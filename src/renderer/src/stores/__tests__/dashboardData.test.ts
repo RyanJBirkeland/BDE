@@ -1,20 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useDashboardDataStore } from '../dashboardData'
 
+const mockLoadAverage = vi.fn()
+
+// Inject system mock into the global window.api stub
+;(window.api as any).system = { loadAverage: mockLoadAverage }
+
 describe('dashboardDataStore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Reset mocks to default values
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
-    ;(window.api.dashboard.burndown as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
     ;(window.api.dashboard.dailySuccessRate as any).mockResolvedValue([])
     ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    mockLoadAverage.mockResolvedValue({ samples: [], cpuCount: 8 })
 
     // Reset store to initial state
     useDashboardDataStore.setState({
-      chartData: [],
-      burndownData: [],
+      throughputData: [],
+      loadData: null,
       feedEvents: [],
       prCount: 0,
       successTrendData: [],
@@ -25,22 +30,34 @@ describe('dashboardDataStore', () => {
 
   it('has correct default state', () => {
     const state = useDashboardDataStore.getState()
-    expect(state.chartData).toEqual([])
-    expect(state.burndownData).toEqual([])
+    expect(state.throughputData).toEqual([])
+    expect(state.loadData).toBeNull()
     expect(state.feedEvents).toEqual([])
     expect(state.prCount).toBe(0)
     expect(state.cardErrors).toEqual({})
     expect(state.loading).toBe(true)
   })
 
+  it('store no longer exposes burndownData', () => {
+    const s = useDashboardDataStore.getState()
+    expect((s as unknown as Record<string, unknown>).burndownData).toBeUndefined()
+  })
+
+  it('fetchAll populates throughputData with hour/success/failed', async () => {
+    ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([
+      { hour: '2026-04-07T14:00:00', successCount: 3, failedCount: 1 }
+    ])
+    await useDashboardDataStore.getState().fetchAll()
+    const s = useDashboardDataStore.getState()
+    expect(s.throughputData).toEqual([
+      { hour: '2026-04-07T14:00:00', successCount: 3, failedCount: 1 }
+    ])
+  })
+
   it('fetchAll populates all fields on success', async () => {
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([
-      { hour: '10:00', count: 5 },
-      { hour: '11:00', count: 3 }
-    ])
-    ;(window.api.dashboard.burndown as any).mockResolvedValue([
-      { date: '2026-03-28', count: 2 },
-      { date: '2026-03-29', count: 4 }
+      { hour: '10:00', successCount: 4, failedCount: 1 },
+      { hour: '11:00', successCount: 2, failedCount: 1 }
     ])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
       {
@@ -68,12 +85,9 @@ describe('dashboardDataStore', () => {
 
     const state = useDashboardDataStore.getState()
     expect(state.loading).toBe(false)
-    expect(state.chartData).toHaveLength(2)
-    expect(state.chartData[0]).toEqual({ value: 5, accent: 'cyan', label: '10:00' })
-    expect(state.chartData[1]).toEqual({ value: 3, accent: 'cyan', label: '11:00' })
-    expect(state.burndownData).toHaveLength(2)
-    expect(state.burndownData[0]).toEqual({ value: 2, accent: 'cyan', label: '2026-03-28' })
-    expect(state.burndownData[1]).toEqual({ value: 4, accent: 'cyan', label: '2026-03-29' })
+    expect(state.throughputData).toHaveLength(2)
+    expect(state.throughputData[0]).toEqual({ hour: '10:00', successCount: 4, failedCount: 1 })
+    expect(state.throughputData[1]).toEqual({ hour: '11:00', successCount: 2, failedCount: 1 })
     expect(state.feedEvents).toHaveLength(2)
     expect(state.feedEvents[0]).toEqual({
       id: '1',
@@ -100,16 +114,15 @@ describe('dashboardDataStore', () => {
 
     const state = useDashboardDataStore.getState()
     expect(state.loading).toBe(false)
-    expect(state.cardErrors.chart).toBe('Failed to load completions')
+    expect(state.cardErrors.throughput).toBe('Failed to load completions')
     expect(state.cardErrors.feed).toBeUndefined()
     expect(state.cardErrors.prs).toBeUndefined()
-    expect(state.chartData).toEqual([])
+    expect(state.throughputData).toEqual([])
   })
 
   it('fetchAll clears previous errors on success', async () => {
     // First call: set errors
     ;(window.api.dashboard.completionsPerHour as any).mockRejectedValue(new Error('fail'))
-    ;(window.api.dashboard.burndown as any).mockRejectedValue(new Error('fail'))
     ;(window.api.dashboard.recentEvents as any).mockRejectedValue(new Error('fail'))
     ;(window.api.getPrList as any).mockRejectedValue(new Error('fail'))
 
@@ -118,14 +131,31 @@ describe('dashboardDataStore', () => {
 
     // Second call: all succeed
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
-    ;(window.api.dashboard.burndown as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
     ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 
     const state = useDashboardDataStore.getState()
-    expect(state.cardErrors).toEqual({})
+    // fetchAll only owns its own keys — loadAverage key (if any) would be preserved
+    expect(state.cardErrors.throughput).toBeUndefined()
+    expect(state.cardErrors.feed).toBeUndefined()
+    expect(state.cardErrors.prs).toBeUndefined()
+    expect(state.cardErrors.successTrend).toBeUndefined()
+  })
+
+  it('fetchAll preserves loadAverage error when it clears its own errors', async () => {
+    // Simulate loadAverage error already set
+    useDashboardDataStore.setState({ cardErrors: { loadAverage: 'Failed to load system metrics' } })
+    ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
+    ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
+    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+
+    await useDashboardDataStore.getState().fetchAll()
+
+    const state = useDashboardDataStore.getState()
+    // loadAverage error should still be there — fetchAll does not own it
+    expect(state.cardErrors.loadAverage).toBe('Failed to load system metrics')
   })
 
   it('fetchAll sets loading false after completion', async () => {
@@ -148,22 +178,10 @@ describe('dashboardDataStore', () => {
     await useDashboardDataStore.getState().fetchAll()
 
     const state = useDashboardDataStore.getState()
-    expect(state.chartData).toEqual([])
+    expect(state.throughputData).toEqual([])
     expect(state.feedEvents).toEqual([])
     expect(state.prCount).toBe(0)
     expect(state.loading).toBe(false)
-  })
-
-  it('fetchAll maps all chart bars with cyan accent', async () => {
-    const data = Array.from({ length: 7 }, (_, i) => ({ hour: `${i}:00`, count: i + 1 }))
-    ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue(data)
-    ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
-
-    await useDashboardDataStore.getState().fetchAll()
-
-    const accents = useDashboardDataStore.getState().chartData.map((d) => d.accent)
-    expect(accents).toEqual(['cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan'])
   })
 
   it('fetchAll maps unknown event types to purple accent', async () => {
@@ -253,5 +271,34 @@ describe('dashboardDataStore', () => {
     expect(events).toHaveLength(2)
     expect(events[0].label).toBe('Task Add feature started')
     expect(events[1].label).toBe('completed')
+  })
+
+  // ---------- fetchLoad tests ----------
+
+  it('fetchLoad populates loadData from system.loadAverage', async () => {
+    mockLoadAverage.mockResolvedValue({
+      samples: [{ t: 1, load1: 2, load5: 3, load15: 4 }],
+      cpuCount: 8
+    })
+    await useDashboardDataStore.getState().fetchLoad()
+    expect(useDashboardDataStore.getState().loadData).toEqual({
+      samples: [{ t: 1, load1: 2, load5: 3, load15: 4 }],
+      cpuCount: 8
+    })
+  })
+
+  it('fetchLoad sets cardErrors.loadAverage on failure', async () => {
+    mockLoadAverage.mockRejectedValue(new Error('boom'))
+    await useDashboardDataStore.getState().fetchLoad()
+    expect(useDashboardDataStore.getState().cardErrors.loadAverage).toBeDefined()
+  })
+
+  it('fetchLoad clears cardErrors.loadAverage on success after failure', async () => {
+    mockLoadAverage.mockRejectedValueOnce(new Error('boom'))
+    await useDashboardDataStore.getState().fetchLoad()
+    expect(useDashboardDataStore.getState().cardErrors.loadAverage).toBeDefined()
+    mockLoadAverage.mockResolvedValueOnce({ samples: [], cpuCount: 8 })
+    await useDashboardDataStore.getState().fetchLoad()
+    expect(useDashboardDataStore.getState().cardErrors.loadAverage).toBeUndefined()
   })
 })

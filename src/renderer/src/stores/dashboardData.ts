@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ChartBar } from '../components/neon/MiniChart'
+import type { CompletionBucket, LoadSnapshot } from '../../../shared/ipc-channels'
 import type { FeedEvent } from '../components/neon/ActivityFeed'
 
 interface DailySuccessRate {
@@ -10,8 +10,8 @@ interface DailySuccessRate {
 }
 
 interface DashboardDataState {
-  chartData: ChartBar[]
-  burndownData: ChartBar[]
+  throughputData: CompletionBucket[]
+  loadData: LoadSnapshot | null
   feedEvents: FeedEvent[]
   prCount: number
   successTrendData: DailySuccessRate[]
@@ -19,6 +19,7 @@ interface DashboardDataState {
   loading: boolean
   lastFetchedAt: number | null
   fetchAll: () => Promise<void>
+  fetchLoad: () => Promise<void>
 }
 
 const EVENT_ACCENT: Record<string, FeedEvent['accent']> = {
@@ -53,9 +54,25 @@ function formatEventAction(eventType: string): string | null {
   }
 }
 
+/**
+ * Merge card errors from a fetch that owns a specific set of keys.
+ * Keys owned by this fetch are cleared first, then new errors are applied.
+ * Keys owned by other fetches (e.g., loadAverage from fetchLoad) are preserved.
+ */
+function mergeCardErrors(
+  prev: Record<string, string | undefined>,
+  incoming: Record<string, string>,
+  keysThisFetchOwns: string[]
+): Record<string, string | undefined> {
+  const next = { ...prev }
+  for (const k of keysThisFetchOwns) delete next[k]
+  Object.assign(next, incoming)
+  return next
+}
+
 export const useDashboardDataStore = create<DashboardDataState>((set) => ({
-  chartData: [],
-  burndownData: [],
+  throughputData: [],
+  loadData: null,
   feedEvents: [],
   prCount: 0,
   successTrendData: [],
@@ -66,32 +83,12 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
   fetchAll: async () => {
     const errors: Record<string, string> = {}
 
-    let chartData: ChartBar[] = []
+    let throughputData: CompletionBucket[] = []
     try {
       const data = await window.api.dashboard?.completionsPerHour()
-      if (data) {
-        chartData = data.map((d) => ({
-          value: d.count,
-          accent: 'cyan' as const,
-          label: d.hour
-        }))
-      }
+      if (data) throughputData = data
     } catch {
-      errors.chart = 'Failed to load completions'
-    }
-
-    let burndownData: ChartBar[] = []
-    try {
-      const data = await window.api.dashboard?.burndown()
-      if (data) {
-        burndownData = data.map((d) => ({
-          value: d.count,
-          accent: 'cyan' as const,
-          label: d.date
-        }))
-      }
-    } catch {
-      errors.burndown = 'Failed to load burndown'
+      errors.throughput = 'Failed to load completions'
     }
 
     let feedEvents: FeedEvent[] = []
@@ -137,15 +134,36 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
       errors.successTrend = 'Failed to load success trend'
     }
 
-    set({
-      chartData,
-      burndownData,
+    set((state) => ({
+      throughputData,
       feedEvents,
       prCount,
       successTrendData,
-      cardErrors: Object.keys(errors).length > 0 ? errors : {},
+      cardErrors: mergeCardErrors(state.cardErrors, errors, [
+        'throughput',
+        'successTrend',
+        'feed',
+        'prs'
+      ]),
       loading: false,
       lastFetchedAt: Date.now()
-    })
+    }))
+  },
+
+  fetchLoad: async () => {
+    try {
+      const data = await window.api.system?.loadAverage()
+      if (data) {
+        set((state) => {
+          const nextErrors = { ...state.cardErrors }
+          delete nextErrors.loadAverage
+          return { loadData: data, cardErrors: nextErrors }
+        })
+      }
+    } catch {
+      set((state) => ({
+        cardErrors: { ...state.cardErrors, loadAverage: 'Failed to load system metrics' }
+      }))
+    }
   }
 }))

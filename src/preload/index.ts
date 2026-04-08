@@ -325,8 +325,12 @@ const api = {
   dashboard: {
     completionsPerHour: () => typedInvoke('agent:completionsPerHour'),
     recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit),
-    dailySuccessRate: (days?: number) => typedInvoke('dashboard:dailySuccessRate', days),
-    burndown: () => typedInvoke('sprint:burndown')
+    dailySuccessRate: (days?: number) => typedInvoke('dashboard:dailySuccessRate', days)
+  },
+
+  // System metrics
+  system: {
+    loadAverage: () => typedInvoke('system:loadAverage')
   },
 
   // Task Workbench

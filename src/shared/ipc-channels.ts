@@ -683,7 +683,8 @@ export interface WebhookChannels {
 /** Dashboard analytics */
 export interface CompletionBucket {
   hour: string
-  count: number
+  successCount: number
+  failedCount: number
 }
 
 export interface DashboardEvent {
@@ -702,16 +703,27 @@ export interface DailySuccessRate {
   failedCount: number
 }
 
-export interface BurndownBucket {
-  date: string
-  count: number
-}
-
 export interface DashboardChannels {
   'agent:completionsPerHour': { args: []; result: CompletionBucket[] }
   'agent:recentEvents': { args: [limit?: number]; result: DashboardEvent[] }
   'dashboard:dailySuccessRate': { args: [days?: number]; result: DailySuccessRate[] }
-  'sprint:burndown': { args: []; result: BurndownBucket[] }
+}
+
+/** System metrics */
+export interface LoadSample {
+  t: number
+  load1: number
+  load5: number
+  load15: number
+}
+
+export interface LoadSnapshot {
+  samples: LoadSample[]
+  cpuCount: number
+}
+
+export interface SystemChannels {
+  'system:loadAverage': { args: []; result: LoadSnapshot }
 }
 
 /** Code review operations */
@@ -885,4 +897,5 @@ export type IpcChannelMap = SettingsChannels &
   ClaudeConfigChannels &
   WebhookChannels &
   GroupChannels &
-  PlannerChannels
+  PlannerChannels &
+  SystemChannels

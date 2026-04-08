@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { CenterColumn } from '../CenterColumn'
-import type { ChartBar } from '../../neon'
+import type { CompletionBucket } from '../../../../../shared/ipc-channels'
 
 vi.mock('../../neon', () => ({
   NeonCard: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div data-testid={`neon-card-${title.toLowerCase()}`}>
+    <div data-testid={`neon-card-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
       <h3>{title}</h3>
       {children}
     </div>
@@ -24,25 +24,29 @@ vi.mock('../../neon', () => ({
   MiniChart: () => <div data-testid="mini-chart">Chart</div>
 }))
 
-vi.mock('../ChartsSection', () => ({
-  ChartsSection: () => <div data-testid="charts-section">ChartsSection</div>
+vi.mock('../ThroughputChart', () => ({
+  ThroughputChart: () => <div data-testid="throughput-chart">ThroughputChart</div>
 }))
 
-vi.mock('../SuccessRing', () => ({
-  SuccessRing: () => <div data-testid="success-ring">SuccessRing</div>
+vi.mock('../SuccessRateChart', () => ({
+  SuccessRateChart: () => <div data-testid="success-rate-chart">SuccessRateChart</div>
+}))
+
+vi.mock('../LoadAverageChart', () => ({
+  LoadAverageChart: () => <div data-testid="load-average-chart">LoadAverageChart</div>
 }))
 
 vi.mock('../../stores/dashboardData', () => ({
   useDashboardDataStore: {
     getState: () => ({
-      fetchAll: vi.fn()
+      fetchAll: vi.fn(),
+      fetchLoad: vi.fn()
     })
   }
 }))
 
 describe('CenterColumn', () => {
-  const mockChartData: ChartBar[] = []
-  const mockBurndownData: ChartBar[] = []
+  const mockThroughputData: CompletionBucket[] = []
   const defaultProps = {
     stats: {
       active: 0,
@@ -51,7 +55,8 @@ describe('CenterColumn', () => {
       failed: 0,
       actualFailed: 0,
       review: 0,
-      done: 0
+      done: 0,
+      doneToday: 0
     },
     partitions: {
       todo: [],
@@ -61,22 +66,18 @@ describe('CenterColumn', () => {
       blocked: [],
       failed: []
     },
-    chartData: mockChartData,
-    burndownData: mockBurndownData,
-    cardErrors: {},
-    successRate: 85,
-    avgDuration: 120000,
-    avgTaskDuration: 150000,
-    taskDurationCount: 5,
-    localAgents: [],
+    throughputData: mockThroughputData,
     successTrendData: [],
-    onFilterClick: vi.fn(),
-    onKeyDownFor: vi.fn(() => vi.fn())
+    loadData: null,
+    tokenTrendData: [],
+    tokenAvg: null,
+    cardErrors: {},
+    onFilterClick: vi.fn()
   }
 
   it('renders Pipeline card', () => {
     render(<CenterColumn {...defaultProps} />)
-    expect(screen.getByTestId('neon-card-pipeline')).toBeInTheDocument()
+    expect(screen.getByTestId('sankey-pipeline')).toBeInTheDocument()
   })
 
   it('renders SankeyPipeline with correct stage counts', () => {
@@ -96,140 +97,68 @@ describe('CenterColumn', () => {
     expect(sankey).toHaveTextContent('Queued: 2, Active: 1')
   })
 
-  it('renders ChartsSection', () => {
+  it('renders ThroughputChart when no error', () => {
     render(<CenterColumn {...defaultProps} />)
-    expect(screen.getByTestId('charts-section')).toBeInTheDocument()
+    expect(screen.getByTestId('throughput-chart')).toBeInTheDocument()
   })
 
-  it('does not render Attention card when no issues', () => {
+  it('renders throughput error card when cardErrors.throughput is set', () => {
+    const props = { ...defaultProps, cardErrors: { throughput: 'Failed to load' } }
+    render(<CenterColumn {...props} />)
+    expect(screen.getByText('Failed to load')).toBeInTheDocument()
+    expect(screen.getByText('Retry')).toBeInTheDocument()
+    expect(screen.queryByTestId('throughput-chart')).not.toBeInTheDocument()
+  })
+
+  it('renders SuccessRateChart when no error', () => {
     render(<CenterColumn {...defaultProps} />)
-    expect(screen.queryByTestId('neon-card-attention')).not.toBeInTheDocument()
+    expect(screen.getByTestId('success-rate-chart')).toBeInTheDocument()
   })
 
-  it('renders Attention card when failed tasks exist', () => {
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, failed: 2 }
-    }
+  it('renders success trend error card when cardErrors.successTrend is set', () => {
+    const props = { ...defaultProps, cardErrors: { successTrend: 'Trend error' } }
     render(<CenterColumn {...props} />)
-    expect(screen.getByTestId('neon-card-attention')).toBeInTheDocument()
-    expect(screen.getByText('2 failed tasks')).toBeInTheDocument()
+    expect(screen.getByText('Trend error')).toBeInTheDocument()
   })
 
-  it('renders singular text for 1 failed task', () => {
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, failed: 1 }
-    }
-    render(<CenterColumn {...props} />)
-    expect(screen.getByText('1 failed task')).toBeInTheDocument()
+  it('renders Loading... when loadData is null and no error', () => {
+    render(<CenterColumn {...defaultProps} />)
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
-  it('renders Attention card when PRs awaiting review exist', () => {
+  it('renders LoadAverageChart when loadData is provided', () => {
     const props = {
       ...defaultProps,
-      partitions: {
-        ...defaultProps.partitions,
-        awaitingReview: [1, 2, 3]
-      }
+      loadData: { samples: [], cpuCount: 8 }
     }
     render(<CenterColumn {...props} />)
-    expect(screen.getByTestId('neon-card-attention')).toBeInTheDocument()
-    expect(screen.getByText('3 PRs awaiting review')).toBeInTheDocument()
+    expect(screen.getByTestId('load-average-chart')).toBeInTheDocument()
   })
 
-  it('renders singular text for 1 PR awaiting review', () => {
-    const props = {
-      ...defaultProps,
-      partitions: {
-        ...defaultProps.partitions,
-        awaitingReview: [1]
-      }
-    }
+  it('renders load error card when cardErrors.loadAverage is set', () => {
+    const props = { ...defaultProps, cardErrors: { loadAverage: 'Load error' } }
     render(<CenterColumn {...props} />)
-    expect(screen.getByText('1 PR awaiting review')).toBeInTheDocument()
+    expect(screen.getByText('Load error')).toBeInTheDocument()
   })
 
-  it('renders Attention card when blocked tasks exist', () => {
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, blocked: 4 }
-    }
-    render(<CenterColumn {...props} />)
-    expect(screen.getByTestId('neon-card-attention')).toBeInTheDocument()
-    expect(screen.getByText('4 blocked tasks')).toBeInTheDocument()
+  it('renders dash when tokenAvg is null', () => {
+    render(<CenterColumn {...defaultProps} />)
+    expect(screen.getByText('—')).toBeInTheDocument()
   })
 
-  it('renders singular text for 1 blocked task', () => {
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, blocked: 1 }
-    }
+  it('renders tokenAvg when provided', () => {
+    const props = { ...defaultProps, tokenAvg: '42.5K' }
     render(<CenterColumn {...props} />)
-    expect(screen.getByText('1 blocked task')).toBeInTheDocument()
+    expect(screen.getByText('42.5K')).toBeInTheDocument()
   })
 
-  it('renders all attention items when all issues exist', () => {
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, failed: 2, blocked: 1 },
-      partitions: {
-        ...defaultProps.partitions,
-        awaitingReview: [1, 2]
-      }
-    }
-    render(<CenterColumn {...props} />)
-    expect(screen.getByText('2 failed tasks')).toBeInTheDocument()
-    expect(screen.getByText('2 PRs awaiting review')).toBeInTheDocument()
-    expect(screen.getByText('1 blocked task')).toBeInTheDocument()
+  it('renders MiniChart for token trend', () => {
+    render(<CenterColumn {...defaultProps} />)
+    expect(screen.getByTestId('mini-chart')).toBeInTheDocument()
   })
 
-  it('calls onFilterClick with failed when failed item is clicked', () => {
-    const mockFilterClick = vi.fn()
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, failed: 1 },
-      onFilterClick: mockFilterClick
-    }
-    render(<CenterColumn {...props} />)
-    fireEvent.click(screen.getByText('1 failed task'))
-    expect(mockFilterClick).toHaveBeenCalledWith('failed')
-  })
-
-  it('calls onFilterClick with awaiting-review when PR item is clicked', () => {
-    const mockFilterClick = vi.fn()
-    const props = {
-      ...defaultProps,
-      partitions: {
-        ...defaultProps.partitions,
-        awaitingReview: [1]
-      },
-      onFilterClick: mockFilterClick
-    }
-    render(<CenterColumn {...props} />)
-    fireEvent.click(screen.getByText('1 PR awaiting review'))
-    expect(mockFilterClick).toHaveBeenCalledWith('awaiting-review')
-  })
-
-  it('calls onFilterClick with blocked when blocked item is clicked', () => {
-    const mockFilterClick = vi.fn()
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, blocked: 1 },
-      onFilterClick: mockFilterClick
-    }
-    render(<CenterColumn {...props} />)
-    fireEvent.click(screen.getByText('1 blocked task'))
-    expect(mockFilterClick).toHaveBeenCalledWith('blocked')
-  })
-
-  it('renders attention items as buttons', () => {
-    const props = {
-      ...defaultProps,
-      stats: { ...defaultProps.stats, failed: 1 }
-    }
-    render(<CenterColumn {...props} />)
-    const failedItem = screen.getByText('1 failed task')
-    expect(failedItem.closest('button')).toBeInTheDocument()
+  it('does not render Attention card (replaced by FiresStrip at DashboardView level)', () => {
+    render(<CenterColumn {...defaultProps} />)
+    expect(screen.queryByText('Attention')).not.toBeInTheDocument()
   })
 })

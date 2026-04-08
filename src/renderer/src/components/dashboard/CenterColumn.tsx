@@ -1,29 +1,29 @@
-import { NeonCard, SankeyPipeline, type ChartBar } from '../neon'
-import { ChartsSection } from './ChartsSection'
-import { StatusFilter } from '../../stores/sprintUI'
-import { Activity, GitPullRequest, XCircle, AlertTriangle } from 'lucide-react'
+import { NeonCard, SankeyPipeline, MiniChart, type ChartBar } from '../neon'
+import { ThroughputChart } from './ThroughputChart'
+import { SuccessRateChart } from './SuccessRateChart'
+import { LoadAverageChart } from './LoadAverageChart'
+import type {
+  CompletionBucket,
+  LoadSnapshot,
+  DailySuccessRate
+} from '../../../../shared/ipc-channels'
+import type { StatusFilter } from '../../stores/sprintUI'
+import { Activity, Zap, TrendingUp, Cpu, Coins } from 'lucide-react'
+import { useDashboardDataStore } from '../../stores/dashboardData'
 
-interface LocalAgent {
-  durationMs?: number | null
-}
-
-interface DailySuccessRate {
-  date: string
-  successRate: number | null
-  doneCount: number
-  failedCount: number
+interface DashboardStats {
+  active: number
+  queued: number
+  blocked: number
+  review: number
+  done: number
+  doneToday: number
+  failed: number
+  actualFailed: number
 }
 
 interface CenterColumnProps {
-  stats: {
-    active: number
-    queued: number
-    blocked: number
-    failed: number
-    actualFailed: number
-    review: number
-    done: number
-  }
+  stats: DashboardStats
   partitions: {
     todo: unknown[]
     inProgress: unknown[]
@@ -32,76 +32,48 @@ interface CenterColumnProps {
     blocked: unknown[]
     failed: unknown[]
   }
-  chartData: ChartBar[]
-  burndownData: ChartBar[]
-  cardErrors: Record<string, string | undefined>
-  successRate: number | null
-  avgDuration: number | null
-  avgTaskDuration: number | null
-  taskDurationCount: number
-  localAgents: LocalAgent[]
+  throughputData: CompletionBucket[]
   successTrendData: DailySuccessRate[]
+  loadData: LoadSnapshot | null
+  tokenTrendData: ChartBar[]
+  tokenAvg: string | null
+  cardErrors: Record<string, string | undefined>
   onFilterClick: (filter: StatusFilter) => void
 }
 
-/** Center column with attention card, pipeline, and charts. */
+function ErrorCard({
+  message,
+  onRetry
+}: {
+  message: string
+  onRetry: () => void
+}): React.JSX.Element {
+  return (
+    <div className="dashboard-card-error">
+      <div className="dashboard-card-error__message">{message}</div>
+      <button className="dashboard-card-error__retry" onClick={onRetry}>
+        Retry
+      </button>
+    </div>
+  )
+}
+
+/** Center column with pipeline and charts. */
 export function CenterColumn({
-  stats,
   partitions,
-  chartData,
-  burndownData,
-  cardErrors,
-  successRate,
-  avgDuration,
-  avgTaskDuration,
-  taskDurationCount,
-  localAgents,
+  throughputData,
   successTrendData,
+  loadData,
+  tokenTrendData,
+  tokenAvg,
+  cardErrors,
   onFilterClick
 }: CenterColumnProps): React.JSX.Element {
+  const retry = (): Promise<void> => useDashboardDataStore.getState().fetchAll()
+  const retryLoad = (): Promise<void> => useDashboardDataStore.getState().fetchLoad()
+
   return (
     <div className="dashboard-col dashboard-col--center">
-      {(stats.failed > 0 || partitions.awaitingReview.length > 0 || stats.blocked > 0) && (
-        <NeonCard accent="red" title="Attention">
-          {stats.failed > 0 && (
-            <button className="dashboard-attention-item" onClick={() => onFilterClick('failed')}>
-              <XCircle size={12} />
-              <span>
-                {stats.failed} failed task{stats.failed !== 1 ? 's' : ''}
-              </span>
-            </button>
-          )}
-          {partitions.awaitingReview.length > 0 && (
-            <div className="dashboard-attention-review-section">
-              <button
-                className="dashboard-attention-item"
-                onClick={() => onFilterClick('awaiting-review')}
-              >
-                <GitPullRequest size={12} />
-                <span>
-                  {partitions.awaitingReview.length} PR
-                  {partitions.awaitingReview.length !== 1 ? 's' : ''} awaiting review
-                </span>
-              </button>
-              <button
-                className="dashboard-review-cta"
-                onClick={() => onFilterClick('awaiting-review')}
-              >
-                Review Code
-              </button>
-            </div>
-          )}
-          {stats.blocked > 0 && (
-            <button className="dashboard-attention-item" onClick={() => onFilterClick('blocked')}>
-              <AlertTriangle size={12} />
-              <span>
-                {stats.blocked} blocked task{stats.blocked !== 1 ? 's' : ''}
-              </span>
-            </button>
-          )}
-        </NeonCard>
-      )}
-
       <NeonCard accent="cyan" title="Pipeline" icon={<Activity size={12} />}>
         <SankeyPipeline
           stages={{
@@ -116,18 +88,55 @@ export function CenterColumn({
         />
       </NeonCard>
 
-      <ChartsSection
-        chartData={chartData}
-        burndownData={burndownData}
-        cardErrors={cardErrors}
-        successRate={successRate}
-        stats={{ done: stats.done, failed: stats.failed, actualFailed: stats.actualFailed }}
-        avgDuration={avgDuration}
-        avgTaskDuration={avgTaskDuration}
-        taskDurationCount={taskDurationCount}
-        localAgents={localAgents}
-        successTrendData={successTrendData}
-      />
+      <NeonCard accent="cyan" title="Throughput · last 24h" icon={<Zap size={12} />}>
+        {cardErrors.throughput ? (
+          <ErrorCard message={cardErrors.throughput} onRetry={retry} />
+        ) : (
+          <ThroughputChart data={throughputData} />
+        )}
+      </NeonCard>
+
+      <NeonCard accent="cyan" title="Success rate · last 14d" icon={<TrendingUp size={12} />}>
+        {cardErrors.successTrend ? (
+          <ErrorCard message={cardErrors.successTrend} onRetry={retry} />
+        ) : (
+          <SuccessRateChart data={successTrendData} />
+        )}
+      </NeonCard>
+
+      <div data-chart="load-average">
+        <NeonCard accent="cyan" title="System load · last 10m" icon={<Cpu size={12} />}>
+          {cardErrors.loadAverage ? (
+            <ErrorCard message={cardErrors.loadAverage} onRetry={retryLoad} />
+          ) : loadData ? (
+            <LoadAverageChart samples={loadData.samples} cpuCount={loadData.cpuCount} />
+          ) : (
+            <div style={{ color: '#64748b', fontSize: 10, padding: 12 }}>Loading...</div>
+          )}
+        </NeonCard>
+      </div>
+
+      <NeonCard accent="cyan" title="Tokens / run" icon={<Coins size={12} />}>
+        <div
+          className="tokens-per-run-row"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <strong style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>
+              {tokenAvg ?? '—'}
+            </strong>
+            <span style={{ color: '#64748b', fontSize: 9 }}>last 20 runs</span>
+          </div>
+          <div style={{ flex: 1, maxWidth: 160 }}>
+            <MiniChart data={tokenTrendData} height={28} />
+          </div>
+        </div>
+      </NeonCard>
     </div>
   )
 }

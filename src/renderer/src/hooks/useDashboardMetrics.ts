@@ -1,9 +1,14 @@
 import { useMemo, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
+import { useDashboardDataStore } from '../stores/dashboardData'
 import { useVisibilityAwareInterval } from './useVisibilityAwareInterval'
 import type { ChartBar } from '../components/neon'
 import type { SprintTask } from '../../../shared/types'
+
+/** 1 hour — matches agent-manager watchdog default */
+export const DEFAULT_STUCK_MS = 60 * 60 * 1000
 
 interface DashboardStats {
   active: number
@@ -34,6 +39,10 @@ interface DashboardMetrics {
   recentCompletions: SprintTask[]
   tokens24h: number
   taskTokenMap: Map<string, number>
+  stuckCount: number
+  loadSaturated: { load1: number; cpuCount: number } | null
+  successRate7dAvg: number | null
+  successRateWeekDelta: number | null
 }
 
 /** Truncate a string to maxLen characters, adding ellipsis if needed. */
@@ -59,6 +68,12 @@ function isToday(timestamp: string | number): boolean {
 export function useDashboardMetrics(): DashboardMetrics {
   const tasks = useSprintTasks((s) => s.tasks)
   const localAgents = useCostDataStore((s) => s.localAgents)
+  const { loadData, successTrendData } = useDashboardDataStore(
+    useShallow((s) => ({
+      loadData: s.loadData,
+      successTrendData: s.successTrendData
+    }))
+  )
 
   // Track current time for 24h token calculation (updates every 60s)
   const [now, setNow] = useState(() => Date.now())
@@ -125,7 +140,7 @@ export function useDashboardMetrics(): DashboardMetrics {
   // Token trend sparkline — last 20 agent runs sorted by start time
   const tokenTrendData = useMemo((): ChartBar[] => {
     const sorted = [...localAgents]
-      .filter((a) => (a.tokensIn != null || a.tokensOut != null))
+      .filter((a) => a.tokensIn != null || a.tokensOut != null)
       .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
       .slice(-20)
     return sorted.map((a) => {
@@ -171,6 +186,41 @@ export function useDashboardMetrics(): DashboardMetrics {
     return map
   }, [localAgents])
 
+  // Stuck tasks — active tasks that have exceeded their runtime threshold
+  const stuckCount = useMemo(() => {
+    return tasks.filter((t) => {
+      if (t.status !== 'active' || !t.started_at) return false
+      const elapsed = now - new Date(t.started_at).getTime()
+      const threshold = t.max_runtime_ms ?? DEFAULT_STUCK_MS
+      return elapsed > threshold
+    }).length
+  }, [tasks, now])
+
+  // Load saturation — null if healthy, populated object if load1 >= 2x CPU count
+  const loadSaturated = useMemo(() => {
+    if (!loadData || loadData.samples.length === 0) return null
+    const latest = loadData.samples[loadData.samples.length - 1]
+    if (latest.load1 < 2 * loadData.cpuCount) return null
+    return { load1: latest.load1, cpuCount: loadData.cpuCount }
+  }, [loadData])
+
+  // Success rate 7-day average and week-over-week delta
+  const { successRate7dAvg, successRateWeekDelta } = useMemo(() => {
+    const avg = (arr: Array<number | null>): number | null => {
+      const nums = arr.filter((n): n is number => n != null)
+      if (nums.length === 0) return null
+      return nums.reduce((s, n) => s + n, 0) / nums.length
+    }
+    const last7 = successTrendData.slice(-7).map((d) => d.successRate)
+    const prior7 = successTrendData.slice(-14, -7).map((d) => d.successRate)
+    const last7Avg = avg(last7)
+    const prior7Avg = avg(prior7)
+    return {
+      successRate7dAvg: last7Avg,
+      successRateWeekDelta: last7Avg != null && prior7Avg != null ? last7Avg - prior7Avg : null
+    }
+  }, [successTrendData])
+
   return {
     stats,
     successRate,
@@ -181,6 +231,10 @@ export function useDashboardMetrics(): DashboardMetrics {
     tokenAvg,
     recentCompletions,
     tokens24h,
-    taskTokenMap
+    taskTokenMap,
+    stuckCount,
+    loadSaturated,
+    successRate7dAvg,
+    successRateWeekDelta
   }
 }

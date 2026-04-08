@@ -1,15 +1,21 @@
 import { getDb } from '../db'
 import { safeHandle } from '../ipc-utils'
 import { getDailySuccessRate } from '../data/sprint-queries'
+import { getLoadSnapshot } from '../services/load-sampler'
 
-export function getCompletionsPerHour(): { hour: string; count: number }[] {
+export function getCompletionsPerHour(): {
+  hour: string
+  successCount: number
+  failedCount: number
+}[] {
   const db = getDb()
   const rows = db
     .prepare(
       `
     SELECT
       strftime('%Y-%m-%dT%H:00:00', finished_at / 1000, 'unixepoch', 'localtime') AS hour,
-      COUNT(*) AS count
+      SUM(CASE WHEN status = 'done'   THEN 1 ELSE 0 END) AS successCount,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failedCount
     FROM agent_runs
     WHERE finished_at IS NOT NULL
       AND finished_at > (strftime('%s', 'now', '-24 hours') * 1000)
@@ -17,7 +23,7 @@ export function getCompletionsPerHour(): { hour: string; count: number }[] {
     ORDER BY hour ASC
   `
     )
-    .all() as { hour: string; count: number }[]
+    .all() as { hour: string; successCount: number; failedCount: number }[]
   return rows
 }
 
@@ -58,26 +64,6 @@ export function getRecentEvents(limit: number = 20): {
   return rows
 }
 
-export function getTaskBurndown(): { date: string; count: number }[] {
-  const db = getDb()
-  const rows = db
-    .prepare(
-      `
-    SELECT
-      DATE(completed_at) AS date,
-      COUNT(*) AS count
-    FROM sprint_tasks
-    WHERE completed_at IS NOT NULL
-      AND completed_at >= DATE('now', '-7 days')
-      AND status = 'done'
-    GROUP BY date
-    ORDER BY date ASC
-  `
-    )
-    .all() as { date: string; count: number }[]
-  return rows
-}
-
 export function registerDashboardHandlers(): void {
   safeHandle('agent:completionsPerHour', async () => {
     return getCompletionsPerHour()
@@ -91,7 +77,7 @@ export function registerDashboardHandlers(): void {
     return getDailySuccessRate(days)
   })
 
-  safeHandle('sprint:burndown', async () => {
-    return getTaskBurndown()
+  safeHandle('system:loadAverage', async () => {
+    return getLoadSnapshot()
   })
 }

@@ -35,14 +35,14 @@ describe('Dashboard handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('agent:completionsPerHour', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent:recentEvents', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('dashboard:dailySuccessRate', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('sprint:burndown', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('system:loadAverage', expect.any(Function))
   })
 
   describe('getCompletionsPerHour', () => {
     it('calls db.prepare with a GROUP BY query and returns rows', () => {
       const buckets = [
-        { hour: '2026-03-24T10:00:00', count: 3 },
-        { hour: '2026-03-24T11:00:00', count: 5 }
+        { hour: '2026-03-24T10:00:00', successCount: 3, failedCount: 0 },
+        { hour: '2026-03-24T11:00:00', successCount: 5, failedCount: 1 }
       ]
       mockAll.mockReturnValueOnce(buckets)
 
@@ -53,10 +53,32 @@ describe('Dashboard handlers', () => {
       expect(result).toBe(buckets)
     })
 
+    it('returns success/failed split per hour', () => {
+      const buckets = [
+        { hour: '2026-03-24T09:00:00', successCount: 2, failedCount: 0 },
+        { hour: '2026-03-24T10:00:00', successCount: 3, failedCount: 1 }
+      ]
+      mockAll.mockReturnValueOnce(buckets)
+
+      const result = getCompletionsPerHour()
+
+      const currentHour = result.find((b) => b.successCount === 3 && b.failedCount === 1)
+      const priorHour = result.find((b) => b.successCount === 2 && b.failedCount === 0)
+      expect(currentHour).toBeDefined()
+      expect(priorHour).toBeDefined()
+    })
+
     it('returns empty array when no completions', () => {
       mockAll.mockReturnValueOnce([])
       const result = getCompletionsPerHour()
       expect(result).toEqual([])
+    })
+
+    it('SQL query uses successCount and failedCount columns', () => {
+      mockAll.mockReturnValueOnce([])
+      getCompletionsPerHour()
+      expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('successCount'))
+      expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('failedCount'))
     })
   })
 
@@ -112,7 +134,7 @@ describe('Dashboard handlers', () => {
     const mockEvent = {} as IpcMainInvokeEvent
 
     it('agent:completionsPerHour handler returns completions', async () => {
-      const buckets = [{ hour: '2026-03-24T10:00:00', count: 2 }]
+      const buckets = [{ hour: '2026-03-24T10:00:00', successCount: 2, failedCount: 0 }]
       mockAll.mockReturnValueOnce(buckets)
       const handlers = captureHandlers()
 
