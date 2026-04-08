@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-import { ReadinessChecks } from '../ReadinessChecks'
+import { ValidationChecks } from '../ValidationChecks'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
 
-describe('ReadinessChecks', () => {
+describe('ValidationChecks', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useTaskWorkbenchStore.getState().resetForm()
@@ -16,7 +16,7 @@ describe('ReadinessChecks', () => {
       semanticChecks: [],
       operationalChecks: []
     })
-    const { container } = render(<ReadinessChecks />)
+    const { container } = render(<ValidationChecks />)
     expect(container.firstChild).toBeNull()
   })
 
@@ -24,7 +24,7 @@ describe('ReadinessChecks', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
     expect(screen.getByText('1/1 passing')).toBeInTheDocument()
   })
 
@@ -38,7 +38,7 @@ describe('ReadinessChecks', () => {
         { id: 'clarity', label: 'Clarity', tier: 2, status: 'pass', message: 'Clear' }
       ]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
     expect(screen.getByText('2/3 passing')).toBeInTheDocument()
   })
 
@@ -46,7 +46,7 @@ describe('ReadinessChecks', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
     const icon = screen.getByTitle('Title').querySelector('[aria-label="Passed"]')
     expect(icon).toBeInTheDocument()
   })
@@ -55,7 +55,7 @@ describe('ReadinessChecks', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [{ id: 'repo', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
     const icon = screen.getByTitle('Repo').querySelector('[aria-label="Failed"]')
     expect(icon).toBeInTheDocument()
   })
@@ -64,7 +64,7 @@ describe('ReadinessChecks', () => {
     useTaskWorkbenchStore.setState({
       semanticChecks: [{ id: 'scope', label: 'Scope', tier: 2, status: 'warn', message: 'Vague' }]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
     const icon = screen.getByTitle('Scope').querySelector('[aria-label="Warning"]')
     expect(icon).toBeInTheDocument()
   })
@@ -75,7 +75,7 @@ describe('ReadinessChecks', () => {
         { id: 'auth', label: 'Auth', tier: 3, status: 'pending', message: 'Checking...' }
       ]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
     const icon = screen.getByTitle('Auth').querySelector('[aria-label="Pending"]')
     expect(icon).toBeInTheDocument()
   })
@@ -90,7 +90,7 @@ describe('ReadinessChecks', () => {
         { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Vague' }
       ]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     expect(screen.getByTitle('Title')).toBeInTheDocument()
     expect(screen.getByTitle('Repo')).toBeInTheDocument()
@@ -102,7 +102,7 @@ describe('ReadinessChecks', () => {
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
       checksExpanded: false
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     expect(screen.queryByText('Title')).not.toBeInTheDocument()
     expect(screen.getByText('▸')).toBeInTheDocument()
@@ -113,7 +113,7 @@ describe('ReadinessChecks', () => {
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
       checksExpanded: false
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     const toggleButton = screen.getByRole('button')
     fireEvent.click(toggleButton)
@@ -126,7 +126,7 @@ describe('ReadinessChecks', () => {
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
       checksExpanded: true
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     expect(screen.getByText('▾')).toBeInTheDocument()
   })
@@ -138,7 +138,7 @@ describe('ReadinessChecks', () => {
       ],
       checksExpanded: true
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     expect(screen.getByText('Title')).toBeInTheDocument()
     expect(screen.getByText('Looks good')).toBeInTheDocument()
@@ -155,7 +155,7 @@ describe('ReadinessChecks', () => {
       ],
       checksExpanded: true
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     expect(screen.getByText('Title')).toBeInTheDocument()
     expect(screen.getByText('OK')).toBeInTheDocument()
@@ -170,7 +170,7 @@ describe('ReadinessChecks', () => {
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
       checksExpanded: true
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     const toggleButton = screen.getByRole('button')
     fireEvent.click(toggleButton)
@@ -185,7 +185,7 @@ describe('ReadinessChecks', () => {
       ],
       checksExpanded: false
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     // Only icon should be present via title attribute, not the text "Title"
     expect(screen.queryByText('Title')).not.toBeInTheDocument()
@@ -196,7 +196,7 @@ describe('ReadinessChecks', () => {
     useTaskWorkbenchStore.setState({
       structuralChecks: [{ id: 'repo', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }]
     })
-    const { container } = render(<ReadinessChecks />)
+    const { container } = render(<ValidationChecks />)
 
     const wrapper = container.firstChild as HTMLElement
     expect(wrapper.className).toContain('neon-card')
@@ -210,7 +210,7 @@ describe('ReadinessChecks', () => {
         { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Vague' }
       ]
     })
-    const { container } = render(<ReadinessChecks />)
+    const { container } = render(<ValidationChecks />)
 
     const wrapper = container.firstChild as HTMLElement
     expect(wrapper.className).toContain('neon-card')
@@ -227,7 +227,7 @@ describe('ReadinessChecks', () => {
         { id: 'auth', label: 'Auth', tier: 3, status: 'pass', message: 'Authenticated' }
       ]
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     expect(screen.getByText('3/3 passing')).toBeInTheDocument()
   })
@@ -243,7 +243,7 @@ describe('ReadinessChecks', () => {
       ],
       checksExpanded: true
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     const labels = screen.getAllByText(/Struct|Semantic|Operational/)
     expect(labels[0].textContent).toBe('Struct')
@@ -257,7 +257,7 @@ describe('ReadinessChecks', () => {
       semanticChecks: [],
       operationalChecks: []
     })
-    render(<ReadinessChecks />)
+    render(<ValidationChecks />)
 
     expect(screen.getByText('1/1 passing')).toBeInTheDocument()
   })

@@ -59,7 +59,7 @@ interface TaskWorkbenchState {
   streamingMessageId: string | null
   activeStreamId: string | null
 
-  // --- Readiness ---
+  // --- Validation ---
   checksExpanded: boolean
   structuralChecks: CheckResult[]
   semanticChecks: CheckResult[]

@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { useSprintTasks, type CreateTicketInput } from '../../stores/sprintTasks'
-import { useReadinessChecks } from '../../hooks/useReadinessChecks'
+import { useValidationChecks } from '../../hooks/useValidationChecks'
 import { useDebouncedAsync } from '../../hooks/useDebouncedAsync'
 import { SpecEditor } from './SpecEditor'
-import { ReadinessChecks } from './ReadinessChecks'
+import { ValidationChecks } from './ValidationChecks'
 import { WorkbenchActions } from './WorkbenchActions'
 import { DependencyPicker } from './DependencyPicker'
 import { ConfirmModal } from '../ui/ConfirmModal'
@@ -79,7 +79,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   const [contractExpanded, setContractExpanded] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
 
-  useReadinessChecks()
+  useValidationChecks()
 
   const setSemanticChecks = useTaskWorkbenchStore((s) => s.setSemanticChecks)
   const setOperationalChecks = useTaskWorkbenchStore((s) => s.setOperationalChecks)
@@ -552,7 +552,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
         />
       </div>
 
-      <ReadinessChecks />
+      <ValidationChecks />
       <WorkbenchActions
         onSaveBacklog={() => handleSubmit('backlog')}
         onQueueNow={() => handleSubmit('queue')}

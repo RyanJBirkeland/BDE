@@ -280,7 +280,7 @@ export function checkComplexity(spec: string): CheckResult {
 
 // React hook — wires structural checks to store on every form change
 
-export function useReadinessChecks(): void {
+export function useValidationChecks(): void {
   const title = useTaskWorkbenchStore((s) => s.title)
   const repo = useTaskWorkbenchStore((s) => s.repo)
   const spec = useTaskWorkbenchStore((s) => s.spec)

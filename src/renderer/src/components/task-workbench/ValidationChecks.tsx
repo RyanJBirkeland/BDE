@@ -5,7 +5,7 @@ import { NeonCard } from '../neon/NeonCard'
 import type { NeonAccent } from '../neon/types'
 
 /**
- * Focus a form field by id and scroll it into view. Used by the readiness
+ * Focus a form field by id and scroll it into view. Used by the validation
  * check list so users can click a failure → land on the offending field.
  * Returns true if a field was found and focused.
  */
@@ -44,7 +44,7 @@ function CheckIcon({ status }: { status: CheckResult['status'] }): React.JSX.Ele
   )
 }
 
-export function ReadinessChecks(): React.JSX.Element | null {
+export function ValidationChecks(): React.JSX.Element | null {
   const structural = useTaskWorkbenchStore((s) => s.structuralChecks)
   const semantic = useTaskWorkbenchStore((s) => s.semanticChecks)
   const operational = useTaskWorkbenchStore((s) => s.operationalChecks)
@@ -65,7 +65,7 @@ export function ReadinessChecks(): React.JSX.Element | null {
   const failCount = allChecks.filter((c) => c.status === 'fail').length
   const warnCount = allChecks.filter((c) => c.status === 'warn').length
   const liveSummary = isLoading
-    ? 'Running readiness checks…'
+    ? 'Running validation checks…'
     : `${passing} of ${total} checks passing` +
       (failCount > 0 ? `, ${failCount} failing` : '') +
       (warnCount > 0 ? `, ${warnCount} warning${warnCount === 1 ? '' : 's'}` : '')
@@ -76,14 +76,14 @@ export function ReadinessChecks(): React.JSX.Element | null {
   return (
     <NeonCard
       accent={accent}
-      title="Readiness Checks"
+      title="Validation Checks"
       icon={<CheckCircle2 size={14} />}
       action={
         <button
           onClick={toggleExpanded}
           className="wb-checks__toggle"
           aria-expanded={expanded}
-          aria-label="Toggle readiness checks details"
+          aria-label="Toggle validation checks details"
           style={{
             background: 'none',
             border: 'none',

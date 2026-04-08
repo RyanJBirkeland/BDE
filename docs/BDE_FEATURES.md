@@ -6,7 +6,7 @@ This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.m
 
 ## How Work Flows Through BDE
 
-1. **Create** — Task Workbench: draft specs with AI copilot assistance, define dependencies between tasks, run readiness checks before queuing
+1. **Create** — Task Workbench: draft specs with AI copilot assistance, define dependencies between tasks, run validation checks before queuing
 2. **Queue** — Tasks enter the Sprint Pipeline with status `queued` via the BDE UI (Task Workbench or Sprint Pipeline)
 3. **Execute** — Agent Manager claims queued tasks, spawns pipeline agents in isolated git worktrees. Agents write code, run tests, and commit. If `playground_enabled` is set, HTML file writes render inline via Dev Playground
 4. **Review** — Agents complete work and transition tasks to `review` status, preserving the worktree. Code Review Station provides diff inspection, commit history, and action buttons (merge locally, create PR, request revision, discard). Users review changes before integration
@@ -18,10 +18,10 @@ This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.m
 
 ### Task Workbench
 
-Planning and spec creation interface. Users draft task specs with AI copilot assistance, configure task properties, and run readiness checks before queuing.
+Planning and spec creation interface. Users draft task specs with AI copilot assistance, configure task properties, and run validation checks before queuing.
 
 - **Copilot**: AI chat assistant for drafting specs. Text-only, uses Agent SDK streaming via `workbench:chatStream` IPC. Messages persist to localStorage under `bde:copilot-messages` (capped at 100). Cannot use tools or explore code — for codebase-aware spec generation, use the Synthesizer instead
-- **Readiness checks**: Validates spec quality before queuing. Specs require at least 2 `## heading` sections. Semantic checks use SDK with haiku model for speed
+- **Validation checks**: Validates spec quality before queuing. Specs require at least 2 `## heading` sections. Semantic checks use SDK with haiku model for speed
 - **Spec types**: `spec` (structured markdown with headings — required for `status=queued`) or `prompt` (freeform text)
 - **Dev Playground toggle**: Enables inline HTML rendering for the task's pipeline agent. When enabled, any `.html` file the agent writes will render in-app
 - Related: Sprint Pipeline, Copilot, Synthesizer

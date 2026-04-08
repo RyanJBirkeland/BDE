@@ -113,7 +113,7 @@ export function buildSpecGenerationPrompt(input: {
 }
 
 export function registerWorkbenchHandlers(am?: AgentManager): void {
-  // --- Fully implemented: Operational readiness checks ---
+  // --- Fully implemented: Operational validation checks ---
   safeHandle('workbench:checkOperational', async (_e, input: { repo: string }) => {
     const { repo } = input
 

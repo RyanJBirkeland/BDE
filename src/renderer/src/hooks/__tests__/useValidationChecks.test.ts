@@ -7,7 +7,7 @@ import {
   checkPreloadSync,
   checkComplexity,
   extractFilePaths
-} from '../useReadinessChecks'
+} from '../useValidationChecks'
 
 describe('computeStructuralChecks', () => {
   it('fails when title is empty', () => {

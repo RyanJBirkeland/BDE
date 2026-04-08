@@ -7,8 +7,8 @@ vi.mock('../SpecEditor', () => ({
     <div data-testid="spec-editor">{generating ? 'Generating...' : 'SpecEditor'}</div>
   )
 }))
-vi.mock('../ReadinessChecks', () => ({
-  ReadinessChecks: () => <div data-testid="readiness-checks">ReadinessChecks</div>
+vi.mock('../ValidationChecks', () => ({
+  ValidationChecks: () => <div data-testid="validation-checks">ValidationChecks</div>
 }))
 vi.mock('../WorkbenchActions', () => ({
   WorkbenchActions: ({
@@ -52,8 +52,8 @@ vi.mock('../../ui/ConfirmModal', () => ({
       </div>
     ) : null
 }))
-vi.mock('../../../hooks/useReadinessChecks', () => ({
-  useReadinessChecks: vi.fn()
+vi.mock('../../../hooks/useValidationChecks', () => ({
+  useValidationChecks: vi.fn()
 }))
 
 import { WorkbenchForm } from '../WorkbenchForm'
@@ -129,9 +129,9 @@ describe('WorkbenchForm', () => {
     expect(screen.getByTestId('spec-editor')).toBeInTheDocument()
   })
 
-  it('renders ReadinessChecks child', () => {
+  it('renders ValidationChecks child', () => {
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
-    expect(screen.getByTestId('readiness-checks')).toBeInTheDocument()
+    expect(screen.getByTestId('validation-checks')).toBeInTheDocument()
   })
 
   it('renders WorkbenchActions child', () => {
