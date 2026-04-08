@@ -146,6 +146,10 @@ function spawnViaCli(
     }
   )
 
+  // Cap listeners on child streams so multiple handler registrations from
+  // tests or retries don't trigger Node's MaxListenersExceededWarning.
+  child.stderr.setMaxListeners(5)
+
   // Capture stderr line-by-line and forward via onStderr callback
   let stderrBuffer = ''
   child.stderr.on('data', (chunk: Buffer) => {

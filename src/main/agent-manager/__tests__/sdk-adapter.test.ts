@@ -273,6 +273,17 @@ describe('spawnAgent (CLI fallback)', () => {
     expect(stderrLines).toEqual(['no trailing newline'])
   })
 
+  it('sets maxListeners=5 on child.stderr to prevent MaxListenersExceededWarning (F-t1-sre-2)', async () => {
+    await spawnAgent({
+      prompt: 'test',
+      cwd: '/tmp',
+      model: 'claude-sonnet-4-5'
+    })
+
+    // stderr is a real Readable — setMaxListeners should have been called
+    expect(child.stderr.getMaxListeners()).toBe(5)
+  })
+
   it('messages AsyncIterable skips non-JSON lines', async () => {
     const handle = await spawnAgent({
       prompt: 'test',
