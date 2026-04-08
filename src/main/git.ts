@@ -198,3 +198,35 @@ export async function gitCheckout(cwd: string, branch: string): Promise<void> {
     maxBuffer: MAX_BUFFER
   })
 }
+
+export async function gitFetch(cwd: string): Promise<{ success: boolean; error?: string; stdout?: string }> {
+  try {
+    const { stdout, stderr } = await execFileAsync('git', ['fetch', 'origin'], {
+      cwd,
+      encoding: 'utf-8' as const,
+      maxBuffer: MAX_BUFFER
+    })
+    return { success: true, stdout: (stdout + stderr).trim() || 'Fetched from origin' }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return { success: false, error: `git fetch failed in ${cwd}: ${msg}` }
+  }
+}
+
+export async function gitPull(cwd: string, currentBranch: string): Promise<{ success: boolean; error?: string; stdout?: string }> {
+  try {
+    const { stdout, stderr } = await execFileAsync('git', ['pull', '--ff-only', 'origin', currentBranch], {
+      cwd,
+      encoding: 'utf-8' as const,
+      maxBuffer: MAX_BUFFER
+    })
+    return { success: true, stdout: (stdout + stderr).trim() || 'Pulled from origin' }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    // Check if the error is due to non-fast-forward
+    if (msg.includes('non-fast-forward') || msg.includes('diverged')) {
+      return { success: false, error: 'Local branch has diverged from origin. Resolve manually.' }
+    }
+    return { success: false, error: `git pull failed in ${cwd}: ${msg}` }
+  }
+}

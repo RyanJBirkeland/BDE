@@ -91,6 +91,8 @@ const api = {
   gitBranches: (cwd: string) => typedInvoke('git:branches', cwd),
   gitCheckout: (cwd: string, branch: string) => typedInvoke('git:checkout', cwd, branch),
   gitDetectRemote: (cwd: string) => typedInvoke('git:detectRemote', cwd),
+  gitFetch: (cwd: string) => typedInvoke('git:fetch', cwd),
+  gitPull: (cwd: string, currentBranch: string) => typedInvoke('git:pull', cwd, currentBranch),
 
   // Local agent process detection + spawning
   getAgentProcesses: () => typedInvoke('local:getAgentProcesses'),

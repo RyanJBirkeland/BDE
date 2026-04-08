@@ -19,7 +19,9 @@ vi.mock('../../git', () => ({
   gitCommit: vi.fn(),
   gitPush: vi.fn(),
   gitBranches: vi.fn(),
-  gitCheckout: vi.fn()
+  gitCheckout: vi.fn(),
+  gitFetch: vi.fn(),
+  gitPull: vi.fn()
 }))
 
 // Mock validation — passthrough by default
@@ -83,7 +85,7 @@ vi.mock('../../settings', () => ({
 
 import { registerGitHandlers } from '../git-handlers'
 import { safeHandle } from '../../ipc-utils'
-import { getRepoPaths, gitStatus, gitDiffFile, gitCommit } from '../../git'
+import { getRepoPaths, gitStatus, gitDiffFile, gitCommit, gitFetch, gitPull } from '../../git'
 import { getGitHubToken } from '../../config'
 import { githubFetch, parseNextLink } from '../../github-fetch'
 import { getLatestPrList, refreshPrList } from '../../pr-poller'
@@ -127,6 +129,8 @@ describe('registerGitHandlers', () => {
     expect(channels).toContain('git:push')
     expect(channels).toContain('git:branches')
     expect(channels).toContain('git:checkout')
+    expect(channels).toContain('git:fetch')
+    expect(channels).toContain('git:pull')
     expect(channels).toContain('pr:pollStatuses')
     expect(channels).toContain('pr:checkConflictFiles')
     expect(channels).toContain('pr:getList')
@@ -536,5 +540,82 @@ describe('pr:pollStatuses handler', () => {
 
     expect(markTaskCancelledByPrNumber).toHaveBeenCalledWith(99)
     expect(result).toEqual(results)
+  })
+})
+
+describe('git:fetch handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns success when fetch succeeds', async () => {
+    vi.mocked(gitFetch).mockResolvedValue({ success: true, stdout: 'Fetched from origin' })
+
+    const handler = captureHandler('git:fetch')
+    const result = await handler(mockEvent, '/Users/test/projects/BDE')
+
+    expect(gitFetch).toHaveBeenCalledWith('/Users/test/projects/BDE')
+    expect(result).toEqual({ success: true, stdout: 'Fetched from origin' })
+  })
+
+  it('returns error when fetch fails', async () => {
+    vi.mocked(gitFetch).mockResolvedValue({
+      success: false,
+      error: 'git fetch failed in /Users/test/projects/BDE: network error'
+    })
+
+    const handler = captureHandler('git:fetch')
+    const result = await handler(mockEvent, '/Users/test/projects/BDE')
+
+    expect(result).toEqual({
+      success: false,
+      error: 'git fetch failed in /Users/test/projects/BDE: network error'
+    })
+  })
+})
+
+describe('git:pull handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns success when pull succeeds', async () => {
+    vi.mocked(gitPull).mockResolvedValue({ success: true, stdout: 'Pulled from origin' })
+
+    const handler = captureHandler('git:pull')
+    const result = await handler(mockEvent, '/Users/test/projects/BDE', 'main')
+
+    expect(gitPull).toHaveBeenCalledWith('/Users/test/projects/BDE', 'main')
+    expect(result).toEqual({ success: true, stdout: 'Pulled from origin' })
+  })
+
+  it('returns error when pull fails due to divergence', async () => {
+    vi.mocked(gitPull).mockResolvedValue({
+      success: false,
+      error: 'Local branch has diverged from origin. Resolve manually.'
+    })
+
+    const handler = captureHandler('git:pull')
+    const result = await handler(mockEvent, '/Users/test/projects/BDE', 'main')
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Local branch has diverged from origin. Resolve manually.'
+    })
+  })
+
+  it('returns error when pull fails for other reasons', async () => {
+    vi.mocked(gitPull).mockResolvedValue({
+      success: false,
+      error: 'git pull failed in /Users/test/projects/BDE: network error'
+    })
+
+    const handler = captureHandler('git:pull')
+    const result = await handler(mockEvent, '/Users/test/projects/BDE', 'main')
+
+    expect(result).toEqual({
+      success: false,
+      error: 'git pull failed in /Users/test/projects/BDE: network error'
+    })
   })
 })

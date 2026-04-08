@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { GitBranch, RefreshCw, AlertCircle, X, CheckCircle } from 'lucide-react'
+import { GitBranch, RefreshCw, AlertCircle, X, CheckCircle, Download, ArrowDownToLine } from 'lucide-react'
 import { useGitTreeStore } from '../stores/gitTree'
 import { toast } from '../stores/toasts'
 import { CommitBox } from '../components/git-tree/CommitBox'
@@ -197,6 +197,40 @@ export default function GitTreeView(): React.ReactElement {
     push(activeRepo)
   }
 
+  function handleFetch(): void {
+    if (!activeRepo) return
+    window.api
+      .gitFetch(activeRepo)
+      .then((result) => {
+        if (result.success) {
+          toast.success('Fetched from origin')
+          fetchStatus(activeRepo)
+        } else {
+          toast.error(result.error ?? 'Failed to fetch')
+        }
+      })
+      .catch((err) => {
+        toast.error(`Fetch failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      })
+  }
+
+  function handlePull(): void {
+    if (!activeRepo || !branch) return
+    window.api
+      .gitPull(activeRepo, branch)
+      .then((result) => {
+        if (result.success) {
+          toast.success('Pulled from origin')
+          fetchStatus(activeRepo)
+        } else {
+          toast.error(result.error ?? 'Failed to pull')
+        }
+      })
+      .catch((err) => {
+        toast.error(`Pull failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      })
+  }
+
   return (
     <motion.div
       className="git-tree-view"
@@ -239,6 +273,29 @@ export default function GitTreeView(): React.ReactElement {
           hasUncommittedChanges={hasUncommittedChanges}
           onCheckout={handleCheckout}
         />
+
+        {/* Fetch button */}
+        <button
+          onClick={handleFetch}
+          aria-label="Fetch from remote"
+          title="Fetch"
+          disabled={loading}
+          className="git-tree-view__refresh-btn"
+        >
+          <Download size={14} />
+        </button>
+
+        {/* Pull button */}
+        <button
+          onClick={handlePull}
+          aria-label="Pull from remote"
+          title="Pull"
+          disabled={loading}
+          className="git-tree-view__refresh-btn"
+        >
+          <ArrowDownToLine size={14} />
+          Pull
+        </button>
 
         {/* Refresh button */}
         <button

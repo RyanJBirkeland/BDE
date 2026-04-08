@@ -142,6 +142,14 @@ export interface GitChannels {
       repo: string | null
     }
   }
+  'git:fetch': {
+    args: [cwd: string]
+    result: { success: boolean; error?: string; stdout?: string }
+  }
+  'git:pull': {
+    args: [cwd: string, currentBranch: string]
+    result: { success: boolean; error?: string; stdout?: string }
+  }
 }
 
 /** Pull request operations */

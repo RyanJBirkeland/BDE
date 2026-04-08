@@ -12,7 +12,9 @@ import {
   gitPush,
   gitBranches,
   gitCheckout,
-  detectGitRemote
+  detectGitRemote,
+  gitFetch,
+  gitPull
 } from '../git'
 import { pollPrStatuses, type PrStatusInput } from '../github-pr-status'
 import { checkConflictFiles, type ConflictFilesInput } from '../github-conflict-check'
@@ -229,6 +231,10 @@ export function registerGitHandlers(): void {
   safeHandle('git:branches', (_e, cwd: string) => gitBranches(validateRepoPath(cwd)))
   safeHandle('git:checkout', (_e, cwd: string, branch: string) =>
     gitCheckout(validateRepoPath(cwd), branch)
+  )
+  safeHandle('git:fetch', (_e, cwd: string) => gitFetch(validateRepoPath(cwd)))
+  safeHandle('git:pull', (_e, cwd: string, currentBranch: string) =>
+    gitPull(validateRepoPath(cwd), currentBranch)
   )
 
   // --- Detect GitHub remote for a directory picked by the user.

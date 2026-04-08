@@ -133,6 +133,8 @@ declare global {
       gitDetectRemote: (
         ...args: IpcArgs<'git:detectRemote'>
       ) => Promise<IpcResult<'git:detectRemote'>>
+      gitFetch: (...args: IpcArgs<'git:fetch'>) => Promise<IpcResult<'git:fetch'>>
+      gitPull: (...args: IpcArgs<'git:pull'>) => Promise<IpcResult<'git:pull'>>
 
       // Agent history — persistent audit trail
       agents: {
