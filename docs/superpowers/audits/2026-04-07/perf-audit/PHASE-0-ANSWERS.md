@@ -83,46 +83,37 @@ This is **Option B** in the plan's Task 2.3 (conservative retention) **plus a pe
 ### Q1: Are 128 zero-input agent runs cache hits or silent failures?
 *Affects: F-t4-cost-4 severity*
 
-**Method:**
+**Status:** **DEFERRED to Phase 6.** Soft gate — can be answered when Task 6.11 runs. Does not block Phases 1-5.
 
-**Findings:**
-
-**Severity adjustment:**
+**Method (when run):** Query the snapshot for the cohort, JOIN to agent_events to see if real work happened.
 
 ---
 
 ### Q3: Actual MAX_ACTIVE_TASKS in production?
 *Affects: F-t1-concur-1 / -2 / -3 / -5 severity tuning*
 
-**Method:**
+**Method:** `sqlite3 .snapshot/bde.db "SELECT key, value FROM settings WHERE key LIKE '%active%' OR ..."`
 
 **Findings:**
+- `agentManager.maxConcurrent = 3`
+- `agentManager.maxRuntimeMinutes = 60`
 
-**Severity adjustment:**
+**Severity adjustment:** **N=3 confirms the audit's concurrency findings remain valid.** All Phase 2 concurrency tasks (`F-t1-concur-1, -2, -3, -5`) keep their original severity. With 3 concurrent agents, fan-out and DB contention are real (not collapsing to Low).
 
 ---
 
 ### Q4: SQLite write latency at single-agent baseline (optional)
 *Affects: F-t1-concur-2 priority confirmation*
 
-**Method:**
-
-**Findings:**
+**Status:** **DEFERRED.** Optional micro-benchmark; the audit's "High" rating on `F-t1-concur-2` stands without measurement. Phase 2 Task 2.2 will produce its own before/after via the synthetic smoke test.
 
 ---
 
 ## Cold-start baseline (for Phase 5)
 
-**Method:**
+**Status:** **DEFERRED to start of Phase 5.** Requires interactive launch of the built app to capture timing logs in the dev console — not safe to do in an autonomous session. Phase 5 Task 5.1 will capture this baseline as its first sub-step.
 
-**Measurements:**
-
-| Run | main.tsx entry → first App.tsx render (ms) |
-|-----|---------------------------------------------|
-| 1   |                                             |
-| 2   |                                             |
-| 3   |                                             |
-| **median** |                                      |
+**Method (when run):** Add `console.log('[perf] main.tsx entry', Date.now())` and `console.log('[perf] App first render', Date.now())`, build, kill app, relaunch 3 times, capture deltas, revert logs.
 
 ---
 
