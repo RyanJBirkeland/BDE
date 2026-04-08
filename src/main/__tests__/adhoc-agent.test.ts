@@ -12,6 +12,9 @@ vi.mock('../agent-history', () => ({
 vi.mock('../data/event-queries', () => ({
   appendEvent: vi.fn()
 }))
+vi.mock('../data/agent-queries', () => ({
+  insertAgentRunTurn: vi.fn()
+}))
 vi.mock('../db', () => ({
   getDb: vi.fn(() => ({}))
 }))
@@ -261,6 +264,49 @@ describe('spawnAdhocAgent', () => {
       'agent-1',
       expect.objectContaining({ status: 'done' })
     )
+  })
+
+  it('accumulates tokensIn across turns (not last-wins)', async () => {
+    // Each turn yields a result message with tokens_in: 100.
+    // With last-wins the final tokensIn would be 100; with accumulation it must be 200.
+    const turn1Handle = createMockQueryHandle([{ type: 'result', tokens_in: 100, tokens_out: 50 }])
+    const turn2Handle = createMockQueryHandle([{ type: 'result', tokens_in: 100, tokens_out: 50 }])
+    mockQuery.mockReturnValueOnce(turn1Handle).mockReturnValueOnce(turn2Handle)
+
+    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+
+    // Wait for first turn to complete
+    await vi.waitFor(() => expect(broadcast).toHaveBeenCalled(), { timeout: 1000 })
+
+    // Run a second turn
+    await getAdhocHandle(result.id)?.send('follow up')
+
+    // Wait for second turn messages to propagate, then close to trigger completion
+    await vi.waitFor(() => expect(mockQuery).toHaveBeenCalledTimes(2), { timeout: 1000 })
+    getAdhocHandle(result.id)?.close()
+
+    await vi.waitFor(
+      () =>
+        expect(broadcast).toHaveBeenCalledWith(
+          'agent:event',
+          expect.objectContaining({ event: expect.objectContaining({ type: 'agent:completed' }) })
+        ),
+      { timeout: 1000 }
+    )
+
+    const completedCall = vi.mocked(broadcast).mock.calls.find(
+      ([, payload]) =>
+        typeof payload === 'object' &&
+        payload !== null &&
+        'event' in payload &&
+        typeof payload.event === 'object' &&
+        payload.event !== null &&
+        (payload.event as Record<string, unknown>).type === 'agent:completed'
+    )
+    expect(completedCall).toBeDefined()
+    const completedEvent = (completedCall![1] as { event: Record<string, unknown> }).event
+    // Accumulated across 2 turns: 100 + 100 = 200, not last-wins 100
+    expect(completedEvent.tokensIn).toBe(200)
   })
 
   it('emits agent:error on message consumption failure', async () => {

@@ -25,6 +25,7 @@ import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
 import { buildAgentPrompt } from './agent-manager/prompt-composer'
 import { setupWorktree } from './agent-manager/worktree'
+import { TurnTracker } from './agent-manager/turn-tracker'
 import { createLogger } from './logger'
 
 const log = createLogger('adhoc-agent')
@@ -148,6 +149,7 @@ export async function spawnAdhocAgent(args: {
   let costUsd = 0
   let tokensIn = 0
   let tokensOut = 0
+  const turnTracker = new TurnTracker(meta.id)
 
   /**
    * Run one conversation turn: create a query (first turn) or resume (subsequent turns).
@@ -177,13 +179,8 @@ export async function spawnAdhocAgent(args: {
           // Track cost/token fields
           if (typeof r.cost_usd === 'number') costUsd = r.cost_usd
           if (typeof r.total_cost_usd === 'number') costUsd = r.total_cost_usd
-          if (typeof r.tokens_in === 'number') tokensIn = r.tokens_in
-          if (typeof r.tokens_out === 'number') tokensOut = r.tokens_out
-          if (typeof r.usage === 'object' && r.usage !== null) {
-            const u = r.usage as Record<string, unknown>
-            if (typeof u.input_tokens === 'number') tokensIn = u.input_tokens
-            if (typeof u.output_tokens === 'number') tokensOut = u.output_tokens
-          }
+          turnTracker.observe(r)
+          ;({ tokensIn, tokensOut } = turnTracker.totals())
         }
       }
       log.info(`[adhoc] ${meta.id} turn complete, session alive`)
