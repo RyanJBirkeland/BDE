@@ -6,10 +6,10 @@ import { useEffect } from 'react'
 import { useVisibilityAwareInterval } from './useVisibilityAwareInterval'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { POLL_SPRINT_INTERVAL, POLL_SPRINT_ACTIVE_MS } from '../lib/constants'
-import { TASK_STATUS } from '../../../shared/constants'
 
 export function useSprintPolling(): void {
-  const hasActiveTasks = useSprintTasks((s) => s.tasks.some((t) => t.status === TASK_STATUS.ACTIVE))
+  // Use derived activeTaskCount (O(1)) instead of .some() scan (O(n))
+  const hasActiveTasks = useSprintTasks((s) => s.activeTaskCount > 0)
   const loadData = useSprintTasks((s) => s.loadData)
 
   // Adaptive sprint polling — consistency backstop

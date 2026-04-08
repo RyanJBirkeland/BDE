@@ -30,6 +30,9 @@ const PENDING_UPDATE_TTL = 2000
 interface SprintTasksState {
   // --- Data ---
   tasks: SprintTask[]
+  /** Derived from tasks — number of tasks currently in ACTIVE status. Maintained incrementally
+   *  so consumers can read it in O(1) instead of scanning tasks with .some(). */
+  activeTaskCount: number
   loading: boolean
   loadError: string | null
   prMergedMap: Record<string, boolean>
@@ -51,8 +54,13 @@ interface SprintTasksState {
   batchRequeueTasks: (taskIds: string[]) => Promise<void>
 }
 
+function countActive(tasks: SprintTask[]): number {
+  return tasks.reduce((n, t) => n + (t.status === TASK_STATUS.ACTIVE ? 1 : 0), 0)
+}
+
 export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   tasks: [],
+  activeTaskCount: 0,
   loading: true,
   loadError: null,
   prMergedMap: {},
@@ -134,7 +142,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
           }
         }
 
-        return { tasks: Array.from(mergedById.values()), pendingUpdates: nextPending }
+        const nextTasks = Array.from(mergedById.values())
+        return { tasks: nextTasks, activeTaskCount: countActive(nextTasks), pendingUpdates: nextPending }
       })
     } catch (e) {
       set({ loadError: 'Failed to load tasks — ' + (e instanceof Error ? e.message : String(e)) })
@@ -361,8 +370,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   },
 
   mergeSseUpdate: (update): void => {
-    set((s) => ({
-      tasks: s.tasks.map((t) => {
+    set((s) => {
+      const nextTasks = s.tasks.map((t) => {
         if (t.id !== update.taskId) return t
         const merged = {
           ...t,
@@ -385,7 +394,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         }
         return merged
       })
-    }))
+      return { tasks: nextTasks, activeTaskCount: countActive(nextTasks) }
+    })
   },
 
   setPrMergedMap: (updater): void => {
