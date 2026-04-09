@@ -69,10 +69,6 @@ vi.mock('../../components/agents/AgentConsole', () => ({
   AgentConsole: ({ agentId }: any) => <div data-testid="agent-console">{agentId}</div>
 }))
 
-vi.mock('../../components/agents/LiveActivityStrip', () => ({
-  LiveActivityStrip: () => <div data-testid="live-strip" />
-}))
-
 vi.mock('../../components/agents/AgentLaunchpad', () => ({
   AgentLaunchpad: ({ onAgentSpawned }: any) => (
     <div data-testid="agent-launchpad">
@@ -111,11 +107,6 @@ describe('AgentsView', () => {
     mockAgentHistoryState.agents = []
     mockAgentHistoryState.fetched = false
     mockAgentHistoryState.fetchError = null
-  })
-
-  it('renders LiveActivityStrip', () => {
-    render(<AgentsView />)
-    expect(screen.getByTestId('live-strip')).toBeInTheDocument()
   })
 
   it('renders Fleet header', () => {

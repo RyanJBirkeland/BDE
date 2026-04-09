@@ -1,7 +1,5 @@
 /**
- * AgentsView — Neon command center with two stacked zones:
- * 1. Live Activity Strip (running agents as pills)
- * 2. Fleet List + Agent Console (two-pane)
+ * AgentsView — Neon command center: Fleet List + Agent Console (two-pane).
  */
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
@@ -13,7 +11,6 @@ import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useAgentEventsStore } from '../stores/agentEvents'
 import { AgentList } from '../components/agents/AgentList'
 import { AgentConsole } from '../components/agents/AgentConsole'
-import { LiveActivityStrip } from '../components/agents/LiveActivityStrip'
 import { AgentLaunchpad } from '../components/agents/AgentLaunchpad'
 import { EmptyState } from '../components/ui/EmptyState'
 import { toast } from '../stores/toasts'
@@ -254,10 +251,7 @@ export function AgentsView(): React.JSX.Element {
       animate="animate"
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
-      {/* Zone 1: Live Activity Strip */}
-      <LiveActivityStrip onSelectAgent={handleSelectAgent} />
-
-      {/* Zone 2: Fleet List + Agent Console */}
+      {/* Zone 1: Fleet List + Agent Console */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Fleet sidebar */}
         <div className="agents-sidebar">

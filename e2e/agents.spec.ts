@@ -2,10 +2,9 @@
  * Agents view E2E tests.
  * Verifies the fleet sidebar, agent launchpad, and new agent button.
  *
- * The AgentsView has three zones:
- * 1. LiveActivityStrip (running agents as pills)
- * 2. Fleet sidebar (.agents-sidebar) + Agent Console / AgentLaunchpad
- * 3. Activity chart (collapsible)
+ * The AgentsView has two zones:
+ * 1. Fleet sidebar (.agents-sidebar) + Agent Console / AgentLaunchpad
+ * 2. Activity chart (collapsible)
  */
 import { test, expect, waitForAppShell } from './fixtures'
 
