@@ -131,7 +131,7 @@
 }
 
 .stg-keybindings__row--warning {
-  background: rgba(255, 165, 0, 0.05);
+  background: var(--bde-warning-surface);
 }
 
 .stg-keybindings__label {
@@ -205,11 +205,11 @@
   gap: 8px;
   margin-top: 16px;
   padding: 12px;
-  background: rgba(255, 165, 0, 0.1);
-  border: 1px solid rgba(255, 165, 0, 0.3);
+  background: var(--bde-warning-surface);
+  border: 1px solid var(--bde-warning-border);
   border-radius: var(--bde-radius-sm);
   font-size: 13px;
-  color: orange;
+  color: var(--bde-warning);
 }
 /* Settings V2 — Grouped sidebar + card-based panels (.stg-* BEM prefix) */
 

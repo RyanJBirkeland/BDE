@@ -172,17 +172,17 @@
 
 .notification-item--success .notification-item__icon {
   color: var(--bde-success);
-  background: rgba(34, 197, 94, 0.1);
+  background: var(--bde-success-surface);
 }
 
 .notification-item--error .notification-item__icon {
   color: var(--bde-danger);
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--bde-danger-surface);
 }
 
 .notification-item--warning .notification-item__icon {
   color: var(--bde-warning);
-  background: rgba(251, 191, 36, 0.1);
+  background: var(--bde-warning-surface);
 }
 
 .notification-item--muted .notification-item__icon {
