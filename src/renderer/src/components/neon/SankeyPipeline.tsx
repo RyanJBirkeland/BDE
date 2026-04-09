@@ -275,7 +275,7 @@ export function SankeyPipeline({
               fill={neonVar(config.accent, 'color')}
               fontSize={config.problem ? 14 : 18}
               fontWeight={700}
-              style={{ textShadow: neonVar(config.accent, 'glow') }}
+              style={{}}
             >
               {formatCount(count)}
             </text>

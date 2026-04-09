@@ -8,10 +8,10 @@ describe('GlassPanel', () => {
     expect(screen.getByText('Panel content')).toBeInTheDocument()
   })
 
-  it('applies glass backdrop-filter', () => {
+  it('does not apply backdrop-filter (glow stripped)', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBeTruthy()
+    expect(panel.style.backdropFilter).toBeFalsy()
   })
 
   it('applies accent border when provided', () => {
@@ -39,22 +39,10 @@ describe('GlassPanel', () => {
     expect(panel.style.background).toContain('var(--bde-accent-surface)')
   })
 
-  it('applies sm blur variant', () => {
+  it('accepts blur prop without applying it (ignored)', () => {
     const { container } = render(<GlassPanel blur="sm">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBe('blur(8px) saturate(180%)')
-  })
-
-  it('applies lg blur variant', () => {
-    const { container } = render(<GlassPanel blur="lg">X</GlassPanel>)
-    const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBe('blur(40px) saturate(180%)')
-  })
-
-  it('defaults to md blur', () => {
-    const { container } = render(<GlassPanel>X</GlassPanel>)
-    const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBe('blur(16px) saturate(180%)')
+    expect(panel.style.backdropFilter).toBeFalsy()
   })
 
   it('applies custom className', () => {

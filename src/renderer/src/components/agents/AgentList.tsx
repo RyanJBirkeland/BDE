@@ -106,7 +106,6 @@ function GroupHeader({
             height: 6,
             borderRadius: tokens.radius.full,
             background: neonVar('cyan', 'color'),
-            boxShadow: `0 0 8px ${neonVar('cyan', 'glow')}`,
             animation: 'pulse 2s infinite'
           }}
         />
@@ -232,7 +231,7 @@ export function AgentList({
             padding: `${tokens.space[1]} ${tokens.space[2]}`,
             background: 'var(--bde-surface)',
             borderRadius: tokens.radius.sm,
-            boxShadow: searchFocused ? `0 0 12px ${neonVar('purple', 'glow')}` : 'none',
+            boxShadow: 'none',
             transition: tokens.transition.fast
           }}
         >

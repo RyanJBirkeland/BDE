@@ -47,9 +47,6 @@ export function StatCounter({
       <div className="stat-counter__value-row">
         <span
           className="stat-counter__value"
-          style={{
-            textShadow: neonVar(accent, 'glow')
-          }}
         >
           {value}
         </span>

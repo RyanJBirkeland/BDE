@@ -25,7 +25,6 @@ export function NeonCard({
     '--card-accent': neonVar(accent, 'color'),
     '--card-accent-border': neonVar(accent, 'border'),
     '--card-accent-surface': neonVar(accent, 'surface'),
-    '--card-accent-glow': neonVar(accent, 'glow'),
     background: `linear-gradient(135deg, ${neonVar(accent, 'surface')}, ${tokens.color.bg})`,
     border: `1px solid ${neonVar(accent, 'border')}`,
     ...style

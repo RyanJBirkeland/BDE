@@ -299,7 +299,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
                       accentColor === color.value
                         ? `2px solid ${color.value}`
                         : '1px solid var(--bde-border)',
-                    boxShadow: accentColor === color.value ? `0 0 12px ${color.value}40` : 'none',
+                    boxShadow: 'none',
                     cursor: 'pointer',
                     transition: 'all 150ms ease',
                     opacity: accentColor === color.value ? 1 : 0.6

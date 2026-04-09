@@ -363,7 +363,7 @@ export function EpicDetail({
                 borderRadius: '4px',
                 minWidth: '160px',
                 zIndex: 100,
-                boxShadow: `0 0 12px ${tokens.color.accent}20`
+                boxShadow: 'none'
               }}
             >
               <button

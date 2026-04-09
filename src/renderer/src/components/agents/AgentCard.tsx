@@ -62,7 +62,6 @@ function StatusIndicator({ status, accent }: StatusIndicatorProps): React.JSX.El
             height: 6,
             borderRadius: tokens.radius.full,
             background: iconColor,
-            boxShadow: `0 0 8px ${neonVar(accent, 'glow')}`,
             flexShrink: 0
           }}
         />
