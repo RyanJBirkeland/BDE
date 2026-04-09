@@ -782,13 +782,9 @@
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-out;
-  box-shadow: 0 0 16px rgba(0, 211, 127, 0.2);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow:
-    0 0 24px rgba(0, 211, 127, 0.3),
-    0 0 8px rgba(0, 211, 127, 0.4);
   filter: brightness(1.1);
 }
 
@@ -1092,7 +1088,6 @@ html.theme-pro-light .elevation-3-backdrop {
 .drawer-resize-handle:hover::after,
 .drawer-resize-handle:active::after {
   background: var(--bde-accent);
-  box-shadow: 0 0 8px transparent;
   opacity: 0.6;
 }
 
@@ -1104,5 +1099,4 @@ html.theme-pro-light .elevation-3-backdrop {
 .panel-separator:hover,
 .panel-separator:active {
   background: var(--bde-accent);
-  box-shadow: 0 0 8px transparent;
 }

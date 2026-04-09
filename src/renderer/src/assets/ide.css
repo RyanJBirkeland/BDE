@@ -411,7 +411,6 @@
 .ide-separator:hover,
 .ide-separator:active {
   background: var(--bde-accent);
-  box-shadow: 0 0 8px transparent;
 }
 
 /* ── File Sidebar ── */
@@ -428,7 +427,6 @@
 
 .ide-sidebar__title {
   color: var(--bde-status-active);
-  text-shadow: 0 0 8px transparent;
 }
 
 .ide-sidebar__folder-name {
@@ -609,7 +607,6 @@
 
 .ide-empty-state__title {
   color: var(--bde-text);
-  text-shadow: 0 0 12px transparent;
 }
 
 .ide-empty-state__subtitle {
@@ -619,14 +616,7 @@
 .ide-empty-state__open-btn {
   color: var(--bde-bg);
   background: var(--bde-accent);
-  box-shadow: 0 0 12px transparent;
-  transition:
-    box-shadow 0.15s ease,
-    opacity 0.15s ease;
-}
-
-.ide-empty-state__open-btn:hover:not(:disabled) {
-  box-shadow: 0 0 16px transparent;
+  transition: opacity 0.15s ease;
 }
 
 .ide-empty-state__open-btn:active:not(:disabled) {
@@ -663,7 +653,6 @@
 
 .terminal-view__title {
   color: var(--bde-status-active);
-  text-shadow: 0 0 8px transparent;
 }
 
 /* ── Terminal Tab Bar ── */
@@ -738,7 +727,6 @@
 
 .terminal-content__separator:hover {
   background: var(--bde-accent);
-  box-shadow: 0 0 8px transparent;
 }
 
 /* ── Terminal Find Bar ── */
@@ -872,7 +860,6 @@
 .ide-sidebar-toggle:hover:not(:disabled) {
   color: var(--bde-accent);
   border-color: var(--bde-accent-border);
-  box-shadow: 0 0 8px transparent;
 }
 
 /* ── Keyboard Shortcuts Overlay ── */
@@ -990,7 +977,6 @@
 
 .quick-open-palette__input:focus-visible {
   border-color: var(--bde-accent);
-  box-shadow: 0 0 8px transparent;
 }
 
 .quick-open-palette__input::placeholder {

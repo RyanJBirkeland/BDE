@@ -329,7 +329,6 @@
 
 .console-prefix--error {
   color: var(--bde-danger);
-  text-shadow: transparent;
 }
 
 .console-prefix--rate {
@@ -906,7 +905,6 @@
   background: var(--bde-accent-surface);
   border-color: var(--bde-status-active);
   color: var(--bde-status-active);
-  box-shadow: 0 0 8px transparent;
 }
 
 /* ── Playground Modal ── */
@@ -1140,7 +1138,6 @@
 
 .agent-card__kill-btn:hover:not(:disabled) {
   background: var(--bde-danger-surface);
-  box-shadow: 0 0 8px transparent;
 }
 
 .agent-card__kill-btn:active:not(:disabled) {
@@ -1321,11 +1318,6 @@
   color: var(--bde-accent);
   font-size: var(--font-sm, 12px);
   cursor: pointer;
-  transition: box-shadow 150ms ease;
-}
-
-.agent-list__load-more:hover:not(:disabled) {
-  box-shadow: 0 0 12px transparent;
 }
 
 .agent-list__load-more:active:not(:disabled) {

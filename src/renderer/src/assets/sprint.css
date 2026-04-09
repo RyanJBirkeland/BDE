@@ -1720,7 +1720,6 @@ tr:hover .bde-task-table__action-btn--done {
 }
 
 .circuit-pipeline__stage--active {
-  box-shadow: 0 0 8px currentColor;
 }
 
 .circuit-pipeline__arrow {

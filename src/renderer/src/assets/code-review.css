@@ -315,7 +315,6 @@
 }
 
 .cr-actions__btn--primary:hover:not(:disabled) {
-  box-shadow: 0 0 12px transparent;
   transform: translateY(-1px);
 }
 
@@ -330,7 +329,6 @@
 }
 
 .cr-actions__btn--ship:hover:not(:disabled) {
-  box-shadow: 0 0 16px transparent;
   transform: translateY(-1px);
 }
 
@@ -357,7 +355,6 @@
 }
 
 .cr-actions__btn--secondary:hover:not(:disabled) {
-  box-shadow: 0 0 12px transparent;
   transform: translateY(-1px);
 }
 
@@ -373,7 +370,6 @@
 
 .cr-actions__btn--ghost:hover:not(:disabled) {
   background: var(--bde-accent-surface);
-  box-shadow: 0 0 8px transparent;
 }
 
 .cr-actions__btn--ghost:active:not(:disabled) {
@@ -388,7 +384,6 @@
 
 .cr-actions__btn--danger:hover:not(:disabled) {
   background: var(--bde-danger-surface);
-  box-shadow: 0 0 12px transparent;
   transform: translateY(-1px);
 }
 

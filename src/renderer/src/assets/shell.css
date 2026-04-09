@@ -80,7 +80,6 @@
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 1px;
-  text-shadow: transparent;
 }
 
 .unified-header__tabs {
@@ -246,7 +245,6 @@
   height: 4px;
   border-radius: 50%;
   background: var(--bde-accent);
-  box-shadow: 0 0 4px var(--bde-accent);
 }
 
 .sidebar-item__badge {
@@ -269,12 +267,10 @@
 
 .sidebar-item__badge--red {
   background: var(--bde-danger);
-  box-shadow: 0 0 6px var(--bde-danger-border);
 }
 
 .sidebar-item__badge--blue {
   background: var(--bde-status-review);
-  box-shadow: 0 0 6px var(--bde-accent-border);
 }
 
 .sidebar-item__badge--orange {

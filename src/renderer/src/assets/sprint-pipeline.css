@@ -289,7 +289,6 @@
   background: var(--bde-accent-surface);
   border-color: var(--bde-accent-border);
   color: var(--bde-accent);
-  box-shadow: 0 0 8px transparent;
 }
 
 .pipeline-sidebar__action-btn:active:not(:disabled) {
@@ -300,7 +299,6 @@
   background: var(--bde-danger-surface);
   border-color: var(--bde-danger-border);
   color: var(--bde-danger);
-  box-shadow: 0 0 8px transparent;
 }
 
 .pipeline-sidebar__action-btn--danger:active:not(:disabled) {
@@ -403,7 +401,6 @@
 .backlog-card__action:focus-visible {
   opacity: 1;
   background: var(--bde-accent-border);
-  box-shadow: 0 0 8px transparent;
 }
 
 .backlog-card:hover .backlog-card__action {
@@ -546,37 +543,32 @@
 
 .pipeline-stage__dot--queued {
   background: var(--bde-accent);
-  box-shadow: 0 0 10px transparent;
 }
 
 .pipeline-stage__dot--blocked {
   background: var(--bde-warning);
-  box-shadow: 0 0 10px transparent;
 }
 
 .pipeline-stage__dot--active {
   background: var(--bde-status-active);
-  box-shadow: 0 0 10px transparent;
   animation: pipeline-pulse 2s ease-in-out infinite;
 }
 
 .pipeline-stage__dot--review {
   background: var(--bde-status-review);
-  box-shadow: 0 0 10px transparent;
 }
 
 .pipeline-stage__dot--done {
   background: var(--bde-status-done);
-  box-shadow: 0 0 8px transparent;
 }
 
 @keyframes pipeline-pulse {
   0%,
   100% {
-    box-shadow: 0 0 10px transparent;
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 20px transparent;
+    opacity: 0.6;
   }
 }
 
@@ -645,7 +637,6 @@
 .pipeline-center .task-pill--selected {
   border-color: var(--bde-accent-border);
   background: var(--bde-accent-surface);
-  box-shadow: 0 0 12px transparent;
 }
 
 .task-pill--active {
@@ -655,7 +646,6 @@
 
 .task-pill--active:hover {
   border-color: var(--bde-accent-border);
-  box-shadow: 0 0 12px transparent;
 }
 
 .task-pill--blocked {
@@ -675,7 +665,6 @@
 
 .task-pill--branch-only:hover {
   border-color: var(--bde-warning-border);
-  box-shadow: 0 0 12px transparent;
 }
 
 .task-pill--done {
@@ -763,15 +752,6 @@
   background: var(--bde-accent-surface);
 }
 
-/* Arrival glow animation */
-@keyframes task-arrive {
-  0% {
-    box-shadow: 0 0 16px var(--bde-accent);
-  }
-  100% {
-    box-shadow: none;
-  }
-}
 
 .task-pill--arriving {
   animation: task-arrive 500ms ease-out;
@@ -857,7 +837,6 @@
 .task-row--selected {
   border-color: var(--bde-accent-border);
   background: var(--bde-accent-surface);
-  box-shadow: 0 0 8px transparent;
 }
 
 .task-row__dot {
@@ -941,7 +920,6 @@
 .task-drawer__resize-handle:hover,
 .task-drawer__resize-handle:active {
   background: var(--bde-accent);
-  box-shadow: 0 0 8px transparent;
 }
 
 .task-drawer__head {
@@ -1869,7 +1847,6 @@
 /* ── Task Pill: Multi-select highlight ── */
 .task-pill--multi-selected {
   border-color: var(--bde-accent-border);
-  box-shadow: 0 0 8px transparent;
 }
 
 /* ── Conflict Drawer (right-slide overlay) ── */

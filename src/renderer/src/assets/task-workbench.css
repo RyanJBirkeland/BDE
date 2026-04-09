@@ -985,7 +985,6 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__type--hard:hover {
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }
 
 .wb-deps__type--soft {

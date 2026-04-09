@@ -296,17 +296,14 @@
 
 .status-bar__dot--ok {
   background: var(--bde-accent);
-  box-shadow: 0 0 8px var(--bde-accent);
 }
 
 .status-bar__dot--error {
   background: var(--bde-danger);
-  box-shadow: 0 0 8px var(--bde-danger);
 }
 
 .status-bar__dot--warning {
   background: var(--bde-warning);
-  box-shadow: 0 0 8px var(--bde-warning);
 }
 
 .status-bar__title {

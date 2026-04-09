@@ -153,7 +153,6 @@
   color: var(--bde-accent);
   font-size: 14px;
   font-weight: 700;
-  text-shadow: transparent;
 }
 
 .dashboard-status-error {
@@ -214,7 +213,6 @@
   color: var(--bde-text);
   font-size: 20px;
   font-weight: 700;
-  text-shadow: transparent;
 }
 
 .dashboard-duration-meta {
@@ -287,7 +285,6 @@
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
-  text-shadow: transparent;
 }
 
 .dashboard-completion-time {
@@ -341,7 +338,6 @@
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
-  text-shadow: transparent;
 }
 
 .dashboard-card-loading {
@@ -357,7 +353,6 @@
   color: var(--bde-text);
   font-size: 28px;
   font-weight: 700;
-  text-shadow: transparent;
 }
 
 /* ── Success Ring ── */

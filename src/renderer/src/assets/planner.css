@@ -29,7 +29,6 @@
   font-weight: 600;
   color: var(--bde-accent);
   margin: 0;
-  text-shadow: transparent;
 }
 
 .planner-header__search {
