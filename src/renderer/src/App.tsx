@@ -29,7 +29,6 @@ import { DEFAULT_MODEL } from '../../shared/models'
 import { VIEW_LABELS } from './lib/view-registry'
 import { PollingProvider } from './components/PollingProvider'
 import { openSettings } from './lib/settings-nav'
-import { AgentMonitor } from './components/ui/AgentMonitor'
 import { SHORTCUT_CATEGORIES } from './lib/shortcuts-data'
 import { FeatureGuideModal } from './components/help/FeatureGuideModal'
 import './assets/neon.css'
@@ -480,7 +479,6 @@ function App(): React.JSX.Element {
           localY={crossDrop.localY}
           onDrop={crossDrop.handleDrop}
         />
-        <AgentMonitor />
       </div>
     </PollingProvider>
   )

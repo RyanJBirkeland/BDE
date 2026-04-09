@@ -157,8 +157,7 @@ vi.stubGlobal('api', {
         recoveryDueAt: null,
         consecutiveRateLimits: 0,
         atFloor: false
-      },
-      activeAgents: []
+      }
     }),
     kill: vi.fn().mockResolvedValue({ ok: true })
   },
