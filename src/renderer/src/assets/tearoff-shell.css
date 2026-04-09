@@ -127,7 +127,7 @@
 .tearoff-tab--active {
   color: var(--bde-text);
   background: var(--bde-bg);
-  border-top: 2px solid var(--neon-cyan);
+  border-top: 2px solid var(--bde-accent);
 }
 .tearoff-tab__close {
   display: flex;

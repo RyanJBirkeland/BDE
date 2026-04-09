@@ -72,13 +72,13 @@
 }
 
 .dashboard-briefing__button--primary {
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan-border);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
+  color: var(--bde-accent);
 }
 
 .dashboard-briefing__button--primary:hover:not(:disabled) {
-  background: var(--neon-cyan-border);
+  background: var(--bde-accent-border);
 }
 
 .dashboard-briefing__button--primary:active:not(:disabled) {
@@ -150,10 +150,10 @@
 }
 
 .dashboard-briefing__total-value {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 14px;
   font-weight: 700;
-  text-shadow: var(--neon-cyan-glow);
+  text-shadow: transparent;
 }
 
 .dashboard-status-error {
@@ -456,10 +456,10 @@
   justify-content: center;
   gap: 6px;
   padding: 8px 12px;
-  border: 1px dashed var(--neon-cyan-border);
+  border: 1px dashed var(--bde-accent-border);
   border-radius: 8px;
   background: none;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -507,10 +507,10 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  border: 1px solid var(--neon-cyan-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
-  background: var(--neon-cyan-surface);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -518,7 +518,7 @@
 }
 
 .dashboard-onboarding__cta:hover:not(:disabled) {
-  background: var(--neon-cyan-border);
+  background: var(--bde-accent-border);
 }
 
 .dashboard-onboarding__cta:active:not(:disabled) {
@@ -555,9 +555,9 @@
 .dashboard-review-cta {
   padding: 8px 12px;
   border-radius: 6px;
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan-border);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
+  color: var(--bde-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -567,7 +567,7 @@
 }
 
 .dashboard-review-cta:hover {
-  background: var(--neon-cyan-border);
+  background: var(--bde-accent-border);
 }
 
 .dashboard-review-cta:active:not(:disabled) {
@@ -657,7 +657,7 @@
 
 .spec-rate__bar {
   height: 100%;
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   border-radius: 3px;
   transition: width 300ms ease;
 }

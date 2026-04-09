@@ -157,7 +157,7 @@ export function getNodeColor(status: SprintTask['status']): string {
     case 'backlog':
       return 'var(--neon-text-dim)'
     case 'queued':
-      return 'var(--neon-cyan)'
+      return 'var(--bde-accent)'
     case 'blocked':
       return 'var(--neon-orange)'
     case 'active':

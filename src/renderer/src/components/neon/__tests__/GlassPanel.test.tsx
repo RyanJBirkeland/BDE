@@ -36,7 +36,7 @@ describe('GlassPanel', () => {
     const { container } = render(<GlassPanel accent="cyan">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
     expect(panel.style.background).toContain('linear-gradient')
-    expect(panel.style.background).toContain('var(--neon-cyan-surface)')
+    expect(panel.style.background).toContain('var(--bde-accent-surface)')
   })
 
   it('applies sm blur variant', () => {

@@ -20,20 +20,20 @@
   gap: 8px;
   margin-bottom: 24px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--neon-cyan-border);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .launchpad__header-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--neon-cyan);
-  box-shadow: 0 0 10px var(--neon-cyan);
+  background: var(--bde-accent);
+  box-shadow: 0 0 10px var(--bde-accent);
   animation: neon-breathe 2s ease-in-out infinite;
 }
 
 .launchpad__header-title {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -156,7 +156,7 @@
 }
 
 .launchpad__prompt-input:focus-visible {
-  border-color: var(--neon-cyan-border);
+  border-color: var(--bde-accent-border);
 }
 
 .launchpad__prompt-input:focus-visible {
@@ -173,11 +173,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan-border);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 10px;
   padding: 12px 18px;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -186,9 +186,9 @@
 }
 
 .launchpad__submit-btn:hover:not(:disabled) {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   color: var(--bde-bg);
-  box-shadow: 0 0 20px var(--neon-cyan-glow);
+  box-shadow: 0 0 20px transparent;
   transform: translateY(-1px);
 }
 
@@ -231,7 +231,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   opacity: 0.5;
 }
 
@@ -279,8 +279,8 @@
 }
 
 .launchpad__repo-dropdown-option--current {
-  background: var(--neon-cyan-surface);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
 }
 
 .launchpad__repo-dropdown-option:not(.launchpad__repo-dropdown-option--current):hover,
@@ -320,9 +320,9 @@
 }
 
 .launchpad__model-pill--active {
-  border-color: var(--neon-cyan-border);
-  color: var(--neon-cyan);
-  background: var(--neon-cyan-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
 }
 
 /* ── Defaults Row ── */

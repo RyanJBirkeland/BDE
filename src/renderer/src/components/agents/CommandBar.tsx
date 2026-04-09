@@ -214,7 +214,7 @@ export function CommandBar({
               height: 64,
               width: 'auto',
               borderRadius: 4,
-              border: '1px solid var(--neon-cyan-border)',
+              border: '1px solid var(--bde-accent-border)',
               objectFit: 'contain'
             }}
           />

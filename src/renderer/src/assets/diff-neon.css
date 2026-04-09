@@ -13,24 +13,24 @@
 /* ── Diff View Header ──────────────────────────────────── */
 
 .diff-view__header {
-  border-bottom: 1px solid var(--neon-cyan-border);
+  border-bottom: 1px solid var(--bde-accent-border);
   background: var(--bde-surface-high);
 }
 
 .diff-view__header::before {
   /* DIFF label gradient */
-  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  background: linear-gradient(135deg, var(--bde-accent), var(--neon-purple));
 }
 
 .diff-view__header::after {
   /* Bottom gradient line */
-  background: linear-gradient(90deg, transparent, var(--neon-cyan-border), transparent);
+  background: linear-gradient(90deg, transparent, var(--bde-accent-border), transparent);
 }
 
 /* ── Diff View Chips (Repo Selector) ───────────────────── */
 
 .diff-view__chip {
-  border: 1px solid var(--neon-cyan-border);
+  border: 1px solid var(--bde-accent-border);
   color: var(--bde-text-muted);
 }
 
@@ -40,20 +40,20 @@
 }
 
 .diff-view__chip--active {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   color: var(--bde-bg);
-  border-color: var(--neon-cyan);
+  border-color: var(--bde-accent);
 }
 
 /* ── Diff View Meta (Branch, PR Link, Error, Loading) ─── */
 
 .diff-view__branch {
   color: var(--bde-text-muted);
-  background: var(--neon-cyan-border);
+  background: var(--bde-accent-border);
 }
 
 .diff-view__pr-link {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .diff-view__error {
@@ -68,12 +68,12 @@
 /* ── Diff Sidebar ──────────────────────────────────────── */
 
 .diff-sidebar {
-  background: var(--neon-cyan-surface);
-  border-right: 1px solid var(--neon-cyan-border);
+  background: var(--bde-accent-surface);
+  border-right: 1px solid var(--bde-accent-border);
 }
 
 .diff-sidebar__header {
-  border-bottom: 1px solid var(--neon-cyan-border);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .diff-sidebar__title {
@@ -82,7 +82,7 @@
 
 .diff-sidebar__count {
   color: var(--bde-text-muted);
-  background: var(--neon-cyan-border);
+  background: var(--bde-accent-border);
 }
 
 /* ── Diff File Items (Sidebar List) ────────────────────── */
@@ -98,7 +98,7 @@
 .diff-file-item--active {
   background: var(--bde-border);
   /* Neon enhancement: cyan left indicator */
-  box-shadow: inset 2px 0 0 var(--neon-cyan);
+  box-shadow: inset 2px 0 0 var(--bde-accent);
 }
 
 /* Keep diff colors (green/red) as-is */
@@ -112,16 +112,16 @@
 }
 
 .diff-file {
-  border-bottom: 1px solid var(--neon-cyan-border);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .diff-file__header {
-  background: var(--neon-cyan-surface);
-  border-bottom: 1px solid var(--neon-cyan-border);
+  background: var(--bde-accent-surface);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .diff-file--active {
-  background: var(--neon-cyan-border);
+  background: var(--bde-accent-border);
 }
 
 .diff-file__path {
@@ -136,13 +136,13 @@
 
 .diff-hunk--focused {
   /* Neon enhancement: cyan outline */
-  outline: 1px solid var(--neon-cyan);
+  outline: 1px solid var(--bde-accent);
 }
 
 .diff-hunk__header {
   color: var(--bde-text-muted);
   background: var(--bde-border);
-  border-bottom: 1px solid var(--neon-cyan-border);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 /* ── Diff Lines ────────────────────────────────────────── */
@@ -162,28 +162,28 @@
 /* ── Line Selection ────────────────────────────────────── */
 
 .diff-line--selected {
-  background: var(--neon-cyan-surface) !important;
+  background: var(--bde-accent-surface) !important;
 }
 
 .diff-line__gutter--selectable:hover {
-  background: var(--neon-cyan-surface);
+  background: var(--bde-accent-surface);
 }
 
 .diff-selection-trigger {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   color: var(--bde-bg);
 }
 
 /* ── Inline Comment Widget ─────────────────────────────── */
 
 .diff-comment-widget {
-  border: 1px solid var(--neon-cyan-border);
+  border: 1px solid var(--bde-accent-border);
   background: var(--bde-bg);
 }
 
 .diff-comment-widget__toggle {
   color: var(--bde-text-muted);
-  background: var(--neon-cyan-surface);
+  background: var(--bde-accent-surface);
 }
 
 .diff-comment-widget__toggle:hover {
@@ -191,7 +191,7 @@
 }
 
 .diff-comment-widget__comment {
-  border-top: 1px solid var(--neon-cyan-border);
+  border-top: 1px solid var(--bde-accent-border);
 }
 
 .diff-comment-widget__author {
@@ -207,20 +207,20 @@
 }
 
 .diff-comment-widget__body code {
-  background: var(--neon-cyan-surface);
+  background: var(--bde-accent-surface);
 }
 
 /* ── Comment Composer ──────────────────────────────────── */
 
 .diff-comment-composer {
-  border: 1px solid var(--neon-cyan-border);
+  border: 1px solid var(--bde-accent-border);
   background: var(--bde-bg);
   /* Neon enhancement: subtle glow on focus (via border) */
 }
 
 .diff-comment-composer__input {
   color: var(--bde-text);
-  background: var(--neon-cyan-surface);
+  background: var(--bde-accent-surface);
 }
 
 .diff-comment-composer__input::placeholder {
@@ -228,7 +228,7 @@
 }
 
 .diff-comment-composer__actions {
-  border-top: 1px solid var(--neon-cyan-border);
+  border-top: 1px solid var(--bde-accent-border);
 }
 
 /* ── Pending Comment Badge ─────────────────────────────── */
@@ -242,7 +242,7 @@
 }
 
 .diff-pending-comment__remove:hover:not(:disabled) {
-  background: var(--neon-cyan-surface);
+  background: var(--bde-accent-surface);
 }
 
 .diff-comment-widget__pending-badge {

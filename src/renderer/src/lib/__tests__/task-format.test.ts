@@ -37,7 +37,7 @@ describe('getDotColor', () => {
   })
 
   it('returns neon-cyan for queued status', () => {
-    expect(getDotColor('queued')).toBe('var(--neon-cyan)')
+    expect(getDotColor('queued')).toBe('var(--bde-accent)')
   })
 
   it('returns neon-orange for blocked status', () => {
@@ -69,7 +69,7 @@ describe('getDotColor', () => {
   })
 
   it('returns neon-cyan for unknown status (default)', () => {
-    expect(getDotColor('backlog')).toBe('var(--neon-cyan)')
+    expect(getDotColor('backlog')).toBe('var(--bde-accent)')
   })
 
   it('prioritizes PR status over task status', () => {

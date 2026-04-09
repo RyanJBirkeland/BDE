@@ -76,7 +76,7 @@ export const tokens = {
     slow: '200ms ease' // Panel slides, fades
   },
   neon: {
-    cyan: 'var(--neon-cyan)',
+    cyan: 'var(--bde-accent)',
     pink: 'var(--neon-pink)',
     blue: 'var(--neon-blue)',
     purple: 'var(--neon-purple)',

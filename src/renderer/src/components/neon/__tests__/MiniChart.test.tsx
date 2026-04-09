@@ -34,7 +34,7 @@ describe('MiniChart', () => {
     const noAccentData: ChartBar[] = [{ value: 50 }, { value: 30 }]
     const { container } = render(<MiniChart data={noAccentData} />)
     const line = container.querySelector('path:nth-of-type(2)') as SVGPathElement
-    expect(line.getAttribute('stroke')).toContain('var(--neon-cyan)')
+    expect(line.getAttribute('stroke')).toContain('var(--bde-accent)')
   })
 
   it('shows tooltip on hover', () => {

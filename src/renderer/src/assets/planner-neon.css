@@ -27,9 +27,9 @@
 .planner-header__title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   margin: 0;
-  text-shadow: var(--neon-cyan-glow);
+  text-shadow: transparent;
 }
 
 .planner-header__search {
@@ -63,8 +63,8 @@
 }
 
 .planner-header__search-input:focus-visible {
-  border-color: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
 }
 
 .planner-header__search-input::placeholder {
@@ -116,7 +116,7 @@
 .planner-epic-list__title {
   font-size: 14px;
   font-weight: 700;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -144,10 +144,10 @@
 .planner-epic-list__new-button {
   width: 100%;
   padding: 10px;
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent);
   border-radius: 6px;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -157,8 +157,8 @@
 }
 
 .planner-epic-list__new-button:hover:not(:disabled) {
-  background: var(--neon-cyan-surface);
-  box-shadow: var(--neon-cyan-glow);
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
 }
 
 .planner-epic-list__new-button:active:not(:disabled) {
@@ -187,13 +187,13 @@
 
 .planner-epic-item:hover {
   background: var(--bde-surface-high);
-  border-color: var(--neon-cyan-border);
+  border-color: var(--bde-accent-border);
 }
 
 .planner-epic-item--selected {
   background: var(--bde-surface-high);
-  border-color: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
 }
 
 .planner-epic-item__accent {
@@ -340,7 +340,7 @@
 }
 
 .epic-detail__header-btn:hover:not(:disabled) {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   background: var(--bde-border);
 }
 
@@ -420,7 +420,7 @@
 
 .epic-detail__task-row:hover {
   background: var(--bde-surface-high);
-  border-color: var(--neon-cyan-border);
+  border-color: var(--bde-accent-border);
 }
 
 .epic-detail__task-status-dot {
@@ -487,17 +487,17 @@
 }
 
 .epic-detail__task-edit-btn:hover:not(:disabled) {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   background: var(--bde-border);
 }
 
 .epic-detail__add-task-row {
   width: 100%;
   padding: 10px;
-  background: var(--neon-cyan-surface);
-  border: 1px dashed var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border: 1px dashed var(--bde-accent);
   border-radius: 6px;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -508,8 +508,8 @@
 }
 
 .epic-detail__add-task-row:hover {
-  background: var(--neon-cyan-surface);
-  box-shadow: var(--neon-cyan-glow);
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
 }
 
 /* ── Queue Bar (Sticky Bottom) ── */
@@ -548,7 +548,7 @@
 
 .epic-detail__queue-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-blue) 100%);
+  background: linear-gradient(135deg, var(--bde-accent) 0%, var(--neon-blue) 100%);
   border: none;
   border-radius: 6px;
   color: var(--bde-bg);
@@ -563,7 +563,7 @@
 
 .epic-detail__queue-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: var(--neon-cyan-glow);
+  box-shadow: transparent;
 }
 
 .epic-detail__queue-btn:disabled {

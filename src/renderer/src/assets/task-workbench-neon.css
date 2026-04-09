@@ -21,10 +21,10 @@
 }
 
 .wb__copilot-toggle button {
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent);
   border-radius: 6px;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   padding: 4px 12px;
   font-size: 12px;
   cursor: pointer;
@@ -34,8 +34,8 @@
 }
 
 .wb__copilot-toggle button:hover:not(:disabled) {
-  background: var(--neon-cyan-surface);
-  box-shadow: var(--neon-cyan-glow);
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
 }
 
 /* ── Copilot discovery popover ── */
@@ -46,12 +46,12 @@
   width: 260px;
   padding: 14px 16px 12px;
   background: var(--glass-surface, rgba(10, 14, 24, 0.95));
-  border: 1px solid var(--neon-cyan, #22d3ee);
+  border: 1px solid var(--bde-accent, #22d3ee);
   border-radius: 8px;
   box-shadow:
     0 0 0 1px rgba(34, 211, 238, 0.15),
     0 12px 32px rgba(0, 0, 0, 0.5),
-    var(--neon-cyan-glow, 0 0 24px rgba(34, 211, 238, 0.25));
+    transparent);
   color: var(--bde-text, rgba(255, 255, 255, 0.9));
   z-index: 20;
   animation: wb-copilot-popover-fade-in 180ms ease-out;
@@ -75,8 +75,8 @@
   width: 12px;
   height: 12px;
   background: var(--glass-surface, rgba(10, 14, 24, 0.95));
-  border-top: 1px solid var(--neon-cyan, #22d3ee);
-  border-left: 1px solid var(--neon-cyan, #22d3ee);
+  border-top: 1px solid var(--bde-accent, #22d3ee);
+  border-left: 1px solid var(--bde-accent, #22d3ee);
   transform: rotate(45deg);
 }
 
@@ -104,7 +104,7 @@
   margin: 0 0 6px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--neon-cyan, #22d3ee);
+  color: var(--bde-accent, #22d3ee);
 }
 
 .wb-copilot-popover__body {
@@ -115,10 +115,10 @@
 }
 
 .wb-copilot-popover__cta {
-  background: var(--neon-cyan-surface, rgba(34, 211, 238, 0.12));
-  border: 1px solid var(--neon-cyan, #22d3ee);
+  background: var(--bde-accent-surface, rgba(34, 211, 238, 0.12));
+  border: 1px solid var(--bde-accent, #22d3ee);
   border-radius: 5px;
-  color: var(--neon-cyan, #22d3ee);
+  color: var(--bde-accent, #22d3ee);
   padding: 5px 14px;
   font-size: 12px;
   font-weight: 600;
@@ -128,11 +128,11 @@
 
 .wb-copilot-popover__cta:hover {
   background: rgba(34, 211, 238, 0.2);
-  box-shadow: var(--neon-cyan-glow, 0 0 16px rgba(34, 211, 238, 0.35));
+  box-shadow: transparent);
 }
 
 .wb-copilot-popover__cta:focus-visible {
-  outline: 2px solid var(--neon-cyan, #22d3ee);
+  outline: 2px solid var(--bde-accent, #22d3ee);
   outline-offset: 2px;
 }
 
@@ -155,7 +155,7 @@
 .wb-form__heading {
   font-size: 16px;
   font-weight: 700;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .wb-form__group {
@@ -207,8 +207,8 @@
 }
 
 .wb-form__input:focus-visible {
-  border-color: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
 }
 
 .wb-form__input:focus-visible {
@@ -233,8 +233,8 @@
 }
 
 .wb-form__select:focus-visible {
-  border-color: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
 }
 
 .wb-form__select:focus-visible {
@@ -335,14 +335,14 @@
 }
 
 .wb-spec__btn--primary {
-  background: var(--neon-cyan-surface);
-  border-color: var(--neon-cyan);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent);
+  color: var(--bde-accent);
 }
 
 .wb-spec__btn--primary:hover:not(:disabled) {
-  background: var(--neon-cyan-surface);
-  box-shadow: var(--neon-cyan-glow);
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
 }
 
 .wb-spec__btn--primary:active:not(:disabled) {
@@ -382,8 +382,8 @@
 }
 
 .wb-spec__textarea:focus-visible {
-  border-color: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
 }
 
 .wb-spec__textarea:focus-visible {
@@ -474,7 +474,7 @@ button.wb-checks__item--actionable {
 button.wb-checks__item--actionable:hover,
 button.wb-checks__item--actionable:focus-visible {
   background: var(--bde-border, rgba(255, 255, 255, 0.04));
-  border-color: var(--neon-cyan-border, rgba(47, 195, 181, 0.4));
+  border-color: var(--bde-accent-border, rgba(47, 195, 181, 0.4));
   outline: none;
 }
 
@@ -498,7 +498,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-check-icon--pass {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 .wb-check-icon--warn {
   color: var(--bde-warning, #ffa500);
@@ -573,7 +573,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-actions__btn--launch {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   border: none;
   color: var(--bde-bg);
   font-weight: 600;
@@ -581,7 +581,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-actions__btn--launch:hover:not(:disabled) {
-  box-shadow: var(--neon-cyan-glow);
+  box-shadow: transparent;
 }
 
 .wb-actions__btn--launch:active:not(:disabled) {
@@ -752,10 +752,10 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__insert-btn {
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent);
   border-radius: 4px;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   padding: 1px 8px;
   font-size: 11px;
   cursor: pointer;
@@ -766,8 +766,8 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__insert-btn:hover:not(:disabled) {
-  background: var(--neon-cyan-surface);
-  box-shadow: var(--neon-cyan-glow);
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
 }
 
 .wb-copilot__insert-btn:active:not(:disabled) {
@@ -846,8 +846,8 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__input:focus-visible {
-  border-color: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
 }
 
 .wb-copilot__input:focus-visible {
@@ -869,13 +869,13 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__send-btn--active {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   color: var(--bde-bg);
   cursor: pointer;
 }
 
 .wb-copilot__send-btn--active:hover:not(:disabled) {
-  box-shadow: var(--neon-cyan-glow);
+  box-shadow: transparent;
 }
 
 .wb-copilot__send-btn--active:active:not(:disabled) {
@@ -916,7 +916,7 @@ button.wb-checks__item--actionable:focus-visible {
   padding: 8px 12px;
   background: none;
   border: none;
-  color: var(--neon-cyan, #22d3ee);
+  color: var(--bde-accent, #22d3ee);
   font-size: 12px;
   font-weight: 600;
   text-align: center;
@@ -929,7 +929,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__show-all:focus-visible {
-  outline: 2px solid var(--neon-cyan, #22d3ee);
+  outline: 2px solid var(--bde-accent, #22d3ee);
   outline-offset: -2px;
 }
 
@@ -989,13 +989,13 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__type--soft {
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent);
+  color: var(--bde-accent);
 }
 
 .wb-deps__type--soft:hover {
-  box-shadow: var(--neon-cyan-glow);
+  box-shadow: transparent;
 }
 
 .wb-deps__type:focus-visible {
@@ -1044,8 +1044,8 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__add:hover:not(:disabled) {
-  border-color: var(--neon-cyan);
-  color: var(--neon-cyan);
+  border-color: var(--bde-accent);
+  color: var(--bde-accent);
 }
 
 .wb-deps__add:focus-visible {
@@ -1079,7 +1079,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__search:focus-visible {
-  border-bottom-color: var(--neon-cyan);
+  border-bottom-color: var(--bde-accent);
 }
 
 .wb-deps__results {

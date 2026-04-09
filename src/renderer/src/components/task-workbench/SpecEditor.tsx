@@ -139,7 +139,7 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
     width: 6,
     height: 6,
     borderRadius: '50%',
-    background: on ? 'var(--neon-cyan, #2fc3b5)' : 'var(--neon-text-dim, #888)',
+    background: on ? 'var(--bde-accent, #2fc3b5)' : 'var(--neon-text-dim, #888)',
     marginRight: 4
   })
   return (

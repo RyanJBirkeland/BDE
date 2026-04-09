@@ -1091,8 +1091,8 @@ html.theme-pro-light .elevation-3-backdrop {
 
 .drawer-resize-handle:hover::after,
 .drawer-resize-handle:active::after {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: 0 0 8px transparent;
   opacity: 0.6;
 }
 
@@ -1103,6 +1103,6 @@ html.theme-pro-light .elevation-3-backdrop {
 
 .panel-separator:hover,
 .panel-separator:active {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: 0 0 8px transparent;
 }

@@ -144,8 +144,8 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: transparent;
   flex-shrink: 0;
 }
 
@@ -245,8 +245,8 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--neon-cyan);
-  box-shadow: 0 0 4px var(--neon-cyan);
+  background: var(--bde-accent);
+  box-shadow: 0 0 4px var(--bde-accent);
 }
 
 .sidebar-item__badge {
@@ -558,14 +558,14 @@
   gap: 8px;
   padding: 8px 16px;
   background: var(--bde-surface);
-  border: 1px solid var(--neon-cyan-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
   box-shadow: var(--bde-shadow-lg);
   width: min(560px, 80vw);
   font-family: var(--bde-font-code);
 }
 .quick-create-bar__icon {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   flex-shrink: 0;
 }
 .quick-create-bar__input {

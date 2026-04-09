@@ -14,7 +14,7 @@ export function getDotColor(status: string, prStatus?: string | null): string {
   if (prStatus === 'open' || prStatus === 'branch_only') return 'var(--neon-blue)'
   switch (status) {
     case 'queued':
-      return 'var(--neon-cyan)'
+      return 'var(--bde-accent)'
     case 'blocked':
       return 'var(--neon-orange)'
     case 'active':
@@ -28,6 +28,6 @@ export function getDotColor(status: string, prStatus?: string | null): string {
     case 'cancelled':
       return 'var(--neon-red, #ff3366)'
     default:
-      return 'var(--neon-cyan)'
+      return 'var(--bde-accent)'
   }
 }

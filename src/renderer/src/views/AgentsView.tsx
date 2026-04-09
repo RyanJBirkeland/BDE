@@ -308,7 +308,7 @@ export function AgentsView(): React.JSX.Element {
                     transition: 'color 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--neon-cyan)'
+                    e.currentTarget.style.color = 'var(--bde-accent)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = 'var(--neon-text-dim)'
@@ -335,7 +335,7 @@ export function AgentsView(): React.JSX.Element {
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                     }}
                   >
-                    <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run
+                    <strong style={{ color: 'var(--bde-accent)' }}>Scratchpad.</strong> Agents here run
                     in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
                     finishes, click <em>Promote to Code Review</em> in its console header to flow the
                     work into the review queue. For tracked sprint work, queue tasks from{' '}
@@ -354,9 +354,9 @@ export function AgentsView(): React.JSX.Element {
                 width: 24,
                 height: 24,
                 borderRadius: 6,
-                border: '1px solid var(--neon-cyan-border)',
-                background: 'var(--neon-cyan-surface)',
-                color: 'var(--neon-cyan)',
+                border: '1px solid var(--bde-accent-border)',
+                background: 'var(--bde-accent-surface)',
+                color: 'var(--bde-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -385,7 +385,7 @@ export function AgentsView(): React.JSX.Element {
               }}
             >
               <div style={{ flex: 1 }}>
-                <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run in
+                <strong style={{ color: 'var(--bde-accent)' }}>Scratchpad.</strong> Agents here run in
                 isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
                 finishes, click <em>Promote to Code Review</em> in its console header to flow the work
                 into the review queue. For tracked sprint work, queue tasks from{' '}
@@ -407,7 +407,7 @@ export function AgentsView(): React.JSX.Element {
                   transition: 'color 0.2s'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--neon-cyan)'
+                  e.currentTarget.style.color = 'var(--bde-accent)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = 'var(--neon-text-dim)'

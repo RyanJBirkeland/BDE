@@ -151,7 +151,7 @@ function TaskPillInner({
       </span>
       <span
         className="task-pill__badge"
-        style={{ background: 'var(--neon-cyan-surface)', color: 'var(--neon-cyan)' }}
+        style={{ background: 'var(--bde-accent-surface)', color: 'var(--bde-accent)' }}
       >
         {task.repo}
       </span>

@@ -88,9 +88,9 @@
 }
 
 .onboarding-wizard__step-indicator.completed .onboarding-wizard__step-number {
-  background: var(--neon-cyan-surface);
-  border-color: var(--neon-cyan);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent);
+  color: var(--bde-accent);
 }
 
 .onboarding-wizard__step-title {
@@ -134,7 +134,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   margin: 0 auto;
 }
 
@@ -173,7 +173,7 @@
 .onboarding-step__feature strong {
   font-size: 14px;
   font-weight: 600;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .onboarding-step__feature span {
@@ -209,7 +209,7 @@
 }
 
 .onboarding-step__check-icon--success {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .onboarding-step__check-icon--error {

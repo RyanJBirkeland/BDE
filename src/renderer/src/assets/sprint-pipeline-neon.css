@@ -23,7 +23,7 @@
 }
 
 .sprint-pipeline__title {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-weight: 700;
   font-size: 14px;
 }
@@ -69,7 +69,7 @@
   color: var(--neon-pink);
 }
 .sprint-pipeline__stat--queued .sprint-pipeline__stat-count {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .sprint-pipeline__stat--clickable {
@@ -286,10 +286,10 @@
 }
 
 .pipeline-sidebar__action-btn:hover:not(:disabled) {
-  background: var(--neon-cyan-surface);
-  border-color: var(--neon-cyan-border);
-  color: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
+  box-shadow: 0 0 8px transparent;
 }
 
 .pipeline-sidebar__action-btn:active:not(:disabled) {
@@ -357,8 +357,8 @@
 }
 
 .backlog-card:hover {
-  border-color: var(--neon-cyan-border);
-  background: var(--neon-cyan-surface);
+  border-color: var(--bde-accent-border);
+  background: var(--bde-accent-surface);
 }
 
 .backlog-card--selected:hover {
@@ -386,9 +386,9 @@
   grid-area: action;
   font-size: var(--font-xs, 11px);
   font-weight: 600;
-  color: var(--neon-cyan);
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan-border);
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 4px;
   padding: 3px 8px;
   cursor: pointer;
@@ -402,8 +402,8 @@
 .backlog-card__action:hover:not(:disabled),
 .backlog-card__action:focus-visible {
   opacity: 1;
-  background: var(--neon-cyan-border);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent-border);
+  box-shadow: 0 0 8px transparent;
 }
 
 .backlog-card:hover .backlog-card__action {
@@ -490,7 +490,7 @@
   width: 2px;
   background: linear-gradient(
     180deg,
-    var(--neon-cyan) 0%,
+    var(--bde-accent) 0%,
     var(--neon-orange) 20%,
     var(--neon-purple) 45%,
     var(--neon-blue) 70%,
@@ -545,8 +545,8 @@
 }
 
 .pipeline-stage__dot--queued {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 10px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: 0 0 10px transparent;
 }
 
 .pipeline-stage__dot--blocked {
@@ -593,7 +593,7 @@
 }
 
 .pipeline-stage__name--queued {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 .pipeline-stage__name--blocked {
   color: var(--neon-orange);
@@ -643,9 +643,9 @@
 }
 
 .pipeline-center .task-pill--selected {
-  border-color: var(--neon-cyan-border);
-  background: var(--neon-cyan-surface);
-  box-shadow: 0 0 12px var(--neon-cyan-glow);
+  border-color: var(--bde-accent-border);
+  background: var(--bde-accent-surface);
+  box-shadow: 0 0 12px transparent;
 }
 
 .task-pill--active {
@@ -766,7 +766,7 @@
 /* Arrival glow animation */
 @keyframes task-arrive {
   0% {
-    box-shadow: 0 0 16px var(--neon-cyan);
+    box-shadow: 0 0 16px var(--bde-accent);
   }
   100% {
     box-shadow: none;
@@ -827,7 +827,7 @@
 
 .sprint-pipeline__density-toggle:hover:not(:disabled) {
   background: var(--bde-surface);
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .sprint-pipeline__density-toggle:active {
@@ -855,9 +855,9 @@
 }
 
 .task-row--selected {
-  border-color: var(--neon-cyan-border);
-  background: var(--neon-cyan-surface);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  border-color: var(--bde-accent-border);
+  background: var(--bde-accent-surface);
+  box-shadow: 0 0 8px transparent;
 }
 
 .task-row__dot {
@@ -879,8 +879,8 @@
 
 .task-row__repo {
   font-size: var(--font-2xs, 10px);
-  color: var(--neon-cyan);
-  background: var(--neon-cyan-surface);
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
   padding: 1px 5px;
   border-radius: 3px;
   flex-shrink: 0;
@@ -940,8 +940,8 @@
 }
 .task-drawer__resize-handle:hover,
 .task-drawer__resize-handle:active {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: 0 0 8px transparent;
 }
 
 .task-drawer__head {
@@ -1057,7 +1057,7 @@
 
 /* Spec link */
 .task-drawer__spec-link {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: var(--font-sm, 12px);
   cursor: pointer;
   background: none;
@@ -1116,7 +1116,7 @@
 }
 
 .task-drawer__dep--done .task-drawer__dep-dot {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
 }
 .task-drawer__dep--active .task-drawer__dep-dot {
   background: var(--neon-purple);
@@ -1125,7 +1125,7 @@
   background: var(--neon-orange);
 }
 .task-drawer__dep--queued .task-drawer__dep-dot {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   opacity: 0.5;
 }
 .task-drawer__dep--failed .task-drawer__dep-dot,
@@ -1202,7 +1202,7 @@
 }
 
 .task-drawer__upstream-card--done .task-drawer__upstream-dot {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
 }
 .task-drawer__upstream-card--active .task-drawer__upstream-dot {
   background: var(--neon-purple);
@@ -1211,7 +1211,7 @@
   background: var(--neon-orange);
 }
 .task-drawer__upstream-card--queued .task-drawer__upstream-dot {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   opacity: 0.5;
 }
 .task-drawer__upstream-card--failed .task-drawer__upstream-dot,
@@ -1239,14 +1239,14 @@
 
 .task-drawer__upstream-pr {
   font-size: var(--font-2xs, 10px);
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   text-decoration: none;
   padding-left: 12px;
   transition: color 150ms ease;
 }
 
 .task-drawer__upstream-pr:hover {
-  color: var(--neon-cyan-bright);
+  color: var(--bde-accent);
   text-decoration: underline;
 }
 
@@ -1260,7 +1260,7 @@
 
 /* Agent link */
 .task-drawer__agent-link {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: var(--font-sm, 12px);
   cursor: pointer;
   background: none;
@@ -1536,8 +1536,8 @@
 }
 
 .done-history__badge {
-  background: var(--neon-cyan-surface);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
 }
 
 .done-history__empty {
@@ -1578,16 +1578,16 @@
 
 .pipeline-error-boundary__retry {
   padding: 4px 12px;
-  border: 1px solid var(--neon-cyan-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 6px;
   background: transparent;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: var(--font-xs, 11px);
   cursor: pointer;
 }
 
 .pipeline-error-boundary__retry:hover:not(:disabled) {
-  background: var(--neon-cyan-surface);
+  background: var(--bde-accent-surface);
 }
 
 .pipeline-error-boundary__retry:active:not(:disabled) {
@@ -1679,7 +1679,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  border: 1px solid var(--neon-cyan-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 4px;
   background: var(--bde-surface-high);
 }
@@ -1691,7 +1691,7 @@
   padding: 2px 6px;
   background: transparent;
   border: none;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: var(--font-2xs, 10px);
   font-family: var(--bde-font-code);
   cursor: pointer;
@@ -1699,7 +1699,7 @@
 }
 
 .pipeline-filter-bar__preset-btn:hover:not(:disabled) {
-  color: var(--neon-cyan-bright);
+  color: var(--bde-accent);
 }
 
 .pipeline-filter-bar__preset-btn:active:not(:disabled) {
@@ -1713,7 +1713,7 @@
   padding: 2px;
   background: transparent;
   border: none;
-  border-left: 1px solid var(--neon-cyan-border);
+  border-left: 1px solid var(--bde-accent-border);
   color: var(--bde-text-dim);
   cursor: pointer;
   opacity: 0.6;
@@ -1769,7 +1769,7 @@
 
 .bulk-action-bar__count {
   font-size: var(--font-xs, 11px);
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-family: var(--bde-font-code);
   font-weight: 600;
 }
@@ -1861,15 +1861,15 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   animation: pipeline-pulse 2s ease-in-out infinite;
   flex-shrink: 0;
 }
 
 /* ── Task Pill: Multi-select highlight ── */
 .task-pill--multi-selected {
-  border-color: var(--neon-cyan-border);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  border-color: var(--bde-accent-border);
+  box-shadow: 0 0 8px transparent;
 }
 
 /* ── Conflict Drawer (right-slide overlay) ── */
@@ -2222,7 +2222,7 @@
 .pipeline-filter-bar__chip:focus-visible,
 .sprint-pipeline__badge:focus-visible,
 .pipeline-stage__done-summary:focus-visible {
-  box-shadow: 0 0 0 2px var(--neon-cyan);
+  box-shadow: 0 0 0 2px var(--bde-accent);
   outline: none;
 }
 
@@ -2484,7 +2484,7 @@
 }
 
 .dag-overlay__title {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-weight: 700;
   font-size: 14px;
   margin: 0;

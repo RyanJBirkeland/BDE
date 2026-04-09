@@ -17,11 +17,11 @@ const ACCENT_VARS: Record<
   { bg: string; border: string; color: string; glow: string; hover: string }
 > = {
   cyan: {
-    bg: 'var(--neon-cyan-surface)',
-    border: 'var(--neon-cyan-border)',
-    color: 'var(--neon-cyan)',
-    glow: 'var(--neon-cyan-glow)',
-    hover: 'var(--neon-cyan-border)'
+    bg: 'var(--bde-accent-surface)',
+    border: 'var(--bde-accent-border)',
+    color: 'var(--bde-accent)',
+    glow: 'transparent',
+    hover: 'var(--bde-accent-border)'
   },
   pink: {
     bg: 'var(--neon-pink-surface)',

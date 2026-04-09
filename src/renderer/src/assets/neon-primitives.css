@@ -61,7 +61,7 @@
 }
 
 .stat-counter__trend--down {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 /* ── NeonCard ──────────────────────────────────────── */
@@ -247,7 +247,7 @@
 }
 
 .tag-input:focus-within {
-  border-color: var(--neon-cyan-border);
+  border-color: var(--bde-accent-border);
 }
 
 .tag-input__tags {
@@ -295,8 +295,8 @@
 }
 
 .status-bar__dot--ok {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan);
+  background: var(--bde-accent);
+  box-shadow: 0 0 8px var(--bde-accent);
 }
 
 .status-bar__dot--error {

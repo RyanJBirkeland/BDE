@@ -15,8 +15,8 @@
 
 .ide-separator:hover,
 .ide-separator:active {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: 0 0 8px transparent;
 }
 
 /* ── File Sidebar ── */
@@ -70,9 +70,9 @@
 }
 
 .ide-file-node--active {
-  background: var(--neon-cyan-surface);
-  color: var(--neon-cyan);
-  border-left: 2px solid var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+  border-left: 2px solid var(--bde-accent);
 }
 
 .ide-file-node__chevron {
@@ -171,12 +171,12 @@
 .ide-editor-tab--active {
   color: var(--bde-text);
   background: var(--bde-bg);
-  border-top-color: var(--neon-cyan);
-  box-shadow: inset 0 2px 8px var(--neon-cyan-surface);
+  border-top-color: var(--bde-accent);
+  box-shadow: inset 0 2px 8px var(--bde-accent-surface);
 }
 
 .ide-editor-tab__dirty {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .ide-editor-tab__close {
@@ -223,15 +223,15 @@
 
 .ide-empty-state__open-btn {
   color: var(--bde-bg);
-  background: var(--neon-cyan);
-  box-shadow: 0 0 12px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: 0 0 12px transparent;
   transition:
     box-shadow 0.15s ease,
     opacity 0.15s ease;
 }
 
 .ide-empty-state__open-btn:hover:not(:disabled) {
-  box-shadow: 0 0 16px var(--neon-cyan-glow);
+  box-shadow: 0 0 16px transparent;
 }
 
 .ide-empty-state__open-btn:active:not(:disabled) {
@@ -243,11 +243,11 @@
 }
 
 .ide-empty-state__recent-item {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 .ide-empty-state__recent-item:hover {
-  background: var(--neon-cyan-surface);
+  background: var(--bde-accent-surface);
 }
 
 /* ── Terminal Panel ── */
@@ -288,13 +288,13 @@
 }
 
 .terminal-tab--active {
-  background: var(--neon-cyan-surface);
-  border-color: var(--neon-cyan-border);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
 }
 
 .terminal-tab--active::before {
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
 }
 
 .terminal-tab__close {
@@ -333,7 +333,7 @@
 
 .terminal-toolbar__btn--active {
   background: var(--bde-surface);
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
 }
 
 /* ── Terminal Content Separator ── */
@@ -342,8 +342,8 @@
 }
 
 .terminal-content__separator:hover {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: 0 0 8px transparent;
 }
 
 /* ── Terminal Find Bar ── */
@@ -400,7 +400,7 @@
 }
 
 .shell-picker__custom-input:focus-visible {
-  border-color: var(--neon-cyan);
+  border-color: var(--bde-accent);
 }
 
 /* ── Agent Picker Dropdown ── */
@@ -475,9 +475,9 @@
 }
 
 .ide-sidebar-toggle:hover:not(:disabled) {
-  color: var(--neon-cyan);
-  border-color: var(--neon-cyan-border);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  color: var(--bde-accent);
+  border-color: var(--bde-accent-border);
+  box-shadow: 0 0 8px transparent;
 }
 
 /* ── Keyboard Shortcuts Overlay ── */
@@ -526,9 +526,9 @@
   text-align: right;
   font-family: var(--bde-font-mono, monospace);
   font-size: 11px;
-  color: var(--neon-cyan, #00e5ff);
-  background: var(--neon-cyan-surface, rgba(0, 229, 255, 0.08));
-  border: 1px solid var(--neon-cyan-border, rgba(0, 229, 255, 0.2));
+  color: var(--bde-accent, #00e5ff);
+  background: var(--bde-accent-surface, rgba(0, 229, 255, 0.08));
+  border: 1px solid var(--bde-accent-border, rgba(0, 229, 255, 0.2));
   border-radius: 4px;
   padding: 2px 6px;
 }
@@ -594,8 +594,8 @@
 }
 
 .quick-open-palette__input:focus-visible {
-  border-color: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  border-color: var(--bde-accent);
+  box-shadow: 0 0 8px transparent;
 }
 
 .quick-open-palette__input::placeholder {
@@ -652,7 +652,7 @@
 }
 
 .quick-open-palette__match {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-weight: 600;
 }
 
@@ -739,8 +739,8 @@
 }
 
 .editor-toolbar__btn--active {
-  color: var(--neon-cyan);
-  background: var(--neon-cyan-surface);
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
 }
 
 .editor-toolbar__btn:disabled {
