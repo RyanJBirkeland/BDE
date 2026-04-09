@@ -216,21 +216,21 @@ html.theme-pro-dark {
   --neon-red-border: rgba(219, 92, 92, 0.25);
 
   /* Background — no gradients */
-  --neon-bg: #1e1f22;
+  --neon-bg: #141414;
   --neon-bg-gradient: none;
 
   /* Semantic text/surface */
-  --neon-text: #bcbec4;
-  --neon-text-muted: rgba(188, 190, 196, 0.6);
-  --neon-text-dim: rgba(188, 190, 196, 0.45);
+  --neon-text: #dfe1e5;
+  --neon-text-muted: rgba(223, 225, 229, 0.6);
+  --neon-text-dim: rgba(223, 225, 229, 0.45);
   --neon-surface-dim: rgba(255, 255, 255, 0.04);
   --neon-surface-subtle: rgba(255, 255, 255, 0.08);
-  --neon-surface-deep: #2b2d30;
-  --neon-surface-base: #2b2d30;
-  --neon-surface-mid: #393b40;
-  --neon-border-base: #393b40;
-  --neon-text-primary: #bcbec4;
-  --neon-text-secondary: #8c8f94;
+  --neon-surface-deep: #1e1f22;
+  --neon-surface-base: #1e1f22;
+  --neon-surface-mid: #2b2d30;
+  --neon-border-base: #2b2d30;
+  --neon-text-primary: #dfe1e5;
+  --neon-text-secondary: #9da0a6;
   --neon-text-tertiary: #6f737a;
 }
 

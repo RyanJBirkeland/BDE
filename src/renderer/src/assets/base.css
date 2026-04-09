@@ -475,19 +475,19 @@ html.theme-warm {
 
 html.theme-pro-dark {
   /* ── Core palette ───────────────────────────────────── */
-  --bde-bg: #1e1f22;
-  --bde-surface: #2b2d30;
-  --bde-surface-high: #393b40;
-  --bde-border: #393b40;
-  --bde-border-hover: #4e5157;
+  --bde-bg: #141414;
+  --bde-surface: #1e1f22;
+  --bde-surface-high: #2b2d30;
+  --bde-border: #2b2d30;
+  --bde-border-hover: #393b40;
   --bde-accent: #4a88c7;
   --bde-accent-dim: rgba(74, 136, 199, 0.15);
-  --bde-text: #bcbec4;
-  --bde-text-muted: #8c8f94;
+  --bde-text: #dfe1e5;
+  --bde-text-muted: #9da0a6;
   --bde-text-dim: #6f737a;
   --bde-danger: #db5c5c;
   --bde-danger-dim: rgba(219, 92, 92, 0.15);
-  --bde-void: #1e1f22;
+  --bde-void: #141414;
   --bde-border-glow: #4a88c7;
   --bde-queued: #4a88c7;
   --bde-running: #5fad65;
@@ -558,16 +558,16 @@ html.theme-pro-dark {
   --gradient-frost: none;
   --gradient-midnight: linear-gradient(
     180deg,
-    rgba(30, 31, 34, 0.95) 0%,
-    rgba(43, 45, 48, 0.98) 100%
+    rgba(20, 20, 20, 0.95) 0%,
+    rgba(30, 31, 34, 0.98) 100%
   );
   --gradient-scanline: none;
 
   /* ── v2 — Glass tints ───────────────────────────────── */
-  --glass-tint-dark: rgba(43, 45, 48, 0.75);
-  --glass-tint-mid: rgba(43, 45, 48, 0.7);
-  --glass-tint-light: rgba(43, 45, 48, 0.6);
-  --glass-tint-ultra: rgba(43, 45, 48, 0.5);
+  --glass-tint-dark: rgba(30, 31, 34, 0.75);
+  --glass-tint-mid: rgba(30, 31, 34, 0.7);
+  --glass-tint-light: rgba(30, 31, 34, 0.6);
+  --glass-tint-ultra: rgba(30, 31, 34, 0.5);
 
   /* ── Compact density ────────────────────────────────── */
   --bde-space-1: 3px;
