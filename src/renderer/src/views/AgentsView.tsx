@@ -3,7 +3,7 @@
  */
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Plus } from 'lucide-react'
+import { Plus, Info, X } from 'lucide-react'
 import '../assets/agents.css'
 import '../assets/agents-neon.css'
 import { usePanelLayoutStore } from '../stores/panelLayout'
@@ -34,6 +34,8 @@ export function AgentsView(): React.JSX.Element {
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showLaunchpad, setShowLaunchpad] = useState(false)
+  const [showScratchpadBanner, setShowScratchpadBanner] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
   const cleanupRef = useRef<(() => void) | null>(null)
   const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
   const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
@@ -74,6 +76,15 @@ export function AgentsView(): React.JSX.Element {
     return () => window.removeEventListener('bde:open-spawn-modal', handler)
   }, [])
 
+  // Check if scratchpad banner has been dismissed
+  useEffect(() => {
+    window.api.settings.get('scratchpad.noticeDismissed').then((val) => {
+      if (!val) {
+        setShowScratchpadBanner(true)
+      }
+    })
+  }, [])
+
   // Register agent commands in command palette
   const handleSpawnAgent = useCallback(() => {
     setSelectedId(null)
@@ -90,6 +101,11 @@ export function AgentsView(): React.JSX.Element {
       new CustomEvent('agent:clear-console', { detail: { agentId: selectedId } })
     )
   }, [selectedId])
+
+  const handleDismissBanner = useCallback(() => {
+    setShowScratchpadBanner(false)
+    window.api.settings.set('scratchpad.noticeDismissed', 'true')
+  }, [])
 
   useEffect(() => {
     const commands: Command[] = [
@@ -265,17 +281,67 @@ export function AgentsView(): React.JSX.Element {
               borderBottom: '1px solid var(--neon-purple-border)'
             }}
           >
-            <span
-              className="text-gradient-aurora"
-              style={{
-                fontSize: '10px',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                fontWeight: 600
-              }}
-            >
-              Fleet
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                className="text-gradient-aurora"
+                style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1.5px',
+                  fontWeight: 600
+                }}
+              >
+                Fleet
+              </span>
+              <div
+                style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                <Info
+                  size={14}
+                  style={{
+                    color: 'var(--neon-text-dim)',
+                    cursor: 'help',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--neon-cyan)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--neon-text-dim)'
+                  }}
+                  aria-describedby="scratchpad-tooltip"
+                />
+                {showTooltip && (
+                  <div
+                    id="scratchpad-tooltip"
+                    role="tooltip"
+                    style={{
+                      position: 'absolute',
+                      top: '20px',
+                      left: '0',
+                      width: '240px',
+                      padding: '8px 10px',
+                      background: 'var(--neon-purple-surface)',
+                      border: '1px solid var(--neon-purple-border)',
+                      borderRadius: '6px',
+                      fontSize: '10px',
+                      lineHeight: 1.4,
+                      color: 'var(--neon-text-dim)',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                    }}
+                  >
+                    <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run
+                    in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
+                    finishes, click <em>Promote to Code Review</em> in its console header to flow the
+                    work into the review queue. For tracked sprint work, queue tasks from{' '}
+                    <em>Task Workbench</em>.
+                  </div>
+                )}
+              </div>
+            </div>
             <button
               onClick={() => {
                 setSelectedId(null)
@@ -300,25 +366,55 @@ export function AgentsView(): React.JSX.Element {
             </button>
           </div>
 
-          {/* Scratchpad notice — agents spawned here are NOT tracked by the
-              sprint pipeline. Click the Promote button on a completed agent
-              to flow its work into Code Review. */}
-          <div
-            role="note"
-            style={{
-              fontSize: '10px',
-              lineHeight: 1.4,
-              padding: '8px 12px',
-              borderBottom: '1px solid var(--neon-purple-border)',
-              color: 'var(--neon-text-dim)'
-            }}
-          >
-            <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run in
-            isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
-            finishes, click <em>Promote to Code Review</em> in its console header to flow the work
-            into the review queue. For tracked sprint work, queue tasks from{' '}
-            <em>Task Workbench</em>.
-          </div>
+          {/* Dismissable banner for first-time users */}
+          {showScratchpadBanner && (
+            <div
+              role="status"
+              style={{
+                fontSize: '10px',
+                lineHeight: 1.4,
+                padding: '8px 12px',
+                borderBottom: '1px solid var(--neon-purple-border)',
+                background: 'var(--neon-purple-surface)',
+                color: 'var(--neon-text-dim)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px'
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run in
+                isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
+                finishes, click <em>Promote to Code Review</em> in its console header to flow the work
+                into the review queue. For tracked sprint work, queue tasks from{' '}
+                <em>Task Workbench</em>.
+              </div>
+              <button
+                onClick={handleDismissBanner}
+                aria-label="Dismiss scratchpad notice"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--neon-text-dim)',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--neon-cyan)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--neon-text-dim)'
+                }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
 
           <AgentList
             agents={agents}

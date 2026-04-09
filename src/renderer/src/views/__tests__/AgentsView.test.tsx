@@ -93,7 +93,11 @@ Object.defineProperty(window, 'api', {
     spawnLocalAgent: vi.fn().mockResolvedValue({ pid: 1, logPath: '/tmp/log', id: 'agent-1' }),
     steerAgent: vi.fn().mockResolvedValue({ ok: true }),
     killAgent: vi.fn().mockResolvedValue(undefined),
-    sprint: { update: vi.fn().mockResolvedValue(undefined) }
+    sprint: { update: vi.fn().mockResolvedValue(undefined) },
+    settings: {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined)
+    }
   },
   writable: true,
   configurable: true
@@ -198,5 +202,55 @@ describe('AgentsView', () => {
       window.dispatchEvent(new Event('bde:open-spawn-modal'))
     })
     expect(screen.getByTestId('agent-launchpad')).toBeInTheDocument()
+  })
+
+  // ---------- Scratchpad banner and tooltip ----------
+
+  it('shows scratchpad banner when not dismissed', async () => {
+    const mockGet = vi.fn().mockResolvedValue(null)
+    window.api.settings.get = mockGet
+
+    render(<AgentsView />)
+
+    await vi.waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('scratchpad.noticeDismissed')
+    })
+
+    await vi.waitFor(() => {
+      expect(screen.getByRole('status')).toBeInTheDocument()
+      expect(screen.getByRole('status')).toHaveTextContent('Scratchpad.')
+    })
+  })
+
+  it('hides scratchpad banner when already dismissed', async () => {
+    const mockGet = vi.fn().mockResolvedValue('true')
+    window.api.settings.get = mockGet
+
+    render(<AgentsView />)
+
+    await vi.waitFor(() => {
+      expect(mockGet).toHaveBeenCalledWith('scratchpad.noticeDismissed')
+    })
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('dismisses banner when X button clicked', async () => {
+    const mockGet = vi.fn().mockResolvedValue(null)
+    const mockSet = vi.fn().mockResolvedValue(undefined)
+    window.api.settings.get = mockGet
+    window.api.settings.set = mockSet
+
+    render(<AgentsView />)
+
+    await vi.waitFor(() => {
+      expect(screen.getByRole('status')).toBeInTheDocument()
+    })
+
+    const dismissButton = screen.getByLabelText('Dismiss scratchpad notice')
+    fireEvent.click(dismissButton)
+
+    expect(mockSet).toHaveBeenCalledWith('scratchpad.noticeDismissed', 'true')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 })
