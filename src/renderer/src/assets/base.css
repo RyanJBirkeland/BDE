@@ -11,6 +11,7 @@
   /* Typography */
   --bde-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --bde-font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --bde-font-mono: var(--bde-font-code);
 
   /* Font sizes */
   --bde-size-2xs: 10px;
@@ -287,7 +288,8 @@ html.theme-pro-dark {
   --bde-space-4: 12px;
   --bde-space-5: 14px;
   --bde-space-6: 18px;
-  --bde-space-8: 22px;
+  --bde-space-7: 22px;
+  --bde-space-8: 28px;
 
   /* ── Compact type scale ─────────────────────────────── */
   --bde-size-2xs: 9px;
@@ -316,6 +318,13 @@ html.theme-pro-dark {
   --bde-status-blocked:   var(--bde-warning);
   --bde-status-done:      #4caf82;
   --bde-status-queued:    var(--bde-accent);
+
+  /* ── Semantic aliases ───────────────────────────────── */
+  --bde-error:            var(--bde-danger);
+  --bde-bg-elevated:      var(--bde-surface-high);
+  --bde-bg-secondary:     var(--bde-surface);
+  --bde-surface-hover:    var(--bde-hover);
+  --bde-success-surface:  rgba(95, 173, 101, 0.10);
 }
 
 /* ── Pro Light — IntelliJ-inspired professional light theme ── */
@@ -443,13 +452,14 @@ html.theme-pro-light {
   --bde-size-2xs: 9px;
   --bde-size-xs: 10px;
   --bde-size-sm: 11px;
-  --bde-size-base: 12px;
+  --bde-size-md: 12px;
   --bde-size-lg: 13px;
   --bde-size-xl: 15px;
   --bde-size-xxl: 18px;
   --bde-radius-sm: 3px;
   --bde-radius-md: 4px;
   --bde-radius-lg: 6px;
+  --bde-radius-xl: 8px;
 
   /* ── New unified tokens ── */
   --bde-accent-surface:   rgba(38, 117, 191, 0.08);
@@ -463,6 +473,13 @@ html.theme-pro-light {
   --bde-status-blocked:   var(--bde-warning);
   --bde-status-done:      #3a9b6f;
   --bde-status-queued:    var(--bde-accent);
+
+  /* ── Semantic aliases ───────────────────────────────── */
+  --bde-error:            var(--bde-danger);
+  --bde-bg-elevated:      var(--bde-surface-high);
+  --bde-bg-secondary:     var(--bde-surface);
+  --bde-surface-hover:    var(--bde-hover);
+  --bde-success-surface:  rgba(73, 160, 75, 0.08);
 }
 
 /* ── Scrollbars ──────────────────────────────────────── */
