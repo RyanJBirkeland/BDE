@@ -10,6 +10,7 @@ export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
 export const BDE_AGENT_TMP_DIR = join(tmpdir(), 'bde-agents')
 export const BDE_AGENT_LOG_PATH = join(BDE_DIR, 'agent-manager.log')
 export const BDE_MEMORY_DIR = join(BDE_DIR, 'memory')
+export const BDE_TASK_MEMORY_DIR = join(BDE_MEMORY_DIR, 'tasks')
 
 // --- Dynamic repo configuration (backed by settings table) ---
 
