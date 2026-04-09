@@ -7,6 +7,11 @@ import { runAgent, detectHtmlWrite, tryEmitPlaygroundEvent } from '../run-agent'
 import type { RunAgentTask, RunAgentDeps } from '../run-agent'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
+import { mkdirSync, readFileSync } from 'node:fs'
+import { buildAgentPrompt } from '../prompt-composer'
+const mockMkdirSync = vi.mocked(mkdirSync)
+const mockReadFileSync = vi.mocked(readFileSync)
+const mockBuildAgentPrompt = vi.mocked(buildAgentPrompt)
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -41,8 +46,18 @@ vi.mock('../../data/sprint-queries', () => ({
 }))
 
 vi.mock('../../paths', () => ({
-  getGhRepo: vi.fn().mockReturnValue('owner/repo')
+  getGhRepo: vi.fn().mockReturnValue('owner/repo'),
+  BDE_TASK_MEMORY_DIR: '/home/user/.bde/memory/tasks'
 }))
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...actual,
+    mkdirSync: vi.fn(),
+    readFileSync: vi.fn().mockImplementation(() => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }) }),
+  }
+})
 
 vi.mock('../../agent-history', () => ({
   createAgentRecord: vi.fn().mockResolvedValue(undefined),
@@ -614,7 +629,9 @@ describe('runAgent — prompt composer integration', () => {
       maxRuntimeMs: undefined,
       upstreamContext: undefined,
       crossRepoContract: undefined,
-      repoName: 'BDE'
+      repoName: 'BDE',
+      taskId: 'task-1',
+      priorScratchpad: '',
     })
   })
 
@@ -656,5 +673,54 @@ describe('runAgent — prompt composer integration', () => {
         model: 'claude-sonnet-4-5' // defaultModel from makeDeps
       })
     )
+  })
+
+  describe('task scratchpad wiring', () => {
+    beforeEach(() => {
+      mockMkdirSync.mockReset()
+      mockReadFileSync.mockReset()
+      mockBuildAgentPrompt.mockReset()
+      mockBuildAgentPrompt.mockImplementation((input) => {
+        return (input.taskContent ?? '') + (input.branch ? `\n\nBranch: ${input.branch}` : '')
+      })
+    })
+
+    it('creates scratchpad directory with task id before buildAgentPrompt', async () => {
+      mockReadFileSync.mockImplementation(() => {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+      })
+
+      await runAgent(makeTask({ id: 'task-xyz' }), worktree, repoPath, makeDeps())
+
+      expect(mockMkdirSync).toHaveBeenCalledWith(
+        '/home/user/.bde/memory/tasks/task-xyz',
+        { recursive: true }
+      )
+    })
+
+    it('passes empty priorScratchpad to buildAgentPrompt when progress.md is absent', async () => {
+      mockReadFileSync.mockImplementation(() => {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+      })
+
+      await runAgent(makeTask({ id: 'task-xyz' }), worktree, repoPath, makeDeps())
+
+      expect(mockBuildAgentPrompt).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: 'task-xyz', priorScratchpad: '' })
+      )
+    })
+
+    it('passes progress.md content as priorScratchpad when file exists', async () => {
+      mockReadFileSync.mockReturnValue('## Prior notes\nTried approach A, failed with error XYZ')
+
+      await runAgent(makeTask({ id: 'task-xyz' }), worktree, repoPath, makeDeps())
+
+      expect(mockBuildAgentPrompt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          taskId: 'task-xyz',
+          priorScratchpad: '## Prior notes\nTried approach A, failed with error XYZ'
+        })
+      )
+    })
   })
 })

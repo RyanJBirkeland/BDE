@@ -29,8 +29,18 @@ vi.mock('../resolve-dependents', () => ({
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getGhRepo: vi.fn(),
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log'
+  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
+  BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
 }))
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...actual,
+    mkdirSync: vi.fn(),
+    readFileSync: vi.fn().mockImplementation(() => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }) }),
+  }
+})
 
 vi.mock('../sdk-adapter', () => ({
   spawnAgent: vi.fn()

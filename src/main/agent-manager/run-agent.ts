@@ -5,13 +5,14 @@ import { cleanupWorktree } from './worktree'
 import { spawnAgent } from './sdk-adapter'
 import { resolveSuccess, resolveFailure } from './completion'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
-import { getGhRepo } from '../paths'
+import { getGhRepo, BDE_TASK_MEMORY_DIR } from '../paths'
 import { createAgentRecord, updateAgentMeta } from '../agent-history'
 import { updateAgentRunCost } from '../data/agent-queries'
 import { getDb } from '../db'
 import { randomUUID } from 'node:crypto'
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
+import { mkdirSync, readFileSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { extname, basename, join } from 'node:path'
 import { broadcast } from '../broadcast'
@@ -251,6 +252,18 @@ export async function runAgent(
     }
   }
 
+  // Create task scratchpad directory (idempotent — safe to call on retry)
+  const scratchpadDir = join(BDE_TASK_MEMORY_DIR, task.id)
+  mkdirSync(scratchpadDir, { recursive: true })
+
+  // Read prior scratchpad content if present (expected ENOENT on first run)
+  let priorScratchpad = ''
+  try {
+    priorScratchpad = readFileSync(join(scratchpadDir, 'progress.md'), 'utf-8')
+  } catch {
+    // Expected on first run — no prior scratchpad
+  }
+
   const prompt = buildAgentPrompt({
     agentType: 'pipeline',
     taskContent,
@@ -261,7 +274,9 @@ export async function runAgent(
     maxRuntimeMs: task.max_runtime_ms ?? undefined,
     upstreamContext: upstreamContext.length > 0 ? upstreamContext : undefined,
     crossRepoContract: task.cross_repo_contract ?? undefined,
-    repoName: task.repo
+    repoName: task.repo,
+    taskId: task.id,
+    priorScratchpad,
   })
 
   let handle: AgentHandle

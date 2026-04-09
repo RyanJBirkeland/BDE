@@ -35,8 +35,18 @@ vi.mock('../../data/sprint-queries', () => ({
 }))
 
 vi.mock('../../paths', () => ({
-  getGhRepo: vi.fn().mockReturnValue('owner/repo')
+  getGhRepo: vi.fn().mockReturnValue('owner/repo'),
+  BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
 }))
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>()
+  return {
+    ...actual,
+    mkdirSync: vi.fn(),
+    readFileSync: vi.fn().mockImplementation(() => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }) }),
+  }
+})
 
 vi.mock('../../agent-history', () => ({
   createAgentRecord: vi.fn().mockResolvedValue(undefined),
