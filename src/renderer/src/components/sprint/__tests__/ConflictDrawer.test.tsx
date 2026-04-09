@@ -99,4 +99,15 @@ describe('ConflictDrawer', () => {
     const overlay = document.querySelector('.conflict-drawer__overlay')
     expect(overlay).not.toBeInTheDocument()
   })
+
+  it('renders a resize handle', () => {
+    const { container } = render(
+      <ConflictDrawer
+        open={true}
+        tasks={[makeTask()]}
+        onClose={vi.fn()}
+      />
+    )
+    expect(container.querySelector('.drawer-resize-handle')).not.toBeNull()
+  })
 })
