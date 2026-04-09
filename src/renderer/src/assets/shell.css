@@ -524,15 +524,19 @@
 
 .panel-leaf__content {
   flex: 1;
-  position: relative;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  min-height: 0;
+  min-width: 0;
 }
 
 .panel-leaf__tabpanel {
-  position: absolute;
-  inset: 0;
   display: none;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
 }
 
 .panel-leaf__tabpanel--active {
