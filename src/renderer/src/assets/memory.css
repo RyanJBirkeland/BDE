@@ -58,8 +58,6 @@
 /* Glass sidebar override */
 .memory-sidebar {
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
   border-right: 1px solid var(--bde-border);
 }
 
@@ -230,7 +228,7 @@
 .memory-sidebar__active-summary {
   padding: 4px 12px;
   font-size: 11px;
-  color: var(--neon-accent, #0ff);
+  color: var(--bde-accent);
   opacity: 0.8;
 }
 
@@ -254,7 +252,7 @@
 }
 .memory-file__toggle--active {
   opacity: 1;
-  color: var(--neon-accent, #0ff);
+  color: var(--bde-accent);
 }
 
 /* Editor toolbar agent toggle */
@@ -267,7 +265,7 @@
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
-  color: var(--neon-text-muted, #888);
+  color: var(--bde-text-muted, #888);
   transition:
     color 0.15s,
     background 0.15s;
@@ -280,18 +278,18 @@
   transform: scale(0.97);
 }
 .memory-editor__agent-toggle--active {
-  color: var(--neon-accent, #0ff);
+  color: var(--bde-accent);
 }
 
 /* Size warning banner */
 .memory-editor__size-banner {
   padding: 6px 12px;
   font-size: 11px;
-  color: var(--neon-text-muted, #888);
+  color: var(--bde-text-muted, #888);
   border-bottom: 1px solid var(--bde-border);
 }
 .memory-editor__size-banner--warn {
-  color: var(--neon-warning, #f90);
+  color: var(--bde-warning);
   background: var(--bde-overlay);
 }
 

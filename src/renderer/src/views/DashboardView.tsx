@@ -11,7 +11,7 @@ import { useVisibilityAwareInterval } from '../hooks/useVisibilityAwareInterval'
 import { useBackoffInterval } from '../hooks/useBackoffInterval'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION } from '../lib/motion'
 import { POLL_LOAD_AVERAGE } from '../lib/constants'
-import { StatusBar, NeonCard, ParticleField } from '../components/neon'
+import { StatusBar, NeonCard } from '../components/neon'
 import { neonVar } from '../components/neon/types'
 import { partitionSprintTasks } from '../lib/partitionSprintTasks'
 import {
@@ -21,7 +21,7 @@ import {
   ActivitySection,
   MorningBriefing
 } from '../components/dashboard'
-import '../assets/dashboard-neon.css'
+import '../assets/dashboard.css'
 import { Plus } from 'lucide-react'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
@@ -214,8 +214,6 @@ export default function DashboardView(): React.JSX.Element {
       animate={reduced ? undefined : 'animate'}
       transition={transition}
     >
-      {/* Background effects (ScanlineOverlay removed for data readability) */}
-      {!reduced && <ParticleField />}
       <div className="dashboard-bg-gradient" />
 
       {/* Content (above effects) */}

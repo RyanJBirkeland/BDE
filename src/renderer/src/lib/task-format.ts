@@ -11,23 +11,23 @@ export function formatElapsed(startedAt: string): string {
 }
 
 export function getDotColor(status: string, prStatus?: string | null): string {
-  if (prStatus === 'open' || prStatus === 'branch_only') return 'var(--neon-blue)'
+  if (prStatus === 'open' || prStatus === 'branch_only') return 'var(--bde-status-review)'
   switch (status) {
     case 'queued':
-      return 'var(--neon-cyan)'
+      return 'var(--bde-accent)'
     case 'blocked':
-      return 'var(--neon-orange)'
+      return 'var(--bde-warning)'
     case 'active':
-      return 'var(--neon-purple)'
+      return 'var(--bde-status-active)'
     case 'review':
-      return 'var(--neon-blue)'
+      return 'var(--bde-status-review)'
     case 'done':
-      return 'var(--neon-pink)'
+      return 'var(--bde-status-done)'
     case 'failed':
     case 'error':
     case 'cancelled':
-      return 'var(--neon-red, #ff3366)'
+      return 'var(--bde-danger)'
     default:
-      return 'var(--neon-cyan)'
+      return 'var(--bde-accent)'
   }
 }

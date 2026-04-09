@@ -4,7 +4,7 @@ import { AuthStep } from './steps/AuthStep'
 import { GitStep } from './steps/GitStep'
 import { RepoStep } from './steps/RepoStep'
 import { DoneStep } from './steps/DoneStep'
-import '../../assets/onboarding-neon.css'
+import '../../assets/onboarding.css'
 
 interface OnboardingWizardProps {
   onComplete: () => void

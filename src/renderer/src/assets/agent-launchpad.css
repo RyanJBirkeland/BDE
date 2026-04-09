@@ -1,7 +1,7 @@
 /* src/renderer/src/assets/agent-launchpad-neon.css */
 /* ═══════════════════════════════════════════════════════
    Agent Launchpad — Single-screen session launcher
-   Uses var(--neon-*) tokens from neon.css
+   Uses var(--bde-*) design tokens from base.css
    ═══════════════════════════════════════════════════════ */
 
 /* ── Launchpad Container ── */
@@ -11,7 +11,7 @@
   height: 100%;
   padding: 24px;
   overflow-y: auto;
-  background: var(--neon-bg);
+  background: var(--bde-bg);
 }
 
 .launchpad__header {
@@ -20,20 +20,19 @@
   gap: 8px;
   margin-bottom: 24px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--neon-cyan-border);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .launchpad__header-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--neon-cyan);
-  box-shadow: 0 0 10px var(--neon-cyan);
+  background: var(--bde-accent);
   animation: neon-breathe 2s ease-in-out infinite;
 }
 
 .launchpad__header-title {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -42,7 +41,7 @@
 
 /* ── Section Labels ── */
 .launchpad__section-label {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -104,26 +103,26 @@
 }
 
 .launchpad__tile-desc {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 10px;
   margin-top: 4px;
 }
 
 .launchpad__tile--add {
   border-style: dashed;
-  border-color: var(--neon-surface-subtle);
+  border-color: var(--bde-surface);
 }
 
 .launchpad__tile--add:hover {
-  border-color: var(--neon-text-dim);
+  border-color: var(--bde-text-dim);
 }
 
 .launchpad__tile--add .launchpad__tile-icon {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .launchpad__tile--add .launchpad__tile-name {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 /* ── Bottom Prompt Bar ── */
@@ -133,16 +132,16 @@
   align-items: center;
   gap: 8px;
   padding-top: 14px;
-  border-top: 1px solid var(--neon-surface-dim);
+  border-top: 1px solid var(--bde-border);
 }
 
 .launchpad__prompt-input {
   flex: 1;
-  background: var(--neon-surface-dim);
-  border: 1px solid var(--neon-surface-subtle);
+  background: var(--bde-border);
+  border: 1px solid var(--bde-surface);
   border-radius: 10px;
   padding: 12px 16px;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   outline: none;
   transition: border-color 200ms ease;
@@ -152,11 +151,11 @@
 }
 
 .launchpad__prompt-input::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .launchpad__prompt-input:focus-visible {
-  border-color: var(--neon-cyan-border);
+  border-color: var(--bde-accent-border);
 }
 
 .launchpad__prompt-input:focus-visible {
@@ -173,11 +172,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--neon-cyan-surface);
-  border: 1px solid var(--neon-cyan-border);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 10px;
   padding: 12px 18px;
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -186,9 +185,8 @@
 }
 
 .launchpad__submit-btn:hover:not(:disabled) {
-  background: var(--neon-cyan);
-  color: var(--neon-bg);
-  box-shadow: 0 0 20px var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  color: var(--bde-bg);
   transform: translateY(-1px);
 }
 
@@ -212,10 +210,10 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   padding: 6px 10px;
-  border: 1px solid var(--neon-surface-dim);
+  border: 1px solid var(--bde-border);
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
@@ -224,14 +222,14 @@
 }
 
 .launchpad__repo-chip:hover {
-  border-color: var(--neon-surface-subtle);
+  border-color: var(--bde-surface);
 }
 
 .launchpad__repo-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--neon-cyan);
+  background: var(--bde-accent);
   opacity: 0.5;
 }
 
@@ -249,8 +247,8 @@
   min-width: 160px;
   max-height: 240px;
   overflow-y: auto;
-  background: var(--neon-surface-dim);
-  border: 1px solid var(--neon-surface-subtle);
+  background: var(--bde-border);
+  border: 1px solid var(--bde-surface);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   margin-top: 4px;
@@ -258,7 +256,7 @@
 
 .launchpad__repo-dropdown-empty {
   padding: 12px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   text-align: center;
 }
@@ -273,20 +271,20 @@
   background: none;
   border: none;
   font-size: 11px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   cursor: pointer;
   transition: background-color 150ms ease;
 }
 
 .launchpad__repo-dropdown-option--current {
-  background: var(--neon-cyan-surface);
-  color: var(--neon-cyan);
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
 }
 
 .launchpad__repo-dropdown-option:not(.launchpad__repo-dropdown-option--current):hover,
 .launchpad__repo-dropdown-option:focus-visible {
-  background: var(--neon-surface-subtle);
-  color: var(--neon-text);
+  background: var(--bde-surface);
+  color: var(--bde-text);
   outline: none;
 }
 
@@ -309,20 +307,20 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 150ms ease;
-  border: 1px solid var(--neon-surface-dim);
-  color: var(--neon-text-dim);
-  background: var(--neon-surface-dim);
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text-dim);
+  background: var(--bde-border);
 }
 
 .launchpad__model-pill:hover {
-  border-color: var(--neon-surface-subtle);
-  color: var(--neon-text-muted);
+  border-color: var(--bde-surface);
+  color: var(--bde-text-muted);
 }
 
 .launchpad__model-pill--active {
-  border-color: var(--neon-cyan-border);
-  color: var(--neon-cyan);
-  background: var(--neon-cyan-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
 }
 
 /* ── Defaults Row ── */

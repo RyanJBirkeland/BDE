@@ -53,14 +53,14 @@ export function EpicList({
   const getStatusColor = (status: TaskGroup['status']): string => {
     switch (status) {
       case 'completed':
-        return tokens.neon.cyan
+        return tokens.color.accent
       case 'in-pipeline':
-        return tokens.neon.blue
+        return tokens.status.review
       case 'ready':
-        return tokens.neon.cyan
+        return tokens.color.accent
       case 'draft':
       default:
-        return tokens.neon.textMuted
+        return tokens.color.textMuted
     }
   }
 
@@ -85,10 +85,10 @@ export function EpicList({
   }
 
   const getProgressColor = (percent: number): string => {
-    if (percent === 100) return tokens.neon.cyan
-    if (percent >= 50) return tokens.neon.blue
-    if (percent > 0) return tokens.neon.orange
-    return tokens.neon.textDim
+    if (percent === 100) return tokens.color.accent
+    if (percent >= 50) return tokens.status.review
+    if (percent > 0) return tokens.color.warning
+    return tokens.color.textDim
   }
 
   const activeGroups = groups.filter((g) => g.status !== 'completed')

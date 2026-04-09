@@ -127,28 +127,28 @@ describe('computeDagLayout', () => {
 
 describe('getNodeColor', () => {
   it('returns appropriate colors for each status', () => {
-    expect(getNodeColor('backlog')).toContain('dim')
-    expect(getNodeColor('queued')).toContain('cyan')
-    expect(getNodeColor('blocked')).toContain('orange')
-    expect(getNodeColor('active')).toContain('purple')
-    expect(getNodeColor('review')).toContain('blue')
-    expect(getNodeColor('done')).toContain('pink')
-    expect(getNodeColor('cancelled')).toContain('red')
-    expect(getNodeColor('failed')).toContain('red')
-    expect(getNodeColor('error')).toContain('red')
+    expect(getNodeColor('backlog')).toContain('bde-text-muted')
+    expect(getNodeColor('queued')).toContain('bde-accent')
+    expect(getNodeColor('blocked')).toContain('bde-warning')
+    expect(getNodeColor('active')).toContain('bde-status-active')
+    expect(getNodeColor('review')).toContain('bde-status-review')
+    expect(getNodeColor('done')).toContain('bde-status-done')
+    expect(getNodeColor('cancelled')).toContain('bde-danger')
+    expect(getNodeColor('failed')).toContain('bde-danger')
+    expect(getNodeColor('error')).toContain('bde-danger')
   })
 
   it('returns dim color for unknown status', () => {
-    expect(getNodeColor('unknown' as any)).toContain('dim')
+    expect(getNodeColor('unknown' as any)).toContain('bde-text-muted')
   })
 })
 
 describe('getEdgeColor', () => {
   it('returns purple for hard edges', () => {
-    expect(getEdgeColor('hard')).toContain('purple')
+    expect(getEdgeColor('hard')).toContain('bde-status-active')
   })
 
   it('returns dim for soft edges', () => {
-    expect(getEdgeColor('soft')).toContain('dim')
+    expect(getEdgeColor('soft')).toContain('bde-text-muted')
   })
 })

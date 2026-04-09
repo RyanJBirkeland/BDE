@@ -58,8 +58,7 @@ export function ActivityFeed({
           <div
             className="activity-feed__dot"
             style={{
-              background: neonVar(event.accent, 'color'),
-              boxShadow: neonVar(event.accent, 'glow')
+              background: neonVar(event.accent, 'color')
             }}
           />
           <span className="activity-feed__label">{event.label}</span>

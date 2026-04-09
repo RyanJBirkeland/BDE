@@ -11,8 +11,8 @@ describe('NeonBadge', () => {
   it('applies accent color styling', () => {
     const { container } = render(<NeonBadge accent="pink" label="queued" />)
     const badge = container.firstChild as HTMLElement
-    expect(badge.style.color).toBe('var(--neon-pink)')
-    expect(badge.style.background).toContain('var(--neon-pink-surface)')
+    expect(badge.style.color).toBe('var(--bde-status-done)')
+    expect(badge.style.background).toContain('var(--bde-accent-surface)')
   })
 
   it('adds pulse class when pulse prop is true', () => {

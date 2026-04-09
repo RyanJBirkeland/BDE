@@ -37,7 +37,7 @@ export function PipelineFlow({ stages }: PipelineFlowProps): React.JSX.Element {
             <span
               data-role="pipeline-arrow"
               style={{
-                color: tokens.neon.textDim,
+                color: tokens.color.textDim,
                 fontSize: tokens.size.lg
               }}
             >

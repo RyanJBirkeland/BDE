@@ -11,7 +11,7 @@
    The zone inherits the app background and has -webkit-app-region: drag
    so it acts as a seamless extension of the titlebar. */
 .app-shell {
-  background: var(--neon-bg);
+  background: var(--bde-bg);
   padding-top: 28px;
 }
 
@@ -24,12 +24,12 @@
   right: 0;
   height: 28px;
   -webkit-app-region: drag;
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
   z-index: 11;
 }
 
 .app-shell__body {
-  background: var(--neon-bg);
+  background: var(--bde-bg);
 }
 
 /* ── Unified Header ── */
@@ -37,8 +37,8 @@
   height: 44px;
   display: flex;
   align-items: stretch;
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
-  border-bottom: 1px solid var(--neon-purple-border);
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
+  border-bottom: 1px solid var(--bde-accent-border);
   -webkit-app-region: drag;
   flex-shrink: 0;
   position: relative;
@@ -57,7 +57,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid var(--neon-purple-border);
+  border-right: 1px solid var(--bde-accent-border);
 }
 
 .unified-header__logo {
@@ -72,15 +72,14 @@
 }
 
 .unified-header__logo:hover {
-  background: var(--neon-purple-surface);
+  background: var(--bde-accent-surface);
 }
 
 .unified-header__logo-letter {
-  color: var(--neon-purple);
+  color: var(--bde-status-active);
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 1px;
-  text-shadow: var(--neon-purple-glow);
 }
 
 .unified-header__tabs {
@@ -116,7 +115,7 @@
   padding: 0 12px;
   gap: 6px;
   font-size: 11px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   cursor: pointer;
   -webkit-app-region: no-drag;
   border-radius: 6px;
@@ -129,14 +128,14 @@
 }
 
 .header-tab:hover {
-  color: var(--neon-text-muted);
-  background: var(--neon-surface-dim);
+  color: var(--bde-text-muted);
+  background: var(--bde-border);
 }
 
 .header-tab--active {
-  color: var(--neon-text);
-  background: var(--neon-surface-deep);
-  border-color: var(--neon-purple-border);
+  color: var(--bde-text);
+  background: var(--bde-surface-high);
+  border-color: var(--bde-accent-border);
   font-weight: 500;
 }
 
@@ -144,8 +143,8 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--neon-cyan);
-  box-shadow: var(--neon-cyan-glow);
+  background: var(--bde-accent);
+  box-shadow: transparent;
   flex-shrink: 0;
 }
 
@@ -156,7 +155,7 @@
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   cursor: pointer;
   transition:
     color 100ms ease,
@@ -172,15 +171,15 @@
 }
 
 .header-tab__close:hover:not(:disabled) {
-  color: var(--neon-text);
-  background: var(--neon-surface-subtle);
+  color: var(--bde-text);
+  background: var(--bde-surface);
 }
 
 /* ── Neon Sidebar ── */
 .neon-sidebar {
   width: 52px;
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
-  border-right: 1px solid var(--neon-purple-border);
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
+  border-right: 1px solid var(--bde-accent-border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -221,21 +220,21 @@
   transition:
     background 150ms ease,
     color 150ms ease;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   border: none;
   background: transparent;
   padding: 0;
 }
 
 .sidebar-item:hover {
-  background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  background: var(--bde-accent-surface);
+  color: var(--bde-text);
 }
 
 .sidebar-item--active {
-  background: var(--neon-purple-surface);
-  color: var(--neon-purple);
-  box-shadow: inset 3px 0 0 var(--neon-purple);
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-active);
+  box-shadow: inset 3px 0 0 var(--bde-status-active);
 }
 
 .sidebar-item__open-dot {
@@ -245,8 +244,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--neon-cyan);
-  box-shadow: 0 0 4px var(--neon-cyan);
+  background: var(--bde-accent);
 }
 
 .sidebar-item__badge {
@@ -256,8 +254,8 @@
   min-width: 16px;
   height: 16px;
   border-radius: 8px;
-  background: var(--neon-orange);
-  color: var(--neon-bg);
+  background: var(--bde-warning);
+  color: var(--bde-bg);
   font-size: 10px;
   font-weight: 700;
   display: flex;
@@ -268,17 +266,15 @@
 }
 
 .sidebar-item__badge--red {
-  background: var(--neon-red);
-  box-shadow: 0 0 6px var(--neon-red-border, rgba(255, 70, 70, 0.6));
+  background: var(--bde-danger);
 }
 
 .sidebar-item__badge--blue {
-  background: var(--neon-blue);
-  box-shadow: 0 0 6px var(--neon-blue-border, rgba(70, 130, 255, 0.6));
+  background: var(--bde-status-review);
 }
 
 .sidebar-item__badge--orange {
-  background: var(--neon-orange);
+  background: var(--bde-warning);
 }
 
 /* ── Sidebar Context Menu ── */
@@ -286,9 +282,8 @@
   position: fixed;
   z-index: 1000;
   background: var(--bde-overlay);
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
-  backdrop-filter: blur(16px) saturate(180%);
   padding: 4px 0;
   min-width: 200px;
 }
@@ -300,7 +295,7 @@
   padding: 8px 12px;
   background: none;
   border: none;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
   cursor: pointer;
   transition:
@@ -310,8 +305,8 @@
 
 .sidebar-context-menu__item:hover,
 .sidebar-context-menu__item:focus-visible {
-  background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  background: var(--bde-accent-surface);
+  color: var(--bde-text);
   outline: none;
 }
 
@@ -321,12 +316,10 @@
   z-index: 1000;
   padding: 6px 12px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--neon-purple-surface), var(--neon-surface-deep));
-  border: 1px solid var(--neon-purple-border);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  box-shadow: var(--neon-glass-shadow);
-  color: var(--neon-text);
+  background: linear-gradient(135deg, var(--bde-accent-surface), var(--bde-surface-high));
+  border: 1px solid var(--bde-accent-border);
+  box-shadow: none;
+  color: var(--bde-text);
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
@@ -335,7 +328,7 @@
 }
 
 .neon-tooltip__shortcut {
-  color: var(--neon-purple);
+  color: var(--bde-status-active);
   margin-left: 8px;
   font-size: 10px;
   font-family: var(--bde-font-code);
@@ -365,7 +358,7 @@
   gap: 8px;
   padding: 8px 12px;
   cursor: pointer;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
   transition:
     background 100ms ease,
@@ -378,13 +371,13 @@
 }
 
 .overflow-menu__item:hover {
-  background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  background: var(--bde-accent-surface);
+  color: var(--bde-text);
 }
 
 .overflow-menu__item-pin {
   margin-left: auto;
-  color: var(--neon-purple);
+  color: var(--bde-status-active);
   font-size: 10px;
   opacity: 0;
   transition: opacity 100ms ease;
@@ -403,14 +396,14 @@
 .overflow-menu__empty {
   padding: 12px;
   font-size: 11px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   text-align: center;
 }
 
 .overflow-menu__separator {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid var(--neon-purple-border);
+  border-top: 1px solid var(--bde-accent-border);
 }
 
 .overflow-menu__customize-btn {
@@ -425,7 +418,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   transition:
     background 100ms ease,
     color 100ms ease;
@@ -434,8 +427,8 @@
 
 .overflow-menu__customize-btn:hover:not(:disabled),
 .overflow-menu__customize-btn:focus-visible {
-  background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  background: var(--bde-accent-surface);
+  color: var(--bde-text);
   outline: none;
 }
 
@@ -446,8 +439,8 @@
   align-items: center;
   padding: 0 10px;
   font-size: 10px;
-  color: var(--neon-text-dim);
-  background: var(--neon-surface-deep);
+  color: var(--bde-text-dim);
+  background: var(--bde-surface-high);
   border-bottom: 1px solid var(--bde-border);
   cursor: pointer;
   transition: color 100ms ease;
@@ -455,11 +448,11 @@
 }
 
 .panel-label-slim:hover {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 .panel-label-dirty-dot {
-  color: var(--neon-purple);
+  color: var(--bde-status-active);
   font-size: 14px;
   line-height: 1;
 }
@@ -468,10 +461,10 @@
 .sidebar-model-badge {
   padding: 3px 4px;
   border-radius: 6px;
-  background: var(--neon-purple-surface);
-  border: 1px solid var(--neon-purple-border);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
   font-size: 7px;
-  color: var(--neon-purple);
+  color: var(--bde-status-active);
   font-family: var(--bde-font-code);
   text-align: center;
   max-width: 48px;
@@ -557,15 +550,15 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: var(--neon-surface);
-  border: 1px solid var(--neon-cyan-border);
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
   box-shadow: var(--bde-shadow-lg);
   width: min(560px, 80vw);
   font-family: var(--bde-font-code);
 }
 .quick-create-bar__icon {
-  color: var(--neon-cyan);
+  color: var(--bde-accent);
   flex-shrink: 0;
 }
 .quick-create-bar__input {
@@ -573,12 +566,12 @@
   background: transparent;
   border: none;
   outline: none;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   font-family: var(--bde-font-code);
 }
 .quick-create-bar__input::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 .quick-create-bar__hints {
   display: flex;
@@ -590,17 +583,17 @@
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 .quick-create-bar__hint kbd {
   padding: 1px 4px;
   border-radius: 3px;
-  background: var(--neon-surface-deep);
-  border: 1px solid var(--neon-border);
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-border);
   font-size: 9px;
 }
 .quick-create-bar__hint--queue {
-  color: var(--neon-orange);
+  color: var(--bde-warning);
 }
 
 /* ── Reduced motion ── */

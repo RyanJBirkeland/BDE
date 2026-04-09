@@ -153,7 +153,7 @@ export function DagOverlay({
                     width={NODE_WIDTH}
                     height={NODE_HEIGHT}
                     rx={6}
-                    fill="var(--neon-surface)"
+                    fill="var(--bde-surface)"
                     stroke={fillColor}
                     strokeWidth={isSelected ? 3 : 1.5}
                     opacity={isSelected ? 1 : 0.8}
@@ -173,7 +173,7 @@ export function DagOverlay({
                     x={NODE_WIDTH / 2}
                     y={NODE_HEIGHT / 2 + 8}
                     textAnchor="middle"
-                    fill="var(--neon-text-dim)"
+                    fill="var(--bde-text-muted)"
                     fontSize={10}
                     fontFamily="var(--bde-font-code)"
                   >

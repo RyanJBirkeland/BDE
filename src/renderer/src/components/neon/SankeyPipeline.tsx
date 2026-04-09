@@ -4,7 +4,7 @@ import type { StatusFilter } from '../../stores/sprintUI'
 import type { NeonAccent } from './types'
 import { neonVar } from './types'
 import { formatCount, STAGE_CONFIG, STAGE_TO_FILTER, type SankeyStageKey } from './sankey-utils'
-import '../../assets/sankey-pipeline-neon.css'
+import '../../assets/sankey-pipeline.css'
 
 interface SankeyPipelineProps {
   stages: {
@@ -275,7 +275,7 @@ export function SankeyPipeline({
               fill={neonVar(config.accent, 'color')}
               fontSize={config.problem ? 14 : 18}
               fontWeight={700}
-              style={{ textShadow: neonVar(config.accent, 'glow') }}
+              style={{}}
             >
               {formatCount(count)}
             </text>

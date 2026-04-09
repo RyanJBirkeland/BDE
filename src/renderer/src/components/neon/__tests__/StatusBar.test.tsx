@@ -44,6 +44,6 @@ describe('StatusBar', () => {
   it('uses neon border token for bottom border', () => {
     const { container } = render(<StatusBar title="Test" status="ok" accent="cyan" />)
     const bar = container.firstChild as HTMLElement
-    expect(bar.style.borderBottom).toContain('var(--neon-cyan-border)')
+    expect(bar.style.borderBottom).toContain('var(--bde-accent-border)')
   })
 })

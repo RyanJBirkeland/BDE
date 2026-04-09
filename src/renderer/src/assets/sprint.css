@@ -458,8 +458,6 @@
   bottom: 0;
   width: 420px;
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-lg) var(--glass-saturate);
   border-left: 1px solid var(--bde-border);
   z-index: 50;
   display: flex;
@@ -486,8 +484,6 @@
   align-items: flex-start;
   justify-content: space-between;
   background: var(--glass-tint-mid);
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   position: relative;
 }
 
@@ -763,7 +759,6 @@
   right: 0;
   height: 50vh;
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   border-top: 1px solid var(--bde-border);
   border-radius: 12px 12px 0 0;
   display: flex;
@@ -792,8 +787,6 @@
   border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
   background: var(--glass-tint-mid);
-  backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   position: relative;
 }
 
@@ -1658,3 +1651,71 @@ tr:hover .bde-task-table__action-btn--done {
 }
 
 /* Task list styles moved to sprint-neon.css */
+/* src/renderer/src/assets/sprint-neon.css */
+/* ═══════════════════════════════════════════════════════
+   Neon Sprint Styles — Legacy styles retained for compatibility
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Count Badge ── */
+.bde-count-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--bde-text-muted);
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border-hover);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* ── Circuit Pipeline ── */
+.circuit-pipeline {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--bde-accent-border);
+  background: linear-gradient(180deg, var(--bde-accent-surface), transparent);
+}
+
+.circuit-pipeline__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: var(--bde-accent);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.circuit-pipeline__stages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.circuit-pipeline__stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid transparent;
+  background: none;
+  font-family: inherit;
+}
+
+.circuit-pipeline__stage:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+
+.circuit-pipeline__stage--active {
+}
+
+.circuit-pipeline__arrow {
+  color: var(--bde-text-dim);
+  font-size: 10px;
+}

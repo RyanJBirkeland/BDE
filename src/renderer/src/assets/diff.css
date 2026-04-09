@@ -140,8 +140,6 @@
   display: flex;
   flex-direction: column;
   background: var(--glass-tint-dark);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
   border-right: 1px solid var(--bde-border);
   overflow: hidden;
 }
@@ -509,4 +507,255 @@
   padding: 0 6px;
   border-radius: 9999px;
   margin-left: auto;
+}
+/* ────────────────────────────────────────────────────────
+   Diff Viewer - Neon Design Token Migration
+
+   This file overrides color/surface tokens in diff.css,
+   migrating from BDE tokens to neon tokens.
+
+   SCOPE: Diff viewer only (.diff-view*, .diff-sidebar*,
+   .diff-file*, .diff-hunk*, .diff-line*, .diff-comment-*)
+
+   GIT CLIENT CLASSES (.git-*) are NOT modified here.
+──────────────────────────────────────────────────────── */
+
+/* ── Diff View Header ──────────────────────────────────── */
+
+.diff-view__header {
+  border-bottom: 1px solid var(--bde-accent-border);
+  background: var(--bde-surface-high);
+}
+
+.diff-view__header::before {
+  /* DIFF label gradient */
+  background: linear-gradient(135deg, var(--bde-accent), var(--bde-status-active));
+}
+
+.diff-view__header::after {
+  /* Bottom gradient line */
+  background: linear-gradient(90deg, transparent, var(--bde-accent-border), transparent);
+}
+
+/* ── Diff View Chips (Repo Selector) ───────────────────── */
+
+.diff-view__chip {
+  border: 1px solid var(--bde-accent-border);
+  color: var(--bde-text-muted);
+}
+
+.diff-view__chip:hover {
+  color: var(--bde-text);
+  border-color: var(--bde-text-muted);
+}
+
+.diff-view__chip--active {
+  background: var(--bde-accent);
+  color: var(--bde-bg);
+  border-color: var(--bde-accent);
+}
+
+/* ── Diff View Meta (Branch, PR Link, Error, Loading) ─── */
+
+.diff-view__branch {
+  color: var(--bde-text-muted);
+  background: var(--bde-accent-border);
+}
+
+.diff-view__pr-link {
+  color: var(--bde-accent);
+}
+
+.diff-view__error {
+  background: var(--bde-danger-surface);
+  color: var(--bde-danger);
+}
+
+.diff-view__loading {
+  color: var(--bde-text-muted);
+}
+
+/* ── Diff Sidebar ──────────────────────────────────────── */
+
+.diff-sidebar {
+  background: var(--bde-accent-surface);
+  border-right: 1px solid var(--bde-accent-border);
+}
+
+.diff-sidebar__header {
+  border-bottom: 1px solid var(--bde-accent-border);
+}
+
+.diff-sidebar__title {
+  color: var(--bde-text);
+}
+
+.diff-sidebar__count {
+  color: var(--bde-text-muted);
+  background: var(--bde-accent-border);
+}
+
+/* ── Diff File Items (Sidebar List) ────────────────────── */
+
+.diff-file-item {
+  color: var(--bde-text);
+}
+
+.diff-file-item:hover {
+  background: var(--bde-border);
+}
+
+.diff-file-item--active {
+  background: var(--bde-border);
+  /* Neon enhancement: cyan left indicator */
+  box-shadow: inset 2px 0 0 var(--bde-accent);
+}
+
+/* Keep diff colors (green/red) as-is */
+/* .diff-file-item__add uses var(--bde-diff-add) */
+/* .diff-file-item__del uses var(--bde-diff-del) */
+
+/* ── Diff Content ──────────────────────────────────────── */
+
+.diff-content {
+  background: var(--bde-bg);
+}
+
+.diff-file {
+  border-bottom: 1px solid var(--bde-accent-border);
+}
+
+.diff-file__header {
+  background: var(--bde-accent-surface);
+  border-bottom: 1px solid var(--bde-accent-border);
+}
+
+.diff-file--active {
+  background: var(--bde-accent-border);
+}
+
+.diff-file__path {
+  color: var(--bde-text);
+}
+
+/* Keep diff stats colors (green/red) as-is */
+/* .diff-file__stats-add uses var(--bde-diff-add) */
+/* .diff-file__stats-del uses var(--bde-diff-del) */
+
+/* ── Diff Hunks ────────────────────────────────────────── */
+
+.diff-hunk--focused {
+  /* Neon enhancement: cyan outline */
+  outline: 1px solid var(--bde-accent);
+}
+
+.diff-hunk__header {
+  color: var(--bde-text-muted);
+  background: var(--bde-border);
+  border-bottom: 1px solid var(--bde-accent-border);
+}
+
+/* ── Diff Lines ────────────────────────────────────────── */
+
+/* Keep add/del backgrounds and colors as-is */
+/* .diff-line--add uses var(--bde-diff-add-bg) and var(--bde-diff-add) */
+/* .diff-line--del uses var(--bde-diff-del-bg) and var(--bde-diff-del) */
+
+.diff-line--ctx {
+  color: var(--bde-text);
+}
+
+.diff-line__gutter {
+  color: var(--bde-text-muted);
+}
+
+/* ── Line Selection ────────────────────────────────────── */
+
+.diff-line--selected {
+  background: var(--bde-accent-surface) !important;
+}
+
+.diff-line__gutter--selectable:hover {
+  background: var(--bde-accent-surface);
+}
+
+.diff-selection-trigger {
+  background: var(--bde-accent);
+  color: var(--bde-bg);
+}
+
+/* ── Inline Comment Widget ─────────────────────────────── */
+
+.diff-comment-widget {
+  border: 1px solid var(--bde-accent-border);
+  background: var(--bde-bg);
+}
+
+.diff-comment-widget__toggle {
+  color: var(--bde-text-muted);
+  background: var(--bde-accent-surface);
+}
+
+.diff-comment-widget__toggle:hover {
+  background: var(--bde-surface);
+}
+
+.diff-comment-widget__comment {
+  border-top: 1px solid var(--bde-accent-border);
+}
+
+.diff-comment-widget__author {
+  color: var(--bde-text);
+}
+
+.diff-comment-widget__time {
+  color: var(--bde-text-dim);
+}
+
+.diff-comment-widget__body {
+  color: var(--bde-text);
+}
+
+.diff-comment-widget__body code {
+  background: var(--bde-accent-surface);
+}
+
+/* ── Comment Composer ──────────────────────────────────── */
+
+.diff-comment-composer {
+  border: 1px solid var(--bde-accent-border);
+  background: var(--bde-bg);
+  /* Neon enhancement: subtle glow on focus (via border) */
+}
+
+.diff-comment-composer__input {
+  color: var(--bde-text);
+  background: var(--bde-accent-surface);
+}
+
+.diff-comment-composer__input::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.diff-comment-composer__actions {
+  border-top: 1px solid var(--bde-accent-border);
+}
+
+/* ── Pending Comment Badge ─────────────────────────────── */
+
+.diff-comment-widget--pending {
+  border-color: var(--bde-warning);
+}
+
+.diff-pending-comment__remove {
+  color: var(--bde-danger);
+}
+
+.diff-pending-comment__remove:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+}
+
+.diff-comment-widget__pending-badge {
+  color: var(--bde-warning);
+  background: var(--bde-warning-surface);
 }

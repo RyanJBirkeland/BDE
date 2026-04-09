@@ -17,46 +17,46 @@ const ACCENT_VARS: Record<
   { bg: string; border: string; color: string; glow: string; hover: string }
 > = {
   cyan: {
-    bg: 'var(--neon-cyan-surface)',
-    border: 'var(--neon-cyan-border)',
-    color: 'var(--neon-cyan)',
-    glow: 'var(--neon-cyan-glow)',
-    hover: 'var(--neon-cyan-border)'
+    bg: 'var(--bde-accent-surface)',
+    border: 'var(--bde-accent-border)',
+    color: 'var(--bde-accent)',
+    glow: 'transparent',
+    hover: 'var(--bde-accent-border)'
   },
   pink: {
-    bg: 'var(--neon-pink-surface)',
-    border: 'var(--neon-pink-border)',
-    color: 'var(--neon-pink)',
-    glow: 'var(--neon-pink-glow)',
-    hover: 'var(--neon-pink-border)'
+    bg: 'var(--bde-accent-surface)',
+    border: 'var(--bde-accent-border)',
+    color: 'var(--bde-status-done)',
+    glow: 'transparent',
+    hover: 'var(--bde-accent-border)'
   },
   blue: {
-    bg: 'var(--neon-blue-surface)',
-    border: 'var(--neon-blue-border)',
-    color: 'var(--neon-blue)',
-    glow: 'var(--neon-blue-glow)',
-    hover: 'var(--neon-blue-border)'
+    bg: 'var(--bde-accent-surface)',
+    border: 'var(--bde-accent-border)',
+    color: 'var(--bde-status-review)',
+    glow: 'transparent',
+    hover: 'var(--bde-accent-border)'
   },
   purple: {
-    bg: 'var(--neon-purple-surface)',
-    border: 'var(--neon-purple-border)',
-    color: 'var(--neon-purple)',
-    glow: 'var(--neon-purple-glow)',
-    hover: 'var(--neon-purple-border)'
+    bg: 'var(--bde-accent-surface)',
+    border: 'var(--bde-accent-border)',
+    color: 'var(--bde-status-active)',
+    glow: 'transparent',
+    hover: 'var(--bde-accent-border)'
   },
   orange: {
-    bg: 'var(--neon-orange-surface)',
-    border: 'var(--neon-orange-border)',
-    color: 'var(--neon-orange)',
-    glow: 'var(--neon-orange-glow)',
-    hover: 'var(--neon-orange-border)'
+    bg: 'var(--bde-warning-surface)',
+    border: 'var(--bde-warning-border)',
+    color: 'var(--bde-warning)',
+    glow: 'transparent',
+    hover: 'var(--bde-warning-border)'
   },
   red: {
-    bg: 'var(--neon-red-surface)',
-    border: 'var(--neon-red-border)',
-    color: 'var(--neon-red)',
-    glow: 'var(--neon-red-glow)',
-    hover: 'var(--neon-red-border)'
+    bg: 'var(--bde-danger-surface)',
+    border: 'var(--bde-danger-border)',
+    color: 'var(--bde-danger)',
+    glow: 'transparent',
+    hover: 'var(--bde-danger-border)'
   }
 }
 

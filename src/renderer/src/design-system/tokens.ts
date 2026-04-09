@@ -19,16 +19,31 @@ export const tokens = {
     borderHover: 'var(--bde-border-hover)',
     accent: 'var(--bde-accent)',
     accentDim: 'var(--bde-accent-dim)',
+    accentSurface: 'var(--bde-accent-surface)',
+    accentBorder: 'var(--bde-accent-border)',
     text: 'var(--bde-text)',
     textMuted: 'var(--bde-text-muted)',
     textDim: 'var(--bde-text-dim)',
     danger: 'var(--bde-danger)',
     dangerDim: 'var(--bde-danger-dim)',
+    dangerSurface: 'var(--bde-danger-surface)',
+    dangerBorder: 'var(--bde-danger-border)',
     warning: 'var(--bde-warning)',
     warningDim: 'var(--bde-warning-dim)',
+    warningSurface: 'var(--bde-warning-surface)',
+    warningBorder: 'var(--bde-warning-border)',
     info: 'var(--bde-info)',
     infoDim: 'var(--bde-info-dim)',
     success: 'var(--bde-success)'
+  },
+  status: {
+    active: 'var(--bde-status-active)',
+    review: 'var(--bde-status-review)',
+    blocked: 'var(--bde-warning)',
+    done: 'var(--bde-status-done)',
+    queued: 'var(--bde-accent)',
+    failed: 'var(--bde-danger)',
+    cancelled: 'var(--bde-text-dim)'
   },
   /** Font stacks */
   font: {
@@ -75,22 +90,4 @@ export const tokens = {
     base: '150ms ease', // General interactions
     slow: '200ms ease' // Panel slides, fades
   },
-  neon: {
-    cyan: 'var(--neon-cyan)',
-    pink: 'var(--neon-pink)',
-    blue: 'var(--neon-blue)',
-    purple: 'var(--neon-purple)',
-    orange: 'var(--neon-orange)',
-    red: 'var(--neon-red)',
-    bg: 'var(--neon-bg)',
-    glassBg: 'var(--neon-glass-blur)',
-    glassEdge: 'var(--neon-glass-edge)',
-    glassShadow: 'var(--neon-glass-shadow)',
-    text: 'var(--neon-text)',
-    textMuted: 'var(--neon-text-muted)',
-    textDim: 'var(--neon-text-dim)',
-    surfaceDim: 'var(--neon-surface-dim)',
-    surfaceSubtle: 'var(--neon-surface-subtle)',
-    surfaceDeep: 'var(--neon-surface-deep)'
-  }
 }

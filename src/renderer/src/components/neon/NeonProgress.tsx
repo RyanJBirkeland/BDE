@@ -29,7 +29,7 @@ export function NeonProgress({ value, accent, label }: NeonProgressProps): React
       <div
         style={{
           height: '4px',
-          background: tokens.neon.surfaceDim,
+          background: tokens.color.surface,
           borderRadius: '2px',
           overflow: 'hidden'
         }}
@@ -39,9 +39,8 @@ export function NeonProgress({ value, accent, label }: NeonProgressProps): React
           style={{
             height: '100%',
             width: `${clamped}%`,
-            background: `linear-gradient(90deg, ${neonVar(accent, 'color')}, var(--neon-blue))`,
+            background: `linear-gradient(90deg, ${neonVar(accent, 'color')}, var(--bde-status-review))`,
             borderRadius: '2px',
-            boxShadow: neonVar(accent, 'glow'),
             transition: 'width 300ms ease'
           }}
         />

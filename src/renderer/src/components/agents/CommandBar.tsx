@@ -201,7 +201,7 @@ export function CommandBar({
         <div
           style={{
             padding: '8px 12px',
-            borderBottom: '1px solid var(--neon-purple-border)',
+            borderBottom: '1px solid var(--bde-accent-border)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
@@ -214,14 +214,14 @@ export function CommandBar({
               height: 64,
               width: 'auto',
               borderRadius: 4,
-              border: '1px solid var(--neon-cyan-border)',
+              border: '1px solid var(--bde-accent-border)',
               objectFit: 'contain'
             }}
           />
           <span
             style={{
               fontSize: '11px',
-              color: 'var(--neon-text-dim)',
+              color: 'var(--bde-text-muted)',
               flex: 1,
               fontFamily: 'var(--bde-font-code)'
             }}
@@ -235,9 +235,9 @@ export function CommandBar({
               width: 20,
               height: 20,
               borderRadius: 4,
-              border: '1px solid var(--neon-red-border)',
-              background: 'var(--neon-red-surface)',
-              color: 'var(--neon-red)',
+              border: '1px solid var(--bde-danger-border)',
+              background: 'var(--bde-danger-surface)',
+              color: 'var(--bde-danger)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

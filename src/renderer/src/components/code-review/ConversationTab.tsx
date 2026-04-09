@@ -36,8 +36,8 @@ function RevisionFeedbackHistory({
           alignItems: 'center',
           gap: 6,
           background: 'none',
-          border: '1px solid var(--neon-orange-border, #ccc)',
-          color: 'var(--neon-orange, #c77)',
+          border: '1px solid var(--bde-warning-border)',
+          color: 'var(--bde-warning)',
           padding: '6px 10px',
           borderRadius: 4,
           cursor: 'pointer',
@@ -66,8 +66,8 @@ function RevisionFeedbackHistory({
               key={`${entry.timestamp}-${i}`}
               style={{
                 padding: 8,
-                borderLeft: '2px solid var(--neon-orange, #c77)',
-                background: 'var(--neon-surface-dim, rgba(0,0,0,0.05))',
+                borderLeft: '2px solid var(--bde-warning)',
+                background: 'var(--bde-surface)',
                 fontSize: '0.85rem'
               }}
             >
@@ -75,7 +75,7 @@ function RevisionFeedbackHistory({
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  color: 'var(--neon-text-muted)',
+                  color: 'var(--bde-text-muted)',
                   fontSize: '0.75rem',
                   marginBottom: 4
                 }}

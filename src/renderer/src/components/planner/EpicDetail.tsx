@@ -134,33 +134,33 @@ export function EpicDetail({
   }, [counts.done, tasks.length])
 
   const progressColor = useMemo(() => {
-    if (progressPercent === 100) return tokens.neon.cyan
-    if (progressPercent >= 50) return tokens.neon.blue
-    if (progressPercent > 0) return tokens.neon.orange
-    return tokens.neon.textDim
+    if (progressPercent === 100) return tokens.color.accent
+    if (progressPercent >= 50) return tokens.status.review
+    if (progressPercent > 0) return tokens.color.warning
+    return tokens.color.textDim
   }, [progressPercent])
 
   // Helper to get status dot color — delegates to shared getDotColor
   const getStatusColor = (status: SprintTask['status']): string => {
     switch (status) {
       case 'done':
-        return tokens.neon.pink
+        return tokens.status.done
       case 'active':
-        return tokens.neon.purple
+        return tokens.status.active
       case 'queued':
-        return tokens.neon.cyan
+        return tokens.status.queued
       case 'blocked':
-        return tokens.neon.orange
+        return tokens.status.blocked
       case 'review':
-        return tokens.neon.blue
+        return tokens.status.review
       case 'failed':
       case 'error':
-        return tokens.neon.red
+        return tokens.status.failed
       case 'cancelled':
-        return tokens.neon.textDim
+        return tokens.status.cancelled
       case 'backlog':
       default:
-        return tokens.neon.textMuted
+        return tokens.color.textMuted
     }
   }
 
@@ -358,12 +358,12 @@ export function EpicDetail({
                 top: '100%',
                 right: 0,
                 marginTop: '4px',
-                background: tokens.neon.surfaceDeep,
-                border: `1px solid ${tokens.neon.cyan}40`,
+                background: tokens.color.bg,
+                border: `1px solid ${tokens.color.accent}40`,
                 borderRadius: '4px',
                 minWidth: '160px',
                 zIndex: 100,
-                boxShadow: `0 0 12px ${tokens.neon.cyan}20`
+                boxShadow: 'none'
               }}
             >
               <button
@@ -383,7 +383,7 @@ export function EpicDetail({
                   padding: '8px 12px',
                   background: 'transparent',
                   border: 'none',
-                  color: tokens.neon.text,
+                  color: tokens.color.text,
                   cursor: 'pointer',
                   fontSize: '13px',
                   textAlign: 'left'
@@ -409,7 +409,7 @@ export function EpicDetail({
                   padding: '8px 12px',
                   background: 'transparent',
                   border: 'none',
-                  color: tokens.neon.text,
+                  color: tokens.color.text,
                   cursor: 'pointer',
                   fontSize: '13px',
                   textAlign: 'left'
@@ -434,7 +434,7 @@ export function EpicDetail({
                   padding: '8px 12px',
                   background: 'transparent',
                   border: 'none',
-                  color: tokens.neon.red,
+                  color: tokens.color.danger,
                   cursor: 'pointer',
                   fontSize: '13px',
                   textAlign: 'left'
@@ -459,19 +459,19 @@ export function EpicDetail({
           />
         </div>
         <div className="epic-detail__status-breakdown">
-          <span className="epic-detail__status-count" style={{ color: tokens.neon.cyan }}>
+          <span className="epic-detail__status-count" style={{ color: tokens.status.done }}>
             {counts.done} done
           </span>
-          <span className="epic-detail__status-count" style={{ color: tokens.neon.blue }}>
+          <span className="epic-detail__status-count" style={{ color: tokens.status.active }}>
             {counts.active} active
           </span>
-          <span className="epic-detail__status-count" style={{ color: tokens.neon.orange }}>
+          <span className="epic-detail__status-count" style={{ color: tokens.status.queued }}>
             {counts.queued} queued
           </span>
-          <span className="epic-detail__status-count" style={{ color: tokens.neon.red }}>
+          <span className="epic-detail__status-count" style={{ color: tokens.status.blocked }}>
             {counts.blocked} blocked
           </span>
-          <span className="epic-detail__status-count" style={{ color: tokens.neon.textMuted }}>
+          <span className="epic-detail__status-count" style={{ color: tokens.color.textMuted }}>
             {counts.draft} draft
           </span>
         </div>
@@ -520,7 +520,7 @@ export function EpicDetail({
                     onDragEnd={handleDragEnd}
                     style={{
                       opacity: isDragging ? 0.5 : 1,
-                      borderTop: isDragOver ? `2px solid ${tokens.neon.cyan}` : undefined,
+                      borderTop: isDragOver ? `2px solid ${tokens.color.accent}` : undefined,
                       cursor: 'grab'
                     }}
                   >
@@ -585,10 +585,10 @@ export function EpicDetail({
                           width: '100%',
                           minHeight: '120px',
                           padding: '8px',
-                          background: tokens.neon.surfaceDeep,
-                          border: `1px solid ${tokens.neon.cyan}40`,
+                          background: tokens.color.bg,
+                          border: `1px solid ${tokens.color.accent}40`,
                           borderRadius: '4px',
-                          color: tokens.neon.text,
+                          color: tokens.color.text,
                           fontFamily: 'monospace',
                           fontSize: '13px',
                           resize: 'vertical'
@@ -602,9 +602,9 @@ export function EpicDetail({
                           style={{
                             padding: '6px 12px',
                             background: 'transparent',
-                            border: `1px solid ${tokens.neon.textDim}`,
+                            border: `1px solid ${tokens.color.textDim}`,
                             borderRadius: '4px',
-                            color: tokens.neon.text,
+                            color: tokens.color.text,
                             cursor: saving ? 'not-allowed' : 'pointer',
                             fontSize: '13px'
                           }}
@@ -617,10 +617,10 @@ export function EpicDetail({
                           disabled={saving}
                           style={{
                             padding: '6px 12px',
-                            background: tokens.neon.cyan,
+                            background: tokens.color.accent,
                             border: 'none',
                             borderRadius: '4px',
-                            color: tokens.neon.surfaceDeep,
+                            color: tokens.color.bg,
                             cursor: saving ? 'not-allowed' : 'pointer',
                             fontSize: '13px',
                             fontWeight: 500

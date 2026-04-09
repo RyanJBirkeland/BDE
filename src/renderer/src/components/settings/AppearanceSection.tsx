@@ -96,14 +96,6 @@ export function AppearanceSection(): React.JSX.Element {
           >
             Light
           </button>
-          <button
-            className={`bde-btn bde-btn--sm ${theme === 'warm' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
-            onClick={() => setTheme('warm')}
-            type="button"
-            aria-pressed={theme === 'warm'}
-          >
-            Warm
-          </button>
         </div>
       </SettingsCard>
 

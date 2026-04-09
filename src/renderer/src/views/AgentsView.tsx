@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { Plus, Info, X } from 'lucide-react'
 import '../assets/agents.css'
-import '../assets/agents-neon.css'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useAgentHistoryStore } from '../stores/agentHistory'
 import { useAgentEventsStore } from '../stores/agentEvents'
@@ -261,7 +260,7 @@ export function AgentsView(): React.JSX.Element {
         flexDirection: 'column',
         height: '100%',
         minWidth: 600,
-        background: 'var(--neon-bg)'
+        background: 'var(--bde-bg)'
       }}
       variants={VARIANTS.fadeIn}
       initial="initial"
@@ -280,7 +279,7 @@ export function AgentsView(): React.JSX.Element {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '10px 12px',
-              borderBottom: '1px solid var(--neon-purple-border)'
+              borderBottom: '1px solid var(--bde-accent-border)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -303,15 +302,15 @@ export function AgentsView(): React.JSX.Element {
                 <Info
                   size={14}
                   style={{
-                    color: 'var(--neon-text-dim)',
+                    color: 'var(--bde-text-muted)',
                     cursor: 'help',
                     transition: 'color 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--neon-cyan)'
+                    e.currentTarget.style.color = 'var(--bde-accent)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--neon-text-dim)'
+                    e.currentTarget.style.color = 'var(--bde-text-muted)'
                   }}
                   aria-describedby="scratchpad-tooltip"
                 />
@@ -325,17 +324,17 @@ export function AgentsView(): React.JSX.Element {
                       left: '0',
                       width: '240px',
                       padding: '8px 10px',
-                      background: 'var(--neon-purple-surface)',
-                      border: '1px solid var(--neon-purple-border)',
+                      background: 'var(--bde-accent-surface)',
+                      border: '1px solid var(--bde-accent-border)',
                       borderRadius: '6px',
                       fontSize: '10px',
                       lineHeight: 1.4,
-                      color: 'var(--neon-text-dim)',
+                      color: 'var(--bde-text-muted)',
                       zIndex: 1000,
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                     }}
                   >
-                    <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run
+                    <strong style={{ color: 'var(--bde-accent)' }}>Scratchpad.</strong> Agents here run
                     in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
                     finishes, click <em>Promote to Code Review</em> in its console header to flow the
                     work into the review queue. For tracked sprint work, queue tasks from{' '}
@@ -354,9 +353,9 @@ export function AgentsView(): React.JSX.Element {
                 width: 24,
                 height: 24,
                 borderRadius: 6,
-                border: '1px solid var(--neon-cyan-border)',
-                background: 'var(--neon-cyan-surface)',
-                color: 'var(--neon-cyan)',
+                border: '1px solid var(--bde-accent-border)',
+                background: 'var(--bde-accent-surface)',
+                color: 'var(--bde-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -376,16 +375,16 @@ export function AgentsView(): React.JSX.Element {
                 fontSize: '10px',
                 lineHeight: 1.4,
                 padding: '8px 12px',
-                borderBottom: '1px solid var(--neon-purple-border)',
-                background: 'var(--neon-purple-surface)',
-                color: 'var(--neon-text-dim)',
+                borderBottom: '1px solid var(--bde-accent-border)',
+                background: 'var(--bde-accent-surface)',
+                color: 'var(--bde-text-muted)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '8px'
               }}
             >
               <div style={{ flex: 1 }}>
-                <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run in
+                <strong style={{ color: 'var(--bde-accent)' }}>Scratchpad.</strong> Agents here run in
                 isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
                 finishes, click <em>Promote to Code Review</em> in its console header to flow the work
                 into the review queue. For tracked sprint work, queue tasks from{' '}
@@ -397,7 +396,7 @@ export function AgentsView(): React.JSX.Element {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'var(--neon-text-dim)',
+                  color: 'var(--bde-text-muted)',
                   cursor: 'pointer',
                   padding: 0,
                   display: 'flex',
@@ -407,10 +406,10 @@ export function AgentsView(): React.JSX.Element {
                   transition: 'color 0.2s'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--neon-cyan)'
+                  e.currentTarget.style.color = 'var(--bde-accent)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--neon-text-dim)'
+                  e.currentTarget.style.color = 'var(--bde-text-muted)'
                 }}
               >
                 <X size={14} />

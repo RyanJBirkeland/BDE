@@ -624,14 +624,11 @@
 }
 
 .glass-modal {
-  background: var(--glass-tint-light);
-  backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
-  -webkit-backdrop-filter: var(--glass-blur-xl) var(--glass-saturate);
-  border: 1px solid var(--bde-border-glow);
+  background: #2b2d30;
+  border: 1px solid var(--bde-border);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.6),
-    0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
-    0 0 60px rgba(0, 211, 127, 0.03);
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(78, 81, 87, 0.5) inset;
 }
 
 .glass-highlight {
@@ -678,8 +675,6 @@
 
 .elevation-3-backdrop {
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px) saturate(120%);
-  -webkit-backdrop-filter: blur(8px) saturate(120%);
 }
 
 /* ── 6. Glow Effects ─────────────────────────────────── */
@@ -782,13 +777,9 @@
   border: none;
   cursor: pointer;
   transition: all 0.15s ease-out;
-  box-shadow: 0 0 16px rgba(0, 211, 127, 0.2);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow:
-    0 0 24px rgba(0, 211, 127, 0.3),
-    0 0 8px rgba(0, 211, 127, 0.4);
   filter: brightness(1.1);
 }
 
@@ -847,7 +838,6 @@
   inset: 0;
   z-index: 1000;
   background: var(--bde-overlay);
-  backdrop-filter: blur(4px);
 }
 
 .confirm-modal {
@@ -891,7 +881,6 @@
   inset: 0;
   z-index: 1000;
   background: var(--bde-overlay);
-  backdrop-filter: blur(4px);
 }
 
 .prompt-modal {
@@ -1018,14 +1007,7 @@ html.theme-light .elevation-3-backdrop {
 
 /* ── Pro Dark theme overrides (zero glass/neon effects) ── */
 
-html.theme-pro-dark .glass-modal {
-  background: #2b2d30;
-  backdrop-filter: none;
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.3),
-    0 0 0 0.5px rgba(78, 81, 87, 0.5) inset;
-}
-
+/* Pro Dark: glass-modal values are in the base rule — only non-modal overrides needed */
 html.theme-pro-dark .glass-highlight {
   display: none;
 }
@@ -1042,14 +1024,12 @@ html.theme-pro-dark .elevation-3 {
 
 html.theme-pro-dark .elevation-3-backdrop {
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: none;
 }
 
-/* ── Pro Light theme overrides (zero glass effects) ── */
+/* ── Pro Light theme overrides ── */
 
 html.theme-pro-light .glass-modal {
   background: #ffffff;
-  backdrop-filter: none;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
@@ -1091,18 +1071,16 @@ html.theme-pro-light .elevation-3-backdrop {
 
 .drawer-resize-handle:hover::after,
 .drawer-resize-handle:active::after {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent);
   opacity: 0.6;
 }
 
 /* ── Shared panel separator (react-resizable-panels) ─────────────────────── */
 .panel-separator {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .panel-separator:hover,
 .panel-separator:active {
-  background: var(--neon-cyan);
-  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  background: var(--bde-accent);
 }

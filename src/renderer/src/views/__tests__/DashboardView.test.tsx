@@ -42,15 +42,6 @@ vi.mock('../../stores/dashboardData', () => {
   return { useDashboardDataStore: store }
 })
 
-vi.mock('../../components/neon', async () => {
-  const actual =
-    await vi.importActual<typeof import('../../components/neon')>('../../components/neon')
-  return {
-    ...actual,
-    ScanlineOverlay: () => null,
-    ParticleField: () => null
-  }
-})
 
 // ---------------------------------------------------------------------------
 // Subject + stores

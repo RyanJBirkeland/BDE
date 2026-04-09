@@ -25,8 +25,8 @@ describe('NeonProgress', () => {
     const { container } = render(<NeonProgress value={50} accent="cyan" />)
     const fill = container.querySelector('[data-role="progress-fill"]') as HTMLElement
     const track = fill.parentElement as HTMLElement
-    // tokens.neon.surfaceDim is 'var(--neon-surface-dim)' — jsdom stores the raw value
-    expect(track.style.background).toBe(tokens.neon.surfaceDim)
+    // tokens.color.surface is 'var(--bde-surface)' — jsdom stores the raw value
+    expect(track.style.background).toBe(tokens.color.surface)
   })
 
   it('uses design token for label font size', () => {

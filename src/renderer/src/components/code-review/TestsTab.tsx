@@ -86,8 +86,8 @@ export function TestsTab(): React.JSX.Element {
             fontSize: 11,
             padding: '2px 8px',
             borderRadius: 4,
-            color: last.success ? 'var(--neon-cyan)' : 'var(--neon-red, #ff5c5c)',
-            border: `1px solid ${last.success ? 'var(--neon-cyan-border, rgba(0,255,255,0.4))' : 'var(--neon-red-border, rgba(255,70,70,0.4))'}`,
+            color: last.success ? 'var(--bde-accent)' : 'var(--bde-danger)',
+            border: `1px solid ${last.success ? 'var(--bde-accent-border)' : 'var(--bde-danger-border)'}`,
             textTransform: 'uppercase',
             fontWeight: 600
           }}

@@ -74,26 +74,17 @@ export function MiniChart({ data, height = 80 }: MiniChartProps): React.JSX.Elem
             <stop offset="0%" stopColor={neonVar(accent, 'color')} stopOpacity="0.35" />
             <stop offset="100%" stopColor={neonVar(accent, 'color')} stopOpacity="0.02" />
           </linearGradient>
-          {/* Glow filter for the line */}
-          <filter id={`${uid}-glow`}>
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Gradient fill area */}
         <path d={fillPath} fill={`url(#${uid}-fill)`} />
 
-        {/* Glowing line */}
+        {/* Line */}
         <path
           d={linePath}
           fill="none"
           stroke={neonVar(accent, 'color')}
           strokeWidth="2"
-          filter={`url(#${uid}-glow)`}
           vectorEffect="non-scaling-stroke"
         />
 
@@ -116,8 +107,7 @@ export function MiniChart({ data, height = 80 }: MiniChartProps): React.JSX.Elem
               r={hover === i ? 5 : 3}
               fill={neonVar(accent, 'color')}
               style={{
-                filter: `drop-shadow(0 0 ${hover === i ? '6px' : '3px'} ${neonVar(accent, 'color')})`,
-                transition: 'r 200ms ease, filter 200ms ease',
+                transition: 'r 200ms ease',
                 pointerEvents: 'none'
               }}
             />

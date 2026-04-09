@@ -8,16 +8,16 @@ describe('GlassPanel', () => {
     expect(screen.getByText('Panel content')).toBeInTheDocument()
   })
 
-  it('applies glass backdrop-filter', () => {
+  it('does not apply backdrop-filter (glow stripped)', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBeTruthy()
+    expect(panel.style.backdropFilter).toBeFalsy()
   })
 
   it('applies accent border when provided', () => {
     const { container } = render(<GlassPanel accent="purple">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.border).toContain('var(--neon-purple-border)')
+    expect(panel.style.border).toContain('var(--bde-accent-border)')
   })
 
   it('uses token borderRadius', () => {
@@ -29,32 +29,20 @@ describe('GlassPanel', () => {
   it('uses surfaceDeep background without accent', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.background).toBe('var(--neon-surface-deep)')
+    expect(panel.style.background).toBe('var(--bde-bg)')
   })
 
   it('uses gradient background with accent', () => {
     const { container } = render(<GlassPanel accent="cyan">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
     expect(panel.style.background).toContain('linear-gradient')
-    expect(panel.style.background).toContain('var(--neon-cyan-surface)')
+    expect(panel.style.background).toContain('var(--bde-accent-surface)')
   })
 
-  it('applies sm blur variant', () => {
+  it('accepts blur prop without applying it (ignored)', () => {
     const { container } = render(<GlassPanel blur="sm">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBe('blur(8px) saturate(180%)')
-  })
-
-  it('applies lg blur variant', () => {
-    const { container } = render(<GlassPanel blur="lg">X</GlassPanel>)
-    const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBe('blur(40px) saturate(180%)')
-  })
-
-  it('defaults to md blur', () => {
-    const { container } = render(<GlassPanel>X</GlassPanel>)
-    const panel = container.firstChild as HTMLElement
-    expect(panel.style.backdropFilter).toBe('blur(16px) saturate(180%)')
+    expect(panel.style.backdropFilter).toBeFalsy()
   })
 
   it('applies custom className', () => {
@@ -68,9 +56,9 @@ describe('GlassPanel', () => {
     expect(panel.style.padding).toBe('20px')
   })
 
-  it('uses surfaceDim border when no accent', () => {
+  it('uses border token when no accent', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.border).toContain('var(--neon-surface-dim)')
+    expect(panel.style.border).toContain('var(--bde-border)')
   })
 })
