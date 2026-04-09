@@ -55,7 +55,7 @@ export function TaskDetailDrawer({
   onExport
 }: TaskDetailDrawerProps): React.JSX.Element {
   const [elapsed, setElapsed] = useState('')
-  const { width, handleResizeStart } = useDrawerResize({
+  const { width, handleResizeStart, handleKeyDown } = useDrawerResize({
     defaultWidth: 380,
     minWidth: 280,
     maxWidth: 700
@@ -114,6 +114,7 @@ export function TaskDetailDrawer({
       <div
         className="task-drawer__resize-handle"
         onMouseDown={handleResizeStart}
+        onKeyDown={handleKeyDown}
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize drawer"

@@ -157,4 +157,62 @@ describe('useDrawerResize', () => {
 
     expect(result.current.width).toBe(450) // must not change after mouseup
   })
+
+  describe('handleKeyDown', () => {
+    it('increases width on ArrowLeft', () => {
+      const { result } = renderHook(() =>
+        useDrawerResize({ defaultWidth: 400, minWidth: 200, maxWidth: 700 })
+      )
+      act(() => {
+        result.current.handleKeyDown({
+          key: 'ArrowLeft',
+          shiftKey: false,
+          preventDefault: () => {}
+        } as React.KeyboardEvent)
+      })
+      expect(result.current.width).toBe(410)
+    })
+
+    it('decreases width on ArrowRight', () => {
+      const { result } = renderHook(() =>
+        useDrawerResize({ defaultWidth: 400, minWidth: 200, maxWidth: 700 })
+      )
+      act(() => {
+        result.current.handleKeyDown({
+          key: 'ArrowRight',
+          shiftKey: false,
+          preventDefault: () => {}
+        } as React.KeyboardEvent)
+      })
+      expect(result.current.width).toBe(390)
+    })
+
+    it('uses large step with Shift', () => {
+      const { result } = renderHook(() =>
+        useDrawerResize({ defaultWidth: 400, minWidth: 200, maxWidth: 700 })
+      )
+      act(() => {
+        result.current.handleKeyDown({
+          key: 'ArrowLeft',
+          shiftKey: true,
+          preventDefault: () => {}
+        } as React.KeyboardEvent)
+      })
+      expect(result.current.width).toBe(450)
+    })
+
+    it('clamps on keyboard resize', () => {
+      const { result } = renderHook(() =>
+        useDrawerResize({ defaultWidth: 400, minWidth: 390, maxWidth: 700 })
+      )
+      act(() => {
+        result.current.handleKeyDown({
+          key: 'ArrowRight',
+          shiftKey: false,
+          preventDefault: () => {}
+        } as React.KeyboardEvent)
+      })
+      expect(result.current.width).toBe(390)
+    })
+  })
 })

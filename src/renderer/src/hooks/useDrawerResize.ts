@@ -14,6 +14,7 @@ interface UseDrawerResizeConfig {
 interface UseDrawerResizeResult {
   width: number
   handleResizeStart: (e: React.MouseEvent) => void
+  handleKeyDown: (e: React.KeyboardEvent) => void
 }
 
 export function useDrawerResize({
@@ -75,5 +76,19 @@ export function useDrawerResize({
     [minWidth, maxWidth]
   )
 
-  return { width, handleResizeStart }
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const step = e.shiftKey ? 50 : 10
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        setWidth((w) => Math.min(maxWidth, Math.max(minWidth, w + step)))
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        setWidth((w) => Math.min(maxWidth, Math.max(minWidth, w - step)))
+      }
+    },
+    [minWidth, maxWidth]
+  )
+
+  return { width, handleResizeStart, handleKeyDown }
 }
