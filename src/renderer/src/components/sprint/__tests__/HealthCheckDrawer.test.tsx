@@ -90,4 +90,9 @@ describe('HealthCheckDrawer', () => {
     const overlay = document.querySelector('.health-drawer__overlay')
     expect(overlay).not.toBeInTheDocument()
   })
+
+  it('renders a resize handle', () => {
+    const { container } = render(<HealthCheckDrawer {...makeProps()} />)
+    expect(container.querySelector('.drawer-resize-handle')).not.toBeNull()
+  })
 })

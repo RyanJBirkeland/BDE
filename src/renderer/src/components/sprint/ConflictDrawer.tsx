@@ -7,6 +7,7 @@ import { repoColor } from '../../lib/format'
 import { parsePrUrl } from '../../../../shared/github'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { useGitHubStatus } from '../../hooks/useGitHubStatus'
+import { useDrawerResize } from '../../hooks/useDrawerResize'
 import type { SprintTask } from '../../../../shared/types'
 
 type ConflictDrawerProps = {
@@ -29,6 +30,11 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
   const fetchedRef = useRef<Set<string>>(new Set())
   const drawerRef = useRef<HTMLDivElement>(null)
   const { configured: ghConfigured } = useGitHubStatus()
+  const { width, handleResizeStart, handleKeyDown: handleResizeKeyDown } = useDrawerResize({
+    defaultWidth: 440,
+    minWidth: 300,
+    maxWidth: 650
+  })
 
   useFocusTrap(drawerRef, open)
 
@@ -156,7 +162,19 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
         role="dialog"
         aria-modal="true"
         className={`conflict-drawer ${open ? 'conflict-drawer--open' : ''}`}
+        style={{ width }}
       >
+        <div
+          className="drawer-resize-handle"
+          onMouseDown={handleResizeStart}
+          onKeyDown={handleResizeKeyDown}
+          role="separator"
+          aria-label="Resize conflict drawer"
+          aria-valuemin={300}
+          aria-valuemax={650}
+          aria-valuenow={width}
+          tabIndex={0}
+        />
         <div className="conflict-drawer__header">
           <div className="conflict-drawer__header-left">
             <GitMerge size={14} />

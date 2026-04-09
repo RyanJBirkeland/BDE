@@ -3,6 +3,7 @@
  * Each section renders a self-contained component. Sections are grouped by category.
  */
 import { motion } from 'framer-motion'
+import { Group, Panel, Separator } from 'react-resizable-panels'
 import {
   Palette,
   Link,
@@ -96,20 +97,27 @@ export default function SettingsView(): React.JSX.Element {
 
   return (
     <div className="stg-layout">
-      <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
-      <motion.div
-        className="stg-content"
-        key={activeId}
-        variants={VARIANTS.fadeIn}
-        initial="initial"
-        animate="animate"
-        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-      >
-        <div className={`stg-content__inner${meta.wide ? ' stg-content__inner--wide' : ''}`}>
-          <SettingsPageHeader title={meta.title} subtitle={meta.subtitle} />
-          <ActiveSection />
-        </div>
-      </motion.div>
+      <Group orientation="horizontal" style={{ flex: 1, height: '100%' }}>
+        <Panel defaultSize={18} minSize={12} maxSize={30}>
+          <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
+        </Panel>
+        <Separator className="panel-separator" />
+        <Panel minSize={50}>
+          <motion.div
+            className="stg-content"
+            key={activeId}
+            variants={VARIANTS.fadeIn}
+            initial="initial"
+            animate="animate"
+            transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+          >
+            <div className={`stg-content__inner${meta.wide ? ' stg-content__inner--wide' : ''}`}>
+              <SettingsPageHeader title={meta.title} subtitle={meta.subtitle} />
+              <ActiveSection />
+            </div>
+          </motion.div>
+        </Panel>
+      </Group>
       <div aria-live="polite" className="sr-only">
         {meta.title} settings
       </div>

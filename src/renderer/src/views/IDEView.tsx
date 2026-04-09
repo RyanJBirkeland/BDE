@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Group, Panel, Separator } from 'react-resizable-panels'
+import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
 import { PanelLeftOpen } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../stores/ide'
@@ -139,6 +139,15 @@ export function IDEView(): React.JSX.Element {
   const savingPaths = useRef(new Set<string>())
   const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
   const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
+  const sidebarPanelRef = usePanelRef()
+
+  useEffect(() => {
+    if (sidebarCollapsed) {
+      sidebarPanelRef.current?.collapse()
+    } else {
+      sidebarPanelRef.current?.expand()
+    }
+  }, [sidebarCollapsed, sidebarPanelRef])
 
   // IDE-5, IDE-7, IDE-8, IDE-9: Load file content from store with proper error handling and loading states
   useEffect(() => {
@@ -317,15 +326,11 @@ export function IDEView(): React.JSX.Element {
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
       <Group orientation="horizontal" style={{ flex: 1, height: '100%', minHeight: 0 }}>
-        {!sidebarCollapsed && (
-          <>
-            <Panel defaultSize={20} minSize={10}>
-              <FileSidebar onOpenFile={handleOpenFile} />
-            </Panel>
-            <Separator className="ide-separator ide-separator--h" />
-          </>
-        )}
-        <Panel defaultSize={sidebarCollapsed ? 100 : 80} minSize={30}>
+        <Panel panelRef={sidebarPanelRef} defaultSize={20} minSize={10} collapsible>
+          <FileSidebar onOpenFile={handleOpenFile} />
+        </Panel>
+        <Separator className="ide-separator ide-separator--h" />
+        <Panel defaultSize={80} minSize={30}>
           <Group orientation="vertical" style={{ height: '100%' }}>
             <Panel defaultSize={terminalCollapsed ? 100 : 65} minSize={20}>
               <div

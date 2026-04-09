@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
@@ -9,10 +9,7 @@ import { TaskDetailActionButtons } from './TaskDetailActionButtons'
 import { AgentActivityPreview } from './AgentActivityPreview'
 import { UpstreamOutcomes } from './UpstreamOutcomes'
 import { useGitHubStatus } from '../../hooks/useGitHubStatus'
-
-const MIN_DRAWER_WIDTH = 280
-const MAX_DRAWER_WIDTH = 700
-const DEFAULT_DRAWER_WIDTH = 380
+import { useDrawerResize } from '../../hooks/useDrawerResize'
 
 export interface TaskDetailDrawerProps {
   task: SprintTask
@@ -58,11 +55,12 @@ export function TaskDetailDrawer({
   onExport
 }: TaskDetailDrawerProps): React.JSX.Element {
   const [elapsed, setElapsed] = useState('')
-  const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)
+  const { width, handleResizeStart, handleKeyDown } = useDrawerResize({
+    defaultWidth: 380,
+    minWidth: 280,
+    maxWidth: 700
+  })
   const { configured: ghConfigured } = useGitHubStatus()
-  const dragging = useRef(false)
-  const startX = useRef(0)
-  const startWidth = useRef(DEFAULT_DRAWER_WIDTH)
   const titleRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -78,59 +76,6 @@ export function TaskDetailDrawer({
   if (isActive && !elapsed) {
     setElapsed(formatElapsed(task.started_at!))
   }
-
-  const cleanupRef = useRef<(() => void) | null>(null)
-
-  // Cleanup listeners on unmount
-  useEffect(() => {
-    return () => {
-      if (cleanupRef.current) {
-        cleanupRef.current()
-      }
-    }
-  }, [])
-
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      dragging.current = true
-      startX.current = e.clientX
-      startWidth.current = width
-      document.body.style.cursor = 'col-resize'
-      document.body.style.userSelect = 'none'
-
-      const onMove = (ev: MouseEvent): void => {
-        if (!dragging.current) return
-        const delta = startX.current - ev.clientX
-        const next = Math.min(
-          MAX_DRAWER_WIDTH,
-          Math.max(MIN_DRAWER_WIDTH, startWidth.current + delta)
-        )
-        setWidth(next)
-      }
-
-      const onUp = (): void => {
-        dragging.current = false
-        document.body.style.cursor = ''
-        document.body.style.userSelect = ''
-        document.removeEventListener('mousemove', onMove)
-        document.removeEventListener('mouseup', onUp)
-        cleanupRef.current = null
-      }
-
-      document.addEventListener('mousemove', onMove)
-      document.addEventListener('mouseup', onUp)
-
-      // Store cleanup function for unmount
-      cleanupRef.current = () => {
-        document.removeEventListener('mousemove', onMove)
-        document.removeEventListener('mouseup', onUp)
-        document.body.style.cursor = ''
-        document.body.style.userSelect = ''
-      }
-    },
-    [width]
-  )
 
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const depIds = useMemo(() => task?.depends_on?.map((d) => d.id) ?? [], [task?.depends_on])
@@ -169,21 +114,13 @@ export function TaskDetailDrawer({
       <div
         className="task-drawer__resize-handle"
         onMouseDown={handleResizeStart}
-        onKeyDown={(e) => {
-          if (e.key === 'ArrowLeft') {
-            e.preventDefault()
-            setWidth((w) => Math.max(MIN_DRAWER_WIDTH, w - (e.shiftKey ? 50 : 10)))
-          } else if (e.key === 'ArrowRight') {
-            e.preventDefault()
-            setWidth((w) => Math.min(MAX_DRAWER_WIDTH, w + (e.shiftKey ? 50 : 10)))
-          }
-        }}
+        onKeyDown={handleKeyDown}
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize drawer"
         aria-valuenow={width}
-        aria-valuemin={MIN_DRAWER_WIDTH}
-        aria-valuemax={MAX_DRAWER_WIDTH}
+        aria-valuemin={280}
+        aria-valuemax={700}
         tabIndex={0}
       />
       {/* Header */}

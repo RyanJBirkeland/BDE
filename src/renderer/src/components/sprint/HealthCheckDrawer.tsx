@@ -4,6 +4,7 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { toast } from '../../stores/toasts'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { useDrawerResize } from '../../hooks/useDrawerResize'
 import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from '../../../../shared/types'
 
@@ -27,6 +28,11 @@ export function HealthCheckDrawer({
 }: HealthCheckDrawerProps): React.JSX.Element {
   const [rescuing, setRescuing] = useState<string | null>(null)
   const drawerRef = useRef<HTMLDivElement>(null)
+  const { width, handleResizeStart, handleKeyDown: handleResizeKeyDown } = useDrawerResize({
+    defaultWidth: 440,
+    minWidth: 300,
+    maxWidth: 600
+  })
 
   useFocusTrap(drawerRef, open)
 
@@ -67,7 +73,19 @@ export function HealthCheckDrawer({
         role="dialog"
         aria-modal="true"
         className={`health-drawer ${open ? 'health-drawer--open' : ''}`}
+        style={{ width }}
       >
+        <div
+          className="drawer-resize-handle"
+          onMouseDown={handleResizeStart}
+          onKeyDown={handleResizeKeyDown}
+          role="separator"
+          aria-label="Resize stuck tasks drawer"
+          aria-valuemin={300}
+          aria-valuemax={600}
+          aria-valuenow={width}
+          tabIndex={0}
+        />
         <div className="health-drawer__header">
           <div className="health-drawer__header-left">
             <HeartPulse size={14} />

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { Group, Panel, Separator } from 'react-resizable-panels'
 import { ReviewQueue } from '../components/code-review/ReviewQueue'
 import { ReviewDetail } from '../components/code-review/ReviewDetail'
 import { ReviewActions } from '../components/code-review/ReviewActions'
@@ -110,12 +111,19 @@ export default function CodeReviewView(): React.JSX.Element {
       animate="animate"
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
-      <ReviewQueue />
+      <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
+        <Panel defaultSize={22} minSize={12} maxSize={40}>
+          <ReviewQueue />
+        </Panel>
+        <Separator className="panel-separator" />
+        <Panel minSize={40}>
+          <div className="cr-main">
+            <ReviewDetail />
+            <ReviewActions />
+          </div>
+        </Panel>
+      </Group>
       <BatchActions />
-      <div className="cr-main">
-        <ReviewDetail />
-        <ReviewActions />
-      </div>
     </motion.div>
   )
 }

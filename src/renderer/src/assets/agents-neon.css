@@ -5,19 +5,16 @@
 
 /* ── Agents Sidebar ── */
 .agents-sidebar {
-  width: 220px;
-  min-width: 180px;
-  max-width: 400px;
   border-right: 1px solid var(--neon-purple-border);
   display: flex;
   flex-direction: column;
+  height: 100%;
   background: linear-gradient(
     180deg,
     var(--neon-purple-surface, rgba(138, 43, 226, 0.04)),
     var(--neon-surface-deep, rgba(10, 0, 21, 0.4))
   );
-  resize: horizontal;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* Agent Card Status Spinner */
