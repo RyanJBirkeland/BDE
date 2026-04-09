@@ -123,9 +123,9 @@ describe('createTaskTerminalService', () => {
 
   it('resolves each unique task exactly once when called multiple times with same id', () => {
     const deps = makeDeps({
-      getTasksWithDependencies: vi.fn().mockReturnValue([
-        { id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }
-      ]),
+      getTasksWithDependencies: vi
+        .fn()
+        .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }]),
       getTask: vi.fn().mockImplementation((id: string) => {
         if (id === 't1')
           return { id: 't1', title: 'Task 1', status: 'done', depends_on: null, notes: null }

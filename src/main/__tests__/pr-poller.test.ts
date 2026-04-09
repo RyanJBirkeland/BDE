@@ -21,7 +21,13 @@ vi.mock('../logger', () => ({
   })
 }))
 
-import { startPrPoller, stopPrPoller, getLatestPrList, refreshPrList, POLL_INTERVAL_MS } from '../pr-poller'
+import {
+  startPrPoller,
+  stopPrPoller,
+  getLatestPrList,
+  refreshPrList,
+  POLL_INTERVAL_MS
+} from '../pr-poller'
 import { broadcast } from '../broadcast'
 import { fetchAllGitHubPages, githubFetch } from '../github-fetch'
 import { getGitHubToken } from '../config'

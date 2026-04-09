@@ -258,7 +258,8 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
   } = input
 
   // Start with agent-type-appropriate preamble
-  const isCodingAgent = agentType === 'pipeline' || agentType === 'assistant' || agentType === 'adhoc'
+  const isCodingAgent =
+    agentType === 'pipeline' || agentType === 'assistant' || agentType === 'adhoc'
   let prompt = isCodingAgent ? CODING_AGENT_PREAMBLE : SPEC_DRAFTING_PREAMBLE
 
   // Inject personality
@@ -354,9 +355,10 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     // Older turns add tokens with diminishing relevance — the spec draft in formContext
     // already captures the accumulated intent.
     const MAX_HISTORY_TURNS = 10
-    const recentMessages = messages.length > MAX_HISTORY_TURNS
-      ? messages.slice(messages.length - MAX_HISTORY_TURNS)
-      : messages
+    const recentMessages =
+      messages.length > MAX_HISTORY_TURNS
+        ? messages.slice(messages.length - MAX_HISTORY_TURNS)
+        : messages
     if (messages.length > MAX_HISTORY_TURNS) {
       prompt += `\n\n## Conversation (last ${MAX_HISTORY_TURNS} of ${messages.length} turns)\n\n`
     } else {

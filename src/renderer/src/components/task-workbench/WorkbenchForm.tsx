@@ -425,111 +425,115 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
         {advancedOpen && (
           <div id="wb-form-advanced">
             <GlassPanel accent="purple" blur="sm" className="wb-form__advanced">
-            <div className="wb-form__field--row">
-              <FormField
-                label="Priority"
-                htmlFor="wb-form-priority"
-                className="wb-form__field wb-form__field--flex"
-              >
-                <select
-                  id="wb-form-priority"
-                  value={priority}
-                  onChange={(e) => setField('priority', Number(e.target.value))}
-                  className="wb-form__select"
+              <div className="wb-form__field--row">
+                <FormField
+                  label="Priority"
+                  htmlFor="wb-form-priority"
+                  className="wb-form__field wb-form__field--flex"
                 >
-                  {PRIORITY_OPTIONS.map((p) => (
-                    <option key={p.value} value={p.value}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-              <FormField
-                label="Model"
-                htmlFor="wb-form-model"
-                className="wb-form__field wb-form__field--flex"
-              >
-                <select
-                  id="wb-form-model"
-                  value={model}
-                  onChange={(e) => setField('model', e.target.value)}
-                  className="wb-form__select"
-                >
-                  <option value="">Default (Sonnet)</option>
-                  <option value="claude-opus-4">Claude Opus 4</option>
-                  <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-                  <option value="claude-haiku-3-5">Claude Haiku 3.5</option>
-                </select>
-              </FormField>
-            </div>
-            <FormField label="Max Cost (USD)" htmlFor="wb-form-max-cost">
-              <input
-                id="wb-form-max-cost"
-                type="number"
-                step="0.01"
-                min="0"
-                value={maxCostUsd ?? ''}
-                onChange={(e) =>
-                  setField('maxCostUsd', e.target.value ? Number(e.target.value) : null)
-                }
-                placeholder="No limit"
-                className="wb-form__input"
-              />
-            </FormField>
-            <div className="wb-form__checkbox-row">
-              <input
-                type="checkbox"
-                id="playground-enabled-workbench"
-                checked={playgroundEnabled}
-                onChange={(e) => setField('playgroundEnabled', e.target.checked)}
-              />
-              <label
-                htmlFor="playground-enabled-workbench"
-                className="wb-form__checkbox-label"
-                title="Enable native HTML preview rendering for frontend work"
-              >
-                Dev Playground
-              </label>
-            </div>
-            <div className="wb-form__field" style={{ marginTop: '1rem' }}>
-              <button
-                type="button"
-                id="wb-form-contract-toggle"
-                onClick={() => setContractExpanded(!contractExpanded)}
-                className="wb-form__toggle"
-                style={{ marginBottom: '0.5rem' }}
-                aria-expanded={contractExpanded}
-                aria-controls="wb-form-contract"
-              >
-                {contractExpanded ? '\u25be' : '\u25b8'} Cross-Repo Contract
-              </button>
-              {contractExpanded && (
-                <div>
-                  <textarea
-                    id="wb-form-contract"
-                    aria-labelledby="wb-form-contract-toggle"
-                    value={crossRepoContract ?? ''}
-                    onChange={(e) => setField('crossRepoContract', e.target.value)}
-                    placeholder="e.g. SprintTask type definition, API endpoint contracts, shared types..."
-                    className="wb-form__textarea"
-                    rows={8}
-                    style={{ fontFamily: 'monospace', fontSize: '0.9em' }}
-                  />
-                  <div
-                    style={{ fontSize: '0.85em', color: 'var(--bde-text-muted)', marginTop: '0.25rem' }}
+                  <select
+                    id="wb-form-priority"
+                    value={priority}
+                    onChange={(e) => setField('priority', Number(e.target.value))}
+                    className="wb-form__select"
                   >
-                    Document API contracts, shared types, or cross-repo dependencies. Will be
-                    injected into the agent prompt.
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField
+                  label="Model"
+                  htmlFor="wb-form-model"
+                  className="wb-form__field wb-form__field--flex"
+                >
+                  <select
+                    id="wb-form-model"
+                    value={model}
+                    onChange={(e) => setField('model', e.target.value)}
+                    className="wb-form__select"
+                  >
+                    <option value="">Default (Sonnet)</option>
+                    <option value="claude-opus-4">Claude Opus 4</option>
+                    <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                    <option value="claude-haiku-3-5">Claude Haiku 3.5</option>
+                  </select>
+                </FormField>
+              </div>
+              <FormField label="Max Cost (USD)" htmlFor="wb-form-max-cost">
+                <input
+                  id="wb-form-max-cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={maxCostUsd ?? ''}
+                  onChange={(e) =>
+                    setField('maxCostUsd', e.target.value ? Number(e.target.value) : null)
+                  }
+                  placeholder="No limit"
+                  className="wb-form__input"
+                />
+              </FormField>
+              <div className="wb-form__checkbox-row">
+                <input
+                  type="checkbox"
+                  id="playground-enabled-workbench"
+                  checked={playgroundEnabled}
+                  onChange={(e) => setField('playgroundEnabled', e.target.checked)}
+                />
+                <label
+                  htmlFor="playground-enabled-workbench"
+                  className="wb-form__checkbox-label"
+                  title="Enable native HTML preview rendering for frontend work"
+                >
+                  Dev Playground
+                </label>
+              </div>
+              <div className="wb-form__field" style={{ marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  id="wb-form-contract-toggle"
+                  onClick={() => setContractExpanded(!contractExpanded)}
+                  className="wb-form__toggle"
+                  style={{ marginBottom: '0.5rem' }}
+                  aria-expanded={contractExpanded}
+                  aria-controls="wb-form-contract"
+                >
+                  {contractExpanded ? '\u25be' : '\u25b8'} Cross-Repo Contract
+                </button>
+                {contractExpanded && (
+                  <div>
+                    <textarea
+                      id="wb-form-contract"
+                      aria-labelledby="wb-form-contract-toggle"
+                      value={crossRepoContract ?? ''}
+                      onChange={(e) => setField('crossRepoContract', e.target.value)}
+                      placeholder="e.g. SprintTask type definition, API endpoint contracts, shared types..."
+                      className="wb-form__textarea"
+                      rows={8}
+                      style={{ fontFamily: 'monospace', fontSize: '0.9em' }}
+                    />
+                    <div
+                      style={{
+                        fontSize: '0.85em',
+                        color: 'var(--bde-text-muted)',
+                        marginTop: '0.25rem'
+                      }}
+                    >
+                      Document API contracts, shared types, or cross-repo dependencies. Will be
+                      injected into the agent prompt.
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-            <DependencyPicker
-              dependencies={dependsOn ?? []}
-              availableTasks={allTasks}
-              onChange={(deps) => setField('dependsOn', deps)}
-              currentTaskId={taskId ?? undefined}
-            />
+                )}
+              </div>
+              <DependencyPicker
+                dependencies={dependsOn ?? []}
+                availableTasks={allTasks}
+                onChange={(deps) => setField('dependsOn', deps)}
+                currentTaskId={taskId ?? undefined}
+              />
             </GlassPanel>
           </div>
         )}

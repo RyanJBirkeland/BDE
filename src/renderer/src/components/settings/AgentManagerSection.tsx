@@ -83,9 +83,7 @@ export function AgentManagerSection(): React.JSX.Element {
       try {
         const result = await window.api.agentManager.reloadConfig()
         if (result.requiresRestart.length > 0) {
-          toast.info(
-            `Saved. Restart required for: ${result.requiresRestart.join(', ')}`
-          )
+          toast.info(`Saved. Restart required for: ${result.requiresRestart.join(', ')}`)
         } else if (result.updated.length > 0) {
           toast.success(`Settings saved and applied: ${result.updated.join(', ')}`)
         } else {
@@ -301,9 +299,9 @@ export function AgentManagerSection(): React.JSX.Element {
                 background: 'rgba(255, 159, 64, 0.08)'
               }}
             >
-              ⚠ {maxConcurrent} concurrent agents may oversaturate this machine. Agents can
-              misjudge load-induced test timeouts as &ldquo;pre-existing failures&rdquo; and push
-              broken work. Recommended: 3 or lower.
+              ⚠ {maxConcurrent} concurrent agents may oversaturate this machine. Agents can misjudge
+              load-induced test timeouts as &ldquo;pre-existing failures&rdquo; and push broken
+              work. Recommended: 3 or lower.
             </span>
           )}
         </label>

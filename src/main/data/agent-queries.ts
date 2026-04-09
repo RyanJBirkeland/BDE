@@ -23,6 +23,7 @@ export interface AgentRunRow {
   pid: number | null
   bin: string
   task: string | null
+  title: string | null
   repo: string | null
   repo_path: string | null
   model: string | null
@@ -51,6 +52,7 @@ export function rowToMeta(row: AgentRunRow): AgentMeta {
     repo: row.repo ?? 'unknown',
     repoPath: row.repo_path ?? '',
     task: row.task ?? '',
+    title: row.title ?? undefined,
     startedAt: row.started_at,
     finishedAt: row.finished_at,
     exitCode: row.exit_code,
@@ -93,13 +95,14 @@ export function insertAgentRecord(
   meta: Omit<AgentMeta, 'logPath'> & { logPath: string }
 ): void {
   db.prepare(
-    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source, sprint_task_id, cost_usd, tokens_in, tokens_out, worktree_path, branch)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, title, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source, sprint_task_id, cost_usd, tokens_in, tokens_out, worktree_path, branch)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     meta.id,
     meta.pid,
     meta.bin,
     meta.task,
+    meta.title ?? null,
     meta.repo,
     meta.repoPath,
     meta.model,
@@ -122,6 +125,7 @@ const AGENT_COLUMN_MAP: Record<string, string> = {
   pid: 'pid',
   bin: 'bin',
   task: 'task',
+  title: 'title',
   repo: 'repo',
   repoPath: 'repo_path',
   model: 'model',
@@ -299,17 +303,24 @@ export function insertAgentRunTurn(db: Database.Database, record: TurnRecord): v
 export function getLatestAgentRunTurn(
   db: Database.Database,
   runId: string
-): { cacheTokensRead: number; cacheTokensCreated: number; tokensIn: number; tokensOut: number } | null {
+): {
+  cacheTokensRead: number
+  cacheTokensCreated: number
+  tokensIn: number
+  tokensOut: number
+} | null {
   const row = db
     .prepare(
       'SELECT cache_tokens_read, cache_tokens_created, tokens_in, tokens_out FROM agent_run_turns WHERE run_id = ? ORDER BY turn DESC LIMIT 1'
     )
-    .get(runId) as {
-    cache_tokens_read: number | null
-    cache_tokens_created: number | null
-    tokens_in: number | null
-    tokens_out: number | null
-  } | undefined
+    .get(runId) as
+    | {
+        cache_tokens_read: number | null
+        cache_tokens_created: number | null
+        tokens_in: number | null
+        tokens_out: number | null
+      }
+    | undefined
   if (!row) return null
   return {
     cacheTokensRead: row.cache_tokens_read ?? 0,

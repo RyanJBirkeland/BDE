@@ -102,7 +102,9 @@ export function BranchSelector({
         className={`git-branch-selector__trigger ${isDisabled ? 'git-branch-selector__trigger--disabled' : 'git-branch-selector__trigger--enabled'}`}
       >
         <GitBranch size={14} />
-        <span className="git-branch-selector__current" title={currentBranch || 'unknown'}>{currentBranch || 'unknown'}</span>
+        <span className="git-branch-selector__current" title={currentBranch || 'unknown'}>
+          {currentBranch || 'unknown'}
+        </span>
         <ChevronDown size={12} />
       </button>
 

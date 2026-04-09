@@ -16,8 +16,11 @@ import { TurnTracker } from '../agent-manager/turn-tracker'
 function makeDb(): Database.Database {
   const db = new Database(':memory:')
   db.pragma('foreign_keys = ON')
-  db.prepare("CREATE TABLE agent_runs (id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'running')").run()
-  db.prepare(`CREATE TABLE agent_run_turns (
+  db.prepare(
+    "CREATE TABLE agent_runs (id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'running')"
+  ).run()
+  db.prepare(
+    `CREATE TABLE agent_run_turns (
       id                   INTEGER PRIMARY KEY,
       run_id               TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
       turn                 INTEGER NOT NULL,
@@ -27,7 +30,8 @@ function makeDb(): Database.Database {
       cache_tokens_created INTEGER,
       cache_tokens_read    INTEGER,
       recorded_at          TEXT NOT NULL
-    )`).run()
+    )`
+  ).run()
   db.prepare('CREATE INDEX idx_agent_run_turns_run ON agent_run_turns(run_id)').run()
   return db
 }
@@ -47,8 +51,14 @@ describe('TurnTracker', () => {
 
   it('accumulates tokens from msg.message.usage (real SDK format)', () => {
     const tracker = new TurnTracker('run-1', db)
-    tracker.observe({ type: 'assistant', message: { usage: { input_tokens: 100, output_tokens: 50 }, content: [] } })
-    tracker.observe({ type: 'assistant', message: { usage: { input_tokens: 200, output_tokens: 80 }, content: [] } })
+    tracker.observe({
+      type: 'assistant',
+      message: { usage: { input_tokens: 100, output_tokens: 50 }, content: [] }
+    })
+    tracker.observe({
+      type: 'assistant',
+      message: { usage: { input_tokens: 200, output_tokens: 80 }, content: [] }
+    })
     expect(tracker.totals()).toMatchObject({ tokensIn: 300, tokensOut: 130 })
   })
 
@@ -64,14 +74,24 @@ describe('TurnTracker', () => {
     tracker.observe({
       type: 'assistant',
       message: {
-        usage: { input_tokens: 10, output_tokens: 5, cache_creation_input_tokens: 80000, cache_read_input_tokens: 0 },
+        usage: {
+          input_tokens: 10,
+          output_tokens: 5,
+          cache_creation_input_tokens: 80000,
+          cache_read_input_tokens: 0
+        },
         content: []
       }
     })
     tracker.observe({
       type: 'assistant',
       message: {
-        usage: { input_tokens: 8, output_tokens: 4, cache_creation_input_tokens: 0, cache_read_input_tokens: 80000 },
+        usage: {
+          input_tokens: 8,
+          output_tokens: 4,
+          cache_creation_input_tokens: 0,
+          cache_read_input_tokens: 80000
+        },
         content: []
       }
     })
@@ -125,7 +145,10 @@ describe('TurnTracker', () => {
 
     tracker.observe({
       type: 'assistant',
-      message: { usage: { input_tokens: 100, output_tokens: 50 }, content: [{ type: 'tool_use', name: 'Read' }] }
+      message: {
+        usage: { input_tokens: 100, output_tokens: 50 },
+        content: [{ type: 'tool_use', name: 'Read' }]
+      }
     })
     tracker.observe({
       type: 'assistant',
@@ -173,9 +196,7 @@ describe('TurnTracker', () => {
     tracker.observe({ type: 'result', tokens_in: 50, tokens_out: 10 })
 
     expect(tracker.totals()).toMatchObject({ tokensIn: 0, tokensOut: 0 })
-    const count = (
-      db.prepare('SELECT COUNT(*) as c FROM agent_run_turns').get() as { c: number }
-    ).c
+    const count = (db.prepare('SELECT COUNT(*) as c FROM agent_run_turns').get() as { c: number }).c
     expect(count).toBe(0)
   })
 

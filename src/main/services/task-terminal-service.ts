@@ -53,7 +53,9 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
                 deps.getSetting
               )
             } catch (err) {
-              deps.logger.error(`[task-terminal-service] resolveDependents failed for ${id}: ${err}`)
+              deps.logger.error(
+                `[task-terminal-service] resolveDependents failed for ${id}: ${err}`
+              )
             }
           }
         } catch (err) {

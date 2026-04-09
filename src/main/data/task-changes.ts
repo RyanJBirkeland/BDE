@@ -61,7 +61,11 @@ export function recordTaskChanges(
  * the surrounding transaction.
  */
 export function recordTaskChangesBulk(
-  entries: Array<{ taskId: string; oldTask: Record<string, unknown>; newPatch: Record<string, unknown> }>,
+  entries: Array<{
+    taskId: string
+    oldTask: Record<string, unknown>
+    newPatch: Record<string, unknown>
+  }>,
   changedBy: string,
   db: Database.Database
 ): void {

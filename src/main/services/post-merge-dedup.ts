@@ -45,10 +45,7 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
       ['diff', '--name-only', '--diff-filter=ACMR', 'HEAD~1', 'HEAD'],
       { cwd: repoPath, env }
     )
-    changedFiles = stdout
-      .trim()
-      .split('\n')
-      .filter(Boolean)
+    changedFiles = stdout.trim().split('\n').filter(Boolean)
   } catch (err) {
     // HEAD~1 may not exist (initial commit, shallow clone, etc.) — skip gracefully
     logger.warn(`[post-merge-dedup] Could not get changed files from HEAD~1: ${err}`)
@@ -62,7 +59,9 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
     return null
   }
 
-  logger.info(`[post-merge-dedup] Processing ${cssFiles.length} CSS file(s): ${cssFiles.join(', ')}`)
+  logger.info(
+    `[post-merge-dedup] Processing ${cssFiles.length} CSS file(s): ${cssFiles.join(', ')}`
+  )
 
   const filesModified: string[] = []
   let totalRemoved = 0
@@ -86,7 +85,9 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
         writeFileSync(absPath, result.deduplicated, 'utf8')
         filesModified.push(relPath)
         totalRemoved += result.removed.length
-        logger.info(`[post-merge-dedup] Removed ${result.removed.length} duplicate(s) from ${relPath}`)
+        logger.info(
+          `[post-merge-dedup] Removed ${result.removed.length} duplicate(s) from ${relPath}`
+        )
       } catch (err) {
         logger.warn(`[post-merge-dedup] Could not write ${relPath}: ${err}`)
       }
@@ -100,8 +101,7 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
       await execFile('git', ['add', ...filesModified], { cwd: repoPath, env })
 
       // Commit the dedup changes
-      const commitMessage =
-        'chore: deduplicate CSS from merge\n\nAutomated by BDE post-merge dedup'
+      const commitMessage = 'chore: deduplicate CSS from merge\n\nAutomated by BDE post-merge dedup'
       await execFile('git', ['commit', '-m', commitMessage], { cwd: repoPath, env })
 
       committed = true

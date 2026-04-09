@@ -61,7 +61,9 @@ describe('CommandBar', () => {
 
   it('renders input field with placeholder', () => {
     render(<CommandBar {...defaultProps} />)
-    expect(screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')).toBeInTheDocument()
+    expect(
+      screen.getByPlaceholderText('Message the agent… (Shift+Enter for newline)')
+    ).toBeInTheDocument()
   })
 
   it('shows autocomplete when typing /', async () => {
@@ -289,11 +291,14 @@ describe('CommandBar', () => {
       await user.type(input, 'check this image')
       await user.keyboard('{Enter}')
 
-      expect(onSend).toHaveBeenCalledWith('check this image', expect.objectContaining({
-        type: 'image',
-        mimeType: 'image/png',
-        data: 'fakebase64data'
-      }))
+      expect(onSend).toHaveBeenCalledWith(
+        'check this image',
+        expect.objectContaining({
+          type: 'image',
+          mimeType: 'image/png',
+          data: 'fakebase64data'
+        })
+      )
       expect(container.querySelector('img')).not.toBeInTheDocument()
 
       window.FileReader = originalFileReader
@@ -318,10 +323,13 @@ describe('CommandBar', () => {
 
       await user.keyboard('{Enter}')
 
-      expect(onSend).toHaveBeenCalledWith('', expect.objectContaining({
-        type: 'image',
-        mimeType: 'image/png'
-      }))
+      expect(onSend).toHaveBeenCalledWith(
+        '',
+        expect.objectContaining({
+          type: 'image',
+          mimeType: 'image/png'
+        })
+      )
 
       window.FileReader = originalFileReader
     })

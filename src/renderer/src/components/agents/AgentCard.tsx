@@ -86,7 +86,8 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
 
   const handleKill = async (e: React.MouseEvent): Promise<void> => {
     e.stopPropagation()
-    const label = agent.task.length > 40 ? agent.task.slice(0, 40) + '\u2026' : agent.task
+    const displayText = agent.title ?? agent.task
+    const label = displayText.length > 40 ? displayText.slice(0, 40) + '\u2026' : displayText
     const ok = await confirm({
       title: 'Stop Agent',
       message: `Stop "${label}"? Any uncommitted work will be lost.`,
@@ -144,7 +145,7 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                   flex: 1
                 }}
               >
-                {agent.task.slice(0, 80)}
+                {agent.title ?? agent.task.slice(0, 80)}
               </span>
               {isRunning && (
                 <button

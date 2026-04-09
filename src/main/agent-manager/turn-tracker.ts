@@ -64,7 +64,13 @@ export class TurnTracker {
     }
   }
 
-  totals(): { tokensIn: number; tokensOut: number; cacheTokensCreated: number; cacheTokensRead: number; turnCount: number } {
+  totals(): {
+    tokensIn: number
+    tokensOut: number
+    cacheTokensCreated: number
+    cacheTokensRead: number
+    turnCount: number
+  } {
     return {
       tokensIn: this.tokensIn,
       tokensOut: this.tokensOut,

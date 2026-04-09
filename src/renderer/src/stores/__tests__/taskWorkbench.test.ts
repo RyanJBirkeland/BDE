@@ -236,7 +236,10 @@ describe('taskWorkbench store', () => {
       updated_at: '2026-01-01',
       created_at: '2026-01-01'
     })
-    useTaskWorkbenchStore.getState().setField('dependsOn', [{ id: 'dep-1', type: 'hard' }, { id: 'dep-2', type: 'soft' }])
+    useTaskWorkbenchStore.getState().setField('dependsOn', [
+      { id: 'dep-1', type: 'hard' },
+      { id: 'dep-2', type: 'soft' }
+    ])
     const s = useTaskWorkbenchStore.getState()
     expect(s.isDirty()).toBe(true)
   })

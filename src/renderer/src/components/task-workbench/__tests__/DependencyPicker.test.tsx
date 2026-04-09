@@ -212,7 +212,9 @@ describe('DependencyPicker', () => {
         />
       )
       await userEvent.click(screen.getByRole('button', { name: /add dependency/i }))
-      expect(screen.getByRole('button', { name: /Showing 30 of 31 — Show all/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /Showing 30 of 31 — Show all/i })
+      ).toBeInTheDocument()
       // 31st item is hidden until "Show all"
       expect(screen.queryByText('Task 30')).not.toBeInTheDocument()
     })

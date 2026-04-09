@@ -106,7 +106,11 @@ describe('resolveSuccess', () => {
 
     // Verify git rev-parse was called with correct cwd
     const revParseCall = calls.find(
-      (c) => c[0] === 'git' && Array.isArray(c[1]) && c[1][0] === 'rev-parse' && c[1][1] === '--abbrev-ref'
+      (c) =>
+        c[0] === 'git' &&
+        Array.isArray(c[1]) &&
+        c[1][0] === 'rev-parse' &&
+        c[1][1] === '--abbrev-ref'
     )
     expect(revParseCall).toBeDefined()
     expect((revParseCall![2] as { cwd: string }).cwd).toBe(opts.worktreePath)

@@ -45,7 +45,11 @@ export function registerAgentHandlers(am?: AgentManager): void {
     'agent:steer',
     async (
       _e,
-      { agentId, message, images }: { agentId: string; message: string; images?: Array<{ data: string; mimeType: string }> }
+      {
+        agentId,
+        message,
+        images
+      }: { agentId: string; message: string; images?: Array<{ data: string; mimeType: string }> }
     ) => {
       // Try ad-hoc agents first
       const adhocHandle = getAdhocHandle(agentId)
@@ -114,70 +118,78 @@ export function registerAgentHandlers(am?: AgentManager): void {
    *  2. Create a NEW sprint task in `review` status pointing at that worktree
    *  3. Return the new task id so the UI can switch to Code Review and select it
    */
-  safeHandle('agents:promoteToReview', async (_e, agentId: string): Promise<PromoteToReviewResult> => {
-    try {
-      const agent = await getAgentMeta(agentId)
-      if (!agent) {
-        return { ok: false, error: `Agent ${agentId} not found` }
-      }
-      if (!agent.worktreePath) {
-        return {
-          ok: false,
-          error: 'Agent has no worktree — only adhoc agents spawned with worktree support can be promoted'
-        }
-      }
-      if (!existsSync(agent.worktreePath)) {
-        return { ok: false, error: `Worktree no longer exists at ${agent.worktreePath}` }
-      }
-      if (!agent.branch) {
-        return { ok: false, error: 'Agent has no branch recorded' }
-      }
-
-      // Verify the worktree has at least one commit beyond main — otherwise
-      // there's nothing to review.
-      const env = buildAgentEnv()
+  safeHandle(
+    'agents:promoteToReview',
+    async (_e, agentId: string): Promise<PromoteToReviewResult> => {
       try {
-        const { stdout } = await execFileAsync(
-          'git',
-          ['rev-list', '--count', `origin/main..${agent.branch}`],
-          { cwd: agent.worktreePath, env }
-        )
-        const commitCount = parseInt(stdout.trim(), 10)
-        if (!Number.isFinite(commitCount) || commitCount === 0) {
+        const agent = await getAgentMeta(agentId)
+        if (!agent) {
+          return { ok: false, error: `Agent ${agentId} not found` }
+        }
+        if (!agent.worktreePath) {
           return {
             ok: false,
-            error: 'Agent has not committed any work yet — nothing to promote'
+            error:
+              'Agent has no worktree — only adhoc agents spawned with worktree support can be promoted'
           }
         }
+        if (!existsSync(agent.worktreePath)) {
+          return { ok: false, error: `Worktree no longer exists at ${agent.worktreePath}` }
+        }
+        if (!agent.branch) {
+          return { ok: false, error: 'Agent has no branch recorded' }
+        }
+
+        // Verify the worktree has at least one commit beyond main — otherwise
+        // there's nothing to review.
+        const env = buildAgentEnv()
+        try {
+          const { stdout } = await execFileAsync(
+            'git',
+            ['rev-list', '--count', `origin/main..${agent.branch}`],
+            { cwd: agent.worktreePath, env }
+          )
+          const commitCount = parseInt(stdout.trim(), 10)
+          if (!Number.isFinite(commitCount) || commitCount === 0) {
+            return {
+              ok: false,
+              error: 'Agent has not committed any work yet — nothing to promote'
+            }
+          }
+        } catch (err) {
+          log.warn(`[agents:promoteToReview] commit count check failed: ${err}`)
+          // Non-fatal — proceed anyway; the review UI will handle empty diffs
+        }
+
+        // Derive a title from the agent's task message (first non-blank line, capped)
+        const firstLine =
+          agent.task
+            .split('\n')
+            .find((l) => l.trim())
+            ?.trim() ?? 'Promoted adhoc agent'
+        const title = firstLine.length > 120 ? firstLine.slice(0, 117) + '...' : firstLine
+
+        const task = createReviewTaskFromAdhoc({
+          title,
+          repo: agent.repo,
+          spec: agent.task,
+          worktreePath: agent.worktreePath,
+          branch: agent.branch
+        })
+
+        if (!task) {
+          return { ok: false, error: 'Failed to create review task — see logs' }
+        }
+
+        log.info(`[agents:promoteToReview] Promoted agent ${agentId} → sprint task ${task.id}`)
+        return { ok: true, taskId: task.id }
       } catch (err) {
-        log.warn(`[agents:promoteToReview] commit count check failed: ${err}`)
-        // Non-fatal — proceed anyway; the review UI will handle empty diffs
+        const msg = err instanceof Error ? err.message : String(err)
+        log.error(`[agents:promoteToReview] failed: ${msg}`)
+        return { ok: false, error: msg }
       }
-
-      // Derive a title from the agent's task message (first non-blank line, capped)
-      const firstLine = agent.task.split('\n').find((l) => l.trim())?.trim() ?? 'Promoted adhoc agent'
-      const title = firstLine.length > 120 ? firstLine.slice(0, 117) + '...' : firstLine
-
-      const task = createReviewTaskFromAdhoc({
-        title,
-        repo: agent.repo,
-        spec: agent.task,
-        worktreePath: agent.worktreePath,
-        branch: agent.branch
-      })
-
-      if (!task) {
-        return { ok: false, error: 'Failed to create review task — see logs' }
-      }
-
-      log.info(`[agents:promoteToReview] Promoted agent ${agentId} → sprint task ${task.id}`)
-      return { ok: true, taskId: task.id }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      log.error(`[agents:promoteToReview] failed: ${msg}`)
-      return { ok: false, error: msg }
     }
-  })
+  )
 
   safeHandle('agent:latestCacheTokens', async (_e, runId: string) => {
     return getLatestAgentRunTurn(getDb(), runId)

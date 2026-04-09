@@ -28,6 +28,7 @@ import type { SpawnLocalAgentResult } from '../shared/types'
 import { buildAgentPrompt } from './agent-manager/prompt-composer'
 import { setupWorktree } from './agent-manager/worktree'
 import { TurnTracker } from './agent-manager/turn-tracker'
+import { deriveAgentTitle } from '../shared/derive-agent-title'
 import { createLogger } from './logger'
 
 const log = createLogger('adhoc-agent')
@@ -45,13 +46,17 @@ const ADHOC_WORKTREE_BASE = join(homedir(), 'worktrees', 'bde-adhoc')
  * recognisable instead of being a raw UUID.
  */
 function deriveAdhocTitle(task: string): string {
-  const firstLine = task.split('\n').find((l) => l.trim())?.trim() ?? 'adhoc session'
+  const firstLine =
+    task
+      .split('\n')
+      .find((l) => l.trim())
+      ?.trim() ?? 'adhoc session'
   // Cap at ~80 chars so the resulting branch slug stays short
   return firstLine.length > 80 ? firstLine.slice(0, 80) : firstLine
 }
 
 export interface ImageAttachment {
-  data: string     // raw base64 (no data: prefix)
+  data: string // raw base64 (no data: prefix)
   mimeType: string // e.g. 'image/png'
 }
 
@@ -137,6 +142,7 @@ export async function spawnAdhocAgent(args: {
   // Record in agent_runs (with worktree path + branch persisted so the
   // Promote handler can find them later)
   const repo = basename(args.repoPath).toLowerCase()
+  const title = deriveAgentTitle(args.task, 'adhoc')
   const meta = await importAgent(
     {
       id: agentId,
@@ -146,6 +152,7 @@ export async function spawnAdhocAgent(args: {
       repo,
       repoPath: args.repoPath,
       task: args.task,
+      title,
       status: 'running',
       source: 'adhoc',
       worktreePath,

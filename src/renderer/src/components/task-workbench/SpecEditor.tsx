@@ -195,9 +195,7 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
             : "No testing guidance detected. Add a '## How to Test' section."
         }
         data-testid="spec-quality-tests"
-        aria-label={
-          indicators.hasTestSection ? 'Test section: present' : 'Test section: missing'
-        }
+        aria-label={indicators.hasTestSection ? 'Test section: present' : 'Test section: missing'}
         style={{ display: 'inline-flex', alignItems: 'center' }}
       >
         <span style={dotStyle(indicators.hasTestSection)} />

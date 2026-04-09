@@ -13,6 +13,8 @@ export interface AgentMeta {
   repo: string
   repoPath: string
   task: string
+  /** Human-readable agent title (derived from task or sprint task title) */
+  title?: string
   startedAt: string
   finishedAt: string | null
   exitCode: number | null

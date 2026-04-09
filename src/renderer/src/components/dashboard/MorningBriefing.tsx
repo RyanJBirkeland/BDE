@@ -29,9 +29,10 @@ export function MorningBriefing({
   // Match tasks with their token usage
   const tasksWithTokens = useMemo((): TaskWithTokens[] => {
     return tasks.slice(0, 5).map((task) => {
-      const agent = localAgents.find((a) => a.sprintTaskId === task.id) ??
+      const agent =
+        localAgents.find((a) => a.sprintTaskId === task.id) ??
         localAgents.find((a) => a.id === task.agent_run_id)
-      const tokens = agent ? ((agent.tokensIn ?? 0) + (agent.tokensOut ?? 0)) : null
+      const tokens = agent ? (agent.tokensIn ?? 0) + (agent.tokensOut ?? 0) : null
       return {
         title: task.title,
         tokens: tokens && tokens > 0 ? tokens : null
@@ -63,7 +64,9 @@ export function MorningBriefing({
             <div className="dashboard-briefing__tasks">
               {tasksWithTokens.map((task, i) => (
                 <div key={i} className="dashboard-briefing__task-row">
-                  <span className="dashboard-briefing__task-title" title={task.title}>{task.title}</span>
+                  <span className="dashboard-briefing__task-title" title={task.title}>
+                    {task.title}
+                  </span>
                   <span className="dashboard-briefing__task-cost">
                     {task.tokens !== null ? formatTokens(task.tokens) : '—'}
                   </span>

@@ -170,9 +170,9 @@ describe('Personality System', () => {
       // Adhoc agents now run in isolated worktrees and must NOT push (push is the
       // user's decision via Promote to Code Review). The previous "never push to
       // main" framing was replaced when the Code Review flow was introduced.
-      expect(
-        adhocPersonality.constraints.some((c) => c.toLowerCase().includes('worktree'))
-      ).toBe(true)
+      expect(adhocPersonality.constraints.some((c) => c.toLowerCase().includes('worktree'))).toBe(
+        true
+      )
       expect(adhocPersonality.constraints.some((c) => c.includes('git push'))).toBe(true)
     })
 

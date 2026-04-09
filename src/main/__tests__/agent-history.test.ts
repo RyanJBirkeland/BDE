@@ -29,12 +29,13 @@ vi.mock('../db', () => {
         db = new Database(TEST_DB_PATH)
         ;(db as Database.Database).pragma('journal_mode = WAL')
         ;(db as Database.Database).pragma('foreign_keys = ON')
-        ;(db as Database.Database).exec(`
+        const schema = `
           CREATE TABLE IF NOT EXISTS agent_runs (
             id           TEXT PRIMARY KEY,
             pid          INTEGER,
             bin          TEXT NOT NULL DEFAULT 'claude',
             task         TEXT,
+            title        TEXT,
             repo         TEXT,
             repo_path    TEXT,
             model        TEXT,
@@ -67,7 +68,8 @@ vi.mock('../db', () => {
             timestamp  INTEGER NOT NULL
           );
           CREATE INDEX IF NOT EXISTS idx_agent_events_agent_id ON agent_events(agent_id);
-        `)
+        `
+        ;(db as Database.Database).exec(schema)
       }
       return db
     },
@@ -566,9 +568,9 @@ describe('agent-history (SQLite)', () => {
       expect(cleaned).toBe(0)
 
       const { getDb } = await import('../db')
-      const row = getDb()
-        .prepare('SELECT status FROM agent_runs WHERE id = ?')
-        .get('adhoc-1') as { status: string }
+      const row = getDb().prepare('SELECT status FROM agent_runs WHERE id = ?').get('adhoc-1') as {
+        status: string
+      }
       expect(row.status).toBe('running')
     })
 
@@ -622,9 +624,7 @@ describe('agent-history (SQLite)', () => {
         sprintTaskId: 'task-456'
       })
 
-      const cleaned = agentHistory.reconcileRunningAgentRuns(
-        (taskId) => taskId === 'task-456'
-      )
+      const cleaned = agentHistory.reconcileRunningAgentRuns((taskId) => taskId === 'task-456')
       expect(cleaned).toBe(0)
 
       const { getDb } = await import('../db')
@@ -664,9 +664,9 @@ describe('agent-history (SQLite)', () => {
 
     async function readFinishedAt(id: string): Promise<string> {
       const { getDb } = await import('../db')
-      const row = getDb()
-        .prepare('SELECT finished_at FROM agent_runs WHERE id = ?')
-        .get(id) as { finished_at: string }
+      const row = getDb().prepare('SELECT finished_at FROM agent_runs WHERE id = ?').get(id) as {
+        finished_at: string
+      }
       return row.finished_at
     }
 

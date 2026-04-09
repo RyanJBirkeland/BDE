@@ -153,7 +153,7 @@ describe('CostSection', () => {
     // Click the sortable Tokens header
     const sortableHeaders = container.querySelectorAll('.cost-table__sortable')
     if (sortableHeaders.length > 0) {
-      (sortableHeaders[0] as HTMLElement).click()
+      ;(sortableHeaders[0] as HTMLElement).click()
     }
   })
 })

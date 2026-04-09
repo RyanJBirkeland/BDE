@@ -35,11 +35,7 @@ export function CopilotDiscoveryPopover({
       <p id="wb-copilot-popover-body" className="wb-copilot-popover__body">
         Get help drafting task specs. Open the copilot any time from this toggle.
       </p>
-      <button
-        type="button"
-        className="wb-copilot-popover__cta"
-        onClick={onDismiss}
-      >
+      <button type="button" className="wb-copilot-popover__cta" onClick={onDismiss}>
         Got it
       </button>
     </div>

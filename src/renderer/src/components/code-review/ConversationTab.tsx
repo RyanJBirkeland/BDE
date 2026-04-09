@@ -219,7 +219,10 @@ export function ConversationTab(): React.JSX.Element {
   // Loading state: agent_run_id exists but events not loaded yet
   if (!agentEvents) {
     return (
-      <div className="cr-conversation" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
+      <div
+        className="cr-conversation"
+        style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}
+      >
         <div className="bde-skeleton" style={{ height: 40 }} />
         <div className="bde-skeleton" style={{ height: 40 }} />
         <div className="bde-skeleton" style={{ height: 40 }} />

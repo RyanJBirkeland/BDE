@@ -172,7 +172,9 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
 
         <div className="conflict-drawer__body">
           {!ghConfigured ? (
-            <div className="conflict-drawer__empty">Conflict detection requires GitHub. Configure a token in Settings &rarr; Connections.</div>
+            <div className="conflict-drawer__empty">
+              Conflict detection requires GitHub. Configure a token in Settings &rarr; Connections.
+            </div>
           ) : tasks.length === 0 ? (
             <div className="conflict-drawer__empty">No merge conflicts detected.</div>
           ) : (

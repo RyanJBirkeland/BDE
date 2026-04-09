@@ -29,10 +29,7 @@ export const useCostDataStore = create<CostDataState>((set, get) => ({
     set({ isFetching: true })
     try {
       const agents = await window.api.cost.getAgentHistory()
-      const total = agents.reduce(
-        (sum, a) => sum + (a.tokensIn ?? 0) + (a.tokensOut ?? 0),
-        0
-      )
+      const total = agents.reduce((sum, a) => sum + (a.tokensIn ?? 0) + (a.tokensOut ?? 0), 0)
       set({ localAgents: agents, totalTokens: total })
     } catch (err) {
       console.error('[costData] fetchLocalAgents failed:', err)

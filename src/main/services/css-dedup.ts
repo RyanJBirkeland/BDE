@@ -90,7 +90,7 @@ function parseCssBlocks(css: string, context: string): ParsedBlock[] {
         selector: '',
         body: '',
         context,
-        raw: css.slice(i, commentEnd),
+        raw: css.slice(i, commentEnd)
       })
       i = commentEnd
       continue
@@ -156,7 +156,7 @@ function parseCssBlocks(css: string, context: string): ParsedBlock[] {
         body,
         context,
         raw,
-        _inner: innerBlocks,
+        _inner: innerBlocks
       } as ParsedMediaBlock)
     } else {
       blocks.push({ type: 'rule', selector: selectorNorm, body, context, raw })
@@ -310,6 +310,6 @@ export function deduplicateCss(css: string): DedupResult {
   return {
     deduplicated: parts.join('\n'),
     removed: [...topRemoved, ...innerRemoved],
-    warnings: [...topWarnings, ...innerWarnings],
+    warnings: [...topWarnings, ...innerWarnings]
   }
 }

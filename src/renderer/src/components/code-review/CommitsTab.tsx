@@ -26,7 +26,10 @@ export function CommitsTab(): React.JSX.Element {
 
   if (loading.commits) {
     return (
-      <div className="cr-commits" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
+      <div
+        className="cr-commits"
+        style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}
+      >
         <div className="bde-skeleton" style={{ height: 48 }} />
         <div className="bde-skeleton" style={{ height: 48 }} />
         <div className="bde-skeleton" style={{ height: 48 }} />

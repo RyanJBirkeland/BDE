@@ -102,8 +102,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
           }
         } catch {
           // If git status fails, show a generic message
-          message =
-            'This agent has a worktree. Killing it may leave uncommitted changes on disk.'
+          message = 'This agent has a worktree. Killing it may leave uncommitted changes on disk.'
         }
       }
 
@@ -152,9 +151,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
       usePanelLayoutStore.getState().setView('code-review')
       useCodeReviewStore.getState().selectTask(result.taskId)
     } catch (err) {
-      toast.error(
-        `Failed to promote: ${err instanceof Error ? err.message : 'Unknown error'}`
-      )
+      toast.error(`Failed to promote: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -201,11 +198,18 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
           {(() => {
             const ctxTokens = isRunning ? liveCtxTokens : agent.cacheRead
             if (ctxTokens == null || ctxTokens === 0) return null
-            const label = ctxTokens >= 1_000_000
-              ? `${(ctxTokens / 1_000_000).toFixed(1)}M`
-              : `${Math.round(ctxTokens / 1_000)}k`
+            const label =
+              ctxTokens >= 1_000_000
+                ? `${(ctxTokens / 1_000_000).toFixed(1)}M`
+                : `${Math.round(ctxTokens / 1_000)}k`
             return (
-              <span title={isRunning ? 'Current context window size (live)' : 'Peak context window size (cache reads)'}>
+              <span
+                title={
+                  isRunning
+                    ? 'Current context window size (live)'
+                    : 'Peak context window size (cache reads)'
+                }
+              >
                 ctx {label}
               </span>
             )

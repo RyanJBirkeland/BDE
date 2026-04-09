@@ -54,7 +54,11 @@ describe('ReviewQueue', () => {
 
   it('renders empty state when no review tasks', () => {
     render(<ReviewQueue />)
-    expect(screen.getByText('No tasks awaiting review. Complete agent runs will appear here for inspection.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'No tasks awaiting review. Complete agent runs will appear here for inspection.'
+      )
+    ).toBeInTheDocument()
     expect(screen.getByText('0')).toBeInTheDocument()
   })
 

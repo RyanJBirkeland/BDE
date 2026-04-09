@@ -101,7 +101,8 @@ export function LaunchpadGrid({
   // Auto-focus first option when dropdown opens
   useEffect(() => {
     if (isRepoDropdownOpen && repoDropdownRef.current) {
-      const firstOption = repoDropdownRef.current.querySelector<HTMLButtonElement>('[role="option"]')
+      const firstOption =
+        repoDropdownRef.current.querySelector<HTMLButtonElement>('[role="option"]')
       firstOption?.focus()
     }
   }, [isRepoDropdownOpen])

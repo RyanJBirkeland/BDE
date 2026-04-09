@@ -36,13 +36,7 @@ describe('TextareaPromptModal', () => {
   })
 
   it('uses custom labels', () => {
-    render(
-      <TextareaPromptModal
-        {...defaultProps}
-        confirmLabel="Submit"
-        cancelLabel="Discard"
-      />
-    )
+    render(<TextareaPromptModal {...defaultProps} confirmLabel="Submit" cancelLabel="Discard" />)
     expect(screen.getByText('Submit')).toBeInTheDocument()
     expect(screen.getByText('Discard')).toBeInTheDocument()
   })

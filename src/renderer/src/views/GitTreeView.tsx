@@ -1,6 +1,14 @@
 import React, { useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { GitBranch, RefreshCw, AlertCircle, X, CheckCircle, Download, ArrowDownToLine } from 'lucide-react'
+import {
+  GitBranch,
+  RefreshCw,
+  AlertCircle,
+  X,
+  CheckCircle,
+  Download,
+  ArrowDownToLine
+} from 'lucide-react'
 import { useGitTreeStore } from '../stores/gitTree'
 import { toast } from '../stores/toasts'
 import { CommitBox } from '../components/git-tree/CommitBox'

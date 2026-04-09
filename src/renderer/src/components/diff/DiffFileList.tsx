@@ -20,9 +20,7 @@ export function DiffFileList({
         <span className="diff-sidebar__count bde-count-badge">{files.length}</span>
       </div>
       <div className="diff-sidebar__list">
-        {files.length === 0 && (
-          <EmptyState message="No files changed. The diff is empty." />
-        )}
+        {files.length === 0 && <EmptyState message="No files changed. The diff is empty." />}
         {files.map((f, i) => (
           <button
             key={f.path}

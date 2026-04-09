@@ -752,10 +752,10 @@ describe('Review handlers', () => {
       )
 
       const handlers = captureHandlers()
-      const result = await handlers['review:shipIt'](
-        _mockEvent,
-        { taskId: 'task-1', strategy: 'merge' }
-      )
+      const result = await handlers['review:shipIt'](_mockEvent, {
+        taskId: 'task-1',
+        strategy: 'merge'
+      })
 
       expect(result.success).toBe(true)
 
@@ -815,10 +815,10 @@ describe('Review handlers', () => {
       )
 
       const handlers = captureHandlers()
-      const result = await handlers['review:shipIt'](
-        _mockEvent,
-        { taskId: 'task-1', strategy: 'merge' }
-      )
+      const result = await handlers['review:shipIt'](_mockEvent, {
+        taskId: 'task-1',
+        strategy: 'merge'
+      })
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('feature/user-other-work')
@@ -864,10 +864,10 @@ describe('Review handlers', () => {
       )
 
       const handlers = captureHandlers()
-      const result = await handlers['review:shipIt'](
-        _mockEvent,
-        { taskId: 'task-1', strategy: 'merge' }
-      )
+      const result = await handlers['review:shipIt'](_mockEvent, {
+        taskId: 'task-1',
+        strategy: 'merge'
+      })
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('diverged from origin/main')

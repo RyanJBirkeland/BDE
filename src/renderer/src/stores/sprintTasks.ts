@@ -143,7 +143,11 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         }
 
         const nextTasks = Array.from(mergedById.values())
-        return { tasks: nextTasks, activeTaskCount: countActive(nextTasks), pendingUpdates: nextPending }
+        return {
+          tasks: nextTasks,
+          activeTaskCount: countActive(nextTasks),
+          pendingUpdates: nextPending
+        }
       })
     } catch (e) {
       set({ loadError: 'Failed to load tasks — ' + (e instanceof Error ? e.message : String(e)) })

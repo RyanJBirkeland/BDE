@@ -150,7 +150,10 @@ export function DependencyPicker({
                 title={`${dep.type === 'hard' ? 'Hard: blocks if upstream fails' : 'Soft: unblocks regardless of upstream outcome'} — click to toggle`}
                 style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
               >
-                <NeonBadge accent={dep.type === 'hard' ? 'red' : 'cyan'} label={(dep.type || 'hard').toUpperCase()} />
+                <NeonBadge
+                  accent={dep.type === 'hard' ? 'red' : 'cyan'}
+                  label={(dep.type || 'hard').toUpperCase()}
+                />
               </button>
               <select
                 className="wb-deps__condition"

@@ -37,7 +37,9 @@ describe('AgentManagerSection', () => {
   it('renders hot-reload / restart hint', () => {
     render(<AgentManagerSection />)
     expect(
-      screen.getByText(/Most fields hot-reload instantly\. Worktree base and Auto-start require a restart\./)
+      screen.getByText(
+        /Most fields hot-reload instantly\. Worktree base and Auto-start require a restart\./
+      )
     ).toBeInTheDocument()
   })
 

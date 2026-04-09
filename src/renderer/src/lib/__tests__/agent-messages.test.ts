@@ -20,25 +20,17 @@ describe('chatItemsToMessages', () => {
       { kind: 'tool_use', name: 'Read', input: '{"path": "/tmp"}', id: 'tu1' }
     ]
     const result = chatItemsToMessages(items)
-    expect(result).toEqual([
-      { role: 'tool', toolName: 'Read', content: '{"path": "/tmp"}' }
-    ])
+    expect(result).toEqual([{ role: 'tool', toolName: 'Read', content: '{"path": "/tmp"}' }])
   })
 
   it('converts tool_result items to tool messages', () => {
-    const items: ChatItem[] = [
-      { kind: 'tool_result', toolUseId: 'tu1', content: 'file contents' }
-    ]
+    const items: ChatItem[] = [{ kind: 'tool_result', toolUseId: 'tu1', content: 'file contents' }]
     const result = chatItemsToMessages(items)
-    expect(result).toEqual([
-      { role: 'tool', toolName: 'Result', content: 'file contents' }
-    ])
+    expect(result).toEqual([{ role: 'tool', toolName: 'Result', content: 'file contents' }])
   })
 
   it('skips empty tool_result items', () => {
-    const items: ChatItem[] = [
-      { kind: 'tool_result', toolUseId: 'tu1', content: '' }
-    ]
+    const items: ChatItem[] = [{ kind: 'tool_result', toolUseId: 'tu1', content: '' }]
     const result = chatItemsToMessages(items)
     expect(result).toEqual([])
   })
@@ -55,9 +47,7 @@ describe('chatItemsToMessages', () => {
   })
 
   it('converts result items to system messages (failure)', () => {
-    const items: ChatItem[] = [
-      { kind: 'result', subtype: 'error', result: '', costUsd: null }
-    ]
+    const items: ChatItem[] = [{ kind: 'result', subtype: 'error', result: '', costUsd: null }]
     const result = chatItemsToMessages(items)
     expect(result[0].content).toContain('Failed')
   })

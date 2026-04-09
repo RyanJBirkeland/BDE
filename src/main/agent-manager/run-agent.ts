@@ -198,8 +198,15 @@ export async function runAgent(
   repoPath: string,
   deps: RunAgentDeps
 ): Promise<void> {
-  const { activeAgents, defaultModel, logger, onTaskTerminal, repo, onSpawnSuccess, onSpawnFailure } =
-    deps
+  const {
+    activeAgents,
+    defaultModel,
+    logger,
+    onTaskTerminal,
+    repo,
+    onSpawnSuccess,
+    onSpawnFailure
+  } = deps
   const effectiveModel = task.model || defaultModel
 
   const taskContent = (task.prompt || task.spec || task.title || '').trim()
@@ -369,6 +376,7 @@ export async function runAgent(
     repo: task.repo,
     repoPath: worktree.worktreePath,
     task: prompt,
+    title: task.title,
     startedAt: new Date(agent.startedAt).toISOString(),
     finishedAt: null,
     exitCode: null,

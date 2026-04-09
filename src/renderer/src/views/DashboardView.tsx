@@ -37,7 +37,9 @@ function FreshnessLabel({ lastFetchedAt }: { lastFetchedAt: number }): React.JSX
   const text = ago < 10 ? 'just now' : ago < 60 ? `${ago}s ago` : `${Math.floor(ago / 60)}m ago`
   const stale = ago > 120
   return (
-    <span className={`dashboard-status-freshness${stale ? ' dashboard-status-freshness--stale' : ''}`}>
+    <span
+      className={`dashboard-status-freshness${stale ? ' dashboard-status-freshness--stale' : ''}`}
+    >
       {' · '}
       {text}
     </span>

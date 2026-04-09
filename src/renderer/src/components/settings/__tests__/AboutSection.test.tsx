@@ -23,9 +23,7 @@ describe('AboutSection', () => {
   it('opens GitHub on click', () => {
     render(<AboutSection />)
     fireEvent.click(screen.getByText('GitHub'))
-    expect(window.api.openExternal).toHaveBeenCalledWith(
-      'https://github.com/RyanJBirkeland/BDE'
-    )
+    expect(window.api.openExternal).toHaveBeenCalledWith('https://github.com/RyanJBirkeland/BDE')
   })
 
   it('dispatches show-shortcuts event on click', () => {

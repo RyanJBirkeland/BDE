@@ -199,7 +199,9 @@ export async function gitCheckout(cwd: string, branch: string): Promise<void> {
   })
 }
 
-export async function gitFetch(cwd: string): Promise<{ success: boolean; error?: string; stdout?: string }> {
+export async function gitFetch(
+  cwd: string
+): Promise<{ success: boolean; error?: string; stdout?: string }> {
   try {
     const { stdout, stderr } = await execFileAsync('git', ['fetch', 'origin'], {
       cwd,
@@ -213,13 +215,20 @@ export async function gitFetch(cwd: string): Promise<{ success: boolean; error?:
   }
 }
 
-export async function gitPull(cwd: string, currentBranch: string): Promise<{ success: boolean; error?: string; stdout?: string }> {
+export async function gitPull(
+  cwd: string,
+  currentBranch: string
+): Promise<{ success: boolean; error?: string; stdout?: string }> {
   try {
-    const { stdout, stderr } = await execFileAsync('git', ['pull', '--ff-only', 'origin', currentBranch], {
-      cwd,
-      encoding: 'utf-8' as const,
-      maxBuffer: MAX_BUFFER
-    })
+    const { stdout, stderr } = await execFileAsync(
+      'git',
+      ['pull', '--ff-only', 'origin', currentBranch],
+      {
+        cwd,
+        encoding: 'utf-8' as const,
+        maxBuffer: MAX_BUFFER
+      }
+    )
     return { success: true, stdout: (stdout + stderr).trim() || 'Pulled from origin' }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)

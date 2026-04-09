@@ -316,8 +316,8 @@ export function AgentsView(): React.JSX.Element {
             <strong style={{ color: 'var(--neon-cyan)' }}>Scratchpad.</strong> Agents here run in
             isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an agent
             finishes, click <em>Promote to Code Review</em> in its console header to flow the work
-            into the review queue. For tracked sprint work, queue tasks from{' '}
-            <em>Task Workbench</em>.
+            into the review queue. For tracked sprint work, queue tasks from <em>Task Workbench</em>
+            .
           </div>
 
           <AgentList

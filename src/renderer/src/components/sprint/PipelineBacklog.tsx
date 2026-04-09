@@ -68,7 +68,9 @@ function PipelineBacklogInner({
                 aria-label={`Select task: ${task.title}`}
                 onClick={() => onTaskClick(task.id)}
               >
-                <div className="backlog-card__title" title={task.title}>{task.title}</div>
+                <div className="backlog-card__title" title={task.title}>
+                  {task.title}
+                </div>
                 <div className="backlog-card__meta">
                   <span>{task.repo}</span>
                   {task.priority <= 2 && <span>P{task.priority}</span>}
@@ -120,7 +122,9 @@ function PipelineBacklogInner({
                 aria-label={`Select task: ${task.title}`}
                 onClick={() => onTaskClick(task.id)}
               >
-                <div className="failed-card__title" title={task.title}>{task.title}</div>
+                <div className="failed-card__title" title={task.title}>
+                  {task.title}
+                </div>
                 <div
                   className="failed-card__meta failed-card__notes"
                   title={task.notes || 'No details'}

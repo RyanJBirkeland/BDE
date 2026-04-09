@@ -4,14 +4,12 @@ import { Onboarding } from '../Onboarding'
 
 beforeEach(() => {
   vi.clearAllMocks()
-  ;(window.api as Record<string, unknown>).authStatus = vi
-    .fn()
-    .mockResolvedValue({
-      cliFound: true,
-      tokenFound: true,
-      tokenExpired: false,
-      expiresAt: '2026-12-31'
-    })
+  ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+    cliFound: true,
+    tokenFound: true,
+    tokenExpired: false,
+    expiresAt: '2026-12-31'
+  })
 })
 
 describe('Onboarding', () => {
@@ -55,13 +53,11 @@ describe('Onboarding', () => {
   })
 
   it('does not auto-advance when CLI is not found', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi
-      .fn()
-      .mockResolvedValue({
-        cliFound: false,
-        tokenFound: false,
-        tokenExpired: false
-      })
+    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+      cliFound: false,
+      tokenFound: false,
+      tokenExpired: false
+    })
 
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)
@@ -73,13 +69,11 @@ describe('Onboarding', () => {
   })
 
   it('shows Check Again button when checks fail', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi
-      .fn()
-      .mockResolvedValue({
-        cliFound: false,
-        tokenFound: false,
-        tokenExpired: false
-      })
+    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+      cliFound: false,
+      tokenFound: false,
+      tokenExpired: false
+    })
 
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)
@@ -90,13 +84,11 @@ describe('Onboarding', () => {
   })
 
   it('shows help text for failed checks', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi
-      .fn()
-      .mockResolvedValue({
-        cliFound: false,
-        tokenFound: false,
-        tokenExpired: false
-      })
+    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+      cliFound: false,
+      tokenFound: false,
+      tokenExpired: false
+    })
 
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)
@@ -109,13 +101,11 @@ describe('Onboarding', () => {
   })
 
   it('calls onReady when Continue Anyway is clicked', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi
-      .fn()
-      .mockResolvedValue({
-        cliFound: false,
-        tokenFound: false,
-        tokenExpired: false
-      })
+    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+      cliFound: false,
+      tokenFound: false,
+      tokenExpired: false
+    })
 
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)

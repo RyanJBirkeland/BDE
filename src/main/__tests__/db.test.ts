@@ -256,9 +256,12 @@ describe('db schema migrations', () => {
     db.pragma('user_version = 37')
 
     // Insert a task with uppercase repo
-    db.prepare(
-      `INSERT INTO sprint_tasks (id, title, repo, status) VALUES (?, ?, ?, ?)`
-    ).run('test-task-1', 'Test Task', 'BDE', 'backlog')
+    db.prepare(`INSERT INTO sprint_tasks (id, title, repo, status) VALUES (?, ?, ?, ?)`).run(
+      'test-task-1',
+      'Test Task',
+      'BDE',
+      'backlog'
+    )
 
     // Verify the repo is uppercase before migration
     const before = db.prepare('SELECT repo FROM sprint_tasks WHERE id = ?').get('test-task-1') as {
@@ -296,7 +299,9 @@ describe('db schema migrations', () => {
 
     // Verify EXPLAIN QUERY PLAN shows the index is used for the hot query
     const plan = db
-      .prepare('EXPLAIN QUERY PLAN SELECT payload FROM agent_events WHERE agent_id=? ORDER BY timestamp ASC')
+      .prepare(
+        'EXPLAIN QUERY PLAN SELECT payload FROM agent_events WHERE agent_id=? ORDER BY timestamp ASC'
+      )
       .all('test-agent') as Array<{ detail: string }>
 
     // The query plan should mention the index

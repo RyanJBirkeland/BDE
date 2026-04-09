@@ -201,7 +201,9 @@ export interface AgentChannels {
     result: { content: string; nextByte: number }
   }
   'agent:steer': {
-    args: [args: { agentId: string; message: string; images?: Array<{ data: string; mimeType: string }> }]
+    args: [
+      args: { agentId: string; message: string; images?: Array<{ data: string; mimeType: string }> }
+    ]
     result: { ok: boolean; error?: string }
   }
   'agent:kill': {
@@ -226,7 +228,12 @@ export interface AgentChannels {
   }
   'agent:latestCacheTokens': {
     args: [runId: string]
-    result: { cacheTokensRead: number; cacheTokensCreated: number; tokensIn: number; tokensOut: number } | null
+    result: {
+      cacheTokensRead: number
+      cacheTokensCreated: number
+      tokensIn: number
+      tokensOut: number
+    } | null
   }
 }
 

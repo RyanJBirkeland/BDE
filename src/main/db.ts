@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { mkdirSync, existsSync, chmodSync, statSync, unlinkSync } from 'fs'
 import path from 'path'
 import { BDE_DIR as DB_DIR, BDE_DB_PATH as DB_PATH } from './paths'
+import { deriveAgentTitle } from '../shared/derive-agent-title'
 
 let _db: Database.Database | null = null
 
@@ -887,7 +888,8 @@ export const migrations: Migration[] = [
   },
   {
     version: 36,
-    description: 'Restore idx_sprint_tasks_claimed_by and idx_sprint_tasks_pr_number dropped in v17/v20 table rewrites',
+    description:
+      'Restore idx_sprint_tasks_claimed_by and idx_sprint_tasks_pr_number dropped in v17/v20 table rewrites',
     up: (db) => {
       db.exec('CREATE INDEX IF NOT EXISTS idx_sprint_tasks_claimed_by ON sprint_tasks(claimed_by)')
       db.exec('CREATE INDEX IF NOT EXISTS idx_sprint_tasks_pr_number ON sprint_tasks(pr_number)')
@@ -925,7 +927,9 @@ export const migrations: Migration[] = [
     version: 38,
     description: 'Normalize sprint_tasks.repo to lowercase for case-insensitive matching',
     up: (db) => {
-      const stmt = db.prepare('UPDATE sprint_tasks SET repo = lower(repo) WHERE repo <> lower(repo)')
+      const stmt = db.prepare(
+        'UPDATE sprint_tasks SET repo = lower(repo) WHERE repo <> lower(repo)'
+      )
       stmt.run()
     }
   },
@@ -1002,6 +1006,31 @@ export const migrations: Migration[] = [
     up: (db) => {
       db.prepare('ALTER TABLE agent_run_turns ADD COLUMN cache_tokens_created INTEGER').run()
       db.prepare('ALTER TABLE agent_run_turns ADD COLUMN cache_tokens_read INTEGER').run()
+    }
+  },
+  {
+    version: 46,
+    description: 'Add title column to agent_runs for human-readable agent names',
+    up: (db) => {
+      // Add title column
+      db.prepare('ALTER TABLE agent_runs ADD COLUMN title TEXT').run()
+
+      // Backfill existing rows by deriving title from task column
+      const rows = db
+        .prepare('SELECT id, task, source FROM agent_runs WHERE title IS NULL')
+        .all() as Array<{
+        id: string
+        task: string | null
+        source: string | null
+      }>
+
+      const update = db.prepare('UPDATE agent_runs SET title = ? WHERE id = ?')
+      for (const row of rows) {
+        const task = row.task ?? ''
+        const source = (row.source as 'adhoc' | 'bde' | 'external') ?? 'external'
+        const title = deriveAgentTitle(task, source)
+        update.run(title, row.id)
+      }
     }
   }
 ]

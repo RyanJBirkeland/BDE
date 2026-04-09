@@ -206,7 +206,9 @@ describe('AgentList', () => {
     ]
     render(<AgentList {...defaultProps} agents={agents} />)
     await user.type(screen.getByPlaceholderText('Filter agents...'), 'xyzzy')
-    expect(screen.getByText('No agents match your filter. Try adjusting the search or clearing filters.')).toBeInTheDocument()
+    expect(
+      screen.getByText('No agents match your filter. Try adjusting the search or clearing filters.')
+    ).toBeInTheDocument()
   })
 
   it('calls onSelect when an agent card is clicked', async () => {
