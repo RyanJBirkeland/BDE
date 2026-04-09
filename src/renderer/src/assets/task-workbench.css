@@ -45,11 +45,11 @@
   right: 0;
   width: 260px;
   padding: 14px 16px 12px;
-  background: var(--glass-surface, rgba(10, 14, 24, 0.95));
-  border: 1px solid var(--bde-accent, #22d3ee);
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent);
   border-radius: 8px;
   box-shadow:
-    0 0 0 1px rgba(34, 211, 238, 0.15),
+    0 0 0 1px var(--bde-accent-border),
     0 12px 32px rgba(0, 0, 0, 0.5),
     transparent);
   color: var(--bde-text, rgba(255, 255, 255, 0.9));
@@ -96,8 +96,8 @@
 }
 
 .wb-copilot-popover__close:hover {
-  color: var(--bde-text, rgba(255, 255, 255, 0.9));
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--bde-text);
+  background: var(--bde-hover-strong);
 }
 
 .wb-copilot-popover__title {
@@ -115,7 +115,7 @@
 }
 
 .wb-copilot-popover__cta {
-  background: var(--bde-accent-surface, rgba(34, 211, 238, 0.12));
+  background: var(--bde-accent-surface);
   border: 1px solid var(--bde-accent, #22d3ee);
   border-radius: 5px;
   color: var(--bde-accent, #22d3ee);
@@ -127,7 +127,7 @@
 }
 
 .wb-copilot-popover__cta:hover {
-  background: rgba(34, 211, 238, 0.2);
+  background: var(--bde-accent-surface);
   box-shadow: transparent);
 }
 
@@ -925,7 +925,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__show-all:hover {
-  background: rgba(34, 211, 238, 0.08);
+  background: var(--bde-accent-surface);
 }
 
 .wb-deps__show-all:focus-visible {

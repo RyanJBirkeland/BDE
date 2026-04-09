@@ -623,18 +623,18 @@
 }
 
 .cr-actions__freshness--fresh {
-  color: var(--bde-accent, #0ff);
-  background: rgba(0, 255, 255, 0.08);
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
 }
 
 .cr-actions__freshness--stale {
   color: var(--bde-warning);
-  background: rgba(255, 136, 0, 0.08);
+  background: var(--bde-warning-surface);
 }
 
 .cr-actions__freshness--conflict {
   color: var(--bde-danger);
-  background: rgba(255, 68, 68, 0.08);
+  background: var(--bde-danger-surface);
 }
 
 .cr-actions__freshness--unknown,
