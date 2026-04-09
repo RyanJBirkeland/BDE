@@ -48,9 +48,17 @@ export function selectUserMemory(taskSpec: string): UserMemoryResult {
     if (!headerMatch) continue
     const relativePath = headerMatch[1].trim()
 
+    // Count only the raw file content bytes (consistent with getUserMemory's accounting).
+    // The section string includes the '### header\n\n' prefix — strip it before counting.
+    const contentStart = section.indexOf('\n\n')
+    const contentBytes =
+      contentStart >= 0
+        ? Buffer.byteLength(section.slice(contentStart + 2), 'utf-8')
+        : Buffer.byteLength(section, 'utf-8')
+
     if (isGlobalFile(relativePath)) {
       kept.push(section)
-      totalBytes += Buffer.byteLength(section, 'utf-8')
+      totalBytes += contentBytes
       continue
     }
 
@@ -58,7 +66,7 @@ export function selectUserMemory(taskSpec: string): UserMemoryResult {
     const hasMatch = [...keywords].some(kw => lower.includes(kw))
     if (hasMatch) {
       kept.push(section)
-      totalBytes += Buffer.byteLength(section, 'utf-8')
+      totalBytes += contentBytes
     }
   }
 
