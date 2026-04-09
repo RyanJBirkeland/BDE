@@ -99,25 +99,46 @@ and add `--bde-status-blocked` that points to the same value.
 
 ### 1.2 New Tokens to Add to Base
 
-Add to both `html.theme-pro-dark` and `html.theme-pro-light` in `base.css`:
+Add to `html.theme-pro-dark` in `base.css`:
 
 ```css
-/* Interactive accent surfaces */
---bde-accent-surface: <faint accent tint>;
---bde-accent-border:  <muted accent border>;
+/* Interactive accent surfaces (accent = #4a88c7) */
+--bde-accent-surface: rgba(74, 136, 199, 0.10);   /* #4a88c71a */
+--bde-accent-border:  rgba(74, 136, 199, 0.28);   /* #4a88c748 */
 
-/* Semantic surface tints (for warning/danger callouts) */
---bde-warning-surface: <faint amber tint>;
---bde-warning-border:  <muted amber>;
---bde-danger-surface:  <faint red tint>;
---bde-danger-border:   <muted red>;
+/* Semantic surface tints */
+--bde-warning-surface: rgba(204, 136, 51, 0.10);  /* #cc88331a */
+--bde-warning-border:  rgba(204, 136, 51, 0.30);  /* #cc88334d */
+--bde-danger-surface:  rgba(219, 92, 92, 0.10);   /* #db5c5c1a */
+--bde-danger-border:   rgba(219, 92, 92, 0.30);   /* #db5c5c4d */
 
 /* Task status colors */
---bde-status-active:   <blue-purple>;
---bde-status-review:   <accent blue>;
---bde-status-blocked:  same as --bde-warning;
---bde-status-done:     <professional green>;
---bde-status-queued:   same as --bde-accent;
+--bde-status-active:   #7c6af7;  /* blue-purple */
+--bde-status-review:   var(--bde-accent);
+--bde-status-blocked:  var(--bde-warning);
+--bde-status-done:     #4caf82;  /* professional green */
+--bde-status-queued:   var(--bde-accent);
+```
+
+Add to `html.theme-pro-light` in `base.css`:
+
+```css
+/* Interactive accent surfaces (accent = #2675bf) */
+--bde-accent-surface: rgba(38, 117, 191, 0.08);   /* #2675bf14 */
+--bde-accent-border:  rgba(38, 117, 191, 0.25);   /* #2675bf40 */
+
+/* Semantic surface tints */
+--bde-warning-surface: rgba(184, 115, 32, 0.08);  /* #b8732014 */
+--bde-warning-border:  rgba(184, 115, 32, 0.28);  /* #b8732047 */
+--bde-danger-surface:  rgba(201, 64, 64, 0.08);   /* #c9404014 */
+--bde-danger-border:   rgba(201, 64, 64, 0.28);   /* #c9404047 */
+
+/* Task status colors */
+--bde-status-active:   #6356e5;
+--bde-status-review:   var(--bde-accent);
+--bde-status-blocked:  var(--bde-warning);
+--bde-status-done:     #3a9b6f;
+--bde-status-queued:   var(--bde-accent);
 ```
 
 ### 1.3 Theme Pruning
@@ -197,18 +218,17 @@ Location: `src/renderer/src/components/neon/`
 - `ParticleField.tsx` — remove all usages, delete file
 - `ScanlineOverlay.tsx` — remove all usages, delete file
 
-**Gut to structural shells (keep exports to avoid sweeping import changes):**
-- `NeonCard` → rename export to `Card`, remove glow/glass styles, becomes a simple bordered container
-- `GlassPanel` → becomes a simple surfaced panel (no backdrop-filter)
-- `NeonBadge` → rename to `Badge`, solid background only
-- `NeonTooltip` → rename to `Tooltip`
-- `NeonProgress` → rename to `ProgressBar`
-- `ActivityFeed`, `StatCounter`, `MiniChart`, `StatusBar`, `PipelineFlow` — keep functional, strip any inline glow styles
+**Gut to structural shells — keep existing export names, only clean internals:**
+- `NeonCard` — remove glow/glass styles, becomes a simple bordered container. Export name unchanged.
+- `GlassPanel` — remove `backdrop-filter`, becomes a plain surfaced panel. Export name unchanged.
+- `NeonBadge` — solid background only, no glow. Export name unchanged.
+- `NeonTooltip` — remove glow shadow. Export name unchanged.
+- `NeonProgress` — remove glow. Export name unchanged.
+- `ActivityFeed`, `StatCounter`, `MiniChart`, `StatusBar`, `PipelineFlow` — strip any inline glow styles. Export names unchanged.
 
-Re-export old names as aliases during a transition period if needed to avoid touching every import site:
-```ts
-export { Card as NeonCard } // temporary alias
-```
+**No import sites are touched in Phase 2.** Export names stay as-is (`NeonCard`, `GlassPanel`,
+etc.) — they are historical names that no longer imply a visual style. A follow-on cleanup PR can
+rename the exports and update import sites, but that is explicitly out of scope here.
 
 ### 2.2 CSS Effects to Strip
 
@@ -253,6 +273,12 @@ After Phase 2:
 - All existing tests pass
 - `npm run typecheck` — zero errors
 - `npm run lint` — zero errors
+
+### Phase Ownership of `tokens.ts`
+
+`src/renderer/src/design-system/tokens.ts` (JS token object) is updated in **Phase 1** alongside
+the CSS token rename — `tokens.neon.*` → `tokens.bde.*`. All component files using
+`tokens.neon.cyan` etc. are updated in the same Phase 1 pass. Phase 2 does not touch `tokens.ts`.
 
 ---
 
