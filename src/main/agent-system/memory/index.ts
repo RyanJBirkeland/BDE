@@ -1,3 +1,5 @@
+export { selectUserMemory } from './select-user-memory'
+
 import { ipcConventions } from './ipc-conventions'
 import { testingPatterns } from './testing-patterns'
 import { architectureRules } from './architecture-rules'
