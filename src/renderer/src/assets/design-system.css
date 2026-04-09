@@ -1069,3 +1069,40 @@ html.theme-pro-light .elevation-3 {
 html.theme-pro-light .elevation-3-backdrop {
   background: rgba(0, 0, 0, 0.3);
 }
+
+/* ── Drawer resize handle (right-anchored overlay drawers) ───────────────── */
+.drawer-resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.drawer-resize-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.drawer-resize-handle:hover::after,
+.drawer-resize-handle:active::after {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan-glow);
+  opacity: 0.6;
+}
+
+/* ── Shared panel separator (react-resizable-panels) ─────────────────────── */
+.panel-separator {
+  background: var(--neon-purple-border);
+}
+
+.panel-separator:hover,
+.panel-separator:active {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan-glow);
+}
