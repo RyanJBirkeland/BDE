@@ -11,9 +11,11 @@ import { copilotPersonality } from '../agent-system/personality/copilot-personal
 import { synthesizerPersonality } from '../agent-system/personality/synthesizer-personality'
 import { adhocPersonality } from '../agent-system/personality/adhoc-personality'
 import type { AgentPersonality } from '../agent-system/personality/types'
-import { getAllMemory, isBdeRepo } from '../agent-system/memory'
+import { join } from 'node:path'
+import { getAllMemory, isBdeRepo, selectUserMemory } from '../agent-system/memory'
 import { getUserMemory } from '../agent-system/memory/user-memory'
 import { getAllSkills } from '../agent-system/skills'
+import { BDE_TASK_MEMORY_DIR } from '../paths'
 
 export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer'
 
@@ -32,6 +34,8 @@ export interface BuildPromptInput {
   upstreamContext?: Array<{ title: string; spec: string; partial_diff?: string }> // completed upstream task specs + diffs
   crossRepoContract?: string | null // cross-repo API contract documentation
   repoName?: string | null // target repo name (used to scope BDE-specific memory injection)
+  taskId?: string // pipeline only — used to build scratchpad path
+  priorScratchpad?: string // content of progress.md from prior attempt (empty string if none)
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +102,34 @@ function buildRetryContext(retryCount: number, previousNotes?: string): string {
     ? `Previous attempt failed: ${previousNotes}`
     : 'No failure notes from previous attempt.'
   return `\n\n## Retry Context\nThis is attempt ${attemptNum} of ${maxAttempts}. ${notesText}\nDo NOT repeat the same approach. Analyze what went wrong and try a different strategy.\nIf the previous failure was a test/typecheck error, fix that specific error first.`
+}
+
+// ---------------------------------------------------------------------------
+// Scratchpad Section
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure string formatter — no fs access, no imports from fs.
+ * All file I/O (mkdirSync, readFileSync) stays in run-agent.ts.
+ */
+function buildScratchpadSection(taskId: string): string {
+  const scratchpadPath = join(BDE_TASK_MEMORY_DIR, taskId)
+  return `\n\n## Task Scratchpad
+
+You have a persistent scratchpad at: \`${scratchpadPath}/\`
+
+Rules:
+- CHECK IT FIRST: Before starting any work, run \`ls "${scratchpadPath}"\` and if \`progress.md\` exists, read it to recover prior context
+- WRITE AS YOU GO: After each meaningful step, append to \`progress.md\`
+- WRITE BEFORE EXIT: Before finishing, write a completion summary to \`progress.md\`
+
+What to record:
+- What you tried and whether it worked
+- Key decisions and why you made them
+- Current state if exiting mid-task
+- Specific errors with their resolutions
+
+This scratchpad survives retries and revision requests. Write for your future self.`
 }
 
 const PLAYGROUND_INSTRUCTIONS = `
@@ -254,7 +286,9 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     maxRuntimeMs,
     upstreamContext,
     crossRepoContract,
-    repoName
+    repoName,
+    taskId,
+    priorScratchpad,
   } = input
 
   // Start with agent-type-appropriate preamble
@@ -281,8 +315,12 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     }
   }
 
-  // Inject user memory (files toggled active in Settings > Memory)
-  const userMem = getUserMemory()
+  // Inject user memory (files toggled active in Settings > Memory).
+  // Pipeline agents use selective pre-loading (keyword-filtered against task spec)
+  // to avoid injecting irrelevant memory files into every agent's context.
+  // All other agent types load unconditionally — interactive agents benefit from full context.
+  const userMem =
+    agentType === 'pipeline' && taskContent ? selectUserMemory(taskContent) : getUserMemory()
   if (userMem.fileCount > 0) {
     prompt += '\n\n## User Knowledge\n'
     prompt += userMem.content
@@ -376,6 +414,18 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     // header so the agent knows it must read and address every section.
     // Copilot/synthesizer have no code tools and use their own task framing.
     if (agentType === 'pipeline') {
+      // Prior attempt context — injected before the task spec so the agent reads
+      // historical context before re-reading requirements.
+      if (priorScratchpad) {
+        prompt += '\n\n## Prior Attempt Context\n\n'
+        prompt += priorScratchpad
+      }
+
+      // Scratchpad instructions — always injected for pipeline agents with a taskId
+      if (taskId) {
+        prompt += buildScratchpadSection(taskId)
+      }
+
       // Inject per-class output budget hint before the spec
       const taskClass = classifyTask(taskContent)
       prompt += buildOutputCapHint(taskClass)

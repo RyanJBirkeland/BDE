@@ -933,4 +933,118 @@ describe('buildAgentPrompt', () => {
       // No playground unless explicitly enabled
     })
   })
+
+  describe('task scratchpad (pipeline only)', () => {
+    it('injects ## Task Scratchpad section when taskId is provided', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'implement feature x',
+        taskId: 'task-abc123',
+      })
+      expect(prompt).toContain('## Task Scratchpad')
+      expect(prompt).toContain('task-abc123')
+      expect(prompt).toContain('progress.md')
+    })
+
+    it('does not inject ## Task Scratchpad when taskId is omitted', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'implement feature x',
+      })
+      expect(prompt).not.toContain('## Task Scratchpad')
+    })
+
+    it('injects ## Prior Attempt Context before ## Task Specification when priorScratchpad is provided', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'implement feature x',
+        priorScratchpad: 'I tried approach A but hit error XYZ',
+      })
+      expect(prompt).toContain('## Prior Attempt Context')
+      expect(prompt).toContain('I tried approach A but hit error XYZ')
+      // Prior context must appear before the task spec
+      const priorIdx = prompt.indexOf('## Prior Attempt Context')
+      const specIdx = prompt.indexOf('## Task Specification')
+      expect(priorIdx).toBeLessThan(specIdx)
+    })
+
+    it('does not inject ## Prior Attempt Context when priorScratchpad is empty or absent', () => {
+      const noScratchpad = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'implement feature x',
+      })
+      expect(noScratchpad).not.toContain('## Prior Attempt Context')
+
+      const emptyScratchpad = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'implement feature x',
+        priorScratchpad: '',
+      })
+      expect(emptyScratchpad).not.toContain('## Prior Attempt Context')
+    })
+
+    it('does not inject scratchpad sections for non-pipeline agents', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'assistant',
+        taskContent: 'implement feature x',
+        taskId: 'task-abc123',
+        priorScratchpad: 'some prior notes',
+      })
+      expect(prompt).not.toContain('## Task Scratchpad')
+      expect(prompt).not.toContain('## Prior Attempt Context')
+    })
+  })
+
+  describe('selective user memory (pipeline only)', () => {
+    afterEach(() => {
+      mockGetUserMemory.mockReturnValue({ content: '', totalBytes: 0, fileCount: 0 })
+    })
+
+    it('pipeline agent filters out non-matching memory files via selectUserMemory', () => {
+      // Memory file about authentication — no keyword overlap with a CSS fix task
+      mockGetUserMemory.mockReturnValue({
+        content: '### auth-guide.md\n\nauthentication oauth token renewal guide',
+        totalBytes: 100,
+        fileCount: 1,
+      })
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'fix css layout overflow problem',
+      })
+      // selectUserMemory finds no overlap between "css", "layout", "overflow" and auth content
+      expect(prompt).not.toContain('## User Knowledge')
+      expect(prompt).not.toContain('authentication oauth token renewal guide')
+    })
+
+    it('pipeline agent includes memory files with matching keywords', () => {
+      mockGetUserMemory.mockReturnValue({
+        content: '### auth-guide.md\n\nauthentication oauth token renewal guide',
+        totalBytes: 100,
+        fileCount: 1,
+      })
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'fix authentication token refresh error',
+      })
+      // "authentication", "token", "refresh" match content → memory included
+      expect(prompt).toContain('## User Knowledge')
+      expect(prompt).toContain('authentication oauth token renewal guide')
+    })
+
+    it('assistant agent loads all memory unconditionally via getUserMemory', () => {
+      // Same auth content, same unrelated task — but assistant uses getUserMemory (no filtering)
+      mockGetUserMemory.mockReturnValue({
+        content: '### auth-guide.md\n\nauthentication oauth token renewal guide',
+        totalBytes: 100,
+        fileCount: 1,
+      })
+      const prompt = buildAgentPrompt({
+        agentType: 'assistant',
+        taskContent: 'fix css layout overflow problem',
+      })
+      // getUserMemory is unconditional for non-pipeline agents
+      expect(prompt).toContain('## User Knowledge')
+      expect(prompt).toContain('authentication oauth token renewal guide')
+    })
+  })
 })
