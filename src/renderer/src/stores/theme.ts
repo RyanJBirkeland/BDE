@@ -6,15 +6,13 @@ import { create } from 'zustand'
  * - `system` (new default for fresh installs) — follows the OS-level
  *   `prefers-color-scheme` media query and resolves to either `pro-dark`
  *   or `pro-light` styling. Re-evaluates live when the OS theme flips.
- * - `dark` — applies the `theme-pro-dark` class. The original "fun dark"
- *   styling has been retired in favor of pro-dark for the default Dark.
- * - `light` — applies the `theme-pro-light` class. Same retirement as Dark.
- * - `warm` — unchanged.
+ * - `dark` — applies the `theme-pro-dark` class.
+ * - `light` — applies the `theme-pro-light` class.
  *
- * Backwards compat: existing users with `pro-dark` or `pro-light` saved
- * to localStorage are migrated to `dark` / `light` on next load.
+ * Backwards compat: existing users with `pro-dark`, `pro-light`, or `warm`
+ * saved to localStorage are migrated on next load.
  */
-type Theme = 'system' | 'dark' | 'light' | 'warm'
+type Theme = 'system' | 'dark' | 'light'
 
 interface ThemeStore {
   theme: Theme
@@ -46,10 +44,9 @@ function applyTheme(t: Theme): void {
   // happens here (not in setTheme) so the storage event handler and the
   // matchMedia listener can both call applyTheme without re-implementing
   // the resolution.
-  const resolved: 'dark' | 'light' | 'warm' = t === 'system' ? getSystemColorScheme() : t
+  const resolved: 'dark' | 'light' = t === 'system' ? getSystemColorScheme() : t
 
   if (resolved === 'light') document.documentElement.classList.add('theme-pro-light')
-  else if (resolved === 'warm') document.documentElement.classList.add('theme-warm')
   else document.documentElement.classList.add('theme-pro-dark') // dark fallback
 }
 
@@ -57,21 +54,26 @@ function applyTheme(t: Theme): void {
  * Migrates legacy theme values from localStorage:
  * - 'pro-dark' → 'dark' (which now applies pro-dark styling)
  * - 'pro-light' → 'light' (which now applies pro-light styling)
+ * - 'warm' → 'dark'
  * - unrecognized values → 'system' (the new fresh-install default)
  */
 function loadSavedTheme(): Theme {
   try {
-    const saved = localStorage.getItem('bde-theme')
-    if (saved === 'pro-dark') {
+    const stored = localStorage.getItem('bde-theme')
+    if (stored === 'warm') {
       localStorage.setItem('bde-theme', 'dark')
       return 'dark'
     }
-    if (saved === 'pro-light') {
+    if (stored === 'pro-dark') {
+      localStorage.setItem('bde-theme', 'dark')
+      return 'dark'
+    }
+    if (stored === 'pro-light') {
       localStorage.setItem('bde-theme', 'light')
       return 'light'
     }
-    if (saved === 'dark' || saved === 'light' || saved === 'warm' || saved === 'system') {
-      return saved
+    if (stored === 'dark' || stored === 'light' || stored === 'system') {
+      return stored
     }
     return 'system'
   } catch {
@@ -86,7 +88,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   theme: initialTheme,
   toggleTheme: () =>
     set((s) => {
-      const order: Theme[] = ['system', 'dark', 'light', 'warm']
+      const order: Theme[] = ['system', 'dark', 'light']
       const idx = order.indexOf(s.theme)
       const next = order[(idx + 1) % order.length]
       try {
@@ -116,11 +118,11 @@ if (typeof window !== 'undefined') {
       // Tolerate legacy values arriving from older windows
       const v = e.newValue
       const next: Theme =
-        v === 'pro-dark'
+        v === 'pro-dark' || v === 'warm'
           ? 'dark'
           : v === 'pro-light'
             ? 'light'
-            : v === 'dark' || v === 'light' || v === 'warm' || v === 'system'
+            : v === 'dark' || v === 'light' || v === 'system'
               ? (v as Theme)
               : 'system'
       applyTheme(next)

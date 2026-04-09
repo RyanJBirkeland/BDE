@@ -63,38 +63,30 @@ describe('theme store', () => {
     expect(useThemeStore.getState().theme).toBe('light')
   })
 
-  it('toggleTheme cycles light → warm', () => {
+  it('toggleTheme cycles light → system (full loop)', () => {
     useThemeStore.setState({ theme: 'light' })
-    useThemeStore.getState().toggleTheme()
-    expect(useThemeStore.getState().theme).toBe('warm')
-  })
-
-  it('toggleTheme cycles warm → system (full loop)', () => {
-    useThemeStore.setState({ theme: 'warm' })
     useThemeStore.getState().toggleTheme()
     expect(useThemeStore.getState().theme).toBe('system')
   })
 
-  it('setTheme to warm updates state and applies theme-warm class', () => {
-    useThemeStore.getState().setTheme('warm')
-    expect(useThemeStore.getState().theme).toBe('warm')
-    expect(document.documentElement.classList.contains('theme-warm')).toBe(true)
-    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(false)
+  it('responds to storage events for cross-window sync (dark)', () => {
+    const event = new StorageEvent('storage', {
+      key: 'bde-theme',
+      newValue: 'dark'
+    })
+    window.dispatchEvent(event)
+    expect(useThemeStore.getState().theme).toBe('dark')
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
   })
 
-  it('setTheme warm persists to localStorage', () => {
-    useThemeStore.getState().setTheme('warm')
-    expect(localStorage.getItem('bde-theme')).toBe('warm')
-  })
-
-  it('responds to storage events for cross-window sync', () => {
+  it('storage event with legacy warm value migrates to dark', () => {
     const event = new StorageEvent('storage', {
       key: 'bde-theme',
       newValue: 'warm'
     })
     window.dispatchEvent(event)
-    expect(useThemeStore.getState().theme).toBe('warm')
-    expect(document.documentElement.classList.contains('theme-warm')).toBe(true)
+    expect(useThemeStore.getState().theme).toBe('dark')
+    expect(document.documentElement.classList.contains('theme-pro-dark')).toBe(true)
   })
 
   it('storage event with legacy pro-dark value migrates to dark', () => {
