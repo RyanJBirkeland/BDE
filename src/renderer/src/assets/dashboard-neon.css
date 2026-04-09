@@ -8,7 +8,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--neon-bg);
+  background: var(--bde-bg);
   position: relative;
   overflow: hidden;
 }
@@ -49,7 +49,7 @@
 }
 
 .dashboard-briefing__text {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
@@ -87,13 +87,13 @@
 
 .dashboard-briefing__button--secondary {
   background: transparent;
-  border: 1px solid var(--neon-text-dim);
-  color: var(--neon-text-dim);
+  border: 1px solid var(--bde-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .dashboard-briefing__button--secondary:hover:not(:disabled) {
-  border-color: var(--neon-text);
-  color: var(--neon-text);
+  border-color: var(--bde-text);
+  color: var(--bde-text);
 }
 
 .dashboard-briefing__button--secondary:active:not(:disabled) {
@@ -114,11 +114,11 @@
   gap: 12px;
   padding: 6px 8px;
   border-radius: 4px;
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
 }
 
 .dashboard-briefing__task-title {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -144,7 +144,7 @@
 }
 
 .dashboard-briefing__total-label {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 12px;
   font-weight: 600;
 }
@@ -204,21 +204,21 @@
 
 /* ── Chart Subtitle / Muted Captions ── */
 .dashboard-chart-caption {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   margin-top: 6px;
 }
 
 /* ── Avg Duration Value ── */
 .dashboard-duration-value {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 20px;
   font-weight: 700;
   text-shadow: var(--neon-blue-glow);
 }
 
 .dashboard-duration-meta {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   margin-top: 4px;
   opacity: 0.85;
@@ -244,7 +244,7 @@
 }
 
 .dashboard-completions-empty {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
 }
 
@@ -263,11 +263,11 @@
 }
 
 .dashboard-completion-row[role='button']:hover {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
 }
 
 .dashboard-completion-title {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -291,7 +291,7 @@
 }
 
 .dashboard-completion-time {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   white-space: nowrap;
   opacity: 0.85;
@@ -299,7 +299,7 @@
 
 /* ── Failure Breakdown ── */
 .dashboard-failure-breakdown-empty {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   opacity: 0.6;
   text-align: center;
@@ -323,11 +323,11 @@
 }
 
 .dashboard-failure-breakdown-row:hover {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
 }
 
 .dashboard-failure-breakdown-reason {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -345,7 +345,7 @@
 }
 
 .dashboard-card-loading {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   opacity: 0.6;
   text-align: center;
@@ -354,7 +354,7 @@
 
 /* ── Cost Card Value ── */
 .dashboard-cost-value {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 28px;
   font-weight: 700;
   text-shadow: var(--neon-orange-glow);
@@ -373,7 +373,7 @@
 
 .dashboard-ring__bg {
   fill: none;
-  stroke: var(--neon-surface-dim);
+  stroke: var(--bde-border);
   stroke-width: 6;
 }
 
@@ -383,13 +383,13 @@
 }
 
 .dashboard-ring__breakdown {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   opacity: 0.85;
 }
 
 .dashboard-ring-empty {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
 }
 
@@ -439,7 +439,7 @@
 }
 
 .dashboard-status-freshness {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
   opacity: 0.6;
 }
@@ -496,7 +496,7 @@
 }
 
 .dashboard-onboarding__text {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 14px;
   line-height: 1.5;
   max-width: 300px;
@@ -534,7 +534,7 @@
   border-radius: 4px;
   background: none;
   border: none;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -543,7 +543,7 @@
 }
 
 .dashboard-attention-item:hover {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
 }
 
 .dashboard-attention-review-section {
@@ -607,14 +607,14 @@
 .spec-rate__title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 12px;
 }
 
 .spec-rate__empty {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 11px;
 }
 
@@ -639,18 +639,18 @@
 .spec-rate__label {
   font-size: 11px;
   font-weight: 500;
-  color: var(--neon-text);
+  color: var(--bde-text);
   text-transform: capitalize;
 }
 
 .spec-rate__value {
   font-size: 11px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 .spec-rate__track {
   height: 6px;
-  background: var(--neon-surface-deep);
+  background: var(--bde-surface-high);
   border-radius: 3px;
   overflow: hidden;
 }

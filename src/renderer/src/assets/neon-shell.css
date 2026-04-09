@@ -11,7 +11,7 @@
    The zone inherits the app background and has -webkit-app-region: drag
    so it acts as a seamless extension of the titlebar. */
 .app-shell {
-  background: var(--neon-bg);
+  background: var(--bde-bg);
   padding-top: 28px;
 }
 
@@ -24,12 +24,12 @@
   right: 0;
   height: 28px;
   -webkit-app-region: drag;
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--bde-surface-high) 100%);
   z-index: 11;
 }
 
 .app-shell__body {
-  background: var(--neon-bg);
+  background: var(--bde-bg);
 }
 
 /* ── Unified Header ── */
@@ -37,7 +37,7 @@
   height: 44px;
   display: flex;
   align-items: stretch;
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--bde-surface-high) 100%);
   border-bottom: 1px solid var(--neon-purple-border);
   -webkit-app-region: drag;
   flex-shrink: 0;
@@ -116,7 +116,7 @@
   padding: 0 12px;
   gap: 6px;
   font-size: 11px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   cursor: pointer;
   -webkit-app-region: no-drag;
   border-radius: 6px;
@@ -129,13 +129,13 @@
 }
 
 .header-tab:hover {
-  color: var(--neon-text-muted);
-  background: var(--neon-surface-dim);
+  color: var(--bde-text-muted);
+  background: var(--bde-border);
 }
 
 .header-tab--active {
-  color: var(--neon-text);
-  background: var(--neon-surface-deep);
+  color: var(--bde-text);
+  background: var(--bde-surface-high);
   border-color: var(--neon-purple-border);
   font-weight: 500;
 }
@@ -156,7 +156,7 @@
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   cursor: pointer;
   transition:
     color 100ms ease,
@@ -172,14 +172,14 @@
 }
 
 .header-tab__close:hover:not(:disabled) {
-  color: var(--neon-text);
-  background: var(--neon-surface-subtle);
+  color: var(--bde-text);
+  background: var(--bde-surface);
 }
 
 /* ── Neon Sidebar ── */
 .neon-sidebar {
   width: 52px;
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--neon-surface-deep) 100%);
+  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--bde-surface-high) 100%);
   border-right: 1px solid var(--neon-purple-border);
   display: flex;
   flex-direction: column;
@@ -221,7 +221,7 @@
   transition:
     background 150ms ease,
     color 150ms ease;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   border: none;
   background: transparent;
   padding: 0;
@@ -229,7 +229,7 @@
 
 .sidebar-item:hover {
   background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .sidebar-item--active {
@@ -257,7 +257,7 @@
   height: 16px;
   border-radius: 8px;
   background: var(--neon-orange);
-  color: var(--neon-bg);
+  color: var(--bde-bg);
   font-size: 10px;
   font-weight: 700;
   display: flex;
@@ -300,7 +300,7 @@
   padding: 8px 12px;
   background: none;
   border: none;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
   cursor: pointer;
   transition:
@@ -311,7 +311,7 @@
 .sidebar-context-menu__item:hover,
 .sidebar-context-menu__item:focus-visible {
   background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  color: var(--bde-text);
   outline: none;
 }
 
@@ -321,12 +321,12 @@
   z-index: 1000;
   padding: 6px 12px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--neon-purple-surface), var(--neon-surface-deep));
+  background: linear-gradient(135deg, var(--neon-purple-surface), var(--bde-surface-high));
   border: 1px solid var(--neon-purple-border);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   box-shadow: var(--neon-glass-shadow);
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
@@ -365,7 +365,7 @@
   gap: 8px;
   padding: 8px 12px;
   cursor: pointer;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
   transition:
     background 100ms ease,
@@ -379,7 +379,7 @@
 
 .overflow-menu__item:hover {
   background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .overflow-menu__item-pin {
@@ -403,7 +403,7 @@
 .overflow-menu__empty {
   padding: 12px;
   font-size: 11px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   text-align: center;
 }
 
@@ -425,7 +425,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   transition:
     background 100ms ease,
     color 100ms ease;
@@ -435,7 +435,7 @@
 .overflow-menu__customize-btn:hover:not(:disabled),
 .overflow-menu__customize-btn:focus-visible {
   background: var(--neon-purple-surface);
-  color: var(--neon-text);
+  color: var(--bde-text);
   outline: none;
 }
 
@@ -446,8 +446,8 @@
   align-items: center;
   padding: 0 10px;
   font-size: 10px;
-  color: var(--neon-text-dim);
-  background: var(--neon-surface-deep);
+  color: var(--bde-text-dim);
+  background: var(--bde-surface-high);
   border-bottom: 1px solid var(--bde-border);
   cursor: pointer;
   transition: color 100ms ease;
@@ -455,7 +455,7 @@
 }
 
 .panel-label-slim:hover {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 .panel-label-dirty-dot {
@@ -557,7 +557,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: var(--neon-surface);
+  background: var(--bde-surface);
   border: 1px solid var(--neon-cyan-border);
   border-radius: 8px;
   box-shadow: var(--bde-shadow-lg);
@@ -573,12 +573,12 @@
   background: transparent;
   border: none;
   outline: none;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   font-family: var(--bde-font-code);
 }
 .quick-create-bar__input::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 .quick-create-bar__hints {
   display: flex;
@@ -590,12 +590,12 @@
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 .quick-create-bar__hint kbd {
   padding: 1px 4px;
   border-radius: 3px;
-  background: var(--neon-surface-deep);
+  background: var(--bde-surface-high);
   border: 1px solid var(--neon-border);
   font-size: 9px;
 }

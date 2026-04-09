@@ -10,7 +10,7 @@
   flex-direction: column;
   position: relative;
   font-family: var(--bde-font-code);
-  background: var(--neon-bg);
+  background: var(--bde-bg);
 }
 
 .wb__copilot-toggle {
@@ -52,7 +52,7 @@
     0 0 0 1px rgba(34, 211, 238, 0.15),
     0 12px 32px rgba(0, 0, 0, 0.5),
     var(--neon-cyan-glow, 0 0 24px rgba(34, 211, 238, 0.25));
-  color: var(--neon-text, rgba(255, 255, 255, 0.9));
+  color: var(--bde-text, rgba(255, 255, 255, 0.9));
   z-index: 20;
   animation: wb-copilot-popover-fade-in 180ms ease-out;
 }
@@ -86,7 +86,7 @@
   right: 6px;
   background: none;
   border: none;
-  color: var(--neon-text-muted, rgba(255, 255, 255, 0.55));
+  color: var(--bde-text-muted, rgba(255, 255, 255, 0.55));
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -96,7 +96,7 @@
 }
 
 .wb-copilot-popover__close:hover {
-  color: var(--neon-text, rgba(255, 255, 255, 0.9));
+  color: var(--bde-text, rgba(255, 255, 255, 0.9));
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -111,7 +111,7 @@
   margin: 0 0 12px;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--neon-text-muted, rgba(255, 255, 255, 0.7));
+  color: var(--bde-text-muted, rgba(255, 255, 255, 0.7));
 }
 
 .wb-copilot-popover__cta {
@@ -138,7 +138,7 @@
 
 .wb__separator {
   width: 1px;
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
   cursor: col-resize;
 }
 
@@ -182,7 +182,7 @@
 .wb-form__label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -192,7 +192,7 @@
   background: var(--bde-overlay);
   border: 1px solid var(--neon-purple-border);
   border-radius: 6px;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   outline: none;
   width: 100%;
@@ -203,7 +203,7 @@
 }
 
 .wb-form__input::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .wb-form__input:focus-visible {
@@ -221,7 +221,7 @@
   background: var(--bde-overlay);
   border: 1px solid var(--neon-purple-border);
   border-radius: 6px;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   outline: none;
   width: 100%;
@@ -245,7 +245,7 @@
 .wb-form__toggle {
   background: none;
   border: none;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
@@ -254,7 +254,7 @@
 }
 
 .wb-form__toggle:hover:not(:disabled) {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .wb-form__toggle:active:not(:disabled) {
@@ -288,7 +288,7 @@
   margin: 0;
   cursor: pointer;
   font-size: 12px;
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 /* ── Spec Editor ── */
@@ -308,7 +308,7 @@
   background: none;
   border: 1px solid var(--bde-border);
   border-radius: 6px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   padding: 4px 12px;
   font-size: 12px;
   cursor: pointer;
@@ -320,9 +320,9 @@
 }
 
 .wb-spec__btn:hover:not(:disabled) {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
   border-color: var(--bde-border-hover);
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .wb-spec__btn:active:not(:disabled) {
@@ -366,7 +366,7 @@
   background: var(--bde-overlay);
   border: 1px solid var(--neon-purple-border);
   border-radius: 8px;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   font-family: var(--bde-font-code);
   line-height: 1.6;
@@ -378,7 +378,7 @@
 }
 
 .wb-spec__textarea::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .wb-spec__textarea:focus-visible {
@@ -430,7 +430,7 @@
 }
 
 .wb-checks__count {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   margin-left: auto;
 }
 
@@ -473,19 +473,19 @@ button.wb-checks__item--actionable {
 
 button.wb-checks__item--actionable:hover,
 button.wb-checks__item--actionable:focus-visible {
-  background: var(--neon-surface-dim, rgba(255, 255, 255, 0.04));
+  background: var(--bde-border, rgba(255, 255, 255, 0.04));
   border-color: var(--neon-cyan-border, rgba(47, 195, 181, 0.4));
   outline: none;
 }
 
 .wb-checks__item-label {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-weight: 500;
   min-width: 80px;
 }
 
 .wb-checks__item-msg {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 /* ── Check Icons (Lucide) ── */
@@ -507,7 +507,7 @@ button.wb-checks__item--actionable:focus-visible {
   color: var(--neon-red);
 }
 .wb-check-icon--pending {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   animation: bde-spin 1.5s linear infinite;
 }
 
@@ -532,13 +532,13 @@ button.wb-checks__item--actionable:focus-visible {
 .wb-actions__btn--secondary {
   background: none;
   border: 1px solid var(--neon-purple-border);
-  color: var(--neon-text);
+  color: var(--bde-text);
   cursor: pointer;
 }
 
 .wb-actions__btn--secondary:hover:not(:disabled) {
   border-color: var(--bde-border-hover);
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
 }
 
 .wb-actions__btn--secondary:active:not(:disabled) {
@@ -546,14 +546,14 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-actions__btn--secondary:disabled {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   cursor: not-allowed;
 }
 
 .wb-actions__btn--primary {
   background: var(--neon-purple);
   border: none;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-weight: 600;
   cursor: pointer;
 }
@@ -567,15 +567,15 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-actions__btn--primary:disabled {
-  background: var(--neon-surface-dim);
-  color: var(--neon-text-dim);
+  background: var(--bde-border);
+  color: var(--bde-text-dim);
   cursor: not-allowed;
 }
 
 .wb-actions__btn--launch {
   background: var(--neon-cyan);
   border: none;
-  color: var(--neon-bg);
+  color: var(--bde-bg);
   font-weight: 600;
   cursor: pointer;
 }
@@ -589,20 +589,20 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-actions__btn--launch:disabled {
-  background: var(--neon-surface-dim);
-  color: var(--neon-text-dim);
+  background: var(--bde-border);
+  color: var(--bde-text-dim);
   cursor: not-allowed;
 }
 
 .wb-actions__btn--ghost {
   background: none;
   border: 1px solid transparent;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   cursor: pointer;
 }
 
 .wb-actions__btn--ghost:hover:not(:disabled) {
-  color: var(--neon-text);
+  color: var(--bde-text);
   border-color: var(--neon-purple-border);
 }
 
@@ -624,7 +624,7 @@ button.wb-checks__item--actionable:focus-visible {
 
 .wb-actions__hint {
   font-size: 11px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   white-space: nowrap;
 }
 
@@ -634,7 +634,7 @@ button.wb-checks__item--actionable:focus-visible {
   flex-direction: column;
   height: 100%;
   border-left: 1px solid var(--neon-purple-border);
-  background: var(--neon-surface-deep);
+  background: var(--bde-surface-high);
 }
 
 .wb-copilot__header {
@@ -658,7 +658,7 @@ button.wb-checks__item--actionable:focus-visible {
 .wb-copilot__close {
   background: none;
   border: none;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
@@ -667,7 +667,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__close:hover:not(:disabled) {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .wb-copilot__close:active:not(:disabled) {
@@ -693,7 +693,7 @@ button.wb-checks__item--actionable:focus-visible {
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 13px;
-  color: var(--neon-text);
+  color: var(--bde-text);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -707,7 +707,7 @@ button.wb-checks__item--actionable:focus-visible {
 
 .wb-copilot__bubble--assistant {
   align-self: flex-start;
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
   border: 1px solid var(--bde-border);
 }
 
@@ -716,7 +716,7 @@ button.wb-checks__item--actionable:focus-visible {
   background: transparent;
   border: 1px solid var(--bde-border);
   font-style: italic;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
 }
 
@@ -748,7 +748,7 @@ button.wb-checks__item--actionable:focus-visible {
 
 .wb-copilot__time {
   font-size: 11px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 .wb-copilot__insert-btn {
@@ -788,7 +788,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__loading-text {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
   font-style: italic;
 }
@@ -797,7 +797,7 @@ button.wb-checks__item--actionable:focus-visible {
   background: none;
   border: 1px solid var(--bde-border);
   border-radius: 4px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   padding: 1px 8px;
   font-size: 11px;
   cursor: pointer;
@@ -808,7 +808,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__cancel-btn:hover:not(:disabled) {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
   border-color: var(--bde-border-hover);
 }
 
@@ -833,10 +833,10 @@ button.wb-checks__item--actionable:focus-visible {
   flex: 1;
   resize: none;
   padding: 8px;
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
   border: 1px solid var(--bde-border);
   border-radius: 6px;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 13px;
   font-family: inherit;
   outline: none;
@@ -870,7 +870,7 @@ button.wb-checks__item--actionable:focus-visible {
 
 .wb-copilot__send-btn--active {
   background: var(--neon-cyan);
-  color: var(--neon-bg);
+  color: var(--bde-bg);
   cursor: pointer;
 }
 
@@ -883,8 +883,8 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-copilot__send-btn--disabled {
-  background: var(--neon-surface-dim);
-  color: var(--neon-text-muted);
+  background: var(--bde-border);
+  color: var(--bde-text-muted);
   cursor: not-allowed;
 }
 
@@ -903,7 +903,7 @@ button.wb-checks__item--actionable:focus-visible {
 .wb-deps__help {
   margin: 0;
   font-size: 11px;
-  color: var(--neon-text-muted, rgba(255, 255, 255, 0.55));
+  color: var(--bde-text-muted, rgba(255, 255, 255, 0.55));
   line-height: 1.4;
 }
 
@@ -956,7 +956,7 @@ button.wb-checks__item--actionable:focus-visible {
 .wb-deps__title {
   flex: 1;
   font-size: 12px;
-  color: var(--neon-text);
+  color: var(--bde-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1007,7 +1007,7 @@ button.wb-checks__item--actionable:focus-visible {
   flex-shrink: 0;
   background: none;
   border: none;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   cursor: pointer;
   font-size: 11px;
   line-height: 1;
@@ -1017,7 +1017,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__remove:hover:not(:disabled) {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .wb-deps__remove:focus-visible {
@@ -1033,7 +1033,7 @@ button.wb-checks__item--actionable:focus-visible {
   background: none;
   border: 1px dashed var(--neon-purple-border);
   border-radius: 6px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: 12px;
   cursor: pointer;
   padding: 4px 10px;
@@ -1054,7 +1054,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__picker {
-  background: var(--neon-surface-deep, var(--neon-bg));
+  background: var(--bde-surface-high, var(--bde-bg));
   border: 1px solid var(--neon-purple-border);
   border-radius: 8px;
   box-shadow: var(--bde-shadow-md);
@@ -1068,14 +1068,14 @@ button.wb-checks__item--actionable:focus-visible {
   background: var(--bde-overlay);
   border: none;
   border-bottom: 1px solid var(--neon-purple-border);
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 12px;
   font-family: inherit;
   outline: none;
 }
 
 .wb-deps__search::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .wb-deps__search:focus-visible {
@@ -1098,7 +1098,7 @@ button.wb-checks__item--actionable:focus-visible {
   padding: 6px 10px;
   background: none;
   border: none;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -1108,7 +1108,7 @@ button.wb-checks__item--actionable:focus-visible {
 }
 
 .wb-deps__result:hover {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
 }
 
 .wb-deps__result:focus-visible {
@@ -1126,7 +1126,7 @@ button.wb-checks__item--actionable:focus-visible {
 .wb-deps__result-status {
   flex-shrink: 0;
   font-size: 10px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -1134,6 +1134,6 @@ button.wb-checks__item--actionable:focus-visible {
 .wb-deps__empty {
   padding: 8px 10px;
   font-size: 12px;
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-style: italic;
 }

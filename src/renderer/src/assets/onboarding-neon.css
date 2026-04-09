@@ -30,7 +30,7 @@
 .onboarding-wizard {
   width: 90%;
   max-width: 800px;
-  background: var(--neon-bg);
+  background: var(--bde-bg);
   border: 1px solid var(--neon-purple-border);
   border-radius: 12px;
   box-shadow: var(--neon-purple-glow);
@@ -95,7 +95,7 @@
 
 .onboarding-wizard__step-title {
   font-size: 12px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   text-align: center;
 }
 
@@ -141,14 +141,14 @@
 .onboarding-step__title {
   font-size: 28px;
   font-weight: 600;
-  color: var(--neon-text);
+  color: var(--bde-text);
   text-align: center;
   margin: 0;
 }
 
 .onboarding-step__description {
   font-size: 16px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   text-align: center;
   line-height: 1.6;
   margin: 0;
@@ -178,7 +178,7 @@
 
 .onboarding-step__feature span {
   font-size: 13px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 /* Status checks */
@@ -197,7 +197,7 @@
   align-items: center;
   gap: 12px;
   font-size: 14px;
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .onboarding-step__check-icon {
@@ -241,7 +241,7 @@
 .onboarding-step__help p {
   margin: 0;
   font-size: 13px;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 /* Actions */

@@ -40,7 +40,7 @@
 }
 
 .stat-counter__value {
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: var(--bde-size-xxl);
   font-weight: 800;
 }
@@ -129,7 +129,7 @@
 }
 
 .activity-feed__empty {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: var(--bde-size-xs);
   padding: var(--bde-space-3) 0;
 }
@@ -158,7 +158,7 @@
 }
 
 .activity-feed__label {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   font-size: var(--bde-size-xs);
   flex: 1;
   overflow: hidden;
@@ -167,7 +167,7 @@
 }
 
 .activity-feed__timestamp {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: var(--bde-size-xs);
   flex-shrink: 0;
 }
@@ -261,13 +261,13 @@
   min-width: 100px;
   background: none;
   border: none;
-  color: var(--neon-text);
+  color: var(--bde-text);
   font-size: var(--bde-size-sm);
   outline: none;
 }
 
 .tag-input__field::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .tag-input__field:disabled {
@@ -318,7 +318,7 @@
 
 .status-bar__children {
   margin-left: auto;
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: var(--bde-size-xs);
   font-family: var(--bde-font-code);
 }
@@ -326,7 +326,7 @@
 /* ── MiniChart ─────────────────────────────────────── */
 
 .mini-chart-empty {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: var(--bde-size-xs);
   display: flex;
   align-items: center;

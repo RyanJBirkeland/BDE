@@ -7,8 +7,8 @@
 .bde-count-badge {
   font-size: 10px;
   font-weight: 700;
-  color: var(--neon-text-muted);
-  background: var(--neon-surface-subtle);
+  color: var(--bde-text-muted);
+  background: var(--bde-surface);
   border: 1px solid var(--bde-border-hover);
   padding: 2px 8px;
   border-radius: 10px;
@@ -64,6 +64,6 @@
 }
 
 .circuit-pipeline__arrow {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
   font-size: 10px;
 }

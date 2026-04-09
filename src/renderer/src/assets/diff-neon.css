@@ -14,7 +14,7 @@
 
 .diff-view__header {
   border-bottom: 1px solid var(--neon-cyan-border);
-  background: var(--neon-surface-deep);
+  background: var(--bde-surface-high);
 }
 
 .diff-view__header::before {
@@ -31,24 +31,24 @@
 
 .diff-view__chip {
   border: 1px solid var(--neon-cyan-border);
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 .diff-view__chip:hover {
-  color: var(--neon-text);
-  border-color: var(--neon-text-muted);
+  color: var(--bde-text);
+  border-color: var(--bde-text-muted);
 }
 
 .diff-view__chip--active {
   background: var(--neon-cyan);
-  color: var(--neon-bg);
+  color: var(--bde-bg);
   border-color: var(--neon-cyan);
 }
 
 /* ── Diff View Meta (Branch, PR Link, Error, Loading) ─── */
 
 .diff-view__branch {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   background: var(--neon-cyan-border);
 }
 
@@ -62,7 +62,7 @@
 }
 
 .diff-view__loading {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 /* ── Diff Sidebar ──────────────────────────────────────── */
@@ -77,26 +77,26 @@
 }
 
 .diff-sidebar__title {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .diff-sidebar__count {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   background: var(--neon-cyan-border);
 }
 
 /* ── Diff File Items (Sidebar List) ────────────────────── */
 
 .diff-file-item {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .diff-file-item:hover {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
 }
 
 .diff-file-item--active {
-  background: var(--neon-surface-dim);
+  background: var(--bde-border);
   /* Neon enhancement: cyan left indicator */
   box-shadow: inset 2px 0 0 var(--neon-cyan);
 }
@@ -108,7 +108,7 @@
 /* ── Diff Content ──────────────────────────────────────── */
 
 .diff-content {
-  background: var(--neon-bg);
+  background: var(--bde-bg);
 }
 
 .diff-file {
@@ -125,7 +125,7 @@
 }
 
 .diff-file__path {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 /* Keep diff stats colors (green/red) as-is */
@@ -140,8 +140,8 @@
 }
 
 .diff-hunk__header {
-  color: var(--neon-text-muted);
-  background: var(--neon-surface-dim);
+  color: var(--bde-text-muted);
+  background: var(--bde-border);
   border-bottom: 1px solid var(--neon-cyan-border);
 }
 
@@ -152,11 +152,11 @@
 /* .diff-line--del uses var(--bde-diff-del-bg) and var(--bde-diff-del) */
 
 .diff-line--ctx {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .diff-line__gutter {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
 }
 
 /* ── Line Selection ────────────────────────────────────── */
@@ -171,23 +171,23 @@
 
 .diff-selection-trigger {
   background: var(--neon-cyan);
-  color: var(--neon-bg);
+  color: var(--bde-bg);
 }
 
 /* ── Inline Comment Widget ─────────────────────────────── */
 
 .diff-comment-widget {
   border: 1px solid var(--neon-cyan-border);
-  background: var(--neon-bg);
+  background: var(--bde-bg);
 }
 
 .diff-comment-widget__toggle {
-  color: var(--neon-text-muted);
+  color: var(--bde-text-muted);
   background: var(--neon-cyan-surface);
 }
 
 .diff-comment-widget__toggle:hover {
-  background: var(--neon-surface-subtle);
+  background: var(--bde-surface);
 }
 
 .diff-comment-widget__comment {
@@ -195,15 +195,15 @@
 }
 
 .diff-comment-widget__author {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .diff-comment-widget__time {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .diff-comment-widget__body {
-  color: var(--neon-text);
+  color: var(--bde-text);
 }
 
 .diff-comment-widget__body code {
@@ -214,17 +214,17 @@
 
 .diff-comment-composer {
   border: 1px solid var(--neon-cyan-border);
-  background: var(--neon-bg);
+  background: var(--bde-bg);
   /* Neon enhancement: subtle glow on focus (via border) */
 }
 
 .diff-comment-composer__input {
-  color: var(--neon-text);
+  color: var(--bde-text);
   background: var(--neon-cyan-surface);
 }
 
 .diff-comment-composer__input::placeholder {
-  color: var(--neon-text-dim);
+  color: var(--bde-text-dim);
 }
 
 .diff-comment-composer__actions {

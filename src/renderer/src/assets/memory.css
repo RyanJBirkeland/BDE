@@ -267,7 +267,7 @@
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
-  color: var(--neon-text-muted, #888);
+  color: var(--bde-text-muted, #888);
   transition:
     color 0.15s,
     background 0.15s;
@@ -287,7 +287,7 @@
 .memory-editor__size-banner {
   padding: 6px 12px;
   font-size: 11px;
-  color: var(--neon-text-muted, #888);
+  color: var(--bde-text-muted, #888);
   border-bottom: 1px solid var(--bde-border);
 }
 .memory-editor__size-banner--warn {
