@@ -19,7 +19,7 @@
 
 .diff-view__header::before {
   /* DIFF label gradient */
-  background: linear-gradient(135deg, var(--bde-accent), var(--neon-purple));
+  background: linear-gradient(135deg, var(--bde-accent), var(--bde-status-active));
 }
 
 .diff-view__header::after {
@@ -57,8 +57,8 @@
 }
 
 .diff-view__error {
-  background: var(--neon-red-surface);
-  color: var(--neon-red);
+  background: var(--bde-danger-surface);
+  color: var(--bde-danger);
 }
 
 .diff-view__loading {
@@ -234,11 +234,11 @@
 /* ── Pending Comment Badge ─────────────────────────────── */
 
 .diff-comment-widget--pending {
-  border-color: var(--neon-orange);
+  border-color: var(--bde-warning);
 }
 
 .diff-pending-comment__remove {
-  color: var(--neon-red);
+  color: var(--bde-danger);
 }
 
 .diff-pending-comment__remove:hover:not(:disabled) {
@@ -246,6 +246,6 @@
 }
 
 .diff-comment-widget__pending-badge {
-  color: var(--neon-orange);
-  background: var(--neon-orange-surface);
+  color: var(--bde-warning);
+  background: var(--bde-warning-surface);
 }

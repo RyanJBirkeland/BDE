@@ -17,7 +17,7 @@ describe('GlassPanel', () => {
   it('applies accent border when provided', () => {
     const { container } = render(<GlassPanel accent="purple">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.border).toContain('var(--neon-purple-border)')
+    expect(panel.style.border).toContain('var(--bde-accent-border)')
   })
 
   it('uses token borderRadius', () => {
@@ -29,7 +29,7 @@ describe('GlassPanel', () => {
   it('uses surfaceDeep background without accent', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.background).toBe('var(--neon-surface-deep)')
+    expect(panel.style.background).toBe('var(--bde-bg)')
   })
 
   it('uses gradient background with accent', () => {
@@ -71,6 +71,6 @@ describe('GlassPanel', () => {
   it('uses surfaceDim border when no accent', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.border).toContain('var(--neon-surface-dim)')
+    expect(panel.style.border).toContain('var(--bde-surface)')
   })
 })

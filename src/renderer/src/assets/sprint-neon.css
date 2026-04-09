@@ -17,8 +17,8 @@
 /* ── Circuit Pipeline ── */
 .circuit-pipeline {
   padding: 14px 16px;
-  border-bottom: 1px solid var(--neon-purple-border);
-  background: linear-gradient(180deg, var(--neon-purple-surface), transparent);
+  border-bottom: 1px solid var(--bde-accent-border);
+  background: linear-gradient(180deg, var(--bde-accent-surface), transparent);
 }
 
 .circuit-pipeline__label {

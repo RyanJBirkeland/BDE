@@ -295,7 +295,7 @@ export function AgentManagerSection(): React.JSX.Element {
                 marginTop: '6px',
                 padding: '6px 10px',
                 fontSize: '11px',
-                color: 'var(--neon-orange, #ff9f40)',
+                color: 'var(--bde-warning)',
                 border: '1px solid rgba(255, 159, 64, 0.4)',
                 borderRadius: '4px',
                 background: 'rgba(255, 159, 64, 0.08)'

@@ -35,7 +35,7 @@ export function GlassPanel({
           : tokens.neon.surfaceDeep,
         border: `1px solid ${borderVal}`,
         borderRadius: tokens.radius.xl,
-        boxShadow: 'var(--neon-glass-shadow), var(--neon-glass-edge)',
+        boxShadow: 'none',
         ...style
       }}
     >

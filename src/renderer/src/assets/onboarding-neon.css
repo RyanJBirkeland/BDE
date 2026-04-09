@@ -31,9 +31,9 @@
   width: 90%;
   max-width: 800px;
   background: var(--bde-bg);
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 12px;
-  box-shadow: var(--neon-purple-glow);
+  box-shadow: transparent;
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -46,7 +46,7 @@
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 24px;
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .onboarding-wizard__step-indicator {
@@ -71,20 +71,20 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 2px solid var(--neon-purple-border);
+  border: 2px solid var(--bde-accent-border);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 600;
-  color: var(--neon-purple);
+  color: var(--bde-status-active);
 }
 
 .onboarding-wizard__step-indicator.active .onboarding-wizard__step-number {
-  background: var(--neon-purple-surface);
-  border-color: var(--neon-purple);
-  box-shadow: var(--neon-purple-glow);
-  color: var(--neon-purple);
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-status-active);
+  box-shadow: transparent;
+  color: var(--bde-status-active);
 }
 
 .onboarding-wizard__step-indicator.completed .onboarding-wizard__step-number {
@@ -100,7 +100,7 @@
 }
 
 .onboarding-wizard__step-indicator.active .onboarding-wizard__step-title {
-  color: var(--neon-purple);
+  color: var(--bde-status-active);
   font-weight: 500;
 }
 
@@ -159,8 +159,8 @@
   flex-direction: column;
   gap: 16px;
   padding: 24px;
-  background: var(--neon-purple-surface);
-  border: 1px solid var(--neon-purple-border);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
 }
 
@@ -187,8 +187,8 @@
   flex-direction: column;
   gap: 12px;
   padding: 24px;
-  background: var(--neon-purple-surface);
-  border: 1px solid var(--neon-purple-border);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
 }
 
@@ -213,14 +213,14 @@
 }
 
 .onboarding-step__check-icon--error {
-  color: var(--neon-red);
+  color: var(--bde-danger);
 }
 
 /* Help text */
 .onboarding-step__help {
   padding: 16px;
-  background: var(--neon-orange-surface);
-  border: 1px solid var(--neon-orange-border);
+  background: var(--bde-warning-surface);
+  border: 1px solid var(--bde-warning-border);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -231,11 +231,11 @@
   display: inline-block;
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--neon-orange-border);
+  border: 1px solid var(--bde-warning-border);
   border-radius: 4px;
   font-family: 'Monaco', 'Courier New', monospace;
   font-size: 13px;
-  color: var(--neon-orange);
+  color: var(--bde-warning);
 }
 
 .onboarding-step__help p {

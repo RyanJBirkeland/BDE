@@ -10,7 +10,7 @@
 
 /* ── Panel Separators ── */
 .ide-separator {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .ide-separator:hover,
@@ -22,18 +22,18 @@
 /* ── File Sidebar ── */
 .ide-sidebar {
   background: var(--bde-surface-high);
-  border-right: 1px solid var(--neon-purple-border);
+  border-right: 1px solid var(--bde-accent-border);
 }
 
 .ide-sidebar__header {
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--bde-surface-high) 100%);
-  backdrop-filter: var(--neon-glass-blur);
-  border-bottom: 1px solid var(--neon-purple-border);
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .ide-sidebar__title {
-  color: var(--neon-purple);
-  text-shadow: 0 0 8px var(--neon-purple-glow);
+  color: var(--bde-status-active);
+  text-shadow: 0 0 8px transparent;
 }
 
 .ide-sidebar__folder-name {
@@ -50,7 +50,7 @@
 }
 
 .ide-sidebar__body::-webkit-scrollbar-thumb {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .ide-sidebar__empty {
@@ -101,8 +101,8 @@
 /* ── Context Menu ── */
 .ide-context-menu {
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border: 1px solid var(--bde-accent-border);
 }
 
 .ide-context-menu__item {
@@ -114,23 +114,23 @@
 }
 
 .ide-context-menu__item--danger {
-  color: var(--neon-red);
+  color: var(--bde-danger);
 }
 
 .ide-context-menu__item--danger:hover {
-  background: var(--neon-red-surface);
+  background: var(--bde-danger-surface);
 }
 
 .ide-context-menu__separator {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 /* ── Editor Tab Bar ── */
 .ide-editor-tab-bar {
   position: relative;
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border-bottom: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--bde-accent-border);
   /* Scroll shadow indicators for overflow */
   mask-image: linear-gradient(
     to right,
@@ -155,7 +155,7 @@
 }
 
 .ide-editor-tab-bar::-webkit-scrollbar-thumb {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .ide-editor-tab {
@@ -214,7 +214,7 @@
 
 .ide-empty-state__title {
   color: var(--bde-text);
-  text-shadow: 0 0 12px var(--neon-purple-glow);
+  text-shadow: 0 0 12px transparent;
 }
 
 .ide-empty-state__subtitle {
@@ -262,20 +262,20 @@
 
 .terminal-view__header {
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border-bottom: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .terminal-view__title {
-  color: var(--neon-purple);
-  text-shadow: 0 0 8px var(--neon-purple-glow);
+  color: var(--bde-status-active);
+  text-shadow: 0 0 8px transparent;
 }
 
 /* ── Terminal Tab Bar ── */
 .terminal-tab-bar {
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border-bottom: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .terminal-tab {
@@ -319,7 +319,7 @@
 /* ── Terminal Toolbar ── */
 .terminal-toolbar {
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
+  backdrop-filter: none;
 }
 
 .terminal-toolbar__btn {
@@ -338,7 +338,7 @@
 
 /* ── Terminal Content Separator ── */
 .terminal-content__separator {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .terminal-content__separator:hover {
@@ -349,8 +349,8 @@
 /* ── Terminal Find Bar ── */
 .terminal-find {
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border: 1px solid var(--bde-accent-border);
 }
 
 .terminal-find__input {
@@ -373,8 +373,8 @@
 /* ── Shell Picker Dropdown ── */
 .shell-picker {
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border: 1px solid var(--bde-accent-border);
 }
 
 .shell-picker__item {
@@ -390,12 +390,12 @@
 }
 
 .shell-picker__divider {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .shell-picker__custom-input {
   background: var(--bde-bg);
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   color: var(--bde-text);
 }
 
@@ -406,8 +406,8 @@
 /* ── Agent Picker Dropdown ── */
 .agent-picker {
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border: 1px solid var(--bde-accent-border);
 }
 
 .agent-picker__header {
@@ -415,7 +415,7 @@
 }
 
 .agent-picker__divider {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .agent-picker__item {
@@ -449,7 +449,7 @@
 
 .terminal-agent-status-bar {
   background: var(--bde-surface-high);
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 /* ── Sidebar Toggle Button (for collapsed sidebar + no tabs) ── */
@@ -463,7 +463,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 6px;
   background: var(--bde-surface-high);
   color: var(--bde-text-dim);
@@ -493,11 +493,11 @@
 
 .ide-shortcuts-panel {
   background: var(--bde-surface-high, #0d0520);
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 12px;
   padding: 20px 24px;
   min-width: 280px;
-  backdrop-filter: var(--neon-glass-blur, blur(16px));
+  backdrop-filter: none;
   box-shadow: var(--bde-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.4));
 }
 
@@ -565,11 +565,11 @@
   width: 90%;
   max-width: 600px;
   background: var(--bde-surface-high);
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
-    0 0 24px var(--neon-purple-glow);
+    0 0 24px transparent;
   overflow: hidden;
 }
 
@@ -577,14 +577,14 @@
   display: flex;
   align-items: center;
   padding: 12px;
-  background: linear-gradient(180deg, var(--neon-purple-surface) 0%, var(--bde-surface-high) 100%);
-  border-bottom: 1px solid var(--neon-purple-border);
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .quick-open-palette__input {
   flex: 1;
   background: var(--bde-border);
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   border-radius: 4px;
   padding: 8px 12px;
   color: var(--bde-text);
@@ -646,9 +646,9 @@
 }
 
 .quick-open-palette__item--selected {
-  background: var(--neon-purple-surface);
+  background: var(--bde-accent-surface);
   color: var(--bde-text);
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
 }
 
 .quick-open-palette__match {
@@ -671,7 +671,7 @@
   padding: 2px 12px;
   min-height: 22px;
   background: var(--bde-surface-high);
-  border-bottom: 1px solid var(--neon-purple-border);
+  border-bottom: 1px solid var(--bde-accent-border);
   font-family: var(--bde-font-mono, monospace);
   font-size: 11px;
   color: var(--bde-text-muted);
@@ -712,8 +712,8 @@
   gap: 4px;
   padding: 6px 12px;
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
-  border-bottom: 1px solid var(--neon-purple-border);
+  backdrop-filter: none;
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .editor-toolbar__btn {
@@ -752,7 +752,7 @@
 .editor-toolbar__divider {
   width: 1px;
   height: 16px;
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
   margin: 0 4px;
 }
 

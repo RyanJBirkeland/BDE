@@ -21,7 +21,7 @@
   padding: 16px 20px;
   border-bottom: 1px solid var(--bde-border);
   background: var(--bde-surface-high);
-  backdrop-filter: var(--neon-glass-blur);
+  backdrop-filter: none;
 }
 
 .planner-header__title {
@@ -387,10 +387,10 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--neon-orange-surface);
-  border: 1px solid var(--neon-orange);
+  background: var(--bde-warning-surface);
+  border: 1px solid var(--bde-warning);
   border-radius: 6px;
-  color: var(--neon-orange);
+  color: var(--bde-warning);
   font-size: 12px;
   font-weight: 600;
 }
@@ -451,9 +451,9 @@
 }
 
 .epic-detail__task-flag--warning {
-  background: var(--neon-orange-surface);
-  color: var(--neon-orange);
-  border: 1px solid var(--neon-orange);
+  background: var(--bde-warning-surface);
+  color: var(--bde-warning);
+  border: 1px solid var(--bde-warning);
 }
 
 .epic-detail__task-dep-ref {
@@ -542,13 +542,13 @@
 }
 
 .epic-detail__queue-needs-specs {
-  color: var(--neon-orange);
+  color: var(--bde-warning);
   font-weight: 600;
 }
 
 .epic-detail__queue-btn {
   padding: 10px 20px;
-  background: linear-gradient(135deg, var(--bde-accent) 0%, var(--neon-blue) 100%);
+  background: linear-gradient(135deg, var(--bde-accent) 0%, var(--bde-status-review) 100%);
   border: none;
   border-radius: 6px;
   color: var(--bde-bg);

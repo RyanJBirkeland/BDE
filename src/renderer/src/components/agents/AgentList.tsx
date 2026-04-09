@@ -211,9 +211,7 @@ export function AgentList({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: `linear-gradient(180deg, var(--neon-purple-surface, rgba(88,28,135,0.1)) 0%, var(--neon-surface-deep, rgba(10,0,21,0.6)) 100%)`,
-        backdropFilter: 'var(--neon-glass-blur)',
-        WebkitBackdropFilter: 'var(--neon-glass-blur)'
+        background: `linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface) 100%)`
       }}
     >
       {/* Search */}
@@ -232,7 +230,7 @@ export function AgentList({
             alignItems: 'center',
             gap: tokens.space[2],
             padding: `${tokens.space[1]} ${tokens.space[2]}`,
-            background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
+            background: 'var(--bde-surface)',
             borderRadius: tokens.radius.sm,
             boxShadow: searchFocused ? `0 0 12px ${neonVar('purple', 'glow')}` : 'none',
             transition: tokens.transition.fast
@@ -321,7 +319,7 @@ export function AgentList({
                 onClick={onRetry}
                 style={{
                   padding: `${tokens.space[1]} ${tokens.space[3]}`,
-                  background: 'var(--neon-surface-deep, rgba(10,0,21,0.4))',
+                  background: 'var(--bde-surface)',
                   border: `1px solid ${neonVar('cyan', 'border')}`,
                   borderRadius: tokens.radius.sm,
                   color: neonVar('cyan', 'color'),

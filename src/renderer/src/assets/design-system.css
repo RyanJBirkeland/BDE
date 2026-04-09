@@ -1098,7 +1098,7 @@ html.theme-pro-light .elevation-3-backdrop {
 
 /* ── Shared panel separator (react-resizable-panels) ─────────────────────── */
 .panel-separator {
-  background: var(--neon-purple-border);
+  background: var(--bde-accent-border);
 }
 
 .panel-separator:hover,

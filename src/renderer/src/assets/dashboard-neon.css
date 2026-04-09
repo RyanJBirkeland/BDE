@@ -17,7 +17,7 @@
 .dashboard-bg-gradient {
   position: absolute;
   inset: 0;
-  background: var(--neon-bg-gradient);
+  background: var(--bde-bg);
   pointer-events: none;
   z-index: 0;
 }
@@ -127,7 +127,7 @@
 }
 
 .dashboard-briefing__task-cost {
-  color: var(--neon-orange);
+  color: var(--bde-warning);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -140,7 +140,7 @@
   align-items: center;
   padding-top: 8px;
   margin-top: 8px;
-  border-top: 1px solid var(--neon-border);
+  border-top: 1px solid var(--bde-border);
 }
 
 .dashboard-briefing__total-label {
@@ -214,7 +214,7 @@
   color: var(--bde-text);
   font-size: 20px;
   font-weight: 700;
-  text-shadow: var(--neon-blue-glow);
+  text-shadow: transparent;
 }
 
 .dashboard-duration-meta {
@@ -283,11 +283,11 @@
 }
 
 .dashboard-completion-cost {
-  color: var(--neon-orange);
+  color: var(--bde-warning);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
-  text-shadow: var(--neon-orange-glow);
+  text-shadow: transparent;
 }
 
 .dashboard-completion-time {
@@ -336,12 +336,12 @@
 }
 
 .dashboard-failure-breakdown-count {
-  color: var(--neon-red);
+  color: var(--bde-danger);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
-  text-shadow: var(--neon-red-glow);
+  text-shadow: transparent;
 }
 
 .dashboard-card-loading {
@@ -357,7 +357,7 @@
   color: var(--bde-text);
   font-size: 28px;
   font-weight: 700;
-  text-shadow: var(--neon-orange-glow);
+  text-shadow: transparent;
 }
 
 /* ── Success Ring ── */
@@ -414,9 +414,9 @@
 .dashboard-card-error__retry {
   padding: 4px 12px;
   border-radius: var(--bde-radius-sm);
-  background: var(--neon-red-surface);
-  border: 1px solid var(--neon-red);
-  color: var(--neon-red);
+  background: var(--bde-danger-surface);
+  border: 1px solid var(--bde-danger);
+  color: var(--bde-danger);
   font-size: var(--bde-size-xs);
   font-weight: 600;
   cursor: pointer;
@@ -424,7 +424,7 @@
 }
 
 .dashboard-card-error__retry:hover:not(:disabled) {
-  background: var(--neon-red-border);
+  background: var(--bde-danger-border);
 }
 
 .dashboard-card-error__retry:active:not(:disabled) {
@@ -445,7 +445,7 @@
 }
 
 .dashboard-status-freshness--stale {
-  color: var(--neon-orange);
+  color: var(--bde-warning);
   opacity: 1;
 }
 

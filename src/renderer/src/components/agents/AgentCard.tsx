@@ -124,7 +124,7 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
           style={{
             padding: tokens.space[2],
             boxShadow: selected
-              ? `0 0 16px ${neonVar(accent, 'glow')}, var(--neon-glass-shadow), var(--neon-glass-edge)`
+              ? `0 0 16px ${neonVar(accent, 'glow')}`
               : undefined,
             border: selected ? `1px solid ${neonVar(accent, 'color')}` : undefined,
             transform: selected ? 'scale(1.02)' : undefined

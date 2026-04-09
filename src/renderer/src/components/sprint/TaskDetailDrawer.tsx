@@ -240,8 +240,8 @@ export function TaskDetailDrawer({
               marginTop: 12,
               padding: 10,
               borderRadius: 6,
-              border: '1px solid var(--neon-red-border, rgba(255,70,70,0.4))',
-              background: 'var(--neon-red-surface, rgba(255,70,70,0.08))'
+              border: '1px solid var(--bde-danger-border)',
+              background: 'var(--bde-danger-surface)'
             }}
           >
             <div
@@ -250,7 +250,7 @@ export function TaskDetailDrawer({
                 fontSize: 11,
                 textTransform: 'uppercase',
                 letterSpacing: 0.5,
-                color: 'var(--neon-red, #ff5c5c)',
+                color: 'var(--bde-danger)',
                 fontWeight: 600,
                 marginBottom: 6
               }}

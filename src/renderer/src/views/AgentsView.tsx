@@ -261,7 +261,7 @@ export function AgentsView(): React.JSX.Element {
         flexDirection: 'column',
         height: '100%',
         minWidth: 600,
-        background: 'var(--neon-bg)'
+        background: 'var(--bde-bg)'
       }}
       variants={VARIANTS.fadeIn}
       initial="initial"
@@ -280,7 +280,7 @@ export function AgentsView(): React.JSX.Element {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '10px 12px',
-              borderBottom: '1px solid var(--neon-purple-border)'
+              borderBottom: '1px solid var(--bde-accent-border)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -303,7 +303,7 @@ export function AgentsView(): React.JSX.Element {
                 <Info
                   size={14}
                   style={{
-                    color: 'var(--neon-text-dim)',
+                    color: 'var(--bde-text-muted)',
                     cursor: 'help',
                     transition: 'color 0.2s'
                   }}
@@ -311,7 +311,7 @@ export function AgentsView(): React.JSX.Element {
                     e.currentTarget.style.color = 'var(--bde-accent)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--neon-text-dim)'
+                    e.currentTarget.style.color = 'var(--bde-text-muted)'
                   }}
                   aria-describedby="scratchpad-tooltip"
                 />
@@ -325,12 +325,12 @@ export function AgentsView(): React.JSX.Element {
                       left: '0',
                       width: '240px',
                       padding: '8px 10px',
-                      background: 'var(--neon-purple-surface)',
-                      border: '1px solid var(--neon-purple-border)',
+                      background: 'var(--bde-accent-surface)',
+                      border: '1px solid var(--bde-accent-border)',
                       borderRadius: '6px',
                       fontSize: '10px',
                       lineHeight: 1.4,
-                      color: 'var(--neon-text-dim)',
+                      color: 'var(--bde-text-muted)',
                       zIndex: 1000,
                       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                     }}
@@ -376,9 +376,9 @@ export function AgentsView(): React.JSX.Element {
                 fontSize: '10px',
                 lineHeight: 1.4,
                 padding: '8px 12px',
-                borderBottom: '1px solid var(--neon-purple-border)',
-                background: 'var(--neon-purple-surface)',
-                color: 'var(--neon-text-dim)',
+                borderBottom: '1px solid var(--bde-accent-border)',
+                background: 'var(--bde-accent-surface)',
+                color: 'var(--bde-text-muted)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '8px'
@@ -397,7 +397,7 @@ export function AgentsView(): React.JSX.Element {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'var(--neon-text-dim)',
+                  color: 'var(--bde-text-muted)',
                   cursor: 'pointer',
                   padding: 0,
                   display: 'flex',
@@ -410,7 +410,7 @@ export function AgentsView(): React.JSX.Element {
                   e.currentTarget.style.color = 'var(--bde-accent)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--neon-text-dim)'
+                  e.currentTarget.style.color = 'var(--bde-text-muted)'
                 }}
               >
                 <X size={14} />

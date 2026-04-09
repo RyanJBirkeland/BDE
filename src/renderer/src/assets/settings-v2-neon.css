@@ -9,7 +9,7 @@
 }
 
 .stg-sidebar {
-  border-right: 1px solid var(--neon-purple-border);
+  border-right: 1px solid var(--bde-accent-border);
   padding: 16px 8px 16px 16px;
   background: var(--bde-bg-elevated);
   overflow-y: auto;
@@ -34,7 +34,7 @@
   width: 100%;
   padding: 6px 8px 6px 28px;
   border-radius: 5px;
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid var(--bde-accent-border);
   background: var(--bde-surface);
   color: var(--bde-text);
   font-size: 12px;
@@ -47,7 +47,7 @@
 
 .stg-sidebar__search-input:focus-visible {
   outline: none;
-  border-color: var(--neon-purple);
+  border-color: var(--bde-status-active);
 }
 
 .stg-sidebar__group {
@@ -57,7 +57,7 @@
 .stg-sidebar__category {
   text-transform: uppercase;
   font-size: 9px;
-  color: color-mix(in srgb, var(--neon-purple) 60%, transparent);
+  color: color-mix(in srgb, var(--bde-status-active) 60%, transparent);
   letter-spacing: 1.2px;
   font-weight: 600;
   padding: 0 8px;
@@ -84,8 +84,8 @@
 }
 
 .stg-sidebar__item--active {
-  background: var(--neon-purple-surface);
-  color: var(--neon-purple);
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-active);
   font-weight: 500;
 }
 
@@ -174,8 +174,8 @@
 }
 
 .stg-card__icon--purple {
-  background: var(--neon-purple-surface);
-  color: var(--neon-purple);
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-active);
 }
 
 .stg-card__icon--neutral {
@@ -227,18 +227,18 @@
 }
 
 .stg-status-pill--success {
-  color: var(--neon-green);
-  background: var(--neon-green-surface);
+  color: var(--bde-status-done);
+  background: var(--bde-accent-surface);
 }
 
 .stg-status-pill--info {
-  color: var(--neon-purple);
-  background: var(--neon-purple-surface);
+  color: var(--bde-status-active);
+  background: var(--bde-accent-surface);
 }
 
 .stg-status-pill--warning {
-  color: var(--neon-orange);
-  background: var(--neon-orange-surface);
+  color: var(--bde-warning);
+  background: var(--bde-warning-surface);
 }
 
 .stg-status-pill--neutral {
@@ -248,14 +248,14 @@
 
 .stg-status-pill--error {
   color: var(--bde-danger);
-  background: var(--neon-red-surface);
+  background: var(--bde-danger-surface);
 }
 
 .stg-status-pill__dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--neon-green);
+  background: var(--bde-status-done);
   flex-shrink: 0;
 }
 
@@ -300,8 +300,8 @@
 /* ─── Permissions Section ────────────────────────────────────────────────── */
 
 .permissions-banner {
-  border: 1px solid var(--neon-purple-border);
-  background: var(--neon-purple-surface);
+  border: 1px solid var(--bde-accent-border);
+  background: var(--bde-accent-surface);
   border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 12px;
@@ -349,13 +349,13 @@
 }
 
 .permissions-tool:hover {
-  border-color: var(--neon-purple-border);
+  border-color: var(--bde-accent-border);
 }
 
 .permissions-tool input[type='checkbox'] {
   flex-shrink: 0;
   margin: 0;
-  accent-color: var(--neon-purple);
+  accent-color: var(--bde-status-active);
 }
 
 .permissions-tool__name {
@@ -542,7 +542,7 @@
 }
 
 .settings-event-option input[type='checkbox'] {
-  accent-color: var(--neon-purple);
+  accent-color: var(--bde-status-active);
   margin: 0;
 }
 

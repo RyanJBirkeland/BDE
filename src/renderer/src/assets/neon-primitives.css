@@ -57,7 +57,7 @@
 }
 
 .stat-counter__trend--up {
-  color: var(--neon-red);
+  color: var(--bde-danger);
 }
 
 .stat-counter__trend--down {
@@ -68,9 +68,9 @@
 
 .neon-card {
   border-radius: var(--bde-radius-xl);
-  backdrop-filter: var(--neon-glass-blur);
-  -webkit-backdrop-filter: var(--neon-glass-blur);
-  box-shadow: var(--neon-glass-shadow), var(--neon-glass-edge);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none, transparent;
   overflow: hidden;
   /* Don't let flex parents shrink the card below its content height —
      combined with overflow: hidden (needed for rounded corners + glass clip),
@@ -300,13 +300,13 @@
 }
 
 .status-bar__dot--error {
-  background: var(--neon-red);
-  box-shadow: 0 0 8px var(--neon-red);
+  background: var(--bde-danger);
+  box-shadow: 0 0 8px var(--bde-danger);
 }
 
 .status-bar__dot--warning {
-  background: var(--neon-orange);
-  box-shadow: 0 0 8px var(--neon-orange);
+  background: var(--bde-warning);
+  box-shadow: 0 0 8px var(--bde-warning);
 }
 
 .status-bar__title {
