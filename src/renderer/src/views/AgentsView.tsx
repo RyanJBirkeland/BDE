@@ -33,6 +33,9 @@ export function AgentsView(): React.JSX.Element {
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Derived: when no explicit selection, fall back to the first agent.
+  // Avoids a useEffect+setState cascade that triggers cascading renders.
+  const activeId = selectedId ?? agents[0]?.id ?? null
   const [showLaunchpad, setShowLaunchpad] = useState(false)
   const [showScratchpadBanner, setShowScratchpadBanner] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
@@ -52,19 +55,12 @@ export function AgentsView(): React.JSX.Element {
     fetchAgents()
   }, [fetchAgents, activeView])
 
-  // Auto-select first agent if none selected
-  useEffect(() => {
-    if (!selectedId && agents.length > 0) {
-      setSelectedId(agents[0].id)
-    }
-  }, [agents, selectedId])
-
   // Load event history when selection changes
   useEffect(() => {
-    if (selectedId) {
-      loadHistory(selectedId)
+    if (activeId) {
+      loadHistory(activeId)
     }
-  }, [selectedId, loadHistory])
+  }, [activeId, loadHistory])
 
   // Listen for spawn modal trigger from CommandPalette
   useEffect(() => {
@@ -92,15 +88,15 @@ export function AgentsView(): React.JSX.Element {
   }, [])
 
   const handleClearConsole = useCallback(() => {
-    if (!selectedId) {
+    if (!activeId) {
       toast.info('No agent selected')
       return
     }
     // Emit event for AgentConsole to handle
     window.dispatchEvent(
-      new CustomEvent('agent:clear-console', { detail: { agentId: selectedId } })
+      new CustomEvent('agent:clear-console', { detail: { agentId: activeId } })
     )
-  }, [selectedId])
+  }, [activeId])
 
   const handleDismissBanner = useCallback(() => {
     setShowScratchpadBanner(false)
@@ -132,11 +128,11 @@ export function AgentsView(): React.JSX.Element {
     }
   }, [handleSpawnAgent, handleClearConsole, registerCommands, unregisterCommands])
 
-  const selectedAgent = agents.find((a) => a.id === selectedId)
+  const selectedAgent = agents.find((a) => a.id === activeId)
 
   const handleSteer = useCallback(
     async (message: string, attachment?: Attachment) => {
-      if (!selectedId) return
+      if (!activeId) return
 
       // Text file attachments get prepended to the message as code blocks.
       // Image attachments are passed separately so the main process can build
@@ -150,21 +146,21 @@ export function AgentsView(): React.JSX.Element {
           ? [{ data: attachment.data, mimeType: attachment.mimeType }]
           : undefined
 
-      const result = await window.api.steerAgent(selectedId, textFormattedMessage, images)
+      const result = await window.api.steerAgent(activeId, textFormattedMessage, images)
       if (!result.ok) {
         toast.error(result.error ?? 'Failed to send message to agent')
       }
     },
-    [selectedId]
+    [activeId]
   )
 
   const handleCommand = useCallback(
     async (cmd: string, _args?: string) => {
-      if (!selectedId || !selectedAgent) return
+      if (!activeId || !selectedAgent) return
       switch (cmd) {
         case '/stop':
           try {
-            await window.api.killAgent(selectedId)
+            await window.api.killAgent(activeId)
           } catch (err) {
             toast.error(
               `Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`
@@ -185,7 +181,7 @@ export function AgentsView(): React.JSX.Element {
           break
         case '/focus':
           if (_args) {
-            const focusResult = await window.api.steerAgent(selectedId, `Focus on: ${_args}`)
+            const focusResult = await window.api.steerAgent(activeId, `Focus on: ${_args}`)
             if (!focusResult.ok) toast.error(focusResult.error ?? 'Failed to send focus message')
           }
           break
@@ -213,7 +209,7 @@ export function AgentsView(): React.JSX.Element {
         }
         case '/test': {
           const result = await window.api.steerAgent(
-            selectedId,
+            activeId,
             'Please run the test suite now with `npm test` (or the project-appropriate command) and report the results before continuing.'
           )
           if (!result.ok) toast.error(result.error ?? 'Failed to send /test steering')
@@ -226,7 +222,7 @@ export function AgentsView(): React.JSX.Element {
             break
           }
           const result = await window.api.steerAgent(
-            selectedId,
+            activeId,
             `Please narrow your focus to only these files for now: ${_args}. Do not modify anything outside this scope without asking first.`
           )
           if (!result.ok) toast.error(result.error ?? 'Failed to send /scope steering')
@@ -235,7 +231,7 @@ export function AgentsView(): React.JSX.Element {
         }
         case '/status': {
           const result = await window.api.steerAgent(
-            selectedId,
+            activeId,
             'Please give a brief status report: what you have completed so far, what you are working on right now, and what remains.'
           )
           if (!result.ok) toast.error(result.error ?? 'Failed to send /status steering')
@@ -245,7 +241,7 @@ export function AgentsView(): React.JSX.Element {
           break
       }
     },
-    [selectedId, selectedAgent]
+    [activeId, selectedAgent]
   )
 
   const handleSelectAgent = useCallback((id: string) => {
@@ -421,7 +417,7 @@ export function AgentsView(): React.JSX.Element {
 
           <AgentList
             agents={agents}
-            selectedId={selectedId}
+            selectedId={activeId}
             onSelect={handleSelectAgent}
             onKill={fetchAgents}
             loading={!fetched && agents.length === 0 && !fetchError}
@@ -444,9 +440,9 @@ export function AgentsView(): React.JSX.Element {
                 fetchAgents()
               }}
             />
-          ) : selectedAgent ? (
+          ) : selectedAgent && activeId ? (
             <AgentConsole
-              agentId={selectedAgent.id}
+              agentId={activeId}
               onSteer={handleSteer}
               onCommand={handleCommand}
             />

@@ -3,7 +3,7 @@
  * Returns current width and a handleResizeStart handler for the resize handle.
  * Dragging left increases width (right-anchored convention).
  */
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react'
 
 interface UseDrawerResizeConfig {
   defaultWidth: number
@@ -27,8 +27,11 @@ export function useDrawerResize({
   const startX = useRef(0)
   const startWidth = useRef(defaultWidth)
   const widthRef = useRef(defaultWidth)
-  widthRef.current = width
   // Must be a ref (not state/effect dep) to avoid stale closure on mid-drag unmount
+  // useLayoutEffect keeps widthRef in sync before any paint, avoiding stale reads in event handlers
+  useLayoutEffect(() => {
+    widthRef.current = width
+  })
   const cleanupRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
