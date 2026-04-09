@@ -21,7 +21,7 @@ import {
   ActivitySection,
   MorningBriefing
 } from '../components/dashboard'
-import '../assets/dashboard-neon.css'
+import '../assets/dashboard.css'
 import { Plus } from 'lucide-react'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 

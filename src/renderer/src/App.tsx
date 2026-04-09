@@ -31,8 +31,8 @@ import { PollingProvider } from './components/PollingProvider'
 import { openSettings } from './lib/settings-nav'
 import { SHORTCUT_CATEGORIES } from './lib/shortcuts-data'
 import { FeatureGuideModal } from './components/help/FeatureGuideModal'
-import './assets/neon-shell.css'
-import './assets/agents-neon.css'
+import './assets/shell.css'
+import './assets/agents.css'
 
 // Query params are read once at module load time — outside any component to avoid
 // violating Rules of Hooks if we need to conditionally skip the full App render.

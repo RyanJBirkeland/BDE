@@ -17,7 +17,7 @@ import { QuickOpenPalette } from '../components/ide/QuickOpenPalette'
 import { useIDEKeyboard } from '../hooks/useIDEKeyboard'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { toast } from '../stores/toasts'
-import '../assets/ide-neon.css'
+import '../assets/ide.css'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 
 const IDE_SHORTCUTS = [

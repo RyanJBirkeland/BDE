@@ -1,23 +1,23 @@
 @import './base.css';
 @import './design-system.css';
-@import './neon-primitives.css';
-@import './neon-shell.css';
-@import './sprint-neon.css';
+@import './primitives.css';
+@import './shell.css';
 @import './sprint.css';
-/* sprint-pipeline-neon.css imported by SprintPipeline.tsx (lazy chunk) */
-/* agents-neon.css imported by AgentsView.tsx (lazy chunk) */
+/* sprint-pipeline.css imported by SprintPipeline.tsx (lazy chunk) */
+/* agents.css imported by AgentsView.tsx and App.tsx (lazy chunk) */
 @import './cost.css';
 @import './memory.css';
 @import './settings.css';
-@import './settings-v2-neon.css';
 @import './terminal.css';
-@import './ide.css';
-@import './code-review-neon.css';
+/* ide.css imported by IDEView.tsx (lazy chunk) */
+@import './code-review.css';
 @import './diff.css';
-@import './diff-neon.css';
-@import './source-control-neon.css';
-@import './onboarding-neon.css';
-@import './planner-neon.css';
+@import './source-control.css';
+/* onboarding.css imported by OnboardingWizard.tsx (lazy chunk) */
+@import './planner.css';
+/* agent-launchpad.css imported by AgentLaunchpad.tsx (lazy chunk) */
+/* task-workbench.css imported by TaskWorkbench.tsx (lazy chunk) */
+/* dashboard.css imported by DashboardView.tsx (lazy chunk) */
 @import './command-palette.css';
 @import './toasts.css';
 
