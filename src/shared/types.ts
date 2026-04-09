@@ -13,6 +13,7 @@ export interface AgentMeta {
   repo: string
   repoPath: string
   task: string
+  title?: string
   startedAt: string
   finishedAt: string | null
   exitCode: number | null

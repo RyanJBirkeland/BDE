@@ -1003,6 +1003,30 @@ export const migrations: Migration[] = [
       db.prepare('ALTER TABLE agent_run_turns ADD COLUMN cache_tokens_created INTEGER').run()
       db.prepare('ALTER TABLE agent_run_turns ADD COLUMN cache_tokens_read INTEGER').run()
     }
+  },
+  {
+    version: 46,
+    description: 'Add title column to agent_runs for meaningful agent names in UI',
+    up: (db) => {
+      db.prepare('ALTER TABLE agent_runs ADD COLUMN title TEXT').run()
+      // Backfill existing rows: extract first meaningful line from task, strip preamble, cap at 120 chars
+      const preamble = 'You are a BDE (Birkeland Development Environment) agent.'
+      const updateSql = `
+        UPDATE agent_runs
+        SET title = CASE
+          WHEN task IS NULL THEN NULL
+          WHEN substr(task, 1, ${preamble.length}) = ? THEN
+            substr(
+              substr(task, ${preamble.length + 1}),
+              1,
+              120
+            )
+          ELSE substr(task, 1, 120)
+        END
+        WHERE title IS NULL
+      `
+      db.prepare(updateSql).run(preamble)
+    }
   }
 ]
 

@@ -23,6 +23,7 @@ export interface AgentRunRow {
   pid: number | null
   bin: string
   task: string | null
+  title: string | null
   repo: string | null
   repo_path: string | null
   model: string | null
@@ -51,6 +52,7 @@ export function rowToMeta(row: AgentRunRow): AgentMeta {
     repo: row.repo ?? 'unknown',
     repoPath: row.repo_path ?? '',
     task: row.task ?? '',
+    title: row.title ?? undefined,
     startedAt: row.started_at,
     finishedAt: row.finished_at,
     exitCode: row.exit_code,
@@ -93,13 +95,14 @@ export function insertAgentRecord(
   meta: Omit<AgentMeta, 'logPath'> & { logPath: string }
 ): void {
   db.prepare(
-    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source, sprint_task_id, cost_usd, tokens_in, tokens_out, worktree_path, branch)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT OR REPLACE INTO agent_runs (id, pid, bin, task, title, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source, sprint_task_id, cost_usd, tokens_in, tokens_out, worktree_path, branch)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     meta.id,
     meta.pid,
     meta.bin,
     meta.task,
+    meta.title ?? null,
     meta.repo,
     meta.repoPath,
     meta.model,
@@ -122,6 +125,7 @@ const AGENT_COLUMN_MAP: Record<string, string> = {
   pid: 'pid',
   bin: 'bin',
   task: 'task',
+  title: 'title',
   repo: 'repo',
   repoPath: 'repo_path',
   model: 'model',

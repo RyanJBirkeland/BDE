@@ -35,6 +35,7 @@ export function AgentsView(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showLaunchpad, setShowLaunchpad] = useState(false)
   const cleanupRef = useRef<(() => void) | null>(null)
+  const hasAutoSelectedRef = useRef(false)
   const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
   const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
 
@@ -52,10 +53,12 @@ export function AgentsView(): React.JSX.Element {
 
   // Auto-select first agent if none selected
   useEffect(() => {
-    if (!selectedId && agents.length > 0) {
+    if (!hasAutoSelectedRef.current && agents.length > 0) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setSelectedId(agents[0].id)
+      hasAutoSelectedRef.current = true
     }
-  }, [agents, selectedId])
+  }, [agents])
 
   // Load event history when selection changes
   useEffect(() => {

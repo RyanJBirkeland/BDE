@@ -144,7 +144,7 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                   flex: 1
                 }}
               >
-                {agent.task.slice(0, 80)}
+                {agent.title || agent.task.slice(0, 80)}
               </span>
               {isRunning && (
                 <button

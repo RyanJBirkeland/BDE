@@ -205,6 +205,7 @@ export async function importAgent(meta: Partial<AgentMeta>, content: string): Pr
     repo: meta.repo ?? 'unknown',
     repoPath: meta.repoPath ?? '',
     task: meta.task ?? '',
+    title: meta.title,
     startedAt,
     finishedAt: meta.finishedAt ?? null,
     exitCode: meta.exitCode ?? null,

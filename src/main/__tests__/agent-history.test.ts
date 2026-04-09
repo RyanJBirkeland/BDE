@@ -35,6 +35,7 @@ vi.mock('../db', () => {
             pid          INTEGER,
             bin          TEXT NOT NULL DEFAULT 'claude',
             task         TEXT,
+            title        TEXT,
             repo         TEXT,
             repo_path    TEXT,
             model        TEXT,

@@ -369,6 +369,7 @@ export async function runAgent(
     repo: task.repo,
     repoPath: worktree.worktreePath,
     task: prompt,
+    title: task.title,
     startedAt: new Date(agent.startedAt).toISOString(),
     finishedAt: null,
     exitCode: null,

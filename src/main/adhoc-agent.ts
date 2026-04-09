@@ -146,6 +146,7 @@ export async function spawnAdhocAgent(args: {
       repo,
       repoPath: args.repoPath,
       task: args.task,
+      title: deriveAdhocTitle(args.task),
       status: 'running',
       source: 'adhoc',
       worktreePath,
