@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { Search, FileUp } from 'lucide-react'
 import type { TaskGroup } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
 import { EmptyState } from '../ui/EmptyState'
@@ -10,6 +11,9 @@ interface EpicListProps {
   selectedId: string | null
   onSelect: (id: string) => void
   onCreateNew: () => void
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  onImport: () => void
 }
 
 interface GroupCounts {
@@ -21,7 +25,10 @@ export function EpicList({
   groups,
   selectedId,
   onSelect,
-  onCreateNew
+  onCreateNew,
+  searchQuery,
+  onSearchChange,
+  onImport
 }: EpicListProps): React.JSX.Element {
   const reduced = useReducedMotion()
   const [counts, setCounts] = useState<Map<string, GroupCounts>>(new Map())
@@ -168,6 +175,26 @@ export function EpicList({
       <div className="planner-epic-list__header">
         <span className="planner-epic-list__title">Epics</span>
         <span className="planner-epic-list__count">{activeGroups.length}</span>
+        <button
+          className="planner-epic-list__import-btn"
+          onClick={onImport}
+          title="Import plan document"
+          type="button"
+        >
+          <FileUp size={14} />
+        </button>
+      </div>
+
+      <div className="planner-epic-list__search">
+        <Search size={14} className="planner-epic-list__search-icon" />
+        <input
+          type="text"
+          placeholder="Search epics..."
+          aria-label="Search epics"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="planner-epic-list__search-input"
+        />
       </div>
 
       <motion.div

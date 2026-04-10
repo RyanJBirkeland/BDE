@@ -85,12 +85,27 @@
    Neon Agents View — Console, Command Bar, Timeline, Live Strip
    ═══════════════════════════════════════════════════════ */
 
+/* ── Agents View Container ── */
+/* Matches .cr-view pattern — overflow: hidden is REQUIRED for
+   react-resizable-panels to measure correctly; without it panels
+   collapse to intrinsic content width (~25px). */
+.agents-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bde-bg);
+}
+
 /* ── Agents Sidebar ── */
 .agents-sidebar {
   border-right: 1px solid var(--bde-accent-border);
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-width: 160px;
   background: linear-gradient(
     180deg,
     var(--bde-accent-surface),

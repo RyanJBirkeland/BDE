@@ -524,23 +524,27 @@
 
 .panel-leaf__content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  position: relative;
   overflow: hidden;
   min-height: 0;
-  min-width: 0;
 }
 
 .panel-leaf__tabpanel {
+  position: absolute;
+  inset: 0;
   display: none;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  min-width: 0;
 }
 
 .panel-leaf__tabpanel--active {
   display: flex;
+}
+
+/* Override react-resizable-panels inline min-width: 0px which
+   lets panels collapse when the Group container width isn't
+   resolved during initial render. */
+[data-panel] {
+  min-width: revert !important;
 }
 
 /* ── Quick Create Bar ── */

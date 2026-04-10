@@ -92,9 +92,25 @@ vi.mock('../../stores/toasts', () => ({
 }))
 
 vi.mock('../../components/planner/EpicList', () => ({
-  EpicList: ({ onCreateNew }: { onCreateNew: () => void }) => (
+  EpicList: ({
+    onCreateNew,
+    searchQuery,
+    onSearchChange,
+    onImport
+  }: {
+    onCreateNew: () => void
+    searchQuery: string
+    onSearchChange: (q: string) => void
+    onImport: () => void
+  }) => (
     <div data-testid="epic-list">
       <button onClick={onCreateNew}>Create New</button>
+      <input
+        placeholder="Search epics..."
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+      />
+      <button onClick={onImport}>Import doc</button>
     </div>
   )
 }))
@@ -158,11 +174,6 @@ import PlannerView from '../PlannerView'
 describe('PlannerView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  it('renders the planner header with title', () => {
-    render(<PlannerView />)
-    expect(screen.getByText('Task Planner')).toBeInTheDocument()
   })
 
   it('renders search input', () => {
