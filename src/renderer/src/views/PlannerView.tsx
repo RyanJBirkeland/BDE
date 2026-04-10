@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
+import { Group, Panel, Separator } from 'react-resizable-panels'
 import { useTaskGroups } from '../stores/taskGroups'
 import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { EpicList } from '../components/planner/EpicList'
 import { EpicDetail } from '../components/planner/EpicDetail'
 import { CreateEpicModal } from '../components/planner/CreateEpicModal'
-import { Search, FileUp } from 'lucide-react'
 import { toast } from '../stores/toasts'
 import { useConfirm, ConfirmModal } from '../components/ui/ConfirmModal'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -144,53 +144,41 @@ export default function PlannerView(): React.JSX.Element {
       animate="animate"
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
-      {/* Header */}
-      <div className="planner-header">
-        <h1 className="planner-header__title text-gradient-aurora">Task Planner</h1>
-        <div className="planner-header__search">
-          <Search size={16} className="planner-header__search-icon" />
-          <input
-            type="text"
-            placeholder="Search epics..."
-            aria-label="Search epics"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="planner-header__search-input"
-          />
-        </div>
-        <button
-          onClick={handleImportPlan}
-          className="planner-header__import-btn"
-          title="Import plan document"
-        >
-          <FileUp size={16} />
-          Import doc
-        </button>
-      </div>
-
       {/* Body: Split layout */}
       <div className="planner-body">
-        <EpicList
-          groups={filteredGroups}
-          selectedId={selectedGroupId}
-          onSelect={selectGroup}
-          onCreateNew={handleCreateNew}
-        />
-        {selectedGroup && (
-          <EpicDetail
-            group={selectedGroup}
-            tasks={groupTasks}
-            loading={loading}
-            onQueueAll={handleQueueAll}
-            onAddTask={handleAddTask}
-            onEditTask={handleEditTask}
-            onEditGroup={handleEditGroup}
-            onDeleteGroup={handleDeleteGroup}
-            onToggleReady={handleToggleReady}
-            onReorderTasks={handleReorderTasks}
-          />
-        )}
-        {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}
+        <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
+          <Panel defaultSize="22%" minSize="12%" maxSize="40%">
+            <EpicList
+              groups={filteredGroups}
+              selectedId={selectedGroupId}
+              onSelect={selectGroup}
+              onCreateNew={handleCreateNew}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onImport={handleImportPlan}
+            />
+          </Panel>
+          <Separator className="panel-separator" />
+          <Panel minSize="40%">
+            {selectedGroup && (
+              <EpicDetail
+                group={selectedGroup}
+                tasks={groupTasks}
+                loading={loading}
+                onQueueAll={handleQueueAll}
+                onAddTask={handleAddTask}
+                onEditTask={handleEditTask}
+                onEditGroup={handleEditGroup}
+                onDeleteGroup={handleDeleteGroup}
+                onToggleReady={handleToggleReady}
+                onReorderTasks={handleReorderTasks}
+              />
+            )}
+            {!selectedGroup && !loading && (
+              <EmptyState message="Select an epic to view details" />
+            )}
+          </Panel>
+        </Group>
       </div>
 
       <CreateEpicModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />

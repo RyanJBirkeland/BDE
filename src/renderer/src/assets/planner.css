@@ -69,11 +69,10 @@
   color: var(--bde-text-dim);
 }
 
-/* ── Body (Split Layout) ── */
+/* ── Body (Split Layout — uses react-resizable-panels) ── */
 .planner-body {
   flex: 1;
-  display: grid;
-  grid-template-columns: 320px 1fr;
+  display: flex;
   overflow: hidden;
 }
 
@@ -105,27 +104,83 @@
 .planner-epic-list__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
+  gap: 8px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--bde-border);
   background: var(--bde-surface);
 }
 
 .planner-epic-list__title {
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--bde-accent);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 1.5px;
 }
 
 .planner-epic-list__count {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--bde-text-dim);
   background: var(--bde-border);
-  padding: 2px 8px;
-  border-radius: 12px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.planner-epic-list__import-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+  color: var(--bde-text-muted);
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.planner-epic-list__import-btn:hover:not(:disabled) {
+  color: var(--bde-text);
+  border-color: var(--bde-text-muted);
+}
+
+.planner-epic-list__search {
+  position: relative;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bde-border);
+}
+
+.planner-epic-list__search-icon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bde-text-dim);
+  pointer-events: none;
+}
+
+.planner-epic-list__search-input {
+  width: 100%;
+  padding: 6px 8px 6px 28px;
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  color: var(--bde-text);
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.planner-epic-list__search-input:focus-visible {
+  border-color: var(--bde-accent);
+}
+
+.planner-epic-list__search-input::placeholder {
+  color: var(--bde-text-dim);
 }
 
 .planner-epic-list__scroll {

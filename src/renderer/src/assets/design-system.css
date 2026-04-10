@@ -842,12 +842,15 @@
 
 .confirm-modal {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
   z-index: 1001;
+  width: fit-content;
+  height: fit-content;
+  margin: auto;
   min-width: 340px;
-  max-width: 440px;
+  max-width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
   padding: var(--bde-space-5);
   border-radius: var(--bde-radius-xl);
   display: flex;
@@ -885,12 +888,15 @@
 
 .prompt-modal {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
   z-index: 1001;
+  width: fit-content;
+  height: fit-content;
+  margin: auto;
   min-width: 340px;
-  max-width: 440px;
+  max-width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
   padding: var(--bde-space-5);
   border-radius: var(--bde-radius-xl);
   display: flex;
