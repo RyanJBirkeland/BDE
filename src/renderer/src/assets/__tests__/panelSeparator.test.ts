@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const CSS_PATH = path.resolve(__dirname, '../design-system.css')
+const CSS_PATH = path.resolve(__dirname, '../design-system/glass.css')
 
 function extractRuleBody(css: string, selector: string): string {
   // Match `selector {` — the selector must be followed only by optional

@@ -1,0 +1,53 @@
+/* ── NeonCard ──────────────────────────────────────── */
+
+.neon-card {
+  border-radius: var(--bde-radius-xl);
+  box-shadow: none, transparent;
+  overflow: hidden;
+  /* Don't let flex parents shrink the card below its content height —
+     combined with overflow: hidden (needed for rounded corners + glass clip),
+     shrinking silently clips chart bodies and text. Scrollable parents
+     (e.g. .dashboard-col) handle overflow at the column level. */
+  flex-shrink: 0;
+  transition:
+    box-shadow var(--bde-transition-base),
+    transform var(--bde-transition-base);
+}
+
+.neon-card--with-title {
+  padding: 0;
+}
+
+.neon-card--no-title {
+  padding: var(--bde-space-3);
+}
+
+.neon-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-2) var(--bde-space-3);
+}
+
+.neon-card__icon {
+  display: flex;
+}
+
+.neon-card__title {
+  font-size: var(--bde-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.neon-card__action {
+  margin-left: auto;
+}
+
+.neon-card__body {
+  padding: var(--bde-space-3);
+}
+
+.neon-card__body--no-title {
+  padding: 0;
+}

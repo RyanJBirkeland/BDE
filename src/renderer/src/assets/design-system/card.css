@@ -1,0 +1,40 @@
+/* ── Card ─────────────────────────────────────────────── */
+
+.bde-card {
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-lg);
+  transition: border-color var(--bde-transition-base);
+}
+
+.bde-card--pad-none {
+  padding: 0;
+}
+
+.bde-card--pad-sm {
+  padding: var(--bde-space-2);
+}
+
+.bde-card--pad-md {
+  padding: var(--bde-space-4);
+}
+
+.bde-card--pad-lg {
+  padding: var(--bde-space-6);
+}
+
+.bde-card--active {
+  border-color: var(--bde-accent);
+}
+
+.bde-card--clickable {
+  cursor: pointer;
+}
+
+.bde-card--clickable:hover {
+  border-color: var(--bde-border-hover);
+}
+
+.bde-card--clickable.bde-card--active:hover {
+  border-color: var(--bde-accent);
+}
