@@ -1,0 +1,154 @@
+/* ── App shell ─────────────────────────────────────────── */
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-shell__body {
+  display: flex;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.app-shell__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bde-bg);
+}
+
+/* ── ViewRouter ────────────────────────────────────────── */
+
+.view-enter {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.view-router {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.view-router__placeholder {
+  color: var(--bde-text-muted);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* ── Shortcuts Overlay ─────────────────────────────────── */
+
+.shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bde-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.shortcuts-overlay__panel {
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-lg);
+  padding: 24px;
+  min-width: 520px;
+  box-shadow: 0 16px 48px var(--bde-overlay);
+  animation: bde-scale-fade-in 150ms ease;
+}
+
+.shortcuts-overlay__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.shortcuts-overlay__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--bde-border);
+  padding-bottom: 8px;
+}
+
+.shortcuts-overlay__tab {
+  padding: 4px 12px;
+  font-size: var(--bde-size-sm);
+  font-family: var(--bde-font-ui);
+  color: var(--bde-text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+}
+
+.shortcuts-overlay__tab:hover {
+  color: var(--bde-text);
+  background: var(--bde-hover);
+}
+
+.shortcuts-overlay__tab--active {
+  color: var(--bde-text);
+  background: var(--bde-hover-strong);
+  border-color: var(--bde-border);
+}
+
+.shortcuts-overlay__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 200px;
+}
+
+.shortcuts-overlay__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--bde-size-md);
+  gap: 12px;
+}
+
+.shortcuts-overlay__close {
+  margin-top: 20px;
+  width: 100%;
+  padding: 6px;
+  background: var(--bde-hover-strong);
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text);
+  font-size: var(--bde-size-md);
+  font-family: var(--bde-font-ui);
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.shortcuts-overlay__close:hover:not(:disabled) {
+  background: var(--bde-hover-strong);
+}
+
+.shortcuts-overlay__close:active:not(:disabled) {
+  transform: scale(0.97);
+}

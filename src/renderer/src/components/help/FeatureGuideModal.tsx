@@ -8,6 +8,7 @@ import { usePanelLayoutStore } from '../../stores/panelLayout'
 import type { View } from '../../stores/panelLayout'
 import { Button } from '../ui/Button'
 import { Kbd } from '../ui/Kbd'
+import './FeatureGuideModal.css'
 
 interface FeatureGuideModalProps {
   open: boolean

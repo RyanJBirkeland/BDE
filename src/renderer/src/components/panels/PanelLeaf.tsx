@@ -4,6 +4,7 @@ import { ErrorBoundary } from '../ui/ErrorBoundary'
 import { PanelDropOverlay } from './PanelDropOverlay'
 import { resolveView } from '../../lib/view-resolver'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
+import './PanelLeaf.css'
 
 // ---------------------------------------------------------------------------
 // Lazy view preloading map — trigger on hover in ActivityBar

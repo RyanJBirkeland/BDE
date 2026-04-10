@@ -8,6 +8,7 @@ import {
   AlertTriangle
 } from 'lucide-react'
 import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
+import './NotificationBell.css'
 import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
 import { useSprintUI } from '../../stores/sprintUI'
 import { useCodeReviewStore } from '../../stores/codeReview'

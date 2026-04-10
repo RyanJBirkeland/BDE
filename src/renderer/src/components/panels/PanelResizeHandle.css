@@ -1,0 +1,8 @@
+.panel-resize-handle {
+  background: transparent;
+  transition: background 100ms ease;
+}
+
+.panel-resize-handle:hover {
+  background: var(--bde-border);
+}
