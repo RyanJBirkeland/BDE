@@ -1139,6 +1139,10 @@
   opacity: 0.4;
 }
 
+.dag-overlay__node--clickable {
+  cursor: pointer;
+}
+
 .dag-overlay__close {
   display: inline-flex;
   align-items: center;

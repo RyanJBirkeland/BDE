@@ -115,3 +115,7 @@
   align-content: flex-start;
 }
 
+.pipeline-stage__show-more {
+  margin-top: 8px;
+}
+

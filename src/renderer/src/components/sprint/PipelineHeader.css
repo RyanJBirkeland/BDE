@@ -93,6 +93,22 @@
   opacity: 0.5;
 }
 
+/* Export menu container */
+.sprint-pipeline__export-wrapper {
+  position: relative;
+}
+
+.sprint-pipeline__export-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 80px;
+}
+
 /* Header indicator badges */
 .sprint-pipeline__badge {
   display: inline-flex;

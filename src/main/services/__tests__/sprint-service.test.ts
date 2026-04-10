@@ -25,7 +25,7 @@ vi.mock('../webhook-service', () => ({
   createWebhookService: vi.fn(() => ({
     fireWebhook: vi.fn()
   })),
-  getWebhookEventName: vi.fn((type, task) => `sprint.task.${type}`)
+  getWebhookEventName: vi.fn((type, _task) => `sprint.task.${type}`)
 }))
 
 // Mock webhook-queries

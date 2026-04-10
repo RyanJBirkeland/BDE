@@ -427,3 +427,67 @@
   display: inline-block;
 }
 
+.task-drawer__failure {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.task-drawer__failure-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.task-drawer__failure-reason {
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+}
+
+.task-drawer__failure-notes {
+  margin: 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--bde-font-code);
+}
+
+.task-drawer__failure-reason {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-bottom: 6px;
+  font-family: var(--bde-font-code);
+}
+
+.task-drawer__failure-notes-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.task-drawer__failure-errors {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.task-drawer__failure-errors-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.task-drawer__failure-error-item {
+  font-family: var(--bde-font-code);
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.task-drawer__status-text {
+  font-size: 12px;
+  opacity: 0.6;
+}
+

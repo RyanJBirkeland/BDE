@@ -135,7 +135,7 @@ export function DagOverlay({
               return (
                 <g
                   key={node.id}
-                  className="dag-overlay__node"
+                  className="dag-overlay__node dag-overlay__node--clickable"
                   transform={`translate(${node.x}, ${node.y})`}
                   onClick={() => handleNodeClick(node.id)}
                   onKeyDown={(e) => {
@@ -147,7 +147,6 @@ export function DagOverlay({
                   role="button"
                   tabIndex={0}
                   aria-label={`${node.task.title}: ${node.task.status}`}
-                  style={{ cursor: 'pointer' }}
                 >
                   <rect
                     width={NODE_WIDTH}

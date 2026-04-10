@@ -26,6 +26,11 @@
   opacity: 0.6;
 }
 
+/* Clickable line */
+.console-line--clickable {
+  cursor: pointer;
+}
+
 /* Console Line Prefixes */
 .console-prefix {
   font-weight: 600;
@@ -78,6 +83,10 @@
   overflow: hidden;
   color: var(--bde-text-muted);
   word-break: break-word;
+}
+
+.console-line__tool-summary {
+  padding-left: 24px;
 }
 
 /* ── Markdown Rendering in Agent Text ── */

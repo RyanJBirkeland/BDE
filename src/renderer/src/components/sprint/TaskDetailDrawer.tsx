@@ -239,9 +239,6 @@ export function TaskDetailDrawer({
             className="task-drawer__failure"
             data-testid="task-drawer-failure"
             style={{
-              marginTop: 12,
-              padding: 10,
-              borderRadius: 6,
               border: '1px solid var(--bde-danger-border)',
               background: 'var(--bde-danger-surface)'
             }}
@@ -249,45 +246,28 @@ export function TaskDetailDrawer({
             <div
               className="task-drawer__failure-label"
               style={{
-                fontSize: 11,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                color: 'var(--bde-danger)',
-                fontWeight: 600,
-                marginBottom: 6
+                color: 'var(--bde-danger)'
               }}
             >
               Failure Details
             </div>
             {task.failure_reason && (
-              <div
-                style={{
-                  fontSize: 11,
-                  opacity: 0.8,
-                  marginBottom: 6,
-                  fontFamily: 'var(--bde-font-mono, monospace)'
-                }}
-                data-testid="task-drawer-failure-reason"
-              >
+              <div className="task-drawer__failure-reason" data-testid="task-drawer-failure-reason">
                 reason: {task.failure_reason}
               </div>
             )}
             {task.notes ? (
               <pre
+                className="task-drawer__failure-notes"
                 data-testid="task-drawer-failure-notes"
                 style={{
-                  margin: 0,
-                  fontSize: 12,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  fontFamily: 'var(--bde-font-mono, monospace)',
                   color: 'var(--bde-text, rgba(255,255,255,0.85))'
                 }}
               >
                 {task.notes}
               </pre>
             ) : (
-              <div style={{ fontSize: 12, opacity: 0.6 }}>
+              <div className="task-drawer__status-text">
                 No diagnostic notes captured. Check the Agents view for details.
               </div>
             )}
@@ -298,28 +278,12 @@ export function TaskDetailDrawer({
                 if (errors.length === 0) return null
                 return (
                   <div
+                    className="task-drawer__failure-errors"
                     data-testid="task-drawer-failure-errors"
-                    style={{ marginTop: 8, fontSize: 12 }}
                   >
-                    <div
-                      style={{
-                        fontSize: 10,
-                        textTransform: 'uppercase',
-                        opacity: 0.6,
-                        marginBottom: 4
-                      }}
-                    >
-                      Recent errors
-                    </div>
+                    <div className="task-drawer__failure-errors-label">Recent errors</div>
                     {errors.map((e, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          fontFamily: 'var(--bde-font-mono, monospace)',
-                          opacity: 0.85,
-                          marginTop: 2
-                        }}
-                      >
+                      <div key={i} className="task-drawer__failure-error-item">
                         {e.type === 'agent:error' ? e.message : ''}
                       </div>
                     ))}

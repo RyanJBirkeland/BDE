@@ -99,7 +99,7 @@ export function PipelineHeader({
         <Network size={12} />
         <span>DAG</span>
       </button>
-      <div style={{ position: 'relative' }}>
+      <div className="sprint-pipeline__export-wrapper">
         <button
           className="sprint-pipeline__badge"
           onClick={() => setShowExportMenu(!showExportMenu)}
@@ -112,17 +112,10 @@ export function PipelineHeader({
         </button>
         {showExportMenu && (
           <div
+            className="sprint-pipeline__export-menu"
             style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              marginTop: '4px',
               backgroundColor: 'var(--bde-surface)',
-              border: '1px solid var(--bde-border)',
-              borderRadius: '4px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              zIndex: 1000,
-              minWidth: '80px'
+              border: '1px solid var(--bde-border)'
             }}
           >
             <button

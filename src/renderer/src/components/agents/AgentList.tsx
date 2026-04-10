@@ -76,38 +76,22 @@ function GroupHeader({
   return (
     <Tag
       {...(collapsible ? { onClick: onToggle } : {})}
+      className={`agent-list__section-header ${!collapsible ? 'agent-list__section-header--static' : ''}`}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: tokens.space[2],
-        width: '100%',
-        padding: `${tokens.space[1]} ${tokens.space[3]}`,
-        background: 'none',
-        border: 'none',
-        cursor: collapsible ? 'pointer' : 'default',
-        color: neonVar('purple', 'color'),
-        fontSize: tokens.size.xs,
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em'
+        color: neonVar('purple', 'color')
       }}
     >
       {collapsible && (
         <ChevronRight
           size={12}
-          style={{
-            transform: open ? 'rotate(90deg)' : undefined,
-            transition: tokens.transition.fast
-          }}
+          className={`agent-list__section-chevron ${open ? 'agent-list__section-chevron--open' : ''}`}
         />
       )}
       {showPulse && (
         <span
+          className="agent-list__section-pulse"
           style={{
-            width: 6,
-            height: 6,
-            borderRadius: tokens.radius.full,
-            background: neonVar('cyan', 'color'),
-            animation: 'pulse 2s infinite'
+            background: neonVar('cyan', 'color')
           }}
         />
       )}
@@ -207,34 +191,22 @@ export function AgentList({
 
   return (
     <div
+      className="agent-list"
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
         background: `linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface) 100%)`
       }}
     >
       {/* Search */}
       <div
+        className="agent-list__search-container"
         style={{
-          padding: tokens.space[2],
           borderBottom: `1px solid ${neonVar('purple', 'border')}`
         }}
       >
         <div
-          className={
+          className={`agent-list__search-box ${
             searchFocused ? 'agent-list__search-border--focused' : 'agent-list__search-border'
-          }
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: tokens.space[2],
-            padding: `${tokens.space[1]} ${tokens.space[2]}`,
-            background: 'var(--bde-surface)',
-            borderRadius: tokens.radius.sm,
-            boxShadow: 'none',
-            transition: tokens.transition.fast
-          }}
+          }`}
         >
           <Search
             size={12}
@@ -250,14 +222,7 @@ export function AgentList({
             onBlur={() => setSearchFocused(false)}
             placeholder="Filter agents..."
             aria-label="Filter agents"
-            className="agent-list__search-input"
-            style={{
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              fontSize: tokens.size.sm,
-              outline: 'none'
-            }}
+            className="agent-list__search-input agent-list__search-input-field"
           />
         </div>
       </div>
@@ -267,11 +232,7 @@ export function AgentList({
         <div
           className="agent-list__repo-chips"
           style={{
-            display: 'flex',
-            gap: tokens.space[1],
-            padding: `${tokens.space[1]} ${tokens.space[2]}`,
-            borderBottom: `1px solid ${neonVar('purple', 'border')}`,
-            overflowX: 'auto'
+            borderBottom: `1px solid ${neonVar('purple', 'border')}`
           }}
         >
           <button
@@ -298,33 +259,18 @@ export function AgentList({
         tabIndex={0}
         onKeyDown={handleKeyDown}
         aria-label="Agent list"
-        style={{ flex: 1, overflow: 'auto', outline: 'none' }}
+        className="agent-list__scroll-container"
       >
         {fetchError && agents.length === 0 && (
-          <div
-            style={{
-              padding: tokens.space[4],
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: tokens.space[2]
-            }}
-          >
-            <span style={{ color: neonVar('red', 'color'), fontSize: tokens.size.sm }}>
-              {fetchError}
-            </span>
+          <div className="agent-list__empty-message">
+            <span style={{ color: neonVar('red', 'color') }}>{fetchError}</span>
             {onRetry && (
               <button
                 onClick={onRetry}
+                className="agent-list__empty-retry"
                 style={{
-                  padding: `${tokens.space[1]} ${tokens.space[3]}`,
-                  background: 'var(--bde-surface)',
                   border: `1px solid ${neonVar('cyan', 'border')}`,
-                  borderRadius: tokens.radius.sm,
-                  color: neonVar('cyan', 'color'),
-                  fontSize: tokens.size.xs,
-                  cursor: 'pointer'
+                  color: neonVar('cyan', 'color')
                 }}
               >
                 Retry
@@ -335,29 +281,20 @@ export function AgentList({
 
         {fetchError && agents.length > 0 && (
           <div
+            className="agent-list__error-banner"
             style={{
-              padding: `${tokens.space[1]} ${tokens.space[2]}`,
               background: neonVar('orange', 'surface'),
               borderBottom: `1px solid ${neonVar('orange', 'border')}`,
-              color: neonVar('orange', 'color'),
-              fontSize: tokens.size.xs,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
+              color: neonVar('orange', 'color')
             }}
           >
             <span>Refresh failed — showing cached list</span>
             {onRetry && (
               <button
                 onClick={onRetry}
+                className="agent-list__retry-button"
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: neonVar('orange', 'color'),
-                  cursor: 'pointer',
-                  fontSize: tokens.size.xs,
-                  textDecoration: 'underline',
-                  padding: 0
+                  color: neonVar('orange', 'color')
                 }}
               >
                 Retry
@@ -367,14 +304,7 @@ export function AgentList({
         )}
 
         {loading && agents.length === 0 && !fetchError && (
-          <div
-            style={{
-              padding: tokens.space[2],
-              display: 'flex',
-              flexDirection: 'column',
-              gap: tokens.space[2]
-            }}
-          >
+          <div className="agent-list__loading-container">
             <div className="bde-skeleton" style={{ height: 56 }} />
             <div className="bde-skeleton" style={{ height: 56 }} />
             <div className="bde-skeleton" style={{ height: 56 }} />

@@ -1,6 +1,39 @@
 /* ── Agent Card Components ── */
+.agent-card__button-reset {
+  all: unset;
+  display: block;
+  width: 100%;
+  padding: var(--bde-space-2) var(--bde-space-3);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.agent-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bde-space-1);
+}
+
+.agent-card__top-row {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+}
+
 .agent-card__task-title {
   color: var(--bde-text);
+  font-size: var(--bde-size-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.agent-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding-left: 14px;
 }
 
 .agent-card__meta-icon {
@@ -9,10 +42,17 @@
 
 .agent-card__meta-text {
   color: var(--bde-text-muted);
+  font-size: var(--bde-size-xs);
 }
 
 .agent-card__meta-separator {
   color: var(--bde-text-muted);
+  font-size: var(--bde-size-xs);
+}
+
+.agent-card__status-label {
+  font-size: var(--bde-size-xs);
+  font-weight: 700;
 }
 
 .agent-card__kill-btn {

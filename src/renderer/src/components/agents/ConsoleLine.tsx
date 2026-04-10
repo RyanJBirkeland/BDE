@@ -195,11 +195,7 @@ export function ConsoleLine({
             <div className="console-line__detail-group">
               {(() => {
                 const summary = formatToolSummary(block.tool, block.input)
-                return summary ? (
-                  <div className="console-line__tool-summary" style={{ paddingLeft: '24px' }}>
-                    {summary}
-                  </div>
-                ) : null
+                return summary ? <div className="console-line__tool-summary">{summary}</div> : null
               })()}
               {block.input !== undefined && (
                 <div className="console-line__detail">
@@ -355,7 +351,7 @@ export function ConsoleLine({
     case 'playground':
       return (
         <div
-          className={`console-line console-line--playground${getSearchClass()}`}
+          className={`console-line console-line--playground${getSearchClass()}${onPlaygroundClick ? ' console-line--clickable' : ''}`}
           data-testid="console-line-playground"
           role="button"
           tabIndex={0}
@@ -366,7 +362,6 @@ export function ConsoleLine({
               onPlaygroundClick?.(block)
             }
           }}
-          style={{ cursor: onPlaygroundClick ? 'pointer' : undefined }}
         >
           <span className="console-prefix console-prefix--play">[play]</span>
           <span className="console-line__content">

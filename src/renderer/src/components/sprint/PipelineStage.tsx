@@ -108,20 +108,12 @@ function PipelineStageInner({
             )}
           </AnimatePresence>
           {!expanded && hiddenCount > 0 && (
-            <button
-              className="pipeline-stage__show-more"
-              onClick={() => setExpanded(true)}
-              style={{ marginTop: '8px' }}
-            >
+            <button className="pipeline-stage__show-more" onClick={() => setExpanded(true)}>
               Show {hiddenCount} more
             </button>
           )}
           {expanded && tasks.length > STAGE_VISIBLE_LIMIT && (
-            <button
-              className="pipeline-stage__show-more"
-              onClick={() => setExpanded(false)}
-              style={{ marginTop: '8px' }}
-            >
+            <button className="pipeline-stage__show-more" onClick={() => setExpanded(false)}>
               Show less
             </button>
           )}

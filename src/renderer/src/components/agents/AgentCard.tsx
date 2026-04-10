@@ -108,17 +108,7 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
 
   return (
     <>
-      <button
-        onClick={onClick}
-        style={{
-          all: 'unset',
-          display: 'block',
-          width: '100%',
-          padding: `${tokens.space[2]} ${tokens.space[3]}`,
-          cursor: 'pointer',
-          boxSizing: 'border-box'
-        }}
-      >
+      <button onClick={onClick} className="agent-card__button-reset">
         <NeonCard
           accent={accent}
           style={{
@@ -128,20 +118,11 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
             transform: selected ? 'scale(1.02)' : undefined
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.space[1] }}>
+          <div className="agent-card__content">
             {/* Top row: status icon + task title + kill button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.space[2] }}>
+            <div className="agent-card__top-row">
               <StatusIndicator status={agent.status} accent={accent} />
-              <span
-                className="agent-card__task-title"
-                style={{
-                  fontSize: tokens.size.md,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  flex: 1
-                }}
-              >
+              <span className="agent-card__task-title">
                 {agent.task.slice(0, 80)}
               </span>
               {isRunning && (
@@ -156,21 +137,10 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
               )}
             </div>
             {/* Bottom row: meta info */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: tokens.space[2],
-                paddingLeft: 14
-              }}
-            >
+            <div className="agent-card__meta-row">
               <SourceIcon size={10} className="agent-card__meta-icon" />
-              <span className="agent-card__meta-text" style={{ fontSize: tokens.size.xs }}>
-                {agent.model}
-              </span>
-              <span className="agent-card__meta-separator" style={{ fontSize: tokens.size.xs }}>
-                ·
-              </span>
+              <span className="agent-card__meta-text">{agent.model}</span>
+              <span className="agent-card__meta-separator">·</span>
               <Clock size={10} color={neonVar(accent, 'color')} />
               <span style={{ fontSize: tokens.size.xs, color: neonVar(accent, 'color') }}>
                 {formatDuration(agent.startedAt, agent.finishedAt)}
@@ -180,14 +150,11 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                 agent.status === 'failed' ||
                 agent.status === 'cancelled') && (
                 <>
-                  <span className="agent-card__meta-separator" style={{ fontSize: tokens.size.xs }}>
-                    ·
-                  </span>
+                  <span className="agent-card__meta-separator">·</span>
                   <span
+                    className="agent-card__status-label"
                     style={{
-                      fontSize: tokens.size.xs,
-                      color: neonVar(accent, 'color'),
-                      fontWeight: 700
+                      color: neonVar(accent, 'color')
                     }}
                   >
                     {agent.status === 'done'
@@ -198,12 +165,8 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                   </span>
                 </>
               )}
-              <span className="agent-card__meta-separator" style={{ fontSize: tokens.size.xs }}>
-                ·
-              </span>
-              <span className="agent-card__meta-text" style={{ fontSize: tokens.size.xs }}>
-                {agent.repo}
-              </span>
+              <span className="agent-card__meta-separator">·</span>
+              <span className="agent-card__meta-text">{agent.repo}</span>
             </div>
           </div>
         </NeonCard>
