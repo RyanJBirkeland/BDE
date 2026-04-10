@@ -118,7 +118,8 @@ describe('TaskDetailActionButtons', () => {
 
     it('disables all buttons during loading', async () => {
       const task = makeTask({ status: 'backlog' })
-      mockOnLaunch.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)))
+      let resolve!: () => void
+      mockOnLaunch.mockImplementation(() => new Promise<void>((r) => { resolve = r }))
       render(
         <TaskDetailActionButtons
           task={task}
@@ -137,6 +138,8 @@ describe('TaskDetailActionButtons', () => {
       expect(launchButton.closest('button')).toBeDisabled()
       expect(editButton.closest('button')).toBeDisabled()
       expect(deleteButton.closest('button')).toBeDisabled()
+      resolve()
+      await waitFor(() => expect(launchButton.closest('button')).not.toBeDisabled())
     })
   })
 
@@ -457,7 +460,8 @@ describe('TaskDetailActionButtons', () => {
   describe('loading states', () => {
     it('shows spinner with aria-busy during action', async () => {
       const task = makeTask({ status: 'backlog' })
-      mockOnLaunch.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)))
+      let resolve!: () => void
+      mockOnLaunch.mockImplementation(() => new Promise<void>((r) => { resolve = r }))
       render(
         <TaskDetailActionButtons
           task={task}
@@ -472,6 +476,8 @@ describe('TaskDetailActionButtons', () => {
       const launchButton = screen.getByText('Launch').closest('button')!
       fireEvent.click(launchButton)
       expect(launchButton).toHaveAttribute('aria-busy', 'true')
+      resolve()
+      await waitFor(() => expect(launchButton).not.toHaveAttribute('aria-busy', 'true'))
     })
 
     it('clears loading state after action completes', async () => {
