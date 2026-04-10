@@ -1,0 +1,51 @@
+/* ── ActivityFeed ──────────────────────────────────── */
+
+.activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bde-space-1);
+}
+
+.activity-feed__empty {
+  color: var(--bde-text-dim);
+  font-size: var(--bde-size-xs);
+  padding: var(--bde-space-3) 0;
+}
+
+.activity-feed__item {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-1);
+}
+
+.activity-feed__item--clickable {
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.15s;
+}
+
+.activity-feed__item--clickable:hover {
+  opacity: 0.75;
+}
+
+.activity-feed__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.activity-feed__label {
+  color: var(--bde-text-muted);
+  font-size: var(--bde-size-xs);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-feed__timestamp {
+  color: var(--bde-text-dim);
+  font-size: var(--bde-size-xs);
+  flex-shrink: 0;
+}

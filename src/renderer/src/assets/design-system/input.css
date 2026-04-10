@@ -1,0 +1,101 @@
+/* ── Input ────────────────────────────────────────────── */
+
+.bde-input {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  transition: border-color var(--bde-transition-base);
+}
+
+.bde-input:focus-within {
+  border-color: var(--bde-accent);
+}
+
+.bde-input__prefix,
+.bde-input__suffix {
+  display: flex;
+  align-items: center;
+  color: var(--bde-text-dim);
+  flex-shrink: 0;
+}
+
+.bde-input__prefix {
+  padding-left: var(--bde-space-2);
+}
+
+.bde-input__suffix {
+  padding-right: var(--bde-space-2);
+}
+
+.bde-input__field {
+  flex: 1;
+  height: 100%;
+  padding: 0 var(--bde-space-3);
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--bde-text);
+  font-family: var(--bde-font-ui);
+  font-size: var(--bde-size-md);
+}
+
+.bde-input__field:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.bde-input--has-prefix .bde-input__field {
+  padding-left: var(--bde-space-1);
+}
+
+.bde-input--has-suffix .bde-input__field {
+  padding-right: var(--bde-space-1);
+}
+
+.bde-input__field::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.bde-input__field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Textarea ─────────────────────────────────────────── */
+
+.bde-textarea {
+  width: 100%;
+  min-height: 36px;
+  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  color: var(--bde-text);
+  font-family: var(--bde-font-ui);
+  font-size: var(--bde-size-md);
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  transition: border-color var(--bde-transition-base);
+}
+
+.bde-textarea:focus-visible {
+  border-color: var(--bde-accent);
+}
+
+.bde-textarea:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.bde-textarea::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.bde-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

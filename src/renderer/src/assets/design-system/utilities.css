@@ -1,0 +1,327 @@
+/* ── Spinner ──────────────────────────────────────────── */
+
+@keyframes bde-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bde-spinner {
+  display: inline-block;
+  border: 2px solid transparent;
+  border-top-color: var(--bde-accent);
+  border-radius: 50%;
+  animation: bde-spin 600ms linear infinite;
+}
+
+.bde-spinner--sm {
+  width: 14px;
+  height: 14px;
+}
+
+.bde-spinner--md {
+  width: 20px;
+  height: 20px;
+}
+
+.bde-spinner--lg {
+  width: 28px;
+  height: 28px;
+}
+
+/* ── EmptyState ───────────────────────────────────────── */
+
+.bde-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-8);
+  text-align: center;
+}
+
+.bde-empty__icon {
+  color: var(--bde-text-dim);
+  opacity: 0.6;
+}
+
+.bde-empty__title {
+  font-size: var(--bde-size-lg);
+  font-weight: 600;
+  color: var(--bde-text);
+}
+
+.bde-empty__desc {
+  font-size: var(--bde-size-md);
+  color: var(--bde-text-muted);
+  max-width: 320px;
+}
+
+/* ── Kbd ──────────────────────────────────────────────── */
+
+.bde-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  line-height: 1;
+}
+
+/* ── Tooltip ──────────────────────────────────────────── */
+
+.bde-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.bde-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  padding: 4px 8px;
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--bde-transition-base);
+  transition-delay: 0ms;
+  z-index: 1000;
+}
+
+.bde-tooltip:hover::after {
+  opacity: 1;
+  transition-delay: 400ms;
+}
+
+.bde-tooltip--top::after {
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bde-tooltip--bottom::after {
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bde-tooltip--left::after {
+  right: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bde-tooltip--right::after {
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ── Divider ──────────────────────────────────────────── */
+
+.bde-divider {
+  flex-shrink: 0;
+}
+
+.bde-divider--horizontal {
+  width: 100%;
+  height: 1px;
+  background: var(--bde-border);
+}
+
+.bde-divider--vertical {
+  width: 1px;
+  height: 100%;
+  background: var(--bde-border);
+}
+
+/* ── Skeleton ────────────────────────────────────────── */
+
+.bde-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bde-surface) 25%,
+    var(--bde-surface-high) 50%,
+    var(--bde-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: bde-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--bde-radius-md);
+}
+
+/* ── Section Title ───────────────────────────────────── */
+
+.bde-section-title {
+  font-size: var(--bde-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--bde-text-muted);
+}
+
+/* ── Error Banner ────────────────────────────────────── */
+
+.bde-error-banner {
+  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--bde-error-bg);
+  color: var(--bde-danger-text);
+  font-size: var(--bde-size-sm);
+  border-radius: var(--bde-radius-sm);
+}
+
+/* ── Warning Banner ──────────────────────────────────── */
+
+.bde-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--bde-warning-dim);
+  color: var(--bde-warning);
+  font-size: var(--bde-size-sm);
+  border-radius: var(--bde-radius-sm);
+}
+
+/* ── Count Badge ─────────────────────────────────────── */
+
+.bde-count-badge {
+  font-size: var(--bde-size-xs);
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  background: var(--bde-border);
+  padding: 0 var(--bde-space-2);
+  border-radius: var(--bde-radius-xl);
+}
+
+/* ── Error Boundary ──────────────────────────────────── */
+
+.error-boundary {
+  padding: var(--bde-space-4);
+  color: var(--bde-danger);
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-sm);
+}
+
+.error-boundary__title {
+  font-weight: 600;
+  margin-bottom: var(--bde-space-1);
+}
+
+.error-boundary__message {
+  opacity: 0.7;
+  margin-bottom: var(--bde-space-3);
+}
+
+/* ── 2.4 Gradient Text ───────────────────────────────── */
+
+.text-gradient-aurora {
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── 4.4 Logotype ────────────────────────────────────── */
+
+.logotype {
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logotype-glow {
+  position: absolute;
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  color: var(--bde-accent);
+  filter: blur(8px);
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── 8.4 Primary Button ──────────────────────────────── */
+
+.btn-primary {
+  background: var(--gradient-aurora);
+  color: var(--bde-btn-primary-text);
+  font-family: var(--bde-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  filter: brightness(0.95);
+  transform: scale(0.98);
+}
+
+/* ── 8.5 Ghost / Glass Button ────────────────────────── */
+
+.btn-glass {
+  background: var(--bde-glass-bg);
+  color: var(--bde-text-muted);
+  font-family: var(--bde-font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--bde-border);
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+
+.btn-glass:hover:not(:disabled) {
+  background: var(--bde-glass-bg-hover);
+  border-color: var(--bde-border-hover);
+  color: var(--bde-text);
+}
+
+.btn-glass:active {
+  background: var(--bde-glass-bg-active);
+  transform: scale(0.98);
+}
+
+/* ── 10. Reduced Motion ─────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .glow-pulse {
+    animation: none !important;
+  }
+}

@@ -1,7 +1,19 @@
 @import './tokens.css';
 @import './reset.css';
-@import './design-system.css';
-@import './primitives.css';
+@import './design-system/button.css';
+@import './design-system/badge.css';
+@import './design-system/input.css';
+@import './design-system/card.css';
+@import './design-system/panel.css';
+@import './design-system/modal.css';
+@import './design-system/glass.css';
+@import './design-system/utilities.css';
+@import './design-system/neon-card.css';
+@import './design-system/stat-counter.css';
+@import './design-system/activity-feed.css';
+@import './design-system/neon-badge.css';
+@import './design-system/status-bar.css';
+@import './design-system/mini-chart.css';
 @import './shell.css';
 @import './sprint.css';
 /* sprint-pipeline.css imported by SprintPipeline.tsx (lazy chunk) */
