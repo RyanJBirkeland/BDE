@@ -744,6 +744,38 @@ export interface SystemChannels {
   }
 }
 
+/* ── Repo Discovery ─────────────────────────────────────────────── */
+
+export interface LocalRepoInfo {
+  name: string
+  localPath: string
+  owner?: string
+  repo?: string
+}
+
+export interface GithubRepoInfo {
+  name: string
+  owner: string
+  description?: string
+  isPrivate: boolean
+  url: string
+}
+
+export interface CloneProgressEvent {
+  owner: string
+  repo: string
+  line: string
+  done: boolean
+  error?: string
+  localPath?: string  // expanded absolute path, set on successful clone completion
+}
+
+export interface RepoDiscoveryChannels {
+  'repos:scanLocal': { args: [dirs: string[]]; result: LocalRepoInfo[] }
+  'repos:listGithub': { args: []; result: GithubRepoInfo[] }
+  'repos:clone': { args: [owner: string, repo: string, destDir: string]; result: void }
+}
+
 /** Code review operations */
 export interface ReviewChannels {
   'review:getDiff': {
@@ -916,4 +948,5 @@ export type IpcChannelMap = SettingsChannels &
   WebhookChannels &
   GroupChannels &
   PlannerChannels &
-  SystemChannels
+  SystemChannels &
+  RepoDiscoveryChannels
