@@ -2,7 +2,7 @@ import type { ActiveAgent, AgentHandle, Logger } from './types'
 import { SPAWN_TIMEOUT_MS, LAST_OUTPUT_MAX_LENGTH } from './types'
 import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'
-import { spawnAgent } from './sdk-adapter'
+import { spawnAgent, asSDKMessage, getNumericField, isRateLimitMessage } from './sdk-adapter'
 import { resolveSuccess, resolveFailure } from './completion'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getGhRepo, BDE_TASK_MEMORY_DIR } from '../paths'
@@ -66,37 +66,24 @@ export interface RunAgentDeps {
 const MAX_PLAYGROUND_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_PARTIAL_DIFF_SIZE = 50 * 1024 // 50KB
 
-export function isRateLimitMessage(msg: unknown): boolean {
-  if (typeof msg !== 'object' || msg === null) return false
-  const m = msg as Record<string, unknown>
-  return m.type === 'system' && m.subtype === 'rate_limit'
-}
-
-export function getNumericField(msg: unknown, field: string): number | undefined {
-  if (typeof msg !== 'object' || msg === null) return undefined
-  const val = (msg as Record<string, unknown>)[field]
-  return typeof val === 'number' ? val : undefined
-}
-
 /**
  * Detects if a message is a tool_result for a Write tool that created an .html file.
  * Returns the file path if detected, null otherwise.
  */
 export function detectHtmlWrite(msg: unknown): string | null {
-  if (typeof msg !== 'object' || msg === null) return null
-  const m = msg as Record<string, unknown>
+  const m = asSDKMessage(msg)
+  if (!m) return null
 
   // Check if this is a tool_result or result message
   if (m.type !== 'tool_result' && m.type !== 'result') return null
 
   // Check if the tool is Write (case-insensitive)
-  const toolName = (m.tool_name as string) ?? (m.name as string) ?? ''
+  const toolName = m.tool_name ?? m.name ?? ''
   if (toolName.toLowerCase() !== 'write') return null
 
   // Extract file path from the tool input or output
   // The Write tool typically has input with { file_path: "..." }
-  const input = m.input as Record<string, unknown> | undefined
-  const filePath = input?.file_path as string | undefined
+  const filePath = m.input?.file_path as string | undefined
 
   if (!filePath || extname(filePath).toLowerCase() !== '.html') return null
 
@@ -284,11 +271,9 @@ function processSDKMessage(
   }
 
   // Capture last assistant text
-  if (typeof msg === 'object' && msg !== null) {
-    const m = msg as Record<string, unknown>
-    if (m.type === 'assistant' && typeof m.text === 'string') {
-      lastAgentOutput = (m.text as string).slice(-LAST_OUTPUT_MAX_LENGTH)
-    }
+  const m = asSDKMessage(msg)
+  if (m?.type === 'assistant' && typeof m.text === 'string') {
+    lastAgentOutput = m.text.slice(-LAST_OUTPUT_MAX_LENGTH)
   }
 
   return { exitCode, lastAgentOutput }

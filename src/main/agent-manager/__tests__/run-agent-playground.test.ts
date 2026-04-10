@@ -4,7 +4,8 @@
  * and that helper functions work as expected.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { isRateLimitMessage, getNumericField, runAgent } from '../run-agent'
+import { runAgent } from '../run-agent'
+import { isRateLimitMessage, getNumericField } from '../sdk-adapter'
 import type { RunAgentTask, RunAgentDeps } from '../run-agent'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
@@ -21,9 +22,13 @@ vi.mock('../worktree', () => ({
   cleanupWorktree: vi.fn().mockResolvedValue(undefined)
 }))
 
-vi.mock('../sdk-adapter', () => ({
-  spawnAgent: vi.fn()
-}))
+vi.mock('../sdk-adapter', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../sdk-adapter')>()
+  return {
+    ...actual,
+    spawnAgent: vi.fn()
+  }
+})
 
 vi.mock('../completion', () => ({
   resolveSuccess: vi.fn().mockResolvedValue(undefined),

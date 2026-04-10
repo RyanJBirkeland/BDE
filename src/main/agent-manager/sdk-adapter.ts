@@ -3,6 +3,75 @@ import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { buildAgentEnv, getOAuthToken, getClaudeCliPath } from '../env-utils'
 
+// ---------------------------------------------------------------------------
+// SDK Wire Protocol Types
+// ---------------------------------------------------------------------------
+
+/**
+ * SDK wire protocol message structure. All fields are optional as the SDK
+ * emits various message shapes. Typed accessors below provide safe extraction.
+ */
+export interface SDKWireMessage {
+  type?: string
+  subtype?: string
+  session_id?: string
+  cost_usd?: number
+  total_cost_usd?: number
+  exit_code?: number
+  text?: string
+  message?: {
+    role?: string
+    content?: Array<{
+      type?: string
+      text?: string
+      name?: string
+      tool_name?: string
+      input?: Record<string, unknown>
+    }>
+  }
+  content?: unknown
+  output?: unknown
+  tool_name?: string
+  name?: string
+  is_error?: boolean
+  input?: Record<string, unknown> // tool_result messages can have input at top level
+}
+
+/**
+ * Safely casts unknown SDK message to SDKWireMessage for field access.
+ */
+export function asSDKMessage(msg: unknown): SDKWireMessage | null {
+  if (typeof msg !== 'object' || msg === null) return null
+  return msg as SDKWireMessage
+}
+
+/**
+ * Extracts a numeric field from an SDK message, returning undefined if not present.
+ */
+export function getNumericField(msg: unknown, field: keyof SDKWireMessage): number | undefined {
+  const m = asSDKMessage(msg)
+  if (!m) return undefined
+  const val = m[field]
+  return typeof val === 'number' ? val : undefined
+}
+
+/**
+ * Extracts session_id from an SDK message if present.
+ */
+export function getSessionId(msg: unknown): string | undefined {
+  const m = asSDKMessage(msg)
+  if (!m) return undefined
+  return typeof m.session_id === 'string' ? m.session_id : undefined
+}
+
+/**
+ * Checks if a message is a rate_limit system message.
+ */
+export function isRateLimitMessage(msg: unknown): boolean {
+  const m = asSDKMessage(msg)
+  return m?.type === 'system' && m?.subtype === 'rate_limit'
+}
+
 /**
  * Per-agent V8 old-space heap cap (MB) applied to spawned Claude CLI
  * processes via NODE_OPTIONS=--max-old-space-size. Prevents 16GB machines
@@ -80,11 +149,9 @@ function spawnViaSdk(
 
   async function* wrapMessages(): AsyncIterable<unknown> {
     for await (const msg of queryResult) {
-      if (typeof msg === 'object' && msg !== null && 'session_id' in msg) {
-        const sid = (msg as Record<string, unknown>).session_id
-        if (typeof sid === 'string' && sid !== resolvedSessionId) {
-          resolvedSessionId = sid as ReturnType<typeof randomUUID>
-        }
+      const sid = getSessionId(msg)
+      if (sid && sid !== resolvedSessionId) {
+        resolvedSessionId = sid as ReturnType<typeof randomUUID>
       }
       yield msg
     }
@@ -99,6 +166,10 @@ function spawnViaSdk(
       abortController.abort()
     },
     async steer(message: string): Promise<SteerResult> {
+      // LSP violation: SDK query() does not support mid-session steering (unlike CLI).
+      // The SDK's query() API is fire-and-forget — once started, it cannot accept
+      // new user messages. CLI mode writes to stdin and can steer. Callers must
+      // handle SteerResult.delivered === false gracefully.
       ;(logger ?? console).warn(
         `[agent-manager] Steer not supported in SDK mode: "${message.slice(0, 100)}"`
       )

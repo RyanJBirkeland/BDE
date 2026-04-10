@@ -2,6 +2,7 @@
  * Shared SDK streaming utilities for Claude Agent SDK.
  */
 import { buildAgentEnvWithAuth, getClaudeCliPath } from './env-utils'
+import { asSDKMessage } from './agent-manager/sdk-adapter'
 
 /**
  * A tool-use event observed during streaming. Used to surface what the
@@ -104,23 +105,21 @@ export async function runSdkStreaming(
 
   try {
     for await (const msg of queryHandle) {
-      if (typeof msg !== 'object' || msg === null) continue
-      const m = msg as Record<string, unknown>
+      const m = asSDKMessage(msg)
+      if (!m) continue
 
       // Extract text and tool_use blocks from assistant messages
       if (m.type === 'assistant') {
-        const message = m.message as Record<string, unknown> | undefined
-        const content = message?.content
+        const content = m.message?.content
         if (Array.isArray(content)) {
           for (const block of content) {
-            const b = block as Record<string, unknown>
-            if (b.type === 'text' && typeof b.text === 'string') {
-              fullText += b.text
-              onChunk(b.text)
-            } else if (b.type === 'tool_use' && options.onToolUse) {
-              const name = typeof b.name === 'string' ? b.name : 'unknown'
-              const inputObj =
-                b.input && typeof b.input === 'object' ? (b.input as Record<string, unknown>) : {}
+            if (!block || typeof block !== 'object') continue
+            if (block.type === 'text' && typeof block.text === 'string') {
+              fullText += block.text
+              onChunk(block.text)
+            } else if (block.type === 'tool_use' && options.onToolUse) {
+              const name = typeof block.name === 'string' ? block.name : 'unknown'
+              const inputObj = block.input && typeof block.input === 'object' ? block.input : {}
               options.onToolUse({ name, input: inputObj })
             }
           }

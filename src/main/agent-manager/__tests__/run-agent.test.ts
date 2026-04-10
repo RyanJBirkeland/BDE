@@ -25,9 +25,13 @@ vi.mock('../worktree', () => ({
   cleanupWorktree: vi.fn().mockResolvedValue(undefined)
 }))
 
-vi.mock('../sdk-adapter', () => ({
-  spawnAgent: vi.fn()
-}))
+vi.mock('../sdk-adapter', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../sdk-adapter')>()
+  return {
+    ...actual,
+    spawnAgent: vi.fn()
+  }
+})
 
 vi.mock('../prompt-composer', () => ({
   buildAgentPrompt: vi.fn((input) => {
