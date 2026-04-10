@@ -5,6 +5,7 @@ import { timeAgo, formatTokens } from '../../lib/format'
 import { CheckCircle, TrendingUp, Gauge } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 import type { FeedEvent } from '../neon/ActivityFeed'
+import './ActivitySection.css'
 
 interface ActivitySectionProps {
   feedEvents: FeedEvent[]

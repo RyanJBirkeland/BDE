@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { CompletionBucket } from '../../../../shared/ipc-channels'
 import { neonVar } from '../neon/types'
+import './ThroughputChart.css'
 
 interface ThroughputChartProps {
   data: CompletionBucket[]

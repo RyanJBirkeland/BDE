@@ -1,4 +1,5 @@
 import type React from 'react'
+import './StatusRail.css'
 
 interface DashboardStats {
   active: number

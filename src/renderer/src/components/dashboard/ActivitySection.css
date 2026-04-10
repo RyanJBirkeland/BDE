@@ -1,0 +1,127 @@
+/* ActivitySection — activity feed and recent completions */
+
+/* Feed Container */
+.dashboard-feed-card {
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-feed-scroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Recent Completions */
+.dashboard-completions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dashboard-completions-empty {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+}
+
+.dashboard-completion-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-completion-row[role='button'] {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.dashboard-completion-row[role='button']:hover {
+  background: var(--bde-border);
+}
+
+.dashboard-completion-title {
+  color: var(--bde-text);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.dashboard-completion-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dashboard-completion-cost {
+  color: var(--bde-warning);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-completion-time {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+/* Failure Breakdown */
+.dashboard-failure-breakdown-empty {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+  opacity: 0.6;
+  text-align: center;
+  padding: 8px;
+}
+
+.dashboard-failure-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dashboard-failure-breakdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.dashboard-failure-breakdown-row:hover {
+  background: var(--bde-border);
+}
+
+.dashboard-failure-breakdown-reason {
+  color: var(--bde-text);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.dashboard-failure-breakdown-count {
+  color: var(--bde-danger);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dashboard-card-loading {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+  opacity: 0.6;
+  text-align: center;
+  padding: 8px;
+}

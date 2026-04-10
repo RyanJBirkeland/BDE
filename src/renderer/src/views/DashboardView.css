@@ -1,0 +1,233 @@
+/* DashboardView — view shell, layout, and shared states */
+
+/* Root Container */
+.dashboard-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bde-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background Gradient Overlay */
+.dashboard-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: var(--bde-bg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Content Layer (above effects) */
+.dashboard-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Status Bar Extras */
+.dashboard-status-loading {
+  opacity: 0.5;
+}
+
+.dashboard-status-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dashboard-retry-btn {
+  background: none;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 9px;
+  cursor: pointer;
+  line-height: 14px;
+}
+
+/* 3-Column Ops Deck Grid */
+.dashboard-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 200px 1fr 240px;
+  gap: 12px;
+  padding: 12px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Column Stacks */
+.dashboard-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.dashboard-col--center {
+  gap: 12px;
+}
+
+/* Status Bar Freshness Indicator */
+.dashboard-status-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dashboard-status-freshness {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.dashboard-status-freshness--stale {
+  color: var(--bde-warning);
+  opacity: 1;
+}
+
+/* New Task Button */
+.dashboard-new-task-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px dashed var(--bde-accent-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--bde-accent);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.6;
+  transition:
+    opacity 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.dashboard-new-task-btn:hover:not(:disabled) {
+  opacity: 1;
+  border-style: solid;
+}
+
+.dashboard-new-task-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Onboarding State */
+.dashboard-onboarding {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.dashboard-onboarding__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.dashboard-onboarding__text {
+  color: var(--bde-text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+.dashboard-onboarding__cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid var(--bde-accent-border);
+  border-radius: 8px;
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dashboard-onboarding__cta:hover:not(:disabled) {
+  background: var(--bde-accent-border);
+}
+
+.dashboard-onboarding__cta:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Card Error State (shared) */
+.dashboard-card-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-4);
+  min-height: 120px;
+}
+
+.dashboard-card-error__message {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-danger);
+  text-align: center;
+}
+
+.dashboard-card-error__retry {
+  padding: 4px 12px;
+  border-radius: var(--bde-radius-sm);
+  background: var(--bde-danger-surface);
+  border: 1px solid var(--bde-danger);
+  color: var(--bde-danger);
+  font-size: var(--bde-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--bde-transition-fast);
+}
+
+.dashboard-card-error__retry:hover:not(:disabled) {
+  background: var(--bde-danger-border);
+}
+
+.dashboard-card-error__retry:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Responsive Breakpoints */
+
+/* Collapse to 2 columns at narrow widths */
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 180px 1fr;
+  }
+  .dashboard-col:nth-child(3) {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+/* Drop fixed left column at mid-narrow widths */
+@media (max-width: 800px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 240px;
+  }
+}
+
+/* Single column for very narrow */
+@media (max-width: 600px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

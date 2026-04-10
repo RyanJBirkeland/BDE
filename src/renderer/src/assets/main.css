@@ -27,7 +27,7 @@
 /* diff.css styles co-located with components */
 /* source-control.css styles co-located with components */
 /* onboarding.css imported by OnboardingWizard.tsx (lazy chunk) */
-@import './planner.css';
+/* planner.css split into co-located component files */
 /* agent-launchpad.css imported by AgentLaunchpad.tsx (lazy chunk) */
 /* task-workbench.css imported by TaskWorkbench.tsx (lazy chunk) */
 /* dashboard.css imported by DashboardView.tsx (lazy chunk) */

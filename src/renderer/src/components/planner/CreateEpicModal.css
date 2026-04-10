@@ -1,0 +1,20 @@
+/* CreateEpicModal — template cards */
+
+.planner-template-card {
+  padding: 12px;
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  background: var(--bde-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.planner-template-card:hover:not(:disabled) {
+  border-color: var(--bde-accent);
+  background: var(--bde-hover);
+}
+
+.planner-template-card:active:not(:disabled) {
+  transform: scale(0.97);
+}

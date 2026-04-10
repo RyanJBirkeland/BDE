@@ -1,0 +1,86 @@
+/* PlannerView — view shell and layout */
+
+.planner-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--bde-font-code);
+  background: var(--bde-bg);
+  overflow: hidden;
+}
+
+.planner-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bde-border);
+  background: var(--bde-surface-high);
+}
+
+.planner-header__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--bde-accent);
+  margin: 0;
+}
+
+.planner-header__search {
+  position: relative;
+  flex: 0 0 300px;
+  margin-left: auto;
+}
+
+.planner-header__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bde-text-muted);
+  pointer-events: none;
+}
+
+.planner-header__search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  color: var(--bde-text);
+  font-size: 13px;
+  font-family: var(--bde-font-code);
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.planner-header__search-input:focus-visible {
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
+}
+
+.planner-header__search-input::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.planner-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.planner-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px;
+  background: var(--bde-bg);
+}
+
+.planner-empty__text {
+  font-size: 14px;
+  color: var(--bde-text-dim);
+  margin: 0;
+}

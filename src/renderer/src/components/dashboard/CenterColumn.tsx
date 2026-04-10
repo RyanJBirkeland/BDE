@@ -10,6 +10,7 @@ import type {
 import type { StatusFilter } from '../../stores/sprintUI'
 import { Activity, Zap, TrendingUp, Cpu, Coins } from 'lucide-react'
 import { useDashboardDataStore } from '../../stores/dashboardData'
+import './CenterColumn.css'
 
 interface DashboardStats {
   active: number

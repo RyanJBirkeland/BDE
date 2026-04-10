@@ -11,6 +11,7 @@ import { useTaskGroups } from '../../stores/taskGroups'
 import { EPIC_TEMPLATES, type EpicTemplate } from './epicTemplates'
 import { tokens } from '../../design-system/tokens'
 import type { TaskGroup } from '../../../../shared/types'
+import './CreateEpicModal.css'
 
 interface CreateEpicModalProps {
   open: boolean

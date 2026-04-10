@@ -5,6 +5,7 @@ import type { TaskGroup } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
 import { EmptyState } from '../ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
+import './EpicList.css'
 
 interface EpicListProps {
   groups: TaskGroup[]

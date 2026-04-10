@@ -11,6 +11,7 @@ import { toast } from '../stores/toasts'
 import { useConfirm, ConfirmModal } from '../components/ui/ConfirmModal'
 import { EmptyState } from '../components/ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import './PlannerView.css'
 
 export default function PlannerView(): React.JSX.Element {
   const reduced = useReducedMotion()

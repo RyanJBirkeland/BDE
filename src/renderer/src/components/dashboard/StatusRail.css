@@ -1,0 +1,149 @@
+/* StatusRail — left rail with status counters and metrics */
+
+/* Cost Card Value */
+.dashboard-cost-value {
+  color: var(--bde-text);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* Success Ring */
+.dashboard-ring {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-ring__svg {
+  transform: rotate(-90deg);
+}
+
+.dashboard-ring__bg {
+  fill: none;
+  stroke: var(--bde-border);
+  stroke-width: 6;
+}
+
+.dashboard-ring__rate {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.dashboard-ring__breakdown {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.dashboard-ring-empty {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+}
+
+/* Attention Card */
+.dashboard-attention-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  color: var(--bde-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.dashboard-attention-item:hover {
+  background: var(--bde-border);
+}
+
+.dashboard-attention-review-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dashboard-review-cta {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
+  color: var(--bde-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.dashboard-review-cta:hover {
+  background: var(--bde-accent-border);
+}
+
+.dashboard-review-cta:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Spec Type Success Rate */
+.spec-rate__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.spec-rate__empty {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+}
+
+.spec-rate__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spec-rate__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spec-rate__info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spec-rate__label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--bde-text);
+  text-transform: capitalize;
+}
+
+.spec-rate__value {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+}
+
+.spec-rate__track {
+  height: 6px;
+  background: var(--bde-surface-high);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.spec-rate__bar {
+  height: 100%;
+  background: var(--bde-accent);
+  border-radius: 3px;
+  transition: width 300ms ease;
+}

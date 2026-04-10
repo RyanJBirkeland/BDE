@@ -8,6 +8,7 @@ import { usePrompt, PromptModal } from '../ui/PromptModal'
 import { LoadingState } from '../ui/LoadingState'
 import { toast } from '../../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
+import './EpicDetail.css'
 
 export interface EpicDetailProps {
   group: TaskGroup
