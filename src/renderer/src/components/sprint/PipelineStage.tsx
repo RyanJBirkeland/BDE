@@ -5,6 +5,8 @@ import { TaskRow } from './TaskRow'
 import { useSprintUI } from '../../stores/sprintUI'
 import type { SprintTask } from '../../../../shared/types'
 
+import './PipelineStage.css'
+
 interface PipelineStageProps {
   name: 'queued' | 'blocked' | 'active' | 'review' | 'done'
   label: string

@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintUI } from '../../stores/sprintUI'
 
+import './PipelineBacklog.css'
+
 interface PipelineBacklogProps {
   backlog: SprintTask[]
   failed: SprintTask[]

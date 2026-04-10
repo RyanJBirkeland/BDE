@@ -33,7 +33,7 @@ import { useCodeReviewStore } from '../../stores/codeReview'
 import type { SprintTask } from '../../../../shared/types'
 import { useCommandPaletteStore, type Command } from '../../stores/commandPalette'
 
-import '../../assets/sprint-pipeline.css'
+import './SprintPipeline.css'
 
 export function SprintPipeline(): React.JSX.Element {
   // --- Store state ---

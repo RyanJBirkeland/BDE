@@ -11,6 +11,8 @@ import { formatDuration } from '../../lib/format'
 import { useTaskCost } from '../../hooks/useTaskCost'
 import { TagBadge } from '../ui/TagBadge'
 
+import './TaskPill.css'
+
 interface TaskPillProps {
   task: SprintTask
   selected: boolean

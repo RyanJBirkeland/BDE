@@ -5,6 +5,8 @@ import { DoneHistoryPanel } from './DoneHistoryPanel'
 import { ConflictDrawer } from './ConflictDrawer'
 import { HealthCheckDrawer } from './HealthCheckDrawer'
 
+import './PipelineOverlays.css'
+
 interface PipelineOverlaysProps {
   specPanelOpen: boolean
   selectedTask: SprintTask | null

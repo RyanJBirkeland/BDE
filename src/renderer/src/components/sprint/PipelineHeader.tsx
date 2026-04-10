@@ -4,6 +4,8 @@ import type { SprintTask } from '../../../../shared/types'
 import { useState, useEffect } from 'react'
 import { toast } from '../../stores/toasts'
 
+import './PipelineHeader.css'
+
 interface StatBadge {
   label: string
   count: number

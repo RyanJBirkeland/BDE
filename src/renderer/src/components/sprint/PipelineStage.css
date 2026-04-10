@@ -1,0 +1,117 @@
+/* ── Pipeline Stage ── */
+.pipeline-stage {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 12px 10px 48px;
+  position: relative;
+  min-height: 64px;
+  border-bottom: 1px solid var(--bde-border);
+}
+
+.pipeline-stage--empty {
+  min-height: 32px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  align-items: center;
+  opacity: 0.4;
+}
+
+.pipeline-stage .pipeline-stage__dot--dim {
+  opacity: 0.4;
+  box-shadow: none;
+}
+
+.pipeline-stage:last-child {
+  border-bottom: none;
+}
+
+/* Stage dot on connector */
+.pipeline-stage__dot {
+  position: absolute;
+  left: 20px;
+  top: 12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-2xs, 10px);
+  font-weight: 700;
+  color: var(--bde-bg);
+}
+
+.pipeline-stage__dot--queued {
+  background: var(--bde-accent);
+}
+
+.pipeline-stage__dot--blocked {
+  background: var(--bde-warning);
+}
+
+.pipeline-stage__dot--active {
+  background: var(--bde-status-active);
+  animation: pipeline-pulse 2s ease-in-out infinite;
+}
+
+.pipeline-stage__dot--review {
+  background: var(--bde-status-review);
+}
+
+.pipeline-stage__dot--done {
+  background: var(--bde-status-done);
+}
+
+@keyframes pipeline-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.pipeline-stage__header {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.pipeline-stage__name {
+  font-size: var(--font-2xs, 10px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pipeline-stage__name--queued {
+  color: var(--bde-accent);
+}
+.pipeline-stage__name--blocked {
+  color: var(--bde-warning);
+}
+.pipeline-stage__name--active {
+  color: var(--bde-status-active);
+}
+.pipeline-stage__name--review {
+  color: var(--bde-status-review);
+}
+.pipeline-stage__name--done {
+  color: var(--bde-status-done);
+}
+
+.pipeline-stage__count {
+  font-size: var(--font-2xs, 10px);
+  color: var(--bde-text-dim);
+  margin-top: 1px;
+}
+
+.pipeline-stage__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  align-content: flex-start;
+}
+
