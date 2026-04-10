@@ -1,3 +1,4 @@
+import './CommandPalette.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFocusTrap } from '../../hooks/useFocusTrap'

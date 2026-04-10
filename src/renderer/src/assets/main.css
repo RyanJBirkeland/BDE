@@ -18,10 +18,10 @@
 /* sprint.css styles co-located with components */
 /* sprint-pipeline.css imported by SprintPipeline.tsx (lazy chunk) */
 /* agents.css imported by AgentsView.tsx and App.tsx (lazy chunk) */
-@import './cost.css';
-@import './memory.css';
+/* cost.css imported by CostSection.tsx (co-located) */
+/* memory.css imported by MemorySection.tsx (co-located) */
 /* settings.css split into co-located component files */
-@import './terminal.css';
+/* terminal.css imported by TerminalPanel.tsx (co-located) */
 /* ide.css imported by IDEView.tsx (lazy chunk) */
 /* code-review.css split into co-located component files */
 /* diff.css styles co-located with components */
@@ -31,8 +31,8 @@
 /* agent-launchpad.css imported by AgentLaunchpad.tsx (lazy chunk) */
 /* task-workbench.css imported by TaskWorkbench.tsx (lazy chunk) */
 /* dashboard.css imported by DashboardView.tsx (lazy chunk) */
-@import './command-palette.css';
-@import './toasts.css';
+/* command-palette.css imported by CommandPalette.tsx (co-located) */
+/* toasts.css imported by ToastContainer.tsx (co-located) */
 /* App shell, ViewRouter, and shortcuts overlay imported by App.tsx */
 /* NotificationBell imported by NotificationBell.tsx */
 /* Memory view imported by MemorySection.tsx */
