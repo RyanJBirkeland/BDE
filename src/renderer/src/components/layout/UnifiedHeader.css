@@ -1,7 +1,4 @@
-/* src/renderer/src/assets/neon-shell.css */
-/* ═══════════════════════════════════════════════════════
-   Neon App Shell — Header, Sidebar, Tooltips
-   ═══════════════════════════════════════════════════════ */
+/* App shell + unified header + tabs + overflow menu + panel/layout utilities */
 
 /* ── App Shell Background ── */
 /* padding-top creates a native titlebar inset zone above the header.
@@ -175,176 +172,6 @@
   background: var(--bde-surface);
 }
 
-/* ── Neon Sidebar ── */
-.neon-sidebar {
-  width: 52px;
-  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
-  border-right: 1px solid var(--bde-accent-border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 10px;
-  flex-shrink: 0;
-  overflow: hidden;
-  overflow-y: auto;
-}
-
-.neon-sidebar__nav {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  flex: 1;
-  padding: 0 6px;
-}
-
-.neon-sidebar__footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0 4px 8px;
-}
-
-/* ── Sidebar Item ── */
-.sidebar-item {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  transition:
-    background 150ms ease,
-    color 150ms ease;
-  color: var(--bde-text-muted);
-  border: none;
-  background: transparent;
-  padding: 0;
-}
-
-.sidebar-item:hover {
-  background: var(--bde-accent-surface);
-  color: var(--bde-text);
-}
-
-.sidebar-item--active {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-active);
-  box-shadow: inset 3px 0 0 var(--bde-status-active);
-}
-
-.sidebar-item__open-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--bde-accent);
-}
-
-.sidebar-item__badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 8px;
-  background: var(--bde-warning);
-  color: var(--bde-bg);
-  font-size: 10px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  padding: 0 4px;
-}
-
-.sidebar-item__badge--red {
-  background: var(--bde-danger);
-}
-
-.sidebar-item__badge--blue {
-  background: var(--bde-status-review);
-}
-
-.sidebar-item__badge--orange {
-  background: var(--bde-warning);
-}
-
-/* ── Sidebar Context Menu ── */
-.sidebar-context-menu {
-  position: fixed;
-  z-index: 1000;
-  background: var(--bde-overlay);
-  border: 1px solid var(--bde-accent-border);
-  border-radius: 8px;
-  padding: 4px 0;
-  min-width: 200px;
-}
-
-.sidebar-context-menu__item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  color: var(--bde-text-muted);
-  font-size: 12px;
-  cursor: pointer;
-  transition:
-    background 100ms ease,
-    color 100ms ease;
-}
-
-.sidebar-context-menu__item:hover,
-.sidebar-context-menu__item:focus-visible {
-  background: var(--bde-accent-surface);
-  color: var(--bde-text);
-  outline: none;
-}
-
-/* ── Neon Tooltip ── */
-.neon-tooltip {
-  position: fixed;
-  z-index: 1000;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--bde-accent-surface), var(--bde-surface-high));
-  border: 1px solid var(--bde-accent-border);
-  box-shadow: none;
-  color: var(--bde-text);
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-  pointer-events: none;
-  animation: neon-tooltip-in 150ms ease forwards;
-}
-
-.neon-tooltip__shortcut {
-  color: var(--bde-status-active);
-  margin-left: 8px;
-  font-size: 10px;
-  font-family: var(--bde-font-code);
-}
-
-@keyframes neon-tooltip-in {
-  from {
-    opacity: 0;
-    transform: translateX(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 /* ── Overflow Menu ── */
 .overflow-menu {
   position: fixed;
@@ -455,23 +282,6 @@
   color: var(--bde-status-active);
   font-size: 14px;
   line-height: 1;
-}
-
-/* ── Model Badge ── */
-.sidebar-model-badge {
-  padding: 3px 4px;
-  border-radius: 6px;
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-accent-border);
-  font-size: 7px;
-  color: var(--bde-status-active);
-  font-family: var(--bde-font-code);
-  text-align: center;
-  max-width: 48px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.2;
 }
 
 /* ── View Skeleton Loading State ── */
@@ -606,9 +416,6 @@
 
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .neon-tooltip {
-    animation: none;
-  }
   .view-skeleton__pulse {
     animation: none;
   }

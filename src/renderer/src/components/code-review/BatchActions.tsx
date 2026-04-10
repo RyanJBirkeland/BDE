@@ -1,3 +1,4 @@
+import './ReviewQueue.css'
 import { useState } from 'react'
 import { GitMerge, Loader2, X } from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'

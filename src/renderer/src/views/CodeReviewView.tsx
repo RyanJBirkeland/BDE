@@ -1,3 +1,4 @@
+import './CodeReviewView.css'
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Group, Panel, Separator } from 'react-resizable-panels'

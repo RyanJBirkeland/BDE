@@ -1,3 +1,4 @@
+import './ConversationTab.css'
 import { useEffect, useState } from 'react'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useCodeReviewStore } from '../../stores/codeReview'

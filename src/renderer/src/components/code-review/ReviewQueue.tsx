@@ -1,3 +1,4 @@
+import './ReviewQueue.css'
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useSprintTasks } from '../../stores/sprintTasks'

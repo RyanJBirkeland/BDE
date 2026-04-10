@@ -1,0 +1,144 @@
+/* Conversation + commits tabs */
+
+.cr-commits {
+  padding: 8px 0;
+}
+.cr-commits__item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--bde-border);
+}
+.cr-commits__icon {
+  color: var(--bde-status-active);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.cr-commits__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cr-commits__message {
+  font-size: 12px;
+  color: var(--bde-text);
+}
+.cr-commits__meta {
+  font-size: 10px;
+  color: var(--bde-text-dim);
+  font-family: var(--bde-font-code);
+}
+
+.cr-conversation {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cr-conversation__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cr-conversation__heading {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--bde-status-active);
+  font-weight: 600;
+  margin: 0;
+}
+.cr-conversation__spec {
+  font-size: 12px;
+  color: var(--bde-text-muted);
+  line-height: 1.6;
+  font-family: var(--bde-font-code);
+}
+.cr-conversation__notes {
+  font-size: 12px;
+  color: var(--bde-text-dim);
+  font-family: var(--bde-font-code);
+  white-space: pre-wrap;
+}
+
+/* Agent conversation events timeline */
+.cr-conversation--events {
+  padding: 8px 0;
+  gap: 0;
+}
+
+.cr-event {
+  display: flex;
+  gap: 8px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--bde-border);
+  align-items: flex-start;
+}
+
+.cr-event__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--bde-text-dim);
+}
+
+.cr-event--text .cr-event__icon {
+  color: var(--bde-status-review);
+}
+.cr-event--tool .cr-event__icon {
+  color: var(--bde-status-active);
+}
+.cr-event--result .cr-event__icon {
+  color: var(--bde-accent);
+}
+.cr-event--result-fail .cr-event__icon {
+  color: var(--bde-danger);
+}
+.cr-event--thinking .cr-event__icon {
+  color: var(--bde-text-dim);
+}
+.cr-event--error .cr-event__icon {
+  color: var(--bde-danger);
+}
+.cr-event--completed .cr-event__icon {
+  color: var(--bde-accent);
+}
+
+.cr-event__body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.cr-event__time {
+  font-size: 10px;
+  color: var(--bde-text-dim);
+  font-family: var(--bde-font-code);
+  flex-shrink: 0;
+}
+
+.cr-event__tool-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bde-status-active);
+  font-family: var(--bde-font-code);
+}
+
+.cr-event__summary {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  font-family: var(--bde-font-code);
+}
+
+.cr-event__content {
+  font-size: 12px;
+  color: var(--bde-text);
+  line-height: 1.5;
+  width: 100%;
+}
+
+.cr-event__content--error {
+  color: var(--bde-danger);
+}

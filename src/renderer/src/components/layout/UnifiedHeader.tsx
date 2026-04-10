@@ -1,3 +1,4 @@
+import './UnifiedHeader.css'
 import { useMemo } from 'react'
 import { Sun, Moon } from 'lucide-react'
 import { useThemeStore } from '../../stores/theme'

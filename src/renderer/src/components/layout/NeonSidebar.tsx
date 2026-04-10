@@ -1,3 +1,4 @@
+import './NeonSidebar.css'
 import React, { useState, useRef } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'

@@ -1,0 +1,193 @@
+/* Action buttons + merge strategy */
+
+.cr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--bde-border);
+  background: linear-gradient(180deg, var(--bde-border) 0%, var(--bde-accent-surface) 100%);
+  flex-shrink: 0;
+}
+
+.cr-actions__hint {
+  color: var(--bde-text-dim);
+  font-size: 11px;
+}
+
+.cr-actions__primary,
+.cr-actions__secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cr-actions__merge-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.cr-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+  border: 1px solid;
+}
+
+.cr-actions__btn:focus-visible {
+  outline: 2px solid var(--bde-status-review);
+  outline-offset: 2px;
+}
+
+.cr-actions__btn--primary {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
+  border-radius: 6px 0 0 6px;
+}
+
+.cr-actions__btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cr-actions__btn--primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.cr-actions__btn--ship {
+  background: linear-gradient(135deg, var(--bde-accent-surface) 0%, var(--bde-accent-surface) 100%);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
+}
+
+.cr-actions__btn--ship:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cr-actions__btn--ship:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.cr-actions__strategy {
+  padding: 6px 8px;
+  background: var(--bde-border);
+  border: 1px solid var(--bde-accent-border);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  color: var(--bde-text-muted);
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  cursor: pointer;
+}
+
+.cr-actions__btn--secondary {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-status-review);
+}
+
+.cr-actions__btn--secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.cr-actions__btn--secondary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.cr-actions__btn--ghost {
+  background: transparent;
+  border-color: var(--bde-accent-border);
+  color: var(--bde-text-muted);
+}
+
+.cr-actions__btn--ghost:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+}
+
+.cr-actions__btn--ghost:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.cr-actions__btn--danger {
+  background: transparent;
+  border-color: var(--bde-danger-border);
+  color: var(--bde-danger);
+}
+
+.cr-actions__btn--danger:hover:not(:disabled) {
+  background: var(--bde-danger-surface);
+  transform: translateY(-1px);
+}
+
+.cr-actions__btn--danger:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.cr-actions__buttons-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cr-actions__rebase-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--cr-border, rgba(255, 255, 255, 0.06));
+  margin-bottom: 8px;
+}
+
+.cr-actions__freshness {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.cr-actions__freshness--fresh {
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
+}
+
+.cr-actions__freshness--stale {
+  color: var(--bde-warning);
+  background: var(--bde-warning-surface);
+}
+
+.cr-actions__freshness--conflict {
+  color: var(--bde-danger);
+  background: var(--bde-danger-surface);
+}
+
+.cr-actions__freshness--unknown,
+.cr-actions__freshness--loading {
+  color: var(--cr-muted, rgba(255, 255, 255, 0.4));
+}
+
+/* Loading spinner for action buttons */
+.cr-actions__btn .spin {
+  animation: bde-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-actions__btn {
+    transition: none;
+  }
+
+  .cr-actions__btn:hover:not(:disabled) {
+    transform: none;
+  }
+}

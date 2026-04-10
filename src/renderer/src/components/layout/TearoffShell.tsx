@@ -16,7 +16,7 @@ import { TearoffTabBar } from './TearoffTabBar'
 import { useCrossWindowDrop } from '../../hooks/useCrossWindowDrop'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { CrossWindowDropOverlay } from '../panels/CrossWindowDropOverlay'
-import '../../assets/tearoff-shell.css'
+import './TearoffShell.css'
 
 // ---------------------------------------------------------------------------
 // Close dialog

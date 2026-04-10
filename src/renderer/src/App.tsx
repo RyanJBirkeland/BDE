@@ -29,7 +29,6 @@ import { VIEW_LABELS } from './lib/view-registry'
 import { PollingProvider } from './components/PollingProvider'
 import { SHORTCUT_CATEGORIES } from './lib/shortcuts-data'
 import { FeatureGuideModal } from './components/help/FeatureGuideModal'
-import './assets/shell.css'
 
 // Query params are read once at module load time — outside any component to avoid
 // violating Rules of Hooks if we need to conditionally skip the full App render.

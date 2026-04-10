@@ -1,3 +1,4 @@
+import './ReviewDetail.css'
 import { useCodeReviewStore, type ReviewTab } from '../../stores/codeReview'
 import { ChangesTab } from './ChangesTab'
 import { CommitsTab } from './CommitsTab'

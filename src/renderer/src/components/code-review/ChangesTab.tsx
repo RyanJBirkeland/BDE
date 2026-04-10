@@ -1,3 +1,4 @@
+import './ChangesTab.css'
 import { useEffect, useState, useMemo } from 'react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'

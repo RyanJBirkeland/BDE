@@ -14,7 +14,7 @@
 @import './design-system/neon-badge.css';
 @import './design-system/status-bar.css';
 @import './design-system/mini-chart.css';
-@import './shell.css';
+/* shell.css split into co-located layout component files */
 /* sprint.css styles co-located with components */
 /* sprint-pipeline.css imported by SprintPipeline.tsx (lazy chunk) */
 /* agents.css imported by AgentsView.tsx and App.tsx (lazy chunk) */
@@ -23,7 +23,7 @@
 /* settings.css split into co-located component files */
 @import './terminal.css';
 /* ide.css imported by IDEView.tsx (lazy chunk) */
-@import './code-review.css';
+/* code-review.css split into co-located component files */
 /* diff.css styles co-located with components */
 /* source-control.css styles co-located with components */
 /* onboarding.css imported by OnboardingWizard.tsx (lazy chunk) */

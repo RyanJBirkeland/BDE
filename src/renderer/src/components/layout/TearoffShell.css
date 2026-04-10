@@ -1,3 +1,5 @@
+/* Tearoff window shell + tab bar */
+
 .tearoff-shell {
   display: flex;
   flex-direction: column;
