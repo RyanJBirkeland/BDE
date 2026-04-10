@@ -14,6 +14,13 @@ import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
+import {
+  mergeAgentBranch,
+  rebaseOntoMain,
+  cleanupWorktree,
+  executeMergeStrategy
+} from '../services/review-merge-service'
+import { createPullRequest } from '../services/review-pr-service'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
@@ -161,108 +168,22 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     if (!repoConfig) throw new Error(`Repo "${task.repo}" not found in settings`)
     const repoPath = repoConfig.localPath
 
-    // Verify clean working tree before merge
-    try {
-      const { stdout: statusOut } = await execFileAsync('git', ['status', '--porcelain'], {
-        cwd: repoPath,
-        env
-      })
-      if (statusOut.trim()) {
-        throw new Error(
-          'Working tree has uncommitted changes. Commit or stash them before merging.'
-        )
-      }
-    } catch (err: unknown) {
-      const errMsg = getErrorMessage(err)
-      return { success: false, error: errMsg }
+    // Execute merge via service
+    const result = await mergeAgentBranch({
+      worktreePath: task.worktree_path,
+      branch,
+      repoPath,
+      strategy,
+      taskId,
+      taskTitle: task.title,
+      env
+    })
+
+    if (!result.success) {
+      return { success: false, error: result.error, conflicts: result.conflicts }
     }
 
-    // Rebase agent branch onto origin/main before merge
-    try {
-      logger.info(`[review:mergeLocally] Fetching origin/main for task ${taskId}`)
-      await execFileAsync('git', ['fetch', 'origin', 'main'], {
-        cwd: task.worktree_path,
-        env
-      })
-
-      logger.info(`[review:mergeLocally] Rebasing ${branch} onto origin/main`)
-      await execFileAsync('git', ['rebase', 'origin/main'], { cwd: task.worktree_path, env })
-    } catch (err: unknown) {
-      const errMsg = getErrorMessage(err)
-      logger.error(`[review:mergeLocally] Rebase failed for task ${taskId}: ${errMsg}`)
-
-      // Abort the rebase
-      try {
-        await execFileAsync('git', ['rebase', '--abort'], { cwd: task.worktree_path, env })
-      } catch {
-        /* best-effort abort */
-      }
-
-      return { success: false, error: `Rebase failed: ${errMsg}` }
-    }
-
-    try {
-      if (strategy === 'squash') {
-        await execFileAsync('git', ['merge', '--squash', branch], { cwd: repoPath, env })
-        // Commit the squash merge
-        try {
-          await execFileAsync('git', ['commit', '-m', `${task.title} (#${taskId})`], {
-            cwd: repoPath,
-            env
-          })
-        } catch (commitErr: unknown) {
-          // Squash merge succeeded but commit failed — unstage to prevent silent corruption
-          logger.error(`[review:mergeLocally] Squash commit failed for task ${taskId}, unstaging`)
-          try {
-            await execFileAsync('git', ['reset', 'HEAD'], { cwd: repoPath, env })
-          } catch {
-            logger.warn(`[review:mergeLocally] git reset HEAD failed — manual cleanup required`)
-          }
-          throw commitErr
-        }
-      } else if (strategy === 'rebase') {
-        // Rebase the branch onto main, then fast-forward main
-        await execFileAsync('git', ['rebase', 'HEAD', branch], { cwd: repoPath, env })
-        await execFileAsync('git', ['merge', '--ff-only', branch], { cwd: repoPath, env })
-      } else {
-        // Default merge commit
-        await execFileAsync(
-          'git',
-          ['merge', '--no-ff', branch, '-m', `Merge: ${task.title} (#${taskId})`],
-          { cwd: repoPath, env }
-        )
-      }
-    } catch (err: unknown) {
-      const errMsg = getErrorMessage(err)
-
-      // Abort the failed merge/rebase
-      try {
-        if (strategy === 'rebase') {
-          await execFileAsync('git', ['rebase', '--abort'], { cwd: repoPath, env })
-        } else {
-          await execFileAsync('git', ['merge', '--abort'], { cwd: repoPath, env })
-        }
-      } catch {
-        /* abort is best-effort */
-      }
-
-      // Try to extract conflict file names
-      const conflicts: string[] = []
-      try {
-        const { stdout: conflictOut } = await execFileAsync(
-          'git',
-          ['diff', '--name-only', '--diff-filter=U'],
-          { cwd: repoPath, env }
-        )
-        conflicts.push(...conflictOut.trim().split('\n').filter(Boolean))
-      } catch {
-        /* best-effort */
-      }
-
-      return { success: false, conflicts, error: errMsg }
-    }
-
-    // Post-merge CSS dedup
+    // Post-merge CSS dedup warnings
     try {
       const dedupReport = await runPostMergeDedup(repoPath)
       if (dedupReport?.warnings.length) {
@@ -275,19 +196,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     }
 
     // Clean up worktree + branch
-    try {
-      await execFileAsync('git', ['worktree', 'remove', task.worktree_path, '--force'], {
-        cwd: repoPath,
-        env
-      })
-    } catch {
-      /* best-effort cleanup */
-    }
-    try {
-      await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
-    } catch {
-      /* best-effort cleanup */
-    }
+    await cleanupWorktree(task.worktree_path, branch, repoPath, env)
 
     // Mark task done via terminal service
     const updated = _updateTask(taskId, {
@@ -317,42 +226,30 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     )
     const branch = branchOut.trim()
 
-    // Push the branch
-    await execFileAsync('git', ['push', '-u', 'origin', branch], {
-      cwd: task.worktree_path,
+    // Create PR via service
+    const result = await createPullRequest({
+      worktreePath: task.worktree_path,
+      branch,
+      title,
+      body,
       env
     })
 
-    // Create PR via gh CLI
-    const { stdout: prUrl } = await execFileAsync(
-      'gh',
-      ['pr', 'create', '--title', title, '--body', body, '--head', branch],
-      { cwd: task.worktree_path, env }
-    )
-    const trimmedPrUrl = prUrl.trim()
-
-    // Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
-    const prNumberMatch = trimmedPrUrl.match(/\/pull\/(\d+)$/)
-    const prNumber = prNumberMatch ? parseInt(prNumberMatch[1], 10) : null
+    if (!result.success || !result.prUrl) {
+      throw new Error(result.error || 'PR creation failed')
+    }
 
     // Update task with PR info
     _updateTask(taskId, {
-      pr_url: trimmedPrUrl,
-      pr_number: prNumber,
+      pr_url: result.prUrl,
+      pr_number: result.prNumber ?? null,
       pr_status: 'open'
     })
 
     // Clean up worktree (branch stays for the PR)
-    try {
-      const repoConfig = getRepoConfig(task.repo)
-      if (repoConfig) {
-        await execFileAsync('git', ['worktree', 'remove', task.worktree_path, '--force'], {
-          cwd: repoConfig.localPath,
-          env
-        })
-      }
-    } catch {
-      /* best-effort cleanup */
+    const repoConfig = getRepoConfig(task.repo)
+    if (repoConfig) {
+      await cleanupWorktree(task.worktree_path, branch, repoConfig.localPath, env)
     }
 
     // Mark task done via terminal service
@@ -364,7 +261,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     if (updated) notifySprintMutation('updated', updated)
     deps.onStatusTerminal(taskId, 'done')
 
-    return { prUrl: trimmedPrUrl }
+    return { prUrl: result.prUrl }
   })
 
   // review:requestRevision — send task back for another pass
@@ -429,31 +326,13 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
           /* best-effort — worktree may not exist */
         }
 
-        // Remove worktree
-        try {
-          await execFileAsync('git', ['worktree', 'remove', task.worktree_path, '--force'], {
-            cwd: repoConfig.localPath,
-            env
-          })
-        } catch {
-          /* best-effort */
-        }
-
-        // Delete branch
         if (branch && branch !== 'HEAD') {
-          try {
-            await execFileAsync('git', ['branch', '-D', branch], {
-              cwd: repoConfig.localPath,
-              env
-            })
-          } catch {
-            /* best-effort */
-          }
+          await cleanupWorktree(task.worktree_path, branch, repoConfig.localPath, env)
         }
       }
     }
 
-    // Clean up task scratchpad (best-effort — directory may not exist on first run)
+    // Clean up task scratchpad
     try {
       rmSync(join(BDE_TASK_MEMORY_DIR, taskId), { recursive: true, force: true })
     } catch {
@@ -505,9 +384,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       }
     }
 
-    // Verify main checkout is on `main` branch — we're about to merge into
-    // whatever's checked out here. If someone's on a feature branch in their
-    // main repo clone, bail loudly instead of silently merging into it.
+    // Verify main checkout is on `main` branch
     const { stdout: currentBranchOut } = await execFileAsync(
       'git',
       ['rev-parse', '--abbrev-ref', 'HEAD'],
@@ -521,96 +398,41 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       }
     }
 
-    // Fetch origin/main ONCE from the main checkout and fast-forward local main
-    // to match. This also updates the shared refs visible from the worktree, so
-    // the rebase below sees the latest origin/main. Previously, fetch ran only
-    // in the worktree — leaving local main in the main checkout stale — and the
-    // subsequent merge created a divergent commit that `git push` silently
-    // rejected as non-fast-forward (leaving the user with a divergent history
-    // and a misleading green success toast).
+    // Fetch origin/main and fast-forward local main
     try {
       logger.info(`[review:shipIt] Fetching origin/main for task ${taskId}`)
       await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: repoPath, env })
-    } catch (fetchErr: unknown) {
-      const errMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr)
-      logger.error(`[review:shipIt] Fetch failed for task ${taskId}: ${errMsg}`)
-      return { success: false, error: `Fetch origin/main failed: ${errMsg}` }
-    }
-
-    try {
       logger.info(`[review:shipIt] Fast-forwarding local main to origin/main`)
       await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], { cwd: repoPath, env })
-    } catch (ffErr: unknown) {
-      const errMsg = ffErr instanceof Error ? ffErr.message : String(ffErr)
-      logger.error(`[review:shipIt] Fast-forward failed for task ${taskId}: ${errMsg}`)
-      return {
-        success: false,
-        error: `Local main has diverged from origin/main and cannot be fast-forwarded. Resolve manually (e.g. git pull --rebase), then retry Ship It.`
-      }
-    }
-
-    // Rebase agent branch onto origin/main before merge. Fetch already happened
-    // above in the main checkout; refs are shared with the worktree via the
-    // same .git directory, so the worktree sees the updated origin/main ref.
-    try {
-      logger.info(`[review:shipIt] Rebasing ${branch} onto origin/main`)
-      await execFileAsync('git', ['rebase', 'origin/main'], { cwd: task.worktree_path, env })
     } catch (err: unknown) {
       const errMsg = getErrorMessage(err)
-      logger.error(`[review:shipIt] Rebase failed for task ${taskId}: ${errMsg}`)
-
-      // Abort the rebase
-      try {
-        await execFileAsync('git', ['rebase', '--abort'], { cwd: task.worktree_path, env })
-      } catch {
-        /* best-effort abort */
+      logger.error(`[review:shipIt] Fetch/FF failed for task ${taskId}: ${errMsg}`)
+      return {
+        success: false,
+        error: `Failed to sync local main with origin: ${errMsg}`
       }
-
-      return { success: false, error: `Rebase failed: ${errMsg}` }
     }
 
-    // Merge
-    try {
-      if (strategy === 'squash') {
-        await execFileAsync('git', ['merge', '--squash', branch], { cwd: repoPath, env })
-        try {
-          await execFileAsync('git', ['commit', '-m', `${task.title} (#${taskId})`], {
-            cwd: repoPath,
-            env
-          })
-        } catch (commitErr) {
-          try {
-            await execFileAsync('git', ['reset', 'HEAD'], { cwd: repoPath, env })
-          } catch {
-            /* */
-          }
-          throw commitErr
-        }
-      } else if (strategy === 'rebase') {
-        await execFileAsync('git', ['rebase', 'HEAD', branch], { cwd: repoPath, env })
-        await execFileAsync('git', ['merge', '--ff-only', branch], { cwd: repoPath, env })
-      } else {
-        await execFileAsync(
-          'git',
-          ['merge', '--no-ff', branch, '-m', `Merge: ${task.title} (#${taskId})`],
-          { cwd: repoPath, env }
-        )
-      }
-    } catch (err) {
-      // Abort failed merge/rebase
-      try {
-        if (strategy === 'rebase') {
-          await execFileAsync('git', ['rebase', '--abort'], { cwd: repoPath, env })
-        } else {
-          await execFileAsync('git', ['merge', '--abort'], { cwd: repoPath, env })
-        }
-      } catch {
-        /* best-effort */
-      }
-      return { success: false, error: getErrorMessage(err) }
+    // Rebase agent branch onto origin/main
+    const rebaseResult = await rebaseOntoMain(task.worktree_path, env)
+    if (!rebaseResult.success) {
+      return { success: false, error: `Rebase failed: ${rebaseResult.error}` }
     }
 
-    // Post-merge CSS dedup (must run before push so dedup commit is included)
+    // Execute merge strategy
+    const mergeResult = await executeMergeStrategy(
+      branch,
+      repoPath,
+      strategy,
+      taskId,
+      task.title,
+      env
+    )
+    if (!mergeResult.success) {
+      return { success: false, error: mergeResult.error, conflicts: mergeResult.conflicts }
+    }
+
+    // Post-merge CSS dedup
     try {
       const dedupReport = await runPostMergeDedup(repoPath)
       if (dedupReport?.warnings.length) {
@@ -629,23 +451,10 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       pushed = true
     } catch (pushErr) {
       logger.warn(`[review:shipIt] Push failed for task ${taskId}: ${pushErr}`)
-      // Merge succeeded, push failed — still mark done but warn user
     }
 
     // Clean up worktree + branch
-    try {
-      await execFileAsync('git', ['worktree', 'remove', task.worktree_path, '--force'], {
-        cwd: repoPath,
-        env
-      })
-    } catch {
-      /* best-effort */
-    }
-    try {
-      await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
-    } catch {
-      /* best-effort */
-    }
+    await cleanupWorktree(task.worktree_path, branch, repoPath, env)
 
     // Mark task done
     const updated = _updateTask(taskId, {
@@ -667,20 +476,9 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
 
-    try {
-      await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: task.worktree_path, env })
-      await execFileAsync('git', ['rebase', 'origin/main'], { cwd: task.worktree_path, env })
-    } catch (err: unknown) {
-      const errMsg = getErrorMessage(err)
-      logger.error(`[review:rebase] Rebase failed for task ${taskId}: ${errMsg}`)
-
-      // Abort the rebase (best-effort)
-      try {
-        await execFileAsync('git', ['rebase', '--abort'], { cwd: task.worktree_path, env })
-      } catch {
-        /* best-effort abort */
-      }
-
+    // Rebase via service
+    const result = await rebaseOntoMain(task.worktree_path, env)
+    if (!result.success) {
       // Extract conflict files
       const conflicts: string[] = []
       try {
@@ -693,8 +491,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       } catch {
         /* best-effort */
       }
-
-      return { success: false, error: errMsg, conflicts }
+      return { success: false, error: result.error, conflicts }
     }
 
     // Get the new base SHA and persist it

@@ -192,6 +192,163 @@ export async function capturePartialDiff(
 }
 
 // ---------------------------------------------------------------------------
+// Extracted helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Spawns an agent with a timeout. Rejects if spawn takes longer than SPAWN_TIMEOUT_MS.
+ */
+export async function spawnWithTimeout(
+  prompt: string,
+  cwd: string,
+  model: string,
+  logger: Logger
+): Promise<AgentHandle> {
+  let timer: ReturnType<typeof setTimeout>
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Spawn timed out after ${SPAWN_TIMEOUT_MS / 1000}s`)),
+      SPAWN_TIMEOUT_MS
+    )
+  })
+  return await Promise.race([
+    spawnAgent({ prompt, cwd, model, logger }),
+    timeoutPromise
+  ]).finally(() => clearTimeout(timer!))
+}
+
+export interface ConsumeMessagesResult {
+  exitCode: number | undefined
+  lastAgentOutput: string
+}
+
+/**
+ * Handles OAuth token refresh after auth errors.
+ */
+async function handleOAuthRefresh(logger: Logger): Promise<void> {
+  const { invalidateOAuthToken, refreshOAuthTokenFromKeychain } = await import('../env-utils')
+  invalidateOAuthToken()
+  refreshOAuthTokenFromKeychain()
+    .then((ok) => {
+      if (ok)
+        logger.info('[agent-manager] OAuth token auto-refreshed from Keychain after auth failure')
+    })
+    .catch((err) => {
+      logger.warn(
+        `[agent-manager] Failed to auto-refresh OAuth token after auth failure: ${getErrorMessage(err)}`
+      )
+    })
+  logger.warn(`[agent-manager] Auth failure detected — OAuth token cache invalidated`)
+}
+
+/**
+ * Processes a single message: tracks costs, emits events, detects playground.
+ */
+function processSDKMessage(
+  msg: unknown,
+  agent: ActiveAgent,
+  task: RunAgentTask,
+  worktreePath: string,
+  agentRunId: string,
+  turnTracker: TurnTracker,
+  logger: Logger,
+  exitCode: number | undefined,
+  lastAgentOutput: string
+): { exitCode: number | undefined; lastAgentOutput: string } {
+  agent.lastOutputAt = Date.now()
+
+  // Track rate-limit events
+  if (isRateLimitMessage(msg)) {
+    agent.rateLimitCount++
+  }
+  // Track cost / tokens
+  agent.costUsd =
+    getNumericField(msg, 'cost_usd') ?? getNumericField(msg, 'total_cost_usd') ?? agent.costUsd
+  turnTracker.observe(msg)
+  const { tokensIn, tokensOut } = turnTracker.totals()
+  agent.tokensIn = tokensIn
+  agent.tokensOut = tokensOut
+  exitCode = getNumericField(msg, 'exit_code') ?? exitCode
+
+  // Emit events
+  const mappedEvents = mapRawMessage(msg)
+  for (const event of mappedEvents) {
+    emitAgentEvent(agentRunId, event)
+  }
+
+  // Detect playground HTML writes
+  if (task.playground_enabled) {
+    const htmlPath = detectHtmlWrite(msg)
+    if (htmlPath) {
+      tryEmitPlaygroundEvent(task.id, htmlPath, worktreePath, logger).catch(() => {})
+    }
+  }
+
+  // Capture last assistant text
+  if (typeof msg === 'object' && msg !== null) {
+    const m = msg as Record<string, unknown>
+    if (m.type === 'assistant' && typeof m.text === 'string') {
+      lastAgentOutput = (m.text as string).slice(-LAST_OUTPUT_MAX_LENGTH)
+    }
+  }
+
+  return { exitCode, lastAgentOutput }
+}
+
+/**
+ * Consumes SDK message stream, tracking costs, emitting events, and detecting playground writes.
+ */
+export async function consumeMessages(
+  handle: AgentHandle,
+  agent: ActiveAgent,
+  task: RunAgentTask,
+  worktreePath: string,
+  agentRunId: string,
+  turnTracker: TurnTracker,
+  logger: Logger
+): Promise<ConsumeMessagesResult> {
+  let exitCode: number | undefined
+  let lastAgentOutput = ''
+
+  try {
+    for await (const msg of handle.messages) {
+      const result = processSDKMessage(
+        msg,
+        agent,
+        task,
+        worktreePath,
+        agentRunId,
+        turnTracker,
+        logger,
+        exitCode,
+        lastAgentOutput
+      )
+      exitCode = result.exitCode
+      lastAgentOutput = result.lastAgentOutput
+    }
+  } catch (err) {
+    logger.error(`[agent-manager] Error consuming messages for task ${task.id}: ${err}`)
+    const errMsg = getErrorMessage(err)
+    // Emit error event for console display
+    emitAgentEvent(agentRunId, {
+      type: 'agent:error',
+      message: errMsg,
+      timestamp: Date.now()
+    })
+    // Invalidate cached OAuth token on auth errors so next agent gets a fresh token
+    if (
+      errMsg.includes('Invalid API key') ||
+      errMsg.includes('invalid_api_key') ||
+      errMsg.includes('authentication')
+    ) {
+      await handleOAuthRefresh(logger)
+    }
+  }
+
+  return { exitCode, lastAgentOutput }
+}
+
+// ---------------------------------------------------------------------------
 // runAgent
 // ---------------------------------------------------------------------------
 
@@ -290,22 +447,7 @@ export async function runAgent(
 
   let handle: AgentHandle
   try {
-    let timer: ReturnType<typeof setTimeout>
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new Error(`Spawn timed out after ${SPAWN_TIMEOUT_MS / 1000}s`)),
-        SPAWN_TIMEOUT_MS
-      )
-    })
-    handle = await Promise.race([
-      spawnAgent({
-        prompt,
-        cwd: worktree.worktreePath,
-        model: effectiveModel,
-        logger
-      }),
-      timeoutPromise
-    ]).finally(() => clearTimeout(timer!))
+    handle = await spawnWithTimeout(prompt, worktree.worktreePath, effectiveModel, logger)
     // Notify circuit breaker that spawn succeeded — resets failure counter.
     try {
       onSpawnSuccess?.()
@@ -377,7 +519,6 @@ export async function runAgent(
   }
   activeAgents.set(task.id, agent)
   const turnTracker = new TurnTracker(agentRunId)
-  let lastAgentOutput = ''
   // Persist agent_run_id so LogDrawer can find logs after restart
   try {
     repo.updateTask(task.id, { agent_run_id: agentRunId })
@@ -419,82 +560,15 @@ export async function runAgent(
   })
 
   // Consume messages
-  let exitCode: number | undefined
-  try {
-    for await (const msg of handle.messages) {
-      agent.lastOutputAt = Date.now()
-
-      // Track rate-limit events
-      if (isRateLimitMessage(msg)) {
-        agent.rateLimitCount++
-      }
-      // Track cost / tokens if present (check both top-level and nested fields)
-      agent.costUsd =
-        getNumericField(msg, 'cost_usd') ?? getNumericField(msg, 'total_cost_usd') ?? agent.costUsd
-      turnTracker.observe(msg)
-      const { tokensIn, tokensOut } = turnTracker.totals()
-      agent.tokensIn = tokensIn
-      agent.tokensOut = tokensOut
-      // Track exit code if present (typically in last message)
-      exitCode = getNumericField(msg, 'exit_code') ?? exitCode
-
-      // Map SDK message → AgentEvents and emit for console display + persistence
-      const mappedEvents = mapRawMessage(msg)
-      for (const event of mappedEvents) {
-        emitAgentEvent(agentRunId, event)
-      }
-
-      // Detect playground HTML writes (when enabled)
-      if (task.playground_enabled) {
-        const htmlPath = detectHtmlWrite(msg)
-        if (htmlPath) {
-          // Fire-and-forget — don't block message loop
-          tryEmitPlaygroundEvent(task.id, htmlPath, worktree.worktreePath, logger).catch(() => {
-            // Already logged inside tryEmitPlaygroundEvent
-          })
-        }
-      }
-      // Capture last assistant text for diagnostics
-      if (typeof msg === 'object' && msg !== null) {
-        const m = msg as Record<string, unknown>
-        if (m.type === 'assistant' && typeof m.text === 'string') {
-          lastAgentOutput = (m.text as string).slice(-LAST_OUTPUT_MAX_LENGTH)
-        }
-      }
-    }
-  } catch (err) {
-    logger.error(`[agent-manager] Error consuming messages for task ${task.id}: ${err}`)
-    const errMsg = getErrorMessage(err)
-    // Emit error event for console display
-    emitAgentEvent(agentRunId, {
-      type: 'agent:error',
-      message: errMsg,
-      timestamp: Date.now()
-    })
-    // Invalidate cached OAuth token on auth errors so next agent gets a fresh token
-    if (
-      errMsg.includes('Invalid API key') ||
-      errMsg.includes('invalid_api_key') ||
-      errMsg.includes('authentication')
-    ) {
-      const { invalidateOAuthToken, refreshOAuthTokenFromKeychain } = await import('../env-utils')
-      invalidateOAuthToken()
-      // Try to auto-refresh so next agent doesn't fail too
-      refreshOAuthTokenFromKeychain()
-        .then((ok) => {
-          if (ok)
-            logger.info(
-              '[agent-manager] OAuth token auto-refreshed from Keychain after auth failure'
-            )
-        })
-        .catch((err) => {
-          logger.warn(
-            `[agent-manager] Failed to auto-refresh OAuth token after auth failure: ${getErrorMessage(err)}`
-          )
-        })
-      logger.warn(`[agent-manager] Auth failure detected — OAuth token cache invalidated`)
-    }
-  }
+  const { exitCode, lastAgentOutput } = await consumeMessages(
+    handle,
+    agent,
+    task,
+    worktree.worktreePath,
+    agentRunId,
+    turnTracker,
+    logger
+  )
 
   // Agent exited
   const exitedAt = Date.now()

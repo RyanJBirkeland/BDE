@@ -13,7 +13,6 @@ import {
   makeConcurrencyState,
   setMaxSlots,
   availableSlots,
-  applyBackpressure,
   tryRecover,
   type ConcurrencyState
 } from './concurrency'
@@ -27,29 +26,26 @@ import { runAgent as _runAgent, type RunAgentDeps, type RunAgentTask } from './r
 import { setSprintQueriesLogger } from '../data/sprint-queries'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoPaths } from '../paths'
-import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../env-utils'
 import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
 import { getSetting, getSettingJson } from '../settings'
-import { broadcast } from '../broadcast'
 import { flushAgentEventBatcher } from '../agent-event-mapper'
+import {
+  CircuitBreaker,
+  SPAWN_CIRCUIT_FAILURE_THRESHOLD,
+  SPAWN_CIRCUIT_PAUSE_MS
+} from './circuit-breaker'
+import {
+  checkOAuthToken,
+  invalidateCheckOAuthTokenCache,
+  OAUTH_CHECK_CACHE_TTL_MS,
+  OAUTH_CHECK_FAIL_CACHE_TTL_MS
+} from './oauth-checker'
+import { handleWatchdogVerdict, type WatchdogVerdict } from './watchdog-handler'
 
-// ---------------------------------------------------------------------------
-// Circuit breaker constants
-// ---------------------------------------------------------------------------
-
-/**
- * Number of consecutive spawn failures that trips the circuit breaker.
- * Tuned for "broken Claude SDK/CLI" failures rather than transient blips —
- * 5 in a row across distinct tasks strongly suggests a global problem.
- */
-export const SPAWN_CIRCUIT_FAILURE_THRESHOLD = 5
-
-/**
- * How long the drain loop pauses spawning new agents once the circuit
- * is open. Long enough that an upstream incident (network blip, expired
- * token, busted CLI install) is unlikely to still be present.
- */
-export const SPAWN_CIRCUIT_PAUSE_MS = 5 * 60 * 1000 // 5 minutes
+// Re-export for backward compatibility with tests
+export { SPAWN_CIRCUIT_FAILURE_THRESHOLD, SPAWN_CIRCUIT_PAUSE_MS }
+export { checkOAuthToken, invalidateCheckOAuthTokenCache, OAUTH_CHECK_CACHE_TTL_MS, OAUTH_CHECK_FAIL_CACHE_TTL_MS }
+export { handleWatchdogVerdict, type WatchdogVerdict }
 
 /**
  * Task statuses that can never transition to a non-terminal status.
@@ -62,190 +58,9 @@ const TERMINAL_TASK_STATUSES = new Set(['done', 'cancelled', 'failed', 'error'])
 // Logger helper — callers can supply their own or fall back to createLogger
 // ---------------------------------------------------------------------------
 
-import { readFile, stat } from 'node:fs/promises'
-import { join as joinPath } from 'node:path'
-import { homedir as home } from 'node:os'
 import { createLogger } from '../logger'
 
 const defaultLogger: Logger = createLogger('agent-manager')
-
-// ---------------------------------------------------------------------------
-// Extracted pure functions (testable independently)
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// OAuth token check cache (F-t1-sysprof-5)
-// ---------------------------------------------------------------------------
-
-/**
- * How long to cache a successful token check (ms).
- * Short enough to still run the 45-min proactive refresh on cache expiry.
- */
-export const OAUTH_CHECK_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
-
-/**
- * How long to cache a failed token check (ms).
- * Short enough to recover quickly if the user fixes the token.
- */
-export const OAUTH_CHECK_FAIL_CACHE_TTL_MS = 30_000 // 30 seconds
-
-let _oauthCheckResult: boolean | null = null
-let _oauthCheckExpiry = 0
-
-/**
- * Invalidate the OAuth token check cache.
- * Call after a forced refresh so the next drain cycle re-validates.
- */
-export function invalidateCheckOAuthTokenCache(): void {
-  _oauthCheckResult = null
-  _oauthCheckExpiry = 0
-}
-
-/**
- * Check whether the OAuth token file exists and contains a valid token.
- * Returns true if the drain loop should proceed, false if it should skip.
- * Results are cached for OAUTH_CHECK_CACHE_TTL_MS to avoid a file read on
- * every drain tick (drain runs every ~5s; token validity changes at most once
- * per hour).
- */
-export async function checkOAuthToken(logger: Logger): Promise<boolean> {
-  const now = Date.now()
-  if (_oauthCheckResult !== null && now < _oauthCheckExpiry) {
-    return _oauthCheckResult
-  }
-  try {
-    const tokenPath = joinPath(home(), '.bde', 'oauth-token')
-    const token = (await readFile(tokenPath, 'utf-8')).trim()
-    if (!token || token.length < 20) {
-      const refreshed = await refreshOAuthTokenFromKeychain()
-      if (refreshed) {
-        logger.info('[agent-manager] OAuth token auto-refreshed from Keychain')
-        _oauthCheckResult = true
-        _oauthCheckExpiry = Date.now() + OAUTH_CHECK_CACHE_TTL_MS
-        return true
-      } else {
-        logger.warn(
-          '[agent-manager] OAuth token file missing/empty and keychain refresh failed — skipping drain cycle'
-        )
-        _oauthCheckResult = false
-        _oauthCheckExpiry = Date.now() + OAUTH_CHECK_FAIL_CACHE_TTL_MS
-        return false
-      }
-    }
-
-    // Proactively refresh if token file is older than 45 minutes
-    // (Claude OAuth tokens expire after ~1 hour)
-    try {
-      const stats = await stat(tokenPath)
-      const ageMs = Date.now() - stats.mtimeMs
-      if (ageMs > 45 * 60 * 1000) {
-        logger.info('[agent-manager] Token file older than 45min — proactively refreshing')
-        const refreshed = await refreshOAuthTokenFromKeychain()
-        if (refreshed) {
-          invalidateOAuthToken()
-          logger.info('[agent-manager] OAuth token proactively refreshed from Keychain')
-        }
-      }
-    } catch {
-      /* stat failed — continue with existing token */
-    }
-
-    _oauthCheckResult = true
-    _oauthCheckExpiry = Date.now() + OAUTH_CHECK_CACHE_TTL_MS
-    return true
-  } catch {
-    logger.warn('[agent-manager] Cannot read OAuth token file — skipping drain cycle')
-    _oauthCheckResult = false
-    _oauthCheckExpiry = Date.now() + OAUTH_CHECK_FAIL_CACHE_TTL_MS
-    return false
-  }
-}
-
-export type WatchdogVerdict = 'max-runtime' | 'idle' | 'rate-limit-loop' | 'cost-budget-exceeded'
-
-/**
- * Handle a watchdog verdict by updating the task and optionally applying backpressure.
- * Returns the (possibly updated) concurrency state.
- */
-export function handleWatchdogVerdict(
-  verdict: WatchdogVerdict,
-  taskId: string,
-  concurrency: ConcurrencyState,
-  now: string,
-  updateTaskFn: (id: string, patch: Record<string, unknown>) => unknown,
-  onTerminal: (id: string, status: string) => Promise<void>,
-  logger: Logger,
-  maxRuntimeMs?: number
-): ConcurrencyState {
-  if (verdict === 'max-runtime') {
-    const runtimeMinutes = maxRuntimeMs ? Math.round(maxRuntimeMs / 60000) : 60
-    try {
-      updateTaskFn(taskId, {
-        status: 'error',
-        completed_at: now,
-        claimed_by: null,
-        notes: `Agent exceeded the maximum runtime of ${runtimeMinutes} minutes. The task may be too large for a single agent session. Consider breaking it into smaller subtasks.`,
-        needs_review: true
-      })
-      onTerminal(taskId, 'error').catch((err) =>
-        logger.warn(
-          `[agent-manager] Failed onTerminal for task ${taskId} after max-runtime kill: ${err}`
-        )
-      )
-    } catch (err) {
-      logger.warn(`[agent-manager] Failed to update task ${taskId} after max-runtime kill: ${err}`)
-    }
-  } else if (verdict === 'idle') {
-    try {
-      updateTaskFn(taskId, {
-        status: 'error',
-        completed_at: now,
-        claimed_by: null,
-        notes:
-          "Agent produced no output for 15 minutes. The agent may be stuck or rate-limited. Check agent events for the last activity. To retry: reset task status to 'queued'.",
-        needs_review: true
-      })
-      onTerminal(taskId, 'error').catch((err) =>
-        logger.warn(`[agent-manager] Failed onTerminal for task ${taskId} after idle kill: ${err}`)
-      )
-    } catch (err) {
-      logger.warn(`[agent-manager] Failed to update task ${taskId} after idle kill: ${err}`)
-    }
-  } else if (verdict === 'rate-limit-loop') {
-    concurrency = applyBackpressure(concurrency, Date.now())
-    try {
-      updateTaskFn(taskId, {
-        status: 'queued',
-        claimed_by: null,
-        notes:
-          'Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown.'
-      })
-    } catch (err) {
-      logger.warn(`[agent-manager] Failed to requeue rate-limited task ${taskId}: ${err}`)
-    }
-  } else if (verdict === 'cost-budget-exceeded') {
-    try {
-      updateTaskFn(taskId, {
-        status: 'error',
-        completed_at: now,
-        claimed_by: null,
-        notes:
-          'Agent exceeded the cost budget (max_cost_usd). The task consumed more API credits than allowed. Review the task complexity or increase the budget.',
-        needs_review: true
-      })
-      onTerminal(taskId, 'error').catch((err) =>
-        logger.warn(
-          `[agent-manager] Failed onTerminal for task ${taskId} after cost budget exceeded: ${err}`
-        )
-      )
-    } catch (err) {
-      logger.warn(
-        `[agent-manager] Failed to update task ${taskId} after cost budget exceeded: ${err}`
-      )
-    }
-  }
-  return concurrency
-}
 
 // ---------------------------------------------------------------------------
 // Public interface
@@ -315,9 +130,8 @@ export class AgentManagerImpl implements AgentManager {
   // Exposed via _ prefix for testability (private by convention, not keyword).
   _lastTaskDeps = new Map<string, { deps: TaskDependency[] | null; hash: string }>()
 
-  // Circuit breaker state — pauses drain loop after consecutive spawn failures.
-  _consecutiveSpawnFailures = 0
-  _circuitOpenUntil = 0
+  // Circuit breaker — pauses drain loop after consecutive spawn failures.
+  private readonly _circuitBreaker: CircuitBreaker
 
   // Private timers
   private pollTimer: ReturnType<typeof setInterval> | null = null
@@ -341,6 +155,7 @@ export class AgentManagerImpl implements AgentManager {
     this._concurrency = makeConcurrencyState(config.maxConcurrent)
     this._depIndex = createDependencyIndex()
     this._metrics = createMetricsCollector()
+    this._circuitBreaker = new CircuitBreaker(logger)
 
     // Wire sprint-queries to use the same structured file logger as the agent manager
     setSprintQueriesLogger(logger)
@@ -352,68 +167,41 @@ export class AgentManagerImpl implements AgentManager {
       logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
       repo,
-      onSpawnSuccess: () => this._recordSpawnSuccess(),
-      onSpawnFailure: () => this._recordSpawnFailure()
+      onSpawnSuccess: () => this._circuitBreaker.recordSuccess(),
+      onSpawnFailure: () => this._circuitBreaker.recordFailure()
     }
   }
 
   /**
-   * Reset the circuit breaker counter on a successful agent spawn.
-   * If the circuit was open, also clear the open-until timestamp.
+   * Backward compatibility accessors for tests that check circuit breaker state.
+   */
+  get _consecutiveSpawnFailures(): number {
+    return this._circuitBreaker.failureCount
+  }
+
+  get _circuitOpenUntil(): number {
+    return this._circuitBreaker.openUntilTimestamp
+  }
+
+  /**
+   * Backward compatibility — delegates to CircuitBreaker.recordSuccess().
    */
   _recordSpawnSuccess(): void {
-    if (this._consecutiveSpawnFailures > 0 || this._circuitOpenUntil > 0) {
-      this.logger.info(
-        `[agent-manager] Spawn succeeded — resetting circuit breaker (was ${this._consecutiveSpawnFailures} failures)`
-      )
-    }
-    this._consecutiveSpawnFailures = 0
-    this._circuitOpenUntil = 0
+    this._circuitBreaker.recordSuccess()
   }
 
   /**
-   * Track a spawn failure and trip the breaker if the consecutive count
-   * crosses the threshold. Emits a renderer event so the UI can warn.
+   * Backward compatibility — delegates to CircuitBreaker.recordFailure().
    */
   _recordSpawnFailure(): void {
-    this._consecutiveSpawnFailures += 1
-    this.logger.warn(
-      `[agent-manager] Spawn failure ${this._consecutiveSpawnFailures}/${SPAWN_CIRCUIT_FAILURE_THRESHOLD}`
-    )
-    if (
-      this._consecutiveSpawnFailures >= SPAWN_CIRCUIT_FAILURE_THRESHOLD &&
-      this._circuitOpenUntil === 0
-    ) {
-      this._circuitOpenUntil = Date.now() + SPAWN_CIRCUIT_PAUSE_MS
-      this.logger.error(
-        `[agent-manager] Spawn circuit breaker OPEN — pausing drain for ${Math.round(
-          SPAWN_CIRCUIT_PAUSE_MS / 1000
-        )}s after ${this._consecutiveSpawnFailures} consecutive failures`
-      )
-      try {
-        broadcast('agent-manager:circuit-breaker-open', {
-          consecutiveFailures: this._consecutiveSpawnFailures,
-          openUntil: this._circuitOpenUntil
-        })
-      } catch (err) {
-        this.logger.warn(`[agent-manager] Failed to broadcast circuit-breaker event: ${err}`)
-      }
-    }
+    this._circuitBreaker.recordFailure()
   }
 
   /**
-   * Returns true if the circuit breaker is currently open. Auto-resets if
-   * the pause window has elapsed.
+   * Backward compatibility — delegates to CircuitBreaker.isOpen().
    */
-  _isCircuitOpen(now: number = Date.now()): boolean {
-    if (this._circuitOpenUntil === 0) return false
-    if (now >= this._circuitOpenUntil) {
-      this.logger.info('[agent-manager] Circuit breaker pause elapsed — resuming drain')
-      this._circuitOpenUntil = 0
-      this._consecutiveSpawnFailures = 0
-      return false
-    }
-    return true
+  _isCircuitOpen(now?: number): boolean {
+    return this._circuitBreaker.isOpen(now)
   }
 
   // ---- Helpers ----

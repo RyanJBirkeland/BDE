@@ -19,11 +19,11 @@ vi.mock('../../env-utils', () => ({
 import { readFile, stat } from 'node:fs/promises'
 import {
   checkOAuthToken,
-  handleWatchdogVerdict,
   invalidateCheckOAuthTokenCache,
   OAUTH_CHECK_CACHE_TTL_MS,
   OAUTH_CHECK_FAIL_CACHE_TTL_MS
-} from '../index'
+} from '../oauth-checker'
+import { handleWatchdogVerdict } from '../watchdog-handler'
 import { makeConcurrencyState, type ConcurrencyState } from '../concurrency'
 import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../../env-utils'
 import type { Logger } from '../types'

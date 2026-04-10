@@ -871,7 +871,7 @@ describe('Review handlers', () => {
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toContain('diverged from origin/main')
+      expect(result.error).toContain('Failed to sync local main with origin')
     })
   })
 })
