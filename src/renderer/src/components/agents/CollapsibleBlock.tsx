@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
+import './CollapsibleBlock.css'
 
 interface CollapsibleBlockProps {
   header: React.ReactNode

@@ -5,6 +5,7 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronDown, Loader } from 'lucide-react'
+import './AgentConsole.css'
 import type { ChatBlock } from '../../lib/pair-events'
 import { pairEvents } from '../../lib/pair-events'
 import { useAgentEventsStore } from '../../stores/agentEvents'

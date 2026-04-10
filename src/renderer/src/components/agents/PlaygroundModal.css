@@ -1,0 +1,234 @@
+/* ── Playground Modal ──────────────────────────────────── */
+
+.playground-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bde-overlay);
+  z-index: 9999;
+}
+
+.playground-modal__view-btn--active {
+  background: var(--bde-accent-dim) !important;
+  color: var(--bde-accent) !important;
+  border-color: var(--bde-accent) !important;
+}
+
+/* Simple CSS-based syntax highlighting for HTML source code */
+.playground-modal__source {
+  color: var(--bde-text-muted);
+}
+
+/* HTML tags */
+.playground-modal__source::before {
+  content: '';
+}
+
+/* Basic highlighting via regex-like patterns (limited, but no deps) */
+/* This is minimal - real highlighting would need a proper parser */
+/* ── Playground Modal ── */
+.playground-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bde-overlay);
+  animation: bde-fade-in 150ms ease;
+}
+
+.playground-modal {
+  width: 90vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bde-surface-high);
+  border-radius: 12px;
+  box-shadow: var(--bde-shadow-lg);
+  overflow: hidden;
+  animation: bde-scale-fade-in 150ms ease;
+}
+
+.playground-modal__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.playground-modal__filename-icon {
+  color: var(--bde-accent);
+  flex-shrink: 0;
+}
+
+.playground-modal__filename {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: var(--bde-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playground-modal__filesize {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  flex-shrink: 0;
+}
+
+.playground-modal__security-badge {
+  font-size: 11px;
+  color: var(--bde-warning);
+  background: rgba(255, 193, 7, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--bde-warning);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.playground-modal__spacer {
+  flex: 1;
+}
+
+.playground-modal__view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bde-surface);
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.playground-modal__view-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--bde-text-muted);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: 100ms ease;
+}
+
+.playground-modal__view-button--active {
+  background: var(--bde-accent-dim);
+  color: var(--bde-accent);
+}
+
+.playground-modal__browser-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--bde-text-muted);
+  border: 1px solid var(--bde-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: 100ms ease;
+}
+
+.playground-modal__close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  color: var(--bde-text-muted);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 100ms ease;
+}
+
+.playground-modal__content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.playground-modal__preview {
+  flex: 1;
+  min-width: 0;
+}
+
+.playground-modal__preview--split {
+  border-right: 1px solid var(--bde-border);
+}
+
+.playground-modal__iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.playground-modal__source {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: var(--bde-surface);
+}
+
+.playground-modal__source-pre {
+  margin: 0;
+  padding: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 20px;
+  color: var(--bde-text);
+  white-space: pre;
+  tab-size: 2;
+}
+
+.playground-modal__source-line {
+  display: flex;
+  min-height: 20px;
+}
+
+.playground-modal__line-number {
+  display: inline-block;
+  width: 48px;
+  text-align: right;
+  padding-right: 12px;
+  color: var(--bde-text-dim);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.playground-modal__syntax-comment {
+  color: var(--bde-text-dim);
+  font-style: italic;
+}
+
+.playground-modal__syntax-tag {
+  color: var(--bde-danger);
+}
+
+.playground-modal__syntax-attr {
+  color: var(--bde-warning);
+}
+
+.playground-modal__syntax-string {
+  color: var(--bde-success);
+}
+
+/* ── Reduced Motion Overrides ── */
+@media (prefers-reduced-motion: reduce) {
+  .agent-pill--running {
+    animation: none;
+  }
+
+  .console-line__chevron {
+    transition: none;
+  }
+}
+

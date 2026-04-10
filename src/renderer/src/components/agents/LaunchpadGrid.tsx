@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import './LaunchpadGrid.css'
 import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { CLAUDE_MODELS } from '../../../../shared/models'
 import type { PromptTemplate } from '../../lib/launchpad-types'

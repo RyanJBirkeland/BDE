@@ -3,6 +3,7 @@
  */
 import { useRef, useEffect } from 'react'
 import { Search, X, ChevronUp, ChevronDown } from 'lucide-react'
+import './ConsoleSearchBar.css'
 
 interface ConsoleSearchBarProps {
   value: string

@@ -1,0 +1,82 @@
+/* Agent Card Status Spinner */
+.agent-card__status-spinner {
+  animation: bde-spin 1.5s linear infinite;
+}
+
+/* ── Agent List Repo Filter Chips ── */
+.agent-list__repo-chips {
+  flex-shrink: 0;
+}
+
+.agent-list__repo-chip {
+  padding: 4px 10px;
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent-border);
+  border-radius: 6px;
+  color: var(--bde-text-dim);
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease;
+  white-space: nowrap;
+}
+
+.agent-list__repo-chip:hover {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-status-active);
+  color: var(--bde-text-muted);
+}
+
+.agent-list__repo-chip--active {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-status-active);
+  color: var(--bde-status-active);
+}
+
+/* ── Agent List Components ── */
+.agent-list__search-border {
+  border: 1px solid var(--bde-border);
+}
+
+.agent-list__search-border--focused {
+  border: 1px solid var(--bde-status-active);
+}
+
+.agent-list__search-icon {
+  color: var(--bde-text-dim);
+}
+
+.agent-list__search-icon--focused {
+  color: var(--bde-status-active);
+}
+
+.agent-list__search-input {
+  color: var(--bde-text);
+}
+
+.agent-list__count-badge {
+  color: var(--bde-text-dim);
+}
+
+.agent-list__empty-state {
+  color: var(--bde-text-dim);
+}
+
+/* ── Load More button ── */
+.agent-list__load-more {
+  padding: 4px 12px;
+  background: var(--bde-surface-high, rgba(10,0,21,0.4));
+  border: 1px solid var(--bde-accent-border);
+  border-radius: var(--bde-radius-sm, 4px);
+  color: var(--bde-accent);
+  font-size: var(--font-sm, 12px);
+  cursor: pointer;
+}
+
+.agent-list__load-more:active:not(:disabled) {
+  transform: scale(0.97);
+}

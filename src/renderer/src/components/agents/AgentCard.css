@@ -1,0 +1,41 @@
+/* ── Agent Card Components ── */
+.agent-card__task-title {
+  color: var(--bde-text);
+}
+
+.agent-card__meta-icon {
+  color: var(--bde-text-dim);
+}
+
+.agent-card__meta-text {
+  color: var(--bde-text-muted);
+}
+
+.agent-card__meta-separator {
+  color: var(--bde-text-muted);
+}
+
+.agent-card__kill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: var(--bde-surface-high, rgba(10,0,21,0.4));
+  border: 1px solid var(--bde-danger-border);
+  border-radius: var(--bde-radius-sm, 4px);
+  cursor: pointer;
+  color: var(--bde-danger);
+  flex-shrink: 0;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.agent-card__kill-btn:hover:not(:disabled) {
+  background: var(--bde-danger-surface);
+}
+
+.agent-card__kill-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+

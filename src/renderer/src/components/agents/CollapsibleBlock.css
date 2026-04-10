@@ -1,0 +1,80 @@
+/* ── Collapsible Lines ── */
+.console-line--collapsible {
+  cursor: pointer;
+  flex-direction: column;
+}
+
+.console-line--collapsible:hover {
+  background: var(--bde-border);
+}
+
+.console-line__chevron {
+  flex-shrink: 0;
+  color: var(--bde-text-dim);
+  transition:
+    transform 150ms ease,
+    color 150ms ease;
+  font-size: 10px;
+}
+
+.console-line--collapsible:hover .console-line__chevron {
+  color: var(--bde-text-muted);
+}
+
+.console-line--expanded .console-line__chevron {
+  transform: rotate(90deg);
+}
+
+.console-collapsible-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+}
+
+/* ── Tool Call Block Components ── */
+.tool-block {
+  border-left: 3px solid var(--bde-accent-border);
+}
+
+.tool-block__chevron {
+  color: var(--bde-status-review);
+}
+
+.tool-block__badge {
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-review);
+}
+
+.tool-block__summary {
+  color: var(--bde-text);
+}
+
+.tool-block__status-badge--success {
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+}
+
+.tool-block__status-badge--danger {
+  background: var(--bde-danger-surface);
+  color: var(--bde-danger);
+}
+
+.tool-block__timestamp {
+  color: var(--bde-text-dim);
+}
+
+.tool-block__label {
+  color: var(--bde-text-dim);
+}
+
+.tool-block__json-block {
+  background: var(--bde-border);
+  color: var(--bde-text-muted);
+}
+

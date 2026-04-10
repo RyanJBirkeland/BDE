@@ -1,0 +1,90 @@
+/* ── Agents: Sidebar header ────────────────────────────── */
+
+.agents-view__sidebar-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 36px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+}
+
+.agents-view__sidebar-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: var(--bde-header-gradient);
+}
+
+.agents-view__title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.agents-view__spawn-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  cursor: pointer;
+  color: var(--bde-text-muted);
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.agents-view__spawn-btn:hover:not(:disabled) {
+  color: var(--bde-text);
+  border-color: var(--bde-text-muted);
+}
+
+.agents-view__spawn-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ── Agents View Container ── */
+/* Matches .cr-view pattern — overflow: hidden is REQUIRED for
+   react-resizable-panels to measure correctly; without it panels
+   collapse to intrinsic content width (~25px). */
+.agents-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bde-bg);
+}
+
+/* Prevent the fleet-list panel from collapsing to 0 at initial render
+   (react-resizable-panels sets minWidth:0 inline; this overrides it). */
+.agents-view [data-panel]:first-child {
+  min-width: 160px !important;
+}
+
+/* ── Agents Sidebar ── */
+.agents-sidebar {
+  border-right: 1px solid var(--bde-accent-border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 160px;
+  background: linear-gradient(
+    180deg,
+    var(--bde-accent-surface),
+    var(--bde-surface-high, rgba(10, 0, 21, 0.4))
+  );
+  overflow-y: auto;
+}
+

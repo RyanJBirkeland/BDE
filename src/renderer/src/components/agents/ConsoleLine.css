@@ -1,0 +1,321 @@
+/* ── Console Line ── */
+.console-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  line-height: 1.5;
+  transition: background 100ms ease;
+}
+
+.console-line:hover {
+  background: var(--bde-border);
+}
+
+/* Error line emphasis */
+.console-line--error {
+  background: var(--bde-danger-surface);
+  border-left: 3px solid var(--bde-danger);
+  padding-left: 9px;
+}
+
+/* Pending message (optimistic UI) */
+.console-line--pending {
+  opacity: 0.6;
+}
+
+/* Console Line Prefixes */
+.console-prefix {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.console-prefix--agent {
+  color: var(--bde-accent);
+}
+
+.console-prefix--user {
+  color: var(--bde-status-done);
+}
+
+.console-prefix--tool {
+  color: var(--bde-status-review);
+}
+
+.console-prefix--think {
+  color: var(--bde-status-active);
+}
+
+.console-prefix--error {
+  color: var(--bde-danger);
+}
+
+.console-prefix--rate {
+  color: var(--bde-warning);
+}
+
+.console-prefix--done {
+  color: var(--bde-accent);
+}
+
+.console-prefix--play {
+  color: var(--bde-accent);
+}
+
+/* ── Console Line Components ── */
+.console-line__timestamp {
+  margin-left: auto;
+  color: var(--bde-text-dim);
+  font-size: 10px;
+  flex-shrink: 0;
+  font-family: var(--bde-font-code);
+}
+
+.console-line__content {
+  flex: 1;
+  overflow: hidden;
+  color: var(--bde-text-muted);
+  word-break: break-word;
+}
+
+/* ── Markdown Rendering in Agent Text ── */
+.console-md-bold {
+  font-weight: 700;
+  color: var(--bde-text);
+}
+
+.console-md-code {
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.console-md-heading {
+  font-weight: 700;
+  color: var(--bde-text);
+  font-size: 13px;
+  display: block;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+/* ── Tool-Specific Icons ── */
+.console-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 10px;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-family: var(--bde-font-code);
+}
+
+.console-tool-icon--bash {
+  background: var(--bde-warning-surface);
+  color: var(--bde-warning);
+}
+.console-tool-icon--read {
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-review);
+}
+.console-tool-icon--edit,
+.console-tool-icon--write {
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+}
+.console-tool-icon--grep {
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-active);
+}
+.console-tool-icon--glob {
+  background: var(--bde-warning-surface);
+  color: var(--bde-warning);
+}
+.console-tool-icon--agent {
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-done);
+}
+.console-tool-icon--default {
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-review);
+}
+
+/* ── Completion Summary Card ── */
+.console-completion-card {
+  margin: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
+  border: 1px solid var(--bde-accent-border);
+  font-family: var(--bde-font-code);
+}
+
+.console-completion-card--failed {
+  background: linear-gradient(135deg, var(--bde-danger-surface) 0%, var(--bde-surface-high) 100%);
+  border-color: var(--bde-danger-border);
+}
+
+.console-completion-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.console-completion-card__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 12px;
+}
+
+.console-completion-card__stat {
+  text-align: center;
+}
+
+.console-completion-card__stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--bde-font-code);
+}
+
+.console-completion-card__stat-value--cyan {
+  color: var(--bde-accent);
+}
+.console-completion-card__stat-value--purple {
+  color: var(--bde-status-active);
+}
+.console-completion-card__stat-value--orange {
+  color: var(--bde-warning);
+}
+.console-completion-card__stat-value--red {
+  color: var(--bde-danger);
+}
+
+.console-completion-card__stat-label {
+  font-size: 10px;
+  color: var(--bde-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.console-completion-card__header--success {
+  color: var(--bde-accent);
+}
+.console-completion-card__header--failed {
+  color: var(--bde-danger);
+}
+
+/* ── Tool Group ── */
+.console-tool-group__items {
+  padding-left: 20px;
+  border-left: 2px solid var(--bde-accent-border);
+  margin-left: 6px;
+  margin-top: 4px;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ── Stderr Content ── */
+.console-line__content--stderr {
+  color: var(--bde-warning);
+}
+
+/* ── Grouped Text Blocks ── */
+.console-line__content--grouped {
+  border-left: 2px solid var(--bde-accent-border);
+  padding-left: 8px;
+}
+
+/* ── Paragraph Break Spacer ── */
+.console-md-paragraph-break {
+  height: 8px;
+}
+
+/* ── Console Badge ── */
+.console-badge {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-family: var(--bde-font-code);
+}
+
+.console-badge--success {
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+}
+
+.console-badge--danger {
+  background: var(--bde-danger-surface);
+  color: var(--bde-danger);
+}
+
+.console-badge--purple {
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-active);
+}
+
+/* ── Thinking Block Components ── */
+.thinking-block__token-count {
+  color: var(--bde-text-muted);
+  background: var(--bde-surface-high);
+}
+
+.thinking-block__content {
+  color: var(--bde-text);
+}
+
+/* ── Chat Bubble Components ── */
+.chat-bubble {
+  color: var(--bde-text);
+}
+
+.chat-bubble--agent {
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent-border);
+}
+
+.chat-bubble--user {
+  background: var(--bde-accent-surface);
+  border: 1px solid transparent;
+}
+
+.chat-bubble--error {
+  background: var(--bde-danger-surface);
+  border: 1px solid var(--bde-danger);
+}
+
+.chat-bubble__timestamp {
+  color: var(--bde-text-muted);
+}
+
+/* ── Chat Renderer Components ── */
+.chat-renderer__started {
+  color: var(--bde-text-muted);
+}
+
+.chat-renderer__completed--success {
+  color: var(--bde-accent);
+}
+
+.chat-renderer__completed--failed {
+  color: var(--bde-danger);
+}
+
+.chat-renderer__rate-limited {
+  color: var(--bde-warning);
+  background: var(--bde-warning-surface);
+}
+

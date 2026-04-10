@@ -3,6 +3,7 @@
  * Appears when agent writes HTML files. Click to open PlaygroundModal.
  */
 import { FileCode, Eye } from 'lucide-react'
+import './PlaygroundCard.css'
 import { tokens } from '../../design-system/tokens'
 
 export interface PlaygroundCardProps {

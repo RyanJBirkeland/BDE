@@ -2,6 +2,7 @@
  * ConsoleLine — Renders a single agent event as a terminal-style line.
  * Uses neon CSS classes (agents-neon.css) for all styling.
  */
+import './ConsoleLine.css'
 import type { ChatBlock } from '../../lib/pair-events'
 import { renderAgentMarkdown } from '../../lib/render-agent-markdown'
 import { formatToolSummary } from '../../lib/tool-summaries'

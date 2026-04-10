@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react'
 import { X } from 'lucide-react'
+import './CommandBar.css'
 import { CommandAutocomplete } from './CommandAutocomplete'
 import { AGENT_COMMANDS } from './commands'
 import { toast } from '../../stores/toasts'

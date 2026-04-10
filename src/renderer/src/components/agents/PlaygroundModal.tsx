@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X, Columns, Eye, Code, ExternalLink } from 'lucide-react'
+import './PlaygroundModal.css'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 type ViewMode = 'split' | 'preview' | 'source'

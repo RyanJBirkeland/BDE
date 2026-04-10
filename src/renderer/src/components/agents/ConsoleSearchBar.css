@@ -1,0 +1,114 @@
+/* ── Console Search Bar ── */
+.console-search-bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-border) 100%);
+  border-bottom: 1px solid var(--bde-accent-border);
+  flex-shrink: 0;
+}
+
+.console-search-bar__icon {
+  color: var(--bde-accent);
+  flex-shrink: 0;
+}
+
+.console-search-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--bde-text);
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  outline: none;
+}
+
+.console-search-bar__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.console-search-bar__input::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.console-search-bar__count {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  font-family: var(--bde-font-code);
+  flex-shrink: 0;
+}
+
+.console-search-bar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.console-search-bar__nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--bde-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+
+.console-search-bar__nav-btn:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+}
+
+.console-search-bar__nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.console-search-bar__close-btn {
+  background: transparent;
+  border: none;
+  color: var(--bde-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+  flex-shrink: 0;
+}
+
+.console-search-bar__close-btn:hover:not(:disabled) {
+  background: var(--bde-danger-surface);
+  color: var(--bde-danger);
+}
+
+.console-search-bar__close-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ── Console Search Highlighting ── */
+.console-line--search-match {
+  background: var(--bde-warning-surface);
+  border-left: 2px solid var(--bde-warning);
+  padding-left: 10px;
+}
+
+.console-line--search-active {
+  background: var(--bde-accent-surface);
+  border-left: 2px solid var(--bde-accent);
+  padding-left: 10px;
+  box-shadow: transparent;
+}
+

@@ -5,6 +5,7 @@
  */
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { Search, ChevronRight } from 'lucide-react'
+import './AgentList.css'
 import type { AgentMeta } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
 import { EmptyState } from '../ui/EmptyState'

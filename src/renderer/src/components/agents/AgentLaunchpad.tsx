@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import '../../assets/agent-launchpad.css'
+import './AgentLaunchpad.css'
 import { useLocalAgentsStore } from '../../stores/localAgents'
 import { usePromptTemplatesStore } from '../../stores/promptTemplates'
 import { toast } from '../../stores/toasts'

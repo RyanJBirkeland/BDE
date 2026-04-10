@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import { Bot, Cpu, Clock, X, CheckCircle, XCircle, Loader, Ban } from 'lucide-react'
+import './AgentCard.css'
 import type { AgentMeta } from '../../../../shared/types'
 import { tokens } from '../../design-system/tokens'
 import { NeonCard } from '../neon/NeonCard'

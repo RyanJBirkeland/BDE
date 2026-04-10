@@ -3,6 +3,7 @@
  */
 import { useEffect, useState, useCallback } from 'react'
 import { Terminal, StopCircle, Copy, GitPullRequest } from 'lucide-react'
+import './ConsoleHeader.css'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
 import { NeonBadge, type NeonAccent } from '../neon'
 import { useTerminalStore } from '../../stores/terminal'

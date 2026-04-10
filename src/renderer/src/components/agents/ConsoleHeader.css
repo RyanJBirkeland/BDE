@@ -1,0 +1,86 @@
+/* ── Console Header ── */
+.console-header {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-border) 100%);
+  border-bottom: 1px solid var(--bde-accent-border);
+  flex-shrink: 0;
+}
+
+.console-header__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.console-header__status-dot--running {
+  background: var(--bde-accent);
+  box-shadow: transparent;
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.console-header__status-dot--done {
+  background: var(--bde-accent);
+  opacity: 0.4;
+}
+
+.console-header__status-dot--failed {
+  background: var(--bde-danger);
+  box-shadow: transparent;
+}
+
+.console-header__status-dot--cancelled {
+  background: var(--bde-warning);
+  opacity: 0.6;
+}
+
+.console-header__task-name {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--bde-text);
+}
+
+.console-header__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--bde-text-dim);
+  font-family: var(--bde-font-code);
+}
+
+.console-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.console-header__action-btn {
+  background: transparent;
+  border: none;
+  color: var(--bde-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+
+.console-header__action-btn:hover:not(:disabled) {
+  background: var(--bde-border);
+  color: var(--bde-text-muted);
+}
+
+.console-header__action-btn:active {
+  background: var(--bde-surface);
+}
+

@@ -1,0 +1,94 @@
+/* ── Command Bar ── */
+.command-bar {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--bde-border) 0%, var(--bde-accent-surface) 100%);
+  border-top: 1px solid var(--bde-accent-border);
+  flex-shrink: 0;
+}
+
+.command-bar__prompt {
+  color: var(--bde-status-active);
+  font-family: var(--bde-font-code);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.command-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--bde-text);
+  font-family: var(--bde-font-code);
+  font-size: 13px;
+  outline: none;
+}
+
+.command-bar__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.command-bar__input::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.command-bar__input:disabled {
+  color: var(--bde-text-dim);
+  cursor: not-allowed;
+}
+
+.command-bar--disabled {
+  opacity: 0.5;
+}
+
+.command-bar--disabled .command-bar__prompt {
+  color: var(--bde-text-dim);
+}
+
+/* ── Command Autocomplete ── */
+.command-autocomplete {
+  position: absolute;
+  bottom: 48px;
+  left: 12px;
+  min-width: 250px;
+  background: linear-gradient(135deg, var(--bde-accent-surface), var(--bde-surface-high));
+  border: 1px solid var(--bde-accent-border);
+  border-radius: 10px;
+  padding: 6px;
+  z-index: 100;
+  box-shadow: none;
+}
+
+.command-autocomplete__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--bde-text-muted);
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+
+.command-autocomplete__item:hover,
+.command-autocomplete__item--active {
+  background: var(--bde-accent-surface);
+  color: var(--bde-text);
+}
+
+.command-autocomplete__item-command {
+  font-weight: 600;
+  color: var(--bde-status-active);
+}
+
+.command-autocomplete__item-description {
+  font-size: 11px;
+  color: var(--bde-text-dim);
+}
+

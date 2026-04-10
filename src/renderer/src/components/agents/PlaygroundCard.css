@@ -1,0 +1,32 @@
+/* ── Playground Card Components ── */
+.playground-card {
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent-border);
+}
+
+.playground-card:hover {
+  border-color: var(--bde-accent);
+  background: var(--bde-accent-surface);
+}
+
+.playground-card__icon-box {
+  background: var(--bde-accent-surface);
+}
+
+.playground-card__icon {
+  color: var(--bde-accent);
+}
+
+.playground-card__filename {
+  color: var(--bde-text);
+}
+
+.playground-card__filesize {
+  color: var(--bde-text-muted);
+}
+
+.playground-card__preview-hint {
+  background: var(--bde-border);
+  color: var(--bde-text-muted);
+}
+
