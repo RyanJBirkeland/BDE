@@ -23,7 +23,6 @@
   background: var(--bde-bg);
   font-family: var(--bde-font-ui);
 }
-
 /* IDE Empty State */
 .ide-empty-state {
   display: flex;
@@ -75,10 +74,6 @@
 .ide-empty-state__open-btn:hover:not(:disabled) {
   opacity: 0.85;
 }
-
-.ide-empty-state__open-btn:active:not(:disabled) {
-  transform: scale(0.97);
-}
 .ide-empty-state__recent {
   display: flex;
   flex-direction: column;
@@ -110,13 +105,11 @@
 .ide-empty-state__recent-item:hover {
   background: var(--bde-accent-hover);
 }
-
 /* Neon Theme Overrides */
 .ide-editor-empty {
   color: var(--bde-text-dim);
   background: var(--bde-bg);
 }
-
 .ide-file-loading {
   display: flex;
   align-items: center;
@@ -125,41 +118,32 @@
   color: var(--bde-text-dim);
   font-size: var(--bde-size-sm);
 }
-
 .ide-empty-state {
   background: var(--bde-bg);
 }
-
 .ide-empty-state__icon {
   color: var(--bde-text-dim);
 }
-
 .ide-empty-state__title {
   color: var(--bde-text);
 }
-
 .ide-empty-state__subtitle {
   color: var(--bde-text-muted);
 }
-
 .ide-empty-state__open-btn {
   color: var(--bde-bg);
   background: var(--bde-accent);
   transition: opacity 0.15s ease;
 }
-
 .ide-empty-state__open-btn:active:not(:disabled) {
   transform: scale(0.97);
 }
-
 .ide-empty-state__recent-label {
   color: var(--bde-text-dim);
 }
-
 .ide-empty-state__recent-item {
   color: var(--bde-accent);
 }
-
 .ide-empty-state__recent-item:hover {
   background: var(--bde-accent-surface);
 }

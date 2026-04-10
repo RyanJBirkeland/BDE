@@ -43,7 +43,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 /* Context Menu */
 .ide-context-menu {
   position: fixed;
@@ -74,9 +73,6 @@
 .ide-context-menu__item:hover {
   background: var(--bde-hover);
 }
-.ide-context-menu__item--danger {
-  color: var(--bde-danger);
-}
 .ide-context-menu__item--danger:hover {
   background: var(--bde-danger-hover);
 }
@@ -85,61 +81,48 @@
   background: var(--bde-border);
   margin: 4px 0;
 }
-
 /* Neon Theme Overrides */
 .ide-file-node {
   color: var(--bde-text-muted);
 }
-
 .ide-file-node:hover {
   background: var(--bde-border);
   color: var(--bde-text);
 }
-
 .ide-file-node--active {
   background: var(--bde-accent-surface);
   color: var(--bde-accent);
   border-left: 2px solid var(--bde-accent);
 }
-
 .ide-file-node__chevron {
   color: var(--bde-text-dim);
 }
-
 .ide-file-node__icon {
   color: var(--bde-text-dim);
 }
-
 /* Folder names: primary white, file names: muted */
 .ide-file-node[data-type='folder'] .ide-file-node__name {
   color: var(--bde-text);
 }
-
 .ide-file-node[data-type='file'] .ide-file-node__name {
   color: var(--bde-text-muted);
 }
-
 .ide-context-menu {
   background: var(--bde-surface-high);
   border: 1px solid var(--bde-accent-border);
 }
-
 .ide-context-menu__item {
   color: var(--bde-text);
 }
-
 .ide-context-menu__item:hover {
   background: var(--bde-border);
 }
-
 .ide-context-menu__item--danger {
   color: var(--bde-danger);
 }
-
 .ide-context-menu__item--danger:hover {
   background: var(--bde-danger-surface);
 }
-
 .ide-context-menu__separator {
   background: var(--bde-accent-border);
 }
