@@ -228,5 +228,11 @@ vi.stubGlobal('api', {
     update: vi.fn().mockResolvedValue(undefined),
     delete: vi.fn().mockResolvedValue(undefined),
     test: vi.fn().mockResolvedValue(undefined)
+  },
+  repoDiscovery: {
+    scanLocal: vi.fn().mockResolvedValue([]),
+    listGithub: vi.fn().mockResolvedValue([]),
+    clone: vi.fn().mockResolvedValue(undefined),
+    onCloneProgress: vi.fn().mockReturnValue(() => {})
   }
 })

@@ -7,7 +7,13 @@ import type {
   SprintTask,
   MetricsSnapshot
 } from '../shared/types'
-import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
+import type {
+  IpcChannelMap,
+  GitHubFetchInit,
+  LocalRepoInfo,
+  GithubRepoInfo,
+  CloneProgressEvent
+} from '../shared/ipc-channels'
 import type { AgentEvent } from '../shared/types'
 
 export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
@@ -443,6 +449,14 @@ declare global {
           error?: string
         }) => void
       ) => () => void
+
+      // Repository discovery
+      repoDiscovery: {
+        scanLocal: (dirs: string[]) => Promise<LocalRepoInfo[]>
+        listGithub: () => Promise<GithubRepoInfo[]>
+        clone: (owner: string, repo: string, destDir: string) => Promise<void>
+        onCloneProgress: (cb: (data: CloneProgressEvent) => void) => () => void
+      }
     }
   }
 }
