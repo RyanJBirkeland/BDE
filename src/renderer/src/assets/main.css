@@ -15,7 +15,7 @@
 @import './design-system/status-bar.css';
 @import './design-system/mini-chart.css';
 @import './shell.css';
-@import './sprint.css';
+/* sprint.css styles co-located with components */
 /* sprint-pipeline.css imported by SprintPipeline.tsx (lazy chunk) */
 /* agents.css imported by AgentsView.tsx and App.tsx (lazy chunk) */
 @import './cost.css';
