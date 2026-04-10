@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useIDEStore } from '../../stores/ide'
 import { HIDDEN_DIRS, DirEntry } from './file-tree-constants'
+import './FileTreeNode.css'
 
 export interface FileTreeNodeProps {
   name: string

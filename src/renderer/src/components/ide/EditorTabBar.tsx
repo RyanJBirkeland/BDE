@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react'
 import { X } from 'lucide-react'
 import { useIDEStore } from '../../stores/ide'
 import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
+import './EditorTabBar.css'
 
 export interface EditorTabBarProps {
   onCloseTab?: (tabId: string, isDirty: boolean) => void

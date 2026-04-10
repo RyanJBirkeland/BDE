@@ -1,0 +1,57 @@
+/* Editor Toolbar */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: var(--bde-surface-high);
+  border-bottom: 1px solid var(--bde-accent-border);
+}
+
+.editor-toolbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.editor-toolbar__btn:hover:not(:disabled) {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+}
+
+.editor-toolbar__btn--active {
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
+}
+
+.editor-toolbar__btn:disabled {
+  color: var(--bde-text-dim);
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.editor-toolbar__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--bde-accent-border);
+  margin: 0 4px;
+}
+
+.editor-toolbar__font-size {
+  font-family: var(--bde-font-mono, monospace);
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  min-width: 20px;
+  text-align: center;
+}

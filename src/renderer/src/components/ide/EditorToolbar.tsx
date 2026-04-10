@@ -1,6 +1,7 @@
 import { Map, WrapText, Minus, Plus } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../../stores/ide'
+import './EditorToolbar.css'
 
 export function EditorToolbar(): React.JSX.Element {
   const {

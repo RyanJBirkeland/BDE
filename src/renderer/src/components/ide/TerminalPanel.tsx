@@ -5,6 +5,7 @@ import { TerminalContent } from '../terminal/TerminalContent'
 import { clearTerminal } from '../terminal/TerminalPane'
 import { useTerminalStore } from '../../stores/terminal'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
+import './TerminalPanel.css'
 
 export function TerminalPanel(): React.JSX.Element {
   const tabs = useTerminalStore((s) => s.tabs)

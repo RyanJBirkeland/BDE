@@ -1,0 +1,203 @@
+/* Terminal Panel */
+.ide-terminal-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bde-bg);
+  overflow: hidden;
+}
+
+/* Neon Theme Overrides */
+.ide-terminal-panel {
+  background: var(--bde-bg);
+}
+
+/* Terminal View Header */
+.terminal-view {
+  background: var(--bde-bg);
+}
+
+.terminal-view__header {
+  background: var(--bde-surface-high);
+  border-bottom: 1px solid var(--bde-accent-border);
+}
+
+.terminal-view__title {
+  color: var(--bde-status-active);
+}
+
+/* Terminal Tab Bar */
+.terminal-tab-bar {
+  background: var(--bde-surface-high);
+  border-bottom: 1px solid var(--bde-accent-border);
+}
+
+.terminal-tab {
+  color: var(--bde-text-muted);
+}
+
+.terminal-tab:hover {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+}
+
+.terminal-tab--active {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
+}
+
+.terminal-tab--active::before {
+  background: var(--bde-accent);
+}
+
+.terminal-tab__close {
+  color: var(--bde-text-dim);
+}
+
+.terminal-tab__close:hover:not(:disabled) {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+}
+
+/* Terminal Tab Bar Actions */
+.terminal-tab-bar__btn {
+  color: var(--bde-text-muted);
+}
+
+.terminal-tab-bar__btn:hover:not(:disabled) {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+}
+
+/* Terminal Toolbar */
+.terminal-toolbar {
+  background: var(--bde-surface-high);
+}
+
+.terminal-toolbar__btn {
+  color: var(--bde-text-muted);
+}
+
+.terminal-toolbar__btn:hover:not(:disabled) {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+}
+
+.terminal-toolbar__btn--active {
+  background: var(--bde-surface);
+  color: var(--bde-accent);
+}
+
+/* Terminal Content Separator */
+.terminal-content__separator {
+  background: var(--bde-accent-border);
+}
+
+.terminal-content__separator:hover {
+  background: var(--bde-accent);
+}
+
+/* Terminal Find Bar */
+.terminal-find {
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent-border);
+}
+
+.terminal-find__input {
+  color: var(--bde-text);
+}
+
+.terminal-find__count {
+  color: var(--bde-text-muted);
+}
+
+.terminal-find__btn {
+  color: var(--bde-text-muted);
+}
+
+.terminal-find__btn:hover:not(:disabled) {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+}
+
+/* Shell Picker Dropdown */
+.shell-picker {
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent-border);
+}
+
+.shell-picker__item {
+  color: var(--bde-text);
+}
+
+.shell-picker__item:hover {
+  background: var(--bde-border);
+}
+
+.shell-picker__shortcut {
+  color: var(--bde-text-dim);
+}
+
+.shell-picker__divider {
+  background: var(--bde-accent-border);
+}
+
+.shell-picker__custom-input {
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-accent-border);
+  color: var(--bde-text);
+}
+
+.shell-picker__custom-input:focus-visible {
+  border-color: var(--bde-accent);
+}
+
+/* Agent Picker Dropdown */
+.agent-picker {
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent-border);
+}
+
+.agent-picker__header {
+  color: var(--bde-text);
+}
+
+.agent-picker__divider {
+  background: var(--bde-accent-border);
+}
+
+.agent-picker__item {
+  color: var(--bde-text);
+}
+
+.agent-picker__item:hover {
+  background: var(--bde-border);
+}
+
+.agent-picker__repo {
+  color: var(--bde-text);
+}
+
+.agent-picker__task {
+  color: var(--bde-text-muted);
+}
+
+.agent-picker__time {
+  color: var(--bde-text-dim);
+}
+
+.agent-picker__empty {
+  color: var(--bde-text-dim);
+}
+
+/* Terminal Agent Tab */
+.terminal-agent-tab {
+  background: var(--bde-bg);
+}
+
+.terminal-agent-status-bar {
+  background: var(--bde-surface-high);
+  border-bottom: 1px solid var(--bde-accent-border);
+}

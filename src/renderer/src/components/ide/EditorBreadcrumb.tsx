@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../../stores/ide'
+import './EditorBreadcrumb.css'
 
 export function EditorBreadcrumb(): React.JSX.Element | null {
   const { activeTabId, openTabs, rootPath } = useIDEStore(

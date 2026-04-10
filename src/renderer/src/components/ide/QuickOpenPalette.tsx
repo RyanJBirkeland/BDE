@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import './QuickOpenPalette.css'
 
 interface QuickOpenPaletteProps {
   rootPath: string

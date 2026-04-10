@@ -1,0 +1,41 @@
+/* Editor Breadcrumb */
+.editor-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 12px;
+  min-height: 22px;
+  background: var(--bde-surface-high);
+  border-bottom: 1px solid var(--bde-accent-border);
+  font-family: var(--bde-font-mono, monospace);
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  overflow: hidden;
+}
+
+.editor-breadcrumb__item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.editor-breadcrumb__sep {
+  color: var(--bde-text-dim);
+  flex-shrink: 0;
+}
+
+.editor-breadcrumb__segment {
+  padding: 1px 4px;
+  border-radius: 3px;
+  cursor: default;
+}
+
+.editor-breadcrumb__segment:hover {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+}
+
+.editor-breadcrumb__segment--active {
+  color: var(--bde-text);
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { FileTreeNode } from './FileTreeNode'
 import { HIDDEN_DIRS, DirEntry } from './file-tree-constants'
+import './FileTree.css'
 
 export interface FileTreeProps {
   dirPath: string
