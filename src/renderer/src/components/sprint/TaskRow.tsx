@@ -6,6 +6,8 @@ import { formatElapsed, getDotColor } from '../../lib/task-format'
 import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import { useSprintUI } from '../../stores/sprintUI'
 
+import './TaskRow.css'
+
 interface TaskRowProps {
   task: SprintTask
   selected: boolean

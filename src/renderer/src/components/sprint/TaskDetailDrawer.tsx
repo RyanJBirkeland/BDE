@@ -11,6 +11,8 @@ import { UpstreamOutcomes } from './UpstreamOutcomes'
 import { useGitHubStatus } from '../../hooks/useGitHubStatus'
 import { useDrawerResize } from '../../hooks/useDrawerResize'
 
+import './TaskDetailDrawer.css'
+
 export interface TaskDetailDrawerProps {
   task: SprintTask
   onClose: () => void

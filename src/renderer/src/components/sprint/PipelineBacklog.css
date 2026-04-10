@@ -1,0 +1,266 @@
+/* ── Left Sidebar (Backlog + Failed) ── */
+.pipeline-sidebar {
+  width: 200px;
+  border-right: 1px solid var(--bde-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: stretch;
+  resize: horizontal;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-width: 400px;
+}
+
+.pipeline-sidebar__section {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.pipeline-sidebar__section--grow {
+  flex-shrink: 0;
+}
+
+.pipeline-sidebar__section + .pipeline-sidebar__section {
+  border-top: 1px solid var(--bde-border);
+}
+
+.pipeline-sidebar__label {
+  font-size: var(--font-2xs, 10px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pipeline-sidebar__label--backlog {
+  color: var(--bde-status-review);
+}
+.pipeline-sidebar__label--failed {
+  color: var(--bde-danger);
+}
+
+.pipeline-sidebar__empty {
+  font-size: var(--font-2xs, 10px);
+  color: var(--bde-text-dim);
+  padding: 8px 0;
+}
+
+.pipeline-sidebar__count {
+  background: var(--bde-surface);
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: var(--font-2xs, 10px);
+  font-weight: 600;
+}
+
+/* Sidebar actions (bulk actions) */
+.pipeline-sidebar__actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.pipeline-sidebar__action-btn {
+  font-size: var(--font-2xs, 10px);
+  font-weight: 600;
+  background: var(--bde-border);
+  border: 1px solid var(--bde-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+  color: var(--bde-text-muted);
+  white-space: nowrap;
+}
+
+.pipeline-sidebar__action-btn:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent-border);
+  color: var(--bde-accent);
+}
+
+.pipeline-sidebar__action-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.pipeline-sidebar__action-btn--danger:hover:not(:disabled) {
+  background: var(--bde-danger-surface);
+  border-color: var(--bde-danger-border);
+  color: var(--bde-danger);
+}
+
+.pipeline-sidebar__action-btn--danger:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Backlog card */
+.backlog-card {
+  background: var(--bde-border);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  /* Grid: row 1 = checkbox + title block, row 2 = action button (full width).
+     A flex-row layout squeezed the title to ~30px in the 200px sidebar. */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'checkbox select'
+    'action   action';
+  gap: 6px 8px;
+  align-items: start;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.backlog-card--selected {
+  border-color: var(--bde-accent-border);
+  background: var(--bde-accent-surface);
+}
+
+.backlog-card__checkbox-wrapper {
+  grid-area: checkbox;
+  display: flex;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.backlog-card__checkbox {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--bde-status-active);
+}
+
+.backlog-card__select {
+  all: unset;
+  display: block;
+  grid-area: select;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.backlog-card:hover {
+  border-color: var(--bde-accent-border);
+  background: var(--bde-accent-surface);
+}
+
+.backlog-card--selected:hover {
+  border-color: var(--bde-accent-border);
+  background: var(--bde-accent-surface);
+}
+
+.backlog-card__title {
+  font-size: var(--font-xs, 11px);
+  color: var(--bde-text-muted);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.backlog-card__meta {
+  font-size: var(--font-2xs, 10px);
+  color: var(--bde-text-dim);
+  display: flex;
+  gap: 8px;
+}
+
+.backlog-card__action {
+  grid-area: action;
+  font-size: var(--font-xs, 11px);
+  font-weight: 600;
+  color: var(--bde-accent);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition:
+    opacity 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.backlog-card__action:hover:not(:disabled),
+.backlog-card__action:focus-visible {
+  opacity: 1;
+  background: var(--bde-accent-border);
+}
+
+.backlog-card:hover .backlog-card__action {
+  opacity: 1;
+}
+
+/* Failed card */
+.failed-card {
+  background: var(--bde-danger-surface);
+  border: 1px solid var(--bde-danger-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  transition: background 150ms ease;
+}
+
+.failed-card__select {
+  all: unset;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.failed-card:hover {
+  background: var(--bde-danger-surface);
+}
+
+.failed-card__title {
+  font-size: var(--font-xs, 11px);
+  color: var(--bde-danger);
+}
+
+.failed-card__meta {
+  font-size: var(--font-2xs, 10px);
+  color: var(--bde-text-dim);
+  margin-top: 2px;
+}
+
+.failed-card__notes {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.failed-card__action--rerun {
+  color: var(--bde-danger);
+}
+
+/* Expand/collapse button */
+.pipeline-sidebar__expand {
+  background: none;
+  border: none;
+  color: var(--bde-text-dim);
+  font-size: var(--font-2xs, 10px);
+  font-family: var(--bde-font-code);
+  padding: 4px 0;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.pipeline-sidebar__expand:hover:not(:disabled) {
+  color: var(--bde-text-muted);
+}
+
