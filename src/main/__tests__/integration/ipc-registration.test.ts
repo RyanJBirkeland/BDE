@@ -2,21 +2,21 @@
  * Integration test: IPC channel registration completeness.
  *
  * Reads source files at test time and verifies that every channel defined in
- * IpcChannelMap (src/shared/ipc-channels.ts) has a corresponding handler
+ * IpcChannelMap (src/shared/ipc-channels/) has a corresponding handler
  * registration via safeHandle() or ipcMain.handle()/ipcMain.on().
  *
  * This catches drift between the type definitions and actual handler wiring
  * without needing to boot Electron.
  */
 import { describe, it, expect } from 'vitest'
-import { readFileSync, readdirSync } from 'fs'
+import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'
 
 /** Root of the src directory, resolved relative to this test file. */
 const srcRoot = join(__dirname, '..', '..', '..')
 
 /**
- * Parse IpcChannelMap channel names from ipc-channels.ts.
+ * Parse IpcChannelMap channel names from ipc-channels split files.
  *
  * Channels appear as string-literal keys inside interface bodies, e.g.:
  *   'sprint:list': { args: ...; result: ... }
@@ -24,16 +24,35 @@ const srcRoot = join(__dirname, '..', '..', '..')
  * We match quoted strings that look like IPC channel names (word:word pattern).
  */
 function extractExpectedChannels(): Set<string> {
-  const source = readFileSync(join(srcRoot, 'shared', 'ipc-channels.ts'), 'utf-8')
+  const channels = new Set<string>()
 
   // Match channel name keys inside the domain interfaces.
   // Pattern: lines starting with optional whitespace, then a quoted 'domain:action' key followed by ':'
   const channelPattern = /^\s+'([a-z][\w-]*:[a-zA-Z][\w-]*)'\s*:/gm
-  const channels = new Set<string>()
-  let match: RegExpExecArray | null
-  while ((match = channelPattern.exec(source))) {
-    channels.add(match[1])
+
+  // Read from ipc-channels directory (split files)
+  const channelsDir = join(srcRoot, 'shared', 'ipc-channels')
+  if (existsSync(channelsDir)) {
+    const channelFiles = readdirSync(channelsDir)
+      .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
+      .map((f) => join(channelsDir, f))
+
+    for (const filePath of channelFiles) {
+      const source = readFileSync(filePath, 'utf-8')
+      let match: RegExpExecArray | null
+      while ((match = channelPattern.exec(source))) {
+        channels.add(match[1])
+      }
+    }
+  } else {
+    // Fallback: if ipc-channels directory doesn't exist, read from main file
+    const source = readFileSync(join(srcRoot, 'shared', 'ipc-channels.ts'), 'utf-8')
+    let match: RegExpExecArray | null
+    while ((match = channelPattern.exec(source))) {
+      channels.add(match[1])
+    }
   }
+
   return channels
 }
 
