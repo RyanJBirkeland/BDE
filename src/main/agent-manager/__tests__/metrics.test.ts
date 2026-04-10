@@ -1,62 +1,151 @@
-import { describe, it, expect } from 'vitest'
-import { createMetricsCollector } from '../metrics'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { createMetricsCollector, type MetricsCollector } from '../metrics'
 
-describe('MetricsCollector', () => {
-  it('starts with zero counters', () => {
-    const m = createMetricsCollector()
-    const s = m.snapshot()
-    expect(s.drainLoopCount).toBe(0)
-    expect(s.agentsSpawned).toBe(0)
-    expect(s.agentsCompleted).toBe(0)
-    expect(s.agentsFailed).toBe(0)
-    expect(s.retriesQueued).toBe(0)
+describe('metrics', () => {
+  let collector: MetricsCollector
+
+  beforeEach(() => {
+    collector = createMetricsCollector()
   })
 
-  it('increments counters', () => {
-    const m = createMetricsCollector()
-    m.increment('drainLoopCount')
-    m.increment('drainLoopCount')
-    m.increment('agentsSpawned')
-    expect(m.snapshot().drainLoopCount).toBe(2)
-    expect(m.snapshot().agentsSpawned).toBe(1)
+  describe('createMetricsCollector', () => {
+    it('should initialize with zero counters', () => {
+      const snapshot = collector.snapshot()
+      expect(snapshot.drainLoopCount).toBe(0)
+      expect(snapshot.agentsSpawned).toBe(0)
+      expect(snapshot.agentsCompleted).toBe(0)
+      expect(snapshot.agentsFailed).toBe(0)
+      expect(snapshot.retriesQueued).toBe(0)
+      expect(snapshot.lastDrainDurationMs).toBe(0)
+      expect(snapshot.watchdogVerdicts).toEqual({})
+    })
+
+    it('should track uptime from creation', () => {
+      const snapshot1 = collector.snapshot()
+      expect(snapshot1.uptimeMs).toBeGreaterThanOrEqual(0)
+
+      const start = Date.now()
+      while (Date.now() - start < 10) {
+        // busy wait
+      }
+
+      const snapshot2 = collector.snapshot()
+      expect(snapshot2.uptimeMs).toBeGreaterThan(snapshot1.uptimeMs)
+    })
   })
 
-  it('tracks watchdog verdicts by type', () => {
-    const m = createMetricsCollector()
-    m.recordWatchdogVerdict('idle')
-    m.recordWatchdogVerdict('idle')
-    m.recordWatchdogVerdict('max-runtime')
-    expect(m.snapshot().watchdogVerdicts.idle).toBe(2)
-    expect(m.snapshot().watchdogVerdicts['max-runtime']).toBe(1)
+  describe('increment', () => {
+    it('should increment counters', () => {
+      collector.increment('drainLoopCount')
+      collector.increment('agentsSpawned')
+      collector.increment('agentsSpawned')
+
+      const snapshot = collector.snapshot()
+      expect(snapshot.drainLoopCount).toBe(1)
+      expect(snapshot.agentsSpawned).toBe(2)
+    })
+
+    it('should handle multiple increments of same counter', () => {
+      for (let i = 0; i < 5; i++) {
+        collector.increment('agentsCompleted')
+      }
+
+      expect(collector.snapshot().agentsCompleted).toBe(5)
+    })
+
+    it('should increment all counter types', () => {
+      collector.increment('drainLoopCount')
+      collector.increment('agentsSpawned')
+      collector.increment('agentsCompleted')
+      collector.increment('agentsFailed')
+      collector.increment('retriesQueued')
+
+      const snapshot = collector.snapshot()
+      expect(snapshot.drainLoopCount).toBe(1)
+      expect(snapshot.agentsSpawned).toBe(1)
+      expect(snapshot.agentsCompleted).toBe(1)
+      expect(snapshot.agentsFailed).toBe(1)
+      expect(snapshot.retriesQueued).toBe(1)
+    })
   })
 
-  it('resets counters', () => {
-    const m = createMetricsCollector()
-    m.increment('agentsSpawned')
-    m.recordWatchdogVerdict('idle')
-    m.setLastDrainDuration(500)
-    m.reset()
-    expect(m.snapshot().agentsSpawned).toBe(0)
-    expect(m.snapshot().watchdogVerdicts).toEqual({})
-    expect(m.snapshot().lastDrainDurationMs).toBe(0)
+  describe('recordWatchdogVerdict', () => {
+    it('should record watchdog verdicts', () => {
+      collector.recordWatchdogVerdict('timeout')
+      collector.recordWatchdogVerdict('success')
+      collector.recordWatchdogVerdict('timeout')
+
+      const snapshot = collector.snapshot()
+      expect(snapshot.watchdogVerdicts['timeout']).toBe(2)
+      expect(snapshot.watchdogVerdicts['success']).toBe(1)
+    })
+
+    it('should handle multiple verdict types', () => {
+      collector.recordWatchdogVerdict('timeout')
+      collector.recordWatchdogVerdict('aborted')
+      collector.recordWatchdogVerdict('error')
+
+      const verdicts = collector.snapshot().watchdogVerdicts
+      expect(verdicts['timeout']).toBe(1)
+      expect(verdicts['aborted']).toBe(1)
+      expect(verdicts['error']).toBe(1)
+    })
   })
 
-  it('tracks uptime', () => {
-    const m = createMetricsCollector()
-    expect(m.snapshot().uptimeMs).toBeGreaterThanOrEqual(0)
+  describe('setLastDrainDuration', () => {
+    it('should record drain duration', () => {
+      collector.setLastDrainDuration(150)
+      expect(collector.snapshot().lastDrainDurationMs).toBe(150)
+    })
+
+    it('should overwrite previous duration', () => {
+      collector.setLastDrainDuration(100)
+      collector.setLastDrainDuration(200)
+      expect(collector.snapshot().lastDrainDurationMs).toBe(200)
+    })
   })
 
-  it('sets last drain duration', () => {
-    const m = createMetricsCollector()
-    m.setLastDrainDuration(150)
-    expect(m.snapshot().lastDrainDurationMs).toBe(150)
+  describe('reset', () => {
+    it('should reset all counters to zero', () => {
+      collector.increment('drainLoopCount')
+      collector.increment('agentsSpawned')
+      collector.recordWatchdogVerdict('timeout')
+      collector.setLastDrainDuration(100)
+
+      collector.reset()
+
+      const snapshot = collector.snapshot()
+      expect(snapshot.drainLoopCount).toBe(0)
+      expect(snapshot.agentsSpawned).toBe(0)
+      expect(snapshot.lastDrainDurationMs).toBe(0)
+      expect(snapshot.watchdogVerdicts).toEqual({})
+    })
+
+    it('should not reset uptime', () => {
+      const before = collector.snapshot().uptimeMs
+      collector.reset()
+      const after = collector.snapshot().uptimeMs
+      expect(after).toBeGreaterThanOrEqual(before)
+    })
   })
 
-  it('returns a copy of watchdogVerdicts (not mutating internal state)', () => {
-    const m = createMetricsCollector()
-    m.recordWatchdogVerdict('idle')
-    const snap = m.snapshot()
-    snap.watchdogVerdicts.idle = 999
-    expect(m.snapshot().watchdogVerdicts.idle).toBe(1)
+  describe('snapshot', () => {
+    it('should return independent copies', () => {
+      const snap1 = collector.snapshot()
+      collector.increment('agentsSpawned')
+      const snap2 = collector.snapshot()
+
+      expect(snap1.agentsSpawned).toBe(0)
+      expect(snap2.agentsSpawned).toBe(1)
+    })
+
+    it('should not share watchdog verdict object references', () => {
+      collector.recordWatchdogVerdict('timeout')
+      const snap1 = collector.snapshot()
+      snap1.watchdogVerdicts['injected'] = 999
+
+      const snap2 = collector.snapshot()
+      expect(snap2.watchdogVerdicts['injected']).toBeUndefined()
+    })
   })
 })

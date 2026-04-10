@@ -1,133 +1,169 @@
-/**
- * Tests for captureDiffSnapshot — verifies we build a structured snapshot
- * by running git diff numstat + name-status + per-file patches.
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { promisify } from 'node:util'
+import { captureDiffSnapshot } from '../diff-snapshot'
+import type { Logger } from '../types'
 
-// Mock node:child_process before importing module under test so execFileAsync
-// returns whatever we set up per-test.
-vi.mock('node:child_process', () => {
-  const execFile = vi.fn() as ReturnType<typeof vi.fn> & { [k: symbol]: unknown }
-  execFile[promisify.custom] = vi.fn()
-  return { execFile }
-})
-
-vi.mock('../../env-utils', () => ({
-  buildAgentEnv: () => ({ PATH: '/usr/bin' })
+vi.mock('node:child_process', () => ({
+  execFile: (_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, result: { stdout: string }) => void) => {
+    const mockExecFile = getMockExecFile()
+    mockExecFile(_cmd, _args, _opts, callback)
+  }
 }))
 
-const logger = {
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn()
+vi.mock('../../env-utils', () => ({
+  buildAgentEnv: vi.fn(() => ({ PATH: '/usr/bin' }))
+}))
+
+let mockExecFile: ReturnType<typeof vi.fn>
+
+function getMockExecFile() {
+  return mockExecFile
 }
 
-async function setupMockExec(responses: Record<string, string | Error>) {
-  const childProcess = await import('node:child_process')
-  const execFileAny = childProcess.execFile as unknown as {
-    [k: symbol]: ReturnType<typeof vi.fn>
-  }
-  const execFileAsync = execFileAny[promisify.custom]
-  execFileAsync.mockImplementation((...args: unknown[]) => {
-    const [, gitArgs] = args as [string, string[]]
-    const key = gitArgs.join(' ')
-    const matchKey = Object.keys(responses).find((k) => key.includes(k))
-    if (!matchKey) {
-      return Promise.reject(new Error(`unexpected git call: ${key}`))
-    }
-    const val = responses[matchKey]
-    if (val instanceof Error) return Promise.reject(val)
-    return Promise.resolve({ stdout: val, stderr: '' })
-  })
-}
+describe('diff-snapshot', () => {
+  let mockLogger: Logger
 
-describe('captureDiffSnapshot', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    mockLogger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
+    } as unknown as Logger
+
+    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
+      if (args.includes('--numstat')) {
+        callback(null, { stdout: '10\t5\tsrc/main/index.ts\n' })
+      } else if (args.includes('--name-status')) {
+        callback(null, { stdout: 'M\tsrc/main/index.ts\n' })
+      } else {
+        callback(null, { stdout: 'diff --git a/src/main/index.ts b/src/main/index.ts\n+added line\n' })
+      }
+    })
   })
 
-  it('returns null when no files changed', async () => {
-    await setupMockExec({
-      '--numstat': '',
-      '--name-status': ''
+  it('should capture diff snapshot with file stats', async () => {
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(result).not.toBeNull()
+    expect(result?.files).toHaveLength(1)
+    expect(result?.files[0]).toMatchObject({
+      path: 'src/main/index.ts',
+      status: 'M',
+      additions: 10,
+      deletions: 5
     })
-    const { captureDiffSnapshot } = await import('../diff-snapshot')
-    const snapshot = await captureDiffSnapshot('/fake/worktree', 'origin/main', logger)
-    expect(snapshot).toBeNull()
+    expect(result?.totals).toEqual({
+      additions: 10,
+      deletions: 5,
+      files: 1
+    })
   })
 
-  it('builds snapshot with file totals and per-file patches', async () => {
-    await setupMockExec({
-      '--numstat': '5\t2\tsrc/foo.ts\n10\t0\tsrc/bar.ts',
-      '--name-status': 'M\tsrc/foo.ts\nA\tsrc/bar.ts',
-      '-- src/foo.ts': 'diff --git a/src/foo.ts b/src/foo.ts\n+added\n-removed',
-      '-- src/bar.ts': 'diff --git a/src/bar.ts b/src/bar.ts\n+new file'
-    })
-    const { captureDiffSnapshot } = await import('../diff-snapshot')
-    const snapshot = await captureDiffSnapshot('/fake/worktree', 'origin/main', logger)
+  it('should attach patches to files', async () => {
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
 
-    expect(snapshot).not.toBeNull()
-    expect(snapshot!.totals).toEqual({ additions: 15, deletions: 2, files: 2 })
-    expect(snapshot!.files).toHaveLength(2)
-    expect(snapshot!.files[0].path).toBe('src/foo.ts')
-    expect(snapshot!.files[0].status).toBe('M')
-    expect(snapshot!.files[0].additions).toBe(5)
-    expect(snapshot!.files[0].patch).toContain('diff --git a/src/foo.ts')
-    expect(snapshot!.files[1].status).toBe('A')
-    expect(snapshot!.truncated).toBeUndefined()
-    expect(snapshot!.capturedAt).toBeTypeOf('string')
+    expect(result?.files[0].patch).toContain('diff --git')
+    expect(result?.files[0].patch).toContain('+added line')
   })
 
-  it('returns null on execFile error', async () => {
-    await setupMockExec({
-      '--numstat': new Error('not a git repo')
+  it('should return null if no files changed', async () => {
+    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
+      callback(null, { stdout: '' })
     })
-    const { captureDiffSnapshot } = await import('../diff-snapshot')
-    const snapshot = await captureDiffSnapshot('/fake/worktree', 'origin/main', logger)
-    expect(snapshot).toBeNull()
-    expect(logger.warn).toHaveBeenCalled()
+
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+    expect(result).toBeNull()
   })
 
-  it('marks snapshot truncated and drops single oversized patch (file stats preserved)', async () => {
-    const hugePatch = 'x'.repeat(600_000) // > 500_000 cap
-    await setupMockExec({
-      '--numstat': '1000\t1000\tbig.txt',
-      '--name-status': 'M\tbig.txt',
-      '-- big.txt': hugePatch
+  it('should handle binary files with - in numstat', async () => {
+    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
+      if (args.includes('--numstat')) {
+        callback(null, { stdout: '-\t-\timage.png\n' })
+      } else if (args.includes('--name-status')) {
+        callback(null, { stdout: 'A\timage.png\n' })
+      } else {
+        callback(null, { stdout: '' })
+      }
     })
-    const { captureDiffSnapshot } = await import('../diff-snapshot')
-    const snapshot = await captureDiffSnapshot('/fake/worktree', 'origin/main', logger)
-    expect(snapshot).not.toBeNull()
-    expect(snapshot!.truncated).toBe(true)
-    expect(snapshot!.files[0].patch).toBeUndefined()
-    // Stats still preserved
-    expect(snapshot!.files[0].additions).toBe(1000)
+
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(result?.files[0]).toMatchObject({
+      path: 'image.png',
+      status: 'A',
+      additions: 0,
+      deletions: 0
+    })
   })
 
-  it('skips oversized files but keeps patches for smaller files later in the list', async () => {
-    // First file is huge (over budget), second file is small — second should
-    // still have its patch attached after the first is skipped.
-    const hugePatch = 'x'.repeat(600_000)
-    const smallPatch = 'diff --git a/small.ts b/small.ts\n+ok'
-    await setupMockExec({
-      '--numstat': '5000\t5000\tbig.txt\n2\t1\tsmall.ts',
-      '--name-status': 'M\tbig.txt\nM\tsmall.ts',
-      '-- big.txt': hugePatch,
-      '-- small.ts': smallPatch
+  it('should skip oversized patches but keep file stats', async () => {
+    const largeContent = 'x'.repeat(600_000)
+    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
+      if (args.includes('--numstat')) {
+        callback(null, { stdout: '100\t50\tlarge.ts\n5\t2\tsmall.ts\n' })
+      } else if (args.includes('--name-status')) {
+        callback(null, { stdout: 'M\tlarge.ts\nM\tsmall.ts\n' })
+      } else if (args.includes('large.ts')) {
+        callback(null, { stdout: largeContent })
+      } else {
+        callback(null, { stdout: 'small patch' })
+      }
     })
-    const { captureDiffSnapshot } = await import('../diff-snapshot')
-    const snapshot = await captureDiffSnapshot('/fake/worktree', 'origin/main', logger)
-    expect(snapshot).not.toBeNull()
-    expect(snapshot!.truncated).toBe(true)
-    expect(snapshot!.files).toHaveLength(2)
-    // Big file's patch was skipped
-    const big = snapshot!.files.find((f) => f.path === 'big.txt')!
-    expect(big.patch).toBeUndefined()
-    expect(big.additions).toBe(5000)
-    // Small file's patch is still attached
-    const small = snapshot!.files.find((f) => f.path === 'small.ts')!
-    expect(small.patch).toBe(smallPatch)
-    expect(small.additions).toBe(2)
+
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(result?.files).toHaveLength(2)
+    expect(result?.files[0].patch).toBeUndefined()
+    expect(result?.files[1].patch).toBe('small patch')
+    expect(result?.truncated).toBe(true)
+  })
+
+  it('should log warning and skip file if patch fetch fails', async () => {
+    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
+      if (args.includes('--numstat')) {
+        callback(null, { stdout: '10\t5\tfoo.ts\n' })
+      } else if (args.includes('--name-status')) {
+        callback(null, { stdout: 'M\tfoo.ts\n' })
+      } else {
+        callback(new Error('Git error'))
+      }
+    })
+
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(result?.files[0].patch).toBeUndefined()
+    expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('[diff-snapshot]'))
+  })
+
+  it('should return null and log warning on git command failure', async () => {
+    mockExecFile = vi.fn((_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null) => void) => {
+      callback(new Error('Git not found'))
+    })
+
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(result).toBeNull()
+    expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('[diff-snapshot] capture failed'))
+  })
+
+  it('should handle tabs in file paths', async () => {
+    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
+      if (args.includes('--numstat')) {
+        callback(null, { stdout: '10\t5\tpath\twith\ttabs.ts\n' })
+      } else if (args.includes('--name-status')) {
+        callback(null, { stdout: 'M\tpath\twith\ttabs.ts\n' })
+      } else {
+        callback(null, { stdout: '' })
+      }
+    })
+
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(result?.files[0].path).toBe('path\twith\ttabs.ts')
+  })
+
+  it('should include capturedAt timestamp', async () => {
+    const result = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(result?.capturedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
   })
 })
