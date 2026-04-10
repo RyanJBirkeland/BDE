@@ -1,6 +1,7 @@
 /**
  * ConnectionsSection — auth status and GitHub credential management.
  */
+import './ConnectionsSection.css'
 import { useCallback, useEffect, useState } from 'react'
 import { RefreshCw, ExternalLink } from 'lucide-react'
 import { toast } from '../../stores/toasts'

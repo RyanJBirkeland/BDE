@@ -1,0 +1,195 @@
+/* ─── Settings Card ─────────────────────────────────────────────────────── */
+
+.stg-card {
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.stg-card--full-bleed {
+  padding: 0;
+}
+
+.stg-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.stg-card__header-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.stg-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.stg-card__icon--purple {
+  background: var(--bde-accent-surface);
+  color: var(--bde-status-active);
+}
+
+.stg-card__icon--neutral {
+  background: var(--bde-surface);
+  color: var(--bde-text-muted);
+}
+
+.stg-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bde-text);
+}
+
+.stg-card__subtitle {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  margin-top: 2px;
+}
+
+.stg-card__body {
+  overflow-x: auto;
+}
+
+.stg-card__body table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.stg-card__footer {
+  border-top: 1px solid var(--bde-border);
+  padding-top: 12px;
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ─── Status Pills (used in cards) ──────────────────────────────────────── */
+
+.stg-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.stg-status-pill--success {
+  color: var(--bde-status-done);
+  background: var(--bde-accent-surface);
+}
+
+.stg-status-pill--info {
+  color: var(--bde-status-active);
+  background: var(--bde-accent-surface);
+}
+
+.stg-status-pill--warning {
+  color: var(--bde-warning);
+  background: var(--bde-warning-surface);
+}
+
+.stg-status-pill--neutral {
+  color: var(--bde-text-muted);
+  background: var(--bde-surface);
+}
+
+.stg-status-pill--error {
+  color: var(--bde-danger);
+  background: var(--bde-danger-surface);
+}
+
+.stg-status-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bde-status-done);
+  flex-shrink: 0;
+}
+
+/* ─── Form Fields (used in cards) ───────────────────────────────────────── */
+
+.stg-field {
+  margin-bottom: 12px;
+}
+
+.stg-field__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--bde-text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.stg-field__input {
+  width: 100%;
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--bde-text);
+  font-family: var(--bde-font-code);
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.stg-field__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.stg-field__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ─── Legacy section card styles ────────────────────────────────────────── */
+
+.settings-section {
+  background: var(--glass-tint-dark);
+  border: 1px solid var(--bde-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.settings-section__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--bde-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.settings-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-card-footer-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

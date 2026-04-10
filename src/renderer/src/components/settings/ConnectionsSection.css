@@ -1,0 +1,55 @@
+/* ─── Connections Section ───────────────────────────────────────────────── */
+
+.settings-connection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-connection__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--bde-text-muted);
+}
+
+.settings-required-marker {
+  color: var(--bde-danger);
+  margin-left: 2px;
+}
+
+.settings-secret-input {
+  position: relative;
+}
+
+.settings-secret-input .settings-field__input {
+  padding-right: 36px;
+}
+
+.settings-secret-input__toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--bde-text-muted);
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.settings-secret-input__toggle:hover {
+  color: var(--bde-text);
+  background: var(--bde-surface);
+}
+
+.settings-fieldset-bare {
+  border: none;
+  padding: 0;
+  margin: 0;
+}

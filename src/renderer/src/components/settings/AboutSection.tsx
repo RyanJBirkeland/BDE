@@ -1,6 +1,7 @@
 /**
  * AboutSection — app version and source link.
  */
+import './AboutSection.css'
 import { ExternalLink, Keyboard } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { SettingsCard } from './SettingsCard'

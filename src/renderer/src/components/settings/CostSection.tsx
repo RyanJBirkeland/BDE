@@ -3,6 +3,7 @@
  * Claude Code subscription = flat rate, so tokens are the meaningful metric.
  * Task table shows per-run token usage, duration, and cache efficiency.
  */
+import './CostSection.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AgentRunCostRow, CostSummary } from '../../../../shared/types'
 import { EmptyState } from '../ui/EmptyState'

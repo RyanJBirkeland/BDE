@@ -1,0 +1,33 @@
+/* ─── Appearance Section ────────────────────────────────────────────────── */
+
+.settings-theme-buttons {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.settings-colors {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.settings-color {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+.settings-color:hover {
+  transform: scale(1.15);
+}
+
+.settings-color--active {
+  border-color: var(--bde-text);
+  transform: scale(1.15);
+}

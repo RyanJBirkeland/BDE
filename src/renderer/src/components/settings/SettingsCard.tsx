@@ -1,6 +1,7 @@
 /**
  * SettingsCard — reusable card wrapper for settings sections.
  */
+import './SettingsCard.css'
 import type { ReactNode } from 'react'
 import type { StatusVariant } from './StatusPill'
 import { StatusPill } from './StatusPill'

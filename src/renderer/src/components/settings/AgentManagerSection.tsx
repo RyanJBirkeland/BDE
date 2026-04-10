@@ -2,6 +2,7 @@
  * AgentManagerSection — configure AgentManager: concurrency, model, worktree base,
  * max runtime, auto-start, and webhooks. Changes take effect after app restart.
  */
+import './AgentManagerSection.css'
 import { useCallback, useEffect, useState } from 'react'
 import { Trash2, Plus, Send, Eye, EyeOff } from 'lucide-react'
 import { toast } from '../../stores/toasts'

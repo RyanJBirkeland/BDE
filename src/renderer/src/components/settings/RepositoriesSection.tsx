@@ -1,6 +1,7 @@
 /**
  * RepositoriesSection — CRUD for repository configurations.
  */
+import './RepositoriesSection.css'
 import { useCallback, useEffect, useState } from 'react'
 import { Trash2, Plus, FolderOpen } from 'lucide-react'
 import { toast } from '../../stores/toasts'

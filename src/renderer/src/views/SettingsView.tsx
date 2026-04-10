@@ -2,6 +2,7 @@
  * SettingsView -- sidebar + content layout for application configuration.
  * Each section renders a self-contained component. Sections are grouped by category.
  */
+import './SettingsView.css'
 import { motion } from 'framer-motion'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import {

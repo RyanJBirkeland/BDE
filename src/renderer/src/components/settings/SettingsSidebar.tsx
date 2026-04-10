@@ -2,6 +2,7 @@
  * SettingsSidebar — categorized sidebar navigation for Settings.
  * Groups sections by category, supports keyboard navigation with roving tabindex.
  */
+import './SettingsSidebar.css'
 import { useRef, useState, useEffect } from 'react'
 import { Search } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'

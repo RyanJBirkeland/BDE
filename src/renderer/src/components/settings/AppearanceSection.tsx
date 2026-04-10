@@ -1,6 +1,7 @@
 /**
  * AppearanceSection — theme toggle, accent color picker, and window behavior.
  */
+import './AppearanceSection.css'
 import { useCallback, useEffect, useState } from 'react'
 import { useThemeStore } from '../../stores/theme'
 import { toast } from '../../stores/toasts'

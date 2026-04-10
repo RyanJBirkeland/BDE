@@ -1,0 +1,268 @@
+/* ─── Repositories Section ──────────────────────────────────────────────── */
+
+.settings-repos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-repos__add-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.settings-repos__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ─── Repository Form ───────────────────────────────────────────────────── */
+
+.settings-repo__dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin: auto;
+}
+
+.settings-repo__github {
+  display: inline-block;
+  font-family: var(--bde-font-code);
+  font-size: 11px;
+  color: var(--bde-text-muted);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bde-bg-elevated);
+  border: 1px solid var(--bde-border);
+}
+
+.settings-repo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-repo-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.settings-repo-form__path-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.settings-repo-form__path-row .settings-field__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-repo-form__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* ── Repo Discovery Modal ───────────────────────────────────────────────── */
+
+.settings-discovery-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.settings-discovery-modal {
+  background: var(--bde-bg-secondary, #1e1e2e);
+  border: 1px solid var(--bde-border, #333);
+  border-radius: 12px;
+  width: 560px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+.settings-discovery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 0;
+}
+
+.settings-discovery-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.settings-discovery-close {
+  background: none;
+  border: none;
+  color: var(--bde-text-dim, #888);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.settings-discovery-close:hover {
+  color: var(--bde-text, #fff);
+  background: var(--bde-bg-hover, #2a2a3a);
+}
+
+.settings-discovery-tabs {
+  display: flex;
+  gap: 0;
+  padding: 12px 20px 0;
+  border-bottom: 1px solid var(--bde-border, #333);
+}
+
+.settings-discovery-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 16px;
+  color: var(--bde-text-dim, #888);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-discovery-tab:hover {
+  color: var(--bde-text, #fff);
+}
+
+.settings-discovery-tab--active {
+  color: var(--bde-text, #fff);
+  border-bottom-color: var(--bde-accent, #6C8EEF);
+}
+
+.settings-discovery-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bde-border, #333);
+  color: var(--bde-text-dim, #888);
+}
+
+.settings-discovery-search input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--bde-text, #fff);
+  font-size: 13px;
+  flex: 1;
+}
+
+.settings-discovery-list {
+  overflow-y: auto;
+  padding: 8px 0;
+  flex: 1;
+  min-height: 200px;
+  max-height: 400px;
+}
+
+.settings-discovery-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  gap: 12px;
+}
+
+.settings-discovery-row:hover {
+  background: var(--bde-bg-hover, #2a2a3a);
+}
+
+.settings-discovery-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-discovery-row__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--bde-text, #fff);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-discovery-row__path,
+.settings-discovery-row__desc {
+  font-size: 11px;
+  color: var(--bde-text-dim, #888);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-discovery-row__github {
+  font-size: 11px;
+  color: var(--bde-accent, #6C8EEF);
+}
+
+.settings-discovery-row__progress {
+  font-size: 11px;
+  color: var(--bde-text-dim, #888);
+  font-family: var(--bde-font-mono, monospace);
+}
+
+.settings-discovery-row__error {
+  font-size: 11px;
+  color: var(--bde-danger, #EF4444);
+}
+
+.settings-discovery-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--bde-text-dim, #888);
+  font-size: 13px;
+}
+
+.settings-discovery-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  color: var(--bde-danger, #EF4444);
+  font-size: 13px;
+}
+
+.settings-discovery-spinner {
+  animation: bde-spin 1s linear infinite;
+}
+
+.settings-discovery-config {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.settings-discovery-config__row {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-discovery-config__input-row {
+  display: flex;
+  gap: 8px;
+}

@@ -1,6 +1,7 @@
 /**
  * SettingsPageHeader — section title and subtitle for settings pages.
  */
+import './SettingsPageHeader.css'
 import type { ReactNode } from 'react'
 
 interface SettingsPageHeaderProps {
