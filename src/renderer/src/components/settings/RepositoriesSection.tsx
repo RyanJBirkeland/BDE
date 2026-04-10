@@ -7,6 +7,7 @@ import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 import { SettingsCard } from './SettingsCard'
+import { RepoDiscoveryModal } from './RepoDiscoveryModal'
 
 const REPO_COLOR_PALETTE = [
   '#6C8EEF',
@@ -30,7 +31,10 @@ interface RepoConfig {
 export function RepositoriesSection(): React.JSX.Element {
   const { confirm, confirmProps } = useConfirm()
   const [repos, setRepos] = useState<RepoConfig[]>([])
-  const [adding, setAdding] = useState(false)
+  const [showManual, setShowManual] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [scanDirs, setScanDirs] = useState('')
+  const [cloneDir, setCloneDir] = useState('')
   const [saving, setSaving] = useState(false)
   const [deletingName, setDeletingName] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
@@ -42,6 +46,12 @@ export function RepositoriesSection(): React.JSX.Element {
   useEffect(() => {
     window.api.settings.getJson('repos').then((raw) => {
       if (Array.isArray(raw)) setRepos(raw as RepoConfig[])
+    })
+    window.api.settings.getJson('repos.scanDirs').then((raw) => {
+      if (typeof raw === 'string') setScanDirs(raw)
+    })
+    window.api.settings.getJson('repos.cloneDir').then((raw) => {
+      if (typeof raw === 'string') setCloneDir(raw)
     })
   }, [])
 
@@ -70,7 +80,7 @@ export function RepositoriesSection(): React.JSX.Element {
     [repos, saveRepos, confirm]
   )
 
-  const handleAdd = useCallback(async () => {
+  const handleManualAdd = useCallback(async () => {
     if (!newName.trim() || !newPath.trim()) return
     setSaving(true)
     try {
@@ -85,7 +95,7 @@ export function RepositoriesSection(): React.JSX.Element {
         }
       ]
       await saveRepos(updated)
-      setAdding(false)
+      setShowManual(false)
       setNewName('')
       setNewPath('')
       setNewOwner('')
@@ -96,6 +106,22 @@ export function RepositoriesSection(): React.JSX.Element {
       setSaving(false)
     }
   }, [repos, newName, newPath, newOwner, newRepo, newColor, saveRepos])
+
+  const handleRepoAdded = useCallback(
+    async (repo: RepoConfig) => {
+      const updated = [...repos, repo]
+      await saveRepos(updated)
+    },
+    [repos, saveRepos]
+  )
+
+  const handleSaveScanDirs = useCallback(async () => {
+    await window.api.settings.setJson('repos.scanDirs', scanDirs)
+  }, [scanDirs])
+
+  const handleSaveCloneDir = useCallback(async () => {
+    await window.api.settings.setJson('repos.cloneDir', cloneDir)
+  }, [cloneDir])
 
   const handleBrowse = useCallback(async () => {
     const dir = await window.api.openDirectoryDialog()
@@ -127,8 +153,42 @@ export function RepositoriesSection(): React.JSX.Element {
   return (
     <>
       <ConfirmModal {...confirmProps} />
+      <RepoDiscoveryModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onRepoAdded={handleRepoAdded}
+        repos={repos}
+      />
+      <div className="settings-discovery-config">
+        <div className="settings-discovery-config__row">
+          <label className="settings-field__label">Scan directories</label>
+          <div className="settings-discovery-config__input-row">
+            <input
+              className="settings-field__input"
+              value={scanDirs}
+              onChange={(e) => setScanDirs(e.target.value)}
+              placeholder="~/projects"
+              onBlur={handleSaveScanDirs}
+            />
+          </div>
+          <span className="settings-field__hint">Comma-separated. Used by Local tab.</span>
+        </div>
+        <div className="settings-discovery-config__row">
+          <label className="settings-field__label">Clone directory</label>
+          <div className="settings-discovery-config__input-row">
+            <input
+              className="settings-field__input"
+              value={cloneDir}
+              onChange={(e) => setCloneDir(e.target.value)}
+              placeholder="~/projects"
+              onBlur={handleSaveCloneDir}
+            />
+          </div>
+          <span className="settings-field__hint">Where GitHub repos are cloned to.</span>
+        </div>
+      </div>
       <div className="settings-cards-list">
-        {repos.length === 0 && !adding && (
+        {repos.length === 0 && !showManual && (
           <span className="settings-repos__empty">No repositories configured</span>
         )}
 
@@ -168,8 +228,8 @@ export function RepositoriesSection(): React.JSX.Element {
           </SettingsCard>
         ))}
 
-        {adding && (
-          <SettingsCard title="Add Repository">
+        {showManual && (
+          <SettingsCard title="Add Repository (Manual)">
             <div className="settings-repo-form">
               <div className="settings-repo-form__row">
                 <input
@@ -224,13 +284,13 @@ export function RepositoriesSection(): React.JSX.Element {
                   ))}
                 </div>
                 <div className="settings-repo-form__actions">
-                  <Button variant="ghost" size="sm" onClick={() => setAdding(false)} type="button">
+                  <Button variant="ghost" size="sm" onClick={() => setShowManual(false)} type="button">
                     Cancel
                   </Button>
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={handleAdd}
+                    onClick={handleManualAdd}
                     disabled={!newName.trim() || !newPath.trim() || saving}
                     loading={saving}
                     type="button"
@@ -243,16 +303,27 @@ export function RepositoriesSection(): React.JSX.Element {
           </SettingsCard>
         )}
 
-        {!adding && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setAdding(true)}
-            type="button"
-            className="settings-repos__add-btn"
-          >
-            <Plus size={14} /> Add Repository
-          </Button>
+        {!showManual && (
+          <div className="settings-repos__actions">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowModal(true)}
+              type="button"
+              className="settings-repos__add-btn"
+            >
+              <Plus size={14} /> Add Repository
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowManual(true)}
+              type="button"
+              className="settings-repos__manual-btn"
+            >
+              Manual
+            </Button>
+          </div>
         )}
       </div>
     </>
