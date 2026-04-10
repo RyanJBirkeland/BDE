@@ -20,6 +20,7 @@ export interface DialogService {
  */
 export function createElectronDialogService(): DialogService {
   // Dynamic import to keep dialog coupling isolated to this factory
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { dialog } = require('electron')
 
   return {

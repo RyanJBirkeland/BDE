@@ -1,11 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
-  startDbWatcher,
   buildConnectSrc,
   initializeDatabase,
   startBackgroundServices,
-  setupCleanupTasks,
-  DEBOUNCE_MS
+  setupCleanupTasks
 } from '../bootstrap'
 import * as db from '../db'
 import * as eventQueries from '../data/event-queries'

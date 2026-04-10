@@ -74,28 +74,24 @@ export function LaunchpadGrid({
   const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false)
   const repoDropdownRef = useRef<HTMLDivElement>(null)
 
-  // Sync repo selection once repos load (useRepoOptions is async via IPC)
-  useEffect(() => {
-    if (repos.length > 0) {
-      setRepo((prev) => prev || repos[0].label)
-    }
-  }, [repos])
+  // Derive effective repo: use selected repo if set, otherwise first available
+  const effectiveRepo = repo || (repos.length > 0 ? repos[0].label : '')
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey && prompt.trim()) {
         e.preventDefault()
-        onCustomPrompt(prompt.trim(), repo, model)
+        onCustomPrompt(prompt.trim(), effectiveRepo, model)
       }
     },
-    [prompt, repo, model, onCustomPrompt]
+    [prompt, effectiveRepo, model, onCustomPrompt]
   )
 
   const handleSubmit = useCallback(() => {
     if (prompt.trim()) {
-      onCustomPrompt(prompt.trim(), repo, model)
+      onCustomPrompt(prompt.trim(), effectiveRepo, model)
     }
-  }, [prompt, repo, model, onCustomPrompt])
+  }, [prompt, effectiveRepo, model, onCustomPrompt])
 
   const toggleRepoDropdown = useCallback(() => {
     setIsRepoDropdownOpen((prev) => !prev)
@@ -175,7 +171,7 @@ export function LaunchpadGrid({
                   '--tile-hover-border': vars.hover
                 } as React.CSSProperties
               }
-              onClick={() => onSelectTemplate(t, repo, model)}
+              onClick={() => onSelectTemplate(t, effectiveRepo, model)}
             >
               <div className="launchpad__tile-icon">{t.icon}</div>
               <div className="launchpad__tile-name">{t.name}</div>
@@ -194,10 +190,10 @@ export function LaunchpadGrid({
             onClick={toggleRepoDropdown}
             aria-haspopup="listbox"
             aria-expanded={isRepoDropdownOpen}
-            aria-label={`Selected repository: ${repo}`}
+            aria-label={`Selected repository: ${effectiveRepo}`}
           >
             <div className="launchpad__repo-dot" />
-            {repo}
+            {effectiveRepo}
             <ChevronDown size={12} />
           </button>
 
@@ -223,9 +219,9 @@ export function LaunchpadGrid({
                       key={r.label}
                       role="option"
                       tabIndex={-1}
-                      aria-selected={r.label === repo}
+                      aria-selected={r.label === effectiveRepo}
                       onClick={() => handleSelectRepo(r.label)}
-                      className={`launchpad__repo-dropdown-option ${r.label === repo ? 'launchpad__repo-dropdown-option--current' : ''}`}
+                      className={`launchpad__repo-dropdown-option ${r.label === effectiveRepo ? 'launchpad__repo-dropdown-option--current' : ''}`}
                     >
                       <div className="launchpad__repo-dot" />
                       <span className="launchpad__repo-dropdown-option-name">{r.label}</span>

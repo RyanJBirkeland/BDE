@@ -21,11 +21,11 @@ describe('synthesizer-handlers', () => {
     handlers.clear()
     mockSender = { send: vi.fn() }
 
-    vi.mocked(specSynthesizer.synthesizeSpec).mockImplementation((req, onChunk, streamId) => {
+    vi.mocked(specSynthesizer.synthesizeSpec).mockImplementation((req, onChunk, _streamId) => {
       onChunk('Generated spec content')
       return Promise.resolve({ spec: 'Full spec', filesAnalyzed: 5 })
     })
-    vi.mocked(specSynthesizer.reviseSpec).mockImplementation((req, onChunk, streamId) => {
+    vi.mocked(specSynthesizer.reviseSpec).mockImplementation((req, onChunk, _streamId) => {
       onChunk('Revised content')
       return Promise.resolve({ spec: 'Revised spec', filesAnalyzed: 3 })
     })
