@@ -3,6 +3,7 @@ import { Check, AlertTriangle, X, Loader2, CheckCircle2 } from 'lucide-react'
 import { useTaskWorkbenchStore, type CheckResult } from '../../stores/taskWorkbench'
 import { NeonCard } from '../neon/NeonCard'
 import type { NeonAccent } from '../neon/types'
+import './ValidationChecks.css'
 
 /**
  * Focus a form field by id and scroll it into view. Used by the validation

@@ -1,0 +1,120 @@
+/* Validation Checks — Check List, Icons, and Actionable Items */
+
+.wb-checks-card {
+  margin: 0;
+}
+
+.wb-checks__toggle {
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  font-family: inherit;
+  transition: opacity 150ms ease;
+}
+
+.wb-checks__toggle:hover {
+  opacity: 0.7;
+}
+
+.wb-checks__toggle:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.wb-checks__summary-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.wb-checks__icons {
+  display: flex;
+  gap: 4px;
+}
+
+.wb-checks__count {
+  color: var(--bde-text-muted);
+  margin-left: auto;
+}
+
+.wb-checks__list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.wb-checks__list > li {
+  display: block;
+}
+
+.wb-checks__item {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  align-items: center;
+  text-align: left;
+}
+
+/* Actionable failed/warn checks render as buttons that focus the field */
+button.wb-checks__item--actionable {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin: 0;
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+}
+
+button.wb-checks__item--actionable:hover,
+button.wb-checks__item--actionable:focus-visible {
+  background: var(--bde-border, rgba(255, 255, 255, 0.04));
+  border-color: var(--bde-accent-border, rgba(47, 195, 181, 0.4));
+  outline: none;
+}
+
+.wb-checks__item-label {
+  color: var(--bde-text);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.wb-checks__item-msg {
+  color: var(--bde-text-muted);
+}
+
+/* ── Check Icons (Lucide) ── */
+.wb-check-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.wb-check-icon--pass {
+  color: var(--bde-accent);
+}
+.wb-check-icon--warn {
+  color: var(--bde-warning, #ffa500);
+}
+.wb-check-icon--fail {
+  color: var(--bde-danger);
+}
+.wb-check-icon--pending {
+  color: var(--bde-text-dim);
+  animation: bde-spin 1.5s linear infinite;
+}

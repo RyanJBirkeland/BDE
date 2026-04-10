@@ -1,0 +1,265 @@
+/* Workbench Copilot — Chat Panel, Messages, and Input */
+
+.wb-copilot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-left: 1px solid var(--bde-accent-border);
+  background: var(--bde-surface-high);
+}
+
+.wb-copilot__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--bde-accent-border);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, transparent 100%);
+}
+
+.wb-copilot__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bde-status-active);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.wb-copilot__close {
+  background: none;
+  border: none;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: color 150ms ease;
+}
+
+.wb-copilot__close:hover:not(:disabled) {
+  color: var(--bde-text);
+}
+
+.wb-copilot__close:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.wb-copilot__close:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.wb-copilot__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-copilot__bubble {
+  max-width: 90%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--bde-text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wb-copilot__bubble--user {
+  align-self: flex-end;
+  background: var(--bde-accent-surface);
+  border: 1px solid transparent;
+}
+
+.wb-copilot__bubble--assistant {
+  align-self: flex-start;
+  background: var(--bde-border);
+  border: 1px solid var(--bde-border);
+}
+
+.wb-copilot__bubble--system {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--bde-border);
+  font-style: italic;
+  color: var(--bde-text-muted);
+  font-size: 12px;
+}
+
+/*
+ * Tool-use system bubbles — shown when the copilot invokes a read-only
+ * Read/Grep/Glob tool. Compact, monospace, dimmed, with a leading marker so
+ * users can see what the copilot is grounding its answer in.
+ */
+.wb-copilot__bubble--tool-use {
+  font-family: var(--bde-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-style: normal;
+  font-size: 11px;
+  padding: 4px 8px;
+  opacity: 0.85;
+}
+
+.wb-copilot__bubble--tool-use::before {
+  content: '› ';
+  color: var(--bde-accent, currentColor);
+  font-weight: 600;
+}
+
+.wb-copilot__bubble-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.wb-copilot__time {
+  font-size: 11px;
+  color: var(--bde-text-muted);
+}
+
+.wb-copilot__insert-btn {
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent);
+  border-radius: 4px;
+  color: var(--bde-accent);
+  padding: 1px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.wb-copilot__insert-btn:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
+}
+
+.wb-copilot__insert-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.wb-copilot__insert-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.wb-copilot__loading {
+  align-self: flex-start;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-copilot__loading-text {
+  color: var(--bde-text-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.wb-copilot__cancel-btn {
+  background: none;
+  border: 1px solid var(--bde-border);
+  border-radius: 4px;
+  color: var(--bde-text-muted);
+  padding: 1px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.wb-copilot__cancel-btn:hover:not(:disabled) {
+  background: var(--bde-border);
+  border-color: var(--bde-border-hover);
+}
+
+.wb-copilot__cancel-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.wb-copilot__cancel-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.wb-copilot__input-row {
+  padding: 8px;
+  border-top: 1px solid var(--bde-border);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wb-copilot__input {
+  flex: 1;
+  resize: none;
+  padding: 8px;
+  background: var(--bde-border);
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  color: var(--bde-text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.wb-copilot__input:focus-visible {
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
+}
+
+.wb-copilot__input:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.wb-copilot__send-btn {
+  align-self: flex-end;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.wb-copilot__send-btn--active {
+  background: var(--bde-accent);
+  color: var(--bde-bg);
+  cursor: pointer;
+}
+
+.wb-copilot__send-btn--active:hover:not(:disabled) {
+  box-shadow: transparent;
+}
+
+.wb-copilot__send-btn--active:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.wb-copilot__send-btn--disabled {
+  background: var(--bde-border);
+  color: var(--bde-text-muted);
+  cursor: not-allowed;
+}
+
+.wb-copilot__send-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}

@@ -4,6 +4,7 @@ import type { SpecType } from '../../../../shared/spec-validation'
 import { useConfirm } from '../ui/ConfirmModal'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { analyzeSpec } from './spec-quality'
+import './SpecEditor.css'
 
 const SPEC_TEMPLATES: Record<string, { label: string; spec: string; specType: SpecType }> = {
   feature: {

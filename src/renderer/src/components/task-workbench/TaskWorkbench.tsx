@@ -4,7 +4,7 @@ import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { WorkbenchForm } from './WorkbenchForm'
 import { WorkbenchCopilot } from './WorkbenchCopilot'
 import { CopilotDiscoveryPopover } from './CopilotDiscoveryPopover'
-import '../../assets/task-workbench.css'
+import './TaskWorkbench.css'
 
 const COPILOT_POPOVER_SEEN_KEY = 'bde:workbench-copilot-popover-seen'
 

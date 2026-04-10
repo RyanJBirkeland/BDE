@@ -1,0 +1,140 @@
+/* Task Workbench Shell — Container, Copilot Toggle, Discovery Popover */
+
+/* ── Shell ── */
+.wb {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family: var(--bde-font-code);
+  background: var(--bde-bg);
+}
+
+.wb__copilot-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.wb__copilot-toggle button {
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent);
+  border-radius: 6px;
+  color: var(--bde-accent);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.wb__copilot-toggle button:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
+}
+
+/* ── Copilot discovery popover ── */
+.wb-copilot-popover {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: 260px;
+  padding: 14px 16px 12px;
+  background: var(--bde-surface-high);
+  border: 1px solid var(--bde-accent);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px var(--bde-accent-border),
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    transparent);
+  color: var(--bde-text, rgba(255, 255, 255, 0.9));
+  z-index: 20;
+  animation: wb-copilot-popover-fade-in 180ms ease-out;
+}
+
+@keyframes wb-copilot-popover-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.wb-copilot-popover__arrow {
+  position: absolute;
+  top: -7px;
+  right: 16px;
+  width: 12px;
+  height: 12px;
+  background: var(--glass-surface, rgba(10, 14, 24, 0.95));
+  border-top: 1px solid var(--bde-accent, #22d3ee);
+  border-left: 1px solid var(--bde-accent, #22d3ee);
+  transform: rotate(45deg);
+}
+
+.wb-copilot-popover__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--bde-text-muted, rgba(255, 255, 255, 0.55));
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wb-copilot-popover__close:hover {
+  color: var(--bde-text);
+  background: var(--bde-hover-strong);
+}
+
+.wb-copilot-popover__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bde-accent, #22d3ee);
+}
+
+.wb-copilot-popover__body {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--bde-text-muted, rgba(255, 255, 255, 0.7));
+}
+
+.wb-copilot-popover__cta {
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent, #22d3ee);
+  border-radius: 5px;
+  color: var(--bde-accent, #22d3ee);
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.wb-copilot-popover__cta:hover {
+  background: var(--bde-accent-surface);
+  box-shadow: transparent);
+}
+
+.wb-copilot-popover__cta:focus-visible {
+  outline: 2px solid var(--bde-accent, #22d3ee);
+  outline-offset: 2px;
+}
+
+.wb__separator {
+  width: 1px;
+  background: var(--bde-border);
+  cursor: col-resize;
+}

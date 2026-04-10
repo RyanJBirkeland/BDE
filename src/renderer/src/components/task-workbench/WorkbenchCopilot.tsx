@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTaskWorkbenchStore, type CopilotMessage } from '../../stores/taskWorkbench'
 import { formatToolUse } from './copilot-utils'
+import './WorkbenchCopilot.css'
 
 interface WorkbenchCopilotProps {
   onClose: () => void

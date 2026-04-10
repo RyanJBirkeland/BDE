@@ -1,0 +1,100 @@
+/* Spec Editor — Toolbar, Buttons, and Textarea */
+
+.wb-spec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-spec__toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wb-spec__btn {
+  background: none;
+  border: 1px solid var(--bde-border);
+  border-radius: 6px;
+  color: var(--bde-text-muted);
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.wb-spec__btn:hover:not(:disabled) {
+  background: var(--bde-border);
+  border-color: var(--bde-border-hover);
+  color: var(--bde-text);
+}
+
+.wb-spec__btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.wb-spec__btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.wb-spec__btn--primary {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent);
+  color: var(--bde-accent);
+}
+
+.wb-spec__btn--primary:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+  box-shadow: transparent;
+}
+
+.wb-spec__btn--primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.wb-spec__btn--primary:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.wb-spec__btn--research {
+  margin-left: auto;
+}
+
+.wb-spec__textarea {
+  min-height: 200px;
+  max-height: 60vh;
+  resize: vertical;
+  padding: 12px;
+  background: var(--bde-overlay);
+  border: 1px solid var(--bde-accent-border);
+  border-radius: 8px;
+  color: var(--bde-text);
+  font-size: 13px;
+  font-family: var(--bde-font-code);
+  line-height: 1.6;
+  outline: none;
+  width: 100%;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.wb-spec__textarea::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.wb-spec__textarea:focus-visible {
+  border-color: var(--bde-accent);
+  box-shadow: transparent;
+}
+
+.wb-spec__textarea:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}

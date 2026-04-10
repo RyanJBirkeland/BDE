@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import type { TaskDependency, SprintTask } from '../../../../shared/types'
 import { NeonBadge } from '../neon/NeonBadge'
+import './DependencyPicker.css'
 
 interface DependencyPickerProps {
   dependencies: TaskDependency[]
