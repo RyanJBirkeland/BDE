@@ -11,15 +11,9 @@
   color: var(--bde-text);
   font-size: var(--bde-size-sm);
 }
-
-.diff-file-item:hover {
-  background: var(--bde-border);
-}
-
 .diff-file-item--active {
   background: var(--bde-border);
 }
-
 .diff-file-item__name {
   white-space: nowrap;
   overflow: hidden;
@@ -27,7 +21,6 @@
   flex: 1;
   min-width: 0;
 }
-
 .diff-file-item__badge {
   display: flex;
   gap: 4px;
@@ -36,26 +29,21 @@
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-xs);
 }
-
 .diff-file-item__add {
   color: var(--bde-diff-add);
 }
-
 .diff-file-item__del {
   color: var(--bde-diff-del);
 }
-
 .diff-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: auto;
   background: var(--bde-bg);
 }
-
 .diff-file {
   border-bottom: 1px solid var(--bde-border);
 }
-
 .diff-file__header {
   display: flex;
   align-items: center;
@@ -67,38 +55,31 @@
   top: 0;
   z-index: 1;
 }
-
 .diff-file--active {
   background: var(--bde-border);
 }
-
 .diff-file__path {
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
   color: var(--bde-text);
   font-weight: 500;
 }
-
 .diff-file__stats {
   display: flex;
   gap: 8px;
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
 }
-
 .diff-file__stats-add {
   color: var(--bde-diff-add);
 }
-
 .diff-file__stats-del {
   color: var(--bde-diff-del);
 }
-
 .diff-hunk--focused {
   outline: 1px solid var(--bde-accent);
   outline-offset: -1px;
 }
-
 .diff-hunk__header {
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-xs);
@@ -107,7 +88,6 @@
   background: var(--bde-hover-subtle);
   border-bottom: 1px solid var(--bde-border);
 }
-
 .diff-line {
   display: flex;
   font-family: var(--bde-font-code);
@@ -115,21 +95,14 @@
   line-height: 1.5;
   white-space: pre;
 }
-
 .diff-line--add {
   background: var(--bde-diff-add-bg);
   color: var(--bde-diff-add);
 }
-
 .diff-line--del {
   background: var(--bde-diff-del-bg);
   color: var(--bde-diff-del);
 }
-
-.diff-line--ctx {
-  color: var(--bde-text);
-}
-
 .diff-line__gutter {
   width: 48px;
   flex-shrink: 0;
@@ -139,31 +112,25 @@
   opacity: 0.5;
   user-select: none;
 }
-
 .diff-line__marker {
   width: 16px;
   flex-shrink: 0;
   text-align: center;
   user-select: none;
 }
-
 .diff-line__text {
   padding-right: 12px;
 }
-
 .diff-line--selected {
   background: color-mix(in srgb, var(--bde-accent) 15%, transparent) !important;
 }
-
 .diff-line__gutter--selectable {
   cursor: pointer;
   user-select: none;
 }
-
 .diff-line__gutter--selectable:hover {
   background: color-mix(in srgb, var(--bde-accent) 20%, transparent);
 }
-
 .diff-selection-trigger {
   display: flex;
   align-items: center;
@@ -183,11 +150,9 @@
   z-index: 3;
   transition: transform var(--bde-transition-fast);
 }
-
 .diff-selection-trigger:hover {
   transform: scale(1.15);
 }
-
 .diff-pending-comment__remove {
   border: none;
   border-radius: var(--bde-radius-sm);
@@ -197,83 +162,64 @@
   color: var(--bde-danger-text);
   cursor: pointer;
 }
-
 .diff-pending-comment__remove:hover:not(:disabled) {
   background: var(--bde-surface);
 }
-
 .diff-file-item {
   color: var(--bde-text);
 }
-
 .diff-file-item:hover {
   background: var(--bde-border);
 }
-
 .diff-file-item--active {
   background: var(--bde-border);
   /* Neon enhancement: cyan left indicator */
   box-shadow: inset 2px 0 0 var(--bde-accent);
 }
-
 .diff-content {
   background: var(--bde-bg);
 }
-
 .diff-file {
   border-bottom: 1px solid var(--bde-accent-border);
 }
-
 .diff-file__header {
   background: var(--bde-accent-surface);
   border-bottom: 1px solid var(--bde-accent-border);
 }
-
 .diff-file--active {
   background: var(--bde-accent-border);
 }
-
 .diff-file__path {
   color: var(--bde-text);
 }
-
 .diff-hunk--focused {
   /* Neon enhancement: cyan outline */
   outline: 1px solid var(--bde-accent);
 }
-
 .diff-hunk__header {
   color: var(--bde-text-muted);
   background: var(--bde-border);
   border-bottom: 1px solid var(--bde-accent-border);
 }
-
 .diff-line--ctx {
   color: var(--bde-text);
 }
-
 .diff-line__gutter {
   color: var(--bde-text-muted);
 }
-
 .diff-line--selected {
   background: var(--bde-accent-surface) !important;
 }
-
 .diff-line__gutter--selectable:hover {
   background: var(--bde-accent-surface);
 }
-
 .diff-selection-trigger {
   background: var(--bde-accent);
   color: var(--bde-bg);
 }
-
 .diff-pending-comment__remove {
   color: var(--bde-danger);
 }
-
 .diff-pending-comment__remove:hover:not(:disabled) {
   background: var(--bde-accent-surface);
 }
-

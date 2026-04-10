@@ -4,7 +4,6 @@
   flex-direction: column;
   overflow: hidden;
 }
-
 .diff-view__header {
   display: flex;
   align-items: center;
@@ -15,7 +14,6 @@
   flex-shrink: 0;
   position: relative;
 }
-
 .diff-view__header::before {
   content: 'DIFF';
   font-size: 13px;
@@ -28,7 +26,6 @@
   background-clip: text;
   flex-shrink: 0;
 }
-
 .diff-view__header::after {
   content: '';
   position: absolute;
@@ -38,12 +35,10 @@
   height: 1px;
   background: var(--bde-header-gradient);
 }
-
 .diff-view__repos {
   display: flex;
   gap: 6px;
 }
-
 .diff-view__chip {
   font-size: var(--bde-size-sm);
   font-weight: 500;
@@ -54,25 +49,17 @@
   color: var(--bde-text-muted);
   cursor: pointer;
 }
-
-.diff-view__chip:hover {
-  color: var(--bde-text);
-  border-color: var(--bde-text-muted);
-}
-
 .diff-view__chip--active {
   background: var(--bde-accent);
   color: var(--bde-void);
   border-color: var(--bde-accent);
 }
-
 .diff-view__meta {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-left: auto;
 }
-
 .diff-view__branch {
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
@@ -81,25 +68,21 @@
   padding: 1px 8px;
   border-radius: var(--bde-radius-sm);
 }
-
 .diff-view__pr-link {
   font-size: var(--bde-size-sm);
   color: var(--bde-accent);
   text-decoration: none;
   cursor: pointer;
 }
-
 .diff-view__pr-link:hover:not(:disabled) {
   text-decoration: underline;
 }
-
 .diff-view__error {
   padding: 8px 16px;
   background: var(--bde-error-bg);
   color: var(--bde-danger-text);
   font-size: var(--bde-size-sm);
 }
-
 .diff-view__loading {
   flex: 1;
   display: flex;
@@ -108,7 +91,6 @@
   color: var(--bde-text-muted);
   font-size: var(--bde-size-lg);
 }
-
 .diff-view__loading-grid {
   display: flex;
   gap: 12px;
@@ -116,68 +98,54 @@
   height: 100%;
   padding: 12px;
 }
-
 .diff-view__loading-sidebar {
   width: 260px;
   flex-shrink: 0;
 }
-
 .diff-view__loading-content {
   flex: 1;
 }
-
 .diff-view-container {
   flex: 1;
   display: flex;
   overflow: hidden;
 }
-
 .diff-view__header {
   border-bottom: 1px solid var(--bde-accent-border);
   background: var(--bde-surface-high);
 }
-
 .diff-view__header::before {
   /* DIFF label gradient */
   background: linear-gradient(135deg, var(--bde-accent), var(--bde-status-active));
 }
-
 .diff-view__header::after {
   /* Bottom gradient line */
   background: linear-gradient(90deg, transparent, var(--bde-accent-border), transparent);
 }
-
 .diff-view__chip {
   border: 1px solid var(--bde-accent-border);
   color: var(--bde-text-muted);
 }
-
 .diff-view__chip:hover {
   color: var(--bde-text);
   border-color: var(--bde-text-muted);
 }
-
 .diff-view__chip--active {
   background: var(--bde-accent);
   color: var(--bde-bg);
   border-color: var(--bde-accent);
 }
-
 .diff-view__branch {
   color: var(--bde-text-muted);
   background: var(--bde-accent-border);
 }
-
 .diff-view__pr-link {
   color: var(--bde-accent);
 }
-
 .diff-view__error {
   background: var(--bde-danger-surface);
   color: var(--bde-danger);
 }
-
 .diff-view__loading {
   color: var(--bde-text-muted);
 }
-

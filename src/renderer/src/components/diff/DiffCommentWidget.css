@@ -5,7 +5,6 @@
   background: var(--bde-bg);
   overflow: hidden;
 }
-
 .diff-comment-widget__toggle {
   display: flex;
   align-items: center;
@@ -20,16 +19,13 @@
   cursor: pointer;
   transition: background var(--bde-transition-fast);
 }
-
 .diff-comment-widget__toggle:hover {
   background: var(--bde-surface-high);
 }
-
 .diff-comment-widget__thread {
   display: flex;
   flex-direction: column;
 }
-
 .diff-comment-widget__comment {
   padding: 8px 12px;
   display: flex;
@@ -37,34 +33,28 @@
   gap: 4px;
   border-top: 1px solid var(--bde-border);
 }
-
 .diff-comment-widget__header {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: var(--bde-size-xs);
 }
-
 .diff-comment-widget__author {
   font-weight: 600;
   color: var(--bde-text);
 }
-
 .diff-comment-widget__time {
   color: var(--bde-text-dim);
   margin-left: auto;
 }
-
 .diff-comment-widget__body {
   font-size: var(--bde-size-xs);
   color: var(--bde-text);
   line-height: 1.5;
 }
-
 .diff-comment-widget__body p {
   margin: 2px 0;
 }
-
 .diff-comment-widget__body code {
   font-family: var(--bde-font-code);
   font-size: 11px;
@@ -72,11 +62,6 @@
   padding: 1px 3px;
   border-radius: 2px;
 }
-
-.diff-comment-widget--pending {
-  border-color: var(--bde-warning);
-}
-
 .diff-comment-widget__pending-badge {
   font-size: 10px;
   font-weight: 600;
@@ -86,47 +71,36 @@
   border-radius: 9999px;
   margin-left: auto;
 }
-
 .diff-comment-widget {
   border: 1px solid var(--bde-accent-border);
   background: var(--bde-bg);
 }
-
 .diff-comment-widget__toggle {
   color: var(--bde-text-muted);
   background: var(--bde-accent-surface);
 }
-
 .diff-comment-widget__toggle:hover {
   background: var(--bde-surface);
 }
-
 .diff-comment-widget__comment {
   border-top: 1px solid var(--bde-accent-border);
 }
-
 .diff-comment-widget__author {
   color: var(--bde-text);
 }
-
 .diff-comment-widget__time {
   color: var(--bde-text-dim);
 }
-
 .diff-comment-widget__body {
   color: var(--bde-text);
 }
-
 .diff-comment-widget__body code {
   background: var(--bde-accent-surface);
 }
-
 .diff-comment-widget--pending {
   border-color: var(--bde-warning);
 }
-
 .diff-comment-widget__pending-badge {
   color: var(--bde-warning);
   background: var(--bde-warning-surface);
 }
-
