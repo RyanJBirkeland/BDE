@@ -8,6 +8,7 @@ import { promisify } from 'util'
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 import { runPostMergeDedup } from './post-merge-dedup'
+import { rebaseOntoMain } from '../agent-manager/git-operations'
 
 const execFileAsync = promisify(execFile)
 const logger = createLogger('review-merge-service')
@@ -26,36 +27,6 @@ export interface MergeResult {
   success: boolean
   error?: string
   conflicts?: string[]
-}
-
-/**
- * Rebase agent branch onto origin/main.
- */
-export async function rebaseOntoMain(
-  worktreePath: string,
-  env: NodeJS.ProcessEnv
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    logger.info(`[rebaseOntoMain] Fetching origin/main`)
-    await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: worktreePath, env })
-
-    logger.info(`[rebaseOntoMain] Rebasing onto origin/main`)
-    await execFileAsync('git', ['rebase', 'origin/main'], { cwd: worktreePath, env })
-
-    return { success: true }
-  } catch (err: unknown) {
-    const errMsg = getErrorMessage(err)
-    logger.error(`[rebaseOntoMain] Rebase failed: ${errMsg}`)
-
-    // Abort the rebase
-    try {
-      await execFileAsync('git', ['rebase', '--abort'], { cwd: worktreePath, env })
-    } catch {
-      /* best-effort abort */
-    }
-
-    return { success: false, error: errMsg }
-  }
 }
 
 /**
@@ -151,9 +122,9 @@ export async function mergeAgentBranch(options: MergeOptions): Promise<MergeResu
   }
 
   // Rebase agent branch onto origin/main
-  const rebaseResult = await rebaseOntoMain(worktreePath, env)
+  const rebaseResult = await rebaseOntoMain(worktreePath, env, logger)
   if (!rebaseResult.success) {
-    return { success: false, error: `Rebase failed: ${rebaseResult.error}` }
+    return { success: false, error: `Rebase failed: ${rebaseResult.notes}` }
   }
 
   // Execute merge

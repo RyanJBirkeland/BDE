@@ -515,12 +515,13 @@ describe('Review handlers', () => {
       const handlers = captureHandlers()
       await handlers['review:mergeLocally'](_mockEvent, { taskId: 'task-1', strategy: 'merge' })
 
-      // Verify ordering: rev-parse → status → fetch → rebase → merge → worktree-remove → branch-delete
+      // Verify ordering: rev-parse → status → fetch → rebase → rev-parse (baseSha) → merge → worktree-remove → branch-delete
       expect(gitCommandCalls).toEqual([
         'rev-parse',
         'status',
         'fetch',
         'rebase',
+        'rev-parse',
         'merge',
         'worktree-remove',
         'branch-delete'
@@ -582,7 +583,7 @@ describe('Review handlers', () => {
       // Verify error returned
       expect(result).toEqual({
         success: false,
-        error: 'Rebase failed: Rebase conflict'
+        error: 'Rebase failed: Rebase onto main failed — manual conflict resolution needed.'
       })
 
       // Verify rebase was aborted
@@ -695,7 +696,7 @@ describe('Review handlers', () => {
       // Verify error returned
       expect(result).toEqual({
         success: false,
-        error: 'Rebase failed: Rebase conflict'
+        error: 'Rebase failed: Rebase onto main failed — manual conflict resolution needed.'
       })
 
       // Verify rebase was aborted

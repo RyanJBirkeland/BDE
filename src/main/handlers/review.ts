@@ -16,15 +16,14 @@ import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   mergeAgentBranch,
-  rebaseOntoMain,
   cleanupWorktree,
   executeMergeStrategy
 } from '../services/review-merge-service'
-import { createPullRequest } from '../services/review-pr-service'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
+import { rebaseOntoMain, pushBranch, checkExistingPr } from '../agent-manager/git-operations'
 
 const execFileAsync = promisify(execFile)
 const logger = createLogger('review-handlers')
@@ -226,28 +225,45 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     )
     const branch = branchOut.trim()
 
-    // Create PR via service
-    const result = await createPullRequest({
-      worktreePath: task.worktree_path,
-      branch,
-      title,
-      body,
-      env
-    })
+    // Push the branch
+    const pushResult = await pushBranch(task.worktree_path, branch, env, logger)
+    if (!pushResult.success) {
+      throw new Error(pushResult.error || 'Push failed')
+    }
 
-    if (!result.success || !result.prUrl) {
-      throw new Error(result.error || 'PR creation failed')
+    // Check for existing PR or create new one
+    const existing = await checkExistingPr(task.worktree_path, branch, env, logger)
+    const repoConfig = getRepoConfig(task.repo)
+    let prUrl: string | null
+    let prNumber: number | null
+
+    if (existing) {
+      prUrl = existing.prUrl
+      prNumber = existing.prNumber
+    } else {
+      const result = await execFileAsync(
+        'gh',
+        ['pr', 'create', '--title', title, '--body', body, '--head', branch],
+        { cwd: task.worktree_path, env }
+      )
+      const trimmedPrUrl = result.stdout.trim()
+      const prNumberMatch = trimmedPrUrl.match(/\/pull\/(\d+)$/)
+      prUrl = trimmedPrUrl
+      prNumber = prNumberMatch ? parseInt(prNumberMatch[1], 10) : null
+    }
+
+    if (!prUrl) {
+      throw new Error('PR creation failed')
     }
 
     // Update task with PR info
     _updateTask(taskId, {
-      pr_url: result.prUrl,
-      pr_number: result.prNumber ?? null,
+      pr_url: prUrl,
+      pr_number: prNumber ?? null,
       pr_status: 'open'
     })
 
     // Clean up worktree (branch stays for the PR)
-    const repoConfig = getRepoConfig(task.repo)
     if (repoConfig) {
       await cleanupWorktree(task.worktree_path, branch, repoConfig.localPath, env)
     }
@@ -261,7 +277,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     if (updated) notifySprintMutation('updated', updated)
     deps.onStatusTerminal(taskId, 'done')
 
-    return { prUrl: result.prUrl }
+    return { prUrl }
   })
 
   // review:requestRevision — send task back for another pass
@@ -414,9 +430,9 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     }
 
     // Rebase agent branch onto origin/main
-    const rebaseResult = await rebaseOntoMain(task.worktree_path, env)
+    const rebaseResult = await rebaseOntoMain(task.worktree_path, env, logger)
     if (!rebaseResult.success) {
-      return { success: false, error: `Rebase failed: ${rebaseResult.error}` }
+      return { success: false, error: `Rebase failed: ${rebaseResult.notes}` }
     }
 
     // Execute merge strategy
@@ -477,7 +493,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
 
     // Rebase via service
-    const result = await rebaseOntoMain(task.worktree_path, env)
+    const result = await rebaseOntoMain(task.worktree_path, env, logger)
     if (!result.success) {
       // Extract conflict files
       const conflicts: string[] = []
@@ -491,7 +507,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       } catch {
         /* best-effort */
       }
-      return { success: false, error: result.error, conflicts }
+      return { success: false, error: result.notes, conflicts }
     }
 
     // Get the new base SHA and persist it

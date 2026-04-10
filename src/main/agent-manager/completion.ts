@@ -10,11 +10,9 @@ import type { AgentEvent, FailureReason } from '../../shared/types'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
 import { captureDiffSnapshot } from './diff-snapshot'
 import { nowIso } from '../../shared/time'
+import { rebaseOntoMain, findOrCreatePR as findOrCreatePRUtil } from './git-operations'
 
 const execFile = promisify(execFileCb)
-
-const PR_CREATE_MAX_ATTEMPTS = 3
-const PR_CREATE_BACKOFF_MS = [3000, 8000]
 
 type AutoReviewRule = {
   id: string
@@ -26,10 +24,6 @@ type AutoReviewRule = {
     excludePatterns?: string[]
   }
   action: 'auto-merge' | 'auto-approve'
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
@@ -62,58 +56,11 @@ export interface ResolveFailureOpts {
   repo: ISprintTaskRepository
 }
 
-function parsePrOutput(stdout: string): { prUrl: string | null; prNumber: number | null } {
-  // gh pr create outputs the PR URL as the last line, e.g.:
-  // https://github.com/owner/repo/pull/42
-  const urlMatch = stdout.match(/https:\/\/github\.com\/[^\s]+\/pull\/(\d+)/)
-  if (!urlMatch) return { prUrl: null, prNumber: null }
-  return { prUrl: urlMatch[0], prNumber: parseInt(urlMatch[1], 10) }
-}
-
-async function generatePrBody(worktreePath: string, branch: string): Promise<string> {
-  const env = buildAgentEnv()
-  const sections: string[] = []
-
-  try {
-    const { stdout: log } = await execFile('git', ['log', '--oneline', `origin/main..${branch}`], {
-      cwd: worktreePath,
-      env
-    })
-    if (log.trim()) {
-      sections.push(
-        '## Commits\n' +
-          log
-            .trim()
-            .split('\n')
-            .map((l) => `- ${l}`)
-            .join('\n')
-      )
-    }
-  } catch {
-    /* non-fatal */
-  }
-
-  try {
-    const { stdout: stat } = await execFile('git', ['diff', '--stat', `origin/main..${branch}`], {
-      cwd: worktreePath,
-      env
-    })
-    if (stat.trim()) {
-      sections.push('## Changes\n```\n' + stat.trim() + '\n```')
-    }
-  } catch {
-    /* non-fatal */
-  }
-
-  sections.push('🤖 Automated by BDE Agent Manager')
-
-  return sections.join('\n\n')
-}
-
 async function detectBranch(worktreePath: string): Promise<string> {
+  const env = buildAgentEnv()
   const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
     cwd: worktreePath,
-    env: buildAgentEnv()
+    env
   })
   return stdout.trim()
 }
@@ -123,15 +70,16 @@ async function autoCommitIfDirty(
   title: string,
   logger: Logger
 ): Promise<void> {
+  const env = buildAgentEnv()
   const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
     cwd: worktreePath,
-    env: buildAgentEnv()
+    env
   })
   if (statusOut.trim()) {
     logger.info(`[completion] auto-committing uncommitted changes`)
     // Use -A to capture new (untracked) files created by agents, not just modifications.
     // The repo's .gitignore excludes node_modules, .env, etc.
-    await execFile('git', ['add', '-A'], { cwd: worktreePath, env: buildAgentEnv() })
+    await execFile('git', ['add', '-A'], { cwd: worktreePath, env })
 
     // Unstage test artifacts that may have been previously tracked
     const artifactPaths = ['test-results/', 'coverage/', '*.log', 'playwright-report/']
@@ -139,7 +87,7 @@ async function autoCommitIfDirty(
       try {
         await execFile('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
           cwd: worktreePath,
-          env: buildAgentEnv()
+          env
         })
       } catch {
         // Non-fatal — artifact may not exist or not be tracked
@@ -149,7 +97,7 @@ async function autoCommitIfDirty(
     // Re-check if staged changes remain (unstaging may have removed everything)
     const { stdout: stagedOut } = await execFile('git', ['diff', '--cached', '--name-only'], {
       cwd: worktreePath,
-      env: buildAgentEnv()
+      env
     })
 
     if (!stagedOut.trim()) {
@@ -163,7 +111,7 @@ async function autoCommitIfDirty(
       ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
       {
         cwd: worktreePath,
-        env: buildAgentEnv()
+        env
       }
     )
   }
@@ -179,10 +127,11 @@ async function cleanupWorktreeAndBranch(
   repoPath: string,
   logger: Logger
 ): Promise<void> {
+  const env = buildAgentEnv()
   try {
     await execFile('git', ['worktree', 'remove', worktreePath, '--force'], {
       cwd: repoPath,
-      env: buildAgentEnv()
+      env
     })
   } catch (err) {
     logger.warn(`[completion] Failed to remove worktree ${worktreePath}: ${err}`)
@@ -191,7 +140,7 @@ async function cleanupWorktreeAndBranch(
   try {
     await execFile('git', ['branch', '-D', branch], {
       cwd: repoPath,
-      env: buildAgentEnv()
+      env
     })
   } catch (err) {
     logger.warn(`[completion] Failed to delete branch ${branch}: ${err}`)
@@ -259,9 +208,10 @@ async function executeSquashMerge(
   logger: Logger,
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
 ): Promise<void> {
+  const env = buildAgentEnv()
   const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
     cwd: repoPath,
-    env: buildAgentEnv()
+    env
   })
   if (statusOut.trim()) {
     logger.warn(
@@ -273,11 +223,11 @@ async function executeSquashMerge(
   try {
     await execFile('git', ['merge', '--squash', branch], {
       cwd: repoPath,
-      env: buildAgentEnv()
+      env
     })
     await execFile('git', ['commit', '-m', `${sanitizeForGit(title)} (#${taskId})`], {
       cwd: repoPath,
-      env: buildAgentEnv()
+      env
     })
 
     try {
@@ -305,7 +255,7 @@ async function executeSquashMerge(
     try {
       await execFile('git', ['merge', '--abort'], {
         cwd: repoPath,
-        env: buildAgentEnv()
+        env
       })
     } catch {
       /* best-effort */
@@ -320,10 +270,11 @@ async function executeSquashMerge(
 async function getDiffFileStats(
   worktreePath: string
 ): Promise<Array<{ path: string; additions: number; deletions: number }> | null> {
+  const env = buildAgentEnv()
   const { stdout: numstatOut } = await execFile(
     'git',
     ['diff', '--numstat', 'origin/main...HEAD'],
-    { cwd: worktreePath, env: buildAgentEnv() }
+    { cwd: worktreePath, env }
   )
 
   if (!numstatOut.trim()) {
@@ -418,11 +369,12 @@ async function hasCommitsAheadOfMain(
   logger: Logger,
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
 ): Promise<boolean> {
+  const env = buildAgentEnv()
   try {
     const { stdout: diffOut } = await execFile(
       'git',
       ['rev-list', '--count', `origin/main..${branch}`],
-      { cwd: worktreePath, env: buildAgentEnv() }
+      { cwd: worktreePath, env }
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
       const summaryNote = agentSummary
@@ -503,163 +455,9 @@ async function attemptAutoMerge(
 }
 
 /**
- * Rebase the agent's branch onto origin/main to ensure it's up-to-date.
- * Returns { success: true, baseSha } if rebase succeeds, { success: false, notes: string } if it fails.
+ * Exported wrapper for findOrCreatePR from git-operations.
+ * Used by review-approve-push flow (push + PR creation deferred from agent completion).
  */
-async function rebaseOntoMain(
-  worktreePath: string,
-  logger: Logger
-): Promise<{ success: boolean; notes?: string; baseSha?: string }> {
-  try {
-    // Fetch origin/main
-    logger.info(`[completion] fetching origin/main for rebase`)
-    await execFile('git', ['fetch', 'origin', 'main'], {
-      cwd: worktreePath,
-      env: buildAgentEnv()
-    })
-
-    // Rebase onto origin/main
-    logger.info(`[completion] rebasing onto origin/main`)
-    await execFile('git', ['rebase', 'origin/main'], {
-      cwd: worktreePath,
-      env: buildAgentEnv()
-    })
-
-    const { stdout: shaOut } = await execFile('git', ['rev-parse', 'origin/main'], {
-      cwd: worktreePath,
-      env: buildAgentEnv()
-    })
-
-    logger.info(`[completion] rebase onto main succeeded`)
-    return { success: true, baseSha: shaOut.trim() }
-  } catch (err) {
-    // Rebase failed — abort to restore clean state
-    logger.warn(`[completion] rebase onto main failed: ${err}`)
-    try {
-      await execFile('git', ['rebase', '--abort'], {
-        cwd: worktreePath,
-        env: buildAgentEnv()
-      })
-      logger.info(`[completion] rebase aborted successfully`)
-    } catch (abortErr) {
-      logger.error(`[completion] failed to abort rebase: ${abortErr}`)
-    }
-
-    return {
-      success: false,
-      notes: 'Rebase onto main failed — manual conflict resolution needed.'
-    }
-  }
-}
-
-/**
- * Check if a PR already exists for the given branch.
- * Returns `{ prUrl, prNumber }` if found, `null` otherwise.
- */
-async function checkExistingPr(
-  worktreePath: string,
-  branch: string,
-  logger: Logger
-): Promise<{ prUrl: string; prNumber: number } | null> {
-  try {
-    const { stdout: listOut } = await execFile(
-      'gh',
-      ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
-      { cwd: worktreePath, env: buildAgentEnv() }
-    )
-    const trimmed = listOut.trim()
-    if (trimmed && trimmed !== 'null') {
-      const existing = JSON.parse(trimmed)
-      if (existing && existing.url && existing.number) {
-        logger.info(`[completion] PR already exists for branch ${branch}: ${existing.url}`)
-        return { prUrl: existing.url, prNumber: existing.number }
-      }
-    }
-  } catch (err) {
-    logger.warn(`[completion] Failed to check for existing PR on branch ${branch}: ${err}`)
-  }
-  return null
-}
-
-/**
- * Create a new PR via `gh pr create`. Handles the race condition where a PR
- * was created between the check and create calls by falling back to a fetch.
- * Returns `{ prUrl, prNumber }` (either may be null if creation failed).
- */
-async function createNewPr(
-  worktreePath: string,
-  branch: string,
-  title: string,
-  ghRepo: string,
-  logger: Logger
-): Promise<{ prUrl: string | null; prNumber: number | null }> {
-  let prUrl: string | null = null
-  let prNumber: number | null = null
-  let lastError: unknown = null
-
-  const body = await generatePrBody(worktreePath, branch)
-
-  for (let attempt = 0; attempt < PR_CREATE_MAX_ATTEMPTS; attempt++) {
-    if (attempt > 0) {
-      const delayMs =
-        PR_CREATE_BACKOFF_MS[attempt - 1] ?? PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1]
-      logger.info(
-        `[completion] Retrying PR creation for branch ${branch} (attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS}) after ${delayMs}ms`
-      )
-      await sleep(delayMs)
-    }
-
-    try {
-      const sanitizedTitle = sanitizeForGit(title)
-      const { stdout: prOut } = await execFile(
-        'gh',
-        [
-          'pr',
-          'create',
-          '--title',
-          sanitizedTitle,
-          '--body',
-          body,
-          '--head',
-          branch,
-          '--repo',
-          ghRepo
-        ],
-        { cwd: worktreePath, env: buildAgentEnv() }
-      )
-      const parsed = parsePrOutput(prOut)
-      prUrl = parsed.prUrl
-      prNumber = parsed.prNumber
-      logger.info(`[completion] created new PR ${prUrl}`)
-      return { prUrl, prNumber }
-    } catch (err) {
-      lastError = err
-      const errMsg = String(err)
-
-      // If PR creation failed because one already exists (race condition), fetch it immediately — no retry needed
-      if (errMsg.includes('already exists') || errMsg.includes('pull request already exists')) {
-        logger.info(
-          `[completion] PR creation failed because one already exists, fetching existing PR`
-        )
-        const existing = await checkExistingPr(worktreePath, branch, logger)
-        if (existing) {
-          return { prUrl: existing.prUrl, prNumber: existing.prNumber }
-        }
-      }
-
-      logger.warn(
-        `[completion] gh pr create attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS} failed: ${err}`
-      )
-    }
-  }
-
-  logger.warn(
-    `[completion] PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}: ${lastError}`
-  )
-  return { prUrl: null, prNumber: null }
-}
-
-/** Exported for use by the review-approve-push flow (push + PR creation deferred from agent completion). */
 export async function findOrCreatePR(
   worktreePath: string,
   branch: string,
@@ -667,10 +465,8 @@ export async function findOrCreatePR(
   ghRepo: string,
   logger: Logger
 ): Promise<{ prUrl: string | null; prNumber: number | null }> {
-  const existing = await checkExistingPr(worktreePath, branch, logger)
-  if (existing) return existing
-
-  return createNewPr(worktreePath, branch, title, ghRepo, logger)
+  const env = buildAgentEnv()
+  return findOrCreatePRUtil(worktreePath, branch, title, ghRepo, env, logger)
 }
 
 /**
@@ -741,6 +537,7 @@ export function classifyFailureReason(notes: string | undefined): FailureReason 
 
 export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
   const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo } = opts
+  const env = buildAgentEnv()
 
   // 0. Guard: worktree must still exist (macOS /tmp can evict it)
   if (!existsSync(worktreePath)) {
@@ -796,7 +593,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   let rebaseBaseSha: string | undefined
   let rebaseSucceeded = false
   try {
-    const rebaseResult = await rebaseOntoMain(worktreePath, logger)
+    const rebaseResult = await rebaseOntoMain(worktreePath, env, logger)
     if (!rebaseResult.success) {
       rebaseNote = rebaseResult.notes
     } else {
@@ -896,5 +693,3 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
     return isTerminal
   }
 }
-
-export { PR_CREATE_MAX_ATTEMPTS }
