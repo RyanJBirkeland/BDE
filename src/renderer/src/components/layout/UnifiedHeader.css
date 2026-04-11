@@ -354,7 +354,7 @@
    lets panels collapse when the Group container width isn't
    resolved during initial render. */
 [data-panel] {
-  min-width: revert !important;
+  min-width: revert;
 }
 
 /* ── Quick Create Bar ── */

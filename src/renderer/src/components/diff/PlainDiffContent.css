@@ -122,7 +122,7 @@
   padding-right: var(--bde-space-3);
 }
 .diff-line--selected {
-  background: color-mix(in srgb, var(--bde-accent) 15%, transparent) !important;
+  background: color-mix(in srgb, var(--bde-accent) 15%, transparent);
 }
 .diff-line__gutter--selectable {
   cursor: pointer;
@@ -208,7 +208,7 @@
   color: var(--bde-text-muted);
 }
 .diff-line--selected {
-  background: var(--bde-accent-surface) !important;
+  background: var(--bde-accent-surface);
 }
 .diff-line__gutter--selectable:hover {
   background: var(--bde-accent-surface);

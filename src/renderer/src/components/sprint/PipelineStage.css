@@ -50,11 +50,6 @@
   background: var(--bde-warning);
 }
 
-.pipeline-stage__dot--active {
-  background: var(--bde-status-active);
-  animation: pipeline-pulse 2s ease-in-out infinite;
-}
-
 .pipeline-stage__dot--review {
   background: var(--bde-status-review);
 }

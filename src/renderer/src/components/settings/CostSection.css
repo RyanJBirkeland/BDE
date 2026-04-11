@@ -285,7 +285,7 @@
 }
 
 .cost-table__num {
-  text-align: right !important;
+  text-align: right;
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
 }

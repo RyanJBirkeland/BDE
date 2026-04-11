@@ -14,10 +14,10 @@
   transition: background 0.15s ease;
 }
 .ide-separator--h {
-  width: 4px !important;
+  width: 4px;
 }
 .ide-separator--v {
-  height: 4px !important;
+  height: 4px;
 }
 /* Neon Theme Overrides */
 .ide-view {

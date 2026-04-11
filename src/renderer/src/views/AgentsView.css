@@ -70,7 +70,7 @@
 /* Prevent the fleet-list panel from collapsing to 0 at initial render
    (react-resizable-panels sets minWidth:0 inline; this overrides it). */
 .agents-view [data-panel]:first-child {
-  min-width: 160px !important;
+  min-width: 160px;
 }
 
 /* ── Agents Sidebar ── */

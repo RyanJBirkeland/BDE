@@ -817,9 +817,6 @@
 
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .pipeline-stage__dot--active {
-    animation: none;
-  }
   .task-pill--arriving {
     animation: none;
   }
@@ -1192,5 +1189,5 @@
 }
 
 .dag-overlay__node:hover {
-  opacity: 1 !important;
+  opacity: 1;
 }
