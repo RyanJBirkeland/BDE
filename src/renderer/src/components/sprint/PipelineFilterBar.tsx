@@ -15,6 +15,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
   const repoFilter = useSprintUI((s) => s.repoFilter)
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const statusFilter = useSprintUI((s) => s.statusFilter)
+  const tagFilter = useSprintUI((s) => s.tagFilter)
 
   const presets = useFilterPresets((s) => s.presets)
   const savePreset = useFilterPresets((s) => s.savePreset)
@@ -27,7 +28,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
     return Array.from(set).sort()
   }, [tasks])
 
-  const hasActiveFilters = !!(searchQuery || repoFilter || statusFilter !== 'all')
+  const hasActiveFilters = !!(searchQuery || repoFilter || tagFilter || statusFilter !== 'all')
   const presetNames = Object.keys(presets)
 
   // Always show if there are presets, multiple repos, or active search

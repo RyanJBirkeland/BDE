@@ -168,19 +168,39 @@ describe('buildAgentPrompt', () => {
     expect(prompt).toContain('spec drafting')
   })
 
-  it('truncates pipeline taskContent at 2000 chars', () => {
-    const longSpec = 'x'.repeat(3000)
+  it('truncates pipeline taskContent at 8000 chars', () => {
+    const longSpec = 'x'.repeat(9000)
     const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: longSpec, branch: 'b' })
-    expect(prompt).toContain('x'.repeat(2000))
-    expect(prompt).not.toContain('x'.repeat(2001))
-    expect(prompt).toContain('[spec truncated at 2000 chars')
+    expect(prompt).toContain('x'.repeat(8000))
+    expect(prompt).not.toContain('x'.repeat(8001))
+    expect(prompt).toContain('[spec truncated at 8000 chars')
   })
 
-  it('does not truncate pipeline taskContent under 2000 chars', () => {
-    const shortSpec = 'y'.repeat(100)
+  it('does not truncate pipeline taskContent under 8000 chars', () => {
+    // A 4000-char spec (typical well-structured pipeline spec with Files to Change,
+    // How to Test, and Out of Scope sections) must not be truncated.
+    const shortSpec = 'y'.repeat(4000)
     const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: shortSpec, branch: 'b' })
-    expect(prompt).toContain('y'.repeat(100))
+    expect(prompt).toContain('y'.repeat(4000))
     expect(prompt).not.toContain('[spec truncated')
+  })
+
+  it('does not truncate pipeline taskContent at exactly 8000 chars', () => {
+    const exactSpec = 'z'.repeat(8000)
+    const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: exactSpec, branch: 'b' })
+    expect(prompt).toContain('z'.repeat(8000))
+    expect(prompt).not.toContain('[spec truncated')
+  })
+
+  it('instructs agents to treat test files as required when listed in spec', () => {
+    const prompt = buildAgentPrompt({
+      agentType: 'pipeline',
+      taskContent: 'Short spec',
+      branch: 'b'
+    })
+    expect(prompt).toContain('Files to Change')
+    expect(prompt).toContain('How to Test')
+    expect(prompt).toContain('REQUIRED, not optional')
   })
 })
 

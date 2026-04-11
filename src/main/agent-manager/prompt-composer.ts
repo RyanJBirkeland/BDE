@@ -297,8 +297,15 @@ function buildPipelinePrompt(input: BuildPromptInput): string {
     // Task specification
     prompt += '\n\n## Task Specification\n\n'
     prompt += 'Read this entire specification before writing any code. '
-    prompt += 'Address every section.\n\n'
-    const MAX_TASK_CONTENT_CHARS = 2000
+    prompt += 'Address every section — especially **Files to Change**, **How to Test**, '
+    prompt += 'and **Out of Scope**. If the spec lists test files to create or modify, '
+    prompt += 'writing those tests is REQUIRED, not optional.\n\n'
+    // 8000 chars (~2000 words) covers the CLAUDE.md "under 500 words" guideline with
+    // headroom for well-structured specs including Files to Change + How to Test +
+    // Out of Scope sections. Previous 2000-char cap was silently truncating every
+    // mid-sized spec, cutting off the Files to Change / How to Test sections and
+    // causing agents to skip test writing. See 2026-04-11 RCA.
+    const MAX_TASK_CONTENT_CHARS = 8000
     if (taskContent.length > MAX_TASK_CONTENT_CHARS) {
       prompt += taskContent.slice(0, MAX_TASK_CONTENT_CHARS)
       prompt += `\n\n[spec truncated at ${MAX_TASK_CONTENT_CHARS} chars — see full spec in task DB]`

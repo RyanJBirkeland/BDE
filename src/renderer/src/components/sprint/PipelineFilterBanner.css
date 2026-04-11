@@ -2,9 +2,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 16px;
-  margin: 0 16px 12px 16px;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-2) var(--bde-space-4);
+  margin: 0 var(--bde-space-4) var(--bde-space-3) var(--bde-space-4);
   background: var(--bde-warning-surface, rgba(255, 184, 0, 0.08));
   border: 1px solid var(--bde-accent-border, rgba(0, 255, 170, 0.2));
   border-radius: 4px;
@@ -15,7 +15,7 @@
 .pipeline-filter-banner__content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--bde-space-3);
   flex: 1;
   min-width: 0;
 }
@@ -34,7 +34,7 @@
 }
 
 .pipeline-filter-banner__chip {
-  padding: 2px 8px;
+  padding: 2px var(--bde-space-2);
   background: var(--bde-surface-elevated, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--bde-accent-border, rgba(0, 255, 170, 0.2));
   border-radius: 3px;
@@ -47,8 +47,8 @@
 .pipeline-filter-banner__clear {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: var(--bde-space-1);
+  padding: var(--bde-space-1) 10px;
   background: transparent;
   border: 1px solid var(--bde-accent-border, rgba(0, 255, 170, 0.3));
   border-radius: 3px;
