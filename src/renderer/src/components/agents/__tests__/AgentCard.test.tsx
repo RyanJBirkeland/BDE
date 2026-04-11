@@ -117,7 +117,7 @@ describe('AgentCard', () => {
     const longTask = 'A'.repeat(100)
     const agent = makeAgent({ task: longTask })
     render(<AgentCard {...defaultProps} agent={agent} />)
-    expect(screen.getByText('A'.repeat(80))).toBeInTheDocument()
+    expect(screen.getByText('A'.repeat(80) + '…')).toBeInTheDocument()
   })
 
   it('shows duration for a done agent with finishedAt', () => {
@@ -299,7 +299,7 @@ describe('AgentCard', () => {
   it('shows "Done" status label for done agents', () => {
     const agent = makeAgent({ status: 'done', finishedAt: nowIso() })
     render(<AgentCard {...defaultProps} agent={agent} />)
-    expect(screen.getByText('Done')).toBeInTheDocument()
+    expect(screen.getByText(/Completed in/i)).toBeInTheDocument()
   })
 
   it('shows "Failed" status label for failed agents', () => {

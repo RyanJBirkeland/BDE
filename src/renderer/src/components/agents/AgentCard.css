@@ -8,36 +8,76 @@
   box-sizing: border-box;
 }
 
+/* Hover glow effect on the NeonCard */
+.agent-card__button-reset:hover:not([data-selected='true']) .agent-card__neon-card {
+  box-shadow: 0 0 12px var(--neon-glow);
+  border: 1px solid var(--neon-color);
+}
+
 .agent-card__content {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-1);
+  gap: var(--bde-space-2);
 }
 
-.agent-card__top-row {
+/* Row 1: Title row */
+.agent-card__title-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--bde-space-2);
+  position: relative;
 }
 
 .agent-card__task-title {
   color: var(--bde-text);
-  font-size: var(--bde-size-md);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: var(--bde-size-sm);
+  font-weight: 600;
   flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
 }
 
-.agent-card__meta-row {
+.agent-card__model-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  background: var(--bde-surface-high, rgba(10, 0, 21, 0.4));
+  padding: 2px 6px;
+  border-radius: var(--bde-radius-sm, 4px);
+  font-weight: 500;
+}
+
+/* Row 2: Status row */
+.agent-card__status-row {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  padding-left: 22px;
+}
+
+.agent-card__status-row--error {
+  color: var(--bde-danger);
+}
+
+.agent-card__status-row--cancelled {
+  color: var(--bde-warning);
+}
+
+/* Row 3: Meta strip */
+.agent-card__meta-strip {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding-left: 14px;
+  gap: var(--bde-space-1-5, 6px);
+  padding-left: 22px;
 }
 
 .agent-card__meta-icon {
   color: var(--bde-text-dim);
+  flex-shrink: 0;
 }
 
 .agent-card__meta-text {
@@ -46,13 +86,8 @@
 }
 
 .agent-card__meta-separator {
-  color: var(--bde-text-muted);
+  color: var(--bde-text-dim);
   font-size: var(--bde-size-xs);
-}
-
-.agent-card__status-label {
-  font-size: var(--bde-size-xs);
-  font-weight: 700;
 }
 
 .agent-card__kill-btn {

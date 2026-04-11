@@ -3,7 +3,7 @@
  * Used in the AgentList sidebar.
  */
 import { useState, useEffect } from 'react'
-import { Bot, Cpu, Clock, X, CheckCircle, XCircle, Loader, Ban } from 'lucide-react'
+import { Clock, DollarSign, X, CheckCircle, XCircle, Loader, Ban } from 'lucide-react'
 import './AgentCard.css'
 import type { AgentMeta } from '../../../../shared/types'
 import { NeonCard } from '../neon/NeonCard'
@@ -72,7 +72,6 @@ function StatusIndicator({ status, accent }: StatusIndicatorProps): React.JSX.El
 export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps): React.JSX.Element {
   const accent = STATUS_ACCENTS[agent.status] ?? 'purple'
   const isRunning = agent.status === 'running'
-  const SourceIcon = agent.source === 'bde' ? Bot : Cpu
   const { confirm, confirmProps } = useConfirm()
 
   // Live duration ticker for running agents
@@ -105,25 +104,32 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
     }
   }
 
+  const taskTitleTruncated = agent.task.length > 80 ? agent.task.slice(0, 80) + '…' : agent.task
+  const costFormatted = agent.costUsd != null ? `$${agent.costUsd.toFixed(2)}` : '$0.00'
+
   return (
     <>
-      <button onClick={onClick} className="agent-card__button-reset">
+      <button
+        onClick={onClick}
+        className="agent-card__button-reset"
+        data-accent={accent}
+        data-selected={selected}
+      >
         <NeonCard
           accent={accent}
+          className="agent-card__neon-card"
           style={{
-            padding: 'var(--bde-space-2)',
+            padding: 'var(--bde-space-3)',
             boxShadow: selected ? `0 0 16px ${neonVar(accent, 'glow')}` : undefined,
             border: selected ? `1px solid ${neonVar(accent, 'color')}` : undefined,
             transform: selected ? 'scale(1.02)' : undefined
           }}
         >
           <div className="agent-card__content">
-            {/* Top row: status icon + task title + kill button */}
-            <div className="agent-card__top-row">
+            {/* Row 1: Title row with status icon, task title, kill button, model badge */}
+            <div className="agent-card__title-row">
               <StatusIndicator status={agent.status} accent={accent} />
-              <span className="agent-card__task-title">
-                {agent.task.slice(0, 80)}
-              </span>
+              <span className="agent-card__task-title">{taskTitleTruncated}</span>
               {isRunning && (
                 <button
                   className="agent-card__kill-btn"
@@ -134,37 +140,34 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
                   <X size={12} />
                 </button>
               )}
+              <span className="agent-card__model-badge">{agent.model}</span>
             </div>
-            {/* Bottom row: meta info */}
-            <div className="agent-card__meta-row">
-              <SourceIcon size={10} className="agent-card__meta-icon" />
-              <span className="agent-card__meta-text">{agent.model}</span>
-              <span className="agent-card__meta-separator">·</span>
-              <Clock size={10} color={neonVar(accent, 'color')} />
-              <span style={{ fontSize: 'var(--bde-size-xs)', color: neonVar(accent, 'color') }}>
+
+            {/* Row 2: Status row (conditional based on agent status) */}
+            {agent.status === 'done' && (
+              <div className="agent-card__status-row">
+                Completed in {formatDuration(agent.startedAt, agent.finishedAt)}
+              </div>
+            )}
+            {agent.status === 'failed' && (
+              <div className="agent-card__status-row agent-card__status-row--error">Failed</div>
+            )}
+            {agent.status === 'cancelled' && (
+              <div className="agent-card__status-row agent-card__status-row--cancelled">
+                Cancelled
+              </div>
+            )}
+
+            {/* Row 3: Meta strip with icons */}
+            <div className="agent-card__meta-strip">
+              <Clock size={12} className="agent-card__meta-icon" />
+              <span className="agent-card__meta-text">
                 {formatDuration(agent.startedAt, agent.finishedAt)}
               </span>
-              {/* Status label for terminal statuses */}
-              {(agent.status === 'done' ||
-                agent.status === 'failed' ||
-                agent.status === 'cancelled') && (
-                <>
-                  <span className="agent-card__meta-separator">·</span>
-                  <span
-                    className="agent-card__status-label"
-                    style={{
-                      color: neonVar(accent, 'color')
-                    }}
-                  >
-                    {agent.status === 'done'
-                      ? 'Done'
-                      : agent.status === 'failed'
-                        ? 'Failed'
-                        : 'Cancelled'}
-                  </span>
-                </>
-              )}
-              <span className="agent-card__meta-separator">·</span>
+              <span className="agent-card__meta-separator">•</span>
+              <DollarSign size={12} className="agent-card__meta-icon" />
+              <span className="agent-card__meta-text">{costFormatted}</span>
+              <span className="agent-card__meta-separator">•</span>
               <span className="agent-card__meta-text">{agent.repo}</span>
             </div>
           </div>

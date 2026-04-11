@@ -257,7 +257,7 @@ export function AgentsView(): React.JSX.Element {
     >
       {/* Zone 1: Fleet List + Agent Console */}
       <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-        <Panel defaultSize={20} minSize={12} maxSize={40}>
+        <Panel defaultSize={28} minSize={18} maxSize={44}>
           {/* Fleet sidebar */}
           <div className="agents-sidebar">
             {/* Header */}
