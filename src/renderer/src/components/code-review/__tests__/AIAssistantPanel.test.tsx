@@ -1,13 +1,104 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
+const { mockTogglePanel, mockSendMessage, mockAbortStream, mockClearMessages, mockAutoReview } =
+  vi.hoisted(() => ({
+    mockTogglePanel: vi.fn(),
+    mockSendMessage: vi.fn().mockResolvedValue(undefined),
+    mockAbortStream: vi.fn().mockResolvedValue(undefined),
+    mockClearMessages: vi.fn(),
+    mockAutoReview: vi.fn().mockResolvedValue(undefined)
+  }))
+
+const partnerState = vi.hoisted(() => ({
+  panelOpen: false,
+  reviewByTask: {} as Record<string, { status: string; result?: unknown; error?: string }>,
+  messagesByTask: {} as Record<string, unknown[]>,
+  activeStreamByTask: {} as Record<string, string | null>,
+  togglePanel: mockTogglePanel,
+  sendMessage: mockSendMessage,
+  abortStream: mockAbortStream,
+  clearMessages: mockClearMessages,
+  autoReview: mockAutoReview
+}))
+
 vi.mock('../../../stores/codeReview', () => {
   const { create } = require('zustand')
   const store = create(() => ({
-    selectedTaskId: null
+    selectedTaskId: null as string | null
   }))
   return { useCodeReviewStore: store }
 })
+
+vi.mock('../../../stores/sprintTasks', () => ({
+  useSprintTasks: vi.fn((sel: (s: { tasks: unknown[] }) => unknown) =>
+    sel({ tasks: [] })
+  )
+}))
+
+vi.mock('../../../stores/reviewPartner', () => ({
+  useReviewPartnerStore: vi.fn(
+    (sel: (s: typeof partnerState) => unknown) => sel(partnerState)
+  )
+}))
+
+vi.mock('../ReviewMetricsRow', () => ({
+  ReviewMetricsRow: ({ loading }: { loading?: boolean }) => (
+    <div data-testid="review-metrics-row" data-loading={loading ? 'true' : 'false'} />
+  )
+}))
+
+vi.mock('../ReviewMessageList', () => ({
+  ReviewMessageList: ({
+    messages,
+    emptyMessage
+  }: {
+    messages: unknown[]
+    emptyMessage?: string
+  }) =>
+    messages.length === 0 ? (
+      <div data-testid="review-message-list-empty">{emptyMessage}</div>
+    ) : (
+      <div data-testid="review-message-list">{messages.length} messages</div>
+    )
+}))
+
+vi.mock('../ReviewQuickActions', () => ({
+  ReviewQuickActions: ({
+    onAction,
+    disabled
+  }: {
+    onAction: (p: string) => void
+    disabled?: boolean
+  }) => (
+    <div data-testid="review-quick-actions" data-disabled={disabled ? 'true' : 'false'}>
+      <button onClick={() => onAction('test-prompt')} disabled={disabled}>
+        Quick action
+      </button>
+    </div>
+  )
+}))
+
+vi.mock('../ReviewChatInput', () => ({
+  ReviewChatInput: ({
+    onSend,
+    onAbort,
+    streaming,
+    disabled
+  }: {
+    onSend: (c: string) => void
+    onAbort?: () => void
+    streaming?: boolean
+    disabled?: boolean
+  }) => (
+    <div data-testid="review-chat-input">
+      <button onClick={() => onSend('hello')} disabled={disabled}>
+        Send
+      </button>
+      {streaming && <button onClick={onAbort}>Abort</button>}
+    </div>
+  )
+}))
 
 import { AIAssistantPanel } from '../AIAssistantPanel'
 import { useCodeReviewStore } from '../../../stores/codeReview'
@@ -16,105 +107,123 @@ describe('AIAssistantPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useCodeReviewStore.setState({ selectedTaskId: null })
+    partnerState.reviewByTask = {}
+    partnerState.messagesByTask = {}
+    partnerState.activeStreamByTask = {}
   })
 
-  it('renders header with Sparkles icon and title', () => {
+  it('renders header with AI Review Partner title', () => {
     render(<AIAssistantPanel />)
-    expect(screen.getByText('AI Assistant')).toBeInTheDocument()
-    // Sparkles icon is rendered but hard to test directly; check parent structure
-    const header = screen.getByText('AI Assistant').closest('.cr-assistant__header')
-    expect(header).toBeInTheDocument()
+    expect(screen.getByText('AI Review Partner')).toBeInTheDocument()
+    expect(screen.getByText('Claude 4.6 Opus')).toBeInTheDocument()
   })
 
-  it('renders kebab menu button', () => {
+  it('renders close button that calls togglePanel', () => {
     render(<AIAssistantPanel />)
-    const kebabBtn = screen.getByRole('button', { name: 'Menu' })
-    expect(kebabBtn).toHaveAttribute('aria-haspopup', 'menu')
+    const closeBtn = screen.getByRole('button', { name: 'Close AI Review Partner' })
+    fireEvent.click(closeBtn)
+    expect(mockTogglePanel).toHaveBeenCalledTimes(1)
   })
 
-  it('opens kebab menu on click and shows three menu items', () => {
+  it('renders More options menu button', () => {
     render(<AIAssistantPanel />)
-    const kebabBtn = screen.getByRole('button', { name: 'Menu' })
-    fireEvent.click(kebabBtn)
-    expect(screen.getByText('Show agent history')).toBeInTheDocument()
-    expect(screen.getByText('Clear thread')).toBeInTheDocument()
-    expect(screen.getByText('New thread')).toBeInTheDocument()
+    const menuBtn = screen.getByRole('button', { name: 'More options' })
+    expect(menuBtn).toBeInTheDocument()
   })
 
-  it('toggles show-history class when menu item clicked', () => {
-    const { container } = render(<AIAssistantPanel />)
-    const aside = container.querySelector('.cr-assistant')
-    expect(aside).not.toHaveClass('cr-assistant--show-history')
-
-    const kebabBtn = screen.getByRole('button', { name: 'Menu' })
-    fireEvent.click(kebabBtn)
-    const historyBtn = screen.getByText('Show agent history')
-    fireEvent.click(historyBtn)
-
-    expect(aside).toHaveClass('cr-assistant--show-history')
-  })
-
-  it('renders quick-action chips', () => {
+  it('opens menu on click and shows Re-review and Clear thread items', () => {
     render(<AIAssistantPanel />)
-    expect(screen.getByText('Summarize diff')).toBeInTheDocument()
-    expect(screen.getByText('Risks?')).toBeInTheDocument()
-    expect(screen.getByText('Explain selected file')).toBeInTheDocument()
+    const menuBtn = screen.getByRole('button', { name: 'More options' })
+    fireEvent.click(menuBtn)
+    expect(screen.getByRole('menuitem', { name: 'Re-review' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Clear thread' })).toBeInTheDocument()
   })
 
-  it('renders input dock with textarea and Send button', () => {
-    const { container } = render(<AIAssistantPanel />)
-    const textarea = container.querySelector('.cr-assistant__input textarea')
-    expect(textarea).toBeInTheDocument()
-    const submitBtn = screen.getByRole('button', { name: 'Send message' })
-    expect(submitBtn).toHaveAttribute('type', 'submit')
-    expect(submitBtn).toBeDisabled() // disabled when empty
-  })
-
-  it('enables submit button when textarea has content', () => {
-    const { container } = render(<AIAssistantPanel />)
-    const textarea = container.querySelector('.cr-assistant__input textarea')
-    const submitBtn = screen.getByRole('button', { name: 'Send message' })
-
-    fireEvent.change(textarea!, { target: { value: 'test message' } })
-    expect(submitBtn).not.toBeDisabled()
-  })
-
-  it('renders empty state when no task selected', () => {
+  it('menu items are disabled when no task selected', () => {
     useCodeReviewStore.setState({ selectedTaskId: null })
     render(<AIAssistantPanel />)
-    expect(
-      screen.getByText('Select a task to start chatting about its changes.')
-    ).toBeInTheDocument()
+    const menuBtn = screen.getByRole('button', { name: 'More options' })
+    fireEvent.click(menuBtn)
+    expect(screen.getByRole('menuitem', { name: 'Re-review' })).toBeDisabled()
+    expect(screen.getByRole('menuitem', { name: 'Clear thread' })).toBeDisabled()
   })
 
-  it('does not render empty state when task selected', () => {
-    useCodeReviewStore.setState({ selectedTaskId: 'task-123' })
+  it('Re-review calls autoReview with force:true', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-abc' })
     render(<AIAssistantPanel />)
-    expect(
-      screen.queryByText('Select a task to start chatting about its changes.')
-    ).not.toBeInTheDocument()
+    const menuBtn = screen.getByRole('button', { name: 'More options' })
+    fireEvent.click(menuBtn)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Re-review' }))
+    expect(mockAutoReview).toHaveBeenCalledWith('task-abc', { force: true })
   })
 
-  it('handles chip clicks without error', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  it('Clear thread calls clearMessages', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-abc' })
     render(<AIAssistantPanel />)
-    const chipBtn = screen.getByText('Summarize diff')
-    fireEvent.click(chipBtn)
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'TODO: CR Redesign follow-up epic —',
-      'summarize'
-    )
-    consoleSpy.mockRestore()
+    const menuBtn = screen.getByRole('button', { name: 'More options' })
+    fireEvent.click(menuBtn)
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Clear thread' }))
+    expect(mockClearMessages).toHaveBeenCalledWith('task-abc')
   })
 
-  it('prevents form submission and logs TODO', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+  it('renders ReviewMetricsRow', () => {
     render(<AIAssistantPanel />)
-    const form = screen.getByRole('button', { name: 'Send message' }).closest('form')
-    expect(form).toBeInTheDocument()
-    // Form submission is preventDefault-ed, so it won't actually submit
-    fireEvent.submit(form!)
-    // No error thrown means preventDefault worked
-    consoleSpy.mockRestore()
+    expect(screen.getByTestId('review-metrics-row')).toBeInTheDocument()
+  })
+
+  it('shows empty message when no task selected', () => {
+    useCodeReviewStore.setState({ selectedTaskId: null })
+    render(<AIAssistantPanel />)
+    expect(screen.getByText('Select a task to start reviewing.')).toBeInTheDocument()
+  })
+
+  it('shows loading message when review is loading', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-1' })
+    partnerState.reviewByTask = { 'task-1': { status: 'loading' } }
+    render(<AIAssistantPanel />)
+    expect(screen.getByText('Reviewing...')).toBeInTheDocument()
+  })
+
+  it('shows error alert when review errored', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-1' })
+    partnerState.reviewByTask = { 'task-1': { status: 'error', error: 'Something went wrong' } }
+    render(<AIAssistantPanel />)
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument()
+  })
+
+  it('error Retry button calls autoReview', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-1' })
+    partnerState.reviewByTask = { 'task-1': { status: 'error', error: 'Failed' } }
+    render(<AIAssistantPanel />)
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(mockAutoReview).toHaveBeenCalledWith('task-1', { force: true })
+  })
+
+  it('renders ReviewQuickActions disabled when no task', () => {
+    useCodeReviewStore.setState({ selectedTaskId: null })
+    render(<AIAssistantPanel />)
+    const qa = screen.getByTestId('review-quick-actions')
+    expect(qa.dataset.disabled).toBe('true')
+  })
+
+  it('renders ReviewChatInput', () => {
+    render(<AIAssistantPanel />)
+    expect(screen.getByTestId('review-chat-input')).toBeInTheDocument()
+  })
+
+  it('sends message via sendMessage action', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-1' })
+    render(<AIAssistantPanel />)
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    expect(mockSendMessage).toHaveBeenCalledWith('task-1', 'hello')
+  })
+
+  it('aborts stream via abortStream action', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-1' })
+    partnerState.activeStreamByTask = { 'task-1': 'stream-id-123' }
+    render(<AIAssistantPanel />)
+    fireEvent.click(screen.getByRole('button', { name: 'Abort' }))
+    expect(mockAbortStream).toHaveBeenCalledWith('task-1')
   })
 })
