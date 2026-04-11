@@ -19,7 +19,6 @@ export function ReviewMessageList({
     <div
       className="cr-messages"
       role="log"
-      aria-live="polite"
       aria-atomic="false"
     >
       {messages.map((m) => (
@@ -27,6 +26,7 @@ export function ReviewMessageList({
           key={m.id}
           className={`cr-message cr-message--${m.role}${m.streaming ? ' cr-message--streaming' : ''}`}
           aria-busy={m.streaming ? 'true' : 'false'}
+          aria-live={m.streaming ? 'polite' : undefined}
         >
           {m.role === 'assistant' && (
             <div className="cr-message__header">

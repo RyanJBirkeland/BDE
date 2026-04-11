@@ -35,4 +35,30 @@ describe('ApproveDropdown', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('menuitem', { name: /squash/i })).toBeNull()
   })
+
+  it('focuses first menuitem on open and returns focus to trigger on Escape', () => {
+    render(<ApproveDropdown {...actions} />)
+    const trigger = screen.getByRole('button', { name: /approve/i })
+    fireEvent.click(trigger)
+    const firstItem = screen.getByRole('menuitem', { name: /merge locally/i })
+    expect(document.activeElement).toBe(firstItem)
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('navigates menu items with ArrowDown and ArrowUp', () => {
+    render(<ApproveDropdown {...actions} />)
+    fireEvent.click(screen.getByRole('button', { name: /approve/i }))
+
+    const menu = screen.getByRole('menu')
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: /squash/i }))
+
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: /create pr/i }))
+
+    fireEvent.keyDown(menu, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: /squash/i }))
+  })
 })

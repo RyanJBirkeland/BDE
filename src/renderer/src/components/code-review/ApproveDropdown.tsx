@@ -1,5 +1,5 @@
 import { Check, ChevronDown } from 'lucide-react'
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from 'react'
 
 interface Props {
   onMergeLocally: () => void
@@ -20,10 +20,13 @@ export function ApproveDropdown({
 }: Props): JSX.Element {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
     if (!open) return
-    function onKey(e: KeyboardEvent): void {
+    function onKey(e: KeyboardEvent | globalThis.KeyboardEvent): void {
       if (e.key === 'Escape') setOpen(false)
     }
     function onClick(e: MouseEvent): void {
@@ -31,13 +34,47 @@ export function ApproveDropdown({
         setOpen(false)
       }
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', onKey as EventListener)
     document.addEventListener('mousedown', onClick)
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', onKey as EventListener)
       document.removeEventListener('mousedown', onClick)
     }
   }, [open])
+
+  // Focus first menuitem on open; return focus to trigger on close
+  useEffect(() => {
+    if (open) {
+      const first = menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')
+      first?.focus()
+    } else if (wasOpenRef.current) {
+      triggerRef.current?.focus()
+    }
+    wasOpenRef.current = open
+  }, [open])
+
+  function handleMenuKeyDown(e: KeyboardEvent<HTMLDivElement>): void {
+    if (!menuRef.current) return
+    const items = Array.from(
+      menuRef.current.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')
+    )
+    const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      const next = items[(currentIndex + 1) % items.length]
+      next?.focus()
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      const prev = items[(currentIndex - 1 + items.length) % items.length]
+      prev?.focus()
+    } else if (e.key === 'Home') {
+      e.preventDefault()
+      items[0]?.focus()
+    } else if (e.key === 'End') {
+      e.preventDefault()
+      items[items.length - 1]?.focus()
+    }
+  }
 
   function run(fn: () => void): void {
     fn()
@@ -48,6 +85,7 @@ export function ApproveDropdown({
     <div className="cr-approve" ref={rootRef}>
       <button
         type="button"
+        ref={triggerRef}
         className="cr-approve__trigger"
         disabled={disabled}
         aria-haspopup="menu"
@@ -59,7 +97,12 @@ export function ApproveDropdown({
         <ChevronDown size={12} />
       </button>
       {open && (
-        <div className="cr-approve__menu" role="menu">
+        <div
+          className="cr-approve__menu"
+          role="menu"
+          ref={menuRef}
+          onKeyDown={handleMenuKeyDown}
+        >
           <button type="button" role="menuitem" onClick={() => run(onMergeLocally)}>
             Merge Locally
           </button>
