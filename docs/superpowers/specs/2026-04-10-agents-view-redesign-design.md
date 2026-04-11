@@ -363,8 +363,8 @@ When a tool action card is for an `edit` or `write` tool and the input contains 
 └──────────────────────────────────────────────────────┘
 ```
 
-- The existing diff infrastructure (`PlainDiffContent` from `components/diff/`) can be reused — no new diff library
 - For `write` (whole file create), render the new content as a code block with line numbers (no diff, just the content)
+- For `edit`, render an inline diff. Implementation note: the existing `PlainDiffContent` from `components/diff/` is **not** directly reusable — it's wired into Code Review's comment/selection system (file refs, hunk addresses, comment widgets). The clean reuse path is `parseDiff(raw: string): DiffFile[]` from `src/renderer/src/lib/diff-parser.ts`, fed a synthetic git-format diff string built from `old_string`/`new_string`. The resulting `DiffFile[]` then feeds a *new, minimal* `EditDiffCard` renderer (~80 LOC) that draws each `DiffLine` (`add` / `del` / `ctx`) as a single styled row. No new dependencies; new component lives at `components/agents/cards/EditDiffCard.tsx`.
 
 #### 8. Bash card (Bash tool result)
 
@@ -535,11 +535,19 @@ Proposed:
 #### `src/renderer/src/views/AgentsView.tsx` (455 → ~280 LOC est)
 
 - **Delete inline styles** at lines 264-405 (sidebar header, info icon, tooltip, scratchpad banner, dismiss button)
-- Use existing CSS classes from `AgentsView.css` (`agents-view__sidebar-header`, `agents-view__title`, `agents-view__spawn-btn`)
-- Add new CSS classes for tooltip and scratchpad banner (move to `AgentsView.css`)
+- Use existing CSS classes from `src/renderer/src/views/AgentsView.css` (the dead `agents-view__sidebar-header`, `agents-view__title`, `agents-view__spawn-btn` classes — see file change below)
 - Update `<Panel defaultSize={20} minSize={12} maxSize={40}>` → `<Panel defaultSize={28} minSize={18} maxSize={44}>`
 - Replace empty-state `<EmptyState title="No agent selected" ... />` with new `<FleetGlance />` component (Section 6)
 - All other logic unchanged: command palette registration, agent selection, spawn modal trigger, steering, command handlers
+
+#### `src/renderer/src/views/AgentsView.css` (90 LOC, additive)
+
+Note the path: this file lives in `views/`, not `components/agents/`. It's the only CSS file in this redesign that does — every other touched CSS file is co-located with its component under `components/agents/`.
+
+- Existing classes `agents-view__sidebar-header`, `agents-view__title`, `agents-view__spawn-btn` are currently dead — wire them up by removing their inline-style equivalents from `AgentsView.tsx`
+- Add new classes for the scratchpad info-icon tooltip (`.agents-view__tooltip`, `.agents-view__tooltip-strong`)
+- Add new classes for the dismissable scratchpad banner (`.agents-view__scratchpad-banner`, `.agents-view__scratchpad-banner-dismiss`)
+- Existing layout rules (`.agents-view`, `.agents-sidebar`, panel min-width override) are kept
 
 #### `src/renderer/src/components/agents/AgentList.tsx` (427 LOC, mostly unchanged)
 
@@ -783,7 +791,7 @@ To make the no-features-added contract explicit:
 
 1. **Live activity row data binding (Section 2):** to render "▶ Currently: editing src/api.ts" in the sidebar card, we need the latest event for each running agent. Today the cockpit subscribes to `agentEvents[selectedId]`. The sidebar would need to subscribe to events for *all running agents*, which could affect virtualization or trigger renders on every event. **To resolve during plan-writing:** profile the cost; if expensive, fall back to a lighter "running" / "thinking" / "tool" state derived from the latest event type only. As noted in Section 2, the redesign is not blocked on this row.
 
-2. **Edit diff rendering (Section 3, card #7):** we're proposing to reuse `PlainDiffContent` from `components/diff/`. Need to verify it accepts arbitrary `oldText`/`newText` strings (vs. only git-format diffs). **To resolve during plan-writing:** read the component's interface; if it's git-format-only, write a small inline diff renderer.
+2. ~~**Edit diff rendering (Section 3, card #7):** we're proposing to reuse `PlainDiffContent` from `components/diff/`. Need to verify it accepts arbitrary `oldText`/`newText` strings (vs. only git-format diffs).~~ **Resolved during spec finalization:** `PlainDiffContent` is heavyweight (wired into Code Review comment/selection infrastructure) and not directly reusable. The clean path is `parseDiff(raw: string): DiffFile[]` from `lib/diff-parser.ts` — feed it a synthetic git-format diff built from `old_string`/`new_string`, then render the resulting `DiffFile[]` with a new minimal `EditDiffCard` (~80 LOC). See Section 3 card #7 for details.
 
 3. **Token additions:** Section 4 says "no new tokens" but we may need a `--bde-size-base` if 13px isn't already in `tokens.ts`. **To resolve during plan-writing:** check current `tokens.ts`; add if missing.
 
