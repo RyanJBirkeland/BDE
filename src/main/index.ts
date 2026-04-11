@@ -30,6 +30,14 @@ import { registerDashboardHandlers } from './handlers/dashboard-handlers'
 import { registerSynthesizerHandlers } from './handlers/synthesizer-handlers'
 import { registerClaudeConfigHandlers } from './handlers/claude-config-handlers'
 import { registerReviewHandlers } from './handlers/review'
+import {
+  registerReviewAssistantHandlers,
+  buildChatStreamDeps,
+} from './handlers/review-assistant'
+import { createReviewRepository } from './data/review-repository'
+import { createReviewService } from './services/review-service'
+import { runSdkOnce } from './sdk-streaming'
+import { getDb } from './db'
 import { registerWebhookHandlers } from './handlers/webhook-handlers'
 import { registerGroupHandlers } from './handlers/group-handlers'
 import { registerPlannerImportHandlers } from './handlers/planner-import'
@@ -194,6 +202,76 @@ app.whenReady().then(() => {
   registerTearoffHandlers()
   registerClaudeConfigHandlers()
   registerReviewHandlers(terminalDeps)
+
+  // AI Review Partner
+  const reviewDb = getDb()
+  const reviewRepo = createReviewRepository(reviewDb)
+  const sprintTaskRepository = createSprintTaskRepository()
+  const reviewServiceLogger = createLogger('review-service')
+
+  function resolveWorktreePathViaRepo(taskId: string): string {
+    const task = sprintTaskRepository.getTask(taskId)
+    if (!task) throw new Error(`Task not found: ${taskId}`)
+    if (!task.worktree_path) {
+      throw new Error(`Task ${taskId} has no worktree_path`)
+    }
+    return task.worktree_path
+  }
+
+  const getHeadCommitSha = async (worktreePath: string): Promise<string> => {
+    const { execFile } = await import('node:child_process')
+    const { promisify } = await import('node:util')
+    const execFileAsync = promisify(execFile)
+    const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'rev-parse', 'HEAD'])
+    return stdout.trim()
+  }
+
+  const getBranch = async (worktreePath: string): Promise<string> => {
+    const { execFile } = await import('node:child_process')
+    const { promisify } = await import('node:util')
+    const execFileAsync = promisify(execFile)
+    const { stdout } = await execFileAsync('git', [
+      '-C',
+      worktreePath,
+      'rev-parse',
+      '--abbrev-ref',
+      'HEAD',
+    ])
+    return stdout.trim()
+  }
+
+  const reviewService = createReviewService({
+    repo: reviewRepo,
+    taskRepo: sprintTaskRepository,
+    logger: reviewServiceLogger,
+    resolveWorktreePath: async (taskId) => resolveWorktreePathViaRepo(taskId),
+    getHeadCommitSha,
+    getDiff: async (worktreePath) => {
+      const { execFile } = await import('node:child_process')
+      const { promisify } = await import('node:util')
+      const execFileAsync = promisify(execFile)
+      const { stdout } = await execFileAsync(
+        'git',
+        ['-C', worktreePath, 'diff', 'main...HEAD'],
+        { maxBuffer: 10 * 1024 * 1024 }
+      )
+      return stdout
+    },
+    getBranch,
+    runSdkOnce,
+  })
+
+  const reviewActiveStreams = new Map<string, { close: () => void }>()
+  registerReviewAssistantHandlers({
+    reviewService,
+    chatStreamDeps: buildChatStreamDeps({
+      taskRepo: sprintTaskRepository,
+      reviewRepo,
+      getHeadCommitSha,
+      activeStreams: reviewActiveStreams,
+    }),
+  })
+
   registerWebhookHandlers()
   registerGroupHandlers()
   registerPlannerImportHandlers({ dialog: dialogService })
