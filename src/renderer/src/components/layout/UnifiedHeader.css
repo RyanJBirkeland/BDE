@@ -352,8 +352,8 @@
 
 /* Override react-resizable-panels inline min-width: 0px which
    lets panels collapse when the Group container width isn't
-   resolved during initial render. */
-[data-panel] {
+   resolved during initial render. Scoped to the outer panel system only. */
+.panel-leaf [data-panel] {
   min-width: revert;
 }
 
