@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Group, Panel, Separator } from 'react-resizable-panels'
 import { useTaskGroups } from '../stores/taskGroups'
 import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
 import { usePanelLayoutStore } from '../stores/panelLayout'
@@ -146,38 +145,33 @@ export default function PlannerView(): React.JSX.Element {
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
       {/* Body: Split layout */}
-      <div className="planner-body">
-        <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-          <Panel defaultSize="22%" minSize="12%" maxSize="40%">
-            <EpicList
-              groups={filteredGroups}
-              selectedId={selectedGroupId}
-              onSelect={selectGroup}
-              onCreateNew={handleCreateNew}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onImport={handleImportPlan}
+      <div className="planner-body view-layout">
+        <EpicList
+          groups={filteredGroups}
+          selectedId={selectedGroupId}
+          onSelect={selectGroup}
+          onCreateNew={handleCreateNew}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onImport={handleImportPlan}
+        />
+        <div className="view-content">
+          {selectedGroup && (
+            <EpicDetail
+              group={selectedGroup}
+              tasks={groupTasks}
+              loading={loading}
+              onQueueAll={handleQueueAll}
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+              onEditGroup={handleEditGroup}
+              onDeleteGroup={handleDeleteGroup}
+              onToggleReady={handleToggleReady}
+              onReorderTasks={handleReorderTasks}
             />
-          </Panel>
-          <Separator className="panel-separator" />
-          <Panel minSize="40%">
-            {selectedGroup && (
-              <EpicDetail
-                group={selectedGroup}
-                tasks={groupTasks}
-                loading={loading}
-                onQueueAll={handleQueueAll}
-                onAddTask={handleAddTask}
-                onEditTask={handleEditTask}
-                onEditGroup={handleEditGroup}
-                onDeleteGroup={handleDeleteGroup}
-                onToggleReady={handleToggleReady}
-                onReorderTasks={handleReorderTasks}
-              />
-            )}
-            {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}
-          </Panel>
-        </Group>
+          )}
+          {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}
+        </div>
       </div>
 
       <CreateEpicModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />

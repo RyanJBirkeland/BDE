@@ -70,6 +70,11 @@
   overflow: hidden;
 }
 
+.planner-epic-list {
+  width: 260px;
+  flex-shrink: 0;
+}
+
 .planner-empty {
   display: flex;
   align-items: center;
