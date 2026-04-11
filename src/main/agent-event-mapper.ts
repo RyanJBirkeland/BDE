@@ -5,8 +5,11 @@
 import { broadcast } from './broadcast'
 import { insertEventBatch, type EventBatchItem } from './data/event-queries'
 import { getDb } from './db'
+import { createLogger } from './logger'
 import type { AgentEvent } from '../shared/types'
 import { TOOL_RESULT_SUMMARY_MAX_CHARS } from './constants'
+
+const logger = createLogger('agent-event-mapper')
 
 /**
  * Maps a raw SDK wire-protocol message to zero or more typed AgentEvents.
@@ -67,7 +70,7 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
     msgType !== 'result'
   ) {
     // Log unrecognized message types for debugging
-    console.debug(`[agent-event-mapper] Unrecognized message type: ${msgType}`)
+    logger.info(`Unrecognized message type: ${msgType}`)
   }
 
   return events
@@ -121,9 +124,7 @@ export function flushAgentEventBatcher(): void {
     // SQLite write failure is non-fatal, but log it (rate-limited)
     const now = Date.now()
     if (now - _lastSqliteErrorLog > SQLITE_ERROR_LOG_INTERVAL_MS) {
-      console.warn(
-        `[agent-event-mapper] SQLite batch write failed (${rows.length} events lost): ${err}`
-      )
+      logger.warn(`SQLite batch write failed (${rows.length} events lost): ${err}`)
       _lastSqliteErrorLog = now
     }
   }

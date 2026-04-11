@@ -79,7 +79,7 @@ export function initializeDatabase(): void {
 
   // One-time async import from Supabase (no-op if local table already has rows or credentials missing)
   importSprintTasksFromSupabase(getDb()).catch((err) =>
-    console.warn('[startup] Supabase import skipped:', err)
+    logger.warn(`Supabase import skipped: ${getErrorMessage(err)}`)
   )
 }
 
