@@ -1,0 +1,21 @@
+/* View Layout — shared sidebar + content flex pattern */
+
+.view-layout {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.view-sidebar {
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--bde-border);
+}
+
+.view-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

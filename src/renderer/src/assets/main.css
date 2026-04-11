@@ -14,6 +14,7 @@
 @import './design-system/neon-badge.css';
 @import './design-system/status-bar.css';
 @import './design-system/mini-chart.css';
+@import './design-system/view-layout.css';
 /* shell.css split into co-located layout component files */
 /* sprint.css styles co-located with components */
 /* sprint-pipeline.css imported by SprintPipeline.tsx (lazy chunk) */
