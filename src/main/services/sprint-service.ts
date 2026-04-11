@@ -22,6 +22,7 @@ import { createLogger } from '../logger'
 import { broadcast } from '../broadcast'
 import { createWebhookService, getWebhookEventName } from './webhook-service'
 import { getWebhooks } from '../data/webhook-queries'
+import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
 export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate }
 
@@ -133,6 +134,22 @@ export function listTasksWithOpenPrs(): SprintTask[] {
 
 export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): void {
   repo.updateTaskMergeableState(prNumber, mergeableState)
+}
+
+export function flagStuckTasks(): void {
+  const allTasks = repo.listTasks()
+  const oneHourAgo = Date.now() - STUCK_TASK_THRESHOLD_MS
+  const stuck = allTasks.filter(
+    (t) =>
+      ['error', 'failed'].includes(t.status) &&
+      !t.needs_review &&
+      new Date(t.updated_at).getTime() < oneHourAgo
+  )
+  if (stuck.length > 0) {
+    for (const t of stuck) {
+      repo.updateTask(t.id, { needs_review: true })
+    }
+  }
 }
 
 export function getHealthCheckTasks(): SprintTask[] {
