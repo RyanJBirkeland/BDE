@@ -6,6 +6,7 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { createLogger } from '../logger'
+import { pushBranch, checkExistingPr } from '../agent-manager/git-operations'
 
 const execFileAsync = promisify(execFile)
 const logger = createLogger('review-pr-service')
@@ -26,7 +27,7 @@ export interface CreatePRResult {
 }
 
 /**
- * Push branch to origin and create GitHub PR.
+ * Push branch to origin and create GitHub PR (or return existing PR).
  */
 export async function createPullRequest(options: CreatePROptions): Promise<CreatePRResult> {
   const { worktreePath, branch, title, body, env } = options
@@ -34,7 +35,25 @@ export async function createPullRequest(options: CreatePROptions): Promise<Creat
   try {
     // Push the branch
     logger.info(`[createPullRequest] Pushing branch ${branch}`)
-    await execFileAsync('git', ['push', '-u', 'origin', branch], { cwd: worktreePath, env })
+    const pushResult = await pushBranch(worktreePath, branch, env, logger)
+    if (!pushResult.success) {
+      return {
+        success: false,
+        error: pushResult.error || 'Push failed'
+      }
+    }
+
+    // Check for existing PR
+    logger.info(`[createPullRequest] Checking for existing PR for ${branch}`)
+    const existing = await checkExistingPr(worktreePath, branch, env, logger)
+    if (existing) {
+      logger.info(`[createPullRequest] Found existing PR #${existing.prNumber}: ${existing.prUrl}`)
+      return {
+        success: true,
+        prUrl: existing.prUrl,
+        prNumber: existing.prNumber
+      }
+    }
 
     // Create PR via gh CLI
     logger.info(`[createPullRequest] Creating PR for ${branch}`)

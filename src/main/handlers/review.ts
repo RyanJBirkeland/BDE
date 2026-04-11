@@ -17,13 +17,15 @@ import { join } from 'node:path'
 import {
   mergeAgentBranch,
   cleanupWorktree,
-  executeMergeStrategy
+  executeMergeStrategy,
+  parseNumstat
 } from '../services/review-merge-service'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
+import { createPullRequest } from '../services/review-pr-service'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
-import { rebaseOntoMain, pushBranch, checkExistingPr } from '../agent-manager/git-operations'
+import { rebaseOntoMain } from '../agent-manager/git-operations'
 
 const execFileAsync = promisify(execFile)
 const logger = createLogger('review-handlers')
@@ -43,31 +45,6 @@ export interface ReviewHandlersDeps {
  * Parse git diff --numstat output into structured file objects.
  * Each line: "additions\tdeletions\tfilepath"
  */
-function parseNumstat(
-  numstat: string,
-  patchMap: Map<string, string>
-): Array<{ path: string; status: string; additions: number; deletions: number; patch: string }> {
-  return numstat
-    .trim()
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => {
-      const parts = line.split('\t')
-      const additions = parts[0] === '-' ? 0 : parseInt(parts[0], 10)
-      const deletions = parts[1] === '-' ? 0 : parseInt(parts[1], 10)
-      const filePath = parts.slice(2).join('\t')
-      const status =
-        additions > 0 && deletions > 0 ? 'modified' : additions > 0 ? 'added' : 'deleted'
-      return {
-        path: filePath,
-        status,
-        additions,
-        deletions,
-        patch: patchMap.get(filePath) ?? ''
-      }
-    })
-}
-
 function getRepoConfig(repoName: string): RepoConfig | null {
   const repos = getSettingJson<RepoConfig[]>('repos')
   const target = repoName.toLowerCase()
@@ -225,45 +202,28 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     )
     const branch = branchOut.trim()
 
-    // Push the branch
-    const pushResult = await pushBranch(task.worktree_path, branch, env, logger)
-    if (!pushResult.success) {
-      throw new Error(pushResult.error || 'Push failed')
-    }
+    // Push and create PR (or get existing)
+    const result = await createPullRequest({
+      worktreePath: task.worktree_path,
+      branch,
+      title,
+      body,
+      env
+    })
 
-    // Check for existing PR or create new one
-    const existing = await checkExistingPr(task.worktree_path, branch, env, logger)
-    const repoConfig = getRepoConfig(task.repo)
-    let prUrl: string | null
-    let prNumber: number | null
-
-    if (existing) {
-      prUrl = existing.prUrl
-      prNumber = existing.prNumber
-    } else {
-      const result = await execFileAsync(
-        'gh',
-        ['pr', 'create', '--title', title, '--body', body, '--head', branch],
-        { cwd: task.worktree_path, env }
-      )
-      const trimmedPrUrl = result.stdout.trim()
-      const prNumberMatch = trimmedPrUrl.match(/\/pull\/(\d+)$/)
-      prUrl = trimmedPrUrl
-      prNumber = prNumberMatch ? parseInt(prNumberMatch[1], 10) : null
-    }
-
-    if (!prUrl) {
-      throw new Error('PR creation failed')
+    if (!result.success || !result.prUrl) {
+      throw new Error(result.error || 'PR creation failed')
     }
 
     // Update task with PR info
     _updateTask(taskId, {
-      pr_url: prUrl,
-      pr_number: prNumber ?? null,
+      pr_url: result.prUrl,
+      pr_number: result.prNumber ?? null,
       pr_status: 'open'
     })
 
     // Clean up worktree (branch stays for the PR)
+    const repoConfig = getRepoConfig(task.repo)
     if (repoConfig) {
       await cleanupWorktree(task.worktree_path, branch, repoConfig.localPath, env)
     }
@@ -277,7 +237,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     if (updated) notifySprintMutation('updated', updated)
     deps.onStatusTerminal(taskId, 'done')
 
-    return { prUrl }
+    return { prUrl: result.prUrl }
   })
 
   // review:requestRevision — send task back for another pass
