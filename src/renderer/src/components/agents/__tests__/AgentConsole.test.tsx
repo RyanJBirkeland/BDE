@@ -118,7 +118,7 @@ describe('AgentConsole', () => {
 
   it('renders console lines for events', () => {
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
-    // The ConsoleLine component should render the started event
+    // The ConsoleCard component should render the started event
     expect(screen.getByText(/Started with model opus-4/)).toBeInTheDocument()
   })
 

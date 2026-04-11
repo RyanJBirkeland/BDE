@@ -13,9 +13,9 @@ vi.mock('../../../stores/agentEvents', () => ({
     })
 }))
 
-// Mock ConsoleLine
-vi.mock('../../agents/ConsoleLine', () => ({
-  ConsoleLine: ({ block }: { block: unknown }) => (
+// Mock ConsoleCard
+vi.mock('../../agents/cards/ConsoleCard', () => ({
+  ConsoleCard: ({ block }: { block: unknown }) => (
     <div data-testid="console-line">{JSON.stringify(block)}</div>
   )
 }))
@@ -55,7 +55,7 @@ describe('AgentOutputTab', () => {
     expect(mockLoadHistory).not.toHaveBeenCalled()
   })
 
-  it('renders ConsoleLine blocks when events are available', () => {
+  it('renders ConsoleCard blocks when events are available', () => {
     mockEvents['agent-1'] = [{ type: 'message', text: 'hello' }]
     render(<AgentOutputTab agentId="agent-1" />)
     expect(screen.getByTestId('console-line')).toBeInTheDocument()

@@ -11,7 +11,7 @@ import { pairEvents } from '../../lib/pair-events'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
 import { ConsoleHeader } from './ConsoleHeader'
-import { ConsoleLine } from './ConsoleLine'
+import { ConsoleCard } from './cards/ConsoleCard'
 import { CommandBar } from './CommandBar'
 import { PlaygroundModal } from './PlaygroundModal'
 import { ConsoleSearchBar } from './ConsoleSearchBar'
@@ -260,7 +260,7 @@ export function AgentConsole({
                       transform: `translateY(${virtualRow.start}px)`
                     }}
                   >
-                    <ConsoleLine
+                    <ConsoleCard
                       block={blocks[blockIndex]}
                       onPlaygroundClick={setPlaygroundBlock}
                       searchHighlight={searchHighlight}

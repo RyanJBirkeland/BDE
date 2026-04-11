@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { pairEvents } from '../../lib/pair-events'
-import { ConsoleLine } from '../agents/ConsoleLine'
+import { ConsoleCard } from '../agents/cards/ConsoleCard'
 
 interface AgentOutputTabProps {
   agentId: string
@@ -25,12 +25,12 @@ export function AgentOutputTab({
 
   const blocks = useMemo(() => (events ? pairEvents(events) : []), [events])
 
-  // Agent events available — use ConsoleLine renderer
+  // Agent events available — use ConsoleCard renderer
   if (events && events.length > 0) {
     return (
       <div className="terminal-agent-tab">
         {blocks.map((block, i) => (
-          <ConsoleLine key={i} block={block} />
+          <ConsoleCard key={i} block={block} />
         ))}
       </div>
     )
