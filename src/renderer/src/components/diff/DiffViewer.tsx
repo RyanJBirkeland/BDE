@@ -8,7 +8,6 @@ import { EmptyState } from '../ui/EmptyState'
 import { DIFF_VIRTUALIZE_THRESHOLD } from '../../lib/constants'
 import type { PrComment } from '../../../../shared/types'
 import type { PendingComment } from '../../stores/pendingReview'
-import { Group, Panel, Separator } from 'react-resizable-panels'
 import { DiffFileList } from './DiffFileList'
 import { PlainDiffContent } from './PlainDiffContent'
 
@@ -433,53 +432,46 @@ function DiffViewer({
   const shouldShowBanner = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments && !forceFullDiff
 
   return (
-    <div className="diff-view-container">
-      <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-        <Panel defaultSize={22} minSize={10} maxSize={40}>
-          <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
-        </Panel>
-        <Separator className="panel-separator" />
-        <Panel minSize={40}>
-          <div className="diff-content" ref={containerRef}>
-            {shouldShowBanner && (
-              <VirtualizedDiffBanner onForceFullDiff={() => setForceFullDiff(true)} />
-            )}
-            {useVirtualization ? (
-              <VirtualizedDiffContent
-                rows={flatRows}
-                totalHeight={totalHeight}
-                offsets={flatOffsets}
-                activeFileIndex={activeFileIndex}
-                activeHunk={activeHunk}
-                containerRef={containerRef}
-              />
-            ) : (
-              <PlainDiffContent
-                files={files}
-                activeFileIndex={activeFileIndex}
-                activeHunk={activeHunk}
-                fileRefs={fileRefs}
-                hunkRefs={hunkRefs}
-                commentsByPosition={commentsByPosition}
-                pendingByPosition={pendingByPosition}
-                selectedRange={selectedRange}
-                selectionStart={selectionStart}
-                isSelecting={isSelecting}
-                composerRange={composerRange}
-                setSelectionStart={setSelectionStart}
-                setIsSelecting={setIsSelecting}
-                setComposerRange={setComposerRange}
-                onSelectRange={onSelectRange}
-                onAddComment={onAddComment}
-                onRemovePendingComment={onRemovePendingComment}
-                isLineSelected={(filePath, lineNo) =>
-                  isLineSelected(filePath, lineNo, selectedRange)
-                }
-              />
-            )}
-          </div>
-        </Panel>
-      </Group>
+    <div className="diff-view-container view-layout">
+      <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
+      <div className="diff-content view-content" ref={containerRef}>
+        {shouldShowBanner && (
+          <VirtualizedDiffBanner onForceFullDiff={() => setForceFullDiff(true)} />
+        )}
+        {useVirtualization ? (
+          <VirtualizedDiffContent
+            rows={flatRows}
+            totalHeight={totalHeight}
+            offsets={flatOffsets}
+            activeFileIndex={activeFileIndex}
+            activeHunk={activeHunk}
+            containerRef={containerRef}
+          />
+        ) : (
+          <PlainDiffContent
+            files={files}
+            activeFileIndex={activeFileIndex}
+            activeHunk={activeHunk}
+            fileRefs={fileRefs}
+            hunkRefs={hunkRefs}
+            commentsByPosition={commentsByPosition}
+            pendingByPosition={pendingByPosition}
+            selectedRange={selectedRange}
+            selectionStart={selectionStart}
+            isSelecting={isSelecting}
+            composerRange={composerRange}
+            setSelectionStart={setSelectionStart}
+            setIsSelecting={setIsSelecting}
+            setComposerRange={setComposerRange}
+            onSelectRange={onSelectRange}
+            onAddComment={onAddComment}
+            onRemovePendingComment={onRemovePendingComment}
+            isLineSelected={(filePath, lineNo) =>
+              isLineSelected(filePath, lineNo, selectedRange)
+            }
+          />
+        )}
+      </div>
     </div>
   )
 }
