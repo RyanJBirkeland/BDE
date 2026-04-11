@@ -15,8 +15,8 @@ import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifi
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
 import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useVisibleStuckTasks } from '../../stores/healthCheck'
+import { useFilteredTasks } from '../../hooks/useFilteredTasks'
 import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
-import { parseTaskQuery, applyPredicates } from '../../lib/task-query'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
 import { PipelineBacklog } from './PipelineBacklog'
@@ -58,11 +58,7 @@ export function SprintPipeline(): React.JSX.Element {
     doneViewOpen,
     logDrawerTaskId,
     conflictDrawerOpen,
-    healthCheckDrawerOpen,
-    statusFilter,
-    repoFilter,
-    tagFilter,
-    searchQuery
+    healthCheckDrawerOpen
   } = useSprintUI(
     useShallow((s) => ({
       selectedTaskId: s.selectedTaskId,
@@ -72,11 +68,7 @@ export function SprintPipeline(): React.JSX.Element {
       doneViewOpen: s.doneViewOpen,
       logDrawerTaskId: s.logDrawerTaskId,
       conflictDrawerOpen: s.conflictDrawerOpen,
-      healthCheckDrawerOpen: s.healthCheckDrawerOpen,
-      statusFilter: s.statusFilter,
-      repoFilter: s.repoFilter,
-      tagFilter: s.tagFilter,
-      searchQuery: s.searchQuery
+      healthCheckDrawerOpen: s.healthCheckDrawerOpen
     }))
   )
   // Setters are stable Zustand references — no shallow-eq needed, one subscription
@@ -249,102 +241,8 @@ export function SprintPipeline(): React.JSX.Element {
   // --- Local UI state ---
   const [dagOpen, setDagOpen] = useState(false)
 
-  // Filter + partition tasks
-  const filteredTasks = useMemo(() => {
-    let result = tasks
-    // Apply UI chip filters
-    if (repoFilter) result = result.filter((t) => t.repo === repoFilter)
-    if (tagFilter) result = result.filter((t) => t.tags?.includes(tagFilter))
-    // Apply structured query language
-    if (searchQuery) {
-      const predicates = parseTaskQuery(searchQuery)
-      result = applyPredicates(result, predicates)
-    }
-    return result
-  }, [tasks, repoFilter, tagFilter, searchQuery])
-
-  const partition = useMemo(() => partitionSprintTasks(filteredTasks), [filteredTasks])
-
-  // Apply status filter to partition buckets
-  const filteredPartition = useMemo(() => {
-    if (statusFilter === 'all') return partition
-
-    const emptyBucket: SprintTask[] = []
-    switch (statusFilter) {
-      case 'backlog':
-        return {
-          ...partition,
-          todo: emptyBucket,
-          blocked: emptyBucket,
-          inProgress: emptyBucket,
-          awaitingReview: emptyBucket,
-          done: emptyBucket,
-          failed: emptyBucket
-        }
-      case 'todo':
-        return {
-          ...partition,
-          backlog: emptyBucket,
-          blocked: emptyBucket,
-          inProgress: emptyBucket,
-          awaitingReview: emptyBucket,
-          done: emptyBucket,
-          failed: emptyBucket
-        }
-      case 'blocked':
-        return {
-          ...partition,
-          backlog: emptyBucket,
-          todo: emptyBucket,
-          inProgress: emptyBucket,
-          awaitingReview: emptyBucket,
-          done: emptyBucket,
-          failed: emptyBucket
-        }
-      case 'in-progress':
-        return {
-          ...partition,
-          backlog: emptyBucket,
-          todo: emptyBucket,
-          blocked: emptyBucket,
-          awaitingReview: emptyBucket,
-          done: emptyBucket,
-          failed: emptyBucket
-        }
-      case 'awaiting-review':
-        return {
-          ...partition,
-          backlog: emptyBucket,
-          todo: emptyBucket,
-          blocked: emptyBucket,
-          inProgress: emptyBucket,
-          done: emptyBucket,
-          failed: emptyBucket
-        }
-      case 'done':
-        return {
-          ...partition,
-          backlog: emptyBucket,
-          todo: emptyBucket,
-          blocked: emptyBucket,
-          inProgress: emptyBucket,
-          awaitingReview: emptyBucket,
-          failed: emptyBucket
-        }
-      case 'failed':
-        return {
-          ...partition,
-          backlog: emptyBucket,
-          todo: emptyBucket,
-          blocked: emptyBucket,
-          inProgress: emptyBucket,
-          awaitingReview: emptyBucket,
-          done: emptyBucket
-        }
-      default:
-        return partition
-    }
-  }, [partition, statusFilter])
+  // Filter + partition tasks via extracted hook
+  const { filteredTasks, filteredPartition, partition } = useFilteredTasks()
 
   const selectedTask = useMemo(
     () => (selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null),
