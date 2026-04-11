@@ -48,7 +48,8 @@ import { getSetting, getSettingJson } from './settings'
 import { createTaskTerminalService } from './services/task-terminal-service'
 import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
-import { getTask, updateTask, getTasksWithDependencies } from './data/sprint-queries'
+import { getTasksWithDependencies } from './data/sprint-queries'
+import { getTask, updateTask } from './services/sprint-service'
 import {
   registerTearoffHandlers,
   closeTearoffWindows,
