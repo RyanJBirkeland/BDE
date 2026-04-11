@@ -27,19 +27,15 @@ function getNextReviewTaskId(
   currentTaskId: string,
   allTasks: Array<{ id: string; status: string; updated_at: string }>
 ): string | null {
+  // Exclude the current task so callers (Ship It / Merge / Discard) don't get
+  // handed back the same task they just acted on. If nothing else is in
+  // review, return null and let the auto-select effect pick up whatever
+  // transitions into review next.
   const reviewTasks = allTasks
-    .filter((t) => t.status === 'review')
+    .filter((t) => t.status === 'review' && t.id !== currentTaskId)
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
-  if (reviewTasks.length === 0) return null
-
-  const currentIndex = reviewTasks.findIndex((t) => t.id === currentTaskId)
-  if (currentIndex === -1) {
-    return reviewTasks[0].id
-  }
-
-  const nextIndex = currentIndex + 1
-  return nextIndex < reviewTasks.length ? reviewTasks[nextIndex].id : reviewTasks[0].id
+  return reviewTasks.length > 0 ? reviewTasks[0].id : null
 }
 
 export function TopBar(): React.JSX.Element {
@@ -74,6 +70,22 @@ export function TopBar(): React.JSX.Element {
       .then(setFreshness)
       .catch(() => setFreshness({ status: 'unknown' }))
   }, [task?.id, task?.rebased_at])
+
+  // Auto-select the first review task when the current selection is stale
+  // (e.g. after Ship It marked it `done`) or missing. Without this, the
+  // TopBar falls into its empty state any time the previously-selected task
+  // leaves review status, even if another task is available — which blocks
+  // the user from shipping anything more without manually reopening the
+  // task switcher popover. Runs whenever `tasks` updates (poll merge + file
+  // watcher `sprint:externalChange` events).
+  const isValidSelection = !!task && task.status === 'review'
+  useEffect(() => {
+    if (isValidSelection) return
+    const firstReview = tasks
+      .filter((t) => t.status === 'review')
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
+    if (firstReview) selectTask(firstReview.id)
+  }, [isValidSelection, tasks, selectTask])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent): void => {
@@ -414,6 +426,7 @@ export function TopBar(): React.JSX.Element {
   }
 
   const isBatchMode = selectedBatchIds.size > 0
+  const hasAnyReviewTask = tasks.some((t) => t.status === 'review')
 
   if (!task || task.status !== 'review') {
     return (
@@ -496,7 +509,7 @@ export function TopBar(): React.JSX.Element {
               exit="exit"
               transition={{ duration: 0.12 }}
             >
-              Select a task in review to see actions
+              {hasAnyReviewTask ? 'Loading…' : 'No tasks in review'}
             </motion.span>
           )}
         </AnimatePresence>

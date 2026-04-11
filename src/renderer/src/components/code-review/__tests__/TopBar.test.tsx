@@ -90,10 +90,22 @@ describe('TopBar', () => {
     expect(screen.getByRole('menuitem', { name: /Discard/i })).toBeInTheDocument()
   })
 
-  it('should render hint when no task selected', () => {
+  it('should auto-select first review task when selection is cleared', async () => {
     useCodeReviewStore.getState().selectTask(null)
     render(<TopBar />)
-    expect(screen.getByText(/Select a task in review to see actions/i)).toBeInTheDocument()
+    // Auto-select effect should re-pick task-1 since it is in review status.
+    // The task title should appear in the task switcher button.
+    await waitFor(() => {
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument()
+    })
+    expect(useCodeReviewStore.getState().selectedTaskId).toBe('task-1')
+  })
+
+  it('should show "No tasks in review" hint when nothing is in review', () => {
+    useSprintTasks.setState({ tasks: [] })
+    useCodeReviewStore.getState().selectTask(null)
+    render(<TopBar />)
+    expect(screen.getByText(/No tasks in review/i)).toBeInTheDocument()
   })
 
   it('should show batch mode when tasks are selected', () => {

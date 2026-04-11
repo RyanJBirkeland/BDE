@@ -49,13 +49,13 @@ describe('CodeReviewView', () => {
   it('renders the three-column shell with TopBar', () => {
     render(<CodeReviewView />)
     // TopBar should be present
-    expect(screen.getByText('Select a task in review to see actions')).toBeInTheDocument()
+    expect(screen.getByText('No tasks in review')).toBeInTheDocument()
     // Three-column structure should exist (check for placeholder AI Assistant)
     expect(screen.getByText('AI Assistant')).toBeInTheDocument()
   })
 
   it('renders the actions hint when no task selected', () => {
     render(<CodeReviewView />)
-    expect(screen.getByText('Select a task in review to see actions')).toBeInTheDocument()
+    expect(screen.getByText('No tasks in review')).toBeInTheDocument()
   })
 })
