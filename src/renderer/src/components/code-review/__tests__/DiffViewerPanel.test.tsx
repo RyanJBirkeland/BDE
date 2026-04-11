@@ -16,9 +16,20 @@ vi.mock('../TestsTab', () => ({
   TestsTab: () => <div data-testid="tests-tab">Tests</div>
 }))
 
+const partnerState = vi.hoisted(() => ({
+  reviewByTask: {} as Record<string, { result?: unknown } | undefined>
+}))
+
+vi.mock('../../../stores/reviewPartner', () => ({
+  useReviewPartnerStore: vi.fn(
+    (sel: (s: typeof partnerState) => unknown) => sel(partnerState)
+  )
+}))
+
 describe('DiffViewerPanel', () => {
   beforeEach(() => {
     useCodeReviewStore.getState().reset()
+    partnerState.reviewByTask = {}
   })
 
   it('should render Changes tab by default', () => {
@@ -66,5 +77,57 @@ describe('DiffViewerPanel', () => {
     expect(screen.getByRole('button', { name: 'Diff' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Commits' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Tests' })).toBeInTheDocument()
+  })
+
+  it('should show AIReviewedBadge when a finding exists for selected file', () => {
+    useCodeReviewStore.setState({
+      selectedTaskId: 'task-1',
+      selectedDiffFile: 'src/foo.ts'
+    })
+    partnerState.reviewByTask = {
+      'task-1': {
+        result: {
+          findings: {
+            perFile: [{ path: 'src/foo.ts', status: 'issues', commentCount: 3, comments: [] }]
+          }
+        }
+      }
+    }
+    render(<DiffViewerPanel />)
+    expect(screen.getByLabelText('AI reviewed — 3 comments')).toBeInTheDocument()
+  })
+
+  it('should not show AIReviewedBadge when no finding for selected file', () => {
+    useCodeReviewStore.setState({
+      selectedTaskId: 'task-1',
+      selectedDiffFile: 'src/foo.ts'
+    })
+    partnerState.reviewByTask = {
+      'task-1': {
+        result: {
+          findings: { perFile: [] }
+        }
+      }
+    }
+    render(<DiffViewerPanel />)
+    expect(screen.queryByLabelText(/AI reviewed/i)).not.toBeInTheDocument()
+  })
+
+  it('should not show AIReviewedBadge when no file selected', () => {
+    useCodeReviewStore.setState({
+      selectedTaskId: 'task-1',
+      selectedDiffFile: null
+    })
+    partnerState.reviewByTask = {
+      'task-1': {
+        result: {
+          findings: {
+            perFile: [{ path: 'src/foo.ts', status: 'clean', commentCount: 0, comments: [] }]
+          }
+        }
+      }
+    }
+    render(<DiffViewerPanel />)
+    expect(screen.queryByLabelText(/AI reviewed/i)).not.toBeInTheDocument()
   })
 })

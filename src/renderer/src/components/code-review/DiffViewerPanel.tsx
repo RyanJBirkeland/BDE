@@ -1,9 +1,11 @@
 import './DiffViewerPanel.css'
 import { Copy } from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
+import { useReviewPartnerStore } from '../../stores/reviewPartner'
 import { ChangesTab } from './ChangesTab'
 import { CommitsTab } from './CommitsTab'
 import { TestsTab } from './TestsTab'
+import { AIReviewedBadge } from './AIReviewedBadge'
 import { toast } from '../../stores/toasts'
 import type { DiffMode } from '../../stores/codeReview'
 
@@ -11,6 +13,13 @@ export function DiffViewerPanel(): React.JSX.Element {
   const diffMode = useCodeReviewStore((s) => s.diffMode)
   const setDiffMode = useCodeReviewStore((s) => s.setDiffMode)
   const selectedDiffFile = useCodeReviewStore((s) => s.selectedDiffFile)
+  const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
+  const finding = useReviewPartnerStore((s) => {
+    if (!selectedTaskId || !selectedDiffFile) return undefined
+    return s.reviewByTask[selectedTaskId]?.result?.findings.perFile.find(
+      (f) => f.path === selectedDiffFile
+    )
+  })
 
   const handleCopyPath = (): void => {
     if (!selectedDiffFile) return
@@ -38,6 +47,7 @@ export function DiffViewerPanel(): React.JSX.Element {
               >
                 <Copy size={12} />
               </button>
+              {finding && <AIReviewedBadge commentCount={finding.commentCount} />}
             </>
           ) : (
             <span className="cr-diffviewer__path cr-diffviewer__path--empty">
