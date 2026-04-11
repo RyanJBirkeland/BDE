@@ -47,6 +47,11 @@ export interface SdkStreamingOptions {
    * Defaults to `['user', 'project', 'local']`.
    */
   settingSources?: Array<'user' | 'project' | 'local'>
+  /**
+   * Override the default SDK model. If omitted, defaults to Sonnet 4.5.
+   * Example: 'claude-opus-4-6' for the review partner chat.
+   */
+  model?: string
 }
 
 /**
@@ -75,7 +80,7 @@ export async function runSdkStreaming(
   const queryHandle = sdk.query({
     prompt,
     options: {
-      model: 'claude-sonnet-4-5',
+      model: options.model ?? 'claude-sonnet-4-5',
       maxTurns: options.maxTurns ?? 1,
       env: env as Record<string, string>,
       pathToClaudeCodeExecutable: getClaudeCliPath(),
@@ -136,4 +141,24 @@ export async function runSdkStreaming(
   }
 
   return fullText.trim()
+}
+
+/**
+ * Single-shot SDK call with no streaming callback — collects the full text and
+ * returns it. Intended for JSON-mode agents (e.g. the reviewer auto-review pass)
+ * where chunk-by-chunk rendering is not needed.
+ *
+ * @param prompt - The prompt to send
+ * @param options - SDK options; `tools: []` disables all tools
+ * @param timeoutMs - Timeout in milliseconds (default: 120 seconds)
+ */
+export async function runSdkOnce(
+  prompt: string,
+  options: SdkStreamingOptions = {},
+  timeoutMs = 120_000
+): Promise<string> {
+  // Reuse runSdkStreaming by supplying a no-op onChunk. Tracking map is local.
+  const activeStreams = new Map<string, { close: () => void }>()
+  const streamId = `once-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return runSdkStreaming(prompt, () => {}, activeStreams, streamId, timeoutMs, options)
 }
