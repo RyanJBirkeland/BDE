@@ -72,8 +72,8 @@ The reason for the move: in a three-panel layout, the left column is premium rea
 The four tabs (`Changes`, `Commits`, `Tests`, `Conversation`) collapse as follows:
 
 - **Changes** → becomes the default mode of `DiffViewer`. No tab needed — it's what you see.
-- **Commits** → becomes a **mode toggle** inside `DiffViewer` (a segmented control at the top of the panel: `Diff` | `Commits`). Selecting `Commits` replaces the diff with the commit list; selecting a commit swaps the file tree to show that commit's files. This is a deferred behaviour — for v1 of the overhaul, the commits view keeps the exact same renderer as today, just moved.
-- **Tests** → same pattern as Commits. Segmented control option `Tests` renders the `TestsTab` component in the center panel. File tree hides in this mode.
+- **Commits** → becomes a **mode toggle** inside `DiffViewer` (a segmented control at the top of the panel: `Diff` | `Commits` | `Tests`). Selecting `Commits` replaces the diff with the commit list. **FileTree behaviour in v1:** the left FileTree stays showing the branch's cumulative file list unchanged — it does *not* swap to the selected commit's files. Swapping is deferred (it requires a second `getDiff()` call scoped to a commit range and adds state that isn't needed for v1). A commit selection highlights the commit in the center panel only.
+- **Tests** → same segmented control. Renders the `TestsTab` component in the center panel. FileTree stays visible showing the branch's cumulative file list (not only the test files) — same rationale: zero extra logic.
 - **Conversation** → **deleted as a tab**. The agent's historical chat log is folded into the `AIAssistant` panel as pre-seeded context: when the user opens the AI assistant for a task, the first thing it sees is the full agent conversation, and there's a toggle inside the assistant panel (`Show agent history`) that renders those messages read-only above the user's own thread.
 
 This means the reviewer can ask the AI "why did the agent touch this file?" and the AI has the original reasoning in its context. The old `ConversationTab` was read-only and never got used for anything; the new assistant makes it productive.
@@ -121,11 +121,12 @@ These are the only spacing values used anywhere in the new view. No `16px`, no `
 
 ### 4.3 Width responsiveness
 
-The total minimum usable width is `256 + 480 + 384 = 1120px` (480px as a hard floor for the diff). Below 1120px:
+The total minimum usable width with all three panels expanded is `256 + 480 + 384 = 1120px` (480px is the hard floor for the diff body). Below that, panels collapse in two steps:
 
-1. **First breakpoint (≤1120px)**: AIAssistant panel collapses to a 40px rail with an `Open assistant` chevron button. Clicking expands it as a right-docked overlay on top of the diff (not a side-panel push).
-2. **Second breakpoint (≤860px)**: FileTree collapses the same way — 40px rail on the left.
-3. **Third breakpoint (≤620px)**: The view is unusable and we don't try to support it. `min-width: 620px` on `.cr-view` (the panel system already prevents smaller viewports).
+1. **Breakpoint A (≤1120px)**: AIAssistant panel collapses to a 40px rail with an `Open assistant` chevron button. Clicking expands it as a right-docked overlay on top of the diff (not a side-panel push).
+2. **Breakpoint B (≤860px)**: FileTree collapses the same way — 40px rail on the left.
+
+Below `620px` the view is considered unusable. `.cr-view` takes `min-width: 620px`; the panel system already prevents smaller viewports from reaching this view, so no further breakpoint is needed.
 
 The collapse/expand transitions are pure CSS width + opacity; no JavaScript needed.
 
@@ -155,7 +156,7 @@ Each sub-section describes the new visual unit. Implementation details (which st
   1. **Left** — task switcher button. Shows current task title (truncated, `max-width: 320px`) and a caret. Clicking opens a popover with the full review queue (what `ReviewQueue` currently renders). The popover is a floating `NeonPopover`-style panel — `position: fixed`, `max-height: 60vh`, scrollable. `j`/`k` still navigate through it; selection fires `selectTask()`.
   2. **Center** — freshness badge (`Fresh` / `Stale (N behind)` / `Conflict` / `…`) using existing `cr-actions__freshness` styles, reparented here. Plus the `Rebase` button, outlined ghost style.
   3. **Right** — primary action cluster: `Ship It`, `Merge Locally` (with strategy dropdown), `Create PR`, and a kebab menu for `Revise` / `Discard`. All four are reused directly from `ReviewActions.tsx`; only their container changes.
-- **Batch mode**: when the user shift-clicks or uses `Select All Review Tasks` from the command palette, the TopBar swaps its content for a batch action row — `N tasks selected` label + the four batch operations. Background flips to `var(--bde-accent-dim)` for strong affordance. Pressing `Escape` or clicking `Clear` reverts.
+- **Batch mode**: when the user shift-clicks or uses `Select All Review Tasks` from the command palette, the TopBar swaps its content for a batch action row — `N tasks selected` label + the four batch operations. Background flips to `var(--bde-accent-surface)` for strong affordance. Pressing `Escape` or clicking `Clear` reverts.
 
 ### 5.3 FileTree panel — `.cr-filetree`
 
@@ -182,27 +183,29 @@ Each sub-section describes the new visual unit. Implementation details (which st
 - Flex `1 1 0; min-width: 0;`
 - **Header** (`.cr-diffviewer__header`, `36px`, `padding: 0 var(--bde-space-4)`):
   - Left: breadcrumb of the selected file path. `var(--bde-size-sm)`, `var(--bde-text-muted)`, with a copy-path icon button on hover.
-  - Right: mode segmented control — `Diff | Commits | Tests`. Pills have `padding: 2px var(--bde-space-3)`, `border-radius: var(--bde-radius-md)`, active pill uses `background: var(--bde-accent-dim); color: var(--bde-accent);`.
+  - Right: mode segmented control — `Diff | Commits | Tests`. Pills have `padding: 2px var(--bde-space-3)`, `border-radius: var(--bde-radius-md)`, active pill uses `background: var(--bde-accent-surface); color: var(--bde-accent);`.
 - **Body** (`.cr-diffviewer__body`):
   - `flex: 1 1 auto; overflow: auto;`
   - Renders the existing `<DiffViewer>` component unchanged. We are *not* rewriting diff rendering — that component already handles hunks, additions, deletions, line numbers, and syntax highlighting.
   - Padding inside the scroll area is `0` because `DiffViewer` owns its own line geometry. The only thing the panel adds is the scroll container.
-- **Commits mode**: the body becomes a commit list (reuse `CommitsTab` as-is). File tree in the left column also swaps to "files in this commit" — or stays disabled in v1; see §9.
-- **Tests mode**: body renders `TestsTab` unchanged.
+- **Commits mode**: the body becomes a commit list (reuse `CommitsTab` as-is). FileTree stays showing the branch's cumulative file list (see §3.2).
+- **Tests mode**: body renders `TestsTab` unchanged. FileTree stays visible (see §3.2).
 - **Snapshot banner**: the existing `.cr-changes__snapshot-banner` moves to the top of `.cr-diffviewer__body` with no visual changes.
 
 ### 5.5 AIAssistant panel — `.cr-assistant`
 
+> **Layout-vs-behaviour split:** this section describes the **visual contract** of the assistant panel only — the DOM structure, CSS, and states the UI must be able to render. The backend wiring (SDK streaming, prompt composition, thread persistence) is **out of scope for this spec** and is authored in the implementation plan. Where the text below says "when a stream is in flight" or "the thread", that is describing the *visual state* the CSS must support, not mandating how it is produced.
+
 - Width `384px`, flex column.
 - **Header** (`.cr-assistant__header`, `36px`):
   - Left: label `AI Assistant`, `var(--bde-size-sm)`, weight `600`, color `var(--bde-text)`. A small `<Sparkles size={12}>` icon in `var(--bde-purple)` sits before the label.
-  - Right: kebab menu with `Show agent history` toggle, `Clear thread`, and `New thread`.
+  - Right: kebab menu with `Show agent history` toggle, `Clear thread`, and `New thread`. For v1 of this redesign, the menu items are **rendered as visual scaffolding** — the kebab opens a popover with these three entries, and `Show agent history` toggles a CSS class that shows/hides any pre-seeded history bubbles. `Clear thread` and `New thread` dispatch no-op placeholder handlers that the implementation plan will replace. The layout work is considered complete when the menu renders, toggles, and does not visually regress.
 - **Messages** (`.cr-assistant__messages`):
   - `flex: 1 1 auto; overflow-y: auto; padding: var(--bde-space-4); display: flex; flex-direction: column; gap: var(--bde-space-3);`
   - **User bubble**: aligned right. `max-width: 80%`, `background: var(--bde-accent); color: var(--bde-btn-primary-text); border-radius: var(--bde-radius-lg) var(--bde-radius-lg) var(--bde-radius-sm) var(--bde-radius-lg); padding: var(--bde-space-3) var(--bde-space-4);` Font `var(--bde-size-sm)`.
   - **Assistant bubble**: aligned left. Same sizing but `background: var(--bde-surface-high); color: var(--bde-text); border: 1px solid var(--bde-border); border-radius: var(--bde-radius-lg) var(--bde-radius-lg) var(--bde-radius-lg) var(--bde-radius-sm);`
   - **Agent-history bubble** (when `Show agent history` is on): assistant bubble style but with `border-left: 2px solid var(--bde-purple);` and an `Agent · <timestamp>` label on top in `var(--bde-text-dim)`.
-  - **Streaming cursor**: the last assistant bubble gets a `::after` blinking cursor while the SDK stream is live. `@keyframes cr-cursor-blink { 50% { opacity: 0; } }`, 1s linear infinite. Respects `prefers-reduced-motion` → no animation.
+  - **Streaming cursor**: the last assistant bubble receives a `.cr-assistant__bubble--streaming` class whenever the UI is rendering an in-flight message. That class drives a `::after` blinking cursor via `@keyframes cr-cursor-blink { 50% { opacity: 0; } }`, 1s linear infinite. Respects `prefers-reduced-motion` → no animation. **Who sets the class is out of scope for this spec** — v1 just requires the selector to exist and render correctly when toggled.
 - **Input dock** (`.cr-assistant__input`):
   - Bottom-pinned. Height `auto` with `min-height: 44px`, `max-height: 160px`. `padding: var(--bde-space-3) var(--bde-space-4); border-top: 1px solid var(--bde-border); background: var(--bde-surface);`
   - A `<textarea>` with `resize: none; background: transparent; border: none; outline: none; font: inherit; color: var(--bde-text);` that auto-grows up to max-height then scrolls.
@@ -234,7 +237,7 @@ All colors, spacing, typography, and radii map to existing `--bde-*` tokens defi
 | `amber-500` (modified) | `var(--bde-diff-mod)` | File icon |
 | `purple-500` (AI) | `var(--bde-purple)` | Sparkles icon, agent-history border |
 | `blue-500` (accent) | `var(--bde-accent)` | Selected row, active tab, primary button |
-| `accent-surface` | `var(--bde-accent-dim)` | Active segmented pill, batch-mode TopBar |
+| `accent-surface` | `var(--bde-accent-surface)` | Active segmented pill, batch-mode TopBar, selected-row tint. Note: this is the newer "unified" token — always prefer it over the older `--bde-accent-dim`, which is reserved for one-off legacy call sites. |
 | `rounded-sm / md / lg / xl` | `var(--bde-radius-sm/md/lg/xl)` | Compact scale: 3/4/6/8px |
 
 Because BDE already ships `pro-dark` and `pro-light` with identical tokens, the redesigned view is **theme-agnostic for free**. No `@media (prefers-color-scheme)` rules, no per-theme overrides. The only place we'll need theme awareness is the diff highlighting — and that already lives inside the existing `DiffViewer` component, not here.
@@ -292,11 +295,10 @@ The existing Zustand store `stores/codeReview.ts` gains one new concept — a pe
 - **Theme switcher for the view.** Neon vs. pro-dark vs. pro-light is controlled at the app level — not per-view.
 - **Mobile / narrow layouts below 620px.** Explicitly unsupported.
 
-## 11. Open Questions (for the user to resolve before implementation)
+## 11. Known Risks
 
-1. **Commits-mode file tree**: when the user switches the DiffViewer to `Commits`, should the left FileTree (a) stay showing the branch's cumulative file list, (b) swap to the files touched by the currently-selected commit, or (c) hide entirely? Default answer in this spec is (a) for v1 (zero extra logic), but (b) is the more useful long-term behaviour.
-2. **Assistant panel default state**: when the user first opens a task, should the AI assistant auto-post a summary message, or wait for the user to ask? Auto-post is more discoverable but may feel noisy; silent is cheaper and more respectful. Default in this spec is **silent** — quick-action chips are the discovery mechanism.
-3. **Figma Make source reference**: the spec above is driven by the user's description of `DESIGN_DOCUMENTATION.md` / `CSS_PATTERNS.md` / `QUICK_REFERENCE.md` rather than a direct read of those files (they live only in the Figma Make workspace). If the designer has pixel-specific overrides — e.g. a 240px FileTree instead of 256px, or a specific assistant panel gradient — those should be reconciled against this spec before implementation. The tokens listed in §6 will absorb colour changes for free; only dimensions need a second pass.
+1. **Assistant panel default state** *(decided: silent)*: when the user first opens a task, the assistant does **not** auto-post a summary. Discovery happens through the three quick-action chips above the input. This is a product call — if feedback after ship says reviewers never find the chips, revisit.
+2. **Figma Make source reference**: the spec above is driven by the user's summary of `DESIGN_DOCUMENTATION.md` / `CSS_PATTERNS.md` / `QUICK_REFERENCE.md` rather than a direct read of those files (they live only in the Figma Make workspace). If the designer has pixel-specific overrides — e.g. a 240px FileTree instead of 256px, or a specific assistant-panel gradient — those should be reconciled against this spec before implementation. The tokens listed in §6 will absorb colour changes for free; only dimensions need a second pass.
 
 ## 12. Success Criteria
 
