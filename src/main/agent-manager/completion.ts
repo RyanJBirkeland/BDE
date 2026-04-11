@@ -56,6 +56,48 @@ export interface ResolveFailureOpts {
   repo: ISprintTaskRepository
 }
 
+interface TransitionToReviewOpts {
+  taskId: string
+  worktreePath: string
+  rebaseNote: string | undefined
+  rebaseBaseSha: string | undefined
+  rebaseSucceeded: boolean
+  repo: ISprintTaskRepository
+  logger: Logger
+}
+
+interface MergeOpts {
+  taskId: string
+  title: string
+  branch: string
+  worktreePath: string
+  repoPath: string
+  repo: ISprintTaskRepository
+  logger: Logger
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>
+}
+
+interface CommitCheckOpts {
+  taskId: string
+  branch: string
+  worktreePath: string
+  agentSummary: string | null | undefined
+  retryCount: number
+  repo: ISprintTaskRepository
+  logger: Logger
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>
+}
+
+interface AutoMergeOpts {
+  taskId: string
+  title: string
+  branch: string
+  worktreePath: string
+  repo: ISprintTaskRepository
+  logger: Logger
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>
+}
+
 async function detectBranch(worktreePath: string): Promise<string> {
   const env = buildAgentEnv()
   const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
@@ -151,15 +193,8 @@ async function cleanupWorktreeAndBranch(
  * Transition task to review status with diff snapshot and duration calculation.
  * Preserves worktree for human code review.
  */
-async function transitionToReview(
-  taskId: string,
-  worktreePath: string,
-  rebaseNote: string | undefined,
-  rebaseBaseSha: string | undefined,
-  rebaseSucceeded: boolean,
-  repo: ISprintTaskRepository,
-  logger: Logger
-): Promise<void> {
+async function transitionToReview(opts: TransitionToReviewOpts): Promise<void> {
+  const { taskId, worktreePath, rebaseNote, rebaseBaseSha, rebaseSucceeded, repo, logger } = opts
   const task = repo.getTask(taskId)
   let durationMs: number | undefined
   if (task?.started_at) {
@@ -198,16 +233,8 @@ async function transitionToReview(
  * Execute squash merge of agent branch into main repo.
  * Handles merge, commit, post-merge dedup, worktree cleanup, and task completion.
  */
-async function executeSquashMerge(
-  taskId: string,
-  title: string,
-  branch: string,
-  worktreePath: string,
-  repoPath: string,
-  repo: ISprintTaskRepository,
-  logger: Logger,
-  onTaskTerminal: (taskId: string, status: string) => Promise<void>
-): Promise<void> {
+async function executeSquashMerge(opts: MergeOpts): Promise<void> {
+  const { taskId, title, branch, worktreePath, repoPath, repo, logger, onTaskTerminal } = opts
   const env = buildAgentEnv()
   const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
     cwd: repoPath,
@@ -359,16 +386,9 @@ async function failTaskWithError(
  * Check if branch has any commits ahead of origin/main.
  * Returns true if commits exist, false if none (triggers retry/failure).
  */
-async function hasCommitsAheadOfMain(
-  taskId: string,
-  branch: string,
-  worktreePath: string,
-  agentSummary: string | null | undefined,
-  retryCount: number,
-  repo: ISprintTaskRepository,
-  logger: Logger,
-  onTaskTerminal: (taskId: string, status: string) => Promise<void>
-): Promise<boolean> {
+async function hasCommitsAheadOfMain(opts: CommitCheckOpts): Promise<boolean> {
+  const { taskId, branch, worktreePath, agentSummary, retryCount, repo, logger, onTaskTerminal } =
+    opts
   const env = buildAgentEnv()
   try {
     const { stdout: diffOut } = await execFile(
@@ -403,15 +423,8 @@ async function hasCommitsAheadOfMain(
  * Attempt auto-merge based on configured auto-review rules.
  * Evaluates rules against diff stats and executes squash merge if qualified.
  */
-async function attemptAutoMerge(
-  taskId: string,
-  title: string,
-  branch: string,
-  worktreePath: string,
-  repo: ISprintTaskRepository,
-  logger: Logger,
-  onTaskTerminal: (taskId: string, status: string) => Promise<void>
-): Promise<void> {
+async function attemptAutoMerge(opts: AutoMergeOpts): Promise<void> {
+  const { taskId, title, branch, worktreePath, repo, logger, onTaskTerminal } = opts
   const { getSettingJson } = await import('../settings')
   const rules = getSettingJson<AutoReviewRule[]>('autoReview.rules')
 
@@ -438,16 +451,16 @@ async function attemptAutoMerge(
         return
       }
 
-      await executeSquashMerge(
+      await executeSquashMerge({
         taskId,
         title,
         branch,
         worktreePath,
-        repoConfig.localPath,
+        repoPath: repoConfig.localPath,
         repo,
         logger,
         onTaskTerminal
-      )
+      })
     }
   } catch (err) {
     logger.warn(`[completion] Auto-review check failed for task ${taskId}: ${err}`)
@@ -606,7 +619,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   }
 
   // 4. Check if there are any commits
-  const hasCommits = await hasCommitsAheadOfMain(
+  const hasCommits = await hasCommitsAheadOfMain({
     taskId,
     branch,
     worktreePath,
@@ -615,7 +628,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     repo,
     logger,
     onTaskTerminal
-  )
+  })
   if (!hasCommits) {
     return
   }
@@ -625,7 +638,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`
   )
 
-  await transitionToReview(
+  await transitionToReview({
     taskId,
     worktreePath,
     rebaseNote,
@@ -633,10 +646,10 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     rebaseSucceeded,
     repo,
     logger
-  )
+  })
 
   // 6. Check auto-review rules — if qualified, auto-merge
-  await attemptAutoMerge(taskId, title, branch, worktreePath, repo, logger, onTaskTerminal)
+  await attemptAutoMerge({ taskId, title, branch, worktreePath, repo, logger, onTaskTerminal })
 
   // NOTE: If not auto-merged, do NOT call onTaskTerminal — review is not a terminal status.
   // Do NOT clean up worktree — it stays alive for review.
