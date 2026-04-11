@@ -1,56 +1,107 @@
 /* ── Agents: Sidebar header ────────────────────────────── */
 
 .agents-view__sidebar-header {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
-  height: 36px;
-  border-bottom: 1px solid var(--bde-border);
-  flex-shrink: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
-.agents-view__sidebar-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 16px;
-  right: 16px;
-  height: 1px;
-  background: var(--bde-header-gradient);
+.agents-view__title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .agents-view__title {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 10px;
   text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+.agents-view__info-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.agents-view__info-icon {
+  color: var(--bde-text-muted);
+  cursor: help;
+  transition: color 0.2s;
+}
+
+.agents-view__info-icon:hover {
+  color: var(--bde-accent);
+}
+
+.agents-view__tooltip {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 240px;
+  padding: 8px 10px;
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--bde-text-muted);
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.agents-view__tooltip-strong {
+  color: var(--bde-accent);
 }
 
 .agents-view__spawn-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--bde-accent-border);
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
   cursor: pointer;
+  padding: 0;
+}
+
+.agents-view__scratchpad-banner {
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--bde-accent-border);
+  background: var(--bde-accent-surface);
   color: var(--bde-text-muted);
-  transition:
-    color 0.12s ease,
-    border-color 0.12s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
-.agents-view__spawn-btn:hover:not(:disabled) {
-  color: var(--bde-text);
-  border-color: var(--bde-text-muted);
+.agents-view__scratchpad-banner-text {
+  flex: 1;
 }
 
-.agents-view__spawn-btn:active:not(:disabled) {
-  transform: scale(0.97);
+.agents-view__scratchpad-banner-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--bde-text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.agents-view__scratchpad-banner-dismiss:hover {
+  color: var(--bde-accent);
 }
 
 /* ── Agents View Container ── */

@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface) 100%);
 }
 
 /* Agent Card Status Spinner */
@@ -13,6 +14,7 @@
 /* ── Search Box ── */
 .agent-list__search-container {
   padding: var(--bde-space-2);
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .agent-list__search-box {
@@ -41,6 +43,7 @@
   gap: var(--bde-space-1);
   padding: var(--bde-space-1) var(--bde-space-2);
   overflow-x: auto;
+  border-bottom: 1px solid var(--bde-accent-border);
 }
 
 .agent-list__repo-chip {

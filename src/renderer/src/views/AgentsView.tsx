@@ -261,68 +261,22 @@ export function AgentsView(): React.JSX.Element {
           {/* Fleet sidebar */}
           <div className="agents-sidebar">
             {/* Header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 12px',
-                borderBottom: '1px solid var(--bde-accent-border)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span
-                  className="text-gradient-aurora"
-                  style={{
-                    fontSize: '10px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1.5px',
-                    fontWeight: 600
-                  }}
-                >
-                  Fleet
-                </span>
+            <div className="agents-view__sidebar-header">
+              <div className="agents-view__title-wrapper">
+                <span className="text-gradient-aurora agents-view__title">Fleet</span>
                 <div
-                  style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+                  className="agents-view__info-wrapper"
                   onMouseEnter={() => setShowTooltip(true)}
                   onMouseLeave={() => setShowTooltip(false)}
                 >
                   <Info
                     size={14}
-                    style={{
-                      color: 'var(--bde-text-muted)',
-                      cursor: 'help',
-                      transition: 'color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'var(--bde-accent)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'var(--bde-text-muted)'
-                    }}
+                    className="agents-view__info-icon"
                     aria-describedby="scratchpad-tooltip"
                   />
                   {showTooltip && (
-                    <div
-                      id="scratchpad-tooltip"
-                      role="tooltip"
-                      style={{
-                        position: 'absolute',
-                        top: '20px',
-                        left: '0',
-                        width: '240px',
-                        padding: '8px 10px',
-                        background: 'var(--bde-accent-surface)',
-                        border: '1px solid var(--bde-accent-border)',
-                        borderRadius: '6px',
-                        fontSize: '10px',
-                        lineHeight: 1.4,
-                        color: 'var(--bde-text-muted)',
-                        zIndex: 1000,
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-                      }}
-                    >
-                      <strong style={{ color: 'var(--bde-accent)' }}>Scratchpad.</strong> Agents
+                    <div id="scratchpad-tooltip" role="tooltip" className="agents-view__tooltip">
+                      <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents
                       here run in isolated worktrees and aren&apos;t tracked in the sprint pipeline.
                       When an agent finishes, click <em>Promote to Code Review</em> in its console
                       header to flow the work into the review queue. For tracked sprint work, queue
@@ -337,19 +291,7 @@ export function AgentsView(): React.JSX.Element {
                   setShowLaunchpad(true)
                 }}
                 title="New Agent"
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  border: '1px solid var(--bde-accent-border)',
-                  background: 'var(--bde-accent-surface)',
-                  color: 'var(--bde-accent)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
+                className="agents-view__spawn-btn"
               >
                 <Plus size={12} />
               </button>
@@ -357,22 +299,9 @@ export function AgentsView(): React.JSX.Element {
 
             {/* Dismissable banner for first-time users */}
             {showScratchpadBanner && (
-              <div
-                role="status"
-                style={{
-                  fontSize: '10px',
-                  lineHeight: 1.4,
-                  padding: '8px 12px',
-                  borderBottom: '1px solid var(--bde-accent-border)',
-                  background: 'var(--bde-accent-surface)',
-                  color: 'var(--bde-text-muted)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '8px'
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <strong style={{ color: 'var(--bde-accent)' }}>Scratchpad.</strong> Agents here
+              <div role="status" className="agents-view__scratchpad-banner">
+                <div className="agents-view__scratchpad-banner-text">
+                  <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents here
                   run in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an
                   agent finishes, click <em>Promote to Code Review</em> in its console header to
                   flow the work into the review queue. For tracked sprint work, queue tasks from{' '}
@@ -381,24 +310,7 @@ export function AgentsView(): React.JSX.Element {
                 <button
                   onClick={handleDismissBanner}
                   aria-label="Dismiss scratchpad notice"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--bde-text-muted)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--bde-accent)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--bde-text-muted)'
-                  }}
+                  className="agents-view__scratchpad-banner-dismiss"
                 >
                   <X size={14} />
                 </button>

@@ -189,19 +189,9 @@ export function AgentList({
   }
 
   return (
-    <div
-      className="agent-list"
-      style={{
-        background: `linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface) 100%)`
-      }}
-    >
+    <div className="agent-list">
       {/* Search */}
-      <div
-        className="agent-list__search-container"
-        style={{
-          borderBottom: `1px solid ${neonVar('purple', 'border')}`
-        }}
-      >
+      <div className="agent-list__search-container">
         <div
           className={`agent-list__search-box ${
             searchFocused ? 'agent-list__search-border--focused' : 'agent-list__search-border'
@@ -228,12 +218,7 @@ export function AgentList({
 
       {/* Repo filter chips */}
       {repos.length >= 2 && (
-        <div
-          className="agent-list__repo-chips"
-          style={{
-            borderBottom: `1px solid ${neonVar('purple', 'border')}`
-          }}
-        >
+        <div className="agent-list__repo-chips">
           <button
             className={`agent-list__repo-chip ${!selectedRepo ? 'agent-list__repo-chip--active' : ''}`}
             onClick={() => setSelectedRepo(null)}
