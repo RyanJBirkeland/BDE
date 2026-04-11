@@ -14,6 +14,7 @@ import type {
   ReviseRequest
 } from '../types'
 import type { WorkflowTemplate } from '../workflow-types'
+import type { ReviewResult, PartnerMessage } from '../review-types'
 
 export interface SprintChannels {
   'sprint:list': {
@@ -292,6 +293,26 @@ export interface GroupChannels {
   'groups:reorderTasks': {
     args: [groupId: string, orderedTaskIds: string[]]
     result: boolean
+  }
+}
+
+export interface ReviewPartnerChannels {
+  'review:autoReview': {
+    args: [taskId: string, force: boolean]
+    result: ReviewResult
+  }
+  'review:chatStream': {
+    args: [
+      input: {
+        taskId: string
+        messages: PartnerMessage[]
+      }
+    ]
+    result: { streamId: string }
+  }
+  'review:chatAbort': {
+    args: [streamId: string]
+    result: void
   }
 }
 

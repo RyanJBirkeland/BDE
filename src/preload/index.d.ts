@@ -14,6 +14,7 @@ import type {
   GithubRepoInfo,
   CloneProgressEvent
 } from '../shared/ipc-channels'
+import type { ReviewResult, PartnerMessage, ChatChunk } from '../shared/review-types'
 import type { AgentEvent } from '../shared/types'
 
 export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }
@@ -444,6 +445,11 @@ declare global {
         }) => Promise<IpcResult<'review:shipIt'>>
         rebase: (payload: { taskId: string }) => Promise<IpcResult<'review:rebase'>>
         checkFreshness: (payload: { taskId: string }) => Promise<IpcResult<'review:checkFreshness'>>
+        // AI Review Partner
+        autoReview: (taskId: string, force?: boolean) => Promise<ReviewResult>
+        chatStream: (params: { taskId: string; messages: PartnerMessage[] }) => Promise<{ streamId: string }>
+        onChatChunk: (listener: (evt: unknown, chunk: ChatChunk) => void) => () => void
+        abortChat: (streamId: string) => Promise<void>
       }
 
       // Spec Synthesizer

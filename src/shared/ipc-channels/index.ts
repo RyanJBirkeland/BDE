@@ -19,6 +19,7 @@ export type {
 export type {
   SprintChannels,
   ReviewChannels,
+  ReviewPartnerChannels,
   TemplateChannels,
   SynthesizerChannels,
   GroupChannels,
@@ -87,6 +88,7 @@ export type IpcChannelMap = import('./settings-channels').SettingsChannels &
   import('./ui-channels').DashboardChannels &
   import('./sprint-channels').SynthesizerChannels &
   import('./sprint-channels').ReviewChannels &
+  import('./sprint-channels').ReviewPartnerChannels &
   import('./ui-channels').TearoffChannels &
   import('./settings-channels').ClaudeConfigChannels &
   import('./system-channels').WebhookChannels &

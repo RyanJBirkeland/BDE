@@ -518,7 +518,26 @@ const api = {
     checkAutoReview: (payload: { taskId: string }) =>
       typedInvoke('review:checkAutoReview', payload),
     rebase: (payload: { taskId: string }) => typedInvoke('review:rebase', payload),
-    checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload)
+    checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload),
+
+    // AI Review Partner
+    autoReview: (taskId: string, force?: boolean) =>
+      ipcRenderer.invoke('review:autoReview', taskId, force ?? false) as Promise<
+        import('../shared/review-types').ReviewResult
+      >,
+    chatStream: (params: {
+      taskId: string
+      messages: import('../shared/review-types').PartnerMessage[]
+    }) =>
+      ipcRenderer.invoke('review:chatStream', params) as Promise<{ streamId: string }>,
+    onChatChunk: (
+      listener: (evt: unknown, chunk: import('../shared/review-types').ChatChunk) => void
+    ) => {
+      ipcRenderer.on('review:chatChunk', listener as never)
+      return () => ipcRenderer.removeListener('review:chatChunk', listener as never)
+    },
+    abortChat: (streamId: string) =>
+      ipcRenderer.invoke('review:chatAbort', streamId) as Promise<void>
   },
 
   // Spec Synthesizer
