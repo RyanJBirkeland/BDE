@@ -27,7 +27,7 @@ The updated design direction comes from a new Figma mockup (`figma.com/design/Uc
 
 **Goals**
 
-- **G1.** Wire `AIAssistantPanel` to live SDK streaming via a new `review:chatStream` IPC channel following the established Task Workbench copilot pattern.
+- **G1.** Wire `AIAssistantPanel` to live SDK streaming via a new `review:chatStream` IPC channel following the established Task Workbench copilot pattern. Extend the shared `runSdkStreaming()` utility with a small optional `model` field on `SdkStreamingOptions` so the reviewer chat can run on Opus (the current hardcoded `'claude-sonnet-4-5'` becomes the default when `model` is omitted — existing call sites are unaffected).
 - **G2.** Run an automatic structured review when a task is selected in Code Review, producing a quality score, issues count, per-file findings, and an opening message — cached by `{taskId, commitSha}` so re-opening is instant.
 - **G3.** Store per-file findings (including inline-comment data) in v1 even though comment rendering ships in v2, so the v2 follow-up is purely a renderer change.
 - **G4.** Give the review chat access to `Read`, `Grep`, and `Glob` tools scoped to the task's worktree, so follow-up questions can actually inspect the branch's code.
@@ -247,7 +247,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService
      findings: { perFile: [] }, model: '(none)', createdAt: Date.now() }
    ```
 8. Build the prompt via `buildAgentPrompt({ agentType: 'reviewer', mode: 'review', task, diff })`.
-9. Call `deps.runSdkOnce(prompt, { model, maxTurns: 1, allowedTools: [] })` — no tools for the review pass.
+9. Call `deps.runSdkOnce(prompt, { model: 'claude-opus-4-6', maxTurns: 1, tools: [] })` — no tools for the review pass. (The option is named `tools` in `SdkStreamingOptions`, not `allowedTools`.)
 10. Parse the response via `parseReviewResponse(raw)` (strips markdown fences, `JSON.parse`, validates shape). On parse failure, retry the parse once; if still failing, log the raw response and throw `MalformedReviewError`.
 11. Compute aggregates: `filesCount = perFile.length`, `issuesCount = count of high+medium-severity comments`.
 12. Persist via `repo.setCached(...)`.
@@ -255,26 +255,34 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService
 
 **Single responsibility**: each dependency is a narrow interface so unit tests can swap in fakes without standing up Electron, SQLite, or the SDK.
 
-**`runSdkOnce`** is not a new exported utility. It is a thin wrapper calling the Agent SDK's `query()` with `maxTurns: 1, allowedTools: []`, implemented inline in the service or as a local helper inside `src/main/sdk-streaming.ts`. Not worth elevating to a public sibling of `runSdkStreaming()` for one caller.
+**`runSdkOnce`** is a new small helper exported from `src/main/sdk-streaming.ts` alongside `runSdkStreaming()`. It calls the Agent SDK's `query()` with `maxTurns: 1, tools: []` and returns the collected text, sharing the same `SdkStreamingOptions` shape (minus streaming-only callbacks) so the `model` field extension benefits both helpers. Pinning the location up-front avoids bike-shedding in the plan phase.
 
 ## 7. Prompt Layer
 
 `src/main/agent-manager/prompt-composer.ts` gains a new `'reviewer'` agent type. Per CLAUDE.md: *"All spawn paths must use `buildAgentPrompt()` instead of inline prompt assembly"*.
 
+**Extending the existing `BuildPromptInput` interface** — not introducing a parallel discriminated union. The existing interface is flat-with-optional-fields and I honor that style:
+
 ```ts
-type ReviewerPromptInput = {
-  agentType: 'reviewer'
-  mode: 'review' | 'chat'
-  task: Pick<SprintTask, 'id' | 'title' | 'spec' | 'repo' | 'branch'>
-  diff?: string                      // review mode only
-  messages?: PartnerMessage[]        // chat mode only
-  reviewSeed?: ReviewResult          // chat mode only — prior auto-review for context
+// src/main/agent-manager/prompt-composer.ts — add 'reviewer' to AgentType
+export type AgentType =
+  | 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
+
+// And extend BuildPromptInput with reviewer-only optional fields:
+export interface BuildPromptInput {
+  agentType: AgentType
+  // ... existing fields unchanged ...
+
+  // Reviewer-only (unused by other agent types):
+  reviewerMode?: 'review' | 'chat'       // required when agentType === 'reviewer'
+  diff?: string                           // reviewer review-mode only
+  reviewSeed?: ReviewResult               // reviewer chat-mode only
 }
 ```
 
-**`buildAgentPrompt()` routes** to one of two new helpers:
+**`buildAgentPrompt()` routes** to one of two new helpers based on `input.reviewerMode`:
 
-- `buildReviewerPrompt(input)` — for `mode === 'review'`. Tools: none. Output: JSON only. System prompt ends with:
+- `buildReviewerPrompt(input)` — for `reviewerMode === 'review'`. Tools: none. Output: JSON only. System prompt ends with:
   ```
   Respond with ONLY a valid JSON object matching this schema — no markdown fences, no prose:
   {
@@ -297,9 +305,9 @@ type ReviewerPromptInput = {
   }
   ```
 
-- `buildReviewerChatPrompt(input)` — for `mode === 'chat'`. Tools: `Read`, `Grep`, `Glob`. Includes `task.spec`, the diff, the prior auto-review's `openingMessage` and quality score as context, and the conversation history. The system prompt instructs the model to answer questions about the change, inspect files via tools when needed, and cite specific file paths and line numbers where possible.
+- `buildReviewerChatPrompt(input)` — for `reviewerMode === 'chat'`. Tools: `Read`, `Grep`, `Glob`. Includes `taskContent`, the diff, the prior auto-review's `openingMessage` and quality score (from `reviewSeed`), and the conversation history from `messages`. The system prompt instructs the model to answer questions about the change, inspect files via tools when needed, and cite specific file paths and line numbers where possible.
 
-Both helpers share a small internal helper `formatTaskContext(task)` that produces the `title`, `spec`, `repo`, and `branch` block.
+Both helpers share a small internal helper `formatTaskContext(input)` that produces the `title`, `spec`, `repo`, and `branch` block — analogous to the existing per-agent-type helpers in `prompt-composer.ts`.
 
 ## 8. IPC Layer
 
@@ -324,7 +332,7 @@ New file: `src/main/handlers/review-assistant.ts`
   2. Resolve worktree path and prior auto-review via the repository.
   3. Build the prompt via `buildAgentPrompt({ agentType: 'reviewer', mode: 'chat', ... })`.
   4. Generate a `streamId`.
-  5. Call `runSdkStreaming(prompt, onChunk, activeStreams, streamId, timeout, { cwd: worktreePath, tools: ['Read', 'Grep', 'Glob'], model: 'claude-opus-4-6', onToolUse })`.
+  5. Call `runSdkStreaming(prompt, onChunk, activeStreams, streamId, timeout, { cwd: worktreePath, tools: ['Read', 'Grep', 'Glob'], model: 'claude-opus-4-6', onToolUse })`. The `model` field requires the small extension to `SdkStreamingOptions` described in G1 — without it the chat runs on the hardcoded Sonnet default and a follow-up correction would be needed.
   6. `onChunk` pushes `review:chatChunk` events via `webContents.send(...)` with the stream ID and chunk text.
   7. On completion, push a final chunk with `done: true, fullText`.
   8. On error, push a chunk with `error: string` and clean up.
@@ -447,21 +455,23 @@ interface ReviewPartnerStore {
 New hook: `src/renderer/src/hooks/useAutoReview.ts`
 
 ```ts
-export function useAutoReview(taskId: string | null) {
+export function useAutoReview(taskId: string | null, taskStatus: TaskStatus | null) {
   const autoReview = useReviewPartnerStore((s) => s.autoReview)
   useEffect(() => {
-    if (!taskId) return
+    // Guard: only fire for tasks in review status. Avoids consistent
+    // rejection paths on tasks selected from stale queue rows.
+    if (!taskId || taskStatus !== 'review') return
     const handle = setTimeout(() => {
       autoReview(taskId).catch(() => {
         // errors are surfaced via store.error; swallow here
       })
     }, 2000)
     return () => clearTimeout(handle)
-  }, [taskId, autoReview])
+  }, [taskId, taskStatus, autoReview])
 }
 ```
 
-`CodeReviewView` mounts this hook with the current `selectedTaskId`. Rapid task switches cancel the pending fire. The 2000 ms debounce is small enough to feel responsive on intentional selection, large enough to absorb `j`/`k` scrolling through the review queue.
+`CodeReviewView` mounts this hook with the current `selectedTaskId` **and** the selected task's `status` (read from the existing sprint tasks store). The `taskStatus !== 'review'` guard is the explicit front-line filter; the service-layer rejection at §6 step 2 remains as a defense-in-depth check. Rapid task switches cancel the pending fire. The 2000 ms debounce is small enough to feel responsive on intentional selection, large enough to absorb `j`/`k` scrolling through the review queue.
 
 ### 11.2 Mid-stream task switch
 
@@ -495,9 +505,9 @@ Under ≤1120 px the right panel becomes a collapsed rail with an expand chevron
 | Failure | Handling |
 |---|---|
 | SDK error (rate limit, network, auth) | `ReviewState.status = 'error'`; panel header shows inline error with `Retry`; nothing cached |
-| Model returns malformed JSON | Strip markdown fences, retry parse once, throw `MalformedReviewError` if still fails; raw response logged |
+| Model returns malformed JSON | Strip markdown fences, retry parse once, throw `MalformedReviewError` (declared in `src/main/services/review-service.ts` alongside the service factory) if still fails; raw response logged |
 | Empty diff | Service returns synthetic "No changes detected" result without SDK call |
-| Worktree missing / stale | Service throws `WorktreeMissingError`; panel shows "Worktree not found" with disabled Re-review |
+| Worktree missing / stale | Service throws `WorktreeMissingError` (declared in `src/main/services/review-service.ts` alongside the service factory); panel shows "Worktree not found" with disabled Re-review |
 | Cache row corrupt | Repository logs, deletes the row, returns `null` → treated as cache miss |
 | Chat stream mid-response failure | Error chunk emitted with `error: string`; streaming message bubble shows error inline, prior messages preserved |
 | User abort (new task selected) | `abortStream()` called; streaming message finalized at current content; not treated as an error |
