@@ -3,7 +3,6 @@
  */
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Group, Panel, Separator } from 'react-resizable-panels'
 import { Plus, Info, X } from 'lucide-react'
 import './AgentsView.css'
 import { usePanelLayoutStore } from '../stores/panelLayout'
@@ -255,111 +254,103 @@ export function AgentsView(): React.JSX.Element {
       animate="animate"
       transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
     >
-      {/* Zone 1: Fleet List + Agent Console */}
-      <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-        <Panel defaultSize={28} minSize={18} maxSize={44}>
-          {/* Fleet sidebar */}
-          <div className="agents-sidebar">
-            {/* Header */}
-            <div className="agents-view__sidebar-header">
-              <div className="agents-view__title-wrapper">
-                <span className="text-gradient-aurora agents-view__title">Fleet</span>
-                <div
-                  className="agents-view__info-wrapper"
-                  onMouseEnter={() => setShowTooltip(true)}
-                  onMouseLeave={() => setShowTooltip(false)}
-                >
-                  <Info
-                    size={14}
-                    className="agents-view__info-icon"
-                    aria-describedby="scratchpad-tooltip"
-                  />
-                  {showTooltip && (
-                    <div id="scratchpad-tooltip" role="tooltip" className="agents-view__tooltip">
-                      <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents
-                      here run in isolated worktrees and aren&apos;t tracked in the sprint pipeline.
-                      When an agent finishes, click <em>Promote to Code Review</em> in its console
-                      header to flow the work into the review queue. For tracked sprint work, queue
-                      tasks from <em>Task Workbench</em>.
-                    </div>
-                  )}
-                </div>
+      <div className="view-layout">
+        <div className="agents-sidebar view-sidebar">
+          {/* Header */}
+          <div className="agents-view__sidebar-header">
+            <div className="agents-view__title-wrapper">
+              <span className="text-gradient-aurora agents-view__title">Fleet</span>
+              <div
+                className="agents-view__info-wrapper"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                <Info
+                  size={14}
+                  className="agents-view__info-icon"
+                  aria-describedby="scratchpad-tooltip"
+                />
+                {showTooltip && (
+                  <div id="scratchpad-tooltip" role="tooltip" className="agents-view__tooltip">
+                    <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents
+                    here run in isolated worktrees and aren&apos;t tracked in the sprint pipeline.
+                    When an agent finishes, click <em>Promote to Code Review</em> in its console
+                    header to flow the work into the review queue. For tracked sprint work, queue
+                    tasks from <em>Task Workbench</em>.
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedId(null)
+                setShowLaunchpad(true)
+              }}
+              title="New Agent"
+              className="agents-view__spawn-btn"
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+
+          {/* Dismissable banner for first-time users */}
+          {showScratchpadBanner && (
+            <div role="status" className="agents-view__scratchpad-banner">
+              <div className="agents-view__scratchpad-banner-text">
+                <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents here
+                run in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an
+                agent finishes, click <em>Promote to Code Review</em> in its console header to
+                flow the work into the review queue. For tracked sprint work, queue tasks from{' '}
+                <em>Task Workbench</em>.
               </div>
               <button
-                onClick={() => {
-                  setSelectedId(null)
-                  setShowLaunchpad(true)
-                }}
-                title="New Agent"
-                className="agents-view__spawn-btn"
+                onClick={handleDismissBanner}
+                aria-label="Dismiss scratchpad notice"
+                className="agents-view__scratchpad-banner-dismiss"
               >
-                <Plus size={12} />
+                <X size={14} />
               </button>
             </div>
+          )}
 
-            {/* Dismissable banner for first-time users */}
-            {showScratchpadBanner && (
-              <div role="status" className="agents-view__scratchpad-banner">
-                <div className="agents-view__scratchpad-banner-text">
-                  <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents here
-                  run in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an
-                  agent finishes, click <em>Promote to Code Review</em> in its console header to
-                  flow the work into the review queue. For tracked sprint work, queue tasks from{' '}
-                  <em>Task Workbench</em>.
-                </div>
-                <button
-                  onClick={handleDismissBanner}
-                  aria-label="Dismiss scratchpad notice"
-                  className="agents-view__scratchpad-banner-dismiss"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-
-            <AgentList
-              agents={agents}
-              selectedId={activeId}
-              onSelect={handleSelectAgent}
-              onKill={fetchAgents}
-              loading={!fetched && agents.length === 0 && !fetchError}
-              fetchError={fetchError}
-              onRetry={fetchAgents}
-              displayedCount={displayedCount}
-              hasMore={hasMore}
-              onLoadMore={loadMore}
+          <AgentList
+            agents={agents}
+            selectedId={activeId}
+            onSelect={handleSelectAgent}
+            onKill={fetchAgents}
+            loading={!fetched && agents.length === 0 && !fetchError}
+            fetchError={fetchError}
+            onRetry={fetchAgents}
+            displayedCount={displayedCount}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
+          />
+        </div>
+        <div className="view-content">
+          {showLaunchpad || (!selectedAgent && agents.length === 0) ? (
+            <AgentLaunchpad
+              onAgentSpawned={() => {
+                setShowLaunchpad(false)
+                fetchAgents()
+              }}
             />
-          </div>
-        </Panel>
-        <Separator className="panel-separator" />
-        <Panel minSize={40}>
-          {/* Agent Console */}
-          <div style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-            {showLaunchpad || (!selectedAgent && agents.length === 0) ? (
-              <AgentLaunchpad
-                onAgentSpawned={() => {
-                  setShowLaunchpad(false)
-                  fetchAgents()
-                }}
-              />
-            ) : selectedAgent && activeId ? (
-              <AgentConsole agentId={activeId} onSteer={handleSteer} onCommand={handleCommand} />
-            ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                  overflow: 'auto'
-                }}
-              >
-                <FleetGlance agents={agents} onSelect={handleSelectAgent} />
-              </div>
-            )}
-          </div>
-        </Panel>
-      </Group>
+          ) : selectedAgent && activeId ? (
+            <AgentConsole agentId={activeId} onSteer={handleSteer} onCommand={handleCommand} />
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                overflow: 'auto'
+              }}
+            >
+              <FleetGlance agents={agents} onSelect={handleSelectAgent} />
+            </div>
+          )}
+        </div>
+      </div>
     </motion.div>
   )
 }

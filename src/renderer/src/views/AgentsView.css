@@ -118,19 +118,14 @@
   background: var(--bde-bg);
 }
 
-/* Prevent the fleet-list panel from collapsing to 0 at initial render
-   (react-resizable-panels sets minWidth:0 inline; this overrides it). */
-.agents-view [data-panel]:first-child {
-  min-width: 160px;
-}
-
 /* ── Agents Sidebar ── */
 .agents-sidebar {
   border-right: 1px solid var(--bde-accent-border);
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-width: 160px;
+  width: 300px;
+  flex-shrink: 0;
   background: linear-gradient(
     180deg,
     var(--bde-accent-surface),
