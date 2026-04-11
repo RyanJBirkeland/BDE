@@ -64,7 +64,7 @@
 .command-autocomplete__item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bde-space-2);
   padding: 6px 10px;
   border-radius: 6px;
   cursor: pointer;

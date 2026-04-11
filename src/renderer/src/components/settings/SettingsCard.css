@@ -4,8 +4,8 @@
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: var(--bde-space-4);
+  margin-bottom: var(--bde-space-3);
   overflow: hidden;
 }
 
@@ -17,23 +17,23 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: var(--bde-space-3);
 }
 
 .stg-card__header-left {
   display: flex;
-  gap: 12px;
+  gap: var(--bde-space-3);
   align-items: center;
 }
 
 .stg-card__icon {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--bde-space-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--bde-space-4);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -71,11 +71,11 @@
 
 .stg-card__footer {
   border-top: 1px solid var(--bde-border);
-  padding-top: 12px;
+  padding-top: var(--bde-space-3);
   margin-top: 14px;
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 /* ─── Status Pills (used in cards) ──────────────────────────────────────── */
@@ -85,7 +85,7 @@
   align-items: center;
   gap: 6px;
   padding: 3px 10px;
-  border-radius: 20px;
+  border-radius: var(--bde-space-5);
   font-size: 11px;
   font-weight: 500;
 }
@@ -126,7 +126,7 @@
 /* ─── Form Fields (used in cards) ───────────────────────────────────────── */
 
 .stg-field {
-  margin-bottom: 12px;
+  margin-bottom: var(--bde-space-3);
 }
 
 .stg-field__label {
@@ -143,10 +143,10 @@
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   color: var(--bde-text);
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-space-3);
   box-sizing: border-box;
 }
 
@@ -157,7 +157,7 @@
 
 .stg-field__row {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   align-items: center;
 }
 
@@ -167,8 +167,8 @@
   background: var(--glass-tint-dark);
   border: 1px solid var(--bde-border);
   border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: var(--bde-space-4);
+  margin-bottom: var(--bde-space-3);
 }
 
 .settings-section__title {
@@ -177,7 +177,7 @@
   color: var(--bde-text-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: var(--bde-space-3);
   padding-bottom: 0;
   border-bottom: none;
 }
@@ -185,11 +185,11 @@
 .settings-cards-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--bde-space-3);
 }
 
 .settings-card-footer-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   justify-content: flex-end;
 }

@@ -2,8 +2,8 @@
 .console-line {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 4px 12px;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-1) var(--bde-space-3);
   font-size: 12px;
   font-family: var(--bde-font-code);
   line-height: 1.5;
@@ -86,7 +86,7 @@
 }
 
 .console-line__tool-summary {
-  padding-left: 24px;
+  padding-left: var(--bde-space-6);
 }
 
 /* ── Markdown Rendering in Agent Text ── */
@@ -108,7 +108,7 @@
   color: var(--bde-text);
   font-size: 13px;
   display: block;
-  margin-top: 8px;
+  margin-top: var(--bde-space-2);
   margin-bottom: 2px;
 }
 
@@ -158,8 +158,8 @@
 
 /* ── Completion Summary Card ── */
 .console-completion-card {
-  margin: 12px;
-  padding: 16px;
+  margin: var(--bde-space-3);
+  padding: var(--bde-space-4);
   border-radius: 8px;
   background: linear-gradient(135deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
   border: 1px solid var(--bde-accent-border);
@@ -174,8 +174,8 @@
 .console-completion-card__header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: var(--bde-space-2);
+  margin-bottom: var(--bde-space-3);
   font-weight: 700;
   font-size: 13px;
 }
@@ -183,7 +183,7 @@
 .console-completion-card__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 12px;
+  gap: var(--bde-space-3);
 }
 
 .console-completion-card__stat {
@@ -242,12 +242,12 @@
 /* ── Grouped Text Blocks ── */
 .console-line__content--grouped {
   border-left: 2px solid var(--bde-accent-border);
-  padding-left: 8px;
+  padding-left: var(--bde-space-2);
 }
 
 /* ── Paragraph Break Spacer ── */
 .console-md-paragraph-break {
-  height: 8px;
+  height: var(--bde-space-2);
 }
 
 /* ── Console Badge ── */

@@ -3,13 +3,13 @@
 .settings-theme-buttons {
   display: flex;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: var(--bde-space-1);
 }
 
 .settings-colors {
   display: flex;
-  gap: 8px;
-  margin-top: 4px;
+  gap: var(--bde-space-2);
+  margin-top: var(--bde-space-1);
 }
 
 .settings-color {

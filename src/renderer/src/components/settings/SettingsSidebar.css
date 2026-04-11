@@ -2,7 +2,7 @@
 
 .stg-sidebar {
   border-right: 1px solid var(--bde-accent-border);
-  padding: 16px 8px 16px 16px;
+  padding: var(--bde-space-4) var(--bde-space-2) var(--bde-space-4) var(--bde-space-4);
   background: var(--bde-bg-elevated);
   overflow-y: auto;
   height: 100%;
@@ -10,12 +10,12 @@
 
 .stg-sidebar__search {
   position: relative;
-  margin-bottom: 12px;
+  margin-bottom: var(--bde-space-3);
 }
 
 .stg-sidebar__search-icon {
   position: absolute;
-  left: 8px;
+  left: var(--bde-space-2);
   top: 50%;
   transform: translateY(-50%);
   color: var(--bde-text-muted);
@@ -24,12 +24,12 @@
 
 .stg-sidebar__search-input {
   width: 100%;
-  padding: 6px 8px 6px 28px;
+  padding: 6px var(--bde-space-2) 6px 28px;
   border-radius: 5px;
   border: 1px solid var(--bde-accent-border);
   background: var(--bde-surface);
   color: var(--bde-text);
-  font-size: 12px;
+  font-size: var(--bde-space-3);
   transition: border-color 0.15s ease;
 }
 
@@ -43,7 +43,7 @@
 }
 
 .stg-sidebar__group {
-  margin-bottom: 16px;
+  margin-bottom: var(--bde-space-4);
 }
 
 .stg-sidebar__category {
@@ -52,7 +52,7 @@
   color: color-mix(in srgb, var(--bde-status-active) 60%, transparent);
   letter-spacing: 1.2px;
   font-weight: 600;
-  padding: 0 8px;
+  padding: 0 var(--bde-space-2);
   margin-bottom: 6px;
 }
 
@@ -60,11 +60,11 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 8px;
+  padding: 6px var(--bde-space-2);
   border-radius: 5px;
   cursor: pointer;
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-space-3);
   transition:
     background 0.15s ease,
     color 0.15s ease;
@@ -95,7 +95,7 @@
 .settings-view__tabs {
   display: flex;
   gap: 2px;
-  padding: 6px 16px;
+  padding: 6px var(--bde-space-4);
   border-bottom: 1px solid var(--bde-border);
   background: var(--glass-tint-dark);
   flex-shrink: 0;
@@ -106,8 +106,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
+  padding: 5px var(--bde-space-3);
+  font-size: var(--bde-space-3);
   font-weight: 500;
   color: var(--bde-text-muted);
   background: none;

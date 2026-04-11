@@ -3,14 +3,14 @@
 .settings-about {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .settings-about__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: var(--bde-space-1) 0;
 }
 
 .settings-about__label {
@@ -26,7 +26,7 @@
 .settings-about__link {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--bde-space-1);
   background: none;
   border: none;
   color: var(--bde-accent);

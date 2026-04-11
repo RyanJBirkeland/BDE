@@ -52,8 +52,8 @@
 .playground-modal__toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-2) var(--bde-space-4);
   border-bottom: 1px solid var(--bde-border);
   flex-shrink: 0;
 }
@@ -82,7 +82,7 @@
   font-size: 11px;
   color: var(--bde-warning);
   background: rgba(255, 193, 7, 0.1);
-  padding: 2px 8px;
+  padding: 2px var(--bde-space-2);
   border-radius: 4px;
   border: 1px solid var(--bde-warning);
   flex-shrink: 0;
@@ -95,17 +95,17 @@
 
 .playground-modal__view-toggle {
   display: flex;
-  gap: 4px;
+  gap: var(--bde-space-1);
   background: var(--bde-surface);
-  padding: 4px;
+  padding: var(--bde-space-1);
   border-radius: 4px;
 }
 
 .playground-modal__view-button {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: var(--bde-space-1);
+  padding: var(--bde-space-1) var(--bde-space-2);
   background: transparent;
   color: var(--bde-text-muted);
   border: none;
@@ -124,8 +124,8 @@
 .playground-modal__browser-button {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: var(--bde-space-1);
+  padding: var(--bde-space-1) var(--bde-space-2);
   background: transparent;
   color: var(--bde-text-muted);
   border: 1px solid var(--bde-border);
@@ -180,7 +180,7 @@
 
 .playground-modal__source-pre {
   margin: 0;
-  padding: 12px;
+  padding: var(--bde-space-3);
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 11px;
   line-height: 20px;
@@ -198,7 +198,7 @@
   display: inline-block;
   width: 48px;
   text-align: right;
-  padding-right: 12px;
+  padding-right: var(--bde-space-3);
   color: var(--bde-text-dim);
   user-select: none;
   flex-shrink: 0;

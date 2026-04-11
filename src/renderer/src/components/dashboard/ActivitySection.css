@@ -28,12 +28,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .dashboard-completion-row[role='button'] {
   cursor: pointer;
-  padding: 4px 6px;
+  padding: var(--bde-space-1) 6px;
   border-radius: 4px;
   transition: background 0.15s ease;
 }
@@ -54,7 +54,7 @@
 .dashboard-completion-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bde-space-2);
   flex-shrink: 0;
 }
 
@@ -78,7 +78,7 @@
   font-size: 11px;
   opacity: 0.6;
   text-align: center;
-  padding: 8px;
+  padding: var(--bde-space-2);
 }
 
 .dashboard-failure-breakdown-list {
@@ -91,8 +91,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: var(--bde-space-2);
+  padding: 6px var(--bde-space-2);
   border-radius: 4px;
   transition: background 0.15s ease;
 }
@@ -123,5 +123,5 @@
   font-size: 11px;
   opacity: 0.6;
   text-align: center;
-  padding: 8px;
+  padding: var(--bde-space-2);
 }

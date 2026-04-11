@@ -29,18 +29,18 @@
 
 .settings-secret-input__toggle {
   position: absolute;
-  right: 8px;
+  right: var(--bde-space-2);
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
   color: var(--bde-text-muted);
-  padding: 4px;
+  padding: var(--bde-space-1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--bde-space-1);
 }
 
 .settings-secret-input__toggle:hover {
@@ -58,22 +58,22 @@
 
 .settings-field__row {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   align-items: center;
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: var(--bde-space-3);
 }
 
 .settings-field__status {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   align-items: center;
   flex: 1;
 }
 
 .settings-field__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .settings-field__expiry {
@@ -82,5 +82,5 @@
 }
 
 .settings-field__refresh-icon {
-  margin-right: 4px;
+  margin-right: var(--bde-space-1);
 }

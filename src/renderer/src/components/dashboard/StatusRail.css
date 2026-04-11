@@ -11,7 +11,7 @@
 .dashboard-ring {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--bde-space-3);
 }
 
 .dashboard-ring__svg {
@@ -44,8 +44,8 @@
 .dashboard-attention-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: var(--bde-space-2);
+  padding: 6px var(--bde-space-2);
   border-radius: 4px;
   background: none;
   border: none;
@@ -64,11 +64,11 @@
 .dashboard-attention-review-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .dashboard-review-cta {
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   border-radius: 6px;
   background: var(--bde-accent-surface);
   border: 1px solid var(--bde-accent-border);
@@ -96,7 +96,7 @@
   color: var(--bde-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 12px;
+  margin-bottom: var(--bde-space-3);
 }
 
 .spec-rate__empty {
@@ -113,7 +113,7 @@
 .spec-rate__row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--bde-space-1);
 }
 
 .spec-rate__info {

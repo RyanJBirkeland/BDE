@@ -3,8 +3,8 @@
   height: 40px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
+  gap: var(--bde-space-2);
+  padding: 0 var(--bde-space-3);
   background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-border) 100%);
   border-bottom: 1px solid var(--bde-accent-border);
   flex-shrink: 0;
@@ -53,7 +53,7 @@
   border: none;
   color: var(--bde-text-dim);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--bde-space-1);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -78,7 +78,7 @@
   border: none;
   color: var(--bde-text-dim);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--bde-space-1);
   border-radius: 4px;
   display: flex;
   align-items: center;

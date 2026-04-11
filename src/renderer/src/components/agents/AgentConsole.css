@@ -11,7 +11,7 @@
 
 /* ── Console Cap Banner ── */
 .console-cap-banner {
-  padding: 4px 12px;
+  padding: var(--bde-space-1) var(--bde-space-3);
   background: var(--bde-warning-surface);
   border-bottom: 1px solid var(--bde-warning-border);
   color: var(--bde-warning);
@@ -35,8 +35,8 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: var(--bde-space-1);
+  padding: 6px var(--bde-space-3);
   background: linear-gradient(135deg, var(--bde-accent-border), var(--bde-surface-high));
   border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
@@ -67,7 +67,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--bde-space-2);
   height: 100%;
   color: var(--bde-text-dim);
   font-size: 13px;
@@ -80,7 +80,7 @@
 
 /* ── Expanded Content ── */
 .console-line__expanded-content {
-  padding-left: 24px;
+  padding-left: var(--bde-space-6);
   font-family: var(--bde-font-code);
   font-size: 12px;
   color: var(--bde-text-muted);
@@ -91,9 +91,9 @@
 }
 
 .console-line__show-full {
-  margin-left: 24px;
+  margin-left: var(--bde-space-6);
   margin-top: 6px;
-  padding: 4px 10px;
+  padding: var(--bde-space-1) 10px;
   background: transparent;
   border: 1px solid var(--bde-accent-border);
   border-radius: 6px;
@@ -113,34 +113,34 @@
 }
 
 .console-line__detail {
-  padding-left: 24px;
+  padding-left: var(--bde-space-6);
 }
 
 .console-line__detail-group {
-  padding-left: 24px;
+  padding-left: var(--bde-space-6);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .console-line__detail-label {
   font-size: 10px;
   color: var(--bde-text-dim);
-  margin-bottom: 4px;
+  margin-bottom: var(--bde-space-1);
 }
 
 .console-line__tool-summary {
   font-size: 12px;
   color: var(--bde-text);
   font-family: var(--bde-font-code);
-  padding: 4px 0;
+  padding: var(--bde-space-1) 0;
   border-bottom: 1px solid var(--bde-accent-border);
-  margin-bottom: 4px;
+  margin-bottom: var(--bde-space-1);
 }
 
 .console-line__json {
   margin: 0;
-  padding: 8px;
+  padding: var(--bde-space-2);
   background: var(--bde-border);
   border-radius: 4px;
   font-size: 11px;
