@@ -272,6 +272,25 @@ declare global {
       // GitHub token expired push event
       onGitHubTokenExpired: (cb: () => void) => () => void
 
+      // GitHub structured error push event (from githubFetchJson)
+      onGitHubError: (
+        cb: (data: {
+          kind:
+            | 'no-token'
+            | 'token-expired'
+            | 'rate-limit'
+            | 'billing'
+            | 'permission'
+            | 'not-found'
+            | 'validation'
+            | 'server'
+            | 'network'
+            | 'unknown'
+          message: string
+          status?: number
+        }) => void
+      ) => () => void
+
       // Open PR list — main-process poller push events
       onPrListUpdated: (cb: (payload: PrListPayload) => void) => () => void
       getPrList: () => Promise<IpcResult<'pr:getList'>>

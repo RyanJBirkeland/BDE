@@ -96,6 +96,7 @@ vi.stubGlobal('api', {
   setMemoryFileActive: vi.fn().mockResolvedValue({}),
   onGitHubRateLimitWarning: vi.fn().mockReturnValue(() => {}),
   onGitHubTokenExpired: vi.fn().mockReturnValue(() => {}),
+  onGitHubError: vi.fn().mockReturnValue(() => {}),
   openFileDialog: vi.fn().mockResolvedValue([]),
   readFileAsBase64: vi.fn().mockResolvedValue({ data: '', mimeType: 'image/png' }),
   readFileAsText: vi.fn().mockResolvedValue({ content: '' }),

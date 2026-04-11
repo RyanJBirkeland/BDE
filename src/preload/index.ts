@@ -258,6 +258,31 @@ const api = {
     return () => ipcRenderer.removeListener('github:tokenExpired', listener)
   },
 
+  // GitHub structured error push event — fired by githubFetchJson for any
+  // classified failure (billing, network, permission, etc.). Debounced
+  // per-kind (60s) at the source, so the renderer never sees spam.
+  onGitHubError: (
+    cb: (data: {
+      kind:
+        | 'no-token'
+        | 'token-expired'
+        | 'rate-limit'
+        | 'billing'
+        | 'permission'
+        | 'not-found'
+        | 'validation'
+        | 'server'
+        | 'network'
+        | 'unknown'
+      message: string
+      status?: number
+    }) => void
+  ): (() => void) => {
+    const listener = (_e: unknown, data: Parameters<typeof cb>[0]): void => cb(data)
+    ipcRenderer.on('github:error', listener)
+    return () => ipcRenderer.removeListener('github:error', listener)
+  },
+
   // Open PR list — main-process poller push events
   onPrListUpdated: (cb: (payload: PrListPayload) => void): (() => void) => {
     const listener = (_e: unknown, data: PrListPayload): void => cb(data)

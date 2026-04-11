@@ -13,6 +13,7 @@ import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
 import { useGitHubRateLimitWarning } from './hooks/useGitHubRateLimitWarning'
+import { useGitHubErrorListener } from './hooks/useGitHubErrorListener'
 import { useDesktopNotifications } from './hooks/useDesktopNotifications'
 import { useAppShortcuts } from './hooks/useAppShortcuts'
 import { useOnboardingCheck } from './hooks/useOnboardingCheck'
@@ -123,6 +124,7 @@ function App(): React.JSX.Element {
   useAppShortcuts({ paletteOpen, shortcutsOpen, setShortcutsOpen })
 
   useGitHubRateLimitWarning()
+  useGitHubErrorListener()
   useDesktopNotifications()
   const crossDrop = useCrossWindowDrop()
 
