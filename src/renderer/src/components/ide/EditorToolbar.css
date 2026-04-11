@@ -2,8 +2,8 @@
 .editor-toolbar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: var(--bde-space-1);
+  padding: 6px var(--bde-space-3);
   background: var(--bde-surface-high);
   border-bottom: 1px solid var(--bde-accent-border);
 }
@@ -45,7 +45,7 @@
   width: 1px;
   height: 16px;
   background: var(--bde-accent-border);
-  margin: 0 4px;
+  margin: 0 var(--bde-space-1);
 }
 
 .editor-toolbar__font-size {

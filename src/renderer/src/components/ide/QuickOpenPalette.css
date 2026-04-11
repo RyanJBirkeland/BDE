@@ -28,7 +28,7 @@
 .quick-open-palette__header {
   display: flex;
   align-items: center;
-  padding: 12px;
+  padding: var(--bde-space-3);
   background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
   border-bottom: 1px solid var(--bde-accent-border);
 }
@@ -38,7 +38,7 @@
   background: var(--bde-border);
   border: 1px solid var(--bde-accent-border);
   border-radius: 4px;
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   color: var(--bde-text);
   font-family: var(--bde-font-mono, monospace);
   font-size: 13px;
@@ -54,7 +54,7 @@
 }
 
 .quick-open-palette__close {
-  margin-left: 8px;
+  margin-left: var(--bde-space-2);
   padding: 6px;
   background: transparent;
   border: none;
@@ -78,11 +78,11 @@
 .quick-open-palette__list {
   max-height: 400px;
   overflow-y: auto;
-  padding: 4px;
+  padding: var(--bde-space-1);
 }
 
 .quick-open-palette__item {
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   cursor: pointer;
   font-family: var(--bde-font-mono, monospace);
   font-size: 12px;
@@ -108,7 +108,7 @@
 }
 
 .quick-open-palette__empty {
-  padding: 32px;
+  padding: var(--bde-space-8);
   text-align: center;
   color: var(--bde-text-muted);
   font-size: 13px;

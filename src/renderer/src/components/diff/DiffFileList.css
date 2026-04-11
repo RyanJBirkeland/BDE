@@ -49,7 +49,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 4px 10px;
+  padding: var(--bde-space-1) 10px;
   background: none;
   border: none;
   cursor: pointer;
@@ -69,7 +69,7 @@
 }
 .diff-file-item__badge {
   display: flex;
-  gap: 4px;
+  gap: var(--bde-space-1);
   flex-shrink: 0;
   margin-left: 6px;
   font-family: var(--bde-font-code);

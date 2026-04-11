@@ -5,9 +5,9 @@
 .ide-file-node {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--bde-space-1);
   height: 24px;
-  padding-right: 8px;
+  padding-right: var(--bde-space-2);
   cursor: pointer;
   font-size: var(--bde-size-sm);
   color: var(--bde-text-muted);
@@ -52,14 +52,14 @@
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md);
   box-shadow: var(--bde-shadow-md);
-  padding: 4px 0;
+  padding: var(--bde-space-1) 0;
   overflow: hidden;
 }
 .ide-context-menu__item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: var(--bde-space-2);
+  padding: 6px var(--bde-space-3);
   font-size: var(--bde-size-sm);
   color: var(--bde-text);
   cursor: pointer;
@@ -79,7 +79,7 @@
 .ide-context-menu__separator {
   height: 1px;
   background: var(--bde-border);
-  margin: 4px 0;
+  margin: var(--bde-space-1) 0;
 }
 /* Neon Theme Overrides */
 .ide-file-node {

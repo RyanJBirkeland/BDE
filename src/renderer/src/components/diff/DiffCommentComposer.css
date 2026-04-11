@@ -1,5 +1,5 @@
 .diff-comment-composer {
-  margin: 4px 0 4px 96px;
+  margin: var(--bde-space-1) 0 var(--bde-space-1) 96px;
   border: 1px solid var(--bde-accent);
   border-radius: var(--bde-radius-md);
   background: var(--bde-bg);
@@ -7,7 +7,7 @@
 }
 .diff-comment-composer__input {
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
   color: var(--bde-text);

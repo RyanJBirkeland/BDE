@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: var(--bde-space-1) 10px;
   width: 100%;
   font-size: var(--bde-size-xs);
   font-family: inherit;
@@ -27,16 +27,16 @@
   flex-direction: column;
 }
 .diff-comment-widget__comment {
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--bde-space-1);
   border-top: 1px solid var(--bde-border);
 }
 .diff-comment-widget__header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bde-space-2);
   font-size: var(--bde-size-xs);
 }
 .diff-comment-widget__author {

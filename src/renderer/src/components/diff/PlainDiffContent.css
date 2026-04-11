@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 4px 10px;
+  padding: var(--bde-space-1) 10px;
   background: none;
   border: none;
   cursor: pointer;
@@ -23,7 +23,7 @@
 }
 .diff-file-item__badge {
   display: flex;
-  gap: 4px;
+  gap: var(--bde-space-1);
   flex-shrink: 0;
   margin-left: 6px;
   font-family: var(--bde-font-code);
@@ -48,7 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
+  padding: 6px var(--bde-space-3);
   background: var(--bde-surface);
   border-bottom: 1px solid var(--bde-border);
   position: sticky;
@@ -66,7 +66,7 @@
 }
 .diff-file__stats {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-sm);
 }
@@ -84,7 +84,7 @@
   font-family: var(--bde-font-code);
   font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
-  padding: 4px 12px;
+  padding: var(--bde-space-1) var(--bde-space-3);
   background: var(--bde-hover-subtle);
   border-bottom: 1px solid var(--bde-border);
 }
@@ -107,7 +107,7 @@
   width: 48px;
   flex-shrink: 0;
   text-align: right;
-  padding-right: 8px;
+  padding-right: var(--bde-space-2);
   color: var(--bde-text-muted);
   opacity: 0.5;
   user-select: none;
@@ -119,7 +119,7 @@
   user-select: none;
 }
 .diff-line__text {
-  padding-right: 12px;
+  padding-right: var(--bde-space-3);
 }
 .diff-line--selected {
   background: color-mix(in srgb, var(--bde-accent) 15%, transparent) !important;
@@ -157,7 +157,7 @@
   border: none;
   border-radius: var(--bde-radius-sm);
   font-size: var(--bde-size-xs);
-  padding: 2px 8px;
+  padding: 2px var(--bde-space-2);
   background: transparent;
   color: var(--bde-danger-text);
   cursor: pointer;
