@@ -49,9 +49,9 @@ export function asSDKMessage(msg: unknown): SDKWireMessage | null {
  * Extracts a numeric field from an SDK message, returning undefined if not present.
  */
 export function getNumericField(msg: unknown, field: keyof SDKWireMessage): number | undefined {
-  const m = asSDKMessage(msg)
-  if (!m) return undefined
-  const val = m[field]
+  const sdkMsg = asSDKMessage(msg)
+  if (!sdkMsg) return undefined
+  const val = sdkMsg[field]
   return typeof val === 'number' ? val : undefined
 }
 
@@ -59,17 +59,17 @@ export function getNumericField(msg: unknown, field: keyof SDKWireMessage): numb
  * Extracts session_id from an SDK message if present.
  */
 export function getSessionId(msg: unknown): string | undefined {
-  const m = asSDKMessage(msg)
-  if (!m) return undefined
-  return typeof m.session_id === 'string' ? m.session_id : undefined
+  const sdkMsg = asSDKMessage(msg)
+  if (!sdkMsg) return undefined
+  return typeof sdkMsg.session_id === 'string' ? sdkMsg.session_id : undefined
 }
 
 /**
  * Checks if a message is a rate_limit system message.
  */
 export function isRateLimitMessage(msg: unknown): boolean {
-  const m = asSDKMessage(msg)
-  return m?.type === 'system' && m?.subtype === 'rate_limit'
+  const sdkMsg = asSDKMessage(msg)
+  return sdkMsg?.type === 'system' && sdkMsg?.subtype === 'rate_limit'
 }
 
 /**

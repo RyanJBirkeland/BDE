@@ -25,19 +25,19 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
     if (Array.isArray(content)) {
       for (const block of content) {
         if (typeof block === 'object' && block !== null) {
-          const b = block as Record<string, unknown>
-          if (b.type === 'text' && typeof b.text === 'string') {
-            events.push({ type: 'agent:text', text: b.text, timestamp: now })
-          } else if (b.type === 'tool_use') {
+          const contentBlock = block as Record<string, unknown>
+          if (contentBlock.type === 'text' && typeof contentBlock.text === 'string') {
+            events.push({ type: 'agent:text', text: contentBlock.text, timestamp: now })
+          } else if (contentBlock.type === 'tool_use') {
             const toolName =
-              (typeof b.name === 'string' && b.name) ||
-              (typeof b.tool_name === 'string' && b.tool_name) ||
+              (typeof contentBlock.name === 'string' && contentBlock.name) ||
+              (typeof contentBlock.tool_name === 'string' && contentBlock.tool_name) ||
               'unknown'
             events.push({
               type: 'agent:tool_call',
               tool: toolName,
               summary: toolName,
-              input: b.input,
+              input: contentBlock.input,
               timestamp: now
             })
           }

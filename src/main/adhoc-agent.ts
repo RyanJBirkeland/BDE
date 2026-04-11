@@ -232,15 +232,15 @@ export async function spawnAdhocAgent(args: {
 
         // Extract session ID from system init message
         if (typeof raw === 'object' && raw !== null) {
-          const r = raw as Record<string, unknown>
-          if (r.type === 'system' && r.subtype === 'init' && typeof r.session_id === 'string') {
-            sessionId = r.session_id
+          const rawMessage = raw as Record<string, unknown>
+          if (rawMessage.type === 'system' && rawMessage.subtype === 'init' && typeof rawMessage.session_id === 'string') {
+            sessionId = rawMessage.session_id
             log.info(`[adhoc] ${meta.id} session ID: ${sessionId}`)
           }
           // Track cost/token fields
-          if (typeof r.cost_usd === 'number') costUsd = r.cost_usd
-          if (typeof r.total_cost_usd === 'number') costUsd = r.total_cost_usd
-          turnTracker.observe(r)
+          if (typeof rawMessage.cost_usd === 'number') costUsd = rawMessage.cost_usd
+          if (typeof rawMessage.total_cost_usd === 'number') costUsd = rawMessage.total_cost_usd
+          turnTracker.observe(rawMessage)
           ;({ tokensIn, tokensOut } = turnTracker.totals())
         }
       }

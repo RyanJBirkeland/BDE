@@ -105,12 +105,12 @@ export async function runSdkStreaming(
 
   try {
     for await (const msg of queryHandle) {
-      const m = asSDKMessage(msg)
-      if (!m) continue
+      const sdkMsg = asSDKMessage(msg)
+      if (!sdkMsg) continue
 
       // Extract text and tool_use blocks from assistant messages
-      if (m.type === 'assistant') {
-        const content = m.message?.content
+      if (sdkMsg.type === 'assistant') {
+        const content = sdkMsg.message?.content
         if (Array.isArray(content)) {
           for (const block of content) {
             if (!block || typeof block !== 'object') continue

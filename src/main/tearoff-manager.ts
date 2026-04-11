@@ -301,8 +301,8 @@ let activeDrag: ActiveDrag | null = null
 function findWindowAtPoint(x: number, y: number, excludeId?: number): BrowserWindow | null {
   for (const win of BrowserWindow.getAllWindows()) {
     if (excludeId !== undefined && win.id === excludeId) continue
-    const b = win.getContentBounds()
-    if (x >= b.x && x < b.x + b.width && y >= b.y && y < b.y + b.height) {
+    const bounds = win.getContentBounds()
+    if (x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height) {
       return win
     }
   }

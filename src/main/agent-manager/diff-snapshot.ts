@@ -39,9 +39,9 @@ export async function captureDiffSnapshot(
     for (const line of statusOut.split('\n').filter(Boolean)) {
       const parts = line.split('\t')
       if (parts.length >= 2) {
-        const s = parts[0].trim()
-        const p = parts.slice(1).join('\t').trim()
-        statusMap.set(p, s)
+        const statusCode = parts[0].trim()
+        const filePath = parts.slice(1).join('\t').trim()
+        statusMap.set(filePath, statusCode)
       }
     }
 

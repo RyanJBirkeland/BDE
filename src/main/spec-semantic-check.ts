@@ -41,15 +41,15 @@ async function runSdkQuery(prompt: string): Promise<string> {
   try {
     for await (const msg of queryHandle) {
       if (typeof msg !== 'object' || msg === null) continue
-      const m = msg as Record<string, unknown>
-      if (m.type === 'assistant') {
-        const message = m.message as Record<string, unknown> | undefined
-        const content = message?.content
+      const message = msg as Record<string, unknown>
+      if (message.type === 'assistant') {
+        const assistantMessage = message.message as Record<string, unknown> | undefined
+        const content = assistantMessage?.content
         if (Array.isArray(content)) {
           for (const block of content) {
-            const b = block as Record<string, unknown>
-            if (b.type === 'text' && typeof b.text === 'string') {
-              fullText += b.text
+            const contentBlock = block as Record<string, unknown>
+            if (contentBlock.type === 'text' && typeof contentBlock.text === 'string') {
+              fullText += contentBlock.text
             }
           }
         }
