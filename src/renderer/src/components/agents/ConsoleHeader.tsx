@@ -1,5 +1,5 @@
 /**
- * ConsoleHeader — 32px glass header for AgentConsole with status, model, duration, cost, and actions.
+ * ConsoleHeader — 56px glass header for AgentConsole with status, model, duration, cost, and actions.
  */
 import { useEffect, useState, useCallback } from 'react'
 import { Terminal, StopCircle, Copy, GitPullRequest } from 'lucide-react'
@@ -166,16 +166,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
         <div className={statusDotClass} />
 
         {/* Task name */}
-        <div
-          className="console-header__task-name"
-          style={{
-            flex: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}
-          title={agent.task}
-        >
+        <div className="console-header__task-name" title={agent.task}>
           {agent.task}
         </div>
 
@@ -190,7 +181,6 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
               className="console-header__phase"
               data-testid="console-header-phase"
               aria-label={`Agent phase: ${derivePhaseLabel(events)}`}
-              style={{ opacity: 0.8 }}
             >
               {derivePhaseLabel(events)}
             </span>
