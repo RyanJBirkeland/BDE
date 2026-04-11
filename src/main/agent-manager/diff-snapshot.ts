@@ -7,7 +7,7 @@ import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
 import type { ReviewDiffSnapshot } from '../../shared/types'
 import { buildAgentEnv } from '../env-utils'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
 

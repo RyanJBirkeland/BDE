@@ -1,4 +1,5 @@
-import type { ActiveAgent, AgentHandle, Logger } from './types'
+import type { ActiveAgent, AgentHandle } from './types'
+import type { Logger } from '../logger'
 import { SPAWN_TIMEOUT_MS, LAST_OUTPUT_MAX_LENGTH } from './types'
 import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'

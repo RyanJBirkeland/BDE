@@ -9,7 +9,7 @@ import { readFile, stat } from 'node:fs/promises'
 import { join as joinPath } from 'node:path'
 import { homedir as home } from 'node:os'
 import { refreshOAuthTokenFromKeychain, invalidateOAuthToken } from '../env-utils'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 
 /**
  * How long to cache a successful token check (ms).

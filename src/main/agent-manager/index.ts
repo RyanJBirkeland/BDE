@@ -1,4 +1,5 @@
-import type { AgentManagerConfig, ActiveAgent, SteerResult, Logger } from './types'
+import type { AgentManagerConfig, ActiveAgent, SteerResult } from './types'
+import type { Logger } from '../logger'
 import type { TaskDependency } from '../../shared/types'
 import {
   EXECUTOR_ID,

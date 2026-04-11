@@ -6,7 +6,7 @@
  */
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 
 const execFile = promisify(execFileCb)
 

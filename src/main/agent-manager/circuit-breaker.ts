@@ -9,7 +9,7 @@
  */
 
 import { broadcast } from '../broadcast'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 
 /**
  * Number of consecutive spawn failures that trips the circuit breaker.

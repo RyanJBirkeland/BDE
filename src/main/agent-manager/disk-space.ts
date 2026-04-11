@@ -1,5 +1,5 @@
 import { statfs as statfsAsync } from 'node:fs/promises'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 
 /**
  * Minimum free disk space required (bytes) before creating a worktree.

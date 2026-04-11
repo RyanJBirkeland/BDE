@@ -7,7 +7,8 @@
  */
 
 import { applyBackpressure, type ConcurrencyState } from './concurrency'
-import type { Logger, WatchdogAction } from './types'
+import type { Logger } from '../logger'
+import type { WatchdogAction } from './types'
 
 /**
  * Handle a watchdog verdict by updating the task and optionally applying backpressure.

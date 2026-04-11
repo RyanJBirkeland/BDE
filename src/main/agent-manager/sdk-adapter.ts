@@ -1,4 +1,5 @@
-import type { AgentHandle, SteerResult, Logger } from './types'
+import type { AgentHandle, SteerResult } from './types'
+import type { Logger } from '../logger'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { buildAgentEnv, getOAuthToken, getClaudeCliPath } from '../env-utils'

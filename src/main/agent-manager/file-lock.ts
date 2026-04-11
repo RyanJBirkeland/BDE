@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync, readFileSync, rmSync, renameSync } from 'node:fs'
 import path from 'node:path'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 
 /**
  * Convert a repo path to a filesystem-safe slug for lock file naming.

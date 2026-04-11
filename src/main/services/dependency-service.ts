@@ -4,7 +4,7 @@
  */
 
 import type { SprintTask, TaskDependency } from '../../shared/types'
-import type { Logger } from '../agent-manager/types'
+import type { Logger } from '../logger'
 import {
   TERMINAL_STATUSES,
   FAILURE_STATUSES,

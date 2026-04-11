@@ -1,5 +1,5 @@
 import type { SprintTask, TaskDependency } from '../../shared/types'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 import {
   type DependencyIndex,
   buildBlockedNotes,

@@ -4,7 +4,7 @@ import { promisify } from 'node:util'
 import path from 'node:path'
 import { buildAgentEnv } from '../env-utils'
 import { BRANCH_SLUG_MAX_LENGTH } from './types'
-import type { Logger } from './types'
+import type { Logger } from '../logger'
 import {
   MIN_FREE_DISK_BYTES,
   DISK_RESERVATION_BYTES,
