@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { promisify } from 'node:util'
-import { capturePartialDiff } from '../run-agent'
+import { capturePartialDiff, classifyDiffCaptureError } from '../run-agent'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 
 // Mock node:child_process before importing module under test
@@ -86,6 +86,29 @@ const mockRepo: ISprintTaskRepository = {
   claimTask: vi.fn()
 }
 
+describe('classifyDiffCaptureError', () => {
+  it('classifies ENOENT as git-missing', () => {
+    const err = Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' })
+    expect(classifyDiffCaptureError(err)).toBe('git-missing')
+  })
+
+  it('classifies bad revision as no-head', () => {
+    expect(classifyDiffCaptureError(new Error("fatal: bad revision 'HEAD'"))).toBe('no-head')
+  })
+
+  it('classifies not a git repository as not-a-repo', () => {
+    expect(classifyDiffCaptureError(new Error('fatal: not a git repository'))).toBe('not-a-repo')
+  })
+
+  it('classifies maxBuffer as max-buffer', () => {
+    expect(classifyDiffCaptureError(new Error('stdout maxBuffer length exceeded'))).toBe('max-buffer')
+  })
+
+  it('classifies unknown errors as unknown', () => {
+    expect(classifyDiffCaptureError(new Error('some other failure'))).toBe('unknown')
+  })
+})
+
 describe('capturePartialDiff', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -146,15 +169,29 @@ index abc123..def456 100644
     expect(noopLogger.info).toHaveBeenCalledWith(expect.stringContaining('truncated'))
   })
 
-  it('handles git command failure gracefully', async () => {
-    getCustomMock().mockRejectedValueOnce(new Error('fatal: not a git repository'))
+  it('logs ENOENT errors at error level', async () => {
+    const enoentError = Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' })
+    getCustomMock().mockRejectedValueOnce(enoentError)
 
     await capturePartialDiff('task-5', '/tmp/worktrees/task-5', mockRepo, noopLogger)
+
+    expect(mockRepo.updateTask).not.toHaveBeenCalled()
+    expect(noopLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining('git binary not found on PATH')
+    )
+    expect(noopLogger.warn).not.toHaveBeenCalled()
+  })
+
+  it('logs non-ENOENT errors at warn level', async () => {
+    getCustomMock().mockRejectedValueOnce(new Error('fatal: not a git repository'))
+
+    await capturePartialDiff('task-5b', '/tmp/worktrees/task-5b', mockRepo, noopLogger)
 
     expect(mockRepo.updateTask).not.toHaveBeenCalled()
     expect(noopLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to capture partial diff')
     )
+    expect(noopLogger.error).not.toHaveBeenCalled()
   })
 
   it('calls git diff HEAD with correct cwd', async () => {
