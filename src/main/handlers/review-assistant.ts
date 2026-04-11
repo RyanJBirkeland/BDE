@@ -30,6 +30,8 @@ export interface ChatStreamDeps {
   taskRepo: ISprintTaskRepository
   reviewRepo: IReviewRepository
   getHeadCommitSha: (worktreePath: string) => Promise<string>
+  getBranch: (worktreePath: string) => Promise<string>
+  getDiff: (worktreePath: string) => Promise<string>
   buildChatPrompt: typeof buildAgentPrompt
   runSdkStreaming: typeof runSdkStreaming
   activeStreams: Map<string, { close: () => void }>
@@ -64,11 +66,15 @@ export async function handleChatStream(
     log.warn(`Could not load review seed for task=${input.taskId}: ${(err as Error).message}`)
   }
 
+  const branch = await deps.getBranch(task.worktree_path)
+  const diff = await deps.getDiff(task.worktree_path)
+
   const prompt = deps.buildChatPrompt({
     agentType: 'reviewer',
     reviewerMode: 'chat',
     taskContent: task.spec ?? task.title,
-    branch: '',
+    branch,
+    diff,
     messages: input.messages.map((m) => ({ role: m.role, content: m.content })),
     reviewSeed,
   })
@@ -96,10 +102,12 @@ export async function handleChatStream(
       )
       const done: ChatChunk = { streamId, done: true, fullText: full }
       sender?.send('review:chatChunk', done)
+      deps.activeStreams.delete(streamId)
     } catch (err) {
       log.error(`review:chatStream failed stream=${streamId}: ${(err as Error).message}`)
       const payload: ChatChunk = { streamId, error: (err as Error).message }
       sender?.send('review:chatChunk', payload)
+      deps.activeStreams.delete(streamId)
     }
   })()
 
@@ -111,6 +119,8 @@ export function buildChatStreamDeps(input: {
   taskRepo: ISprintTaskRepository
   reviewRepo: IReviewRepository
   getHeadCommitSha: (worktreePath: string) => Promise<string>
+  getBranch: (worktreePath: string) => Promise<string>
+  getDiff: (worktreePath: string) => Promise<string>
   activeStreams: Map<string, { close: () => void }>
 }): ChatStreamDeps {
   return {

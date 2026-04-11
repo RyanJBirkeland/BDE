@@ -38,11 +38,22 @@ describe('buildChatStreamDeps', () => {
     const taskRepo = {} as any
     const reviewRepo = {} as any
     const getHeadCommitSha = async () => 'sha'
+    const getBranch = async () => 'feat/auth'
+    const getDiff = async () => 'diff --git a/x b/x\n+ change'
     const activeStreams = new Map<string, { close: () => void }>()
-    const deps = buildChatStreamDeps({ taskRepo, reviewRepo, getHeadCommitSha, activeStreams })
+    const deps = buildChatStreamDeps({
+      taskRepo,
+      reviewRepo,
+      getHeadCommitSha,
+      getBranch,
+      getDiff,
+      activeStreams,
+    })
     expect(deps.taskRepo).toBe(taskRepo)
     expect(deps.reviewRepo).toBe(reviewRepo)
     expect(deps.getHeadCommitSha).toBe(getHeadCommitSha)
+    expect(deps.getBranch).toBe(getBranch)
+    expect(deps.getDiff).toBe(getDiff)
     expect(deps.activeStreams).toBe(activeStreams)
     expect(typeof deps.buildChatPrompt).toBe('function')
     expect(typeof deps.runSdkStreaming).toBe('function')
@@ -82,6 +93,8 @@ describe('handleChatStream', () => {
         invalidate: () => {},
       } as IReviewRepository,
       getHeadCommitSha: async () => 'sha-abc',
+      getBranch: async () => 'feat/auth',
+      getDiff: async () => 'diff --git a/x b/x\n+ change',
       buildChatPrompt: vi.fn().mockReturnValue('BUILT_PROMPT'),
       runSdkStreaming: vi.fn(
         async (
@@ -114,6 +127,8 @@ describe('handleChatStream', () => {
     expect(promptArg?.agentType).toBe('reviewer')
     expect(promptArg?.reviewerMode).toBe('chat')
     expect(promptArg?.reviewSeed).toBeDefined() // seed lookup confirmed
+    expect(promptArg?.branch).toBe('feat/auth')
+    expect(promptArg?.diff).toBeTruthy()
     expect(chunks.some((c) => c.chunk === 'hello ')).toBe(true)
     expect(chunks.some((c) => c.done === true)).toBe(true)
   })
@@ -129,6 +144,8 @@ describe('handleChatStream', () => {
         invalidate: () => {},
       } as IReviewRepository,
       getHeadCommitSha: async () => 'sha-abc',
+      getBranch: async () => 'feat/auth',
+      getDiff: async () => 'diff --git a/x b/x\n+ change',
       buildChatPrompt: () => 'prompt',
       runSdkStreaming: async () => {
         throw new Error('rate limit')
@@ -150,6 +167,8 @@ describe('handleChatStream', () => {
       taskRepo: { getTask: () => null } as unknown as ISprintTaskRepository,
       reviewRepo: { getCached: () => null, setCached: () => {}, invalidate: () => {} },
       getHeadCommitSha: async () => 'sha',
+      getBranch: async () => 'feat/auth',
+      getDiff: async () => '',
       buildChatPrompt: () => '',
       runSdkStreaming: async () => '',
       activeStreams: new Map(),

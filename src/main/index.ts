@@ -240,23 +240,25 @@ app.whenReady().then(() => {
     return stdout.trim()
   }
 
+  const getDiff = async (worktreePath: string): Promise<string> => {
+    const { execFile } = await import('node:child_process')
+    const { promisify } = await import('node:util')
+    const execFileAsync = promisify(execFile)
+    const { stdout } = await execFileAsync(
+      'git',
+      ['-C', worktreePath, 'diff', 'main...HEAD'],
+      { maxBuffer: 10 * 1024 * 1024 }
+    )
+    return stdout
+  }
+
   const reviewService = createReviewService({
     repo: reviewRepo,
     taskRepo: sprintTaskRepository,
     logger: reviewServiceLogger,
     resolveWorktreePath: async (taskId) => resolveWorktreePathViaRepo(taskId),
     getHeadCommitSha,
-    getDiff: async (worktreePath) => {
-      const { execFile } = await import('node:child_process')
-      const { promisify } = await import('node:util')
-      const execFileAsync = promisify(execFile)
-      const { stdout } = await execFileAsync(
-        'git',
-        ['-C', worktreePath, 'diff', 'main...HEAD'],
-        { maxBuffer: 10 * 1024 * 1024 }
-      )
-      return stdout
-    },
+    getDiff,
     getBranch,
     runSdkOnce,
   })
@@ -268,6 +270,8 @@ app.whenReady().then(() => {
       taskRepo: sprintTaskRepository,
       reviewRepo,
       getHeadCommitSha,
+      getBranch,
+      getDiff,
       activeStreams: reviewActiveStreams,
     }),
   })
