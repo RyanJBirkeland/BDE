@@ -10,3 +10,8 @@
   background: var(--bde-bg);
   font-family: var(--bde-font-code);
 }
+
+.cr-view .cr-queue {
+  width: 260px;
+  flex-shrink: 0;
+}
