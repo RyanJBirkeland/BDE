@@ -22,6 +22,8 @@ export interface FileFinding {
 
 export interface ReviewFindings {
   perFile: FileFinding[]
+  /** Git branch the review was run against. Populated at review time by the service. */
+  branch?: string
 }
 
 export interface ReviewResult {

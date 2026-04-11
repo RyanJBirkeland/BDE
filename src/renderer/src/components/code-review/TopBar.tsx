@@ -48,6 +48,10 @@ export function TopBar(): React.JSX.Element {
   } = useReviewActions()
   const panelOpen = useReviewPartnerStore((s) => s.panelOpen)
   const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
+  const reviewResult = useReviewPartnerStore((s) =>
+    selectedTaskId ? s.reviewByTask[selectedTaskId]?.result : undefined
+  )
+  const branch = reviewResult?.findings.branch
 
   const [taskSwitcherOpen, setTaskSwitcherOpen] = useState(false)
   const [batchActionInFlight, setBatchActionInFlight] = useState<string | null>(null)
@@ -423,12 +427,7 @@ export function TopBar(): React.JSX.Element {
                   </div>
                 )}
               </div>
-              {task.worktree_path && (
-                <BranchBar
-                  branch={task.worktree_path.split('/').pop() ?? task.id}
-                  targetBranch="main"
-                />
-              )}
+              {branch && <BranchBar branch={branch} targetBranch="main" />}
             </div>
 
             <div className="cr-topbar__center">

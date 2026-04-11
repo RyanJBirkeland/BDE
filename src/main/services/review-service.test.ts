@@ -205,6 +205,7 @@ describe('reviewService.reviewChanges', () => {
     await svc.reviewChanges('task-1')
     expect(repo._set['task-1:sha-abc']).toBeDefined()
     expect(repo._set['task-1:sha-abc']?.qualityScore).toBe(88)
+    expect(repo._set['task-1:sha-abc']?.findings.branch).toBe('feat/auth')
   })
 
   it('throws on malformed model response', async () => {

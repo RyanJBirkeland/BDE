@@ -193,6 +193,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
       }
 
       const diff = await getDiff(worktreePath)
+      const branch = await getBranch(worktreePath)
 
       if (!diff.trim()) {
         logger.info(`Empty diff for task=${taskId} — synthetic result`)
@@ -201,14 +202,12 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
           issuesCount: 0,
           filesCount: 0,
           openingMessage: 'No changes detected on this branch.',
-          findings: { perFile: [] },
+          findings: { perFile: [], branch },
           model: '(none)',
           createdAt: Date.now(),
         }
         return synthetic
       }
-
-      const branch = await getBranch(worktreePath)
 
       const prompt = buildAgentPrompt({
         agentType: 'reviewer',
@@ -247,7 +246,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         issuesCount: aggregates.issuesCount,
         filesCount: aggregates.filesCount,
         openingMessage: parsed.openingMessage,
-        findings: { perFile: parsed.perFile },
+        findings: { perFile: parsed.perFile, branch },
         model: REVIEWER_MODEL,
         createdAt: Date.now(),
       }

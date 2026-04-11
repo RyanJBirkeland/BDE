@@ -18,10 +18,13 @@ vi.mock('../../../stores/reviewPartner', () => {
   const { create } = require('zustand')
   const store = create(() => ({
     panelOpen: false,
-    togglePanel: vi.fn()
+    togglePanel: vi.fn(),
+    reviewByTask: {} as Record<string, { status: string; result?: unknown }>
   }))
   return { useReviewPartnerStore: store }
 })
+
+import { useReviewPartnerStore } from '../../../stores/reviewPartner'
 
 const TASK_1: SprintTask = {
   id: 'task-1',
@@ -54,6 +57,7 @@ describe('TopBar', () => {
     useCodeReviewStore.getState().reset()
     useSprintTasks.setState({ tasks: [TASK_1] })
     useCodeReviewStore.getState().selectTask('task-1')
+    useReviewPartnerStore.setState({ reviewByTask: {} })
     window.api = {
       review: {
         checkFreshness: vi.fn().mockResolvedValue({ status: 'fresh', commitsBehind: 0 })
@@ -111,6 +115,34 @@ describe('TopBar', () => {
     const taskBtn = screen.getByRole('button', { name: /Test Task 1/i })
     await user.click(taskBtn)
     expect(screen.getByTestId('review-queue')).toBeInTheDocument()
+  })
+
+  it('should show BranchBar with real branch name from review result', () => {
+    useReviewPartnerStore.setState({
+      reviewByTask: {
+        'task-1': {
+          status: 'ready',
+          result: {
+            qualityScore: 92,
+            issuesCount: 3,
+            filesCount: 8,
+            openingMessage: 'ok',
+            findings: { perFile: [], branch: 'feat/fix-auth' },
+            model: 'claude-opus-4-6',
+            createdAt: 0,
+          },
+        },
+      },
+    })
+    render(<TopBar />)
+    expect(screen.getByText('feat/fix-auth')).toBeInTheDocument()
+  })
+
+  it('should not show BranchBar when review result has no branch yet', () => {
+    useReviewPartnerStore.setState({ reviewByTask: {} })
+    render(<TopBar />)
+    // No branch text — BranchBar is not rendered
+    expect(screen.queryByText(/feat\//)).not.toBeInTheDocument()
   })
 
   it('should auto-select first review task when selection is cleared', async () => {
