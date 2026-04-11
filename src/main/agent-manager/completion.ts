@@ -10,7 +10,7 @@ import type { AgentEvent, FailureReason } from '../../shared/types'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
 import { captureDiffSnapshot } from './diff-snapshot'
 import { nowIso } from '../../shared/time'
-import { rebaseOntoMain, findOrCreatePR as findOrCreatePRUtil } from './git-operations'
+import { rebaseOntoMain, findOrCreatePR as findOrCreatePRUtil, sanitizeForGit } from './git-operations'
 
 const execFile = promisify(execFileCb)
 
@@ -24,18 +24,6 @@ type AutoReviewRule = {
     excludePatterns?: string[]
   }
   action: 'auto-merge' | 'auto-approve'
-}
-
-/**
- * Sanitize task title for use in git commit messages and PR titles.
- * Strips backticks, command substitution $(), and markdown links to prevent shell injection.
- */
-export function sanitizeForGit(title: string): string {
-  return title
-    .replace(/`/g, "'") // Replace backticks with single quotes
-    .replace(/\$\(/g, '(') // Strip the $ from $( to neutralize command substitution
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Strip markdown links, keep text only
-    .trim()
 }
 
 export interface ResolveSuccessOpts {

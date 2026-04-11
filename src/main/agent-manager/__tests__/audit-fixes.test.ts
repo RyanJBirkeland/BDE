@@ -2,7 +2,8 @@
  * Tests for critical/high security audit fixes (AM-1 through AM-6)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { sanitizeForGit, resolveFailure } from '../completion'
+import { resolveFailure } from '../completion'
+import { sanitizeForGit } from '../git-operations'
 import { handleWatchdogVerdict } from '../index'
 import { makeConcurrencyState } from '../concurrency'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'

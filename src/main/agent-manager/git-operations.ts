@@ -175,7 +175,7 @@ export async function checkExistingPr(
  * Sanitize task title for use in git commit messages and PR titles.
  * Strips backticks, command substitution $(), and markdown links to prevent shell injection.
  */
-function sanitizeForGit(title: string): string {
+export function sanitizeForGit(title: string): string {
   return title
     .replace(/`/g, "'")
     .replace(/\$\(/g, '(')
