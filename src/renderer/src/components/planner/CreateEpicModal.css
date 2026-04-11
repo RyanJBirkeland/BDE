@@ -3,12 +3,12 @@
 .planner-template-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--bde-space-3);
+  margin-bottom: var(--bde-space-5);
 }
 
 .planner-template-card {
-  padding: 12px;
+  padding: var(--bde-space-3);
   border: 1px solid var(--bde-border);
   border-radius: 6px;
   background: var(--bde-surface);
@@ -33,7 +33,7 @@
 
 .planner-template-card__name {
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: var(--bde-space-1);
 }
 
 .planner-template-card__description {
@@ -49,11 +49,11 @@
 }
 
 .planner-selected-template-banner {
-  padding: 12px;
+  padding: var(--bde-space-3);
   background: var(--bde-surface);
   border: 1px solid var(--bde-accent);
   border-radius: 6px;
-  margin-bottom: 16px;
+  margin-bottom: var(--bde-space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -62,7 +62,7 @@
 .planner-selected-template {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--bde-space-3);
 }
 
 .planner-selected-template__icon {
@@ -98,9 +98,9 @@
 
 .planner-color-picker {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: var(--bde-space-2);
 }
 
 .planner-color-swatch {
@@ -118,5 +118,5 @@
 }
 
 .prompt-modal__label--spaced {
-  margin-top: 16px;
+  margin-top: var(--bde-space-4);
 }

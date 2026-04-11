@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 10px var(--bde-space-3);
   border-bottom: 1px solid var(--bde-accent-border);
   flex-shrink: 0;
   background: linear-gradient(180deg, var(--bde-accent-surface) 0%, transparent 100%);
@@ -53,15 +53,15 @@
 .wb-copilot__messages {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: var(--bde-space-3);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .wb-copilot__bubble {
   max-width: 90%;
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   border-radius: 6px;
   font-size: 13px;
   color: var(--bde-text);
@@ -100,7 +100,7 @@
   font-family: var(--bde-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-style: normal;
   font-size: 11px;
-  padding: 4px 8px;
+  padding: var(--bde-space-1) var(--bde-space-2);
   opacity: 0.85;
 }
 
@@ -114,7 +114,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 4px;
+  margin-top: var(--bde-space-1);
 }
 
 .wb-copilot__time {
@@ -127,7 +127,7 @@
   border: 1px solid var(--bde-accent);
   border-radius: 4px;
   color: var(--bde-accent);
-  padding: 1px 8px;
+  padding: 1px var(--bde-space-2);
   font-size: 11px;
   cursor: pointer;
   font-family: inherit;
@@ -152,10 +152,10 @@
 
 .wb-copilot__loading {
   align-self: flex-start;
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .wb-copilot__loading-text {
@@ -169,7 +169,7 @@
   border: 1px solid var(--bde-border);
   border-radius: 4px;
   color: var(--bde-text-muted);
-  padding: 1px 8px;
+  padding: 1px var(--bde-space-2);
   font-size: 11px;
   cursor: pointer;
   font-family: inherit;
@@ -193,17 +193,17 @@
 }
 
 .wb-copilot__input-row {
-  padding: 8px;
+  padding: var(--bde-space-2);
   border-top: 1px solid var(--bde-border);
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   flex-shrink: 0;
 }
 
 .wb-copilot__input {
   flex: 1;
   resize: none;
-  padding: 8px;
+  padding: var(--bde-space-2);
   background: var(--bde-border);
   border: 1px solid var(--bde-border);
   border-radius: 6px;
@@ -228,7 +228,7 @@
 
 .wb-copilot__send-btn {
   align-self: flex-end;
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   border: none;
   border-radius: 6px;
   font-size: 12px;

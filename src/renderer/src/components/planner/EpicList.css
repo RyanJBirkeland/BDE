@@ -11,8 +11,8 @@
 .planner-epic-list__header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--bde-space-2);
+  padding: 10px var(--bde-space-3);
   border-bottom: 1px solid var(--bde-border);
   background: var(--bde-surface);
 }
@@ -56,7 +56,7 @@
 
 .planner-epic-list__search {
   position: relative;
-  padding: 8px 12px;
+  padding: var(--bde-space-2) var(--bde-space-3);
   border-bottom: 1px solid var(--bde-border);
 }
 
@@ -71,7 +71,7 @@
 
 .planner-epic-list__search-input {
   width: 100%;
-  padding: 6px 8px 6px 28px;
+  padding: 6px var(--bde-space-2) 6px 28px;
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: 6px;
@@ -93,11 +93,11 @@
 .planner-epic-list__scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: var(--bde-space-2);
 }
 
 .planner-epic-list__footer {
-  padding: 12px;
+  padding: var(--bde-space-3);
   border-top: 1px solid var(--bde-border);
 }
 
@@ -130,9 +130,9 @@
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 8px;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-3);
+  margin-bottom: var(--bde-space-2);
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: 8px;
@@ -190,7 +190,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .planner-epic-item__name {
@@ -234,7 +234,7 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 8px 14px;
+  padding: var(--bde-space-2) 14px;
   background: none;
   border: none;
   border-top: 1px solid var(--bde-border);
@@ -243,7 +243,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
-  margin-top: 4px;
+  margin-top: var(--bde-space-1);
 }
 
 .planner-epic-list__section-toggle:hover {
@@ -261,7 +261,7 @@
 }
 
 .planner-epic-list__empty {
-  padding: 16px 14px;
+  padding: var(--bde-space-4) 14px;
   font-size: 12px;
   color: var(--bde-text-dim);
   text-align: center;

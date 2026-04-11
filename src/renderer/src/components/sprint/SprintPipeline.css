@@ -12,7 +12,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 16px;
+  gap: var(--bde-space-4);
   color: var(--bde-text-dim);
   font-family: var(--bde-font-code);
 }
@@ -27,13 +27,13 @@
 }
 
 .pipeline-empty-state__hint--spaced {
-  margin-bottom: 12px;
+  margin-bottom: var(--bde-space-3);
 }
 
 .sprint-pipeline__empty-text {
   color: var(--bde-text-dim);
   font-size: var(--font-sm, 12px);
-  margin: 0 0 12px;
+  margin: 0 0 var(--bde-space-3);
 }
 
 .sprint-pipeline__body {

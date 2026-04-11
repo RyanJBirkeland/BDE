@@ -3,8 +3,8 @@
 .wb-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  gap: var(--bde-space-4);
+  padding: var(--bde-space-4);
   overflow-y: auto;
   height: 100%;
 }
@@ -18,18 +18,18 @@
 .wb-form__group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--bde-space-3);
 }
 
 .wb-form__field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--bde-space-1);
 }
 
 .wb-form__field--row {
   flex-direction: row;
-  gap: 12px;
+  gap: var(--bde-space-3);
 }
 
 .wb-form__field--flex {
@@ -45,7 +45,7 @@
 }
 
 .wb-form__input {
-  padding: 10px 12px;
+  padding: 10px var(--bde-space-3);
   background: var(--bde-overlay);
   border: 1px solid var(--bde-accent-border);
   border-radius: 6px;
@@ -74,7 +74,7 @@
 }
 
 .wb-form__select {
-  padding: 10px 12px;
+  padding: 10px var(--bde-space-3);
   background: var(--bde-overlay);
   border: 1px solid var(--bde-accent-border);
   border-radius: 6px;
@@ -124,17 +124,17 @@
 }
 
 .wb-form__advanced {
-  margin-top: 8px;
+  margin-top: var(--bde-space-2);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-4);
 }
 
 .wb-form__checkbox-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .wb-form__checkbox-row input[type='checkbox'] {

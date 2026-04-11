@@ -2,7 +2,7 @@
 .pipeline-stage {
   display: flex;
   align-items: flex-start;
-  padding: 10px 12px 10px 48px;
+  padding: 10px var(--bde-space-3) 10px 48px;
   position: relative;
   min-height: 64px;
   border-bottom: 1px solid var(--bde-border);
@@ -116,6 +116,6 @@
 }
 
 .pipeline-stage__show-more {
-  margin-top: 8px;
+  margin-top: var(--bde-space-2);
 }
 

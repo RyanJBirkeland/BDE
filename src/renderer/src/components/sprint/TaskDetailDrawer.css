@@ -26,7 +26,7 @@
 }
 
 .task-drawer__head {
-  padding: 20px 20px 16px;
+  padding: var(--bde-space-5) var(--bde-space-5) var(--bde-space-4);
   border-bottom: 1px solid var(--bde-border);
   position: relative;
 }
@@ -37,7 +37,7 @@
   color: var(--bde-text);
   margin-bottom: 10px;
   word-break: break-word;
-  padding-right: 32px;
+  padding-right: var(--bde-space-8);
   line-height: 1.35;
 }
 
@@ -65,7 +65,7 @@
   color: var(--bde-text-dim);
   font-size: 14px;
   cursor: pointer;
-  padding: 8px;
+  padding: var(--bde-space-2);
   min-width: 28px;
   min-height: 28px;
   border-radius: 4px;
@@ -85,13 +85,13 @@
 }
 
 .task-drawer__body {
-  padding: 16px 20px;
+  padding: var(--bde-space-4) var(--bde-space-5);
   flex: 1;
   overflow-y: auto;
 }
 
 .task-drawer__field {
-  margin-bottom: 16px;
+  margin-bottom: var(--bde-space-4);
 }
 
 .task-drawer__label {
@@ -100,7 +100,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--bde-text-dim);
-  margin-bottom: 4px;
+  margin-bottom: var(--bde-space-1);
 }
 
 .task-drawer__value {
@@ -118,14 +118,14 @@
   letter-spacing: 0.06em;
   color: var(--bde-text-dim);
   margin-bottom: 6px;
-  margin-top: 20px;
+  margin-top: var(--bde-space-5);
 }
 
 .task-drawer__prompt {
   background: var(--bde-border);
   border: 1px solid var(--bde-border);
   border-radius: 6px;
-  padding: 12px 14px;
+  padding: var(--bde-space-3) 14px;
   font-family: var(--bde-font-code);
   font-size: var(--font-sm, 12px);
   color: var(--bde-text-muted);
@@ -145,10 +145,10 @@
   border: none;
   font: inherit;
   padding: 0;
-  margin-top: 16px;
+  margin-top: var(--bde-space-4);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--bde-space-1);
 }
 
 .task-drawer__spec-link:hover {
@@ -159,8 +159,8 @@
 .task-drawer__deps {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 0;
+  gap: var(--bde-space-1);
+  padding: var(--bde-space-2) 0;
 }
 
 .task-drawer__deps-label {
@@ -174,7 +174,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: var(--bde-space-1) var(--bde-space-2);
   border-radius: 6px;
   border: 1px solid var(--bde-accent-border);
   background: var(--bde-border);
@@ -231,7 +231,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px 0;
+  padding: var(--bde-space-3) 0;
 }
 
 .task-drawer__upstream-label {
@@ -239,7 +239,7 @@
   color: var(--bde-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  margin-bottom: var(--bde-space-1);
 }
 
 .task-drawer__upstream-list {
@@ -253,7 +253,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 8px 10px;
+  padding: var(--bde-space-2) 10px;
   border-radius: 6px;
   border: 1px solid var(--bde-accent-border);
   background: var(--bde-border);
@@ -322,7 +322,7 @@
   font-size: var(--font-2xs, 10px);
   color: var(--bde-accent);
   text-decoration: none;
-  padding-left: 12px;
+  padding-left: var(--bde-space-3);
   transition: color 150ms ease;
 }
 
@@ -335,7 +335,7 @@
   font-size: var(--font-2xs, 10px);
   color: var(--bde-text-dim);
   line-height: 1.4;
-  padding-left: 12px;
+  padding-left: var(--bde-space-3);
   font-style: italic;
 }
 
@@ -348,20 +348,20 @@
   border: none;
   font: inherit;
   padding: 0;
-  margin-top: 8px;
+  margin-top: var(--bde-space-2);
 }
 
 /* Actions bar */
 .task-drawer__actions {
-  padding: 16px 20px;
+  padding: var(--bde-space-4) var(--bde-space-5);
   border-top: 1px solid var(--bde-border);
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   flex-shrink: 0;
 }
 
 .task-drawer__btn {
-  padding: 8px 16px;
+  padding: var(--bde-space-2) var(--bde-space-4);
   border-radius: 6px;
   font-size: var(--font-xs, 11px);
   font-weight: 600;
@@ -418,17 +418,17 @@
 }
 
 .task-drawer__branch-only {
-  padding: 8px 0;
+  padding: var(--bde-space-2) 0;
   border-top: 1px solid var(--bde-warning-border);
 }
 
 .task-drawer__branch-only-link {
-  margin-top: 8px;
+  margin-top: var(--bde-space-2);
   display: inline-block;
 }
 
 .task-drawer__failure {
-  margin-top: 12px;
+  margin-top: var(--bde-space-3);
   padding: 10px;
   border-radius: 6px;
 }
@@ -465,11 +465,11 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  margin-bottom: var(--bde-space-1);
 }
 
 .task-drawer__failure-errors {
-  margin-top: 8px;
+  margin-top: var(--bde-space-2);
   font-size: 12px;
 }
 
@@ -477,7 +477,7 @@
   font-size: 10px;
   text-transform: uppercase;
   opacity: 0.6;
-  margin-bottom: 4px;
+  margin-bottom: var(--bde-space-1);
 }
 
 .task-drawer__failure-error-item {

@@ -29,7 +29,7 @@
 }
 
 .cr-detail__tab {
-  padding: 8px 16px;
+  padding: var(--bde-space-2) var(--bde-space-4);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -63,7 +63,7 @@
 }
 
 .cr-placeholder {
-  padding: 24px;
+  padding: var(--bde-space-6);
   color: var(--bde-text-dim);
   font-size: 12px;
   text-align: center;

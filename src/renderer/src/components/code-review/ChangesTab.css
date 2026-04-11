@@ -26,8 +26,8 @@
 .cr-changes__files--loading {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px;
+  gap: var(--bde-space-1);
+  padding: var(--bde-space-2);
 }
 
 .cr-changes__file {
@@ -91,12 +91,12 @@
 }
 
 .cr-changes__diff--loading {
-  padding: 16px;
+  padding: var(--bde-space-4);
 }
 
 .cr-changes__diff-content {
   margin: 0;
-  padding: 12px;
+  padding: var(--bde-space-3);
   font-family: var(--bde-font-code);
   font-size: 12px;
   color: var(--bde-text-muted);

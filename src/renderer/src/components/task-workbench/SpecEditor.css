@@ -3,12 +3,12 @@
 .wb-spec {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--bde-space-2);
 }
 
 .wb-spec__toolbar {
   display: flex;
-  gap: 8px;
+  gap: var(--bde-space-2);
   flex-wrap: wrap;
 }
 
@@ -17,7 +17,7 @@
   border: 1px solid var(--bde-border);
   border-radius: 6px;
   color: var(--bde-text-muted);
-  padding: 4px 12px;
+  padding: var(--bde-space-1) var(--bde-space-3);
   font-size: 12px;
   cursor: pointer;
   font-family: inherit;
@@ -70,7 +70,7 @@
   min-height: 200px;
   max-height: 60vh;
   resize: vertical;
-  padding: 12px;
+  padding: var(--bde-space-3);
   background: var(--bde-overlay);
   border: 1px solid var(--bde-accent-border);
   border-radius: 8px;
