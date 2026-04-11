@@ -14,38 +14,45 @@ vi.mock('../ReviewQueue', () => ({
   ReviewQueue: () => <div data-testid="review-queue">Queue</div>
 }))
 
+vi.mock('../../../stores/reviewPartner', () => {
+  const { create } = require('zustand')
+  const store = create(() => ({
+    panelOpen: false,
+    togglePanel: vi.fn()
+  }))
+  return { useReviewPartnerStore: store }
+})
+
+const TASK_1: SprintTask = {
+  id: 'task-1',
+  title: 'Test Task 1',
+  status: 'review',
+  repo: 'bde',
+  spec: 'Test spec',
+  spec_type: 'spec',
+  updated_at: '2026-04-11T00:00:00Z',
+  priority: 1,
+  needs_review: true,
+  playground_enabled: false,
+  prompt: null,
+  notes: null,
+  retry_count: 0,
+  fast_fail_count: 0,
+  agent_run_id: null,
+  pr_number: null,
+  pr_status: null,
+  pr_url: null,
+  claimed_by: null,
+  started_at: null,
+  completed_at: null,
+  template_name: null,
+  depends_on: null
+} as SprintTask
+
 describe('TopBar', () => {
   beforeEach(() => {
     useCodeReviewStore.getState().reset()
-    useSprintTasks.setState({
-      tasks: [
-        {
-          id: 'task-1',
-          title: 'Test Task 1',
-          status: 'review',
-          repo: 'bde',
-          spec: 'Test spec',
-          spec_type: 'spec',
-          updated_at: '2026-04-11T00:00:00Z',
-          priority: 1,
-          needs_review: true,
-          playground_enabled: false,
-          prompt: null,
-          notes: null,
-          retry_count: 0,
-          fast_fail_count: 0,
-          agent_run_id: null,
-          pr_number: null,
-          pr_status: null,
-          pr_url: null,
-          claimed_by: null,
-          started_at: null,
-          completed_at: null,
-          template_name: null,
-          depends_on: null
-        } as SprintTask
-      ]
-    })
+    useSprintTasks.setState({ tasks: [TASK_1] })
     useCodeReviewStore.getState().selectTask('task-1')
     window.api = {
       review: {
@@ -59,11 +66,36 @@ describe('TopBar', () => {
     expect(screen.getByText('Test Task 1')).toBeInTheDocument()
   })
 
-  it('should render action buttons', () => {
+  it('should render AI Partner toggle button', () => {
     render(<TopBar />)
-    expect(screen.getByText(/Ship It/i)).toBeInTheDocument()
-    expect(screen.getByText(/Merge Locally/i)).toBeInTheDocument()
-    expect(screen.getByText(/Create PR/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Toggle AI Review Partner' })).toBeInTheDocument()
+  })
+
+  it('should render Approve dropdown trigger', () => {
+    render(<TopBar />)
+    expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument()
+  })
+
+  it('should show action buttons inside Approve dropdown', async () => {
+    const user = userEvent.setup()
+    render(<TopBar />)
+    // Click the Approve trigger to open the dropdown
+    const approveBtn = screen.getByRole('button', { name: /approve/i })
+    await user.click(approveBtn)
+    // All consolidated actions appear as menuitems
+    expect(screen.getByRole('menuitem', { name: /Merge Locally/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /Create PR/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /Request Revision/i })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /Discard/i })).toBeInTheDocument()
+  })
+
+  it('should show Ship It as Squash & Merge inside Approve dropdown', async () => {
+    const user = userEvent.setup()
+    render(<TopBar />)
+    const approveBtn = screen.getByRole('button', { name: /approve/i })
+    await user.click(approveBtn)
+    // Ship It functionality maps to Squash & Merge in the consolidated dropdown
+    expect(screen.getByRole('menuitem', { name: /Squash & Merge/i })).toBeInTheDocument()
   })
 
   it('should show freshness badge', async () => {
@@ -81,20 +113,9 @@ describe('TopBar', () => {
     expect(screen.getByTestId('review-queue')).toBeInTheDocument()
   })
 
-  it('should open kebab menu on click', async () => {
-    const user = userEvent.setup()
-    render(<TopBar />)
-    const kebabBtn = screen.getByLabelText('More actions')
-    await user.click(kebabBtn)
-    expect(screen.getByRole('menuitem', { name: /Revise/i })).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /Discard/i })).toBeInTheDocument()
-  })
-
   it('should auto-select first review task when selection is cleared', async () => {
     useCodeReviewStore.getState().selectTask(null)
     render(<TopBar />)
-    // Auto-select effect should re-pick task-1 since it is in review status.
-    // The task title should appear in the task switcher button.
     await waitFor(() => {
       expect(screen.getByText('Test Task 1')).toBeInTheDocument()
     })
@@ -112,54 +133,14 @@ describe('TopBar', () => {
     useSprintTasks.setState({
       tasks: [
         {
+          ...TASK_1,
           id: 'task-1',
-          title: 'Task 1',
-          status: 'review',
-          repo: 'bde',
-          spec: 'Test spec',
-          spec_type: 'spec',
-          updated_at: '2026-04-11T00:00:00Z',
-          priority: 1,
-          needs_review: true,
-          playground_enabled: false,
-          prompt: null,
-          notes: null,
-          retry_count: 0,
-          fast_fail_count: 0,
-          agent_run_id: null,
-          pr_number: null,
-          pr_status: null,
-          pr_url: null,
-          claimed_by: null,
-          started_at: null,
-          completed_at: null,
-          template_name: null,
-          depends_on: null
+          title: 'Task 1'
         } as SprintTask,
         {
+          ...TASK_1,
           id: 'task-2',
-          title: 'Task 2',
-          status: 'review',
-          repo: 'bde',
-          spec: 'Test spec',
-          spec_type: 'spec',
-          updated_at: '2026-04-11T00:00:00Z',
-          priority: 1,
-          needs_review: true,
-          playground_enabled: false,
-          prompt: null,
-          notes: null,
-          retry_count: 0,
-          fast_fail_count: 0,
-          agent_run_id: null,
-          pr_number: null,
-          pr_status: null,
-          pr_url: null,
-          claimed_by: null,
-          started_at: null,
-          completed_at: null,
-          template_name: null,
-          depends_on: null
+          title: 'Task 2'
         } as SprintTask
       ]
     })
@@ -176,33 +157,7 @@ describe('TopBar', () => {
   it('should clear batch selection when Clear is clicked', async () => {
     const user = userEvent.setup()
     useSprintTasks.setState({
-      tasks: [
-        {
-          id: 'task-1',
-          title: 'Task 1',
-          status: 'review',
-          repo: 'bde',
-          spec: 'Test spec',
-          spec_type: 'spec',
-          updated_at: '2026-04-11T00:00:00Z',
-          priority: 1,
-          needs_review: true,
-          playground_enabled: false,
-          prompt: null,
-          notes: null,
-          retry_count: 0,
-          fast_fail_count: 0,
-          agent_run_id: null,
-          pr_number: null,
-          pr_status: null,
-          pr_url: null,
-          claimed_by: null,
-          started_at: null,
-          completed_at: null,
-          template_name: null,
-          depends_on: null
-        } as SprintTask
-      ]
+      tasks: [{ ...TASK_1, id: 'task-1', title: 'Task 1' } as SprintTask]
     })
     const batchIds = new Set(['task-1'])
     useCodeReviewStore.setState({ selectedBatchIds: batchIds })

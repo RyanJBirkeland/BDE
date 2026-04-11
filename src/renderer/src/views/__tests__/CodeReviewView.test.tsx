@@ -39,6 +39,22 @@ vi.mock('../../stores/codeReview', () => {
   return { useCodeReviewStore: store }
 })
 
+vi.mock('../../stores/reviewPartner', () => ({
+  useReviewPartnerStore: vi.fn((sel: (s: Record<string, unknown>) => unknown) =>
+    sel({
+      panelOpen: false,
+      reviewByTask: {},
+      messagesByTask: {},
+      activeStreamByTask: {},
+      togglePanel: vi.fn(),
+      sendMessage: vi.fn(),
+      abortStream: vi.fn(),
+      clearMessages: vi.fn(),
+      autoReview: vi.fn()
+    })
+  )
+}))
+
 vi.mock('../../lib/render-agent-markdown', () => ({
   renderAgentMarkdown: (text: string) => <span>{text}</span>
 }))
@@ -50,8 +66,8 @@ describe('CodeReviewView', () => {
     render(<CodeReviewView />)
     // TopBar should be present
     expect(screen.getByText('No tasks in review')).toBeInTheDocument()
-    // Three-column structure should exist (check for placeholder AI Assistant)
-    expect(screen.getByText('AI Assistant')).toBeInTheDocument()
+    // AI Review Partner panel should be present (updated title from Phase G1)
+    expect(screen.getByText('AI Review Partner')).toBeInTheDocument()
   })
 
   it('renders the actions hint when no task selected', () => {

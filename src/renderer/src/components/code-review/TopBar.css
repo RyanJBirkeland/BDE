@@ -269,3 +269,29 @@
   color: var(--bde-accent);
   font-family: var(--bde-font-code);
 }
+
+/* AI Partner toggle button */
+.cr-topbar__ai-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-2) var(--bde-space-3);
+  border-radius: var(--bde-radius-md);
+  background: transparent;
+  border: 1px solid var(--bde-border);
+  color: var(--bde-text);
+  cursor: pointer;
+  font-size: var(--bde-size-sm);
+  transition: all 120ms ease;
+  white-space: nowrap;
+}
+
+.cr-topbar__ai-toggle--on {
+  background: var(--bde-purple-surface, var(--bde-surface-high));
+  border-color: var(--bde-purple);
+  color: var(--bde-purple);
+}
+
+.cr-topbar__ai-toggle:hover:not(.cr-topbar__ai-toggle--on) {
+  background: var(--bde-hover);
+}

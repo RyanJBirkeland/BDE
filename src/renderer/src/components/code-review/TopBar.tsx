@@ -4,13 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   GitMerge,
   GitPullRequest,
-  RotateCcw,
   Trash2,
   Loader2,
   Rocket,
   RefreshCw,
   ChevronDown,
-  MoreVertical,
+  Sparkles,
   X
 } from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
@@ -21,6 +20,9 @@ import { toast } from '../../stores/toasts'
 import { ReviewQueue } from './ReviewQueue'
 import { VARIANTS } from '../../lib/motion'
 import { useReviewActions } from '../../hooks/useReviewActions'
+import { BranchBar } from './BranchBar'
+import { ApproveDropdown } from './ApproveDropdown'
+import { useReviewPartnerStore } from '../../stores/reviewPartner'
 
 export function TopBar(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -33,8 +35,6 @@ export function TopBar(): React.JSX.Element {
   const { confirm, confirmProps: batchConfirmProps } = useConfirm()
   const {
     actionInFlight,
-    mergeStrategy,
-    setMergeStrategy,
     freshness,
     ghConfigured,
     shipIt,
@@ -46,11 +46,12 @@ export function TopBar(): React.JSX.Element {
     confirmProps,
     promptProps
   } = useReviewActions()
+  const panelOpen = useReviewPartnerStore((s) => s.panelOpen)
+  const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
+
   const [taskSwitcherOpen, setTaskSwitcherOpen] = useState(false)
-  const [kebabOpen, setKebabOpen] = useState(false)
   const [batchActionInFlight, setBatchActionInFlight] = useState<string | null>(null)
   const taskSwitcherRef = useRef<HTMLDivElement>(null)
-  const kebabRef = useRef<HTMLDivElement>(null)
 
   const selectedTasks = tasks.filter((t) => selectedBatchIds.has(t.id) && t.status === 'review')
 
@@ -75,21 +76,16 @@ export function TopBar(): React.JSX.Element {
       if (taskSwitcherRef.current && !taskSwitcherRef.current.contains(e.target as Node)) {
         setTaskSwitcherOpen(false)
       }
-      if (kebabRef.current && !kebabRef.current.contains(e.target as Node)) {
-        setKebabOpen(false)
-      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const handleRequestRevision = async (): Promise<void> => {
-    setKebabOpen(false)
     await requestRevision()
   }
 
   const handleDiscard = async (): Promise<void> => {
-    setKebabOpen(false)
     await discard()
   }
 
@@ -427,6 +423,12 @@ export function TopBar(): React.JSX.Element {
                   </div>
                 )}
               </div>
+              {task.worktree_path && (
+                <BranchBar
+                  branch={task.worktree_path.split('/').pop() ?? task.id}
+                  targetBranch="main"
+                />
+              )}
             </div>
 
             <div className="cr-topbar__center">
@@ -464,89 +466,27 @@ export function TopBar(): React.JSX.Element {
             </div>
 
             <div className="cr-topbar__right">
+              {/* AI Partner toggle */}
               <button
-                className="cr-topbar__btn cr-topbar__btn--ship"
-                onClick={shipIt}
-                disabled={!!actionInFlight || !ghConfigured}
-                title={!ghConfigured ? 'Configure GitHub in Settings → Connections' : undefined}
+                type="button"
+                className={`cr-topbar__ai-toggle${panelOpen ? ' cr-topbar__ai-toggle--on' : ''}`}
+                aria-pressed={panelOpen}
+                aria-label="Toggle AI Review Partner"
+                onClick={togglePanel}
               >
-                {actionInFlight === 'shipIt' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <Rocket size={14} />
-                )}{' '}
-                Ship It
+                <Sparkles size={14} />
+                <span>AI Partner</span>
               </button>
-              <div className="cr-topbar__merge-group">
-                <button
-                  className="cr-topbar__btn cr-topbar__btn--primary"
-                  onClick={mergeLocally}
-                  disabled={!!actionInFlight}
-                >
-                  {actionInFlight === 'merge' ? (
-                    <Loader2 size={14} className="spin" />
-                  ) : (
-                    <GitMerge size={14} />
-                  )}{' '}
-                  Merge Locally
-                </button>
-                <select
-                  className="cr-topbar__strategy"
-                  value={mergeStrategy}
-                  onChange={(e) =>
-                    setMergeStrategy(e.target.value as 'squash' | 'merge' | 'rebase')
-                  }
-                  disabled={!!actionInFlight}
-                >
-                  <option value="squash">Squash</option>
-                  <option value="merge">Merge</option>
-                  <option value="rebase">Rebase</option>
-                </select>
-              </div>
-              <button
-                className="cr-topbar__btn cr-topbar__btn--secondary"
-                onClick={createPr}
-                disabled={!!actionInFlight || !ghConfigured}
-                title={!ghConfigured ? 'Configure GitHub in Settings → Connections' : undefined}
-              >
-                {actionInFlight === 'createPr' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <GitPullRequest size={14} />
-                )}{' '}
-                Create PR
-              </button>
-              <div className="cr-topbar__kebab" ref={kebabRef}>
-                <button
-                  className="cr-topbar__btn cr-topbar__btn--ghost"
-                  onClick={() => setKebabOpen(!kebabOpen)}
-                  aria-label="More actions"
-                >
-                  <MoreVertical size={14} />
-                </button>
-                {kebabOpen && (
-                  <div className="cr-topbar__kebab-menu" role="menu">
-                    <button
-                      className="cr-topbar__kebab-item"
-                      onClick={handleRequestRevision}
-                      disabled={!!actionInFlight}
-                      role="menuitem"
-                    >
-                      <RotateCcw size={14} />
-                      Revise
-                    </button>
-                    <button
-                      className="cr-topbar__kebab-item cr-topbar__kebab-item--danger"
-                      onClick={handleDiscard}
-                      disabled={!!actionInFlight}
-                      role="menuitem"
-                    >
-                      <Trash2 size={14} />
-                      Discard
-                    </button>
-                  </div>
-                )}
-              </div>
+
+              {/* Approve dropdown (consolidated actions) */}
+              <ApproveDropdown
+                onMergeLocally={mergeLocally}
+                onSquashMerge={shipIt}
+                onCreatePR={createPr}
+                onRequestRevision={handleRequestRevision}
+                onDiscard={handleDiscard}
+                disabled={!!actionInFlight}
+              />
             </div>
           </motion.div>
         )}
