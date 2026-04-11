@@ -138,3 +138,135 @@ function validateParsedReview(value: unknown, raw: string): ParsedReview {
 }
 
 export type { ReviewFindings }
+
+import type { IReviewRepository } from '../data/review-repository'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
+import type { Logger } from '../logger'
+import type { SdkStreamingOptions } from '../sdk-streaming'
+import type { ReviewResult } from '../../shared/review-types'
+import { buildAgentPrompt } from '../agent-manager/prompt-composer'
+
+export interface ReviewServiceDeps {
+  repo: IReviewRepository
+  taskRepo: ISprintTaskRepository
+  logger: Logger
+  resolveWorktreePath: (taskId: string) => Promise<string>
+  getHeadCommitSha: (worktreePath: string) => Promise<string>
+  getDiff: (worktreePath: string) => Promise<string>
+  runSdkOnce: (prompt: string, options: SdkStreamingOptions) => Promise<string>
+}
+
+export interface ReviewService {
+  reviewChanges(
+    taskId: string,
+    opts?: { force?: boolean }
+  ): Promise<ReviewResult>
+}
+
+const REVIEWER_MODEL = 'claude-opus-4-6'
+
+export function createReviewService(deps: ReviewServiceDeps): ReviewService {
+  const { repo, taskRepo, logger, resolveWorktreePath, getHeadCommitSha, getDiff, runSdkOnce } = deps
+
+  return {
+    async reviewChanges(taskId, opts) {
+      const task = taskRepo.getTask(taskId)
+      if (!task) {
+        throw new Error(`Task not found: ${taskId}`)
+      }
+      if (task.status !== 'review') {
+        throw new Error(
+          `Task ${taskId} is not in review status (current: ${task.status})`
+        )
+      }
+
+      const worktreePath = await resolveWorktreePath(taskId)
+      const headSha = await getHeadCommitSha(worktreePath)
+
+      if (!opts?.force) {
+        const cached = repo.getCached(taskId, headSha)
+        if (cached) {
+          logger.info(`Cache hit for task=${taskId} sha=${headSha}`)
+          return cached
+        }
+      }
+
+      const diff = await getDiff(worktreePath)
+
+      if (!diff.trim()) {
+        logger.info(`Empty diff for task=${taskId} — synthetic result`)
+        const synthetic: ReviewResult = {
+          qualityScore: 100,
+          issuesCount: 0,
+          filesCount: 0,
+          openingMessage: 'No changes detected on this branch.',
+          findings: { perFile: [] },
+          model: '(none)',
+          createdAt: Date.now(),
+        }
+        return synthetic
+      }
+
+      const prompt = buildAgentPrompt({
+        agentType: 'reviewer',
+        reviewerMode: 'review',
+        taskContent: task.spec ?? task.title,
+        branch: (task as unknown as Record<string, unknown>)['branch'] as string | undefined ?? '',
+        diff,
+      })
+
+      logger.info(`Firing auto-review for task=${taskId} sha=${headSha}`)
+      let raw: string
+      try {
+        raw = await runSdkOnce(prompt, {
+          model: REVIEWER_MODEL,
+          maxTurns: 1,
+          tools: [],
+        })
+      } catch (err) {
+        logger.error(`Review SDK call failed for task=${taskId}: ${(err as Error).message}`)
+        throw err
+      }
+
+      let parsed
+      try {
+        parsed = parseReviewResponse(raw)
+      } catch (_firstErr) {
+        logger.warn(`Parse failed once for task=${taskId} — retrying`)
+        try {
+          parsed = parseReviewResponse(raw)
+        } catch (secondErr) {
+          logger.error(`Parse failed twice for task=${taskId}: ${(secondErr as Error).message}`)
+          throw secondErr
+        }
+      }
+
+      const aggregates = aggregate(parsed.perFile)
+      const result: ReviewResult = {
+        qualityScore: parsed.qualityScore,
+        issuesCount: aggregates.issuesCount,
+        filesCount: aggregates.filesCount,
+        openingMessage: parsed.openingMessage,
+        findings: { perFile: parsed.perFile },
+        model: REVIEWER_MODEL,
+        createdAt: Date.now(),
+      }
+
+      repo.setCached(taskId, headSha, result, raw)
+      return result
+    },
+  }
+}
+
+function aggregate(perFile: FileFinding[]): {
+  filesCount: number
+  issuesCount: number
+} {
+  let issuesCount = 0
+  for (const f of perFile) {
+    for (const c of f.comments) {
+      if (c.severity === 'high' || c.severity === 'medium') issuesCount++
+    }
+  }
+  return { filesCount: perFile.length, issuesCount }
+}
