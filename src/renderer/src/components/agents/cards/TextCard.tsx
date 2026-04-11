@@ -1,5 +1,4 @@
-import '../ConsoleLine.css'
-import { formatTime } from './util'
+import './ConsoleCard.css'
 import { renderAgentMarkdown } from '../../../lib/render-agent-markdown'
 
 interface TextCardProps {
@@ -8,17 +7,10 @@ interface TextCardProps {
   searchClass: string
 }
 
-export function TextCard({ text, timestamp, searchClass }: TextCardProps): React.JSX.Element {
-  const isGrouped = text.includes('\n')
+export function TextCard({ text }: TextCardProps): React.JSX.Element {
   return (
-    <div className={`console-line${searchClass}`} data-testid="console-line-text">
-      <span className="console-prefix console-prefix--agent">[agent]</span>
-      <span
-        className={`console-line__content${isGrouped ? ' console-line__content--grouped' : ''}`}
-      >
-        {renderAgentMarkdown(text)}
-      </span>
-      <span className="console-line__timestamp">{formatTime(timestamp)}</span>
+    <div className="console-card console-card--text" data-testid="console-line-text">
+      {renderAgentMarkdown(text)}
     </div>
   )
 }

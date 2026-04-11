@@ -1,5 +1,4 @@
-import '../ConsoleLine.css'
-import { formatTime } from './util'
+import './ConsoleCard.css'
 
 interface UserMessageCardProps {
   text: string
@@ -10,18 +9,14 @@ interface UserMessageCardProps {
 
 export function UserMessageCard({
   text,
-  timestamp,
-  pending,
-  searchClass
+  pending
 }: UserMessageCardProps): React.JSX.Element {
   return (
     <div
-      className={`console-line${pending ? ' console-line--pending' : ''}${searchClass}`}
+      className={`console-card console-card--user${pending ? ' console-card--pending' : ''}`}
       data-testid="console-line-user"
     >
-      <span className="console-prefix console-prefix--user">[user]</span>
-      <span className="console-line__content">{text}</span>
-      <span className="console-line__timestamp">{formatTime(timestamp)}</span>
+      {text}
     </div>
   )
 }

@@ -1,5 +1,4 @@
-import '../ConsoleLine.css'
-import { formatTime } from './util'
+import './ConsoleCard.css'
 
 interface RateLimitedCardProps {
   retryDelayMs: number
@@ -10,17 +9,11 @@ interface RateLimitedCardProps {
 
 export function RateLimitedCard({
   retryDelayMs,
-  attempt,
-  timestamp,
-  searchClass
+  attempt
 }: RateLimitedCardProps): React.JSX.Element {
   return (
-    <div className={`console-line${searchClass}`} data-testid="console-line-rate-limited">
-      <span className="console-prefix console-prefix--rate">[rate]</span>
-      <span className="console-line__content">
-        Rate limited, retry in {Math.ceil(retryDelayMs / 1000)}s (attempt {attempt})
-      </span>
-      <span className="console-line__timestamp">{formatTime(timestamp)}</span>
+    <div className="console-card console-card--rate" data-testid="console-line-rate-limited">
+      Rate limited, retry in {Math.ceil(retryDelayMs / 1000)}s (attempt {attempt})
     </div>
   )
 }

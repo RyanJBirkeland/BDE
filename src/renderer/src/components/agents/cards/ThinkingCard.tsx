@@ -1,6 +1,6 @@
-import '../ConsoleLine.css'
-import { formatTime } from './util'
-import { CollapsibleBlock } from '../CollapsibleBlock'
+import './ConsoleCard.css'
+import { useState } from 'react'
+import { ChevronRight } from 'lucide-react'
 
 interface ThinkingCardProps {
   tokenCount: number
@@ -11,27 +11,45 @@ interface ThinkingCardProps {
 
 export function ThinkingCard({
   tokenCount,
-  text,
-  timestamp,
-  searchClass
+  text
 }: ThinkingCardProps): React.JSX.Element {
+  const [expanded, setExpanded] = useState(false)
+  const preview = text ? text.slice(0, 120) + (text.length > 120 ? '...' : '') : ''
+
   return (
-    <CollapsibleBlock
-      testId="console-line-thinking"
-      searchClass={searchClass}
-      header={
-        <>
-          <span className="console-prefix console-prefix--think">[think]</span>
-          <span className="console-line__content">Thinking...</span>
-          <span className="console-badge console-badge--purple">
-            {tokenCount.toLocaleString()} tokens
-          </span>
-          <span className="console-line__timestamp">{formatTime(timestamp)}</span>
-        </>
-      }
-      expandedContent={
-        text ? <div className="console-line__expanded-content">{text}</div> : null
-      }
-    />
+    <div
+      className="console-card console-card--reasoning"
+      data-testid="console-line-thinking"
+    >
+      <div className="console-card__header">
+        💭 Reasoning · {tokenCount.toLocaleString()} tokens
+        {text && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              color: 'inherit'
+            }}
+            aria-label={expanded ? 'Collapse' : 'Expand'}
+          >
+            <ChevronRight
+              size={14}
+              style={{
+                transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 100ms ease'
+              }}
+            />
+          </button>
+        )}
+      </div>
+      {text && !expanded && <div className="console-card__preview">{preview}</div>}
+      {text && expanded && <div className="console-card__content">{text}</div>}
+    </div>
   )
 }

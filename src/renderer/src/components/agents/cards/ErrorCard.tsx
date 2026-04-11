@@ -1,5 +1,4 @@
-import '../ConsoleLine.css'
-import { formatTime } from './util'
+import './ConsoleCard.css'
 
 interface ErrorCardProps {
   message: string
@@ -7,15 +6,13 @@ interface ErrorCardProps {
   searchClass: string
 }
 
-export function ErrorCard({ message, timestamp, searchClass }: ErrorCardProps): React.JSX.Element {
+export function ErrorCard({ message }: ErrorCardProps): React.JSX.Element {
   return (
     <div
-      className={`console-line console-line--error${searchClass}`}
+      className="console-card console-card--error"
       data-testid="console-line-error"
     >
-      <span className="console-prefix console-prefix--error">[error]</span>
-      <span className="console-line__content">{message}</span>
-      <span className="console-line__timestamp">{formatTime(timestamp)}</span>
+      {message}
     </div>
   )
 }

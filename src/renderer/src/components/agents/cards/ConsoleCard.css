@@ -1,0 +1,90 @@
+/* ── Console Card Base ── */
+.console-card {
+  padding: var(--bde-space-3);
+  margin-bottom: var(--bde-space-3);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--bde-font-code);
+  line-height: 1.5;
+  transition: all 100ms ease;
+}
+
+.console-card:hover {
+  box-shadow: 0 0 12px var(--bde-accent-glow, rgba(0, 255, 255, 0.1));
+  border: 1px solid var(--bde-accent-border, var(--bde-border));
+}
+
+/* ── Card Header ── */
+.console-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  font-size: 11px;
+  color: var(--bde-text-dim);
+}
+
+/* ── Card Content ── */
+.console-card__content {
+  margin-top: var(--bde-space-2);
+}
+
+/* ── Per-Type Accent Styles ── */
+
+/* User message: right-aligned chat bubble */
+.console-card--user {
+  max-width: 70%;
+  margin-left: auto;
+  background: var(--bde-accent-surface, rgba(0, 255, 255, 0.05));
+  border-left: 3px solid var(--bde-accent);
+}
+
+.console-card--user.console-card--pending {
+  opacity: 0.6;
+}
+
+/* Text: agent response */
+.console-card--text {
+  background: var(--bde-surface);
+  border-left: 3px solid var(--bde-accent);
+}
+
+/* Reasoning: thinking/reasoning block */
+.console-card--reasoning {
+  background: var(--bde-surface);
+  border-left: 3px solid var(--bde-status-active, #a78bfa);
+}
+
+.console-card--reasoning .console-card__preview {
+  color: var(--bde-text-dim);
+  font-style: italic;
+  margin-top: var(--bde-space-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Error: full-width red border */
+.console-card--error {
+  background: var(--bde-danger-surface);
+  border-left: 3px solid var(--bde-danger);
+}
+
+/* Stderr: yellow border, smaller text */
+.console-card--stderr {
+  background: var(--bde-surface);
+  border-left: 3px solid var(--bde-warning);
+  font-size: 11px;
+}
+
+/* Rate limited: yellow/orange accent */
+.console-card--rate {
+  background: var(--bde-surface);
+  border-left: 3px solid var(--bde-warning);
+}
+
+/* Started: small one-line dim card */
+.console-card--started {
+  background: var(--bde-surface);
+  color: var(--bde-text-dim);
+  font-size: 11px;
+  padding: var(--bde-space-2) var(--bde-space-3);
+}

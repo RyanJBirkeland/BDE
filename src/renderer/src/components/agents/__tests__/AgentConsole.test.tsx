@@ -119,7 +119,7 @@ describe('AgentConsole', () => {
   it('renders console lines for events', () => {
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
     // The ConsoleCard component should render the started event
-    expect(screen.getByText(/Started with model opus-4/)).toBeInTheDocument()
+    expect(screen.getByText(/🤖 Agent started.*opus-4/)).toBeInTheDocument()
   })
 
   it('shows "Agent not found" when agent does not exist', () => {
@@ -236,7 +236,7 @@ describe('AgentConsole', () => {
     fireEvent.click(sendButton)
 
     // Find the user message line and check for pending class
-    const userLine = container.querySelector('.console-line--pending')
+    const userLine = container.querySelector('.console-card--pending')
     expect(userLine).toBeInTheDocument()
     expect(userLine).toHaveTextContent('test message')
   })
@@ -257,7 +257,7 @@ describe('AgentConsole', () => {
     fireEvent.click(sendButton)
 
     // Verify pending message is present
-    expect(container.querySelector('.console-line--pending')).toBeInTheDocument()
+    expect(container.querySelector('.console-card--pending')).toBeInTheDocument()
 
     // Simulate real user_message event arriving
     eventState = {
@@ -282,6 +282,6 @@ describe('AgentConsole', () => {
     rerender(<AgentConsole agentId="test-agent-1" onSteer={onSteer} onCommand={vi.fn()} />)
 
     // Pending message should be removed
-    expect(container.querySelector('.console-line--pending')).not.toBeInTheDocument()
+    expect(container.querySelector('.console-card--pending')).not.toBeInTheDocument()
   })
 })

@@ -8,39 +8,36 @@ describe('ConsoleCard', () => {
     vi.clearAllMocks()
   })
 
-  it('renders text block with [agent] prefix', () => {
+  it('renders text block without prefix', () => {
     const block: ChatBlock = { type: 'text', text: 'Hello world', timestamp: Date.now() }
     render(<ConsoleCard block={block} />)
-    expect(screen.getByText('[agent]')).toBeInTheDocument()
     expect(screen.getByText('Hello world')).toBeInTheDocument()
   })
 
-  it('renders started block with model name', () => {
+  it('renders started block with emoji and model name', () => {
     const block: ChatBlock = { type: 'started', model: 'claude-opus-4', timestamp: Date.now() }
     render(<ConsoleCard block={block} />)
-    expect(screen.getByText('[agent]')).toBeInTheDocument()
-    expect(screen.getByText('Started with model claude-opus-4')).toBeInTheDocument()
+    expect(screen.getByText(/🤖 Agent started/)).toBeInTheDocument()
+    expect(screen.getByText(/claude-opus-4/)).toBeInTheDocument()
   })
 
-  it('renders user_message block with [user] prefix', () => {
+  it('renders user_message block without prefix', () => {
     const block: ChatBlock = { type: 'user_message', text: 'User input', timestamp: Date.now() }
     render(<ConsoleCard block={block} />)
-    expect(screen.getByText('[user]')).toBeInTheDocument()
     expect(screen.getByText('User input')).toBeInTheDocument()
   })
 
-  it('renders error block with [error] prefix', () => {
+  it('renders error block without prefix', () => {
     const block: ChatBlock = {
       type: 'error',
       message: 'Something went wrong',
       timestamp: Date.now()
     }
     render(<ConsoleCard block={block} />)
-    expect(screen.getByText('[error]')).toBeInTheDocument()
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
   })
 
-  it('renders rate_limited block with [rate] prefix and retry info', () => {
+  it('renders rate_limited block with retry countdown', () => {
     const block: ChatBlock = {
       type: 'rate_limited',
       retryDelayMs: 5000,
@@ -48,7 +45,6 @@ describe('ConsoleCard', () => {
       timestamp: Date.now()
     }
     render(<ConsoleCard block={block} />)
-    expect(screen.getByText('[rate]')).toBeInTheDocument()
     expect(screen.getByText(/Rate limited, retry in 5s \(attempt 2\)/)).toBeInTheDocument()
   })
 
@@ -106,25 +102,26 @@ describe('ConsoleCard', () => {
     expect(container.querySelector('.console-md-code')?.textContent).toBe('npm test')
   })
 
-  // Grouped text styling
-  it('applies grouped styling to multi-line text blocks', () => {
+  // Text rendering
+  it('renders multi-line text blocks', () => {
     const block: ChatBlock = {
       type: 'text',
       text: 'Line one\nLine two',
       timestamp: Date.now()
     }
-    const { container } = render(<ConsoleCard block={block} />)
-    expect(container.querySelector('.console-line__content--grouped')).toBeInTheDocument()
+    render(<ConsoleCard block={block} />)
+    expect(screen.getByText(/Line one/)).toBeInTheDocument()
+    expect(screen.getByText(/Line two/)).toBeInTheDocument()
   })
 
-  it('does not apply grouped styling to single-line text', () => {
+  it('renders single-line text', () => {
     const block: ChatBlock = {
       type: 'text',
       text: 'Just one line',
       timestamp: Date.now()
     }
-    const { container } = render(<ConsoleCard block={block} />)
-    expect(container.querySelector('.console-line__content--grouped')).not.toBeInTheDocument()
+    render(<ConsoleCard block={block} />)
+    expect(screen.getByText('Just one line')).toBeInTheDocument()
   })
 
   // Completion card tests
@@ -177,7 +174,7 @@ describe('ConsoleCard', () => {
     expect(screen.getByText(/chart\.html \(2KB\)/)).toBeInTheDocument()
   })
 
-  it('renders thinking block with [think] prefix and token count badge', () => {
+  it('renders thinking block with emoji header and token count', () => {
     const block: ChatBlock = {
       type: 'thinking',
       tokenCount: 1234,
@@ -185,11 +182,10 @@ describe('ConsoleCard', () => {
       timestamp: Date.now()
     }
     render(<ConsoleCard block={block} />)
-    expect(screen.getByText('[think]')).toBeInTheDocument()
-    expect(screen.getByText('1,234 tokens')).toBeInTheDocument()
+    expect(screen.getByText(/💭 Reasoning.*1,234 tokens/)).toBeInTheDocument()
   })
 
-  it('renders thinking block collapsed by default', () => {
+  it('renders thinking block with preview visible by default', () => {
     const block: ChatBlock = {
       type: 'thinking',
       tokenCount: 100,
@@ -197,7 +193,8 @@ describe('ConsoleCard', () => {
       timestamp: Date.now()
     }
     render(<ConsoleCard block={block} />)
-    expect(screen.queryByText('Hidden thoughts')).not.toBeInTheDocument()
+    // Preview should be visible by default
+    expect(screen.getByText('Hidden thoughts')).toBeInTheDocument()
   })
 
   it('expands thinking block on click', () => {
@@ -296,7 +293,7 @@ describe('ConsoleCard', () => {
     expect(screen.getByText(/"content": "Hello world"/)).toBeInTheDocument()
   })
 
-  it('toggles collapsible blocks back to collapsed on second click', () => {
+  it('toggles thinking block between preview and full text', () => {
     const block: ChatBlock = {
       type: 'thinking',
       tokenCount: 100,
@@ -304,21 +301,26 @@ describe('ConsoleCard', () => {
       timestamp: Date.now()
     }
     render(<ConsoleCard block={block} />)
+    // Preview visible by default
+    expect(screen.getByText('Toggle me')).toBeInTheDocument()
     const button = screen.getByRole('button')
+    // Expand to full text
     fireEvent.click(button)
     expect(screen.getByText('Toggle me')).toBeInTheDocument()
+    // Collapse back to preview
     fireEvent.click(button)
-    expect(screen.queryByText('Toggle me')).not.toBeInTheDocument()
+    expect(screen.getByText('Toggle me')).toBeInTheDocument()
   })
 
-  it('formats timestamp as HH:MM:SS', () => {
+  it('renders text card without timestamps', () => {
     const timestamp = new Date('2024-01-15T14:32:45').getTime()
     const block: ChatBlock = { type: 'text', text: 'Test', timestamp }
     render(<ConsoleCard block={block} />)
-    // The exact format depends on locale, but we can check that a timestamp is rendered
-    const timestampElements = screen.getByTestId('console-line-text').querySelectorAll('span')
-    const timestampText = Array.from(timestampElements).pop()?.textContent
-    expect(timestampText).toMatch(/\d{1,2}:\d{2}:\d{2}/)
+    // Text content should be visible
+    expect(screen.getByText('Test')).toBeInTheDocument()
+    // No timestamp elements in the new card grammar
+    const card = screen.getByTestId('console-line-text')
+    expect(card.textContent).toBe('Test')
   })
 
   it('chevron rotates when thinking block is expanded', () => {
