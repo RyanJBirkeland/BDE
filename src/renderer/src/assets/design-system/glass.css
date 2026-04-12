@@ -61,7 +61,7 @@
 }
 
 .elevation-3-backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bde-overlay);
 }
 
 /* ── 6. Glow Effects ─────────────────────────────────── */
@@ -148,7 +148,7 @@ html.theme-light .elevation-3 {
 }
 
 html.theme-light .elevation-3-backdrop {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--bde-overlay);
 }
 
 /* ── Pro Dark theme overrides (zero glass/neon effects) ── */
@@ -169,7 +169,7 @@ html.theme-pro-dark .elevation-3 {
 }
 
 html.theme-pro-dark .elevation-3-backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bde-overlay);
 }
 
 /* ── Pro Light theme overrides ── */
@@ -193,7 +193,7 @@ html.theme-pro-light .elevation-3 {
 }
 
 html.theme-pro-light .elevation-3-backdrop {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bde-overlay);
 }
 
 /* ── Drawer resize handle (right-anchored overlay drawers) ───────────────── */
