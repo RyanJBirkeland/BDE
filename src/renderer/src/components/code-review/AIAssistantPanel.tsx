@@ -3,6 +3,7 @@ import { Sparkles, X, MoreHorizontal } from 'lucide-react'
 import { useState, useEffect, useRef, type JSX } from 'react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useReviewPartnerStore } from '../../stores/reviewPartner'
+import { useReviewPartnerActions } from '../../hooks/useReviewPartnerActions'
 import { ReviewMetricsRow } from './ReviewMetricsRow'
 import { ReviewMessageList } from './ReviewMessageList'
 import { ReviewQuickActions } from './ReviewQuickActions'
@@ -26,13 +27,12 @@ export function AIAssistantPanel(): JSX.Element {
     selectedTaskId ? (s.messagesByTask[selectedTaskId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
   const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
-  const sendMessage = useReviewPartnerStore((s) => s.sendMessage)
-  const abortStream = useReviewPartnerStore((s) => s.abortStream)
   const activeStream = useReviewPartnerStore((s) =>
     selectedTaskId ? s.activeStreamByTask[selectedTaskId] : null
   )
   const clearMessages = useReviewPartnerStore((s) => s.clearMessages)
-  const autoReview = useReviewPartnerStore((s) => s.autoReview)
+
+  const { autoReview, sendMessage, abortStream } = useReviewPartnerActions()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)

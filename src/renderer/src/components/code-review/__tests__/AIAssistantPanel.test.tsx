@@ -1,14 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
-const { mockTogglePanel, mockSendMessage, mockAbortStream, mockClearMessages, mockAutoReview } =
-  vi.hoisted(() => ({
-    mockTogglePanel: vi.fn(),
+const { mockSendMessage, mockAbortStream, mockAutoReview, mockAppendQuickAction } = vi.hoisted(
+  () => ({
     mockSendMessage: vi.fn().mockResolvedValue(undefined),
     mockAbortStream: vi.fn().mockResolvedValue(undefined),
-    mockClearMessages: vi.fn(),
-    mockAutoReview: vi.fn().mockResolvedValue(undefined)
-  }))
+    mockAutoReview: vi.fn().mockResolvedValue(undefined),
+    mockAppendQuickAction: vi.fn().mockResolvedValue(undefined)
+  })
+)
+
+const { mockTogglePanel, mockClearMessages } = vi.hoisted(() => ({
+  mockTogglePanel: vi.fn(),
+  mockClearMessages: vi.fn()
+}))
 
 const partnerState = vi.hoisted(() => ({
   panelOpen: false,
@@ -16,10 +21,7 @@ const partnerState = vi.hoisted(() => ({
   messagesByTask: {} as Record<string, unknown[]>,
   activeStreamByTask: {} as Record<string, string | null>,
   togglePanel: mockTogglePanel,
-  sendMessage: mockSendMessage,
-  abortStream: mockAbortStream,
-  clearMessages: mockClearMessages,
-  autoReview: mockAutoReview
+  clearMessages: mockClearMessages
 }))
 
 vi.mock('../../../stores/codeReview', () => {
@@ -31,15 +33,20 @@ vi.mock('../../../stores/codeReview', () => {
 })
 
 vi.mock('../../../stores/sprintTasks', () => ({
-  useSprintTasks: vi.fn((sel: (s: { tasks: unknown[] }) => unknown) =>
-    sel({ tasks: [] })
-  )
+  useSprintTasks: vi.fn((sel: (s: { tasks: unknown[] }) => unknown) => sel({ tasks: [] }))
 }))
 
 vi.mock('../../../stores/reviewPartner', () => ({
-  useReviewPartnerStore: vi.fn(
-    (sel: (s: typeof partnerState) => unknown) => sel(partnerState)
-  )
+  useReviewPartnerStore: vi.fn((sel: (s: typeof partnerState) => unknown) => sel(partnerState))
+}))
+
+vi.mock('../../../hooks/useReviewPartnerActions', () => ({
+  useReviewPartnerActions: vi.fn(() => ({
+    autoReview: mockAutoReview,
+    sendMessage: mockSendMessage,
+    abortStream: mockAbortStream,
+    appendQuickAction: mockAppendQuickAction
+  }))
 }))
 
 vi.mock('../ReviewMetricsRow', () => ({
