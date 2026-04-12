@@ -8,7 +8,6 @@ import { EmptyState } from '../ui/EmptyState'
 import { DIFF_VIRTUALIZE_THRESHOLD } from '../../lib/constants'
 import type { PrComment } from '../../../../shared/types'
 import type { PendingComment } from '../../stores/pendingReview'
-import { DiffFileList } from './DiffFileList'
 import { PlainDiffContent } from './PlainDiffContent'
 
 export interface LineRange {
@@ -432,9 +431,8 @@ function DiffViewer({
   const shouldShowBanner = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments && !forceFullDiff
 
   return (
-    <div className="diff-view-container view-layout">
-      <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
-      <div className="diff-content view-content" ref={containerRef}>
+    <div className="diff-view-container">
+      <div className="diff-content" ref={containerRef}>
         {shouldShowBanner && (
           <VirtualizedDiffBanner onForceFullDiff={() => setForceFullDiff(true)} />
         )}

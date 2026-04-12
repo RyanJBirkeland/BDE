@@ -110,10 +110,6 @@
   display: flex;
   overflow: hidden;
 }
-.diff-view-container .diff-sidebar {
-  width: 220px;
-  flex-shrink: 0;
-}
 .diff-view__header {
   border-bottom: 1px solid var(--bde-accent-border);
   background: var(--bde-surface-high);

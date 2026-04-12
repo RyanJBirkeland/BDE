@@ -60,20 +60,6 @@ describe('DiffViewer', () => {
     expect(screen.getByText(/no changes/i)).toBeInTheDocument()
   })
 
-  it('renders file path in file list sidebar', () => {
-    const files = [makeDiffFile('src/foo/bar.ts')]
-    render(<DiffViewer files={files} />)
-    // Sidebar shows just the filename (basename)
-    expect(screen.getByText('bar.ts')).toBeInTheDocument()
-  })
-
-  it('renders multiple files in the sidebar', () => {
-    const files = [makeDiffFile('src/foo/alpha.ts'), makeDiffFile('src/foo/beta.ts')]
-    render(<DiffViewer files={files} />)
-    expect(screen.getByText('alpha.ts')).toBeInTheDocument()
-    expect(screen.getByText('beta.ts')).toBeInTheDocument()
-  })
-
   it('renders diff lines with content', () => {
     const files = [makeDiffFile('src/example.ts')]
     render(<DiffViewer files={files} />)
@@ -95,7 +81,6 @@ describe('DiffViewer', () => {
   it('renders addition and deletion stats', () => {
     const files = [makeDiffFile('src/example.ts', { additions: 5, deletions: 3 })]
     render(<DiffViewer files={files} />)
-    // stats appear in both sidebar and content header
     expect(screen.getAllByText('+5').length).toBeGreaterThan(0)
     expect(screen.getAllByText('-3').length).toBeGreaterThan(0)
   })
@@ -103,15 +88,7 @@ describe('DiffViewer', () => {
   it('renders file path in the diff content header', () => {
     const files = [makeDiffFile('src/deeply/nested/file.ts')]
     render(<DiffViewer files={files} />)
-    // The full path appears in the diff content header
     expect(screen.getByText('src/deeply/nested/file.ts')).toBeInTheDocument()
-  })
-
-  it('shows file count badge', () => {
-    const files = [makeDiffFile('a.ts'), makeDiffFile('b.ts'), makeDiffFile('c.ts')]
-    render(<DiffViewer files={files} />)
-    // count badge shows number of files
-    expect(screen.getByText('3')).toBeInTheDocument()
   })
 
   it('renders hunk header text', () => {
@@ -120,35 +97,22 @@ describe('DiffViewer', () => {
     expect(screen.getByText('@@ -1,3 +1,4 @@')).toBeInTheDocument()
   })
 
-  it('file sidebar click scrolls to the file', () => {
-    const files = [makeDiffFile('src/foo/alpha.ts'), makeDiffFile('src/foo/beta.ts')]
-    render(<DiffViewer files={files} />)
-    // Clicking the beta.ts item in the sidebar
-    const betaBtn = screen.getByText('beta.ts')
-    fireEvent.click(betaBtn)
-    // active class should be on beta row in sidebar
-    expect(betaBtn.closest('.diff-file-item')).toHaveClass('diff-file-item--active')
-  })
-
-  it('keyboard ] key moves to next file', () => {
+  it('keyboard ] key scrolls to next file', () => {
     const files = [makeDiffFile('src/foo/alpha.ts'), makeDiffFile('src/foo/beta.ts')]
     render(<DiffViewer files={files} />)
 
-    // activeFileIndex starts at -1, so ] goes to index 0 (alpha)
     fireEvent.keyDown(window, { key: ']' })
 
-    const alphaBtn = screen.getByText('alpha.ts')
-    expect(alphaBtn.closest('.diff-file-item')).toHaveClass('diff-file-item--active')
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
   })
 
-  it('keyboard [ key moves to previous file (wraps)', () => {
+  it('keyboard [ key scrolls to previous file (wraps)', () => {
     const files = [makeDiffFile('src/foo/alpha.ts'), makeDiffFile('src/foo/beta.ts')]
     render(<DiffViewer files={files} />)
 
-    // Start at index -1 (unselected), [ wraps to last = beta.ts
     fireEvent.keyDown(window, { key: '[' })
-    const betaBtn = screen.getByText('beta.ts')
-    expect(betaBtn.closest('.diff-file-item')).toHaveClass('diff-file-item--active')
+
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
   })
 
   it('keyboard ArrowDown moves to first hunk', () => {
@@ -179,9 +143,8 @@ describe('DiffViewer', () => {
 
     fireEvent.keyDown(window, { key: ']', metaKey: true })
 
-    // No file should be active
-    const active = document.querySelector('.diff-file-item--active')
-    expect(active).not.toBeInTheDocument()
+    // scrollIntoView should not have been called
+    expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled()
   })
 
   it('renders inline comments when comments prop provided', () => {
