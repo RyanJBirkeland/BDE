@@ -263,6 +263,50 @@
   box-shadow: transparent;
 }
 
+/* Completed Tasks Section */
+.epic-detail__completed-section {
+  margin-top: var(--bde-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bde-space-1);
+}
+
+.epic-detail__completed-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-3) var(--bde-space-1);
+}
+
+.epic-detail__completed-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--bde-border);
+}
+
+.epic-detail__completed-divider-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bde-text-dim);
+  white-space: nowrap;
+}
+
+.epic-detail__task-row--completed {
+  opacity: 0.55;
+  cursor: default !important;
+}
+
+.epic-detail__task-row--completed .epic-detail__task-title {
+  text-decoration: line-through;
+  text-decoration-color: var(--bde-text-dim);
+}
+
+.epic-detail__task-row--completed:hover {
+  opacity: 0.75;
+}
+
 /* Queue Bar (Sticky Bottom) */
 .epic-detail__queue-bar {
   display: flex;

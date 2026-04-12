@@ -95,6 +95,19 @@ export default function PlannerView(): React.JSX.Element {
     await updateGroup(selectedGroup.id, { status: newStatus })
   }
 
+  const handleMarkCompleted = async (): Promise<void> => {
+    if (!selectedGroup) return
+
+    const confirmed = await confirm({
+      title: 'Mark Epic as Completed',
+      message: `Mark "${selectedGroup.name}" as completed? It will move to the Completed section.`,
+      confirmLabel: 'Complete'
+    })
+
+    if (!confirmed) return
+    await updateGroup(selectedGroup.id, { status: 'completed' })
+  }
+
   const handleQueueAll = async (): Promise<void> => {
     if (!selectedGroupId || !selectedGroup) return
 
@@ -177,6 +190,7 @@ export default function PlannerView(): React.JSX.Element {
               onDeleteGroup={handleDeleteGroup}
               onToggleReady={handleToggleReady}
               onReorderTasks={handleReorderTasks}
+              onMarkCompleted={handleMarkCompleted}
             />
           )}
           {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}

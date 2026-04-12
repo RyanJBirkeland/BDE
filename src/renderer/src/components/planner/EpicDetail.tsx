@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Edit2, MoreVertical, AlertTriangle } from 'lucide-react'
+import { Edit2, MoreVertical, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import type { TaskGroup, SprintTask, EpicDependency } from '../../../../shared/types'
 import { STATUS_METADATA } from '../../../../shared/task-state-machine'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
@@ -29,6 +29,7 @@ export interface EpicDetailProps {
   onDeleteGroup?: () => void
   onToggleReady?: () => void
   onReorderTasks?: (orderedTaskIds: string[]) => void
+  onMarkCompleted?: () => void
 }
 
 interface StatusCounts {
@@ -53,7 +54,8 @@ export function EpicDetail({
   onEditGroup,
   onDeleteGroup,
   onToggleReady,
-  onReorderTasks
+  onReorderTasks,
+  onMarkCompleted
 }: EpicDetailProps): React.JSX.Element {
   const reduced = useReducedMotion()
   const [showOverflowMenu, setShowOverflowMenu] = useState(false)
@@ -150,6 +152,18 @@ export function EpicDetail({
     return 'var(--bde-text-dim)'
   }, [progressPercent])
 
+  // Split tasks into outstanding vs completed for visual grouping
+  const TERMINAL_STATUSES = new Set(['done', 'cancelled', 'failed', 'error'])
+  const outstandingTasks = useMemo(
+    () => tasks.filter((t) => !TERMINAL_STATUSES.has(t.status)),
+    [tasks]
+  )
+  const completedTasks = useMemo(
+    () => tasks.filter((t) => TERMINAL_STATUSES.has(t.status)),
+    [tasks]
+  )
+
+  const isCompleted = group.status === 'completed'
   const queueDisabled = tasksNeedingSpecs > 0
 
   // Overflow menu handlers
@@ -191,6 +205,12 @@ export function EpicDetail({
     setShowOverflowMenu(false)
     if (!onToggleReady) return
     onToggleReady()
+  }
+
+  const handleMarkCompleted = (): void => {
+    setShowOverflowMenu(false)
+    if (!onMarkCompleted) return
+    onMarkCompleted()
   }
 
   // Inline spec editing handlers
@@ -378,9 +398,37 @@ export function EpicDetail({
               >
                 {isReady ? 'Mark as Draft' : 'Mark as Ready'}
               </button>
+              {!isCompleted && (
+                <button
+                  ref={(el): void => {
+                    if (el) menuItemsRef.current[2] = el
+                  }}
+                  type="button"
+                  role="menuitem"
+                  tabIndex={-1}
+                  className="epic-detail__overflow-item"
+                  onClick={handleMarkCompleted}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--bde-status-done)',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    textAlign: 'left'
+                  }}
+                >
+                  <CheckCircle2 size={14} />
+                  Mark as Completed
+                </button>
+              )}
               <button
                 ref={(el): void => {
-                  if (el) menuItemsRef.current[2] = el
+                  if (el) menuItemsRef.current[isCompleted ? 2 : 3] = el
                 }}
                 type="button"
                 role="menuitem"
@@ -467,7 +515,7 @@ export function EpicDetail({
           <LoadingState message="Loading tasks..." />
         ) : (
           <>
-            {tasks.map((task) => {
+            {outstandingTasks.map((task) => {
               const hasSpec = task.spec && task.spec.trim() !== ''
               const hasDeps = task.depends_on && task.depends_on.length > 0
               const isDragging = draggedTaskId === task.id
@@ -609,6 +657,60 @@ export function EpicDetail({
             <button type="button" className="epic-detail__add-task-row" onClick={onAddTask}>
               + Add task
             </button>
+
+            {/* Completed tasks section */}
+            {completedTasks.length > 0 && (
+              <div className="epic-detail__completed-section">
+                <div className="epic-detail__completed-divider">
+                  <div className="epic-detail__completed-divider-line" />
+                  <span className="epic-detail__completed-divider-label">
+                    Completed ({completedTasks.length})
+                  </span>
+                  <div className="epic-detail__completed-divider-line" />
+                </div>
+                {completedTasks.map((task) => {
+                  const hasDeps = task.depends_on && task.depends_on.length > 0
+                  return (
+                    <motion.div
+                      key={task.id}
+                      variants={VARIANTS.staggerChild}
+                      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+                    >
+                      <div className="epic-detail__task-row epic-detail__task-row--completed">
+                        <div
+                          className="epic-detail__task-status-dot"
+                          style={{
+                            background: `var(${STATUS_METADATA[task.status].colorToken})`
+                          }}
+                        />
+                        <span className="epic-detail__task-title">{task.title}</span>
+                        {hasDeps && task.depends_on && (
+                          <span className="epic-detail__task-dep-ref">
+                            {task.depends_on.length} dep{task.depends_on.length === 1 ? '' : 's'}
+                          </span>
+                        )}
+                        <span
+                          className="epic-detail__task-status-badge"
+                          style={{
+                            color: `var(${STATUS_METADATA[task.status].colorToken})`
+                          }}
+                        >
+                          {STATUS_METADATA[task.status].label}
+                        </span>
+                        <button
+                          type="button"
+                          className="epic-detail__task-edit-btn"
+                          onClick={() => onEditTask(task.id)}
+                          aria-label={`Edit ${task.title}`}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            )}
           </>
         )}
       </motion.div>
