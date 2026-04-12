@@ -26,16 +26,6 @@ vi.mock('../../../lib/pair-events', () => ({
     events.map((_e, i) => ({ type: 'text', text: `event-${i}`, timestamp: Date.now() }))
 }))
 
-// Mock design-system tokens
-vi.mock('../../../design-system/tokens', () => ({
-  tokens: {
-    space: { 2: '0.5rem', 3: '0.75rem', 4: '1rem', 8: '2rem' },
-    color: { text: '#fff', textDim: '#888', border: '#333' },
-    font: { ui: 'sans-serif', code: 'monospace' },
-    size: { md: '14px' }
-  }
-}))
-
 import { AgentOutputTab } from '../AgentOutputTab'
 
 describe('AgentOutputTab', () => {

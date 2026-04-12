@@ -95,13 +95,6 @@ vi.mock('../../../lib/terminal-theme', () => ({
   getTerminalTheme: () => ({ background: '#000', foreground: '#fff' })
 }))
 
-vi.mock('../../../design-system/tokens', () => ({
-  tokens: {
-    space: { 2: '0.5rem' },
-    font: { code: 'monospace' }
-  }
-}))
-
 import { TerminalPane, clearTerminal, getSearchAddon } from '../TerminalPane'
 
 let originalApi: typeof window.api
