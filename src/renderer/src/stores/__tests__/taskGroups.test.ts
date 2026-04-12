@@ -75,6 +75,9 @@ describe('taskGroups store', () => {
     groups.removeTask.mockResolvedValue(true)
     groups.getGroupTasks.mockResolvedValue([])
     groups.queueAll.mockResolvedValue(0)
+    groups.addDependency.mockResolvedValue({})
+    groups.removeDependency.mockResolvedValue({})
+    groups.updateDependencyCondition.mockResolvedValue({})
   })
 
   describe('loadGroups', () => {
@@ -483,6 +486,89 @@ describe('taskGroups store', () => {
 
       expect(count).toBe(0)
       expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('queue failed'))
+    })
+  })
+
+  describe('Epic dependencies', () => {
+    it('addDependency — updates store on success', async () => {
+      const group1 = makeGroup('g1')
+      const group2 = makeGroup('g2', {
+        depends_on: [{ id: 'g1', condition: 'on_success' }]
+      })
+
+      useTaskGroups.setState({ groups: [group1, group2] })
+      ;(window.api.groups.addDependency as ReturnType<typeof vi.fn>).mockResolvedValue(group2)
+
+      await useTaskGroups.getState().addDependency('g2', { id: 'g1', condition: 'on_success' })
+
+      expect(window.api.groups.addDependency).toHaveBeenCalledWith('g2', {
+        id: 'g1',
+        condition: 'on_success'
+      })
+      expect(useTaskGroups.getState().groups.find((g) => g.id === 'g2')).toEqual(group2)
+      expect(toast.success).toHaveBeenCalledWith('Dependency added')
+    })
+
+    it('addDependency — shows error on failure', async () => {
+      ;(window.api.groups.addDependency as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('cycle detected')
+      )
+
+      await useTaskGroups.getState().addDependency('g2', { id: 'g1', condition: 'on_success' })
+
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('cycle detected'))
+    })
+
+    it('removeDependency — updates store on success', async () => {
+      const group1 = makeGroup('g1')
+      const group2 = makeGroup('g2', { depends_on: null })
+
+      useTaskGroups.setState({ groups: [group1, group2] })
+      ;(window.api.groups.removeDependency as ReturnType<typeof vi.fn>).mockResolvedValue(group2)
+
+      await useTaskGroups.getState().removeDependency('g2', 'g1')
+
+      expect(window.api.groups.removeDependency).toHaveBeenCalledWith('g2', 'g1')
+      expect(useTaskGroups.getState().groups.find((g) => g.id === 'g2')).toEqual(group2)
+      expect(toast.success).toHaveBeenCalledWith('Dependency removed')
+    })
+
+    it('removeDependency — shows error on failure', async () => {
+      ;(window.api.groups.removeDependency as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('not found')
+      )
+
+      await useTaskGroups.getState().removeDependency('g2', 'g1')
+
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('not found'))
+    })
+
+    it('updateDependencyCondition — updates store on success', async () => {
+      const group1 = makeGroup('g1')
+      const group2 = makeGroup('g2', {
+        depends_on: [{ id: 'g1', condition: 'always' }]
+      })
+
+      useTaskGroups.setState({ groups: [group1, group2] })
+      ;(window.api.groups.updateDependencyCondition as ReturnType<typeof vi.fn>).mockResolvedValue(
+        group2
+      )
+
+      await useTaskGroups.getState().updateDependencyCondition('g2', 'g1', 'always')
+
+      expect(window.api.groups.updateDependencyCondition).toHaveBeenCalledWith('g2', 'g1', 'always')
+      expect(useTaskGroups.getState().groups.find((g) => g.id === 'g2')).toEqual(group2)
+      expect(toast.success).toHaveBeenCalledWith('Dependency condition updated')
+    })
+
+    it('updateDependencyCondition — shows error on failure', async () => {
+      ;(window.api.groups.updateDependencyCondition as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('update failed')
+      )
+
+      await useTaskGroups.getState().updateDependencyCondition('g2', 'g1', 'manual')
+
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('update failed'))
     })
   })
 })

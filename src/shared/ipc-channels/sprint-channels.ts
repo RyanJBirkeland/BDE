@@ -7,6 +7,7 @@ import type {
   ClaimedTask,
   TaskTemplate,
   TaskGroup,
+  EpicDependency,
   BatchOperation,
   BatchResult,
   SpecTypeSuccessRate,
@@ -294,6 +295,18 @@ export interface GroupChannels {
   'groups:reorderTasks': {
     args: [groupId: string, orderedTaskIds: string[]]
     result: boolean
+  }
+  'groups:addDependency': {
+    args: [groupId: string, dep: EpicDependency]
+    result: TaskGroup
+  }
+  'groups:removeDependency': {
+    args: [groupId: string, upstreamId: string]
+    result: TaskGroup
+  }
+  'groups:updateDependencyCondition': {
+    args: [groupId: string, upstreamId: string, condition: EpicDependency['condition']]
+    result: TaskGroup
   }
 }
 

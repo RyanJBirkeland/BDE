@@ -234,6 +234,15 @@ declare global {
         reorderTasks: (
           ...args: IpcArgs<'groups:reorderTasks'>
         ) => Promise<IpcResult<'groups:reorderTasks'>>
+        addDependency: (
+          ...args: IpcArgs<'groups:addDependency'>
+        ) => Promise<IpcResult<'groups:addDependency'>>
+        removeDependency: (
+          ...args: IpcArgs<'groups:removeDependency'>
+        ) => Promise<IpcResult<'groups:removeDependency'>>
+        updateDependencyCondition: (
+          ...args: IpcArgs<'groups:updateDependencyCondition'>
+        ) => Promise<IpcResult<'groups:updateDependencyCondition'>>
       }
 
       // Plan import

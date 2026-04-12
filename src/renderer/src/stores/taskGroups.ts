@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { TaskGroup, SprintTask } from '../../../shared/types'
+import type { TaskGroup, SprintTask, EpicDependency } from '../../../shared/types'
 import { toast } from './toasts'
 
 interface TaskGroupsState {
@@ -32,6 +32,13 @@ interface TaskGroupsState {
   removeTaskFromGroup: (taskId: string) => Promise<void>
   queueAllTasks: (groupId: string) => Promise<number>
   reorderTasks: (groupId: string, orderedTaskIds: string[]) => Promise<void>
+  addDependency: (groupId: string, dep: EpicDependency) => Promise<void>
+  removeDependency: (groupId: string, upstreamId: string) => Promise<void>
+  updateDependencyCondition: (
+    groupId: string,
+    upstreamId: string,
+    condition: EpicDependency['condition']
+  ) => Promise<void>
   createGroupFromTemplate: (
     template: {
       name: string
@@ -216,6 +223,48 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
       toast.error('Failed to reorder tasks — ' + (e instanceof Error ? e.message : String(e)))
       // Revert by reloading
       await get().loadGroupTasks(groupId)
+    }
+  },
+
+  addDependency: async (groupId, dep): Promise<void> => {
+    try {
+      const updated = await window.api.groups.addDependency(groupId, dep)
+      set((s) => ({
+        groups: s.groups.map((g) => (g.id === groupId ? updated : g))
+      }))
+      toast.success('Dependency added')
+    } catch (e) {
+      toast.error('Failed to add dependency — ' + (e instanceof Error ? e.message : String(e)))
+    }
+  },
+
+  removeDependency: async (groupId, upstreamId): Promise<void> => {
+    try {
+      const updated = await window.api.groups.removeDependency(groupId, upstreamId)
+      set((s) => ({
+        groups: s.groups.map((g) => (g.id === groupId ? updated : g))
+      }))
+      toast.success('Dependency removed')
+    } catch (e) {
+      toast.error('Failed to remove dependency — ' + (e instanceof Error ? e.message : String(e)))
+    }
+  },
+
+  updateDependencyCondition: async (groupId, upstreamId, condition): Promise<void> => {
+    try {
+      const updated = await window.api.groups.updateDependencyCondition(
+        groupId,
+        upstreamId,
+        condition
+      )
+      set((s) => ({
+        groups: s.groups.map((g) => (g.id === groupId ? updated : g))
+      }))
+      toast.success('Dependency condition updated')
+    } catch (e) {
+      toast.error(
+        'Failed to update dependency condition — ' + (e instanceof Error ? e.message : String(e))
+      )
     }
   },
 

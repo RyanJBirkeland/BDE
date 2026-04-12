@@ -10,13 +10,41 @@ import {
   getGroupTasks,
   queueAllGroupTasks,
   reorderGroupTasks,
+  addGroupDependency,
+  removeGroupDependency,
+  updateGroupDependencyCondition,
   type CreateGroupInput,
   type UpdateGroupInput
 } from '../data/task-group-queries'
+import { createEpicDependencyIndex, detectEpicCycle } from '../services/epic-dependency-service'
+import type { EpicDependency } from '../../shared/types'
+
+// In-memory epic dependency index
+const epicIndex = createEpicDependencyIndex()
+
+/**
+ * Initialize epic index on startup by loading all groups.
+ */
+function initEpicIndex(): void {
+  const groups = listGroups()
+  epicIndex.rebuild(groups)
+}
+
+/**
+ * Rebuild epic index after mutations.
+ */
+function rebuildEpicIndex(): void {
+  const groups = listGroups()
+  epicIndex.rebuild(groups)
+}
 export function registerGroupHandlers(): void {
+  // Initialize epic index on first registration
+  initEpicIndex()
+
   safeHandle('groups:create', (_e, input: CreateGroupInput) => {
     const group = createGroup(input)
     if (!group) throw new Error('Failed to create task group')
+    rebuildEpicIndex()
     return group
   })
 
@@ -63,4 +91,44 @@ export function registerGroupHandlers(): void {
     if (!success) throw new Error(`Failed to reorder tasks in group ${groupId}`)
     return true
   })
+
+  safeHandle('groups:addDependency', (_e, groupId: string, dep: EpicDependency) => {
+    // Check for cycles before writing
+    const group = getGroup(groupId)
+    if (!group) throw new Error(`Task group not found: ${groupId}`)
+
+    const currentDeps = group.depends_on ?? []
+    const proposedDeps = [...currentDeps, dep]
+
+    const cycle = detectEpicCycle(groupId, proposedDeps, (id) => {
+      const g = getGroup(id)
+      return g?.depends_on ?? null
+    })
+
+    if (cycle) {
+      throw new Error(`Epic cycle detected: ${cycle.join(' -> ')}`)
+    }
+
+    const updated = addGroupDependency(groupId, dep)
+    if (!updated) throw new Error(`Failed to add dependency to group ${groupId}`)
+    rebuildEpicIndex()
+    return updated
+  })
+
+  safeHandle('groups:removeDependency', (_e, groupId: string, upstreamId: string) => {
+    const updated = removeGroupDependency(groupId, upstreamId)
+    if (!updated) throw new Error(`Failed to remove dependency from group ${groupId}`)
+    rebuildEpicIndex()
+    return updated
+  })
+
+  safeHandle(
+    'groups:updateDependencyCondition',
+    (_e, groupId: string, upstreamId: string, condition: EpicDependency['condition']) => {
+      const updated = updateGroupDependencyCondition(groupId, upstreamId, condition)
+      if (!updated) throw new Error(`Failed to update dependency condition in group ${groupId}`)
+      rebuildEpicIndex()
+      return updated
+    }
+  )
 }

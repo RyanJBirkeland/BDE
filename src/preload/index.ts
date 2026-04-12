@@ -5,7 +5,8 @@ import type {
   PrListPayload,
   SpawnLocalAgentArgs,
   AgentEvent,
-  BatchOperation
+  BatchOperation,
+  EpicDependency
 } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
 import type { WorkflowTemplate } from '../shared/workflow-types'
@@ -206,7 +207,16 @@ const api = {
     getGroupTasks: (groupId: string) => typedInvoke('groups:getGroupTasks', groupId),
     queueAll: (groupId: string) => typedInvoke('groups:queueAll', groupId),
     reorderTasks: (groupId: string, orderedTaskIds: string[]) =>
-      typedInvoke('groups:reorderTasks', groupId, orderedTaskIds)
+      typedInvoke('groups:reorderTasks', groupId, orderedTaskIds),
+    addDependency: (groupId: string, dep: EpicDependency) =>
+      typedInvoke('groups:addDependency', groupId, dep),
+    removeDependency: (groupId: string, upstreamId: string) =>
+      typedInvoke('groups:removeDependency', groupId, upstreamId),
+    updateDependencyCondition: (
+      groupId: string,
+      upstreamId: string,
+      condition: EpicDependency['condition']
+    ) => typedInvoke('groups:updateDependencyCondition', groupId, upstreamId, condition)
   },
 
   // Plan import

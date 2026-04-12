@@ -271,3 +271,86 @@ export function reorderGroupTasks(
     return false
   }
 }
+
+/**
+ * Add an epic dependency to a group.
+ */
+export function addGroupDependency(
+  groupId: string,
+  dep: EpicDependency,
+  db?: Database.Database
+): TaskGroup | null {
+  try {
+    const conn = db ?? getDb()
+    const group = getGroup(groupId, conn)
+    if (!group) throw new Error(`Group not found: ${groupId}`)
+
+    const currentDeps = group.depends_on ?? []
+    // Prevent duplicates
+    if (currentDeps.some((d) => d.id === dep.id)) {
+      throw new Error(`Dependency already exists: ${dep.id}`)
+    }
+
+    const newDeps = [...currentDeps, dep]
+    return updateGroup(groupId, { depends_on: newDeps }, conn)
+  } catch (err) {
+    const msg = getErrorMessage(err)
+    console.error(`[task-group-queries] addGroupDependency failed: ${msg}`)
+    throw err
+  }
+}
+
+/**
+ * Remove an epic dependency from a group.
+ */
+export function removeGroupDependency(
+  groupId: string,
+  upstreamId: string,
+  db?: Database.Database
+): TaskGroup | null {
+  try {
+    const conn = db ?? getDb()
+    const group = getGroup(groupId, conn)
+    if (!group) throw new Error(`Group not found: ${groupId}`)
+
+    const currentDeps = group.depends_on ?? []
+    const newDeps = currentDeps.filter((d) => d.id !== upstreamId)
+
+    return updateGroup(groupId, { depends_on: newDeps.length > 0 ? newDeps : null }, conn)
+  } catch (err) {
+    const msg = getErrorMessage(err)
+    console.error(`[task-group-queries] removeGroupDependency failed: ${msg}`)
+    throw err
+  }
+}
+
+/**
+ * Update the condition of an existing epic dependency.
+ */
+export function updateGroupDependencyCondition(
+  groupId: string,
+  upstreamId: string,
+  condition: EpicDependency['condition'],
+  db?: Database.Database
+): TaskGroup | null {
+  try {
+    const conn = db ?? getDb()
+    const group = getGroup(groupId, conn)
+    if (!group) throw new Error(`Group not found: ${groupId}`)
+
+    const currentDeps = group.depends_on ?? []
+    const depIndex = currentDeps.findIndex((d) => d.id === upstreamId)
+    if (depIndex === -1) {
+      throw new Error(`Dependency not found: ${upstreamId}`)
+    }
+
+    const newDeps = [...currentDeps]
+    newDeps[depIndex] = { ...newDeps[depIndex], condition }
+
+    return updateGroup(groupId, { depends_on: newDeps }, conn)
+  } catch (err) {
+    const msg = getErrorMessage(err)
+    console.error(`[task-group-queries] updateGroupDependencyCondition failed: ${msg}`)
+    throw err
+  }
+}
