@@ -45,7 +45,8 @@ import {
   clearSprintTaskFk,
   pruneOldDiffSnapshots,
   DIFF_SNAPSHOT_RETENTION_DAYS,
-  UPDATE_ALLOWLIST
+  UPDATE_ALLOWLIST,
+  COLUMN_MAP
 } from '../sprint-queries'
 
 beforeEach(() => {
@@ -99,6 +100,15 @@ describe('UPDATE_ALLOWLIST', () => {
     expect(UPDATE_ALLOWLIST.has('id')).toBe(false)
     expect(UPDATE_ALLOWLIST.has('created_at')).toBe(false)
     expect(UPDATE_ALLOWLIST.has('updated_at')).toBe(false)
+  })
+
+  // F-t3-datalyr-7: COLUMN_MAP whitelist validation tests
+  it('COLUMN_MAP contains all UPDATE_ALLOWLIST entries', () => {
+    expect(COLUMN_MAP.size).toBe(UPDATE_ALLOWLIST.size)
+    for (const col of UPDATE_ALLOWLIST) {
+      expect(COLUMN_MAP.has(col)).toBe(true)
+      expect(COLUMN_MAP.get(col)).toBe(col)
+    }
   })
 })
 
