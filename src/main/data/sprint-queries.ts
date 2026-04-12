@@ -116,6 +116,16 @@ export const UPDATE_ALLOWLIST = new Set([
   'review_diff_snapshot'
 ])
 
+// F-t3-datalyr-7: Whitelist Map for defense-in-depth column validation
+export const COLUMN_MAP = new Map<string, string>(
+  Array.from(UPDATE_ALLOWLIST).map((col) => [col, col])
+)
+
+// Module-load assertion: COLUMN_MAP must match UPDATE_ALLOWLIST exactly
+if (COLUMN_MAP.size !== UPDATE_ALLOWLIST.size) {
+  throw new Error('COLUMN_MAP/UPDATE_ALLOWLIST mismatch')
+}
+
 export interface QueueStats {
   [key: string]: number
   backlog: number
@@ -378,11 +388,12 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
         const auditPatch: Record<string, unknown> = {}
 
         for (const [key, value] of changedEntries) {
-          // QA-18: Defense-in-depth regex assertion for SQL column names
-          if (!/^[a-z_]+$/.test(key)) {
+          // F-t3-datalyr-7: Whitelist Map replaces regex for defense-in-depth
+          const colName = COLUMN_MAP.get(key)
+          if (!colName) {
             throw new Error(`Invalid column name: ${key}`)
           }
-          setClauses.push(`${key} = ?`)
+          setClauses.push(`${colName} = ?`)
           const serialized = serializeFieldForStorage(key, value)
           values.push(serialized)
           // For audit, store the sanitized form for depends_on/tags but original for others
