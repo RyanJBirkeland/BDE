@@ -6,7 +6,6 @@ import type Database from 'better-sqlite3'
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { sanitizeTags } from '../../shared/sanitize-tags'
-import { isValidTransition } from '../../shared/task-state-machine'
 import { getDb } from '../db'
 import { recordTaskChanges, recordTaskChangesBulk } from './task-changes'
 import type { Logger } from '../logger'
@@ -14,6 +13,7 @@ import { withRetry } from './sqlite-retry'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
 import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
+import { validateTransition } from '../services/task-state-service'
 
 // Module-level logger — defaults to console, injectable for testing/structured logging
 let logger: Logger = {
@@ -357,10 +357,9 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
         // Enforce status transition state machine
         if (patch.status && typeof patch.status === 'string') {
           const currentStatus = oldTask.status as string
-          if (!isValidTransition(currentStatus, patch.status)) {
-            logger.warn(
-              `[sprint-queries] Invalid status transition: ${currentStatus} → ${patch.status} for task ${id}`
-            )
+          const result = validateTransition(currentStatus, patch.status)
+          if (!result.ok) {
+            logger.warn(`[sprint-queries] ${result.reason} for task ${id}`)
             return null
           }
         }
