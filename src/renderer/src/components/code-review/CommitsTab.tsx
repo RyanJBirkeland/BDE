@@ -1,30 +1,14 @@
-import { useEffect } from 'react'
-import { useCodeReviewStore } from '../../stores/codeReview'
-import { useSprintTasks } from '../../stores/sprintTasks'
 import { GitCommit } from 'lucide-react'
 import { EmptyState } from '../ui/EmptyState'
+import { useCodeReviewStore } from '../../stores/codeReview'
+import { useReviewCommits } from '../../hooks/useReviewCommits'
 
 export function CommitsTab(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
-  const commits = useCodeReviewStore((s) => s.commits)
-  const setCommits = useCodeReviewStore((s) => s.setCommits)
-  const setLoading = useCodeReviewStore((s) => s.setLoading)
-  const loading = useCodeReviewStore((s) => s.loading)
-  const tasks = useSprintTasks((s) => s.tasks)
 
-  const task = tasks.find((t) => t.id === selectedTaskId)
+  const { commits, loading } = useReviewCommits(selectedTaskId)
 
-  useEffect(() => {
-    if (!task?.worktree_path) return
-    setLoading('commits', true)
-    window.api.review
-      .getCommits({ worktreePath: task.worktree_path, base: 'origin/main' })
-      .then((result) => setCommits(result.commits))
-      .catch(() => setCommits([]))
-      .finally(() => setLoading('commits', false))
-  }, [task?.worktree_path, task?.id, setCommits, setLoading])
-
-  if (loading.commits) {
+  if (loading) {
     return (
       <div
         className="cr-commits"
