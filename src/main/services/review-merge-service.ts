@@ -30,6 +30,31 @@ export interface MergeResult {
 }
 
 /**
+ * Extract conflict file paths from git diff.
+ * Returns empty array on failure (with optional warning log).
+ */
+export async function extractConflictFiles(
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+  loggerInstance?: ReturnType<typeof createLogger>
+): Promise<string[]> {
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['diff', '--name-only', '--diff-filter=U'],
+      { cwd, env }
+    )
+    return stdout
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+  } catch (err: unknown) {
+    loggerInstance?.warn(`Failed to extract conflict files: ${getErrorMessage(err)}`)
+    return []
+  }
+}
+
+/**
  * Execute merge strategy (without rebase — caller handles that).
  */
 export async function executeMergeStrategy(
@@ -104,17 +129,7 @@ export async function executeMergeStrategy(
     }
 
     // Extract conflict file names
-    const conflicts: string[] = []
-    try {
-      const { stdout: conflictOut } = await execFileAsync(
-        'git',
-        ['diff', '--name-only', '--diff-filter=U'],
-        { cwd: repoPath, env }
-      )
-      conflicts.push(...conflictOut.trim().split('\n').filter(Boolean))
-    } catch {
-      /* best-effort */
-    }
+    const conflicts = await extractConflictFiles(repoPath, env, logger)
 
     return { success: false, conflicts, error: errMsg }
   }

@@ -522,6 +522,7 @@ describe('review-orchestration-service', () => {
         success: false,
         notes: 'Rebase failed'
       })
+      vi.mocked(reviewMerge.extractConflictFiles).mockResolvedValue(['conflict.ts'])
       getCustomMock().mockImplementation(async (
         _cmd: string,
         args: readonly string[],

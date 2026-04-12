@@ -20,7 +20,12 @@ import type { Logger } from '../logger'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import type { ReviewActionPlan, GitOpDescriptor } from './review-action-policy'
 import { rebaseOntoMain } from '../agent-manager/git-operations'
-import { mergeAgentBranch, cleanupWorktree, executeMergeStrategy } from './review-merge-service'
+import {
+  mergeAgentBranch,
+  cleanupWorktree,
+  executeMergeStrategy,
+  extractConflictFiles
+} from './review-merge-service'
 import { runPostMergeDedup } from './post-merge-dedup'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
@@ -147,17 +152,7 @@ async function executeGitOp(
       const result = await rebaseOntoMain(op.worktreePath, env, logger)
       if (!result.success) {
         // Extract conflict files
-        const conflicts: string[] = []
-        try {
-          const { stdout: conflictOut } = await execFile(
-            'git',
-            ['diff', '--name-only', '--diff-filter=U'],
-            { cwd: op.worktreePath, env }
-          )
-          conflicts.push(...conflictOut.trim().split('\n').filter(Boolean))
-        } catch {
-          /* best-effort */
-        }
+        const conflicts = await extractConflictFiles(op.worktreePath, env, logger)
         const error = new Error(`Rebase failed: ${result.notes}`) as Error & { conflicts?: string[] }
         if (conflicts.length > 0) {
           error.conflicts = conflicts
