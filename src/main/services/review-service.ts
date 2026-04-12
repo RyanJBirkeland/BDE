@@ -1,4 +1,4 @@
-import type { ReviewFindings, FileFinding } from '../../shared/review-types'
+import type { ReviewFindings, FileFinding } from '../../shared/types'
 
 export class WorktreeMissingError extends Error {
   constructor(public readonly path: string) {
@@ -143,7 +143,7 @@ import type { IReviewRepository } from '../data/review-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import type { Logger } from '../logger'
 import type { SdkStreamingOptions } from '../sdk-streaming'
-import type { ReviewResult } from '../../shared/review-types'
+import type { ReviewResult } from '../../shared/types'
 import { buildAgentPrompt } from '../agent-manager/prompt-composer'
 
 export interface ReviewServiceDeps {

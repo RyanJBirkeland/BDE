@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildAgentPrompt } from './prompt-composer'
-import type { ReviewResult } from '../../shared/review-types'
+import type { ReviewResult } from '../../shared/types'
 
 const reviewSeed: ReviewResult = {
   qualityScore: 92,

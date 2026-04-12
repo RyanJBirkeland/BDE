@@ -10,7 +10,7 @@ import type {
   ChatChunk,
   PartnerMessage,
   ReviewResult,
-} from '../../shared/review-types'
+} from '../../shared/types'
 
 const log = createLogger('review-assistant')
 

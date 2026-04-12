@@ -63,3 +63,15 @@ export type {
   PrComment,
   PrIssueComment
 } from './git-types'
+
+// Review Partner types
+export type {
+  FindingSeverity,
+  FindingCategory,
+  InlineComment,
+  FileFinding,
+  ReviewFindings,
+  ReviewResult,
+  PartnerMessage,
+  ChatChunk
+} from './review-types'

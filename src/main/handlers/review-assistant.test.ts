@@ -7,7 +7,7 @@ import {
 import type { ReviewService } from '../services/review-service'
 import type { IReviewRepository } from '../data/review-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
-import type { ReviewResult, PartnerMessage, ChatChunk } from '../../shared/review-types'
+import type { ReviewResult, PartnerMessage, ChatChunk } from '../../shared/types'
 
 function fakeResult(): ReviewResult {
   return {

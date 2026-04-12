@@ -7,7 +7,7 @@ import { ReviewMetricsRow } from './ReviewMetricsRow'
 import { ReviewMessageList } from './ReviewMessageList'
 import { ReviewQuickActions } from './ReviewQuickActions'
 import { ReviewChatInput } from './ReviewChatInput'
-import type { PartnerMessage } from '../../../../shared/review-types'
+import type { PartnerMessage } from '../../../../shared/types'
 
 // Stable reference for the empty-messages fallback. Returning a fresh `[]`
 // literal from a Zustand selector breaks React's useSyncExternalStore contract

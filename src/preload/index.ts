@@ -523,15 +523,15 @@ const api = {
     // AI Review Partner
     autoReview: (taskId: string, force?: boolean) =>
       ipcRenderer.invoke('review:autoReview', taskId, force ?? false) as Promise<
-        import('../shared/review-types').ReviewResult
+        import('../shared/types').ReviewResult
       >,
     chatStream: (params: {
       taskId: string
-      messages: import('../shared/review-types').PartnerMessage[]
+      messages: import('../shared/types').PartnerMessage[]
     }) =>
       ipcRenderer.invoke('review:chatStream', params) as Promise<{ streamId: string }>,
     onChatChunk: (
-      listener: (evt: unknown, chunk: import('../shared/review-types').ChatChunk) => void
+      listener: (evt: unknown, chunk: import('../shared/types').ChatChunk) => void
     ) => {
       ipcRenderer.on('review:chatChunk', listener as never)
       return () => ipcRenderer.removeListener('review:chatChunk', listener as never)

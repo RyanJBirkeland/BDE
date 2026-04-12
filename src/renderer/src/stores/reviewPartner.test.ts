@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useReviewPartnerStore } from './reviewPartner'
-import type { ReviewResult, ChatChunk } from '../../../shared/review-types'
+import type { ReviewResult, ChatChunk } from '../../../shared/types'
 
 function freshResult(): ReviewResult {
   return {

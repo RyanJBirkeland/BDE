@@ -64,7 +64,7 @@ describe('parseReviewResponse', () => {
 
 import { createReviewService, WorktreeMissingError } from './review-service'
 import type { IReviewRepository } from '../data/review-repository'
-import type { ReviewResult } from '../../shared/review-types'
+import type { ReviewResult } from '../../shared/types'
 
 function makeFakeRepo(): IReviewRepository & { _set: Record<string, ReviewResult> } {
   const _set: Record<string, ReviewResult> = {}

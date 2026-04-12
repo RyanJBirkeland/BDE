@@ -3,7 +3,7 @@ import type {
   ReviewResult,
   PartnerMessage,
   ChatChunk,
-} from '../../../shared/review-types'
+} from '../../../shared/types'
 
 const MESSAGES_STORAGE_KEY = 'bde:review-partner-messages'
 const PANEL_OPEN_KEY = 'bde:review-partner-open'

@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { ReviewResult } from '../../shared/review-types'
+import type { ReviewResult } from '../../shared/types'
 import { createLogger } from '../logger'
 
 const log = createLogger('review-repository')

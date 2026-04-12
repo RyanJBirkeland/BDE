@@ -11,10 +11,11 @@ import type {
   BatchResult,
   SpecTypeSuccessRate,
   SynthesizeRequest,
-  ReviseRequest
+  ReviseRequest,
+  ReviewResult,
+  PartnerMessage
 } from '../types'
 import type { WorkflowTemplate } from '../workflow-types'
-import type { ReviewResult, PartnerMessage } from '../review-types'
 
 export interface SprintChannels {
   'sprint:list': {

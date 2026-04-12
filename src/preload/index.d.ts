@@ -14,7 +14,7 @@ import type {
   GithubRepoInfo,
   CloneProgressEvent
 } from '../shared/ipc-channels'
-import type { ReviewResult, PartnerMessage, ChatChunk } from '../shared/review-types'
+import type { ReviewResult, PartnerMessage, ChatChunk } from '../shared/types'
 import type { AgentEvent } from '../shared/types'
 
 export type { AgentMeta, SpawnLocalAgentArgs, SpawnLocalAgentResult, SprintTask }

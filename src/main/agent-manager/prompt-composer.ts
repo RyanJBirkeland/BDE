@@ -44,7 +44,7 @@ export interface BuildPromptInput {
   // Reviewer-only fields
   reviewerMode?: 'review' | 'chat'
   diff?: string
-  reviewSeed?: import('../../shared/review-types').ReviewResult
+  reviewSeed?: import('../../shared/types').ReviewResult
 }
 
 // ---------------------------------------------------------------------------

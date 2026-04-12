@@ -1,4 +1,4 @@
-// src/shared/review-types.ts
+// src/shared/types/review-types.ts
 
 export type FindingSeverity = 'high' | 'medium' | 'low'
 export type FindingCategory = 'security' | 'performance' | 'correctness' | 'style'

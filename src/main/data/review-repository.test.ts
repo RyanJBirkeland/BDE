@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createReviewRepository, type IReviewRepository } from './review-repository'
-import type { ReviewResult } from '../../shared/review-types'
+import type { ReviewResult } from '../../shared/types'
 
 function makeDb(): Database.Database {
   const db = new Database(':memory:')

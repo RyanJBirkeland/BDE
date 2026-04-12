@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react'
 import type { JSX } from 'react'
-import type { PartnerMessage } from '../../../../shared/review-types'
+import type { PartnerMessage } from '../../../../shared/types'
 
 interface Props {
   messages: PartnerMessage[]
