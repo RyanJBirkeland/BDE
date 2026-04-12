@@ -10,8 +10,8 @@
 
 /* Hover glow effect on the NeonCard */
 .agent-card__button-reset:hover:not([data-selected='true']) .agent-card__neon-card {
-  box-shadow: 0 0 12px var(--neon-glow);
-  border: 1px solid var(--neon-color);
+  box-shadow: 0 0 12px var(--bde-accent-dim);
+  border: 1px solid var(--bde-accent);
 }
 
 .agent-card__content {

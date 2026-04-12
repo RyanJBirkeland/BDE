@@ -19,10 +19,10 @@
   padding: 20px;
   background: linear-gradient(
     135deg,
-    var(--neon-purple-surface),
+    var(--bde-purple-dim),
     var(--bde-bg)
   );
-  border: 1px solid var(--neon-purple-border);
+  border: 1px solid rgba(138, 124, 181, 0.3);
   border-radius: var(--bde-radius-md);
 }
 
@@ -43,23 +43,23 @@
 }
 
 .fleet-glance__stat-icon--running {
-  color: var(--neon-cyan-color);
+  color: var(--bde-accent);
 }
 
 .fleet-glance__stat-icon--done {
-  color: var(--neon-green-color);
+  color: var(--bde-success);
 }
 
 .fleet-glance__stat-icon--failed {
-  color: var(--neon-red-color);
+  color: var(--bde-danger);
 }
 
 .fleet-glance__stat-icon--cost {
-  color: var(--neon-orange-color);
+  color: var(--bde-warning);
 }
 
 .fleet-glance__stat-icon--runtime {
-  color: var(--neon-purple-color);
+  color: var(--bde-purple);
 }
 
 .fleet-glance__stat-label {
@@ -116,8 +116,8 @@
 
 .fleet-glance__item:hover {
   background: var(--bde-bg-hover);
-  border-color: var(--neon-cyan-border);
-  box-shadow: 0 0 8px var(--neon-cyan-color);
+  border-color: var(--bde-accent-border);
+  box-shadow: 0 0 8px var(--bde-accent);
 }
 
 .fleet-glance__status-dot {
@@ -128,8 +128,8 @@
 }
 
 .fleet-glance__status-dot--running {
-  background: var(--neon-cyan-color);
-  box-shadow: 0 0 8px var(--neon-cyan-color);
+  background: var(--bde-accent);
+  box-shadow: 0 0 8px var(--bde-accent);
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
@@ -168,7 +168,7 @@
 
 .fleet-glance__cost {
   font-size: 12px;
-  color: var(--neon-orange-color);
+  color: var(--bde-warning);
   font-family: 'JetBrains Mono', monospace;
   min-width: 50px;
   text-align: right;
@@ -187,11 +187,11 @@
 }
 
 .fleet-glance__completion-icon--done {
-  color: var(--neon-green-color);
+  color: var(--bde-success);
 }
 
 .fleet-glance__completion-icon--failed {
-  color: var(--neon-red-color);
+  color: var(--bde-danger);
 }
 
 /* Empty state */
@@ -212,6 +212,6 @@
 }
 
 .fleet-glance__empty-hint strong {
-  color: var(--neon-cyan-color);
+  color: var(--bde-accent);
   font-weight: 600;
 }
