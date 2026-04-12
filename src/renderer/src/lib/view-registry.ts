@@ -10,7 +10,7 @@ import {
   Hexagon,
   type LucideIcon
 } from 'lucide-react'
-import type { View } from '../stores/panelLayout'
+import type { View } from './view-types'
 
 // ---------------------------------------------------------------------------
 // Single source of truth for view metadata

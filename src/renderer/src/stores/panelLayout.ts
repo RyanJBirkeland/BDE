@@ -1,21 +1,13 @@
 import { create } from 'zustand'
 import { VIEW_LABELS } from '../lib/view-registry'
+import type { View, DropZone } from '../lib/view-types'
+
+// Re-export for backward compatibility
+export type { View, DropZone }
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-export type View =
-  | 'dashboard'
-  | 'agents'
-  | 'ide'
-  | 'sprint'
-  | 'code-review'
-  | 'git'
-  | 'settings'
-  | 'task-workbench'
-  | 'planner'
-export type DropZone = 'top' | 'bottom' | 'left' | 'right' | 'center'
 
 export interface PanelTab {
   viewKey: View
