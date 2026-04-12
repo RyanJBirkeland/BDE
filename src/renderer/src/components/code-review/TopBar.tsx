@@ -1,21 +1,10 @@
 import './TopBar.css'
 import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  GitMerge,
-  GitPullRequest,
-  Trash2,
-  Loader2,
-  Rocket,
-  RefreshCw,
-  ChevronDown,
-  Sparkles,
-  X
-} from 'lucide-react'
+import { GitMerge, GitPullRequest, Trash2, Loader2, Rocket, ChevronDown, Sparkles, X } from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
-import { TextareaPromptModal } from '../ui/TextareaPromptModal'
 import { toast } from '../../stores/toasts'
 import { ReviewQueue } from './ReviewQueue'
 import { VARIANTS } from '../../lib/motion'
@@ -24,6 +13,7 @@ import { useTaskAutoSelect } from '../../hooks/useTaskAutoSelect'
 import { BranchBar } from './BranchBar'
 import { ApproveDropdown } from './ApproveDropdown'
 import { useReviewPartnerStore } from '../../stores/reviewPartner'
+import { ReviewActionsBar } from './ReviewActionsBar'
 
 export function TopBar(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -33,19 +23,6 @@ export function TopBar(): React.JSX.Element {
   const loadData = useSprintTasks((s) => s.loadData)
   const task = tasks.find((t) => t.id === selectedTaskId)
   const { confirm, confirmProps: batchConfirmProps } = useConfirm()
-  const {
-    actionInFlight,
-    freshness,
-    ghConfigured,
-    shipIt,
-    mergeLocally,
-    createPr,
-    requestRevision,
-    rebase,
-    discard,
-    confirmProps,
-    promptProps
-  } = useReviewActions()
   const panelOpen = useReviewPartnerStore((s) => s.panelOpen)
   const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
   const reviewResult = useReviewPartnerStore((s) =>
@@ -58,6 +35,10 @@ export function TopBar(): React.JSX.Element {
   const taskSwitcherRef = useRef<HTMLDivElement>(null)
 
   const selectedTasks = tasks.filter((t) => selectedBatchIds.has(t.id) && t.status === 'review')
+  const isBatchMode = selectedBatchIds.size > 0
+
+  // Call hook unconditionally (Rules of Hooks), but only use ghConfigured in batch mode
+  const { ghConfigured } = useReviewActions()
 
   // Auto-select review tasks when current selection becomes invalid
   useTaskAutoSelect()
@@ -71,14 +52,6 @@ export function TopBar(): React.JSX.Element {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  const handleRequestRevision = async (): Promise<void> => {
-    await requestRevision()
-  }
-
-  const handleDiscard = async (): Promise<void> => {
-    await discard()
-  }
 
   const handleBatchMergeAll = async (): Promise<void> => {
     const ok = await confirm({
@@ -224,7 +197,6 @@ export function TopBar(): React.JSX.Element {
     }
   }
 
-  const isBatchMode = selectedBatchIds.size > 0
   const hasAnyReviewTask = tasks.some((t) => t.status === 'review')
 
   if (!task || task.status !== 'review') {
@@ -313,8 +285,6 @@ export function TopBar(): React.JSX.Element {
           )}
         </AnimatePresence>
         <ConfirmModal {...batchConfirmProps} />
-        <ConfirmModal {...confirmProps} />
-        <TextareaPromptModal {...promptProps} />
       </div>
     )
   }
@@ -336,9 +306,9 @@ export function TopBar(): React.JSX.Element {
             <button
               className="cr-topbar__btn cr-topbar__btn--primary"
               onClick={handleBatchMergeAll}
-              disabled={!!actionInFlight}
+              disabled={!!batchActionInFlight}
             >
-              {actionInFlight === 'batchMerge' ? (
+              {batchActionInFlight === 'batchMerge' ? (
                 <Loader2 size={14} className="spin" />
               ) : (
                 <GitMerge size={14} />
@@ -348,9 +318,9 @@ export function TopBar(): React.JSX.Element {
             <button
               className="cr-topbar__btn cr-topbar__btn--ship"
               onClick={handleBatchShipAll}
-              disabled={!!actionInFlight || !ghConfigured}
+              disabled={!!batchActionInFlight || !ghConfigured}
             >
-              {actionInFlight === 'batchShip' ? (
+              {batchActionInFlight === 'batchShip' ? (
                 <Loader2 size={14} className="spin" />
               ) : (
                 <Rocket size={14} />
@@ -360,9 +330,9 @@ export function TopBar(): React.JSX.Element {
             <button
               className="cr-topbar__btn cr-topbar__btn--secondary"
               onClick={handleBatchCreatePr}
-              disabled={!!actionInFlight || !ghConfigured}
+              disabled={!!batchActionInFlight || !ghConfigured}
             >
-              {actionInFlight === 'batchPr' ? (
+              {batchActionInFlight === 'batchPr' ? (
                 <Loader2 size={14} className="spin" />
               ) : (
                 <GitPullRequest size={14} />
@@ -372,9 +342,9 @@ export function TopBar(): React.JSX.Element {
             <button
               className="cr-topbar__btn cr-topbar__btn--ghost"
               onClick={handleBatchDiscard}
-              disabled={!!actionInFlight}
+              disabled={!!batchActionInFlight}
             >
-              {actionInFlight === 'batchDiscard' ? (
+              {batchActionInFlight === 'batchDiscard' ? (
                 <Loader2 size={14} className="spin" />
               ) : (
                 <Trash2 size={14} />
@@ -384,7 +354,7 @@ export function TopBar(): React.JSX.Element {
             <button
               className="cr-topbar__btn cr-topbar__btn--ghost"
               onClick={clearBatch}
-              disabled={!!actionInFlight}
+              disabled={!!batchActionInFlight}
             >
               <X size={14} /> Clear
             </button>
@@ -417,69 +387,43 @@ export function TopBar(): React.JSX.Element {
               {branch && <BranchBar branch={branch} targetBranch="main" />}
             </div>
 
-            <div className="cr-topbar__center">
-              <span
-                className={`cr-topbar__freshness cr-topbar__freshness--${freshness.status}`}
-                title={
-                  freshness.status === 'stale'
-                    ? `${freshness.commitsBehind} commit(s) behind main`
-                    : freshness.status === 'conflict'
-                      ? 'Last rebase had conflicts'
-                      : freshness.status === 'fresh'
-                        ? 'Up to date with main'
-                        : 'Checking...'
-                }
-              >
-                {freshness.status === 'fresh' && 'Fresh'}
-                {freshness.status === 'stale' && `Stale (${freshness.commitsBehind} behind)`}
-                {freshness.status === 'conflict' && 'Conflict'}
-                {freshness.status === 'unknown' && 'Unknown'}
-                {freshness.status === 'loading' && '...'}
-              </span>
-              <button
-                className="cr-topbar__btn cr-topbar__btn--ghost"
-                onClick={rebase}
-                disabled={!!actionInFlight || freshness.status === 'fresh'}
-                title="Rebase agent branch onto current main"
-              >
-                {actionInFlight === 'rebase' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <RefreshCw size={14} />
-                )}{' '}
-                Rebase
-              </button>
-            </div>
+            <ReviewActionsBar variant="compact">
+              {(actions) => (
+                <>
+                  <div className="cr-topbar__center">
+                    {actions.renderFreshnessBadge()}
+                    {actions.renderRebaseButton()}
+                  </div>
 
-            <div className="cr-topbar__right">
-              {/* AI Partner toggle */}
-              <button
-                type="button"
-                className={`cr-topbar__ai-toggle${panelOpen ? ' cr-topbar__ai-toggle--on' : ''}`}
-                aria-pressed={panelOpen}
-                aria-label="Toggle AI Review Partner"
-                onClick={togglePanel}
-              >
-                <Sparkles size={14} />
-                <span>AI Partner</span>
-              </button>
+                  <div className="cr-topbar__right">
+                    {/* AI Partner toggle */}
+                    <button
+                      type="button"
+                      className={`cr-topbar__ai-toggle${panelOpen ? ' cr-topbar__ai-toggle--on' : ''}`}
+                      aria-pressed={panelOpen}
+                      aria-label="Toggle AI Review Partner"
+                      onClick={togglePanel}
+                    >
+                      <Sparkles size={14} />
+                      <span>AI Partner</span>
+                    </button>
 
-              {/* Approve dropdown (consolidated actions) */}
-              <ApproveDropdown
-                onMergeLocally={mergeLocally}
-                onSquashMerge={shipIt}
-                onCreatePR={createPr}
-                onRequestRevision={handleRequestRevision}
-                onDiscard={handleDiscard}
-                disabled={!!actionInFlight}
-              />
-            </div>
+                    {/* Approve dropdown (consolidated actions) */}
+                    <ApproveDropdown
+                      onMergeLocally={actions.mergeLocally}
+                      onSquashMerge={actions.shipIt}
+                      onCreatePR={actions.createPr}
+                      onRequestRevision={actions.requestRevision}
+                      onDiscard={actions.discard}
+                      disabled={!!actions.actionInFlight}
+                    />
+                  </div>
+                </>
+              )}
+            </ReviewActionsBar>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <ConfirmModal {...confirmProps} />
-      <TextareaPromptModal {...promptProps} />
     </div>
   )
 }
