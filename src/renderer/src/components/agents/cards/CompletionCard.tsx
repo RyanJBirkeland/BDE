@@ -1,6 +1,5 @@
 import '../ConsoleLine.css'
-import { formatTokenCount } from './util'
-import { formatDurationMs } from '../../../lib/format'
+import { formatDurationMs, formatTokens } from '../../../lib/format'
 
 interface CompletionCardProps {
   exitCode: number
@@ -50,13 +49,13 @@ export function CompletionCard({
         </div>
         <div className="console-completion-card__stat">
           <div className="console-completion-card__stat-value console-completion-card__stat-value--purple">
-            {formatTokenCount(tokensIn)}
+            {formatTokens(tokensIn)}
           </div>
           <div className="console-completion-card__stat-label">Tokens In</div>
         </div>
         <div className="console-completion-card__stat">
           <div className="console-completion-card__stat-value console-completion-card__stat-value--orange">
-            {formatTokenCount(tokensOut)}
+            {formatTokens(tokensOut)}
           </div>
           <div className="console-completion-card__stat-label">Tokens Out</div>
         </div>
