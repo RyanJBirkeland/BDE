@@ -132,11 +132,11 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
     }
   }
 
-  // Promote action: only available for completed adhoc agents that have a worktree.
-  // Pipeline agents already flow through the sprint pipeline and don't need promotion.
+  // Promote action: available for any agent with a worktree that doesn't already
+  // have a sprint task. Works mid-session (running) or after completion (done).
+  // Pipeline agents already have sprintTaskId, so they're excluded automatically.
   const canPromote =
-    agent.source === 'adhoc' &&
-    agent.status === 'done' &&
+    (agent.status === 'done' || agent.status === 'running') &&
     !!agent.worktreePath &&
     !agent.sprintTaskId
 

@@ -17,9 +17,11 @@
  * the work into a sprint task via `agents:promoteToReview`.
  */
 import { randomUUID } from 'node:crypto'
+import { execFile as execFileCb } from 'node:child_process'
+import { promisify } from 'node:util'
 import { basename, join } from 'node:path'
 import { homedir } from 'node:os'
-import { importAgent, updateAgentMeta } from './agent-history'
+import { importAgent, updateAgentMeta, getAgentMeta } from './agent-history'
 import { updateAgentRunCost } from './data/agent-queries'
 import { getDb } from './db'
 import { buildAgentEnvWithAuth, getClaudeCliPath, refreshOAuthTokenFromKeychain } from './env-utils'
@@ -28,9 +30,12 @@ import type { SpawnLocalAgentResult } from '../shared/types'
 import { buildAgentPrompt } from './agent-manager/prompt-composer'
 import { setupWorktree } from './agent-manager/worktree'
 import { TurnTracker } from './agent-manager/turn-tracker'
+import { createReviewTaskFromAdhoc } from './data/sprint-queries'
 import { getErrorMessage } from '../shared/errors'
 import { nowIso } from '../shared/time'
 import { createLogger } from './logger'
+
+const execFileAsync = promisify(execFileCb)
 
 const log = createLogger('adhoc-agent')
 
@@ -256,10 +261,8 @@ export async function spawnAdhocAgent(args: {
   }
 
   /**
-   * Complete the session — emit completed event and clean up.
-   * Note: the worktree is intentionally preserved so the user can review
-   * the diff or promote it via `agents:promoteToReview`. Cleanup happens
-   * later when the agent_runs row is pruned.
+   * Complete the session — emit completed event, persist cost, and auto-promote
+   * to Code Review if the agent committed work. Worktree is preserved for review.
    */
   function completeSession(): void {
     if (closed) return
@@ -301,6 +304,66 @@ export async function spawnAdhocAgent(args: {
 
     adhocSessions.delete(meta.id)
     log.info(`[adhoc] ${meta.id} session completed after ${Math.round(durationMs / 1000)}s`)
+
+    // Auto-promote to Code Review if the agent committed work
+    autoPromoteToReview().catch((err) => {
+      log.warn(`[adhoc] ${meta.id} auto-promote failed: ${getErrorMessage(err)}`)
+    })
+  }
+
+  /**
+   * Check if the adhoc worktree has commits beyond main and, if so,
+   * automatically create a sprint task in `review` status so the work
+   * appears in Code Review Station without manual promotion.
+   */
+  async function autoPromoteToReview(): Promise<void> {
+    // Skip if the user already promoted mid-session via the UI button
+    const currentMeta = await getAgentMeta(meta.id)
+    if (currentMeta?.sprintTaskId) {
+      log.info(`[adhoc] ${meta.id} already promoted — skipping auto-promote`)
+      return
+    }
+
+    const env = buildAgentEnvWithAuth()
+    try {
+      const { stdout } = await execFileAsync(
+        'git',
+        ['rev-list', '--count', `origin/main..${branch}`],
+        { cwd: worktreePath, env: env as Record<string, string> }
+      )
+      const commitCount = parseInt(stdout.trim(), 10)
+      if (!Number.isFinite(commitCount) || commitCount === 0) {
+        log.info(`[adhoc] ${meta.id} no commits beyond main — skipping auto-promote`)
+        return
+      }
+    } catch (err) {
+      log.warn(`[adhoc] ${meta.id} commit count check failed: ${getErrorMessage(err)}`)
+      // Non-fatal — proceed anyway; Code Review handles empty diffs gracefully
+    }
+
+    const firstLine =
+      meta.task
+        .split('\n')
+        .find((l) => l.trim())
+        ?.trim() ?? 'Adhoc agent session'
+    const title = firstLine.length > 120 ? firstLine.slice(0, 117) + '...' : firstLine
+
+    const task = createReviewTaskFromAdhoc({
+      title,
+      repo: meta.repo,
+      spec: meta.task,
+      worktreePath,
+      branch
+    })
+
+    if (!task) {
+      log.warn(`[adhoc] ${meta.id} auto-promote: createReviewTaskFromAdhoc returned null`)
+      return
+    }
+
+    // Link the agent to the sprint task so the manual promote button hides
+    await updateAgentMeta(meta.id, { sprintTaskId: task.id })
+    log.info(`[adhoc] ${meta.id} auto-promoted to review task ${task.id}`)
   }
 
   // Track for steering / kill
