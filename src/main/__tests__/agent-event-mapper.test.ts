@@ -128,4 +128,133 @@ describe('emitAgentEvent batching', () => {
 
     expect(insertEventBatchMock).not.toHaveBeenCalled()
   })
+
+  it('re-queues events on SQLite failure', async () => {
+    const { emitAgentEvent, flushAgentEventBatcher } = await import('../agent-event-mapper')
+
+    insertEventBatchMock.mockImplementationOnce(() => {
+      throw new Error('SQLITE_BUSY')
+    })
+
+    // Emit 3 events and flush
+    emitAgentEvent('agent-1', { type: 'agent:text', text: 'a', timestamp: 1 })
+    emitAgentEvent('agent-1', { type: 'agent:text', text: 'b', timestamp: 2 })
+    emitAgentEvent('agent-1', { type: 'agent:text', text: 'c', timestamp: 3 })
+    flushAgentEventBatcher()
+
+    // First flush should fail and re-queue
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
+
+    // Reset mock to succeed on retry
+    insertEventBatchMock.mockReset()
+
+    // Second flush should succeed with the re-queued events
+    flushAgentEventBatcher()
+
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
+    const [_db, batch] = insertEventBatchMock.mock.calls[0]
+    expect(batch).toHaveLength(3)
+    expect(batch[0].agentId).toBe('agent-1')
+    expect(JSON.parse(batch[0].payload)).toEqual({ type: 'agent:text', text: 'a', timestamp: 1 })
+  })
+
+  it('triggers circuit breaker after 5 consecutive failures', async () => {
+    const { emitAgentEvent, flushAgentEventBatcher } = await import('../agent-event-mapper')
+
+    insertEventBatchMock.mockImplementation(() => {
+      throw new Error('SQLITE_LOCKED')
+    })
+
+    // Emit 2 events
+    emitAgentEvent('agent-1', { type: 'agent:text', text: 'a', timestamp: 1 })
+    emitAgentEvent('agent-1', { type: 'agent:text', text: 'b', timestamp: 2 })
+
+    // Fail 5 times — events should be re-queued each time
+    for (let i = 0; i < 4; i++) {
+      flushAgentEventBatcher()
+    }
+
+    // 5th failure should trigger circuit breaker
+    flushAgentEventBatcher()
+
+    // Should have attempted 5 times
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(5)
+
+    // Reset mock to succeed
+    insertEventBatchMock.mockReset()
+
+    // 6th flush should not re-queue (circuit breaker tripped)
+    flushAgentEventBatcher()
+
+    // Queue should now be empty — no events to flush
+    expect(insertEventBatchMock).not.toHaveBeenCalled()
+  })
+
+  it('caps pending events at 10000', async () => {
+    const { emitAgentEvent, flushAgentEventBatcher } = await import('../agent-event-mapper')
+
+    // Make insertEventBatch fail to trigger re-queue
+    insertEventBatchMock.mockImplementation(() => {
+      throw new Error('SQLITE_BUSY')
+    })
+
+    // Emit 50 events to trigger auto-flush
+    for (let i = 0; i < 50; i++) {
+      emitAgentEvent('agent-1', { type: 'agent:text', text: `msg${i}`, timestamp: i })
+    }
+
+    // Flush fails, re-queues 50 events
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
+
+    // Emit 10000 more events (should trigger multiple auto-flushes)
+    for (let i = 50; i < 10050; i++) {
+      emitAgentEvent('agent-1', { type: 'agent:text', text: `msg${i}`, timestamp: i })
+    }
+
+    // Reset mock to succeed and flush
+    insertEventBatchMock.mockReset()
+    flushAgentEventBatcher()
+
+    // Should have capped at 10000
+    const [_db, batch] = insertEventBatchMock.mock.calls[0]
+    expect(batch.length).toBeLessThanOrEqual(10000)
+  })
+
+  it('resets consecutive failures on successful flush', async () => {
+    const { emitAgentEvent, flushAgentEventBatcher } = await import('../agent-event-mapper')
+
+    // Fail once
+    insertEventBatchMock.mockImplementationOnce(() => {
+      throw new Error('SQLITE_BUSY')
+    })
+
+    emitAgentEvent('agent-1', { type: 'agent:text', text: 'a', timestamp: 1 })
+    flushAgentEventBatcher()
+
+    // Now succeed
+    insertEventBatchMock.mockReset()
+    flushAgentEventBatcher()
+
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
+
+    // Fail 4 more times — should not trigger circuit breaker (counter was reset)
+    insertEventBatchMock.mockReset()
+    insertEventBatchMock.mockImplementation(() => {
+      throw new Error('SQLITE_LOCKED')
+    })
+
+    for (let i = 0; i < 4; i++) {
+      emitAgentEvent('agent-1', { type: 'agent:text', text: `b${i}`, timestamp: i + 2 })
+      flushAgentEventBatcher()
+    }
+
+    // Should have attempted 4 times and still be re-queuing
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(4)
+
+    // Reset and flush — should still have events
+    insertEventBatchMock.mockReset()
+    flushAgentEventBatcher()
+
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
+  })
 })

@@ -78,6 +78,8 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
 
 const BATCH_SIZE = 50
 const BATCH_INTERVAL_MS = 100
+const MAX_CONSECUTIVE_FAILURES = 5
+const MAX_PENDING_EVENTS = 10000
 
 interface PendingRow {
   agentId: string
@@ -86,6 +88,7 @@ interface PendingRow {
 
 const _pending: PendingRow[] = []
 let _flushTimer: ReturnType<typeof setTimeout> | null = null
+let _consecutiveFailures = 0
 
 // Rate-limited error logging for SQLite failures
 let _lastSqliteErrorLog = 0
@@ -116,11 +119,25 @@ export function flushAgentEventBatcher(): void {
       timestamp: event.timestamp
     }))
     insertEventBatch(getDb(), batch)
+    _consecutiveFailures = 0
   } catch (err) {
-    // SQLite write failure is non-fatal, but log it (rate-limited)
+    // SQLite write failure — re-queue events with circuit breaker
+    _consecutiveFailures++
+    if (_consecutiveFailures < MAX_CONSECUTIVE_FAILURES) {
+      _pending.unshift(...rows)
+      if (_pending.length > MAX_PENDING_EVENTS) {
+        const dropped = _pending.splice(0, _pending.length - MAX_PENDING_EVENTS)
+        logger.warn(`Dropped ${dropped.length} oldest events (cap)`)
+      }
+    } else {
+      logger.error(
+        `${rows.length} events permanently lost after ${MAX_CONSECUTIVE_FAILURES} failures: ${err}`
+      )
+    }
+    // Rate-limited error logging for context
     const now = Date.now()
     if (now - _lastSqliteErrorLog > SQLITE_ERROR_LOG_INTERVAL_MS) {
-      logger.warn(`SQLite batch write failed (${rows.length} events lost): ${err}`)
+      logger.warn(`SQLite batch write failed (attempt ${_consecutiveFailures}): ${err}`)
       _lastSqliteErrorLog = now
     }
   }
