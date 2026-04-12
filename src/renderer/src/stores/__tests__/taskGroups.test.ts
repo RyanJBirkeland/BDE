@@ -24,6 +24,7 @@ const makeGroup = (id: string, overrides: Partial<TaskGroup> = {}): TaskGroup =>
   status: 'draft',
   created_at: nowIso(),
   updated_at: nowIso(),
+  depends_on: null,
   ...overrides
 })
 

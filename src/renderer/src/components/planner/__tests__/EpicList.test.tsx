@@ -12,7 +12,8 @@ const mockGroups: TaskGroup[] = [
     goal: 'Complete authentication',
     status: 'in-pipeline',
     created_at: '2026-01-01T00:00:00Z',
-    updated_at: '2026-01-01T00:00:00Z'
+    updated_at: '2026-01-01T00:00:00Z',
+    depends_on: null
   },
   {
     id: 'group-2',
@@ -22,7 +23,8 @@ const mockGroups: TaskGroup[] = [
     goal: null,
     status: 'draft',
     created_at: '2026-01-02T00:00:00Z',
-    updated_at: '2026-01-02T00:00:00Z'
+    updated_at: '2026-01-02T00:00:00Z',
+    depends_on: null
   },
   {
     id: 'group-3',
@@ -32,7 +34,8 @@ const mockGroups: TaskGroup[] = [
     goal: 'Done',
     status: 'completed',
     created_at: '2026-01-03T00:00:00Z',
-    updated_at: '2026-01-03T00:00:00Z'
+    updated_at: '2026-01-03T00:00:00Z',
+    depends_on: null
   }
 ]
 

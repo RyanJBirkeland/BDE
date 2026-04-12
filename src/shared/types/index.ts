@@ -32,6 +32,7 @@ export type {
 // Task types
 export type {
   TaskDependency,
+  EpicDependency,
   TaskGroup,
   RevisionFeedbackEntry,
   FailureReason,

@@ -3,7 +3,7 @@
  * All functions are synchronous and use the local SQLite database via getDb().
  */
 import type Database from 'better-sqlite3'
-import type { TaskGroup, SprintTask } from '../../shared/types'
+import type { TaskGroup, SprintTask, EpicDependency } from '../../shared/types'
 import { getDb } from '../db'
 import { mapRowsToTasks } from './sprint-queries'
 import { getErrorMessage } from '../../shared/errors'
@@ -13,6 +13,7 @@ export interface CreateGroupInput {
   icon?: string
   accent_color?: string
   goal?: string
+  depends_on?: EpicDependency[] | null
 }
 
 export interface UpdateGroupInput {
@@ -21,12 +22,25 @@ export interface UpdateGroupInput {
   accent_color?: string
   goal?: string
   status?: 'draft' | 'ready' | 'in-pipeline' | 'completed'
+  depends_on?: EpicDependency[] | null
 }
 
 /**
  * Sanitize a single group row from SQLite.
  */
 function sanitizeGroup(row: Record<string, unknown>): TaskGroup {
+  let depends_on: EpicDependency[] | null = null
+  if (row.depends_on && typeof row.depends_on === 'string') {
+    try {
+      const parsed = JSON.parse(row.depends_on)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        depends_on = parsed
+      }
+    } catch {
+      // Malformed JSON → null
+    }
+  }
+
   return {
     id: String(row.id),
     name: String(row.name),
@@ -35,7 +49,8 @@ function sanitizeGroup(row: Record<string, unknown>): TaskGroup {
     goal: row.goal ? String(row.goal) : null,
     status: String(row.status ?? 'draft') as TaskGroup['status'],
     created_at: String(row.created_at),
-    updated_at: String(row.updated_at)
+    updated_at: String(row.updated_at),
+    depends_on
   }
 }
 
@@ -45,16 +60,20 @@ function sanitizeGroup(row: Record<string, unknown>): TaskGroup {
 export function createGroup(input: CreateGroupInput, db?: Database.Database): TaskGroup | null {
   try {
     const conn = db ?? getDb()
+    const dependsOnJson =
+      input.depends_on && input.depends_on.length > 0 ? JSON.stringify(input.depends_on) : null
+
     const stmt = conn.prepare(`
-      INSERT INTO task_groups (name, icon, accent_color, goal)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO task_groups (name, icon, accent_color, goal, depends_on)
+      VALUES (?, ?, ?, ?, ?)
       RETURNING *
     `)
     const row = stmt.get(
       input.name,
       input.icon ?? 'G',
       input.accent_color ?? '#00ffcc',
-      input.goal ?? null
+      input.goal ?? null,
+      dependsOnJson
     ) as Record<string, unknown> | undefined
 
     return row ? sanitizeGroup(row) : null
@@ -110,12 +129,19 @@ export function updateGroup(
 ): TaskGroup | null {
   try {
     const conn = db ?? getDb()
-    const allowed = new Set(['name', 'icon', 'accent_color', 'goal', 'status'])
+    const allowed = new Set(['name', 'icon', 'accent_color', 'goal', 'status', 'depends_on'])
     const fields = Object.keys(patch).filter((k) => allowed.has(k))
     if (fields.length === 0) return getGroup(id, db)
 
     const setClauses = fields.map((f) => `${f} = ?`)
-    const values = fields.map((f) => patch[f as keyof UpdateGroupInput])
+    const values = fields.map((f) => {
+      const value = patch[f as keyof UpdateGroupInput]
+      // Serialize depends_on to JSON if present
+      if (f === 'depends_on') {
+        return value && Array.isArray(value) && value.length > 0 ? JSON.stringify(value) : null
+      }
+      return value
+    })
 
     const stmt = conn.prepare(`
       UPDATE task_groups

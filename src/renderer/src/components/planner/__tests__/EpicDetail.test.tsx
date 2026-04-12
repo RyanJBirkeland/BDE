@@ -13,7 +13,8 @@ describe('EpicDetail', () => {
     goal: 'Implement secure user authentication',
     status: 'draft',
     created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z'
+    updated_at: '2024-01-01T00:00:00Z',
+    depends_on: null
   }
 
   const mockTasks: SprintTask[] = [

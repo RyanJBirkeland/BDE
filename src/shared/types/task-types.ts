@@ -12,6 +12,11 @@ export interface TaskDependency {
   condition?: 'on_success' | 'on_failure' | 'always'
 }
 
+export interface EpicDependency {
+  id: string
+  condition: 'on_success' | 'always' | 'manual'
+}
+
 export interface TaskGroup {
   id: string
   name: string
@@ -21,6 +26,7 @@ export interface TaskGroup {
   status: 'draft' | 'ready' | 'in-pipeline' | 'completed'
   created_at: string
   updated_at: string
+  depends_on: EpicDependency[] | null
 }
 
 export interface RevisionFeedbackEntry {
