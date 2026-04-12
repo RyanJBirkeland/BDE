@@ -4,9 +4,13 @@ import {
   type DependencyIndex,
   TERMINAL_STATUSES
 } from './dependency-service'
-import type { SprintTask, TaskDependency } from '../../shared/types'
+import {
+  createEpicDependencyIndex,
+  type EpicDependencyIndex
+} from './epic-dependency-service'
+import type { SprintTask, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
 
-type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes' | 'title'> & {
+type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes' | 'title' | 'group_id'> & {
   depends_on: TaskDependency[] | null
 }
 
@@ -14,6 +18,9 @@ export interface TaskTerminalServiceDeps {
   getTask: (id: string) => TaskSlice | null
   updateTask: (id: string, patch: Record<string, unknown>) => unknown
   getTasksWithDependencies: () => Array<{ id: string; depends_on: TaskDependency[] | null }>
+  getGroup: (id: string) => TaskGroup | null
+  getGroupsWithDependencies: () => Array<{ id: string; depends_on: EpicDependency[] | null }>
+  listGroupTasks: (groupId: string) => SprintTask[]
   getSetting?: (key: string) => string | null
   logger: { info: (msg: string) => void; warn: (msg: string) => void; error: (msg: string) => void }
 }
@@ -24,6 +31,7 @@ export interface TaskTerminalService {
 
 export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTerminalService {
   const depIndex: DependencyIndex = createDependencyIndex()
+  const epicIndex: EpicDependencyIndex = createEpicDependencyIndex()
 
   // Pending resolution: taskIds that have reached terminal status and need dep resolution.
   // setTimeout(0) coalesces multiple synchronous completions into one resolution pass.
@@ -33,6 +41,8 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
   function rebuildIndex(): void {
     const tasks = deps.getTasksWithDependencies()
     depIndex.rebuild(tasks)
+    const groups = deps.getGroupsWithDependencies()
+    epicIndex.rebuild(groups)
   }
 
   function scheduleResolution(taskId: string, status: string): void {
@@ -51,7 +61,10 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
                 deps.getTask,
                 deps.updateTask,
                 deps.logger,
-                deps.getSetting
+                deps.getSetting,
+                epicIndex,
+                deps.getGroup,
+                deps.listGroupTasks
               )
             } catch (err) {
               deps.logger.error(

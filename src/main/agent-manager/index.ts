@@ -21,7 +21,9 @@ import { checkAgent } from './watchdog'
 import { setupWorktree, pruneStaleWorktrees } from './worktree'
 import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex, formatBlockedNote } from '../services/dependency-service'
+import { createEpicDependencyIndex, type EpicDependencyIndex } from '../services/epic-dependency-service'
 import { resolveDependents } from './resolve-dependents'
+import { getGroup, getGroupTasks, getGroupsWithDependencies } from '../data/task-group-queries'
 import { runAgent as _runAgent, type RunAgentDeps, type RunAgentTask } from './run-agent'
 import { setSprintQueriesLogger } from '../data/sprint-queries'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
@@ -125,6 +127,7 @@ export class AgentManagerImpl implements AgentManager {
   _drainInFlight: Promise<void> | null = null
   readonly _agentPromises = new Set<Promise<void>>()
   readonly _depIndex: DependencyIndex
+  readonly _epicIndex: EpicDependencyIndex
   readonly _metrics: MetricsCollector
   // F-t1-sysprof-1/-4: Cache a stable fingerprint alongside the deps array so
   // subsequent drain ticks can short-circuit the deep compare via hash equality.
@@ -155,6 +158,7 @@ export class AgentManagerImpl implements AgentManager {
     this.config = config
     this._concurrency = makeConcurrencyState(config.maxConcurrent)
     this._depIndex = createDependencyIndex()
+    this._epicIndex = createEpicDependencyIndex()
     this._metrics = createMetricsCollector()
     this._circuitBreaker = new CircuitBreaker(logger)
 
@@ -231,7 +235,11 @@ export class AgentManagerImpl implements AgentManager {
           this._depIndex,
           this.repo.getTask,
           this.repo.updateTask,
-          this.logger
+          this.logger,
+          getSetting,
+          this._epicIndex,
+          getGroup,
+          getGroupTasks
         )
       } catch (err) {
         this.logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
@@ -670,6 +678,8 @@ export class AgentManagerImpl implements AgentManager {
     try {
       const tasks = this.repo.getTasksWithDependencies()
       this._depIndex.rebuild(tasks)
+      const groups = getGroupsWithDependencies()
+      this._epicIndex.rebuild(groups)
       // Initialize _lastTaskDeps to avoid false positives on first drain
       this._lastTaskDeps.clear()
       for (const task of tasks) {

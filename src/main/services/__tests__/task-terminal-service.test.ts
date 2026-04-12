@@ -9,10 +9,14 @@ function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTermina
       title: 'Test Task',
       status: 'done',
       depends_on: null,
-      notes: null
+      notes: null,
+      group_id: null
     }),
     updateTask: vi.fn(),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
+    getGroup: vi.fn().mockReturnValue(null),
+    getGroupsWithDependencies: vi.fn().mockReturnValue([]),
+    listGroupTasks: vi.fn().mockReturnValue([]),
     getSetting: vi.fn().mockReturnValue(null),
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     ...overrides
@@ -35,14 +39,22 @@ describe('createTaskTerminalService', () => {
         .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }]),
       getTask: vi.fn().mockImplementation((id: string) => {
         if (id === 't1')
-          return { id: 't1', title: 'Task 1', status: 'done', depends_on: null, notes: null }
+          return {
+            id: 't1',
+            title: 'Task 1',
+            status: 'done',
+            depends_on: null,
+            notes: null,
+            group_id: null
+          }
         if (id === 't2')
           return {
             id: 't2',
             title: 'Task 2',
             status: 'blocked',
             depends_on: [{ id: 't1', type: 'hard' }],
-            notes: null
+            notes: null,
+            group_id: null
           }
         return null
       })
@@ -128,14 +140,22 @@ describe('createTaskTerminalService', () => {
         .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }]),
       getTask: vi.fn().mockImplementation((id: string) => {
         if (id === 't1')
-          return { id: 't1', title: 'Task 1', status: 'done', depends_on: null, notes: null }
+          return {
+            id: 't1',
+            title: 'Task 1',
+            status: 'done',
+            depends_on: null,
+            notes: null,
+            group_id: null
+          }
         if (id === 't2')
           return {
             id: 't2',
             title: 'Task 2',
             status: 'blocked',
             depends_on: [{ id: 't1', type: 'hard' }],
-            notes: null
+            notes: null,
+            group_id: null
           }
         return null
       })

@@ -10,7 +10,7 @@ import { getSettingJson } from '../settings'
 import { TERMINAL_STATUSES } from '../../shared/task-transitions'
 import {
   buildBlockedNotes,
-  checkTaskDependencies,
+  computeBlockState,
   detectCycle
 } from '../services/dependency-service'
 import {
@@ -41,6 +41,7 @@ import { registerSprintExportHandlers } from './sprint-export-handlers'
 import { registerSprintBatchHandlers } from './sprint-batch-handlers'
 import { registerSprintRetryHandler } from './sprint-retry-handler'
 import { validateTaskSpec } from './sprint-validation-helpers'
+import { listGroups } from '../data/task-group-queries'
 
 const logger = createLogger('sprint-local')
 
@@ -59,7 +60,8 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
   safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
     const validation = validateTaskCreation(task, {
       logger: { warn: (...args: unknown[]) => logger.warn(String(args[0])) },
-      listTasks
+      listTasks,
+      listGroups
     })
     if (!validation.valid) {
       throw new Error(`Spec quality checks failed: ${validation.errors.join('; ')}`)
@@ -117,17 +119,14 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
         context: 'queue'
       })
 
-      // Dependency check (existing logic)
-      const taskDeps = task.depends_on
-      if (taskDeps && taskDeps.length > 0) {
-        const { shouldBlock, blockedBy } = checkTaskDependencies(id, taskDeps, logger, listTasks)
-        if (shouldBlock) {
-          // Auto-block and record which dependencies are blocking, preserving user notes
-          patch = {
-            ...patch,
-            status: 'blocked',
-            notes: buildBlockedNotes(blockedBy, task.notes as string | null)
-          }
+      // Dependency check (task-level + epic-level)
+      const { shouldBlock, blockedBy } = computeBlockState(task, { logger, listTasks, listGroups })
+      if (shouldBlock) {
+        // Auto-block and record which dependencies are blocking, preserving user notes
+        patch = {
+          ...patch,
+          status: 'blocked',
+          notes: buildBlockedNotes(blockedBy, task.notes as string | null)
         }
       }
 

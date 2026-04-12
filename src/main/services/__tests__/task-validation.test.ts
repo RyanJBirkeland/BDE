@@ -13,17 +13,18 @@ vi.mock('../dependency-service', () => ({
   buildBlockedNotes: vi.fn(
     (blockedBy: string[]) => `[auto-block] Blocked by: ${blockedBy.join(', ')}`
   ),
-  checkTaskDependencies: vi.fn().mockReturnValue({ shouldBlock: false, blockedBy: [] }),
+  computeBlockState: vi.fn().mockReturnValue({ shouldBlock: false, blockedBy: [] }),
   createDependencyIndex: vi.fn().mockReturnValue({
     areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true })
   })
 }))
 
 import { validateTaskCreation } from '../task-validation'
-import { checkTaskDependencies } from '../dependency-service'
+import { computeBlockState } from '../dependency-service'
 
 const mockLogger = { warn: vi.fn() }
 const mockListTasks = vi.fn().mockReturnValue([])
+const mockListGroups = vi.fn().mockReturnValue([])
 
 describe('validateTaskCreation', () => {
   beforeEach(() => {
@@ -33,7 +34,7 @@ describe('validateTaskCreation', () => {
   it('accepts a valid backlog task with title and repo only', () => {
     const result = validateTaskCreation(
       { title: 'Fix bug', repo: 'bde', status: 'backlog' } as any,
-      { logger: mockLogger, listTasks: mockListTasks }
+      { logger: mockLogger, listTasks: mockListTasks, listGroups: mockListGroups }
     )
     expect(result.valid).toBe(true)
     expect(result.errors).toEqual([])
@@ -76,7 +77,7 @@ describe('validateTaskCreation', () => {
   })
 
   it('auto-blocks task with unsatisfied hard dependencies', () => {
-    vi.mocked(checkTaskDependencies).mockReturnValue({
+    vi.mocked(computeBlockState).mockReturnValue({
       shouldBlock: true,
       blockedBy: ['dep-1']
     })
@@ -100,7 +101,7 @@ describe('validateTaskCreation', () => {
   })
 
   it('does not auto-block when dependencies are satisfied', () => {
-    vi.mocked(checkTaskDependencies).mockReturnValue({
+    vi.mocked(computeBlockState).mockReturnValue({
       shouldBlock: false,
       blockedBy: []
     })
@@ -135,12 +136,12 @@ describe('validateTaskCreation', () => {
     })
 
     expect(result.valid).toBe(true)
-    expect(checkTaskDependencies).not.toHaveBeenCalled()
+    expect(computeBlockState).not.toHaveBeenCalled()
   })
 
   it('uses provided listTasks override', () => {
     const customListTasks = vi.fn().mockReturnValue([])
-    vi.mocked(checkTaskDependencies).mockReturnValue({
+    vi.mocked(computeBlockState).mockReturnValue({
       shouldBlock: false,
       blockedBy: []
     })
@@ -153,17 +154,25 @@ describe('validateTaskCreation', () => {
       spec: validSpec,
       depends_on: [{ id: 'dep-1', type: 'hard' }]
     }
-    validateTaskCreation(input as any, { logger: mockLogger, listTasks: customListTasks })
+    validateTaskCreation(input as any, {
+      logger: mockLogger,
+      listTasks: customListTasks,
+      listGroups: mockListGroups
+    })
 
-    expect(checkTaskDependencies).toHaveBeenCalledWith(
-      'new-task',
-      input.depends_on,
+    expect(computeBlockState).toHaveBeenCalledWith(
       expect.objectContaining({
-        warn: mockLogger.warn,
-        info: expect.any(Function),
-        error: expect.any(Function)
+        id: 'new-task',
+        depends_on: input.depends_on,
+        group_id: null
       }),
-      customListTasks
+      expect.objectContaining({
+        logger: expect.objectContaining({
+          warn: mockLogger.warn
+        }),
+        listTasks: customListTasks,
+        listGroups: expect.any(Function)
+      })
     )
   })
 })

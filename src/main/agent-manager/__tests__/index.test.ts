@@ -1066,10 +1066,14 @@ describe('createAgentManager', () => {
       expect(vi.mocked(resolveDependents)).toHaveBeenCalledWith(
         'task-1',
         'done',
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        logger
+        expect.anything(), // depIndex
+        expect.anything(), // getTask
+        expect.anything(), // updateTask
+        logger,
+        expect.anything(), // getSetting
+        expect.anything(), // epicIndex
+        expect.anything(), // getGroup
+        expect.anything() // listGroupTasks
       )
     })
 

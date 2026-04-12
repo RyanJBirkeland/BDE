@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { formatBlockedNote, stripBlockedNote, buildBlockedNotes } from '../dependency-service'
+import {
+  formatBlockedNote,
+  stripBlockedNote,
+  buildBlockedNotes,
+  computeBlockState
+} from '../dependency-service'
 
 // Mock for createDependencyIndex used by checkTaskDependencies
 vi.mock('../dependency-service', async (importOriginal) => {
@@ -135,5 +140,136 @@ describe('checkTaskDependencies', () => {
     expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('checkTaskDependencies failed for task-1')
     )
+  })
+})
+
+describe('computeBlockState', () => {
+  const mockLogger = {
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn()
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should return not blocked when no deps and no epic deps', () => {
+    const task ={ id: 'task-1', depends_on: null, group_id: null }
+    const ctx = {
+      logger: mockLogger,
+      listTasks: () => [],
+      listGroups: () => []
+    }
+
+    const result = computeBlockState(task, ctx)
+    expect(result).toEqual({ shouldBlock: false, blockedBy: [] })
+  })
+
+  it('should return blocked by task deps when task deps unsatisfied', () => {
+    const task ={
+      id: 'task-1',
+      depends_on: [{ id: 'task-2', type: 'hard' }],
+      group_id: null
+    }
+    const ctx = {
+      logger: mockLogger,
+      listTasks: () => [
+        { id: 'task-1', status: 'blocked', depends_on: null, group_id: null },
+        { id: 'task-2', status: 'queued', depends_on: null, group_id: null }
+      ],
+      listGroups: () => []
+    }
+
+    const result = computeBlockState(task, ctx)
+    expect(result.shouldBlock).toBe(true)
+    expect(result.blockedBy).toEqual(['task-2'])
+  })
+
+  it('should return blocked by epic deps with epic: prefix when epic deps unsatisfied', () => {
+    const task ={
+      id: 'task-1',
+      depends_on: null,
+      group_id: 'epic-2'
+    }
+    const ctx = {
+      logger: mockLogger,
+      listTasks: () => [
+        { id: 'task-1', status: 'queued', depends_on: null, group_id: 'epic-2' },
+        { id: 'task-in-epic-1', status: 'queued', depends_on: null, group_id: 'epic-1' }
+      ],
+      listGroups: () => [
+        {
+          id: 'epic-1',
+          name: 'Epic 1',
+          status: 'in-pipeline',
+          depends_on: null,
+          icon: '',
+          accent_color: '',
+          goal: null,
+          created_at: '',
+          updated_at: ''
+        },
+        {
+          id: 'epic-2',
+          name: 'Epic 2',
+          status: 'in-pipeline',
+          depends_on: [{ id: 'epic-1', condition: 'on_success' }],
+          icon: '',
+          accent_color: '',
+          goal: null,
+          created_at: '',
+          updated_at: ''
+        }
+      ]
+    }
+
+    const result = computeBlockState(task, ctx)
+    expect(result.shouldBlock).toBe(true)
+    expect(result.blockedBy).toEqual(['epic:epic-1'])
+  })
+
+  it('should combine task and epic blockers when both unsatisfied', () => {
+    const task ={
+      id: 'task-1',
+      depends_on: [{ id: 'task-2', type: 'hard' }],
+      group_id: 'epic-2'
+    }
+    const ctx = {
+      logger: mockLogger,
+      listTasks: () => [
+        { id: 'task-1', status: 'blocked', depends_on: null, group_id: 'epic-2' },
+        { id: 'task-2', status: 'queued', depends_on: null, group_id: null },
+        { id: 'task-in-epic-1', status: 'queued', depends_on: null, group_id: 'epic-1' }
+      ],
+      listGroups: () => [
+        {
+          id: 'epic-1',
+          name: 'Epic 1',
+          status: 'in-pipeline',
+          depends_on: null,
+          icon: '',
+          accent_color: '',
+          goal: null,
+          created_at: '',
+          updated_at: ''
+        },
+        {
+          id: 'epic-2',
+          name: 'Epic 2',
+          status: 'in-pipeline',
+          depends_on: [{ id: 'epic-1', condition: 'on_success' }],
+          icon: '',
+          accent_color: '',
+          goal: null,
+          created_at: '',
+          updated_at: ''
+        }
+      ]
+    }
+
+    const result = computeBlockState(task, ctx)
+    expect(result.shouldBlock).toBe(true)
+    expect(result.blockedBy).toEqual(['task-2', 'epic:epic-1'])
   })
 })

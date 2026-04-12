@@ -5,9 +5,9 @@
  * to eliminate duplicated validation logic.
  */
 import { validateStructural } from '../../shared/spec-validation'
-import { buildBlockedNotes, checkTaskDependencies } from './dependency-service'
+import { buildBlockedNotes, computeBlockState } from './dependency-service'
 import type { CreateTaskInput } from '../data/sprint-queries'
-import type { SprintTask, TaskDependency } from '../../shared/types'
+import type { SprintTask, TaskDependency, TaskGroup } from '../../shared/types'
 
 export interface TaskCreationResult {
   valid: boolean
@@ -21,6 +21,8 @@ interface ValidateOptions {
   logger: { warn: (...args: unknown[]) => void }
   /** Function to list tasks for dependency resolution */
   listTasks: (status?: string) => SprintTask[]
+  /** Function to list task groups for epic dependency resolution */
+  listGroups: () => TaskGroup[]
 }
 
 /**
@@ -44,19 +46,25 @@ export function validateTaskCreation(
     return { valid: false, errors: structural.errors, task: input }
   }
 
-  // 2. Auto-block tasks with unsatisfied hard dependencies
+  // 2. Auto-block tasks with unsatisfied hard dependencies (task-level + epic-level)
   let task = { ...input }
   const dependsOn = task.depends_on as TaskDependency[] | undefined
-  if (dependsOn && dependsOn.length > 0 && (task.status === 'queued' || !task.status)) {
-    const { shouldBlock, blockedBy } = checkTaskDependencies(
-      'new-task',
-      dependsOn,
+  if ((dependsOn && dependsOn.length > 0 && (task.status === 'queued' || !task.status)) || task.group_id) {
+    const { shouldBlock, blockedBy } = computeBlockState(
       {
-        warn: opts.logger.warn,
-        info: (..._args: unknown[]) => {},
-        error: (..._args: unknown[]) => {}
+        id: 'new-task',
+        depends_on: dependsOn ?? null,
+        group_id: task.group_id ?? null
       },
-      opts.listTasks
+      {
+        logger: {
+          warn: opts.logger.warn,
+          info: (..._args: unknown[]) => {},
+          error: (..._args: unknown[]) => {}
+        },
+        listTasks: opts.listTasks,
+        listGroups: opts.listGroups
+      }
     )
     if (shouldBlock) {
       task = {

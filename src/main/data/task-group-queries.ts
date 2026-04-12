@@ -354,3 +354,22 @@ export function updateGroupDependencyCondition(
     throw err
   }
 }
+
+/**
+ * Get all task groups with their dependencies for index rebuilding.
+ * Returns id + depends_on for all groups (not just those with dependencies).
+ */
+export function getGroupsWithDependencies(
+  db?: Database.Database
+): Array<{ id: string; depends_on: EpicDependency[] | null }> {
+  const conn = db ?? getDb()
+  const rows = conn.prepare('SELECT id, depends_on FROM task_groups').all() as Array<{
+    id: string
+    depends_on: string | null
+  }>
+
+  return rows.map((row) => ({
+    id: row.id,
+    depends_on: row.depends_on ? (JSON.parse(row.depends_on) as EpicDependency[]) : null
+  }))
+}
