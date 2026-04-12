@@ -119,6 +119,27 @@ export function insertAgentRecord(
   )
 }
 
+const AGENT_UPDATE_ALLOWLIST = new Set([
+  'pid',
+  'bin',
+  'task',
+  'repo',
+  'repo_path',
+  'model',
+  'status',
+  'log_path',
+  'started_at',
+  'finished_at',
+  'exit_code',
+  'source',
+  'cost_usd',
+  'tokens_in',
+  'tokens_out',
+  'sprint_task_id',
+  'worktree_path',
+  'branch'
+])
+
 const AGENT_COLUMN_MAP: Record<string, string> = {
   pid: 'pid',
   bin: 'bin',
@@ -140,6 +161,11 @@ const AGENT_COLUMN_MAP: Record<string, string> = {
   branch: 'branch'
 }
 
+// Module-load assertion: AGENT_COLUMN_MAP must match AGENT_UPDATE_ALLOWLIST
+if (Object.keys(AGENT_COLUMN_MAP).length !== AGENT_UPDATE_ALLOWLIST.size) {
+  throw new Error('AGENT_COLUMN_MAP/AGENT_UPDATE_ALLOWLIST size mismatch')
+}
+
 // DL-33: Return mapped AgentMeta for consistency with other query functions
 export function updateAgentMeta(
   db: Database.Database,
@@ -152,10 +178,6 @@ export function updateAgentMeta(
   for (const [key, value] of Object.entries(patch)) {
     const col = AGENT_COLUMN_MAP[key]
     if (col) {
-      // QA-18: Defense-in-depth regex assertion for SQL column names
-      if (!/^[a-z_]+$/.test(col)) {
-        throw new Error(`Invalid column name: ${col}`)
-      }
       setClauses.push(`${col} = ?`)
       values.push(value)
     }
