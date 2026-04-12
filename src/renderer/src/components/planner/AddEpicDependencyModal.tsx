@@ -224,7 +224,7 @@ export function AddEpicDependencyModal({
                     />
                     <span>Manual checkpoint</span>
                     <span className="modal-radio-hint">
-                      Requires explicit "Mark Complete" action on upstream epic
+                      Requires explicit &ldquo;Mark Complete&rdquo; action on upstream epic
                     </span>
                   </label>
                 </div>

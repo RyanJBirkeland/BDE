@@ -1,12 +1,11 @@
 /**
  * Group handler unit tests — epic dependency IPC round-trip
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import Database from 'better-sqlite3'
-import type { TaskGroup, EpicDependency } from '../../../shared/types'
+import type { EpicDependency } from '../../../shared/types'
 import {
   createGroup,
-  listGroups,
   getGroup,
   addGroupDependency,
   removeGroupDependency,

@@ -1,7 +1,7 @@
 /**
  * ConsoleHeader — 56px glass header for AgentConsole with status, model, duration, cost, and actions.
  */
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Terminal, StopCircle, Copy, GitPullRequest } from 'lucide-react'
 import './ConsoleHeader.css'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
@@ -10,6 +10,7 @@ import { useTerminalStore } from '../../stores/terminal'
 import { toast } from '../../stores/toasts'
 import { formatDuration, formatElapsed } from '../../lib/format'
 import { useBackoffInterval } from '../../hooks/useBackoffInterval'
+import { useVisibilityAwareInterval } from '../../hooks/useVisibilityAwareInterval'
 import { derivePhaseLabel } from '../../lib/agent-phase'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useCodeReviewStore } from '../../stores/codeReview'
@@ -51,17 +52,16 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
   useBackoffInterval(fetchCtx, 3000, { maxMs: 10_000 })
 
   // Live duration ticker for running agents
-  useEffect(() => {
-    if (!isRunning) return
-    const interval = setInterval(() => {
+  useVisibilityAwareInterval(
+    () => {
       setDuration(
         agent.finishedAt
           ? formatDuration(agent.startedAt, agent.finishedAt)
           : formatElapsed(new Date(agent.startedAt).getTime())
       )
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [isRunning, agent.startedAt, agent.finishedAt])
+    },
+    isRunning ? 1000 : null
+  )
 
   // Extract cost from completed event or agent meta
   const completedEvent = events.find(

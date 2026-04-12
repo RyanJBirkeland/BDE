@@ -49,7 +49,6 @@ import * as reviewPr from '../review-pr-service'
 import * as sprintService from '../sprint-service'
 import * as postMergeDedup from '../post-merge-dedup'
 import * as gitOps from '../../agent-manager/git-operations'
-import { notifySprintMutation } from '../../handlers/sprint-listeners'
 
 const execFileMock = vi.mocked(execFile)
 

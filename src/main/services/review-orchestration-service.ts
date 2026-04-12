@@ -27,6 +27,7 @@ import type {
   RebaseInput,
   RebaseResult
 } from './review-orchestration-types'
+import type { SprintTask } from '../../shared/types/task-types'
 
 export type {
   MergeLocallyInput,
@@ -47,7 +48,7 @@ const execFileAsync = promisify(execFile)
 const logger = createLogger('review-orchestration')
 const repo = createSprintTaskRepository()
 
-function getRepoConfig(name: string) {
+function getRepoConfig(name: string): { name: string; localPath: string } | null {
   const repos = getSettingJson<Array<{ name: string; localPath: string }>>('repos')
   return repos?.find((r) => r.name.toLowerCase() === name.toLowerCase()) ?? null
 }
@@ -57,12 +58,12 @@ async function runPlan(
   input: Parameters<typeof classifyReviewAction>[0],
   env: NodeJS.ProcessEnv,
   onTerminal: (taskId: string, status: string) => void | Promise<void>
-) {
+): Promise<ReturnType<typeof executeReviewAction>> {
   return executeReviewAction(classifyReviewAction(input), taskId, {
     repo,
     broadcast: (event: string, payload: unknown) => {
       if (event === 'sprint:mutation' && typeof payload === 'object' && payload !== null) {
-        const { type, task } = payload as { type: 'created' | 'updated' | 'deleted'; task: any }
+        const { type, task } = payload as { type: 'created' | 'updated' | 'deleted'; task: SprintTask }
         notifySprintMutation(type, task)
       }
     },
@@ -196,7 +197,7 @@ export async function rebase(i: RebaseInput): Promise<RebaseResult> {
         repo,
         broadcast: (event: string, payload: unknown) => {
           if (event === 'sprint:mutation' && typeof payload === 'object' && payload !== null) {
-            const { type, task } = payload as { type: 'created' | 'updated' | 'deleted'; task: any }
+            const { type, task } = payload as { type: 'created' | 'updated' | 'deleted'; task: SprintTask }
             notifySprintMutation(type, task)
           }
         },

@@ -26,23 +26,27 @@ export function useReviewCommits(taskId: string | null): ReviewCommitsResult {
       return
     }
 
-    setLoading('commits', true)
-    setError(null)
+    const worktreePath = task.worktree_path
 
-    window.api.review
-      .getCommits({ worktreePath: task.worktree_path, base: 'origin/main' })
-      .then((result) => {
+    void (async () => {
+      setLoading('commits', true)
+      setError(null)
+
+      try {
+        const result = await window.api.review.getCommits({
+          worktreePath,
+          base: 'origin/main'
+        })
         if (!cancelled) setCommits(result.commits)
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!cancelled) {
           setCommits([])
           setError(err instanceof Error ? err.message : 'Failed to load commits')
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading('commits', false)
-      })
+      }
+    })()
 
     return () => {
       cancelled = true

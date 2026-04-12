@@ -47,7 +47,7 @@ export function EpicDependencySection({
 
         {isEmpty ? (
           <p className="epic-deps__empty">
-            No upstream epics. This epic's tasks can run as soon as they're queued.
+            No upstream epics. This epic&apos;s tasks can run as soon as they&apos;re queued.
           </p>
         ) : (
           <div className="epic-deps__list">
