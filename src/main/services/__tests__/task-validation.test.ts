@@ -23,6 +23,7 @@ import { validateTaskCreation } from '../task-validation'
 import { checkTaskDependencies } from '../dependency-service'
 
 const mockLogger = { warn: vi.fn() }
+const mockListTasks = vi.fn().mockReturnValue([])
 
 describe('validateTaskCreation', () => {
   beforeEach(() => {
@@ -32,7 +33,7 @@ describe('validateTaskCreation', () => {
   it('accepts a valid backlog task with title and repo only', () => {
     const result = validateTaskCreation(
       { title: 'Fix bug', repo: 'bde', status: 'backlog' } as any,
-      { logger: mockLogger }
+      { logger: mockLogger, listTasks: mockListTasks }
     )
     expect(result.valid).toBe(true)
     expect(result.errors).toEqual([])
@@ -40,7 +41,8 @@ describe('validateTaskCreation', () => {
 
   it('rejects task with empty title', () => {
     const result = validateTaskCreation({ title: '', repo: 'bde', status: 'backlog' } as any, {
-      logger: mockLogger
+      logger: mockLogger,
+      listTasks: mockListTasks
     })
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('title is required')
@@ -48,7 +50,8 @@ describe('validateTaskCreation', () => {
 
   it('rejects task with empty repo', () => {
     const result = validateTaskCreation({ title: 'Fix', repo: '', status: 'backlog' } as any, {
-      logger: mockLogger
+      logger: mockLogger,
+      listTasks: mockListTasks
     })
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('repo is required')
@@ -56,7 +59,8 @@ describe('validateTaskCreation', () => {
 
   it('rejects queued task without spec', () => {
     const result = validateTaskCreation({ title: 'Fix', repo: 'bde', status: 'queued' } as any, {
-      logger: mockLogger
+      logger: mockLogger,
+      listTasks: mockListTasks
     })
     expect(result.valid).toBe(false)
     expect(result.errors).toContain('spec is required')
@@ -64,7 +68,10 @@ describe('validateTaskCreation', () => {
 
   it('returns the original task when no blocking needed', () => {
     const input = { title: 'Fix', repo: 'bde', status: 'backlog' }
-    const result = validateTaskCreation(input as any, { logger: mockLogger })
+    const result = validateTaskCreation(input as any, {
+      logger: mockLogger,
+      listTasks: mockListTasks
+    })
     expect(result.task).toEqual(input)
   })
 
@@ -82,7 +89,10 @@ describe('validateTaskCreation', () => {
       spec: validSpec,
       depends_on: [{ id: 'dep-1', type: 'hard' }]
     }
-    const result = validateTaskCreation(input as any, { logger: mockLogger })
+    const result = validateTaskCreation(input as any, {
+      logger: mockLogger,
+      listTasks: mockListTasks
+    })
 
     expect(result.valid).toBe(true)
     expect(result.task.status).toBe('blocked')
@@ -103,7 +113,10 @@ describe('validateTaskCreation', () => {
       spec: validSpec,
       depends_on: [{ id: 'dep-1', type: 'hard' }]
     }
-    const result = validateTaskCreation(input as any, { logger: mockLogger })
+    const result = validateTaskCreation(input as any, {
+      logger: mockLogger,
+      listTasks: mockListTasks
+    })
 
     expect(result.valid).toBe(true)
     expect(result.task.status).toBe('queued')
@@ -116,7 +129,10 @@ describe('validateTaskCreation', () => {
       status: 'backlog',
       depends_on: [{ id: 'dep-1', type: 'hard' }]
     }
-    const result = validateTaskCreation(input as any, { logger: mockLogger })
+    const result = validateTaskCreation(input as any, {
+      logger: mockLogger,
+      listTasks: mockListTasks
+    })
 
     expect(result.valid).toBe(true)
     expect(checkTaskDependencies).not.toHaveBeenCalled()

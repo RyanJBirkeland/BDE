@@ -7,7 +7,6 @@
 import { validateStructural } from '../../shared/spec-validation'
 import { buildBlockedNotes, checkTaskDependencies } from './dependency-service'
 import type { CreateTaskInput } from '../data/sprint-queries'
-import { listTasks as queryListTasks } from '../data/sprint-queries'
 import type { SprintTask, TaskDependency } from '../../shared/types'
 
 export interface TaskCreationResult {
@@ -20,8 +19,8 @@ export interface TaskCreationResult {
 interface ValidateOptions {
   /** Logger for dependency check messages */
   logger: { warn: (...args: unknown[]) => void }
-  /** Override for listing tasks (useful for testing) */
-  listTasks?: (status?: string) => SprintTask[]
+  /** Function to list tasks for dependency resolution */
+  listTasks: (status?: string) => SprintTask[]
 }
 
 /**
@@ -34,8 +33,6 @@ export function validateTaskCreation(
   input: CreateTaskInput,
   opts: ValidateOptions
 ): TaskCreationResult {
-  const listTasks = opts.listTasks ?? queryListTasks
-
   // 1. Structural validation — relaxed for backlog (only title + repo required)
   const structural = validateStructural({
     title: input.title,
@@ -59,7 +56,7 @@ export function validateTaskCreation(
         info: (..._args: unknown[]) => {},
         error: (..._args: unknown[]) => {}
       },
-      listTasks
+      opts.listTasks
     )
     if (shouldBlock) {
       task = {
