@@ -248,6 +248,21 @@ html.theme-pro-dark {
     rgba(30, 31, 34, 0.98) 100%
   );
   --gradient-scanline: none;
+  --gradient-horizon: linear-gradient(
+    160deg,
+    rgba(74, 136, 199, 0.02) 0%,
+    rgba(138, 124, 181, 0.015) 50%,
+    rgba(20, 20, 20, 0) 100%
+  );
+  --gradient-shimmer: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+
+  /* ── v2 — Glass surface ─────────────────────────────── */
+  --glass-surface: rgba(10, 14, 24, 0.95);
 
   /* ── v2 — Glass tints ───────────────────────────────── */
   --glass-tint-dark: rgba(30, 31, 34, 0.75);
@@ -421,6 +436,9 @@ html.theme-pro-light {
     rgba(0, 0, 0, 0.02) 50%,
     rgba(0, 0, 0, 0) 100%
   );
+
+  /* ── v2 — Glass surface ─────────────────────────────── */
+  --glass-surface: rgba(255, 255, 255, 0.95);
 
   /* ── v2 — Glass tints ───────────────────────────────── */
   --glass-tint-dark: rgba(255, 255, 255, 0.75);
