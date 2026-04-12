@@ -28,7 +28,7 @@ import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
 import { getSettingJson } from '../settings'
-import { notifySprintMutation } from '../handlers/sprint-listeners'
+import { notifySprintMutation } from './sprint-service'
 
 const execFileAsync = promisify(execFile)
 const logger = createLogger('review-orchestration')
