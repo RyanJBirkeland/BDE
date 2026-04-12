@@ -232,11 +232,11 @@ html.theme-pro-dark {
   --bde-glass-bg-active: rgba(255, 255, 255, 0.06);
 
   /* ── v2 — Gradients ─────────────────────────────────── */
-  --gradient-aurora: none;
-  --gradient-electric: none;
-  --gradient-solar: none;
-  --gradient-ember: none;
-  --gradient-frost: none;
+  --gradient-aurora: linear-gradient(135deg, #00d37f 0%, #00b4d8 100%);
+  --gradient-electric: linear-gradient(135deg, #6c8eef 0%, #a78bfa 50%, #c084fc 100%);
+  --gradient-solar: linear-gradient(135deg, #ffaa33 0%, #ff6b35 100%);
+  --gradient-ember: linear-gradient(135deg, #ff453a 0%, #ff6b8a 100%);
+  --gradient-frost: linear-gradient(180deg, rgba(90, 120, 200, 0.06) 0%, rgba(60, 60, 120, 0.02) 100%);
   --gradient-midnight: linear-gradient(
     180deg,
     rgba(20, 20, 20, 0.95) 0%,
