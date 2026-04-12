@@ -415,12 +415,14 @@ export class AgentManagerImpl implements AgentManager {
             notes: `Repo "${task.repo}" is not configured in BDE settings. Add it in Settings > Repos, then reset this task to queued.`,
             claimed_by: null
           })
-          await this.onTaskTerminal(task.id, 'error')
         } catch (err) {
           this.logger.warn(
             `[agent-manager] Failed to update task ${task.id} after repo resolution failure: ${err}`
           )
         }
+        await this.onTaskTerminal(task.id, 'error').catch((err) =>
+          this.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
+        )
         return
       }
 
@@ -467,7 +469,9 @@ export class AgentManagerImpl implements AgentManager {
           notes,
           claimed_by: null
         })
-        await this.onTaskTerminal(task.id, 'error')
+        await this.onTaskTerminal(task.id, 'error').catch((err) =>
+          this.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
+        )
         return
       }
 
