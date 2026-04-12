@@ -146,7 +146,7 @@ describe('ConsoleCard', () => {
     expect(container.querySelector('.console-completion-card--failed')).not.toBeInTheDocument()
     expect(screen.getByText(/completed successfully/)).toBeInTheDocument()
     expect(screen.getByText('$0.48')).toBeInTheDocument()
-    expect(screen.getByText('142K')).toBeInTheDocument()
+    expect(screen.getByText('142.0K')).toBeInTheDocument()
     expect(screen.getByText('8.2K')).toBeInTheDocument()
     expect(screen.getByText('5m 14s')).toBeInTheDocument()
   })
