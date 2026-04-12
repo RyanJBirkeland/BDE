@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createTaskTerminalService } from '../task-terminal-service'
 import type { TaskTerminalServiceDeps } from '../task-terminal-service'
 
+vi.mock('../../broadcast', () => ({
+  broadcast: vi.fn(),
+  broadcastCoalesced: vi.fn()
+}))
+
 function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTerminalServiceDeps {
   return {
     getTask: vi.fn().mockReturnValue({

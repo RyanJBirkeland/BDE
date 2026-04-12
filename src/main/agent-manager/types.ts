@@ -1,5 +1,20 @@
 import { join } from 'node:path'
 import { homedir } from 'node:os'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
+import type { Logger } from '../logger'
+
+/**
+ * Conceptual parameters for resolveDependents() orchestration.
+ * Used to document the coupling between agent-manager and task-terminal-service.
+ * Both modules resolve blocked dependents but with different orchestration strategies.
+ */
+export interface ResolveDependentsParams {
+  taskId: string
+  terminalStatus: string
+  repo: ISprintTaskRepository
+  logger: Logger
+}
+
 export interface AgentManagerConfig {
   maxConcurrent: number
   worktreeBase: string

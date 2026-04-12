@@ -9,6 +9,8 @@ import {
   type EpicDependencyIndex
 } from './epic-dependency-service'
 import type { SprintTask, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
+import { broadcast } from '../broadcast'
+import { getErrorMessage } from '../../shared/errors'
 
 type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes' | 'title' | 'group_id'> & {
   depends_on: TaskDependency[] | null
@@ -52,6 +54,11 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
         _resolveTimer = null
         try {
           rebuildIndex() // Rebuild once for the batch
+          // DESIGN: Batched resolution via setTimeout(0) for bulk PR merges.
+          // When multiple PRs merge simultaneously (e.g., sprint PR poller tick),
+          // we rebuild the dependency index once and process all resolutions together.
+          // This differs from agent-manager's inline synchronous approach.
+          // See ResolveDependentsParams in agent-manager/types.ts for the conceptual contract.
           for (const [id, terminalStatus] of _pendingResolution) {
             try {
               resolveDependents(
@@ -74,6 +81,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
           }
         } catch (err) {
           deps.logger.error(`[task-terminal-service] rebuildIndex failed: ${err}`)
+          broadcast('task-terminal:resolution-error', { error: getErrorMessage(err) })
         } finally {
           _pendingResolution.clear()
         }

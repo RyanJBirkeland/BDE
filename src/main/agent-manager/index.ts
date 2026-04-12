@@ -236,6 +236,11 @@ export class AgentManagerImpl implements AgentManager {
       if (this.config.onStatusTerminal) {
         this.config.onStatusTerminal(taskId, status)
       } else {
+        // DESIGN: Inline resolution for immediate drain loop feedback.
+        // When a pipeline agent completes, we resolve dependents synchronously
+        // so the drain loop can claim newly-unblocked tasks in the same tick.
+        // This differs from task-terminal-service's batched setTimeout(0) approach.
+        // See ResolveDependentsParams in types.ts for the conceptual contract.
         try {
           resolveDependents(
             taskId,
