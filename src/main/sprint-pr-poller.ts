@@ -64,10 +64,16 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
           `[sprint-pr-poller] PR #${prNumber} merged — marked ${ids.length} task(s) done: ${ids.join(', ') || '(none)'}`
         )
         if (deps.onTaskTerminal) {
-          for (const id of ids) {
+          const promises = ids.map((id) => {
             log.info(`[sprint-pr-poller] Calling onTaskTerminal(${id}, 'done')`)
-            deps.onTaskTerminal(id, 'done')
-          }
+            return Promise.resolve(deps.onTaskTerminal!(id, 'done'))
+          })
+          const results = await Promise.allSettled(promises)
+          results.forEach((r, i) => {
+            if (r.status === 'rejected') {
+              log.warn(`[sprint-pr-poller] onTaskTerminal failed for ${ids[i]}: ${r.reason}`)
+            }
+          })
         } else {
           log.warn(
             `[sprint-pr-poller] onTaskTerminal not wired — dependency resolution will not fire`
@@ -80,7 +86,13 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
             `[sprint-pr-poller] PR #${prNumber} closed — cancelled ${ids.length} task(s): ${ids.join(', ')}`
           )
           if (deps.onTaskTerminal) {
-            for (const id of ids) deps.onTaskTerminal(id, 'cancelled')
+            const promises = ids.map((id) => Promise.resolve(deps.onTaskTerminal!(id, 'cancelled')))
+            const results = await Promise.allSettled(promises)
+            results.forEach((r, i) => {
+              if (r.status === 'rejected') {
+                log.warn(`[sprint-pr-poller] onTaskTerminal failed for ${ids[i]}: ${r.reason}`)
+              }
+            })
           }
         }
       }
