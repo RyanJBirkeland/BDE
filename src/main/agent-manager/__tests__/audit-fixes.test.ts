@@ -52,35 +52,13 @@ describe('sanitizeForGit (AM-3)', () => {
 // ---------------------------------------------------------------------------
 
 describe('handleWatchdogVerdict claimed_by clearing (AM-4)', () => {
-  let updateTaskFn: ReturnType<typeof vi.fn>
-  let onTerminal: ReturnType<typeof vi.fn>
-  const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-
-  beforeEach(() => {
-    updateTaskFn = vi.fn()
-    onTerminal = vi.fn().mockResolvedValue(undefined)
-    logger.info.mockClear()
-    logger.warn.mockClear()
-    logger.error.mockClear()
-  })
-
   it('clears claimed_by on max-runtime kill', () => {
     const concurrency = makeConcurrencyState(2)
     const now = nowIso()
 
-    handleWatchdogVerdict(
-      'max-runtime',
-      'task-123',
-      concurrency,
-      now,
-      updateTaskFn,
-      onTerminal,
-      logger,
-      3600000
-    )
+    const result = handleWatchdogVerdict('max-runtime', concurrency, now, 3600000)
 
-    expect(updateTaskFn).toHaveBeenCalledWith(
-      'task-123',
+    expect(result.taskUpdate).toEqual(
       expect.objectContaining({
         status: 'error',
         completed_at: now,
@@ -94,10 +72,9 @@ describe('handleWatchdogVerdict claimed_by clearing (AM-4)', () => {
     const concurrency = makeConcurrencyState(2)
     const now = nowIso()
 
-    handleWatchdogVerdict('idle', 'task-456', concurrency, now, updateTaskFn, onTerminal, logger)
+    const result = handleWatchdogVerdict('idle', concurrency, now)
 
-    expect(updateTaskFn).toHaveBeenCalledWith(
-      'task-456',
+    expect(result.taskUpdate).toEqual(
       expect.objectContaining({
         status: 'error',
         completed_at: now,
@@ -111,18 +88,9 @@ describe('handleWatchdogVerdict claimed_by clearing (AM-4)', () => {
     const concurrency = makeConcurrencyState(2)
     const now = nowIso()
 
-    handleWatchdogVerdict(
-      'rate-limit-loop',
-      'task-789',
-      concurrency,
-      now,
-      updateTaskFn,
-      onTerminal,
-      logger
-    )
+    const result = handleWatchdogVerdict('rate-limit-loop', concurrency, now)
 
-    expect(updateTaskFn).toHaveBeenCalledWith(
-      'task-789',
+    expect(result.taskUpdate).toEqual(
       expect.objectContaining({
         status: 'queued',
         claimed_by: null

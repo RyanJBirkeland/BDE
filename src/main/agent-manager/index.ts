@@ -41,7 +41,7 @@ import {
   OAUTH_CHECK_CACHE_TTL_MS,
   OAUTH_CHECK_FAIL_CACHE_TTL_MS
 } from './oauth-checker'
-import { handleWatchdogVerdict } from './watchdog-handler'
+import { handleWatchdogVerdict, type WatchdogVerdictResult } from './watchdog-handler'
 import type { WatchdogCheck, WatchdogAction } from './types'
 
 // Re-export for backward compatibility with tests
@@ -53,7 +53,7 @@ export {
   OAUTH_CHECK_FAIL_CACHE_TTL_MS
 }
 export { handleWatchdogVerdict }
-export type { WatchdogCheck, WatchdogAction }
+export type { WatchdogVerdictResult, WatchdogCheck, WatchdogAction }
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to createLogger
@@ -621,19 +621,33 @@ export class AgentManagerImpl implements AgentManager {
       // Delete agent — activeCount is derived from activeAgents.size
       this._activeAgents.delete(agent.taskId)
 
-      // Update task based on verdict
+      // Get verdict decision, then apply side effects
       const now = nowIso()
       const maxRuntimeMs = agent.maxRuntimeMs ?? this.config.maxRuntimeMs
-      this._concurrency = handleWatchdogVerdict(
+      const result = handleWatchdogVerdict(
         verdict,
-        agent.taskId,
         this._concurrency,
         now,
-        this.repo.updateTask,
-        this.onTaskTerminal.bind(this),
-        this.logger,
         maxRuntimeMs
       )
+      this._concurrency = result.concurrency
+
+      if (result.taskUpdate) {
+        try {
+          this.repo.updateTask(agent.taskId, result.taskUpdate)
+        } catch (err) {
+          this.logger.warn(
+            `[agent-manager] Failed to update task ${agent.taskId} after ${verdict}: ${err}`
+          )
+        }
+      }
+      if (result.shouldNotifyTerminal && result.terminalStatus) {
+        this.onTaskTerminal(agent.taskId, result.terminalStatus).catch((err) =>
+          this.logger.warn(
+            `[agent-manager] Failed onTerminal for task ${agent.taskId} after ${verdict}: ${err}`
+          )
+        )
+      }
     }
   }
 
