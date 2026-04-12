@@ -52,7 +52,7 @@
 .dashboard-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 200px 1fr 240px;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--bde-space-3);
   padding: var(--bde-space-3);
   overflow: hidden;
@@ -66,6 +66,11 @@
   gap: 10px;
   overflow-y: auto;
   min-height: 0;
+}
+
+/* StatusRail — override inline width: 110 so it fills the grid cell */
+.dashboard-grid > :first-child {
+  width: auto !important;
 }
 
 .dashboard-col--center {
@@ -208,7 +213,7 @@
 /* Collapse to 2 columns at narrow widths */
 @media (max-width: 900px) {
   .dashboard-grid {
-    grid-template-columns: 180px 1fr;
+    grid-template-columns: 1fr 1fr;
   }
   .dashboard-col:nth-child(3) {
     grid-column: 1 / -1;
@@ -221,7 +226,7 @@
 /* Drop fixed left column at mid-narrow widths */
 @media (max-width: 800px) {
   .dashboard-grid {
-    grid-template-columns: 1fr 240px;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
