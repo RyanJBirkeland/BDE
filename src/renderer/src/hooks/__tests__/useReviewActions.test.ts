@@ -265,4 +265,205 @@ describe('useReviewActions', () => {
     expect(result.current.confirmProps).toBeDefined()
     expect(result.current.promptProps).toBeDefined()
   })
+
+  describe('batch operations', () => {
+    const mockBatchTasks = [
+      { id: 'task-1', title: 'Task 1', spec: 'Spec 1', prompt: '' },
+      { id: 'task-2', title: 'Task 2', spec: 'Spec 2', prompt: '' }
+    ]
+
+    beforeEach(() => {
+      vi.mocked(useCodeReviewStore).mockImplementation((selector: any) => {
+        const state = {
+          selectedTaskId: null,
+          selectTask: vi.fn(),
+          clearBatch: vi.fn()
+        }
+        return selector ? selector(state) : state
+      })
+    })
+
+    it('should handle batchMergeLocally all-success', async () => {
+      const mockLoadData = vi.fn()
+      const mockClearBatch = vi.fn()
+
+      vi.mocked(useSprintTasks).mockImplementation((selector: any) => {
+        const state = {
+          tasks: mockTasks,
+          loadData: mockLoadData
+        }
+        return selector(state)
+      })
+
+      // Mock getState for clearBatch access
+      useCodeReviewStore.getState = vi.fn().mockReturnValue({
+        clearBatch: mockClearBatch
+      })
+
+      window.api.review.mergeLocally = vi.fn().mockResolvedValue({ success: true })
+
+      const { result } = renderHook(() => useReviewActions())
+
+      await act(async () => {
+        await result.current.batchMergeLocally(mockBatchTasks)
+      })
+
+      expect(window.api.review.mergeLocally).toHaveBeenCalledTimes(2)
+      expect(mockClearBatch).toHaveBeenCalled()
+      expect(mockLoadData).toHaveBeenCalled()
+    })
+
+    it('should handle batchMergeLocally all-fail', async () => {
+      const mockLoadData = vi.fn()
+      const mockClearBatch = vi.fn()
+
+      vi.mocked(useSprintTasks).mockImplementation((selector: any) => {
+        const state = {
+          tasks: mockTasks,
+          loadData: mockLoadData
+        }
+        return selector(state)
+      })
+
+      useCodeReviewStore.getState = vi.fn().mockReturnValue({
+        clearBatch: mockClearBatch
+      })
+
+      window.api.review.mergeLocally = vi.fn().mockRejectedValue(new Error('Merge failed'))
+
+      const { result } = renderHook(() => useReviewActions())
+
+      await act(async () => {
+        await result.current.batchMergeLocally(mockBatchTasks)
+      })
+
+      expect(window.api.review.mergeLocally).toHaveBeenCalledTimes(2)
+      expect(mockClearBatch).toHaveBeenCalled()
+      expect(mockLoadData).toHaveBeenCalled()
+    })
+
+    it('should handle batchMergeLocally partial-success', async () => {
+      const mockLoadData = vi.fn()
+      const mockClearBatch = vi.fn()
+
+      vi.mocked(useSprintTasks).mockImplementation((selector: any) => {
+        const state = {
+          tasks: mockTasks,
+          loadData: mockLoadData
+        }
+        return selector(state)
+      })
+
+      useCodeReviewStore.getState = vi.fn().mockReturnValue({
+        clearBatch: mockClearBatch
+      })
+
+      window.api.review.mergeLocally = vi
+        .fn()
+        .mockResolvedValueOnce({ success: true })
+        .mockRejectedValueOnce(new Error('Merge failed'))
+
+      const { result } = renderHook(() => useReviewActions())
+
+      await act(async () => {
+        await result.current.batchMergeLocally(mockBatchTasks)
+      })
+
+      expect(window.api.review.mergeLocally).toHaveBeenCalledTimes(2)
+      expect(mockClearBatch).toHaveBeenCalled()
+      expect(mockLoadData).toHaveBeenCalled()
+    })
+
+    it('should handle batchShipIt all-success', async () => {
+      const mockLoadData = vi.fn()
+      const mockClearBatch = vi.fn()
+
+      vi.mocked(useSprintTasks).mockImplementation((selector: any) => {
+        const state = {
+          tasks: mockTasks,
+          loadData: mockLoadData
+        }
+        return selector(state)
+      })
+
+      useCodeReviewStore.getState = vi.fn().mockReturnValue({
+        clearBatch: mockClearBatch
+      })
+
+      window.api.review.shipIt = vi.fn().mockResolvedValue({ success: true, pushed: true })
+
+      const { result } = renderHook(() => useReviewActions())
+
+      await act(async () => {
+        await result.current.batchShipIt(mockBatchTasks)
+      })
+
+      expect(window.api.review.shipIt).toHaveBeenCalledTimes(2)
+      expect(mockClearBatch).toHaveBeenCalled()
+      expect(mockLoadData).toHaveBeenCalled()
+    })
+
+    it('should handle batchCreatePr all-success', async () => {
+      const mockLoadData = vi.fn()
+      const mockClearBatch = vi.fn()
+
+      vi.mocked(useSprintTasks).mockImplementation((selector: any) => {
+        const state = {
+          tasks: mockTasks,
+          loadData: mockLoadData
+        }
+        return selector(state)
+      })
+
+      useCodeReviewStore.getState = vi.fn().mockReturnValue({
+        clearBatch: mockClearBatch
+      })
+
+      window.api.review.createPr = vi.fn().mockResolvedValue({ prUrl: 'https://github.com/pr/123' })
+
+      const { result } = renderHook(() => useReviewActions())
+
+      await act(async () => {
+        await result.current.batchCreatePr(mockBatchTasks)
+      })
+
+      expect(window.api.review.createPr).toHaveBeenCalledTimes(2)
+      expect(window.api.review.createPr).toHaveBeenCalledWith({
+        taskId: 'task-1',
+        title: 'Task 1',
+        body: 'Spec 1'
+      })
+      expect(mockClearBatch).toHaveBeenCalled()
+      expect(mockLoadData).toHaveBeenCalled()
+    })
+
+    it('should handle batchDiscard all-success', async () => {
+      const mockLoadData = vi.fn()
+      const mockClearBatch = vi.fn()
+
+      vi.mocked(useSprintTasks).mockImplementation((selector: any) => {
+        const state = {
+          tasks: mockTasks,
+          loadData: mockLoadData
+        }
+        return selector(state)
+      })
+
+      useCodeReviewStore.getState = vi.fn().mockReturnValue({
+        clearBatch: mockClearBatch
+      })
+
+      window.api.review.discard = vi.fn().mockResolvedValue(undefined)
+
+      const { result } = renderHook(() => useReviewActions())
+
+      await act(async () => {
+        await result.current.batchDiscard(mockBatchTasks)
+      })
+
+      expect(window.api.review.discard).toHaveBeenCalledTimes(2)
+      expect(mockClearBatch).toHaveBeenCalled()
+      expect(mockLoadData).toHaveBeenCalled()
+    })
+  })
 })
