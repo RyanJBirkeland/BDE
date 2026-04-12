@@ -89,7 +89,7 @@ describe('AgentCard', () => {
   it('applies selected style when selected=true', () => {
     const agent = makeAgent()
     const { container } = render(<AgentCard {...defaultProps} agent={agent} selected={true} />)
-    const neonCard = container.querySelector('.neon-card')
+    const neonCard = container.querySelector('.bde-card')
     expect(neonCard).toBeInTheDocument()
     // Selected card has enhanced glow and border
     const cardStyle = (neonCard as HTMLElement)?.style
@@ -99,7 +99,7 @@ describe('AgentCard', () => {
   it('applies default style when not selected', () => {
     const agent = makeAgent()
     const { container } = render(<AgentCard {...defaultProps} agent={agent} selected={false} />)
-    const neonCard = container.querySelector('.neon-card')
+    const neonCard = container.querySelector('.bde-card')
     expect(neonCard).toBeInTheDocument()
     // Non-selected card doesn't have enhanced styling
     const cardStyle = (neonCard as HTMLElement)?.style

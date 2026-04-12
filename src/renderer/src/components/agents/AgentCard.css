@@ -8,8 +8,8 @@
   box-sizing: border-box;
 }
 
-/* Hover glow effect on the NeonCard */
-.agent-card__button-reset:hover:not([data-selected='true']) .agent-card__neon-card {
+/* Hover glow effect on the card */
+.agent-card__button-reset:hover:not([data-selected='true']) .agent-card__card {
   box-shadow: 0 0 12px var(--bde-accent-dim);
   border: 1px solid var(--bde-accent);
 }

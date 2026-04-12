@@ -4,7 +4,12 @@
   background: var(--bde-surface);
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-lg);
-  transition: border-color var(--bde-transition-base);
+  overflow: hidden;
+  flex-shrink: 0;
+  transition:
+    border-color var(--bde-transition-base),
+    box-shadow var(--bde-transition-base),
+    transform var(--bde-transition-base);
 }
 
 .bde-card--pad-none {
@@ -37,4 +42,50 @@
 
 .bde-card--clickable.bde-card--active:hover {
   border-color: var(--bde-accent);
+}
+
+/* Card with title header */
+.bde-card--with-title {
+  padding: 0;
+}
+
+/* Card without title header */
+.bde-card--no-title {
+  padding: var(--bde-space-3);
+}
+
+/* Card header (title bar) */
+.bde-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-2) var(--bde-space-3);
+}
+
+/* Card header icon */
+.bde-card__icon {
+  display: flex;
+}
+
+/* Card header title */
+.bde-card__title {
+  font-size: var(--bde-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+/* Card header action (right-aligned) */
+.bde-card__action {
+  margin-left: auto;
+}
+
+/* Card body */
+.bde-card__body {
+  padding: var(--bde-space-3);
+}
+
+/* Card body when no title */
+.bde-card__body--no-title {
+  padding: 0;
 }

@@ -23,7 +23,7 @@ describe('NeonCard', () => {
         X
       </NeonCard>
     )
-    expect(container.firstChild).toHaveClass('neon-card', 'custom')
+    expect(container.firstChild).toHaveClass('bde-card', 'custom')
   })
 
   it('renders with header when title is provided', () => {

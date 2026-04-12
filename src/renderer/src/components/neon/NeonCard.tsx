@@ -31,28 +31,28 @@ export function NeonCard({
 
   return (
     <div
-      className={`neon-card ${title ? 'neon-card--with-title' : 'neon-card--no-title'} ${className}`.trim()}
+      className={`bde-card ${title ? 'bde-card--with-title' : 'bde-card--no-title'} ${className}`.trim()}
       style={cardStyle}
     >
       {title && (
         <div
-          className="neon-card__header"
+          className="bde-card__header"
           style={{
             borderBottom: `1px solid ${neonVar(accent, 'border')}`
           }}
         >
           {icon && (
-            <span className="neon-card__icon" style={{ color: neonVar(accent, 'color') }}>
+            <span className="bde-card__icon" style={{ color: neonVar(accent, 'color') }}>
               {icon}
             </span>
           )}
-          <span className="neon-card__title" style={{ color: neonVar(accent, 'color') }}>
+          <span className="bde-card__title" style={{ color: neonVar(accent, 'color') }}>
             {title}
           </span>
-          {action && <span className="neon-card__action">{action}</span>}
+          {action && <span className="bde-card__action">{action}</span>}
         </div>
       )}
-      <div className={title ? 'neon-card__body' : 'neon-card__body--no-title'}>{children}</div>
+      <div className={title ? 'bde-card__body' : 'bde-card__body--no-title'}>{children}</div>
     </div>
   )
 }

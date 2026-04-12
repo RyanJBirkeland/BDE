@@ -117,7 +117,7 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
       >
         <NeonCard
           accent={accent}
-          className="agent-card__neon-card"
+          className="agent-card__card"
           style={{
             padding: 'var(--bde-space-3)',
             boxShadow: selected ? `0 0 16px ${neonVar(accent, 'glow')}` : undefined,
