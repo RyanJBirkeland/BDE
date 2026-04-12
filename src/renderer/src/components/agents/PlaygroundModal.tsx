@@ -252,7 +252,7 @@ export function PlaygroundModal({
                 sandbox="allow-scripts"
                 srcDoc={html}
                 className="playground-modal__iframe"
-                style={{ background: '#ffffff' }}
+                style={{ background: 'var(--bde-surface)' }}
               />
             </div>
           )}

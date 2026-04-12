@@ -75,7 +75,7 @@
 .playground-modal__security-badge {
   font-size: 11px;
   color: var(--bde-warning);
-  background: rgba(255, 193, 7, 0.1);
+  background: var(--bde-warning-surface);
   padding: 2px var(--bde-space-2);
   border-radius: 4px;
   border: 1px solid var(--bde-warning);

@@ -82,8 +82,8 @@
 }
 
 .settings-discovery-modal {
-  background: var(--bde-bg-secondary, #1e1e2e);
-  border: 1px solid var(--bde-border, #333);
+  background: var(--bde-bg-secondary);
+  border: 1px solid var(--bde-border);
   border-radius: var(--bde-space-3);
   width: 560px;
   max-height: 70vh;
@@ -108,14 +108,14 @@
 .settings-discovery-close {
   background: none;
   border: none;
-  color: var(--bde-text-dim, #888);
+  color: var(--bde-text-dim);
   cursor: pointer;
   padding: var(--bde-space-1);
   border-radius: var(--bde-space-1);
 }
 
 .settings-discovery-close:hover {
-  color: var(--bde-text, #fff);
+  color: var(--bde-text);
   background: var(--bde-bg-hover);
 }
 
@@ -123,7 +123,7 @@
   display: flex;
   gap: 0;
   padding: var(--bde-space-3) var(--bde-space-5) 0;
-  border-bottom: 1px solid var(--bde-border, #333);
+  border-bottom: 1px solid var(--bde-border);
 }
 
 .settings-discovery-tab {
@@ -131,19 +131,19 @@
   border: none;
   border-bottom: 2px solid transparent;
   padding: var(--bde-space-2) var(--bde-space-4);
-  color: var(--bde-text-dim, #888);
+  color: var(--bde-text-dim);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
 }
 
 .settings-discovery-tab:hover {
-  color: var(--bde-text, #fff);
+  color: var(--bde-text);
 }
 
 .settings-discovery-tab--active {
-  color: var(--bde-text, #fff);
-  border-bottom-color: var(--bde-accent, #6C8EEF);
+  color: var(--bde-text);
+  border-bottom-color: var(--bde-accent);
 }
 
 .settings-discovery-search {
@@ -151,15 +151,15 @@
   align-items: center;
   gap: var(--bde-space-2);
   padding: var(--bde-space-3) var(--bde-space-5);
-  border-bottom: 1px solid var(--bde-border, #333);
-  color: var(--bde-text-dim, #888);
+  border-bottom: 1px solid var(--bde-border);
+  color: var(--bde-text-dim);
 }
 
 .settings-discovery-search input {
   background: none;
   border: none;
   outline: none;
-  color: var(--bde-text, #fff);
+  color: var(--bde-text);
   font-size: 13px;
   flex: 1;
 }
@@ -195,7 +195,7 @@
 .settings-discovery-row__name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--bde-text, #fff);
+  color: var(--bde-text);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -204,7 +204,7 @@
 .settings-discovery-row__path,
 .settings-discovery-row__desc {
   font-size: 11px;
-  color: var(--bde-text-dim, #888);
+  color: var(--bde-text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -212,18 +212,18 @@
 
 .settings-discovery-row__github {
   font-size: 11px;
-  color: var(--bde-accent, #6C8EEF);
+  color: var(--bde-accent);
 }
 
 .settings-discovery-row__progress {
   font-size: 11px;
-  color: var(--bde-text-dim, #888);
+  color: var(--bde-text-dim);
   font-family: var(--bde-font-mono, monospace);
 }
 
 .settings-discovery-row__error {
   font-size: 11px;
-  color: var(--bde-danger, #EF4444);
+  color: var(--bde-danger);
 }
 
 .settings-discovery-empty {
@@ -232,7 +232,7 @@
   justify-content: center;
   gap: var(--bde-space-2);
   padding: 40px var(--bde-space-5);
-  color: var(--bde-text-dim, #888);
+  color: var(--bde-text-dim);
   font-size: 13px;
 }
 
@@ -241,7 +241,7 @@
   align-items: center;
   gap: var(--bde-space-2);
   padding: var(--bde-space-3) var(--bde-space-5);
-  color: var(--bde-danger, #EF4444);
+  color: var(--bde-danger);
   font-size: 13px;
 }
 
