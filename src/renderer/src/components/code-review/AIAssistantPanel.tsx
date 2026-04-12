@@ -7,6 +7,14 @@ import { ReviewMetricsRow } from './ReviewMetricsRow'
 import { ReviewMessageList } from './ReviewMessageList'
 import { ReviewQuickActions } from './ReviewQuickActions'
 import { ReviewChatInput } from './ReviewChatInput'
+import type { PartnerMessage } from '../../../../shared/review-types'
+
+// Stable reference for the empty-messages fallback. Returning a fresh `[]`
+// literal from a Zustand selector breaks React's useSyncExternalStore contract
+// (getSnapshot must return the same reference when state hasn't changed),
+// which triggers an infinite re-render loop the moment the panel mounts with
+// no messages for the selected task ("Maximum update depth exceeded").
+const EMPTY_MESSAGES: PartnerMessage[] = []
 
 export function AIAssistantPanel(): JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -15,7 +23,7 @@ export function AIAssistantPanel(): JSX.Element {
     selectedTaskId ? s.reviewByTask[selectedTaskId] : undefined
   )
   const messages = useReviewPartnerStore((s) =>
-    selectedTaskId ? (s.messagesByTask[selectedTaskId] ?? []) : []
+    selectedTaskId ? (s.messagesByTask[selectedTaskId] ?? EMPTY_MESSAGES) : EMPTY_MESSAGES
   )
   const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
   const sendMessage = useReviewPartnerStore((s) => s.sendMessage)
