@@ -116,7 +116,7 @@
 
 .settings-discovery-close:hover {
   color: var(--bde-text, #fff);
-  background: var(--bde-bg-hover, #2a2a3a);
+  background: var(--bde-bg-hover);
 }
 
 .settings-discovery-tabs {
@@ -181,7 +181,7 @@
 }
 
 .settings-discovery-row:hover {
-  background: var(--bde-bg-hover, #2a2a3a);
+  background: var(--bde-bg-hover);
 }
 
 .settings-discovery-row__info {

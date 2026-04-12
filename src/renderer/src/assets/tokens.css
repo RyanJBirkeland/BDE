@@ -172,6 +172,9 @@ html.theme-pro-dark {
   --bde-border-glow: #4a88c7;
   --bde-queued: #4a88c7;
   --bde-running: #4a88c7;
+  --bde-bg-hover: rgba(255, 255, 255, 0.04);
+  --bde-bg-subtle: rgba(255, 255, 255, 0.02);
+  --bde-surface-raised: #2b2d30;
 
   /* ── Interaction states ─────────────────────────────── */
   --bde-hover: rgba(255, 255, 255, 0.04);
@@ -316,6 +319,9 @@ html.theme-pro-light {
   --bde-border-glow: #9ca0a8;
   --bde-queued: #2675bf;
   --bde-running: #2675bf;
+  --bde-bg-hover: rgba(0, 0, 0, 0.03);
+  --bde-bg-subtle: rgba(0, 0, 0, 0.015);
+  --bde-surface-raised: #f0f1f3;
 
   /* ── Interaction states ─────────────────────────────── */
   --bde-hover: rgba(0, 0, 0, 0.04);
