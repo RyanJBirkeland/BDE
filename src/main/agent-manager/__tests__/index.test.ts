@@ -1092,6 +1092,7 @@ describe('createAgentManager', () => {
 
     it('guards against duplicate invocation for same taskId', async () => {
       const { resolveDependents } = await import('../resolve-dependents')
+      vi.mocked(resolveDependents).mockClear()
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
 
