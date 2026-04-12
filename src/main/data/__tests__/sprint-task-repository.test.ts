@@ -28,7 +28,8 @@ vi.mock('../sprint-queries', () => ({
   getHealthCheckTasks: vi.fn(),
   getSuccessRateBySpecType: vi.fn(),
   createReviewTaskFromAdhoc: vi.fn(),
-  getDailySuccessRate: vi.fn()
+  getDailySuccessRate: vi.fn(),
+  getFailureReasonBreakdown: vi.fn()
 }))
 
 describe('createSprintTaskRepository', () => {

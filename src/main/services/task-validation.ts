@@ -6,7 +6,7 @@
  */
 import { validateStructural } from '../../shared/spec-validation'
 import { buildBlockedNotes, computeBlockState } from './dependency-service'
-import type { CreateTaskInput } from '../data/sprint-queries'
+import type { CreateTaskInput } from '../data/sprint-task-repository'
 import type { SprintTask, TaskDependency, TaskGroup } from '../../shared/types'
 
 export interface TaskCreationResult {

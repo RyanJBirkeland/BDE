@@ -125,6 +125,7 @@ vi.mock('../../data/sprint-queries', () => ({
   getSuccessRateBySpecType: vi.fn(),
   createReviewTaskFromAdhoc: vi.fn(),
   getDailySuccessRate: vi.fn(),
+  getFailureReasonBreakdown: vi.fn(),
   UPDATE_ALLOWLIST: new Set(['title', 'status'])
 }))
 

@@ -14,10 +14,17 @@ import type {
   CreateTaskInput,
   QueueStats,
   SpecTypeSuccessRate,
-  DailySuccessRate
+  DailySuccessRate,
+  FailureReasonBreakdown
 } from './sprint-queries'
 
-export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate }
+export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate, FailureReasonBreakdown }
+
+// Re-export constants and functions for callers that need them
+export { UPDATE_ALLOWLIST } from './sprint-queries'
+export { pruneOldDiffSnapshots, DIFF_SNAPSHOT_RETENTION_DAYS } from './sprint-queries'
+export { clearSprintTaskFk } from './sprint-queries'
+export { getFailureReasonBreakdown } from './sprint-queries'
 
 /**
  * Methods used by the agent manager for pipeline execution.
@@ -67,6 +74,7 @@ export interface IDashboardRepository {
     branch: string
   }): SprintTask | null
   getDailySuccessRate(days?: number): DailySuccessRate[]
+  getFailureReasonBreakdown(): FailureReasonBreakdown[]
 }
 
 /**
@@ -103,6 +111,7 @@ export function createSprintTaskRepository(): ISprintTaskRepository {
     getHealthCheckTasks: queries.getHealthCheckTasks,
     getSuccessRateBySpecType: queries.getSuccessRateBySpecType,
     createReviewTaskFromAdhoc: queries.createReviewTaskFromAdhoc,
-    getDailySuccessRate: queries.getDailySuccessRate
+    getDailySuccessRate: queries.getDailySuccessRate,
+    getFailureReasonBreakdown: queries.getFailureReasonBreakdown
   }
 }

@@ -32,7 +32,7 @@ import {
   getSuccessRateBySpecType,
   type CreateTaskInput
 } from '../services/sprint-service'
-import { UPDATE_ALLOWLIST } from '../data/sprint-queries'
+import { UPDATE_ALLOWLIST } from '../data/sprint-task-repository'
 import { getAgentLogInfo } from '../data/agent-queries'
 import { readLog } from '../agent-history'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
@@ -249,7 +249,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
   })
 
   safeHandle('sprint:failureBreakdown', async () => {
-    const { getFailureReasonBreakdown } = await import('../data/sprint-queries')
+    const { getFailureReasonBreakdown } = await import('../data/sprint-task-repository')
     return getFailureReasonBreakdown()
   })
 
