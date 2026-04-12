@@ -216,6 +216,60 @@ describe('createSprintPrPoller', () => {
 
     expect(depsWithoutTerminal.markTaskDoneByPrNumber).toHaveBeenCalledWith(42)
   })
+
+  it('logs errors when onTaskTerminal rejects for merged PRs', async () => {
+    const task = makeTask()
+    const logWarn = vi.fn()
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null }
+        ]),
+      markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
+      onTaskTerminal: vi.fn().mockRejectedValue(new Error('dependency resolution failed')),
+      logger: { info: vi.fn(), warn: logWarn }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'done')
+    expect(logWarn).toHaveBeenCalledWith(
+      expect.stringContaining('onTaskTerminal failed for task-1')
+    )
+  })
+
+  it('logs errors when onTaskTerminal rejects for closed PRs', async () => {
+    const task = makeTask()
+    const logWarn = vi.fn()
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi
+        .fn()
+        .mockResolvedValue([
+          { taskId: 'task-1', merged: false, state: 'CLOSED', mergeableState: null }
+        ]),
+      markTaskCancelledByPrNumber: vi.fn().mockReturnValue(['task-1']),
+      onTaskTerminal: vi.fn().mockRejectedValue(new Error('dependency resolution failed')),
+      logger: { info: vi.fn(), warn: logWarn }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'cancelled')
+    expect(logWarn).toHaveBeenCalledWith(
+      expect.stringContaining('onTaskTerminal failed for task-1')
+    )
+  })
 })
 
 // Suppress unused variable warning
