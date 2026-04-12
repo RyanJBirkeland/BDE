@@ -253,6 +253,15 @@ html.theme-pro-dark {
   --glass-tint-light: rgba(30, 31, 34, 0.6);
   --glass-tint-ultra: rgba(30, 31, 34, 0.5);
 
+  /* ── v2 — Glass glow ─────────────────────────────────── */
+  --glass-glow-color: rgba(0, 211, 127, 1);
+  --glass-glow-subtle: rgba(0, 211, 127, 0.015);
+  --glass-glow-border: rgba(0, 211, 127, 0.2);
+  --glass-glow-shadow: rgba(0, 211, 127, 0.15);
+  --glass-glow-pulse-1: rgba(0, 211, 127, 0.25);
+  --glass-glow-pulse-2: rgba(0, 211, 127, 0.35);
+  --glass-glow-pulse-3: rgba(0, 211, 127, 0.4);
+
   /* ── Compact density ────────────────────────────────── */
   --bde-space-1: 3px;
   --bde-space-2: 6px;
@@ -414,6 +423,15 @@ html.theme-pro-light {
   --glass-tint-mid: rgba(255, 255, 255, 0.7);
   --glass-tint-light: rgba(255, 255, 255, 0.6);
   --glass-tint-ultra: rgba(255, 255, 255, 0.5);
+
+  /* ── v2 — Glass glow ─────────────────────────────────── */
+  --glass-glow-color: rgba(38, 117, 191, 1);
+  --glass-glow-subtle: rgba(38, 117, 191, 0.01);
+  --glass-glow-border: rgba(38, 117, 191, 0.12);
+  --glass-glow-shadow: rgba(38, 117, 191, 0.08);
+  --glass-glow-pulse-1: rgba(38, 117, 191, 0.15);
+  --glass-glow-pulse-2: rgba(38, 117, 191, 0.22);
+  --glass-glow-pulse-3: rgba(38, 117, 191, 0.25);
 
   /* ── Compact density (same as pro-dark) ─────────────── */
   --bde-space-1: 3px;
