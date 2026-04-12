@@ -58,8 +58,8 @@
 }
 
 .launchpad__tile {
-  background: linear-gradient(135deg, var(--tile-bg), transparent);
-  border: 1px solid var(--tile-border);
+  background: linear-gradient(135deg, var(--bde-surface), transparent);
+  border: 1px solid var(--bde-border);
   border-radius: 12px;
   padding: 18px 14px;
   text-align: center;
@@ -74,8 +74,8 @@
 
 .launchpad__tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px var(--tile-glow);
-  border-color: var(--tile-hover-border);
+  box-shadow: 0 4px 20px var(--bde-accent-dim);
+  border-color: var(--bde-border-hover);
 }
 
 .launchpad__tile:active {
@@ -95,7 +95,7 @@
 }
 
 .launchpad__tile-name {
-  color: var(--tile-color);
+  color: var(--bde-text);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
