@@ -6,8 +6,14 @@
   gap: 5px;
   font-family: var(--bde-font-ui);
   font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   border-radius: var(--bde-radius-full);
   white-space: nowrap;
+}
+
+.bde-badge--pulse {
+  animation: bde-pulse 3s ease-in-out infinite;
 }
 
 .bde-badge--sm {

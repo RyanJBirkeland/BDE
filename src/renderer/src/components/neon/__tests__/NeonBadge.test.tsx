@@ -17,12 +17,12 @@ describe('NeonBadge', () => {
 
   it('adds pulse class when pulse prop is true', () => {
     const { container } = render(<NeonBadge accent="cyan" label="live" pulse />)
-    expect(container.firstChild).toHaveClass('neon-badge--pulse')
+    expect(container.firstChild).toHaveClass('bde-badge--pulse')
   })
 
   it('has base badge class', () => {
     const { container } = render(<NeonBadge accent="cyan" label="test" />)
     const badge = container.firstChild as HTMLElement
-    expect(badge).toHaveClass('neon-badge')
+    expect(badge).toHaveClass('bde-badge')
   })
 })

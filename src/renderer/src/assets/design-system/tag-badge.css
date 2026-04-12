@@ -1,21 +1,3 @@
-/* ── NeonBadge ────────────────────────────────────── */
-
-.neon-badge {
-  border-radius: var(--bde-radius-full);
-  padding: 2px var(--bde-space-2);
-  font-size: var(--bde-size-xs);
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--bde-space-1);
-}
-
-.neon-badge--pulse {
-  animation: bde-pulse 3s ease-in-out infinite;
-}
-
 /* ── TagBadge & TagInput ──────────────────────────── */
 
 .tag-badge {
