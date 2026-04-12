@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { useSprintTasks, type CreateTicketInput } from '../../stores/sprintTasks'
+import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useValidationChecks } from '../../hooks/useValidationChecks'
 import { useDebouncedAsync } from '../../hooks/useDebouncedAsync'
 import { SpecEditor } from './SpecEditor'
@@ -71,8 +72,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   const resetForm = useTaskWorkbenchStore((s) => s.resetForm)
 
   const allTasks = useSprintTasks((s) => s.tasks)
-  const createTask = useSprintTasks((s) => s.createTask)
   const updateTask = useSprintTasks((s) => s.updateTask)
+  const { createTask } = useSprintTaskActions()
 
   const [submitting, setSubmitting] = useState(false)
   const [generating, setGenerating] = useState(false)

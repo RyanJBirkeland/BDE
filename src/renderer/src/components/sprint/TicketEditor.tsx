@@ -7,7 +7,7 @@
  * "Dismiss" collapses back to raw JSON.
  */
 import { useState, useEffect } from 'react'
-import { useSprintTasks } from '../../stores/sprintTasks'
+import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { toast } from '../../stores/toasts'
 
@@ -42,6 +42,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
   const [state, setState] = useState<EditorState>('editing')
   const [repoPaths, setRepoPaths] = useState<Record<string, string>>({})
   const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set())
+  const { createTask } = useSprintTaskActions()
 
   useEffect(() => {
     window.api.getRepoPaths().then((paths) => setRepoPaths(paths))
@@ -99,7 +100,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
 
       try {
         const { _id, created: _, ...ticketData } = ticket
-        await useSprintTasks.getState().createTask({
+        await createTask({
           title: ticketData.title,
           repo: ticketData.repo,
           prompt: ticketData.prompt,

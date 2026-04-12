@@ -7,6 +7,9 @@ import { nowIso } from '../../../../shared/time'
 // Mock sprintTasks store
 const mockUpdateTask = vi.fn().mockResolvedValue(undefined)
 const mockDeleteTask = vi.fn().mockResolvedValue(undefined)
+const mockCreateTask = vi.fn().mockResolvedValue('new-task-id')
+const mockBatchDeleteTasks = vi.fn().mockResolvedValue(undefined)
+const mockGenerateSpec = vi.fn().mockResolvedValue(undefined)
 const mockLaunchTask = vi.fn().mockResolvedValue(undefined)
 const mockLoadData = vi.fn().mockResolvedValue(undefined)
 const mockTasks: unknown[] = []
@@ -17,6 +20,9 @@ vi.mock('../../stores/sprintTasks', () => {
       tasks: mockTasks,
       updateTask: mockUpdateTask,
       deleteTask: mockDeleteTask,
+      createTask: mockCreateTask,
+      batchDeleteTasks: mockBatchDeleteTasks,
+      generateSpec: mockGenerateSpec,
       launchTask: mockLaunchTask,
       loadData: mockLoadData
     })
@@ -25,6 +31,9 @@ vi.mock('../../stores/sprintTasks', () => {
     tasks: mockTasks,
     updateTask: mockUpdateTask,
     deleteTask: mockDeleteTask,
+    createTask: mockCreateTask,
+    batchDeleteTasks: mockBatchDeleteTasks,
+    generateSpec: mockGenerateSpec,
     launchTask: mockLaunchTask,
     loadData: mockLoadData
   })
@@ -32,15 +41,30 @@ vi.mock('../../stores/sprintTasks', () => {
 })
 
 // Mock sprintUI store
+const mockClearTaskIfSelected = vi.fn()
+const mockAddGeneratingId = vi.fn()
+const mockRemoveGeneratingId = vi.fn()
 const mockSetSelectedTaskId = vi.fn()
+const mockSetDrawerOpen = vi.fn()
 
 vi.mock('../../stores/sprintUI', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
-    sel({ selectedTaskId: null, setSelectedTaskId: mockSetSelectedTaskId })
+    sel({
+      selectedTaskId: null,
+      clearTaskIfSelected: mockClearTaskIfSelected,
+      addGeneratingId: mockAddGeneratingId,
+      removeGeneratingId: mockRemoveGeneratingId,
+      setSelectedTaskId: mockSetSelectedTaskId,
+      setDrawerOpen: mockSetDrawerOpen
+    })
   )
   ;(store as any).getState = () => ({
     selectedTaskId: null,
-    setSelectedTaskId: mockSetSelectedTaskId
+    clearTaskIfSelected: mockClearTaskIfSelected,
+    addGeneratingId: mockAddGeneratingId,
+    removeGeneratingId: mockRemoveGeneratingId,
+    setSelectedTaskId: mockSetSelectedTaskId,
+    setDrawerOpen: mockSetDrawerOpen
   })
   return { useSprintUI: store }
 })
@@ -52,6 +76,11 @@ vi.mock('../../stores/toasts', () => ({
     error: vi.fn(),
     info: vi.fn()
   }
+}))
+
+// Mock template heuristics
+vi.mock('../../../../shared/template-heuristics', () => ({
+  detectTemplate: vi.fn().mockReturnValue('feature')
 }))
 
 // Mock framer-motion (used by ConfirmModal, which useConfirm depends on)
@@ -123,9 +152,77 @@ describe('useSprintTaskActions', () => {
     expect(result.current.launchTask).toBe(mockLaunchTask)
   })
 
-  it('deleteTask is the store deleteTask function', () => {
+  it('deleteTask wrapper calls both store and UI', async () => {
     const { result } = renderHook(() => useSprintTaskActions())
-    expect(result.current.deleteTask).toBe(mockDeleteTask)
+
+    await act(async () => {
+      await result.current.deleteTask('task-1')
+    })
+
+    expect(mockDeleteTask).toHaveBeenCalledWith('task-1')
+    expect(mockClearTaskIfSelected).toHaveBeenCalledWith('task-1')
+  })
+
+  it('createTask wrapper returns taskId from store', async () => {
+    const { result } = renderHook(() => useSprintTaskActions())
+
+    const taskId = await act(async () => {
+      return await result.current.createTask({
+        title: 'New task',
+        repo: 'bde',
+        priority: 1,
+        spec: 'existing spec'
+      })
+    })
+
+    expect(taskId).toBe('new-task-id')
+    expect(mockCreateTask).toHaveBeenCalled()
+  })
+
+  it('createTask triggers spec generation when no spec provided', async () => {
+    const { result } = renderHook(() => useSprintTaskActions())
+
+    await act(async () => {
+      await result.current.createTask({
+        title: 'Quick task',
+        repo: 'bde',
+        priority: 1
+      })
+    })
+
+    expect(mockAddGeneratingId).toHaveBeenCalledWith('new-task-id')
+    expect(mockGenerateSpec).toHaveBeenCalledWith('new-task-id', 'Quick task', 'bde', 'feature')
+  })
+
+  it('createTask skips spec generation when spec provided', async () => {
+    const { result } = renderHook(() => useSprintTaskActions())
+
+    await act(async () => {
+      await result.current.createTask({
+        title: 'Task with spec',
+        repo: 'bde',
+        priority: 1,
+        spec: 'existing spec'
+      })
+    })
+
+    expect(mockAddGeneratingId).not.toHaveBeenCalled()
+    expect(mockGenerateSpec).not.toHaveBeenCalled()
+  })
+
+  it('batchDeleteTasks wrapper calls both store and UI', async () => {
+    const { result } = renderHook(() => useSprintTaskActions())
+
+    await act(async () => {
+      await result.current.batchDeleteTasks(['t1', 't2', 't3'])
+    })
+
+    expect(mockBatchDeleteTasks).toHaveBeenCalledWith(['t1', 't2', 't3'])
+    expect(mockClearTaskIfSelected).toHaveBeenCalledTimes(3)
+    // forEach passes (item, index, array) to the callback
+    expect(mockClearTaskIfSelected).toHaveBeenNthCalledWith(1, 't1', 0, ['t1', 't2', 't3'])
+    expect(mockClearTaskIfSelected).toHaveBeenNthCalledWith(2, 't2', 1, ['t1', 't2', 't3'])
+    expect(mockClearTaskIfSelected).toHaveBeenNthCalledWith(3, 't3', 2, ['t1', 't2', 't3'])
   })
 
   // --- handleStop ---

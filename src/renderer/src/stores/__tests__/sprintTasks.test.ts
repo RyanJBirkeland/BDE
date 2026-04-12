@@ -213,15 +213,16 @@ describe('sprintTasks store', () => {
       expect(toast.error).toHaveBeenCalledWith('delete failed')
     })
 
-    it('calls clearTaskIfSelected on sprintUI store after delete', async () => {
+    it('does not touch UI state (decoupled from sprintUI)', async () => {
       useSprintTasks.setState({ tasks: [makeTask('t1')] })
       useSprintUI.setState({ selectedTaskId: 't1', drawerOpen: true })
       ;(window.api.sprint.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true })
 
       await useSprintTasks.getState().deleteTask('t1')
 
-      expect(useSprintUI.getState().selectedTaskId).toBeNull()
-      expect(useSprintUI.getState().drawerOpen).toBe(false)
+      // Store should not touch UI state - it's decoupled
+      expect(useSprintUI.getState().selectedTaskId).toBe('t1')
+      expect(useSprintUI.getState().drawerOpen).toBe(true)
     })
   })
 
@@ -348,32 +349,62 @@ describe('sprintTasks store', () => {
       expect(window.api.sprint.generatePrompt).not.toHaveBeenCalled()
     })
 
-    it('triggers spec generation for quick-mode tasks (no spec)', async () => {
-      // generatePrompt is mocked in beforeEach — just verify it gets called
+    it('does not trigger spec generation (decoupled from UI)', async () => {
+      // Store's createTask no longer triggers spec generation - that's in the hook wrapper
       await useSprintTasks.getState().createTask({
         title: 'Quick task',
         repo: 'BDE',
         priority: 1
       })
 
-      // generatePrompt is called asynchronously (fire and forget), so we need to flush
-      await vi.waitFor(() => {
-        expect(window.api.sprint.generatePrompt).toHaveBeenCalled()
+      // Verify generatePrompt is NOT called by the store
+      expect(window.api.sprint.generatePrompt).not.toHaveBeenCalled()
+    })
+
+    it('does not show toast.info for spec generation (decoupled from UI)', async () => {
+      // Store's createTask no longer shows spec-ready toast - that's in the hook wrapper
+      await useSprintTasks.getState().createTask({
+        title: 'Quick task',
+        repo: 'BDE',
+        priority: 1
+      })
+
+      // Verify toast.info is NOT called by the store
+      expect(toast.info).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('generateSpec', () => {
+    beforeEach(() => {
+      useSprintTasks.setState({
+        tasks: [makeTask('t1', { title: 'Task 1', spec: null })],
+        pendingUpdates: {},
+        pendingCreates: []
+      })
+      ;(window.api.sprint.generatePrompt as ReturnType<typeof vi.fn>).mockResolvedValue({
+        taskId: 't1',
+        spec: 'generated spec',
+        prompt: 'generated prompt'
       })
     })
 
-    it('updates task with generated spec and shows toast.info', async () => {
-      await useSprintTasks.getState().createTask({
-        title: 'Quick task',
-        repo: 'BDE',
-        priority: 1
-      })
+    it('calls generatePrompt with correct params', async () => {
+      await useSprintTasks.getState().generateSpec('t1', 'Task 1', 'bde', 'feature')
 
-      await vi.waitFor(() => {
-        const task = useSprintTasks.getState().tasks.find((t) => t.id === 'server-id-1')
-        expect(task?.spec).toBe('generated spec')
+      expect(window.api.sprint.generatePrompt).toHaveBeenCalledWith({
+        taskId: 't1',
+        title: 'Task 1',
+        repo: 'bde',
+        templateHint: 'feature'
       })
-      expect(toast.info).toHaveBeenCalled()
+    })
+
+    it('updates task with generated spec', async () => {
+      await useSprintTasks.getState().generateSpec('t1', 'Task 1', 'bde', 'feature')
+
+      const task = useSprintTasks.getState().tasks.find((t) => t.id === 't1')
+      expect(task?.spec).toBe('generated spec')
+      expect(task?.prompt).toBe('generated prompt')
     })
   })
 

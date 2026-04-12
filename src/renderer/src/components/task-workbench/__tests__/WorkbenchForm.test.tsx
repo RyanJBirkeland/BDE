@@ -56,6 +56,21 @@ vi.mock('../../../hooks/useValidationChecks', () => ({
   useValidationChecks: vi.fn()
 }))
 
+const mockCreateTask = vi.fn().mockResolvedValue('new-task-id')
+vi.mock('../../../hooks/useSprintTaskActions', () => ({
+  useSprintTaskActions: () => ({
+    createTask: mockCreateTask,
+    handleSaveSpec: vi.fn(),
+    handleStop: vi.fn(),
+    handleRerun: vi.fn(),
+    handleRetry: vi.fn(),
+    launchTask: vi.fn(),
+    deleteTask: vi.fn(),
+    batchDeleteTasks: vi.fn(),
+    confirmProps: { open: false, onConfirm: vi.fn(), onCancel: vi.fn(), message: '' }
+  })
+}))
+
 import { WorkbenchForm } from '../WorkbenchForm'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
 import { useSprintTasks } from '../../../stores/sprintTasks'
@@ -65,6 +80,8 @@ describe('WorkbenchForm', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockCreateTask.mockClear()
+    mockCreateTask.mockResolvedValue('new-task-id')
     useTaskWorkbenchStore.getState().resetForm()
 
     // Add workbench API mocks
@@ -172,15 +189,13 @@ describe('WorkbenchForm', () => {
   })
 
   it('calls createTask on save to backlog', async () => {
-    const mockCreate = vi.fn().mockResolvedValue('new-task-id')
-    useSprintTasks.setState({ createTask: mockCreate, tasks: [] })
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE', spec: 'Some spec' })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
     fireEvent.click(screen.getByTestId('save-backlog'))
 
     await waitFor(() => {
-      expect(mockCreate).toHaveBeenCalled()
+      expect(mockCreateTask).toHaveBeenCalled()
     })
   })
 
@@ -214,8 +229,6 @@ describe('WorkbenchForm', () => {
       noConflict: { status: 'pass', message: 'OK' },
       slotsAvailable: { status: 'pass', message: 'OK' }
     })
-    const mockCreate = vi.fn()
-    useSprintTasks.setState({ createTask: mockCreate, tasks: [] })
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
@@ -225,7 +238,7 @@ describe('WorkbenchForm', () => {
       expect((window.api as any).workbench.checkOperational).toHaveBeenCalled()
     })
     // Should NOT have created task because op check failed
-    expect(mockCreate).not.toHaveBeenCalled()
+    expect(mockCreateTask).not.toHaveBeenCalled()
   })
 
   it('shows confirm modal when queue has warnings', async () => {
@@ -268,13 +281,12 @@ describe('WorkbenchForm', () => {
   })
 
   it('handleConfirmedQueue creates and queues task in create mode', async () => {
-    const mockCreate = vi.fn().mockResolvedValue('new-1')
     const mockUpdate = vi.fn().mockResolvedValue(undefined)
     useSprintTasks.setState({
-      createTask: mockCreate,
       updateTask: mockUpdate,
       tasks: []
     })
+    mockCreateTask.mockResolvedValue('new-1')
     useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
 
     // Make it show the confirm modal (warn state)
@@ -296,7 +308,7 @@ describe('WorkbenchForm', () => {
     fireEvent.click(screen.getByTestId('confirm-yes'))
 
     await waitFor(() => {
-      expect(mockCreate).toHaveBeenCalled()
+      expect(mockCreateTask).toHaveBeenCalled()
       expect(mockUpdate).toHaveBeenCalledWith(
         'new-1',
         expect.objectContaining({ status: 'queued' })
@@ -339,8 +351,6 @@ describe('WorkbenchForm', () => {
   })
 
   it('includes dependsOn when non-empty', async () => {
-    const mockCreate = vi.fn().mockResolvedValue('new-task-id')
-    useSprintTasks.setState({ createTask: mockCreate, tasks: [] })
     useTaskWorkbenchStore.setState({
       title: 'With deps',
       repo: 'BDE',
@@ -351,7 +361,7 @@ describe('WorkbenchForm', () => {
     fireEvent.click(screen.getByTestId('save-backlog'))
 
     await waitFor(() => {
-      expect(mockCreate).toHaveBeenCalledWith(
+      expect(mockCreateTask).toHaveBeenCalledWith(
         expect.objectContaining({
           depends_on: expect.arrayContaining([expect.objectContaining({ task_id: 'dep-1' })])
         })

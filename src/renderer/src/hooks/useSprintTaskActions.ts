@@ -1,8 +1,11 @@
 import { useCallback } from 'react'
 import { useSprintTasks } from '../stores/sprintTasks'
+import type { CreateTicketInput } from '../stores/sprintTasks'
+import { useSprintUI } from '../stores/sprintUI'
 import { useConfirm } from '../components/ui/ConfirmModal'
 import { toast } from '../stores/toasts'
 import { TASK_STATUS } from '../../../shared/constants'
+import { detectTemplate } from '../../../shared/template-heuristics'
 import type { SprintTask } from '../../../shared/types'
 
 interface SprintTaskActions {
@@ -12,6 +15,8 @@ interface SprintTaskActions {
   handleRetry: (task: SprintTask) => void
   launchTask: (task: SprintTask) => void
   deleteTask: (id: string) => Promise<void>
+  createTask: (data: CreateTicketInput) => Promise<string | null>
+  batchDeleteTasks: (taskIds: string[]) => Promise<void>
   confirmProps: ReturnType<typeof useConfirm>['confirmProps']
 }
 
@@ -21,9 +26,18 @@ interface SprintTaskActions {
  */
 export function useSprintTaskActions(): SprintTaskActions {
   const updateTask = useSprintTasks((s) => s.updateTask)
-  const deleteTask = useSprintTasks((s) => s.deleteTask)
+  const storeDeleteTask = useSprintTasks((s) => s.deleteTask)
+  const storeCreateTask = useSprintTasks((s) => s.createTask)
+  const storeBatchDeleteTasks = useSprintTasks((s) => s.batchDeleteTasks)
+  const generateSpec = useSprintTasks((s) => s.generateSpec)
   const launchTask = useSprintTasks((s) => s.launchTask)
   const loadData = useSprintTasks((s) => s.loadData)
+
+  const clearTaskIfSelected = useSprintUI((s) => s.clearTaskIfSelected)
+  const addGeneratingId = useSprintUI((s) => s.addGeneratingId)
+  const removeGeneratingId = useSprintUI((s) => s.removeGeneratingId)
+  const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
+  const setDrawerOpen = useSprintUI((s) => s.setDrawerOpen)
 
   const { confirm, confirmProps } = useConfirm()
 
@@ -102,6 +116,55 @@ export function useSprintTaskActions(): SprintTaskActions {
     [confirm, loadData]
   )
 
+  // --- Delete task wrapper (coordinates store + UI) ---
+  const deleteTask = useCallback(
+    async (taskId: string): Promise<void> => {
+      await storeDeleteTask(taskId)
+      clearTaskIfSelected(taskId)
+    },
+    [storeDeleteTask, clearTaskIfSelected]
+  )
+
+  // --- Create task wrapper (coordinates store + UI spec generation) ---
+  const createTask = useCallback(
+    async (data: CreateTicketInput): Promise<string | null> => {
+      const taskId = await storeCreateTask(data)
+
+      // Background spec generation for Quick Mode tasks
+      if (taskId && !data.spec) {
+        const templateHint = detectTemplate(data.title)
+        addGeneratingId(taskId)
+
+        generateSpec(taskId, data.title, data.repo.toLowerCase(), templateHint)
+          .then(() => {
+            toast.info(`Spec ready for "${data.title}"`, {
+              action: 'View Spec',
+              onAction: () => {
+                setSelectedTaskId(taskId)
+                setDrawerOpen(true)
+              },
+              durationMs: 6000
+            })
+          })
+          .finally(() => {
+            removeGeneratingId(taskId)
+          })
+      }
+
+      return taskId
+    },
+    [storeCreateTask, generateSpec, addGeneratingId, removeGeneratingId, setSelectedTaskId, setDrawerOpen]
+  )
+
+  // --- Batch delete tasks wrapper (coordinates store + UI) ---
+  const batchDeleteTasks = useCallback(
+    async (taskIds: string[]): Promise<void> => {
+      await storeBatchDeleteTasks(taskIds)
+      taskIds.forEach(clearTaskIfSelected)
+    },
+    [storeBatchDeleteTasks, clearTaskIfSelected]
+  )
+
   return {
     handleSaveSpec,
     handleStop,
@@ -109,6 +172,8 @@ export function useSprintTaskActions(): SprintTaskActions {
     handleRetry,
     launchTask,
     deleteTask,
+    createTask,
+    batchDeleteTasks,
     confirmProps
   }
 }

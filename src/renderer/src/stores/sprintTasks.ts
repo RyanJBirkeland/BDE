@@ -2,10 +2,8 @@ import { create } from 'zustand'
 import type { SprintTask, TaskDependency } from '../../../shared/types'
 import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 import { toast } from './toasts'
-import { detectTemplate } from '../../../shared/template-heuristics'
 import { sanitizeDependsOn } from '../../../shared/sanitize-depends-on'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
-import { useSprintUI } from './sprintUI'
 import { nowIso } from '../../../shared/time'
 
 export interface CreateTicketInput {
@@ -46,6 +44,7 @@ interface SprintTasksState {
   updateTask: (taskId: string, patch: Partial<SprintTask>) => Promise<void>
   deleteTask: (taskId: string) => Promise<void>
   createTask: (data: CreateTicketInput) => Promise<string | null>
+  generateSpec: (taskId: string, title: string, repo: string, templateHint: string) => Promise<void>
   launchTask: (task: SprintTask) => Promise<void>
   mergeSseUpdate: (update: { taskId: string; [key: string]: unknown }) => void
   setTasks: (tasks: SprintTask[]) => void
@@ -222,7 +221,6 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       set((s) => ({
         tasks: s.tasks.filter((t) => t.id !== taskId)
       }))
-      useSprintUI.getState().clearTaskIfSelected(taskId)
       toast.success('Task deleted')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to delete task')
@@ -281,42 +279,6 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
           pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id)
         }))
 
-        // Background spec generation for Quick Mode tasks
-        if (!data.spec) {
-          const templateHint = detectTemplate(data.title)
-          useSprintUI.getState().addGeneratingId(result.id)
-
-          window.api.sprint
-            .generatePrompt({
-              taskId: result.id,
-              title: data.title,
-              repo: repoEnum,
-              templateHint
-            })
-            .then((genResult) => {
-              set((s) => ({
-                tasks: s.tasks.map((t) =>
-                  t.id === genResult.taskId
-                    ? { ...t, spec: genResult.spec || null, prompt: genResult.prompt }
-                    : t
-                )
-              }))
-              toast.info(`Spec ready for "${data.title}"`, {
-                action: 'View Spec',
-                onAction: () => {
-                  useSprintUI.getState().setSelectedTaskId(result.id)
-                  useSprintUI.getState().setDrawerOpen(true)
-                },
-                durationMs: 6000
-              })
-            })
-            .catch((e: unknown) => {
-              toast.error('Spec generation failed: ' + (e instanceof Error ? e.message : String(e)))
-            })
-            .finally(() => {
-              useSprintUI.getState().removeGeneratingId(result.id)
-            })
-        }
         toast.success('Ticket created — saved to Backlog')
         return result.id
       }
@@ -329,6 +291,26 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       }))
       toast.error(e instanceof Error ? e.message : 'Failed to create task')
       return null
+    }
+  },
+
+  generateSpec: async (taskId, title, repo, templateHint): Promise<void> => {
+    try {
+      const genResult = await window.api.sprint.generatePrompt({
+        taskId,
+        title,
+        repo,
+        templateHint
+      })
+      set((s) => ({
+        tasks: s.tasks.map((t) =>
+          t.id === genResult.taskId
+            ? { ...t, spec: genResult.spec || null, prompt: genResult.prompt }
+            : t
+        )
+      }))
+    } catch (e) {
+      toast.error('Spec generation failed: ' + (e instanceof Error ? e.message : String(e)))
     }
   },
 
@@ -421,11 +403,6 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       set((s) => ({
         tasks: s.tasks.filter((t) => !deletedIds.has(t.id))
       }))
-
-      // Clear selection if deleted
-      deletedIds.forEach((id) => {
-        useSprintUI.getState().clearTaskIfSelected(id)
-      })
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to delete tasks')
     }

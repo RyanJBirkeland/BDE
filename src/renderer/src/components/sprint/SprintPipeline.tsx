@@ -46,7 +46,6 @@ export function SprintPipeline(): React.JSX.Element {
   )
   const updateTask = useSprintTasks((s) => s.updateTask)
   const loadData = useSprintTasks((s) => s.loadData)
-  const batchDeleteTasks = useSprintTasks((s) => s.batchDeleteTasks)
   const batchRequeueTasks = useSprintTasks((s) => s.batchRequeueTasks)
 
   const {
@@ -107,6 +106,7 @@ export function SprintPipeline(): React.JSX.Element {
     handleRetry,
     launchTask,
     deleteTask,
+    batchDeleteTasks,
     confirmProps
   } = useSprintTaskActions()
 
