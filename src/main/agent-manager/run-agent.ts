@@ -239,6 +239,36 @@ async function handleOAuthRefresh(logger: Logger): Promise<void> {
 }
 
 /**
+ * Updates agent cost and token fields from SDK message.
+ */
+function trackAgentCosts(msg: unknown, agent: ActiveAgent, turnTracker: TurnTracker): void {
+  agent.costUsd =
+    getNumericField(msg, 'cost_usd') ?? getNumericField(msg, 'total_cost_usd') ?? agent.costUsd
+  turnTracker.observe(msg)
+  const { tokensIn, tokensOut } = turnTracker.totals()
+  agent.tokensIn = tokensIn
+  agent.tokensOut = tokensOut
+}
+
+/**
+ * Detects HTML writes and emits playground events if enabled.
+ */
+function detectPlaygroundWrite(
+  msg: unknown,
+  task: RunAgentTask,
+  worktreePath: string,
+  logger: Logger
+): void {
+  if (!task.playground_enabled) return
+  const htmlPath = detectHtmlWrite(msg)
+  if (htmlPath) {
+    tryEmitPlaygroundEvent(task.id, htmlPath, worktreePath, logger).catch(err => {
+      logger.warn(`[run-agent] playground emit failed for task ${task.id}: ${err}`)
+    })
+  }
+}
+
+/**
  * Processes a single message: tracks costs, emits events, detects playground.
  */
 function processSDKMessage(
@@ -254,36 +284,20 @@ function processSDKMessage(
 ): { exitCode: number | undefined; lastAgentOutput: string } {
   agent.lastOutputAt = Date.now()
 
-  // Track rate-limit events
   if (isRateLimitMessage(msg)) {
     agent.rateLimitCount++
   }
-  // Track cost / tokens
-  agent.costUsd =
-    getNumericField(msg, 'cost_usd') ?? getNumericField(msg, 'total_cost_usd') ?? agent.costUsd
-  turnTracker.observe(msg)
-  const { tokensIn, tokensOut } = turnTracker.totals()
-  agent.tokensIn = tokensIn
-  agent.tokensOut = tokensOut
+
+  trackAgentCosts(msg, agent, turnTracker)
   exitCode = getNumericField(msg, 'exit_code') ?? exitCode
 
-  // Emit events
   const mappedEvents = mapRawMessage(msg)
   for (const event of mappedEvents) {
     emitAgentEvent(agentRunId, event)
   }
 
-  // Detect playground HTML writes
-  if (task.playground_enabled) {
-    const htmlPath = detectHtmlWrite(msg)
-    if (htmlPath) {
-      tryEmitPlaygroundEvent(task.id, htmlPath, worktreePath, logger).catch(err => {
-        logger.warn(`[run-agent] playground emit failed for task ${task.id}: ${err}`)
-      })
-    }
-  }
+  detectPlaygroundWrite(msg, task, worktreePath, logger)
 
-  // Capture last assistant text
   const m = asSDKMessage(msg)
   if (m?.type === 'assistant' && typeof m.text === 'string') {
     lastAgentOutput = m.text.slice(-LAST_OUTPUT_MAX_LENGTH)
