@@ -2,9 +2,8 @@
  * Agent IPC handlers — manages agent lifecycle operations
  * and provides local history/log access from SQLite.
  */
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
+import { execFileAsync } from '../lib/async-utils'
 import { safeHandle } from '../ipc-utils'
 import { tailAgentLog, cleanupOldLogs } from '../agent-log-manager'
 import type { TailLogArgs } from '../agent-log-manager'
@@ -21,7 +20,6 @@ import type { AgentManager } from '../agent-manager'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 
-const execFileAsync = promisify(execFileCb)
 const log = createLogger('agent-handlers')
 
 export interface PromoteToReviewResult {

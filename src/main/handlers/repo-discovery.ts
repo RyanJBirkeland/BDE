@@ -1,8 +1,8 @@
-import { promisify } from 'util'
-import { execFile, spawn } from 'child_process'
+import { spawn } from 'child_process'
 import { readdir, stat, access, mkdir } from 'fs/promises'
 import * as path from 'path'
 import * as os from 'os'
+import { execFileAsync } from '../lib/async-utils'
 import { parseGitHubRemote } from '../../shared/git-remote'
 import { getSettingJson } from '../settings'
 import { safeHandle } from '../ipc-utils'
@@ -11,7 +11,6 @@ import type { LocalRepoInfo, GithubRepoInfo, CloneProgressEvent } from '../../sh
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 
-const execFileAsync = promisify(execFile)
 const logger = createLogger('repo-discovery')
 
 interface RepoConfig {

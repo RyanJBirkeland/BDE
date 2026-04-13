@@ -20,6 +20,7 @@ import { getDb } from './db'
 import { closeDb } from './db'
 import { createAgentManager } from './agent-manager'
 import { createSprintTaskRepository } from './data/sprint-task-repository'
+import { execFileAsync } from './lib/async-utils'
 import { getOAuthToken, ensureExtraPathsOnProcessEnv } from './env-utils'
 import { createLogger } from './logger'
 import { setSprintQueriesLogger } from './data/sprint-queries'
@@ -183,17 +184,11 @@ app.whenReady().then(() => {
   }
 
   const getHeadCommitSha = async (worktreePath: string): Promise<string> => {
-    const { execFile } = await import('node:child_process')
-    const { promisify } = await import('node:util')
-    const execFileAsync = promisify(execFile)
     const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'rev-parse', 'HEAD'])
     return stdout.trim()
   }
 
   const getBranch = async (worktreePath: string): Promise<string> => {
-    const { execFile } = await import('node:child_process')
-    const { promisify } = await import('node:util')
-    const execFileAsync = promisify(execFile)
     const { stdout } = await execFileAsync('git', [
       '-C',
       worktreePath,
@@ -205,9 +200,6 @@ app.whenReady().then(() => {
   }
 
   const getDiff = async (worktreePath: string): Promise<string> => {
-    const { execFile } = await import('node:child_process')
-    const { promisify } = await import('node:util')
-    const execFileAsync = promisify(execFile)
     const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'diff', 'main...HEAD'], {
       maxBuffer: 10 * 1024 * 1024
     })

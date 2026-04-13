@@ -3,15 +3,12 @@
  * persisting to `sprint_tasks.review_diff_snapshot`. This lets the Code
  * Review UI show changes even after the worktree is cleaned up.
  */
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import type { ReviewDiffSnapshot } from '../../shared/types'
+import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import type { Logger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
-
-const execFile = promisify(execFileCb)
 
 /** Max total characters of full-patch content we're willing to store. */
 const MAX_SNAPSHOT_CHARS = 500_000
@@ -23,13 +20,13 @@ export async function captureDiffSnapshot(
 ): Promise<ReviewDiffSnapshot | null> {
   const env = buildAgentEnv()
   try {
-    const { stdout: numstatOut } = await execFile('git', ['diff', '--numstat', `${base}...HEAD`], {
+    const { stdout: numstatOut } = await execFileAsync('git', ['diff', '--numstat', `${base}...HEAD`], {
       cwd: worktreePath,
       env,
       maxBuffer: 10 * 1024 * 1024
     })
 
-    const { stdout: statusOut } = await execFile(
+    const { stdout: statusOut } = await execFileAsync(
       'git',
       ['diff', '--name-status', `${base}...HEAD`],
       { cwd: worktreePath, env, maxBuffer: 10 * 1024 * 1024 }
@@ -77,7 +74,7 @@ export async function captureDiffSnapshot(
     let truncated = false
     for (const file of files) {
       try {
-        const { stdout: patch } = await execFile(
+        const { stdout: patch } = await execFileAsync(
           'git',
           ['diff', `${base}...HEAD`, '--', file.path],
           { cwd: worktreePath, env, maxBuffer: 10 * 1024 * 1024 }

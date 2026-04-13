@@ -2,14 +2,11 @@
  * Memory search handler — grep-based content search through memory files.
  */
 import { safeHandle } from '../ipc-utils'
-import { promisify } from 'util'
-import { execFile } from 'child_process'
+import { execFileAsync } from '../lib/async-utils'
 import { BDE_MEMORY_DIR } from '../paths'
 import { createLogger } from '../logger'
 
 const logger = createLogger('memory-search')
-
-const execFileAsync = promisify(execFile)
 
 export interface MemorySearchMatch {
   line: number

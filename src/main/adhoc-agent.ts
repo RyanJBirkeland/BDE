@@ -17,12 +17,11 @@
  * the work into a sprint task via `agents:promoteToReview`.
  */
 import { randomUUID } from 'node:crypto'
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import { basename, join } from 'node:path'
 import { homedir } from 'node:os'
 import { importAgent, updateAgentMeta, getAgentMeta } from './agent-history'
 import { updateAgentRunCost } from './data/agent-queries'
+import { execFileAsync } from './lib/async-utils'
 import { buildAgentEnvWithAuth, getClaudeCliPath, refreshOAuthTokenFromKeychain } from './env-utils'
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
@@ -33,8 +32,6 @@ import type { ISprintTaskRepository } from './data/sprint-task-repository'
 import { getErrorMessage } from '../shared/errors'
 import { nowIso } from '../shared/time'
 import { createLogger } from './logger'
-
-const execFileAsync = promisify(execFileCb)
 
 const log = createLogger('adhoc-agent')
 

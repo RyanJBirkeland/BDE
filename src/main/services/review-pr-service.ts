@@ -3,12 +3,10 @@
  *
  * Provides branch push and GitHub PR creation via gh CLI.
  */
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
 import { pushBranch, checkExistingPr } from '../agent-manager/git-operations'
 
-const execFileAsync = promisify(execFile)
 const logger = createLogger('review-pr-service')
 
 export interface CreatePROptions {

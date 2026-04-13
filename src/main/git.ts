@@ -1,5 +1,4 @@
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from './lib/async-utils'
 
 import type { Result } from '../shared/types'
 import {
@@ -7,8 +6,6 @@ import {
   getRepoPath as getRepoPathFromSettings
 } from './paths'
 import { getErrorMessage } from '../shared/errors'
-
-const execFileAsync = promisify(execFile)
 
 const MAX_BUFFER = 10 * 1024 * 1024
 

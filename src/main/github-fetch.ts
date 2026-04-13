@@ -11,6 +11,7 @@
  * instead of the bare `fetch`.
  */
 
+import { sleep } from './lib/async-utils'
 import { broadcast } from './broadcast'
 import { createLogger } from './logger'
 import { getErrorMessage } from '../shared/errors'
@@ -129,10 +130,6 @@ export function computeBackoffMs(attempt: number): number {
   const exponential = BASE_BACKOFF_MS * Math.pow(2, attempt)
   const jitter = Math.random() * BASE_BACKOFF_MS
   return Math.min(exponential + jitter, MAX_BACKOFF_MS)
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function isRetryableServerError(status: number): boolean {

@@ -1,8 +1,7 @@
 /**
  * Review orchestration service — thin facade over policy + executor layers.
  */
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
 import { classifyReviewAction } from './review-action-policy'
 import { executeReviewAction } from './review-action-executor'
@@ -44,7 +43,6 @@ export type {
   RebaseResult
 }
 
-const execFileAsync = promisify(execFile)
 const logger = createLogger('review-orchestration')
 const repo = createSprintTaskRepository()
 

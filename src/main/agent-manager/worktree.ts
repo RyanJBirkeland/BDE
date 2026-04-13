@@ -1,7 +1,6 @@
-import { execFile } from 'node:child_process'
 import { mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs'
-import { promisify } from 'node:util'
 import path from 'node:path'
+import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { BRANCH_SLUG_MAX_LENGTH, GIT_FETCH_TIMEOUT_MS, GIT_FF_MERGE_TIMEOUT_MS } from './types'
 import type { Logger } from '../logger'
@@ -35,8 +34,6 @@ export {
   getPendingReservation,
   ensureFreeDiskSpace
 }
-
-const execFileAsync = promisify(execFile)
 
 export function branchNameForTask(title: string, taskId?: string, groupId?: string): string {
   const slug = title

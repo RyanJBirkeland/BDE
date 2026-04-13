@@ -2,13 +2,11 @@
  * Spec Synthesizer Service — AI-powered spec generation from user answers + codebase context.
  */
 import { promises as fs } from 'fs'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
 import { runSdkStreaming } from '../sdk-streaming'
 import type { SynthesizeRequest, ReviseRequest } from '../../shared/types'
 
-const execFileAsync = promisify(execFile)
 const log = createLogger('spec-synthesizer')
 
 // --- Types ---

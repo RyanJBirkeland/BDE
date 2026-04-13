@@ -14,12 +14,10 @@ import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
 import { getSettingJson, getSetting } from '../settings'
 import { buildAgentEnv } from '../env-utils'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from '../lib/async-utils'
 import { parseNumstat } from '../services/review-merge-service'
 import * as reviewOrchestration from '../services/review-orchestration-service'
 
-const execFileAsync = promisify(execFile)
 const logger = createLogger('review-handlers')
 
 interface RepoConfig {

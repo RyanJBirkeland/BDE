@@ -10,14 +10,12 @@
  * Always non-fatal — errors are logged but never propagate to callers.
  */
 import { readFileSync, writeFileSync } from 'node:fs'
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import { join } from 'node:path'
+import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
 import { buildAgentEnv } from '../env-utils'
 import { deduplicateCss } from './css-dedup'
 
-const execFile = promisify(execFileCb)
 const logger = createLogger('post-merge-dedup')
 
 export interface DedupReport {
@@ -40,7 +38,7 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
   // Determine which files changed in the merge commit
   let changedFiles: string[] = []
   try {
-    const { stdout } = await execFile(
+    const { stdout } = await execFileAsync(
       'git',
       ['diff', '--name-only', '--diff-filter=ACMR', 'HEAD~1', 'HEAD'],
       { cwd: repoPath, env }
@@ -98,11 +96,11 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
   if (filesModified.length > 0) {
     try {
       // Stage modified CSS files
-      await execFile('git', ['add', ...filesModified], { cwd: repoPath, env })
+      await execFileAsync('git', ['add', ...filesModified], { cwd: repoPath, env })
 
       // Commit the dedup changes
       const commitMessage = 'chore: deduplicate CSS from merge\n\nAutomated by BDE post-merge dedup'
-      await execFile('git', ['commit', '-m', commitMessage], { cwd: repoPath, env })
+      await execFileAsync('git', ['commit', '-m', commitMessage], { cwd: repoPath, env })
 
       committed = true
       logger.info(

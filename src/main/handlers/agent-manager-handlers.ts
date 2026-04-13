@@ -1,15 +1,13 @@
 /**
  * Agent manager IPC handlers — delegates to the in-process AgentManager.
  */
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
+import { execFileAsync } from '../lib/async-utils'
 import { safeHandle } from '../ipc-utils'
 import type { AgentManager } from '../agent-manager'
 import type { AgentManagerStatus } from '../../shared/types'
 import { getTask } from '../services/sprint-service'
 import { createLogger, logError } from '../logger'
 
-const execFileAsync = promisify(execFile)
 const log = createLogger('agent-manager-handlers')
 
 const STOPPED_STATUS: AgentManagerStatus = {

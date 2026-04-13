@@ -12,10 +12,9 @@
  * - Broadcasting mutations and triggering terminal callbacks
  */
 
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
+import { execFileAsync } from '../lib/async-utils'
 import type { Logger } from '../logger'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import type { ReviewActionPlan, GitOpDescriptor } from './review-action-policy'
@@ -29,8 +28,6 @@ import {
 import { runPostMergeDedup } from './post-merge-dedup'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
-
-const execFile = promisify(execFileCb)
 
 // ============================================================================
 // Dependency Injection
@@ -80,7 +77,7 @@ async function executeGitOp(
     // ========================================================================
     case 'getBranch': {
       if (!op.worktreePath) throw new Error('worktreePath required for getBranch')
-      const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+      const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
         cwd: op.worktreePath,
         env
       })
@@ -92,7 +89,7 @@ async function executeGitOp(
     // ========================================================================
     case 'checkStatus': {
       if (!op.repoPath) throw new Error('repoPath required for checkStatus')
-      const { stdout } = await execFile('git', ['status', '--porcelain'], {
+      const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
         cwd: op.repoPath,
         env
       })
@@ -107,7 +104,7 @@ async function executeGitOp(
     // ========================================================================
     case 'checkBranch': {
       if (!op.repoPath) throw new Error('repoPath required for checkBranch')
-      const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+      const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
         cwd: op.repoPath,
         env
       })
@@ -126,7 +123,7 @@ async function executeGitOp(
     case 'fetch': {
       if (!op.repoPath) throw new Error('repoPath required for fetch')
       logger.info('[executor] Fetching origin/main')
-      await execFile('git', ['fetch', 'origin', 'main'], { cwd: op.repoPath, env })
+      await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: op.repoPath, env })
       return state
     }
 
@@ -137,7 +134,7 @@ async function executeGitOp(
       if (!op.repoPath) throw new Error('repoPath required for fastForward')
       logger.info('[executor] Fast-forwarding local main to origin/main')
       try {
-        await execFile('git', ['merge', '--ff-only', 'origin/main'], { cwd: op.repoPath, env })
+        await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], { cwd: op.repoPath, env })
       } catch (err: unknown) {
         throw new Error(`Failed to sync local main with origin: ${getErrorMessage(err)}`)
       }
@@ -239,7 +236,7 @@ async function executeGitOp(
       if (!op.repoPath) throw new Error('repoPath required for push')
       logger.info('[executor] Pushing to origin')
       try {
-        await execFile('git', ['push', 'origin', 'HEAD'], { cwd: op.repoPath, env })
+        await execFileAsync('git', ['push', 'origin', 'HEAD'], { cwd: op.repoPath, env })
         logger.info('[executor] Push succeeded')
       } catch (pushErr) {
         throw new Error(

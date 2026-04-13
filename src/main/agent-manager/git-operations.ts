@@ -4,14 +4,11 @@
  * Consolidates rebase, push, and PR creation logic to avoid duplication
  * between completion.ts and review.ts.
  */
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import type { Logger } from '../logger'
+import { execFileAsync, sleep } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
 import { getErrorMessage } from '../../shared/errors'
-
-const execFile = promisify(execFileCb)
 
 /**
  * Test artifact patterns to exclude from agent commits.
@@ -21,10 +18,6 @@ const GIT_ARTIFACT_PATTERNS = ['test-results/', 'coverage/', '*.log', 'playwrigh
 
 const PR_CREATE_MAX_ATTEMPTS = 3
 const PR_CREATE_BACKOFF_MS = [3000, 8000]
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
 
 /**
  * Parse git PR creation output to extract PR URL and number.
@@ -46,7 +39,7 @@ export async function generatePrBody(
   const sections: string[] = []
 
   try {
-    const { stdout: log } = await execFile('git', ['log', '--oneline', `origin/main..${branch}`], {
+    const { stdout: log } = await execFileAsync('git', ['log', '--oneline', `origin/main..${branch}`], {
       cwd: worktreePath,
       env
     })
@@ -65,7 +58,7 @@ export async function generatePrBody(
   }
 
   try {
-    const { stdout: stat } = await execFile('git', ['diff', '--stat', `origin/main..${branch}`], {
+    const { stdout: stat } = await execFileAsync('git', ['diff', '--stat', `origin/main..${branch}`], {
       cwd: worktreePath,
       env
     })
@@ -92,18 +85,18 @@ export async function rebaseOntoMain(
 ): Promise<{ success: boolean; notes?: string; baseSha?: string }> {
   try {
     logger.info(`[git-ops] fetching origin/main for rebase`)
-    await execFile('git', ['fetch', 'origin', 'main'], {
+    await execFileAsync('git', ['fetch', 'origin', 'main'], {
       cwd: worktreePath,
       env
     })
 
     logger.info(`[git-ops] rebasing onto origin/main`)
-    await execFile('git', ['rebase', 'origin/main'], {
+    await execFileAsync('git', ['rebase', 'origin/main'], {
       cwd: worktreePath,
       env
     })
 
-    const { stdout: shaOut } = await execFile('git', ['rev-parse', 'origin/main'], {
+    const { stdout: shaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
       cwd: worktreePath,
       env
     })
@@ -113,7 +106,7 @@ export async function rebaseOntoMain(
   } catch (err) {
     logger.warn(`[git-ops] rebase onto main failed: ${err}`)
     try {
-      await execFile('git', ['rebase', '--abort'], {
+      await execFileAsync('git', ['rebase', '--abort'], {
         cwd: worktreePath,
         env
       })
@@ -140,7 +133,7 @@ export async function pushBranch(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     logger.info(`[git-ops] pushing branch ${branch}`)
-    await execFile('git', ['push', '-u', 'origin', branch], { cwd: worktreePath, env })
+    await execFileAsync('git', ['push', '-u', 'origin', branch], { cwd: worktreePath, env })
     logger.info(`[git-ops] push succeeded`)
     return { success: true }
   } catch (err) {
@@ -161,7 +154,7 @@ export async function checkExistingPr(
   logger: Logger
 ): Promise<{ prUrl: string; prNumber: number } | null> {
   try {
-    const { stdout: listOut } = await execFile(
+    const { stdout: listOut } = await execFileAsync(
       'gh',
       ['pr', 'list', '--head', branch, '--json', 'url,number', '--jq', '.[0] | {url, number}'],
       { cwd: worktreePath, env }
@@ -226,7 +219,7 @@ export async function createNewPr(
 
     try {
       const sanitizedTitle = sanitizeForGit(title)
-      const { stdout: prOut } = await execFile(
+      const { stdout: prOut } = await execFileAsync(
         'gh',
         [
           'pr',
@@ -294,7 +287,7 @@ export async function findOrCreatePR(
  * Returns stdout containing worktree metadata.
  */
 export async function listWorktrees(repoPath: string, env: NodeJS.ProcessEnv): Promise<string> {
-  const { stdout } = await execFile('git', ['worktree', 'list', '--porcelain'], {
+  const { stdout } = await execFileAsync('git', ['worktree', 'list', '--porcelain'], {
     cwd: repoPath,
     env
   })
@@ -309,7 +302,7 @@ export async function removeWorktreeForce(
   worktreePath: string,
   env: NodeJS.ProcessEnv
 ): Promise<void> {
-  await execFile('git', ['worktree', 'remove', '--force', worktreePath], {
+  await execFileAsync('git', ['worktree', 'remove', '--force', worktreePath], {
     cwd: repoPath,
     env
   })
@@ -319,7 +312,7 @@ export async function removeWorktreeForce(
  * Prune stale worktree administrative files.
  */
 export async function pruneWorktrees(repoPath: string, env: NodeJS.ProcessEnv): Promise<void> {
-  await execFile('git', ['worktree', 'prune'], { cwd: repoPath, env })
+  await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env })
 }
 
 /**
@@ -330,7 +323,7 @@ export async function deleteBranch(
   branch: string,
   env: NodeJS.ProcessEnv
 ): Promise<void> {
-  await execFile('git', ['branch', '-D', branch], { cwd: repoPath, env })
+  await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
 }
 
 /**
@@ -341,7 +334,7 @@ export async function forceDeleteBranchRef(
   branch: string,
   env: NodeJS.ProcessEnv
 ): Promise<void> {
-  await execFile('git', ['update-ref', '-d', `refs/heads/${branch}`], {
+  await execFileAsync('git', ['update-ref', '-d', `refs/heads/${branch}`], {
     cwd: repoPath,
     env
   })
@@ -356,7 +349,7 @@ export async function fetchMain(
   logger: Logger,
   timeoutMs = 30000
 ): Promise<void> {
-  await execFile('git', ['fetch', 'origin', 'main', '--no-tags'], {
+  await execFileAsync('git', ['fetch', 'origin', 'main', '--no-tags'], {
     cwd: repoPath,
     env,
     timeout: timeoutMs
@@ -373,7 +366,7 @@ export async function ffMergeMain(
   logger: Logger,
   timeoutMs = 10000
 ): Promise<void> {
-  await execFile('git', ['merge', '--ff-only', 'origin/main'], {
+  await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], {
     cwd: repoPath,
     env,
     timeout: timeoutMs
@@ -390,7 +383,7 @@ export async function addWorktree(
   worktreePath: string,
   env: NodeJS.ProcessEnv
 ): Promise<void> {
-  await execFile('git', ['worktree', 'add', '-b', branch, worktreePath], {
+  await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], {
     cwd: repoPath,
     env
   })
@@ -407,12 +400,12 @@ async function stageWithArtifactCleanup(
 ): Promise<boolean> {
   // Use -A to capture new (untracked) files created by agents, not just modifications.
   // The repo's .gitignore excludes node_modules, .env, etc.
-  await execFile('git', ['add', '-A'], { cwd: worktreePath, env })
+  await execFileAsync('git', ['add', '-A'], { cwd: worktreePath, env })
 
   // Unstage test artifacts that may have been previously tracked
   for (const path of GIT_ARTIFACT_PATTERNS) {
     try {
-      await execFile('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
+      await execFileAsync('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
         cwd: worktreePath,
         env
       })
@@ -423,7 +416,7 @@ async function stageWithArtifactCleanup(
   }
 
   // Re-check if staged changes remain (unstaging may have removed everything)
-  const { stdout: stagedOut } = await execFile('git', ['diff', '--cached', '--name-only'], {
+  const { stdout: stagedOut } = await execFileAsync('git', ['diff', '--cached', '--name-only'], {
     cwd: worktreePath,
     env
   })
@@ -441,7 +434,7 @@ export async function autoCommitIfDirty(
   logger: Logger
 ): Promise<void> {
   const env = buildAgentEnv()
-  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
+  const { stdout: statusOut } = await execFileAsync('git', ['status', '--porcelain'], {
     cwd: worktreePath,
     env
   })
@@ -456,7 +449,7 @@ export async function autoCommitIfDirty(
   }
 
   const sanitizedTitle = sanitizeForGit(title)
-  await execFile(
+  await execFileAsync(
     'git',
     ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
     {
@@ -478,7 +471,7 @@ export async function cleanupWorktreeAndBranch(
 ): Promise<void> {
   const env = buildAgentEnv()
   try {
-    await execFile('git', ['worktree', 'remove', worktreePath, '--force'], {
+    await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], {
       cwd: repoPath,
       env
     })
@@ -487,7 +480,7 @@ export async function cleanupWorktreeAndBranch(
   }
 
   try {
-    await execFile('git', ['branch', '-D', branch], {
+    await execFileAsync('git', ['branch', '-D', branch], {
       cwd: repoPath,
       env
     })
@@ -515,7 +508,7 @@ export async function executeSquashMerge(
 ): Promise<'merged' | 'dirty-main' | 'failed'> {
   const { taskId, branch, worktreePath, repoPath, title, logger } = opts
   const env = buildAgentEnv()
-  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
+  const { stdout: statusOut } = await execFileAsync('git', ['status', '--porcelain'], {
     cwd: repoPath,
     env
   })
@@ -527,11 +520,11 @@ export async function executeSquashMerge(
   }
 
   try {
-    await execFile('git', ['merge', '--squash', branch], {
+    await execFileAsync('git', ['merge', '--squash', branch], {
       cwd: repoPath,
       env
     })
-    await execFile('git', ['commit', '-m', `${sanitizeForGit(title)} (#${taskId})`], {
+    await execFileAsync('git', ['commit', '-m', `${sanitizeForGit(title)} (#${taskId})`], {
       cwd: repoPath,
       env
     })
@@ -550,7 +543,7 @@ export async function executeSquashMerge(
       `[completion] Auto-merge failed: ${mergeErr} — task remains in review`
     )
     try {
-      await execFile('git', ['merge', '--abort'], {
+      await execFileAsync('git', ['merge', '--abort'], {
         cwd: repoPath,
         env
       })

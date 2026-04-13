@@ -1,7 +1,6 @@
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
+import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH, RETRY_BACKOFF_BASE_MS, RETRY_BACKOFF_CAP_MS } from './types'
 import type { Logger } from '../logger'
@@ -16,8 +15,6 @@ import {
   executeSquashMerge
 } from './git-operations'
 import { transitionToReview } from './review-transition'
-
-const execFile = promisify(execFileCb)
 
 export interface ResolveSuccessOpts {
   taskId: string
@@ -60,7 +57,7 @@ interface AutoMergeOpts {
 
 async function detectBranch(worktreePath: string): Promise<string> {
   const env = buildAgentEnv()
-  const { stdout } = await execFile('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+  const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
     cwd: worktreePath,
     env
   })
@@ -76,7 +73,7 @@ async function getDiffFileStats(
   worktreePath: string
 ): Promise<Array<{ path: string; additions: number; deletions: number }> | null> {
   const env = buildAgentEnv()
-  const { stdout: numstatOut } = await execFile(
+  const { stdout: numstatOut } = await execFileAsync(
     'git',
     ['diff', '--numstat', 'origin/main...HEAD'],
     { cwd: worktreePath, env }
@@ -169,7 +166,7 @@ async function hasCommitsAheadOfMain(opts: CommitCheckOpts): Promise<boolean> {
     opts
   const env = buildAgentEnv()
   try {
-    const { stdout: diffOut } = await execFile(
+    const { stdout: diffOut } = await execFileAsync(
       'git',
       ['rev-list', '--count', `origin/main..${branch}`],
       { cwd: worktreePath, env }

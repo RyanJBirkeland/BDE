@@ -1,9 +1,6 @@
 import type { Logger } from '../logger'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
-
-const execFile = promisify(execFileCb)
+import { execFileAsync } from '../lib/async-utils'
 
 const MAX_PARTIAL_DIFF_SIZE = 50 * 1024 // 50KB
 
@@ -36,7 +33,7 @@ export async function capturePartialDiff(
   logger: Logger
 ): Promise<void> {
   try {
-    const { stdout } = await execFile('git', ['diff', 'HEAD'], {
+    const { stdout } = await execFileAsync('git', ['diff', 'HEAD'], {
       cwd: worktreePath,
       maxBuffer: MAX_PARTIAL_DIFF_SIZE
     })

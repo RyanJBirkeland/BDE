@@ -3,15 +3,13 @@
  * Extracted from sprint-local.ts to reduce function size and improve cohesion.
  */
 
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from '../lib/async-utils'
 import { safeHandle } from '../ipc-utils'
 import { getTask, updateTask } from '../services/sprint-service'
 import { getSettingJson } from '../settings'
 import { getErrorMessage } from '../../shared/errors'
 import { createLogger } from '../logger'
 
-const execFileAsync = promisify(execFile)
 const logger = createLogger('sprint-retry-handler')
 
 export function registerSprintRetryHandler(): void {

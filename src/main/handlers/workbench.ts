@@ -4,8 +4,7 @@
 import { safeHandle } from '../ipc-utils'
 import { checkAuthStatus } from '../auth-guard'
 import { getRepoPath } from '../git'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from '../lib/async-utils'
 import { listTasks } from '../services/sprint-service'
 import type { AgentManager } from '../agent-manager'
 import { createSpecQualityService } from '../services/spec-quality/factory'
@@ -17,7 +16,6 @@ import { generateSpec } from '../services/spec-generation-service'
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 
-const execFileAsync = promisify(execFile)
 const log = createLogger('workbench')
 
 /** Module-level singleton — created once, reused across all checkSpec calls. */

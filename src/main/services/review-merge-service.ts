@@ -3,14 +3,12 @@
  *
  * Provides rebase, merge strategies, conflict handling, and cleanup.
  */
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 import { runPostMergeDedup } from './post-merge-dedup'
 import { rebaseOntoMain } from '../agent-manager/git-operations'
 
-const execFileAsync = promisify(execFile)
 const logger = createLogger('review-merge-service')
 
 export interface MergeOptions {
