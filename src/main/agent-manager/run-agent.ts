@@ -559,12 +559,13 @@ async function resolveAgentExit(
   exitCode: number | undefined,
   lastAgentOutput: string,
   agent: ActiveAgent,
+  exitedAt: number,
   worktree: { worktreePath: string; branch: string },
   repo: ISprintTaskRepository,
   onTaskTerminal: (taskId: string, status: string) => Promise<void>,
   logger: Logger
 ): Promise<void> {
-  const ffResult = classifyExit(agent.startedAt, Date.now(), exitCode ?? 1, task.fast_fail_count ?? 0)
+  const ffResult = classifyExit(agent.startedAt, exitedAt, exitCode ?? 1, task.fast_fail_count ?? 0)
   const now = nowIso()
 
   if (ffResult === 'fast-fail-exhausted') {
@@ -623,6 +624,36 @@ async function resolveAgentExit(
 }
 
 /**
+ * Preserves the worktree if the task moved to 'review' status;
+ * otherwise captures a partial diff and removes the worktree.
+ */
+async function cleanupOrPreserveWorktree(
+  task: RunAgentTask,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  repo: ISprintTaskRepository,
+  logger: Logger
+): Promise<void> {
+  const currentTask = repo.getTask(task.id)
+  if (currentTask?.status !== 'review') {
+    await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
+    cleanupWorktree({
+      repoPath,
+      worktreePath: worktree.worktreePath,
+      branch: worktree.branch
+    }).catch((err: unknown) => {
+      logger.warn(
+        `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${err}`
+      )
+    })
+  } else {
+    logger.info(
+      `[agent-manager] Preserving worktree for review task ${task.id} at ${worktree.worktreePath}`
+    )
+  }
+}
+
+/**
  * Phase 3: Finalizes agent run — emits completion event, classifies exit,
  * runs resolution handlers, and cleans up resources.
  */
@@ -670,29 +701,12 @@ async function finalizeAgentRun(
   }
 
   persistAgentRunTelemetry(agentRunId, agent, exitCode, turnTracker, exitedAt, durationMs, logger)
-  await resolveAgentExit(task, exitCode, lastAgentOutput, agent, worktree, repo, onTaskTerminal, logger)
+  await resolveAgentExit(task, exitCode, lastAgentOutput, agent, exitedAt, worktree, repo, onTaskTerminal, logger)
 
   // Remove from active map
   activeAgents.delete(task.id)
 
-  // Cleanup worktree (preserve for review tasks)
-  const currentTask = repo.getTask(task.id)
-  if (currentTask?.status !== 'review') {
-    await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
-    cleanupWorktree({
-      repoPath,
-      worktreePath: worktree.worktreePath,
-      branch: worktree.branch
-    }).catch((cleanupErr: unknown) => {
-      logger.warn(
-        `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`
-      )
-    })
-  } else {
-    logger.info(
-      `[agent-manager] Preserving worktree for review task ${task.id} at ${worktree.worktreePath}`
-    )
-  }
+  await cleanupOrPreserveWorktree(task, worktree, repoPath, repo, logger)
 
   logger.info(`[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'})`)
 }
