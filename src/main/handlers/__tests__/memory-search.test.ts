@@ -144,4 +144,69 @@ projects/foo.md:12:more test content`
 
     expect(result).toEqual([])
   })
+
+  it('rejects query longer than 200 characters', async () => {
+    let searchHandler: any
+
+    vi.mocked(safeHandle).mockImplementation((channel, handler) => {
+      if (channel === 'memory:search') {
+        searchHandler = handler
+      }
+    })
+
+    registerMemorySearchHandler()
+
+    const mockEvent = {} as IpcMainInvokeEvent
+    const longQuery = 'a'.repeat(201)
+    await expect(searchHandler(mockEvent, longQuery)).rejects.toThrow(
+      'Query must be a string of 200 characters or fewer'
+    )
+    expect(mockExecFileAsync).not.toHaveBeenCalled()
+  })
+
+  it('strips catastrophic backtracking patterns from query before passing to grep', async () => {
+    let searchHandler: any
+
+    vi.mocked(safeHandle).mockImplementation((channel, handler) => {
+      if (channel === 'memory:search') {
+        searchHandler = handler
+      }
+    })
+
+    mockExecFileAsync.mockResolvedValue({ stdout: '' })
+
+    registerMemorySearchHandler()
+
+    const mockEvent = {} as IpcMainInvokeEvent
+    // Pattern with nested quantifier: (?:a+)+ → dangerous, strip the outer +
+    await searchHandler(mockEvent, '(?:a+)+')
+
+    // The safeQuery passed to grep should NOT contain the original dangerous pattern
+    const calledWith = mockExecFileAsync.mock.calls[0]
+    const queryArg = calledWith[1][2] // grep args: ['-rni', '--', query, '.']
+    expect(queryArg).not.toBe('(?:a+)+')
+  })
+
+  it('applies a 5-second timeout to the grep call', async () => {
+    let searchHandler: any
+
+    vi.mocked(safeHandle).mockImplementation((channel, handler) => {
+      if (channel === 'memory:search') {
+        searchHandler = handler
+      }
+    })
+
+    mockExecFileAsync.mockResolvedValue({ stdout: '' })
+
+    registerMemorySearchHandler()
+
+    const mockEvent = {} as IpcMainInvokeEvent
+    await searchHandler(mockEvent, 'hello')
+
+    expect(mockExecFileAsync).toHaveBeenCalledWith(
+      'grep',
+      expect.any(Array),
+      expect.objectContaining({ timeout: 5000 })
+    )
+  })
 })

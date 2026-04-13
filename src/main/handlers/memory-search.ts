@@ -23,15 +23,24 @@ export interface MemorySearchResult {
  * Returns array of files with matching lines.
  */
 async function searchMemory(query: string): Promise<MemorySearchResult[]> {
+  // Input validation
+  if (typeof query !== 'string' || query.length > 200) {
+    throw new Error('Query must be a string of 200 characters or fewer')
+  }
+
   if (!query.trim()) {
     return []
   }
 
+  // Strip catastrophic backtracking patterns
+  const safeQuery = query.replace(/(\(\?:.*\))[+*]/g, '').replace(/\([^)]*\)[+*]{2,}/g, '')
+
   try {
-    const { stdout } = await execFileAsync('grep', ['-rni', '--', query, '.'], {
+    const { stdout } = await execFileAsync('grep', ['-rni', '--', safeQuery, '.'], {
       cwd: BDE_MEMORY_DIR,
       encoding: 'utf-8',
-      maxBuffer: 5 * 1024 * 1024 // 5MB
+      maxBuffer: 5 * 1024 * 1024, // 5MB
+      timeout: 5000
     })
 
     const lines = stdout.trim().split('\n').filter(Boolean)

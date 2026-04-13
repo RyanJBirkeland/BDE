@@ -147,6 +147,12 @@ export async function listGithubRepos(): Promise<GithubRepoInfo[]> {
 }
 
 export function cloneRepo(owner: string, repo: string, destDir: string): void {
+  if (!/^[a-zA-Z0-9_.-]+$/.test(owner) || !/^[a-zA-Z0-9_.-]+$/.test(repo)) {
+    throw new Error(
+      `Invalid repository identifier: owner and repo must contain only alphanumeric characters, hyphens, underscores, and dots`
+    )
+  }
+
   const expanded = expandTilde(destDir)
   const target = path.join(expanded, repo)
   const url = `https://github.com/${owner}/${repo}.git`

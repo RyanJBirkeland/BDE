@@ -35,8 +35,9 @@ vi.mock('../../broadcast', () => ({
   broadcast: vi.fn()
 }))
 
-import { scanLocalRepos, listGithubRepos } from '../repo-discovery'
-import { readdir, stat, access } from 'fs/promises'
+import { scanLocalRepos, listGithubRepos, cloneRepo } from '../repo-discovery'
+import { readdir, stat, access, mkdir } from 'fs/promises'
+import { spawn } from 'child_process'
 import { getSettingJson } from '../../settings'
 
 describe('scanLocalRepos', () => {
@@ -146,5 +147,56 @@ describe('listGithubRepos', () => {
     execFileAsyncMock.mockRejectedValue(err)
 
     await expect(listGithubRepos()).rejects.toThrow(/gh/)
+  })
+})
+
+describe('cloneRepo owner/repo validation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('rejects owner containing a forward slash', () => {
+    expect(() => cloneRepo('bad/owner', 'repo', '~/projects')).toThrow(
+      'Invalid repository identifier'
+    )
+  })
+
+  it('rejects owner containing a space', () => {
+    expect(() => cloneRepo('bad owner', 'repo', '~/projects')).toThrow(
+      'Invalid repository identifier'
+    )
+  })
+
+  it('rejects owner containing a semicolon', () => {
+    expect(() => cloneRepo('owner;rm -rf /', 'repo', '~/projects')).toThrow(
+      'Invalid repository identifier'
+    )
+  })
+
+  it('rejects repo containing a forward slash', () => {
+    expect(() => cloneRepo('owner', 'bad/repo', '~/projects')).toThrow(
+      'Invalid repository identifier'
+    )
+  })
+
+  it('accepts a normal owner and repo like anthropics/claude-code', () => {
+    vi.mocked(mkdir).mockResolvedValue(undefined as any)
+    vi.mocked(spawn).mockReturnValue({
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      on: vi.fn()
+    } as any)
+    // Should not throw
+    expect(() => cloneRepo('anthropics', 'claude-code', '~/projects')).not.toThrow()
+  })
+
+  it('accepts owner/repo with underscores and dots', () => {
+    vi.mocked(mkdir).mockResolvedValue(undefined as any)
+    vi.mocked(spawn).mockReturnValue({
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      on: vi.fn()
+    } as any)
+    expect(() => cloneRepo('my_org', 'my.repo', '~/projects')).not.toThrow()
   })
 })
