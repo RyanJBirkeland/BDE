@@ -3,7 +3,7 @@ import { mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { buildAgentEnv } from '../env-utils'
-import { BRANCH_SLUG_MAX_LENGTH } from './types'
+import { BRANCH_SLUG_MAX_LENGTH, GIT_FETCH_TIMEOUT_MS, GIT_FF_MERGE_TIMEOUT_MS } from './types'
 import type { Logger } from '../logger'
 import {
   listWorktrees,
@@ -171,7 +171,7 @@ export async function setupWorktree(
     // own lock through 30s of network I/O fully serialized worktree setup
     // for multiple agents on the same repo (10 tasks → 5+ minute startup).
     try {
-      await fetchMain(repoPath, env, log, 30_000)
+      await fetchMain(repoPath, env, log, GIT_FETCH_TIMEOUT_MS)
       log.info(`[worktree] Fetched origin/main for task ${taskId}`)
     } catch (err) {
       // Non-fatal — proceed with whatever HEAD we have
@@ -192,7 +192,7 @@ export async function setupWorktree(
       // Fast-forward local main to match origin so the new worktree branches
       // off the latest commit. Non-destructive — only succeeds for true ff.
       try {
-        await ffMergeMain(repoPath, env, log, 10_000)
+        await ffMergeMain(repoPath, env, log, GIT_FF_MERGE_TIMEOUT_MS)
       } catch (err) {
         log.warn(`[worktree] Failed to ff-merge origin/main (proceeding anyway): ${err}`)
       }

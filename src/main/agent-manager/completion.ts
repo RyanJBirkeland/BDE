@@ -3,7 +3,7 @@ import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { buildAgentEnv } from '../env-utils'
-import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
+import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH, RETRY_BACKOFF_BASE_MS, RETRY_BACKOFF_CAP_MS } from './types'
 import type { Logger } from '../logger'
 import { broadcastCoalesced } from '../broadcast'
 import type { AgentEvent, FailureReason } from '../../shared/types'
@@ -474,7 +474,7 @@ export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boole
   try {
     if (!isTerminal) {
       // Exponential backoff: 30s, 60s, 120s, capped at 5 minutes
-      const backoffMs = Math.min(300000, 30000 * Math.pow(2, retryCount))
+      const backoffMs = Math.min(RETRY_BACKOFF_CAP_MS, RETRY_BACKOFF_BASE_MS * Math.pow(2, retryCount))
       const nextEligibleAt = new Date(Date.now() + backoffMs).toISOString()
       repo.updateTask(taskId, {
         status: 'queued',
