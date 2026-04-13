@@ -215,9 +215,9 @@ export class AgentManagerImpl implements AgentManager {
    * On repo error, logs a warning and returns an empty map so the drain loop
    * continues with a stale-but-safe state.
    *
-   * Exposed via _ convention (not private keyword) for testability.
+   * Exposed via _ prefix convention (not private keyword) for testability.
    */
-  refreshDependencyIndex(): Map<string, string> {
+  _refreshDependencyIndex(): Map<string, string> {
     try {
       const allTasks = this.repo.getTasksWithDependencies()
       const currentTaskIds = new Set(allTasks.map((t) => t.id))
@@ -475,7 +475,7 @@ export class AgentManagerImpl implements AgentManager {
     const drainStart = Date.now()
 
     // Incrementally update dependency index instead of full rebuild
-    const taskStatusMap = this.refreshDependencyIndex()
+    const taskStatusMap = this._refreshDependencyIndex()
 
     const available = availableSlots(this._concurrency, this._activeAgents.size)
     if (available <= 0) return

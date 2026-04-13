@@ -677,10 +677,10 @@ describe('AgentManagerImpl — class internals', () => {
   })
 
   // -------------------------------------------------------------------------
-  // refreshDependencyIndex
+  // _refreshDependencyIndex
   // -------------------------------------------------------------------------
 
-  describe('refreshDependencyIndex', () => {
+  describe('_refreshDependencyIndex', () => {
     function makeInlineRepo(
       tasks: Array<{ id: string; status: string; depends_on: null }>
     ): ISprintTaskRepository {
@@ -702,7 +702,7 @@ describe('AgentManagerImpl — class internals', () => {
       ])
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
-      const result = manager.refreshDependencyIndex()
+      const result = manager._refreshDependencyIndex()
 
       expect(result).toBeInstanceOf(Map)
       expect(result.get('task-a')).toBe('queued')
@@ -718,7 +718,7 @@ describe('AgentManagerImpl — class internals', () => {
       manager._lastTaskDeps.set('task-a', { deps: null, hash: 'old-hash' })
       manager._lastTaskDeps.set('task-b', { deps: null, hash: 'old-hash' })
 
-      manager.refreshDependencyIndex()
+      manager._refreshDependencyIndex()
 
       // task-a was deleted → should be removed from cache
       expect(manager._lastTaskDeps.has('task-a')).toBe(false)
@@ -741,7 +741,7 @@ describe('AgentManagerImpl — class internals', () => {
       const logger = makeLogger()
       const manager = new AgentManagerImpl(baseConfig, repo, logger)
 
-      const result = manager.refreshDependencyIndex()
+      const result = manager._refreshDependencyIndex()
 
       expect(result).toBeInstanceOf(Map)
       expect(result.size).toBe(0)
