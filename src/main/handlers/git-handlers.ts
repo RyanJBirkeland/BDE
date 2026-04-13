@@ -163,7 +163,12 @@ export function registerGitHandlers(deps: GitHandlersDeps): void {
     if (path.startsWith('https://')) {
       const parsed = new URL(path)
       if (parsed.hostname !== 'api.github.com') {
-        throw new Error('github:fetch only allows api.github.com URLs')
+        return {
+          ok: false,
+          status: 0,
+          body: { error: 'github:fetch only allows api.github.com URLs' },
+          linkNext: null
+        }
       }
       url = path
       apiPath = parsed.pathname
@@ -176,10 +181,16 @@ export function registerGitHandlers(deps: GitHandlersDeps): void {
     const method = init?.method ?? 'GET'
     if (!isGitHubRequestAllowed(method, apiPath, init?.body)) {
       logger.warn(`github:fetch rejected: ${method} ${apiPath}`)
-      throw new Error(
-        `GitHub API request not allowed: ${method} ${apiPath}. ` +
-          'Only specific read and PR-related operations are permitted.'
-      )
+      return {
+        ok: false,
+        status: 0,
+        body: {
+          error:
+            `GitHub API request not allowed: ${method} ${apiPath}. ` +
+            'Only specific read and PR-related operations are permitted.'
+        },
+        linkNext: null
+      }
     }
 
     // Strip caller Authorization -- token is injected server-side only

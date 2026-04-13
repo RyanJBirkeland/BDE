@@ -32,9 +32,13 @@ export function registerAgentManagerHandlers(am: AgentManager | undefined): void
   })
 
   safeHandle('agent-manager:kill', async (_e, taskId: string) => {
-    if (!am) throw new Error('Agent manager not available')
-    am.killAgent(taskId)
-    return { ok: true }
+    if (!am) return { ok: false, error: 'Agent manager not available' }
+    try {
+      am.killAgent(taskId)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: getErrorMessage(err) }
+    }
   })
 
   safeHandle('agent-manager:metrics', async () => {
