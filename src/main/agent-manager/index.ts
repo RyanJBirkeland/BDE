@@ -3,6 +3,7 @@ import type { Logger } from '../logger'
 import { logError } from '../logger'
 import type { TaskDependency } from '../../shared/types'
 import { computeDepsFingerprint, refreshDependencyIndex } from './dependency-refresher'
+import { handleTaskTerminal } from './terminal-handler'
 import {
   EXECUTOR_ID,
   WATCHDOG_INTERVAL_MS,
@@ -26,7 +27,6 @@ import {
   createEpicDependencyIndex,
   type EpicDependencyIndex
 } from '../services/epic-dependency-service'
-import { resolveDependents } from './resolve-dependents'
 import { runAgent as _runAgent, type RunAgentDeps, type RunAgentTask } from './run-agent'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoPaths } from '../paths'
@@ -217,60 +217,15 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   async onTaskTerminal(taskId: string, status: string): Promise<void> {
-    // F-t4-lifecycle-5: Guard against double-invocation when watchdog and completion handler race
-    if (this._terminalCalled.has(taskId)) {
-      this.logger.warn(`[agent-manager] onTaskTerminal duplicate for ${taskId}`)
-      return
-    }
-    this._terminalCalled.add(taskId)
-
-    try {
-      if (status === 'done' || status === 'review') {
-        this._metrics.increment('agentsCompleted')
-      } else if (status === 'failed' || status === 'error') {
-        this._metrics.increment('agentsFailed')
-      }
-      if (this.config.onStatusTerminal) {
-        this.config.onStatusTerminal(taskId, status)
-      } else {
-        // DESIGN: Inline resolution for immediate drain loop feedback.
-        // When a pipeline agent completes, we resolve dependents synchronously
-        // so the drain loop can claim newly-unblocked tasks in the same tick.
-        // This differs from task-terminal-service's batched setTimeout(0) approach.
-        // See ResolveDependentsParams in types.ts for the conceptual contract.
-        // Rebuild dep index first to pick up any tasks created/modified since
-        // the last drain tick — stale index causes missed unblocking.
-        try {
-          const freshTasks = this.repo.getTasksWithDependencies()
-          this._depIndex.rebuild(freshTasks)
-        } catch (rebuildErr) {
-          this.logger.warn(
-            `[agent-manager] dep index rebuild failed before resolution for ${taskId}: ${rebuildErr}`
-          )
-        }
-        try {
-          resolveDependents(
-            taskId,
-            status,
-            this._depIndex,
-            this.repo.getTask,
-            this.repo.updateTask,
-            this.logger,
-            getSetting,
-            this._epicIndex,
-            this.repo.getGroup,
-            this.repo.getGroupTasks,
-            undefined,
-            this.onTaskTerminal.bind(this)
-          )
-        } catch (err) {
-          this.logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${err}`)
-        }
-      }
-    } finally {
-      // Clean up after 5 seconds to prevent unbounded memory growth
-      setTimeout(() => this._terminalCalled.delete(taskId), 5000)
-    }
+    return handleTaskTerminal(taskId, status, this.onTaskTerminal.bind(this), {
+      metrics: this._metrics,
+      depIndex: this._depIndex,
+      epicIndex: this._epicIndex,
+      repo: this.repo,
+      config: this.config,
+      terminalCalled: this._terminalCalled,
+      logger: this.logger
+    })
   }
 
   private resolveRepoPath(repoSlug: string): string | null {
