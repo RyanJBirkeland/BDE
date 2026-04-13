@@ -6,6 +6,7 @@ import { checkAuthStatus } from '../auth-guard'
 import { getRepoPath } from '../git'
 import { execFileAsync } from '../lib/async-utils'
 import { listTasks } from '../services/sprint-service'
+import { searchRepo } from '../services/repo-search-service'
 import type { AgentManager } from '../agent-manager'
 import { createSpecQualityService } from '../services/spec-quality/factory'
 import type { SpecQualityResult } from '../../shared/spec-quality/types'
@@ -232,61 +233,11 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
   // --- Fully implemented: Repo research via grep ---
   safeHandle('workbench:researchRepo', async (_e, input: { query: string; repo: string }) => {
     const { query, repo } = input
-
     const repoPath = getRepoPath(repo)
     if (!repoPath) {
-      return {
-        content: `Error: No path configured for repo "${repo}"`,
-        filesSearched: [],
-        totalMatches: 0
-      }
+      return { content: `Error: No path configured for repo "${repo}"`, filesSearched: [], totalMatches: 0 }
     }
-
-    try {
-      const { stdout } = await execFileAsync('grep', ['-rn', '-i', '--', query, '.'], {
-        cwd: repoPath,
-        encoding: 'utf-8',
-        maxBuffer: 5 * 1024 * 1024 // 5MB
-      })
-
-      const lines = stdout.trim().split('\n').filter(Boolean)
-      const fileMap = new Map<string, string[]>()
-
-      for (const line of lines) {
-        const match = line.match(/^(.+?):(\d+):(.*)$/)
-        if (!match) continue
-        const [, file, lineNum, content] = match
-        if (!fileMap.has(file)) {
-          fileMap.set(file, [])
-        }
-        fileMap.get(file)!.push(`${lineNum}: ${content.trim()}`)
-      }
-
-      const filesSearched = Array.from(fileMap.keys()).slice(0, 10)
-      const totalMatches = fileMap.size
-
-      let content = `Found ${totalMatches} file(s) matching "${query}" (showing first 10):\n\n`
-      for (const file of filesSearched) {
-        const matches = fileMap.get(file)!.slice(0, 3) // 3 lines per file
-        content += `**${file}**\n${matches.join('\n')}\n\n`
-      }
-
-      return { content, filesSearched, totalMatches }
-    } catch (err: unknown) {
-      // grep exits with code 1 when no matches found
-      if ((err as { code?: number }).code === 1) {
-        return {
-          content: `No matches found for "${query}" in repo "${repo}"`,
-          filesSearched: [],
-          totalMatches: 0
-        }
-      }
-      return {
-        content: `Error searching repo: ${(err as Error).message}`,
-        filesSearched: [],
-        totalMatches: 0
-      }
-    }
+    return searchRepo(repoPath, query)
   })
 
   // NOTE: The non-streaming `workbench:chat` IPC handler was removed.
