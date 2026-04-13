@@ -961,7 +961,7 @@ describe('createAgentManager', () => {
     it('returns killed=false when no active agent', () => {
       const mgr = createAgentManager(baseConfig, mockRepo, makeLogger())
       const result = mgr.killAgent('nonexistent')
-      expect(result).toEqual({ killed: false, error: 'No active agent for task nonexistent' })
+      expect(result).toEqual({ killed: false, error: 'Agent not found' })
     })
 
     it('calls handle.abort()', async () => {
@@ -1121,7 +1121,7 @@ describe('createAgentManager', () => {
       mgr.start()
       await flush(20)
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Initial orphan recovery error')
+        expect.stringContaining('[agent-supervisor] Orphan recovery error')
       )
       await mgr.stop(100)
       await flush()
@@ -1135,7 +1135,7 @@ describe('createAgentManager', () => {
       mgr.start()
       await flush(20)
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Initial worktree prune error')
+        expect.stringContaining('[agent-supervisor] Worktree prune error')
       )
       await mgr.stop(100)
       await flush()
@@ -1151,7 +1151,7 @@ describe('createAgentManager', () => {
       mgr.start()
       await flush(20)
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to build dependency index')
+        expect.stringContaining('[dependency-resolver] Failed to build indexes')
       )
       await mgr.stop(100)
       await flush()
@@ -1172,7 +1172,7 @@ describe('createAgentManager', () => {
       await vi.advanceTimersByTimeAsync(61_000)
       for (let i = 0; i < 30; i++) await vi.advanceTimersByTimeAsync(1)
       expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Orphan recovery before initial drain error')
+        expect.stringContaining('[agent-supervisor] Orphan recovery error')
       )
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
