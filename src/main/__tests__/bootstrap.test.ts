@@ -3,7 +3,8 @@ import {
   buildConnectSrc,
   initializeDatabase,
   startBackgroundServices,
-  setupCleanupTasks
+  setupCleanupTasks,
+  runBootstrap
 } from '../bootstrap'
 import * as db from '../db'
 import * as eventQueries from '../data/event-queries'
@@ -11,6 +12,9 @@ import * as taskChanges from '../data/task-changes'
 import * as sprintQueries from '../data/sprint-queries'
 import * as pluginLoader from '../services/plugin-loader'
 import * as loadSampler from '../services/load-sampler'
+import * as prPoller from '../pr-poller'
+import * as sprintPrPoller from '../sprint-pr-poller'
+import { clearServices } from '../services/bootstrap-registry'
 
 vi.mock('fs', async () => {
   const actual = await vi.importActual('fs')
@@ -86,6 +90,7 @@ describe('bootstrap', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useFakeTimers()
+    clearServices() // Clear bootstrap registry between tests
 
     vi.mocked(db.getDb).mockReturnValue(mockDb as never)
     vi.mocked(db.backupDatabase).mockImplementation(() => {})
@@ -180,6 +185,52 @@ describe('bootstrap', () => {
       })
 
       expect(() => setupCleanupTasks()).not.toThrow()
+    })
+  })
+
+  describe('runBootstrap', () => {
+    it('should initialize all services with graceful error handling', async () => {
+      await runBootstrap()
+
+      // Verify core services were initialized
+      expect(db.getDb).toHaveBeenCalled()
+      expect(db.backupDatabase).toHaveBeenCalled()
+      expect(pluginLoader.loadPlugins).toHaveBeenCalled()
+      expect(loadSampler.startLoadSampler).toHaveBeenCalled()
+      expect(eventQueries.pruneOldEvents).toHaveBeenCalled()
+    })
+
+    it('should initialize PR pollers when dependencies provided', async () => {
+      const terminalDeps = {
+        onStatusTerminal: vi.fn(),
+        dialog: { showError: vi.fn(), showConfirmation: vi.fn() }
+      }
+
+      await runBootstrap(terminalDeps)
+
+      expect(prPoller.startPrPoller).toHaveBeenCalled()
+      expect(sprintPrPoller.startSprintPrPoller).toHaveBeenCalledWith(terminalDeps)
+    })
+
+    it('should not initialize PR pollers without dependencies', async () => {
+      await runBootstrap()
+
+      expect(prPoller.startPrPoller).not.toHaveBeenCalled()
+      expect(sprintPrPoller.startSprintPrPoller).not.toHaveBeenCalled()
+    })
+
+    it('should continue bootstrapping if one service fails', async () => {
+      // Make plugins fail
+      vi.mocked(pluginLoader.loadPlugins).mockImplementation(() => {
+        throw new Error('Plugin load failed')
+      })
+
+      // Should not throw - graceful degradation
+      await expect(runBootstrap()).resolves.not.toThrow()
+
+      // Other services should still run
+      expect(db.getDb).toHaveBeenCalled()
+      expect(loadSampler.startLoadSampler).toHaveBeenCalled()
     })
   })
 })

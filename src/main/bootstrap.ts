@@ -20,6 +20,10 @@ import { startLoadSampler, stopLoadSampler } from './services/load-sampler'
 import type { TaskTerminalService } from './services/task-terminal-service'
 import type { DialogService } from './dialog-service'
 import { BACKUP_INTERVAL_MS, PRUNE_CHANGES_DAYS } from './constants'
+import {
+  registerBootstrapService,
+  runBootstrap as runBootstrapRegistry
+} from './services/bootstrap-registry'
 
 const logger = createLogger('bootstrap')
 
@@ -216,4 +220,155 @@ export function setupCSP(): void {
       }
     })
   })
+}
+
+/**
+ * Register and run all bootstrap services with graceful error handling.
+ * If any service fails, the error is logged and other services continue.
+ *
+ * @param terminalDeps - Dependencies for PR pollers (if enabled)
+ */
+export async function runBootstrap(terminalDeps?: {
+  onStatusTerminal: TaskTerminalService['onStatusTerminal']
+  dialog: DialogService
+}): Promise<void> {
+  // Database initialization service
+  registerBootstrapService({
+    name: 'database',
+    setup: () => {
+      getDb()
+
+      // Ensure Claude Code has sensible default permissions for BDE agents
+      import('./claude-settings-bootstrap')
+        .then((m) => m.ensureClaudeSettings())
+        .catch((err) => {
+          logger.warn(`Failed to ensure Claude settings: ${getErrorMessage(err)}`)
+        })
+
+      // Run backup on startup and every 24 hours
+      backupDatabase()
+      const backupInterval = setInterval(backupDatabase, BACKUP_INTERVAL_MS)
+      app.on('will-quit', () => clearInterval(backupInterval))
+
+      // One-time async import from Supabase (no-op if local table already has rows or credentials missing)
+      importSprintTasksFromSupabase(getDb()).catch((err) =>
+        logger.warn(`Supabase import skipped: ${getErrorMessage(err)}`)
+      )
+    }
+  })
+
+  // Plugin loader service
+  registerBootstrapService({
+    name: 'plugins',
+    setup: () => {
+      loadPlugins()
+    }
+  })
+
+  // Load sampler service
+  registerBootstrapService({
+    name: 'load-sampler',
+    setup: () => {
+      startLoadSampler()
+      app.on('will-quit', stopLoadSampler)
+    }
+  })
+
+  // PR pollers service (only if dependencies provided)
+  if (terminalDeps) {
+    registerBootstrapService({
+      name: 'pr-pollers',
+      setup: () => {
+        startPrPoller()
+        app.on('will-quit', stopPrPoller)
+
+        startSprintPrPoller(terminalDeps)
+        app.on('will-quit', stopSprintPrPoller)
+      }
+    })
+  }
+
+  // Cleanup tasks service
+  registerBootstrapService({
+    name: 'cleanup-tasks',
+    setup: () => {
+      // Prune old agent events on startup
+      pruneOldEvents(getDb(), getEventRetentionDays())
+
+      // Prune agent_events periodically (every 24 hours)
+      const pruneEventsInterval = setInterval(
+        () => {
+          try {
+            pruneOldEvents(getDb(), getEventRetentionDays())
+          } catch {
+            /* non-fatal */
+          }
+        },
+        24 * 60 * 60 * 1000
+      )
+      app.on('will-quit', () => clearInterval(pruneEventsInterval))
+
+      // Prune old audit trail records (non-fatal)
+      try {
+        const pruned = pruneOldChanges(PRUNE_CHANGES_DAYS)
+        if (pruned > 0) logger.info(`Pruned ${pruned} old task change records`)
+      } catch (err) {
+        logger.warn(`Failed to prune task changes: ${err}`)
+      }
+
+      // Null out review_diff_snapshot blobs on long-completed tasks (non-fatal).
+      // Snapshots can be ~500KB each — without this, the DB grows unbounded.
+      try {
+        const pruned = pruneOldDiffSnapshots(DIFF_SNAPSHOT_RETENTION_DAYS)
+        if (pruned > 0)
+          logger.info(
+            `Cleared review_diff_snapshot on ${pruned} terminal tasks older than ${DIFF_SNAPSHOT_RETENTION_DAYS} days`
+          )
+      } catch (err) {
+        logger.warn(`Failed to prune diff snapshots: ${err}`)
+      }
+
+      // Clean up test task artifacts (agents running tests create "Test task" records)
+      try {
+        const db = getDb()
+        const result = db.prepare("DELETE FROM sprint_tasks WHERE title LIKE 'Test task%'").run()
+        if (result.changes > 0) {
+          logger.info(`Cleaned ${result.changes} test task artifacts`)
+        }
+      } catch {
+        /* non-fatal */
+      }
+
+      // Prune task_changes periodically (every 24 hours)
+      const pruneTakeChangesInterval = setInterval(
+        () => {
+          try {
+            pruneOldChanges(30)
+          } catch {
+            /* non-fatal */
+          }
+        },
+        24 * 60 * 60 * 1000
+      )
+      app.on('will-quit', () => clearInterval(pruneTakeChangesInterval))
+
+      // Prune review_diff_snapshot periodically (every 24 hours)
+      const pruneDiffSnapshotsInterval = setInterval(
+        () => {
+          try {
+            const cleared = pruneOldDiffSnapshots(DIFF_SNAPSHOT_RETENTION_DAYS)
+            if (cleared > 0)
+              logger.info(`Cleared review_diff_snapshot on ${cleared} terminal tasks`)
+          } catch {
+            /* non-fatal */
+          }
+        },
+        24 * 60 * 60 * 1000
+      )
+      app.on('will-quit', () => clearInterval(pruneDiffSnapshotsInterval))
+    }
+  })
+
+  // Run all registered services with graceful error handling
+  await runBootstrapRegistry(logger)
 }
