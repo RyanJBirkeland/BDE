@@ -524,6 +524,7 @@ describe('resolveDependents', () => {
       resolveDependents(
         'A', 'failed', index, getTask, updateTask2,
         undefined, getSetting, undefined, undefined, undefined,
+        undefined,
         onTaskTerminal
       )
 

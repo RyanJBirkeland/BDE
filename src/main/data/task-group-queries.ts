@@ -175,10 +175,12 @@ export function updateGroup(
  * Delete a task group. Sets group_id to NULL for all associated tasks.
  */
 export function deleteGroup(id: string, db?: Database.Database): void {
+  const conn = db ?? getDb()
   try {
-    const conn = db ?? getDb()
-    conn.prepare('UPDATE sprint_tasks SET group_id = NULL WHERE group_id = ?').run(id)
-    conn.prepare('DELETE FROM task_groups WHERE id = ?').run(id)
+    conn.transaction(() => {
+      conn.prepare('UPDATE sprint_tasks SET group_id = NULL WHERE group_id = ?').run(id)
+      conn.prepare('DELETE FROM task_groups WHERE id = ?').run(id)
+    })()
   } catch (err) {
     const msg = getErrorMessage(err)
     _logger.error(`[task-group-queries] deleteGroup failed for id=${id}: ${msg}`)
@@ -299,19 +301,21 @@ export function addGroupDependency(
   dep: EpicDependency,
   db?: Database.Database
 ): TaskGroup | null {
+  const conn = db ?? getDb()
   try {
-    const conn = db ?? getDb()
-    const group = getGroup(groupId, conn)
-    if (!group) throw new Error(`Group not found: ${groupId}`)
+    return conn.transaction((): TaskGroup | null => {
+      const group = getGroup(groupId, conn)
+      if (!group) throw new Error(`Group not found: ${groupId}`)
 
-    const currentDeps = group.depends_on ?? []
-    // Prevent duplicates
-    if (currentDeps.some((d) => d.id === dep.id)) {
-      throw new Error(`Dependency already exists: ${dep.id}`)
-    }
+      const currentDeps = group.depends_on ?? []
+      // Prevent duplicates
+      if (currentDeps.some((d) => d.id === dep.id)) {
+        throw new Error(`Dependency already exists: ${dep.id}`)
+      }
 
-    const newDeps = [...currentDeps, dep]
-    return updateGroup(groupId, { depends_on: newDeps }, conn)
+      const newDeps = [...currentDeps, dep]
+      return updateGroup(groupId, { depends_on: newDeps }, conn)
+    })()
   } catch (err) {
     const msg = getErrorMessage(err)
     _logger.error(`[task-group-queries] addGroupDependency failed: ${msg}`)
@@ -327,15 +331,17 @@ export function removeGroupDependency(
   upstreamId: string,
   db?: Database.Database
 ): TaskGroup | null {
+  const conn = db ?? getDb()
   try {
-    const conn = db ?? getDb()
-    const group = getGroup(groupId, conn)
-    if (!group) throw new Error(`Group not found: ${groupId}`)
+    return conn.transaction((): TaskGroup | null => {
+      const group = getGroup(groupId, conn)
+      if (!group) throw new Error(`Group not found: ${groupId}`)
 
-    const currentDeps = group.depends_on ?? []
-    const newDeps = currentDeps.filter((d) => d.id !== upstreamId)
+      const currentDeps = group.depends_on ?? []
+      const newDeps = currentDeps.filter((d) => d.id !== upstreamId)
 
-    return updateGroup(groupId, { depends_on: newDeps.length > 0 ? newDeps : null }, conn)
+      return updateGroup(groupId, { depends_on: newDeps.length > 0 ? newDeps : null }, conn)
+    })()
   } catch (err) {
     const msg = getErrorMessage(err)
     _logger.error(`[task-group-queries] removeGroupDependency failed: ${msg}`)

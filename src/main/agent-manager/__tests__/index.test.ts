@@ -1077,7 +1077,8 @@ describe('createAgentManager', () => {
         expect.anything(), // epicIndex
         expect.anything(), // getGroup
         expect.anything(), // listGroupTasks
-        expect.anything() // onTaskTerminal
+        undefined,         // runInTransaction (not used by agent-manager)
+        expect.anything()  // onTaskTerminal
       )
     })
 

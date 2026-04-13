@@ -265,6 +265,7 @@ export class AgentManagerImpl implements AgentManager {
             this._epicIndex,
             this.repo.getGroup,
             this.repo.getGroupTasks,
+            undefined,
             this.onTaskTerminal.bind(this)
           )
         } catch (err) {

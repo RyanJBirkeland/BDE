@@ -38,8 +38,8 @@ export function resolveDependents(
   epicIndex?: EpicDependencyIndex,
   getGroup?: (id: string) => TaskGroup | null,
   listGroupTasks?: (groupId: string) => SprintTask[],
-  onTaskTerminal?: (taskId: string, status: string) => void,
-  runInTransaction?: (fn: () => void) => void
+  runInTransaction?: (fn: () => void) => void,
+  onTaskTerminal?: (taskId: string, status: string) => void
 ): void {
   // Guard: only process terminal statuses — calling with active/queued/blocked
   // produces nonsensical cascade-cancel and satisfaction results.
@@ -107,8 +107,8 @@ export function resolveDependents(
         epicIndex,
         getGroup,
         listGroupTasks,
-        onTaskTerminal,
-        runInTransaction
+        runInTransaction,
+        onTaskTerminal
       )
       return
     }

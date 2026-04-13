@@ -1,7 +1,15 @@
 import Database from 'better-sqlite3'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { runMigrations } from '../../db'
-import { createGroup, getGroup, updateGroup, listGroups } from '../task-group-queries'
+import {
+  createGroup,
+  getGroup,
+  updateGroup,
+  listGroups,
+  deleteGroup,
+  addGroupDependency,
+  removeGroupDependency
+} from '../task-group-queries'
 import type { EpicDependency } from '../../../shared/types'
 import { up as v047Up } from '../../migrations/v047-add-depends-on-to-task-groups'
 
@@ -149,5 +157,66 @@ describe('migration v047 idempotence', () => {
 
     // Run it a third time for good measure
     expect(() => v047Up(db)).not.toThrow()
+  })
+})
+
+describe('deleteGroup atomicity', () => {
+  it('rolls back task group_id update if group delete fails', () => {
+    const group = createGroup({ name: 'Test Group' }, db)
+    expect(group).not.toBeNull()
+
+    // Insert a task in the group
+    db.prepare(
+      `INSERT INTO sprint_tasks (title, repo, prompt, status, priority, group_id)
+       VALUES ('T', 'bde', 'p', 'backlog', 0, ?)`
+    ).run(group!.id)
+
+    // Normal delete should clear group_id and delete the group
+    deleteGroup(group!.id, db)
+
+    const groupAfter = db.prepare('SELECT * FROM task_groups WHERE id = ?').get(group!.id)
+    expect(groupAfter).toBeUndefined()
+
+    const tasksWithGroupId = db
+      .prepare('SELECT * FROM sprint_tasks WHERE group_id = ?')
+      .all(group!.id)
+    expect(tasksWithGroupId).toHaveLength(0)
+  })
+})
+
+describe('addGroupDependency — transaction safety', () => {
+  it('adds dependency atomically', () => {
+    const group = createGroup({ name: 'G1' }, db)!
+    const dep: EpicDependency = { id: 'epic-upstream', condition: 'on_success' }
+
+    addGroupDependency(group.id, dep, db)
+
+    const updated = db
+      .prepare('SELECT depends_on FROM task_groups WHERE id = ?')
+      .get(group.id) as { depends_on: string }
+    const deps = JSON.parse(updated.depends_on)
+    expect(deps).toEqual([dep])
+  })
+
+  it('throws when adding a duplicate dependency', () => {
+    const group = createGroup({ name: 'G2' }, db)!
+    const dep: EpicDependency = { id: 'epic-upstream', condition: 'on_success' }
+
+    addGroupDependency(group.id, dep, db)
+    expect(() => addGroupDependency(group.id, dep, db)).toThrow('Dependency already exists')
+  })
+})
+
+describe('removeGroupDependency — transaction safety', () => {
+  it('removes dependency atomically', () => {
+    const dep: EpicDependency = { id: 'epic-upstream', condition: 'on_success' }
+    const group = createGroup({ name: 'G3', depends_on: [dep] }, db)!
+
+    removeGroupDependency(group.id, 'epic-upstream', db)
+
+    const updated = db
+      .prepare('SELECT depends_on FROM task_groups WHERE id = ?')
+      .get(group.id) as { depends_on: string | null }
+    expect(updated.depends_on).toBeNull()
   })
 })
