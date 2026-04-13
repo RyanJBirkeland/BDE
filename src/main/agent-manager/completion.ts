@@ -15,6 +15,12 @@ import { getErrorMessage } from '../../shared/errors'
 
 const execFile = promisify(execFileCb)
 
+/**
+ * Test artifact patterns to exclude from agent commits.
+ * These paths are unstaged during auto-commit to prevent polluting the diff with test outputs.
+ */
+const GIT_ARTIFACT_PATTERNS = ['test-results/', 'coverage/', '*.log', 'playwright-report/'] as const
+
 type AutoReviewRule = {
   id: string
   name: string
@@ -113,8 +119,7 @@ async function autoCommitIfDirty(
     await execFile('git', ['add', '-A'], { cwd: worktreePath, env })
 
     // Unstage test artifacts that may have been previously tracked
-    const artifactPaths = ['test-results/', 'coverage/', '*.log', 'playwright-report/']
-    for (const path of artifactPaths) {
+    for (const path of GIT_ARTIFACT_PATTERNS) {
       try {
         await execFile('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
           cwd: worktreePath,
