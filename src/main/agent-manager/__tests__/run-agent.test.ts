@@ -3,7 +3,7 @@
  * watchdog race, fast-fail paths, and completion fallback.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { runAgent, validateTaskForRun, assembleRunContext, fetchUpstreamContext, readPriorScratchpad } from '../run-agent'
+import { runAgent, validateTaskForRun, assembleRunContext, fetchUpstreamContext, readPriorScratchpad, consumeMessages } from '../run-agent'
 import { detectHtmlWrite, tryEmitPlaygroundEvent } from '../playground-handler'
 import type { RunAgentTask, RunAgentDeps, RunAgentSpawnDeps, RunAgentDataDeps, RunAgentEventDeps } from '../run-agent'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
@@ -906,5 +906,46 @@ describe('assembleRunContext', () => {
 
     expect(typeof prompt).toBe('string')
     expect(prompt.length).toBeGreaterThan(0)
+  })
+})
+
+describe('consumeMessages', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('returns streamError when message stream throws a non-auth error', async () => {
+    const { TurnTracker } = await import('../turn-tracker')
+    const error = new Error('Stream closed unexpectedly')
+    const handle = makeErrorHandle(error)
+    const agent: ActiveAgent = {
+      taskId: 'task-1',
+      agentRunId: 'run-1',
+      handle: handle as any,
+      model: 'claude-sonnet-4-5',
+      startedAt: Date.now(),
+      lastOutputAt: Date.now(),
+      rateLimitCount: 0,
+      costUsd: 0,
+      tokensIn: 0,
+      tokensOut: 0,
+      maxRuntimeMs: null,
+      maxCostUsd: null
+    }
+    const task = makeTask()
+    const turnTracker = new TurnTracker('run-1')
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+
+    const result = await consumeMessages(
+      handle as any,
+      agent,
+      task,
+      '/tmp/wt',
+      'run-1',
+      turnTracker,
+      logger
+    )
+
+    expect(result.streamError).toBeInstanceOf(Error)
+    expect(result.streamError?.message).toBe('Stream closed unexpectedly')
+    expect(result.exitCode).toBeUndefined()
   })
 })

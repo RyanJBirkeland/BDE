@@ -73,6 +73,7 @@ export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventD
 export interface ConsumeMessagesResult {
   exitCode: number | undefined
   lastAgentOutput: string
+  streamError?: Error  // set if the message stream threw
 }
 
 /**
@@ -207,6 +208,11 @@ export async function consumeMessages(
       errMsg.includes('authentication')
     ) {
       await handleOAuthRefresh(logger)
+    }
+    return {
+      exitCode,
+      lastAgentOutput,
+      streamError: err instanceof Error ? err : new Error(errMsg)
     }
   }
 
@@ -663,7 +669,7 @@ export async function runAgent(
   }
 
   // Phase 3: Consume messages
-  const { exitCode, lastAgentOutput } = await consumeMessages(
+  const { exitCode, lastAgentOutput, streamError } = await consumeMessages(
     agent.handle,
     agent,
     task,
@@ -672,6 +678,10 @@ export async function runAgent(
     turnTracker,
     logger
   )
+  if (streamError) {
+    logger.warn(`[agent-manager] Message stream failed for task ${task.id}: ${streamError.message}`)
+    // exitCode will be undefined; finalizeAgentRun's classifyExit treats undefined as exit code 1
+  }
 
   // Phase 4: Finalize — classify exit, resolve, cleanup
   await finalizeAgentRun(
