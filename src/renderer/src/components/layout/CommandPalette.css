@@ -96,6 +96,12 @@
   background: var(--bde-hover-strong);
 }
 
+.command-palette__label {
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-muted);
+  font-weight: 500;
+}
+
 .command-palette__empty {
   padding: 16px;
   text-align: center;
