@@ -10,7 +10,11 @@ import type { AgentEvent, FailureReason } from '../../shared/types'
 import { runPostMergeDedup } from '../services/post-merge-dedup'
 import { captureDiffSnapshot } from './diff-snapshot'
 import { nowIso } from '../../shared/time'
-import { rebaseOntoMain, findOrCreatePR as findOrCreatePRUtil, sanitizeForGit } from './git-operations'
+import {
+  rebaseOntoMain,
+  findOrCreatePR as findOrCreatePRUtil,
+  sanitizeForGit
+} from './git-operations'
 import { getErrorMessage } from '../../shared/errors'
 
 const execFile = promisify(execFileCb)

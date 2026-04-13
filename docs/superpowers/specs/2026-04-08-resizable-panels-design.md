@@ -14,13 +14,13 @@ Make every fixed-size pane, drawer, and sidebar in the app freely resizable so s
 
 ## Decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Overlay drawers | Custom `useDrawerResize` hook | Drawers are `position: fixed` — outside document flow, incompatible with `react-resizable-panels` |
-| Panel splits | `react-resizable-panels` | Already a dep (v4.7.2), used in IDEView + TaskWorkbench |
-| Handle style | Subtle — invisible at rest, faint cyan glow on hover | Matches IDEView's existing `.ide-separator` behavior |
-| Persistence | Session-only (`useState`) | No persistence layer needed |
-| SpecPanel | Out of scope | Centered modal overlay (`max-width: 80vw`), not a side-anchored panel |
+| Decision        | Choice                                               | Rationale                                                                                         |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Overlay drawers | Custom `useDrawerResize` hook                        | Drawers are `position: fixed` — outside document flow, incompatible with `react-resizable-panels` |
+| Panel splits    | `react-resizable-panels`                             | Already a dep (v4.7.2), used in IDEView + TaskWorkbench                                           |
+| Handle style    | Subtle — invisible at rest, faint cyan glow on hover | Matches IDEView's existing `.ide-separator` behavior                                              |
+| Persistence     | Session-only (`useState`)                            | No persistence layer needed                                                                       |
+| SpecPanel       | Out of scope                                         | Centered modal overlay (`max-width: 80vw`), not a side-anchored panel                             |
 
 ---
 
@@ -92,11 +92,11 @@ return (
 
 ### Per-drawer bounds
 
-| Drawer | Default | Min | Max |
-|---|---|---|---|
-| `TaskDetailDrawer` | 380px | 280px | 700px |
-| `ConflictDrawer` | 440px | 300px | 650px |
-| `HealthCheckDrawer` | 440px | 300px | 600px |
+| Drawer              | Default | Min   | Max   |
+| ------------------- | ------- | ----- | ----- |
+| `TaskDetailDrawer`  | 380px   | 280px | 700px |
+| `ConflictDrawer`    | 440px   | 300px | 650px |
+| `HealthCheckDrawer` | 440px   | 300px | 600px |
 
 ### Handle CSS
 
@@ -120,7 +120,9 @@ Add to `src/renderer/src/assets/design-system.css`:
   position: absolute;
   inset: 0;
   background: transparent;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .drawer-resize-handle:hover::after,
@@ -190,6 +192,7 @@ Replace the `<ReviewQueue /> + <div className="cr-main">` flex layout:
 ```
 
 **CSS changes in `code-review-neon.css`:**
+
 - Remove `width: 260px` and `min-width: 160px` from `.cr-queue` — width is now controlled by the panel
 - `.cr-queue` keeps `height: 100%`, `overflow-y: auto`, `flex-direction: column`
 - `.cr-view` keeps `display: flex; flex-direction: column; height: 100%`
@@ -222,6 +225,7 @@ The inner flex row `{display: 'flex', flex: 1, minHeight: 0}` wraps `.agents-sid
 ```
 
 **CSS changes in `agents-neon.css`:**
+
 - Remove `width: 220px`, `min-width: 180px`, `max-width: 400px` from `.agents-sidebar`
 - Remove `resize: horizontal` and `overflow: hidden` from `.agents-sidebar` — these conflict with the Panel separator (the native CSS resize handle would appear alongside the Panel separator)
 - Keep `height: 100%`, `overflow-y: auto`, `flex-direction: column`, borders
@@ -256,6 +260,7 @@ The inner flex row `{display: 'flex', flex: 1, minHeight: 0}` wraps `.agents-sid
 ```
 
 **CSS changes in `settings-v2-neon.css`:**
+
 - Remove `width: 180px` and `min-width: 180px` from `.stg-sidebar`
 - Keep `height: 100%`, padding, borders, background
 - `.stg-layout` becomes `display: flex; height: 100%` (Group fills it)
@@ -290,6 +295,7 @@ The return renders `<DiffFileList />` + `<div className="diff-content">` in a fl
 ```
 
 **CSS changes in `diff.css`:**
+
 - Remove `width: 200px` and `flex-shrink: 0` from `.diff-sidebar`
 - Keep `height: 100%`, `overflow: hidden`, background, border
 - `.diff-view__loading-sidebar` fixed `width: 260px` can stay (it's only a skeleton loader)
@@ -328,48 +334,45 @@ Note: remove the `defaultSize={sidebarCollapsed ? 100 : 80}` hack on the editor 
 
 ## Files Changed
 
-| File | Change |
-|---|---|
-| `src/renderer/src/hooks/useDrawerResize.ts` | **NEW** — shared drawer resize hook |
-| `src/renderer/src/assets/design-system.css` | Add `.drawer-resize-handle` + `.panel-separator` CSS |
-| `src/renderer/src/components/sprint/TaskDetailDrawer.tsx` | Replace inline drag logic with `useDrawerResize` |
-| `src/renderer/src/components/sprint/ConflictDrawer.tsx` | Add `useDrawerResize` + resize handle div |
-| `src/renderer/src/components/sprint/HealthCheckDrawer.tsx` | Add `useDrawerResize` + resize handle div |
-| `src/renderer/src/views/CodeReviewView.tsx` | Wrap in Group/Panel/Separator |
-| `src/renderer/src/assets/code-review-neon.css` | Remove fixed `.cr-queue` width |
-| `src/renderer/src/views/AgentsView.tsx` | Wrap in Group/Panel/Separator |
-| `src/renderer/src/assets/agents-neon.css` | Remove fixed `.agents-sidebar` width |
-| `src/renderer/src/views/SettingsView.tsx` | Wrap in Group/Panel/Separator |
-| `src/renderer/src/assets/settings-v2-neon.css` | Remove fixed `.stg-sidebar` width |
-| `src/renderer/src/components/diff/DiffViewer.tsx` | Wrap DiffFileList in Group/Panel/Separator |
-| `src/renderer/src/assets/diff.css` | Remove fixed `.diff-sidebar` width |
-| `src/renderer/src/views/IDEView.tsx` | Verify only — fix conditional mount if needed |
+| File                                                       | Change                                               |
+| ---------------------------------------------------------- | ---------------------------------------------------- |
+| `src/renderer/src/hooks/useDrawerResize.ts`                | **NEW** — shared drawer resize hook                  |
+| `src/renderer/src/assets/design-system.css`                | Add `.drawer-resize-handle` + `.panel-separator` CSS |
+| `src/renderer/src/components/sprint/TaskDetailDrawer.tsx`  | Replace inline drag logic with `useDrawerResize`     |
+| `src/renderer/src/components/sprint/ConflictDrawer.tsx`    | Add `useDrawerResize` + resize handle div            |
+| `src/renderer/src/components/sprint/HealthCheckDrawer.tsx` | Add `useDrawerResize` + resize handle div            |
+| `src/renderer/src/views/CodeReviewView.tsx`                | Wrap in Group/Panel/Separator                        |
+| `src/renderer/src/assets/code-review-neon.css`             | Remove fixed `.cr-queue` width                       |
+| `src/renderer/src/views/AgentsView.tsx`                    | Wrap in Group/Panel/Separator                        |
+| `src/renderer/src/assets/agents-neon.css`                  | Remove fixed `.agents-sidebar` width                 |
+| `src/renderer/src/views/SettingsView.tsx`                  | Wrap in Group/Panel/Separator                        |
+| `src/renderer/src/assets/settings-v2-neon.css`             | Remove fixed `.stg-sidebar` width                    |
+| `src/renderer/src/components/diff/DiffViewer.tsx`          | Wrap DiffFileList in Group/Panel/Separator           |
+| `src/renderer/src/assets/diff.css`                         | Remove fixed `.diff-sidebar` width                   |
+| `src/renderer/src/views/IDEView.tsx`                       | Verify only — fix conditional mount if needed        |
 
 ---
 
 ## Implementation Order
 
 **Phase 1 — Hook + drawers (low risk, isolated)**
+
 1. Create `useDrawerResize.ts`
 2. Add `.drawer-resize-handle` + `.panel-separator` to `design-system.css`
 3. Refactor `TaskDetailDrawer` to use hook
 4. Add hook to `ConflictDrawer`
 5. Add hook to `HealthCheckDrawer`
 
-**Phase 2 — Panel splits (moderate risk, layout changes)**
-6. `CodeReviewView` — Group/Panel/Separator, remove fixed `.cr-queue` width
-7. `AgentsView` — Group/Panel/Separator, remove fixed `.agents-sidebar` width
-8. `DiffViewer` — Group/Panel/Separator, remove fixed `.diff-sidebar` width
+**Phase 2 — Panel splits (moderate risk, layout changes)** 6. `CodeReviewView` — Group/Panel/Separator, remove fixed `.cr-queue` width 7. `AgentsView` — Group/Panel/Separator, remove fixed `.agents-sidebar` width 8. `DiffViewer` — Group/Panel/Separator, remove fixed `.diff-sidebar` width
 
-**Phase 3 — Remaining**
-9. `SettingsView` — Group/Panel/Separator, remove fixed `.stg-sidebar` width
-10. `IDEView` — verify; fix conditional mount pattern only if broken
+**Phase 3 — Remaining** 9. `SettingsView` — Group/Panel/Separator, remove fixed `.stg-sidebar` width 10. `IDEView` — verify; fix conditional mount pattern only if broken
 
 ---
 
 ## Testing
 
 For each surface after change:
+
 - Drag the resize handle and confirm width updates live
 - Release mouse off-screen and confirm drag state cleans up (cursor resets)
 - Reload the app and confirm size resets to default (session-only)

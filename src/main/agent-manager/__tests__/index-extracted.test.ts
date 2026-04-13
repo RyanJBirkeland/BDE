@@ -179,12 +179,7 @@ describe('handleWatchdogVerdict', () => {
 
   it('returns error verdict with terminal notification on max-runtime', () => {
     const now = '2026-03-25T12:00:00.000Z'
-    const result = handleWatchdogVerdict(
-      'max-runtime',
-      concurrency,
-      now,
-      60 * 60 * 1000
-    )
+    const result = handleWatchdogVerdict('max-runtime', concurrency, now, 60 * 60 * 1000)
     expect(result.taskUpdate).toEqual({
       status: 'error',
       completed_at: now,
@@ -225,11 +220,7 @@ describe('handleWatchdogVerdict', () => {
   })
 
   it('reaches floor when backpressure applied at effectiveSlots=2', () => {
-    const result = handleWatchdogVerdict(
-      'rate-limit-loop',
-      makeConcurrencyState(2),
-      ''
-    )
+    const result = handleWatchdogVerdict('rate-limit-loop', makeConcurrencyState(2), '')
     expect(result.concurrency.effectiveSlots).toBe(1)
     expect(result.concurrency.atFloor).toBe(true)
   })

@@ -36,10 +36,7 @@ interface ReviewActionsBarProps {
   children?: (actions: ReviewActionCallbacks) => React.ReactNode
 }
 
-export function ReviewActionsBar({
-  variant,
-  children
-}: ReviewActionsBarProps): React.JSX.Element {
+export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): React.JSX.Element {
   const {
     actionInFlight,
     mergeStrategy,
@@ -66,10 +63,7 @@ export function ReviewActionsBar({
           : 'Checking...'
 
   const renderFreshnessBadge = (): React.ReactNode => (
-    <span
-      className={`rab__freshness rab__freshness--${freshness.status}`}
-      title={freshnessTitle}
-    >
+    <span className={`rab__freshness rab__freshness--${freshness.status}`} title={freshnessTitle}>
       {freshness.status === 'fresh' && 'Fresh'}
       {freshness.status === 'stale' && `Stale (${freshness.commitsBehind} behind)`}
       {freshness.status === 'conflict' && 'Conflict'}
@@ -152,7 +146,9 @@ export function ReviewActionsBar({
                 <select
                   className="rab__strategy"
                   value={mergeStrategy}
-                  onChange={(e) => setMergeStrategy(e.target.value as 'squash' | 'merge' | 'rebase')}
+                  onChange={(e) =>
+                    setMergeStrategy(e.target.value as 'squash' | 'merge' | 'rebase')
+                  }
                   disabled={!!actionInFlight}
                 >
                   <option value="squash">Squash</option>

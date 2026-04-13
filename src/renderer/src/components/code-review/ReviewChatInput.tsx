@@ -12,7 +12,7 @@ export function ReviewChatInput({
   onSend,
   onAbort,
   streaming = false,
-  disabled = false,
+  disabled = false
 }: Props): JSX.Element {
   const [value, setValue] = useState('')
 

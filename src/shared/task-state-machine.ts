@@ -232,10 +232,7 @@ export type ValidationResult = { ok: true } | { ok: false; reason: string }
  *   return null
  * }
  */
-export function validateTransition(
-  currentStatus: string,
-  targetStatus: string
-): ValidationResult {
+export function validateTransition(currentStatus: string, targetStatus: string): ValidationResult {
   if (!isValidTransition(currentStatus, targetStatus)) {
     const allowed = VALID_TRANSITIONS[currentStatus]
     const allowedArray = allowed ? Array.from(allowed) : []

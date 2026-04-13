@@ -9,7 +9,7 @@ const reviewSeed: ReviewResult = {
   openingMessage: 'Overall solid. A few items to address.',
   findings: { perFile: [] },
   model: 'claude-opus-4-6',
-  createdAt: 0,
+  createdAt: 0
 }
 
 describe('buildReviewerPrompt', () => {
@@ -20,7 +20,7 @@ describe('buildReviewerPrompt', () => {
         reviewerMode: 'review',
         taskContent: '# Spec\nImprove auth flow.',
         diff: 'diff --git a/file.ts b/file.ts\n+ new line',
-        branch: 'feat/auth',
+        branch: 'feat/auth'
       })
       expect(prompt).toContain('qualityScore')
       expect(prompt).toContain('perFile')
@@ -34,7 +34,7 @@ describe('buildReviewerPrompt', () => {
         reviewerMode: 'review',
         taskContent: '# Spec\nImprove auth flow.',
         diff: '+ newline',
-        branch: 'feat/auth',
+        branch: 'feat/auth'
       })
       expect(prompt).toContain('Improve auth flow.')
     })
@@ -45,7 +45,7 @@ describe('buildReviewerPrompt', () => {
         reviewerMode: 'review',
         taskContent: '# Spec',
         diff: 'UNIQUE_DIFF_MARKER_ABC123',
-        branch: 'feat/x',
+        branch: 'feat/x'
       })
       expect(prompt).toContain('UNIQUE_DIFF_MARKER_ABC123')
     })
@@ -60,7 +60,7 @@ describe('buildReviewerPrompt', () => {
         diff: '+ change',
         branch: 'feat/x',
         messages: [{ role: 'user', content: 'What are the risks?' }],
-        reviewSeed,
+        reviewSeed
       })
       expect(prompt).toContain('Overall solid. A few items to address.')
       expect(prompt).toContain('92')
@@ -75,9 +75,9 @@ describe('buildReviewerPrompt', () => {
         branch: 'feat/x',
         messages: [
           { role: 'user', content: 'UNIQUE_USER_MARKER_42' },
-          { role: 'assistant', content: 'UNIQUE_ASSISTANT_MARKER_43' },
+          { role: 'assistant', content: 'UNIQUE_ASSISTANT_MARKER_43' }
         ],
-        reviewSeed,
+        reviewSeed
       })
       expect(prompt).toContain('UNIQUE_USER_MARKER_42')
       expect(prompt).toContain('UNIQUE_ASSISTANT_MARKER_43')
@@ -91,7 +91,7 @@ describe('buildReviewerPrompt', () => {
         diff: '+ change',
         branch: 'feat/x',
         messages: [{ role: 'user', content: 'Hi' }],
-        reviewSeed,
+        reviewSeed
       })
       expect(prompt).not.toContain('Respond with ONLY a valid JSON object')
     })

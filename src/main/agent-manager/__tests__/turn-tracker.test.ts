@@ -136,8 +136,16 @@ describe('turn-tracker', () => {
         }
       })
 
-      expect(agentQueries.insertAgentRunTurn).toHaveBeenNthCalledWith(1, mockDb, expect.objectContaining({ toolCalls: 1 }))
-      expect(agentQueries.insertAgentRunTurn).toHaveBeenNthCalledWith(2, mockDb, expect.objectContaining({ toolCalls: 2 }))
+      expect(agentQueries.insertAgentRunTurn).toHaveBeenNthCalledWith(
+        1,
+        mockDb,
+        expect.objectContaining({ toolCalls: 1 })
+      )
+      expect(agentQueries.insertAgentRunTurn).toHaveBeenNthCalledWith(
+        2,
+        mockDb,
+        expect.objectContaining({ toolCalls: 2 })
+      )
     })
 
     it('should handle missing usage gracefully', () => {

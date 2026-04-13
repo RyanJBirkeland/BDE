@@ -5,7 +5,12 @@ import * as cssDedup from '../css-dedup'
 
 vi.mock('node:fs')
 vi.mock('node:child_process', () => ({
-  execFile: (_cmd: string, _args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
+  execFile: (
+    _cmd: string,
+    _args: string[],
+    _opts: unknown,
+    callback: (err: Error | null, result?: { stdout: string }) => void
+  ) => {
     const mockExecFile = getMockExecFile()
     mockExecFile(_cmd, _args, _opts, callback)
   }
@@ -32,15 +37,22 @@ describe('post-merge-dedup', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
-      if (args.includes('--name-only')) {
-        callback(null, { stdout: 'src/styles/main.css\n' })
-      } else if (args.includes('add') || args.includes('commit')) {
-        callback(null, { stdout: '' })
-      } else {
-        callback(null, { stdout: '' })
+    mockExecFile = vi.fn(
+      (
+        cmd: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, result?: { stdout: string }) => void
+      ) => {
+        if (args.includes('--name-only')) {
+          callback(null, { stdout: 'src/styles/main.css\n' })
+        } else if (args.includes('add') || args.includes('commit')) {
+          callback(null, { stdout: '' })
+        } else {
+          callback(null, { stdout: '' })
+        }
       }
-    })
+    )
 
     vi.mocked(fs.readFileSync).mockReturnValue('.class { color: duplicate; }')
     vi.mocked(cssDedup.deduplicateCss).mockReturnValue({
@@ -61,13 +73,20 @@ describe('post-merge-dedup', () => {
   })
 
   it('should return null if no CSS files changed', async () => {
-    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
-      if (args.includes('--name-only')) {
-        callback(null, { stdout: 'src/index.ts\nREADME.md\n' })
-      } else {
-        callback(null, { stdout: '' })
+    mockExecFile = vi.fn(
+      (
+        cmd: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, result?: { stdout: string }) => void
+      ) => {
+        if (args.includes('--name-only')) {
+          callback(null, { stdout: 'src/index.ts\nREADME.md\n' })
+        } else {
+          callback(null, { stdout: '' })
+        }
       }
-    })
+    )
 
     const result = await runPostMergeDedup('/repo')
 
@@ -124,13 +143,20 @@ describe('post-merge-dedup', () => {
   })
 
   it('should handle multiple CSS files', async () => {
-    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
-      if (args.includes('--name-only')) {
-        callback(null, { stdout: 'a.css\nb.css\n' })
-      } else {
-        callback(null, { stdout: '' })
+    mockExecFile = vi.fn(
+      (
+        cmd: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, result?: { stdout: string }) => void
+      ) => {
+        if (args.includes('--name-only')) {
+          callback(null, { stdout: 'a.css\nb.css\n' })
+        } else {
+          callback(null, { stdout: '' })
+        }
       }
-    })
+    )
 
     vi.mocked(fs.readFileSync).mockReturnValue('.duplicate { }')
 
@@ -173,15 +199,22 @@ describe('post-merge-dedup', () => {
   })
 
   it('should handle commit errors gracefully', async () => {
-    mockExecFile = vi.fn((cmd: string, args: string[], _opts: unknown, callback: (err: Error | null, result?: { stdout: string }) => void) => {
-      if (args.includes('commit')) {
-        callback(new Error('Commit failed'))
-      } else if (args.includes('--name-only')) {
-        callback(null, { stdout: 'main.css\n' })
-      } else {
-        callback(null, { stdout: '' })
+    mockExecFile = vi.fn(
+      (
+        cmd: string,
+        args: string[],
+        _opts: unknown,
+        callback: (err: Error | null, result?: { stdout: string }) => void
+      ) => {
+        if (args.includes('commit')) {
+          callback(new Error('Commit failed'))
+        } else if (args.includes('--name-only')) {
+          callback(null, { stdout: 'main.css\n' })
+        } else {
+          callback(null, { stdout: '' })
+        }
       }
-    })
+    )
 
     const result = await runPostMergeDedup('/repo')
 

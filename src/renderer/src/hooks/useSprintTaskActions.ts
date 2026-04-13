@@ -153,7 +153,14 @@ export function useSprintTaskActions(): SprintTaskActions {
 
       return taskId
     },
-    [storeCreateTask, generateSpec, addGeneratingId, removeGeneratingId, setSelectedTaskId, setDrawerOpen]
+    [
+      storeCreateTask,
+      generateSpec,
+      addGeneratingId,
+      removeGeneratingId,
+      setSelectedTaskId,
+      setDrawerOpen
+    ]
   )
 
   // --- Batch delete tasks wrapper (coordinates store + UI) ---

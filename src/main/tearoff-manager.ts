@@ -304,7 +304,12 @@ function findWindowAtPoint(x: number, y: number, excludeId?: number): BrowserWin
   for (const win of BrowserWindow.getAllWindows()) {
     if (excludeId !== undefined && win.id === excludeId) continue
     const bounds = win.getContentBounds()
-    if (x >= bounds.x && x < bounds.x + bounds.width && y >= bounds.y && y < bounds.y + bounds.height) {
+    if (
+      x >= bounds.x &&
+      x < bounds.x + bounds.width &&
+      y >= bounds.y &&
+      y < bounds.y + bounds.height
+    ) {
       return win
     }
   }

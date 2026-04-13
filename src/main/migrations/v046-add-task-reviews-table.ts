@@ -21,7 +21,5 @@ export const up: (db: Database.Database) => void = (db) => {
     )`
   ).run()
 
-  db.prepare(
-    'CREATE INDEX IF NOT EXISTS idx_task_reviews_task ON task_reviews(task_id)'
-  ).run()
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_task_reviews_task ON task_reviews(task_id)').run()
 }

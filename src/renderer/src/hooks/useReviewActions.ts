@@ -288,9 +288,7 @@ export function useReviewActions(): UseReviewActionsResult {
     }
   }
 
-  const batchShipIt = async (
-    batchTasks: Array<{ id: string; title: string }>
-  ): Promise<void> => {
+  const batchShipIt = async (batchTasks: Array<{ id: string; title: string }>): Promise<void> => {
     const clearBatch = useCodeReviewStore.getState().clearBatch
     let succeeded = 0
     let failed = 0
@@ -348,9 +346,7 @@ export function useReviewActions(): UseReviewActionsResult {
     }
   }
 
-  const batchDiscard = async (
-    batchTasks: Array<{ id: string; title: string }>
-  ): Promise<void> => {
+  const batchDiscard = async (batchTasks: Array<{ id: string; title: string }>): Promise<void> => {
     const clearBatch = useCodeReviewStore.getState().clearBatch
     let succeeded = 0
     let failed = 0

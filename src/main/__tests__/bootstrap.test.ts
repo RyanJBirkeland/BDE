@@ -155,7 +155,9 @@ describe('bootstrap', () => {
     it('should clean test task artifacts', () => {
       setupCleanupTasks()
 
-      expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining("DELETE FROM sprint_tasks WHERE title LIKE 'Test task%'"))
+      expect(mockDb.prepare).toHaveBeenCalledWith(
+        expect.stringContaining("DELETE FROM sprint_tasks WHERE title LIKE 'Test task%'")
+      )
     })
 
     it('should schedule periodic cleanup tasks', () => {

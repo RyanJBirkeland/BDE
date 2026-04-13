@@ -107,7 +107,7 @@
 /* ── Load More button ── */
 .agent-list__load-more {
   padding: var(--bde-space-1) var(--bde-space-3);
-  background: var(--bde-surface-high, rgba(10,0,21,0.4));
+  background: var(--bde-surface-high, rgba(10, 0, 21, 0.4));
   border: 1px solid var(--bde-accent-border);
   border-radius: var(--bde-radius-sm, 4px);
   color: var(--bde-accent);

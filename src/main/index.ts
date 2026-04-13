@@ -29,10 +29,7 @@ import { registerDashboardHandlers } from './handlers/dashboard-handlers'
 import { registerSynthesizerHandlers } from './handlers/synthesizer-handlers'
 import { registerClaudeConfigHandlers } from './handlers/claude-config-handlers'
 import { registerReviewHandlers } from './handlers/review'
-import {
-  registerReviewAssistantHandlers,
-  buildChatStreamDeps,
-} from './handlers/review-assistant'
+import { registerReviewAssistantHandlers, buildChatStreamDeps } from './handlers/review-assistant'
 import { createReviewRepository } from './data/review-repository'
 import { createReviewService } from './services/review-service'
 import { runSdkOnce } from './sdk-streaming'
@@ -245,7 +242,7 @@ app.whenReady().then(() => {
       worktreePath,
       'rev-parse',
       '--abbrev-ref',
-      'HEAD',
+      'HEAD'
     ])
     return stdout.trim()
   }
@@ -254,11 +251,9 @@ app.whenReady().then(() => {
     const { execFile } = await import('node:child_process')
     const { promisify } = await import('node:util')
     const execFileAsync = promisify(execFile)
-    const { stdout } = await execFileAsync(
-      'git',
-      ['-C', worktreePath, 'diff', 'main...HEAD'],
-      { maxBuffer: 10 * 1024 * 1024 }
-    )
+    const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'diff', 'main...HEAD'], {
+      maxBuffer: 10 * 1024 * 1024
+    })
     return stdout
   }
 
@@ -270,7 +265,7 @@ app.whenReady().then(() => {
     getHeadCommitSha,
     getDiff,
     getBranch,
-    runSdkOnce,
+    runSdkOnce
   })
 
   const reviewActiveStreams = new Map<string, { close: () => void }>()
@@ -282,8 +277,8 @@ app.whenReady().then(() => {
       getHeadCommitSha,
       getBranch,
       getDiff,
-      activeStreams: reviewActiveStreams,
-    }),
+      activeStreams: reviewActiveStreams
+    })
   })
 
   registerWebhookHandlers()

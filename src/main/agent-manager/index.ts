@@ -21,7 +21,10 @@ import { checkAgent } from './watchdog'
 import { setupWorktree, pruneStaleWorktrees } from './worktree'
 import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex, formatBlockedNote } from '../services/dependency-service'
-import { createEpicDependencyIndex, type EpicDependencyIndex } from '../services/epic-dependency-service'
+import {
+  createEpicDependencyIndex,
+  type EpicDependencyIndex
+} from '../services/epic-dependency-service'
 import { resolveDependents } from './resolve-dependents'
 import { runAgent as _runAgent, type RunAgentDeps, type RunAgentTask } from './run-agent'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
@@ -632,12 +635,7 @@ export class AgentManagerImpl implements AgentManager {
       // Get verdict decision, then apply side effects
       const now = nowIso()
       const maxRuntimeMs = agent.maxRuntimeMs ?? this.config.maxRuntimeMs
-      const result = handleWatchdogVerdict(
-        verdict,
-        this._concurrency,
-        now,
-        maxRuntimeMs
-      )
+      const result = handleWatchdogVerdict(verdict, this._concurrency, now, maxRuntimeMs)
       this._concurrency = result.concurrency
 
       if (result.taskUpdate) {

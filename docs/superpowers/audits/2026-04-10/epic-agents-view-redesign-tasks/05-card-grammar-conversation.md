@@ -19,6 +19,7 @@ Update these cards to render with the new card chrome (12px padding, 12px vertic
 7. **`RateLimitedCard.tsx`** — yellow/orange accent. Show retry countdown text.
 
 **Card chrome CSS** (add to `cards/ConsoleCard.css`):
+
 - `.console-card { padding: var(--bde-space-3); margin-bottom: var(--bde-space-3); border-radius: 6px; }`
 - Hover: `box-shadow: 0 0 12px var(--bde-accent-glow); border: 1px solid var(--bde-accent-border);`
 - `.console-card__header { display: flex; align-items: center; gap: var(--bde-space-2); font-size: 11px; }`

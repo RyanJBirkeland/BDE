@@ -24,6 +24,7 @@ import {
 import './DashboardView.css'
 import { Plus } from 'lucide-react'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
 /**
  * Renders the "X ago" freshness text with its own 10s ticker.
@@ -213,107 +214,109 @@ export default function DashboardView(): React.JSX.Element {
   const transition = reduced ? REDUCED_TRANSITION : SPRINGS.snappy
 
   return (
-    <motion.div
-      className="dashboard-root"
-      variants={reduced ? undefined : VARIANTS.fadeIn}
-      initial={reduced ? undefined : 'initial'}
-      animate={reduced ? undefined : 'animate'}
-      transition={transition}
-    >
-      <div className="dashboard-bg-gradient" />
+    <ErrorBoundary name="DashboardView">
+      <motion.div
+        className="dashboard-root"
+        variants={reduced ? undefined : VARIANTS.fadeIn}
+        initial={reduced ? undefined : 'initial'}
+        animate={reduced ? undefined : 'animate'}
+        transition={transition}
+      >
+        <div className="dashboard-bg-gradient" />
 
-      {/* Content (above effects) */}
-      <div className="dashboard-content">
-        <StatusBar title="BDE Command Center" status={dataStale ? 'warning' : 'ok'}>
-          {loading && !throughputData.length ? (
-            <span className="dashboard-status-loading">Loading...</span>
-          ) : errorCount > 0 ? (
-            <span className="dashboard-status-error" style={{ color: neonVar('red', 'color') }}>
-              {errorCount} card
-              {errorCount !== 1 ? 's' : ''} failed
-            </span>
-          ) : (
-            <span className="dashboard-status-ok">
-              SYS.OK
-              {lastFetchedAt && <FreshnessLabel lastFetchedAt={lastFetchedAt} />}
-            </span>
-          )}
-        </StatusBar>
+        {/* Content (above effects) */}
+        <div className="dashboard-content">
+          <StatusBar title="BDE Command Center" status={dataStale ? 'warning' : 'ok'}>
+            {loading && !throughputData.length ? (
+              <span className="dashboard-status-loading">Loading...</span>
+            ) : errorCount > 0 ? (
+              <span className="dashboard-status-error" style={{ color: neonVar('red', 'color') }}>
+                {errorCount} card
+                {errorCount !== 1 ? 's' : ''} failed
+              </span>
+            ) : (
+              <span className="dashboard-status-ok">
+                SYS.OK
+                {lastFetchedAt && <FreshnessLabel lastFetchedAt={lastFetchedAt} />}
+              </span>
+            )}
+          </StatusBar>
 
-        {/* Morning briefing card */}
-        {showBriefing && briefingTasks.length > 0 && (
-          <MorningBriefing
-            tasks={briefingTasks}
-            localAgents={localAgents}
-            onReviewAll={() => {
-              setView('code-review')
-              handleDismissBriefing()
-            }}
-            onDismiss={handleDismissBriefing}
-          />
-        )}
-
-        {/* 3-column Ops Deck grid or onboarding */}
-        {tasks.length === 0 ? (
-          <div className="dashboard-onboarding">
-            <NeonCard accent="cyan" title="Welcome to BDE">
-              <div className="dashboard-onboarding__content">
-                <p className="dashboard-onboarding__text">
-                  Create your first sprint task to see the pipeline in action.
-                </p>
-                <button
-                  className="dashboard-onboarding__cta"
-                  onClick={() => setView('task-workbench')}
-                >
-                  <Plus size={14} /> Create First Task
-                </button>
-              </div>
-            </NeonCard>
-          </div>
-        ) : (
-          <>
-            <FiresStrip
-              failed={stats.failed}
-              blocked={stats.blocked}
-              stuck={stuckCount}
-              loadSaturated={loadSaturated}
-              onClick={handleFiresClick}
+          {/* Morning briefing card */}
+          {showBriefing && briefingTasks.length > 0 && (
+            <MorningBriefing
+              tasks={briefingTasks}
+              localAgents={localAgents}
+              onReviewAll={() => {
+                setView('code-review')
+                handleDismissBriefing()
+              }}
+              onDismiss={handleDismissBriefing}
             />
-            <div className="dashboard-grid" role="region" aria-label="Dashboard overview">
-              <StatusRail
-                stats={stats}
-                tokens24h={tokens24h}
-                onFilterClick={handleRailFilter}
-                onNewTaskClick={() => setView('task-workbench')}
-              />
+          )}
 
-              <CenterColumn
-                stats={stats}
-                partitions={partitions}
-                throughputData={throughputData}
-                successTrendData={successTrendData}
-                loadData={loadData}
-                tokenTrendData={tokenTrendData}
-                tokenAvg={tokenAvg}
-                cardErrors={cardErrors}
-                onFilterClick={navigateToSprintWithFilter}
-              />
-
-              <ActivitySection
-                feedEvents={feedEvents}
-                cardErrors={cardErrors}
-                recentCompletions={recentCompletions}
-                tokenTrendData={tokenTrendData}
-                tokenAvg={tokenAvg}
-                tokens24h={tokens24h}
-                taskTokenMap={taskTokenMap}
-                onFeedEventClick={() => setView('agents')}
-                onCompletionClick={handleCompletionClick}
-              />
+          {/* 3-column Ops Deck grid or onboarding */}
+          {tasks.length === 0 ? (
+            <div className="dashboard-onboarding">
+              <NeonCard accent="cyan" title="Welcome to BDE">
+                <div className="dashboard-onboarding__content">
+                  <p className="dashboard-onboarding__text">
+                    Create your first sprint task to see the pipeline in action.
+                  </p>
+                  <button
+                    className="dashboard-onboarding__cta"
+                    onClick={() => setView('task-workbench')}
+                  >
+                    <Plus size={14} /> Create First Task
+                  </button>
+                </div>
+              </NeonCard>
             </div>
-          </>
-        )}
-      </div>
-    </motion.div>
+          ) : (
+            <>
+              <FiresStrip
+                failed={stats.failed}
+                blocked={stats.blocked}
+                stuck={stuckCount}
+                loadSaturated={loadSaturated}
+                onClick={handleFiresClick}
+              />
+              <div className="dashboard-grid" role="region" aria-label="Dashboard overview">
+                <StatusRail
+                  stats={stats}
+                  tokens24h={tokens24h}
+                  onFilterClick={handleRailFilter}
+                  onNewTaskClick={() => setView('task-workbench')}
+                />
+
+                <CenterColumn
+                  stats={stats}
+                  partitions={partitions}
+                  throughputData={throughputData}
+                  successTrendData={successTrendData}
+                  loadData={loadData}
+                  tokenTrendData={tokenTrendData}
+                  tokenAvg={tokenAvg}
+                  cardErrors={cardErrors}
+                  onFilterClick={navigateToSprintWithFilter}
+                />
+
+                <ActivitySection
+                  feedEvents={feedEvents}
+                  cardErrors={cardErrors}
+                  recentCompletions={recentCompletions}
+                  tokenTrendData={tokenTrendData}
+                  tokenAvg={tokenAvg}
+                  tokens24h={tokens24h}
+                  taskTokenMap={taskTokenMap}
+                  onFeedEventClick={() => setView('agents')}
+                  onCompletionClick={handleCompletionClick}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </motion.div>
+    </ErrorBoundary>
   )
 }

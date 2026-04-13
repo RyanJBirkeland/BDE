@@ -38,11 +38,11 @@ A new utility module `src/main/services/css-dedup.ts` that:
 
 The dedup runs as a **post-merge step** in three places:
 
-| Merge path | File | Insert after |
-|---|---|---|
-| `review:mergeLocally` | `src/main/handlers/review.ts` | After successful merge block (between merge success and worktree cleanup) |
-| Auto-merge (auto-review rules) | `src/main/agent-manager/completion.ts` | After squash merge in `resolveSuccess()` auto-review block |
-| `review:shipIt` | `src/main/handlers/review.ts` | After merge in `review:shipIt` handler |
+| Merge path                     | File                                   | Insert after                                                              |
+| ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------- |
+| `review:mergeLocally`          | `src/main/handlers/review.ts`          | After successful merge block (between merge success and worktree cleanup) |
+| Auto-merge (auto-review rules) | `src/main/agent-manager/completion.ts` | After squash merge in `resolveSuccess()` auto-review block                |
+| `review:shipIt`                | `src/main/handlers/review.ts`          | After merge in `review:shipIt` handler                                    |
 
 **Excluded:** `review:createPr` — this pushes the branch to remote and creates a GitHub PR without merging into local main. Since CSS duplicates only accumulate via local merges, dedup is not needed here.
 
@@ -70,12 +70,12 @@ Not a full CSS parser — a lightweight block-level parser sufficient for dedup:
 ```typescript
 interface CssBlock {
   type: 'rule' | 'keyframes' | 'media' | 'comment'
-  selector: string        // e.g., ".btn--ship:hover" or "@keyframes spin"
-  body: string            // normalized declaration body
-  context: string         // parent at-rule or "" for top-level
+  selector: string // e.g., ".btn--ship:hover" or "@keyframes spin"
+  body: string // normalized declaration body
+  context: string // parent at-rule or "" for top-level
   startLine: number
   endLine: number
-  raw: string             // original text (for preservation)
+  raw: string // original text (for preservation)
 }
 
 // Returns { deduplicated: string; removed: CssBlock[]; warnings: string[] }
@@ -98,6 +98,7 @@ function deduplicateCss(content: string): DedupResult
 ### Current State
 
 Rebase already happens in two places:
+
 1. **`rebaseOntoMain()` in `completion.ts`** — called in `resolveSuccess()` after auto-commit. Rebases agent branch onto `origin/main` when agent finishes. If it fails, sets a note but still transitions to `review`.
 2. **`review:mergeLocally` handler in `review.ts`** — rebases again at merge time (fetch + rebase inside the handler). If it fails, aborts rebase and blocks the merge with error to UI.
 
@@ -140,16 +141,17 @@ Both channels exposed via `window.api.review.rebase()` and `window.api.review.ch
 
 Two new nullable columns on `sprint_tasks`, added via migration v32 in `src/main/db.ts`:
 
-| Field | Type | Purpose |
-|---|---|---|
+| Field             | Type        | Purpose                                     |
+| ----------------- | ----------- | ------------------------------------------- |
 | `rebase_base_sha` | `TEXT NULL` | SHA of main that the branch is rebased onto |
-| `rebased_at` | `TEXT NULL` | ISO timestamp of last successful rebase |
+| `rebased_at`      | `TEXT NULL` | ISO timestamp of last successful rebase     |
 
 These are set in `completion.ts` after successful rebase and updated by the manual `review:rebase` handler.
 
 ### UI Changes
 
 In `ReviewDetail` or `ReviewActions`:
+
 - Small badge showing rebase freshness (Fresh/Stale/Conflict)
 - "Rebase" button (triggers `review:rebase` IPC)
 - Conflict state shows affected file names
@@ -171,6 +173,7 @@ src/renderer/.../code-review/           ← MODIFY: add rebase freshness badge +
 ## Testing
 
 ### CSS Dedup (unit tests)
+
 - Exact duplicate removal (same selector + body)
 - Keeps last occurrence (cascade order)
 - Respects `@media` context (same selector in different media queries = NOT duplicate)
@@ -181,18 +184,19 @@ src/renderer/.../code-review/           ← MODIFY: add rebase freshness badge +
 - Normalization: whitespace differences still detected as duplicates
 
 ### Rebase (integration tests)
+
 - `review:rebase` IPC handler: success path, conflict path
 - Freshness calculation: fresh when SHA matches, stale when behind
 - Rebase fields persisted and cleared on merge
 
 ## Risks and Mitigations
 
-| Risk | Mitigation |
-|---|---|
-| CSS parser misidentifies block boundaries | Conservative parser — if uncertain, don't dedup. Unit tests with real-world CSS from the codebase |
-| Dedup changes cascade semantics | Keep LAST occurrence (highest cascade priority). Only exact matches. |
-| Rebase fields add DB complexity | Nullable columns, no foreign keys. Set-and-forget in completion.ts. |
-| Post-merge commit clutters history | Single "chore: deduplicate CSS" commit only when changes found. Could be squashed into merge commit instead. |
+| Risk                                      | Mitigation                                                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| CSS parser misidentifies block boundaries | Conservative parser — if uncertain, don't dedup. Unit tests with real-world CSS from the codebase            |
+| Dedup changes cascade semantics           | Keep LAST occurrence (highest cascade priority). Only exact matches.                                         |
+| Rebase fields add DB complexity           | Nullable columns, no foreign keys. Set-and-forget in completion.ts.                                          |
+| Post-merge commit clutters history        | Single "chore: deduplicate CSS" commit only when changes found. Could be squashed into merge commit instead. |
 
 ## Out of Scope
 

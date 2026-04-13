@@ -138,5 +138,12 @@ export function useSprintPipelineCommands({
     return () => {
       unregisterCommands(commands.map((c) => c.id))
     }
-  }, [openWorkbench, handleStop, handleRetry, setStatusFilter, registerCommands, unregisterCommands])
+  }, [
+    openWorkbench,
+    handleStop,
+    handleRetry,
+    setStatusFilter,
+    registerCommands,
+    unregisterCommands
+  ])
 }

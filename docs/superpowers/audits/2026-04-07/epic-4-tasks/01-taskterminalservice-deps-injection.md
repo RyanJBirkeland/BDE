@@ -6,12 +6,12 @@ The `TaskTerminalService.onStatusTerminal` callback is the single most important
 
 Currently the callback is wired via **four separate module-level setters** in four different files:
 
-| File | Setter name | Module var |
-|---|---|---|
-| `src/main/handlers/sprint-local.ts` | `setOnStatusTerminal(fn)` | `let _onStatusTerminal` |
+| File                                | Setter name                          | Module var              |
+| ----------------------------------- | ------------------------------------ | ----------------------- |
+| `src/main/handlers/sprint-local.ts` | `setOnStatusTerminal(fn)`            | `let _onStatusTerminal` |
 | `src/main/handlers/git-handlers.ts` | `setGitHandlersOnStatusTerminal(fn)` | `let _onStatusTerminal` |
-| `src/main/handlers/review.ts` | `setReviewOnStatusTerminal(fn)` | `let _onStatusTerminal` |
-| `src/main/sprint-pr-poller.ts` | `setOnTaskTerminal(fn)` | `let _onTaskTerminal` |
+| `src/main/handlers/review.ts`       | `setReviewOnStatusTerminal(fn)`      | `let _onStatusTerminal` |
+| `src/main/sprint-pr-poller.ts`      | `setOnTaskTerminal(fn)`              | `let _onTaskTerminal`   |
 
 `src/main/index.ts` calls all four setters at boot (lines ~151-154). Each file has defensive `if (!_onStatusTerminal) logger.warn(...)` fallbacks because **the wiring has silently broken before**. Adding a fifth handler means adding a fifth setter, a fifth fallback, and one more thing for `index.ts` to remember to wire up.
 
@@ -24,6 +24,7 @@ Replace all four setters with **constructor-injection via a `deps` argument** to
 ### Exact changes per file
 
 **1. `src/main/handlers/sprint-local.ts`**
+
 - Delete: `let _onStatusTerminal: ((taskId: string, status: string) => void) | null = null` (line 75)
 - Delete: `export function setOnStatusTerminal(fn: ...): void { _onStatusTerminal = fn }` (lines 77-79)
 - Change: `export function registerSprintLocalHandlers(): void {` → `export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {`
@@ -32,6 +33,7 @@ Replace all four setters with **constructor-injection via a `deps` argument** to
 - Delete the `if (!_onStatusTerminal) logger.warn(...)` fallback blocks (around lines 188-194, 524-529) — they're no longer needed since deps is required. Just call `deps.onStatusTerminal(...)` directly.
 
 **2. `src/main/handlers/git-handlers.ts`**
+
 - Delete: `let _onStatusTerminal: ... | null = null` (line 138)
 - Delete: `export function setGitHandlersOnStatusTerminal(fn: ...): void` (lines 140-142)
 - Change: `export function registerGitHandlers(): void {` → `export function registerGitHandlers(deps: GitHandlersDeps): void {`
@@ -39,6 +41,7 @@ Replace all four setters with **constructor-injection via a `deps` argument** to
 - Replace `_onStatusTerminal?.(id, 'done')` / `_onStatusTerminal?.(id, 'cancelled')` call sites (lines 269, 272) with `deps.onStatusTerminal(id, 'done')` / `deps.onStatusTerminal(id, 'cancelled')` (no optional chaining — deps is required).
 
 **3. `src/main/handlers/review.ts`**
+
 - Delete: `let _onStatusTerminal: ... | null = null` (line 27)
 - Delete: `export function setReviewOnStatusTerminal(fn: ...): void` (lines 29-31)
 - Change: `export function registerReviewHandlers(): void {` → `export function registerReviewHandlers(deps: ReviewHandlersDeps): void {`
@@ -46,6 +49,7 @@ Replace all four setters with **constructor-injection via a `deps` argument** to
 - Replace all `if (_onStatusTerminal) { _onStatusTerminal(...) } else { logger.warn(...) }` blocks (around lines 296, 368, 472, 665) with direct calls: `deps.onStatusTerminal(taskId, 'done')` or `deps.onStatusTerminal(taskId, 'cancelled')`. Delete the warn fallbacks.
 
 **4. `src/main/sprint-pr-poller.ts`**
+
 - Delete: `let _onTaskTerminal: ... | null = null` (line 108)
 - Delete: `export function setOnTaskTerminal(fn: ...): void` (lines 110-112)
 - Change: `export function startSprintPrPoller(): void {` → `export function startSprintPrPoller(deps: SprintPrPollerDeps): void {`
@@ -53,6 +57,7 @@ Replace all four setters with **constructor-injection via a `deps` argument** to
 - Replace `if (_onTaskTerminal) { _onTaskTerminal(taskId, status) }` (lines 124-126) with `deps.onStatusTerminal(taskId, status)` (note: rename `_onTaskTerminal` → `onStatusTerminal` for consistency across modules).
 
 **5. `src/main/index.ts`**
+
 - Delete the four setter imports (lines 25, 54, 55, 56 — specifically remove `setReviewOnStatusTerminal`, `setOnStatusTerminal`, `setGitHandlersOnStatusTerminal`, `setOnTaskTerminal` from their respective import statements; keep the other imports like `registerReviewHandlers` from the same lines).
 - Delete the four setter calls (lines 151-154).
 - Change the four call sites that currently call `registerGitHandlers()`, `registerSprintLocalHandlers()`, `registerReviewHandlers()`, `startSprintPrPoller()` to pass the deps object:

@@ -710,7 +710,6 @@ describe('sprintTasks store', () => {
     })
   })
 
-
   describe('setTasks', () => {
     it('sets tasks and sanitizes depends_on', () => {
       const tasks = [makeTask('t1', { depends_on: null }), makeTask('t2')]

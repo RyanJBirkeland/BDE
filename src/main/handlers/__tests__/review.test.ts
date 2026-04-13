@@ -70,9 +70,7 @@ vi.mock('../../ipc-utils', () => ({
 // Mock electron (for BrowserWindow used by broadcast)
 vi.mock('electron', () => ({
   BrowserWindow: {
-    getAllWindows: vi.fn(() => [
-      { webContents: { send: vi.fn() } }
-    ])
+    getAllWindows: vi.fn(() => [{ webContents: { send: vi.fn() } }])
   }
 }))
 

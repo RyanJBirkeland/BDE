@@ -8,10 +8,10 @@ CSS files in the agents, dashboard, settings, layout, git-tree, panels, and help
 
 Replace every hardcoded spacing pixel value that has an exact token match. The token scale in `src/renderer/src/assets/tokens.css`:
 
-| Raw | Token |
-|-----|-------|
-| `4px` | `var(--bde-space-1)` |
-| `8px` | `var(--bde-space-2)` |
+| Raw    | Token                |
+| ------ | -------------------- |
+| `4px`  | `var(--bde-space-1)` |
+| `8px`  | `var(--bde-space-2)` |
 | `12px` | `var(--bde-space-3)` |
 | `16px` | `var(--bde-space-4)` |
 | `20px` | `var(--bde-space-5)` |
@@ -19,6 +19,7 @@ Replace every hardcoded spacing pixel value that has an exact token match. The t
 | `32px` | `var(--bde-space-8)` |
 
 **Rules:**
+
 - Only replace `gap`, `padding`, and `margin` properties (including `-top`/`-right`/`-bottom`/`-left` variants)
 - Tokenize each value independently in shorthands: `padding: 8px 10px` → `padding: var(--bde-space-2) 10px`
 - **Leave as-is:** `0`/`1px`/`2px`/`3px`, values without token match (`6px`, `10px`, `14px`), negative values, `calc()` internals, non-spacing properties (`width`, `height`, `font-size`, `border-radius`, `border-width`)

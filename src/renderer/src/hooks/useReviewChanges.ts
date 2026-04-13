@@ -152,8 +152,8 @@ export function useReviewChanges(taskId: string | null): ReviewChangesResult {
     loading: useCodeReviewStore((s) => s.loading.diff ?? false),
     error,
     isSnapshot,
-    snapshotCapturedAt: isSnapshot ? snapshot?.capturedAt ?? null : null,
-    snapshotTruncated: isSnapshot ? snapshot?.truncated ?? false : false,
+    snapshotCapturedAt: isSnapshot ? (snapshot?.capturedAt ?? null) : null,
+    snapshotTruncated: isSnapshot ? (snapshot?.truncated ?? false) : false,
     fileDiff,
     fileDiffLoading: false, // Not tracking separate loading state for file diff
     selectFile: setSelectedDiffFile

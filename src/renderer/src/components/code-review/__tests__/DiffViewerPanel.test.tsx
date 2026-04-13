@@ -21,9 +21,7 @@ const partnerState = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../stores/reviewPartner', () => ({
-  useReviewPartnerStore: vi.fn(
-    (sel: (s: typeof partnerState) => unknown) => sel(partnerState)
-  )
+  useReviewPartnerStore: vi.fn((sel: (s: typeof partnerState) => unknown) => sel(partnerState))
 }))
 
 describe('DiffViewerPanel', () => {

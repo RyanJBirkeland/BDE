@@ -136,7 +136,6 @@
   background: var(--bde-accent-surface);
 }
 
-
 .task-pill--arriving {
   animation: task-arrive 500ms ease-out;
 }
@@ -174,7 +173,6 @@
   flex-shrink: 0;
 }
 
-
 /* ── Task Pill: Duration (completed tasks) ── */
 .task-pill__duration {
   font-size: var(--font-2xs, 10px);
@@ -203,4 +201,3 @@
 .task-pill--multi-selected {
   border-color: var(--bde-accent-border);
 }
-

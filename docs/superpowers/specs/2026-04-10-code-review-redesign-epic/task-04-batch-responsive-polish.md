@@ -16,17 +16,29 @@ Full reference: `docs/superpowers/specs/2026-04-10-code-review-redesign-design.m
 - `src/renderer/src/views/CodeReviewView.css` — add `min-width: 620px` on `.cr-view`; add responsive blocks:
   ```css
   @media (max-width: 1120px) {
-    .cr-assistant { width: 40px; }
+    .cr-assistant {
+      width: 40px;
+    }
     .cr-assistant--expanded {
-      position: absolute; right: 0; top: 44px; bottom: 0;
-      width: 384px; box-shadow: var(--bde-shadow-lg);
+      position: absolute;
+      right: 0;
+      top: 44px;
+      bottom: 0;
+      width: 384px;
+      box-shadow: var(--bde-shadow-lg);
     }
   }
   @media (max-width: 860px) {
-    .cr-filetree { width: 40px; }
+    .cr-filetree {
+      width: 40px;
+    }
     .cr-filetree--expanded {
-      position: absolute; left: 0; top: 44px; bottom: 0;
-      width: 256px; box-shadow: var(--bde-shadow-lg);
+      position: absolute;
+      left: 0;
+      top: 44px;
+      bottom: 0;
+      width: 256px;
+      box-shadow: var(--bde-shadow-lg);
     }
   }
   ```

@@ -269,10 +269,7 @@ export function computeBlockState(
   )
 
   // Compose blockers: task-level as-is, epic-level with "epic:" prefix
-  const allBlockedBy = [
-    ...taskResult.blockedBy,
-    ...epicResult.blockedBy.map((id) => `epic:${id}`)
-  ]
+  const allBlockedBy = [...taskResult.blockedBy, ...epicResult.blockedBy.map((id) => `epic:${id}`)]
 
   return {
     shouldBlock: allBlockedBy.length > 0,

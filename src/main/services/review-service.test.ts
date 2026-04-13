@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  parseReviewResponse,
-  MalformedReviewError,
-} from './review-service'
+import { parseReviewResponse, MalformedReviewError } from './review-service'
 
 describe('parseReviewResponse', () => {
   const validJson = JSON.stringify({
@@ -12,11 +9,9 @@ describe('parseReviewResponse', () => {
       {
         path: 'src/foo.ts',
         status: 'issues',
-        comments: [
-          { line: 10, severity: 'high', category: 'security', message: 'XSS' },
-        ],
-      },
-    ],
+        comments: [{ line: 10, severity: 'high', category: 'security', message: 'XSS' }]
+      }
+    ]
   })
 
   it('parses plain JSON', () => {
@@ -36,9 +31,7 @@ describe('parseReviewResponse', () => {
   })
 
   it('strips leading/trailing prose', () => {
-    const out = parseReviewResponse(
-      'Here is the review:\n' + validJson + '\nHope that helps!'
-    )
+    const out = parseReviewResponse('Here is the review:\n' + validJson + '\nHope that helps!')
     expect(out.qualityScore).toBe(92)
   })
 
@@ -47,16 +40,14 @@ describe('parseReviewResponse', () => {
   })
 
   it('throws on missing required fields', () => {
-    expect(() =>
-      parseReviewResponse('{"qualityScore": 92}')
-    ).toThrow(MalformedReviewError)
+    expect(() => parseReviewResponse('{"qualityScore": 92}')).toThrow(MalformedReviewError)
   })
 
   it('throws on qualityScore out of range', () => {
     const bad = JSON.stringify({
       qualityScore: 150,
       openingMessage: 'bad',
-      perFile: [],
+      perFile: []
     })
     expect(() => parseReviewResponse(bad)).toThrow(MalformedReviewError)
   })
@@ -78,7 +69,7 @@ function makeFakeRepo(): IReviewRepository & { _set: Record<string, ReviewResult
       for (const k of Object.keys(_set)) {
         if (k.startsWith(taskId + ':')) delete _set[k]
       }
-    },
+    }
   }
 }
 
@@ -89,13 +80,13 @@ function makeTask() {
     spec: '# Spec\nFix auth.',
     repo: 'bde',
     branch: 'feat/auth',
-    status: 'review' as const,
+    status: 'review' as const
   }
 }
 
 function makeFakeTaskRepo(task = makeTask()) {
   return {
-    getTask: (id: string) => (id === task.id ? task : null),
+    getTask: (id: string) => (id === task.id ? task : null)
   } as any
 }
 
@@ -119,13 +110,13 @@ function baseDeps(overrides: Partial<any> = {}) {
             comments: [
               { line: 10, severity: 'high', category: 'security', message: 'XSS' },
               { line: 20, severity: 'medium', category: 'correctness', message: 'Off-by-one' },
-              { line: 30, severity: 'low', category: 'style', message: 'Name' },
-            ],
+              { line: 30, severity: 'low', category: 'style', message: 'Name' }
+            ]
           },
-          { path: 'src/bar.ts', status: 'clean', comments: [] },
-        ],
+          { path: 'src/bar.ts', status: 'clean', comments: [] }
+        ]
       }),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -139,16 +130,19 @@ describe('reviewService.reviewChanges', () => {
       openingMessage: 'From cache.',
       findings: { perFile: [] },
       model: 'claude-opus-4-6',
-      createdAt: 0,
+      createdAt: 0
     }
     repo._set['task-1:sha-abc'] = cached
 
     let sdkCalled = false
     const svc = createReviewService(
-      baseDeps({ repo, runSdkOnce: async () => {
-        sdkCalled = true
-        return '{}'
-      } })
+      baseDeps({
+        repo,
+        runSdkOnce: async () => {
+          sdkCalled = true
+          return '{}'
+        }
+      })
     )
 
     const result = await svc.reviewChanges('task-1')
@@ -165,7 +159,7 @@ describe('reviewService.reviewChanges', () => {
       openingMessage: 'Stale.',
       findings: { perFile: [] },
       model: 'x',
-      createdAt: 0,
+      createdAt: 0
     }
 
     const svc = createReviewService(baseDeps({ repo }))
@@ -181,7 +175,7 @@ describe('reviewService.reviewChanges', () => {
         runSdkOnce: async () => {
           sdkCalled = true
           return '{}'
-        },
+        }
       })
     )
     const result = await svc.reviewChanges('task-1')
@@ -209,17 +203,13 @@ describe('reviewService.reviewChanges', () => {
   })
 
   it('throws on malformed model response', async () => {
-    const svc = createReviewService(
-      baseDeps({ runSdkOnce: async () => 'not json, twice' })
-    )
+    const svc = createReviewService(baseDeps({ runSdkOnce: async () => 'not json, twice' }))
     await expect(svc.reviewChanges('task-1')).rejects.toThrow()
   })
 
   it('rejects when task is not in review status', async () => {
     const task = { ...makeTask(), status: 'queued' as const }
-    const svc = createReviewService(
-      baseDeps({ taskRepo: makeFakeTaskRepo(task) })
-    )
+    const svc = createReviewService(baseDeps({ taskRepo: makeFakeTaskRepo(task) }))
     await expect(svc.reviewChanges('task-1')).rejects.toThrow(/review status/)
   })
 
@@ -228,7 +218,7 @@ describe('reviewService.reviewChanges', () => {
       baseDeps({
         resolveWorktreePath: async () => {
           throw new WorktreeMissingError('/tmp/missing')
-        },
+        }
       })
     )
     await expect(svc.reviewChanges('task-1')).rejects.toThrow(WorktreeMissingError)

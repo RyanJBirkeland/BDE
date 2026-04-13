@@ -49,7 +49,10 @@ export function validateTaskCreation(
   // 2. Auto-block tasks with unsatisfied hard dependencies (task-level + epic-level)
   let task = { ...input }
   const dependsOn = task.depends_on as TaskDependency[] | undefined
-  if ((dependsOn && dependsOn.length > 0 && (task.status === 'queued' || !task.status)) || task.group_id) {
+  if (
+    (dependsOn && dependsOn.length > 0 && (task.status === 'queued' || !task.status)) ||
+    task.group_id
+  ) {
     const { shouldBlock, blockedBy } = computeBlockState(
       {
         id: 'new-task',

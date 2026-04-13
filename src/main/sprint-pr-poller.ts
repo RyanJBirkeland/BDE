@@ -70,7 +70,9 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
           })
           const results = await Promise.allSettled(promises)
           const failed = results
-            .map((r, i) => (r.status === 'rejected' ? { id: ids[i], reason: String(r.reason) } : null))
+            .map((r, i) =>
+              r.status === 'rejected' ? { id: ids[i], reason: String(r.reason) } : null
+            )
             .filter(Boolean)
           if (failed.length > 0) {
             log.warn(
@@ -92,7 +94,9 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
             const promises = ids.map((id) => Promise.resolve(deps.onTaskTerminal!(id, 'cancelled')))
             const results = await Promise.allSettled(promises)
             const failed = results
-              .map((r, i) => (r.status === 'rejected' ? { id: ids[i], reason: String(r.reason) } : null))
+              .map((r, i) =>
+                r.status === 'rejected' ? { id: ids[i], reason: String(r.reason) } : null
+              )
               .filter(Boolean)
             if (failed.length > 0) {
               log.warn(

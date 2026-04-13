@@ -45,13 +45,7 @@ describe('EpicDependencySection', () => {
   })
 
   it('renders empty state when no dependencies', () => {
-    render(
-      <EpicDependencySection
-        group={mockGroup}
-        allGroups={mockAllGroups}
-        {...mockHandlers}
-      />
-    )
+    render(<EpicDependencySection group={mockGroup} allGroups={mockAllGroups} {...mockHandlers} />)
 
     expect(
       screen.getByText(/No upstream epics. This epic's tasks can run as soon as they're queued/)
@@ -59,26 +53,14 @@ describe('EpicDependencySection', () => {
   })
 
   it('renders add button', () => {
-    render(
-      <EpicDependencySection
-        group={mockGroup}
-        allGroups={mockAllGroups}
-        {...mockHandlers}
-      />
-    )
+    render(<EpicDependencySection group={mockGroup} allGroups={mockAllGroups} {...mockHandlers} />)
 
     expect(screen.getByRole('button', { name: /add epic dependency/i })).toBeInTheDocument()
   })
 
   it('opens modal when add button clicked', async () => {
     const user = userEvent.setup()
-    render(
-      <EpicDependencySection
-        group={mockGroup}
-        allGroups={mockAllGroups}
-        {...mockHandlers}
-      />
-    )
+    render(<EpicDependencySection group={mockGroup} allGroups={mockAllGroups} {...mockHandlers} />)
 
     await user.click(screen.getByRole('button', { name: /add epic dependency/i }))
 
@@ -94,11 +76,7 @@ describe('EpicDependencySection', () => {
     }
 
     render(
-      <EpicDependencySection
-        group={groupWithDeps}
-        allGroups={mockAllGroups}
-        {...mockHandlers}
-      />
+      <EpicDependencySection group={groupWithDeps} allGroups={mockAllGroups} {...mockHandlers} />
     )
 
     expect(screen.getByText('Upstream Epic')).toBeInTheDocument()
@@ -113,11 +91,7 @@ describe('EpicDependencySection', () => {
     }
 
     render(
-      <EpicDependencySection
-        group={groupWithDeps}
-        allGroups={mockAllGroups}
-        {...mockHandlers}
-      />
+      <EpicDependencySection group={groupWithDeps} allGroups={mockAllGroups} {...mockHandlers} />
     )
 
     // Click remove button
@@ -144,11 +118,7 @@ describe('EpicDependencySection', () => {
     }
 
     render(
-      <EpicDependencySection
-        group={groupWithDeps}
-        allGroups={mockAllGroups}
-        {...mockHandlers}
-      />
+      <EpicDependencySection group={groupWithDeps} allGroups={mockAllGroups} {...mockHandlers} />
     )
 
     const select = screen.getByRole('combobox', {

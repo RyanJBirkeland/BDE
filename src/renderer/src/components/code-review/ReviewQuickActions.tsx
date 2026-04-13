@@ -11,20 +11,19 @@ const ACTIONS = [
     label: 'Explain security issues',
     icon: Shield,
     prompt:
-      "Walk me through any security risks you see in this diff. Cite specific files and lines where possible.",
+      'Walk me through any security risks you see in this diff. Cite specific files and lines where possible.'
   },
   {
     label: 'Performance analysis',
     icon: TrendingUp,
     prompt:
-      "Analyze this change for performance regressions or improvements. Focus on hot paths and allocations.",
+      'Analyze this change for performance regressions or improvements. Focus on hot paths and allocations.'
   },
   {
     label: 'Suggest improvements',
     icon: Zap,
-    prompt:
-      "What would you change about this diff before merging? Rank suggestions by impact.",
-  },
+    prompt: 'What would you change about this diff before merging? Rank suggestions by impact.'
+  }
 ] as const
 
 export function ReviewQuickActions({ onAction, disabled = false }: Props): JSX.Element {

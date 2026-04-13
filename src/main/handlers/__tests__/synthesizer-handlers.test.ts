@@ -53,7 +53,7 @@ describe('synthesizer-handlers', () => {
 
       await handler({ sender: mockSender }, { template: 'feature', answers: { title: 'Test' } })
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
       expect(specSynthesizer.synthesizeSpec).toHaveBeenCalledWith(
         { template: 'feature', answers: { title: 'Test' } },
@@ -66,25 +66,31 @@ describe('synthesizer-handlers', () => {
       const handler = handlers.get('synthesizer:generate')!
       await handler({ sender: mockSender }, { template: 'bug', answers: {} })
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
-      expect(mockSender.send).toHaveBeenCalledWith('synthesizer:chunk', expect.objectContaining({
-        chunk: 'Generated spec content',
-        done: false
-      }))
+      expect(mockSender.send).toHaveBeenCalledWith(
+        'synthesizer:chunk',
+        expect.objectContaining({
+          chunk: 'Generated spec content',
+          done: false
+        })
+      )
     })
 
     it('should send completion message with full text', async () => {
       const handler = handlers.get('synthesizer:generate')!
       await handler({ sender: mockSender }, { template: 'bug', answers: {} })
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
-      expect(mockSender.send).toHaveBeenCalledWith('synthesizer:chunk', expect.objectContaining({
-        done: true,
-        fullText: 'Full spec',
-        filesAnalyzed: 5
-      }))
+      expect(mockSender.send).toHaveBeenCalledWith(
+        'synthesizer:chunk',
+        expect.objectContaining({
+          done: true,
+          fullText: 'Full spec',
+          filesAnalyzed: 5
+        })
+      )
     })
 
     it('should handle synthesis errors', async () => {
@@ -93,19 +99,25 @@ describe('synthesizer-handlers', () => {
       const handler = handlers.get('synthesizer:generate')!
       await handler({ sender: mockSender }, { template: 'bug', answers: {} })
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
-      expect(mockSender.send).toHaveBeenCalledWith('synthesizer:chunk', expect.objectContaining({
-        done: true,
-        error: 'Synthesis failed'
-      }))
+      expect(mockSender.send).toHaveBeenCalledWith(
+        'synthesizer:chunk',
+        expect.objectContaining({
+          done: true,
+          error: 'Synthesis failed'
+        })
+      )
     })
   })
 
   describe('synthesizer:revise', () => {
     it('should return streamId immediately', async () => {
       const handler = handlers.get('synthesizer:revise')!
-      const result = await handler({ sender: mockSender }, { currentSpec: 'Old spec', instruction: 'Make it better' })
+      const result = await handler(
+        { sender: mockSender },
+        { currentSpec: 'Old spec', instruction: 'Make it better' }
+      )
 
       expect(result).toMatchObject({ streamId: expect.stringContaining('synthesizer-rev-') })
     })
@@ -115,7 +127,7 @@ describe('synthesizer-handlers', () => {
 
       await handler({ sender: mockSender }, { currentSpec: 'Old', instruction: 'Improve' })
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
       expect(specSynthesizer.reviseSpec).toHaveBeenCalledWith(
         { currentSpec: 'Old', instruction: 'Improve' },
@@ -128,12 +140,15 @@ describe('synthesizer-handlers', () => {
       const handler = handlers.get('synthesizer:revise')!
       await handler({ sender: mockSender }, { currentSpec: 'Old', instruction: 'Improve' })
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
-      expect(mockSender.send).toHaveBeenCalledWith('synthesizer:chunk', expect.objectContaining({
-        chunk: 'Revised content',
-        done: false
-      }))
+      expect(mockSender.send).toHaveBeenCalledWith(
+        'synthesizer:chunk',
+        expect.objectContaining({
+          chunk: 'Revised content',
+          done: false
+        })
+      )
     })
   })
 

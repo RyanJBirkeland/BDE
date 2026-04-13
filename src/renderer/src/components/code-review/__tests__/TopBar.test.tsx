@@ -129,10 +129,10 @@ describe('TopBar', () => {
             openingMessage: 'ok',
             findings: { perFile: [], branch: 'feat/fix-auth' },
             model: 'claude-opus-4-6',
-            createdAt: 0,
-          },
-        },
-      },
+            createdAt: 0
+          }
+        }
+      }
     })
     render(<TopBar />)
     expect(screen.getByText('feat/fix-auth')).toBeInTheDocument()

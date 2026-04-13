@@ -39,6 +39,4 @@ export interface GitHubError {
 }
 
 /** Discriminated-union result wrapper. Use instead of throwing. */
-export type GitHubResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: GitHubError }
+export type GitHubResult<T> = { ok: true; data: T } | { ok: false; error: GitHubError }

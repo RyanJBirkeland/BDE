@@ -153,7 +153,9 @@ async function executeGitOp(
       if (!result.success) {
         // Extract conflict files
         const conflicts = await extractConflictFiles(op.worktreePath, env, logger)
-        const error = new Error(`Rebase failed: ${result.notes}`) as Error & { conflicts?: string[] }
+        const error = new Error(`Rebase failed: ${result.notes}`) as Error & {
+          conflicts?: string[]
+        }
         if (conflicts.length > 0) {
           error.conflicts = conflicts
         }

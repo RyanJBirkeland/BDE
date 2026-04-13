@@ -6,15 +6,15 @@ Design spec: `docs/superpowers/specs/2026-04-10-agents-view-redesign-design.md`
 
 ## Tasks
 
-| # | Title | Files | Depends on | Risk | Est time |
-|---|---|---|---|---|---|
-| 01 | Inline-styles cleanup (AgentsView + AgentList) | 4 | — | low | 15-20 min |
-| 02 | Sidebar card redesign + panel resize | 3 | 01 | med | 25-35 min |
-| 03 | Cockpit header growth + typography | 2 | — | low | 15-20 min |
-| 04 | Console body file restructure (no visual change) | ~14 | — | med | 30-40 min |
-| 05 | Card grammar — conversation cards | 8 | 04 | med | 25-35 min |
-| 06 | Card grammar — tool cards + EditDiffCard | 7 | 05 | med | 30-40 min |
-| 07 | Fleet at a Glance empty state | 3 | 01 | low | 20-30 min |
+| #   | Title                                            | Files | Depends on | Risk | Est time  |
+| --- | ------------------------------------------------ | ----- | ---------- | ---- | --------- |
+| 01  | Inline-styles cleanup (AgentsView + AgentList)   | 4     | —          | low  | 15-20 min |
+| 02  | Sidebar card redesign + panel resize             | 3     | 01         | med  | 25-35 min |
+| 03  | Cockpit header growth + typography               | 2     | —          | low  | 15-20 min |
+| 04  | Console body file restructure (no visual change) | ~14   | —          | med  | 30-40 min |
+| 05  | Card grammar — conversation cards                | 8     | 04         | med  | 25-35 min |
+| 06  | Card grammar — tool cards + EditDiffCard         | 7     | 05         | med  | 30-40 min |
+| 07  | Fleet at a Glance empty state                    | 3     | 01         | low  | 20-30 min |
 
 **Total: 7 tasks, ~3-4 hours wall time at maxConcurrent=2.**
 
@@ -77,12 +77,14 @@ Tasks 03 is fully independent and can ship alongside any other task.
 ## Queue strategy
 
 At `maxConcurrent=2`:
+
 - Wave 1: 01 + 03 (parallel), 04 starts when one of those completes
 - Wave 2: 02 and 07 unblock after 01; 05 unblocks after 04
 - Wave 3: 06 unblocks after 05
 - Expected total wall time: ~3-4 hours
 
 At `maxConcurrent=3`:
+
 - Wave 1: 01, 03, 04 all parallel
 - Wave 2: 02, 05, 07 all parallel
 - Wave 3: 06
@@ -96,6 +98,7 @@ python3 queue_epic.py
 ```
 
 The script:
+
 1. Inserts task 01 first, captures its inserted ID
 2. Inserts task 03 (no deps)
 3. Inserts task 04 (no deps), captures ID

@@ -17,9 +17,11 @@
 ### New files
 
 **Shared:**
+
 - `src/shared/review-types.ts` — `FindingSeverity`, `FindingCategory`, `InlineComment`, `FileFinding`, `ReviewFindings`, `ReviewResult`, `PartnerMessage`, `ChatChunk`.
 
 **Main process:**
+
 - `src/main/migrations/v046-add-task-reviews-table.ts` — SQLite migration.
 - `src/main/data/review-repository.ts` — `IReviewRepository` + `createReviewRepository()`.
 - `src/main/data/review-repository.test.ts` — repository unit tests.
@@ -29,6 +31,7 @@
 - `src/main/handlers/review-assistant.test.ts` — handler integration tests.
 
 **Renderer:**
+
 - `src/renderer/src/stores/reviewPartner.ts` — Zustand store.
 - `src/renderer/src/stores/reviewPartner.test.ts` — store unit tests.
 - `src/renderer/src/hooks/useAutoReview.ts` — debounced auto-review trigger.
@@ -70,6 +73,7 @@
 ### Task A1: Shared review types
 
 **Files:**
+
 - Create: `src/shared/review-types.ts`
 
 - [ ] **Step 1: Create the shared types file**
@@ -142,10 +146,12 @@ export interface ChatChunk {
 - [ ] **Step 2: Typecheck**
 
 Run:
+
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
-Expected: zero errors. If errors reference missing imports in *other* files, ignore — nothing else references this file yet.
+
+Expected: zero errors. If errors reference missing imports in _other_ files, ignore — nothing else references this file yet.
 
 - [ ] **Step 3: Commit**
 
@@ -159,6 +165,7 @@ git commit -m "feat: add shared review types for AI Review Partner"
 ### Task A2: SQLite migration — `task_reviews` table
 
 **Files:**
+
 - Create: `src/main/migrations/v046-add-task-reviews-table.ts`
 
 Reference pattern: `src/main/migrations/v045-add-cache-token-columns-to-agent-run-turns-for-ful.ts`
@@ -168,7 +175,8 @@ Reference pattern: `src/main/migrations/v045-add-cache-token-columns-to-agent-ru
 ```bash
 ls src/main/migrations/ | sort | tail -3
 ```
-Expected: the highest existing version is v045 at plan-writing time. If a newer migration (v046 or higher) has landed since, bump the file name *and* the `version` export in Step 1 to the next unused number. Do NOT trust the hardcoded `46` blindly.
+
+Expected: the highest existing version is v045 at plan-writing time. If a newer migration (v046 or higher) has landed since, bump the file name _and_ the `version` export in Step 1 to the next unused number. Do NOT trust the hardcoded `46` blindly.
 
 - [ ] **Step 1: Create the migration file**
 
@@ -198,9 +206,7 @@ export const up: (db: Database.Database) => void = (db) => {
     )`
   ).run()
 
-  db.prepare(
-    'CREATE INDEX IF NOT EXISTS idx_task_reviews_task ON task_reviews(task_id)'
-  ).run()
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_task_reviews_task ON task_reviews(task_id)').run()
 }
 ```
 
@@ -209,6 +215,7 @@ export const up: (db: Database.Database) => void = (db) => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors.
 
 - [ ] **Step 3: Run main tests to confirm migration loader picks it up**
@@ -216,6 +223,7 @@ Expected: zero errors.
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run
 ```
+
 Expected: all tests pass. Migration loader discovers the new file automatically via the glob in `db.ts`.
 
 - [ ] **Step 4: Commit**
@@ -230,6 +238,7 @@ git commit -m "feat: add task_reviews table migration (v046)"
 ### Task A3: Review repository (TDD)
 
 **Files:**
+
 - Create: `src/main/data/review-repository.ts`
 - Create: `src/main/data/review-repository.test.ts`
 
@@ -279,14 +288,14 @@ function makeResult(overrides: Partial<ReviewResult> = {}): ReviewResult {
           commentCount: 2,
           comments: [
             { line: 10, severity: 'high', category: 'security', message: 'XSS' },
-            { line: 20, severity: 'low', category: 'style', message: 'Name' },
-          ],
-        },
-      ],
+            { line: 20, severity: 'low', category: 'style', message: 'Name' }
+          ]
+        }
+      ]
     },
     model: 'claude-opus-4-6',
     createdAt: 1_700_000_000_000,
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -355,6 +364,7 @@ describe('review-repository', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/data/review-repository.test.ts
 ```
+
 Expected: FAIL with `Cannot find module './review-repository'`.
 
 - [ ] **Step 3: Implement the repository**
@@ -370,12 +380,7 @@ const log = createLogger('review-repository')
 
 export interface IReviewRepository {
   getCached(taskId: string, commitSha: string): ReviewResult | null
-  setCached(
-    taskId: string,
-    commitSha: string,
-    result: ReviewResult,
-    rawResponse: string
-  ): void
+  setCached(taskId: string, commitSha: string, result: ReviewResult, rawResponse: string): void
   invalidate(taskId: string): void
 }
 
@@ -396,9 +401,9 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
   const getStmt = db.prepare<[string, string]>(
     'SELECT * FROM task_reviews WHERE task_id = ? AND commit_sha = ?'
   )
-  const upsertStmt = db.prepare<[
-    string, string, number, number, number, string, string, string, string, number
-  ]>(
+  const upsertStmt = db.prepare<
+    [string, string, number, number, number, string, string, string, string, number]
+  >(
     `INSERT OR REPLACE INTO task_reviews
      (task_id, commit_sha, quality_score, issues_count, files_count,
       opening_message, findings_json, raw_response, model, created_at)
@@ -407,9 +412,7 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
   const deleteRowStmt = db.prepare<[string, string]>(
     'DELETE FROM task_reviews WHERE task_id = ? AND commit_sha = ?'
   )
-  const invalidateStmt = db.prepare<[string]>(
-    'DELETE FROM task_reviews WHERE task_id = ?'
-  )
+  const invalidateStmt = db.prepare<[string]>('DELETE FROM task_reviews WHERE task_id = ?')
 
   return {
     getCached(taskId, commitSha) {
@@ -424,13 +427,12 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
           openingMessage: row.opening_message,
           findings,
           model: row.model,
-          createdAt: row.created_at,
+          createdAt: row.created_at
         }
       } catch (err) {
-        log.warn(
-          `Corrupt findings_json for task=${taskId} sha=${commitSha}; deleting row`,
-          { err: (err as Error).message }
-        )
+        log.warn(`Corrupt findings_json for task=${taskId} sha=${commitSha}; deleting row`, {
+          err: (err as Error).message
+        })
         deleteRowStmt.run(taskId, commitSha)
         return null
       }
@@ -453,7 +455,7 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
 
     invalidate(taskId) {
       invalidateStmt.run(taskId)
-    },
+    }
   }
 }
 ```
@@ -463,6 +465,7 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/data/review-repository.test.ts
 ```
+
 Expected: all 6 tests pass.
 
 - [ ] **Step 5: Commit**
@@ -479,6 +482,7 @@ git commit -m "feat: add review repository with corrupt-row recovery"
 ### Task B1: Extend `SdkStreamingOptions` with `model` + add `runSdkOnce`
 
 **Files:**
+
 - Modify: `src/main/sdk-streaming.ts`
 
 - [ ] **Step 1: Read the existing file to plan the edits**
@@ -486,11 +490,12 @@ git commit -m "feat: add review repository with corrupt-row recovery"
 ```bash
 cat src/main/sdk-streaming.ts
 ```
+
 Expected: note the `SdkStreamingOptions` interface and the hardcoded `model: 'claude-sonnet-4-5'` in `runSdkStreaming`.
 
 - [ ] **Step 2: Add the `model` field to `SdkStreamingOptions`**
 
-Find the `SdkStreamingOptions` interface and add this property *after* `settingSources`:
+Find the `SdkStreamingOptions` interface and add this property _after_ `settingSources`:
 
 ```ts
   /**
@@ -545,6 +550,7 @@ export async function runSdkOnce(
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors.
 
 - [ ] **Step 6: Run main tests — confirm no regression in existing `runSdkStreaming` call sites**
@@ -552,6 +558,7 @@ Expected: zero errors.
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run
 ```
+
 Expected: all existing tests pass.
 
 - [ ] **Step 7: Commit**
@@ -566,6 +573,7 @@ git commit -m "feat(sdk): add optional model option + runSdkOnce helper"
 ### Task B2: Add `'reviewer'` agent type to prompt composer
 
 **Files:**
+
 - Modify: `src/main/agent-manager/prompt-composer.ts`
 - Create: `src/main/agent-manager/prompt-composer.reviewer.test.ts`
 
@@ -585,7 +593,7 @@ const reviewSeed: ReviewResult = {
   openingMessage: 'Overall solid. A few items to address.',
   findings: { perFile: [] },
   model: 'claude-opus-4-6',
-  createdAt: 0,
+  createdAt: 0
 }
 
 describe('buildAgentPrompt — reviewer', () => {
@@ -596,7 +604,7 @@ describe('buildAgentPrompt — reviewer', () => {
         reviewerMode: 'review',
         taskContent: '# Spec\nImprove auth flow.',
         diff: 'diff --git a/file.ts b/file.ts\n+ new line',
-        branch: 'feat/auth',
+        branch: 'feat/auth'
       })
       expect(prompt).toContain('qualityScore')
       expect(prompt).toContain('perFile')
@@ -610,7 +618,7 @@ describe('buildAgentPrompt — reviewer', () => {
         reviewerMode: 'review',
         taskContent: '# Spec\nImprove auth flow.',
         diff: '+ newline',
-        branch: 'feat/auth',
+        branch: 'feat/auth'
       })
       expect(prompt).toContain('Improve auth flow.')
     })
@@ -621,7 +629,7 @@ describe('buildAgentPrompt — reviewer', () => {
         reviewerMode: 'review',
         taskContent: '# Spec',
         diff: 'UNIQUE_DIFF_MARKER_ABC123',
-        branch: 'feat/x',
+        branch: 'feat/x'
       })
       expect(prompt).toContain('UNIQUE_DIFF_MARKER_ABC123')
     })
@@ -636,7 +644,7 @@ describe('buildAgentPrompt — reviewer', () => {
         diff: '+ change',
         branch: 'feat/x',
         messages: [{ role: 'user', content: 'What are the risks?' }],
-        reviewSeed,
+        reviewSeed
       })
       expect(prompt).toContain('Overall solid. A few items to address.')
       expect(prompt).toContain('92')
@@ -651,9 +659,9 @@ describe('buildAgentPrompt — reviewer', () => {
         branch: 'feat/x',
         messages: [
           { role: 'user', content: 'UNIQUE_USER_MARKER_42' },
-          { role: 'assistant', content: 'UNIQUE_ASSISTANT_MARKER_43' },
+          { role: 'assistant', content: 'UNIQUE_ASSISTANT_MARKER_43' }
         ],
-        reviewSeed,
+        reviewSeed
       })
       expect(prompt).toContain('UNIQUE_USER_MARKER_42')
       expect(prompt).toContain('UNIQUE_ASSISTANT_MARKER_43')
@@ -667,7 +675,7 @@ describe('buildAgentPrompt — reviewer', () => {
         diff: '+ change',
         branch: 'feat/x',
         messages: [{ role: 'user', content: 'Hi' }],
-        reviewSeed,
+        reviewSeed
       })
       expect(prompt).not.toContain('Respond with ONLY a valid JSON object')
     })
@@ -680,6 +688,7 @@ describe('buildAgentPrompt — reviewer', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/agent-manager/prompt-composer.reviewer.test.ts
 ```
+
 Expected: FAIL — likely type errors because `'reviewer'`, `reviewerMode`, `diff`, and `reviewSeed` aren't yet in `BuildPromptInput`.
 
 - [ ] **Step 3: Extend `AgentType` and `BuildPromptInput`**
@@ -687,22 +696,18 @@ Expected: FAIL — likely type errors because `'reviewer'`, `reviewerMode`, `dif
 In `src/main/agent-manager/prompt-composer.ts`:
 
 Find:
+
 ```ts
 export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer'
 ```
 
 Replace with:
+
 ```ts
-export type AgentType =
-  | 'pipeline'
-  | 'assistant'
-  | 'adhoc'
-  | 'copilot'
-  | 'synthesizer'
-  | 'reviewer'
+export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
 ```
 
-Find the end of the `BuildPromptInput` interface (the line with `priorScratchpad?: string`) and append, *inside* the interface, before the closing brace:
+Find the end of the `BuildPromptInput` interface (the line with `priorScratchpad?: string`) and append, _inside_ the interface, before the closing brace:
 
 ```ts
   // Reviewer-only fields
@@ -775,9 +780,7 @@ Opening: ${reviewSeed.openingMessage}
 `
     : ''
 
-  const history = messages
-    .map((m) => `**${m.role}:** ${m.content}`)
-    .join('\n\n')
+  const history = messages.map((m) => `**${m.role}:** ${m.content}`).join('\n\n')
 
   return `${SPEC_DRAFTING_PREAMBLE}
 
@@ -817,6 +820,7 @@ Find the `switch (input.agentType)` inside `buildAgentPrompt()` and add a case:
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/agent-manager/prompt-composer.reviewer.test.ts
 ```
+
 Expected: all 6 tests pass.
 
 - [ ] **Step 7: Run the full main test suite — confirm no regression**
@@ -824,6 +828,7 @@ Expected: all 6 tests pass.
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run
 ```
+
 Expected: all tests pass.
 
 - [ ] **Step 8: Commit**
@@ -840,6 +845,7 @@ git commit -m "feat: add reviewer agent type with review + chat prompt builders"
 ### Task C1: Error classes + `parseReviewResponse` helper (TDD)
 
 **Files:**
+
 - Create: `src/main/services/review-service.ts` (partial — just errors + parser)
 - Create: `src/main/services/review-service.test.ts` (partial — just parser tests)
 
@@ -847,12 +853,9 @@ git commit -m "feat: add reviewer agent type with review + chat prompt builders"
 
 Write `src/main/services/review-service.test.ts`:
 
-```ts
+````ts
 import { describe, it, expect } from 'vitest'
-import {
-  parseReviewResponse,
-  MalformedReviewError,
-} from './review-service'
+import { parseReviewResponse, MalformedReviewError } from './review-service'
 
 describe('parseReviewResponse', () => {
   const validJson = JSON.stringify({
@@ -862,11 +865,9 @@ describe('parseReviewResponse', () => {
       {
         path: 'src/foo.ts',
         status: 'issues',
-        comments: [
-          { line: 10, severity: 'high', category: 'security', message: 'XSS' },
-        ],
-      },
-    ],
+        comments: [{ line: 10, severity: 'high', category: 'security', message: 'XSS' }]
+      }
+    ]
   })
 
   it('parses plain JSON', () => {
@@ -886,9 +887,7 @@ describe('parseReviewResponse', () => {
   })
 
   it('strips leading/trailing prose', () => {
-    const out = parseReviewResponse(
-      'Here is the review:\n' + validJson + '\nHope that helps!'
-    )
+    const out = parseReviewResponse('Here is the review:\n' + validJson + '\nHope that helps!')
     expect(out.qualityScore).toBe(92)
   })
 
@@ -897,34 +896,33 @@ describe('parseReviewResponse', () => {
   })
 
   it('throws on missing required fields', () => {
-    expect(() =>
-      parseReviewResponse('{"qualityScore": 92}')
-    ).toThrow(MalformedReviewError)
+    expect(() => parseReviewResponse('{"qualityScore": 92}')).toThrow(MalformedReviewError)
   })
 
   it('throws on qualityScore out of range', () => {
     const bad = JSON.stringify({
       qualityScore: 150,
       openingMessage: 'bad',
-      perFile: [],
+      perFile: []
     })
     expect(() => parseReviewResponse(bad)).toThrow(MalformedReviewError)
   })
 })
-```
+````
 
 - [ ] **Step 2: Run — confirm failure**
 
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/services/review-service.test.ts
 ```
+
 Expected: FAIL — `Cannot find module './review-service'`.
 
 - [ ] **Step 3: Create `review-service.ts` with error classes and parser**
 
 Write `src/main/services/review-service.ts`:
 
-```ts
+````ts
 import type { ReviewFindings, FileFinding } from '../../shared/review-types'
 
 export class WorktreeMissingError extends Error {
@@ -935,7 +933,10 @@ export class WorktreeMissingError extends Error {
 }
 
 export class MalformedReviewError extends Error {
-  constructor(message: string, public readonly rawResponse?: string) {
+  constructor(
+    message: string,
+    public readonly rawResponse?: string
+  ) {
     super(message)
     this.name = 'MalformedReviewError'
   }
@@ -963,10 +964,7 @@ export function parseReviewResponse(raw: string): ParsedReview {
   try {
     parsed = JSON.parse(jsonText)
   } catch (err) {
-    throw new MalformedReviewError(
-      `JSON.parse failed: ${(err as Error).message}`,
-      raw
-    )
+    throw new MalformedReviewError(`JSON.parse failed: ${(err as Error).message}`, raw)
   }
 
   return validateParsedReview(parsed, raw)
@@ -1032,10 +1030,7 @@ function validateParsedReview(value: unknown, raw: string): ParsedReview {
       commentCount: comments.length,
       comments: comments.map((c: unknown, ci: number) => {
         if (!c || typeof c !== 'object') {
-          throw new MalformedReviewError(
-            `perFile[${idx}].comments[${ci}] not an object`,
-            raw
-          )
+          throw new MalformedReviewError(`perFile[${idx}].comments[${ci}] not an object`, raw)
         }
         const cc = c as Record<string, unknown>
         return {
@@ -1051,27 +1046,28 @@ function validateParsedReview(value: unknown, raw: string): ParsedReview {
             cc.category === 'style'
               ? cc.category
               : 'correctness',
-          message: typeof cc.message === 'string' ? cc.message : '',
+          message: typeof cc.message === 'string' ? cc.message : ''
         }
-      }),
+      })
     }
   })
 
   return {
     qualityScore: Math.round(v.qualityScore),
     openingMessage: v.openingMessage,
-    perFile,
+    perFile
   }
 }
 
 export type { ReviewFindings }
-```
+````
 
 - [ ] **Step 4: Run — confirm tests pass**
 
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/services/review-service.test.ts
 ```
+
 Expected: all 7 parser tests pass.
 
 - [ ] **Step 5: Commit**
@@ -1086,6 +1082,7 @@ git commit -m "feat: add review-service error classes + parseReviewResponse"
 ### Task C2: `ReviewService.reviewChanges` (TDD)
 
 **Files:**
+
 - Modify: `src/main/services/review-service.ts` (add the service factory)
 - Modify: `src/main/services/review-service.test.ts` (add the flow tests)
 
@@ -1110,7 +1107,7 @@ function makeFakeRepo(): IReviewRepository & { _set: Record<string, ReviewResult
       for (const k of Object.keys(_set)) {
         if (k.startsWith(taskId + ':')) delete _set[k]
       }
-    },
+    }
   }
 }
 
@@ -1121,13 +1118,13 @@ function makeTask() {
     spec: '# Spec\nFix auth.',
     repo: 'bde',
     branch: 'feat/auth',
-    status: 'review' as const,
+    status: 'review' as const
   }
 }
 
 function makeFakeTaskRepo(task = makeTask()) {
   return {
-    getTask: (id: string) => (id === task.id ? task : null),
+    getTask: (id: string) => (id === task.id ? task : null)
   } as any
 }
 
@@ -1150,13 +1147,13 @@ function baseDeps(overrides: Partial<any> = {}) {
             comments: [
               { line: 10, severity: 'high', category: 'security', message: 'XSS' },
               { line: 20, severity: 'medium', category: 'correctness', message: 'Off-by-one' },
-              { line: 30, severity: 'low', category: 'style', message: 'Name' },
-            ],
+              { line: 30, severity: 'low', category: 'style', message: 'Name' }
+            ]
           },
-          { path: 'src/bar.ts', status: 'clean', comments: [] },
-        ],
+          { path: 'src/bar.ts', status: 'clean', comments: [] }
+        ]
       }),
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -1170,16 +1167,19 @@ describe('reviewService.reviewChanges', () => {
       openingMessage: 'From cache.',
       findings: { perFile: [] },
       model: 'claude-opus-4-6',
-      createdAt: 0,
+      createdAt: 0
     }
     repo._set['task-1:sha-abc'] = cached
 
     let sdkCalled = false
     const svc = createReviewService(
-      baseDeps({ repo, runSdkOnce: async () => {
-        sdkCalled = true
-        return '{}'
-      } })
+      baseDeps({
+        repo,
+        runSdkOnce: async () => {
+          sdkCalled = true
+          return '{}'
+        }
+      })
     )
 
     const result = await svc.reviewChanges('task-1')
@@ -1196,7 +1196,7 @@ describe('reviewService.reviewChanges', () => {
       openingMessage: 'Stale.',
       findings: { perFile: [] },
       model: 'x',
-      createdAt: 0,
+      createdAt: 0
     }
 
     const svc = createReviewService(baseDeps({ repo }))
@@ -1212,7 +1212,7 @@ describe('reviewService.reviewChanges', () => {
         runSdkOnce: async () => {
           sdkCalled = true
           return '{}'
-        },
+        }
       })
     )
     const result = await svc.reviewChanges('task-1')
@@ -1239,17 +1239,13 @@ describe('reviewService.reviewChanges', () => {
   })
 
   it('throws on malformed model response after one retry', async () => {
-    const svc = createReviewService(
-      baseDeps({ runSdkOnce: async () => 'not json, twice' })
-    )
+    const svc = createReviewService(baseDeps({ runSdkOnce: async () => 'not json, twice' }))
     await expect(svc.reviewChanges('task-1')).rejects.toThrow()
   })
 
   it('rejects when task is not in review status', async () => {
     const task = { ...makeTask(), status: 'queued' as const }
-    const svc = createReviewService(
-      baseDeps({ taskRepo: makeFakeTaskRepo(task) })
-    )
+    const svc = createReviewService(baseDeps({ taskRepo: makeFakeTaskRepo(task) }))
     await expect(svc.reviewChanges('task-1')).rejects.toThrow(/review status/)
   })
 
@@ -1258,7 +1254,7 @@ describe('reviewService.reviewChanges', () => {
       baseDeps({
         resolveWorktreePath: async () => {
           throw new WorktreeMissingError('/tmp/missing')
-        },
+        }
       })
     )
     await expect(svc.reviewChanges('task-1')).rejects.toThrow(WorktreeMissingError)
@@ -1271,6 +1267,7 @@ describe('reviewService.reviewChanges', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/services/review-service.test.ts
 ```
+
 Expected: FAIL — `createReviewService` not exported.
 
 - [ ] **Step 3: Implement `createReviewService`**
@@ -1296,16 +1293,14 @@ export interface ReviewServiceDeps {
 }
 
 export interface ReviewService {
-  reviewChanges(
-    taskId: string,
-    opts?: { force?: boolean }
-  ): Promise<ReviewResult>
+  reviewChanges(taskId: string, opts?: { force?: boolean }): Promise<ReviewResult>
 }
 
 const REVIEWER_MODEL = 'claude-opus-4-6'
 
 export function createReviewService(deps: ReviewServiceDeps): ReviewService {
-  const { repo, taskRepo, logger, resolveWorktreePath, getHeadCommitSha, getDiff, runSdkOnce } = deps
+  const { repo, taskRepo, logger, resolveWorktreePath, getHeadCommitSha, getDiff, runSdkOnce } =
+    deps
 
   return {
     async reviewChanges(taskId, opts) {
@@ -1314,9 +1309,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         throw new Error(`Task not found: ${taskId}`)
       }
       if (task.status !== 'review') {
-        throw new Error(
-          `Task ${taskId} is not in review status (current: ${task.status})`
-        )
+        throw new Error(`Task ${taskId} is not in review status (current: ${task.status})`)
       }
 
       const worktreePath = await resolveWorktreePath(taskId)
@@ -1341,7 +1334,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
           openingMessage: 'No changes detected on this branch.',
           findings: { perFile: [] },
           model: '(none)',
-          createdAt: Date.now(),
+          createdAt: Date.now()
         }
         return synthetic
       }
@@ -1351,7 +1344,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         reviewerMode: 'review',
         taskContent: task.spec ?? task.title,
         branch: task.branch ?? '',
-        diff,
+        diff
       })
 
       logger.info(`Firing auto-review for task=${taskId} sha=${headSha}`)
@@ -1360,7 +1353,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         raw = await runSdkOnce(prompt, {
           model: REVIEWER_MODEL,
           maxTurns: 1,
-          tools: [],
+          tools: []
         })
       } catch (err) {
         logger.error(`Review SDK call failed for task=${taskId}`, { err })
@@ -1376,7 +1369,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
           parsed = parseReviewResponse(raw)
         } catch (secondErr) {
           logger.error(`Parse failed twice for task=${taskId}`, {
-            err: (secondErr as Error).message,
+            err: (secondErr as Error).message
           })
           throw secondErr
         }
@@ -1390,12 +1383,12 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         openingMessage: parsed.openingMessage,
         findings: { perFile: parsed.perFile },
         model: REVIEWER_MODEL,
-        createdAt: Date.now(),
+        createdAt: Date.now()
       }
 
       repo.setCached(taskId, headSha, result, raw)
       return result
-    },
+    }
   }
 }
 
@@ -1418,6 +1411,7 @@ function aggregate(perFile: FileFinding[]): {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/services/review-service.test.ts
 ```
+
 Expected: all 15 tests pass (7 parser + 8 service).
 
 - [ ] **Step 5: Run the full main suite — confirm no regression**
@@ -1425,6 +1419,7 @@ Expected: all 15 tests pass (7 parser + 8 service).
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run
 ```
+
 Expected: all tests pass.
 
 - [ ] **Step 6: Commit**
@@ -1441,6 +1436,7 @@ git commit -m "feat: add reviewService.reviewChanges with cache + aggregation"
 ### Task D1: Add typed channels + preload bridge
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels/sprint-channels.ts`
 - Modify: `src/shared/ipc-channels/index.ts`
 - Modify: `src/preload/index.ts`
@@ -1452,6 +1448,7 @@ git commit -m "feat: add reviewService.reviewChanges with cache + aggregation"
 ```bash
 grep -n "ReviewChannels\|ReviewPartnerChannels" src/shared/ipc-channels/sprint-channels.ts
 ```
+
 Expected: `ReviewChannels` exists. You're adding a sibling `ReviewPartnerChannels` interface — don't merge into the existing one, they serve different concerns (the existing `ReviewChannels` covers the review lifecycle, the new interface covers the AI partner feature).
 
 - [ ] **Step 2: Add `ReviewPartnerChannels` interface to sprint-channels.ts**
@@ -1516,6 +1513,7 @@ Then find the `IpcChannelMap` intersection at the bottom of the file and add:
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors. If TypeScript complains that `review-types.ts` isn't found from `sprint-channels.ts`, the relative path should be `../review-types` from inside the `ipc-channels/` subdirectory.
 
 - [ ] **Step 5: Add the `review` namespace to the preload bridge**
@@ -1551,6 +1549,7 @@ Also update the `Window.api` type declaration in the same file — add the match
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors.
 
 - [ ] **Step 7: Commit**
@@ -1567,10 +1566,12 @@ git commit -m "feat: add ReviewPartnerChannels + preload bridge"
 ### Task D2: Handler file with `safeHandle` + pure logic (TDD)
 
 **Files:**
+
 - Create: `src/main/handlers/review-assistant.ts`
 - Create: `src/main/handlers/review-assistant.test.ts`
 
 **Pattern reference:** `src/main/handlers/workbench.ts` — all handlers use `safeHandle('channel:name', async (e, input) => { ... })` from `../ipc-utils`. `safeHandle` is a typed wrapper that:
+
 1. Derives `args` and `result` types from `IpcChannelMap[channel]`
 2. Uses the module-level `ipcMain` — no `ipcMain` parameter needed
 3. Automatically logs unhandled errors
@@ -1597,7 +1598,7 @@ function fakeResult(): ReviewResult {
     openingMessage: 'ok',
     findings: { perFile: [] },
     model: 'claude-opus-4-6',
-    createdAt: 0,
+    createdAt: 0
   }
 }
 
@@ -1609,7 +1610,7 @@ function fakeTask() {
     repo: 'bde',
     branch: 'feat/auth',
     status: 'review' as const,
-    worktree_path: '/tmp/wt',
+    worktree_path: '/tmp/wt'
   } as any
 }
 
@@ -1643,7 +1644,7 @@ describe('handleChatStream', () => {
       reviewRepo: {
         getCached: () => fakeResult(),
         setCached: () => {},
-        invalidate: () => {},
+        invalidate: () => {}
       } as IReviewRepository,
       getHeadCommitSha: async () => 'sha-abc',
       buildChatPrompt: vi.fn().mockReturnValue('BUILT_PROMPT'),
@@ -1661,11 +1662,11 @@ describe('handleChatStream', () => {
           return 'hello world'
         }
       ),
-      activeStreams: new Map<string, { close: () => void }>(),
+      activeStreams: new Map<string, { close: () => void }>()
     }
     const input: { taskId: string; messages: PartnerMessage[] } = {
       taskId: 'task-1',
-      messages: [{ id: 'u1', role: 'user', content: 'Hi', timestamp: 0 }],
+      messages: [{ id: 'u1', role: 'user', content: 'Hi', timestamp: 0 }]
     }
 
     const { streamId } = await handleChatStream(deps, input, sender as any)
@@ -1690,20 +1691,16 @@ describe('handleChatStream', () => {
       reviewRepo: {
         getCached: () => null,
         setCached: () => {},
-        invalidate: () => {},
+        invalidate: () => {}
       } as IReviewRepository,
       getHeadCommitSha: async () => 'sha-abc',
       buildChatPrompt: () => 'prompt',
       runSdkStreaming: async () => {
         throw new Error('rate limit')
       },
-      activeStreams: new Map<string, { close: () => void }>(),
+      activeStreams: new Map<string, { close: () => void }>()
     }
-    await handleChatStream(
-      deps,
-      { taskId: 'task-1', messages: [] },
-      sender as any
-    )
+    await handleChatStream(deps, { taskId: 'task-1', messages: [] }, sender as any)
     await new Promise((r) => setImmediate(r))
     expect(chunks.some((c) => c.error?.includes('rate limit'))).toBe(true)
   })
@@ -1716,7 +1713,7 @@ describe('handleChatStream', () => {
       getHeadCommitSha: async () => 'sha',
       buildChatPrompt: () => '',
       runSdkStreaming: async () => '',
-      activeStreams: new Map(),
+      activeStreams: new Map()
     }
     await expect(
       handleChatStream(deps, { taskId: 'missing', messages: [] }, sender as any)
@@ -1730,6 +1727,7 @@ describe('handleChatStream', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/handlers/review-assistant.test.ts
 ```
+
 Expected: FAIL — `Cannot find module './review-assistant'`.
 
 - [ ] **Step 3: Implement the handler module**
@@ -1745,11 +1743,7 @@ import { runSdkStreaming } from '../sdk-streaming'
 import type { ReviewService } from '../services/review-service'
 import type { IReviewRepository } from '../data/review-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
-import type {
-  ChatChunk,
-  PartnerMessage,
-  ReviewResult,
-} from '../../shared/review-types'
+import type { ChatChunk, PartnerMessage, ReviewResult } from '../../shared/review-types'
 
 const log = createLogger('review-assistant')
 
@@ -1801,7 +1795,7 @@ export async function handleChatStream(
     reviewSeed = deps.reviewRepo.getCached(input.taskId, headSha) ?? undefined
   } catch (err) {
     log.warn(`Could not load review seed for task=${input.taskId}`, {
-      err: (err as Error).message,
+      err: (err as Error).message
     })
   }
 
@@ -1811,7 +1805,7 @@ export async function handleChatStream(
     taskContent: task.spec ?? task.title,
     branch: task.branch ?? '',
     messages: input.messages.map((m) => ({ role: m.role, content: m.content })),
-    reviewSeed,
+    reviewSeed
   })
 
   void (async () => {
@@ -1832,14 +1826,14 @@ export async function handleChatStream(
           onToolUse: (event) => {
             const payload: ChatChunk = { streamId, toolUse: event }
             sender?.send('review:chatChunk', payload)
-          },
+          }
         }
       )
       const done: ChatChunk = { streamId, done: true, fullText: full }
       sender?.send('review:chatChunk', done)
     } catch (err) {
       log.error(`review:chatStream failed stream=${streamId}`, {
-        err: (err as Error).message,
+        err: (err as Error).message
       })
       const payload: ChatChunk = { streamId, error: (err as Error).message }
       sender?.send('review:chatChunk', payload)
@@ -1859,7 +1853,7 @@ export function buildChatStreamDeps(input: {
   return {
     ...input,
     buildChatPrompt: buildAgentPrompt,
-    runSdkStreaming,
+    runSdkStreaming
   }
 }
 
@@ -1870,9 +1864,7 @@ export interface ReviewAssistantRegistrationInput {
   chatStreamDeps: ChatStreamDeps
 }
 
-export function registerReviewAssistantHandlers(
-  input: ReviewAssistantRegistrationInput
-): void {
+export function registerReviewAssistantHandlers(input: ReviewAssistantRegistrationInput): void {
   safeHandle('review:autoReview', async (_e, taskId, force) => {
     return handleAutoReview(input.reviewService, taskId, force)
   })
@@ -1894,6 +1886,7 @@ export function registerReviewAssistantHandlers(
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run src/main/handlers/review-assistant.test.ts
 ```
+
 Expected: all 6 tests pass.
 
 - [ ] **Step 5: Typecheck + full main tests**
@@ -1901,6 +1894,7 @@ Expected: all 6 tests pass.
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck && npm run test:main -- --run
 ```
+
 Expected: zero type errors, all tests pass. If TypeScript complains about `safeHandle('review:autoReview', ...)` arg types, the channel entries in `sprint-channels.ts` (Task D1) need correcting — the channel map is the source of truth for handler types.
 
 - [ ] **Step 6: Commit**
@@ -1915,6 +1909,7 @@ git commit -m "feat: add review-assistant handlers via safeHandle"
 ### Task D3: Wire handlers into `src/main/index.ts`
 
 **Files:**
+
 - Modify: `src/main/index.ts`
 
 **Pattern reference:** `task.worktree_path` is a column on the `SprintTask` row — confirmed in use at `src/main/handlers/review.ts:132` (`if (!task.worktree_path) throw new Error(...)`). Use this field as the canonical worktree path. Do NOT invoke `agentManager.getWorktreePath(taskId)` — no such method exists.
@@ -1924,6 +1919,7 @@ git commit -m "feat: add review-assistant handlers via safeHandle"
 ```bash
 grep -n "register" src/main/index.ts | head -20
 ```
+
 Expected: a sequence of `register*Handlers` calls — find one nearby (e.g. `registerWorkbenchHandlers`) and add the review registration next to it.
 
 - [ ] **Step 2: Import the handler factory and the dependencies**
@@ -1931,10 +1927,7 @@ Expected: a sequence of `register*Handlers` calls — find one nearby (e.g. `reg
 Near the top of `src/main/index.ts`, add:
 
 ```ts
-import {
-  registerReviewAssistantHandlers,
-  buildChatStreamDeps,
-} from './handlers/review-assistant'
+import { registerReviewAssistantHandlers, buildChatStreamDeps } from './handlers/review-assistant'
 import { createReviewRepository } from './data/review-repository'
 import { createReviewService } from './services/review-service'
 import { runSdkOnce } from './sdk-streaming'
@@ -1969,12 +1962,7 @@ const getHeadCommitSha = async (worktreePath: string): Promise<string> => {
   const { execFile } = await import('node:child_process')
   const { promisify } = await import('node:util')
   const execFileAsync = promisify(execFile)
-  const { stdout } = await execFileAsync('git', [
-    '-C',
-    worktreePath,
-    'rev-parse',
-    'HEAD',
-  ])
+  const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'rev-parse', 'HEAD'])
   return stdout.trim()
 }
 
@@ -1988,14 +1976,12 @@ const reviewService = createReviewService({
     const { execFile } = await import('node:child_process')
     const { promisify } = await import('node:util')
     const execFileAsync = promisify(execFile)
-    const { stdout } = await execFileAsync(
-      'git',
-      ['-C', worktreePath, 'diff', 'main...HEAD'],
-      { maxBuffer: 10 * 1024 * 1024 }
-    )
+    const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'diff', 'main...HEAD'], {
+      maxBuffer: 10 * 1024 * 1024
+    })
     return stdout
   },
-  runSdkOnce,
+  runSdkOnce
 })
 
 const reviewActiveStreams = new Map<string, { close: () => void }>()
@@ -2005,8 +1991,8 @@ registerReviewAssistantHandlers({
     taskRepo: sprintTaskRepository,
     reviewRepo,
     getHeadCommitSha,
-    activeStreams: reviewActiveStreams,
-  }),
+    activeStreams: reviewActiveStreams
+  })
 })
 ```
 
@@ -2017,6 +2003,7 @@ Note: the exact names of `db` and `sprintTaskRepository` may differ — replace 
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors. Fix any identifier mismatches by grepping the file for the canonical names.
 
 - [ ] **Step 6: Main tests**
@@ -2024,6 +2011,7 @@ Expected: zero errors. Fix any identifier mismatches by grepping the file for th
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run test:main -- --run
 ```
+
 Expected: all pass.
 
 - [ ] **Step 7: Commit**
@@ -2040,6 +2028,7 @@ git commit -m "feat: register review-assistant handlers in main"
 ### Task E1: Zustand store scaffold (TDD)
 
 **Files:**
+
 - Create: `src/renderer/src/stores/reviewPartner.ts`
 - Create: `src/renderer/src/stores/reviewPartner.test.ts`
 
@@ -2062,7 +2051,7 @@ function freshResult(): ReviewResult {
     openingMessage: 'Nice work overall.',
     findings: { perFile: [] },
     model: 'claude-opus-4-6',
-    createdAt: Date.now(),
+    createdAt: Date.now()
   }
 }
 
@@ -2074,8 +2063,8 @@ function mockApi(overrides: Partial<any> = {}) {
       chatStream: vi.fn().mockResolvedValue({ streamId: 'stream-1' }),
       onChatChunk: vi.fn().mockReturnValue(() => {}),
       abortChat: vi.fn().mockResolvedValue(undefined),
-      ...overrides.review,
-    },
+      ...overrides.review
+    }
   }
   ;(window as any).api = api
   return api
@@ -2088,7 +2077,7 @@ describe('useReviewPartnerStore', () => {
       panelOpen: false,
       reviewByTask: {},
       messagesByTask: {},
-      activeStreamByTask: {},
+      activeStreamByTask: {}
     })
   })
 
@@ -2140,9 +2129,9 @@ describe('useReviewPartnerStore', () => {
         messagesByTask: {
           'task-1': [
             { id: 'u1', role: 'user', content: 'Hi', timestamp: 0 },
-            { id: 'a1', role: 'assistant', content: 'Hello', timestamp: 1 },
-          ],
-        },
+            { id: 'a1', role: 'assistant', content: 'Hello', timestamp: 1 }
+          ]
+        }
       })
       await useReviewPartnerStore.getState().autoReview('task-1')
       const msgs = useReviewPartnerStore.getState().messagesByTask['task-1'] ?? []
@@ -2158,10 +2147,8 @@ describe('useReviewPartnerStore', () => {
       mockApi()
       useReviewPartnerStore.setState({
         messagesByTask: {
-          'task-1': [
-            { id: 'u1', role: 'user', content: 'Old', timestamp: 0 },
-          ],
-        },
+          'task-1': [{ id: 'u1', role: 'user', content: 'Old', timestamp: 0 }]
+        }
       })
       useReviewPartnerStore.getState().clearMessages('task-1')
       await useReviewPartnerStore.getState().autoReview('task-1')
@@ -2183,8 +2170,8 @@ describe('useReviewPartnerStore', () => {
             chunkListeners.push(cb)
             return () => {}
           }),
-          abortChat: vi.fn().mockResolvedValue(undefined),
-        },
+          abortChat: vi.fn().mockResolvedValue(undefined)
+        }
       })
       await useReviewPartnerStore.getState().sendMessage('task-1', 'What are the risks?')
 
@@ -2215,8 +2202,8 @@ describe('useReviewPartnerStore', () => {
             chunkListeners.push(cb)
             return () => {}
           }),
-          abortChat: vi.fn(),
-        },
+          abortChat: vi.fn()
+        }
       })
       await useReviewPartnerStore.getState().sendMessage('task-1', 'Hi')
       chunkListeners[0]?.({}, { streamId: 's-2', error: 'Claude Code rate limit reached.' })
@@ -2230,8 +2217,8 @@ describe('useReviewPartnerStore', () => {
     it('removes all messages for a task', () => {
       useReviewPartnerStore.setState({
         messagesByTask: {
-          'task-1': [{ id: '1', role: 'user', content: 'x', timestamp: 0 }],
-        },
+          'task-1': [{ id: '1', role: 'user', content: 'x', timestamp: 0 }]
+        }
       })
       useReviewPartnerStore.getState().clearMessages('task-1')
       expect(useReviewPartnerStore.getState().messagesByTask['task-1']).toEqual([])
@@ -2245,6 +2232,7 @@ describe('useReviewPartnerStore', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/stores/reviewPartner.test.ts
 ```
+
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement the store**
@@ -2253,11 +2241,7 @@ Write `src/renderer/src/stores/reviewPartner.ts`:
 
 ```ts
 import { create } from 'zustand'
-import type {
-  ReviewResult,
-  PartnerMessage,
-  ChatChunk,
-} from '../../../shared/review-types'
+import type { ReviewResult, PartnerMessage, ChatChunk } from '../../../shared/review-types'
 
 const MESSAGES_STORAGE_KEY = 'bde:review-partner-messages'
 const PANEL_OPEN_KEY = 'bde:review-partner-open'
@@ -2297,7 +2281,7 @@ function loadMessages(): PersistedMessages {
     const parsed = JSON.parse(raw)
     return {
       messagesByTask: parsed.messagesByTask ?? {},
-      lruOrder: parsed.lruOrder ?? [],
+      lruOrder: parsed.lruOrder ?? []
     }
   } catch {
     return { messagesByTask: {}, lruOrder: [] }
@@ -2361,7 +2345,7 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
     if (prev?.status === 'loading') return
 
     set((s) => ({
-      reviewByTask: { ...s.reviewByTask, [taskId]: { status: 'loading' } },
+      reviewByTask: { ...s.reviewByTask, [taskId]: { status: 'loading' } }
     }))
 
     try {
@@ -2376,23 +2360,23 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
                   id: newId('seed'),
                   role: 'assistant' as const,
                   content: result.openingMessage,
-                  timestamp: Date.now(),
-                },
+                  timestamp: Date.now()
+                }
               ]
             : existingMessages
         const nextMsgs = { ...s.messagesByTask, [taskId]: messages }
         saveMessages(nextMsgs)
         return {
           reviewByTask: { ...s.reviewByTask, [taskId]: { status: 'ready', result } },
-          messagesByTask: nextMsgs,
+          messagesByTask: nextMsgs
         }
       })
     } catch (err) {
       set((s) => ({
         reviewByTask: {
           ...s.reviewByTask,
-          [taskId]: { status: 'error', error: (err as Error).message },
-        },
+          [taskId]: { status: 'error', error: (err as Error).message }
+        }
       }))
     }
   },
@@ -2402,14 +2386,14 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
       id: newId('u'),
       role: 'user',
       content,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     }
     const streamingMsg: PartnerMessage = {
       id: newId('a'),
       role: 'assistant',
       content: '',
       timestamp: Date.now(),
-      streaming: true,
+      streaming: true
     }
 
     set((s) => {
@@ -2436,13 +2420,13 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
             msgs[msgs.length - 1] = {
               ...last,
               content: (last.content ? last.content + '\n\n' : '') + `Error: ${chunk.error}`,
-              streaming: false,
+              streaming: false
             }
           } else if (chunk.done) {
             msgs[msgs.length - 1] = {
               ...last,
               content: chunk.fullText ?? last.content,
-              streaming: false,
+              streaming: false
             }
           } else if (chunk.chunk) {
             msgs[msgs.length - 1] = { ...last, content: last.content + chunk.chunk }
@@ -2464,7 +2448,7 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
       const { streamId: sid } = await window.api.review.chatStream({ taskId, messages })
       streamId = sid
       set((s) => ({
-        activeStreamByTask: { ...s.activeStreamByTask, [taskId]: streamId },
+        activeStreamByTask: { ...s.activeStreamByTask, [taskId]: streamId }
       }))
     } catch (err) {
       set((s) => {
@@ -2474,7 +2458,7 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
           msgs[msgs.length - 1] = {
             ...last,
             content: `Error: ${(err as Error).message}`,
-            streaming: false,
+            streaming: false
           }
         }
         return { messagesByTask: { ...s.messagesByTask, [taskId]: msgs } }
@@ -2495,7 +2479,7 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
       }
       return {
         messagesByTask: { ...s.messagesByTask, [taskId]: msgs },
-        activeStreamByTask: { ...s.activeStreamByTask, [taskId]: null },
+        activeStreamByTask: { ...s.activeStreamByTask, [taskId]: null }
       }
     })
   },
@@ -2510,7 +2494,7 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
 
   async appendQuickAction(taskId, prompt) {
     await get().sendMessage(taskId, prompt)
-  },
+  }
 }))
 ```
 
@@ -2519,6 +2503,7 @@ export const useReviewPartnerStore = create<ReviewPartnerStore>((set, get) => ({
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/stores/reviewPartner.test.ts
 ```
+
 Expected: all 8 tests pass. If subscribe-BEFORE-invoke timing makes the "append streaming message" test flaky, add a short `await new Promise((r) => setTimeout(r, 0))` after `sendMessage` in the test.
 
 - [ ] **Step 5: Typecheck**
@@ -2526,6 +2511,7 @@ Expected: all 8 tests pass. If subscribe-BEFORE-invoke timing makes the "append 
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors.
 
 - [ ] **Step 6: Commit**
@@ -2540,6 +2526,7 @@ git commit -m "feat: add reviewPartner Zustand store"
 ### Task E2: `useAutoReview` hook (TDD)
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/useAutoReview.ts`
 - Create: `src/renderer/src/hooks/useAutoReview.test.ts`
 
@@ -2566,10 +2553,10 @@ describe('useAutoReview', () => {
           openingMessage: 'ok',
           findings: { perFile: [] },
           model: 'claude-opus-4-6',
-          createdAt: 0,
+          createdAt: 0
         }),
-        onChatChunk: () => () => {},
-      },
+        onChatChunk: () => () => {}
+      }
     }
   })
   afterEach(() => {
@@ -2600,10 +2587,9 @@ describe('useAutoReview', () => {
 
   it('cancels pending fire when task changes before debounce elapses', async () => {
     const spy = vi.spyOn(useReviewPartnerStore.getState(), 'autoReview')
-    const { rerender } = renderHook(
-      ({ id }: { id: string }) => useAutoReview(id, 'review'),
-      { initialProps: { id: 'task-1' } }
-    )
+    const { rerender } = renderHook(({ id }: { id: string }) => useAutoReview(id, 'review'), {
+      initialProps: { id: 'task-1' }
+    })
     await vi.advanceTimersByTimeAsync(1000)
     rerender({ id: 'task-2' })
     await vi.advanceTimersByTimeAsync(1000)
@@ -2621,6 +2607,7 @@ describe('useAutoReview', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/hooks/useAutoReview.test.ts
 ```
+
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement the hook**
@@ -2639,10 +2626,7 @@ const DEBOUNCE_MS = 2000
  * Rapid task switches cancel the pending fire — only the last stable selection
  * triggers a review.
  */
-export function useAutoReview(
-  taskId: string | null,
-  taskStatus: TaskStatus | null
-): void {
+export function useAutoReview(taskId: string | null, taskStatus: TaskStatus | null): void {
   const autoReview = useReviewPartnerStore((s) => s.autoReview)
 
   useEffect(() => {
@@ -2658,6 +2642,7 @@ export function useAutoReview(
 ```
 
 Note: if `TaskStatus` is not exported from `src/shared/contract.ts`, import from wherever `src/shared/task-transitions.ts` exposes it. Check with:
+
 ```bash
 grep -n "export.*TaskStatus" src/shared/
 ```
@@ -2667,6 +2652,7 @@ grep -n "export.*TaskStatus" src/shared/
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/hooks/useAutoReview.test.ts
 ```
+
 Expected: all 4 tests pass.
 
 - [ ] **Step 5: Commit**
@@ -2683,6 +2669,7 @@ git commit -m "feat: add useAutoReview debounced hook"
 ### Task F1: `AIFileStatusBadge` + `AIReviewedBadge`
 
 **Files:**
+
 - Create: `src/renderer/src/components/code-review/AIFileStatusBadge.tsx`
 - Create: `src/renderer/src/components/code-review/AIFileStatusBadge.test.tsx`
 - Create: `src/renderer/src/components/code-review/AIReviewedBadge.tsx`
@@ -2719,6 +2706,7 @@ describe('AIFileStatusBadge', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/components/code-review/AIFileStatusBadge.test.tsx
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Implement both badge components**
@@ -2736,22 +2724,14 @@ export function AIFileStatusBadge({ status }: { status: FileReviewStatus }): JSX
 
   if (status === 'issues') {
     return (
-      <span
-        role="img"
-        aria-label="File has issues"
-        className="cr-ai-status cr-ai-status--issues"
-      >
+      <span role="img" aria-label="File has issues" className="cr-ai-status cr-ai-status--issues">
         <AlertTriangle size={10} />
       </span>
     )
   }
 
   return (
-    <span
-      role="img"
-      aria-label="File reviewed clean"
-      className="cr-ai-status cr-ai-status--clean"
-    >
+    <span role="img" aria-label="File reviewed clean" className="cr-ai-status cr-ai-status--clean">
       <Check size={10} />
     </span>
   )
@@ -2773,9 +2753,7 @@ export function AIReviewedBadge({ commentCount }: Props): JSX.Element {
     <span className="cr-ai-reviewed" aria-label={`AI reviewed — ${commentCount} comments`}>
       <Sparkles size={12} />
       <span className="cr-ai-reviewed__label">AI Reviewed</span>
-      {commentCount > 0 && (
-        <span className="cr-ai-reviewed__count">{commentCount}</span>
-      )}
+      {commentCount > 0 && <span className="cr-ai-reviewed__count">{commentCount}</span>}
     </span>
   )
 }
@@ -2795,8 +2773,12 @@ Append to the existing code-review CSS file (`src/renderer/src/components/code-r
   height: 14px;
   border-radius: var(--bde-radius-sm);
 }
-.cr-ai-status--issues { color: var(--bde-warning); }
-.cr-ai-status--clean  { color: var(--bde-success); }
+.cr-ai-status--issues {
+  color: var(--bde-warning);
+}
+.cr-ai-status--clean {
+  color: var(--bde-success);
+}
 
 /* AI reviewed file-header badge */
 .cr-ai-reviewed {
@@ -2827,6 +2809,7 @@ Append to the existing code-review CSS file (`src/renderer/src/components/code-r
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/components/code-review/AIFileStatusBadge.test.tsx
 ```
+
 Expected: all 3 tests pass.
 
 - [ ] **Step 6: Commit**
@@ -2844,6 +2827,7 @@ git commit -m "feat: add AI file status + reviewed badges"
 ### Task F2: `BranchBar` + `ReviewMetricsRow`
 
 **Files:**
+
 - Create: `src/renderer/src/components/code-review/BranchBar.tsx`
 - Create: `src/renderer/src/components/code-review/ReviewMetricsRow.tsx`
 - Create: `src/renderer/src/components/code-review/ReviewMetricsRow.test.tsx`
@@ -2878,6 +2862,7 @@ describe('ReviewMetricsRow', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/components/code-review/ReviewMetricsRow.test.tsx
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Implement `ReviewMetricsRow`**
@@ -2899,7 +2884,7 @@ export function ReviewMetricsRow({
   qualityScore,
   issuesCount,
   filesCount,
-  loading = false,
+  loading = false
 }: Props): JSX.Element {
   return (
     <div className="cr-metrics" role="group" aria-label="AI review metrics">
@@ -2919,9 +2904,7 @@ export function ReviewMetricsRow({
         value={loading || issuesCount === undefined ? '—' : issuesCount}
         label="Issues"
         ariaLabel={
-          issuesCount !== undefined
-            ? `${issuesCount} issues found`
-            : 'Issue count pending'
+          issuesCount !== undefined ? `${issuesCount} issues found` : 'Issue count pending'
         }
         variant="warning"
       />
@@ -2929,11 +2912,7 @@ export function ReviewMetricsRow({
         icon={<TrendingUp size={16} />}
         value={loading || filesCount === undefined ? '—' : filesCount}
         label="Files"
-        ariaLabel={
-          filesCount !== undefined
-            ? `${filesCount} files changed`
-            : 'File count pending'
-        }
+        ariaLabel={filesCount !== undefined ? `${filesCount} files changed` : 'File count pending'}
         variant="info"
       />
     </div>
@@ -2945,7 +2924,7 @@ function MetricCard({
   value,
   label,
   ariaLabel,
-  variant,
+  variant
 }: {
   icon: ReactNode
   value: number | string
@@ -2954,11 +2933,7 @@ function MetricCard({
   variant: 'success' | 'warning' | 'info'
 }): JSX.Element {
   return (
-    <div
-      className={`cr-metric cr-metric--${variant}`}
-      role="status"
-      aria-label={ariaLabel}
-    >
+    <div className={`cr-metric cr-metric--${variant}`} role="status" aria-label={ariaLabel}>
       <div className="cr-metric__icon">{icon}</div>
       <div className="cr-metric__value">{value}</div>
       <div className="cr-metric__label">{label}</div>
@@ -3023,9 +2998,15 @@ Append to `CodeReviewView.css`:
   font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
 }
-.cr-metric--success .cr-metric__icon { color: var(--bde-success); }
-.cr-metric--warning .cr-metric__icon { color: var(--bde-warning); }
-.cr-metric--info    .cr-metric__icon { color: var(--bde-accent); }
+.cr-metric--success .cr-metric__icon {
+  color: var(--bde-success);
+}
+.cr-metric--warning .cr-metric__icon {
+  color: var(--bde-warning);
+}
+.cr-metric--info .cr-metric__icon {
+  color: var(--bde-accent);
+}
 
 .cr-branchbar {
   display: inline-flex;
@@ -3034,8 +3015,13 @@ Append to `CodeReviewView.css`:
   font-size: var(--bde-size-sm);
   color: var(--bde-text-muted);
 }
-.cr-branchbar__branch { color: var(--bde-text); font-weight: 500; }
-.cr-branchbar__target { color: var(--bde-text-dim); }
+.cr-branchbar__branch {
+  color: var(--bde-text);
+  font-weight: 500;
+}
+.cr-branchbar__target {
+  color: var(--bde-text-dim);
+}
 ```
 
 - [ ] **Step 6: Run — confirm tests pass + commit**
@@ -3043,6 +3029,7 @@ Append to `CodeReviewView.css`:
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/components/code-review/ReviewMetricsRow.test.tsx
 ```
+
 Expected: both tests pass.
 
 ```bash
@@ -3058,6 +3045,7 @@ git commit -m "feat: add branch bar + review metrics row"
 ### Task F3: `ReviewQuickActions`, `ReviewChatInput`, `ReviewMessageList`
 
 **Files:**
+
 - Create: `src/renderer/src/components/code-review/ReviewQuickActions.tsx`
 - Create: `src/renderer/src/components/code-review/ReviewChatInput.tsx`
 - Create: `src/renderer/src/components/code-review/ReviewMessageList.tsx`
@@ -3082,20 +3070,19 @@ const ACTIONS = [
     label: 'Explain security issues',
     icon: Shield,
     prompt:
-      "Walk me through any security risks you see in this diff. Cite specific files and lines where possible.",
+      'Walk me through any security risks you see in this diff. Cite specific files and lines where possible.'
   },
   {
     label: 'Performance analysis',
     icon: TrendingUp,
     prompt:
-      "Analyze this change for performance regressions or improvements. Focus on hot paths and allocations.",
+      'Analyze this change for performance regressions or improvements. Focus on hot paths and allocations.'
   },
   {
     label: 'Suggest improvements',
     icon: Zap,
-    prompt:
-      "What would you change about this diff before merging? Rank suggestions by impact.",
-  },
+    prompt: 'What would you change about this diff before merging? Rank suggestions by impact.'
+  }
 ] as const
 
 export function ReviewQuickActions({ onAction, disabled = false }: Props): JSX.Element {
@@ -3138,7 +3125,7 @@ export function ReviewChatInput({
   onSend,
   onAbort,
   streaming = false,
-  disabled = false,
+  disabled = false
 }: Props): JSX.Element {
   const [value, setValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -3211,19 +3198,14 @@ interface Props {
 
 export function ReviewMessageList({
   messages,
-  emptyMessage = 'Select a task to see the AI review.',
+  emptyMessage = 'Select a task to see the AI review.'
 }: Props): JSX.Element {
   if (messages.length === 0) {
     return <div className="cr-messages cr-messages--empty">{emptyMessage}</div>
   }
 
   return (
-    <div
-      className="cr-messages"
-      role="log"
-      aria-live="polite"
-      aria-atomic="false"
-    >
+    <div className="cr-messages" role="log" aria-live="polite" aria-atomic="false">
       {messages.map((m) => (
         <div
           key={m.id}
@@ -3237,9 +3219,7 @@ export function ReviewMessageList({
             </div>
           )}
           <div className="cr-message__content">{m.content}</div>
-          <div className="cr-message__timestamp">
-            {new Date(m.timestamp).toLocaleTimeString()}
-          </div>
+          <div className="cr-message__timestamp">{new Date(m.timestamp).toLocaleTimeString()}</div>
         </div>
       ))}
     </div>
@@ -3379,10 +3359,14 @@ Append to `CodeReviewView.css`:
   animation: cr-cursor-blink 1s linear infinite;
 }
 @keyframes cr-cursor-blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cr-message--streaming .cr-message__content::after { animation: none; }
+  .cr-message--streaming .cr-message__content::after {
+    animation: none;
+  }
 }
 ```
 
@@ -3391,6 +3375,7 @@ Append to `CodeReviewView.css`:
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors.
 
 ```bash
@@ -3406,6 +3391,7 @@ git commit -m "feat: add quick actions, chat input, and message list primitives"
 ### Task F4: `ApproveDropdown` (TDD — keyboard nav)
 
 **Files:**
+
 - Create: `src/renderer/src/components/code-review/ApproveDropdown.tsx`
 - Create: `src/renderer/src/components/code-review/ApproveDropdown.test.tsx`
 
@@ -3425,7 +3411,7 @@ describe('ApproveDropdown', () => {
     onSquashMerge: vi.fn(),
     onCreatePR: vi.fn(),
     onRequestRevision: vi.fn(),
-    onDiscard: vi.fn(),
+    onDiscard: vi.fn()
   }
 
   it('opens on click and shows all actions', () => {
@@ -3460,6 +3446,7 @@ describe('ApproveDropdown', () => {
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/components/code-review/ApproveDropdown.test.tsx
 ```
+
 Expected: FAIL.
 
 - [ ] **Step 3: Implement `ApproveDropdown`**
@@ -3485,7 +3472,7 @@ export function ApproveDropdown({
   onCreatePR,
   onRequestRevision,
   onDiscard,
-  disabled = false,
+  disabled = false
 }: Props): JSX.Element {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -3562,7 +3549,10 @@ export function ApproveDropdown({
 Append to `CodeReviewView.css`:
 
 ```css
-.cr-approve { position: relative; display: inline-block; }
+.cr-approve {
+  position: relative;
+  display: inline-block;
+}
 .cr-approve__trigger {
   display: inline-flex;
   align-items: center;
@@ -3609,7 +3599,9 @@ Append to `CodeReviewView.css`:
   border: none;
   border-top: 1px solid var(--bde-border);
 }
-.cr-approve__danger { color: var(--bde-error); }
+.cr-approve__danger {
+  color: var(--bde-error);
+}
 ```
 
 - [ ] **Step 5: Run — confirm tests pass**
@@ -3617,6 +3609,7 @@ Append to `CodeReviewView.css`:
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/components/code-review/ApproveDropdown.test.tsx
 ```
+
 Expected: all 3 tests pass.
 
 - [ ] **Step 6: Commit**
@@ -3635,6 +3628,7 @@ git commit -m "feat: add ApproveDropdown with keyboard/outside-click dismiss"
 ### Task G1: Rewire `AIAssistantPanel` to consume the store
 
 **Files:**
+
 - Modify: `src/renderer/src/components/code-review/AIAssistantPanel.tsx`
 
 - [ ] **Step 1: Read the current file to understand its structure**
@@ -3642,6 +3636,7 @@ git commit -m "feat: add ApproveDropdown with keyboard/outside-click dismiss"
 ```bash
 cat src/renderer/src/components/code-review/AIAssistantPanel.tsx
 ```
+
 Expected: note the existing header, menu, message-area, and input-area DOM shape. The rewrite replaces handlers and message rendering but keeps the outer shell so the layout CSS still applies.
 
 - [ ] **Step 2: Replace the component body**
@@ -3668,7 +3663,7 @@ export function AIAssistantPanel(): JSX.Element {
     selectedTaskId ? s.reviewByTask[selectedTaskId] : undefined
   )
   const messages = useReviewPartnerStore((s) =>
-    selectedTaskId ? s.messagesByTask[selectedTaskId] ?? [] : []
+    selectedTaskId ? (s.messagesByTask[selectedTaskId] ?? []) : []
   )
   const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
   const sendMessage = useReviewPartnerStore((s) => s.sendMessage)
@@ -3771,8 +3766,8 @@ export function AIAssistantPanel(): JSX.Element {
           !selectedTaskId
             ? 'Select a task to start reviewing.'
             : loading
-            ? 'Reviewing...'
-            : 'No review yet. Open this task to auto-review.'
+              ? 'Reviewing...'
+              : 'No review yet. Open this task to auto-review.'
         }
       />
 
@@ -3802,6 +3797,7 @@ export function AIAssistantPanel(): JSX.Element {
 ```
 
 Note: if the import `useSprintTasks` is a different name in this repo, adjust. Search with:
+
 ```bash
 grep -rn "export.*useSprintTasks\|export.*sprintTasks" src/renderer/src/stores/
 ```
@@ -3811,6 +3807,7 @@ grep -rn "export.*useSprintTasks\|export.*sprintTasks" src/renderer/src/stores/
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck
 ```
+
 Expected: zero errors. Fix any import/export mismatches.
 
 - [ ] **Step 4: Run existing tests for this file if any**
@@ -3818,6 +3815,7 @@ Expected: zero errors. Fix any import/export mismatches.
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm test -- --run src/renderer/src/components/code-review/AIAssistantPanel
 ```
+
 Expected: either tests pass, or the test file doesn't exist yet (fine).
 
 - [ ] **Step 5: Commit**
@@ -3832,6 +3830,7 @@ git commit -m "feat: wire AIAssistantPanel to reviewPartner store"
 ### Task G2: Update `TopBar` with branch bar + AI Partner toggle + Approve dropdown
 
 **Files:**
+
 - Modify: `src/renderer/src/components/code-review/TopBar.tsx`
 
 - [ ] **Step 1: Read the current file**
@@ -3839,6 +3838,7 @@ git commit -m "feat: wire AIAssistantPanel to reviewPartner store"
 ```bash
 cat src/renderer/src/components/code-review/TopBar.tsx
 ```
+
 Expected: note the existing task-switcher, freshness badge, and explicit action buttons (Ship It / Merge Locally / Squash / Create PR).
 
 - [ ] **Step 2: Add imports**
@@ -3857,8 +3857,10 @@ import { useReviewPartnerStore } from '../../stores/reviewPartner'
 Find the block that currently renders explicit action buttons (Ship It, Merge Locally, etc.) and replace it with:
 
 ```tsx
-{/* AI Partner toggle */}
-<button
+{
+  /* AI Partner toggle */
+}
+;<button
   type="button"
   className={`cr-topbar__ai-toggle${panelOpen ? ' cr-topbar__ai-toggle--on' : ''}`}
   aria-pressed={panelOpen}
@@ -3869,8 +3871,10 @@ Find the block that currently renders explicit action buttons (Ship It, Merge Lo
   <span>AI Partner</span>
 </button>
 
-{/* Approve dropdown (consolidated actions) */}
-<ApproveDropdown
+{
+  /* Approve dropdown (consolidated actions) */
+}
+;<ApproveDropdown
   onMergeLocally={handleMergeLocally}
   onSquashMerge={handleSquashMerge}
   onCreatePR={handleCreatePR}
@@ -3897,9 +3901,9 @@ const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
 In the left zone of the top bar (where the task switcher currently lives), add just below or above the existing task switcher:
 
 ```tsx
-{selectedTask?.branch && (
-  <BranchBar branch={selectedTask.branch} targetBranch="main" />
-)}
+{
+  selectedTask?.branch && <BranchBar branch={selectedTask.branch} targetBranch="main" />
+}
 ```
 
 - [ ] **Step 5: Add CSS for the AI toggle**
@@ -3934,6 +3938,7 @@ Append to `CodeReviewView.css`:
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck && npm test -- --run
 ```
+
 Expected: zero errors, all tests pass. If a test for `TopBar` renders `Ship It` explicitly and fails, update the test to query for the `Approve` button instead (keep the same behavioral assertion).
 
 - [ ] **Step 7: Commit**
@@ -3949,6 +3954,7 @@ git commit -m "feat: consolidate top bar — branch bar + AI toggle + approve dr
 ### Task G3: Decorate `FileTreePanel` with per-file badges
 
 **Files:**
+
 - Modify: `src/renderer/src/components/code-review/FileTreePanel.tsx`
 
 - [ ] **Step 1: Read the current file**
@@ -3997,6 +4003,7 @@ Exact JSX placement depends on the existing row shape — add the badge without 
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck && npm test -- --run
 ```
+
 Expected: zero errors, all tests pass.
 
 - [ ] **Step 5: Commit**
@@ -4011,6 +4018,7 @@ git commit -m "feat: render AI file status badges in file tree"
 ### Task G4: Decorate `DiffViewerPanel` header with `AIReviewedBadge`
 
 **Files:**
+
 - Modify: `src/renderer/src/components/code-review/DiffViewerPanel.tsx`
 
 - [ ] **Step 1: Read the current file**
@@ -4045,7 +4053,9 @@ const finding = useReviewPartnerStore((s) => {
 In the header area (next to the breadcrumb/file path):
 
 ```tsx
-{finding && <AIReviewedBadge commentCount={finding.commentCount} />}
+{
+  finding && <AIReviewedBadge commentCount={finding.commentCount} />
+}
 ```
 
 - [ ] **Step 4: Typecheck + tests**
@@ -4068,6 +4078,7 @@ git commit -m "feat: show AI reviewed badge in diff viewer header"
 ### Task H1: Mount `useAutoReview` + panel toggle in `CodeReviewView`
 
 **Files:**
+
 - Modify: `src/renderer/src/views/CodeReviewView.tsx`
 
 - [ ] **Step 1: Read the current file**
@@ -4075,6 +4086,7 @@ git commit -m "feat: show AI reviewed badge in diff viewer header"
 ```bash
 cat src/renderer/src/views/CodeReviewView.tsx
 ```
+
 Expected: note where `<AIAssistantPanel />` is mounted, and how `selectedTaskId` is currently threaded.
 
 - [ ] **Step 2: Add imports**
@@ -4101,7 +4113,9 @@ const panelOpen = useReviewPartnerStore((s) => s.panelOpen)
 Change the existing `<AIAssistantPanel />` render to:
 
 ```tsx
-{panelOpen && <AIAssistantPanel />}
+{
+  panelOpen && <AIAssistantPanel />
+}
 ```
 
 - [ ] **Step 5: Update the grid CSS to expand when the panel is closed**
@@ -4117,7 +4131,9 @@ If the current layout uses flex with explicit widths, add a `.cr-panels--partner
 And in CSS:
 
 ```css
-.cr-panels--partner-closed .cr-assistant { display: none; }
+.cr-panels--partner-closed .cr-assistant {
+  display: none;
+}
 ```
 
 - [ ] **Step 6: Typecheck + tests**
@@ -4125,6 +4141,7 @@ And in CSS:
 ```bash
 cd ~/worktrees/bde/ai-review-partner && npm run typecheck && npm test -- --run
 ```
+
 Expected: zero errors, all tests pass.
 
 - [ ] **Step 7: Commit**
@@ -4152,6 +4169,7 @@ npm run lint
 npm test -- --run
 npm run test:main -- --run
 ```
+
 Expected: zero type errors, zero lint errors, all renderer tests pass, all main tests pass.
 
 - [ ] **Step 2: Start the dev server and manually verify the UX**
@@ -4161,6 +4179,7 @@ cd ~/worktrees/bde/ai-review-partner && npm run dev
 ```
 
 Manual smoke checklist:
+
 - [ ] Toggle `Settings → Appearance` between `theme-pro-dark` and `theme-pro-light` and confirm the AI Partner panel, metric cards, chat bubbles, and file-tree badges render correctly in both themes with no hardcoded colors bleeding through.
 - [ ] Code Review view loads with three-column layout when `AI Partner` toggle is on.
 - [ ] Clicking `AI Partner` in the top bar hides the right panel; the diff expands.
@@ -4195,6 +4214,7 @@ Alternatively, skip the empty commit and let the PR description speak for itself
 ```bash
 git push -u origin feat/ai-review-partner
 ```
+
 Expected: push succeeds. The pre-push hook will run `typecheck + test + test:main + lint` per the CLAUDE.md convention — it should pass because Step 1 already ran the same suite. If the hook fails, investigate and fix; do NOT use `--no-verify`.
 
 ---
@@ -4212,4 +4232,4 @@ These are documented in spec §16 but are explicitly out of scope for v1:
 
 ---
 
-*End of plan. Execute task-by-task via superpowers:subagent-driven-development or superpowers:executing-plans.*
+_End of plan. Execute task-by-task via superpowers:subagent-driven-development or superpowers:executing-plans._

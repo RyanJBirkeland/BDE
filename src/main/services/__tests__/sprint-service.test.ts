@@ -9,9 +9,7 @@ import type { SprintTask, CreateTaskInput, QueueStats } from '../../../shared/ty
 // Mock electron (for BrowserWindow used by broadcast)
 vi.mock('electron', () => ({
   BrowserWindow: {
-    getAllWindows: vi.fn(() => [
-      { webContents: { send: vi.fn() } }
-    ])
+    getAllWindows: vi.fn(() => [{ webContents: { send: vi.fn() } }])
   }
 }))
 
@@ -109,9 +107,7 @@ import {
   getHealthCheckTasks as _getHealthCheckTasks
 } from '../../data/sprint-queries'
 
-import {
-  getDoneTodayCount as _getDoneTodayCount
-} from '../../data/reporting-queries'
+import { getDoneTodayCount as _getDoneTodayCount } from '../../data/reporting-queries'
 
 import { broadcast } from '../../broadcast'
 

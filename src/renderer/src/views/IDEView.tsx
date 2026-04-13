@@ -19,6 +19,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/
 import { toast } from '../stores/toasts'
 import './IDEView.css'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
 const IDE_SHORTCUTS = [
   { keys: '⌘B', desc: 'Toggle sidebar' },
@@ -317,113 +318,115 @@ export function IDEView(): React.JSX.Element {
   }
 
   return (
-    <motion.div
-      className="ide-view"
-      onClick={() => setFocusedPanel('editor')}
-      variants={VARIANTS.fadeIn}
-      initial="initial"
-      animate="animate"
-      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-    >
-      <Group orientation="horizontal" style={{ flex: 1, height: '100%', minHeight: 0 }}>
-        <Panel panelRef={sidebarPanelRef} defaultSize={20} minSize={10} collapsible>
-          <FileSidebar onOpenFile={handleOpenFile} />
-        </Panel>
-        <Separator className="ide-separator ide-separator--h" />
-        <Panel defaultSize={80} minSize={30}>
-          <Group orientation="vertical" style={{ height: '100%' }}>
-            <Panel defaultSize={terminalCollapsed ? 100 : 65} minSize={20}>
-              <div
-                className="ide-editor-area"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setFocusedPanel('editor')
-                }}
-              >
-                {sidebarCollapsed && !activeTab && (
-                  <button
-                    className="ide-sidebar-toggle"
-                    onClick={toggleSidebar}
-                    aria-label="Open sidebar"
-                  >
-                    <PanelLeftOpen size={16} />
-                  </button>
-                )}
-                <EditorTabBar onCloseTab={(id, dirty) => void handleCloseTab(id, dirty)} />
-                <EditorBreadcrumb />
-                <EditorToolbar />
-                <div className="ide-editor-content">
-                  {/* IDE-9: Show loading indicator while file is being fetched */}
-                  {activeTab && fileLoadingStates[activeTab.filePath] ? (
-                    <div className="ide-file-loading">Loading...</div>
-                  ) : (
-                    <EditorPane
-                      filePath={activeTab?.filePath ?? null}
-                      content={activeTab ? (fileContents[activeTab.filePath] ?? null) : null}
-                      language={activeTab?.language ?? 'plaintext'}
-                      onContentChange={handleContentChange}
-                      onSave={() => void handleSave()}
-                      minimapEnabled={minimapEnabled}
-                      wordWrapEnabled={wordWrapEnabled}
-                      fontSize={fontSize}
-                    />
+    <ErrorBoundary name="IDEView">
+      <motion.div
+        className="ide-view"
+        onClick={() => setFocusedPanel('editor')}
+        variants={VARIANTS.fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+      >
+        <Group orientation="horizontal" style={{ flex: 1, height: '100%', minHeight: 0 }}>
+          <Panel panelRef={sidebarPanelRef} defaultSize={20} minSize={10} collapsible>
+            <FileSidebar onOpenFile={handleOpenFile} />
+          </Panel>
+          <Separator className="ide-separator ide-separator--h" />
+          <Panel defaultSize={80} minSize={30}>
+            <Group orientation="vertical" style={{ height: '100%' }}>
+              <Panel defaultSize={terminalCollapsed ? 100 : 65} minSize={20}>
+                <div
+                  className="ide-editor-area"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setFocusedPanel('editor')
+                  }}
+                >
+                  {sidebarCollapsed && !activeTab && (
+                    <button
+                      className="ide-sidebar-toggle"
+                      onClick={toggleSidebar}
+                      aria-label="Open sidebar"
+                    >
+                      <PanelLeftOpen size={16} />
+                    </button>
                   )}
-                </div>
-              </div>
-            </Panel>
-            {!terminalCollapsed && (
-              <>
-                <Separator className="ide-separator ide-separator--v" />
-                <Panel defaultSize={35} minSize={15}>
-                  <div
-                    style={{ height: '100%' }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setFocusedPanel('terminal')
-                    }}
-                  >
-                    <TerminalPanel />
+                  <EditorTabBar onCloseTab={(id, dirty) => void handleCloseTab(id, dirty)} />
+                  <EditorBreadcrumb />
+                  <EditorToolbar />
+                  <div className="ide-editor-content">
+                    {/* IDE-9: Show loading indicator while file is being fetched */}
+                    {activeTab && fileLoadingStates[activeTab.filePath] ? (
+                      <div className="ide-file-loading">Loading...</div>
+                    ) : (
+                      <EditorPane
+                        filePath={activeTab?.filePath ?? null}
+                        content={activeTab ? (fileContents[activeTab.filePath] ?? null) : null}
+                        language={activeTab?.language ?? 'plaintext'}
+                        onContentChange={handleContentChange}
+                        onSave={() => void handleSave()}
+                        minimapEnabled={minimapEnabled}
+                        wordWrapEnabled={wordWrapEnabled}
+                        fontSize={fontSize}
+                      />
+                    )}
                   </div>
-                </Panel>
-              </>
-            )}
-          </Group>
-        </Panel>
-      </Group>
-      <UnsavedDialogModal {...confirmProps} />
-
-      {/* Quick Open Palette */}
-      {showQuickOpen && rootPath && (
-        <QuickOpenPalette
-          rootPath={rootPath}
-          onClose={() => setShowQuickOpen(false)}
-          onSelectFile={handleOpenFile}
-        />
-      )}
-
-      {/* Keyboard shortcuts help overlay */}
-      {showShortcuts && (
-        <div
-          className="ide-shortcuts-overlay"
-          onClick={() => setShowShortcuts(false)}
-          role="dialog"
-          aria-label="IDE Keyboard Shortcuts"
-        >
-          <div className="ide-shortcuts-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="ide-shortcuts-panel__title">Keyboard Shortcuts</div>
-            <div className="ide-shortcuts-panel__grid">
-              {IDE_SHORTCUTS.map(({ keys, desc }) => (
-                <div key={keys} className="ide-shortcuts-panel__row">
-                  <kbd className="ide-shortcuts-panel__key">{keys}</kbd>
-                  <span className="ide-shortcuts-panel__desc">{desc}</span>
                 </div>
-              ))}
+              </Panel>
+              {!terminalCollapsed && (
+                <>
+                  <Separator className="ide-separator ide-separator--v" />
+                  <Panel defaultSize={35} minSize={15}>
+                    <div
+                      style={{ height: '100%' }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setFocusedPanel('terminal')
+                      }}
+                    >
+                      <TerminalPanel />
+                    </div>
+                  </Panel>
+                </>
+              )}
+            </Group>
+          </Panel>
+        </Group>
+        <UnsavedDialogModal {...confirmProps} />
+
+        {/* Quick Open Palette */}
+        {showQuickOpen && rootPath && (
+          <QuickOpenPalette
+            rootPath={rootPath}
+            onClose={() => setShowQuickOpen(false)}
+            onSelectFile={handleOpenFile}
+          />
+        )}
+
+        {/* Keyboard shortcuts help overlay */}
+        {showShortcuts && (
+          <div
+            className="ide-shortcuts-overlay"
+            onClick={() => setShowShortcuts(false)}
+            role="dialog"
+            aria-label="IDE Keyboard Shortcuts"
+          >
+            <div className="ide-shortcuts-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="ide-shortcuts-panel__title">Keyboard Shortcuts</div>
+              <div className="ide-shortcuts-panel__grid">
+                {IDE_SHORTCUTS.map(({ keys, desc }) => (
+                  <div key={keys} className="ide-shortcuts-panel__row">
+                    <kbd className="ide-shortcuts-panel__key">{keys}</kbd>
+                    <span className="ide-shortcuts-panel__desc">{desc}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="ide-shortcuts-panel__hint">Press ⌘/ or Esc to close</div>
             </div>
-            <div className="ide-shortcuts-panel__hint">Press ⌘/ or Esc to close</div>
           </div>
-        </div>
-      )}
-    </motion.div>
+        )}
+      </motion.div>
+    </ErrorBoundary>
   )
 }
 

@@ -330,8 +330,7 @@ describe('githubFetch', () => {
     // Count only token-expired broadcasts (ignore any rate-limit noise)
     const tokenExpiredCalls = mockSend.mock.calls.filter(
       ([channel, payload]) =>
-        channel === 'github:error' &&
-        (payload as { kind: string }).kind === 'token-expired'
+        channel === 'github:error' && (payload as { kind: string }).kind === 'token-expired'
     )
     expect(tokenExpiredCalls).toHaveLength(1)
   })
@@ -536,7 +535,8 @@ describe('classifyHttpError', () => {
 
   it('classifies 403 with billing keywords in body as billing', () => {
     const res = mockResponse(403, {})
-    const body = 'The job was not started because recent account payments have failed or your spending limit needs to be increased.'
+    const body =
+      'The job was not started because recent account payments have failed or your spending limit needs to be increased.'
     const err = classifyHttpError(res, body)
     expect(err.kind).toBe('billing')
     expect(err.retryable).toBe(false)
@@ -642,9 +642,7 @@ describe('githubFetchJson', () => {
 
   it('returns ok:false with classified http error on non-ok response', async () => {
     const body = 'The job was not started because recent account payments have failed.'
-    const mockFetch = vi.fn().mockResolvedValueOnce(
-      new Response(body, { status: 403 })
-    )
+    const mockFetch = vi.fn().mockResolvedValueOnce(new Response(body, { status: 403 }))
     vi.stubGlobal('fetch', mockFetch)
 
     const result = await githubFetchJson<unknown>('https://api.github.com/x', 'ghp_token')

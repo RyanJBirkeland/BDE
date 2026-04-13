@@ -14,7 +14,7 @@ You write specs. BDE queues them, spawns Claude Code sessions, monitors progress
 
 ![BDE Dashboard — pipeline health, status counters, cost tracking, and live activity feed]
 
-*Dashboard: 6 active Claude Code sessions, 21 queued, 225 completed — all visible at a glance.*
+_Dashboard: 6 active Claude Code sessions, 21 queued, 225 completed — all visible at a glance._
 
 </div>
 
@@ -36,7 +36,7 @@ BDE adds all of this. It doesn't replace Claude Code — it wraps it in the infr
 
 ### The Cognitive Load Problem
 
-Running AI agents manually is surprisingly exhausting. You're context-switching between terminal tabs, remembering which branch is which, mentally tracking what depends on what, catching failures by accident, and trying to review diffs while three other sessions are still running. The agents are doing the coding — but *you're* doing all the project management in your head.
+Running AI agents manually is surprisingly exhausting. You're context-switching between terminal tabs, remembering which branch is which, mentally tracking what depends on what, catching failures by accident, and trying to review diffs while three other sessions are still running. The agents are doing the coding — but _you're_ doing all the project management in your head.
 
 That's the kind of invisible overhead that leads to burnout. Not from the work itself, but from juggling the meta-work around it.
 
@@ -44,17 +44,17 @@ BDE externalizes all of that. The Dashboard shows you pipeline health at a glanc
 
 The goal is simple: **you should be able to look at one screen and know exactly what's happening across all your concurrent work** — then make decisions (review, retry, reprioritize) without holding any of it in your head.
 
-| | Using Claude Code directly | Using Claude Code via BDE |
-|---|---|---|
-| **Sessions** | One at a time, manually started | Fleet running in parallel, auto-claimed from queue |
-| **Isolation** | Works in your current checkout | Each session gets its own git worktree |
-| **Lifecycle** | Open terminal → chat → hope it works | Spec → queue → execute → review → merge |
-| **After completion** | You manually check the diff, commit, PR | Code Review Station: inspect diffs, merge/PR/revise in one click |
-| **Coordination** | You remember which tasks depend on which | Declarative hard/soft dependencies with auto-resolution |
-| **When it fails** | You notice, restart manually | Auto-retry (up to 3x), fast-fail detection, watchdog kill |
-| **Observability** | Scroll through terminal output | Dashboard, pipeline view, cost charts, event streams |
-| **Spend visibility** | No idea what your agents cost | Cost dashboard with per-run, hourly, and daily analytics |
-| **Cognitive load** | You track everything in your head | One screen shows all concurrent work, decisions, and status |
+|                      | Using Claude Code directly               | Using Claude Code via BDE                                        |
+| -------------------- | ---------------------------------------- | ---------------------------------------------------------------- |
+| **Sessions**         | One at a time, manually started          | Fleet running in parallel, auto-claimed from queue               |
+| **Isolation**        | Works in your current checkout           | Each session gets its own git worktree                           |
+| **Lifecycle**        | Open terminal → chat → hope it works     | Spec → queue → execute → review → merge                          |
+| **After completion** | You manually check the diff, commit, PR  | Code Review Station: inspect diffs, merge/PR/revise in one click |
+| **Coordination**     | You remember which tasks depend on which | Declarative hard/soft dependencies with auto-resolution          |
+| **When it fails**    | You notice, restart manually             | Auto-retry (up to 3x), fast-fail detection, watchdog kill        |
+| **Observability**    | Scroll through terminal output           | Dashboard, pipeline view, cost charts, event streams             |
+| **Spend visibility** | No idea what your agents cost            | Cost dashboard with per-run, hourly, and daily analytics         |
+| **Cognitive load**   | You track everything in your head        | One screen shows all concurrent work, decisions, and status      |
 
 ---
 
@@ -151,12 +151,15 @@ sequenceDiagram
 ## Features
 
 ### Task Workbench — Plan Before You Build
+
 Draft task specs with an AI copilot, define dependencies between tasks, and run readiness checks before queuing. The copilot helps refine specs through conversation. A synthesizer can generate structured specs from codebase context.
 
 ### Sprint Pipeline — Watch Work Flow
+
 Real-time monitoring of tasks flowing through stages. Seven visual buckets (backlog, todo, blocked, in-progress, awaiting review, done, failed) give you instant visibility into your entire pipeline.
 
 ### Agent Manager — Orchestrating Claude Code Sessions
+
 The core of BDE. Watches the task queue, spawns Claude Code sessions in isolated git worktrees, monitors their health, and handles the full lifecycle from start to review.
 
 - **Parallel execution** — configurable WIP limit for concurrent Claude Code sessions
@@ -166,31 +169,39 @@ The core of BDE. Watches the task queue, spawns Claude Code sessions in isolated
 - **Project context** — every session inherits your `CLAUDE.md` files, so agents know your conventions
 
 ![Agents view — multiple concurrent Claude Code sessions with live tool use streams](docs/screenshots/agents-view.png)
-*Agents view: 5 active Claude Code sessions running in parallel. Each shows live tool calls, edits, and bash commands as they happen.*
+_Agents view: 5 active Claude Code sessions running in parallel. Each shows live tool calls, edits, and bash commands as they happen._
 
 ### Code Review Station — Human in the Loop
+
 Agents don't push directly to main. Every completed task lands in a review queue where you inspect diffs, browse commits, read the agent's conversation log, then choose: merge locally, create a PR, request a revision, or discard.
 
 ### Task Dependencies — Declarative Coordination
+
 Tasks can declare `hard` or `soft` dependencies on other tasks:
+
 - **Hard** — downstream blocks until upstream succeeds
 - **Soft** — downstream unblocks regardless of upstream outcome
 
 Cycle detection at creation time. Automatic resolution when tasks complete. No manual coordination needed.
 
 ### Dev Playground — Visual Output in the IDE
+
 When agents write HTML files, BDE renders them inline — sandboxed with DOMPurify. Build CSS theme explorers, component playgrounds, data visualizations, and architecture diagrams without leaving the app.
 
 ### Integrated IDE
+
 Monaco editor with file explorer, multi-tab interface, and integrated terminal. Syntax highlighting, dirty state tracking, keyboard shortcuts. Not a replacement for VS Code — a companion for quick edits and agent output inspection.
 
 ### Source Control
+
 Git staging, committing, and pushing across multiple repos. Inline diff previews, branch selection, and error handling with retry.
 
 ### Cost Tracking — Know What Your Agents Cost
+
 Every Claude Code session's token usage and cost are logged to `cost_events`. The Dashboard surfaces per-run, hourly, and daily spend trends so you can spot expensive tasks, compare models, and catch runaway loops before the bill does. No external billing integration needed — the data comes straight from SDK usage events.
 
 ### Dashboard
+
 Aggregated metrics at a glance: active/queued/blocked task counts, hourly completion charts, cost-per-run trends, success rate, and recent activity feed. Dark and light themes supported.
 
 <p align="center">
@@ -198,7 +209,7 @@ Aggregated metrics at a glance: active/queued/blocked task counts, hourly comple
 <img src="docs/screenshots/dashboard-light.png" width="49%" alt="Dashboard — light theme" />
 </p>
 
-*Left: dark neon theme. Right: light theme. Same data, same layout — pick what works for you.*
+_Left: dark neon theme. Right: light theme. Same data, same layout — pick what works for you._
 
 ---
 
@@ -254,30 +265,30 @@ graph TB
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Electron + electron-vite |
-| Frontend | React, TypeScript, Zustand |
-| Editor | Monaco (ESM, not CDN) |
-| Database | SQLite (better-sqlite3, WAL mode) |
+| Layer     | Technology                                               |
+| --------- | -------------------------------------------------------- |
+| Framework | Electron + electron-vite                                 |
+| Frontend  | React, TypeScript, Zustand                               |
+| Editor    | Monaco (ESM, not CDN)                                    |
+| Database  | SQLite (better-sqlite3, WAL mode)                        |
 | AI Engine | Claude Code (spawned via @anthropic-ai/claude-agent-sdk) |
-| Icons | lucide-react |
-| Layout | react-resizable-panels |
-| Testing | Vitest (unit + integration), Playwright (E2E) |
-| CI | GitHub Actions (typecheck + lint + coverage-gated tests) |
+| Icons     | lucide-react                                             |
+| Layout    | react-resizable-panels                                   |
+| Testing   | Vitest (unit + integration), Playwright (E2E)            |
+| CI        | GitHub Actions (typecheck + lint + coverage-gated tests) |
 
 ### Data Model
 
 All state lives in a local SQLite database at `~/.bde/bde.db`. No cloud dependencies for core functionality.
 
-| Table | Purpose |
-|-------|---------|
+| Table          | Purpose                                                       |
+| -------------- | ------------------------------------------------------------- |
 | `sprint_tasks` | Task specs, status, dependencies, PR links, agent assignments |
-| `agent_runs` | Agent execution audit trail — model, status, timing |
-| `agent_events` | Streaming agent events (tool use, output, errors) |
-| `cost_events` | Token usage and cost tracking per agent run |
-| `task_changes` | Field-level audit trail on every task mutation |
-| `settings` | Key-value app configuration |
+| `agent_runs`   | Agent execution audit trail — model, status, timing           |
+| `agent_events` | Streaming agent events (tool use, output, errors)             |
+| `cost_events`  | Token usage and cost tracking per agent run                   |
+| `task_changes` | Field-level audit trail on every task mutation                |
+| `settings`     | Key-value app configuration                                   |
 
 ---
 
@@ -323,17 +334,17 @@ npm run lint         # ESLint
 
 ## Views at a Glance
 
-| View | Shortcut | What it does |
-|------|----------|-------------|
-| Dashboard | `Cmd+1` | Pipeline health, metrics, activity feed |
-| Agents | `Cmd+2` | Spawn and interact with AI agents |
-| IDE | `Cmd+3` | Monaco editor + file explorer + terminal |
-| Task Pipeline | `Cmd+4` | Real-time task execution monitoring |
-| Code Review | `Cmd+5` | Review agent diffs before merging |
-| Source Control | `Cmd+6` | Git staging, commits, push |
-| Settings | `Cmd+7` | 9 config tabs (connections, repos, agents, appearance, etc.) |
-| Task Planner | `Cmd+8` | Multi-task workflow planning |
-| Task Workbench | `Cmd+0` | Spec drafting with AI copilot + readiness checks |
+| View           | Shortcut | What it does                                                 |
+| -------------- | -------- | ------------------------------------------------------------ |
+| Dashboard      | `Cmd+1`  | Pipeline health, metrics, activity feed                      |
+| Agents         | `Cmd+2`  | Spawn and interact with AI agents                            |
+| IDE            | `Cmd+3`  | Monaco editor + file explorer + terminal                     |
+| Task Pipeline  | `Cmd+4`  | Real-time task execution monitoring                          |
+| Code Review    | `Cmd+5`  | Review agent diffs before merging                            |
+| Source Control | `Cmd+6`  | Git staging, commits, push                                   |
+| Settings       | `Cmd+7`  | 9 config tabs (connections, repos, agents, appearance, etc.) |
+| Task Planner   | `Cmd+8`  | Multi-task workflow planning                                 |
+| Task Workbench | `Cmd+0`  | Spec drafting with AI copilot + readiness checks             |
 
 The panel system supports split panes, drag-and-drop docking, and tear-off windows for multi-monitor setups.
 
@@ -343,13 +354,13 @@ The panel system supports split panes, drag-and-drop docking, and tear-off windo
 
 BDE spawns Claude Code in five different modes, depending on the context:
 
-| Type | Interactive | Worktree | What it does |
-|------|-----------|----------|----------|
-| **Pipeline** | No | Isolated | Autonomous task execution from the sprint queue |
-| **Adhoc** | Yes (multi-turn) | Repo dir | User-spawned one-off Claude Code sessions |
-| **Assistant** | Yes (multi-turn) | Repo dir | Conversational help and recommendations |
-| **Copilot** | Yes (chat) | None | Text-only spec drafting in Task Workbench |
-| **Synthesizer** | No | None | Structured spec generation from codebase context |
+| Type            | Interactive      | Worktree | What it does                                     |
+| --------------- | ---------------- | -------- | ------------------------------------------------ |
+| **Pipeline**    | No               | Isolated | Autonomous task execution from the sprint queue  |
+| **Adhoc**       | Yes (multi-turn) | Repo dir | User-spawned one-off Claude Code sessions        |
+| **Assistant**   | Yes (multi-turn) | Repo dir | Conversational help and recommendations          |
+| **Copilot**     | Yes (chat)       | None     | Text-only spec drafting in Task Workbench        |
+| **Synthesizer** | No               | None     | Structured spec generation from codebase context |
 
 All sessions inherit your project knowledge from `CLAUDE.md` files — same as running Claude Code in your terminal, but managed.
 

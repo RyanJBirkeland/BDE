@@ -68,9 +68,9 @@ test.describe('New agent flow', () => {
 
     // AgentLaunchpad should be visible (it replaces the console area)
     // Wait for launchpad content to render
-    await expect(
-      window.locator('[class*="agent-launchpad"]').first()
-    ).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('[class*="agent-launchpad"]').first()).toBeVisible({
+      timeout: 5_000
+    })
   })
 
   test('opens agent launchpad via command palette Spawn Agent command', async ({ bde }) => {

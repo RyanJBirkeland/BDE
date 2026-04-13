@@ -50,21 +50,27 @@ For each, either delete `!important` and increase selector specificity to win th
 ## How to Test
 
 1. Verify dead selectors are gone:
+
    ```bash
    grep -rn 'playground-modal__view-btn--active\|pipeline-stage__dot--active\|agent-pill--running' src/renderer/src/
    ```
+
    Expected: zero matches.
 
 2. Verify dead keyframes are gone:
+
    ```bash
    grep -rn 'bde-slide-up-fade\|toast-slide-in' src/renderer/src/
    ```
+
    Expected: zero matches.
 
 3. Verify !important count is exactly 5 (all in utilities.css):
+
    ```bash
    grep -rn '!important' src/renderer/src/ --include='*.css' | grep -v node_modules
    ```
+
    Expected: exactly 5 matches, all in `utilities.css`.
 
 4. `npm run typecheck && npm test && npm run lint` — all must pass

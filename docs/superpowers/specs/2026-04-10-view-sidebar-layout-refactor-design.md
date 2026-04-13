@@ -45,13 +45,13 @@ Add to a shared location (e.g., `src/renderer/src/assets/design-system/view-layo
 
 Derived from current `defaultSize` percentages at typical window widths, rounded to clean values:
 
-| View | Current | New sidebar width |
-|------|---------|-------------------|
-| CodeReview | 22% Panel | `260px` |
-| Agents | 28% Panel | `300px` |
-| Settings | 18% Panel | `220px` |
-| Planner | 22% Panel | `260px` |
-| IDE | 20% Panel (collapsible) | **Keep react-resizable-panels** |
+| View       | Current                 | New sidebar width               |
+| ---------- | ----------------------- | ------------------------------- |
+| CodeReview | 22% Panel               | `260px`                         |
+| Agents     | 28% Panel               | `300px`                         |
+| Settings   | 18% Panel               | `220px`                         |
+| Planner    | 22% Panel               | `260px`                         |
+| IDE        | 20% Panel (collapsible) | **Keep react-resizable-panels** |
 
 Each view sets the sidebar width via a view-specific CSS class (e.g., `.cr-view .view-sidebar { width: 260px; }`).
 
@@ -60,6 +60,7 @@ Each view sets the sidebar width via a view-specific CSS class (e.g., `.cr-view 
 ### 1. CodeReviewView.tsx
 
 **Before:**
+
 ```tsx
 <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
   <Panel defaultSize={22} minSize={12} maxSize={40}>
@@ -73,6 +74,7 @@ Each view sets the sidebar width via a view-specific CSS class (e.g., `.cr-view 
 ```
 
 **After:**
+
 ```tsx
 <div className="view-layout">
   <ReviewQueue />
@@ -85,6 +87,7 @@ Remove `import { Group, Panel, Separator } from 'react-resizable-panels'`.
 ### 2. AgentsView.tsx
 
 **Before:**
+
 ```tsx
 <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
   <Panel defaultSize={28} minSize={18} maxSize={44}>
@@ -96,6 +99,7 @@ Remove `import { Group, Panel, Separator } from 'react-resizable-panels'`.
 ```
 
 **After:**
+
 ```tsx
 <div className="view-layout">
   <div className="agents-sidebar view-sidebar">...</div>
@@ -106,6 +110,7 @@ Remove `import { Group, Panel, Separator } from 'react-resizable-panels'`.
 ### 3. SettingsView.tsx
 
 **Before:**
+
 ```tsx
 <Group orientation="horizontal" style={{ flex: 1, height: '100%' }}>
   <Panel defaultSize={18} minSize={12} maxSize={30}>
@@ -117,6 +122,7 @@ Remove `import { Group, Panel, Separator } from 'react-resizable-panels'`.
 ```
 
 **After:**
+
 ```tsx
 <div className="view-layout">
   <SettingsSidebar />
@@ -129,6 +135,7 @@ Remove `import { Group, Panel, Separator } from 'react-resizable-panels'`.
 Note: The Group is inside a `<div className="planner-body">` wrapper — the wrapper stays, `view-layout` replaces the Group inside it.
 
 **Before:**
+
 ```tsx
 <div className="planner-body">
   <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
@@ -142,6 +149,7 @@ Note: The Group is inside a `<div className="planner-body">` wrapper — the wra
 ```
 
 **After:**
+
 ```tsx
 <div className="planner-body view-layout">
   <EpicList />
@@ -154,6 +162,7 @@ Note: The Group is inside a `<div className="planner-body">` wrapper — the wra
 `src/renderer/src/components/diff/DiffViewer.tsx` uses `react-resizable-panels` for a file list sidebar + diff content split inside CodeReview's ChangesTab. Same pattern, same fix.
 
 **After:**
+
 ```tsx
 <div className="view-layout">
   <DiffFileList />
@@ -175,6 +184,7 @@ In `src/renderer/src/components/layout/UnifiedHeader.css:356-358`:
 ```
 
 Options:
+
 - **Remove entirely** if the outer panel system works without it (test this)
 - **Scope to outer panels only** via `.panel-leaf [data-panel]` if removal causes regression
 
@@ -192,20 +202,20 @@ The existing `<div className="stg-layout">` outer wrapper stays. The `view-layou
 
 ## Files to change
 
-| File | Action |
-|------|--------|
-| `src/renderer/src/assets/design-system/view-layout.css` | **Create** — shared flex layout classes |
-| `src/renderer/src/views/CodeReviewView.tsx` | Replace Group/Panel with flex divs |
-| `src/renderer/src/views/CodeReviewView.css` | Add sidebar width |
-| `src/renderer/src/views/AgentsView.tsx` | Replace Group/Panel with flex divs |
-| `src/renderer/src/views/AgentsView.css` | Add sidebar width, remove `[data-panel]` override |
-| `src/renderer/src/views/SettingsView.tsx` | Replace Group/Panel with flex divs |
-| `src/renderer/src/views/SettingsView.css` | Add sidebar width |
-| `src/renderer/src/views/PlannerView.tsx` | Replace Group/Panel with flex divs |
-| `src/renderer/src/views/PlannerView.css` | Add sidebar width |
-| `src/renderer/src/components/diff/DiffViewer.tsx` | Replace Group/Panel with flex divs |
-| `src/renderer/src/components/diff/DiffViewer.css` | Add sidebar width |
-| `src/renderer/src/components/layout/UnifiedHeader.css` | Remove or scope `[data-panel]` override |
+| File                                                    | Action                                            |
+| ------------------------------------------------------- | ------------------------------------------------- |
+| `src/renderer/src/assets/design-system/view-layout.css` | **Create** — shared flex layout classes           |
+| `src/renderer/src/views/CodeReviewView.tsx`             | Replace Group/Panel with flex divs                |
+| `src/renderer/src/views/CodeReviewView.css`             | Add sidebar width                                 |
+| `src/renderer/src/views/AgentsView.tsx`                 | Replace Group/Panel with flex divs                |
+| `src/renderer/src/views/AgentsView.css`                 | Add sidebar width, remove `[data-panel]` override |
+| `src/renderer/src/views/SettingsView.tsx`               | Replace Group/Panel with flex divs                |
+| `src/renderer/src/views/SettingsView.css`               | Add sidebar width                                 |
+| `src/renderer/src/views/PlannerView.tsx`                | Replace Group/Panel with flex divs                |
+| `src/renderer/src/views/PlannerView.css`                | Add sidebar width                                 |
+| `src/renderer/src/components/diff/DiffViewer.tsx`       | Replace Group/Panel with flex divs                |
+| `src/renderer/src/components/diff/DiffViewer.css`       | Add sidebar width                                 |
+| `src/renderer/src/components/layout/UnifiedHeader.css`  | Remove or scope `[data-panel]` override           |
 
 ## How to test
 

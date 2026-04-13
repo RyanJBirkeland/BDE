@@ -11,6 +11,7 @@
 `tokens_in` in `agent_runs` is currently broken: it overwrites on each SDK message instead of accumulating. For a $9.47 run, the stored value was 408 — only the last turn's count. `cost_usd` is accurate because the SDK reports it as a running total. BDE therefore knows how much things cost but not why.
 
 This is Phase 1 of a two-phase token audit:
+
 - **Phase 1 (this spec):** Instrument — fix accumulation, add per-turn breakdown
 - **Phase 2 (future):** Optimize — with real data, cut the biggest bloat per agent type
 
@@ -30,19 +31,20 @@ Both pipeline (`run-agent.ts`) and adhoc (`adhoc-agent.ts`) construct a `TurnTra
 interface TurnRecord {
   runId: string
   turn: number
-  tokensIn: number    // running total accumulated up to and including this turn
-  tokensOut: number   // running total accumulated up to and including this turn
-  toolCalls: number   // tool_use blocks in this turn only (reset per turn)
+  tokensIn: number // running total accumulated up to and including this turn
+  tokensOut: number // running total accumulated up to and including this turn
+  toolCalls: number // tool_use blocks in this turn only (reset per turn)
 }
 
 class TurnTracker {
   constructor(runId: string) {}
-  observe(msg: unknown): void  // call for every SDK message
+  observe(msg: unknown): void // call for every SDK message
   totals(): { tokensIn: number; tokensOut: number }
 }
 ```
 
 **Token field sources:** The tracker extracts token counts from two SDK message shapes, both using `+=` to accumulate:
+
 - `msg.usage.input_tokens` / `msg.usage.output_tokens` (nested usage object, present on assistant messages)
 - Top-level `msg.tokens_in` / `msg.tokens_out` (present on some result/system messages)
 
@@ -98,13 +100,13 @@ CREATE INDEX idx_agent_run_turns_run ON agent_run_turns(run_id);
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/main/db.ts` | Add migration for `agent_run_turns` table |
-| `src/main/data/agent-queries.ts` | Add `insertAgentRunTurn`, `listAgentRunTurns` |
-| `src/main/agent-manager/turn-tracker.ts` | **New file** — `TurnTracker` class |
-| `src/main/agent-manager/run-agent.ts` | Replace broken token reads with `TurnTracker` |
-| `src/main/adhoc-agent.ts` | Replace broken token reads with `TurnTracker` |
+| File                                     | Change                                        |
+| ---------------------------------------- | --------------------------------------------- |
+| `src/main/db.ts`                         | Add migration for `agent_run_turns` table     |
+| `src/main/data/agent-queries.ts`         | Add `insertAgentRunTurn`, `listAgentRunTurns` |
+| `src/main/agent-manager/turn-tracker.ts` | **New file** — `TurnTracker` class            |
+| `src/main/agent-manager/run-agent.ts`    | Replace broken token reads with `TurnTracker` |
+| `src/main/adhoc-agent.ts`                | Replace broken token reads with `TurnTracker` |
 
 ---
 

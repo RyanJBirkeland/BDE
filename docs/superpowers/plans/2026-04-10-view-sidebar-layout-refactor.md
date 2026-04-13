@@ -15,6 +15,7 @@
 ### Task 1: Create shared view-layout.css
 
 **Files:**
+
 - Create: `src/renderer/src/assets/design-system/view-layout.css`
 - Modify: `src/renderer/src/assets/main.css` (add import)
 
@@ -69,41 +70,45 @@ git commit -m "feat: add shared view-layout.css for sidebar+content flex pattern
 ### Task 2: Refactor CodeReviewView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/CodeReviewView.tsx`
 - Modify: `src/renderer/src/views/CodeReviewView.css`
 
 - [ ] **Step 1: Update CodeReviewView.tsx**
 
 Remove the import:
+
 ```tsx
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 Replace lines 115-126 (the Group/Panel/Separator block):
+
 ```tsx
-      <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-        <Panel defaultSize={22} minSize={12} maxSize={40}>
-          <ReviewQueue />
-        </Panel>
-        <Separator className="panel-separator" />
-        <Panel minSize={40}>
-          <div className="cr-main">
-            <ReviewDetail />
-            <ReviewActions />
-          </div>
-        </Panel>
-      </Group>
+<Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
+  <Panel defaultSize={22} minSize={12} maxSize={40}>
+    <ReviewQueue />
+  </Panel>
+  <Separator className="panel-separator" />
+  <Panel minSize={40}>
+    <div className="cr-main">
+      <ReviewDetail />
+      <ReviewActions />
+    </div>
+  </Panel>
+</Group>
 ```
 
 With:
+
 ```tsx
-      <div className="view-layout">
-        <ReviewQueue />
-        <div className="cr-main view-content">
-          <ReviewDetail />
-          <ReviewActions />
-        </div>
-      </div>
+<div className="view-layout">
+  <ReviewQueue />
+  <div className="cr-main view-content">
+    <ReviewDetail />
+    <ReviewActions />
+  </div>
+</div>
 ```
 
 - [ ] **Step 2: Add sidebar width to CodeReviewView.css**
@@ -134,43 +139,45 @@ git commit -m "refactor: CodeReviewView — replace resizable panels with flex l
 ### Task 3: Refactor AgentsView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/AgentsView.tsx`
 - Modify: `src/renderer/src/views/AgentsView.css`
 
 - [ ] **Step 1: Update AgentsView.tsx**
 
 Remove the import:
+
 ```tsx
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 Replace lines 258-362 (the Group/Panel/Separator block). The current structure is:
+
 ```tsx
-      <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-        <Panel defaultSize={28} minSize={18} maxSize={44}>
-          <div className="agents-sidebar">
-            {/* ...sidebar header, banner, AgentList... */}
-          </div>
-        </Panel>
-        <Separator className="panel-separator" />
-        <Panel minSize={40}>
-          <div style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-            {/* ...AgentLaunchpad | AgentConsole | FleetGlance... */}
-          </div>
-        </Panel>
-      </Group>
+<Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
+  <Panel defaultSize={28} minSize={18} maxSize={44}>
+    <div className="agents-sidebar">{/* ...sidebar header, banner, AgentList... */}</div>
+  </Panel>
+  <Separator className="panel-separator" />
+  <Panel minSize={40}>
+    <div style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      {/* ...AgentLaunchpad | AgentConsole | FleetGlance... */}
+    </div>
+  </Panel>
+</Group>
 ```
 
 With:
+
 ```tsx
-      <div className="view-layout">
-        <div className="agents-sidebar view-sidebar">
-          {/* ...sidebar header, banner, AgentList — contents unchanged... */}
-        </div>
-        <div className="view-content">
-          {/* ...AgentLaunchpad | AgentConsole | FleetGlance — contents unchanged... */}
-        </div>
-      </div>
+<div className="view-layout">
+  <div className="agents-sidebar view-sidebar">
+    {/* ...sidebar header, banner, AgentList — contents unchanged... */}
+  </div>
+  <div className="view-content">
+    {/* ...AgentLaunchpad | AgentConsole | FleetGlance — contents unchanged... */}
+  </div>
+</div>
 ```
 
 The right panel's inline `style={{ height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}` is now handled by `.view-content` — remove the inline style div entirely, its children go directly inside `.view-content`.
@@ -178,6 +185,7 @@ The right panel's inline `style={{ height: '100%', minWidth: 0, display: 'flex',
 - [ ] **Step 2: Update AgentsView.css**
 
 Remove lines 121-125 (the `[data-panel]` override):
+
 ```css
 /* Prevent the fleet-list panel from collapsing to 0 at initial render
    (react-resizable-panels sets minWidth:0 inline; this overrides it). */
@@ -218,17 +226,20 @@ git commit -m "refactor: AgentsView — replace resizable panels with flex layou
 ### Task 4: Refactor SettingsView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx`
 - Modify: `src/renderer/src/views/SettingsView.css`
 
 - [ ] **Step 1: Update SettingsView.tsx**
 
 Remove the import:
+
 ```tsx
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 Replace lines 101-121 (the Group inside `stg-layout`):
+
 ```tsx
       <Group orientation="horizontal" style={{ flex: 1, height: '100%' }}>
         <Panel defaultSize={18} minSize={12} maxSize={30}>
@@ -244,6 +255,7 @@ Replace lines 101-121 (the Group inside `stg-layout`):
 ```
 
 With:
+
 ```tsx
       <div className="view-layout">
         <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
@@ -283,17 +295,20 @@ git commit -m "refactor: SettingsView — replace resizable panels with flex lay
 ### Task 5: Refactor PlannerView
 
 **Files:**
+
 - Modify: `src/renderer/src/views/PlannerView.tsx`
 - Modify: `src/renderer/src/views/PlannerView.css`
 
 - [ ] **Step 1: Update PlannerView.tsx**
 
 Remove the import:
+
 ```tsx
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 Replace lines 149-181 (the `planner-body` div containing the Group):
+
 ```tsx
       <div className="planner-body">
         <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
@@ -310,6 +325,7 @@ Replace lines 149-181 (the `planner-body` div containing the Group):
 ```
 
 With:
+
 ```tsx
       <div className="planner-body view-layout">
         <EpicList ... />
@@ -350,41 +366,45 @@ git commit -m "refactor: PlannerView — replace resizable panels with flex layo
 ### Task 6: Refactor DiffViewer component
 
 **Files:**
+
 - Modify: `src/renderer/src/components/diff/DiffViewer.tsx`
 - Modify: `src/renderer/src/components/diff/DiffViewer.css`
 
 - [ ] **Step 1: Update DiffViewer.tsx**
 
 Remove the import:
+
 ```tsx
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 Replace lines 436-483 (the return block). The current structure:
+
 ```tsx
-    <div className="diff-view-container">
-      <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
-        <Panel defaultSize={22} minSize={10} maxSize={40}>
-          <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
-        </Panel>
-        <Separator className="panel-separator" />
-        <Panel minSize={40}>
-          <div className="diff-content" ref={containerRef}>
-            {/* ...VirtualizedDiffBanner, VirtualizedDiffContent or PlainDiffContent... */}
-          </div>
-        </Panel>
-      </Group>
-    </div>
+<div className="diff-view-container">
+  <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
+    <Panel defaultSize={22} minSize={10} maxSize={40}>
+      <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
+    </Panel>
+    <Separator className="panel-separator" />
+    <Panel minSize={40}>
+      <div className="diff-content" ref={containerRef}>
+        {/* ...VirtualizedDiffBanner, VirtualizedDiffContent or PlainDiffContent... */}
+      </div>
+    </Panel>
+  </Group>
+</div>
 ```
 
 With:
+
 ```tsx
-    <div className="diff-view-container view-layout">
-      <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
-      <div className="diff-content view-content" ref={containerRef}>
-        {/* ...contents unchanged... */}
-      </div>
-    </div>
+<div className="diff-view-container view-layout">
+  <DiffFileList files={files} activeFileIndex={activeFileIndex} onSelect={scrollToFile} />
+  <div className="diff-content view-content" ref={containerRef}>
+    {/* ...contents unchanged... */}
+  </div>
+</div>
 ```
 
 - [ ] **Step 2: Update DiffViewer.css**
@@ -392,6 +412,7 @@ With:
 The existing `.diff-view-container` rule (line 108) has `flex: 1; display: flex; overflow: hidden;` — adding `view-layout` is compatible. `DiffFileList` renders `<div className="diff-sidebar">`. Target it directly.
 
 Add after `.diff-view-container`:
+
 ```css
 .diff-view-container .diff-sidebar {
   width: 220px;
@@ -418,6 +439,7 @@ git commit -m "refactor: DiffViewer — replace resizable panels with flex layou
 ### Task 7: Scope the `[data-panel]` CSS override
 
 **Files:**
+
 - Modify: `src/renderer/src/components/layout/UnifiedHeader.css`
 
 - [ ] **Step 1: Scope the override**
@@ -476,6 +498,7 @@ Expected: All pass with zero errors.
 - [ ] **Step 2: Visual verification checklist**
 
 Run `npm run dev` and verify:
+
 - [ ] CodeReview: sidebar (260px) + content, no overflow on narrow window
 - [ ] Agents: sidebar (300px) + content, no overflow on narrow window
 - [ ] Settings: sidebar (220px) + content, no overflow on narrow window

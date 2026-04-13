@@ -12,7 +12,9 @@ interface PipelineFlowProps {
 
 export function PipelineFlow({ stages }: PipelineFlowProps): React.JSX.Element {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-1)', flexWrap: 'wrap' }}>
+    <div
+      style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-1)', flexWrap: 'wrap' }}
+    >
       {stages.map((stage, i) => (
         <div
           key={stage.label}

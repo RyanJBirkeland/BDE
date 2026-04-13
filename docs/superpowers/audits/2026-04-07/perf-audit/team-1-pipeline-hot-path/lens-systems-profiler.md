@@ -7,10 +7,12 @@
 ## Findings
 
 ### F-t1-sysprof-1: Redundant array sorting in `_depsEqual()` during drain loop
+
 **Severity:** High
 **Category:** CPU
 **Location:** `/Users/ryan/projects/BDE/src/main/agent-manager/index.ts:608-625`
 **Evidence:**
+
 ```typescript
 private _depsEqual(a: TaskDependency[] | null, b: TaskDependency[] | null): boolean {
   if (a === b) return true
@@ -45,10 +47,12 @@ The drain loop (line 661) calls `_depsEqual()` for every task in `allTasks` ever
 ---
 
 ### F-t1-sysprof-2: JSON.stringify() on every SDK message in hot message loop
+
 **Severity:** High
 **Category:** CPU
 **Location:** `/Users/ryan/projects/BDE/src/main/agent-event-mapper.ts:83-95`
 **Evidence:**
+
 ```typescript
 export function emitAgentEvent(agentId: string, event: AgentEvent): void {
   broadcast('agent:event', { agentId, event })
@@ -66,6 +70,7 @@ export function emitAgentEvent(agentId: string, event: AgentEvent): void {
 ```
 
 Called from the message loop in `/Users/ryan/projects/BDE/src/main/agent-manager/run-agent.ts:419-421`:
+
 ```typescript
 const mappedEvents = mapRawMessage(msg)
 for (const event of mappedEvents) {
@@ -73,7 +78,7 @@ for (const event of mappedEvents) {
 }
 ```
 
-Each SDK message produces 1-5 events (text, tool_use, tool_result blocks). A typical 15-minute agent session processes 500-2000 messages, meaning 1000-10000 calls to `JSON.stringify()` per agent. This serialization happens *synchronously* on every message tick, blocking the message loop briefly.
+Each SDK message produces 1-5 events (text, tool_use, tool_result blocks). A typical 15-minute agent session processes 500-2000 messages, meaning 1000-10000 calls to `JSON.stringify()` per agent. This serialization happens _synchronously_ on every message tick, blocking the message loop briefly.
 
 **Impact:** At 1 agent this is sub-millisecond, but with 3+ concurrent agents (which is common), synchronous JSON serialization adds measurable jitter to message consumption. Under high throughput (tool-heavy tasks), this can cause visible lag in the UI's event display and may accumulate into periodic frame skips.
 
@@ -86,10 +91,12 @@ Each SDK message produces 1-5 events (text, tool_use, tool_result blocks). A typ
 ---
 
 ### F-t1-sysprof-3: Synchronous file I/O in `getUserMemory()` on every prompt build
+
 **Severity:** Medium
 **Category:** I/O
 **Location:** `/Users/ryan/projects/BDE/src/main/agent-system/memory/user-memory.ts:25-66`
 **Evidence:**
+
 ```typescript
 export function getUserMemory(): UserMemoryResult {
   const activeFiles = getSettingJson<Record<string, boolean>>(SETTING_KEY)
@@ -123,6 +130,7 @@ export function getUserMemory(): UserMemoryResult {
 ```
 
 Called during every prompt build in `/Users/ryan/projects/BDE/src/main/agent-manager/prompt-composer.ts:257-262`:
+
 ```typescript
 const userMem = getUserMemory()
 if (userMem.fileCount > 0) {
@@ -144,10 +152,12 @@ Every agent spawn calls `buildAgentPrompt()` which calls `getUserMemory()`, whic
 ---
 
 ### F-t1-sysprof-4: Deep dependency comparison on every drain loop tick
+
 **Severity:** Medium
 **Category:** CPU
 **Location:** `/Users/ryan/projects/BDE/src/main/agent-manager/index.ts:660-668`
 **Evidence:**
+
 ```typescript
 // Update tasks with changed dependencies
 for (const task of allTasks) {
@@ -161,6 +171,7 @@ for (const task of allTasks) {
 ```
 
 On a typical poll cycle with 100 tasks:
+
 - All 100 tasks are fetched via `getTasksWithDependencies()`
 - All 100 are compared using `_depsEqual()` (even those without dependencies)
 - Only ~5-10% typically have changed dependencies
@@ -178,10 +189,12 @@ The comparison is called inside a loop that already iterates all tasks. If tasks
 ---
 
 ### F-t1-sysprof-5: `checkOAuthToken()` file I/O on every drain loop
+
 **Severity:** Low
 **Category:** I/O
 **Location:** `/Users/ryan/projects/BDE/src/main/agent-manager/index.ts:71-110`
 **Evidence:**
+
 ```typescript
 export async function checkOAuthToken(logger: Logger): Promise<boolean> {
   try {
@@ -237,12 +250,14 @@ Called on every drain loop (every ~5 seconds). Performs two I/O operations: `rea
 ---
 
 ### F-t1-sysprof-6: No caching of `buildAgentPrompt()` result
+
 **Severity:** Low
 **Category:** CPU
 **Location:** `/Users/ryan/projects/BDE/src/main/agent-manager/prompt-composer.ts:217-405`
 **Evidence:**
 
 `buildAgentPrompt()` is called once per agent spawn in `/Users/ryan/projects/BDE/src/main/agent-manager/run-agent.ts:251-262`:
+
 ```typescript
 const prompt = buildAgentPrompt({
   agentType: 'pipeline',
@@ -279,4 +294,3 @@ The function concatenates ~15-20 string sections (preamble, personality, memory,
 3. **Repository query shape:** Does `getTasksWithDependencies()` return all task fields on every call, or could it be optimized to return only (id, status, depends_on) for the dependency index logic? This would reduce memory churn.
 
 4. **SQLite prepared statement caching:** The `appendEvent()` function prepares a statement on every call. SQLite caches these, but is the cache size appropriate for the event write throughput (1000-10000 writes per agent)?
-

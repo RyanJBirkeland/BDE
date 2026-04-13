@@ -6,12 +6,7 @@ const log = createLogger('review-repository')
 
 export interface IReviewRepository {
   getCached(taskId: string, commitSha: string): ReviewResult | null
-  setCached(
-    taskId: string,
-    commitSha: string,
-    result: ReviewResult,
-    rawResponse: string
-  ): void
+  setCached(taskId: string, commitSha: string, result: ReviewResult, rawResponse: string): void
   invalidate(taskId: string): void
 }
 
@@ -32,9 +27,9 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
   const getStmt = db.prepare<[string, string]>(
     'SELECT * FROM task_reviews WHERE task_id = ? AND commit_sha = ?'
   )
-  const upsertStmt = db.prepare<[
-    string, string, number, number, number, string, string, string, string, number
-  ]>(
+  const upsertStmt = db.prepare<
+    [string, string, number, number, number, string, string, string, string, number]
+  >(
     `INSERT OR REPLACE INTO task_reviews
      (task_id, commit_sha, quality_score, issues_count, files_count,
       opening_message, findings_json, raw_response, model, created_at)
@@ -43,9 +38,7 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
   const deleteRowStmt = db.prepare<[string, string]>(
     'DELETE FROM task_reviews WHERE task_id = ? AND commit_sha = ?'
   )
-  const invalidateStmt = db.prepare<[string]>(
-    'DELETE FROM task_reviews WHERE task_id = ?'
-  )
+  const invalidateStmt = db.prepare<[string]>('DELETE FROM task_reviews WHERE task_id = ?')
 
   return {
     getCached(taskId, commitSha) {
@@ -60,7 +53,7 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
           openingMessage: row.opening_message,
           findings,
           model: row.model,
-          createdAt: row.created_at,
+          createdAt: row.created_at
         }
       } catch (err) {
         log.warn(
@@ -88,6 +81,6 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
 
     invalidate(taskId) {
       invalidateStmt.run(taskId)
-    },
+    }
   }
 }

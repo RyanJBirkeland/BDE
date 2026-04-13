@@ -134,9 +134,12 @@ describe('useGitHubErrorListener', () => {
     const message = 'GitHub API rate limit low: 50/5000 remaining. Resets at 14:30 UTC.'
     errorHandler!({ kind: 'rate-limit', message, status: 403 })
 
-    expect(toast.info).toHaveBeenCalledWith(message, expect.objectContaining({
-      durationMs: expect.any(Number)
-    }))
+    expect(toast.info).toHaveBeenCalledWith(
+      message,
+      expect.objectContaining({
+        durationMs: expect.any(Number)
+      })
+    )
   })
 
   it('fires an error toast for kind=token-expired using the payload message', async () => {

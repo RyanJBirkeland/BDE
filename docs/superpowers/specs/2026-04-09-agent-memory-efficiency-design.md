@@ -45,6 +45,7 @@ Each pipeline task gets an isolated scratchpad directory at:
 ```
 
 **At spawn time** (in `run-agent.ts`, before calling `buildAgentPrompt`):
+
 1. Create the directory if it doesn't exist (`mkdirSync(..., { recursive: true })`)
 2. Read `progress.md` wrapped in try/catch — file-not-found is expected on first run and must not throw
 3. Pass the content as `priorScratchpad` to `buildAgentPrompt` (empty string if not found)
@@ -82,6 +83,7 @@ If a prior scratchpad exists, it is also injected as:
 This section appears BEFORE the task spec so the agent reads historical context before re-reading requirements.
 
 **Scratchpad lifecycle:**
+
 - Created at first spawn
 - Preserved on failure (for retry/revision)
 - Cleared on `discard` action in Code Review Station (worktree cleanup)
@@ -126,6 +128,7 @@ Internally calls `getUserMemory()` to load all active files, then scores and fil
 This is O(keywords × files), runs in <1ms for typical file sets (10-50 files, each <10KB), and requires no API calls.
 
 **What doesn't change:**
+
 - `getUserMemory()` itself is unchanged — it still loads all active files
 - The Settings > Memory UI toggle behavior is unchanged
 - Convention modules (IPC, testing, architecture) are always injected for BDE agents — they're small and always relevant
@@ -135,10 +138,12 @@ This is O(keywords × files), runs in <1ms for typical file sets (10-50 files, e
 ## Files to Change
 
 ### New
+
 - `src/main/agent-system/memory/select-user-memory.ts` — keyword scoring function
 - `src/main/agent-system/memory/__tests__/select-user-memory.test.ts` — unit tests
 
 ### Modified
+
 - `src/main/paths.ts` — add `BDE_TASK_MEMORY_DIR = join(BDE_MEMORY_DIR, 'tasks')` constant
 - `src/main/agent-system/memory/index.ts` — re-export `selectUserMemory`
 - `src/main/agent-manager/prompt-composer.ts`:
@@ -160,6 +165,7 @@ This is O(keywords × files), runs in <1ms for typical file sets (10-50 files, e
 ## How to Test
 
 ### Selective pre-loading
+
 ```bash
 # Unit test the scoring function
 npx vitest run src/main/agent-system/memory/__tests__/select-user-memory.test.ts
@@ -169,6 +175,7 @@ npx vitest run src/main/agent-system/memory/__tests__/select-user-memory.test.ts
 ```
 
 ### Task scratchpad
+
 ```bash
 # Manually: queue a task, let it run, check the scratchpad was created
 ls ~/.bde/memory/tasks/
@@ -178,6 +185,7 @@ ls ~/.bde/memory/tasks/
 ```
 
 ### Full CI
+
 ```bash
 npm run typecheck && npm run test:coverage && npm run lint
 ```

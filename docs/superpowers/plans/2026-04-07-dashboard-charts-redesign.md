@@ -18,22 +18,22 @@
 
 ## Task Overview
 
-| # | Task | Files touched | Depends on |
-|---|---|---|---|
-| 1 | Preflight — confirm no hidden consumers | grep burndown / SuccessRing | — |
-| 2 | Backend: load-sampler service (pure) | `src/main/services/load-sampler.ts` + tests | — |
-| 3 | Backend: throughput SQL split | `src/main/handlers/dashboard-handlers.ts` + tests | — |
-| 4 | Backend: IPC channel + handler + preload | `ipc-channels.ts`, `dashboard-handlers.ts`, `preload/index.ts`, `main/index.ts` | 2, 3 |
-| 5 | Store: `useDashboardDataStore` updates | `stores/dashboardData.ts` + tests | 4 |
-| 6 | Metrics hook extensions | `hooks/useDashboardMetrics.ts` + tests | 5 |
-| 7 | Component: `ThroughputChart` | `components/dashboard/ThroughputChart.tsx` + tests | 5 |
-| 8 | Component: `SuccessRateChart` | `components/dashboard/SuccessRateChart.tsx` + tests | — |
-| 9 | Component: `LoadAverageChart` | `components/dashboard/LoadAverageChart.tsx` + tests | 5 |
-| 10 | Component: `FiresStrip` | `components/dashboard/FiresStrip.tsx` + tests | 6 |
-| 11 | Component: `StatusRail` | `components/dashboard/StatusRail.tsx` + tests | 6 |
-| 12 | Integrate into `DashboardView` | `views/DashboardView.tsx`, `components/dashboard/CenterColumn.tsx`, `components/dashboard/index.ts` | 7–11 |
-| 13 | Delete obsolete code | `SuccessRing.tsx`, `SuccessTrendChart.tsx`, `SpecTypeSuccessRate.tsx`, `FailureBreakdown.tsx`, `StatusCounters.tsx`, `ChartsSection.tsx`, burndown types/functions | 12 |
-| 14 | Verification + screenshots + PR | — | 13 |
+| #   | Task                                     | Files touched                                                                                                                                                      | Depends on |
+| --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| 1   | Preflight — confirm no hidden consumers  | grep burndown / SuccessRing                                                                                                                                        | —          |
+| 2   | Backend: load-sampler service (pure)     | `src/main/services/load-sampler.ts` + tests                                                                                                                        | —          |
+| 3   | Backend: throughput SQL split            | `src/main/handlers/dashboard-handlers.ts` + tests                                                                                                                  | —          |
+| 4   | Backend: IPC channel + handler + preload | `ipc-channels.ts`, `dashboard-handlers.ts`, `preload/index.ts`, `main/index.ts`                                                                                    | 2, 3       |
+| 5   | Store: `useDashboardDataStore` updates   | `stores/dashboardData.ts` + tests                                                                                                                                  | 4          |
+| 6   | Metrics hook extensions                  | `hooks/useDashboardMetrics.ts` + tests                                                                                                                             | 5          |
+| 7   | Component: `ThroughputChart`             | `components/dashboard/ThroughputChart.tsx` + tests                                                                                                                 | 5          |
+| 8   | Component: `SuccessRateChart`            | `components/dashboard/SuccessRateChart.tsx` + tests                                                                                                                | —          |
+| 9   | Component: `LoadAverageChart`            | `components/dashboard/LoadAverageChart.tsx` + tests                                                                                                                | 5          |
+| 10  | Component: `FiresStrip`                  | `components/dashboard/FiresStrip.tsx` + tests                                                                                                                      | 6          |
+| 11  | Component: `StatusRail`                  | `components/dashboard/StatusRail.tsx` + tests                                                                                                                      | 6          |
+| 12  | Integrate into `DashboardView`           | `views/DashboardView.tsx`, `components/dashboard/CenterColumn.tsx`, `components/dashboard/index.ts`                                                                | 7–11       |
+| 13  | Delete obsolete code                     | `SuccessRing.tsx`, `SuccessTrendChart.tsx`, `SpecTypeSuccessRate.tsx`, `FailureBreakdown.tsx`, `StatusCounters.tsx`, `ChartsSection.tsx`, burndown types/functions | 12         |
+| 14  | Verification + screenshots + PR          | —                                                                                                                                                                  | 13         |
 
 ---
 
@@ -46,25 +46,31 @@ This is cheap insurance before we rip things out in task 13. If a consumer exist
 - [ ] **Step 1: Grep for burndown consumers**
 
 Run:
+
 ```bash
 rg -n "burndown|Burndown|burnDown|BurnDown" src/ --type ts --type tsx
 ```
+
 Expected: only matches in `ChartsSection.tsx`, `CenterColumn.tsx`, `DashboardView.tsx`, `stores/dashboardData.ts`, `main/handlers/dashboard-handlers.ts`, `shared/ipc-channels.ts`, `preload/index.ts`, and their tests. Flag any other consumer (e.g. MorningBriefing, unrelated hooks) — if found, STOP and escalate before proceeding.
 
 - [ ] **Step 2: Grep for `SuccessRing`, `SuccessTrendChart`, `SpecTypeSuccessRate`, `FailureBreakdown`, `StatusCounters`**
 
 Run:
+
 ```bash
 rg -n "SuccessRing|SuccessTrendChart|SpecTypeSuccessRate|FailureBreakdown|StatusCounters" src/ --type ts --type tsx
 ```
+
 Expected: only matches inside `components/dashboard/` and its tests, plus `components/dashboard/index.ts` and consumers in `views/DashboardView.tsx` / `components/dashboard/CenterColumn.tsx` / `ChartsSection.tsx`. Anything else → STOP.
 
 - [ ] **Step 3: Verify `started_at` is populated on active tasks**
 
 Run:
+
 ```bash
 rg -n "started_at" src/main/data/sprint-queries.ts src/main/handlers/sprint-local.ts src/shared/types.ts
 ```
+
 Expected: `started_at` is populated by the agent-manager and manual transitions. If there is any path that creates an `active` task without setting `started_at`, the stuck-detection code in Task 6 must guard with a null check. **Document whatever you find** as a comment on the stuck-detection code in Task 6.
 
 - [ ] **Step 4: No commit — this is read-only investigation.** Record findings in your working notes.
@@ -74,6 +80,7 @@ Expected: `started_at` is populated by the agent-manager and manual transitions.
 ### Task 2: Load-sampler service (pure, main-process, no IPC yet)
 
 **Files:**
+
 - Create: `src/main/services/load-sampler.ts`
 - Create: `src/main/services/__tests__/load-sampler.test.ts`
 
@@ -262,6 +269,7 @@ git commit -m "feat(dashboard): add load-sampler service for CPU load average tr
 ### Task 3: Throughput SQL — split success vs failed
 
 **Files:**
+
 - Modify: `src/main/handlers/dashboard-handlers.ts` (function `getCompletionsPerHour` — lines 5-22)
 - Modify: `src/main/handlers/__tests__/dashboard-handlers.test.ts`
 - Modify: `src/shared/ipc-channels.ts` (interface `CompletionBucket` — line 684)
@@ -371,6 +379,7 @@ Expected: errors in `src/renderer/src/stores/dashboardData.ts` about `d.count` m
 - [ ] **Step 7: Temporarily pin renderer to the new shape**
 
 In `src/renderer/src/stores/dashboardData.ts`, inside the `fetchAll` body where `chartData` is computed, change:
+
 ```typescript
 chartData = data.map((d) => ({
   value: d.count,
@@ -378,7 +387,9 @@ chartData = data.map((d) => ({
   label: d.hour
 }))
 ```
+
 to:
+
 ```typescript
 chartData = data.map((d) => ({
   value: d.successCount + d.failedCount,
@@ -386,6 +397,7 @@ chartData = data.map((d) => ({
   label: d.hour
 }))
 ```
+
 This is a temporary bridge so the build stays green after Task 3. Task 5 will replace it properly.
 
 - [ ] **Step 8: Typecheck + tests + lint all green**
@@ -405,6 +417,7 @@ git commit -m "feat(dashboard): split throughput SQL into success/failed counts 
 ### Task 4: System load IPC channel + handler + preload + main-process init
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts` — add `SystemChannels` interface
 - Modify: `src/main/handlers/dashboard-handlers.ts` — add `system:loadAverage` handler inside `registerDashboardHandlers`
 - Modify: `src/preload/index.ts` — add `system.loadAverage()` method
@@ -437,16 +450,19 @@ Then find the type that unions all channel interfaces (search for `DashboardChan
 ```typescript
 export type IpcChannelMap = SomeChannels & OtherChannels & DashboardChannels & ...
 ```
+
 add `& SystemChannels` to the end.
 
 - [ ] **Step 2: Register the handler**
 
 In `src/main/handlers/dashboard-handlers.ts`, add at the top:
+
 ```typescript
 import { getLoadSnapshot } from '../services/load-sampler'
 ```
 
 Inside `registerDashboardHandlers()`, after the existing handlers, add:
+
 ```typescript
 safeHandle('system:loadAverage', async () => {
   return getLoadSnapshot()
@@ -473,17 +489,21 @@ In `src/main/index.ts`, find `app.whenReady().then(() => { … })` (around line 
 ```typescript
 import { startLoadSampler, stopLoadSampler } from './services/load-sampler'
 ```
+
 at the top of the file, and inside `.whenReady`:
+
 ```typescript
 startLoadSampler()
 ```
 
 Also add cleanup on shutdown. Find the existing `app.on('window-all-closed', …)` or `app.on('before-quit', …)` handler and add:
+
 ```typescript
 stopLoadSampler()
 ```
 
 If no suitable shutdown hook exists, add:
+
 ```typescript
 app.on('before-quit', () => {
   stopLoadSampler()
@@ -499,9 +519,11 @@ Expected: all pass. The IPC type must match between main handler and preload.
 
 Run: `npm run dev`
 Open the app, open DevTools console in the renderer, type:
+
 ```javascript
 await window.api.system.loadAverage()
 ```
+
 Expected: returns `{ samples: [...], cpuCount: <number> }` with at least one sample. Close dev server.
 
 - [ ] **Step 7: Commit**
@@ -516,6 +538,7 @@ git commit -m "feat(dashboard): wire system:loadAverage IPC channel and start sa
 ### Task 5: `useDashboardDataStore` updates
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/dashboardData.ts`
 - Modify: `src/renderer/src/stores/__tests__/dashboardData.test.ts`
 
@@ -575,7 +598,9 @@ Add the IPC mock at the top of the test file alongside existing mocks:
 ```typescript
 const mockLoadAverage = vi.fn()
 // ... in the window.api mock:
-system: { loadAverage: mockLoadAverage }
+system: {
+  loadAverage: mockLoadAverage
+}
 ```
 
 Remove any `burndown`-related test assertions.
@@ -631,7 +656,12 @@ In `src/renderer/src/stores/dashboardData.ts`:
      feedEvents,
      prCount,
      successTrendData,
-     cardErrors: mergeCardErrors(state.cardErrors, errors, ['throughput', 'successTrend', 'feed', 'prs']),
+     cardErrors: mergeCardErrors(state.cardErrors, errors, [
+       'throughput',
+       'successTrend',
+       'feed',
+       'prs'
+     ]),
      loading: false,
      lastFetchedAt: Date.now()
    }))
@@ -668,6 +698,7 @@ Actually simpler: **make this task self-contained by using `@ts-expect-error` co
 - In `DashboardView.tsx`: rename destructured `chartData` → `throughputData` and drop `burndownData`.
 - In `CenterColumn.tsx`: update props type, rename `chartData` → `throughputData` (type `CompletionBucket[]`), drop `burndownData`.
 - In `ChartsSection.tsx`: rename `chartData` → `throughputData` (same type), drop `burndownData`. The existing component will temporarily pass the data into `MiniChart` incorrectly — wrap with:
+
   ```typescript
   <MiniChart
     data={throughputData.map(d => ({
@@ -678,6 +709,7 @@ Actually simpler: **make this task self-contained by using `@ts-expect-error` co
     height={120}
   />
   ```
+
   **Add a `// TODO(dashboard-redesign): replaced in Task 12` comment.** Do the same for anywhere `burndownData` was used — replace with an empty `<div>` placeholder carrying the same TODO comment.
 
 - [ ] **Step 6: Full typecheck + tests + lint all green**
@@ -697,6 +729,7 @@ git commit -m "refactor(dashboard): store uses throughputData and loadData; remo
 ### Task 6: `useDashboardMetrics` extensions
 
 **Files:**
+
 - Modify: `src/renderer/src/hooks/useDashboardMetrics.ts`
 - Create: `src/renderer/src/hooks/__tests__/useDashboardMetrics.test.ts` (if missing)
 
@@ -769,11 +802,13 @@ Expected: FAIL.
 In `src/renderer/src/hooks/useDashboardMetrics.ts`:
 
 1. Near the top, add:
+
    ```typescript
    export const DEFAULT_STUCK_MS = 60 * 60 * 1000 // 1h — matches agent-manager watchdog
    ```
 
 2. Import `loadData` and `successTrendData` from `useDashboardDataStore`:
+
    ```typescript
    import { useDashboardDataStore } from '../stores/dashboardData'
    // inside the hook:
@@ -781,9 +816,11 @@ In `src/renderer/src/hooks/useDashboardMetrics.ts`:
      useShallow((s) => ({ loadData: s.loadData, successTrendData: s.successTrendData }))
    )
    ```
+
    (Check if `useShallow` is already imported; if not, add the import from `zustand/react/shallow`.)
 
 3. Add `stuckCount` memo:
+
    ```typescript
    const stuckCount = useMemo(() => {
      return tasks.filter((t) => {
@@ -794,9 +831,11 @@ In `src/renderer/src/hooks/useDashboardMetrics.ts`:
      }).length
    }, [tasks, now])
    ```
+
    (Reuse the existing `now` state variable that polls every 60s.)
 
 4. Add `loadSaturated` memo:
+
    ```typescript
    const loadSaturated = useMemo(() => {
      if (!loadData || loadData.samples.length === 0) return null
@@ -807,6 +846,7 @@ In `src/renderer/src/hooks/useDashboardMetrics.ts`:
    ```
 
 5. Add `successRate7dAvg` and `successRateWeekDelta` memos:
+
    ```typescript
    const { successRate7dAvg, successRateWeekDelta } = useMemo(() => {
      const avg = (arr: number[]): number | null => {
@@ -820,8 +860,7 @@ In `src/renderer/src/hooks/useDashboardMetrics.ts`:
      const prior7Avg = avg(prior7 as number[])
      return {
        successRate7dAvg: last7Avg,
-       successRateWeekDelta:
-         last7Avg != null && prior7Avg != null ? last7Avg - prior7Avg : null
+       successRateWeekDelta: last7Avg != null && prior7Avg != null ? last7Avg - prior7Avg : null
      }
    }, [successTrendData])
    ```
@@ -859,6 +898,7 @@ git commit -m "feat(dashboard): extend metrics with stuckCount, loadSaturated, w
 ### Task 7: `ThroughputChart` component
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/ThroughputChart.tsx`
 - Create: `src/renderer/src/components/dashboard/__tests__/ThroughputChart.test.tsx`
 
@@ -1153,6 +1193,7 @@ git commit -m "feat(dashboard): add ThroughputChart with real hour axis and stac
 ### Task 8: `SuccessRateChart` component
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/SuccessRateChart.tsx`
 - Create: `src/renderer/src/components/dashboard/__tests__/SuccessRateChart.test.tsx`
 
@@ -1249,6 +1290,7 @@ git commit -m "feat(dashboard): add SuccessRateChart with fixed 0-100% axis and 
 ### Task 9: `LoadAverageChart` component
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/LoadAverageChart.tsx`
 - Create: `src/renderer/src/components/dashboard/__tests__/LoadAverageChart.test.tsx`
 
@@ -1363,6 +1405,7 @@ git commit -m "feat(dashboard): add LoadAverageChart for CPU load visualization"
 ### Task 10: `FiresStrip` component
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/FiresStrip.tsx`
 - Create: `src/renderer/src/components/dashboard/__tests__/FiresStrip.test.tsx`
 
@@ -1464,6 +1507,7 @@ git commit -m "feat(dashboard): add FiresStrip consolidating failed/blocked/stuc
 ### Task 11: `StatusRail` component
 
 **Files:**
+
 - Create: `src/renderer/src/components/dashboard/StatusRail.tsx`
 - Create: `src/renderer/src/components/dashboard/__tests__/StatusRail.test.tsx`
 
@@ -1517,6 +1561,7 @@ describe('StatusRail', () => {
 Create `src/renderer/src/components/dashboard/StatusRail.tsx`. Structure: a vertical flex column of 4 compact tiles (Active, Queued, Done, Tokens 24h) + a "New Task" button at the bottom. Each tile is a `<button>` wrapper with `data-role="rail-tile"` and a meaningful `aria-label`. Use a `formatTokensCompact` helper — copy from `useDashboardMetrics.ts` or extract into a shared util if you prefer (don't cross that boundary unless the function grows).
 
 Signature:
+
 ```typescript
 interface StatusRailProps {
   stats: DashboardStats
@@ -1542,6 +1587,7 @@ git commit -m "feat(dashboard): add StatusRail replacing 8-card StatusCounters"
 ### Task 12: Integration — rewire `DashboardView` + `CenterColumn` + `ActivitySection` + 5s load polling
 
 **Files:**
+
 - Modify: `src/renderer/src/views/DashboardView.tsx`
 - Modify: `src/renderer/src/components/dashboard/CenterColumn.tsx`
 - Modify: `src/renderer/src/components/dashboard/ActivitySection.tsx` — **remove the two `<FailureBreakdown />` and `<SpecTypeSuccessRate />` renders along with their imports**. The "Recent Completions" card, "Tokens / Run" card, and "Tokens 24h" card stay. These two children are subsumed by the FiresStrip and removed from the dashboard per spec. (Task 1 preflight confirmed these are the only consumers of those components.)
@@ -1550,6 +1596,7 @@ git commit -m "feat(dashboard): add StatusRail replacing 8-card StatusCounters"
 - [ ] **Step 1: Update `components/dashboard/index.ts` to export the new components**
 
 Add:
+
 ```typescript
 export { ThroughputChart } from './ThroughputChart'
 export { SuccessRateChart } from './SuccessRateChart'
@@ -1557,11 +1604,13 @@ export { LoadAverageChart } from './LoadAverageChart'
 export { FiresStrip } from './FiresStrip'
 export { StatusRail } from './StatusRail'
 ```
+
 (Leave old exports in place for now — Task 13 removes them.)
 
 - [ ] **Step 2: Rewrite `CenterColumn.tsx`**
 
 The new center column structure is:
+
 ```jsx
 <div className="dashboard-col dashboard-col--center">
   <NeonCard accent="cyan" title="Pipeline" icon={<Activity size={12} />}>
@@ -1599,6 +1648,7 @@ Drop the old Attention card (moved to Fires strip, rendered at the grid level in
 Drop the `ChartsSection` import entirely.
 
 New prop shape for `CenterColumn`:
+
 ```typescript
 interface CenterColumnProps {
   stats: DashboardStats
@@ -1618,9 +1668,18 @@ interface CenterColumnProps {
 Changes inside `DashboardView.tsx`:
 
 1. Destructure the new fields from `useDashboardDataStore`:
+
    ```typescript
-   const { throughputData, loadData, successTrendData, feedEvents, cardErrors, loading, lastFetchedAt } =
-     useDashboardDataStore(useShallow((s) => ({
+   const {
+     throughputData,
+     loadData,
+     successTrendData,
+     feedEvents,
+     cardErrors,
+     loading,
+     lastFetchedAt
+   } = useDashboardDataStore(
+     useShallow((s) => ({
        throughputData: s.throughputData,
        loadData: s.loadData,
        successTrendData: s.successTrendData,
@@ -1628,20 +1687,25 @@ Changes inside `DashboardView.tsx`:
        cardErrors: s.cardErrors,
        loading: s.loading,
        lastFetchedAt: s.lastFetchedAt
-     })))
+     }))
+   )
    ```
 
 2. Get `fetchLoad` and set up 5s polling with `useBackoffInterval` (BDE convention — reviewer note):
+
    ```typescript
    import { useBackoffInterval } from '../hooks/useBackoffInterval'
-   import { POLL_LOAD_AVERAGE } from '../lib/constants'  // new constant
+   import { POLL_LOAD_AVERAGE } from '../lib/constants' // new constant
    // ...
    const fetchLoad = useDashboardDataStore((s) => s.fetchLoad)
-   useEffect(() => { fetchLoad() }, [fetchLoad])
+   useEffect(() => {
+     fetchLoad()
+   }, [fetchLoad])
    useBackoffInterval(fetchLoad, POLL_LOAD_AVERAGE)
    ```
 
 3. Add the new constant in `src/renderer/src/lib/constants.ts`:
+
    ```typescript
    export const POLL_LOAD_AVERAGE = 5_000 // 5s
    ```
@@ -1649,6 +1713,7 @@ Changes inside `DashboardView.tsx`:
 4. Use `useDashboardMetrics` destructured with the new fields (`stuckCount`, `loadSaturated`, `successRate7dAvg`, `successRateWeekDelta`).
 
 5. Insert `<FiresStrip>` at the top of the dashboard grid (inside the `tasks.length > 0` branch, above the 3-column grid):
+
    ```typescript
    <FiresStrip
      failed={stats.failed}
@@ -1668,6 +1733,7 @@ Changes inside `DashboardView.tsx`:
    ```
 
 6. Replace `<StatusCounters>` with `<StatusRail>`:
+
    ```typescript
    <StatusRail
      stats={stats}
@@ -1684,11 +1750,12 @@ Changes inside `DashboardView.tsx`:
 - [ ] **Step 4: Update `DashboardView.test.tsx` as needed**
 
 The existing dashboard view test uses a lot of mock setup. Update mocks for:
+
 - `useDashboardDataStore` — new fields (`throughputData`, `loadData`, drop `chartData`/`burndownData`)
 - `useDashboardMetrics` — new return fields
 - Replace `StatusCounters` / `ChartsSection` mocks with `StatusRail` / new chart component mocks
 
-Keep the test focused on *integration shape* (renders, fires strip visibility, rail tiles present), not each chart's internals.
+Keep the test focused on _integration shape_ (renders, fires strip visibility, rail tiles present), not each chart's internals.
 
 - [ ] **Step 5: Run tests**
 
@@ -1704,6 +1771,7 @@ Expected: all pass. (Old component tests for `ChartsSection`, `SuccessRing`, `Su
 
 Run: `npm run dev`
 Verify:
+
 - Dashboard renders without runtime errors.
 - Throughput chart shows real bars with hour labels.
 - Success rate chart has 0-100% scale.
@@ -1728,6 +1796,7 @@ git commit -m "feat(dashboard): integrate new charts, Fires strip, and StatusRai
 **Scope note:** The backend data pipelines for `getSuccessRateBySpecType` (sprint-queries → sprint-service → sprint-task-repository → sprint-local IPC handler → preload bridge) and `getFailureBreakdown` (sprint-local IPC handler → preload bridge) are **intentionally left in place** as dead code for this PR. Removing them is a separate scope that touches repository/service layers and their tests. This PR is purely a dashboard redesign; backend cleanup can be a follow-up. Only the renderer-side components and their direct dependencies (burndown handler, burndown IPC type, burndown preload method) are removed here.
 
 **Files:**
+
 - Delete: `src/renderer/src/components/dashboard/SuccessRing.tsx`
 - Delete: `src/renderer/src/components/dashboard/SuccessTrendChart.tsx`
 - Delete: `src/renderer/src/components/dashboard/SpecTypeSuccessRate.tsx`
@@ -1767,30 +1836,36 @@ Edit `src/renderer/src/components/dashboard/index.ts` and remove export lines fo
 - [ ] **Step 3: Remove burndown from backend**
 
 In `src/main/handlers/dashboard-handlers.ts`:
+
 - Delete the `getTaskBurndown` function.
 - Remove the `safeHandle('sprint:burndown', ...)` registration.
 
 In `src/shared/ipc-channels.ts`:
+
 - Delete the `BurndownBucket` interface.
 - Remove `'sprint:burndown'` from `DashboardChannels`.
 
 In `src/preload/index.ts`:
+
 - Remove `burndown: () => typedInvoke('sprint:burndown')` from the `dashboard` section.
 
 In `src/main/handlers/__tests__/dashboard-handlers.test.ts`:
+
 - Remove any remaining `getTaskBurndown` tests.
 
 - [ ] **Step 4: Remove any leftover `burndownData` references**
 
 Run:
+
 ```bash
 rg -n "burndown|Burndown" src/ --type ts --type tsx
 ```
+
 Expected: **zero matches** (or only in changelog/docs). Fix any stragglers.
 
 - [ ] **Step 5: Remove any leftover `avgDuration`/`avgTaskDuration` references**
 
-In `useDashboardMetrics.ts`, now that no consumer uses these, remove the computation and the return fields entirely (along with the `localAgents` import *if* nothing else uses it — check `tokenTrendData` which does still use `localAgents`, so the import likely stays).
+In `useDashboardMetrics.ts`, now that no consumer uses these, remove the computation and the return fields entirely (along with the `localAgents` import _if_ nothing else uses it — check `tokenTrendData` which does still use `localAgents`, so the import likely stays).
 
 - [ ] **Step 6: Typecheck + tests + lint**
 
@@ -1811,9 +1886,11 @@ git commit -m "chore(dashboard): remove obsolete charts, burndown, and status co
 - [ ] **Step 1: Full verification**
 
 Run:
+
 ```bash
 npm run typecheck && npm test && npm run lint
 ```
+
 Expected: all green, no warnings introduced. If coverage enforcement flags a file, investigate whether new tests are needed — don't silence thresholds.
 
 - [ ] **Step 2: E2E check (if applicable)**
@@ -1830,6 +1907,7 @@ Expected: production build succeeds.
 
 Run: `npm run dev`
 Capture screenshots of:
+
 1. Dashboard in healthy state (Fires strip hidden)
 2. Dashboard with Fires strip visible (either induce failures locally or use mocked data)
 3. Throughput chart with real data
@@ -1851,6 +1929,7 @@ Use `gh pr create` with the screenshots embedded in the body (per CLAUDE.md's "U
 PR title: `feat(dashboard): redesign charts with real axes, load tracking, and Fires strip`
 
 PR body must include:
+
 - Summary of the redesign
 - Before/after screenshots (ASCII art fallback if the app won't render)
 - Test plan checklist
@@ -1859,6 +1938,7 @@ PR body must include:
 - [ ] **Step 7: Clean up worktree**
 
 After the PR is merged:
+
 ```bash
 git worktree remove ~/worktrees/BDE/dashboard-charts-redesign
 ```

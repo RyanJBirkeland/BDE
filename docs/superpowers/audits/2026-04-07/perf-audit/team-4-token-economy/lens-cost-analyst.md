@@ -51,7 +51,7 @@ agent_events:
 ## Per-task totals (top 20 by input tokens)
 
 | sprint_task_id                       | runs | tokens_in | tokens_out | cost_usd |
-|--------------------------------------|------|-----------|------------|----------|
+| ------------------------------------ | ---- | --------- | ---------- | -------- |
 | c7c9521aa0bf06079b7096d0234ecdc4     | 1    | 20099     | 27973      | 3.05     |
 | 90478ecf-1d7e-48e8-8e4a-9a6519385653 | 1    | 8009      | 11476      | 0.70     |
 | 0eb8a62d-01a4-4409-8e69-a941532f50da | 1    | 7262      | 24364      | 1.82     |
@@ -78,31 +78,31 @@ agent_events:
 All 430 runs with token data are from `source='bde'` (pipeline/automated). `source='adhoc'` has 0 tracked runs in this snapshot.
 
 | source | n   | avg_in | avg_out | avg_cost | avg_duration_ms |
-|--------|-----|--------|---------|----------|-----------------|
+| ------ | --- | ------ | ------- | -------- | --------------- |
 | bde    | 430 | 207.9  | 5060.6  | 1.17     | (NULL)          |
 
 ## Per-model averages
 
 All 430 runs use `claude-sonnet-4-5`.
 
-| model              | count | avg_in | avg_out | avg_cost |
-|--------------------|-------|--------|---------|----------|
-| claude-sonnet-4-5  | 430   | 207.9  | 5060.6  | 1.17     |
+| model             | count | avg_in | avg_out | avg_cost |
+| ----------------- | ----- | ------ | ------- | -------- |
+| claude-sonnet-4-5 | 430   | 207.9  | 5060.6  | 1.17     |
 
 ## Recent 10 successful runs
 
-| id (short)   | source | model              | sprint_task_id (short) | tokens_in | tokens_out | cost_usd |
-|--------------|--------|--------------------|------------------------|-----------|------------|----------|
-| 447d555c     | bde    | claude-sonnet-4-5  | f6ff1342               | 258       | 12008      | 1.02     |
-| 8c7bd7ce     | bde    | claude-sonnet-4-5  | 6ec14634               | 378       | 18597      | 1.36     |
-| fc68c983     | bde    | claude-sonnet-4-5  | 881e73e9               | 250       | 12051      | 0.90     |
-| 2a879fa5     | bde    | claude-sonnet-4-5  | f206721f               | 10        | 239        | 0.80     |
-| 2fcb6cbd     | bde    | claude-sonnet-4-5  | e4d88a5a               | 10        | 296        | 1.06     |
-| 3765f8ce     | bde    | claude-sonnet-4-5  | 4c6298bd               | 10        | 425        | 1.58     |
-| 1e61454b     | bde    | claude-sonnet-4-5  | 26f07c2f               | 10        | 112        | 0.73     |
-| e8dc7e44     | bde    | claude-sonnet-4-5  | c50ad114               | 10        | 339        | 1.06     |
-| 1fcdc27d     | bde    | claude-sonnet-4-5  | 3a963744               | 10        | 201        | 0.58     |
-| 0a5926db     | bde    | claude-sonnet-4-5  | 070cbd69               | 10        | 324        | 1.10     |
+| id (short) | source | model             | sprint_task_id (short) | tokens_in | tokens_out | cost_usd |
+| ---------- | ------ | ----------------- | ---------------------- | --------- | ---------- | -------- |
+| 447d555c   | bde    | claude-sonnet-4-5 | f6ff1342               | 258       | 12008      | 1.02     |
+| 8c7bd7ce   | bde    | claude-sonnet-4-5 | 6ec14634               | 378       | 18597      | 1.36     |
+| fc68c983   | bde    | claude-sonnet-4-5 | 881e73e9               | 250       | 12051      | 0.90     |
+| 2a879fa5   | bde    | claude-sonnet-4-5 | f206721f               | 10        | 239        | 0.80     |
+| 2fcb6cbd   | bde    | claude-sonnet-4-5 | e4d88a5a               | 10        | 296        | 1.06     |
+| 3765f8ce   | bde    | claude-sonnet-4-5 | 4c6298bd               | 10        | 425        | 1.58     |
+| 1e61454b   | bde    | claude-sonnet-4-5 | 26f07c2f               | 10        | 112        | 0.73     |
+| e8dc7e44   | bde    | claude-sonnet-4-5 | c50ad114               | 10        | 339        | 1.06     |
+| 1fcdc27d   | bde    | claude-sonnet-4-5 | 3a963744               | 10        | 201        | 0.58     |
+| 0a5926db   | bde    | claude-sonnet-4-5 | 070cbd69               | 10        | 324        | 1.10     |
 
 ## Aggregate stats
 
@@ -114,6 +114,7 @@ All 430 runs use `claude-sonnet-4-5`.
 - **Failed runs:** 147 ($34.99, 5.7% of spend)
 
 **Input token percentiles:**
+
 - p25: 0 tokens
 - p50: 10 tokens
 - p75: 130 tokens
@@ -122,6 +123,7 @@ All 430 runs use `claude-sonnet-4-5`.
 - avg: 207.9 tokens
 
 **Output token statistics:**
+
 - min: 0
 - avg: 5,061
 - max: 54,871
@@ -131,36 +133,43 @@ All 430 runs use `claude-sonnet-4-5`.
 ## Task reconstructions (5 real tasks)
 
 ### Task 1: CSS Pro Light theme variables (most expensive input: 20,099 tokens)
+
 - **sprint_tasks row:** id=`c7c9521aa0bf06079b7096d0234ecdc4`, title="CSS: Pro Light theme variables (IntelliJ palette + compact density)", status=`done`
 - **agent_runs row:** id=`a7790045-13a9-457e-90ca-fbe54620238e`, tokens_in=20099, tokens_out=27973, cost_usd=3.05, started=2026-04-05T10:03:31.336Z, finished=2026-04-05T10:14:20.516Z, output/input=1.4×
 - **What made it expensive:** Largest single input prompt in the snapshot. The bulk of input tokens are the system prompt (BDE conventions, IPC protocols, hard rules, pre-commit verification, testing requirements, CI constraints). Input dominated by context, not by the actual task content.
 
 ### Task 2: Settings UI – 5-theme selector (high output: 52,405 tokens)
+
 - **sprint_tasks row:** id=`882c2a27bf3fec5912d4a90223eb495c`, title="Settings UI: 5-theme selector with Fun/Professional groups", status=`done`
 - **agent_runs row:** id=`6dcd3e9a-bb3e-4426-a0c0-a6b91d2eca5c`, tokens_in=1282, tokens_out=52405, cost_usd=5.71, output/input=40.9×
 - **What made it expensive:** Multi-file generation. Generated React components, Zustand store, CSS modules, and 13 test cases in one shot. Output-heavy.
 
 ### Task 3: Agent Intelligence – Context propagation (extreme ratio: 112.9×)
+
 - **sprint_tasks row:** id=`139b725b-fbbf-436c-9f88-12cbaa98e639`, title="Agent Intelligence: Context propagation between dependent tasks", status=`done`
 - **agent_runs row:** id=`8e7ac2fc-5103-4633-af3e-e4188c10c592`, tokens_in=266, tokens_out=30020, cost_usd=7.79, output/input=112.9×
 - **What made it expensive:** Architecture exploration + implementation in a single run. Read existing context-propagation code, designed dependency resolution, wrote a state machine, generated documentation and multiple implementation files with inline comments. The 113:1 ratio is the most extreme in the snapshot.
 
 ### Task 4: Planner – import epics from markdown
+
 - **sprint_tasks row:** id=`0d8ec7ed-ba7e-4023-a9f4-735d6593dd95`, title="Planner: import epics from plan markdown docs", status=`done`
 - **agent_runs row:** id=`c86ce3fe-c74e-4330-b9eb-febd68c0f646`, tokens_in=3426, tokens_out=32975, cost_usd=3.49, output/input=9.6×
 - **What made it expensive:** Parser development. Read markdown specs, analyzed existing epic-import logic, built a parser, generated test cases with sample data, wrote error handling.
 
 ### Task 5: Agent Intelligence – Per-task model selection (highest single-run cost: $9.47)
+
 - **agent_runs row:** id=`6e1d81b0-9fca-4726-b9bd-fba3f162f8d4`, sprint_task_id=`c3a77e47-9766-4fe7-a2a2-00a01a7c0817` (task record deleted), tokens_in=408, tokens_out=32213, cost_usd=9.47, output/input=79×
 - **What made it expensive:** Comprehensive system implementation in one turn — model-selection logic, cost-budgeting framework, retry strategy with learning, failure-diagnostics UI, worktree-checkpoint design. Huge generation across multiple components.
 
 ## Findings
 
 ## F-t4-cost-1: Output tokens drive 96% of cost; input optimization has diminishing returns
+
 **Severity:** High
 **Category:** Tokens
 **Location:** All runs; aggregate analysis (avg 5061 output vs 207.9 input per run)
 **Evidence:**
+
 - Total: 89,379 input (3.9%) vs 2,176,060 output (96.1%)
 - Sonnet-4.5 cost formula approximates output share at ~96% of total spend
 - 10% output reduction → ~$21.76 saved; 10% input reduction → ~$4.37 saved
@@ -174,10 +183,12 @@ All 430 runs use `claude-sonnet-4-5`.
 **Confidence:** High
 
 ## F-t4-cost-2: Successful tasks cost 7× more than failed tasks (output dominates)
+
 **Severity:** High
 **Category:** Tokens
 **Location:** All runs by status — done=283 @ $1.65 avg, failed=147 @ $0.24 avg
 **Evidence:**
+
 - done: avg 309.4 input / 7363.6 output / $1.65
 - failed: avg 12.4 input / 626.9 output / $0.24
 - Total done spend: $467.64; total failed spend: $34.99
@@ -191,10 +202,12 @@ All 430 runs use `claude-sonnet-4-5`.
 **Confidence:** High
 
 ## F-t4-cost-3: Output/input ratio ranges 1.4× to 112.9×; extreme ratios cluster on multi-file generation
+
 **Severity:** Medium
 **Category:** Tokens
 **Location:** Tasks `882c2a27...` (40.9×), `139b725b...` (112.9×), `6e1d81b0...` (79×)
 **Evidence:**
+
 - 7 runs with cost > $5 all have output/input ratios of 27–113×
 - CSS theme task (20K input) has 1.4× ratio — input-heavy analysis, modest generation
 - Settings UI (1.3K input) has 40.9× ratio — generation-heavy
@@ -208,10 +221,12 @@ All 430 runs use `claude-sonnet-4-5`.
 **Confidence:** Medium
 
 ## F-t4-cost-4: 30% of runs have 0 input tokens; 29% have exactly 10 — verify these are real work
+
 **Severity:** Medium
 **Category:** Tokens
 **Location:** Input percentile distribution
 **Evidence:**
+
 - 128 runs (30%) have 0 input tokens
 - 123 runs (29%) have exactly 10 input tokens
 - Only 20 runs have > 1K input tokens
@@ -224,10 +239,12 @@ All 430 runs use `claude-sonnet-4-5`.
 **Confidence:** Medium
 
 ## F-t4-cost-5: Top 5 single-run costs ($23–$33) cluster on Agent Intelligence + Settings UI work
+
 **Severity:** Medium
 **Category:** Tokens
 **Location:** Top 5 most expensive single runs (all `done` status)
 **Evidence:**
+
 - Agent Intelligence (per-task model): $9.47
 - Agent Intelligence (context propagation): $7.79
 - Agent Intelligence (retry + diagnostics): $6.71

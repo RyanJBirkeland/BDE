@@ -17,13 +17,7 @@ import { getAllSkills } from '../agent-system/skills'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { buildReviewerPrompt } from './prompt-composer-reviewer'
 
-export type AgentType =
-  | 'pipeline'
-  | 'assistant'
-  | 'adhoc'
-  | 'copilot'
-  | 'synthesizer'
-  | 'reviewer'
+export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
 
 export interface BuildPromptInput {
   agentType: AgentType

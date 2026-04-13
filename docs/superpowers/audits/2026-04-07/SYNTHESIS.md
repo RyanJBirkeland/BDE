@@ -1,7 +1,7 @@
 # BDE Quality Audit — Synthesis
 
 **Date:** 2026-04-07
-**Scope:** Pre-launch quality + product-completeness audit ("does it work *well*?")
+**Scope:** Pre-launch quality + product-completeness audit ("does it work _well_?")
 **Method:** 3 teams × 5 personas = 15 independent reports. Findings below are deduped and confidence-scored by how many personas/teams flagged the same issue.
 
 **Total findings across 15 reports:** ~293 (roughly 40 CRITICAL, 130 MAJOR, 120 MINOR).
@@ -30,30 +30,35 @@ Ranked by **confidence × severity × visibility** (roughly: what would a public
 ### P0 — Demo Killers (fix before anyone else sees the app)
 
 **1. Rewrite the "Create First Task" sample so it runs unmodified.**
+
 - Ships with `REPLACE_WITH_ENTRY_FILE` placeholder. First-run onboarding leads straight into it. Agent will thrash or fail. The 60-second demo dies here.
 - Confidence: 1 persona (Gamma Marketing) but severity=critical because it's the first thing every new user touches.
 - Files: `src/renderer/src/components/onboarding/steps/sample-first-task.ts:35-38`
 - Fix: Ship a task with a literal repo-relative path (e.g., "Add a comment to README.md").
 
 **2. Kill the legacy Supabase onboarding screen.**
+
 - `Onboarding.tsx` still checks for `supabase.url` and blocks first launch after the new `OnboardingWizard` finishes. Users do onboarding twice in two different visual styles, and the second one references a backend that no longer exists.
 - Confidence: Gamma PM (critical)
 - Files: `src/renderer/src/App.tsx:419-432`, `src/renderer/src/components/Onboarding.tsx`
 - Fix: Delete `Onboarding.tsx`. Have `OnboardingWizard.DoneStep` call `onReady` directly.
 
 **3. Fix README factual errors.**
+
 - Wrong clone URL (`rbtechbot/bde` vs `RyanJBirkeland/BDE`), advertises "cost charts" after migration to tokens, claims "86 typed channels"/"8 views"/"17 handler modules" (actuals: ~144/9/23), missing Task Planner from Views table, missing Ship It entirely, Workbench shortcut listed as "—" (actually ⌘0).
 - Confidence: Bravo Marketing + Gamma Marketing (both critical)
 - Files: `README.md` (many lines)
 - Fix: Canonical clone URL sweep, regenerate counts, add Ship It feature section with screenshot, add Task Planner row to the Views table.
 
 **4. Settings "About" tab is unreachable.**
+
 - Built, imported, in `SECTION_MAP` and `SECTION_META`, but not in the `SECTIONS` array that renders the sidebar. Meanwhile every doc promises it exists.
 - Confidence: Bravo PM + Gamma PM + Gamma Marketing (three teams)
 - Files: `src/renderer/src/views/SettingsView.tsx:35-46`
 - Fix: Add `{ id: 'about', label: 'About', icon: Info, category: 'App' }` to `SECTIONS`. One-line fix, three-team confidence.
 
 **5. WebhooksSection is a 293-line orphan.**
+
 - Complete settings panel exists, never imported anywhere except its own test. Webhooks are instead inlined into Agent Manager settings, where nobody will look for them.
 - Confidence: Bravo PM + Gamma PM (critical in both)
 - Files: `src/renderer/src/components/settings/WebhooksSection.tsx`, `AgentManagerSection.tsx:332`
@@ -62,6 +67,7 @@ Ranked by **confidence × severity × visibility** (roughly: what would a public
 ### P1 — High-confidence cross-cutting fixes
 
 **6. Settle the naming war — pick one name per concept and sweep.**
+
 - The three-teams-high-confidence finding of the whole audit.
 - **"Sprint Pipeline" vs "Task Pipeline"** → pick one (recommendation across all reports: **Task Pipeline**, since the UI already uses it and "sprint" implies agile ceremony BDE doesn't do)
 - **"Epic" / "Task Group" / "Group" / "Sprint"** → the data model has BOTH `group_id` AND `sprint_id` on `SprintTask`, components use "Epic," stores use "groups," sidebar says "Task Planner." **Pick "Epic"** (most vivid) and rename the type, store, view, and drop the unused column.
@@ -71,6 +77,7 @@ Ranked by **confidence × severity × visibility** (roughly: what would a public
 - Files: many — start with `view-registry.ts`, `README.md`, `BDE_FEATURES.md`, `WelcomeStep.tsx`, `sprint-pipeline-neon.css`, `taskGroups.ts` → `epics.ts`.
 
 **7. Dedupe the pre-commit verification block across ALL agent prompts.**
+
 - A pipeline agent currently reads the pre-commit rule **4–5 times** per spawn: (1) `UNIVERSAL_PREAMBLE` (line 57-68), (2) `DEFINITION_OF_DONE` (line 122), (3) auto-loaded `CLAUDE.md` MANDATORY section, (4) `testing-patterns.ts` memory module (which contradicts the others by saying `npm run test:coverage` not `npm test`), (5) the `Test Coverage` task template (which hardcodes threshold numbers the memory module explicitly forbids).
 - The preamble hardcodes `"2563+ tests"` which violates the memory module's own rule about hardcoding test counts.
 - The preamble forces `npm install` as the FIRST action "before reading any files" — but then tells the agent to "read this entire specification" immediately after.
@@ -79,12 +86,14 @@ Ranked by **confidence × severity × visibility** (roughly: what would a public
 - Fix: One canonical pre-commit block (probably in the preamble). Remove the duplicates. Drop `2563+`. Use `npm run test:coverage` consistently. Move `npm install` rule out of `UNIVERSAL_PREAMBLE` and into a `pipeline`-only appendix (copilot/synthesizer have no Bash tool and literally cannot obey it).
 
 **8. Fix the `TaskTerminalService` wiring — four setters is too fragile.**
-- `_onStatusTerminal` is a module-level `let` mutated via `setOnStatusTerminal()` in **four separate files** (`sprint-local.ts`, `git-handlers.ts`, `review.ts`, `sprint-pr-poller.ts`). Each has its own "if (!_onStatusTerminal) logger.warn(...)" fallback. Forgetting to wire one silently breaks dependency resolution forever — the two `warn` comments already in code prove this has happened before.
+
+- `_onStatusTerminal` is a module-level `let` mutated via `setOnStatusTerminal()` in **four separate files** (`sprint-local.ts`, `git-handlers.ts`, `review.ts`, `sprint-pr-poller.ts`). Each has its own "if (!\_onStatusTerminal) logger.warn(...)" fallback. Forgetting to wire one silently breaks dependency resolution forever — the two `warn` comments already in code prove this has happened before.
 - Confidence: Alpha Arch + Bravo Arch + Gamma Arch (all three teams, all CRITICAL)
 - Files: `src/main/handlers/sprint-local.ts:75-79,188-197`, `src/main/handlers/git-handlers.ts:136-140`, `src/main/handlers/review.ts:27-31`, `src/main/sprint-pr-poller.ts`
 - Fix: Replace the four setters with a single `registerXxxHandlers(deps)` pattern that takes `terminalService` as a required constructor arg. Or make `updateTask()` itself detect terminal transitions and fire the hook so callers can't forget.
 
 **9. Route Source Control, Code Review actions, and synthesizer through the real abstractions.**
+
 - Repository pattern (`ISprintTaskRepository`) is documented as "always through this" but **45 files import `sprint-queries` directly**, including `sprint-local.ts` which simultaneously imports from `sprint-queries`, `sprint-service`, AND constructs the repository. Three parallel data-access layers.
 - `spec-synthesizer.ts` bypasses `buildAgentPrompt` entirely — `synthesizerPersonality` is dead code.
 - Four other prompts (`sprint-spec.ts`, `spec-semantic-check.ts`, `review-summary.ts`, `review-summary.ts`) also bypass the composer with hand-written "You are an expert..." strings.
@@ -93,6 +102,7 @@ Ranked by **confidence × severity × visibility** (roughly: what would a public
 
 **10. Promote hidden marquee features in the README and UI.**
 Flagged independently by all three marketing personas:
+
 - **Ship It** — single best demo moment, rocket button, not in README, Mermaid diagram doesn't show it, onboarding doesn't mention it.
 - **Dev Playground** — two README sentences, zero screenshots, hidden inside "Advanced" fold in Workbench. Should be the marquee.
 - **Promote to Code Review** — just shipped in commit `3b2f8763`, only visible via a 10px footnote in AgentsView, no docs.
@@ -106,6 +116,7 @@ Flagged independently by all three marketing personas:
 ### P2 — High-leverage senior-dev friction
 
 **11. Scope Cmd+Enter to the Workbench form; fix the Code Review action loop.**
+
 - Cmd+Enter in Workbench is a global `window.addEventListener` — fires from anywhere in tear-off windows, IDE panels, anywhere. Can accidentally queue half-finished tasks.
 - Every Code Review action (Ship It, Merge, Revise, Discard, Rebase) calls `loadData()` + `selectTask(null)`, dumping the user back to "no task selected" mid-flow and triggering a full sprint task refetch. Defeats the j/k navigation entirely.
 - Confidence: Alpha SD (critical), Alpha Arch, Gamma SD
@@ -113,41 +124,48 @@ Flagged independently by all three marketing personas:
 - Fix: Scope the Workbench listener to `containerRef`. After a Review action, advance to the next review task in the queue; patch the single task locally, don't refetch.
 
 **12. Fix the local merge conflict dead-end.**
+
 - `mergeLocally` and `rebase` return "conflicts detected" with no file list, no resolution UI, no "Open in IDE" link. The user is dumped to terminal — violating the entire product promise.
 - Confidence: Alpha PM + Alpha SD (both CRITICAL)
 - Files: `src/renderer/src/components/code-review/ReviewActions.tsx:101-108,191-198`, IPC handler behind it
 - Fix: Return `{ success: false, conflictFiles: string[] }`. Render an inline conflict panel with per-file "Open in IDE" buttons and a "Try rebasing first" CTA when freshness is `stale`.
 
 **13. Source Control has no Pull, no Fetch, no Amend, no per-file Discard.**
+
 - `git:pull` and `git:fetch` IPC channels don't exist at all. Meanwhile the empty state helpfully says "pull updates to see changes here."
 - Confidence: Bravo PM + Bravo SD (both CRITICAL)
 - Files: `src/main/handlers/git-handlers.ts`, `src/renderer/src/components/git-tree/CommitBox.tsx`
 - Fix: Add the IPC channels, surface buttons next to Push. Add "Amend last commit" toggle. Add per-row Discard/Restore.
 
 **14. IDE has no Find-in-Files, no project search.**
+
 - ⌘F is bound to terminal find, not editor find. No ⌘⇧F for project-wide. No problems panel. README sells BDE as a "development environment" and it can't grep its own repo.
 - Confidence: Bravo PM + Bravo SD
 - Files: `src/renderer/src/views/IDEView.tsx`, `src/main/handlers/ide-fs-handlers.ts`
 - Fix: Wire Monaco's built-in find widget to ⌘F when editor focused. Add a sidebar Search panel using the existing ripgrep path (or add one).
 
 **15. Agent CommandBar is a single-line `<input>`.**
+
 - Can't paste stack traces, code, multi-paragraph instructions. By contrast, Launchpad uses textarea (but only 2 rows) and Code Review revision modal uses textarea.
 - Confidence: Bravo PM + Bravo SD (both MAJOR)
 - Files: `src/renderer/src/components/agents/CommandBar.tsx:207-221`
 - Fix: Convert to auto-growing textarea, Enter to send, Shift+Enter for newline.
 
 **16. Agent Manager settings require full app restart.**
+
 - `maxConcurrent`, `defaultModel`, `worktreeBase`, `maxRuntimeMs`, `autoStart` are read once at boot. No UI warning. No `app.relaunch()` button. Restart kills running terminals, in-flight agents, file watchers, and unsaved IDE state.
 - Confidence: Bravo SD (critical)
 - Fix: Hot-reload concurrency at minimum. Add "Save & Restart" button with `app.relaunch()` fallback. Persist terminal tabs across restart so it hurts less.
 
 **17. Delete the fake `estimateCost`.**
+
 - `ConsoleHeader.tsx:28` returns `events.length × 0.001` as a USD estimate. Has nothing to do with actual tokens or pricing. Shown live in orange italics next to the real `costUsd`. After the token migration, the product now: advertises cost in the README, delivers tokens on the Dashboard, and fabricates a dollar figure in the agent header.
 - Confidence: Bravo PM + Bravo Marketing + Bravo SD (three personas, same team)
 - Files: `src/renderer/src/components/agents/ConsoleHeader.tsx:28-31,155-162`
 - Fix: Delete entirely. Show "—" until the SDK reports real `costUsd`. Or expose real interim token usage.
 
 **18. Fix the view shortcut pattern.**
+
 - ⌘1 Dashboard, ⌘2 Agents, ⌘3 IDE, ⌘4 Task Pipeline, ⌘5 Code Review, ⌘6 Source Control, ⌘7 Settings, ⌘8 Task Planner, **⌘0** Task Workbench, ⌘9 unused. Workbench is the primary task-creation surface and gets the worst shortcut.
 - Confidence: Alpha PM + Bravo PM + Gamma PM + Gamma SD
 - Fix: Move Workbench to ⌘9, or swap with Settings. Reserve ⌘0 for future "reset zoom" if ever needed.
@@ -155,6 +173,7 @@ Flagged independently by all three marketing personas:
 ### P3 — Architectural scar tissue worth touching now
 
 **19. Add missing SQLite indexes; audit migration drift.**
+
 - Migration v17 and v20 silently dropped `idx_sprint_tasks_claimed_by` and `idx_sprint_tasks_pr_number` during full-table rewrites for CHECK constraint changes. These columns are queried every 30s by the drain loop and 60s by the PR poller. Full scans today, quadratic cost as the table grows.
 - No compound index on `(status, next_eligible_at)`, `(status, completed_at)`, or `(pr_status, status)` despite these being hot-path.
 - `sprint_tasks` has been rewritten 4 times for CHECK constraints alone; no test snapshots the final schema; v18/v19 add-and-remove cruft remains.
@@ -164,6 +183,7 @@ Flagged independently by all three marketing personas:
 - Fix: New migration v36 that (a) re-adds the dropped indexes, (b) creates compound indexes, (c) deletes `useNativeSystem` cruft. Add a schema-snapshot test. Add `sprint:listFull({ since? })` IPC for views that need history, or document the 7-day window unambiguously.
 
 **20. Fix the Dev Playground XSS vector.**
+
 - `playground:show` IPC handler (`playground-handlers.ts:55`) reads the HTML file and broadcasts it **raw** to the renderer. The parallel auto-detect path in `run-agent.ts:136-137` correctly calls `DOMPurify.sanitize`. Both broadcast on the same channel; the renderer iframe has `sandbox="allow-scripts"`. An `allow-scripts` iframe + unsanitized payload is exactly the DOMPurify threat model.
 - Confidence: Bravo Arch (critical, security)
 - Files: `src/main/handlers/playground-handlers.ts:55`, `src/main/agent-manager/run-agent.ts:136-137`
@@ -174,25 +194,28 @@ Flagged independently by all three marketing personas:
 ## Themes (clusters of related findings)
 
 ### Theme A: The product has multiple names for the same thing
+
 Flagged by all three marketing personas, all three PM personas, Gamma PE.
 
-| Concept | Names in use |
-|---|---|
+| Concept            | Names in use                                                                                         |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
 | The execution view | Sprint Pipeline, Task Pipeline, Sprint Center, Pipeline Center, SprintView, sprint-pipeline-neon.css |
-| Task containers | Epic, TaskGroup, Group, Sprint, Task Planner, Plan, Workflow |
-| Adhoc agent space | Agents, Fleet, Scratchpad, Launchpad, Command Center |
-| Money metric | Cost, Cost & Usage, USD, tokens |
-| Review UI | Code Review Station, PR Station (stale skill), Review Queue |
-| What agents do | queue, task, backlog, draft |
+| Task containers    | Epic, TaskGroup, Group, Sprint, Task Planner, Plan, Workflow                                         |
+| Adhoc agent space  | Agents, Fleet, Scratchpad, Launchpad, Command Center                                                 |
+| Money metric       | Cost, Cost & Usage, USD, tokens                                                                      |
+| Review UI          | Code Review Station, PR Station (stale skill), Review Queue                                          |
+| What agents do     | queue, task, backlog, draft                                                                          |
 
 **Why this hurts:** Every time a user reads the README, opens the app, types into Copilot, or reads an agent's response, the names don't match. Agents themselves are trained on `BDE_FEATURES.md` as context, so when they reference features they use one vocabulary while the UI uses another. New users bounce; careful reviewers notice in 30 seconds; search and documentation fragment.
 
 **Fix cost:** Low. It's mostly a rename sweep plus discipline on what goes in `view-registry.ts`, `BDE_FEATURES.md`, and `README.md`. Budget: 1 day.
 
 ### Theme B: The best features are invisible
+
 Flagged by all three marketing personas.
 
 The product has at least **7 features** that would be the first thing you'd demo and all of them are hidden:
+
 - Ship It (rocket button — the climax of the product story)
 - Dev Playground (inline HTML rendering — the most screenshot-worthy thing BDE does)
 - Promote to Code Review (just shipped, only explained in a 10px footnote)
@@ -207,13 +230,16 @@ The product has at least **7 features** that would be the first thing you'd demo
 **Fix cost:** Medium. Screenshots, README restructuring, promoting controls out of folds, a "help" modal for slash commands. Budget: 2-3 days.
 
 ### Theme C: Prompt engineering is a house of contradictions
+
 Flagged by all three prompt-engineer personas.
 
 The agent prompt system has **two parallel universes** that don't know about each other:
+
 - **Path A** (the disciplined one): `buildAgentPrompt()` in `prompt-composer.ts` → personality → memory → skills. Well-factored.
 - **Path B** (the wild west): `spec-synthesizer.ts`, `spec-semantic-check.ts`, `sprint-spec.ts`, `review-summary.ts`. Four hand-written "You are an expert…" system prompts that never touch the composer. `synthesizerPersonality` is literally dead code — the only synthesizer call site bypasses it.
 
 And within Path A, there are **specific contradictions** that cost tokens and trust:
+
 - Pre-commit verification duplicated 4-5x across preamble, DoD, CLAUDE.md, memory, skills
 - Hard-coded "2563+ tests" in the preamble that the memory module's own rule forbids
 - `npm test` (preamble) vs `npm run test:coverage` (memory module) — pipeline agents will pass locally and fail CI
@@ -232,14 +258,17 @@ And within Path A, there are **specific contradictions** that cost tokens and tr
 **Fix cost:** Medium-high. Consolidation + plumbing `repoName` + rerouting the four bypass paths + deleting dead `synthesizerPersonality`. Budget: 3-5 days for a full prompt-system cleanup.
 
 ### Theme D: The data layer is documented honestly in CLAUDE.md but dishonestly in code
+
 Flagged by Alpha Arch, Bravo Arch, Gamma Arch.
 
 CLAUDE.md says:
+
 - "Agent manager data access: always through `ISprintTaskRepository`, never direct sprint-queries imports"
 - "Single writer to sprint_tasks"
 - "Max one Zustand store per domain concern"
 
 Reality:
+
 - 45 files import `sprint-queries` directly. Only the agent manager honors the repository.
 - Three parallel data-access layers (`sprint-queries`, `sprint-service`, `sprint-task-repository`) all routinely imported in the same file.
 - 8 Zustand stores touch the task/review concern.
@@ -254,6 +283,7 @@ Reality:
 **Fix cost:** High. This is real refactor work. Budget: 1-2 weeks for a proper cleanup, or fence it off at a boundary and accept the debt.
 
 ### Theme E: Cross-feature seams leak
+
 Flagged by Gamma SD + several team-level findings.
 
 - **Panel system mounts ALL tabs simultaneously** (display:none). Three tabbed views in one leaf = three sets of `document.addEventListener('keydown')` + three polling loops + three command registrations concurrently. Tear-off multiplies the problem. (`PanelLeaf.tsx:104-119`)
@@ -268,6 +298,7 @@ Flagged by Gamma SD + several team-level findings.
 **Fix cost:** Medium. Panel tab mounting is the biggest — either unmount inactive tabs or gate all side-effects behind `isActive`. Budget: 3-5 days.
 
 ### Theme F: IPC surface bloat + boundary erosion
+
 Flagged by all three architect personas.
 
 - 144 typed channels across 26 domain interfaces. No naming convention (`domain:verb`, `domain:verbNoun`, `verb:noun` all coexist).
@@ -284,28 +315,28 @@ Flagged by all three architect personas.
 
 ## Coverage Map
 
-| Surface | Alpha | Bravo | Gamma | Total findings |
-|---|---|---|---|---|
-| Task Workbench | ✅✅✅✅✅ | — | ✅ | Heavy coverage |
-| Sprint/Task Pipeline | ✅✅✅✅✅ | — | ✅✅ | Heavy coverage |
-| Code Review Station | ✅✅✅✅✅ | — | ✅✅ | Heavy coverage |
-| Task Dependencies | ✅✅✅ | — | ✅ | Medium |
-| Task Planner | ✅✅ | — | ✅✅ | Medium |
-| Agents view / adhoc | — | ✅✅✅✅✅ | ✅ | Heavy |
-| Dev Playground | — | ✅✅ (security, marketing) | ✅ | Medium |
-| IDE | — | ✅✅✅✅ | ✅ | Heavy |
-| Source Control | — | ✅✅✅✅ | ✅ | Heavy |
-| Dashboard | — | ✅✅ | ✅ | Medium |
-| Settings | — | ✅✅✅ | ✅✅ | Heavy |
-| Panel System | — | ✅ | ✅✅ | Medium |
-| Onboarding | — | — | ✅✅ | **Light — consider a dedicated follow-up** |
-| Prompt system (pipeline) | ✅✅ | — | ✅ | Heavy |
-| Prompt system (adhoc/assistant) | — | ✅✅ | ✅ | Medium |
-| Prompt system (copilot/synthesizer) | ✅ | — | ✅✅ | Medium |
-| Database / migrations | ✅✅ | ✅✅ | ✅ | Heavy |
-| Agent Manager / lifecycle | — | ✅✅✅ | ✅ | Heavy |
-| IPC topology | ✅ | ✅ | ✅ | Medium (all three teams flagged) |
-| Native agent system | — | ✅ | ✅ | Light |
+| Surface                             | Alpha      | Bravo                      | Gamma | Total findings                             |
+| ----------------------------------- | ---------- | -------------------------- | ----- | ------------------------------------------ |
+| Task Workbench                      | ✅✅✅✅✅ | —                          | ✅    | Heavy coverage                             |
+| Sprint/Task Pipeline                | ✅✅✅✅✅ | —                          | ✅✅  | Heavy coverage                             |
+| Code Review Station                 | ✅✅✅✅✅ | —                          | ✅✅  | Heavy coverage                             |
+| Task Dependencies                   | ✅✅✅     | —                          | ✅    | Medium                                     |
+| Task Planner                        | ✅✅       | —                          | ✅✅  | Medium                                     |
+| Agents view / adhoc                 | —          | ✅✅✅✅✅                 | ✅    | Heavy                                      |
+| Dev Playground                      | —          | ✅✅ (security, marketing) | ✅    | Medium                                     |
+| IDE                                 | —          | ✅✅✅✅                   | ✅    | Heavy                                      |
+| Source Control                      | —          | ✅✅✅✅                   | ✅    | Heavy                                      |
+| Dashboard                           | —          | ✅✅                       | ✅    | Medium                                     |
+| Settings                            | —          | ✅✅✅                     | ✅✅  | Heavy                                      |
+| Panel System                        | —          | ✅                         | ✅✅  | Medium                                     |
+| Onboarding                          | —          | —                          | ✅✅  | **Light — consider a dedicated follow-up** |
+| Prompt system (pipeline)            | ✅✅       | —                          | ✅    | Heavy                                      |
+| Prompt system (adhoc/assistant)     | —          | ✅✅                       | ✅    | Medium                                     |
+| Prompt system (copilot/synthesizer) | ✅         | —                          | ✅✅  | Medium                                     |
+| Database / migrations               | ✅✅       | ✅✅                       | ✅    | Heavy                                      |
+| Agent Manager / lifecycle           | —          | ✅✅✅                     | ✅    | Heavy                                      |
+| IPC topology                        | ✅         | ✅                         | ✅    | Medium (all three teams flagged)           |
+| Native agent system                 | —          | ✅                         | ✅    | Light                                      |
 
 **Under-covered:** Onboarding (two separate flows, and the audit only caught that from one persona). Accessibility (nobody looked specifically — ARIA is mentioned in passing, keyboard nav gaps are flagged throughout, but no dedicated pass). Electron packaging / auto-update / code signing. Windows/Linux portability (all reports assumed macOS). Security beyond the Playground XSS (no auth-store review, no keychain review, no path-traversal audit).
 
@@ -334,7 +365,7 @@ If you're reading this and deciding what to do Monday morning:
 - **All 15 reports landed.** No reports failed or timed out. Report quality was high across all personas — the persona-charter framing worked.
 - **Cross-team confidence was high.** The top 10 findings were independently flagged by 2+ teams. This is the cleanest signal of what's real.
 - **Team Gamma's wildcard role paid off.** Gamma caught the cross-cutting naming war, the two-flow onboarding, the Synthesizer orphan, the panel-mounting bug, and the stale architecture doc — all things a focused team could have missed. Worth repeating the hybrid-team model on future audits.
-- **One weakness:** Gamma PE noted the agents are reading `BDE_FEATURES.md` as auto-loaded context, which means everything in that file becomes part of the agent system — this audit was conducted *with that in mind*, and the results will differ if that context loading changes.
+- **One weakness:** Gamma PE noted the agents are reading `BDE_FEATURES.md` as auto-loaded context, which means everything in that file becomes part of the agent system — this audit was conducted _with that in mind_, and the results will differ if that context loading changes.
 - **What's not in here:** security beyond Playground XSS, accessibility (ARIA compliance beyond landmark usage), performance profiling under real load, Windows/Linux portability, code signing. Consider dedicated audits for these before public release.
 
 ---
@@ -344,6 +375,7 @@ If you're reading this and deciding what to do Monday morning:
 After the audit was written, Epic 1 was executed by running a preflight prompt fix through BDE's own Code Review Station (the "eat your own dogfood" test). That single Ship It attempt surfaced five additional findings that weren't in the original 20 — each one independently flagged by hitting the failure mode in real use. They're logged here because **finding bugs by using the product is the highest-signal audit technique there is.**
 
 ### [CRITICAL-new] Stale `review` tasks with no worktree_path have no recovery path
+
 - **Category:** Error Recovery / Feature Gap
 - **Symptom:** Clicking Create PR / Ship It on a `review`-status task whose worktree was cleaned up (e.g., by a completion-handler crash before the status transition fired) throws `Error: Task X has no worktree path`. A red toast with no recovery action. Five such tasks were stranded in the review queue before the dogfood test; their PRs had actually been opened and merged manually, but the task records were left stuck.
 - **Recommendation:** Detect the `status='review' + worktree_path IS NULL` condition before enabling action buttons. Offer a "Reconcile from GitHub PR state" action that looks up the branch's PR via gh CLI, reads its state (merged / closed / open), and transitions the task accordingly. Or at minimum a "Mark as done/cancelled manually" escape hatch.
@@ -351,6 +383,7 @@ After the audit was written, Epic 1 was executed by running a preflight prompt f
 - **Self-validation:** Gamma SD's "bde:refresh and bde:escape dispatched but no listeners" finding is a sibling — both are examples of dead-end error states with no user-visible recovery.
 
 ### [CRITICAL-new] `sprint_tasks.repo` field has case drift (`BDE` vs `bde`)
+
 - **Category:** Data Integrity
 - **Symptom:** Ship It failed with `Error: Repo "BDE" not found in settings`. Investigation: 100 historical tasks have `repo = 'BDE'` (uppercase), 354 have `repo = 'bde'` (lowercase). Settings stores `name: 'bde'` (lowercase). Code Review's `repo → localPath` lookup is case-sensitive. **22% of historical tasks are currently unshippable** due to this mismatch.
 - **Location:** `src/main/handlers/review.ts:499` (`getRepoConfig(task.repo)`), `src/main/data/sprint-queries.ts` writes
@@ -358,6 +391,7 @@ After the audit was written, Epic 1 was executed by running a preflight prompt f
 - **Self-validation:** Found by hitting the wall on the preflight task's Ship It. Historical reconstruction showed this isn't a one-off — ~22% of tasks are affected.
 
 ### [MAJOR-new] `review:shipIt` does not fast-forward local main before merging
+
 - **Category:** Race Condition / Fragility
 - **Symptom:** Ship It fetches origin/main in the agent worktree to rebase the feature branch, but never updates local main in the main checkout. If any commit landed on origin/main since local main was last updated (e.g., other PRs merged during a BDE session), the subsequent `git merge --squash` merges into a stale tip, creating a divergent commit that `git push` rejects as non-fast-forward. The catch block warns quietly and still marks the task done, leaving the user with divergent history and a misleadingly green toast.
 - **Location:** `src/main/handlers/review.ts:515-537` (Ship It rebase-before-merge block)
@@ -366,6 +400,7 @@ After the audit was written, Epic 1 was executed by running a preflight prompt f
 - **Self-validation:** Found by running Ship It on the preflight task and then checking `git log origin/main`. The toast said "Merged & pushed!" — but origin didn't have the commit. The exact scenario the original audit's Gamma SD finding predicted ("Ship It success toast is misleading on push failure"), validated in real time.
 
 ### [MAJOR-new] Ship It's push-failure toast is styled as soft-success
+
 - **Category:** Error Recovery / Copy
 - **Symptom:** When Ship It's merge succeeds but push fails, the old code showed `toast.success('Merged locally (push failed — push manually)')` — a green toast with the default 3-second duration. In real use (this very dogfood loop), the user saw a green toast and assumed Ship It succeeded. Only discovered the push had failed by checking `git log origin/main` after the fact.
 - **Location:** `src/renderer/src/components/code-review/ReviewActions.tsx:67-70`
@@ -374,10 +409,12 @@ After the audit was written, Epic 1 was executed by running a preflight prompt f
 - **Self-validation:** Same dogfood session. This is literally Gamma SD MAJOR #12 from the original audit, reproduced live.
 
 ### [MAJOR-new] BDE_FEATURES.md and this audit describe "9 views" but the docs say different counts
+
 - **Category:** Documentation drift (minor — but catches the eye)
 - **Symptom:** README says "8 Views" in the architecture section. `BDE_FEATURES.md` describes 9. View registry has 9. The count of "settings tabs" is similarly inconsistent across README (9), `BDE_FEATURES.md` (9), and the actual sidebar (10 visible + 1 orphan).
 - **Recommendation:** Add a generated "counts table" at the top of `BDE_FEATURES.md` derived from `view-registry.ts`, `ipc-channels.ts`, handler directory, etc. Regenerate as part of pre-commit or CI.
 - **Self-validation:** Surfaced in both Bravo Marketing and Gamma Marketing originally; confirmed during the README factual-fixes task spec authoring.
 
 ### Process note: the dogfood loop is the single best remediation test
+
 Running Epic 1 through BDE's own Code Review Station surfaced **5 additional CRITICAL/MAJOR findings** in a single Ship It attempt — roughly 30% more signal than the entire 15-agent audit produced for the same surfaces. Recommendation for future audits: always include a dogfood-loop step where the remediation itself is executed through the product being audited. Bugs that only show up under real use will never appear in a read-only audit.

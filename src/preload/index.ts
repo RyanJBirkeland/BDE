@@ -269,8 +269,11 @@ const api = {
   refreshPrList: () => typedInvoke('pr:refreshList'),
 
   // Sprint DB file-watcher push events
-  onExternalSprintChange: (cb: (data: BroadcastChannels['sprint:externalChange']) => void): (() => void) => {
-    const listener = (_e: unknown, data: BroadcastChannels['sprint:externalChange']): void => cb(data)
+  onExternalSprintChange: (
+    cb: (data: BroadcastChannels['sprint:externalChange']) => void
+  ): (() => void) => {
+    const listener = (_e: unknown, data: BroadcastChannels['sprint:externalChange']): void =>
+      cb(data)
     ipcRenderer.on('sprint:externalChange', listener)
     return () => ipcRenderer.removeListener('sprint:externalChange', listener)
   },
@@ -499,14 +502,14 @@ const api = {
     chatStream: (params: {
       taskId: string
       messages: import('../shared/types').PartnerMessage[]
-    }) =>
-      typedInvoke('review:chatStream', params),
-    onChatChunk: (listener: (evt: unknown, chunk: BroadcastChannels['review:chatChunk']) => void) => {
+    }) => typedInvoke('review:chatStream', params),
+    onChatChunk: (
+      listener: (evt: unknown, chunk: BroadcastChannels['review:chatChunk']) => void
+    ) => {
       ipcRenderer.on('review:chatChunk', listener as never)
       return () => ipcRenderer.removeListener('review:chatChunk', listener as never)
     },
-    abortChat: (streamId: string) =>
-      typedInvoke('review:chatAbort', streamId)
+    abortChat: (streamId: string) => typedInvoke('review:chatAbort', streamId)
   },
 
   // Spec Synthesizer

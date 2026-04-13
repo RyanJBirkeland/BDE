@@ -43,12 +43,8 @@ test.describe('Keyboard navigation — full cycle', () => {
     // IDEView root element or empty state
     const ideView = window.locator('.ide-view')
     const ideEmpty = window.locator('.ide-empty-state')
-    const hasIDE = await ideView
-      .isVisible()
-      .catch(() => false)
-    const hasEmpty = await ideEmpty
-      .isVisible()
-      .catch(() => false)
+    const hasIDE = await ideView.isVisible().catch(() => false)
+    const hasEmpty = await ideEmpty.isVisible().catch(() => false)
     expect(hasIDE || hasEmpty).toBe(true)
   })
 

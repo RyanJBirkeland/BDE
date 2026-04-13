@@ -6,7 +6,7 @@
 
 ## Background
 
-While running the Sprint Pipeline today, BDE drove the host machine to extremely high CPU loads. Earlier today, commit `00e32951` capped vitest worker parallelism inside agent worktrees because each pipeline agent was spawning CPU-count test workers, producing 24+ concurrent test processes at `MAX_ACTIVE_TASKS > 1` and pushing load averages to 100-141. That fix is treated as baseline for this audit — the goal is to find what *else* is wrong.
+While running the Sprint Pipeline today, BDE drove the host machine to extremely high CPU loads. Earlier today, commit `00e32951` capped vitest worker parallelism inside agent worktrees because each pipeline agent was spawning CPU-count test workers, producing 24+ concurrent test processes at `MAX_ACTIVE_TASKS > 1` and pushing load averages to 100-141. That fix is treated as baseline for this audit — the goal is to find what _else_ is wrong.
 
 Separately, we have no current visibility into **token economy**: how large is the prompt that goes into each spawned agent, what is the average input/output token usage per task, and where in the prompt-composition path are we wasting context.
 
@@ -39,6 +39,7 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
 **Domain:** Agent drain loop, worktree creation, SDK spawn, completion handler, file watchers, PR pollers, sprint PR poller, watchdog.
 
 **Key files:**
+
 - `src/main/agent-manager/` (entire module)
 - `src/main/agent-manager/sdk-adapter.ts`
 - `src/main/agent-manager/worktree.ts`
@@ -49,17 +50,19 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
 - `src/main/agent-event-mapper.ts`
 
 **Lenses (scope is non-overlapping by design — see below):**
-- **Systems Profiler** — *Single-agent steady-state cost only.* Assume `MAX_ACTIVE_TASKS=1`. Where do CPU cycles go inside one Pipeline run? Synchronous file I/O on hot paths, tight loops, redundant work each tick of the drain loop, blocking calls in async paths, expensive computation per tick. Do NOT analyze multi-agent interactions — that belongs to Concurrency Auditor.
-- **Concurrency Auditor** — *Interactions across N concurrent agents only.* Lock contention, fan-out blowups (one event triggers N handlers, doubled by N agents), race-prone polling, watchers that double-fire across agents, shared state corruption, redundant work duplicated across agents that could be shared. Do NOT report findings that exist with one agent — those belong to Systems Profiler.
-- **SRE / Ops** — *Scaling cliffs and unbounded resources only.* What happens at `MAX_ACTIVE_TASKS=3`? `=5`? `=10`? What unbounded resources exist (event listeners, cached state, in-memory indexes, log files, db tables)? Do NOT report code-level CPU findings — focus on what grows without bound and where it falls over.
 
-**Baseline for all Team 1 lenses:** Commit `00e32951` already capped vitest worker parallelism to `Math.max(1, Math.floor(cpuCount / activeTasks))` inside agent worktrees. The vitest worker oversubscription issue is *out of scope* — do not re-report it. The audit hunts for what *else* drives CPU load during a Pipeline run.
+- **Systems Profiler** — _Single-agent steady-state cost only._ Assume `MAX_ACTIVE_TASKS=1`. Where do CPU cycles go inside one Pipeline run? Synchronous file I/O on hot paths, tight loops, redundant work each tick of the drain loop, blocking calls in async paths, expensive computation per tick. Do NOT analyze multi-agent interactions — that belongs to Concurrency Auditor.
+- **Concurrency Auditor** — _Interactions across N concurrent agents only._ Lock contention, fan-out blowups (one event triggers N handlers, doubled by N agents), race-prone polling, watchers that double-fire across agents, shared state corruption, redundant work duplicated across agents that could be shared. Do NOT report findings that exist with one agent — those belong to Systems Profiler.
+- **SRE / Ops** — _Scaling cliffs and unbounded resources only._ What happens at `MAX_ACTIVE_TASKS=3`? `=5`? `=10`? What unbounded resources exist (event listeners, cached state, in-memory indexes, log files, db tables)? Do NOT report code-level CPU findings — focus on what grows without bound and where it falls over.
+
+**Baseline for all Team 1 lenses:** Commit `00e32951` already capped vitest worker parallelism to `Math.max(1, Math.floor(cpuCount / activeTasks))` inside agent worktrees. The vitest worker oversubscription issue is _out of scope_ — do not re-report it. The audit hunts for what _else_ drives CPU load during a Pipeline run.
 
 #### Team 2 — Renderer Performance
 
 **Domain:** React re-renders, Zustand subscription granularity, polling hooks, Monaco workers, panel layout, sprint pipeline view, dashboard polling.
 
 **Key files:**
+
 - `src/renderer/src/components/sprint/SprintPipeline.tsx`
 - `src/renderer/src/components/dashboard/`
 - `src/renderer/src/stores/sprintTasks.ts`
@@ -72,6 +75,7 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
 - CSP / `worker-src` configuration in the renderer entry HTML
 
 **Lenses:**
+
 - **React Performance Engineer** — Wasted re-renders, missing memoization, store subscription granularity (component subscribes to whole store vs. selector), expensive derivations recomputed on every render, unstable callback identities.
 - **Bundle / Asset Auditor** — Bundle size by route/view, missing lazy-loading, Monaco worker loading strategy, eagerly imported modules that should be code-split, asset weight on cold start.
 
@@ -80,6 +84,7 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
 **Domain:** SQLite queries, migrations, file watcher debouncing, audit trail writes, optimistic update reconciliation, WAL contention.
 
 **Key files:**
+
 - `src/main/db.ts`
 - `src/main/data/sprint-queries.ts`
 - `src/main/data/sprint-task-repository.ts`
@@ -88,6 +93,7 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
 - File watcher emitting `sprint:externalChange`
 
 **Lenses:**
+
 - **Database Performance Engineer** — Query plans, missing indexes, N+1 patterns, repeated queries that could be cached or batched, WAL contention from many concurrent writes during a Pipeline run.
 - **Data Modeling Critic** — Write amplification (one user action → N table writes), hot tables, audit-trail bloat (`task_changes` row count growth), `agent_events` cap behavior, schema choices that force expensive reads.
 
@@ -96,6 +102,7 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
 **Domain:** Prompt composition, context injection, agent event capture, what every agent is "born" with.
 
 **Key files:**
+
 - `src/main/agent-manager/prompt-composer.ts` — `buildAgentPrompt()`
 - `src/main/sdk-streaming.ts`
 - `src/main/agent-event-mapper.ts`
@@ -104,6 +111,7 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
 - `~/.bde/bde.db` tables: `agent_events`, `cost_events`, `agent_runs`
 
 **Lenses:**
+
 - **Prompt Engineer** — What is actually in each prompt for each agent type (pipeline / assistant / adhoc / copilot / synthesizer)? What is redundant, duplicated, or never used by the model? Where could we lazy-inject context instead of front-loading it?
 - **Cost Analyst** — Average input tokens per task, per agent type. Average output tokens. Breakdown of where the input tokens go (CLAUDE.md, BDE_FEATURES.md, task spec, system prompt, tool definitions). Where the money is going. Must produce real numbers from `~/.bde/bde.db`.
 - **Context Window Strategist** — What could be lazy-loaded vs. front-loaded? What is the token budget per task and how much headroom exists? Are we close to context-window cliffs at any agent type?
@@ -116,7 +124,7 @@ Lenses are independent personas, not collaborators. Two lenses on the same team 
    - **Per-task totals:** `SELECT task_id, SUM(input_tokens), SUM(output_tokens), SUM(cache_read_input_tokens), SUM(cache_creation_input_tokens) FROM cost_events GROUP BY task_id ORDER BY 2 DESC LIMIT 20;`
    - **Per-agent-type averages:** join `cost_events` to `agent_runs` on `run_id` (or whatever the FK is) and `AVG()` by `agent_type`.
    - **Recent-N sample:** the 5 most recent completed pipeline runs with their full token breakdown.
-4. **Read `prompt-composer.ts`, `CLAUDE.md`, and `BDE_FEATURES.md`** and estimate their token contribution to each agent type's prompt. The chars/4 heuristic is for *sizing only* — authoritative numbers come from `cost_events`/`agent_runs`, not from estimation.
+4. **Read `prompt-composer.ts`, `CLAUDE.md`, and `BDE_FEATURES.md`** and estimate their token contribution to each agent type's prompt. The chars/4 heuristic is for _sizing only_ — authoritative numbers come from `cost_events`/`agent_runs`, not from estimation.
 5. **Sample 3-5 recent real tasks** from the snapshot and reconstruct what the agent received: which CLAUDE.md files were auto-loaded, which sections of `prompt-composer.ts` ran, how many tool definitions were attached.
 
 ### Execution Model
@@ -169,6 +177,7 @@ Every lens output file uses the same finding template so the synthesis agent can
 
 ```markdown
 ## F-{team}-{lens-id}-{n}: {short title}
+
 **Severity:** Critical | High | Medium | Low
 **Category:** CPU | Memory | I/O | Tokens | Latency | Scaling
 **Location:** `path/to/file.ts:123-145`
@@ -180,6 +189,7 @@ Every lens output file uses the same finding template so the synthesis agent can
 ```
 
 ID parts are globally unique across the entire audit:
+
 - `{team}` — `t1` | `t2` | `t3` | `t4`
 - `{lens-id}` — short slug per lens: `sysprof`, `concur`, `sre`, `react`, `bundle`, `db`, `model`, `prompt`, `cost`, `ctx`
 - `{n}` — monotonic integer within the lens file, starting at 1
@@ -205,13 +215,13 @@ The synthesis agent does not invent findings. It only merges, dedupes, and ranks
 
 ## Risks & Mitigations
 
-| Risk | Mitigation |
-|---|---|
-| Lens agents produce shallow findings to chase coverage | Brief explicitly says "depth over breadth, 5-10 strong findings" |
-| Token Economy team produces qualitative hand-waving | Brief mandates real numbers from `~/.bde/bde.db` and sampled tasks |
-| Lens overlap creates noise | Synthesis pass explicitly dedupes |
-| 10 concurrent agents exhaust user's local API quota | Acceptable — each agent's individual context is bounded; if quota becomes an issue, fall back to sequential within each team |
-| Findings reference stale code by the time triage happens | All findings include file paths + line numbers; user can re-verify before queueing |
+| Risk                                                     | Mitigation                                                                                                                   |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Lens agents produce shallow findings to chase coverage   | Brief explicitly says "depth over breadth, 5-10 strong findings"                                                             |
+| Token Economy team produces qualitative hand-waving      | Brief mandates real numbers from `~/.bde/bde.db` and sampled tasks                                                           |
+| Lens overlap creates noise                               | Synthesis pass explicitly dedupes                                                                                            |
+| 10 concurrent agents exhaust user's local API quota      | Acceptable — each agent's individual context is bounded; if quota becomes an issue, fall back to sequential within each team |
+| Findings reference stale code by the time triage happens | All findings include file paths + line numbers; user can re-verify before queueing                                           |
 
 ## Out of Scope
 

@@ -11,20 +11,34 @@ After tasks 04 and 05, the tool card files (`ToolCallCard`, `ToolPairCard`, `Too
 In `cards/util.ts`, rewrite `getToolMeta()` and `TOOL_MAP`:
 
 ```typescript
-import { Terminal, FileText, Edit3, FilePlus, Search, Folder, Bot, List, Wrench, type LucideIcon } from 'lucide-react'
+import {
+  Terminal,
+  FileText,
+  Edit3,
+  FilePlus,
+  Search,
+  Folder,
+  Bot,
+  List,
+  Wrench,
+  type LucideIcon
+} from 'lucide-react'
 
-interface ToolMeta { Icon: LucideIcon; color: string }
+interface ToolMeta {
+  Icon: LucideIcon
+  color: string
+}
 
 const TOOL_MAP: Record<string, ToolMeta> = {
-  bash:  { Icon: Terminal, color: 'var(--bde-warning)' },
-  read:  { Icon: FileText, color: 'var(--bde-status-review)' },
-  edit:  { Icon: Edit3,    color: 'var(--bde-accent)' },
+  bash: { Icon: Terminal, color: 'var(--bde-warning)' },
+  read: { Icon: FileText, color: 'var(--bde-status-review)' },
+  edit: { Icon: Edit3, color: 'var(--bde-accent)' },
   write: { Icon: FilePlus, color: 'var(--bde-accent)' },
-  grep:  { Icon: Search,   color: 'var(--bde-status-active)' },
-  glob:  { Icon: Folder,   color: 'var(--bde-warning)' },
-  agent: { Icon: Bot,      color: 'var(--bde-status-done)' },
-  task:  { Icon: Bot,      color: 'var(--bde-status-done)' },
-  list:  { Icon: List,     color: 'var(--bde-text-muted)' },
+  grep: { Icon: Search, color: 'var(--bde-status-active)' },
+  glob: { Icon: Folder, color: 'var(--bde-warning)' },
+  agent: { Icon: Bot, color: 'var(--bde-status-done)' },
+  task: { Icon: Bot, color: 'var(--bde-status-done)' },
+  list: { Icon: List, color: 'var(--bde-text-muted)' }
 }
 export function getToolMeta(name: string): ToolMeta {
   return TOOL_MAP[name.toLowerCase()] ?? { Icon: Wrench, color: 'var(--bde-text-muted)' }
@@ -39,6 +53,7 @@ export function getToolMeta(name: string): ToolMeta {
 ### EditDiffCard (new)
 
 Create `src/renderer/src/components/agents/cards/EditDiffCard.tsx` (~80 LOC). Reads `input` from the parent card's tool block:
+
 - For `edit` tool: `input.old_string` and `input.new_string` exist. Build a synthetic git-format diff string:
   ```
   diff --git a/file b/file

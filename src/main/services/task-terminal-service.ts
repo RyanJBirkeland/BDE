@@ -4,10 +4,7 @@ import {
   type DependencyIndex,
   TERMINAL_STATUSES
 } from './dependency-service'
-import {
-  createEpicDependencyIndex,
-  type EpicDependencyIndex
-} from './epic-dependency-service'
+import { createEpicDependencyIndex, type EpicDependencyIndex } from './epic-dependency-service'
 import type { SprintTask, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
 import { broadcast } from '../broadcast'
 import { getErrorMessage } from '../../shared/errors'

@@ -15,6 +15,7 @@
 ### Task 1: CSS Dedup Service — Core Parser + Tests
 
 **Files:**
+
 - Create: `src/main/services/css-dedup.ts`
 - Create: `src/main/services/__tests__/css-dedup.test.ts`
 
@@ -23,6 +24,7 @@ This is the pure-function core. No side effects, no file I/O — just string in,
 - [ ] **Step 1: Write failing tests for the CSS dedup function**
 
 Create `src/main/services/__tests__/css-dedup.test.ts` with tests for:
+
 - Removes exact duplicate rules, keeping last occurrence
 - Returns input unchanged when no duplicates
 - Treats rules in different `@media` contexts as distinct
@@ -63,11 +65,13 @@ export function deduplicateCss(css: string): DedupResult
 ```
 
 Implementation approach:
+
 - `parseCssBlocks(css, context)` — lightweight parser that tracks brace depth, extracts selector + body + raw text. Handles `@media`/`@supports` recursively, `@keyframes` as named blocks, comments, and plain rules.
 - `normalizeBody(body)` — collapse whitespace, trim. Used for comparison only.
 - `deduplicateCss(css)` — parse blocks, group by `context|||selector` key, identify exact duplicates (same normalized body → remove all but last), flag near-duplicates (same key, different body → warning). Rebuild output from non-removed blocks' `raw` text.
 
 Key design decisions:
+
 - Keep LAST occurrence (highest CSS cascade priority)
 - `@media` blocks themselves are not deduped — only rules inside them
 - Comments and unrecognized content pass through unchanged
@@ -89,6 +93,7 @@ git commit -m "feat: add CSS dedup service with block-level parser"
 ### Task 2: Post-Merge Dedup Integration
 
 **Files:**
+
 - Create: `src/main/services/post-merge-dedup.ts`
 - Modify: `src/main/handlers/review.ts`
 - Modify: `src/main/agent-manager/completion.ts`
@@ -111,6 +116,7 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
 ```
 
 Implementation:
+
 1. Run `git diff --name-only --diff-filter=ACMR HEAD~1 HEAD` via `execFileAsync` to get changed files
 2. Filter to `*.css` files only — return `null` if none
 3. For each CSS file: `readFileSync`, run `deduplicateCss()`, `writeFileSync` if changed
@@ -123,21 +129,22 @@ Implementation:
 - [ ] **Step 2: Integrate into `review:mergeLocally` handler**
 
 In `src/main/handlers/review.ts`:
+
 - Add import: `import { runPostMergeDedup } from '../services/post-merge-dedup'`
 - Insert after the successful merge block (after the merge switch/case, before the worktree cleanup `git worktree remove`):
 
 ```typescript
-    // Post-merge CSS dedup
-    try {
-      const dedupReport = await runPostMergeDedup(repoPath)
-      if (dedupReport?.warnings.length) {
-        const existing = _getTask(taskId)
-        const warnText = `\n\n## CSS Near-Duplicate Warnings\n${dedupReport.warnings.join('\n')}`
-        _updateTask(taskId, { notes: (existing?.notes || '') + warnText })
-      }
-    } catch (err) {
-      logger.warn(`[review:mergeLocally] Post-merge dedup failed (non-fatal): ${err}`)
-    }
+// Post-merge CSS dedup
+try {
+  const dedupReport = await runPostMergeDedup(repoPath)
+  if (dedupReport?.warnings.length) {
+    const existing = _getTask(taskId)
+    const warnText = `\n\n## CSS Near-Duplicate Warnings\n${dedupReport.warnings.join('\n')}`
+    _updateTask(taskId, { notes: (existing?.notes || '') + warnText })
+  }
+} catch (err) {
+  logger.warn(`[review:mergeLocally] Post-merge dedup failed (non-fatal): ${err}`)
+}
 ```
 
 - [ ] **Step 3: Integrate into `review:shipIt` handler**
@@ -147,15 +154,16 @@ Same pattern as Step 2 — add the dedup block after the successful merge in `re
 - [ ] **Step 4: Integrate into auto-merge path in `completion.ts`**
 
 In `src/main/agent-manager/completion.ts`:
+
 - Add import: `import { runPostMergeDedup } from '../services/post-merge-dedup'`
 - In the auto-merge block inside `resolveSuccess()`, after the squash merge commit succeeds, add:
 
 ```typescript
-      try {
-        await runPostMergeDedup(repoPath)
-      } catch {
-        // Non-fatal
-      }
+try {
+  await runPostMergeDedup(repoPath)
+} catch {
+  // Non-fatal
+}
 ```
 
 - [ ] **Step 5: Run typecheck + existing tests**
@@ -175,6 +183,7 @@ git commit -m "feat: integrate CSS dedup into merge pipeline"
 ### Task 3: DB Migration + Type Updates for Rebase Fields
 
 **Files:**
+
 - Modify: `src/main/db.ts` (migration v32)
 - Modify: `src/shared/types.ts` (SprintTask interface)
 
@@ -226,6 +235,7 @@ git commit -m "feat: add rebase_base_sha, rebased_at fields (migration v32)"
 ### Task 4: Extend `rebaseOntoMain()` to Capture Base SHA
 
 **Files:**
+
 - Modify: `src/main/agent-manager/completion.ts`
 
 - [ ] **Step 1: Modify `rebaseOntoMain()` return type**
@@ -239,11 +249,11 @@ Promise<{ success: boolean; notes?: string; baseSha?: string }>
 After the successful rebase (`await execFileAsync('git', ['rebase', 'origin/main'], ...)`), add:
 
 ```typescript
-    const { stdout: shaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
-      cwd: worktreePath,
-      env: buildAgentEnv()
-    })
-    return { success: true, baseSha: shaOut.trim() }
+const { stdout: shaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
+  cwd: worktreePath,
+  env: buildAgentEnv()
+})
+return { success: true, baseSha: shaOut.trim() }
 ```
 
 - [ ] **Step 2: Store rebase fields in `resolveSuccess()`**
@@ -272,6 +282,7 @@ git commit -m "feat: capture rebase base SHA on agent completion"
 ### Task 5: IPC Channels + Preload for Rebase & Freshness
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts`
 - Modify: `src/preload/index.ts`
 - Modify: `src/main/handlers/review.ts`
@@ -343,6 +354,7 @@ git commit -m "feat: add review:rebase and review:checkFreshness IPC channels"
 ### Task 6: Rebase Freshness Badge + Button in Code Review UI
 
 **Files:**
+
 - Modify: `src/renderer/src/components/code-review/ReviewActions.tsx`
 - Modify: `src/renderer/src/assets/code-review-neon.css`
 
@@ -383,12 +395,14 @@ const handleRebase = async (): Promise<void> => {
 - [ ] **Step 3: Add freshness badge + rebase button to JSX**
 
 Insert before `cr-actions__primary`:
+
 - Freshness badge: `<span>` with class `cr-actions__freshness--{status}` showing "Fresh" / "Stale (N behind)" / "Conflict" / "..."
 - Rebase button: ghost style, `RefreshCw` icon, disabled when `actionInFlight` or `freshness.status === 'fresh'`
 
 - [ ] **Step 4: Add CSS for the freshness badge**
 
 In `src/renderer/src/assets/code-review-neon.css`, add styles for:
+
 - `.cr-actions__rebase-status` — flex row container with border-bottom
 - `.cr-actions__freshness` — small badge, 11px font, 4px border-radius
 - Color variants: `--fresh` (cyan), `--stale` (orange), `--conflict` (red), `--unknown`/`--loading` (muted)
@@ -429,6 +443,7 @@ Expected: Zero errors (warnings OK)
 - [ ] **Step 4: Clean up existing duplicates**
 
 Remove the known duplicates found during investigation:
+
 - `src/renderer/src/assets/code-review-neon.css`: remove the second `.cr-actions__btn--ship` and `.cr-actions__btn--ship:hover` blocks (search for the duplicate, keep the first occurrence)
 - `src/renderer/src/assets/sprint.css`: remove the second set of `.spec-drawer__prompt-section`, `.spec-drawer__prompt-toggle`, `.spec-drawer__prompt-toggle:hover`, `.spec-drawer__prompt-body` blocks (search for duplicates, keep first occurrences)
 

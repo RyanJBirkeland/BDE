@@ -27,9 +27,7 @@ export function CompletionCard({
       >
         <span>{success ? '\u2713' : '\u2717'}</span>
         <span>
-          {success
-            ? 'Agent completed successfully'
-            : `Agent failed (exit code ${exitCode})`}
+          {success ? 'Agent completed successfully' : `Agent failed (exit code ${exitCode})`}
         </span>
       </div>
       <div className="console-completion-card__stats">

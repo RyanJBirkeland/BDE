@@ -238,7 +238,11 @@ export async function spawnAdhocAgent(args: {
         // Extract session ID from system init message
         if (typeof raw === 'object' && raw !== null) {
           const rawMessage = raw as Record<string, unknown>
-          if (rawMessage.type === 'system' && rawMessage.subtype === 'init' && typeof rawMessage.session_id === 'string') {
+          if (
+            rawMessage.type === 'system' &&
+            rawMessage.subtype === 'init' &&
+            typeof rawMessage.session_id === 'string'
+          ) {
             sessionId = rawMessage.session_id
             log.info(`[adhoc] ${meta.id} session ID: ${sessionId}`)
           }

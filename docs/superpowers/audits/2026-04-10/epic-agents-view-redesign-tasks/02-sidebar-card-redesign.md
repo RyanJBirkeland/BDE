@@ -9,6 +9,7 @@ The `AgentList` sidebar today is 20% wide with tiny `AgentCard`s — it function
 Restructure `AgentCard.tsx` and `AgentCard.css` to a 3-row layout, replace the panel size defaults, and adopt lucide icons for the meta strip.
 
 **Card structure (3 rows):**
+
 1. **Title row:** status icon (existing `StatusIndicator`) + task title (13px, weight 600, wraps to 2 lines, max 80 chars truncated with ellipsis) + kill button (existing, when running) + small model badge in top-right
 2. **Status row:**
    - Running: empty (live activity row deferred — see spec Open Question #1)

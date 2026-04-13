@@ -119,7 +119,12 @@ describe('TaskDetailActionButtons', () => {
     it('disables all buttons during loading', async () => {
       const task = makeTask({ status: 'backlog' })
       let resolve!: () => void
-      mockOnLaunch.mockImplementation(() => new Promise<void>((r) => { resolve = r }))
+      mockOnLaunch.mockImplementation(
+        () =>
+          new Promise<void>((r) => {
+            resolve = r
+          })
+      )
       render(
         <TaskDetailActionButtons
           task={task}
@@ -461,7 +466,12 @@ describe('TaskDetailActionButtons', () => {
     it('shows spinner with aria-busy during action', async () => {
       const task = makeTask({ status: 'backlog' })
       let resolve!: () => void
-      mockOnLaunch.mockImplementation(() => new Promise<void>((r) => { resolve = r }))
+      mockOnLaunch.mockImplementation(
+        () =>
+          new Promise<void>((r) => {
+            resolve = r
+          })
+      )
       render(
         <TaskDetailActionButtons
           task={task}

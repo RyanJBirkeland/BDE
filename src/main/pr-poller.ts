@@ -47,11 +47,9 @@ async function fetchCheckRuns(
   const result = await githubFetchJson<{
     total_count: number
     check_runs: { status: string; conclusion: string | null }[]
-  }>(
-    `https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs`,
-    token,
-    { timeoutMs: REQUEST_TIMEOUT_MS }
-  )
+  }>(`https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs`, token, {
+    timeoutMs: REQUEST_TIMEOUT_MS
+  })
   // On any error, degrade to the "pending" sentinel so the UI doesn't flash
   // false positives. Error details are logged + broadcast by githubFetchJson
   // via `github:error` for the renderer toast system to surface.
