@@ -397,6 +397,41 @@ export async function addWorktree(
 }
 
 /**
+ * Stages all changes (git add -A), then unstages known test artifact paths.
+ * Returns true if there are staged changes remaining after cleanup, false otherwise.
+ */
+async function stageWithArtifactCleanup(
+  worktreePath: string,
+  env: NodeJS.ProcessEnv,
+  logger: Logger
+): Promise<boolean> {
+  // Use -A to capture new (untracked) files created by agents, not just modifications.
+  // The repo's .gitignore excludes node_modules, .env, etc.
+  await execFile('git', ['add', '-A'], { cwd: worktreePath, env })
+
+  // Unstage test artifacts that may have been previously tracked
+  for (const path of GIT_ARTIFACT_PATTERNS) {
+    try {
+      await execFile('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
+        cwd: worktreePath,
+        env
+      })
+    } catch (err) {
+      // Non-fatal — artifact may not exist or not be tracked
+      logger.info(`[completion] artifact cleanup failed for ${path}: ${getErrorMessage(err)}`)
+    }
+  }
+
+  // Re-check if staged changes remain (unstaging may have removed everything)
+  const { stdout: stagedOut } = await execFile('git', ['diff', '--cached', '--name-only'], {
+    cwd: worktreePath,
+    env
+  })
+
+  return stagedOut.trim().length > 0
+}
+
+/**
  * Auto-commit any uncommitted changes in the worktree.
  * Uses -A to capture new (untracked) files. Unstages test artifact paths before committing.
  */
@@ -410,46 +445,25 @@ export async function autoCommitIfDirty(
     cwd: worktreePath,
     env
   })
-  if (statusOut.trim()) {
-    logger.info(`[completion] auto-committing uncommitted changes`)
-    // Use -A to capture new (untracked) files created by agents, not just modifications.
-    // The repo's .gitignore excludes node_modules, .env, etc.
-    await execFile('git', ['add', '-A'], { cwd: worktreePath, env })
+  if (!statusOut.trim()) return
 
-    // Unstage test artifacts that may have been previously tracked
-    for (const path of GIT_ARTIFACT_PATTERNS) {
-      try {
-        await execFile('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
-          cwd: worktreePath,
-          env
-        })
-      } catch (err) {
-        // Non-fatal — artifact may not exist or not be tracked
-        logger.info(`[completion] artifact cleanup failed for ${path}: ${getErrorMessage(err)}`)
-      }
-    }
+  logger.info(`[completion] auto-committing uncommitted changes`)
+  const hasChanges = await stageWithArtifactCleanup(worktreePath, env, logger)
 
-    // Re-check if staged changes remain (unstaging may have removed everything)
-    const { stdout: stagedOut } = await execFile('git', ['diff', '--cached', '--name-only'], {
+  if (!hasChanges) {
+    logger.info(`[completion] no staged changes after unstaging test artifacts — skipping commit`)
+    return
+  }
+
+  const sanitizedTitle = sanitizeForGit(title)
+  await execFile(
+    'git',
+    ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
+    {
       cwd: worktreePath,
       env
-    })
-
-    if (!stagedOut.trim()) {
-      logger.info(`[completion] no staged changes after unstaging test artifacts — skipping commit`)
-      return
     }
-
-    const sanitizedTitle = sanitizeForGit(title)
-    await execFile(
-      'git',
-      ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
-      {
-        cwd: worktreePath,
-        env
-      }
-    )
-  }
+  )
 }
 
 /**
