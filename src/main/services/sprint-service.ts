@@ -1,165 +1,74 @@
 /**
- * Sprint service layer — thin wrappers around the sprint task repository that
- * add mutation notifications (SSE broadcast + IPC push).
+ * Sprint service — backward-compatible unified interface.
  *
- * Extracted from handlers/sprint-local.ts so that both IPC handlers
- * and Queue API can share the same notification-aware data access
- * without importing from the handler module.
+ * Re-exports from sprint-mutations.ts and sprint-mutation-broadcaster.ts
+ * to maintain existing import paths. New code should import from those
+ * modules directly.
  *
- * All data access goes through ISprintTaskRepository (createSprintTaskRepository).
- * No direct imports from sprint-queries — the repository is the single abstraction.
+ * This module wraps mutation operations to automatically trigger notifications,
+ * preserving the behavior existing code expects.
  */
-import {
-  createSprintTaskRepository,
-  type ISprintTaskRepository,
-  type CreateTaskInput,
-  type QueueStats,
-  type SpecTypeSuccessRate,
-  type DailySuccessRate
-} from '../data/sprint-task-repository'
+import * as mutations from './sprint-mutations'
+import * as broadcaster from './sprint-mutation-broadcaster'
 import type { SprintTask } from '../../shared/types'
-import { createLogger } from '../logger'
-import { broadcast } from '../broadcast'
-import { createWebhookService, getWebhookEventName } from './webhook-service'
-import { getWebhooks } from '../data/webhook-queries'
-import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
-export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate }
+export type {
+  CreateTaskInput,
+  QueueStats,
+  SpecTypeSuccessRate,
+  DailySuccessRate
+} from './sprint-mutations'
 
-const logger = createLogger('sprint-service')
+export type { SprintMutationEvent, SprintMutationListener } from './sprint-mutation-broadcaster'
 
-export type SprintMutationEvent = {
-  type: 'created' | 'updated' | 'deleted'
-  task: SprintTask
-}
-export type SprintMutationListener = (event: SprintMutationEvent) => void
+// Re-export notification functions
+export const onSprintMutation = broadcaster.onSprintMutation
+export const notifySprintMutation = broadcaster.notifySprintMutation
 
-const listeners: Set<SprintMutationListener> = new Set()
+// Re-export read-only operations
+export const getTask = mutations.getTask
+export const listTasks = mutations.listTasks
+export const listTasksRecent = mutations.listTasksRecent
+export const getQueueStats = mutations.getQueueStats
+export const getDoneTodayCount = mutations.getDoneTodayCount
+export const listTasksWithOpenPrs = mutations.listTasksWithOpenPrs
+export const getHealthCheckTasks = mutations.getHealthCheckTasks
+export const getSuccessRateBySpecType = mutations.getSuccessRateBySpecType
+export const getDailySuccessRate = mutations.getDailySuccessRate
+export const markTaskDoneByPrNumber = mutations.markTaskDoneByPrNumber
+export const markTaskCancelledByPrNumber = mutations.markTaskCancelledByPrNumber
+export const updateTaskMergeableState = mutations.updateTaskMergeableState
+export const flagStuckTasks = mutations.flagStuckTasks
 
-// Initialize webhook service
-const webhookService = createWebhookService({ getWebhooks, logger })
-
-export function onSprintMutation(cb: SprintMutationListener): () => void {
-  listeners.add(cb)
-  return () => {
-    listeners.delete(cb)
-  }
-}
-
-export function notifySprintMutation(type: SprintMutationEvent['type'], task: SprintTask): void {
-  const event = { type, task }
-  for (const cb of listeners) {
-    try {
-      cb(event)
-    } catch (err) {
-      logger.error(`${err}`)
-    }
-  }
-
-  // Push to renderer windows so Dashboard/SprintCenter refresh immediately
-  broadcast('sprint:externalChange')
-
-  // Fire webhooks for external integrations
-  try {
-    const webhookEvent = getWebhookEventName(type, task)
-    webhookService.fireWebhook(webhookEvent, task)
-  } catch (err) {
-    logger.error(`[webhook] ${err}`)
-  }
-}
-
-const repo: ISprintTaskRepository = createSprintTaskRepository()
-
-export function getTask(id: string): SprintTask | null {
-  return repo.getTask(id)
-}
-
-export function listTasks(status?: string): SprintTask[] {
-  return repo.listTasks(status)
-}
-
-export function listTasksRecent(): SprintTask[] {
-  return repo.listTasksRecent()
-}
-
-export function createTask(input: CreateTaskInput): SprintTask | null {
-  const row = repo.createTask(input)
-  if (row) notifySprintMutation('created', row)
+// Wrap mutation operations to auto-notify
+export function createTask(input: mutations.CreateTaskInput): SprintTask | null {
+  const row = mutations.createTask(input)
+  if (row) broadcaster.notifySprintMutation('created', row)
   return row
 }
 
 export function claimTask(id: string, claimedBy: string): SprintTask | null {
-  const result = repo.claimTask(id, claimedBy)
-  if (result) notifySprintMutation('updated', result)
+  const result = mutations.claimTask(id, claimedBy)
+  if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
 
 export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
-  const result = repo.updateTask(id, patch)
-  if (result) notifySprintMutation('updated', result)
+  const result = mutations.updateTask(id, patch)
+  if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
 
 export function deleteTask(id: string): void {
-  const task = repo.getTask(id)
-  repo.deleteTask(id)
-  if (task) notifySprintMutation('deleted', task)
+  const task = mutations.getTask(id)
+  mutations.deleteTask(id)
+  if (task) broadcaster.notifySprintMutation('deleted', task)
 }
 
 export function releaseTask(id: string, claimedBy: string): SprintTask | null {
-  const result = repo.releaseTask(id, claimedBy)
-  if (result) notifySprintMutation('updated', result)
+  const result = mutations.releaseTask(id, claimedBy)
+  if (result) broadcaster.notifySprintMutation('updated', result)
   return result
-}
-
-export function getQueueStats(): QueueStats {
-  return repo.getQueueStats()
-}
-
-export function getDoneTodayCount(): number {
-  return repo.getDoneTodayCount()
-}
-
-export function markTaskDoneByPrNumber(prNumber: number): string[] {
-  return repo.markTaskDoneByPrNumber(prNumber)
-}
-
-export function markTaskCancelledByPrNumber(prNumber: number): string[] {
-  return repo.markTaskCancelledByPrNumber(prNumber)
-}
-
-export function listTasksWithOpenPrs(): SprintTask[] {
-  return repo.listTasksWithOpenPrs()
-}
-
-export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): void {
-  repo.updateTaskMergeableState(prNumber, mergeableState)
-}
-
-export function flagStuckTasks(): void {
-  const allTasks = repo.listTasks()
-  const oneHourAgo = Date.now() - STUCK_TASK_THRESHOLD_MS
-  const stuck = allTasks.filter(
-    (t) =>
-      // Note: Uses ['error', 'failed'] instead of isFailure() from task-state-machine
-      // because cancelled tasks are intentionally excluded from stuck-task flagging.
-      ['error', 'failed'].includes(t.status) &&
-      !t.needs_review &&
-      new Date(t.updated_at).getTime() < oneHourAgo
-  )
-  if (stuck.length > 0) {
-    for (const t of stuck) {
-      repo.updateTask(t.id, { needs_review: true })
-    }
-  }
-}
-
-export function getHealthCheckTasks(): SprintTask[] {
-  return repo.getHealthCheckTasks()
-}
-
-export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
-  return repo.getSuccessRateBySpecType()
 }
 
 export function createReviewTaskFromAdhoc(input: {
@@ -169,11 +78,7 @@ export function createReviewTaskFromAdhoc(input: {
   worktreePath: string
   branch: string
 }): SprintTask | null {
-  const row = repo.createReviewTaskFromAdhoc(input)
-  if (row) notifySprintMutation('created', row)
+  const row = mutations.createReviewTaskFromAdhoc(input)
+  if (row) broadcaster.notifySprintMutation('created', row)
   return row
-}
-
-export function getDailySuccessRate(days?: number): DailySuccessRate[] {
-  return repo.getDailySuccessRate(days)
 }
