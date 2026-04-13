@@ -13,7 +13,6 @@ let unsubscribe: (() => void) | null = null
 interface SprintEventsState {
   // --- State ---
   taskEvents: Record<string, AnyTaskEvent[]>
-  latestEvents: Record<string, AnyTaskEvent>
 
   // --- Actions ---
   initTaskOutputListener: () => () => void
@@ -21,9 +20,21 @@ interface SprintEventsState {
   clearTaskEvents: (taskId: string) => void
 }
 
+/**
+ * Selector — returns the most recent event for a given agent without
+ * storing redundant state. Zustand memoizes selector results automatically.
+ *
+ * Usage: `const latest = useSprintEvents(selectLatestEvent(taskId))`
+ */
+export const selectLatestEvent =
+  (taskId: string) =>
+  (state: SprintEventsState): AnyTaskEvent | undefined => {
+    const events = state.taskEvents[taskId]
+    return events && events.length > 0 ? events[events.length - 1] : undefined
+  }
+
 export const useSprintEvents = create<SprintEventsState>((set) => ({
   taskEvents: {},
-  latestEvents: {},
 
   initTaskOutputListener: (): (() => void) => {
     if (unsubscribe) {
@@ -40,10 +51,6 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
           taskEvents: {
             ...s.taskEvents,
             [agentId]: updated
-          },
-          latestEvents: {
-            ...s.latestEvents,
-            [agentId]: event
           }
         }
       })
@@ -60,8 +67,7 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
   clearTaskEvents: (taskId): void => {
     set((s) => {
       const { [taskId]: _events, ...restEvents } = s.taskEvents
-      const { [taskId]: _latest, ...restLatest } = s.latestEvents
-      return { taskEvents: restEvents, latestEvents: restLatest }
+      return { taskEvents: restEvents }
     })
   }
 }))

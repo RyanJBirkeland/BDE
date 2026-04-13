@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useSprintEvents } from '../sprintEvents'
+import { useSprintEvents, selectLatestEvent } from '../sprintEvents'
 import type { AgentEvent } from '../../../../shared/types'
 import type { TaskOutputEvent } from '../../../../shared/types'
 import { nowIso } from '../../../../shared/time'
 
 const initialState = {
-  taskEvents: {},
-  latestEvents: {}
+  taskEvents: {}
 }
 
 beforeEach(() => {
@@ -69,9 +68,9 @@ describe('initTaskOutputListener', () => {
     const event = makeAgentEvent('first')
     captured!({ agentId: 'agent-1', event })
 
-    const { taskEvents, latestEvents } = useSprintEvents.getState()
-    expect(taskEvents['agent-1']).toHaveLength(1)
-    expect(latestEvents['agent-1']).toBe(event)
+    const state = useSprintEvents.getState()
+    expect(state.taskEvents['agent-1']).toHaveLength(1)
+    expect(selectLatestEvent('agent-1')(state)).toBe(event)
   })
 
   it('accumulates multiple events for the same agent', () => {
@@ -107,7 +106,7 @@ describe('initTaskOutputListener', () => {
     expect(taskEvents['agent-y']).toHaveLength(1)
   })
 
-  it('updates latestEvents to the most recently received event', () => {
+  it('selectLatestEvent returns the most recently received event', () => {
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
     vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
       captured = cb
@@ -121,13 +120,12 @@ describe('initTaskOutputListener', () => {
     captured!({ agentId: 'agent-1', event: first })
     captured!({ agentId: 'agent-1', event: second })
 
-    expect(useSprintEvents.getState().latestEvents['agent-1']).toBe(second)
+    expect(selectLatestEvent('agent-1')(useSprintEvents.getState())).toBe(second)
   })
 
   it('preserves existing events from other agents when a new event arrives', () => {
     useSprintEvents.setState({
-      taskEvents: { 'agent-existing': [makeAgentEvent('old')] },
-      latestEvents: {}
+      taskEvents: { 'agent-existing': [makeAgentEvent('old')] }
     })
 
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
@@ -155,7 +153,7 @@ describe('initTaskOutputListener', () => {
 
     // Pre-fill with 500 events via setState
     const existing = Array.from({ length: 500 }, (_, i) => makeAgentEvent(`e${i}`))
-    useSprintEvents.setState({ taskEvents: { 'agent-1': existing }, latestEvents: {} })
+    useSprintEvents.setState({ taskEvents: { 'agent-1': existing } })
 
     // Push one more — should slice to keep only the last 500
     captured!({ agentId: 'agent-1', event: makeAgentEvent('overflow') })
@@ -178,32 +176,28 @@ describe('initTaskOutputListener', () => {
     const event = makeTaskOutputEvent('task-123', 'agent:started')
     captured!({ agentId: 'agent-2', event })
 
-    const { taskEvents, latestEvents } = useSprintEvents.getState()
-    expect(taskEvents['agent-2']).toHaveLength(1)
-    expect(latestEvents['agent-2']).toBe(event)
+    const state = useSprintEvents.getState()
+    expect(state.taskEvents['agent-2']).toHaveLength(1)
+    expect(selectLatestEvent('agent-2')(state)).toBe(event)
   })
 })
 
 // --- clearTaskEvents ---
 
 describe('clearTaskEvents', () => {
-  it('removes events and latest event for the given agent', () => {
+  it('removes events for the given agent', () => {
     useSprintEvents.setState({
       taskEvents: {
         'agent-a': [makeAgentEvent('a1'), makeAgentEvent('a2')],
         'agent-b': [makeAgentEvent('b1')]
-      },
-      latestEvents: {
-        'agent-a': makeAgentEvent('a2'),
-        'agent-b': makeAgentEvent('b1')
       }
     })
 
     useSprintEvents.getState().clearTaskEvents('agent-a')
 
-    const { taskEvents, latestEvents } = useSprintEvents.getState()
-    expect(taskEvents['agent-a']).toBeUndefined()
-    expect(latestEvents['agent-a']).toBeUndefined()
+    const state = useSprintEvents.getState()
+    expect(state.taskEvents['agent-a']).toBeUndefined()
+    expect(selectLatestEvent('agent-a')(state)).toBeUndefined()
   })
 
   it('leaves other agents untouched', () => {
@@ -211,24 +205,19 @@ describe('clearTaskEvents', () => {
       taskEvents: {
         'agent-a': [makeAgentEvent('a1')],
         'agent-b': [makeAgentEvent('b1')]
-      },
-      latestEvents: {
-        'agent-a': makeAgentEvent('a1'),
-        'agent-b': makeAgentEvent('b1')
       }
     })
 
     useSprintEvents.getState().clearTaskEvents('agent-a')
 
-    const { taskEvents, latestEvents } = useSprintEvents.getState()
-    expect(taskEvents['agent-b']).toHaveLength(1)
-    expect(latestEvents['agent-b']).toBeDefined()
+    const state = useSprintEvents.getState()
+    expect(state.taskEvents['agent-b']).toHaveLength(1)
+    expect(selectLatestEvent('agent-b')(state)).toBeDefined()
   })
 
   it('is a no-op when the agent id does not exist', () => {
     useSprintEvents.setState({
-      taskEvents: { 'agent-a': [makeAgentEvent('a1')] },
-      latestEvents: { 'agent-a': makeAgentEvent('a1') }
+      taskEvents: { 'agent-a': [makeAgentEvent('a1')] }
     })
 
     // should not throw
@@ -241,7 +230,6 @@ describe('clearTaskEvents', () => {
   it('handles clearing from an empty store without throwing', () => {
     expect(() => useSprintEvents.getState().clearTaskEvents('any-id')).not.toThrow()
     expect(useSprintEvents.getState().taskEvents).toEqual({})
-    expect(useSprintEvents.getState().latestEvents).toEqual({})
   })
 })
 
@@ -252,7 +240,7 @@ describe('initial state', () => {
     expect(useSprintEvents.getState().taskEvents).toEqual({})
   })
 
-  it('has empty latestEvents', () => {
-    expect(useSprintEvents.getState().latestEvents).toEqual({})
+  it('selectLatestEvent returns undefined for unknown agent', () => {
+    expect(selectLatestEvent('unknown')(useSprintEvents.getState())).toBeUndefined()
   })
 })
