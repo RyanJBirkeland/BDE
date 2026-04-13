@@ -129,17 +129,25 @@ vi.mock('../../services/dependency-service', async (importOriginal) => {
   }
 })
 
-// Mock spec-semantic-check
-const mockCheckSpecSemantic = vi.fn().mockResolvedValue({
-  passed: true,
-  hasFails: false,
-  hasWarns: false,
-  results: {},
-  failMessages: [],
-  warnMessages: []
+// Mock spec-quality factory
+const mockValidateFull = vi.fn().mockResolvedValue({
+  valid: true,
+  issues: [],
+  errors: [],
+  warnings: [],
+  prescriptivenessChecked: true
 })
-vi.mock('../../spec-semantic-check', () => ({
-  checkSpecSemantic: (...args: unknown[]) => mockCheckSpecSemantic(...args)
+vi.mock('../../services/spec-quality/factory', () => ({
+  createSpecQualityService: () => ({
+    validateStructural: vi.fn().mockReturnValue({
+      valid: true,
+      issues: [],
+      errors: [],
+      warnings: [],
+      prescriptivenessChecked: false
+    }),
+    validateFull: (...args: unknown[]) => mockValidateFull(...args)
+  })
 }))
 
 import { registerSprintLocalHandlers } from '../sprint-local'
@@ -523,13 +531,12 @@ describe('sprint:create spec validation', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCheckSpecSemantic.mockResolvedValue({
-      passed: true,
-      hasFails: false,
-      hasWarns: false,
-      results: {},
-      failMessages: [],
-      warnMessages: []
+    mockValidateFull.mockResolvedValue({
+      valid: true,
+      issues: [],
+      errors: [],
+      warnings: [],
+      prescriptivenessChecked: true
     })
   })
 
@@ -583,13 +590,12 @@ describe('sprint:update spec validation on queue transition', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCheckSpecSemantic.mockResolvedValue({
-      passed: true,
-      hasFails: false,
-      hasWarns: false,
-      results: {},
-      failMessages: [],
-      warnMessages: []
+    mockValidateFull.mockResolvedValue({
+      valid: true,
+      issues: [],
+      errors: [],
+      warnings: [],
+      prescriptivenessChecked: true
     })
   })
 
@@ -630,7 +636,7 @@ describe('sprint:update spec validation on queue transition', () => {
     await handler(mockEvent, 'abc', { status: 'done' })
 
     expect(_getTask).not.toHaveBeenCalled()
-    expect(mockCheckSpecSemantic).not.toHaveBeenCalled()
+    expect(mockValidateFull).not.toHaveBeenCalled()
   })
 
   it('throws when semantic check fails', async () => {
@@ -641,13 +647,16 @@ describe('sprint:update spec validation on queue transition', () => {
       spec: validSpec,
       status: 'backlog'
     } as any)
-    mockCheckSpecSemantic.mockResolvedValue({
-      passed: false,
-      hasFails: true,
-      hasWarns: false,
-      results: {},
-      failMessages: ['clarity: Too vague'],
-      warnMessages: []
+    mockValidateFull.mockResolvedValue({
+      valid: false,
+      issues: [
+        { code: 'STEP_REQUIRES_DESIGN_DECISION', severity: 'error', message: 'clarity: Too vague' }
+      ],
+      errors: [
+        { code: 'STEP_REQUIRES_DESIGN_DECISION', severity: 'error', message: 'clarity: Too vague' }
+      ],
+      warnings: [],
+      prescriptivenessChecked: true
     })
 
     const handler = captureHandler('sprint:update')

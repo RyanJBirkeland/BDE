@@ -2,6 +2,9 @@
  * Shared validation helpers for sprint task handlers.
  * Extracted to reduce duplication across handlers.
  */
+import { createSpecQualityService } from '../services/spec-quality/factory'
+
+const specQualityService = createSpecQualityService()
 
 /**
  * Run structural and semantic validation on a task spec.
@@ -26,16 +29,12 @@ export async function validateTaskSpec(input: {
     throw new Error(`${prefix} — spec quality checks failed: ${structural.errors.join('; ')}`)
   }
 
-  // Semantic check
+  // Full quality check (structural + AI prescriptiveness)
   if (input.spec) {
-    const { checkSpecSemantic } = await import('../spec-semantic-check')
-    const semantic = await checkSpecSemantic({
-      title: input.title,
-      repo: input.repo,
-      spec: input.spec
-    })
-    if (!semantic.passed) {
-      throw new Error(`${prefix} — semantic checks failed: ${semantic.failMessages.join('; ')}`)
+    const result = await specQualityService.validateFull(input.spec)
+    if (!result.valid) {
+      const firstError = result.errors[0]?.message ?? 'Spec did not pass quality checks'
+      throw new Error(`${prefix} — semantic checks failed: ${firstError}`)
     }
   }
 }

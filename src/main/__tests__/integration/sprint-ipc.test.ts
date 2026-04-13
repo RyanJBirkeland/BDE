@@ -117,9 +117,24 @@ vi.mock('../../logger', () => ({
   }))
 }))
 
-// Mock spec-semantic-check
-vi.mock('../../spec-semantic-check', () => ({
-  checkSpecSemantic: vi.fn().mockResolvedValue({ passed: true, failMessages: [] })
+// Mock spec-quality factory
+vi.mock('../../services/spec-quality/factory', () => ({
+  createSpecQualityService: () => ({
+    validateStructural: vi.fn().mockReturnValue({
+      valid: true,
+      issues: [],
+      errors: [],
+      warnings: [],
+      prescriptivenessChecked: false
+    }),
+    validateFull: vi.fn().mockResolvedValue({
+      valid: true,
+      issues: [],
+      errors: [],
+      warnings: [],
+      prescriptivenessChecked: true
+    })
+  })
 }))
 
 // Mock Electron ipcMain.handle — capture registered handlers
