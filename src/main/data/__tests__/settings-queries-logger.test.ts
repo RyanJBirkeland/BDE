@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { setSettingsQueriesLogger } from '../settings-queries'
 
 describe('settings-queries logger injection', () => {
