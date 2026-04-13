@@ -1,26 +1,6 @@
 /* Terminal Panel */
 .ide-terminal-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
   background: var(--bde-bg);
-  overflow: hidden;
-}
-/* Neon Theme Overrides */
-.ide-terminal-panel {
-  background: var(--bde-bg);
-}
-/* Terminal View Header */
-.terminal-view {
-  background: var(--bde-bg);
-}
-.terminal-view__header {
-  background: var(--bde-surface-high);
-  border-bottom: 1px solid var(--bde-accent-border);
-}
-.terminal-view__title {
-  color: var(--bde-status-active);
 }
 /* Terminal Tab Bar */
 .terminal-tab-bar {
@@ -155,39 +135,6 @@
 .terminal-agent-status-bar {
   background: var(--bde-surface-high);
   border-bottom: 1px solid var(--bde-accent-border);
-}
-/* ── Terminal: View layout ────────────────────────────── */
-.terminal-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--bde-bg);
-}
-/* Header title bar */
-.terminal-view__header {
-  position: relative;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  padding: 0 var(--bde-space-4);
-  border-bottom: 1px solid var(--bde-border);
-  background: var(--glass-tint-dark);
-  flex-shrink: 0;
-}
-.terminal-view__header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: var(--bde-space-4);
-  right: var(--bde-space-4);
-  height: 1px;
-  background: var(--bde-header-gradient);
-}
-.terminal-view__title {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 /* ── Terminal: Tab bar ────────────────────────────────── */
 .terminal-tab-bar {

@@ -1,11 +1,7 @@
 /* EpicDetail — epic detail panel */
 
 .epic-detail {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
   background: var(--bde-bg);
-  overflow: hidden;
 }
 
 .epic-detail__header {

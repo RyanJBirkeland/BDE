@@ -301,7 +301,7 @@ export function EpicDetail({
   }
 
   return (
-    <div className="epic-detail">
+    <div className="bde-panel epic-detail">
       {/* Header */}
       <div className="epic-detail__header">
         <div

@@ -43,7 +43,7 @@ export function TerminalPanel(): React.JSX.Element {
   }, [closeTab])
 
   return (
-    <div className="ide-terminal-panel">
+    <div className="bde-panel ide-terminal-panel">
       <div className="terminal-tab-bar">
         <TerminalTabBar
           tabs={tabs}
