@@ -24,11 +24,13 @@ vi.mock('../WorkbenchCopilot', () => ({
 
 import { TaskWorkbench } from '../TaskWorkbench'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
+import { useCopilotStore } from '../../../stores/copilot'
 
 describe('TaskWorkbench', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useTaskWorkbenchStore.getState().resetForm()
+    useCopilotStore.getState().reset()
 
     // Mark the copilot discovery popover as already-seen by default so it
     // doesn't show up in unrelated tests. Tests that want to exercise the
@@ -47,52 +49,52 @@ describe('TaskWorkbench', () => {
   })
 
   it('renders WorkbenchCopilot when copilotVisible is true', () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
     expect(screen.getByTestId('workbench-copilot')).toBeInTheDocument()
   })
 
   it('does not render WorkbenchCopilot when copilotVisible is false', () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: false })
+    useCopilotStore.setState({ visible: false })
     render(<TaskWorkbench />)
     expect(screen.queryByTestId('workbench-copilot')).not.toBeInTheDocument()
   })
 
   it('shows "AI Copilot" toggle button when copilot is hidden', () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: false })
+    useCopilotStore.setState({ visible: false })
     render(<TaskWorkbench />)
     expect(screen.getByText('AI Copilot')).toBeInTheDocument()
   })
 
   it('does not show toggle button when copilot is visible', () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
     expect(screen.queryByText('AI Copilot')).not.toBeInTheDocument()
   })
 
   it('toggles copilot visibility when AI Copilot button is clicked', () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: false })
+    useCopilotStore.setState({ visible: false })
     render(<TaskWorkbench />)
 
     const toggleButton = screen.getByText('AI Copilot')
     fireEvent.click(toggleButton)
 
-    expect(useTaskWorkbenchStore.getState().copilotVisible).toBe(true)
+    expect(useCopilotStore.getState().visible).toBe(true)
   })
 
   it('closes copilot when onClose is called', () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
 
     const closeButton = screen.getByTestId('close-copilot')
     fireEvent.click(closeButton)
 
-    expect(useTaskWorkbenchStore.getState().copilotVisible).toBe(false)
+    expect(useCopilotStore.getState().visible).toBe(false)
   })
 
   it('sends message via chatStream when handleSendFromForm is called', async () => {
     useTaskWorkbenchStore.setState({
-      copilotVisible: true,
+      visible: true,
       title: 'Test Task',
       repo: 'BDE',
       spec: 'Test spec'
@@ -112,42 +114,42 @@ describe('TaskWorkbench', () => {
   })
 
   it('shows copilot if hidden when sending message', async () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: false })
+    useCopilotStore.setState({ visible: false })
     render(<TaskWorkbench />)
 
     const sendButton = screen.getByTestId('send-copilot')
     fireEvent.click(sendButton)
 
     await waitFor(() => {
-      expect(useTaskWorkbenchStore.getState().copilotVisible).toBe(true)
+      expect(useCopilotStore.getState().visible).toBe(true)
     })
   })
 
   it('adds user message to store when sending', async () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
 
-    const initialMessageCount = useTaskWorkbenchStore.getState().copilotMessages.length
+    const initialMessageCount = useCopilotStore.getState().messages.length
 
     const sendButton = screen.getByTestId('send-copilot')
     fireEvent.click(sendButton)
 
     await waitFor(() => {
-      const messages = useTaskWorkbenchStore.getState().copilotMessages
+      const messages = useCopilotStore.getState().messages
       expect(messages.length).toBeGreaterThan(initialMessageCount)
       expect(messages.some((m) => m.role === 'user' && m.content === 'test message')).toBe(true)
     })
   })
 
   it('creates empty assistant message and starts streaming state', async () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
 
     const sendButton = screen.getByTestId('send-copilot')
     fireEvent.click(sendButton)
 
     await waitFor(() => {
-      const messages = useTaskWorkbenchStore.getState().copilotMessages
+      const messages = useCopilotStore.getState().messages
       const assistantMsg = messages.find((m) => m.role === 'assistant')
       expect(assistantMsg).toBeDefined()
       expect(assistantMsg?.insertable).toBe(true)
@@ -161,7 +163,7 @@ describe('TaskWorkbench', () => {
     })
     ;(window.api as any).workbench.chatStream = vi.fn().mockReturnValue(chatStreamPromise)
 
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
 
     const sendButton = screen.getByTestId('send-copilot')
@@ -169,9 +171,9 @@ describe('TaskWorkbench', () => {
 
     // Should be in streaming/loading state
     await waitFor(() => {
-      const state = useTaskWorkbenchStore.getState()
+      const state = useCopilotStore.getState()
       expect(state.streamingMessageId).toBeTruthy()
-      expect(state.copilotLoading).toBe(true)
+      expect(state.loading).toBe(true)
     })
 
     // Resolve the stream initiation
@@ -179,14 +181,14 @@ describe('TaskWorkbench', () => {
   })
 
   it('marks assistant message as insertable', async () => {
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
 
     const sendButton = screen.getByTestId('send-copilot')
     fireEvent.click(sendButton)
 
     await waitFor(() => {
-      const messages = useTaskWorkbenchStore.getState().copilotMessages
+      const messages = useCopilotStore.getState().messages
       const assistantMsg = messages.find((m) => m.role === 'assistant')
       expect(assistantMsg?.insertable).toBe(true)
     })
@@ -197,14 +199,14 @@ describe('TaskWorkbench', () => {
       .fn()
       .mockRejectedValue(new Error('Network error'))
 
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
 
     const sendButton = screen.getByTestId('send-copilot')
     fireEvent.click(sendButton)
 
     await waitFor(() => {
-      const messages = useTaskWorkbenchStore.getState().copilotMessages
+      const messages = useCopilotStore.getState().messages
       expect(messages.some((m) => m.content.includes('Failed to reach Claude'))).toBe(true)
     })
   })
@@ -214,14 +216,14 @@ describe('TaskWorkbench', () => {
       .fn()
       .mockRejectedValue(new Error('Network error'))
 
-    useTaskWorkbenchStore.setState({ copilotVisible: true })
+    useCopilotStore.setState({ visible: true })
     render(<TaskWorkbench />)
 
     const sendButton = screen.getByTestId('send-copilot')
     fireEvent.click(sendButton)
 
     await waitFor(() => {
-      expect(useTaskWorkbenchStore.getState().copilotLoading).toBe(false)
+      expect(useCopilotStore.getState().loading).toBe(false)
     })
   })
 
@@ -251,28 +253,28 @@ describe('TaskWorkbench', () => {
 
     it('shows the popover on first visit when copilot is hidden', () => {
       window.localStorage.removeItem(POPOVER_KEY)
-      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      useCopilotStore.setState({ visible: false })
       render(<TaskWorkbench />)
       expect(screen.getByRole('dialog', { name: /Meet the AI Copilot/i })).toBeInTheDocument()
     })
 
     it('does not show the popover when localStorage flag is set', () => {
       window.localStorage.setItem(POPOVER_KEY, '1')
-      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      useCopilotStore.setState({ visible: false })
       render(<TaskWorkbench />)
       expect(screen.queryByRole('dialog', { name: /Meet the AI Copilot/i })).not.toBeInTheDocument()
     })
 
     it('does not show the popover when copilot is already visible', () => {
       window.localStorage.removeItem(POPOVER_KEY)
-      useTaskWorkbenchStore.setState({ copilotVisible: true })
+      useCopilotStore.setState({ visible: true })
       render(<TaskWorkbench />)
       expect(screen.queryByRole('dialog', { name: /Meet the AI Copilot/i })).not.toBeInTheDocument()
     })
 
     it('persists dismissal to localStorage and hides on "Got it"', async () => {
       window.localStorage.removeItem(POPOVER_KEY)
-      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      useCopilotStore.setState({ visible: false })
       render(<TaskWorkbench />)
 
       fireEvent.click(screen.getByRole('button', { name: /got it/i }))
@@ -283,7 +285,7 @@ describe('TaskWorkbench', () => {
 
     it('auto-dismisses when user opens the copilot via the toggle', async () => {
       window.localStorage.removeItem(POPOVER_KEY)
-      useTaskWorkbenchStore.setState({ copilotVisible: false })
+      useCopilotStore.setState({ visible: false })
       render(<TaskWorkbench />)
 
       // Initially the popover is showing
@@ -301,7 +303,7 @@ describe('TaskWorkbench', () => {
 
   it('includes form context in chatStream call', async () => {
     useTaskWorkbenchStore.setState({
-      copilotVisible: true,
+      visible: true,
       title: 'Build feature X',
       repo: 'life-os',
       spec: '## Problem\nNeed X\n## Solution\nBuild X'

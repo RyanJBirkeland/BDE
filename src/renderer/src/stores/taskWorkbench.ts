@@ -6,20 +6,6 @@ import type { SpecType } from '../../../shared/spec-validation'
 // Types
 // ---------------------------------------------------------------------------
 
-export interface CopilotMessage {
-  id: string
-  role: 'user' | 'assistant' | 'system'
-  content: string
-  timestamp: number
-  insertable?: boolean
-  /**
-   * Optional kind discriminator for system messages. `tool-use` indicates the
-   * copilot invoked a read-only tool (Read/Grep/Glob) — rendered compactly so
-   * users can see what the copilot is grounding its answer in.
-   */
-  kind?: 'tool-use'
-}
-
 export interface CheckResult {
   id: string
   label: string
@@ -55,13 +41,6 @@ interface TaskWorkbenchState {
   // --- Dirty state tracking ---
   originalSnapshot: PersistedDraft | null
 
-  // --- Copilot ---
-  copilotVisible: boolean
-  copilotMessages: CopilotMessage[]
-  copilotLoading: boolean
-  streamingMessageId: string | null
-  activeStreamId: string | null
-
   // --- Validation ---
   checksExpanded: boolean
   structuralChecks: CheckResult[]
@@ -75,16 +54,10 @@ interface TaskWorkbenchState {
   setSpecType: (type: SpecType | null) => void
   resetForm: () => void
   loadTask: (task: SprintTask) => void
-  toggleCopilot: () => void
   toggleChecksExpanded: () => void
   setStructuralChecks: (checks: CheckResult[]) => void
   setSemanticChecks: (checks: CheckResult[]) => void
   setOperationalChecks: (checks: CheckResult[]) => void
-  addCopilotMessage: (msg: CopilotMessage) => void
-  setCopilotLoading: (loading: boolean) => void
-  startStreaming: (messageId: string, streamId: string) => void
-  appendToStreamingMessage: (chunk: string) => void
-  finishStreaming: (insertable: boolean) => void
   isDirty: () => boolean
 }
 
@@ -92,15 +65,6 @@ interface TaskWorkbenchState {
 // Defaults
 // ---------------------------------------------------------------------------
 
-const WELCOME_MESSAGE: CopilotMessage = {
-  id: 'welcome',
-  role: 'system',
-  content:
-    'I can help you craft this task. Try asking me to research the codebase, brainstorm approaches, or review your spec.',
-  timestamp: Date.now()
-}
-
-const COPILOT_STORAGE_KEY = 'bde:copilot-messages'
 const ADVANCED_OPEN_STORAGE_KEY = 'bde:workbench-advanced-open'
 const DRAFT_STORAGE_KEY = 'bde:workbench-draft'
 const DRAFT_SAVE_DEBOUNCE_MS = 500
@@ -135,6 +99,19 @@ function persistAdvancedOpen(open: boolean): void {
   }
 }
 
+/**
+ * Returns true if a draft is "non-empty" — i.e., the user actually typed
+ * something. Used to avoid persisting on every blank-form keystroke.
+ */
+function draftHasContent(d: PersistedDraft): boolean {
+  return (
+    d.title.trim().length > 0 ||
+    d.spec.trim().length > 0 ||
+    d.dependsOn.length > 0 ||
+    (d.crossRepoContract?.trim().length ?? 0) > 0
+  )
+}
+
 export function loadDraft(): Partial<PersistedDraft> | null {
   try {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
@@ -163,41 +140,6 @@ export function clearDraftStorage(): void {
   }
 }
 
-/**
- * Returns true if a draft is "non-empty" — i.e., the user actually typed
- * something. Used to avoid persisting on every blank-form keystroke.
- */
-function draftHasContent(d: PersistedDraft): boolean {
-  return (
-    d.title.trim().length > 0 ||
-    d.spec.trim().length > 0 ||
-    d.dependsOn.length > 0 ||
-    (d.crossRepoContract?.trim().length ?? 0) > 0
-  )
-}
-
-function loadPersistedMessages(): CopilotMessage[] {
-  try {
-    const raw = localStorage.getItem(COPILOT_STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed
-  } catch {
-    // Ignore corrupt localStorage
-  }
-  return []
-}
-
-function persistMessages(messages: CopilotMessage[]): void {
-  try {
-    // Only persist the last 100 messages to keep localStorage lean
-    const toStore = messages.slice(-100)
-    localStorage.setItem(COPILOT_STORAGE_KEY, JSON.stringify(toStore))
-  } catch {
-    // Ignore quota errors
-  }
-}
-
 type DefaultsShape = Pick<
   TaskWorkbenchState,
   | 'mode'
@@ -216,11 +158,6 @@ type DefaultsShape = Pick<
   | 'crossRepoContract'
   | 'pendingGroupId'
   | 'originalSnapshot'
-  | 'copilotVisible'
-  | 'copilotMessages'
-  | 'copilotLoading'
-  | 'streamingMessageId'
-  | 'activeStreamId'
   | 'checksExpanded'
   | 'structuralChecks'
   | 'semanticChecks'
@@ -247,14 +184,6 @@ function emptyDefaults(): DefaultsShape {
     crossRepoContract: null,
     pendingGroupId: null,
     originalSnapshot: null,
-    copilotVisible: true,
-    copilotMessages: (() => {
-      const persisted = loadPersistedMessages()
-      return persisted.length > 0 ? persisted : [{ ...WELCOME_MESSAGE, timestamp: Date.now() }]
-    })(),
-    copilotLoading: false,
-    streamingMessageId: null,
-    activeStreamId: null,
     checksExpanded: false,
     structuralChecks: [],
     semanticChecks: [],
@@ -337,58 +266,16 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       specType: (task.spec_type as SpecType) ?? null,
       crossRepoContract: task.cross_repo_contract ?? null,
       originalSnapshot: snapshot,
-      copilotMessages: [{ ...WELCOME_MESSAGE, timestamp: Date.now() }],
-      streamingMessageId: null,
-      activeStreamId: null,
       semanticChecks: [],
       operationalChecks: []
     })
   },
 
-  toggleCopilot: () => set((s) => ({ copilotVisible: !s.copilotVisible })),
   toggleChecksExpanded: () => set((s) => ({ checksExpanded: !s.checksExpanded })),
 
   setStructuralChecks: (checks) => set({ structuralChecks: checks }),
   setSemanticChecks: (checks) => set({ semanticChecks: checks, semanticLoading: false }),
   setOperationalChecks: (checks) => set({ operationalChecks: checks, operationalLoading: false }),
-
-  addCopilotMessage: (msg) =>
-    set((s) => {
-      const messages = [...s.copilotMessages, msg]
-      return { copilotMessages: messages.length > 200 ? messages.slice(-200) : messages }
-    }),
-
-  setCopilotLoading: (loading) => set({ copilotLoading: loading }),
-
-  startStreaming: (messageId, streamId) =>
-    set({
-      streamingMessageId: messageId,
-      activeStreamId: streamId,
-      copilotLoading: true
-    }),
-
-  appendToStreamingMessage: (chunk) =>
-    set((s) => {
-      if (!s.streamingMessageId) return s
-      const messages = s.copilotMessages.map((m) =>
-        m.id === s.streamingMessageId ? { ...m, content: m.content + chunk } : m
-      )
-      return { copilotMessages: messages }
-    }),
-
-  finishStreaming: (insertable) =>
-    set((s) => {
-      if (!s.streamingMessageId) return s
-      const messages = s.copilotMessages.map((m) =>
-        m.id === s.streamingMessageId ? { ...m, insertable } : m
-      )
-      return {
-        copilotMessages: messages,
-        streamingMessageId: null,
-        activeStreamId: null,
-        copilotLoading: false
-      }
-    }),
 
   isDirty: () => {
     const state = useTaskWorkbenchStore.getState()
@@ -425,11 +312,8 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
   }
 }))
 
-// Persist copilot messages to localStorage on change
+// Persist advancedOpen to localStorage on change
 useTaskWorkbenchStore.subscribe((state, prev) => {
-  if (state.copilotMessages !== prev.copilotMessages && !state.streamingMessageId) {
-    persistMessages(state.copilotMessages)
-  }
   if (state.advancedOpen !== prev.advancedOpen) {
     persistAdvancedOpen(state.advancedOpen)
   }

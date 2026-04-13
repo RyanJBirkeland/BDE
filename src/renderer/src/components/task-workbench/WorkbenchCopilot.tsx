@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useTaskWorkbenchStore, type CopilotMessage } from '../../stores/taskWorkbench'
+import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
+import { useCopilotStore, type CopilotMessage } from '../../stores/copilot'
 import { formatToolUse } from './copilot-utils'
 import './WorkbenchCopilot.css'
 
@@ -48,9 +49,9 @@ function MessageBubble({
 }
 
 export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.Element {
-  const messages = useTaskWorkbenchStore((s) => s.copilotMessages)
-  const loading = useTaskWorkbenchStore((s) => s.copilotLoading)
-  const addMessage = useTaskWorkbenchStore((s) => s.addCopilotMessage)
+  const messages = useCopilotStore((s) => s.messages)
+  const loading = useCopilotStore((s) => s.loading)
+  const addMessage = useCopilotStore((s) => s.addMessage)
   const title = useTaskWorkbenchStore((s) => s.title)
   const repo = useTaskWorkbenchStore((s) => s.repo)
   const spec = useTaskWorkbenchStore((s) => s.spec)
@@ -63,18 +64,18 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
 
   // Subscribe to streaming chunks — accept any active stream
   useEffect(() => {
-    const store = useTaskWorkbenchStore.getState
+    const getCopilot = useCopilotStore.getState
     const unsub = window.api.workbench.onChatChunk((data) => {
       // Accept chunks if: we have a matching streamId, OR we're streaming with a placeholder ID
       const currentStreamId = activeStreamIdRef.current
-      const storeStreamId = store().activeStreamId
-      const isStreaming = !!store().streamingMessageId
+      const storeStreamId = getCopilot().activeStreamId
+      const isStreaming = !!getCopilot().streamingMessageId
 
       if (currentStreamId && data.streamId !== currentStreamId) return
       // If no ref yet but store is streaming (placeholder), accept and set the real ID
       if (!currentStreamId && isStreaming && storeStreamId === '') {
         activeStreamIdRef.current = data.streamId
-        useTaskWorkbenchStore.setState({ activeStreamId: data.streamId })
+        useCopilotStore.setState({ activeStreamId: data.streamId })
       } else if (!currentStreamId && !isStreaming) {
         return // Not streaming at all, ignore
       }
@@ -82,7 +83,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
       // Tool-use events: surface what the copilot is reading/searching so the
       // user can see it is grounded in the actual code.
       if (data.toolUse) {
-        store().addCopilotMessage({
+        getCopilot().addMessage({
           id: `tool-${data.streamId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           role: 'system',
           kind: 'tool-use',
@@ -93,20 +94,20 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
       }
 
       if (!data.done) {
-        store().appendToStreamingMessage(data.chunk)
+        getCopilot().appendToStreaming(data.chunk)
       } else {
         if (data.error) {
-          const msgId = store().streamingMessageId
+          const msgId = getCopilot().streamingMessageId
           if (msgId) {
-            useTaskWorkbenchStore.setState((s) => ({
-              copilotMessages: s.copilotMessages.map((m) =>
+            useCopilotStore.setState((s) => ({
+              messages: s.messages.map((m) =>
                 m.id === msgId ? { ...m, content: `Error: ${data.error}` } : m
               )
             }))
           }
-          store().finishStreaming(false)
+          getCopilot().finishStreaming(false)
         } else {
-          store().finishStreaming(true)
+          getCopilot().finishStreaming(true)
         }
         activeStreamIdRef.current = null
       }
@@ -115,7 +116,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
   }, [])
 
   // Auto-scroll on new messages and streaming content
-  const streamingId = useTaskWorkbenchStore((s) => s.streamingMessageId)
+  const streamingId = useCopilotStore((s) => s.streamingMessageId)
   const streamingContent = messages.find((m) => m.id === streamingId)?.content?.length ?? 0
 
   useEffect(() => {
@@ -135,7 +136,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
     // keyword-matched `workbench:researchRepo` injection has been removed —
     // the underlying IPC handler is kept as a fallback for other callers.
 
-    const allMessages = [...useTaskWorkbenchStore.getState().copilotMessages]
+    const allMessages = [...useCopilotStore.getState().messages]
       .filter((m) => m.role !== 'system')
       .map((m) => ({ role: m.role, content: m.content }))
     allMessages.push({ role: 'user', content: text })
@@ -150,7 +151,7 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
       timestamp: Date.now(),
       insertable: true
     })
-    useTaskWorkbenchStore.getState().startStreaming(msgId, '') // placeholder streamId
+    useCopilotStore.getState().startStreaming(msgId, '') // placeholder streamId
 
     try {
       const { streamId } = await window.api.workbench.chatStream({
@@ -159,15 +160,15 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
       })
       // Now set the real streamId
       activeStreamIdRef.current = streamId
-      useTaskWorkbenchStore.setState({ activeStreamId: streamId })
+      useCopilotStore.setState({ activeStreamId: streamId })
     } catch {
-      useTaskWorkbenchStore.setState((s) => ({
-        copilotMessages: s.copilotMessages.map((m) =>
+      useCopilotStore.setState((s) => ({
+        messages: s.messages.map((m) =>
           m.id === msgId
             ? { ...m, content: 'Failed to reach Claude. Check your connection and try again.' }
             : m
         ),
-        copilotLoading: false,
+        loading: false,
         streamingMessageId: null,
         activeStreamId: null
       }))
@@ -222,14 +223,14 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
         {loading && (
           <div className="wb-copilot__loading">
             <span className="wb-copilot__loading-text">
-              {useTaskWorkbenchStore.getState().streamingMessageId ? 'Streaming...' : 'Thinking...'}
+              {useCopilotStore.getState().streamingMessageId ? 'Streaming...' : 'Thinking...'}
             </span>
             <button
               onClick={() => {
-                const sid = useTaskWorkbenchStore.getState().activeStreamId
+                const sid = useCopilotStore.getState().activeStreamId
                 if (sid) {
                   window.api.workbench.cancelStream(sid)
-                  useTaskWorkbenchStore.getState().finishStreaming(true)
+                  useCopilotStore.getState().finishStreaming(true)
                 }
               }}
               className="wb-copilot__cancel-btn"

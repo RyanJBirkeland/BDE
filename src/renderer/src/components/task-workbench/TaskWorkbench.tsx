@@ -1,6 +1,7 @@
 import { useCallback, useRef, useEffect, useState } from 'react'
 import { Group, Panel, Separator } from 'react-resizable-panels'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
+import { useCopilotStore } from '../../stores/copilot'
 import { WorkbenchForm } from './WorkbenchForm'
 import { WorkbenchCopilot } from './WorkbenchCopilot'
 import { CopilotDiscoveryPopover } from './CopilotDiscoveryPopover'
@@ -9,8 +10,8 @@ import './TaskWorkbench.css'
 const COPILOT_POPOVER_SEEN_KEY = 'bde:workbench-copilot-popover-seen'
 
 export function TaskWorkbench(): React.JSX.Element {
-  const copilotVisible = useTaskWorkbenchStore((s) => s.copilotVisible)
-  const toggleCopilot = useTaskWorkbenchStore((s) => s.toggleCopilot)
+  const copilotVisible = useCopilotStore((s) => s.visible)
+  const toggleCopilot = useCopilotStore((s) => s.toggleVisible)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // First-run discoverability popover for the AI Copilot toggle.
@@ -39,16 +40,16 @@ export function TaskWorkbench(): React.JSX.Element {
 
     const observer = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width ?? 0
-      const store = useTaskWorkbenchStore.getState()
-      if (width < 600 && store.copilotVisible) {
-        store.toggleCopilot()
+      const copilot = useCopilotStore.getState()
+      if (width < 600 && copilot.visible) {
+        copilot.toggleVisible()
       }
     })
 
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
-  const addMessage = useTaskWorkbenchStore((s) => s.addCopilotMessage)
+  const addMessage = useCopilotStore((s) => s.addMessage)
   const title = useTaskWorkbenchStore((s) => s.title)
   const repo = useTaskWorkbenchStore((s) => s.repo)
   const spec = useTaskWorkbenchStore((s) => s.spec)
@@ -56,7 +57,7 @@ export function TaskWorkbench(): React.JSX.Element {
   const handleSendFromForm = useCallback(
     async (text: string) => {
       // If copilot is hidden, show it so the streaming listener is mounted
-      if (!useTaskWorkbenchStore.getState().copilotVisible) {
+      if (!useCopilotStore.getState().visible) {
         toggleCopilot()
       }
 
@@ -78,7 +79,7 @@ export function TaskWorkbench(): React.JSX.Element {
         timestamp: Date.now(),
         insertable: true
       })
-      useTaskWorkbenchStore.getState().startStreaming(msgId, '') // placeholder streamId
+      useCopilotStore.getState().startStreaming(msgId, '') // placeholder streamId
 
       try {
         await window.api.workbench.chatStream({
@@ -87,13 +88,13 @@ export function TaskWorkbench(): React.JSX.Element {
         })
         // Real streamId is set by the WorkbenchCopilot chunk listener
       } catch {
-        useTaskWorkbenchStore.setState((s) => ({
-          copilotMessages: s.copilotMessages.map((m) =>
+        useCopilotStore.setState((s) => ({
+          messages: s.messages.map((m) =>
             m.id === msgId
               ? { ...m, content: 'Failed to reach Claude. Check your connection and try again.' }
               : m
           ),
-          copilotLoading: false,
+          loading: false,
           streamingMessageId: null,
           activeStreamId: null
         }))

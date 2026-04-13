@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 import { WorkbenchCopilot } from '../WorkbenchCopilot'
 import { isResearchQuery, extractSearchTerms, formatToolUse } from '../copilot-utils'
-import { useTaskWorkbenchStore, type CopilotMessage } from '../../../stores/taskWorkbench'
+import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
+import { useCopilotStore, type CopilotMessage } from '../../../stores/copilot'
 
 describe('WorkbenchCopilot', () => {
   const mockOnClose = vi.fn()
@@ -13,6 +14,7 @@ describe('WorkbenchCopilot', () => {
     vi.clearAllMocks()
     chunkCallback = null
     useTaskWorkbenchStore.getState().resetForm()
+    useCopilotStore.getState().reset()
     ;(window.api as any).workbench = {
       chat: vi.fn().mockResolvedValue({ content: 'AI response here' }),
       chatStream: vi.fn().mockResolvedValue({ streamId: 'test-stream-1' }),
@@ -224,7 +226,7 @@ describe('WorkbenchCopilot', () => {
         insertable: true
       }
     ]
-    useTaskWorkbenchStore.setState({ copilotMessages: msgs })
+    useCopilotStore.setState({ messages: msgs })
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     expect(screen.getByText('Welcome')).toBeInTheDocument()
@@ -242,7 +244,7 @@ describe('WorkbenchCopilot', () => {
         insertable: true
       }
     ]
-    useTaskWorkbenchStore.setState({ copilotMessages: msgs })
+    useCopilotStore.setState({ messages: msgs })
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     expect(screen.getByText('Insert into spec')).toBeInTheDocument()
@@ -252,7 +254,7 @@ describe('WorkbenchCopilot', () => {
     const msgs: CopilotMessage[] = [
       { id: 'usr-1', role: 'user', content: 'My question', timestamp: Date.now() }
     ]
-    useTaskWorkbenchStore.setState({ copilotMessages: msgs })
+    useCopilotStore.setState({ messages: msgs })
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
     expect(screen.queryByText('Insert into spec')).not.toBeInTheDocument()
@@ -260,8 +262,10 @@ describe('WorkbenchCopilot', () => {
 
   it('clicking "Insert into spec" appends to spec field', () => {
     useTaskWorkbenchStore.setState({
-      spec: 'Existing spec',
-      copilotMessages: [
+      spec: 'Existing spec'
+    })
+    useCopilotStore.setState({
+      messages: [
         {
           id: 'ast-1',
           role: 'assistant',
@@ -280,8 +284,10 @@ describe('WorkbenchCopilot', () => {
 
   it('inserting into empty spec does not prepend separator', () => {
     useTaskWorkbenchStore.setState({
-      spec: '',
-      copilotMessages: [
+      spec: ''
+    })
+    useCopilotStore.setState({
+      messages: [
         {
           id: 'ast-1',
           role: 'assistant',
@@ -300,7 +306,7 @@ describe('WorkbenchCopilot', () => {
 
   it('filters system messages from chat API call', async () => {
     useTaskWorkbenchStore.setState({
-      copilotMessages: [{ id: 'sys-1', role: 'system', content: 'Welcome', timestamp: Date.now() }]
+      messages: [{ id: 'sys-1', role: 'system', content: 'Welcome', timestamp: Date.now() }]
     })
 
     render(<WorkbenchCopilot onClose={mockOnClose} />)
@@ -388,6 +394,7 @@ describe('research integration', () => {
       chunkCb = null
       localStorage.clear()
       useTaskWorkbenchStore.getState().resetForm()
+      useCopilotStore.getState().reset()
       useTaskWorkbenchStore.setState({ repo: 'bde' })
       ;(window.api as any).workbench = {
         chat: vi.fn().mockResolvedValue({ content: 'AI response here' }),

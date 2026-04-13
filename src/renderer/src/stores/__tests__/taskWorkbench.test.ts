@@ -14,9 +14,6 @@ describe('taskWorkbench store', () => {
     expect(s.repo).toBe('BDE')
     expect(s.priority).toBe(3)
     expect(s.spec).toBe('')
-    expect(s.copilotVisible).toBe(true)
-    expect(s.copilotMessages).toHaveLength(1)
-    expect(s.copilotMessages[0].role).toBe('system')
   })
 
   it('setField updates a single field', () => {
@@ -102,23 +99,6 @@ describe('taskWorkbench store', () => {
     })
     expect(useTaskWorkbenchStore.getState().semanticChecks).toHaveLength(0)
     expect(useTaskWorkbenchStore.getState().operationalChecks).toHaveLength(0)
-  })
-
-  it('toggleCopilot flips visibility', () => {
-    expect(useTaskWorkbenchStore.getState().copilotVisible).toBe(true)
-    useTaskWorkbenchStore.getState().toggleCopilot()
-    expect(useTaskWorkbenchStore.getState().copilotVisible).toBe(false)
-  })
-
-  it('addCopilotMessage appends to messages', () => {
-    const before = useTaskWorkbenchStore.getState().copilotMessages.length
-    useTaskWorkbenchStore.getState().addCopilotMessage({
-      id: 'test-1',
-      role: 'user',
-      content: 'Hello',
-      timestamp: Date.now()
-    })
-    expect(useTaskWorkbenchStore.getState().copilotMessages).toHaveLength(before + 1)
   })
 
   it('isDirty returns false in pristine create mode', () => {
