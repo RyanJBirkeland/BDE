@@ -118,7 +118,8 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
     logger: {
       info: vi.fn(),
       warn: vi.fn(),
-      error: vi.fn()
+      error: vi.fn(),
+      debug: vi.fn()
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
@@ -451,7 +452,7 @@ describe('tryEmitPlaygroundEvent', () => {
     const { broadcast } = await import('../../broadcast')
     vi.mocked(stat).mockResolvedValue({ size: 1024 } as any)
     vi.mocked(readFile).mockResolvedValue('<html>hello</html>')
-    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     await tryEmitPlaygroundEvent('task-1', '/wt/index.html', '/wt', logger)
     expect(broadcast).toHaveBeenCalledWith(
       'agent:event',
@@ -470,7 +471,7 @@ describe('tryEmitPlaygroundEvent', () => {
     const { readFile } = await import('node:fs/promises')
     vi.mocked(stat).mockResolvedValue({ size: 100 } as any)
     vi.mocked(readFile).mockResolvedValue('<html/>')
-    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     await tryEmitPlaygroundEvent('task-1', 'relative/file.html', '/wt/path', logger)
     expect(stat).toHaveBeenCalledWith('/wt/path/relative/file.html')
   })
@@ -478,7 +479,7 @@ describe('tryEmitPlaygroundEvent', () => {
     const { stat } = await import('node:fs/promises')
     const { broadcast } = await import('../../broadcast')
     vi.mocked(stat).mockResolvedValue({ size: 10 * 1024 * 1024 } as any)
-    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     await tryEmitPlaygroundEvent('task-1', '/wt/big.html', '/wt', logger)
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('File too large'))
     expect(broadcast).not.toHaveBeenCalled()
@@ -486,7 +487,7 @@ describe('tryEmitPlaygroundEvent', () => {
   it('logs warning on file read error', async () => {
     const { stat } = await import('node:fs/promises')
     vi.mocked(stat).mockRejectedValue(new Error('ENOENT'))
-    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     await tryEmitPlaygroundEvent('task-1', '/wt/missing.html', '/wt', logger)
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to read HTML file'))
   })
