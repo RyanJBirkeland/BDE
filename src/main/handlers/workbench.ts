@@ -392,18 +392,14 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
   })
 
   // --- AI-powered spec generation ---
-  safeHandle(
-    'workbench:generateSpec',
-    async (_e, input: { title: string; repo: string; templateHint: string }) => {
+  safeHandle('workbench:generateSpec', async (_e, input: { title: string; repo: string; templateHint: string }) => {
       const spec = await generateSpec(input)
       return { spec }
     }
   )
 
   // --- AI-powered spec checks ---
-  safeHandle(
-    'workbench:checkSpec',
-    async (_e, input: { title: string; repo: string; spec: string; specType?: string | null }) => {
+  safeHandle('workbench:checkSpec', async (_e, input: { title: string; repo: string; spec: string; specType?: string | null }) => {
       const result = await specQualityService.validateFull(input.spec)
       return mapQualityResult(result)
     }

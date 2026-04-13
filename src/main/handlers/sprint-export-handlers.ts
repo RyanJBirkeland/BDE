@@ -58,9 +58,7 @@ export function registerSprintExportHandlers(deps: ExportHandlersDeps): void {
     return { success: true, path: result.filePath }
   })
 
-  safeHandle(
-    'sprint:exportTasks',
-    async (_e, format: 'json' | 'csv'): Promise<{ filePath: string | null; canceled: boolean }> => {
+  safeHandle('sprint:exportTasks', async (_e, format: 'json' | 'csv'): Promise<{ filePath: string | null; canceled: boolean }> => {
       const tasks = listTasks()
 
       // Show save dialog

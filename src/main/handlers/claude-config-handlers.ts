@@ -16,9 +16,7 @@ export function registerClaudeConfigHandlers(): void {
     }
   })
 
-  safeHandle(
-    'claude:setPermissions',
-    async (_e, permissions: { allow: string[]; deny: string[] }) => {
+  safeHandle('claude:setPermissions', async (_e, permissions: { allow: string[]; deny: string[] }) => {
       if (!existsSync(CLAUDE_DIR)) mkdirSync(CLAUDE_DIR, { recursive: true })
 
       let settings: Record<string, unknown> = {}

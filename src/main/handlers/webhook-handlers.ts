@@ -20,18 +20,14 @@ export function registerWebhookHandlers(): void {
     return listWebhooks()
   })
 
-  safeHandle(
-    'webhook:create',
-    async (_e, payload: { url: string; events: string[]; secret?: string }) => {
+  safeHandle('webhook:create', async (_e, payload: { url: string; events: string[]; secret?: string }) => {
       const webhook = createWebhook(payload)
       logger.info(`Created webhook ${webhook.id} for ${payload.url}`)
       return webhook
     }
   )
 
-  safeHandle(
-    'webhook:update',
-    async (
+  safeHandle('webhook:update', async (
       _e,
       payload: {
         id: string

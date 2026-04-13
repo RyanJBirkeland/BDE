@@ -54,9 +54,7 @@ export function registerAgentManagerHandlers(am: AgentManager | undefined): void
 
   // /checkpoint — snapshot current worktree state without stopping the agent.
   // Runs `git add -A && git commit -m "<message>"` in the agent's worktree.
-  safeHandle(
-    'agent-manager:checkpoint',
-    async (
+  safeHandle('agent-manager:checkpoint', async (
       _e,
       taskId: string,
       message?: string

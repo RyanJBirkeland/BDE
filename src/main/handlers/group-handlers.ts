@@ -122,9 +122,7 @@ export function registerGroupHandlers(): void {
     return updated
   })
 
-  safeHandle(
-    'groups:updateDependencyCondition',
-    (_e, groupId: string, upstreamId: string, condition: EpicDependency['condition']) => {
+  safeHandle('groups:updateDependencyCondition', (_e, groupId: string, upstreamId: string, condition: EpicDependency['condition']) => {
       const updated = updateGroupDependencyCondition(groupId, upstreamId, condition)
       if (!updated) throw new Error(`Failed to update dependency condition in group ${groupId}`)
       rebuildEpicIndex()

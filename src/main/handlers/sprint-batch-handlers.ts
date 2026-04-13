@@ -14,9 +14,7 @@ export interface BatchHandlersDeps {
 }
 
 export function registerSprintBatchHandlers(deps: BatchHandlersDeps): void {
-  safeHandle(
-    'sprint:batchUpdate',
-    async (
+  safeHandle('sprint:batchUpdate', async (
       _e,
       operations: Array<{ op: 'update' | 'delete'; id: string; patch?: Record<string, unknown> }>
     ) => {
@@ -111,9 +109,7 @@ export function registerSprintBatchHandlers(deps: BatchHandlersDeps): void {
     }
   )
 
-  safeHandle(
-    'sprint:batchImport',
-    async (
+  safeHandle('sprint:batchImport', async (
       _e,
       tasks: Array<{
         title: string

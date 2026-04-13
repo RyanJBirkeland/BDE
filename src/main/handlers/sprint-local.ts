@@ -128,10 +128,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
     return readFile(safePath, 'utf-8')
   })
 
-  safeHandle(
-    'sprint:generatePrompt',
-    (_e, args: GeneratePromptRequest): GeneratePromptResponse => generatePrompt(args)
-  )
+  safeHandle('sprint:generatePrompt', (_e, args: GeneratePromptRequest): GeneratePromptResponse => generatePrompt(args))
 
   safeHandle('sprint:claimTask', async (_e, taskId: string): Promise<ClaimedTask | null> => {
     const task = getTask(taskId)
@@ -172,9 +169,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
     return { content: result.content, status: info.status, nextByte: result.nextByte }
   })
 
-  safeHandle(
-    'sprint:validateDependencies',
-    async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
+  safeHandle('sprint:validateDependencies', async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
       // Validate all dep targets exist
       for (const dep of proposedDeps) {
         const target = getTask(dep.id)

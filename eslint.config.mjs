@@ -69,5 +69,46 @@ export default defineConfig(
       'no-restricted-exports': 'off'
     }
   },
+  // Require safeHandle channel name on same line as safeHandle( for reliable grep-based tooling
+  {
+    plugins: {
+      local: {
+        rules: {
+          'safe-handle-channel-same-line': {
+            meta: {
+              type: 'suggestion',
+              docs: {
+                description: 'Require safeHandle channel name on same line as safeHandle('
+              }
+            },
+            create(context) {
+              return {
+                CallExpression(node) {
+                  if (
+                    node.callee.type === 'Identifier' &&
+                    node.callee.name === 'safeHandle' &&
+                    node.arguments.length > 0
+                  ) {
+                    const callLine = node.loc.start.line
+                    const firstArgLine = node.arguments[0].loc.start.line
+                    if (callLine !== firstArgLine) {
+                      context.report({
+                        node: node.arguments[0],
+                        message: "safeHandle channel name must be on the same line as 'safeHandle('"
+                      })
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    files: ['src/main/**/*.ts'],
+    rules: {
+      'local/safe-handle-channel-same-line': 'error'
+    }
+  },
   eslintConfigPrettier
 )

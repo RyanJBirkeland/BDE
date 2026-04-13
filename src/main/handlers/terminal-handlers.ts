@@ -10,9 +10,7 @@ const terminalWindows = new Map<number, number>() // terminalId -> BrowserWindow
 let termId = 0
 
 export function registerTerminalHandlers(): void {
-  safeHandle(
-    'terminal:create',
-    (
+  safeHandle('terminal:create', (
       event,
       { cols, rows, shell, cwd }: { cols: number; rows: number; shell?: string; cwd?: string }
     ) => {
@@ -51,9 +49,7 @@ export function registerTerminalHandlers(): void {
     terminals.get(id)?.write(data)
   })
 
-  safeHandle(
-    'terminal:resize',
-    (_e, { id, cols, rows }: { id: number; cols: number; rows: number }) => {
+  safeHandle('terminal:resize', (_e, { id, cols, rows }: { id: number; cols: number; rows: number }) => {
       terminals.get(id)?.resize(cols, rows)
     }
   )

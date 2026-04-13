@@ -45,9 +45,7 @@ export function registerAgentHandlers(am?: AgentManager): void {
     })
   })
   safeHandle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
-  safeHandle(
-    'agent:steer',
-    async (
+  safeHandle('agent:steer', async (
       _e,
       {
         agentId,
@@ -124,9 +122,7 @@ export function registerAgentHandlers(am?: AgentManager): void {
    *  2. Create a NEW sprint task in `review` status pointing at that worktree
    *  3. Return the new task id so the UI can switch to Code Review and select it
    */
-  safeHandle(
-    'agents:promoteToReview',
-    async (_e, agentId: string): Promise<PromoteToReviewResult> => {
+  safeHandle('agents:promoteToReview', async (_e, agentId: string): Promise<PromoteToReviewResult> => {
       try {
         const agent = await getAgentMeta(agentId)
         if (!agent) {
