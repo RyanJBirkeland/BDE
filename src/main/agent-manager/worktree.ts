@@ -88,25 +88,35 @@ async function cleanupStaleWorktrees(
           log.warn(`[worktree] Removing stale worktree at ${stalePath} for branch ${branch}`)
           try {
             await removeWorktreeForce(repoPath, stalePath, env)
-          } catch {
+          } catch (removeErr) {
+            log.warn(
+              `[worktree] removeWorktreeForce failed for ${stalePath} (branch ${branch}): ${removeErr instanceof Error ? removeErr.message : String(removeErr)} — falling back to rmSync`
+            )
             try {
               rmSync(stalePath, { recursive: true, force: true })
-            } catch {
-              /* best effort */
+            } catch (rmErr) {
+              log.warn(
+                `[worktree] rmSync fallback also failed for ${stalePath}: ${rmErr instanceof Error ? rmErr.message : String(rmErr)}`
+              )
             }
           }
         }
       }
     }
-  } catch {
-    /* worktree list failed — continue */
+  } catch (listErr) {
+    log.warn(
+      `[worktree] listWorktrees failed for ${repoPath} (branch ${branch}): ${listErr instanceof Error ? listErr.message : String(listErr)} — skipping stale worktree removal`
+    )
   }
 
   // Remove the target worktree path if it exists (from a previous run at this exact path)
   if (existsSync(worktreePath)) {
     try {
       await removeWorktreeForce(repoPath, worktreePath, env)
-    } catch {
+    } catch (removeErr) {
+      log.warn(
+        `[worktree] removeWorktreeForce failed for ${worktreePath} (branch ${branch}): ${removeErr instanceof Error ? removeErr.message : String(removeErr)} — falling back to rmSync`
+      )
       rmSync(worktreePath, { recursive: true, force: true })
     }
   }
@@ -114,8 +124,10 @@ async function cleanupStaleWorktrees(
   // Prune stale worktree references from git's tracking
   try {
     await pruneWorktrees(repoPath, env)
-  } catch {
-    /* best effort */
+  } catch (pruneErr) {
+    log.warn(
+      `[worktree] pruneWorktrees failed for ${repoPath}: ${pruneErr instanceof Error ? pruneErr.message : String(pruneErr)}`
+    )
   }
 
   // Delete the branch if it exists (no push — agent branches are throwaway).
@@ -129,8 +141,10 @@ async function cleanupStaleWorktrees(
   } catch {
     try {
       await forceDeleteBranchRef(repoPath, branch, env)
-    } catch {
-      /* branch doesn't exist — fine */
+    } catch (forceDeleteErr) {
+      log.warn(
+        `[worktree] forceDeleteBranchRef also failed for branch ${branch} in ${repoPath}: ${forceDeleteErr instanceof Error ? forceDeleteErr.message : String(forceDeleteErr)}`
+      )
     }
   }
 }
