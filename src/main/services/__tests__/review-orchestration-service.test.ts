@@ -190,6 +190,54 @@ describe('review-orchestration-service', () => {
       // updateTask calls now go through repository in executor
       expect(mockOnStatusTerminal).toHaveBeenCalledWith('task2', 'done')
     })
+
+    describe('createPr call ordering', () => {
+      it('calls onStatusTerminal before notifySprintMutation', async () => {
+        const callOrder: string[] = []
+
+        vi.mocked(sprintService.getTask).mockReturnValue({
+          id: 'task-1', repo: 'bde', worktree_path: '/wt/task-1',
+          status: 'review', title: 'Test'
+        } as any)
+
+        vi.mocked(sprintService.updateTask).mockReturnValue({
+          id: 'task-1', status: 'done'
+        } as any)
+
+        vi.mocked(sprintService.notifySprintMutation).mockImplementation(() => {
+          callOrder.push('notify')
+        })
+
+        vi.mocked(reviewPr.createPullRequest).mockResolvedValue({
+          success: true,
+          prUrl: 'https://github.com/owner/repo/pull/1',
+          prNumber: 1
+        })
+
+        getCustomMock()
+          .mockReset()
+          .mockImplementation(async (_cmd: string, args: readonly string[]) => {
+            if (args.includes('--abbrev-ref')) return { stdout: 'agent/branch\n', stderr: '' }
+            return { stdout: '', stderr: '' }
+          })
+
+        vi.mocked(reviewMerge.cleanupWorktree).mockResolvedValue(undefined)
+
+        const onStatusTerminal = vi.fn().mockImplementation(async () => {
+          callOrder.push('terminal')
+        })
+
+        await orchestration.createPr({
+          taskId: 'task-1',
+          title: 'PR title',
+          body: 'PR body',
+          env: mockEnv,
+          onStatusTerminal
+        })
+
+        expect(callOrder).toEqual(['terminal', 'notify'])
+      })
+    })
   })
 
   describe('requestRevision', () => {

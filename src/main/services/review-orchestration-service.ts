@@ -127,8 +127,10 @@ export async function createPr(i: CreatePrInput): Promise<CreatePrResult> {
       completed_at: nowIso(),
       worktree_path: null
     })
-    if (updated) notifySprintMutation('updated', updated)
+    // Fire terminal callback before broadcast so dependency resolution completes
+    // before the renderer receives the mutation — avoids stale pipeline state.
     i.onStatusTerminal(i.taskId, 'done')
+    if (updated) notifySprintMutation('updated', updated)
     return { success: true, prUrl: pr.prUrl }
   } catch (err: unknown) {
     return { success: false, error: getErrorMessage(err) }
