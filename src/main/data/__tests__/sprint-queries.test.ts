@@ -870,6 +870,37 @@ describe('updateTaskMergeableState — audit trail (F-t3-audit-trail-1)', () => 
   })
 })
 
+// F-t3-tasktrans-3: updateTask transition enforcement
+describe('updateTask — transition enforcement', () => {
+  function seedTaskAtStatus(status: string): string {
+    // Insert a task directly at the desired status, bypassing transitions
+    const row = db
+      .prepare(
+        `INSERT INTO sprint_tasks (title, repo, prompt, status, priority)
+         VALUES ('Test', 'bde', 'prompt', ?, 0) RETURNING id`
+      )
+      .get(status) as { id: string }
+    return row.id
+  }
+
+  it('throws on invalid transition: done → active', () => {
+    const id = seedTaskAtStatus('done')
+    expect(() => updateTask(id, { status: 'active' })).toThrow(/Invalid transition/)
+  })
+
+  it('throws on invalid transition: cancelled → queued', () => {
+    const id = seedTaskAtStatus('cancelled')
+    expect(() => updateTask(id, { status: 'queued' })).toThrow(/Invalid transition/)
+  })
+
+  it('succeeds on valid transition: queued → active', () => {
+    const id = seedTaskAtStatus('queued')
+    const result = updateTask(id, { status: 'active' })
+    expect(result).not.toBeNull()
+    expect(result?.status).toBe('active')
+  })
+})
+
 // F-t3-audit-trail-2: updateTaskMergeableState audit atomicity
 describe('updateTaskMergeableState — audit atomicity (F-t3-audit-trail-2)', () => {
   it('rolls back pr_mergeable_state update when recordTaskChanges throws', () => {

@@ -369,10 +369,11 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
         // Enforce status transition state machine
         if (patch.status && typeof patch.status === 'string') {
           const currentStatus = oldTask.status as string
-          const result = validateTransition(currentStatus, patch.status)
-          if (!result.ok) {
-            logger.warn(`[sprint-queries] ${result.reason} for task ${id}`)
-            return null
+          const validationResult = validateTransition(currentStatus, patch.status)
+          if (!validationResult.ok) {
+            throw new Error(
+              `[sprint-queries] Invalid transition for task ${id}: ${validationResult.reason}`
+            )
           }
         }
 
@@ -447,6 +448,10 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
       })()
     )
   } catch (err) {
+    // Re-throw invalid transition errors so callers can surface them to the UI
+    if (err instanceof Error && err.message.includes('Invalid transition')) {
+      throw err
+    }
     // DL-17: Standardize error message format
     const msg = getErrorMessage(err)
     logger.warn(`[sprint-queries] updateTask failed for id=${id}: ${msg}`)
