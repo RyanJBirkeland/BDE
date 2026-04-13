@@ -13,7 +13,7 @@ import { withRetry } from './sqlite-retry'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
 import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
-import { validateTransition } from '../services/task-state-service'
+import { validateTransition } from '../../shared/task-state-machine'
 
 // Module-level logger — defaults to console, injectable for testing/structured logging
 let logger: Logger = {
