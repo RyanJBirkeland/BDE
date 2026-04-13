@@ -7,6 +7,7 @@ const initialState = {
 }
 
 beforeEach(() => {
+  useAgentEventsStore.getState().destroy() // reset module-level guard
   useAgentEventsStore.setState(initialState)
   vi.clearAllMocks()
 })

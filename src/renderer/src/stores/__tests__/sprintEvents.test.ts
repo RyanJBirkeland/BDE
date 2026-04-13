@@ -10,6 +10,7 @@ const initialState = {
 }
 
 beforeEach(() => {
+  useSprintEvents.getState().destroy() // reset module-level guard
   useSprintEvents.setState(initialState)
   vi.clearAllMocks()
 })

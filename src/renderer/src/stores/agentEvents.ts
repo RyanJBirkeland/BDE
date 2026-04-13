@@ -4,10 +4,13 @@ import type { AgentEvent } from '../../../shared/types'
 const MAX_EVENTS_PER_AGENT = 2000
 const EMPTY_EVENTS: AgentEvent[] = []
 
+let unsubscribe: (() => void) | null = null
+
 interface AgentEventsState {
   events: Record<string, AgentEvent[]>
   evictedAgents: Record<string, boolean>
   init: () => () => void
+  destroy: () => void
   loadHistory: (agentId: string) => Promise<void>
   clear: (agentId: string) => void
 }
@@ -27,7 +30,10 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
   evictedAgents: {},
 
   init() {
-    return window.api.agentEvents.onEvent(({ agentId, event }) => {
+    if (unsubscribe) {
+      return unsubscribe // already subscribed
+    }
+    unsubscribe = window.api.agentEvents.onEvent(({ agentId, event }) => {
       set((state) => {
         const existing = state.events[agentId] ?? []
         const updated = [...existing, event]
@@ -43,6 +49,12 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
         }
       })
     })
+    return unsubscribe
+  },
+
+  destroy() {
+    unsubscribe?.()
+    unsubscribe = null
   },
 
   async loadHistory(agentId: string) {

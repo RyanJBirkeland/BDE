@@ -8,6 +8,8 @@ export type AnyTaskEvent = TaskOutputEvent | AgentEvent
 /** Maximum number of events to retain per agent to prevent memory leaks. */
 const MAX_EVENTS_PER_AGENT = 500
 
+let unsubscribe: (() => void) | null = null
+
 interface SprintEventsState {
   // --- State ---
   taskEvents: Record<string, AnyTaskEvent[]>
@@ -15,6 +17,7 @@ interface SprintEventsState {
 
   // --- Actions ---
   initTaskOutputListener: () => () => void
+  destroy: () => void
   clearTaskEvents: (taskId: string) => void
 }
 
@@ -23,7 +26,10 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
   latestEvents: {},
 
   initTaskOutputListener: (): (() => void) => {
-    const cleanup = window.api.agentEvents?.onEvent(({ agentId, event }) => {
+    if (unsubscribe) {
+      return unsubscribe // already subscribed
+    }
+    unsubscribe = window.api.agentEvents?.onEvent(({ agentId, event }) => {
       set((s) => {
         const existing = s.taskEvents[agentId] ?? []
         let updated = [...existing, event]
@@ -43,9 +49,12 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
       })
     })
 
-    return () => {
-      cleanup?.()
-    }
+    return unsubscribe ?? (() => {})
+  },
+
+  destroy: () => {
+    unsubscribe?.()
+    unsubscribe = null
   },
 
   clearTaskEvents: (taskId): void => {
