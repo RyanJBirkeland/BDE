@@ -3,6 +3,10 @@
  */
 import { safeHandle } from '../ipc-utils'
 import { synthesizeSpec, reviseSpec, cancelSynthesis } from '../services/spec-synthesizer'
+import { createLogger } from '../logger'
+import { getErrorMessage } from '../../shared/errors'
+
+const log = createLogger('synthesizer')
 
 /**
  * Register all synthesizer IPC handlers.
@@ -50,6 +54,9 @@ export function registerSynthesizerHandlers(): void {
           /* window may have closed */
         }
       })
+      .catch((err) =>
+        log.error(`[synthesizer] unhandled rejection in generate: ${getErrorMessage(err)}`)
+      )
 
     return { streamId }
   })
@@ -95,6 +102,9 @@ export function registerSynthesizerHandlers(): void {
           /* window may have closed */
         }
       })
+      .catch((err) =>
+        log.error(`[synthesizer] unhandled rejection in revise: ${getErrorMessage(err)}`)
+      )
 
     return { streamId }
   })

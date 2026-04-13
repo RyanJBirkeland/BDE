@@ -13,8 +13,11 @@ import { runSdkStreaming } from '../sdk-streaming'
 import { extractTasksFromPlan } from '../services/plan-extractor'
 import { buildChatPrompt, getCopilotSdkOptions } from '../services/copilot-service'
 import { generateSpec } from '../services/spec-generation-service'
+import { createLogger } from '../logger'
+import { getErrorMessage } from '../../shared/errors'
 
 const execFileAsync = promisify(execFile)
+const log = createLogger('workbench')
 
 /** Active streaming handles, keyed by streamId. */
 const activeStreams = new Map<string, { close: () => void }>()
@@ -309,6 +312,9 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
           /* window may have closed */
         }
       })
+      .catch((err) =>
+        log.error(`[workbench] unhandled rejection in chatStream: ${getErrorMessage(err)}`)
+      )
 
     return { streamId }
   })

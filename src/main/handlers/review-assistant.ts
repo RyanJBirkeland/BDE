@@ -11,6 +11,7 @@ import type {
   PartnerMessage,
   ReviewResult,
 } from '../../shared/types'
+import { getErrorMessage } from '../../shared/errors'
 
 const log = createLogger('review-assistant')
 
@@ -79,7 +80,7 @@ export async function handleChatStream(
     reviewSeed,
   })
 
-  void (async () => {
+  ;(async () => {
     try {
       const full = await deps.runSdkStreaming(
         prompt,
@@ -109,7 +110,9 @@ export async function handleChatStream(
       sender?.send('review:chatChunk', payload)
       deps.activeStreams.delete(streamId)
     }
-  })()
+  })().catch((err) =>
+    log.error(`[review-assistant] unhandled rejection in chatStream: ${getErrorMessage(err)}`)
+  )
 
   return { streamId }
 }
