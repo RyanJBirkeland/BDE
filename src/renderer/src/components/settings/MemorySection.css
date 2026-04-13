@@ -73,69 +73,11 @@
   flex-shrink: 0;
 }
 
-.memory-sidebar__search-input {
-  width: 100%;
-  background: var(--bde-bg);
-  border: 1px solid var(--bde-border);
-  color: var(--bde-text);
-  font-size: var(--bde-size-sm);
-  padding: 5px var(--bde-space-6) 5px var(--bde-space-2);
-  border-radius: var(--bde-radius-sm);
-  outline: none;
-}
-
-.memory-sidebar__search-input:focus-visible {
-  border-color: var(--bde-accent);
-}
-
-.memory-sidebar__search-input::placeholder {
-  color: var(--bde-text-dim);
-}
-
-.memory-sidebar__search-clear {
-  position: absolute;
-  right: var(--bde-space-3);
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: var(--bde-text-muted);
-  cursor: pointer;
-  font-size: var(--bde-size-lg);
-  line-height: 1;
-  padding: 2px;
-}
-
-.memory-sidebar__search-clear:hover {
-  color: var(--bde-text);
-}
-
-.memory-sidebar__searching {
-  padding: var(--bde-space-2) var(--bde-space-3);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
-}
-
-.memory-file__snippet {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 1px;
-}
 
 .memory-sidebar__list {
   flex: 1;
   overflow-y: auto;
   padding: var(--bde-space-1) 0;
-}
-
-.memory-sidebar__error {
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-error-bg);
-  color: var(--bde-danger-text);
-  font-size: var(--bde-size-sm);
 }
 
 .memory-group__label {
