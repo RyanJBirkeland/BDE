@@ -28,10 +28,10 @@ import {
   getSuccessRateBySpecType,
   type CreateTaskInput
 } from '../services/sprint-service'
-import { UPDATE_ALLOWLIST } from '../data/sprint-task-repository'
+import { UPDATE_ALLOWLIST, createSprintTaskRepository } from '../data/sprint-task-repository'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getAgentLogInfo } from '../data/agent-queries'
 import { readLog } from '../agent-history'
-import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import { instantiateWorkflow } from '../services/workflow-engine'
 import { prepareQueueTransition, prepareUnblockTransition } from '../services/task-state-service'
 import { listGroups } from '../data/task-group-queries'
@@ -45,7 +45,8 @@ export interface SprintLocalDeps {
 
 // --- Handler registration ---
 
-export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
+export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprintTaskRepository): void {
+  const effectiveRepo = repo ?? createSprintTaskRepository()
   safeHandle('sprint:list', () => {
     return listTasksRecent()
   })
@@ -66,8 +67,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
   })
 
   safeHandle('sprint:createWorkflow', async (_e, template: WorkflowTemplate) => {
-    const repo = createSprintTaskRepository()
-    const result = instantiateWorkflow(template, repo)
+    const result = instantiateWorkflow(template, effectiveRepo)
 
     if (result.errors.length > 0) {
       logger.warn(

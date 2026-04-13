@@ -171,11 +171,10 @@ app.whenReady().then(() => {
   // AI Review Partner setup
   const reviewDb = getDb()
   const reviewRepo = createReviewRepository(reviewDb)
-  const sprintTaskRepository = createSprintTaskRepository()
   const reviewServiceLogger = createLogger('review-service')
 
   function resolveWorktreePathViaRepo(taskId: string): string {
-    const task = sprintTaskRepository.getTask(taskId)
+    const task = repo.getTask(taskId)
     if (!task) throw new Error(`Task not found: ${taskId}`)
     if (!task.worktree_path) {
       throw new Error(`Task ${taskId} has no worktree_path`)
@@ -217,7 +216,7 @@ app.whenReady().then(() => {
 
   const reviewService = createReviewService({
     repo: reviewRepo,
-    taskRepo: sprintTaskRepository,
+    taskRepo: repo,
     logger: reviewServiceLogger,
     resolveWorktreePath: async (taskId) => resolveWorktreePathViaRepo(taskId),
     getHeadCommitSha,
@@ -228,7 +227,7 @@ app.whenReady().then(() => {
 
   const reviewActiveStreams = new Map<string, { close: () => void }>()
   const reviewChatStreamDeps = buildChatStreamDeps({
-    taskRepo: sprintTaskRepository,
+    taskRepo: repo,
     reviewRepo,
     getHeadCommitSha,
     getBranch,
@@ -241,7 +240,8 @@ app.whenReady().then(() => {
     agentManager,
     terminalDeps,
     reviewService,
-    reviewChatStreamDeps
+    reviewChatStreamDeps,
+    repo
   }
   registerAllHandlers(handlerDeps)
 

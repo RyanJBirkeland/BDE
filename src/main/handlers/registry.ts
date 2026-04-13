@@ -3,6 +3,7 @@ import type { TaskTerminalService } from '../services/task-terminal-service'
 import type { DialogService } from '../dialog-service'
 import type { ReviewService } from '../services/review-service'
 import type { ChatStreamDeps } from './review-assistant'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 
 import { registerAgentHandlers } from './agent-handlers'
 import { registerGitHandlers } from './git-handlers'
@@ -42,6 +43,7 @@ export interface AppHandlerDeps {
   terminalDeps: TerminalDeps
   reviewService?: ReviewService
   reviewChatStreamDeps?: ChatStreamDeps
+  repo?: ISprintTaskRepository
 }
 
 /**
@@ -49,15 +51,15 @@ export interface AppHandlerDeps {
  * Consolidates handler registration to reduce coupling in index.ts.
  */
 export function registerAllHandlers(deps: AppHandlerDeps): void {
-  const { agentManager, terminalDeps, reviewService, reviewChatStreamDeps } = deps
+  const { agentManager, terminalDeps, reviewService, reviewChatStreamDeps, repo } = deps
 
   // Agent-related handlers (conditional on agentManager presence)
   if (agentManager) {
-    registerAgentHandlers(agentManager)
+    registerAgentHandlers(agentManager, repo)
     registerAgentManagerHandlers(agentManager)
     registerWorkbenchHandlers(agentManager)
   } else {
-    registerAgentHandlers()
+    registerAgentHandlers(undefined, repo)
     registerAgentManagerHandlers(undefined)
     registerWorkbenchHandlers()
   }
@@ -71,9 +73,9 @@ export function registerAllHandlers(deps: AppHandlerDeps): void {
   registerWindowHandlers()
 
   // Sprint task handlers
-  registerSprintLocalHandlers(terminalDeps)
+  registerSprintLocalHandlers(terminalDeps, repo)
   registerSprintExportHandlers({ dialog: terminalDeps.dialog })
-  registerSprintBatchHandlers({ onStatusTerminal: terminalDeps.onStatusTerminal })
+  registerSprintBatchHandlers({ onStatusTerminal: terminalDeps.onStatusTerminal, repo })
   registerSprintRetryHandler()
 
   // Utility handlers
