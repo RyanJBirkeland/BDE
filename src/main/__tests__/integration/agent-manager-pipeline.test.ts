@@ -54,9 +54,18 @@ vi.mock('node:fs', async (importOriginal) => {
   }
 })
 
-vi.mock('../../agent-manager/sdk-adapter', () => ({
-  spawnAgent: vi.fn()
-}))
+vi.mock('../../agent-manager/sdk-adapter', () => {
+  const spawnAgent = vi.fn()
+  return {
+    spawnAgent,
+    spawnWithTimeout: vi.fn((_prompt: string, _cwd: string, _model: string, _logger: unknown) =>
+      spawnAgent({ prompt: _prompt, cwd: _cwd, model: _model, logger: _logger })
+    ),
+    asSDKMessage: vi.fn((msg: unknown) => msg),
+    getNumericField: vi.fn(),
+    isRateLimitMessage: vi.fn(() => false)
+  }
+})
 
 vi.mock('../../agent-manager/worktree', () => ({
   setupWorktree: vi.fn(),
