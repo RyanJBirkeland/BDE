@@ -37,6 +37,7 @@ All subsequent steps run from this directory.
 ## Task 1: Create audit directory scaffolding
 
 **Files:**
+
 - Create: `docs/superpowers/audits/2026-04-07/perf-audit/` (directory)
 - Create: `docs/superpowers/audits/2026-04-07/perf-audit/.snapshot/` (directory)
 - Create: `docs/superpowers/audits/2026-04-07/perf-audit/team-1-pipeline-hot-path/` (directory)
@@ -65,6 +66,7 @@ Expected: 5 subdirs (`.snapshot`, `team-1-...`, `team-2-...`, `team-3-...`, `tea
 ## Task 2: Snapshot the SQLite database
 
 **Files:**
+
 - Create: `docs/superpowers/audits/2026-04-07/perf-audit/.snapshot/bde.db`
 
 - [ ] **Step 2.1: Verify source db exists**
@@ -104,6 +106,7 @@ Expected: 5 rows. Save the output — it goes into the README in the next task.
 ## Task 3: Write the audit README index
 
 **Files:**
+
 - Create: `docs/superpowers/audits/2026-04-07/perf-audit/README.md`
 
 - [ ] **Step 3.1: Capture git state and timestamp**
@@ -134,13 +137,13 @@ Use the Write tool to create `docs/superpowers/audits/2026-04-07/perf-audit/READ
 
 Database snapshotted from `~/.bde/bde.db` to `.snapshot/bde.db` via SQLite online backup API. Row counts at snapshot time:
 
-| Table          | Rows |
-|----------------|------|
-| sprint_tasks   | <n>  |
-| agent_runs     | <n>  |
-| agent_events   | <n>  |
-| cost_events    | <n>  |
-| task_changes   | <n>  |
+| Table        | Rows |
+| ------------ | ---- |
+| sprint_tasks | <n>  |
+| agent_runs   | <n>  |
+| agent_events | <n>  |
+| cost_events  | <n>  |
+| task_changes | <n>  |
 
 All Team 4 (Token Economy) lens agents read from the snapshot, not the live db, so their numbers are mutually comparable.
 
@@ -156,12 +159,12 @@ The audit produced 10 lens files across 4 teams, each containing severity-ranked
 
 ### Teams and lenses
 
-| Team | Domain | Lenses |
-|------|--------|--------|
-| 1 | Pipeline Hot Path | Systems Profiler, Concurrency Auditor, SRE/Ops |
-| 2 | Renderer Performance | React Perf, Bundle/Asset |
-| 3 | Data Layer | DB Performance, Data Modeling Critic |
-| 4 | Token Economy | Prompt Engineer, Cost Analyst, Context Strategist |
+| Team | Domain               | Lenses                                            |
+| ---- | -------------------- | ------------------------------------------------- |
+| 1    | Pipeline Hot Path    | Systems Profiler, Concurrency Auditor, SRE/Ops    |
+| 2    | Renderer Performance | React Perf, Bundle/Asset                          |
+| 3    | Data Layer           | DB Performance, Data Modeling Critic              |
+| 4    | Token Economy        | Prompt Engineer, Cost Analyst, Context Strategist |
 
 ### Finding ID format
 
@@ -169,7 +172,7 @@ The audit produced 10 lens files across 4 teams, each containing severity-ranked
 
 ## Baseline
 
-Commit `00e32951` (earlier on 2026-04-07) capped vitest worker parallelism inside agent worktrees. That fix is treated as baseline; the audit hunts for what *else* drives CPU load during a Pipeline run. Team 1 lens agents are explicitly told not to re-report the vitest issue.
+Commit `00e32951` (earlier on 2026-04-07) capped vitest worker parallelism inside agent worktrees. That fix is treated as baseline; the audit hunts for what _else_ drives CPU load during a Pipeline run. Team 1 lens agents are explicitly told not to re-report the vitest issue.
 ```
 
 - [ ] **Step 3.3: Verify**
@@ -192,7 +195,7 @@ Each lens agent uses `subagent_type: Explore` (read-only by capability). Each pr
 
 Every lens prompt follows this skeleton:
 
-```
+````
 You are auditing BDE (an Electron desktop app at /Users/ryan/projects/BDE) as part of a coordinated performance audit. You are one of 10 parallel lens agents. You will not coordinate with the other 9 — overlap is acceptable and will be deduped at synthesis.
 
 ## Your role
@@ -226,7 +229,7 @@ Use this exact format for every finding. IDs must use the `F-{TEAM-ID}-{LENS-ID}
 **Recommendation:** <concrete fix>
 **Effort:** S | M | L
 **Confidence:** High | Medium | Low
-```
+````
 
 ## Quality bar
 
@@ -253,7 +256,8 @@ Begin your output file with a level-1 heading naming the lens, a one-paragraph s
 ## Open questions
 
 <things you wanted to verify but couldn't, or where another lens or a human should follow up>
-```
+
+````
 
 ### Path conventions for all lens prompts
 
@@ -386,9 +390,10 @@ The `Agent` tool blocks until each subagent completes. After the message returns
 
 ```bash
 ls docs/superpowers/audits/2026-04-07/perf-audit/team-*/lens-*.md
-```
+````
 
 Expected: exactly these 10 paths:
+
 ```
 docs/superpowers/audits/2026-04-07/perf-audit/team-1-pipeline-hot-path/lens-systems-profiler.md
 docs/superpowers/audits/2026-04-07/perf-audit/team-1-pipeline-hot-path/lens-concurrency-auditor.md
@@ -407,6 +412,7 @@ docs/superpowers/audits/2026-04-07/perf-audit/team-4-token-economy/lens-context-
 - [ ] **Step 5.2: Spot-check format compliance**
 
 For each file, verify:
+
 - Starts with `# ` heading naming the lens
 - Has a `**Lens scope:**` line and a `**Summary:**` paragraph
 - Has at least one `## F-{team}-{lens}-{n}:` finding heading
@@ -439,11 +445,13 @@ Expected: at least Lens 4.2 (cost-analyst) shows up. If it doesn't, re-dispatch 
 ## Task 6: Dispatch the synthesis agent
 
 **Files:**
+
 - Create: `docs/superpowers/audits/2026-04-07/perf-audit/SYNTHESIS.md`
 
 - [ ] **Step 6.1: Dispatch one general-purpose synthesis agent**
 
 Use the `Agent` tool with:
+
 - `description`: `"Synthesize perf audit findings"`
 - `subagent_type`: `"general-purpose"`
 - `prompt`: the synthesis prompt below
@@ -603,6 +611,7 @@ Expected: commit succeeds. If hooks fail, fix issues and create a new commit (do
 - [ ] **Step 8.4: Surface the synthesis to the user**
 
 Send the user a final message containing:
+
 1. Path to `SYNTHESIS.md`
 2. The Top 10 actions (copied from the synthesis, not summarized)
 3. The Quick Wins list

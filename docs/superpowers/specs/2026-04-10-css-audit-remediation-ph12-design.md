@@ -14,15 +14,15 @@ The CSS refactor (phases 10–11) achieved excellent co-location (79 CSS files m
 
 The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 
-| Raw value | Token |
-|-----------|-------|
-| `4px` | `var(--bde-space-1)` |
-| `8px` | `var(--bde-space-2)` |
-| `12px` | `var(--bde-space-3)` |
-| `16px` | `var(--bde-space-4)` |
-| `20px` | `var(--bde-space-5)` |
-| `24px` | `var(--bde-space-6)` |
-| `32px` | `var(--bde-space-8)` |
+| Raw value | Token                |
+| --------- | -------------------- |
+| `4px`     | `var(--bde-space-1)` |
+| `8px`     | `var(--bde-space-2)` |
+| `12px`    | `var(--bde-space-3)` |
+| `16px`    | `var(--bde-space-4)` |
+| `20px`    | `var(--bde-space-5)` |
+| `24px`    | `var(--bde-space-6)` |
+| `32px`    | `var(--bde-space-8)` |
 
 ### Replacement Rules
 
@@ -48,6 +48,7 @@ The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 **Scope:** 14 CSS files.
 
 **Files:**
+
 - `src/renderer/src/components/ide/QuickOpenPalette.css`
 - `src/renderer/src/components/ide/EditorPane.css`
 - `src/renderer/src/components/ide/EditorTabBar.css`
@@ -66,6 +67,7 @@ The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 **Action:** Replace hardcoded `gap`, `padding`, and `margin` pixel values with `var(--bde-space-*)` tokens per the mapping table. Respect all exclusions.
 
 **How to Test:**
+
 1. Grep for `(gap|padding|margin).*\b(4|8|12|16|20|24|32)px` in the file set — should return zero matches
 2. `npm run typecheck && npm test && npm run lint` — must pass
 
@@ -78,6 +80,7 @@ The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 **Scope:** 23 CSS files.
 
 **Files:**
+
 - `src/renderer/src/components/sprint/PipelineOverlays.css`
 - `src/renderer/src/components/sprint/TaskDetailDrawer.css`
 - `src/renderer/src/components/sprint/PipelineBacklog.css`
@@ -115,6 +118,7 @@ The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 **Scope:** 33 CSS files.
 
 **Files:**
+
 - `src/renderer/src/components/agents/LaunchpadGrid.css`
 - `src/renderer/src/components/agents/PlaygroundModal.css`
 - `src/renderer/src/components/agents/AgentConsole.css`
@@ -162,6 +166,7 @@ The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 **Scope:** 22 CSS files.
 
 **Files:**
+
 - `src/renderer/src/assets/design-system/neon-badge.css`
 - `src/renderer/src/assets/design-system/button.css`
 - `src/renderer/src/assets/design-system/utilities.css`
@@ -198,15 +203,18 @@ The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 **Scope:** 3 dead selectors, 2 unused `@keyframes`, 12 unjustified `!important` declarations.
 
 **Dead selectors to remove:**
+
 - `.playground-modal__view-btn--active` — `src/renderer/src/components/agents/PlaygroundModal.css:10`
 - `.pipeline-stage__dot--active` — `src/renderer/src/components/sprint/PipelineStage.css:53` and `src/renderer/src/components/sprint/PipelineOverlays.css:820` (reduced-motion override for same dead class)
 - `.agent-pill--running` — `src/renderer/src/components/agents/PlaygroundModal.css:226`
 
 **Unused @keyframes to remove (both copies are unreferenced):**
+
 - `@keyframes bde-slide-up-fade` — `src/renderer/src/assets/reset.css:80`
 - `@keyframes toast-slide-in` — remove from both `src/renderer/src/assets/toasts.css:84` and `src/renderer/src/components/layout/ToastContainer.css:84` (neither is referenced by any `animation` property)
 
 **!important to resolve (remove or refactor via increased specificity):**
+
 - `src/renderer/src/components/agents/PlaygroundModal.css:11-13` — 3 instances (background, color, border-color)
 - `src/renderer/src/components/sprint/PipelineOverlays.css:1195` — 1 instance (opacity)
 - `src/renderer/src/components/diff/PlainDiffContent.css:125,211` — 2 instances (background)
@@ -219,6 +227,7 @@ The `--bde-space-*` scale defined in `src/renderer/src/assets/tokens.css`:
 **Keep justified (do not touch):** All 5 instances in `src/renderer/src/assets/design-system/utilities.css` (reduced motion overrides).
 
 **How to Test:**
+
 1. Grep for each dead selector and `@keyframes` name — should return zero matches
 2. Grep for `!important` across all CSS in `src/renderer/` — should return exactly 5 matches (all in `utilities.css`)
 3. `npm run typecheck && npm test && npm run lint` — must pass

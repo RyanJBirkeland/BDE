@@ -8,7 +8,10 @@ export class WorktreeMissingError extends Error {
 }
 
 export class MalformedReviewError extends Error {
-  constructor(message: string, public readonly rawResponse?: string) {
+  constructor(
+    message: string,
+    public readonly rawResponse?: string
+  ) {
     super(message)
     this.name = 'MalformedReviewError'
   }
@@ -36,10 +39,7 @@ export function parseReviewResponse(raw: string): ParsedReview {
   try {
     parsed = JSON.parse(jsonText)
   } catch (err) {
-    throw new MalformedReviewError(
-      `JSON.parse failed: ${(err as Error).message}`,
-      raw
-    )
+    throw new MalformedReviewError(`JSON.parse failed: ${(err as Error).message}`, raw)
   }
 
   return validateParsedReview(parsed, raw)
@@ -105,10 +105,7 @@ function validateParsedReview(value: unknown, raw: string): ParsedReview {
       commentCount: comments.length,
       comments: comments.map((c: unknown, ci: number) => {
         if (!c || typeof c !== 'object') {
-          throw new MalformedReviewError(
-            `perFile[${idx}].comments[${ci}] not an object`,
-            raw
-          )
+          throw new MalformedReviewError(`perFile[${idx}].comments[${ci}] not an object`, raw)
         }
         const cc = c as Record<string, unknown>
         return {
@@ -124,16 +121,16 @@ function validateParsedReview(value: unknown, raw: string): ParsedReview {
             cc.category === 'style'
               ? cc.category
               : 'correctness',
-          message: typeof cc.message === 'string' ? cc.message : '',
+          message: typeof cc.message === 'string' ? cc.message : ''
         }
-      }),
+      })
     }
   })
 
   return {
     qualityScore: Math.round(v.qualityScore),
     openingMessage: v.openingMessage,
-    perFile,
+    perFile
   }
 }
 
@@ -158,16 +155,22 @@ export interface ReviewServiceDeps {
 }
 
 export interface ReviewService {
-  reviewChanges(
-    taskId: string,
-    opts?: { force?: boolean }
-  ): Promise<ReviewResult>
+  reviewChanges(taskId: string, opts?: { force?: boolean }): Promise<ReviewResult>
 }
 
 const REVIEWER_MODEL = 'claude-opus-4-6'
 
 export function createReviewService(deps: ReviewServiceDeps): ReviewService {
-  const { repo, taskRepo, logger, resolveWorktreePath, getHeadCommitSha, getDiff, getBranch, runSdkOnce } = deps
+  const {
+    repo,
+    taskRepo,
+    logger,
+    resolveWorktreePath,
+    getHeadCommitSha,
+    getDiff,
+    getBranch,
+    runSdkOnce
+  } = deps
 
   return {
     async reviewChanges(taskId, opts) {
@@ -176,9 +179,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         throw new Error(`Task not found: ${taskId}`)
       }
       if (task.status !== 'review') {
-        throw new Error(
-          `Task ${taskId} is not in review status (current: ${task.status})`
-        )
+        throw new Error(`Task ${taskId} is not in review status (current: ${task.status})`)
       }
 
       const worktreePath = await resolveWorktreePath(taskId)
@@ -204,7 +205,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
           openingMessage: 'No changes detected on this branch.',
           findings: { perFile: [], branch },
           model: '(none)',
-          createdAt: Date.now(),
+          createdAt: Date.now()
         }
         return synthetic
       }
@@ -214,7 +215,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         reviewerMode: 'review',
         taskContent: task.spec ?? task.title,
         branch,
-        diff,
+        diff
       })
 
       logger.info(`Firing auto-review for task=${taskId} sha=${headSha}`)
@@ -223,7 +224,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         raw = await runSdkOnce(prompt, {
           model: REVIEWER_MODEL,
           maxTurns: 1,
-          tools: [],
+          tools: []
         })
       } catch (err) {
         logger.error(`Review SDK call failed for task=${taskId}: ${(err as Error).message}`)
@@ -234,9 +235,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
       try {
         parsed = parseReviewResponse(raw)
       } catch (err) {
-        logger.error(
-          `Parse failed for task=${taskId}: ${(err as Error).message}`
-        )
+        logger.error(`Parse failed for task=${taskId}: ${(err as Error).message}`)
         throw err
       }
 
@@ -248,12 +247,12 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         openingMessage: parsed.openingMessage,
         findings: { perFile: parsed.perFile, branch },
         model: REVIEWER_MODEL,
-        createdAt: Date.now(),
+        createdAt: Date.now()
       }
 
       repo.setCached(taskId, headSha, result, raw)
       return result
-    },
+    }
   }
 }
 

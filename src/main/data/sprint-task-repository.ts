@@ -19,7 +19,13 @@ import type {
   FailureReasonBreakdown
 } from './reporting-queries'
 
-export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate, FailureReasonBreakdown }
+export type {
+  CreateTaskInput,
+  QueueStats,
+  SpecTypeSuccessRate,
+  DailySuccessRate,
+  FailureReasonBreakdown
+}
 
 // Re-export constants and functions for callers that need them
 export { UPDATE_ALLOWLIST } from './sprint-queries'

@@ -33,6 +33,7 @@ import { KeybindingsSettings } from '../components/settings/KeybindingsSettings'
 import { NotificationsSection } from '../components/settings/NotificationsSection'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useSettingsNavStore } from '../stores/settingsNav'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
 const SECTIONS: SettingsSection[] = [
   { id: 'connections', label: 'Connections', icon: Link, category: 'Account' },
@@ -96,26 +97,28 @@ export default function SettingsView(): React.JSX.Element {
   }
 
   return (
-    <div className="stg-layout">
-      <div className="view-layout">
-        <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
-        <motion.div
-          className="stg-content view-content"
-          key={activeId}
-          variants={VARIANTS.fadeIn}
-          initial="initial"
-          animate="animate"
-          transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-        >
-          <div className={`stg-content__inner${meta.wide ? ' stg-content__inner--wide' : ''}`}>
-            <SettingsPageHeader title={meta.title} subtitle={meta.subtitle} />
-            <ActiveSection />
-          </div>
-        </motion.div>
+    <ErrorBoundary name="SettingsView">
+      <div className="stg-layout">
+        <div className="view-layout">
+          <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
+          <motion.div
+            className="stg-content view-content"
+            key={activeId}
+            variants={VARIANTS.fadeIn}
+            initial="initial"
+            animate="animate"
+            transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+          >
+            <div className={`stg-content__inner${meta.wide ? ' stg-content__inner--wide' : ''}`}>
+              <SettingsPageHeader title={meta.title} subtitle={meta.subtitle} />
+              <ActiveSection />
+            </div>
+          </motion.div>
+        </div>
+        <div aria-live="polite" className="sr-only">
+          {meta.title} settings
+        </div>
       </div>
-      <div aria-live="polite" className="sr-only">
-        {meta.title} settings
-      </div>
-    </div>
+    </ErrorBoundary>
   )
 }

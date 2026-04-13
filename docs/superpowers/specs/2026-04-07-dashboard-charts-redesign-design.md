@@ -11,7 +11,7 @@ The dashboard is trying to show useful information but the presentation makes it
 - **Success Trend** auto-scales its Y-axis from 0 to `max(data)`, so when every day is 95–100% a single 80% day produces wild visual swings. No "100%" reference line. No tick labels. The chart encodes no actionable information.
 - **Sprint Burn-Down** is mislabeled — it shows tasks-completed-per-day (a run-up), not remaining work sloping toward zero. Users interpret the curve as a burndown because of the title, and get misled.
 - **Completions by Hour** has no hour axis. When most hours have zero completions (the common case), the chart shows one lonely dot and looks broken.
-- **Success Rate donut** is decoration. At 100% it's a full circle; at 98% it's still visually "full"; at any value below that it still tells you nothing about *when* or *why*.
+- **Success Rate donut** is decoration. At 100% it's a full circle; at 98% it's still visually "full"; at any value below that it still tells you nothing about _when_ or _why_.
 - **Avg Task Duration** card shows `—` and "0 runs tracked" despite 115 done tasks — the data pipeline is wrong and a blank hero card trains users to ignore the dashboard.
 - **Left column status rail** stacks 8 separate cards vertically, most showing 0 in steady state. Huge real estate to communicate "4 things are happening."
 
@@ -74,13 +74,13 @@ Renders at the top of the grid when any of the following are non-zero: `stats.fa
 
 Reduces the left column from 8 stacked cards to 5 compact tiles, plus the existing "+ New Task" button.
 
-| Tile | Value | Subtext | Click action |
-|---|---|---|---|
-| Active | `stats.active` | — | filter → active |
-| Queued | `stats.queued` | — | filter → queued |
-| Done | `stats.done` | `{doneToday} today` | filter → done |
-| Tokens 24h | `formatTokensCompact(tokens24h)` | — | (no-op, informational) |
-| + New Task | — | — | open Task Workbench |
+| Tile       | Value                            | Subtext             | Click action           |
+| ---------- | -------------------------------- | ------------------- | ---------------------- |
+| Active     | `stats.active`                   | —                   | filter → active        |
+| Queued     | `stats.queued`                   | —                   | filter → queued        |
+| Done       | `stats.done`                     | `{doneToday} today` | filter → done          |
+| Tokens 24h | `formatTokensCompact(tokens24h)` | —                   | (no-op, informational) |
+| + New Task | —                                | —                   | open Task Workbench    |
 
 The tiles are ~90px wide, 2/3 the height of the current cards. The four statuses **not** in the rail (Blocked, Failed, Review, PRs) are handled by:
 
@@ -137,10 +137,10 @@ A line chart showing CPU load average over the last 10 minutes. Lives in the cen
 - **Data model:** a ring buffer of `LoadSample` objects sampled every 5 seconds:
   ```ts
   interface LoadSample {
-    t: number         // epoch ms
-    load1: number     // 1-minute load average
-    load5: number     // 5-minute load average
-    load15: number    // 15-minute load average
+    t: number // epoch ms
+    load1: number // 1-minute load average
+    load5: number // 5-minute load average
+    load15: number // 15-minute load average
   }
   ```
   Buffer size: 120 samples = 10 minutes of history.
@@ -171,7 +171,7 @@ A new module `src/main/services/load-sampler.ts` owns the ring buffer. It starts
 import os from 'node:os'
 
 const SAMPLE_INTERVAL_MS = 5000
-const BUFFER_SIZE = 120  // 10 minutes at 5s
+const BUFFER_SIZE = 120 // 10 minutes at 5s
 
 const ring: LoadSample[] = []
 const cpuCount = os.cpus().length
@@ -185,13 +185,16 @@ function sample(): void {
 
 export function startLoadSampler(): void {
   if (timer) return
-  sample()  // seed immediately
+  sample() // seed immediately
   timer = setInterval(sample, SAMPLE_INTERVAL_MS)
-  timer.unref()  // don't hold the process open
+  timer.unref() // don't hold the process open
 }
 
 export function stopLoadSampler(): void {
-  if (timer) { clearInterval(timer); timer = null }
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
 }
 
 export function getLoadSnapshot(): { samples: LoadSample[]; cpuCount: number } {
@@ -284,13 +287,13 @@ Renders nothing when `failed + blocked + stuck === 0 && loadSaturated === null`.
 
 ```tsx
 interface ThroughputDatum {
-  hour: string       // ISO local hour, e.g. "2026-04-07T14:00:00"
+  hour: string // ISO local hour, e.g. "2026-04-07T14:00:00"
   successCount: number
   failedCount: number
 }
 interface ThroughputChartProps {
   data: ThroughputDatum[]
-  height?: number    // default 140
+  height?: number // default 140
 }
 ```
 
@@ -300,8 +303,8 @@ A new SVG chart component. Not an extension of `MiniChart` — it's architectura
 
 ```tsx
 interface SuccessRateChartProps {
-  data: DailySuccessRate[]  // existing type
-  height?: number            // default 140
+  data: DailySuccessRate[] // existing type
+  height?: number // default 140
 }
 ```
 
@@ -319,7 +322,7 @@ interface LoadSample {
 interface LoadAverageChartProps {
   samples: LoadSample[]
   cpuCount: number
-  height?: number  // default 140
+  height?: number // default 140
 }
 ```
 

@@ -13,10 +13,7 @@ interface ToolGroupCardProps {
   searchHighlight?: 'match' | 'active'
 }
 
-function renderToolBlock(
-  tool: ToolBlock,
-  searchHighlight?: 'match' | 'active'
-): React.JSX.Element {
+function renderToolBlock(tool: ToolBlock, searchHighlight?: 'match' | 'active'): React.JSX.Element {
   const searchClass = !searchHighlight
     ? ''
     : searchHighlight === 'active'

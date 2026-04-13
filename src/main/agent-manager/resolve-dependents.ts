@@ -136,7 +136,10 @@ export function resolveDependents(
         if (epic) {
           epicStatusMap.set(epicId, epic.status)
           const tasks = listGroupTasks(epicId)
-          tasksByEpic.set(epicId, tasks.map((t) => ({ status: t.status })))
+          tasksByEpic.set(
+            epicId,
+            tasks.map((t) => ({ status: t.status }))
+          )
         }
       }
 
@@ -163,33 +166,30 @@ export function resolveDependents(
         if (task.status !== 'blocked') continue
 
         // Re-check block state with fresh data
-        const { shouldBlock, blockedBy } = computeBlockState(
-          task,
-          {
-            logger: logger ?? { warn: console.warn, info: console.info, error: console.error },
-            listTasks: () => {
-              // Build a fresh task list from all known epics
-              const allTasks: SprintTask[] = []
-              for (const epicId of [depEpicId, ...Array.from(epicStatusMap.keys())]) {
-                allTasks.push(...listGroupTasks(epicId))
-              }
-              // Include the completed task if it's not already in the list
-              if (completedTask && !allTasks.some((t) => t.id === completedTaskId)) {
-                allTasks.push(completedTask as SprintTask)
-              }
-              return allTasks
-            },
-            listGroups: () => {
-              // Build a fresh group list from all known epics
-              const allGroups: TaskGroup[] = []
-              for (const epicId of [depEpicId, ...Array.from(epicStatusMap.keys())]) {
-                const epic = getGroup(epicId)
-                if (epic) allGroups.push(epic)
-              }
-              return allGroups
+        const { shouldBlock, blockedBy } = computeBlockState(task, {
+          logger: logger ?? { warn: console.warn, info: console.info, error: console.error },
+          listTasks: () => {
+            // Build a fresh task list from all known epics
+            const allTasks: SprintTask[] = []
+            for (const epicId of [depEpicId, ...Array.from(epicStatusMap.keys())]) {
+              allTasks.push(...listGroupTasks(epicId))
             }
+            // Include the completed task if it's not already in the list
+            if (completedTask && !allTasks.some((t) => t.id === completedTaskId)) {
+              allTasks.push(completedTask as SprintTask)
+            }
+            return allTasks
+          },
+          listGroups: () => {
+            // Build a fresh group list from all known epics
+            const allGroups: TaskGroup[] = []
+            for (const epicId of [depEpicId, ...Array.from(epicStatusMap.keys())]) {
+              const epic = getGroup(epicId)
+              if (epic) allGroups.push(epic)
+            }
+            return allGroups
           }
-        )
+        })
 
         if (!shouldBlock) {
           // Unblock the task (keep existing notes as-is)

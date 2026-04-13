@@ -19,7 +19,7 @@ export function ApproveDropdown({
   onRequestRevision,
   onDiscard,
   disabled = false,
-  loading = false,
+  loading = false
 }: Props): JSX.Element {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -101,12 +101,7 @@ export function ApproveDropdown({
         {!loading && <ChevronDown size={12} />}
       </button>
       {open && (
-        <div
-          className="cr-approve__menu"
-          role="menu"
-          ref={menuRef}
-          onKeyDown={handleMenuKeyDown}
-        >
+        <div className="cr-approve__menu" role="menu" ref={menuRef} onKeyDown={handleMenuKeyDown}>
           <button type="button" role="menuitem" onClick={() => run(onMergeLocally)}>
             Merge Locally
           </button>

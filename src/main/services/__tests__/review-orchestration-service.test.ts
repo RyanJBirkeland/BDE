@@ -65,27 +65,23 @@ describe('review-orchestration-service', () => {
     vi.clearAllMocks()
 
     // Default mock for getSettingJson (returns repo config)
-    vi.mocked(getSettingJson).mockReturnValue([
-      { name: 'bde', localPath: '/repo/bde' }
-    ])
+    vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
 
     // Default mock for promisified execFile
-    getCustomMock().mockReset().mockImplementation(async (
-      _cmd: string,
-      args: readonly string[],
-      _opts?: any
-    ) => {
-      // Default: return branch name 'agent/test-branch'
-      if (args.includes('--abbrev-ref')) {
-        return { stdout: 'agent/test-branch\n', stderr: '' }
-      } else if (args.includes('--porcelain')) {
-        return { stdout: '', stderr: '' } // clean working tree
-      } else if (args.includes('rev-parse')) {
-        return { stdout: 'abc123\n', stderr: '' }
-      } else {
-        return { stdout: '', stderr: '' }
-      }
-    })
+    getCustomMock()
+      .mockReset()
+      .mockImplementation(async (_cmd: string, args: readonly string[], _opts?: any) => {
+        // Default: return branch name 'agent/test-branch'
+        if (args.includes('--abbrev-ref')) {
+          return { stdout: 'agent/test-branch\n', stderr: '' }
+        } else if (args.includes('--porcelain')) {
+          return { stdout: '', stderr: '' } // clean working tree
+        } else if (args.includes('rev-parse')) {
+          return { stdout: 'abc123\n', stderr: '' }
+        } else {
+          return { stdout: '', stderr: '' }
+        }
+      })
   })
 
   describe('mergeLocally', () => {
@@ -254,10 +250,10 @@ describe('review-orchestration-service', () => {
 
       expect(result.success).toBe(true)
       expect(reviewMerge.cleanupWorktree).toHaveBeenCalled()
-      expect(rmSync).toHaveBeenCalledWith(
-        expect.stringContaining('task5'),
-        { recursive: true, force: true }
-      )
+      expect(rmSync).toHaveBeenCalledWith(expect.stringContaining('task5'), {
+        recursive: true,
+        force: true
+      })
       // updateTask calls now go through repository in executor
       expect(mockOnStatusTerminal).toHaveBeenCalledWith('task5', 'cancelled')
     })
@@ -279,21 +275,19 @@ describe('review-orchestration-service', () => {
       vi.mocked(postMergeDedup.runPostMergeDedup).mockResolvedValue(null)
 
       // Mock git calls for shipIt
-      getCustomMock().mockImplementation(async (
-        _cmd: string,
-        args: readonly string[],
-        opts: any
-      ) => {
-        if (opts.cwd === '/worktree/task6' && args.includes('--abbrev-ref')) {
-          return { stdout: 'agent/ship-branch\n', stderr: '' }
-        } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
-          return { stdout: '', stderr: '' } // clean
-        } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
-          return { stdout: 'main\n', stderr: '' } // on main
-        } else {
-          return { stdout: '', stderr: '' }
+      getCustomMock().mockImplementation(
+        async (_cmd: string, args: readonly string[], opts: any) => {
+          if (opts.cwd === '/worktree/task6' && args.includes('--abbrev-ref')) {
+            return { stdout: 'agent/ship-branch\n', stderr: '' }
+          } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
+            return { stdout: '', stderr: '' } // clean
+          } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+            return { stdout: 'main\n', stderr: '' } // on main
+          } else {
+            return { stdout: '', stderr: '' }
+          }
         }
-      })
+      )
 
       const result = await orchestration.shipIt({
         taskId: 'task6',
@@ -326,21 +320,19 @@ describe('review-orchestration-service', () => {
       })
 
       // Mock git calls for shipIt
-      getCustomMock().mockImplementation(async (
-        _cmd: string,
-        args: readonly string[],
-        opts: any
-      ) => {
-        if (opts.cwd === '/worktree/task7' && args.includes('--abbrev-ref')) {
-          return { stdout: 'agent/fail-branch\n', stderr: '' }
-        } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
-          return { stdout: '', stderr: '' } // clean
-        } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
-          return { stdout: 'main\n', stderr: '' } // on main
-        } else {
-          return { stdout: '', stderr: '' }
+      getCustomMock().mockImplementation(
+        async (_cmd: string, args: readonly string[], opts: any) => {
+          if (opts.cwd === '/worktree/task7' && args.includes('--abbrev-ref')) {
+            return { stdout: 'agent/fail-branch\n', stderr: '' }
+          } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
+            return { stdout: '', stderr: '' } // clean
+          } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+            return { stdout: 'main\n', stderr: '' } // on main
+          } else {
+            return { stdout: '', stderr: '' }
+          }
         }
-      })
+      )
 
       const result = await orchestration.shipIt({
         taskId: 'task7',
@@ -374,24 +366,22 @@ describe('review-orchestration-service', () => {
       vi.mocked(postMergeDedup.runPostMergeDedup).mockResolvedValue(null)
 
       // Mock git calls: succeed on everything EXCEPT `git push`
-      getCustomMock().mockImplementation(async (
-        _cmd: string,
-        args: readonly string[],
-        opts: any
-      ) => {
-        if (args[0] === 'push') {
-          throw new Error('remote: rejected — pre-push hook failed')
+      getCustomMock().mockImplementation(
+        async (_cmd: string, args: readonly string[], opts: any) => {
+          if (args[0] === 'push') {
+            throw new Error('remote: rejected — pre-push hook failed')
+          }
+          if (opts.cwd === '/worktree/task-push-fail' && args.includes('--abbrev-ref')) {
+            return { stdout: 'agent/push-fail-branch\n', stderr: '' }
+          } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
+            return { stdout: '', stderr: '' } // clean
+          } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+            return { stdout: 'main\n', stderr: '' } // on main
+          } else {
+            return { stdout: '', stderr: '' }
+          }
         }
-        if (opts.cwd === '/worktree/task-push-fail' && args.includes('--abbrev-ref')) {
-          return { stdout: 'agent/push-fail-branch\n', stderr: '' }
-        } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
-          return { stdout: '', stderr: '' } // clean
-        } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
-          return { stdout: 'main\n', stderr: '' } // on main
-        } else {
-          return { stdout: '', stderr: '' }
-        }
-      })
+      )
 
       const result = await orchestration.shipIt({
         taskId: 'task-push-fail',
@@ -422,19 +412,17 @@ describe('review-orchestration-service', () => {
         worktree_path: '/worktree/task8'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
-      getCustomMock().mockImplementation(async (
-        _cmd: string,
-        args: readonly string[],
-        _opts?: any
-      ) => {
-        if (args.includes('--porcelain')) {
-          return { stdout: 'M file.ts\n', stderr: '' } // dirty working tree
-        } else if (args.includes('--abbrev-ref')) {
-          return { stdout: 'main\n', stderr: '' }
-        } else {
-          return { stdout: '', stderr: '' }
+      getCustomMock().mockImplementation(
+        async (_cmd: string, args: readonly string[], _opts?: any) => {
+          if (args.includes('--porcelain')) {
+            return { stdout: 'M file.ts\n', stderr: '' } // dirty working tree
+          } else if (args.includes('--abbrev-ref')) {
+            return { stdout: 'main\n', stderr: '' }
+          } else {
+            return { stdout: '', stderr: '' }
+          }
         }
-      })
+      )
 
       const result = await orchestration.shipIt({
         taskId: 'task8',
@@ -455,27 +443,24 @@ describe('review-orchestration-service', () => {
         worktree_path: '/worktree/task9'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
-      getCustomMock().mockImplementation(async (
-        _cmd: string,
-        args: readonly string[],
-        opts: any
-      ) => {
-        // First call: get branch from worktree
-        if (opts.cwd === '/worktree/task9' && args.includes('--abbrev-ref')) {
-          return { stdout: 'agent/test\n', stderr: '' }
+      getCustomMock().mockImplementation(
+        async (_cmd: string, args: readonly string[], opts: any) => {
+          // First call: get branch from worktree
+          if (opts.cwd === '/worktree/task9' && args.includes('--abbrev-ref')) {
+            return { stdout: 'agent/test\n', stderr: '' }
+          }
+          // Second call: check working tree status
+          else if (args.includes('--porcelain')) {
+            return { stdout: '', stderr: '' } // clean
+          }
+          // Third call: get current branch in main repo
+          else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+            return { stdout: 'feature-branch\n', stderr: '' } // NOT main
+          } else {
+            return { stdout: '', stderr: '' }
+          }
         }
-        // Second call: check working tree status
-        else if (args.includes('--porcelain')) {
-          return { stdout: '', stderr: '' } // clean
-        }
-        // Third call: get current branch in main repo
-        else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
-          return { stdout: 'feature-branch\n', stderr: '' } // NOT main
-        }
-        else {
-          return { stdout: '', stderr: '' }
-        }
-      })
+      )
 
       const result = await orchestration.shipIt({
         taskId: 'task9',
@@ -498,7 +483,11 @@ describe('review-orchestration-service', () => {
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
       vi.mocked(sprintService.updateTask).mockReturnValue(mockTask as any)
-      vi.mocked(gitOps.rebaseOntoMain).mockResolvedValue({ success: true, notes: '', baseSha: 'abc123' })
+      vi.mocked(gitOps.rebaseOntoMain).mockResolvedValue({
+        success: true,
+        notes: '',
+        baseSha: 'abc123'
+      })
 
       const result = await orchestration.rebase({
         taskId: 'task10',
@@ -507,7 +496,11 @@ describe('review-orchestration-service', () => {
 
       expect(result.success).toBe(true)
       expect(result.baseSha).toBe('abc123')
-      expect(gitOps.rebaseOntoMain).toHaveBeenCalledWith('/worktree/task10', mockEnv, expect.anything())
+      expect(gitOps.rebaseOntoMain).toHaveBeenCalledWith(
+        '/worktree/task10',
+        mockEnv,
+        expect.anything()
+      )
       // updateTask calls now go through repository in executor
     })
 
@@ -523,17 +516,15 @@ describe('review-orchestration-service', () => {
         notes: 'Rebase failed'
       })
       vi.mocked(reviewMerge.extractConflictFiles).mockResolvedValue(['conflict.ts'])
-      getCustomMock().mockImplementation(async (
-        _cmd: string,
-        args: readonly string[],
-        _opts?: any
-      ) => {
-        if (args.includes('--diff-filter=U')) {
-          return { stdout: 'conflict.ts\n', stderr: '' }
-        } else {
-          return { stdout: '', stderr: '' }
+      getCustomMock().mockImplementation(
+        async (_cmd: string, args: readonly string[], _opts?: any) => {
+          if (args.includes('--diff-filter=U')) {
+            return { stdout: 'conflict.ts\n', stderr: '' }
+          } else {
+            return { stdout: '', stderr: '' }
+          }
         }
-      })
+      )
 
       const result = await orchestration.rebase({
         taskId: 'task11',

@@ -26,10 +26,16 @@ describe('webhook-handlers', () => {
   beforeEach(() => {
     handlers.clear()
     vi.mocked(webhookQueries.listWebhooks).mockReturnValue([])
-    vi.mocked(webhookQueries.createWebhook).mockImplementation((payload) => ({ id: 'wh-123', ...payload, enabled: true, events: [] }) as never)
-    vi.mocked(webhookQueries.updateWebhook).mockImplementation((payload) => ({ id: payload.id, updated: true, url: '', enabled: true, events: [] }) as never)
+    vi.mocked(webhookQueries.createWebhook).mockImplementation(
+      (payload) => ({ id: 'wh-123', ...payload, enabled: true, events: [] }) as never
+    )
+    vi.mocked(webhookQueries.updateWebhook).mockImplementation(
+      (payload) => ({ id: payload.id, updated: true, url: '', enabled: true, events: [] }) as never
+    )
     vi.mocked(webhookQueries.deleteWebhook).mockReturnValue(true)
-    vi.mocked(webhookQueries.getWebhookById).mockImplementation((id) => (id === 'wh-123' ? { id, url: 'https://example.com', enabled: true, events: [] } : null))
+    vi.mocked(webhookQueries.getWebhookById).mockImplementation((id) =>
+      id === 'wh-123' ? { id, url: 'https://example.com', enabled: true, events: [] } : null
+    )
     registerWebhookHandlers()
   })
 
@@ -43,12 +49,16 @@ describe('webhook-handlers', () => {
 
   describe('webhook:list', () => {
     it('should return webhook list', async () => {
-      vi.mocked(webhookQueries.listWebhooks).mockReturnValue([{ id: 'wh-1', url: 'https://example.com', events: [], enabled: true }])
+      vi.mocked(webhookQueries.listWebhooks).mockReturnValue([
+        { id: 'wh-1', url: 'https://example.com', events: [], enabled: true }
+      ])
 
       const handler = handlers.get('webhook:list')!
       const result = await handler({})
 
-      expect(result).toEqual([{ id: 'wh-1', url: 'https://example.com', events: [], enabled: true }])
+      expect(result).toEqual([
+        { id: 'wh-1', url: 'https://example.com', events: [], enabled: true }
+      ])
     })
   })
 
@@ -91,17 +101,18 @@ describe('webhook-handlers', () => {
     })
 
     it('should send test webhook', async () => {
-      global.fetch = vi.fn(() =>
-        Promise.resolve({ ok: true, status: 200 } as Response)
-      )
+      global.fetch = vi.fn(() => Promise.resolve({ ok: true, status: 200 } as Response))
 
       const handler = handlers.get('webhook:test')!
       const result = await handler({}, { id: 'wh-123' })
 
       expect(result).toEqual({ success: true, status: 200 })
-      expect(fetch).toHaveBeenCalledWith('https://example.com', expect.objectContaining({
-        method: 'POST'
-      }))
+      expect(fetch).toHaveBeenCalledWith(
+        'https://example.com',
+        expect.objectContaining({
+          method: 'POST'
+        })
+      )
     })
 
     it('should throw if webhook test fails', async () => {
@@ -115,11 +126,15 @@ describe('webhook-handlers', () => {
     })
 
     it('should include HMAC signature if webhook has secret', async () => {
-      vi.mocked(webhookQueries.getWebhookById).mockReturnValue({ id: 'wh-123', url: 'https://example.com', secret: 'my-secret', enabled: true, events: [] })
+      vi.mocked(webhookQueries.getWebhookById).mockReturnValue({
+        id: 'wh-123',
+        url: 'https://example.com',
+        secret: 'my-secret',
+        enabled: true,
+        events: []
+      })
 
-      global.fetch = vi.fn(() =>
-        Promise.resolve({ ok: true, status: 200 } as Response)
-      )
+      global.fetch = vi.fn(() => Promise.resolve({ ok: true, status: 200 } as Response))
 
       const handler = handlers.get('webhook:test')!
       await handler({}, { id: 'wh-123' })

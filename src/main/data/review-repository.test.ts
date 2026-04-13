@@ -37,14 +37,14 @@ function makeResult(overrides: Partial<ReviewResult> = {}): ReviewResult {
           commentCount: 2,
           comments: [
             { line: 10, severity: 'high', category: 'security', message: 'XSS' },
-            { line: 20, severity: 'low', category: 'style', message: 'Name' },
-          ],
-        },
-      ],
+            { line: 20, severity: 'low', category: 'style', message: 'Name' }
+          ]
+        }
+      ]
     },
     model: 'claude-opus-4-6',
     createdAt: 1_700_000_000_000,
-    ...overrides,
+    ...overrides
   }
 }
 

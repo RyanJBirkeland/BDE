@@ -39,15 +39,11 @@ export async function extractConflictFiles(
   loggerInstance?: ReturnType<typeof createLogger>
 ): Promise<string[]> {
   try {
-    const { stdout } = await execFileAsync(
-      'git',
-      ['diff', '--name-only', '--diff-filter=U'],
-      { cwd, env }
-    )
-    return stdout
-      .trim()
-      .split('\n')
-      .filter(Boolean)
+    const { stdout } = await execFileAsync('git', ['diff', '--name-only', '--diff-filter=U'], {
+      cwd,
+      env
+    })
+    return stdout.trim().split('\n').filter(Boolean)
   } catch (err: unknown) {
     loggerInstance?.warn(`Failed to extract conflict files: ${getErrorMessage(err)}`)
     return []
@@ -73,14 +69,11 @@ export async function executeMergeStrategy(
       // Skip merge --squash / commit and let the caller push the existing
       // commit. `git cherry HEAD branch` prefixes applied commits with `-`
       // and unapplied ones with `+`; if there are no `+` lines, we're done.
-      const { stdout: cherryOut } = await execFileAsync(
-        'git',
-        ['cherry', 'HEAD', branch],
-        { cwd: repoPath, env }
-      )
-      const hasNewCommits = cherryOut
-        .split('\n')
-        .some((line) => line.trim().startsWith('+'))
+      const { stdout: cherryOut } = await execFileAsync('git', ['cherry', 'HEAD', branch], {
+        cwd: repoPath,
+        env
+      })
+      const hasNewCommits = cherryOut.split('\n').some((line) => line.trim().startsWith('+'))
       if (!hasNewCommits) {
         logger.info(
           `[executeMergeStrategy] Branch ${branch} is already patch-merged into HEAD — skipping squash`

@@ -7,6 +7,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 ## Findings
 
 ### [CRITICAL] Hard-coded test count in pre-commit instructions will go stale
+
 - **Category:** Vague Instruction
 - **Location:** `src/main/agent-manager/prompt-composer.ts:60`
 - **Prompt excerpt:** `"npm test — All renderer tests must pass (currently 2563+ tests)"`
@@ -15,6 +16,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Drop the parenthetical entirely. `"npm test — All tests must pass"` is sufficient.
 
 ### [CRITICAL] `task.prompt` silently bypasses the spec wrapper
+
 - **Category:** Conflicting Guidance / Missing Context
 - **Location:** `src/main/agent-manager/run-agent.ts:207` and `src/main/agent-manager/prompt-composer.ts:295-303`
 - **Prompt excerpt (composer):** `"## Task Specification\n\nRead this entire specification before writing any code. Address every section."`
@@ -23,6 +25,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Either (a) prefer `spec` over `prompt` in run-agent.ts, or (b) concatenate them with explicit headers (`## Spec\n…\n\n## Additional Prompt Instructions\n…`), or (c) reject tasks that have both set at validation time.
 
 ### [CRITICAL] Definition of Done duplicates and slightly contradicts the Pre-Commit Verification block
+
 - **Category:** Conflicting Guidance
 - **Location:** `src/main/agent-manager/prompt-composer.ts:57-68` vs `122`
 - **Prompt excerpt (preamble):** `"Before EVERY commit, you MUST run ALL of these and they MUST pass: 1. npm run typecheck … 2. npm test … 3. npm run lint"`
@@ -32,6 +35,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Delete the `DEFINITION_OF_DONE` block. The pre-commit instructions already cover verification. Replace with a single line: "Your task is done when your final commit is pushed to your branch and the pre-commit checks passed."
 
 ### [CRITICAL] `npm install` as MANDATORY first action contradicts spec-first guidance
+
 - **Category:** Conflicting Guidance / Token Waste
 - **Location:** `src/main/agent-manager/prompt-composer.ts:51-52`
 - **Prompt excerpt:** `"Your worktree has NO node_modules. Run \`npm install\` as your FIRST action before reading any files or running any commands."`
@@ -40,6 +44,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** `"Run npm install before invoking npm test, npm run typecheck, or npm run lint. You may read the spec and source files first to plan."`
 
 ### [MAJOR] Retry context is omitted on attempt #1, so the agent never sees the retry budget
+
 - **Category:** Missing Context
 - **Location:** `src/main/agent-manager/prompt-composer.ts:336`
 - **Prompt excerpt (guard):** `if (agentType === 'pipeline' && retryCount && retryCount > 0)`
@@ -48,6 +53,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Always inject the attempt counter. Vary the tone by attempt number.
 
 ### [MAJOR] "Currently 2563+ tests" + DoD checklist contradicts the test-pattern memory module
+
 - **Category:** Conflicting Guidance
 - **Location:** Preamble + DoD vs `src/main/agent-system/memory/testing-patterns.ts:6-13`
 - **Prompt excerpt (memory):** `"do NOT hardcode threshold numbers in code, prompts, or docs (they drift). To verify your changes meet the bar, run: npm run test:coverage"`
@@ -56,6 +62,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Use `npm run test:coverage` consistently in the pipeline preamble and DoD, OR have the memory module say `npm test` for fast-loop dev. Pick one. Don't ship both.
 
 ### [MAJOR] Self-Review checklist hidden after the spec, easy to skip
+
 - **Category:** Missing Example / Token Waste
 - **Location:** `src/main/agent-manager/prompt-composer.ts:342-349`
 - **Prompt excerpt:** `"## Self-Review Checklist\nBefore your final push, verify:\n- [ ] Every changed file is required by the spec\n- [ ] No console.log, commented-out code, or TODO left behind …"`
@@ -64,6 +71,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Either move it adjacent to the pre-commit block at the top (so it's read before planning), or convert each line to an actionable command: `"Run rg 'console\\.log' src/ — must return zero matches in your changed files."`
 
 ### [MAJOR] Synthesizer prompt bypasses `buildAgentPrompt` entirely
+
 - **Category:** Missing Context
 - **Location:** `src/main/services/spec-synthesizer.ts:121-180` (`buildSpecPrompt`)
 - **Prompt excerpt:** `"You are an expert software engineer writing a precise, actionable coding task specification."`
@@ -72,6 +80,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Either route the synthesizer through `buildAgentPrompt` (preferred) or delete `synthesizer-personality.ts` and document that the synthesizer uses a hand-built prompt.
 
 ### [MAJOR] Semantic readiness check has no schema enforcement and silently passes on parse failure
+
 - **Category:** No Failure Path
 - **Location:** `src/main/spec-semantic-check.ts:80-130`
 - **Prompt excerpt:** `"Return ONLY valid JSON (no markdown fencing). … Return JSON: {\"clarity\":{\"status\":\"…\"…}}"`
@@ -80,6 +89,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** (1) Strip markdown fences before parse (\`\`\`json...\`\`\` is trivially detectable). (2) On parse failure, return `hasFails: true` with a clear message, not pass-through. (3) Replace "Adjust expectations accordingly" with concrete rules per spec type.
 
 ### [MAJOR] `buildQuickSpecPrompt` template scaffold is too sparse to produce useful specs
+
 - **Category:** Missing Example
 - **Location:** `src/main/handlers/sprint-spec.ts:80-92`
 - **Prompt excerpt:** `bugfix: '## Bug Description\n\n## Root Cause\n\n## Fix\n\n## Files to Change\n\n## How to Test'`
@@ -88,6 +98,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Have `getTemplateScaffold()` pull from `DEFAULT_TASK_TEMPLATES` so both paths use the rich scaffolds.
 
 ### [MAJOR] Copilot is told it has Read/Grep/Glob but the prompt never shows it WHERE to ground
+
 - **Category:** Vague Instruction
 - **Location:** `src/main/handlers/workbench.ts:351` (built via `buildAgentPrompt → copilotPersonality`)
 - **Prompt excerpt:** `"Use them proactively to ground every piece of advice in the actual code rather than guessing."`
@@ -96,6 +107,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Add a concrete decision rule to the copilot prompt: `"Before suggesting any file path, you MUST run Glob to confirm it exists. Before referencing a function, you MUST Grep for its definition. If the user asks 'where does X live,' your first action is Grep, not an answer."`
 
 ### [MAJOR] "Stay within spec scope" constraint has no enforcement teeth
+
 - **Category:** Vague Instruction
 - **Location:** `src/main/agent-system/personality/pipeline-personality.ts:13-14`
 - **Prompt excerpt:** `"If the spec lists ## Files to Change, restrict modifications to those files unless you document the reason for additional changes in the commit message"`
@@ -104,6 +116,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Replace with hard rule: `"If you find you need to modify a file not listed in ## Files to Change, STOP. Add a brief note to the task and exit. Do not modify the file."` Let the human decide whether to expand the spec.
 
 ### [MAJOR] Synthesizer prompt instructs "no preamble" but also "starting with a title" — literal-minded models break
+
 - **Category:** Conflicting Guidance
 - **Location:** `src/main/services/spec-synthesizer.ts:160`
 - **Prompt excerpt:** `"6. **No preamble**: Output ONLY the spec markdown, starting with a title"`
@@ -112,6 +125,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** `"Output ONLY the spec markdown. The first line must be a # H1 title derived from the user's task."`
 
 ### [MINOR] Universal preamble repeats "your work will be reviewed via PR"
+
 - **Category:** Token Waste
 - **Location:** `src/main/agent-manager/prompt-composer.ts:46` and `src/main/agent-system/personality/pipeline-personality.ts:8`
 - **Prompt excerpt:** `"Your work will be reviewed via PR before merging to main"` (in both places, near-verbatim)
@@ -120,6 +134,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Pick one location for each rule. The universal preamble is the right home; remove the duplicates from personality and branch appendix.
 
 ### [MINOR] Cross-repo contract block has no example of what a contract looks like
+
 - **Category:** Missing Example
 - **Location:** `src/main/agent-manager/prompt-composer.ts:307-312`
 - **Prompt excerpt:** `"## Cross-Repo Contract\n\nThis task involves API contracts with other repositories. Follow these contract specifications exactly:"`
@@ -128,6 +143,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Reframe: `"## Cross-Repo Contract\n\nThe following types and function signatures are referenced from other repositories. You MUST NOT change their shape, field names, or types. You may only change implementation details that are not visible across the contract."`
 
 ### [MINOR] Idle timeout warning's "emit a progress message" is non-actionable for an LLM
+
 - **Category:** Vague Instruction
 - **Location:** `src/main/agent-manager/prompt-composer.ts:120`
 - **Prompt excerpt:** `"You will be TERMINATED if you produce no output for 15 minutes. If running long commands (npm install, test suites), emit a progress message before and after."`
@@ -136,6 +152,7 @@ The pipeline-agent prompt is well-structured at the macro level (universal pream
 - **Recommendation:** Either describe the actual mechanism (`"Before any command expected to take more than 2 minutes, send a brief assistant text message describing what you're about to do."`), or drop the instruction and rely on a longer idle timeout for known-long commands.
 
 ### [MINOR] `prompt-composer` injects "## Note: third-party plugin guidance may not apply" but agents have no third-party plugins
+
 - **Category:** Token Waste
 - **Location:** `src/main/agent-manager/prompt-composer.ts:230-232`
 - **Prompt excerpt:** `"You have BDE-native skills and conventions loaded. Generic third-party plugin guidance may not apply to BDE workflows."`

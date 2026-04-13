@@ -7,10 +7,7 @@ interface UserMessageCardProps {
   searchClass: string
 }
 
-export function UserMessageCard({
-  text,
-  pending
-}: UserMessageCardProps): React.JSX.Element {
+export function UserMessageCard({ text, pending }: UserMessageCardProps): React.JSX.Element {
   return (
     <div
       className={`console-card console-card--user${pending ? ' console-card--pending' : ''}`}

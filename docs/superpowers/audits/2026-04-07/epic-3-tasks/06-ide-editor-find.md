@@ -13,6 +13,7 @@ Flagged by Bravo PM and Bravo Senior Dev as MAJOR.
 When a Monaco editor tab is focused, Cmd+F should open Monaco's find widget. When the terminal is focused, Cmd+F should open the terminal's find (current behavior). The decision is based on focus.
 
 Preferred implementation:
+
 1. On the Monaco editor mount (`onMount` callback — probably in `src/renderer/src/components/ide/EditorTab.tsx` or similar), register a command: `editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => editor.getAction('editor.action.startFindReplaceAction')?.run())` — or whatever the Monaco API is for triggering find. Read the Monaco imports already in the file to figure out the exact pattern.
 2. Let Monaco handle it locally — no global listener needed. Monaco's keybinding only fires when the editor has focus.
 3. Leave the terminal's Cmd+F handler in place — it only fires when the terminal has focus, so there's no conflict.

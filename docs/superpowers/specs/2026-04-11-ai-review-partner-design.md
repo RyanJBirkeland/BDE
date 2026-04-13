@@ -48,12 +48,12 @@ The updated design direction comes from a new Figma mockup (`figma.com/design/Uc
 
 This spec **supersedes** four decisions from `2026-04-10-code-review-redesign-design.md`:
 
-| Prior spec decision | This spec revises to | Reason |
-|---|---|---|
-| §5.5 — assistant is silent on open; discovery via chips | Auto-review fires on task selection, debounced 2s, cached by commit SHA | New Figma design makes metrics + opening message the primary affordance |
-| §5.2 — TopBar right zone has `Ship It`, `Merge Locally`, `Create PR`, kebab | TopBar right zone has `AI Partner` toggle + single `Approve ▾` dropdown containing all prior actions | Figma consolidation — prior actions remain functional, only the container changes |
-| §5.5 — quick-action chips are `Summarize diff`, `Risks?`, `Explain selected file` | Chips are `Explain security issues`, `Performance analysis`, `Suggest improvements` | Figma labels |
-| §5.5 — `Show agent history` / `Clear thread` / `New thread` are visual scaffolding with no-op handlers | These menu items get real handlers (read from store, clear task messages, reset thread) | Wiring phase |
+| Prior spec decision                                                                                    | This spec revises to                                                                                 | Reason                                                                            |
+| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| §5.5 — assistant is silent on open; discovery via chips                                                | Auto-review fires on task selection, debounced 2s, cached by commit SHA                              | New Figma design makes metrics + opening message the primary affordance           |
+| §5.2 — TopBar right zone has `Ship It`, `Merge Locally`, `Create PR`, kebab                            | TopBar right zone has `AI Partner` toggle + single `Approve ▾` dropdown containing all prior actions | Figma consolidation — prior actions remain functional, only the container changes |
+| §5.5 — quick-action chips are `Summarize diff`, `Risks?`, `Explain selected file`                      | Chips are `Explain security issues`, `Performance analysis`, `Suggest improvements`                  | Figma labels                                                                      |
+| §5.5 — `Show agent history` / `Clear thread` / `New thread` are visual scaffolding with no-op handlers | These menu items get real handlers (read from store, clear task messages, reset thread)              | Wiring phase                                                                      |
 
 All other decisions from the prior spec (three-panel geometry, `256/flex/384` widths, design tokens, motion rules, accessibility patterns) carry forward unchanged.
 
@@ -104,17 +104,17 @@ The filename `AIAssistantPanel.tsx` is preserved from the prior spec for continu
 
 **Pattern mapping — nothing is invented:**
 
-| New piece | Pattern followed | Reference |
-|---|---|---|
-| `ReviewService` | Service layer | `src/main/services/task-terminal-service.ts` |
-| `IReviewRepository` | Repository pattern | `src/main/data/sprint-task-repository.ts` |
-| `review:chatStream` IPC | Workbench copilot streaming | `src/main/handlers/workbench.ts` |
-| `review:autoReview` IPC | Synthesizer single-turn structured output | `buildSynthesizerPrompt()` in `prompt-composer.ts` |
-| `buildReviewerPrompt()` | New agent type in existing composer | `src/main/agent-manager/prompt-composer.ts` |
-| `useReviewPartnerStore` | Zustand-per-domain | `src/renderer/src/stores/taskWorkbench.ts` |
-| `task_reviews` table | Migration at bottom of `db.ts` | `src/main/db.ts` |
-| Handler file | `safeHandle()` + `createLogger('review-assistant')` | `src/main/handlers/workbench.ts` |
-| File-tree badges | Component primitive in `code-review/` | `src/renderer/src/components/code-review/` |
+| New piece               | Pattern followed                                    | Reference                                          |
+| ----------------------- | --------------------------------------------------- | -------------------------------------------------- |
+| `ReviewService`         | Service layer                                       | `src/main/services/task-terminal-service.ts`       |
+| `IReviewRepository`     | Repository pattern                                  | `src/main/data/sprint-task-repository.ts`          |
+| `review:chatStream` IPC | Workbench copilot streaming                         | `src/main/handlers/workbench.ts`                   |
+| `review:autoReview` IPC | Synthesizer single-turn structured output           | `buildSynthesizerPrompt()` in `prompt-composer.ts` |
+| `buildReviewerPrompt()` | New agent type in existing composer                 | `src/main/agent-manager/prompt-composer.ts`        |
+| `useReviewPartnerStore` | Zustand-per-domain                                  | `src/renderer/src/stores/taskWorkbench.ts`         |
+| `task_reviews` table    | Migration at bottom of `db.ts`                      | `src/main/db.ts`                                   |
+| Handler file            | `safeHandle()` + `createLogger('review-assistant')` | `src/main/handlers/workbench.ts`                   |
+| File-tree badges        | Component primitive in `code-review/`               | `src/renderer/src/components/code-review/`         |
 
 Zero new npm dependencies. All new code composes from `runSdkStreaming`, `buildAgentPrompt`, `safeHandle`, `createLogger`, `ISprintTaskRepository`, Zustand, and existing design tokens.
 
@@ -152,7 +152,7 @@ export type FindingSeverity = 'high' | 'medium' | 'low'
 export type FindingCategory = 'security' | 'performance' | 'correctness' | 'style'
 
 export interface InlineComment {
-  line: number                  // post-change (right-side) line number
+  line: number // post-change (right-side) line number
   severity: FindingSeverity
   category: FindingCategory
   message: string
@@ -162,7 +162,7 @@ export interface FileFinding {
   path: string
   status: 'clean' | 'issues'
   commentCount: number
-  comments: InlineComment[]     // stored in v1, rendered in v2
+  comments: InlineComment[] // stored in v1, rendered in v2
 }
 
 export interface ReviewFindings {
@@ -170,13 +170,13 @@ export interface ReviewFindings {
 }
 
 export interface ReviewResult {
-  qualityScore: number          // 0-100
-  issuesCount: number           // server-computed aggregate
-  filesCount: number            // server-computed aggregate
+  qualityScore: number // 0-100
+  issuesCount: number // server-computed aggregate
+  filesCount: number // server-computed aggregate
   openingMessage: string
   findings: ReviewFindings
-  model: string                 // e.g. 'claude-opus-4-6'
-  createdAt: number             // ms since epoch
+  model: string // e.g. 'claude-opus-4-6'
+  createdAt: number // ms since epoch
 }
 ```
 
@@ -200,6 +200,7 @@ export function createReviewRepository(db: Database): IReviewRepository { ... }
 ```
 
 **`getCached` behavior:**
+
 - Returns `null` on cache miss.
 - Parses `findings_json` defensively (`try/catch` around `JSON.parse`). On parse failure, logs a warning, deletes the corrupt row, returns `null` (treated as miss — triggers a fresh review).
 
@@ -223,10 +224,7 @@ export interface ReviewServiceDeps {
 }
 
 export interface ReviewService {
-  reviewChanges(
-    taskId: string,
-    opts?: { force?: boolean },
-  ): Promise<ReviewResult>
+  reviewChanges(taskId: string, opts?: { force?: boolean }): Promise<ReviewResult>
 }
 
 export function createReviewService(deps: ReviewServiceDeps): ReviewService
@@ -259,14 +257,13 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService
 
 ## 7. Prompt Layer
 
-`src/main/agent-manager/prompt-composer.ts` gains a new `'reviewer'` agent type. Per CLAUDE.md: *"All spawn paths must use `buildAgentPrompt()` instead of inline prompt assembly"*.
+`src/main/agent-manager/prompt-composer.ts` gains a new `'reviewer'` agent type. Per CLAUDE.md: _"All spawn paths must use `buildAgentPrompt()` instead of inline prompt assembly"_.
 
 **Extending the existing `BuildPromptInput` interface** — not introducing a parallel discriminated union. The existing interface is flat-with-optional-fields and I honor that style:
 
 ```ts
 // src/main/agent-manager/prompt-composer.ts — add 'reviewer' to AgentType
-export type AgentType =
-  | 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
+export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
 
 // And extend BuildPromptInput with reviewer-only optional fields:
 export interface BuildPromptInput {
@@ -274,15 +271,16 @@ export interface BuildPromptInput {
   // ... existing fields unchanged ...
 
   // Reviewer-only (unused by other agent types):
-  reviewerMode?: 'review' | 'chat'       // required when agentType === 'reviewer'
-  diff?: string                           // reviewer review-mode only
-  reviewSeed?: ReviewResult               // reviewer chat-mode only
+  reviewerMode?: 'review' | 'chat' // required when agentType === 'reviewer'
+  diff?: string // reviewer review-mode only
+  reviewSeed?: ReviewResult // reviewer chat-mode only
 }
 ```
 
 **`buildAgentPrompt()` routes** to one of two new helpers based on `input.reviewerMode`:
 
 - `buildReviewerPrompt(input)` — for `reviewerMode === 'review'`. Tools: none. Output: JSON only. System prompt ends with:
+
   ```
   Respond with ONLY a valid JSON object matching this schema — no markdown fences, no prose:
   {
@@ -314,10 +312,10 @@ Both helpers share a small internal helper `formatTaskContext(input)` that produ
 ### 8.1 New channels in `src/shared/ipc-channels.ts`
 
 ```ts
-'review:autoReview'   // invoke    (taskId, force?) → ReviewResult
-'review:chatStream'   // invoke    ({taskId, messages}) → { streamId }
-'review:chatChunk'    // main→rend ({streamId, chunk?, done, error?, toolUse?})
-'review:chatAbort'    // invoke    (streamId) → void
+'review:autoReview' // invoke    (taskId, force?) → ReviewResult
+'review:chatStream' // invoke    ({taskId, messages}) → { streamId }
+'review:chatChunk' // main→rend ({streamId, chunk?, done, error?, toolUse?})
+'review:chatAbort' // invoke    (streamId) → void
 ```
 
 ### 8.2 Handler file
@@ -395,6 +393,7 @@ interface ReviewPartnerStore {
 ```
 
 **Persistence:**
+
 - `messagesByTask` → localStorage under `bde:review-partner-messages`, capped at 100 messages per task, LRU eviction across at most 20 tasks. Stricter than workbench's 200/∞ because reviews are more numerous and most become stale once the task ships.
 - `panelOpen` → localStorage under `bde:review-partner-open` (boolean).
 - `reviewByTask` → **memory only**. The backend is already the source of truth via SQLite cache. On mount, the store calls `autoReview(taskId)` which hits the cache and returns instantly.
@@ -424,23 +423,23 @@ interface ReviewPartnerStore {
 
 ## 10. Frontend: Components
 
-| File | Status | Purpose |
-|---|---|---|
-| `components/code-review/AIAssistantPanel.tsx` | **Modify** | Replaces stub handlers with real wiring; consumes `useReviewPartnerStore` |
-| `components/code-review/ReviewMetricsRow.tsx` | **New** | Three cards — Quality score / Issues / Files |
-| `components/code-review/ReviewMessageList.tsx` | **New** | Streaming-aware chat message list |
-| `components/code-review/ReviewQuickActions.tsx` | **New** | Three action chips with Figma labels |
-| `components/code-review/ReviewChatInput.tsx` | **New** | Textarea, send/abort button, auto-grow |
-| `components/code-review/TopBar.tsx` | **Modify** | Adds `AI Partner` toggle, adds branch bar, swaps action buttons for `Approve ▾` |
-| `components/code-review/ApproveDropdown.tsx` | **New** | Popover consolidating Merge Locally / Squash / Create PR / Request Revision / Discard |
-| `components/code-review/BranchBar.tsx` | **New** | `<branch> → <target>` display in top bar |
-| `components/code-review/AIFileStatusBadge.tsx` | **New** | Small dot (warning/check/none) used in the file tree |
-| `components/code-review/AIReviewedBadge.tsx` | **New** | Pill badge on the file header |
-| `components/code-review/FileTreePanel.tsx` | **Modify** | Reads per-file findings from store; renders `AIFileStatusBadge` for each row |
-| `components/code-review/DiffViewerPanel.tsx` | **Modify** | Adds `AIReviewedBadge` + comment count to the header for the selected file |
-| `stores/reviewPartner.ts` | **New** | Zustand store — see §9 |
-| `hooks/useAutoReview.ts` | **New** | Debounced auto-review trigger on task selection |
-| `shared/review-types.ts` | **New** | Shared type definitions |
+| File                                            | Status     | Purpose                                                                               |
+| ----------------------------------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| `components/code-review/AIAssistantPanel.tsx`   | **Modify** | Replaces stub handlers with real wiring; consumes `useReviewPartnerStore`             |
+| `components/code-review/ReviewMetricsRow.tsx`   | **New**    | Three cards — Quality score / Issues / Files                                          |
+| `components/code-review/ReviewMessageList.tsx`  | **New**    | Streaming-aware chat message list                                                     |
+| `components/code-review/ReviewQuickActions.tsx` | **New**    | Three action chips with Figma labels                                                  |
+| `components/code-review/ReviewChatInput.tsx`    | **New**    | Textarea, send/abort button, auto-grow                                                |
+| `components/code-review/TopBar.tsx`             | **Modify** | Adds `AI Partner` toggle, adds branch bar, swaps action buttons for `Approve ▾`       |
+| `components/code-review/ApproveDropdown.tsx`    | **New**    | Popover consolidating Merge Locally / Squash / Create PR / Request Revision / Discard |
+| `components/code-review/BranchBar.tsx`          | **New**    | `<branch> → <target>` display in top bar                                              |
+| `components/code-review/AIFileStatusBadge.tsx`  | **New**    | Small dot (warning/check/none) used in the file tree                                  |
+| `components/code-review/AIReviewedBadge.tsx`    | **New**    | Pill badge on the file header                                                         |
+| `components/code-review/FileTreePanel.tsx`      | **Modify** | Reads per-file findings from store; renders `AIFileStatusBadge` for each row          |
+| `components/code-review/DiffViewerPanel.tsx`    | **Modify** | Adds `AIReviewedBadge` + comment count to the header for the selected file            |
+| `stores/reviewPartner.ts`                       | **New**    | Zustand store — see §9                                                                |
+| `hooks/useAutoReview.ts`                        | **New**    | Debounced auto-review trigger on task selection                                       |
+| `shared/review-types.ts`                        | **New**    | Shared type definitions                                                               |
 
 **Quick action behavior:** chips dispatch `appendQuickAction(taskId, prompt)` which injects a canned user message and triggers `sendMessage()` without requiring the user to type. Canned prompts:
 
@@ -502,17 +501,17 @@ Under ≤1120 px the right panel becomes a collapsed rail with an expand chevron
 
 ## 13. Error Handling
 
-| Failure | Handling |
-|---|---|
-| SDK error (rate limit, network, auth) | `ReviewState.status = 'error'`; panel header shows inline error with `Retry`; nothing cached |
-| Model returns malformed JSON | Strip markdown fences, retry parse once, throw `MalformedReviewError` (declared in `src/main/services/review-service.ts` alongside the service factory) if still fails; raw response logged |
-| Empty diff | Service returns synthetic "No changes detected" result without SDK call |
-| Worktree missing / stale | Service throws `WorktreeMissingError` (declared in `src/main/services/review-service.ts` alongside the service factory); panel shows "Worktree not found" with disabled Re-review |
-| Cache row corrupt | Repository logs, deletes the row, returns `null` → treated as cache miss |
-| Chat stream mid-response failure | Error chunk emitted with `error: string`; streaming message bubble shows error inline, prior messages preserved |
-| User abort (new task selected) | `abortStream()` called; streaming message finalized at current content; not treated as an error |
-| Rate limit | Distinctive error message: `"Claude Code rate limit reached. Try again shortly."` |
-| Timeout (`runSdkStreaming` default 180 s) | Error chunk emitted; treated as stream error |
+| Failure                                   | Handling                                                                                                                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SDK error (rate limit, network, auth)     | `ReviewState.status = 'error'`; panel header shows inline error with `Retry`; nothing cached                                                                                                |
+| Model returns malformed JSON              | Strip markdown fences, retry parse once, throw `MalformedReviewError` (declared in `src/main/services/review-service.ts` alongside the service factory) if still fails; raw response logged |
+| Empty diff                                | Service returns synthetic "No changes detected" result without SDK call                                                                                                                     |
+| Worktree missing / stale                  | Service throws `WorktreeMissingError` (declared in `src/main/services/review-service.ts` alongside the service factory); panel shows "Worktree not found" with disabled Re-review           |
+| Cache row corrupt                         | Repository logs, deletes the row, returns `null` → treated as cache miss                                                                                                                    |
+| Chat stream mid-response failure          | Error chunk emitted with `error: string`; streaming message bubble shows error inline, prior messages preserved                                                                             |
+| User abort (new task selected)            | `abortStream()` called; streaming message finalized at current content; not treated as an error                                                                                             |
+| Rate limit                                | Distinctive error message: `"Claude Code rate limit reached. Try again shortly."`                                                                                                           |
+| Timeout (`runSdkStreaming` default 180 s) | Error chunk emitted; treated as stream error                                                                                                                                                |
 
 All errors logged via `createLogger('review-assistant')` with task and stream context. IPC boundary errors surface via `safeHandle()`'s automatic handling.
 
@@ -534,32 +533,32 @@ All errors logged via `createLogger('review-assistant')` with task and stream co
 
 ### 15.1 Main process (`npm run test:main`)
 
-| Target | Cases |
-|---|---|
-| `createReviewRepository` | Round-trip get/set; cache miss; `invalidate` clears all SHAs for a task; corrupt `findings_json` returns `null` and deletes the row |
-| `reviewService.reviewChanges` | Cache hit short-circuits SDK; `force: true` bypasses cache; empty diff short-circuit; malformed JSON retry-then-fail; aggregate computation (issuesCount from high+medium severity) |
-| `parseReviewResponse` | Raw JSON; JSON with markdown fences; JSON with leading/trailing prose; rejects invalid shapes |
-| `buildReviewerPrompt` (review mode) | Contains task spec, diff, schema instructions; does not include conversation history |
-| `buildReviewerChatPrompt` (chat mode) | Includes messages, review seed context, tools declared, `cwd` passed |
-| IPC `review:autoReview` handler | Calls service, returns result; `safeHandle` wraps error; force flag passed through |
-| IPC `review:chatStream` handler | Calls `runSdkStreaming` with correct options; chunks emitted via `webContents.send`; abort path clears `activeStreams` |
+| Target                                | Cases                                                                                                                                                                               |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createReviewRepository`              | Round-trip get/set; cache miss; `invalidate` clears all SHAs for a task; corrupt `findings_json` returns `null` and deletes the row                                                 |
+| `reviewService.reviewChanges`         | Cache hit short-circuits SDK; `force: true` bypasses cache; empty diff short-circuit; malformed JSON retry-then-fail; aggregate computation (issuesCount from high+medium severity) |
+| `parseReviewResponse`                 | Raw JSON; JSON with markdown fences; JSON with leading/trailing prose; rejects invalid shapes                                                                                       |
+| `buildReviewerPrompt` (review mode)   | Contains task spec, diff, schema instructions; does not include conversation history                                                                                                |
+| `buildReviewerChatPrompt` (chat mode) | Includes messages, review seed context, tools declared, `cwd` passed                                                                                                                |
+| IPC `review:autoReview` handler       | Calls service, returns result; `safeHandle` wraps error; force flag passed through                                                                                                  |
+| IPC `review:chatStream` handler       | Calls `runSdkStreaming` with correct options; chunks emitted via `webContents.send`; abort path clears `activeStreams`                                                              |
 
 Repository tests use `new Database(':memory:')` with the migration applied. Service tests use fakes for all deps — no SDK, no SQLite, no file IO.
 
 ### 15.2 Renderer (`npm test`)
 
-| Target | Cases |
-|---|---|
-| `useReviewPartnerStore.autoReview` | idle → loading → ready; error path; idempotent re-fire |
+| Target                              | Cases                                                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `useReviewPartnerStore.autoReview`  | idle → loading → ready; error path; idempotent re-fire                                                    |
 | `useReviewPartnerStore.sendMessage` | User message append; streaming message builds from chunks; abort cancellation; error chunk renders inline |
-| `useAutoReview` hook | Debounces 2 s; task change clears pending; unmount cleans up |
-| `AIAssistantPanel` | Empty / loading / ready / error render variants |
-| `ReviewMetricsRow` | Three cards with numbers and correct `aria-label` |
-| `ReviewQuickActions` | Chip click dispatches canned prompt |
-| `ApproveDropdown` | Arrow-key nav; `Escape` close; action dispatch |
-| `AIFileStatusBadge` | Warning / check / none variants |
-| `FileTreePanel` (modified) | Renders `AIFileStatusBadge` for files with findings; no badge for unreviewed files |
-| `DiffViewerPanel` (modified) | Shows `AIReviewedBadge` + comment count when the selected file has a finding |
+| `useAutoReview` hook                | Debounces 2 s; task change clears pending; unmount cleans up                                              |
+| `AIAssistantPanel`                  | Empty / loading / ready / error render variants                                                           |
+| `ReviewMetricsRow`                  | Three cards with numbers and correct `aria-label`                                                         |
+| `ReviewQuickActions`                | Chip click dispatches canned prompt                                                                       |
+| `ApproveDropdown`                   | Arrow-key nav; `Escape` close; action dispatch                                                            |
+| `AIFileStatusBadge`                 | Warning / check / none variants                                                                           |
+| `FileTreePanel` (modified)          | Renders `AIFileStatusBadge` for files with findings; no badge for unreviewed files                        |
+| `DiffViewerPanel` (modified)        | Shows `AIReviewedBadge` + comment count when the selected file has a finding                              |
 
 Per the pinned memory rule, Zustand state is set via `useReviewPartnerStore.setState()` **before** `render()` in tests.
 
@@ -608,4 +607,4 @@ New files inherit the existing `npm run test:coverage` threshold from `vitest.co
 
 ---
 
-*Pair this design doc with a follow-up implementation plan (use `superpowers:writing-plans`) that sequences the backend wiring, then the store and components, then the top-bar and file-tree decorations, then tests. Each slice should leave the app buildable and the existing visual scaffolding intact.*
+_Pair this design doc with a follow-up implementation plan (use `superpowers:writing-plans`) that sequences the backend wiring, then the store and components, then the top-bar and file-tree decorations, then tests. Each slice should leave the app buildable and the existing visual scaffolding intact._

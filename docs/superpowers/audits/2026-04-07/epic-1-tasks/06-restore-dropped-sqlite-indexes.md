@@ -3,6 +3,7 @@
 ## Problem
 
 Migration v15 in `src/main/db.ts` (around line 443-454) created three indexes on `sprint_tasks`:
+
 - `idx_sprint_tasks_status`
 - `idx_sprint_tasks_claimed_by`
 - `idx_sprint_tasks_pr_number`
@@ -10,6 +11,7 @@ Migration v15 in `src/main/db.ts` (around line 443-454) created three indexes on
 Migrations v17 and v20 each did a full table rewrite (CREATE new → INSERT SELECT → DROP old → RENAME) to alter the `status` CHECK constraint. In both cases the index-recreation block only re-created `idx_sprint_tasks_status`. After v20 runs, `claimed_by` and `pr_number` are unindexed.
 
 These columns are queried on hot paths:
+
 - `getOrphanedTasks(claimedBy)` — agent manager startup
 - `markTaskDoneByPrNumber` / `markTaskCancelledByPrNumber` / `updateTaskMergeableState` / `listTasksWithOpenPrs` — sprint PR poller, runs every 60s
 
@@ -22,6 +24,7 @@ Add migration v36 to the `migrations` array in `src/main/db.ts`. Insert it after
 The migration body should issue two `CREATE INDEX IF NOT EXISTS` statements via the existing better-sqlite3 API used throughout the file (read v15, v17, v20 to see the exact pattern). The `IF NOT EXISTS` guard makes the migration idempotent — safe even if the indexes happen to exist on some users' DBs.
 
 The two index names to create are exactly:
+
 - `idx_sprint_tasks_claimed_by` on column `claimed_by`
 - `idx_sprint_tasks_pr_number` on column `pr_number`
 

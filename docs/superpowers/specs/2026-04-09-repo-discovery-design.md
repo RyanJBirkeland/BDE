@@ -18,15 +18,15 @@ Code review remains local — this feature only affects how repos are discovered
 
 ## Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| GitHub repo source | `gh` CLI | Already a BDE prerequisite; handles auth natively |
-| Clone destination | Configurable default dir | Setting `repos.cloneDir`, defaults `~/projects/` |
-| Scan directories | Configurable list | Setting `repos.scanDirs`, defaults `['~/projects']` |
-| Scan depth | 1 level | Keeps scanning fast and predictable |
-| Already-configured repos | Hidden from lists | Users are here to add, not review existing |
-| Clone progress | Streaming via IPC events | Clone can take 30s+; frozen spinner is bad UX |
-| UX surface | Modal with tabs | Inline form too cramped for repo lists with search |
+| Decision                 | Choice                   | Rationale                                           |
+| ------------------------ | ------------------------ | --------------------------------------------------- |
+| GitHub repo source       | `gh` CLI                 | Already a BDE prerequisite; handles auth natively   |
+| Clone destination        | Configurable default dir | Setting `repos.cloneDir`, defaults `~/projects/`    |
+| Scan directories         | Configurable list        | Setting `repos.scanDirs`, defaults `['~/projects']` |
+| Scan depth               | 1 level                  | Keeps scanning fast and predictable                 |
+| Already-configured repos | Hidden from lists        | Users are here to add, not review existing          |
+| Clone progress           | Streaming via IPC events | Clone can take 30s+; frozen spinner is bad UX       |
+| UX surface               | Modal with tabs          | Inline form too cramped for repo lists with search  |
 
 ## Architecture
 
@@ -51,26 +51,26 @@ New channels added to `src/shared/ipc-channels.ts`:
 
 ```typescript
 interface LocalRepoInfo {
-  name: string          // directory basename
-  localPath: string     // absolute path
-  owner?: string        // parsed from git remote
-  repo?: string         // parsed from git remote
+  name: string // directory basename
+  localPath: string // absolute path
+  owner?: string // parsed from git remote
+  repo?: string // parsed from git remote
 }
 
 interface GithubRepoInfo {
-  name: string          // repo name
-  owner: string         // owner login (mapped from gh's owner.login)
-  description?: string  // repo description
+  name: string // repo name
+  owner: string // owner login (mapped from gh's owner.login)
+  description?: string // repo description
   isPrivate: boolean
-  url: string           // clone URL
+  url: string // clone URL
 }
 
 interface CloneProgressEvent {
   owner: string
   repo: string
-  line: string          // single line of git clone stderr output
-  done: boolean         // true when process has exited
-  error?: string        // set on non-zero exit
+  line: string // single line of git clone stderr output
+  done: boolean // true when process has exited
+  error?: string // set on non-zero exit
 }
 ```
 
@@ -78,10 +78,10 @@ interface CloneProgressEvent {
 
 ### New Settings
 
-| Key | Type | Default | Purpose |
-|-----|------|---------|---------|
-| `repos.scanDirs` | `string[]` | `['~/projects']` | Directories to scan for local git repos |
-| `repos.cloneDir` | `string` | `~/projects` | Default clone destination for GitHub imports |
+| Key              | Type       | Default          | Purpose                                      |
+| ---------------- | ---------- | ---------------- | -------------------------------------------- |
+| `repos.scanDirs` | `string[]` | `['~/projects']` | Directories to scan for local git repos      |
+| `repos.cloneDir` | `string`   | `~/projects`     | Default clone destination for GitHub imports |
 
 Settings store the unexpanded `~` form. Tilde expansion happens at read time in the handler (via `os.homedir()`), so paths remain portable across macOS migrations.
 
@@ -202,15 +202,15 @@ Going with **Option A** — settings that affect behavior should live in Setting
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/shared/ipc-channels.ts` | Add `repos:scanLocal`, `repos:listGithub`, `repos:clone` channels + types |
-| `src/main/handlers/repo-discovery.ts` | **New** — handler implementations |
-| `src/main/index.ts` | Register `registerRepoDiscoveryHandlers()` |
-| `src/preload/index.ts` | Add `repoDiscovery` API surface |
-| `src/renderer/src/components/settings/RepoDiscoveryModal.tsx` | **New** — modal with Local/GitHub tabs |
+| File                                                           | Change                                                                      |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `src/shared/ipc-channels.ts`                                   | Add `repos:scanLocal`, `repos:listGithub`, `repos:clone` channels + types   |
+| `src/main/handlers/repo-discovery.ts`                          | **New** — handler implementations                                           |
+| `src/main/index.ts`                                            | Register `registerRepoDiscoveryHandlers()`                                  |
+| `src/preload/index.ts`                                         | Add `repoDiscovery` API surface                                             |
+| `src/renderer/src/components/settings/RepoDiscoveryModal.tsx`  | **New** — modal with Local/GitHub tabs                                      |
 | `src/renderer/src/components/settings/RepositoriesSection.tsx` | Replace inline form trigger with modal trigger, add scan/clone dir settings |
-| `src/renderer/src/components/settings/repo-discovery.css` | **New** — modal-specific styles (tabs, repo list rows, clone progress) |
+| `src/renderer/src/components/settings/repo-discovery.css`      | **New** — modal-specific styles (tabs, repo list rows, clone progress)      |
 
 ## How to Test
 

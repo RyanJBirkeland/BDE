@@ -4,14 +4,14 @@ Six tight, single-file (or near-single-file) tasks. Each is independent of the o
 
 ## Tasks
 
-| # | Title | Files touched | Risk |
-|---|---|---|---|
-| 01 | Make sample-first-task runnable as-shipped | 1 | low |
-| 02 | Add About tab to Settings sidebar | 1 | low |
-| 03 | Delete fake estimateCost from console header | 1 | low |
-| 04 | Extract playground HTML sanitization (security) | 3 (1 new) | medium |
-| 05 | Fix README factual errors (URL, counts, views) | 1 | low |
-| 06 | Migration v36 — restore dropped SQLite indexes | 2 | medium |
+| #   | Title                                           | Files touched | Risk   |
+| --- | ----------------------------------------------- | ------------- | ------ |
+| 01  | Make sample-first-task runnable as-shipped      | 1             | low    |
+| 02  | Add About tab to Settings sidebar               | 1             | low    |
+| 03  | Delete fake estimateCost from console header    | 1             | low    |
+| 04  | Extract playground HTML sanitization (security) | 3 (1 new)     | medium |
+| 05  | Fix README factual errors (URL, counts, views)  | 1             | low    |
+| 06  | Migration v36 — restore dropped SQLite indexes  | 2             | medium |
 
 ## Pre-flight checklist
 
@@ -28,6 +28,7 @@ These are ~30 min of hand edits. Without them, expect 1-2 of the six tasks to th
 ## How to use these specs
 
 For each task:
+
 1. Open Task Workbench (⌘0)
 2. Paste the title into the Title field, repo = `BDE`, spec_type = appropriate template
 3. Paste the body of the .md file into the Spec editor

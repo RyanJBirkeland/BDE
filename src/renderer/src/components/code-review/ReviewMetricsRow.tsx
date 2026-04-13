@@ -12,7 +12,7 @@ export function ReviewMetricsRow({
   qualityScore,
   issuesCount,
   filesCount,
-  loading = false,
+  loading = false
 }: Props): JSX.Element {
   return (
     <div className="cr-metrics" role="group" aria-label="AI review metrics">
@@ -32,9 +32,7 @@ export function ReviewMetricsRow({
         value={loading || issuesCount === undefined ? '—' : issuesCount}
         label="Issues"
         ariaLabel={
-          issuesCount !== undefined
-            ? `${issuesCount} issues found`
-            : 'Issue count pending'
+          issuesCount !== undefined ? `${issuesCount} issues found` : 'Issue count pending'
         }
         variant="warning"
       />
@@ -42,11 +40,7 @@ export function ReviewMetricsRow({
         icon={<TrendingUp size={16} />}
         value={loading || filesCount === undefined ? '—' : filesCount}
         label="Files"
-        ariaLabel={
-          filesCount !== undefined
-            ? `${filesCount} files changed`
-            : 'File count pending'
-        }
+        ariaLabel={filesCount !== undefined ? `${filesCount} files changed` : 'File count pending'}
         variant="info"
       />
     </div>
@@ -58,7 +52,7 @@ function MetricCard({
   value,
   label,
   ariaLabel,
-  variant,
+  variant
 }: {
   icon: ReactNode
   value: number | string
@@ -67,11 +61,7 @@ function MetricCard({
   variant: 'success' | 'warning' | 'info'
 }): JSX.Element {
   return (
-    <div
-      className={`cr-metric cr-metric--${variant}`}
-      role="status"
-      aria-label={ariaLabel}
-    >
+    <div className={`cr-metric cr-metric--${variant}`} role="status" aria-label={ariaLabel}>
       <div className="cr-metric__icon">{icon}</div>
       <div className="cr-metric__value">{value}</div>
       <div className="cr-metric__label">{label}</div>

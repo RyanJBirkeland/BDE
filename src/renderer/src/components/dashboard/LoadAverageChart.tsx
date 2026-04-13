@@ -102,7 +102,12 @@ export function LoadAverageChart({
 
   const trendLabel =
     trend === 'cooling' ? '▼ cooling' : trend === 'climbing' ? '▲ climbing' : '— steady'
-  const trendColor = trend === 'cooling' ? 'var(--bde-success)' : trend === 'climbing' ? 'var(--bde-danger)' : 'var(--bde-text-dim)'
+  const trendColor =
+    trend === 'cooling'
+      ? 'var(--bde-success)'
+      : trend === 'climbing'
+        ? 'var(--bde-danger)'
+        : 'var(--bde-text-dim)'
 
   return (
     <div

@@ -9,6 +9,7 @@
 Delete every inline `style={{}}` prop in `AgentsView.tsx` and `AgentList.tsx` and move the styles to CSS classes.
 
 For `AgentsView.tsx`:
+
 - Sidebar header (lines 264-272) → use existing `.agents-view__sidebar-header` class
 - "Fleet" gradient title (lines 274-284) → use existing `.agents-view__title` class
 - Info icon + tooltip (lines 285-332) → new classes `.agents-view__info-icon`, `.agents-view__tooltip`
@@ -16,6 +17,7 @@ For `AgentsView.tsx`:
 - Scratchpad banner (lines 358-406) → new classes `.agents-view__scratchpad-banner`, `.agents-view__scratchpad-banner-text`, `.agents-view__scratchpad-banner-dismiss`
 
 For `AgentList.tsx`:
+
 - Inline `linear-gradient` background (line 195) → new class `.agent-list--gradient` or extend existing `.agent-list`
 - Inline `borderBottom` (lines 202, 232) → new classes or extend `.agent-list__search-container`, `.agent-list__repo-chips`
 

@@ -7,6 +7,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 ## Findings
 
 ### [CRITICAL] Universal preamble forces `npm install` before reading any files — hostile to adhoc/assistant use cases
+
 - **Category:** Conflicting Guidance / Scope Drift
 - **Location:** `src/main/agent-manager/prompt-composer.ts:51-52`
 - **Prompt excerpt:** `"Your worktree has NO node_modules. Run \`npm install\` as your FIRST action before reading any files or running any commands. If \`npm install\` fails, report the error clearly and exit immediately. Do not proceed without dependencies."`
@@ -15,6 +16,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Move the `npm install` rule out of `UNIVERSAL_PREAMBLE` and into a pipeline-only appendix (next to `DEFINITION_OF_DONE`). Adhoc worktrees inherit `node_modules` from the main checkout in most flows anyway; if some don't, gate this on `agentType === 'pipeline'`.
 
 ### [CRITICAL] MANDATORY pre-commit verification applied to every agent, including non-coding ones
+
 - **Category:** Scope Drift / Conflicting Guidance
 - **Location:** `src/main/agent-manager/prompt-composer.ts:57-68`
 - **Prompt excerpt:** `"## MANDATORY Pre-Commit Verification (DO NOT SKIP)\nBefore EVERY commit, you MUST run ALL of these and they MUST pass:\n1. \`npm run typecheck\`\n2. \`npm test\` — All renderer tests must pass (currently 2563+ tests)\n3. \`npm run lint\` ... This is non-negotiable."`
@@ -23,6 +25,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Move to a new `PIPELINE_CODE_DISCIPLINE` appendix applied only when `agentType === 'pipeline'`. Drop the hardcoded `2563+` count — reference the CI command instead (the testing-patterns memory module already models this correctly).
 
 ### [CRITICAL] Assistant personality contradicts the actual runtime: says "not in worktrees", but `spawnAdhocAgent` puts it in one
+
 - **Category:** Conflicting Guidance
 - **Location:** `src/main/agent-system/personality/assistant-personality.ts:11-12` vs `src/main/adhoc-agent.ts:85-109`
 - **Prompt excerpt:** `"You work in the repo directory directly (not in worktrees)."`
@@ -31,6 +34,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Update `assistant-personality.roleFrame` to match the new worktree-backed reality, or (cleaner) stop putting assistants into worktrees and keep them in the repo dir as documented.
 
 ### [MAJOR] Adhoc personality forbids `git push`, but the branch appendix actively instructs how to push
+
 - **Category:** Conflicting Guidance
 - **Location:** `src/main/agent-system/personality/adhoc-personality.ts:16` vs `src/main/agent-manager/prompt-composer.ts:74-81`
 - **Prompt excerpt:** Personality: `"Do NOT run \`git push\` — your work is reviewed locally; pushing is the user's decision"`. Branch appendix (always appended when branch is set): `"If you need to push, use: \`git push origin ${branch}\`"`.
@@ -39,6 +43,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** In `buildBranchAppendix`, omit the "if you need to push" line when `agentType === 'adhoc'` (or `assistant`). Use a neutral statement: "Commit to this branch. The user reviews your work and decides when to push."
 
 ### [MAJOR] `repoName` is never passed for adhoc/assistant — BDE memory is injected into non-BDE sessions
+
 - **Category:** Missing Context / Token Waste
 - **Location:** `src/main/adhoc-agent.ts:105-109`
 - **Prompt excerpt:** `buildAgentPrompt({ agentType: args.assistant ? 'assistant' : 'adhoc', taskContent: args.task, branch })`
@@ -47,6 +52,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** `adhoc-agent.ts` has `repoPath` and derives `repo = basename(args.repoPath).toLowerCase()` on line 124 — pass that as `repoName` to `buildAgentPrompt`. Also reconsider the "default to BDE when unknown" heuristic in `isBdeRepo` — defaulting to empty is safer.
 
 ### [MAJOR] "Plugin disable note" is meaningless to the model and wastes tokens
+
 - **Category:** Token Waste / Vague Instruction
 - **Location:** `src/main/agent-manager/prompt-composer.ts:230-232`
 - **Prompt excerpt:** `"## Note\nYou have BDE-native skills and conventions loaded. Generic third-party plugin guidance may not apply to BDE workflows."`
@@ -55,6 +61,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Delete these three lines. If the intent is to override global CLAUDE.md guidance, name the specific conflicts.
 
 ### [MAJOR] Skills reference the deleted "PR Station" and ⌘5 mapping — stale against current docs
+
 - **Category:** Missing Context / Conflicting Guidance
 - **Location:** `src/main/agent-system/skills/pr-review.ts:35-36`
 - **Prompt excerpt:** `"## BDE PR Station\nPR Station view (Cmd+5) provides inline code review with CI badges, diff comments, batch review submission, and merge controls."`
@@ -63,6 +70,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Rename to Code Review Station, update the description. Move the rebase/force-push subsection behind a capability gate (assistant only, not adhoc) or explicitly scope it: "Only run git push if the user asks; adhoc sessions must never push unprompted."
 
 ### [MAJOR] `codePatternsSkill` contains drifted panel-view instructions that will break `VIEW_REGISTRY`
+
 - **Category:** Missing Context
 - **Location:** `src/main/agent-system/skills/code-patterns.ts:58-63`
 - **Prompt excerpt:** `"## Panel Views\n1. Add to View union in panelLayout.ts\n2. Update ALL maps: VIEW_ICONS, VIEW_LABELS, VIEW_SHORTCUTS\n3. Create ViewName.tsx in src/renderer/src/views/\n4. Add lazy import in view-resolver.tsx\n5. Register in resolveView() switch"`
@@ -71,6 +79,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Replace the 5-step list with a one-liner pointing to `VIEW_REGISTRY` in `src/renderer/src/lib/view-registry.ts`.
 
 ### [MAJOR] `taskOrchestrationSkill` teaches `window.api.sprint.create` for main-process agents
+
 - **Category:** Missing Context / Conflicting Guidance
 - **Location:** `src/main/agent-system/skills/task-orchestration.ts:14-24`
 - **Prompt excerpt:** ` \`\`\`typescript\n// Example: Create task via IPC\nawait window.api.sprint.create({ ... })\n\`\`\` `
@@ -79,6 +88,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Either (a) document the SQLite insertion path with the known caveats ("bypasses IPC validation — only use for rescue"), or (b) expose a real CLI/MCP tool for task creation and reference that. As-is, delete the TypeScript example; keep the conceptual hard/soft description.
 
 ### [MAJOR] Synthesizer and copilot agents receive the same "worktree / pre-commit / npm install" rules despite having no tools
+
 - **Category:** Missing Context / Token Waste
 - **Location:** `src/main/agent-manager/prompt-composer.ts:41-68`
 - **Prompt excerpt:** (full `UNIVERSAL_PREAMBLE`)
@@ -87,6 +97,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Split `UNIVERSAL_PREAMBLE` into three layers: (1) identity ("you are a BDE agent, safety rules: never commit secrets"), applied universally; (2) pipeline code discipline (npm install, pre-commit, typescript strict); (3) interactive code discipline (commit format, branch hygiene). Apply 2 to pipeline only and 3 to adhoc/assistant.
 
 ### [MAJOR] `copilotPersonality` used for copilot path but `repoName` is not threaded through workbench copilot either (risk sibling bug)
+
 - **Category:** Missing Context
 - **Location:** `src/main/agent-manager/prompt-composer.ts:210` (`repoName: repoName ?? undefined`)
 - **Observation:** Memory injection for the copilot path depends on whether the copilot caller passes `repoName`. If the workbench IPC doesn't pipe through `formContext.repo` as `repoName`, copilots drafting specs for life-os will be handed BDE conventions. Not verified here (Team Alpha territory), but the `formContext` already contains `repo`, so using `repo` for both `formContext` and `repoName` would be trivial. Flagging because the same plumbing bug exists in adhoc and is easy to replicate.
@@ -94,6 +105,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** When `formContext.repo` is provided, also set `repoName: formContext.repo`. Enforce it in a type guard.
 
 ### [MINOR] `SELF_REVIEW_CHECKLIST` is pipeline-only, but could help adhoc too
+
 - **Category:** Missing Example
 - **Location:** `src/main/agent-manager/prompt-composer.ts:341-350`
 - **Observation:** The `## Self-Review Checklist` (no console.log left behind, no hardcoded colors, commit messages explain WHY) is valuable for any coding session. Gating it to pipeline means adhoc users get worse commits from their interactive agent than from the pipeline agent doing the same work.
@@ -101,6 +113,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Apply the checklist to adhoc when a branch is set (pipeline and adhoc both commit).
 
 ### [MINOR] Adhoc personality constraint contradicts CLAUDE.md's mandatory pre-commit rules
+
 - **Category:** Conflicting Guidance
 - **Location:** `src/main/agent-system/personality/adhoc-personality.ts:17`
 - **Prompt excerpt:** `"Run tests after changes: npm test && npm run typecheck"`
@@ -108,6 +121,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Either remove this line (covered by preamble) or make it authoritative and align with the preamble. Personalities should not contradict universal rules.
 
 ### [MINOR] `debuggingSkill` tells agents to edit SQLite directly to reset tasks — bypasses the data-layer contract
+
 - **Category:** Conflicting Guidance
 - **Location:** `src/main/agent-system/skills/debugging.ts:23-27`
 - **Prompt excerpt:** `"## Reset Errored Tasks\nMust clear BOTH status AND claimed_by via SQLite: \`UPDATE sprint_tasks SET status='queued', claimed_by=NULL, notes=NULL, started_at=NULL, completed_at=NULL, fast_fail_count=0 WHERE id='...';\`"`
@@ -116,6 +130,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Replace with an IPC-backed reset command or at minimum call out that `resolveDependents()` must also run and the `task_changes` audit row must be inserted.
 
 ### [MINOR] `voice` and `patterns` fields use vague qualifiers with no examples
+
 - **Category:** Vague Instruction
 - **Location:** `src/main/agent-system/personality/adhoc-personality.ts:4-5`, `assistant-personality.ts:4-6`
 - **Prompt excerpt:** adhoc: `"Be terse and execution-focused. Do the work first, explain after."` assistant: `"Be conversational but concise. Explain your reasoning briefly."`
@@ -124,6 +139,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Add one concrete anchor per voice. Example for adhoc: `"Default to ≤5 lines of narration per action; skip it entirely for routine file reads."`
 
 ### [MINOR] `PLAYGROUND_INSTRUCTIONS` mentions "the BDE chat" without defining it for adhoc sessions
+
 - **Category:** Missing Context
 - **Location:** `src/main/agent-manager/prompt-composer.ts:98-109`
 - **Prompt excerpt:** `"The preview will automatically appear inline in the BDE chat when you write .html files"`
@@ -131,12 +147,14 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Say "the Agents view console in BDE" and reference PlaygroundCard by name — matches BDE_FEATURES.md terminology.
 
 ### [MINOR] `IDLE_TIMEOUT_WARNING` and `buildTimeLimitSection` are pipeline-only, but adhoc also has a watchdog in practice
+
 - **Category:** Missing Context
 - **Location:** `src/main/agent-manager/prompt-composer.ts:115-122`, applied only on line 354-357
 - **Observation:** Adhoc sessions run multi-turn in the main process and are subject to SDK-level timeouts (and the user closing the app). The agent is never told about any time budget, so it may undertake open-ended exploration that never finishes.
 - **Recommendation:** Add a soft "budget your work; if a step takes >10 min report progress" hint to the adhoc personality, or emit `IDLE_TIMEOUT_WARNING` unconditionally.
 
 ### [MINOR] `getAllSkills()` concatenates all 5 skills unconditionally — no routing by trigger
+
 - **Category:** Token Waste
 - **Location:** `src/main/agent-system/skills/index.ts:20-30`
 - **Observation:** The `BDESkill.trigger` field exists precisely so skills can be conditionally injected ("User asks about PR review..."), but `getAllSkills()` throws away the triggers and concatenates every skill's full markdown on every adhoc/assistant spawn. Total is ~6KB of skill text per session, most of it irrelevant to any given conversation.
@@ -144,6 +162,7 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Either (a) delete the `trigger` field if it's dead, or (b) implement skill selection: inject only the system-introspection + debugging skills by default, and have the agent pull additional skill guidance via a tool (`bde:getSkill(id)`) when needed.
 
 ### [MINOR] `taskContent` for adhoc/assistant is appended with no header — contrasted with pipeline's explicit `## Task Specification`
+
 - **Category:** Missing Example
 - **Location:** `src/main/agent-manager/prompt-composer.ts:291-303`
 - **Prompt excerpt:** `"// For assistant, adhoc: append task content as-is\nprompt += '\\n\\n' + taskContent"`
@@ -152,8 +171,8 @@ The non-pipeline agent surfaces (adhoc, assistant, native agent system) share a 
 - **Recommendation:** Wrap adhoc/assistant task content in `## User Request` (or `## Task` for adhoc). Costs 3 tokens, prevents boundary confusion.
 
 ### [MINOR] `agent-event-mapper.ts` silently drops `result` messages and logs unknown types via `console.debug`
+
 - **Category:** No Failure Path
 - **Location:** `src/main/agent-event-mapper.ts:47-70`
 - **Observation:** Not strictly a prompt smell but related to agent supervision: when the SDK wire protocol evolves (e.g., adds a new message type like `thinking` or `sidechain`), this mapper silently drops the event and only emits a `console.debug` that nobody will see in production. There is no escape hatch for the agent to tell the user "I did work but it wasn't captured."
 - **Recommendation:** At minimum upgrade `console.debug` to the module logger used elsewhere in main, and consider emitting an `agent:warning` event for unknown message types so supervisors notice when new SDK versions break mapping.
-

@@ -81,9 +81,7 @@ Opening: ${reviewSeed.openingMessage}
 `
     : ''
 
-  const history = messages
-    .map((m) => `**${m.role}:** ${m.content}`)
-    .join('\n\n')
+  const history = messages.map((m) => `**${m.role}:** ${m.content}`).join('\n\n')
 
   return `${REVIEWER_PREAMBLE}
 

@@ -12,6 +12,7 @@ import { useReviewPartnerStore } from '../stores/reviewPartner'
 import { useAutoReview } from '../hooks/useAutoReview'
 import { toast } from '../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
 export default function CodeReviewView(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -109,21 +110,23 @@ export default function CodeReviewView(): React.JSX.Element {
   ])
 
   return (
-    <motion.div
-      className="cr-view"
-      variants={VARIANTS.fadeIn}
-      initial="initial"
-      animate="animate"
-      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-    >
-      <TopBar />
-      <div className="cr-panels">
-        <FileTreePanel />
-        <div className="cr-diffviewer">
-          <DiffViewerPanel />
+    <ErrorBoundary name="CodeReviewView">
+      <motion.div
+        className="cr-view"
+        variants={VARIANTS.fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+      >
+        <TopBar />
+        <div className="cr-panels">
+          <FileTreePanel />
+          <div className="cr-diffviewer">
+            <DiffViewerPanel />
+          </div>
+          {panelOpen && <AIAssistantPanel />}
         </div>
-        {panelOpen && <AIAssistantPanel />}
-      </div>
-    </motion.div>
+      </motion.div>
+    </ErrorBoundary>
   )
 }

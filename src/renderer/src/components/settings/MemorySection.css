@@ -73,7 +73,6 @@
   flex-shrink: 0;
 }
 
-
 .memory-sidebar__list {
   flex: 1;
   overflow-y: auto;

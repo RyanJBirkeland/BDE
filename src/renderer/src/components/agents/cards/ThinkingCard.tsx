@@ -9,18 +9,12 @@ interface ThinkingCardProps {
   searchClass: string
 }
 
-export function ThinkingCard({
-  tokenCount,
-  text
-}: ThinkingCardProps): React.JSX.Element {
+export function ThinkingCard({ tokenCount, text }: ThinkingCardProps): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
   const preview = text ? text.slice(0, 120) + (text.length > 120 ? '...' : '') : ''
 
   return (
-    <div
-      className="console-card console-card--reasoning"
-      data-testid="console-line-thinking"
-    >
+    <div className="console-card console-card--reasoning" data-testid="console-line-thinking">
       <div className="console-card__header">
         💭 Reasoning · {tokenCount.toLocaleString()} tokens
         {text && (

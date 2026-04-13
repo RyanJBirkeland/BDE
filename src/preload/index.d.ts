@@ -456,7 +456,10 @@ declare global {
         checkFreshness: (payload: { taskId: string }) => Promise<IpcResult<'review:checkFreshness'>>
         // AI Review Partner
         autoReview: (taskId: string, force?: boolean) => Promise<ReviewResult>
-        chatStream: (params: { taskId: string; messages: PartnerMessage[] }) => Promise<{ streamId: string }>
+        chatStream: (params: {
+          taskId: string
+          messages: PartnerMessage[]
+        }) => Promise<{ streamId: string }>
         onChatChunk: (listener: (evt: unknown, chunk: ChatChunk) => void) => () => void
         abortChat: (streamId: string) => Promise<void>
       }

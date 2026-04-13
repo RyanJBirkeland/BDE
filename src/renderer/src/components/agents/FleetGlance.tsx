@@ -13,49 +13,56 @@ interface FleetGlanceProps {
 }
 
 export function FleetGlance({ agents, onSelect }: FleetGlanceProps): React.JSX.Element {
-  const { running, doneToday, failedToday, todayCost, todayRuntime, runningAgents, recentCompletions } =
-    useMemo(() => {
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
-      const todayStartMs = todayStart.getTime()
+  const {
+    running,
+    doneToday,
+    failedToday,
+    todayCost,
+    todayRuntime,
+    runningAgents,
+    recentCompletions
+  } = useMemo(() => {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const todayStartMs = todayStart.getTime()
 
-      const runningList = agents.filter((a) => a.status === 'running')
-      const todayAgents = agents.filter(
-        (a) => a.finishedAt && new Date(a.finishedAt).getTime() >= todayStartMs
-      )
+    const runningList = agents.filter((a) => a.status === 'running')
+    const todayAgents = agents.filter(
+      (a) => a.finishedAt && new Date(a.finishedAt).getTime() >= todayStartMs
+    )
 
-      const doneCount = todayAgents.filter((a) => a.status === 'done').length
-      const failedCount = todayAgents.filter(
-        (a) => a.status === 'failed' || a.status === 'cancelled'
-      ).length
+    const doneCount = todayAgents.filter((a) => a.status === 'done').length
+    const failedCount = todayAgents.filter(
+      (a) => a.status === 'failed' || a.status === 'cancelled'
+    ).length
 
-      const totalCost = todayAgents.reduce((sum, a) => sum + (a.costUsd ?? 0), 0)
+    const totalCost = todayAgents.reduce((sum, a) => sum + (a.costUsd ?? 0), 0)
 
-      const totalRuntime = todayAgents.reduce((sum, a) => {
-        if (!a.finishedAt) return sum
-        const duration = new Date(a.finishedAt).getTime() - new Date(a.startedAt).getTime()
-        return sum + duration
-      }, 0)
+    const totalRuntime = todayAgents.reduce((sum, a) => {
+      if (!a.finishedAt) return sum
+      const duration = new Date(a.finishedAt).getTime() - new Date(a.startedAt).getTime()
+      return sum + duration
+    }, 0)
 
-      const recent = agents
-        .filter((a) => a.status === 'done' || a.status === 'failed' || a.status === 'cancelled')
-        .sort((a, b) => {
-          const aFinished = a.finishedAt ? new Date(a.finishedAt).getTime() : 0
-          const bFinished = b.finishedAt ? new Date(b.finishedAt).getTime() : 0
-          return bFinished - aFinished
-        })
-        .slice(0, 5)
+    const recent = agents
+      .filter((a) => a.status === 'done' || a.status === 'failed' || a.status === 'cancelled')
+      .sort((a, b) => {
+        const aFinished = a.finishedAt ? new Date(a.finishedAt).getTime() : 0
+        const bFinished = b.finishedAt ? new Date(b.finishedAt).getTime() : 0
+        return bFinished - aFinished
+      })
+      .slice(0, 5)
 
-      return {
-        running: runningList.length,
-        doneToday: doneCount,
-        failedToday: failedCount,
-        todayCost: totalCost,
-        todayRuntime: totalRuntime,
-        runningAgents: runningList.slice(0, 5),
-        recentCompletions: recent
-      }
-    }, [agents])
+    return {
+      running: runningList.length,
+      doneToday: doneCount,
+      failedToday: failedCount,
+      todayCost: totalCost,
+      todayRuntime: totalRuntime,
+      runningAgents: runningList.slice(0, 5),
+      recentCompletions: recent
+    }
+  }, [agents])
 
   const formatCost = (usd: number): string => `$${usd.toFixed(2)}`
   const formatRuntimeMs = (ms: number): string => {
@@ -91,10 +98,7 @@ export function FleetGlance({ agents, onSelect }: FleetGlanceProps): React.JSX.E
           <span className="fleet-glance__stat-value">{failedToday}</span>
         </div>
         <div className="fleet-glance__stat">
-          <DollarSign
-            size={16}
-            className="fleet-glance__stat-icon fleet-glance__stat-icon--cost"
-          />
+          <DollarSign size={16} className="fleet-glance__stat-icon fleet-glance__stat-icon--cost" />
           <span className="fleet-glance__stat-label">Today</span>
           <span className="fleet-glance__stat-value">{formatCost(todayCost)}</span>
         </div>

@@ -53,13 +53,13 @@ All intermediate layers pass a single optional `Attachment` (not `Attachment[]`)
 
 ## Files to Change
 
-| File | Change |
-|------|--------|
-| `src/renderer/src/components/agents/CommandBar.tsx` | Add `onPaste` handler, `attachment` state, thumbnail strip UI, fix submit guard for image-only sends, update `onSend` signature to `(message: string, attachment?: Attachment) => void` |
-| `src/renderer/src/components/agents/AgentConsole.tsx` | Update `onSteer` prop and internal `handleSteer` to `(message: string, attachment?: Attachment) => void`; thread attachment from `CommandBar.onSend` through to `onSteer` caller |
-| `src/renderer/src/views/AgentsView.tsx` | Update `handleSteer` to accept `attachment?`; call `buildLocalAgentMessage(message, [attachment])` when attachment present; other command call sites (`/focus`, `/test`, etc.) remain unchanged |
-| `src/renderer/src/components/agents/__tests__/CommandBar.test.tsx` | Add paste tests; test image-only submit; test ✕ button |
-| `src/renderer/src/components/agents/__tests__/AgentConsole.test.tsx` | Update mock and existing assertion to match new `onSend(message, attachment?)` signature |
+| File                                                                 | Change                                                                                                                                                                                          |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/renderer/src/components/agents/CommandBar.tsx`                  | Add `onPaste` handler, `attachment` state, thumbnail strip UI, fix submit guard for image-only sends, update `onSend` signature to `(message: string, attachment?: Attachment) => void`         |
+| `src/renderer/src/components/agents/AgentConsole.tsx`                | Update `onSteer` prop and internal `handleSteer` to `(message: string, attachment?: Attachment) => void`; thread attachment from `CommandBar.onSend` through to `onSteer` caller                |
+| `src/renderer/src/views/AgentsView.tsx`                              | Update `handleSteer` to accept `attachment?`; call `buildLocalAgentMessage(message, [attachment])` when attachment present; other command call sites (`/focus`, `/test`, etc.) remain unchanged |
+| `src/renderer/src/components/agents/__tests__/CommandBar.test.tsx`   | Add paste tests; test image-only submit; test ✕ button                                                                                                                                          |
+| `src/renderer/src/components/agents/__tests__/AgentConsole.test.tsx` | Update mock and existing assertion to match new `onSend(message, attachment?)` signature                                                                                                        |
 
 No main-process or IPC changes required.
 
@@ -68,17 +68,21 @@ No main-process or IPC changes required.
 ### CommandBar
 
 **New state:**
+
 ```typescript
 const [attachment, setAttachment] = useState<Attachment | null>(null)
 ```
 
 **Updated `onSend` prop signature:**
+
 ```typescript
 onSend: (message: string, attachment?: Attachment) => void
 ```
+
 (Previously `(message: string) => void`)
 
 **Submit guard fix** — allow image-only sends:
+
 ```typescript
 // Before:
 if (!trimmed || disabled) return
@@ -87,6 +91,7 @@ if ((!trimmed && !attachment) || disabled) return
 ```
 
 **Updated submit call:**
+
 ```typescript
 onSend(trimmed, attachment ?? undefined)
 setAttachment(null)
@@ -94,10 +99,11 @@ setValue('')
 ```
 
 **Paste handler** (on `<input>` element — `React.ClipboardEvent<HTMLInputElement>`):
+
 ```typescript
 const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
   const items = Array.from(e.clipboardData.items)
-  const imageItem = items.find(item => item.type.startsWith('image/'))
+  const imageItem = items.find((item) => item.type.startsWith('image/'))
   if (!imageItem) return // non-image: default paste through
   e.preventDefault()
   const blob = imageItem.getAsFile()
@@ -116,7 +122,7 @@ const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
       type: 'image',
       mimeType: blob.type,
       data: dataUrl.split(',')[1],
-      preview: dataUrl,
+      preview: dataUrl
     })
   }
   reader.readAsDataURL(blob)
@@ -126,13 +132,16 @@ const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
 Note: `blob.size` is checked synchronously before the `FileReader` is instantiated, avoiding reading large binaries into memory.
 
 **Thumbnail strip** — rendered above the input, shown when `attachment !== null`:
+
 ```tsx
-{attachment && (
-  <div className="command-bar-attachment-strip">
-    <img src={attachment.preview} alt="attachment preview" />
-    <button onClick={() => setAttachment(null)}>✕</button>
-  </div>
-)}
+{
+  attachment && (
+    <div className="command-bar-attachment-strip">
+      <img src={attachment.preview} alt="attachment preview" />
+      <button onClick={() => setAttachment(null)}>✕</button>
+    </div>
+  )
+}
 ```
 
 Small fixed-size preview (~64×64px), dark background, thin border — consistent with neon terminal aesthetic.
@@ -140,6 +149,7 @@ Small fixed-size preview (~64×64px), dark background, thin border — consisten
 ### AgentConsole
 
 Internal `handleSteer` signature update:
+
 ```typescript
 const handleSteer = (message: string, attachment?: Attachment) => {
   // existing command routing (/stop, /retry, etc.) stays the same — commands have no attachment
@@ -150,6 +160,7 @@ const handleSteer = (message: string, attachment?: Attachment) => {
 `CommandBar` is called with `onSend={handleSteer}` — no new props to `CommandBar`.
 
 `onSteer` prop type:
+
 ```typescript
 onSteer: (message: string, attachment?: Attachment) => void
 ```
@@ -161,9 +172,7 @@ Existing test in `AgentConsole.test.tsx` at the `expect(onSteer).toHaveBeenCalle
 ```typescript
 const handleSteer = (message: string, attachment?: Attachment) => {
   if (!selectedId) return
-  const formattedMessage = attachment
-    ? buildLocalAgentMessage(message, [attachment])
-    : message
+  const formattedMessage = attachment ? buildLocalAgentMessage(message, [attachment]) : message
   window.api.steerAgent(selectedId, formattedMessage)
 }
 ```
@@ -181,6 +190,7 @@ When the user sends image-only (no text), `buildLocalAgentMessage('', [attachmen
 ## Testing
 
 ### CommandBar unit tests
+
 - Paste image → attachment state set, thumbnail shown
 - Paste text (non-image) → attachment state unchanged, text in input
 - ✕ button → attachment cleared
@@ -192,10 +202,12 @@ When the user sends image-only (no text), `buildLocalAgentMessage('', [attachmen
 - Paste second image → first replaced
 
 ### AgentConsole unit tests
+
 - Update `expect(onSteer).toHaveBeenCalledWith('test message')` → `toHaveBeenCalledWith('test message', undefined)`
 - New: `onSend` called with attachment → `onSteer` called with same attachment
 
 ### AgentsView unit tests (direct function tests, not rendered)
+
 - `handleSteer('message', attachment)` → `buildLocalAgentMessage` called, `steerAgent` called with formatted string
 - `handleSteer('message', undefined)` → `buildLocalAgentMessage` not called, `steerAgent` called with raw message
 

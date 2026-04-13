@@ -52,27 +52,27 @@ This spec captures the layout, spacing, and visual system for that overhaul. Imp
 - N1. Changing what data the view fetches, how the diff is parsed, or how Ship It works.
 - N2. Introducing a new design token system, Tailwind, or a new CSS framework. BDE ships with vanilla CSS + custom properties and that stays.
 - N3. Re-theming the rest of the app. This is a Code Review view change only.
-- N4. Rewriting tests. Component tests for `ReviewQueue`, `ChangesTab`, `ReviewActions`, etc. will be rewired as components move, but test *intent* is preserved.
+- N4. Rewriting tests. Component tests for `ReviewQueue`, `ChangesTab`, `ReviewActions`, etc. will be rewired as components move, but test _intent_ is preserved.
 
 ## 3. Architectural Shift
 
 ### 3.1 From two panels to three
 
-| Current panel | Role | New location |
-|---|---|---|
-| `ReviewQueue` (260px left) | Pick a task | Moves into the **TopBar** as a task switcher dropdown |
-| `ReviewDetail` → tabs | Inspect changes | Splits across **FileTree** + **DiffViewer** |
-| `ReviewActions` (bottom-right) | Act on the task | Moves into the **TopBar** on the right |
+| Current panel                    | Role               | New location                                                                  |
+| -------------------------------- | ------------------ | ----------------------------------------------------------------------------- |
+| `ReviewQueue` (260px left)       | Pick a task        | Moves into the **TopBar** as a task switcher dropdown                         |
+| `ReviewDetail` → tabs            | Inspect changes    | Splits across **FileTree** + **DiffViewer**                                   |
+| `ReviewActions` (bottom-right)   | Act on the task    | Moves into the **TopBar** on the right                                        |
 | `BatchActions` (floating footer) | Bulk-apply actions | Re-renders as a **TopBar mode** when >1 task is selected in the task dropdown |
 
-The reason for the move: in a three-panel layout, the left column is premium real estate and should be scoped to *"things about this diff"*, not *"pick a different task"*. Every IDE (VS Code, JetBrains, Cursor) puts file context on the left and session switching on the top. BDE should match.
+The reason for the move: in a three-panel layout, the left column is premium real estate and should be scoped to _"things about this diff"_, not _"pick a different task"_. Every IDE (VS Code, JetBrains, Cursor) puts file context on the left and session switching on the top. BDE should match.
 
 ### 3.2 Tab collapse
 
 The four tabs (`Changes`, `Commits`, `Tests`, `Conversation`) collapse as follows:
 
 - **Changes** → becomes the default mode of `DiffViewer`. No tab needed — it's what you see.
-- **Commits** → becomes a **mode toggle** inside `DiffViewer` (a segmented control at the top of the panel: `Diff` | `Commits` | `Tests`). Selecting `Commits` replaces the diff with the commit list. **FileTree behaviour in v1:** the left FileTree stays showing the branch's cumulative file list unchanged — it does *not* swap to the selected commit's files. Swapping is deferred (it requires a second `getDiff()` call scoped to a commit range and adds state that isn't needed for v1). A commit selection highlights the commit in the center panel only.
+- **Commits** → becomes a **mode toggle** inside `DiffViewer` (a segmented control at the top of the panel: `Diff` | `Commits` | `Tests`). Selecting `Commits` replaces the diff with the commit list. **FileTree behaviour in v1:** the left FileTree stays showing the branch's cumulative file list unchanged — it does _not_ swap to the selected commit's files. Swapping is deferred (it requires a second `getDiff()` call scoped to a commit range and adds state that isn't needed for v1). A commit selection highlights the commit in the center panel only.
 - **Tests** → same segmented control. Renders the `TestsTab` component in the center panel. FileTree stays visible showing the branch's cumulative file list (not only the test files) — same rationale: zero extra logic.
 - **Conversation** → **deleted as a tab**. The agent's historical chat log is folded into the `AIAssistant` panel as pre-seeded context: when the user opens the AI assistant for a task, the first thing it sees is the full agent conversation, and there's a toggle inside the assistant panel (`Show agent history`) that renders those messages read-only above the user's own thread.
 
@@ -186,7 +186,7 @@ Each sub-section describes the new visual unit. Implementation details (which st
   - Right: mode segmented control — `Diff | Commits | Tests`. Pills have `padding: 2px var(--bde-space-3)`, `border-radius: var(--bde-radius-md)`, active pill uses `background: var(--bde-accent-surface); color: var(--bde-accent);`.
 - **Body** (`.cr-diffviewer__body`):
   - `flex: 1 1 auto; overflow: auto;`
-  - Renders the existing `<DiffViewer>` component unchanged. We are *not* rewriting diff rendering — that component already handles hunks, additions, deletions, line numbers, and syntax highlighting.
+  - Renders the existing `<DiffViewer>` component unchanged. We are _not_ rewriting diff rendering — that component already handles hunks, additions, deletions, line numbers, and syntax highlighting.
   - Padding inside the scroll area is `0` because `DiffViewer` owns its own line geometry. The only thing the panel adds is the scroll container.
 - **Commits mode**: the body becomes a commit list (reuse `CommitsTab` as-is). FileTree stays showing the branch's cumulative file list (see §3.2).
 - **Tests mode**: body renders `TestsTab` unchanged. FileTree stays visible (see §3.2).
@@ -194,7 +194,7 @@ Each sub-section describes the new visual unit. Implementation details (which st
 
 ### 5.5 AIAssistant panel — `.cr-assistant`
 
-> **Layout-vs-behaviour split:** this section describes the **visual contract** of the assistant panel only — the DOM structure, CSS, and states the UI must be able to render. The backend wiring (SDK streaming, prompt composition, thread persistence) is **out of scope for this spec** and is authored in the implementation plan. Where the text below says "when a stream is in flight" or "the thread", that is describing the *visual state* the CSS must support, not mandating how it is produced.
+> **Layout-vs-behaviour split:** this section describes the **visual contract** of the assistant panel only — the DOM structure, CSS, and states the UI must be able to render. The backend wiring (SDK streaming, prompt composition, thread persistence) is **out of scope for this spec** and is authored in the implementation plan. Where the text below says "when a stream is in flight" or "the thread", that is describing the _visual state_ the CSS must support, not mandating how it is produced.
 
 - Width `384px`, flex column.
 - **Header** (`.cr-assistant__header`, `36px`):
@@ -222,23 +222,23 @@ Each sub-section describes the new visual unit. Implementation details (which st
 
 All colors, spacing, typography, and radii map to existing `--bde-*` tokens defined in `src/renderer/src/assets/tokens.css`. **No new tokens are introduced.** The mapping table the designer should reference:
 
-| Figma Make intent | BDE token | Notes |
-|---|---|---|
-| `bg-background` | `var(--bde-bg)` | View container |
-| `bg-card` / `bg-panel` | `var(--bde-surface)` | TopBar, FileTree, AIAssistant panels |
-| `bg-card-elevated` | `var(--bde-surface-high)` | Assistant bubbles, hover-elevated rows |
-| `border` | `var(--bde-border)` | 1px panel dividers |
-| `border-hover` | `var(--bde-border-hover)` | Button hover outline |
-| `text-foreground` | `var(--bde-text)` | Primary text |
-| `text-muted` | `var(--bde-text-muted)` | Secondary labels, breadcrumbs |
-| `text-dim` | `var(--bde-text-dim)` | Tertiary (counts, timestamps) |
-| `emerald-500` (additions) | `var(--bde-diff-add)` | File icon, stats `+N` |
-| `rose-500` (deletions) | `var(--bde-diff-del)` | File icon, stats `−N` |
-| `amber-500` (modified) | `var(--bde-diff-mod)` | File icon |
-| `purple-500` (AI) | `var(--bde-purple)` | Sparkles icon, agent-history border |
-| `blue-500` (accent) | `var(--bde-accent)` | Selected row, active tab, primary button |
-| `accent-surface` | `var(--bde-accent-surface)` | Active segmented pill, batch-mode TopBar, selected-row tint. Note: this is the newer "unified" token — always prefer it over the older `--bde-accent-dim`, which is reserved for one-off legacy call sites. |
-| `rounded-sm / md / lg / xl` | `var(--bde-radius-sm/md/lg/xl)` | Compact scale: 3/4/6/8px |
+| Figma Make intent           | BDE token                       | Notes                                                                                                                                                                                                       |
+| --------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bg-background`             | `var(--bde-bg)`                 | View container                                                                                                                                                                                              |
+| `bg-card` / `bg-panel`      | `var(--bde-surface)`            | TopBar, FileTree, AIAssistant panels                                                                                                                                                                        |
+| `bg-card-elevated`          | `var(--bde-surface-high)`       | Assistant bubbles, hover-elevated rows                                                                                                                                                                      |
+| `border`                    | `var(--bde-border)`             | 1px panel dividers                                                                                                                                                                                          |
+| `border-hover`              | `var(--bde-border-hover)`       | Button hover outline                                                                                                                                                                                        |
+| `text-foreground`           | `var(--bde-text)`               | Primary text                                                                                                                                                                                                |
+| `text-muted`                | `var(--bde-text-muted)`         | Secondary labels, breadcrumbs                                                                                                                                                                               |
+| `text-dim`                  | `var(--bde-text-dim)`           | Tertiary (counts, timestamps)                                                                                                                                                                               |
+| `emerald-500` (additions)   | `var(--bde-diff-add)`           | File icon, stats `+N`                                                                                                                                                                                       |
+| `rose-500` (deletions)      | `var(--bde-diff-del)`           | File icon, stats `−N`                                                                                                                                                                                       |
+| `amber-500` (modified)      | `var(--bde-diff-mod)`           | File icon                                                                                                                                                                                                   |
+| `purple-500` (AI)           | `var(--bde-purple)`             | Sparkles icon, agent-history border                                                                                                                                                                         |
+| `blue-500` (accent)         | `var(--bde-accent)`             | Selected row, active tab, primary button                                                                                                                                                                    |
+| `accent-surface`            | `var(--bde-accent-surface)`     | Active segmented pill, batch-mode TopBar, selected-row tint. Note: this is the newer "unified" token — always prefer it over the older `--bde-accent-dim`, which is reserved for one-off legacy call sites. |
+| `rounded-sm / md / lg / xl` | `var(--bde-radius-sm/md/lg/xl)` | Compact scale: 3/4/6/8px                                                                                                                                                                                    |
 
 Because BDE already ships `pro-dark` and `pro-light` with identical tokens, the redesigned view is **theme-agnostic for free**. No `@media (prefers-color-scheme)` rules, no per-theme overrides. The only place we'll need theme awareness is the diff highlighting — and that already lives inside the existing `DiffViewer` component, not here.
 
@@ -256,25 +256,25 @@ Every motion respects `useReducedMotion()` and falls back to `REDUCED_TRANSITION
 
 ## 8. Component Migration Map
 
-| Current file | New role | Action |
-|---|---|---|
-| `views/CodeReviewView.tsx` | Shell | **Edit** — replace `.view-layout` with new `.cr-topbar` + `.cr-panels` tree. |
-| `views/CodeReviewView.css` | Shell styles | **Edit** — add `.cr-panels`, `.cr-topbar`, `.cr-filetree`, `.cr-diffviewer`, `.cr-assistant`. |
-| `components/code-review/ReviewQueue.tsx` | Task picker | **Move** — render inside a popover triggered by the TopBar task switcher button. No logic changes; only its container changes. |
-| `components/code-review/ReviewQueue.css` | Task picker styles | **Edit** — drop the fixed-width aside wrapper; add popover positioning. |
-| `components/code-review/ReviewDetail.tsx` | Tabs | **Delete** — tabs are collapsed into the DiffViewer mode switcher. `ChangesTab`, `CommitsTab`, `TestsTab` are mounted directly by the new `DiffViewerPanel`. `ConversationTab` is deleted (its data flows into the assistant). |
-| `components/code-review/ChangesTab.tsx` | Old: file list + diff. New: diff only | **Split** — extract the `.cr-changes__files` block into a new `FileTreePanel` component; `ChangesTab` becomes the `DiffViewerPanel` body for `mode === 'diff'`. |
-| `components/code-review/ChangesTab.css` | Scoped styles | **Rename / split** — `.cr-filetree*` classes into a new CSS file, `.cr-diffviewer*` replace `.cr-changes__diff*`. |
-| `components/code-review/CommitsTab.tsx` | Commits view | **Keep** — rendered inside DiffViewerPanel when `mode === 'commits'`. No changes to its internals. |
-| `components/code-review/TestsTab.tsx` | Tests view | **Keep** — same pattern as Commits. |
-| `components/code-review/ConversationTab.tsx` | Agent history | **Delete** — its rendering is reimplemented inside `AIAssistantPanel` as pre-seeded read-only messages. |
-| `components/code-review/ReviewActions.tsx` | Action buttons | **Move** — rendered inside the TopBar right zone. No behavioural changes; only its parent container changes. |
-| `components/code-review/ReviewActions.css` | Action bar styles | **Edit** — drop the full-width bar layout, keep the button styles. |
-| `components/code-review/BatchActions.tsx` | Batch controls | **Refactor** — becomes a TopBar *mode* rather than a floating footer. Logic unchanged. |
-| `components/code-review/AIAssistantPanel.tsx` | AI chat | **New** — new file. |
-| `components/code-review/FileTreePanel.tsx` | File tree | **New** — extracted from `ChangesTab`. |
-| `components/code-review/DiffViewerPanel.tsx` | Diff container | **New** — wraps `ChangesTab` / `CommitsTab` / `TestsTab` with a mode segmented control. |
-| `components/code-review/TopBar.tsx` | Top bar | **New** — task switcher + freshness + action buttons. |
+| Current file                                  | New role                              | Action                                                                                                                                                                                                                         |
+| --------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `views/CodeReviewView.tsx`                    | Shell                                 | **Edit** — replace `.view-layout` with new `.cr-topbar` + `.cr-panels` tree.                                                                                                                                                   |
+| `views/CodeReviewView.css`                    | Shell styles                          | **Edit** — add `.cr-panels`, `.cr-topbar`, `.cr-filetree`, `.cr-diffviewer`, `.cr-assistant`.                                                                                                                                  |
+| `components/code-review/ReviewQueue.tsx`      | Task picker                           | **Move** — render inside a popover triggered by the TopBar task switcher button. No logic changes; only its container changes.                                                                                                 |
+| `components/code-review/ReviewQueue.css`      | Task picker styles                    | **Edit** — drop the fixed-width aside wrapper; add popover positioning.                                                                                                                                                        |
+| `components/code-review/ReviewDetail.tsx`     | Tabs                                  | **Delete** — tabs are collapsed into the DiffViewer mode switcher. `ChangesTab`, `CommitsTab`, `TestsTab` are mounted directly by the new `DiffViewerPanel`. `ConversationTab` is deleted (its data flows into the assistant). |
+| `components/code-review/ChangesTab.tsx`       | Old: file list + diff. New: diff only | **Split** — extract the `.cr-changes__files` block into a new `FileTreePanel` component; `ChangesTab` becomes the `DiffViewerPanel` body for `mode === 'diff'`.                                                                |
+| `components/code-review/ChangesTab.css`       | Scoped styles                         | **Rename / split** — `.cr-filetree*` classes into a new CSS file, `.cr-diffviewer*` replace `.cr-changes__diff*`.                                                                                                              |
+| `components/code-review/CommitsTab.tsx`       | Commits view                          | **Keep** — rendered inside DiffViewerPanel when `mode === 'commits'`. No changes to its internals.                                                                                                                             |
+| `components/code-review/TestsTab.tsx`         | Tests view                            | **Keep** — same pattern as Commits.                                                                                                                                                                                            |
+| `components/code-review/ConversationTab.tsx`  | Agent history                         | **Delete** — its rendering is reimplemented inside `AIAssistantPanel` as pre-seeded read-only messages.                                                                                                                        |
+| `components/code-review/ReviewActions.tsx`    | Action buttons                        | **Move** — rendered inside the TopBar right zone. No behavioural changes; only its parent container changes.                                                                                                                   |
+| `components/code-review/ReviewActions.css`    | Action bar styles                     | **Edit** — drop the full-width bar layout, keep the button styles.                                                                                                                                                             |
+| `components/code-review/BatchActions.tsx`     | Batch controls                        | **Refactor** — becomes a TopBar _mode_ rather than a floating footer. Logic unchanged.                                                                                                                                         |
+| `components/code-review/AIAssistantPanel.tsx` | AI chat                               | **New** — new file.                                                                                                                                                                                                            |
+| `components/code-review/FileTreePanel.tsx`    | File tree                             | **New** — extracted from `ChangesTab`.                                                                                                                                                                                         |
+| `components/code-review/DiffViewerPanel.tsx`  | Diff container                        | **New** — wraps `ChangesTab` / `CommitsTab` / `TestsTab` with a mode segmented control.                                                                                                                                        |
+| `components/code-review/TopBar.tsx`           | Top bar                               | **New** — task switcher + freshness + action buttons.                                                                                                                                                                          |
 
 The existing Zustand store `stores/codeReview.ts` gains one new concept — a per-task assistant thread — but that's implementation detail and is spelled out in the subsequent implementation plan. From the CSS/layout perspective, the store surface is unchanged.
 
@@ -297,7 +297,7 @@ The existing Zustand store `stores/codeReview.ts` gains one new concept — a pe
 
 ## 11. Known Risks
 
-1. **Assistant panel default state** *(decided: silent)*: when the user first opens a task, the assistant does **not** auto-post a summary. Discovery happens through the three quick-action chips above the input. This is a product call — if feedback after ship says reviewers never find the chips, revisit.
+1. **Assistant panel default state** _(decided: silent)_: when the user first opens a task, the assistant does **not** auto-post a summary. Discovery happens through the three quick-action chips above the input. This is a product call — if feedback after ship says reviewers never find the chips, revisit.
 2. **Figma Make source reference**: the spec above is driven by the user's summary of `DESIGN_DOCUMENTATION.md` / `CSS_PATTERNS.md` / `QUICK_REFERENCE.md` rather than a direct read of those files (they live only in the Figma Make workspace). If the designer has pixel-specific overrides — e.g. a 240px FileTree instead of 256px, or a specific assistant-panel gradient — those should be reconciled against this spec before implementation. The tokens listed in §6 will absorb colour changes for free; only dimensions need a second pass.
 
 ## 12. Success Criteria
@@ -315,4 +315,4 @@ The overhaul is "done" when all of the following are true:
 
 ---
 
-*Pair this design doc with a follow-up implementation plan (use `superpowers:writing-plans`) that sequences the migration into reviewable slices.*
+_Pair this design doc with a follow-up implementation plan (use `superpowers:writing-plans`) that sequences the migration into reviewable slices._

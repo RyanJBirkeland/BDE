@@ -8,7 +8,7 @@ describe('ApproveDropdown', () => {
     onSquashMerge: vi.fn(),
     onCreatePR: vi.fn(),
     onRequestRevision: vi.fn(),
-    onDiscard: vi.fn(),
+    onDiscard: vi.fn()
   }
 
   it('opens on click and shows all actions', () => {

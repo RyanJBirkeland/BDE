@@ -35,41 +35,41 @@ references remain anywhere in the codebase.
 
 **Atmosphere / surfaces (1:1 mapping):**
 
-| Old (`--neon-*`) | New (`--bde-*`) |
-|---|---|
-| `--neon-bg` | `--bde-bg` |
-| `--neon-text` | `--bde-text` |
-| `--neon-text-muted` | `--bde-text-muted` |
-| `--neon-text-dim` | `--bde-text-dim` |
-| `--neon-surface-dim` | `--bde-border` |
-| `--neon-surface-subtle` | `--bde-surface` |
-| `--neon-surface-deep` | `--bde-surface-high` |
-| `--neon-surface-base` | `--bde-bg` |
-| `--neon-surface-mid` | `--bde-surface` |
+| Old (`--neon-*`)        | New (`--bde-*`)      |
+| ----------------------- | -------------------- |
+| `--neon-bg`             | `--bde-bg`           |
+| `--neon-text`           | `--bde-text`         |
+| `--neon-text-muted`     | `--bde-text-muted`   |
+| `--neon-text-dim`       | `--bde-text-dim`     |
+| `--neon-surface-dim`    | `--bde-border`       |
+| `--neon-surface-subtle` | `--bde-surface`      |
+| `--neon-surface-deep`   | `--bde-surface-high` |
+| `--neon-surface-base`   | `--bde-bg`           |
+| `--neon-surface-mid`    | `--bde-surface`      |
 
 **Interactive accent (primary blue):**
 
-| Old (`--neon-*`) | New (`--bde-*`) |
-|---|---|
-| `--neon-cyan` | `--bde-accent` |
+| Old (`--neon-*`)      | New (`--bde-*`)                    |
+| --------------------- | ---------------------------------- |
+| `--neon-cyan`         | `--bde-accent`                     |
 | `--neon-cyan-surface` | `--bde-accent-surface` ← new token |
-| `--neon-cyan-border` | `--bde-accent-border` ← new token |
-| `--neon-cyan-glow` | deleted — no replacement |
+| `--neon-cyan-border`  | `--bde-accent-border` ← new token  |
+| `--neon-cyan-glow`    | deleted — no replacement           |
 
 **Status colors (new tier — semantic names):**
 
-| Old (`--neon-*`) | New (`--bde-*`) | Value (dark) | Value (light) |
-|---|---|---|---|
-| `--neon-purple` | `--bde-status-active` | `#7c6af7` | `#6356e5` |
-| `--neon-blue` | `--bde-status-review` | `#4a88c7` | `#2675bf` |
-| `--neon-orange` | `--bde-status-blocked` / `--bde-warning` | `#cc8833` | `#b87320` |
-| `--neon-pink` | `--bde-status-done` | `#4caf82` | `#3a9b6f` |
-| `--neon-red` | `--bde-danger` | `#db5c5c` | `#c94040` |
-| `--neon-*-glow` (all) | deleted | — | — |
-| `--neon-*-surface` (non-cyan) | `--bde-warning-surface`, `--bde-danger-surface` etc. ← new tokens | faint tint | faint tint |
-| `--neon-*-border` (non-cyan) | `--bde-warning-border`, `--bde-danger-border` etc. ← new tokens | tinted | tinted |
+| Old (`--neon-*`)              | New (`--bde-*`)                                                   | Value (dark) | Value (light) |
+| ----------------------------- | ----------------------------------------------------------------- | ------------ | ------------- |
+| `--neon-purple`               | `--bde-status-active`                                             | `#7c6af7`    | `#6356e5`     |
+| `--neon-blue`                 | `--bde-status-review`                                             | `#4a88c7`    | `#2675bf`     |
+| `--neon-orange`               | `--bde-status-blocked` / `--bde-warning`                          | `#cc8833`    | `#b87320`     |
+| `--neon-pink`                 | `--bde-status-done`                                               | `#4caf82`    | `#3a9b6f`     |
+| `--neon-red`                  | `--bde-danger`                                                    | `#db5c5c`    | `#c94040`     |
+| `--neon-*-glow` (all)         | deleted                                                           | —            | —             |
+| `--neon-*-surface` (non-cyan) | `--bde-warning-surface`, `--bde-danger-surface` etc. ← new tokens | faint tint   | faint tint    |
+| `--neon-*-border` (non-cyan)  | `--bde-warning-border`, `--bde-danger-border` etc. ← new tokens   | tinted       | tinted        |
 
-Note: `--neon-pink` was used for "done" status — semantically wrong (pink ≠ done). Phase 1 
+Note: `--neon-pink` was used for "done" status — semantically wrong (pink ≠ done). Phase 1
 corrects this to green (`--bde-status-done`).
 
 Note: `--neon-orange` overlaps with the existing `--bde-warning`. Consolidate to `--bde-warning`
@@ -79,7 +79,7 @@ and add `--bde-status-blocked` that points to the same value.
 
 ```
 --neon-glass-blur
---neon-glass-edge  
+--neon-glass-edge
 --neon-glass-shadow
 --neon-scanline-opacity
 --neon-scanline-speed
@@ -103,52 +103,54 @@ Add to `html.theme-pro-dark` in `base.css`:
 
 ```css
 /* Interactive accent surfaces (accent = #4a88c7) */
---bde-accent-surface: rgba(74, 136, 199, 0.10);   /* #4a88c71a */
---bde-accent-border:  rgba(74, 136, 199, 0.28);   /* #4a88c748 */
+--bde-accent-surface: rgba(74, 136, 199, 0.1); /* #4a88c71a */
+--bde-accent-border: rgba(74, 136, 199, 0.28); /* #4a88c748 */
 
 /* Semantic surface tints */
---bde-warning-surface: rgba(204, 136, 51, 0.10);  /* #cc88331a */
---bde-warning-border:  rgba(204, 136, 51, 0.30);  /* #cc88334d */
---bde-danger-surface:  rgba(219, 92, 92, 0.10);   /* #db5c5c1a */
---bde-danger-border:   rgba(219, 92, 92, 0.30);   /* #db5c5c4d */
+--bde-warning-surface: rgba(204, 136, 51, 0.1); /* #cc88331a */
+--bde-warning-border: rgba(204, 136, 51, 0.3); /* #cc88334d */
+--bde-danger-surface: rgba(219, 92, 92, 0.1); /* #db5c5c1a */
+--bde-danger-border: rgba(219, 92, 92, 0.3); /* #db5c5c4d */
 
 /* Task status colors */
---bde-status-active:   #7c6af7;  /* blue-purple */
---bde-status-review:   var(--bde-accent);
---bde-status-blocked:  var(--bde-warning);
---bde-status-done:     #4caf82;  /* professional green */
---bde-status-queued:   var(--bde-accent);
+--bde-status-active: #7c6af7; /* blue-purple */
+--bde-status-review: var(--bde-accent);
+--bde-status-blocked: var(--bde-warning);
+--bde-status-done: #4caf82; /* professional green */
+--bde-status-queued: var(--bde-accent);
 ```
 
 Add to `html.theme-pro-light` in `base.css`:
 
 ```css
 /* Interactive accent surfaces (accent = #2675bf) */
---bde-accent-surface: rgba(38, 117, 191, 0.08);   /* #2675bf14 */
---bde-accent-border:  rgba(38, 117, 191, 0.25);   /* #2675bf40 */
+--bde-accent-surface: rgba(38, 117, 191, 0.08); /* #2675bf14 */
+--bde-accent-border: rgba(38, 117, 191, 0.25); /* #2675bf40 */
 
 /* Semantic surface tints */
---bde-warning-surface: rgba(184, 115, 32, 0.08);  /* #b8732014 */
---bde-warning-border:  rgba(184, 115, 32, 0.28);  /* #b8732047 */
---bde-danger-surface:  rgba(201, 64, 64, 0.08);   /* #c9404014 */
---bde-danger-border:   rgba(201, 64, 64, 0.28);   /* #c9404047 */
+--bde-warning-surface: rgba(184, 115, 32, 0.08); /* #b8732014 */
+--bde-warning-border: rgba(184, 115, 32, 0.28); /* #b8732047 */
+--bde-danger-surface: rgba(201, 64, 64, 0.08); /* #c9404014 */
+--bde-danger-border: rgba(201, 64, 64, 0.28); /* #c9404047 */
 
 /* Task status colors */
---bde-status-active:   #6356e5;
---bde-status-review:   var(--bde-accent);
---bde-status-blocked:  var(--bde-warning);
---bde-status-done:     #3a9b6f;
---bde-status-queued:   var(--bde-accent);
+--bde-status-active: #6356e5;
+--bde-status-review: var(--bde-accent);
+--bde-status-blocked: var(--bde-warning);
+--bde-status-done: #3a9b6f;
+--bde-status-queued: var(--bde-accent);
 ```
 
 ### 1.3 Theme Pruning
 
 **Remove from `base.css`:**
+
 - `:root` color variable definitions (old default dark theme)
 - `html.theme-light` block (old light theme)
 - `html.theme-warm` block (warm theme)
 
 **Keep in `base.css`:**
+
 - `:root` structural variables only (spacing, radii, fonts, transitions — no colors)
 - `html.theme-pro-dark` — becomes the primary dark definition
 - `html.theme-pro-light` — becomes the primary light definition
@@ -158,6 +160,7 @@ blocks or deleted (glow/effect variables). Do not replace with another file — 
 color definitions live in `base.css` alongside structure.
 
 **Update `src/renderer/src/stores/theme.ts`:**
+
 - Remove `'warm'` option
 - Valid values: `'dark'` (→ applies `theme-pro-dark`), `'light'` (→ applies `theme-pro-light`),
   `'system'` (→ resolves to one of the above via `prefers-color-scheme`)
@@ -173,25 +176,25 @@ non-neon into neon (neon has the real styles), then rename dropping the `-neon` 
 
 **File renames:**
 
-| Old name | New name | Notes |
-|---|---|---|
-| `neon.css` | deleted | Content absorbed into base.css or deleted |
-| `neon-primitives.css` | `primitives.css` | |
-| `neon-shell.css` | `shell.css` | |
-| `sprint-pipeline-neon.css` | `sprint-pipeline.css` | |
-| `agents-neon.css` | `agents.css` | Merge legacy `agents.css` (83 lines) into this first |
-| `task-workbench-neon.css` | `task-workbench.css` | |
-| `source-control-neon.css` | `source-control.css` | |
-| `code-review-neon.css` | `code-review.css` | |
-| `dashboard-neon.css` | `dashboard.css` | |
-| `settings-v2-neon.css` | `settings.css` | Merge legacy `settings.css` (215 lines) into this first |
-| `planner-neon.css` | `planner.css` | |
-| `ide-neon.css` | `ide.css` | Merge legacy `ide.css` (395 lines) into this first |
-| `agent-launchpad-neon.css` | `agent-launchpad.css` | |
-| `onboarding-neon.css` | `onboarding.css` | |
-| `diff-neon.css` | `diff.css` | Merge legacy `diff.css` (514 lines) into this first |
-| `sprint-neon.css` | merged into `sprint.css` | Sprint-neon is 69 lines — absorb |
-| `sankey-pipeline-neon.css` | `sankey-pipeline.css` | |
+| Old name                   | New name                 | Notes                                                   |
+| -------------------------- | ------------------------ | ------------------------------------------------------- |
+| `neon.css`                 | deleted                  | Content absorbed into base.css or deleted               |
+| `neon-primitives.css`      | `primitives.css`         |                                                         |
+| `neon-shell.css`           | `shell.css`              |                                                         |
+| `sprint-pipeline-neon.css` | `sprint-pipeline.css`    |                                                         |
+| `agents-neon.css`          | `agents.css`             | Merge legacy `agents.css` (83 lines) into this first    |
+| `task-workbench-neon.css`  | `task-workbench.css`     |                                                         |
+| `source-control-neon.css`  | `source-control.css`     |                                                         |
+| `code-review-neon.css`     | `code-review.css`        |                                                         |
+| `dashboard-neon.css`       | `dashboard.css`          |                                                         |
+| `settings-v2-neon.css`     | `settings.css`           | Merge legacy `settings.css` (215 lines) into this first |
+| `planner-neon.css`         | `planner.css`            |                                                         |
+| `ide-neon.css`             | `ide.css`                | Merge legacy `ide.css` (395 lines) into this first      |
+| `agent-launchpad-neon.css` | `agent-launchpad.css`    |                                                         |
+| `onboarding-neon.css`      | `onboarding.css`         |                                                         |
+| `diff-neon.css`            | `diff.css`               | Merge legacy `diff.css` (514 lines) into this first     |
+| `sprint-neon.css`          | merged into `sprint.css` | Sprint-neon is 69 lines — absorb                        |
+| `sankey-pipeline-neon.css` | `sankey-pipeline.css`    |                                                         |
 
 All import statements in `main.css` (and any lazy-load points) updated to match new names.
 
@@ -215,10 +218,12 @@ After Phase 1: `grep -r '\-\-neon-' src/` returns zero results. This is the veri
 Location: `src/renderer/src/components/neon/`
 
 **Delete entirely:**
+
 - `ParticleField.tsx` — remove all usages, delete file
 - `ScanlineOverlay.tsx` — remove all usages, delete file
 
 **Gut to structural shells — keep existing export names, only clean internals:**
+
 - `NeonCard` — remove glow/glass styles, becomes a simple bordered container. Export name unchanged.
 - `GlassPanel` — remove `backdrop-filter`, becomes a plain surfaced panel. Export name unchanged.
 - `NeonBadge` — solid background only, no glow. Export name unchanged.
@@ -266,6 +271,7 @@ entirely since only pro themes exist.
 ### 2.4 Verification
 
 After Phase 2:
+
 - `grep -r 'backdrop-filter' src/` — zero results (or only intentional non-blur uses)
 - `grep -r 'text-shadow' src/` — zero results
 - `grep -r 'ParticleField\|ScanlineOverlay' src/` — zero results

@@ -155,7 +155,7 @@ describe('computeBlockState', () => {
   })
 
   it('should return not blocked when no deps and no epic deps', () => {
-    const task ={ id: 'task-1', depends_on: null, group_id: null }
+    const task = { id: 'task-1', depends_on: null, group_id: null }
     const ctx = {
       logger: mockLogger,
       listTasks: () => [],
@@ -167,7 +167,7 @@ describe('computeBlockState', () => {
   })
 
   it('should return blocked by task deps when task deps unsatisfied', () => {
-    const task ={
+    const task = {
       id: 'task-1',
       depends_on: [{ id: 'task-2', type: 'hard' }],
       group_id: null
@@ -187,7 +187,7 @@ describe('computeBlockState', () => {
   })
 
   it('should return blocked by epic deps with epic: prefix when epic deps unsatisfied', () => {
-    const task ={
+    const task = {
       id: 'task-1',
       depends_on: null,
       group_id: 'epic-2'
@@ -230,7 +230,7 @@ describe('computeBlockState', () => {
   })
 
   it('should combine task and epic blockers when both unsatisfied', () => {
-    const task ={
+    const task = {
       id: 'task-1',
       depends_on: [{ id: 'task-2', type: 'hard' }],
       group_id: 'epic-2'

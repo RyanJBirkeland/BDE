@@ -14,20 +14,21 @@
 
 ## File Map
 
-| File | Action | Responsibility |
-|------|--------|----------------|
-| `src/main/db.ts` | Modify | Add migration v44: `agent_run_turns` table + index |
-| `src/main/data/agent-queries.ts` | Modify | Add `insertAgentRunTurn`, `listAgentRunTurns` query functions |
-| `src/main/agent-manager/turn-tracker.ts` | **Create** | `TurnTracker` class — accumulation logic, turn boundary detection, SQLite writes |
-| `src/main/agent-manager/run-agent.ts` | Modify | Replace broken token reads with `TurnTracker` |
-| `src/main/adhoc-agent.ts` | Modify | Replace broken token reads with `TurnTracker` (session-scoped) |
-| `src/main/__tests__/turn-tracker.test.ts` | **Create** | Unit tests for `TurnTracker` |
+| File                                      | Action     | Responsibility                                                                   |
+| ----------------------------------------- | ---------- | -------------------------------------------------------------------------------- |
+| `src/main/db.ts`                          | Modify     | Add migration v44: `agent_run_turns` table + index                               |
+| `src/main/data/agent-queries.ts`          | Modify     | Add `insertAgentRunTurn`, `listAgentRunTurns` query functions                    |
+| `src/main/agent-manager/turn-tracker.ts`  | **Create** | `TurnTracker` class — accumulation logic, turn boundary detection, SQLite writes |
+| `src/main/agent-manager/run-agent.ts`     | Modify     | Replace broken token reads with `TurnTracker`                                    |
+| `src/main/adhoc-agent.ts`                 | Modify     | Replace broken token reads with `TurnTracker` (session-scoped)                   |
+| `src/main/__tests__/turn-tracker.test.ts` | **Create** | Unit tests for `TurnTracker`                                                     |
 
 ---
 
 ## Task 1: Add `agent_run_turns` DB migration
 
 **Files:**
+
 - Modify: `src/main/db.ts` (add migration after `version: 43`)
 
 - [ ] **Step 1: Add migration v44**
@@ -76,6 +77,7 @@ git commit -m "feat: add agent_run_turns migration (v44)"
 ## Task 2: Add query functions in `agent-queries.ts`
 
 **Files:**
+
 - Modify: `src/main/data/agent-queries.ts`
 
 - [ ] **Step 1: Add `TurnRecord` interface**
@@ -151,6 +153,7 @@ git commit -m "feat: add insertAgentRunTurn and listAgentRunTurns query function
 ## Task 3: Write `TurnTracker` with tests (TDD)
 
 **Files:**
+
 - Create: `src/main/__tests__/turn-tracker.test.ts`
 - Create: `src/main/agent-manager/turn-tracker.ts`
 
@@ -285,9 +288,7 @@ describe('TurnTracker', () => {
     tracker.observe({ type: 'result', tokens_in: 50, tokens_out: 10 })
 
     expect(tracker.totals()).toEqual({ tokensIn: 50, tokensOut: 10 })
-    const count = (
-      db.prepare('SELECT COUNT(*) as c FROM agent_run_turns').get() as { c: number }
-    ).c
+    const count = (db.prepare('SELECT COUNT(*) as c FROM agent_run_turns').get() as { c: number }).c
     expect(count).toBe(0)
   })
 
@@ -410,6 +411,7 @@ git commit -m "feat: add TurnTracker for correct per-turn token accumulation"
 ## Task 4: Wire `TurnTracker` into pipeline agents (`run-agent.ts`)
 
 **Files:**
+
 - Modify: `src/main/agent-manager/run-agent.ts`
 
 - [ ] **Step 1: Import `TurnTracker`**
@@ -485,6 +487,7 @@ git commit -m "fix: use TurnTracker to accumulate tokens_in/out in pipeline agen
 ## Task 5: Wire `TurnTracker` into adhoc agents (`adhoc-agent.ts`)
 
 **Files:**
+
 - Modify: `src/main/adhoc-agent.ts`
 
 - [ ] **Step 1: Import `TurnTracker`**

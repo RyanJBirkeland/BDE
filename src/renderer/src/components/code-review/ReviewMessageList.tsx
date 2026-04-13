@@ -9,18 +9,14 @@ interface Props {
 
 export function ReviewMessageList({
   messages,
-  emptyMessage = 'Select a task to see the AI review.',
+  emptyMessage = 'Select a task to see the AI review.'
 }: Props): JSX.Element {
   if (messages.length === 0) {
     return <div className="cr-messages cr-messages--empty">{emptyMessage}</div>
   }
 
   return (
-    <div
-      className="cr-messages"
-      role="log"
-      aria-atomic="false"
-    >
+    <div className="cr-messages" role="log" aria-atomic="false">
       {messages.map((m) => (
         <div
           key={m.id}
@@ -35,9 +31,7 @@ export function ReviewMessageList({
             </div>
           )}
           <div className="cr-message__content">{m.content}</div>
-          <div className="cr-message__timestamp">
-            {new Date(m.timestamp).toLocaleTimeString()}
-          </div>
+          <div className="cr-message__timestamp">{new Date(m.timestamp).toLocaleTimeString()}</div>
         </div>
       ))}
     </div>

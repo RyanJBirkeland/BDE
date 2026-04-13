@@ -91,7 +91,9 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
         }}
       >
         <div>
-          <strong style={{ color: 'var(--bde-text)', fontSize: 20, fontWeight: 700 }}>{lastHour}</strong>
+          <strong style={{ color: 'var(--bde-text)', fontSize: 20, fontWeight: 700 }}>
+            {lastHour}
+          </strong>
           <span style={{ color: 'var(--bde-text-dim)', marginLeft: 6 }}> last hour</span>
         </div>
         <div style={{ color: 'var(--bde-text-dim)' }}>

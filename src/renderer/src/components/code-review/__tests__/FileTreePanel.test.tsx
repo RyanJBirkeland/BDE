@@ -21,9 +21,7 @@ const partnerState = vi.hoisted(() => ({
 }))
 
 vi.mock('../../../stores/reviewPartner', () => ({
-  useReviewPartnerStore: vi.fn(
-    (sel: (s: typeof partnerState) => unknown) => sel(partnerState)
-  )
+  useReviewPartnerStore: vi.fn((sel: (s: typeof partnerState) => unknown) => sel(partnerState))
 }))
 
 import { FileTreePanel } from '../FileTreePanel'
@@ -119,9 +117,7 @@ describe('FileTreePanel', () => {
   it('shows issues badge for a file with findings', () => {
     useCodeReviewStore.setState({
       selectedTaskId: 'task-1',
-      diffFiles: [
-        { path: 'src/risky.ts', status: 'M', additions: 5, deletions: 0, patch: '' }
-      ]
+      diffFiles: [{ path: 'src/risky.ts', status: 'M', additions: 5, deletions: 0, patch: '' }]
     })
     partnerState.reviewByTask = {
       'task-1': {
@@ -139,9 +135,7 @@ describe('FileTreePanel', () => {
   it('shows clean badge for a file with no issues', () => {
     useCodeReviewStore.setState({
       selectedTaskId: 'task-1',
-      diffFiles: [
-        { path: 'src/clean.ts', status: 'M', additions: 2, deletions: 0, patch: '' }
-      ]
+      diffFiles: [{ path: 'src/clean.ts', status: 'M', additions: 2, deletions: 0, patch: '' }]
     })
     partnerState.reviewByTask = {
       'task-1': {
@@ -159,9 +153,7 @@ describe('FileTreePanel', () => {
   it('shows no badge for unreviewed files', () => {
     useCodeReviewStore.setState({
       selectedTaskId: 'task-1',
-      diffFiles: [
-        { path: 'src/unknown.ts', status: 'M', additions: 1, deletions: 0, patch: '' }
-      ]
+      diffFiles: [{ path: 'src/unknown.ts', status: 'M', additions: 1, deletions: 0, patch: '' }]
     })
     partnerState.reviewByTask = { 'task-1': { result: { findings: { perFile: [] } } } }
     render(<FileTreePanel />)

@@ -11,6 +11,7 @@ import { useConfirm, ConfirmModal } from '../components/ui/ConfirmModal'
 import { EmptyState } from '../components/ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import './PlannerView.css'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
 export default function PlannerView(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -153,52 +154,54 @@ export default function PlannerView(): React.JSX.Element {
   }
 
   return (
-    <motion.div
-      className="planner-view"
-      variants={VARIANTS.fadeIn}
-      initial="initial"
-      animate="animate"
-      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-    >
-      {/* Body: Split layout */}
-      <div className="planner-body view-layout">
-        <EpicList
-          groups={filteredGroups}
-          selectedId={selectedGroupId}
-          onSelect={selectGroup}
-          onCreateNew={handleCreateNew}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onImport={handleImportPlan}
-        />
-        <div className="view-content">
-          {selectedGroup && (
-            <EpicDetail
-              group={selectedGroup}
-              tasks={groupTasks}
-              allGroups={groups}
-              onAddDependency={(dep) => addDependency(selectedGroup.id, dep)}
-              onRemoveDependency={(upstreamId) => removeDependency(selectedGroup.id, upstreamId)}
-              onUpdateDependencyCondition={(upstreamId, condition) =>
-                updateDependencyCondition(selectedGroup.id, upstreamId, condition)
-              }
-              loading={loading}
-              onQueueAll={handleQueueAll}
-              onAddTask={handleAddTask}
-              onEditTask={handleEditTask}
-              onEditGroup={handleEditGroup}
-              onDeleteGroup={handleDeleteGroup}
-              onToggleReady={handleToggleReady}
-              onReorderTasks={handleReorderTasks}
-              onMarkCompleted={handleMarkCompleted}
-            />
-          )}
-          {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}
+    <ErrorBoundary name="PlannerView">
+      <motion.div
+        className="planner-view"
+        variants={VARIANTS.fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+      >
+        {/* Body: Split layout */}
+        <div className="planner-body view-layout">
+          <EpicList
+            groups={filteredGroups}
+            selectedId={selectedGroupId}
+            onSelect={selectGroup}
+            onCreateNew={handleCreateNew}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onImport={handleImportPlan}
+          />
+          <div className="view-content">
+            {selectedGroup && (
+              <EpicDetail
+                group={selectedGroup}
+                tasks={groupTasks}
+                allGroups={groups}
+                onAddDependency={(dep) => addDependency(selectedGroup.id, dep)}
+                onRemoveDependency={(upstreamId) => removeDependency(selectedGroup.id, upstreamId)}
+                onUpdateDependencyCondition={(upstreamId, condition) =>
+                  updateDependencyCondition(selectedGroup.id, upstreamId, condition)
+                }
+                loading={loading}
+                onQueueAll={handleQueueAll}
+                onAddTask={handleAddTask}
+                onEditTask={handleEditTask}
+                onEditGroup={handleEditGroup}
+                onDeleteGroup={handleDeleteGroup}
+                onToggleReady={handleToggleReady}
+                onReorderTasks={handleReorderTasks}
+                onMarkCompleted={handleMarkCompleted}
+              />
+            )}
+            {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}
+          </div>
         </div>
-      </div>
 
-      <CreateEpicModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />
-      <ConfirmModal {...confirmProps} />
-    </motion.div>
+        <CreateEpicModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />
+        <ConfirmModal {...confirmProps} />
+      </motion.div>
+    </ErrorBoundary>
   )
 }

@@ -17,7 +17,9 @@ async function navigateToMemorySection(window: import('@playwright/test').Page):
   await memoryItem.click()
 
   // Wait for the Memory section page header
-  await expect(window.locator('.stg-page-header__title')).toContainText('Memory', { timeout: 5_000 })
+  await expect(window.locator('.stg-page-header__title')).toContainText('Memory', {
+    timeout: 5_000
+  })
 }
 
 test.describe('Memory Section', () => {

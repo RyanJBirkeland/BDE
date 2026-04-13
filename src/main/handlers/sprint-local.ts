@@ -8,11 +8,7 @@ import type { WorkflowTemplate } from '../../shared/workflow-types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
 import { TERMINAL_STATUSES } from '../../shared/task-state-machine'
-import {
-  buildBlockedNotes,
-  computeBlockState,
-  detectCycle
-} from '../services/dependency-service'
+import { buildBlockedNotes, computeBlockState, detectCycle } from '../services/dependency-service'
 import {
   generatePrompt,
   validateSpecPath,

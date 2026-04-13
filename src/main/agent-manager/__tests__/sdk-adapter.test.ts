@@ -36,7 +36,9 @@ describe('sdk-adapter', () => {
     it('should handle complex NODE_OPTIONS with multiple flags', () => {
       const existing = '--expose-gc --trace-warnings --max-http-header-size=16384'
       const result = withMaxOldSpaceOption(existing, 2048)
-      expect(result).toBe('--expose-gc --trace-warnings --max-http-header-size=16384 --max-old-space-size=2048')
+      expect(result).toBe(
+        '--expose-gc --trace-warnings --max-http-header-size=16384 --max-old-space-size=2048'
+      )
     })
 
     it('should preserve exact existing value when flag already present', () => {

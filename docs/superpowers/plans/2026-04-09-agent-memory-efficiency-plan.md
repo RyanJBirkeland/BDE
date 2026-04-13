@@ -9,6 +9,7 @@
 ## Overview
 
 Two independent improvements:
+
 - **Part A:** Task scratchpad — pipeline agents persist progress notes across retries/revisions
 - **Part B:** Selective user memory pre-loading — only inject memory files relevant to the task spec
 
@@ -39,9 +40,31 @@ import { basename } from 'node:path'
 import { getUserMemory, type UserMemoryResult } from './user-memory'
 
 const STOP_WORDS = new Set([
-  'the', 'this', 'that', 'with', 'from', 'have', 'will', 'your', 'they',
-  'been', 'were', 'when', 'what', 'which', 'their', 'there', 'about',
-  'into', 'more', 'also', 'each', 'should', 'must', 'only', 'both',
+  'the',
+  'this',
+  'that',
+  'with',
+  'from',
+  'have',
+  'will',
+  'your',
+  'they',
+  'been',
+  'were',
+  'when',
+  'what',
+  'which',
+  'their',
+  'there',
+  'about',
+  'into',
+  'more',
+  'also',
+  'each',
+  'should',
+  'must',
+  'only',
+  'both'
 ])
 
 function extractKeywords(text: string): Set<string> {
@@ -49,7 +72,7 @@ function extractKeywords(text: string): Set<string> {
     text
       .toLowerCase()
       .split(/\W+/)
-      .filter(tok => tok.length >= 4 && !STOP_WORDS.has(tok))
+      .filter((tok) => tok.length >= 4 && !STOP_WORDS.has(tok))
   )
 }
 
@@ -92,7 +115,7 @@ export function selectUserMemory(taskSpec: string): UserMemoryResult {
     }
 
     const lower = section.toLowerCase()
-    const hasMatch = [...keywords].some(kw => lower.includes(kw))
+    const hasMatch = [...keywords].some((kw) => lower.includes(kw))
     if (hasMatch) {
       kept.push(section)
       totalBytes += Buffer.byteLength(section, 'utf-8')
@@ -102,7 +125,7 @@ export function selectUserMemory(taskSpec: string): UserMemoryResult {
   return {
     content: kept.join('\n\n---\n\n'),
     totalBytes,
-    fileCount: kept.length,
+    fileCount: kept.length
   }
 }
 ```
@@ -110,6 +133,7 @@ export function selectUserMemory(taskSpec: string): UserMemoryResult {
 **New test file:** `src/main/agent-system/memory/__tests__/select-user-memory.test.ts`
 
 Tests must cover:
+
 - File with matching keyword → included
 - File with zero keyword overlap → excluded
 - Global-named file (`global_rules.md`, `_global_api.md`) → always included
@@ -126,6 +150,7 @@ Run: `npx vitest run src/main/agent-system/memory/__tests__/select-user-memory.t
 **File:** `src/main/agent-system/memory/index.ts`
 
 Add export:
+
 ```typescript
 export { selectUserMemory } from './select-user-memory'
 ```
@@ -139,6 +164,7 @@ export { selectUserMemory } from './select-user-memory'
 ### 4a — Extend `BuildPromptInput`
 
 Add to the interface:
+
 ```typescript
 taskId?: string          // pipeline only — used to build scratchpad path
 priorScratchpad?: string // content of progress.md from prior attempt (empty string if none)
@@ -176,12 +202,14 @@ This scratchpad survives retries and revision requests. Write for your future se
 In `buildAgentPrompt`, for pipeline agents, inject in this order **before** the task spec:
 
 1. If `priorScratchpad` is non-empty:
+
 ```typescript
 prompt += '\n\n## Prior Attempt Context\n\n'
 prompt += priorScratchpad
 ```
 
 2. Scratchpad instructions (always, for pipeline agents with a taskId):
+
 ```typescript
 if (taskId) {
   prompt += buildScratchpadSection(taskId)
@@ -195,14 +223,14 @@ if (taskId) {
 ### 4d — Use `selectUserMemory` for pipeline agents
 
 Replace the unconditional `getUserMemory()` call:
+
 ```typescript
 // Before:
 const userMem = getUserMemory()
 
 // After:
-const userMem = agentType === 'pipeline' && taskContent
-  ? selectUserMemory(taskContent)
-  : getUserMemory()
+const userMem =
+  agentType === 'pipeline' && taskContent ? selectUserMemory(taskContent) : getUserMemory()
 ```
 
 Add import: `import { selectUserMemory } from '../agent-system/memory'`
@@ -212,6 +240,7 @@ Add import: `import { selectUserMemory } from '../agent-system/memory'`
 **File:** `src/main/agent-manager/__tests__/prompt-composer.test.ts`
 
 Add tests:
+
 - Pipeline prompt with `priorScratchpad: 'prior notes'` → prompt includes `## Prior Attempt Context` before `## Task Specification`
 - Pipeline prompt with `taskId: 'abc123'` → prompt includes `## Task Scratchpad` with the correct path
 - Pipeline prompt with `taskContent` set and user memory active → `selectUserMemory` is called (spy or snapshot test)
@@ -254,6 +283,7 @@ try {
 ### 5c — Pass new params to `buildAgentPrompt`
 
 Add to the existing call:
+
 ```typescript
 const prompt = buildAgentPrompt({
   agentType: 'pipeline',
@@ -266,8 +296,8 @@ const prompt = buildAgentPrompt({
   upstreamContext: upstreamContext.length > 0 ? upstreamContext : undefined,
   crossRepoContract: task.cross_repo_contract ?? undefined,
   repoName: task.repo,
-  taskId: task.id,           // NEW
-  priorScratchpad,           // NEW
+  taskId: task.id, // NEW
+  priorScratchpad // NEW
 })
 ```
 
@@ -276,6 +306,7 @@ const prompt = buildAgentPrompt({
 **File:** `src/main/agent-manager/__tests__/run-agent.test.ts`
 
 Add tests (mock `fs` module):
+
 - `mkdirSync` is called with `join(BDE_TASK_MEMORY_DIR, taskId)` and `{ recursive: true }`
 - When `progress.md` exists: `readFileSync` returns content, `priorScratchpad` is passed to `buildAgentPrompt` spy
 - When `progress.md` absent (ENOENT): `priorScratchpad` is `''` passed to `buildAgentPrompt`
@@ -343,6 +374,7 @@ gh pr create \
 ```
 
 PR body must include:
+
 - Summary of both changes (A: scratchpad, B: selective pre-loading)
 - Files changed list
 - How to test manually

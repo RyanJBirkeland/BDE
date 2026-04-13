@@ -4,18 +4,19 @@ Six pipeline-friendly single-file fixes from the 2026-04-07 quality audit's P2 "
 
 ## Tasks
 
-| # | Title | Files | Risk | Est time |
-|---|---|---|---|---|
-| 01 | Scope Workbench Cmd+Enter to form | 1 | low | 10-15 min |
-| 02 | Code Review: preserve selection, advance to next | 1-2 | medium | 15-25 min |
-| 03 | Agent CommandBar → auto-growing textarea | 1 | low | 10-15 min |
-| 04 | Move Workbench shortcut Cmd+0 → Cmd+9 | 1 | low | 5-10 min |
-| 05 | Launchpad repo cycler → dropdown | 1 | medium | 15-20 min |
-| 06 | IDE Cmd+F → Monaco find when editor focused | 1-2 | medium | 15-20 min |
+| #   | Title                                            | Files | Risk   | Est time  |
+| --- | ------------------------------------------------ | ----- | ------ | --------- |
+| 01  | Scope Workbench Cmd+Enter to form                | 1     | low    | 10-15 min |
+| 02  | Code Review: preserve selection, advance to next | 1-2   | medium | 15-25 min |
+| 03  | Agent CommandBar → auto-growing textarea         | 1     | low    | 10-15 min |
+| 04  | Move Workbench shortcut Cmd+0 → Cmd+9            | 1     | low    | 5-10 min  |
+| 05  | Launchpad repo cycler → dropdown                 | 1     | medium | 15-20 min |
+| 06  | IDE Cmd+F → Monaco find when editor focused      | 1-2   | medium | 15-20 min |
 
 ## Pre-flight
 
 All Epic 1 preflight fixes are already on main:
+
 - Deduped pre-commit verification (one canonical block)
 - `npm run test:coverage` unified across preamble + DoD
 - `npm install` gated to pipeline only
@@ -29,6 +30,7 @@ User's local `agentManager.maxConcurrent` has been lowered to **3** for this ses
 ## Queue strategy
 
 All 6 independent, no shared files. Queue all 6 at once at `maxConcurrent=3`:
+
 - Wave 1: tasks 01, 02, 03 run in parallel
 - Wave 2: tasks 04, 05, 06 run as the first wave finishes
 - Expected total wall time: ~25-40 min
@@ -36,6 +38,7 @@ All 6 independent, no shared files. Queue all 6 at once at `maxConcurrent=3`:
 ## Deferred to Epic 4+
 
 These senior-dev items need more scope and stay out of Epic 3:
+
 - **Source Control Pull/Fetch** — needs new IPC channels + 2-3 files
 - **Source Control Amend/Discard** — multiple sub-features
 - **IDE Find-in-Files (Cmd+Shift+F)** — needs ripgrep IPC + sidebar panel

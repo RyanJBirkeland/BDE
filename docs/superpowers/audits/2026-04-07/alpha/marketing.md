@@ -171,4 +171,3 @@ The core task flow has a strong narrative — "spec → queue → agents work in
 - **Location:** `src/renderer/src/components/planner/EpicDetail.tsx:334`, `src/renderer/src/components/planner/EpicList.tsx:125`
 - **Observation:** `{group.icon.charAt(0).toUpperCase()}` — uses the first character of the icon field uppercased. If `group.icon` is meant to hold an emoji, `charAt(0)` will grab half a surrogate pair; if it's a word, the result is a single capital letter sitting in a colored square that looks like a placeholder. In screenshots, every epic looks like "B" or "F" in a colored square.
 - **Recommendation:** Use a real icon (lucide-react) picked by category, or a full emoji (handle surrogate pairs), not the first char.
-

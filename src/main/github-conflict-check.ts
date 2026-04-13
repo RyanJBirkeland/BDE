@@ -30,11 +30,9 @@ export async function checkConflictFiles(input: ConflictFilesInput): Promise<Con
   const prResult = await githubFetchJson<{
     head: { ref: string }
     base: { ref: string }
-  }>(
-    `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}`,
-    token,
-    { timeoutMs: 10_000 }
-  )
+  }>(`https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}`, token, {
+    timeoutMs: 10_000
+  })
   if (!prResult.ok) return empty
 
   // Fetch the list of changed files in the PR (paginated)

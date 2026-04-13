@@ -262,7 +262,7 @@ function detectPlaygroundWrite(
   if (!task.playground_enabled) return
   const htmlPath = detectHtmlWrite(msg)
   if (htmlPath) {
-    tryEmitPlaygroundEvent(task.id, htmlPath, worktreePath, logger).catch(err => {
+    tryEmitPlaygroundEvent(task.id, htmlPath, worktreePath, logger).catch((err) => {
       logger.warn(`[run-agent] playground emit failed for task ${task.id}: ${err}`)
     })
   }

@@ -5,7 +5,10 @@ import { describe, it, expect } from 'vitest'
 import { classifyReviewAction } from '../review-action-policy'
 import type { SprintTask } from '../../../shared/types/task-types'
 
-const mockTask: Pick<SprintTask, 'id' | 'title' | 'repo' | 'worktree_path' | 'spec' | 'notes' | 'agent_run_id'> = {
+const mockTask: Pick<
+  SprintTask,
+  'id' | 'title' | 'repo' | 'worktree_path' | 'spec' | 'notes' | 'agent_run_id'
+> = {
   id: 'test-123',
   title: 'Test Task',
   repo: 'test-repo',

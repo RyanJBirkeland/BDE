@@ -14,29 +14,30 @@
 
 ## File Map
 
-| File | Action | Purpose |
-|---|---|---|
-| `src/renderer/src/hooks/useDrawerResize.ts` | **CREATE** | Shared hook for right-anchored overlay drawers |
-| `src/renderer/src/hooks/__tests__/useDrawerResize.test.ts` | **CREATE** | Unit tests for hook |
-| `src/renderer/src/assets/design-system.css` | **MODIFY** | Add `.drawer-resize-handle` + `.panel-separator` CSS |
-| `src/renderer/src/components/sprint/TaskDetailDrawer.tsx` | **MODIFY** | Replace inline drag logic with `useDrawerResize` |
-| `src/renderer/src/components/sprint/ConflictDrawer.tsx` | **MODIFY** | Add `useDrawerResize` + resize handle div |
-| `src/renderer/src/components/sprint/HealthCheckDrawer.tsx` | **MODIFY** | Add `useDrawerResize` + resize handle div |
-| `src/renderer/src/views/CodeReviewView.tsx` | **MODIFY** | Wrap in Group/Panel/Separator |
-| `src/renderer/src/assets/code-review-neon.css` | **MODIFY** | Remove fixed `.cr-queue` width |
-| `src/renderer/src/views/AgentsView.tsx` | **MODIFY** | Wrap inner flex row in Group/Panel/Separator |
-| `src/renderer/src/assets/agents-neon.css` | **MODIFY** | Remove fixed `.agents-sidebar` width + `resize: horizontal` |
-| `src/renderer/src/components/diff/DiffViewer.tsx` | **MODIFY** | Wrap DiffFileList in Group/Panel/Separator |
-| `src/renderer/src/assets/diff.css` | **MODIFY** | Remove fixed `.diff-sidebar` width |
-| `src/renderer/src/views/SettingsView.tsx` | **MODIFY** | Wrap in Group/Panel/Separator |
-| `src/renderer/src/assets/settings-v2-neon.css` | **MODIFY** | Remove fixed `.stg-sidebar` width |
-| `src/renderer/src/views/IDEView.tsx` | **MODIFY** | Fix conditional-mount sidebar using `usePanelRef` + `collapsible` prop |
+| File                                                       | Action     | Purpose                                                                |
+| ---------------------------------------------------------- | ---------- | ---------------------------------------------------------------------- |
+| `src/renderer/src/hooks/useDrawerResize.ts`                | **CREATE** | Shared hook for right-anchored overlay drawers                         |
+| `src/renderer/src/hooks/__tests__/useDrawerResize.test.ts` | **CREATE** | Unit tests for hook                                                    |
+| `src/renderer/src/assets/design-system.css`                | **MODIFY** | Add `.drawer-resize-handle` + `.panel-separator` CSS                   |
+| `src/renderer/src/components/sprint/TaskDetailDrawer.tsx`  | **MODIFY** | Replace inline drag logic with `useDrawerResize`                       |
+| `src/renderer/src/components/sprint/ConflictDrawer.tsx`    | **MODIFY** | Add `useDrawerResize` + resize handle div                              |
+| `src/renderer/src/components/sprint/HealthCheckDrawer.tsx` | **MODIFY** | Add `useDrawerResize` + resize handle div                              |
+| `src/renderer/src/views/CodeReviewView.tsx`                | **MODIFY** | Wrap in Group/Panel/Separator                                          |
+| `src/renderer/src/assets/code-review-neon.css`             | **MODIFY** | Remove fixed `.cr-queue` width                                         |
+| `src/renderer/src/views/AgentsView.tsx`                    | **MODIFY** | Wrap inner flex row in Group/Panel/Separator                           |
+| `src/renderer/src/assets/agents-neon.css`                  | **MODIFY** | Remove fixed `.agents-sidebar` width + `resize: horizontal`            |
+| `src/renderer/src/components/diff/DiffViewer.tsx`          | **MODIFY** | Wrap DiffFileList in Group/Panel/Separator                             |
+| `src/renderer/src/assets/diff.css`                         | **MODIFY** | Remove fixed `.diff-sidebar` width                                     |
+| `src/renderer/src/views/SettingsView.tsx`                  | **MODIFY** | Wrap in Group/Panel/Separator                                          |
+| `src/renderer/src/assets/settings-v2-neon.css`             | **MODIFY** | Remove fixed `.stg-sidebar` width                                      |
+| `src/renderer/src/views/IDEView.tsx`                       | **MODIFY** | Fix conditional-mount sidebar using `usePanelRef` + `collapsible` prop |
 
 ---
 
 ## Task 1: Create `useDrawerResize` hook
 
 **Files:**
+
 - Create: `src/renderer/src/hooks/useDrawerResize.ts`
 - Create: `src/renderer/src/hooks/__tests__/useDrawerResize.test.ts`
 
@@ -301,6 +302,7 @@ git commit -m "feat: add useDrawerResize hook for right-anchored overlay drawers
 ## Task 2: Add shared CSS for resize handles and panel separators
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/design-system.css`
 
 - [ ] **Step 1: Append to `design-system.css`**
@@ -324,7 +326,9 @@ Add the following at the end of `src/renderer/src/assets/design-system.css`:
   position: absolute;
   inset: 0;
   background: transparent;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .drawer-resize-handle:hover::after,
@@ -366,6 +370,7 @@ git commit -m "feat: add drawer-resize-handle and panel-separator CSS"
 ## Task 3: Refactor TaskDetailDrawer to use `useDrawerResize`
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/TaskDetailDrawer.tsx`
 
 The existing inline drag logic (lines 61–133) is replaced by the hook. The constants at lines 13–15 move into the hook call.
@@ -377,6 +382,7 @@ The existing inline drag logic (lines 61–133) is replaced by the hook. The con
 In `src/renderer/src/components/sprint/TaskDetailDrawer.tsx`:
 
 Remove the three constants at the top of the file:
+
 ```ts
 // DELETE these three lines
 const MIN_DRAWER_WIDTH = 280
@@ -385,11 +391,13 @@ const DEFAULT_DRAWER_WIDTH = 380
 ```
 
 Add the hook import after the existing imports:
+
 ```ts
 import { useDrawerResize } from '../../hooks/useDrawerResize'
 ```
 
 Inside the component body, remove:
+
 - `const [width, setWidth] = useState(DEFAULT_DRAWER_WIDTH)` (line 61)
 - `const dragging = useRef(false)` (line 63)
 - `const startX = useRef(0)` (line 64)
@@ -399,6 +407,7 @@ Inside the component body, remove:
 - The entire `handleResizeStart` `useCallback` (lines 93–133)
 
 Replace all of the above with a single line:
+
 ```ts
 const { width, handleResizeStart } = useDrawerResize({
   defaultWidth: 380,
@@ -437,6 +446,7 @@ git commit -m "refactor: use shared useDrawerResize hook in TaskDetailDrawer"
 ## Task 4: Add resize to ConflictDrawer
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/ConflictDrawer.tsx`
 - Modify: `src/renderer/src/assets/sprint-pipeline-neon.css` (remove fixed width)
 - Reference test: `src/renderer/src/components/sprint/__tests__/ConflictDrawer.test.tsx`
@@ -450,12 +460,7 @@ In `src/renderer/src/components/sprint/__tests__/ConflictDrawer.test.tsx`, add a
 ```tsx
 it('renders a resize handle', () => {
   const { container } = render(
-    <ConflictDrawer
-      open={true}
-      tasks={[makeTask()]}
-      onClose={vi.fn()}
-      onOpenExternal={vi.fn()}
-    />
+    <ConflictDrawer open={true} tasks={[makeTask()]} onClose={vi.fn()} onOpenExternal={vi.fn()} />
   )
   expect(container.querySelector('.drawer-resize-handle')).not.toBeNull()
 })
@@ -474,11 +479,13 @@ Expected: FAIL — `.drawer-resize-handle` not found.
 In `src/renderer/src/components/sprint/ConflictDrawer.tsx`:
 
 Add import:
+
 ```ts
 import { useDrawerResize } from '../../hooks/useDrawerResize'
 ```
 
 Inside the component body (before the return), add:
+
 ```ts
 const { width, handleResizeStart } = useDrawerResize({
   defaultWidth: 440,
@@ -488,6 +495,7 @@ const { width, handleResizeStart } = useDrawerResize({
 ```
 
 In the JSX, find the element with `className="conflict-drawer ..."` and:
+
 1. Add `style={{ width }}` to it
 2. Add the resize handle as its **first child**:
 
@@ -509,6 +517,7 @@ In the JSX, find the element with `className="conflict-drawer ..."` and:
 In `src/renderer/src/assets/sprint-pipeline-neon.css`, find `.conflict-drawer` (around line 1877) and remove the `width: 440px` line. The drawer's `position: fixed; right: 0; top: 0; bottom: 0` lines stay. Also update the `transform: translateX(440px)` on `.conflict-drawer` (closed state) to use a CSS variable or just remove the transition offset — the simplest fix is to change it to `transform: translateX(100%)` so it always slides fully off-screen regardless of width.
 
 Before:
+
 ```css
 .conflict-drawer {
   position: fixed;
@@ -522,6 +531,7 @@ Before:
 ```
 
 After:
+
 ```css
 .conflict-drawer {
   position: fixed;
@@ -562,6 +572,7 @@ git commit -m "feat: make ConflictDrawer resizable"
 ## Task 5: Add resize to HealthCheckDrawer
 
 **Files:**
+
 - Modify: `src/renderer/src/components/sprint/HealthCheckDrawer.tsx`
 - Modify: `src/renderer/src/assets/sprint-pipeline-neon.css` (remove fixed width for `.health-drawer`)
 
@@ -599,11 +610,13 @@ npx vitest run src/renderer/src/components/sprint/__tests__/HealthCheckDrawer.te
 In `src/renderer/src/components/sprint/HealthCheckDrawer.tsx`:
 
 Add import:
+
 ```ts
 import { useDrawerResize } from '../../hooks/useDrawerResize'
 ```
 
 Inside component, add:
+
 ```ts
 const { width, handleResizeStart } = useDrawerResize({
   defaultWidth: 440,
@@ -613,6 +626,7 @@ const { width, handleResizeStart } = useDrawerResize({
 ```
 
 Add `style={{ width }}` to the `.health-drawer` div and insert the resize handle as its first child:
+
 ```tsx
 <div className={`health-drawer ${open ? 'health-drawer--open' : ''}`} style={{ width }} ref={drawerRef} ...>
   <div className="drawer-resize-handle" onMouseDown={handleResizeStart} />
@@ -622,6 +636,7 @@ Add `style={{ width }}` to the `.health-drawer` div and insert the resize handle
 - [ ] **Step 4: Update CSS in `sprint-pipeline-neon.css`**
 
 Find `.health-drawer` (around line 2075) and apply the same changes as Task 4:
+
 - Remove `width: 440px`
 - Change `transform: translateX(440px)` to `transform: translateX(100%)`
 
@@ -646,6 +661,7 @@ git commit -m "feat: make HealthCheckDrawer resizable"
 ## Task 6: Make CodeReview layout resizable
 
 **Files:**
+
 - Modify: `src/renderer/src/views/CodeReviewView.tsx`
 - Modify: `src/renderer/src/assets/code-review-neon.css`
 
@@ -701,6 +717,7 @@ describe('CodeReviewView', () => {
 ```
 
 Run to confirm it passes before the change:
+
 ```bash
 npx vitest run src/renderer/src/views/__tests__/CodeReviewView.test.tsx
 ```
@@ -710,11 +727,13 @@ This is a "does it still render" smoke test — it should pass before AND after 
 - [ ] **Step 3: Update `CodeReviewView.tsx`**
 
 Add import at the top:
+
 ```ts
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 Replace the render return from:
+
 ```tsx
 <motion.div className="cr-view" ...>
   <ReviewQueue />
@@ -727,6 +746,7 @@ Replace the render return from:
 ```
 
 To:
+
 ```tsx
 <motion.div className="cr-view" ...>
   <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
@@ -750,6 +770,7 @@ Note: `<BatchActions />` is `position: absolute` — it stays as a sibling of `<
 - [ ] **Step 4: Update `code-review-neon.css`**
 
 Find `.cr-queue` and remove these two lines:
+
 ```css
 width: 260px;
 min-width: 160px;
@@ -778,6 +799,7 @@ git commit -m "feat: make CodeReview queue sidebar resizable"
 ## Task 7: Make Agents view sidebar resizable
 
 **Files:**
+
 - Modify: `src/renderer/src/views/AgentsView.tsx`
 - Modify: `src/renderer/src/assets/agents-neon.css`
 
@@ -794,32 +816,29 @@ npx vitest run src/renderer/src/views/__tests__/AgentsView.test.tsx
 - [ ] **Step 3: Update `AgentsView.tsx`**
 
 Add import:
+
 ```ts
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 Find the inner flex row (around line 255):
+
 ```tsx
 <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-  <div className="agents-sidebar">
-    {/* ... */}
-  </div>
+  <div className="agents-sidebar">{/* ... */}</div>
   {/* agent console content */}
 </div>
 ```
 
 Replace with:
+
 ```tsx
 <Group orientation="horizontal" style={{ flex: 1, minHeight: 0 }}>
   <Panel defaultSize={20} minSize={12} maxSize={40}>
-    <div className="agents-sidebar">
-      {/* unchanged content */}
-    </div>
+    <div className="agents-sidebar">{/* unchanged content */}</div>
   </Panel>
   <Separator className="panel-separator" />
-  <Panel minSize={40}>
-    {/* unchanged console content */}
-  </Panel>
+  <Panel minSize={40}>{/* unchanged console content */}</Panel>
 </Group>
 ```
 
@@ -828,6 +847,7 @@ The outer `<motion.div style={{ display: 'flex', flexDirection: 'column', ... }}
 - [ ] **Step 4: Update `agents-neon.css`**
 
 Find `.agents-sidebar` and remove:
+
 - `width: 220px`
 - `min-width: 180px`
 - `max-width: 400px`
@@ -855,6 +875,7 @@ git commit -m "feat: make Agents sidebar resizable"
 ## Task 8: Make Diff file sidebar resizable
 
 **Files:**
+
 - Modify: `src/renderer/src/components/diff/DiffViewer.tsx`
 - Modify: `src/renderer/src/assets/diff.css`
 
@@ -869,6 +890,7 @@ import { Group, Panel, Separator } from 'react-resizable-panels'
 - [ ] **Step 3: Wrap the file list and content**
 
 The main return (non-empty case, around line 433):
+
 ```tsx
 // Before
 <div className="diff-view-container">
@@ -899,6 +921,7 @@ The `ref={containerRef}` stays on the inner `<div className="diff-content">` —
 - [ ] **Step 4: Update `diff.css`**
 
 Find `.diff-sidebar` (line 139) and remove:
+
 - `width: 200px`
 - `flex-shrink: 0`
 
@@ -925,6 +948,7 @@ git commit -m "feat: make diff file sidebar resizable"
 ## Task 9: Make Settings sidebar resizable
 
 **Files:**
+
 - Modify: `src/renderer/src/views/SettingsView.tsx`
 - Modify: `src/renderer/src/assets/settings-v2-neon.css`
 
@@ -933,11 +957,13 @@ git commit -m "feat: make diff file sidebar resizable"
 - [ ] **Step 2: Update `SettingsView.tsx`**
 
 Add import:
+
 ```ts
 import { Group, Panel, Separator } from 'react-resizable-panels'
 ```
 
 The return is currently:
+
 ```tsx
 <div className="stg-layout">
   <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
@@ -949,6 +975,7 @@ The return is currently:
 ```
 
 Replace with:
+
 ```tsx
 <div className="stg-layout">
   <Group orientation="horizontal" style={{ flex: 1, height: '100%' }}>
@@ -969,6 +996,7 @@ Replace with:
 - [ ] **Step 3: Update `settings-v2-neon.css`**
 
 Find `.stg-sidebar` and remove:
+
 - `width: 180px`
 - `min-width: 180px`
 - `flex-shrink: 0`
@@ -996,6 +1024,7 @@ git commit -m "feat: make Settings sidebar resizable"
 ## Task 10: Fix IDEView sidebar collapse using imperative Panel API
 
 **Files:**
+
 - Modify: `src/renderer/src/views/IDEView.tsx`
 
 The IDE sidebar is already inside a `react-resizable-panels` Group. The current pattern conditionally unmounts the sidebar Panel (`{!sidebarCollapsed && <Panel>}`), which causes the library to lose size tracking. Fix it using the imperative `collapse()`/`expand()` API.
@@ -1005,6 +1034,7 @@ The IDE sidebar is already inside a `react-resizable-panels` Group. The current 
 - [ ] **Step 2: Add `usePanelRef` import**
 
 In `IDEView.tsx`, add to the `react-resizable-panels` import:
+
 ```ts
 import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
 ```
@@ -1012,6 +1042,7 @@ import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
 - [ ] **Step 3: Replace conditional mount with imperative collapse**
 
 In the component body, add:
+
 ```ts
 const sidebarPanelRef = usePanelRef()
 
@@ -1025,6 +1056,7 @@ useEffect(() => {
 ```
 
 In the JSX, replace the conditional Panel mount:
+
 ```tsx
 // Before (conditional mount — causes library to lose size tracking)
 {!sidebarCollapsed && (
@@ -1094,6 +1126,7 @@ Expected: Zero errors.
 - [ ] **Step 4: Manual smoke test** (if running the app)
 
 For each surface, verify:
+
 - [ ] TaskDetailDrawer — drag left edge, width updates live; release off-screen, drag state cleans up
 - [ ] ConflictDrawer — drag handle, slides to correct width
 - [ ] HealthCheckDrawer — drag handle, slides to correct width

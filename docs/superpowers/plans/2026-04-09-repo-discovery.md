@@ -14,21 +14,21 @@
 
 ## File Structure
 
-| File | Responsibility |
-|------|---------------|
-| `src/shared/ipc-channels.ts` | Add `RepoDiscoveryChannels` interface + types to `IpcChannelMap` |
-| `src/main/handlers/repo-discovery.ts` | **New** — `scanLocal`, `listGithub`, `clone` handlers |
-| `src/main/index.ts` | Import + register new handlers |
-| `src/preload/index.ts` | Add `repoDiscovery` API namespace |
-| `src/renderer/src/components/settings/RepoDiscoveryModal.tsx` | **New** — modal with Local/GitHub tabs |
+| File                                                           | Responsibility                                                     |
+| -------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `src/shared/ipc-channels.ts`                                   | Add `RepoDiscoveryChannels` interface + types to `IpcChannelMap`   |
+| `src/main/handlers/repo-discovery.ts`                          | **New** — `scanLocal`, `listGithub`, `clone` handlers              |
+| `src/main/index.ts`                                            | Import + register new handlers                                     |
+| `src/preload/index.ts`                                         | Add `repoDiscovery` API namespace                                  |
+| `src/renderer/src/components/settings/RepoDiscoveryModal.tsx`  | **New** — modal with Local/GitHub tabs                             |
 | `src/renderer/src/components/settings/RepositoriesSection.tsx` | Add modal trigger, scan/clone dir settings, remove inline add form |
-| `src/renderer/src/assets/settings.css` | Add modal styles (`.settings-discovery-*` classes) |
+| `src/renderer/src/assets/settings.css`                         | Add modal styles (`.settings-discovery-*` classes)                 |
 
 Test files:
 
-| File | Tests |
-|------|-------|
-| `src/main/handlers/__tests__/repo-discovery.test.ts` | **New** — handler unit tests |
+| File                                                                         | Tests                           |
+| ---------------------------------------------------------------------------- | ------------------------------- |
+| `src/main/handlers/__tests__/repo-discovery.test.ts`                         | **New** — handler unit tests    |
 | `src/renderer/src/components/settings/__tests__/RepoDiscoveryModal.test.tsx` | **New** — modal component tests |
 
 ---
@@ -36,6 +36,7 @@ Test files:
 ### Task 1: Shared Types — IPC Channel Definitions
 
 **Files:**
+
 - Modify: `src/shared/ipc-channels.ts` (add interface before line ~890, add to intersection at line ~919)
 
 - [ ] **Step 1: Add types and channel interface**
@@ -66,7 +67,7 @@ export interface CloneProgressEvent {
   line: string
   done: boolean
   error?: string
-  localPath?: string  // expanded absolute path, set on successful clone completion
+  localPath?: string // expanded absolute path, set on successful clone completion
 }
 
 export interface RepoDiscoveryChannels {
@@ -95,6 +96,7 @@ git commit -m "feat: add RepoDiscoveryChannels IPC types"
 ### Task 2: Main Process — `repo-discovery.ts` Handler (scanLocal + listGithub)
 
 **Files:**
+
 - Create: `src/main/handlers/repo-discovery.ts`
 - Create: `src/main/handlers/__tests__/repo-discovery.test.ts`
 
@@ -215,7 +217,13 @@ describe('listGithubRepos', () => {
     ] as any)
     execFileAsyncMock.mockResolvedValue({
       stdout: JSON.stringify([
-        { name: 'my-repo', owner: { login: 'octocat' }, description: '', visibility: 'public', url: '' }
+        {
+          name: 'my-repo',
+          owner: { login: 'octocat' },
+          description: '',
+          visibility: 'public',
+          url: ''
+        }
       ]),
       stderr: ''
     })
@@ -251,11 +259,7 @@ import { parseGitHubRemote } from '../../shared/git-remote'
 import { getSettingJson } from '../settings'
 import { safeHandle } from '../ipc-utils'
 import { broadcast } from '../broadcast'
-import type {
-  LocalRepoInfo,
-  GithubRepoInfo,
-  CloneProgressEvent
-} from '../../shared/ipc-channels'
+import type { LocalRepoInfo, GithubRepoInfo, CloneProgressEvent } from '../../shared/ipc-channels'
 
 const execFileAsync = promisify(execFile)
 
@@ -362,9 +366,7 @@ export async function listGithubRepos(): Promise<GithubRepoInfo[]> {
     stdout = result.stdout
   } catch (err: any) {
     if (err.code === 'ENOENT') {
-      throw new Error(
-        'GitHub CLI (gh) is not installed. Install it from https://cli.github.com/'
-      )
+      throw new Error('GitHub CLI (gh) is not installed. Install it from https://cli.github.com/')
     }
     if (err.stderr?.includes('auth login') || err.stderr?.includes('not logged')) {
       throw new Error('GitHub CLI is not authenticated. Run `gh auth login` in your terminal.')
@@ -408,10 +410,18 @@ export function cloneRepo(owner: string, repo: string, destDir: string): void {
       })
 
       proc.stdout?.on('data', (data: Buffer) => {
-        data.toString().split('\n').filter(Boolean).forEach((line) => sendEvent({ line }))
+        data
+          .toString()
+          .split('\n')
+          .filter(Boolean)
+          .forEach((line) => sendEvent({ line }))
       })
       proc.stderr?.on('data', (data: Buffer) => {
-        data.toString().split('\n').filter(Boolean).forEach((line) => sendEvent({ line }))
+        data
+          .toString()
+          .split('\n')
+          .filter(Boolean)
+          .forEach((line) => sendEvent({ line }))
       })
 
       proc.on('close', (code) => {
@@ -463,6 +473,7 @@ git commit -m "feat: add repo-discovery handlers (scanLocal + listGithub + clone
 ### Task 3: Wire Up Handler Registration + Preload Bridge
 
 **Files:**
+
 - Modify: `src/main/index.ts` (~line 28 for import, ~line 294 for registration)
 - Modify: `src/preload/index.ts` (~line 543 for new API namespace)
 
@@ -471,11 +482,13 @@ git commit -m "feat: add repo-discovery handlers (scanLocal + listGithub + clone
 In `src/main/index.ts`:
 
 Add import after the last handler import (~line 28):
+
 ```typescript
 import { registerRepoDiscoveryHandlers } from './handlers/repo-discovery'
 ```
 
 Add registration call after `registerPlannerImportHandlers()` (~line 294):
+
 ```typescript
 registerRepoDiscoveryHandlers()
 ```
@@ -517,6 +530,7 @@ git commit -m "feat: wire repo-discovery handlers + preload bridge"
 ### Task 4: RepoDiscoveryModal — Local Tab
 
 **Files:**
+
 - Create: `src/renderer/src/components/settings/RepoDiscoveryModal.tsx`
 - Create: `src/renderer/src/components/settings/__tests__/RepoDiscoveryModal.test.tsx`
 
@@ -564,7 +578,12 @@ describe('RepoDiscoveryModal', () => {
 
   it('shows discovered local repos', async () => {
     mockScanLocal.mockResolvedValue([
-      { name: 'my-project', localPath: '/Users/test/projects/my-project', owner: 'octocat', repo: 'my-project' }
+      {
+        name: 'my-project',
+        localPath: '/Users/test/projects/my-project',
+        owner: 'octocat',
+        repo: 'my-project'
+      }
     ])
 
     render(<RepoDiscoveryModal open onClose={vi.fn()} onRepoAdded={vi.fn()} repos={[]} />)
@@ -587,7 +606,12 @@ describe('RepoDiscoveryModal', () => {
   it('calls onRepoAdded when Add button clicked', async () => {
     const onRepoAdded = vi.fn()
     mockScanLocal.mockResolvedValue([
-      { name: 'my-project', localPath: '/Users/test/projects/my-project', owner: 'oct', repo: 'my-project' }
+      {
+        name: 'my-project',
+        localPath: '/Users/test/projects/my-project',
+        owner: 'oct',
+        repo: 'my-project'
+      }
     ])
 
     render(<RepoDiscoveryModal open onClose={vi.fn()} onRepoAdded={onRepoAdded} repos={[]} />)
@@ -600,7 +624,10 @@ describe('RepoDiscoveryModal', () => {
 
     await waitFor(() => {
       expect(onRepoAdded).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'my-project', localPath: '/Users/test/projects/my-project' })
+        expect.objectContaining({
+          name: 'my-project',
+          localPath: '/Users/test/projects/my-project'
+        })
       )
     })
   })
@@ -679,8 +706,14 @@ interface CloneState {
 }
 
 const REPO_COLOR_PALETTE = [
-  '#6C8EEF', '#00D37F', '#FF8A00', '#EF4444',
-  '#8B5CF6', '#3B82F6', '#F97316', '#06B6D4'
+  '#6C8EEF',
+  '#00D37F',
+  '#FF8A00',
+  '#EF4444',
+  '#8B5CF6',
+  '#3B82F6',
+  '#F97316',
+  '#06B6D4'
 ]
 
 interface Props {
@@ -697,7 +730,12 @@ function nextColor(repos: RepoConfig[]): string {
   return REPO_COLOR_PALETTE.find((c) => !used.has(c)) ?? REPO_COLOR_PALETTE[0]
 }
 
-export function RepoDiscoveryModal({ open, onClose, onRepoAdded, repos }: Props): React.JSX.Element | null {
+export function RepoDiscoveryModal({
+  open,
+  onClose,
+  onRepoAdded,
+  repos
+}: Props): React.JSX.Element | null {
   const [tab, setTab] = useState<Tab>('local')
   const [search, setSearch] = useState('')
 
@@ -794,14 +832,11 @@ export function RepoDiscoveryModal({ open, onClose, onRepoAdded, repos }: Props)
     [repos, onRepoAdded]
   )
 
-  const handleClone = useCallback(
-    async (repo: GithubRepoInfo) => {
-      const cloneDir =
-        ((await window.api.settings.getJson('repos.cloneDir')) as string | null) ?? '~/projects'
-      await window.api.repoDiscovery.clone(repo.owner, repo.name, cloneDir)
-    },
-    []
-  )
+  const handleClone = useCallback(async (repo: GithubRepoInfo) => {
+    const cloneDir =
+      ((await window.api.settings.getJson('repos.cloneDir')) as string | null) ?? '~/projects'
+    await window.api.repoDiscovery.clone(repo.owner, repo.name, cloneDir)
+  }, [])
 
   // Track which clones have been processed to prevent double-firing
   const processedClonesRef = useRef<Set<string>>(new Set())
@@ -908,9 +943,7 @@ export function RepoDiscoveryModal({ open, onClose, onRepoAdded, repos }: Props)
                 </div>
               )}
               {!localLoading && !localError && filteredLocal.length === 0 && (
-                <div className="settings-discovery-empty">
-                  No unconfigured git repos found
-                </div>
+                <div className="settings-discovery-empty">No unconfigured git repos found</div>
               )}
               {filteredLocal.map((r) => (
                 <div key={r.localPath} className="settings-discovery-row">
@@ -923,7 +956,12 @@ export function RepoDiscoveryModal({ open, onClose, onRepoAdded, repos }: Props)
                       </span>
                     )}
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleAddLocal(r)} aria-label={`Add ${r.name}`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleAddLocal(r)}
+                    aria-label={`Add ${r.name}`}
+                  >
                     <Plus size={14} /> Add
                   </Button>
                 </div>
@@ -954,8 +992,7 @@ export function RepoDiscoveryModal({ open, onClose, onRepoAdded, repos }: Props)
                   <div key={cloneKey} className="settings-discovery-row">
                     <div className="settings-discovery-row__info">
                       <span className="settings-discovery-row__name">
-                        {r.isPrivate ? <Lock size={12} /> : <Globe size={12} />}
-                        {' '}{r.owner}/{r.name}
+                        {r.isPrivate ? <Lock size={12} /> : <Globe size={12} />} {r.owner}/{r.name}
                       </span>
                       {r.description && (
                         <span className="settings-discovery-row__desc">{r.description}</span>
@@ -1010,6 +1047,7 @@ git commit -m "feat: add RepoDiscoveryModal with Local tab"
 ### Task 5: CSS Styles for Modal
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/settings.css` (append new classes)
 
 - [ ] **Step 1: Add modal styles**
@@ -1091,7 +1129,7 @@ Append to `src/renderer/src/assets/settings.css`:
 
 .settings-discovery-tab--active {
   color: var(--bde-text, #fff);
-  border-bottom-color: var(--bde-accent, #6C8EEF);
+  border-bottom-color: var(--bde-accent, #6c8eef);
 }
 
 .settings-discovery-search {
@@ -1160,7 +1198,7 @@ Append to `src/renderer/src/assets/settings.css`:
 
 .settings-discovery-row__github {
   font-size: 11px;
-  color: var(--bde-accent, #6C8EEF);
+  color: var(--bde-accent, #6c8eef);
 }
 
 .settings-discovery-row__progress {
@@ -1171,7 +1209,7 @@ Append to `src/renderer/src/assets/settings.css`:
 
 .settings-discovery-row__error {
   font-size: 11px;
-  color: var(--bde-danger, #EF4444);
+  color: var(--bde-danger, #ef4444);
 }
 
 .settings-discovery-empty {
@@ -1189,12 +1227,12 @@ Append to `src/renderer/src/assets/settings.css`:
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  color: var(--bde-danger, #EF4444);
+  color: var(--bde-danger, #ef4444);
   font-size: 13px;
 }
 
 .settings-discovery-spinner {
-  animation: bde-spin 1s linear infinite;  /* reuses existing @keyframes bde-spin from design-system.css */
+  animation: bde-spin 1s linear infinite; /* reuses existing @keyframes bde-spin from design-system.css */
 }
 ```
 
@@ -1215,6 +1253,7 @@ git commit -m "feat: add repo discovery modal styles"
 ### Task 6: Integrate Modal into RepositoriesSection
 
 **Files:**
+
 - Modify: `src/renderer/src/components/settings/RepositoriesSection.tsx`
 
 - [ ] **Step 1: Write test for modal integration**
@@ -1230,7 +1269,7 @@ describe('RepositoriesSection integration', () => {
 })
 ```
 
-*(The primary integration test is that the modal opens and the inline form is gone — this is verified manually and via the existing RepoDiscoveryModal tests.)*
+_(The primary integration test is that the modal opens and the inline form is gone — this is verified manually and via the existing RepoDiscoveryModal tests.)_
 
 - [ ] **Step 2: Update RepositoriesSection to use the modal**
 
@@ -1256,8 +1295,14 @@ import { SettingsCard } from './SettingsCard'
 import { RepoDiscoveryModal } from './RepoDiscoveryModal'
 
 const REPO_COLOR_PALETTE = [
-  '#6C8EEF', '#00D37F', '#FF8A00', '#EF4444',
-  '#8B5CF6', '#3B82F6', '#F97316', '#06B6D4'
+  '#6C8EEF',
+  '#00D37F',
+  '#FF8A00',
+  '#EF4444',
+  '#8B5CF6',
+  '#3B82F6',
+  '#F97316',
+  '#06B6D4'
 ]
 
 interface RepoConfig {
@@ -1371,11 +1416,16 @@ export function RepositoriesSection(): React.JSX.Element {
       } else if (!detected.isGitRepo) {
         toast.info('Not a git repository (you can still add it manually)')
       }
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
   }, [newName, newOwner, newRepo])
 
   const handleSaveScanDirs = useCallback(async () => {
-    const dirs = scanDirs.split(',').map((d) => d.trim()).filter(Boolean)
+    const dirs = scanDirs
+      .split(',')
+      .map((d) => d.trim())
+      .filter(Boolean)
     await window.api.settings.setJson('repos.scanDirs', dirs)
     toast.success('Scan directories updated')
   }, [scanDirs])
@@ -1484,7 +1534,13 @@ export function RepositoriesSection(): React.JSX.Element {
                     value={newPath}
                     onChange={(e) => setNewPath(e.target.value)}
                   />
-                  <Button variant="ghost" size="sm" onClick={handleBrowse} title="Browse" type="button">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBrowse}
+                    title="Browse"
+                    type="button"
+                  >
                     <FolderOpen size={14} />
                   </Button>
                 </div>
@@ -1517,7 +1573,12 @@ export function RepositoriesSection(): React.JSX.Element {
                   ))}
                 </div>
                 <div className="settings-repo-form__actions">
-                  <Button variant="ghost" size="sm" onClick={() => setShowManual(false)} type="button">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowManual(false)}
+                    type="button"
+                  >
                     Cancel
                   </Button>
                   <Button

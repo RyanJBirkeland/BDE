@@ -1,7 +1,16 @@
 import './TopBar.css'
 import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitMerge, GitPullRequest, Trash2, Loader2, Rocket, ChevronDown, Sparkles, X } from 'lucide-react'
+import {
+  GitMerge,
+  GitPullRequest,
+  Trash2,
+  Loader2,
+  Rocket,
+  ChevronDown,
+  Sparkles,
+  X
+} from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'

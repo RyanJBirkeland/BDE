@@ -20,6 +20,7 @@ export function sanitizePlaygroundHtml(rawHtml: string): string
 The function uses DOMPurify (already a dependency — see `run-agent.ts` for the existing import pattern) to strip `<script>` tags, event handlers (`onclick`, `onerror`, etc.), and `javascript:` URLs. Use the same DOMPurify configuration that `run-agent.ts` currently uses inline.
 
 Then call this helper from BOTH broadcast paths:
+
 - `playground-handlers.ts:55` — wrap the `readFile` result before assigning to the event payload
 - `run-agent.ts:136-137` — replace the inline `purify.sanitize` call with `sanitizePlaygroundHtml`
 

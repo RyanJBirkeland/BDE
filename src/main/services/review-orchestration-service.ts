@@ -63,7 +63,10 @@ async function runPlan(
     repo,
     broadcast: (event: string, payload: unknown) => {
       if (event === 'sprint:mutation' && typeof payload === 'object' && payload !== null) {
-        const { type, task } = payload as { type: 'created' | 'updated' | 'deleted'; task: SprintTask }
+        const { type, task } = payload as {
+          type: 'created' | 'updated' | 'deleted'
+          task: SprintTask
+        }
         notifySprintMutation(type, task)
       }
     },
@@ -197,7 +200,10 @@ export async function rebase(i: RebaseInput): Promise<RebaseResult> {
         repo,
         broadcast: (event: string, payload: unknown) => {
           if (event === 'sprint:mutation' && typeof payload === 'object' && payload !== null) {
-            const { type, task } = payload as { type: 'created' | 'updated' | 'deleted'; task: SprintTask }
+            const { type, task } = payload as {
+              type: 'created' | 'updated' | 'deleted'
+              task: SprintTask
+            }
             notifySprintMutation(type, task)
           }
         },

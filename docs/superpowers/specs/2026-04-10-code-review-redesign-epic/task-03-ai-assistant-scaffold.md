@@ -20,7 +20,9 @@ Full reference: `docs/superpowers/specs/2026-04-10-code-review-redesign-design.m
   <header className="cr-assistant__header">
     <Sparkles size={12} className="cr-assistant__icon" />
     <span className="cr-assistant__title">AI Assistant</span>
-    <button className="cr-assistant__kebab" aria-haspopup="menu">⋯</button>
+    <button className="cr-assistant__kebab" aria-haspopup="menu">
+      ⋯
+    </button>
   </header>
   <div className="cr-assistant__messages" role="log" aria-live="polite">
     {/* empty state when selectedTaskId == null */}
@@ -31,7 +33,10 @@ Full reference: `docs/superpowers/specs/2026-04-10-code-review-redesign-design.m
     <button>Explain selected file</button>
   </div>
   <form className="cr-assistant__input" onSubmit={noop}>
-    <textarea /> <button type="submit"><Send size={14} /></button>
+    <textarea />{' '}
+    <button type="submit">
+      <Send size={14} />
+    </button>
   </form>
 </aside>
 ```

@@ -51,7 +51,7 @@ I spent the audit pretending to be a senior dev who lives in BDE every day — b
 - **Category:** Cross-feature Friction
 - **Location:** `src/renderer/src/views/GitTreeView.tsx:55-65` (loads `repoPaths` from settings), agent worktrees live under `worktreeBase` from `worktree.ts:244-310`
 - **Observation:** `GitTreeView` only knows about user-configured repos (`loadRepoPaths()`). The repo selector doesn't list active agent worktrees. When an agent is mid-task in `~/worktrees/bde/<repo-slug>/<taskId>`, I cannot tail its uncommitted changes through Source Control. I can only see them after merge — by which point they're in main.
-- **Why it matters:** A senior dev wants to peek at what an agent is doing without context-switching to a terminal or to the Code Review view (which only shows tasks in `review` status). The whole point of BDE-as-IDE is to *avoid* leaving the app.
+- **Why it matters:** A senior dev wants to peek at what an agent is doing without context-switching to a terminal or to the Code Review view (which only shows tasks in `review` status). The whole point of BDE-as-IDE is to _avoid_ leaving the app.
 - **Recommendation:** Surface active agent worktrees in the GitTreeView repo dropdown (perhaps under an "Agents" group). Bonus: clicking one previews the live diff against `origin/main` exactly the way Code Review will once the agent transitions.
 
 ### [MAJOR] No collision detection between IDE saves and agent activity on the same file
@@ -98,7 +98,7 @@ I spent the audit pretending to be a senior dev who lives in BDE every day — b
 
 - **Category:** Error Recovery
 - **Location:** `src/renderer/src/components/code-review/ReviewActions.tsx:67-70`
-- **Observation:** `toast.success(result.pushed ? 'Merged & pushed!' : 'Merged locally (push failed — push manually)')` — this is a *success* toast even when the push step failed. The task is also still marked as "shipped" in the success branch.
+- **Observation:** `toast.success(result.pushed ? 'Merged & pushed!' : 'Merged locally (push failed — push manually)')` — this is a _success_ toast even when the push step failed. The task is also still marked as "shipped" in the success branch.
 - **Why it matters:** Users will read "success" and assume their PR is up. Then they'll be confused tomorrow when CI never ran. A push failure during Ship It is a partial failure and should be a warning toast at minimum, with a one-click retry.
 - **Recommendation:** Use `toast.warning()` (or whatever the equivalent is) when `!result.pushed`, and include a "Retry push" action button on the toast.
 
@@ -113,7 +113,7 @@ I spent the audit pretending to be a senior dev who lives in BDE every day — b
 
 - **Category:** State Loss
 - **Location:** `src/renderer/src/views/IDEView.tsx:222-232` (only handles `beforeunload`)
-- **Observation:** The IDE installs a `beforeunload` guard for dirty tabs. But if I have an unsaved file in IDE and I press ⌘5 to jump to Code Review, the IDE view stays mounted (because of CRITICAL #1 above) so my edit is preserved — *for now*. If I close the tab in PanelLeaf, however, the view unmounts and I lose unsaved state with no warning. The unsaved-on-tab-close confirm only fires on explicit `closeTab` from the EditorTabBar (`:191-203`), not on panel-tab close.
+- **Observation:** The IDE installs a `beforeunload` guard for dirty tabs. But if I have an unsaved file in IDE and I press ⌘5 to jump to Code Review, the IDE view stays mounted (because of CRITICAL #1 above) so my edit is preserved — _for now_. If I close the tab in PanelLeaf, however, the view unmounts and I lose unsaved state with no warning. The unsaved-on-tab-close confirm only fires on explicit `closeTab` from the EditorTabBar (`:191-203`), not on panel-tab close.
 - **Why it matters:** Senior devs close panel tabs all day. If "close panel tab" silently destroys unsaved IDE work, that's a data loss bug.
 - **Recommendation:** When the IDE view is about to unmount and has dirty tabs, show the same UnsavedDialog before allowing PanelLeaf to drop it. This requires hooking into the panelLayout `closeTab` action with a pre-close veto.
 
@@ -159,4 +159,3 @@ I spent the audit pretending to be a senior dev who lives in BDE every day — b
 - **Location:** `src/renderer/src/views/AgentsView.tsx:127-151`
 - **Observation:** The eslint-disable comment acknowledges this — `Date.now()` makes the memo non-pure, so the chart only refreshes when `agents` changes. It's stuck on whatever clock value happened on the last agent fetch, so the bucket labels become stale immediately and never update until something moves in the agent list.
 - **Recommendation:** Recompute on a 60s interval, or accept staleness and label the chart "as of <time>".
-

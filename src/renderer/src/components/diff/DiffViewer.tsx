@@ -464,9 +464,7 @@ function DiffViewer({
             onSelectRange={onSelectRange}
             onAddComment={onAddComment}
             onRemovePendingComment={onRemovePendingComment}
-            isLineSelected={(filePath, lineNo) =>
-              isLineSelected(filePath, lineNo, selectedRange)
-            }
+            isLineSelected={(filePath, lineNo) => isLineSelected(filePath, lineNo, selectedRange)}
           />
         )}
       </div>

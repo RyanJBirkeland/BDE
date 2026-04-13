@@ -15,6 +15,7 @@ Change Task Workbench's shortcut from `Cmd+0` to `Cmd+9` in the view registry. L
 The only edit is in `VIEW_REGISTRY` inside `view-registry.ts`. Find the entry for `taskWorkbench` (or whatever the ID is) and change its `shortcut` field from `'0'` (or `'Cmd+0'`) to `'9'` (or `'Cmd+9'` — match the existing format exactly by reading other entries first).
 
 Per CLAUDE.md:
+
 > VIEW_REGISTRY is the single source of truth. VIEW_LABELS / VIEW_SHORTCUT_MAP are derived re-exports. Do NOT edit panelLayout.ts or App.tsx for view metadata.
 
 So editing VIEW_REGISTRY is the complete fix. No other files need touching.

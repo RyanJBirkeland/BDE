@@ -9,7 +9,7 @@
 
 ## TL;DR
 
-The current Agents view implements a "terminal-aesthetic log viewer" — every event is `[prefix] content timestamp`, tool icons are single letters in colored boxes, and the sidebar is a 20%-wide navigation widget. It works, but it isn't meaningfully better than terminal Claude Code, which contradicts BDE's stated value proposition (*"a steering system for Claude Code at scale"* — README, line 5). This spec replaces the line-based log metaphor with a **card grammar** and elevates the **fleet sidebar** from a navigation widget to the primary observability surface. No functionality is added or removed.
+The current Agents view implements a "terminal-aesthetic log viewer" — every event is `[prefix] content timestamp`, tool icons are single letters in colored boxes, and the sidebar is a 20%-wide navigation widget. It works, but it isn't meaningfully better than terminal Claude Code, which contradicts BDE's stated value proposition (_"a steering system for Claude Code at scale"_ — README, line 5). This spec replaces the line-based log metaphor with a **card grammar** and elevates the **fleet sidebar** from a navigation widget to the primary observability surface. No functionality is added or removed.
 
 ---
 
@@ -19,11 +19,11 @@ The current Agents view implements a "terminal-aesthetic log viewer" — every e
 
 Per the README:
 
-> *"5 active Claude Code sessions running in parallel. Each shows live tool calls, edits, and bash commands as they happen."* (Agents view caption, README:169)
+> _"5 active Claude Code sessions running in parallel. Each shows live tool calls, edits, and bash commands as they happen."_ (Agents view caption, README:169)
 
-> *"You should be able to look at one screen and know exactly what's happening across all your concurrent work — then make decisions (review, retry, reprioritize) without holding any of it in your head."* (README:45)
+> _"You should be able to look at one screen and know exactly what's happening across all your concurrent work — then make decisions (review, retry, reprioritize) without holding any of it in your head."_ (README:45)
 
-The Agents view's job is **multi-agent observability**. It's where users go to see what their fleet of pipeline + ad-hoc Claude Code sessions are doing right now, and to drill into any one of them when needed. The view is *not* the place where users issue specs (Task Workbench), monitor the queue (Sprint Pipeline), or review finished work (Code Review Station). It is the place where they *watch agents work*.
+The Agents view's job is **multi-agent observability**. It's where users go to see what their fleet of pipeline + ad-hoc Claude Code sessions are doing right now, and to drill into any one of them when needed. The view is _not_ the place where users issue specs (Task Workbench), monitor the queue (Sprint Pipeline), or review finished work (Code Review Station). It is the place where they _watch agents work_.
 
 ### History
 
@@ -37,7 +37,7 @@ The current view is the union of (3) and the console part of (2). The fleet side
 
 ### Why redesign now
 
-The user has lived with the terminal-aesthetic console for 2+ weeks and reported it as "buggy and annoying" — *"it functionally works but it's not better than terminal Claude Code, which is what I'm talking to you through. I want it to be 10x the experience of Claude Code."* The terminal-aesthetic experiment validated that the data flow works and the events are right, but the *visual language* is a ceiling. By definition, a colored log viewer cannot be "10x better" than terminal Claude Code — it's the same shape rendered in HTML.
+The user has lived with the terminal-aesthetic console for 2+ weeks and reported it as "buggy and annoying" — _"it functionally works but it's not better than terminal Claude Code, which is what I'm talking to you through. I want it to be 10x the experience of Claude Code."_ The terminal-aesthetic experiment validated that the data flow works and the events are right, but the _visual language_ is a ceiling. By definition, a colored log viewer cannot be "10x better" than terminal Claude Code — it's the same shape rendered in HTML.
 
 ---
 
@@ -45,26 +45,26 @@ The user has lived with the terminal-aesthetic console for 2+ weeks and reported
 
 ### Findings from code review
 
-| # | Finding | Location | Severity |
-|---|---|---|---|
-| 1 | Tool "icons" are single letters (`$`, `R`, `E`, `W`, `?`, `F`, `A`) in 18px boxes — `lucide-react` is imported across the codebase but unused here | `ConsoleLine.tsx:41-51`, `ConsoleLine.css:115-157` | High |
-| 2 | All event types render with the same `[prefix] content timestamp` flex shape — no visual hierarchy between user message, tool call, reasoning, error | `ConsoleLine.tsx:74-373` | High |
-| 3 | Tool group rendering = text (`"5 tool calls (3 read, 2 edit)"`) instead of an icon row | `ConsoleLine.tsx:303-348` | Med |
-| 4 | Tool input/output expansion is `<pre>{JSON.stringify(input)}</pre>` — for an `edit` tool, that's a wrapped JSON blob, not a diff | `ConsoleLine.tsx:202-214` | High |
-| 5 | The completion card (`ConsoleLine.tsx:254-301`) is the right visual language *and only renders once*, at the end of an agent run — the rest of the body reverts to log lines | `ConsoleLine.tsx:254-301`, `ConsoleLine.css:160-225` | High |
-| 6 | Body font 12px, timestamps 10px, header meta 10px, tool icon 10px font — everything fits but nothing breathes | `ConsoleLine.css:8`, `ConsoleHeader.css:51` | Med |
-| 7 | Timestamps render on every line — adds visual noise where most users scan once | `ConsoleLine.tsx:80, 94, 107, 122, 148, 191, 227, 239, 250, 332, 369` | Low |
-| 8 | `AgentsView.tsx` lines 264-405 are an inline-styles sewer (sidebar header, info icon, tooltip, scratchpad banner, dismiss button). The CSS file `AgentsView.css` already declares matching class names (`agents-view__sidebar-header`, `agents-view__title`, `agents-view__spawn-btn`) but they are **dead code** — TSX uses inline `style={{}}` instead | `AgentsView.tsx:264-405`, `AgentsView.css:1-55` | High (code health) |
-| 9 | `.console-line:hover { background: var(--bde-border) }` — generic hover, no elevation, no glow, no border change. Doesn't feel "neon" at all | `ConsoleLine.css:13-15` | Med |
-| 10 | `AgentList.tsx` has inline `linear-gradient` and `borderBottom` style overrides at lines 195, 202, 232 — same pattern as #8 | `AgentList.tsx:194-198, 200-203, 232-236` | Med |
-| 11 | The Scratchpad info-icon tooltip and the dismissable banner display **identical copy** in two places, both inline-styled | `AgentsView.tsx:305-331, 358-406` | Low |
-| 12 | Markdown content (bold, code, headings) renders inside the same horizontal flex shape as a one-line file read — multi-paragraph thinking gets cramped into a 12px row | `ConsoleLine.tsx:84-97`, `ConsoleLine.css:92-114` | Med |
-| 13 | Reasoning (`thinking`) collapses to "Thinking… 234 tokens" — the value of seeing the agent's reasoning is hidden behind a click | `ConsoleLine.tsx:111-131` | Low |
-| 14 | Header is 32px and the *task title* — the most important thing on the screen — renders at 12px | `ConsoleHeader.css:2-12, 41-45` | High |
+| #   | Finding                                                                                                                                                                                                                                                                                                                                                  | Location                                                              | Severity           |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------ |
+| 1   | Tool "icons" are single letters (`$`, `R`, `E`, `W`, `?`, `F`, `A`) in 18px boxes — `lucide-react` is imported across the codebase but unused here                                                                                                                                                                                                       | `ConsoleLine.tsx:41-51`, `ConsoleLine.css:115-157`                    | High               |
+| 2   | All event types render with the same `[prefix] content timestamp` flex shape — no visual hierarchy between user message, tool call, reasoning, error                                                                                                                                                                                                     | `ConsoleLine.tsx:74-373`                                              | High               |
+| 3   | Tool group rendering = text (`"5 tool calls (3 read, 2 edit)"`) instead of an icon row                                                                                                                                                                                                                                                                   | `ConsoleLine.tsx:303-348`                                             | Med                |
+| 4   | Tool input/output expansion is `<pre>{JSON.stringify(input)}</pre>` — for an `edit` tool, that's a wrapped JSON blob, not a diff                                                                                                                                                                                                                         | `ConsoleLine.tsx:202-214`                                             | High               |
+| 5   | The completion card (`ConsoleLine.tsx:254-301`) is the right visual language _and only renders once_, at the end of an agent run — the rest of the body reverts to log lines                                                                                                                                                                             | `ConsoleLine.tsx:254-301`, `ConsoleLine.css:160-225`                  | High               |
+| 6   | Body font 12px, timestamps 10px, header meta 10px, tool icon 10px font — everything fits but nothing breathes                                                                                                                                                                                                                                            | `ConsoleLine.css:8`, `ConsoleHeader.css:51`                           | Med                |
+| 7   | Timestamps render on every line — adds visual noise where most users scan once                                                                                                                                                                                                                                                                           | `ConsoleLine.tsx:80, 94, 107, 122, 148, 191, 227, 239, 250, 332, 369` | Low                |
+| 8   | `AgentsView.tsx` lines 264-405 are an inline-styles sewer (sidebar header, info icon, tooltip, scratchpad banner, dismiss button). The CSS file `AgentsView.css` already declares matching class names (`agents-view__sidebar-header`, `agents-view__title`, `agents-view__spawn-btn`) but they are **dead code** — TSX uses inline `style={{}}` instead | `AgentsView.tsx:264-405`, `AgentsView.css:1-55`                       | High (code health) |
+| 9   | `.console-line:hover { background: var(--bde-border) }` — generic hover, no elevation, no glow, no border change. Doesn't feel "neon" at all                                                                                                                                                                                                             | `ConsoleLine.css:13-15`                                               | Med                |
+| 10  | `AgentList.tsx` has inline `linear-gradient` and `borderBottom` style overrides at lines 195, 202, 232 — same pattern as #8                                                                                                                                                                                                                              | `AgentList.tsx:194-198, 200-203, 232-236`                             | Med                |
+| 11  | The Scratchpad info-icon tooltip and the dismissable banner display **identical copy** in two places, both inline-styled                                                                                                                                                                                                                                 | `AgentsView.tsx:305-331, 358-406`                                     | Low                |
+| 12  | Markdown content (bold, code, headings) renders inside the same horizontal flex shape as a one-line file read — multi-paragraph thinking gets cramped into a 12px row                                                                                                                                                                                    | `ConsoleLine.tsx:84-97`, `ConsoleLine.css:92-114`                     | Med                |
+| 13  | Reasoning (`thinking`) collapses to "Thinking… 234 tokens" — the value of seeing the agent's reasoning is hidden behind a click                                                                                                                                                                                                                          | `ConsoleLine.tsx:111-131`                                             | Low                |
+| 14  | Header is 32px and the _task title_ — the most important thing on the screen — renders at 12px                                                                                                                                                                                                                                                           | `ConsoleHeader.css:2-12, 41-45`                                       | High               |
 
 ### The meta-finding
 
-The completion card (`ConsoleLine.tsx:254-301`) and `NeonCard` (used in `AgentCard.tsx`) prove the team already knows what good looks like in this codebase. The infrastructure is there. The problem is that **the card language stops at the edges of the stream** — the body itself reverts to a log file. So the redesign is not "invent new design language" — it's *"extend the existing card language into the body and the sidebar."*
+The completion card (`ConsoleLine.tsx:254-301`) and `NeonCard` (used in `AgentCard.tsx`) prove the team already knows what good looks like in this codebase. The infrastructure is there. The problem is that **the card language stops at the edges of the stream** — the body itself reverts to a log file. So the redesign is not "invent new design language" — it's _"extend the existing card language into the body and the sidebar."_
 
 ---
 
@@ -76,7 +76,7 @@ Three principles:
 
 1. **The fleet sidebar is the headline.** Today it's a navigation widget. After this redesign it's the primary information surface — bigger, richer, ambient.
 2. **The cockpit speaks card grammar.** Every event is a card with a clear visual identity. Cards group naturally. Detail expands on demand. The completion-card style becomes the visual language of the whole view, not a one-off ending.
-3. **Density goes down, signal goes up.** Bigger fonts, real lucide icons, breathing room, hover/focus that actually feels neon. The view should feel like a *room*, not a wall.
+3. **Density goes down, signal goes up.** Bigger fonts, real lucide icons, breathing room, hover/focus that actually feels neon. The view should feel like a _room_, not a wall.
 
 ---
 
@@ -133,16 +133,16 @@ Three principles:
 
 ### Layout changes
 
-| Element | Today | Proposed | Why |
-|---|---|---|---|
-| Default sidebar width | 20% (12-40 range) | 28% (18-44 range) | Sidebar is the headline, not a navigation widget |
-| Sidebar min/max | min 12% / max 40% | min 18% / max 44% | Prevents collapse to a useless skinny strip |
-| Sidebar header | 36px, ~140 lines of inline `style={{}}` in TSX | ~44px, all CSS classes, dead `AgentsView.css` classes resurrected | Code health + room to breathe |
-| Cockpit header | 32px, 12px task title | ~56px, 15px task title, 11px meta strip | The most important thing on the screen is currently invisible |
-| Cockpit body | virtualized `ConsoleLine` rows | virtualized cards (`ConsoleCard`) with vertical rhythm | The whole point of the redesign |
-| Command bar | bottom of cockpit | structurally unchanged — visual polish only | Working interaction; preserve |
-| Spawn launchpad | full-pane takeover when `showLaunchpad` is true | structurally unchanged — full-pane takeover; visual polish only | Spawn flow preserved per user direction |
-| Empty state | tiny `EmptyState` component, dead center | "Fleet at a Glance" panel — see Section 6 | Walking in with no selection should still give fleet-level signal |
+| Element               | Today                                           | Proposed                                                          | Why                                                               |
+| --------------------- | ----------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Default sidebar width | 20% (12-40 range)                               | 28% (18-44 range)                                                 | Sidebar is the headline, not a navigation widget                  |
+| Sidebar min/max       | min 12% / max 40%                               | min 18% / max 44%                                                 | Prevents collapse to a useless skinny strip                       |
+| Sidebar header        | 36px, ~140 lines of inline `style={{}}` in TSX  | ~44px, all CSS classes, dead `AgentsView.css` classes resurrected | Code health + room to breathe                                     |
+| Cockpit header        | 32px, 12px task title                           | ~56px, 15px task title, 11px meta strip                           | The most important thing on the screen is currently invisible     |
+| Cockpit body          | virtualized `ConsoleLine` rows                  | virtualized cards (`ConsoleCard`) with vertical rhythm            | The whole point of the redesign                                   |
+| Command bar           | bottom of cockpit                               | structurally unchanged — visual polish only                       | Working interaction; preserve                                     |
+| Spawn launchpad       | full-pane takeover when `showLaunchpad` is true | structurally unchanged — full-pane takeover; visual polish only   | Spawn flow preserved per user direction                           |
+| Empty state           | tiny `EmptyState` component, dead center        | "Fleet at a Glance" panel — see Section 6                         | Walking in with no selection should still give fleet-level signal |
 
 ### Things explicitly NOT changing in this section
 
@@ -214,14 +214,14 @@ The sidebar contains three sections (Running / Recent / History) and within each
 
 ### Required: live activity row
 
-The "▶ Currently: editing src/api.ts" line is the new visual element that makes the running card *feel alive*. It reads the most recent meaningful event from `agentEvents` store for that agent's id and renders a one-line summary:
+The "▶ Currently: editing src/api.ts" line is the new visual element that makes the running card _feel alive_. It reads the most recent meaningful event from `agentEvents` store for that agent's id and renders a one-line summary:
 
 - If most recent is a tool call → "running tests" / "editing `src/api.ts`" / "reading 4 files" / "thinking…"
 - If most recent is text → first 60 chars of text
 - If most recent is reasoning → "thinking…" with the token count
 - If running but no events yet → "starting…"
 
-Implementation note: this *uses* existing data — no new IPC, no new store, no new tables. The data is in the `agentEvents` store today; it's just not bound to the sidebar card. Categorized as a style change because it surfaces existing data in a new place.
+Implementation note: this _uses_ existing data — no new IPC, no new store, no new tables. The data is in the `agentEvents` store today; it's just not bound to the sidebar card. Categorized as a style change because it surfaces existing data in a new place.
 
 If wiring the live activity row turns out to be more invasive than expected during plan-writing (e.g. requires lifting state from cockpit to sidebar in a way that hurts virtualization), it can be deferred to a follow-up. Without it the cards still ship the typography + lucide-icon row + breathing room — that alone is a major upgrade. **The redesign is not blocked on this row.**
 
@@ -312,7 +312,7 @@ The cockpit body becomes a vertical stream of cards instead of a vertical stream
 ```
 
 - Distinct visual identity (faint purple border-left, italic preview)
-- *Preview is visible by default* — today the entire reasoning is hidden behind a click. Showing the first ~120 chars gives ambient signal without forcing the user to expand.
+- _Preview is visible by default_ — today the entire reasoning is hidden behind a click. Showing the first ~120 chars gives ambient signal without forcing the user to expand.
 - Click → expands to full reasoning text (existing `CollapsibleBlock` mechanism preserved)
 
 #### 5. Tool action card (single tool call)
@@ -346,7 +346,7 @@ The cockpit body becomes a vertical stream of cards instead of a vertical stream
 
 #### 7. Special card: Edit diff (Edit / Write tool result)
 
-When a tool action card is for an `edit` or `write` tool and the input contains `old_string`/`new_string` or `content`, the *expanded view* renders an inline diff instead of JSON:
+When a tool action card is for an `edit` or `write` tool and the input contains `old_string`/`new_string` or `content`, the _expanded view_ renders an inline diff instead of JSON:
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -364,7 +364,7 @@ When a tool action card is for an `edit` or `write` tool and the input contains 
 ```
 
 - For `write` (whole file create), render the new content as a code block with line numbers (no diff, just the content)
-- For `edit`, render an inline diff. Implementation note: the existing `PlainDiffContent` from `components/diff/` is **not** directly reusable — it's wired into Code Review's comment/selection system (file refs, hunk addresses, comment widgets). The clean reuse path is `parseDiff(raw: string): DiffFile[]` from `src/renderer/src/lib/diff-parser.ts`, fed a synthetic git-format diff string built from `old_string`/`new_string`. The resulting `DiffFile[]` then feeds a *new, minimal* `EditDiffCard` renderer (~80 LOC) that draws each `DiffLine` (`add` / `del` / `ctx`) as a single styled row. No new dependencies; new component lives at `components/agents/cards/EditDiffCard.tsx`.
+- For `edit`, render an inline diff. Implementation note: the existing `PlainDiffContent` from `components/diff/` is **not** directly reusable — it's wired into Code Review's comment/selection system (file refs, hunk addresses, comment widgets). The clean reuse path is `parseDiff(raw: string): DiffFile[]` from `src/renderer/src/lib/diff-parser.ts`, fed a synthetic git-format diff string built from `old_string`/`new_string`. The resulting `DiffFile[]` then feeds a _new, minimal_ `EditDiffCard` renderer (~80 LOC) that draws each `DiffLine` (`add` / `del` / `ctx`) as a single styled row. No new dependencies; new component lives at `components/agents/cards/EditDiffCard.tsx`.
 
 #### 8. Bash card (Bash tool result)
 
@@ -447,8 +447,8 @@ The existing playground click-to-open card (`ConsoleLine.tsx:351-372`) stays. Ma
 Today every line shows a timestamp on the right. Proposed:
 
 - Each card's header row optionally shows a timestamp on hover (CSS `:hover` reveal)
-- Cards within the same minute share an *implicit* group — no headers, just the card spacing
-- When the *minute* changes between two adjacent cards, a thin "14:23" timestamp label is rendered in the gutter
+- Cards within the same minute share an _implicit_ group — no headers, just the card spacing
+- When the _minute_ changes between two adjacent cards, a thin "14:23" timestamp label is rendered in the gutter
 
 This kills 80% of the visible-timestamp noise without losing chronological context.
 
@@ -458,28 +458,28 @@ This kills 80% of the visible-timestamp noise without losing chronological conte
 
 ### Typography
 
-| Element | Today | Proposed | Notes |
-|---|---|---|---|
-| Body / card content | 12px | 13px | Still code-friendly, more readable |
-| Card header text | n/a | 12px | New element |
-| Task title (cockpit header) | 12px | 15px | The most important text on screen |
-| Task title (sidebar card) | inherits | 13px / weight 600 | Wraps to 2 lines |
-| Section headers (sidebar) | 10px uppercase | 11px uppercase | Slight breathing room |
-| Tool labels / badges | 10px | 11px | Icon + label legibility |
-| Timestamps | 10px | 10px (kept) | Hover-only / minute-grouped |
-| Meta strip (cockpit header) | 10px | 11px | Duration · model · cost · ctx |
+| Element                     | Today          | Proposed          | Notes                              |
+| --------------------------- | -------------- | ----------------- | ---------------------------------- |
+| Body / card content         | 12px           | 13px              | Still code-friendly, more readable |
+| Card header text            | n/a            | 12px              | New element                        |
+| Task title (cockpit header) | 12px           | 15px              | The most important text on screen  |
+| Task title (sidebar card)   | inherits       | 13px / weight 600 | Wraps to 2 lines                   |
+| Section headers (sidebar)   | 10px uppercase | 11px uppercase    | Slight breathing room              |
+| Tool labels / badges        | 10px           | 11px              | Icon + label legibility            |
+| Timestamps                  | 10px           | 10px (kept)       | Hover-only / minute-grouped        |
+| Meta strip (cockpit header) | 10px           | 11px              | Duration · model · cost · ctx      |
 
 All typography continues to use existing tokens — no new font sizes added to `tokens.ts`. Where the old hardcoded `12px` was used, swap to the appropriate `--bde-size-*` token (extending the token set if the right value isn't already there).
 
 ### Spacing
 
-| Element | Today | Proposed |
-|---|---|---|
-| Card internal padding | `--bde-space-1` / `--bde-space-2` (4-8px) | `--bde-space-3` (12px) |
-| Card vertical gap | implicit (line-height) | `--bde-space-3` (12px) |
-| Card horizontal gutter | none | `--bde-space-3` (12px) per side |
-| Sidebar item padding | `--bde-space-2` | `--bde-space-3` |
-| Cockpit header padding | `0 var(--bde-space-3)` | `0 var(--bde-space-4)` |
+| Element                | Today                                     | Proposed                        |
+| ---------------------- | ----------------------------------------- | ------------------------------- |
+| Card internal padding  | `--bde-space-1` / `--bde-space-2` (4-8px) | `--bde-space-3` (12px)          |
+| Card vertical gap      | implicit (line-height)                    | `--bde-space-3` (12px)          |
+| Card horizontal gutter | none                                      | `--bde-space-3` (12px) per side |
+| Sidebar item padding   | `--bde-space-2`                           | `--bde-space-3`                 |
+| Cockpit header padding | `0 var(--bde-space-3)`                    | `0 var(--bde-space-4)`          |
 
 All spacing continues to use the existing `--bde-space-*` token scale.
 
@@ -488,8 +488,8 @@ All spacing continues to use the existing `--bde-space-*` token scale.
 No new color tokens. Continue using the existing palette in `neon.css` / `agents-neon.css` / `tokens.ts`:
 
 - `--bde-accent` / `--bde-accent-border` / `--bde-accent-surface` — primary cyan
-- `--bde-status-active` — purple (used today for `[think]` prefix and reasoning) — promote to be the *reasoning card* identity
-- `--bde-status-review` — used today for `[tool]` prefix — promote to be the *tool action card* identity
+- `--bde-status-active` — purple (used today for `[think]` prefix and reasoning) — promote to be the _reasoning card_ identity
+- `--bde-status-review` — used today for `[tool]` prefix — promote to be the _tool action card_ identity
 - `--bde-warning` / `--bde-warning-surface` — yellow (stderr, rate limited)
 - `--bde-danger` / `--bde-danger-surface` — red (error)
 - `--bde-status-done` — green (user message accent, completion success)
@@ -498,19 +498,20 @@ No new color tokens. Continue using the existing palette in `neon.css` / `agents
 
 The current letter-in-a-box pattern (`ConsoleLine.tsx:41-51`) is replaced with lucide icons. `lucide-react` is already imported all over the codebase — no new dependency.
 
-| Tool name | Lucide icon | Token color |
-|---|---|---|
-| `bash` | `Terminal` | `--bde-warning` |
-| `read` | `FileText` | `--bde-status-review` (cyan-ish) |
-| `edit` | `Edit3` | `--bde-accent` |
-| `write` | `FilePlus` | `--bde-accent` |
-| `grep` | `Search` | `--bde-status-active` (purple) |
-| `glob` | `Folder` | `--bde-warning` |
-| `agent` / `task` | `Bot` | `--bde-status-done` |
-| `list` | `List` | `--bde-text-muted` |
-| (default) | `Wrench` | `--bde-text-muted` |
+| Tool name        | Lucide icon | Token color                      |
+| ---------------- | ----------- | -------------------------------- |
+| `bash`           | `Terminal`  | `--bde-warning`                  |
+| `read`           | `FileText`  | `--bde-status-review` (cyan-ish) |
+| `edit`           | `Edit3`     | `--bde-accent`                   |
+| `write`          | `FilePlus`  | `--bde-accent`                   |
+| `grep`           | `Search`    | `--bde-status-active` (purple)   |
+| `glob`           | `Folder`    | `--bde-warning`                  |
+| `agent` / `task` | `Bot`       | `--bde-status-done`              |
+| `list`           | `List`      | `--bde-text-muted`               |
+| (default)        | `Wrench`    | `--bde-text-muted`               |
 
 Icon sizes:
+
 - Inline in card header: 16px
 - In tool group icon row: 14px
 - In sidebar fleet card tool row: 14px
@@ -730,7 +731,7 @@ When `showLaunchpad === false && !selectedAgent` (currently `<EmptyState title="
 
 ### Why this matters
 
-Today, walking into the Agents view with nothing selected gives you a passive "select an agent" message. The Fleet at a Glance turns the empty state into an *information surface* — you immediately see whether your fleet is healthy, what's running right now, what just happened. This is the cognitive-load externalization the README talks about.
+Today, walking into the Agents view with nothing selected gives you a passive "select an agent" message. The Fleet at a Glance turns the empty state into an _information surface_ — you immediately see whether your fleet is healthy, what's running right now, what just happened. This is the cognitive-load externalization the README talks about.
 
 It uses **only existing data** — `agents` from `agentHistory` store, events from `agentEvents` store, durations from existing fields. No new IPC, no new tables.
 
@@ -749,47 +750,47 @@ The panel must:
 
 To make the no-features-added contract explicit:
 
-| Functionality | Status |
-|---|---|
-| Spawn ad-hoc / assistant agents via `+` button → `AgentLaunchpad` modal | Preserved |
-| Spawn flow opens `LaunchpadGrid` with playground templates | Preserved |
-| Spawn modal can be triggered via command palette (`bde:open-spawn-modal` event) | Preserved |
-| Sidebar search input filters agents by task / repo / model | Preserved |
-| Sidebar repo chip filter (when ≥2 repos) | Preserved |
-| Sidebar sections: Running / Recent (24h) / History (collapsible) | Preserved |
-| Arrow Up/Down keyboard navigation in sidebar | Preserved |
-| Load More button when `hasMore` | Preserved |
-| Click sidebar agent card → loads in cockpit | Preserved |
-| Selected agent visual treatment (scale + glow) | Preserved |
-| Cmd+F → opens `ConsoleSearchBar` over the cockpit body | Preserved |
-| Search next/prev navigation through matching events | Preserved |
-| `Jump to latest` floating button when scrolled up | Preserved |
-| Auto-scroll to tail when at bottom | Preserved |
-| Virtualized scrolling via `@tanstack/react-virtual` | Preserved |
-| `CommandBar` with steering, slash commands, attachments, autocomplete | Preserved |
+| Functionality                                                                            | Status    |
+| ---------------------------------------------------------------------------------------- | --------- |
+| Spawn ad-hoc / assistant agents via `+` button → `AgentLaunchpad` modal                  | Preserved |
+| Spawn flow opens `LaunchpadGrid` with playground templates                               | Preserved |
+| Spawn modal can be triggered via command palette (`bde:open-spawn-modal` event)          | Preserved |
+| Sidebar search input filters agents by task / repo / model                               | Preserved |
+| Sidebar repo chip filter (when ≥2 repos)                                                 | Preserved |
+| Sidebar sections: Running / Recent (24h) / History (collapsible)                         | Preserved |
+| Arrow Up/Down keyboard navigation in sidebar                                             | Preserved |
+| Load More button when `hasMore`                                                          | Preserved |
+| Click sidebar agent card → loads in cockpit                                              | Preserved |
+| Selected agent visual treatment (scale + glow)                                           | Preserved |
+| Cmd+F → opens `ConsoleSearchBar` over the cockpit body                                   | Preserved |
+| Search next/prev navigation through matching events                                      | Preserved |
+| `Jump to latest` floating button when scrolled up                                        | Preserved |
+| Auto-scroll to tail when at bottom                                                       | Preserved |
+| Virtualized scrolling via `@tanstack/react-virtual`                                      | Preserved |
+| `CommandBar` with steering, slash commands, attachments, autocomplete                    | Preserved |
 | Slash commands: `/stop`, `/retry`, `/focus`, `/checkpoint`, `/test`, `/scope`, `/status` | Preserved |
-| Image and text attachment support in CommandBar | Preserved |
-| `agent:clear-console` event handler | Preserved |
-| Command palette commands: "Spawn Agent", "Clear Console" | Preserved |
-| Killing agents via `+` kill button on AgentCard or via ConsoleHeader stop button | Preserved |
-| Stop confirmation modal with uncommitted-changes warning | Preserved |
-| Promote-to-Code-Review button (adhoc done agents with worktree) | Preserved |
-| Open terminal in agent directory | Preserved |
-| Copy log to clipboard | Preserved |
-| Pending optimistic message rendering (opacity 0.6) | Preserved |
-| Event eviction banner ("Older events were trimmed") | Preserved |
-| Playground modal opens on PlaygroundCard click | Preserved |
-| Live duration ticker for running agents | Preserved |
-| Live ctx token counter polling | Preserved |
-| Phase label (`derivePhaseLabel`) for running agents in header | Preserved |
-| Scratchpad info tooltip + first-time banner (rebuilt in CSS, same content) | Preserved |
-| Repo lowercase normalization (existing `repo` field semantics) | Preserved |
+| Image and text attachment support in CommandBar                                          | Preserved |
+| `agent:clear-console` event handler                                                      | Preserved |
+| Command palette commands: "Spawn Agent", "Clear Console"                                 | Preserved |
+| Killing agents via `+` kill button on AgentCard or via ConsoleHeader stop button         | Preserved |
+| Stop confirmation modal with uncommitted-changes warning                                 | Preserved |
+| Promote-to-Code-Review button (adhoc done agents with worktree)                          | Preserved |
+| Open terminal in agent directory                                                         | Preserved |
+| Copy log to clipboard                                                                    | Preserved |
+| Pending optimistic message rendering (opacity 0.6)                                       | Preserved |
+| Event eviction banner ("Older events were trimmed")                                      | Preserved |
+| Playground modal opens on PlaygroundCard click                                           | Preserved |
+| Live duration ticker for running agents                                                  | Preserved |
+| Live ctx token counter polling                                                           | Preserved |
+| Phase label (`derivePhaseLabel`) for running agents in header                            | Preserved |
+| Scratchpad info tooltip + first-time banner (rebuilt in CSS, same content)               | Preserved |
+| Repo lowercase normalization (existing `repo` field semantics)                           | Preserved |
 
 ---
 
 ## Open Questions
 
-1. **Live activity row data binding (Section 2):** to render "▶ Currently: editing src/api.ts" in the sidebar card, we need the latest event for each running agent. Today the cockpit subscribes to `agentEvents[selectedId]`. The sidebar would need to subscribe to events for *all running agents*, which could affect virtualization or trigger renders on every event. **To resolve during plan-writing:** profile the cost; if expensive, fall back to a lighter "running" / "thinking" / "tool" state derived from the latest event type only. As noted in Section 2, the redesign is not blocked on this row.
+1. **Live activity row data binding (Section 2):** to render "▶ Currently: editing src/api.ts" in the sidebar card, we need the latest event for each running agent. Today the cockpit subscribes to `agentEvents[selectedId]`. The sidebar would need to subscribe to events for _all running agents_, which could affect virtualization or trigger renders on every event. **To resolve during plan-writing:** profile the cost; if expensive, fall back to a lighter "running" / "thinking" / "tool" state derived from the latest event type only. As noted in Section 2, the redesign is not blocked on this row.
 
 2. ~~**Edit diff rendering (Section 3, card #7):** we're proposing to reuse `PlainDiffContent` from `components/diff/`. Need to verify it accepts arbitrary `oldText`/`newText` strings (vs. only git-format diffs).~~ **Resolved during spec finalization:** `PlainDiffContent` is heavyweight (wired into Code Review comment/selection infrastructure) and not directly reusable. The clean path is `parseDiff(raw: string): DiffFile[]` from `lib/diff-parser.ts` — feed it a synthetic git-format diff built from `old_string`/`new_string`, then render the resulting `DiffFile[]` with a new minimal `EditDiffCard` (~80 LOC). See Section 3 card #7 for details.
 
@@ -805,7 +806,7 @@ To make the no-features-added contract explicit:
 
 ## Out of Scope
 
-Explicitly *not* in this redesign:
+Explicitly _not_ in this redesign:
 
 - New IPC channels, new agent SDK options, new database tables or columns
 - Changes to event grouping logic in `pair-events.ts`

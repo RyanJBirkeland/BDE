@@ -108,9 +108,7 @@ function checkRateLimitThreshold(): void {
   state.warningEmitted = true
   // HH:MM in UTC — locale-agnostic, unambiguous, and cheap to format.
   const resetTime = new Date(resetEpoch * 1_000).toISOString().slice(11, 16)
-  logger.warn(
-    `Rate limit low: ${remaining}/${limit} remaining. Resets at ${resetTime} UTC.`
-  )
+  logger.warn(`Rate limit low: ${remaining}/${limit} remaining. Resets at ${resetTime} UTC.`)
   broadcastGitHubError({
     kind: 'rate-limit',
     status: 403,

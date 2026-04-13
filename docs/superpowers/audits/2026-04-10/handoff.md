@@ -34,9 +34,11 @@ a8332e32  Fix Task Pipeline filter state pollution + banner       done
 ### Agent worktrees to know about
 
 Task 05 lives at:
+
 ```
 ~/worktrees/bde/Users-ryan-projects-BDE/b08b2071bf4cbe52e8d610237f48aea6
 ```
+
 …on branch `agent/agents-view-redesign-05-card-grammar-con-b08b2071`.
 
 Note the case: **manual CLI worktrees go under `~/worktrees/BDE/` (uppercase)**, **agent-spawned worktrees go under `~/worktrees/bde/Users-ryan-projects-BDE/` (lowercase + flattened repo path)**. This is a documented convention in `CLAUDE.md` and it tripped me up briefly during Ship It commands.
@@ -48,11 +50,13 @@ Note the case: **manual CLI worktrees go under `~/worktrees/BDE/` (uppercase)**,
 ### 1. Watch task 05 through to completion
 
 Check state:
+
 ```bash
 sqlite3 ~/.bde/bde.db "SELECT status, claimed_by FROM sprint_tasks WHERE id='b08b2071bf4cbe52e8d610237f48aea6';"
 ```
 
 **If `status=review`:** inspect the diff and Ship It. Diff is visible via:
+
 ```bash
 cd ~/worktrees/bde/Users-ryan-projects-BDE/b08b2071bf4cbe52e8d610237f48aea6
 git log --oneline main..HEAD
@@ -60,6 +64,7 @@ git diff main --stat
 ```
 
 Review checklist for task 05's work:
+
 - [ ] 7 conversation card files updated with new card chrome (no `[agent]`/`[user]`/etc. prefix text)
 - [ ] `ThinkingCard.tsx` shows ~120-char preview by default (not hidden behind a click)
 - [ ] `UserMessageCard.tsx` right-aligned via CSS
@@ -68,6 +73,7 @@ Review checklist for task 05's work:
 - [ ] CSS uses `--bde-space-*` tokens, not hardcoded pixel values (the filter-fix agent failed this; watch for it here)
 
 **Ship It pattern** (from `CLAUDE.md`):
+
 ```bash
 cd ~/projects/BDE
 git fetch origin main
@@ -88,6 +94,7 @@ git branch -D agent/agents-view-redesign-05-card-grammar-con-b08b2071
 Once task 05 is `done`, task 06 (`c7c3cd91`) auto-unblocks via the terminal-status hook → `resolveDependents`. The drain loop picks it up within ~30s. It's a bigger task (4944-char spec, lucide tool icon replacement + `ToolActionCard`, `ToolPairCard`, `ToolGroupCard`, `BashCard`, `ReadCard`, `EditDiffCard`) so expect 20-40 min runtime.
 
 Review checklist for task 06:
+
 - [ ] `cards/util.ts` rewritten to return `{ Icon: LucideIcon, color: string }` instead of `{ letter, iconClass }`
 - [ ] No more single-letter tool "icons" (`$`, `R`, `E`, `W`) anywhere
 - [ ] `EditDiffCard.tsx` exists, uses `parseDiff()` from `lib/diff-parser.ts` to render synthetic diffs
@@ -140,7 +147,7 @@ f4b48a0c Agents View Redesign 03: Cockpit header growth + typography
 
 **Impact before the fix:** Pipeline agents were systematically shipping code without the test coverage the spec required. Tasks 01-04 and 07 still shipped usable code because their agents could infer scope from the Problem/Solution portions, but any requirement at the bottom of a spec was silently ignored. This is a product-wide quality tax that had been baked in for an unknown amount of time.
 
-**The fix:** cap raised to 8000 chars (~2000 words) — covers the `CLAUDE.md` "under 500 words" guideline with headroom. Also added explicit prompt wording: *"If the spec lists test files to create or modify, writing those tests is REQUIRED, not optional."*
+**The fix:** cap raised to 8000 chars (~2000 words) — covers the `CLAUDE.md` "under 500 words" guideline with headroom. Also added explicit prompt wording: _"If the spec lists test files to create or modify, writing those tests is REQUIRED, not optional."_
 
 **Watch for:** task 05 is the first run with the fix in place. If it produces test files, the fix is validated. If it doesn't, there's a deeper prompt issue to dig into.
 
@@ -149,6 +156,7 @@ f4b48a0c Agents View Redesign 03: Cockpit header growth + typography
 `SprintPipeline.tsx` applies four filters (`statusFilter`, `repoFilter`, `tagFilter`, `searchQuery`) from the `useSprintUI` store before partitioning and rendering. `DashboardView.tsx` uses raw unfiltered tasks. This meant clicking a Dashboard stage box (via `navigateToSprintWithFilter`) left a persistent filter active that silently hid tasks when the user navigated to the Task Pipeline view.
 
 Three secondary bugs compounded it:
+
 1. `PipelineFilterBar.tsx:34` self-hides when there's only one repo + no searchQuery + no presets — no UI to see or clear an active filter
 2. `hasActiveFilters` on that same bar was missing `tagFilter` in the check
 3. "Show All Tasks" command palette only cleared `statusFilter`, not the other three
@@ -163,11 +171,12 @@ The fix (commits `4a253ec0` + `6f3188cf`) adds a `PipelineFilterBanner` that's a
 
 ### Direct SQL insert into `sprint_tasks` bypasses IPC-level auto-blocking, but the drain loop re-checks
 
-`src/main/agent-manager/index.ts:388-389` has a defensive `_checkAndBlockDeps` call at claim time. So direct SQL inserts (bypassing `sprint:create` IPC) are safe — the drain loop catches unsatisfied dependencies at claim time and auto-blocks the task. Confirmed by reading the code *and* seeing task 02 / 06 get correctly auto-blocked after direct SQL insertion in the redesign epic.
+`src/main/agent-manager/index.ts:388-389` has a defensive `_checkAndBlockDeps` call at claim time. So direct SQL inserts (bypassing `sprint:create` IPC) are safe — the drain loop catches unsatisfied dependencies at claim time and auto-blocks the task. Confirmed by reading the code _and_ seeing task 02 / 06 get correctly auto-blocked after direct SQL insertion in the redesign epic.
 
 ### Pipeline agent completion flow — what NOT to touch
 
 When agents complete successfully:
+
 1. Agent commits to their branch in the agent worktree
 2. Task transitions `active → review`
 3. **Worktree is preserved** for human inspection
@@ -187,12 +196,14 @@ The completion logic is in `src/main/agent-manager/completion.ts` (uses `git add
    - `src/renderer/src/components/agents/AgentCard.css`
    - `src/renderer/src/components/agents/ConsoleHeader.css`
    - `src/renderer/src/components/agents/cards/*.css` (after 05 + 06 land)
-   Good candidate for a pipeline task with a small (~1500-word) spec.
+     Good candidate for a pipeline task with a small (~1500-word) spec.
 
 2. **`spawn git ENOENT` in the partial-diff capture cleanup path.** When a task fails, BDE tries to capture a partial git diff from the agent's worktree. The spawn fails with ENOENT (git not found) — this is a PATH issue in Electron's child process environment during the error/cleanup hook. Log entry from task 05's first failed run:
+
    ```
    [WARN] [agent-manager] Failed to capture partial diff for task b08b2071...: Error: spawn git ENOENT
    ```
+
    Doesn't corrupt anything, just means the `partial_diff` column stays null on failed runs. Likely fix: use `execFile` with an absolute path or explicit env.PATH in the cleanup hook. Check `src/main/agent-manager/run-agent.ts` or `completion.ts` for the partial-diff code path.
 
 3. **Visual QA pass against the spec's 29-item acceptance checklist.** After 05 + 06 land, spend ~30 minutes walking through `docs/superpowers/specs/2026-04-10-agents-view-redesign-design.md`'s "Acceptance Criteria" section with the running app. Expect ~3-5 iteration items.

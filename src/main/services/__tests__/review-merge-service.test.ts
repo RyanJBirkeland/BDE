@@ -139,7 +139,14 @@ describe('executeMergeStrategy (squash)', () => {
       return { stdout: '', stderr: '' }
     })
 
-    const result = await executeMergeStrategy(branch, repoPath, 'squash', 'task1', 'My Task', mockEnv)
+    const result = await executeMergeStrategy(
+      branch,
+      repoPath,
+      'squash',
+      'task1',
+      'My Task',
+      mockEnv
+    )
 
     expect(result.success).toBe(true)
     // Verify NO squash merge or commit happened
@@ -161,7 +168,14 @@ describe('executeMergeStrategy (squash)', () => {
       return { stdout: '', stderr: '' }
     })
 
-    const result = await executeMergeStrategy(branch, repoPath, 'squash', 'task1', 'My Task', mockEnv)
+    const result = await executeMergeStrategy(
+      branch,
+      repoPath,
+      'squash',
+      'task1',
+      'My Task',
+      mockEnv
+    )
 
     expect(result.success).toBe(true)
     expect(gitCalls.some((args) => args[0] === 'merge' && args[1] === '--squash')).toBe(true)

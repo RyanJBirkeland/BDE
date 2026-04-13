@@ -9,6 +9,7 @@ The "Create your first task" button on the onboarding DoneStep ships a sample sp
 Replace the placeholder with a real, working sample task that any pipeline agent can complete unmodified on the BDE repo. The sample is BDE-specific (`repo: 'BDE'`), so we can hardcode `src/main/index.ts` — that file exists and is the documented main process entry point.
 
 Edit `SAMPLE_FIRST_TASK.spec` so:
+
 - `## Files to Change` lists the literal path `src/main/index.ts` (not a placeholder)
 - The "Solution" section's "Update this path before queuing" sentence is removed
 - The task body still asks for a short top-of-file comment (≤10 lines, no behavior change)

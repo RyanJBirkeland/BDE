@@ -41,14 +41,14 @@ Hard dependencies resolve only on `done` status (`HARD_SATISFIED_STATUSES` in `s
 
 ## Files in this folder
 
-| File | Purpose |
-|---|---|
-| `README.md` | This file |
-| `task-01-filetree-extraction.md` | Task 1 spec (pipeline-agent-ready) |
-| `task-02-shell-topbar.md` | Task 2 spec |
-| `task-03-ai-assistant-scaffold.md` | Task 3 spec |
-| `task-04-batch-responsive-polish.md` | Task 4 spec |
-| `queue.py` | Idempotent queueing script — direct SQL, bypasses IPC readiness check |
+| File                                 | Purpose                                                               |
+| ------------------------------------ | --------------------------------------------------------------------- |
+| `README.md`                          | This file                                                             |
+| `task-01-filetree-extraction.md`     | Task 1 spec (pipeline-agent-ready)                                    |
+| `task-02-shell-topbar.md`            | Task 2 spec                                                           |
+| `task-03-ai-assistant-scaffold.md`   | Task 3 spec                                                           |
+| `task-04-batch-responsive-polish.md` | Task 4 spec                                                           |
+| `queue.py`                           | Idempotent queueing script — direct SQL, bypasses IPC readiness check |
 
 ## Queueing
 

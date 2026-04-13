@@ -37,7 +37,7 @@ describe('useReviewCommits', () => {
     const { result } = renderHook(() => useReviewCommits(null))
 
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
     })
 
     expect(result.current.commits).toEqual([])
@@ -132,7 +132,9 @@ describe('useReviewCommits', () => {
           setTimeout(
             () =>
               resolve({
-                commits: [{ hash: 'old123', message: 'old commit', author: 'Ryan', date: '2026-04-10' }]
+                commits: [
+                  { hash: 'old123', message: 'old commit', author: 'Ryan', date: '2026-04-10' }
+                ]
               }),
             100
           )
@@ -151,9 +153,7 @@ describe('useReviewCommits', () => {
     })
 
     // Should not have set commits from the cancelled request
-    expect(result.current.commits).not.toContainEqual(
-      expect.objectContaining({ hash: 'old123' })
-    )
+    expect(result.current.commits).not.toContainEqual(expect.objectContaining({ hash: 'old123' }))
   })
 
   it('should handle non-Error exceptions', async () => {

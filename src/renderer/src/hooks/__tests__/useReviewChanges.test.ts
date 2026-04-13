@@ -84,7 +84,9 @@ describe('useReviewChanges', () => {
     const snapshot = {
       capturedAt: '2026-04-11T12:00:00Z',
       totals: { additions: 5, deletions: 2, files: 1 },
-      files: [{ path: 'file1.ts', status: 'M', additions: 5, deletions: 2, patch: 'snapshot-diff' }],
+      files: [
+        { path: 'file1.ts', status: 'M', additions: 5, deletions: 2, patch: 'snapshot-diff' }
+      ],
       truncated: false
     }
 
@@ -181,7 +183,13 @@ describe('useReviewChanges', () => {
     mockGetDiff.mockImplementation(
       () =>
         new Promise((resolve) =>
-          setTimeout(() => resolve({ files: [{ path: 'old.ts', status: 'M', additions: 1, deletions: 0, patch: '' }] }), 100)
+          setTimeout(
+            () =>
+              resolve({
+                files: [{ path: 'old.ts', status: 'M', additions: 1, deletions: 0, patch: '' }]
+              }),
+            100
+          )
         )
     )
 
@@ -197,9 +205,7 @@ describe('useReviewChanges', () => {
     })
 
     // Should not have set files from the cancelled request
-    expect(result.current.files).not.toContainEqual(
-      expect.objectContaining({ path: 'old.ts' })
-    )
+    expect(result.current.files).not.toContainEqual(expect.objectContaining({ path: 'old.ts' }))
   })
 
   it('should load file diff when a file is selected', async () => {
@@ -237,7 +243,9 @@ describe('useReviewChanges', () => {
     const snapshot = {
       capturedAt: '2026-04-11T12:00:00Z',
       totals: { additions: 5, deletions: 2, files: 1 },
-      files: [{ path: 'file1.ts', status: 'M', additions: 5, deletions: 2, patch: 'snapshot-patch' }],
+      files: [
+        { path: 'file1.ts', status: 'M', additions: 5, deletions: 2, patch: 'snapshot-patch' }
+      ],
       truncated: false
     }
 

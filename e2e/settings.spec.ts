@@ -41,8 +41,12 @@ test.describe('Settings view', () => {
     const themeButtons = window.locator('.settings-theme-buttons')
     await expect(themeButtons).toBeVisible({ timeout: 3_000 })
 
-    await expect(themeButtons.locator('button', { hasText: 'Dark' })).toBeVisible({ timeout: 3_000 })
-    await expect(themeButtons.locator('button', { hasText: 'Light' })).toBeVisible({ timeout: 3_000 })
+    await expect(themeButtons.locator('button', { hasText: 'Dark' })).toBeVisible({
+      timeout: 3_000
+    })
+    await expect(themeButtons.locator('button', { hasText: 'Light' })).toBeVisible({
+      timeout: 3_000
+    })
   })
 
   test('Sidebar section switching — Repositories', async ({ bde }) => {

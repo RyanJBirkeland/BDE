@@ -17,6 +17,7 @@
 ### Task 1: Add new `--bde-*` tokens to `base.css`
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/base.css`
 
 The pro-dark and pro-light theme blocks need the new tokens before any references to them are written. Add them at the end of each theme block.
@@ -26,18 +27,18 @@ The pro-dark and pro-light theme blocks need the new tokens before any reference
 Find the closing `}` of the `html.theme-pro-dark` block and insert before it:
 
 ```css
-  /* ── New unified tokens ── */
-  --bde-accent-surface:   rgba(74, 136, 199, 0.10);
-  --bde-accent-border:    rgba(74, 136, 199, 0.28);
-  --bde-warning-surface:  rgba(204, 136, 51, 0.10);
-  --bde-warning-border:   rgba(204, 136, 51, 0.30);
-  --bde-danger-surface:   rgba(219, 92, 92, 0.10);
-  --bde-danger-border:    rgba(219, 92, 92, 0.30);
-  --bde-status-active:    #7c6af7;
-  --bde-status-review:    var(--bde-accent);
-  --bde-status-blocked:   var(--bde-warning);
-  --bde-status-done:      #4caf82;
-  --bde-status-queued:    var(--bde-accent);
+/* ── New unified tokens ── */
+--bde-accent-surface: rgba(74, 136, 199, 0.1);
+--bde-accent-border: rgba(74, 136, 199, 0.28);
+--bde-warning-surface: rgba(204, 136, 51, 0.1);
+--bde-warning-border: rgba(204, 136, 51, 0.3);
+--bde-danger-surface: rgba(219, 92, 92, 0.1);
+--bde-danger-border: rgba(219, 92, 92, 0.3);
+--bde-status-active: #7c6af7;
+--bde-status-review: var(--bde-accent);
+--bde-status-blocked: var(--bde-warning);
+--bde-status-done: #4caf82;
+--bde-status-queued: var(--bde-accent);
 ```
 
 - [ ] **Step 2: Add tokens to `html.theme-pro-light` block in `base.css`**
@@ -45,18 +46,18 @@ Find the closing `}` of the `html.theme-pro-dark` block and insert before it:
 Find the closing `}` of the `html.theme-pro-light` block and insert before it:
 
 ```css
-  /* ── New unified tokens ── */
-  --bde-accent-surface:   rgba(38, 117, 191, 0.08);
-  --bde-accent-border:    rgba(38, 117, 191, 0.25);
-  --bde-warning-surface:  rgba(184, 115, 32, 0.08);
-  --bde-warning-border:   rgba(184, 115, 32, 0.28);
-  --bde-danger-surface:   rgba(201, 64, 64, 0.08);
-  --bde-danger-border:    rgba(201, 64, 64, 0.28);
-  --bde-status-active:    #6356e5;
-  --bde-status-review:    var(--bde-accent);
-  --bde-status-blocked:   var(--bde-warning);
-  --bde-status-done:      #3a9b6f;
-  --bde-status-queued:    var(--bde-accent);
+/* ── New unified tokens ── */
+--bde-accent-surface: rgba(38, 117, 191, 0.08);
+--bde-accent-border: rgba(38, 117, 191, 0.25);
+--bde-warning-surface: rgba(184, 115, 32, 0.08);
+--bde-warning-border: rgba(184, 115, 32, 0.28);
+--bde-danger-surface: rgba(201, 64, 64, 0.08);
+--bde-danger-border: rgba(201, 64, 64, 0.28);
+--bde-status-active: #6356e5;
+--bde-status-review: var(--bde-accent);
+--bde-status-blocked: var(--bde-warning);
+--bde-status-done: #3a9b6f;
+--bde-status-queued: var(--bde-accent);
 ```
 
 - [ ] **Step 3: Verify tokens exist in both theme blocks**
@@ -79,6 +80,7 @@ git commit -m "chore(css): add new --bde-* status and surface tokens to pro them
 ### Task 2: Remove old themes from `base.css`
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/base.css`
 
 Remove three legacy theme blocks. The `:root` block keeps only structural variables (spacing, radii, fonts, transitions) — strip its color definitions.
@@ -125,6 +127,7 @@ git commit -m "chore(css): remove theme-light, theme-warm, and root color vars"
 ### Task 3: Update theme store + Settings UI
 
 **Files:**
+
 - Modify: `src/renderer/src/stores/theme.ts`
 - Modify: `src/renderer/src/views/SettingsView.tsx` (or wherever the Appearance tab theme selector lives — search for `'warm'` in the settings components)
 
@@ -147,6 +150,7 @@ b) Add localStorage migration: if stored value is `'warm'`, rewrite to `'dark'` 
 c) Remove the legacy `'pro-dark'` → `'dark'` and `'pro-light'` → `'light'` migration entries (they've already run).
 
 The migration block should look like (migrate `'warm'` only — the `'pro-dark'`/`'pro-light'` migration from a previous sprint has already run and should be removed):
+
 ```ts
 const stored = localStorage.getItem('bde-theme')
 if (stored === 'warm') {
@@ -191,6 +195,7 @@ git commit -m "chore(css): remove warm theme, add migration for legacy stored va
 ### Task 4: Delete `neon.css` and update its import
 
 **Files:**
+
 - Delete: `src/renderer/src/assets/neon.css`
 - Modify: `src/renderer/src/assets/main.css`
 - Modify: `src/renderer/src/App.tsx`
@@ -214,6 +219,7 @@ rm src/renderer/src/assets/neon.css
 - [ ] **Step 3: Remove import from `main.css`**
 
 In `src/renderer/src/assets/main.css`, delete the line:
+
 ```css
 @import './neon.css';
 ```
@@ -221,6 +227,7 @@ In `src/renderer/src/assets/main.css`, delete the line:
 - [ ] **Step 4: Remove import from `App.tsx`**
 
 In `src/renderer/src/App.tsx`, delete the line:
+
 ```ts
 import './assets/neon.css'
 ```
@@ -453,6 +460,7 @@ git commit -m "chore(css): replace all remaining --neon-* tokens with --bde-* eq
 ### Task 8: Update `tokens.ts` and `neonVar` + all call sites
 
 **Files:**
+
 - Modify: `src/renderer/src/design-system/tokens.ts`
 - Modify: `src/renderer/src/components/neon/types.ts`
 - Modify (8 files using `tokens.neon.*`): `src/renderer/src/components/planner/CreateEpicModal.tsx`, `EpicList.tsx`, `EpicDetail.tsx`, `src/renderer/src/components/neon/NeonCard.tsx`, `PipelineFlow.tsx`, `NeonProgress.tsx`, `GlassPanel.tsx`, `NeonProgress.test.tsx`
@@ -512,30 +520,30 @@ Replace the implementation in `src/renderer/src/components/neon/types.ts`:
 export type NeonAccent = 'cyan' | 'pink' | 'blue' | 'purple' | 'orange' | 'red'
 
 const colorMap: Record<NeonAccent, string> = {
-  cyan:   'var(--bde-accent)',
-  blue:   'var(--bde-status-review)',
+  cyan: 'var(--bde-accent)',
+  blue: 'var(--bde-status-review)',
   purple: 'var(--bde-status-active)',
-  pink:   'var(--bde-status-done)',
+  pink: 'var(--bde-status-done)',
   orange: 'var(--bde-warning)',
-  red:    'var(--bde-danger)'
+  red: 'var(--bde-danger)'
 }
 
 const surfaceMap: Record<NeonAccent, string> = {
-  cyan:   'var(--bde-accent-surface)',
-  blue:   'var(--bde-accent-surface)',
+  cyan: 'var(--bde-accent-surface)',
+  blue: 'var(--bde-accent-surface)',
   purple: 'var(--bde-accent-surface)',
-  pink:   'var(--bde-accent-surface)',
+  pink: 'var(--bde-accent-surface)',
   orange: 'var(--bde-warning-surface)',
-  red:    'var(--bde-danger-surface)'
+  red: 'var(--bde-danger-surface)'
 }
 
 const borderMap: Record<NeonAccent, string> = {
-  cyan:   'var(--bde-accent-border)',
-  blue:   'var(--bde-accent-border)',
+  cyan: 'var(--bde-accent-border)',
+  blue: 'var(--bde-accent-border)',
   purple: 'var(--bde-accent-border)',
-  pink:   'var(--bde-accent-border)',
+  pink: 'var(--bde-accent-border)',
   orange: 'var(--bde-warning-border)',
-  red:    'var(--bde-danger-border)'
+  red: 'var(--bde-danger-border)'
 }
 
 /** Maps a legacy NeonAccent name to its --bde-* CSS custom property */
@@ -562,6 +570,7 @@ grep -rn 'tokens\.neon\.' src/renderer/src/
 ```
 
 For each file, update the reference using this mapping:
+
 - `tokens.neon.cyan` → `tokens.color.accent`
 - `tokens.neon.pink` → `tokens.status.done`
 - `tokens.neon.blue` → `tokens.status.review`
@@ -610,33 +619,33 @@ Some features have both a legacy CSS file and a `-neon.css` version. Merge first
 
 **Files with both legacy and neon versions (merge legacy → neon first):**
 
-| Legacy | Neon (target) |
-|---|---|
-| `src/renderer/src/assets/agents.css` (83 lines) | `src/renderer/src/assets/agents-neon.css` |
+| Legacy                                             | Neon (target)                                  |
+| -------------------------------------------------- | ---------------------------------------------- |
+| `src/renderer/src/assets/agents.css` (83 lines)    | `src/renderer/src/assets/agents-neon.css`      |
 | `src/renderer/src/assets/settings.css` (215 lines) | `src/renderer/src/assets/settings-v2-neon.css` |
-| `src/renderer/src/assets/ide.css` (395 lines) | `src/renderer/src/assets/ide-neon.css` |
-| `src/renderer/src/assets/diff.css` (514 lines) | `src/renderer/src/assets/diff-neon.css` |
+| `src/renderer/src/assets/ide.css` (395 lines)      | `src/renderer/src/assets/ide-neon.css`         |
+| `src/renderer/src/assets/diff.css` (514 lines)     | `src/renderer/src/assets/diff-neon.css`        |
 
 **All neon files to rename (after merges complete):**
 
-| Old name | New name |
-|---|---|
-| `neon-primitives.css` | `primitives.css` |
-| `neon-shell.css` | `shell.css` |
-| `sprint-neon.css` | absorbed into `sprint.css` |
-| `agents-neon.css` | `agents.css` |
-| `task-workbench-neon.css` | `task-workbench.css` |
-| `source-control-neon.css` | `source-control.css` |
-| `code-review-neon.css` | `code-review.css` |
-| `dashboard-neon.css` | `dashboard.css` |
-| `settings-v2-neon.css` | `settings.css` |
-| `planner-neon.css` | `planner.css` |
-| `ide-neon.css` | `ide.css` |
-| `agent-launchpad-neon.css` | `agent-launchpad.css` |
-| `onboarding-neon.css` | `onboarding.css` |
-| `diff-neon.css` | `diff.css` |
-| `sankey-pipeline-neon.css` | `sankey-pipeline.css` |
-| `sprint-pipeline-neon.css` | `sprint-pipeline.css` |
+| Old name                   | New name                   |
+| -------------------------- | -------------------------- |
+| `neon-primitives.css`      | `primitives.css`           |
+| `neon-shell.css`           | `shell.css`                |
+| `sprint-neon.css`          | absorbed into `sprint.css` |
+| `agents-neon.css`          | `agents.css`               |
+| `task-workbench-neon.css`  | `task-workbench.css`       |
+| `source-control-neon.css`  | `source-control.css`       |
+| `code-review-neon.css`     | `code-review.css`          |
+| `dashboard-neon.css`       | `dashboard.css`            |
+| `settings-v2-neon.css`     | `settings.css`             |
+| `planner-neon.css`         | `planner.css`              |
+| `ide-neon.css`             | `ide.css`                  |
+| `agent-launchpad-neon.css` | `agent-launchpad.css`      |
+| `onboarding-neon.css`      | `onboarding.css`           |
+| `diff-neon.css`            | `diff.css`                 |
+| `sankey-pipeline-neon.css` | `sankey-pipeline.css`      |
+| `sprint-pipeline-neon.css` | `sprint-pipeline.css`      |
 
 - [ ] **Step 1: Merge `agents.css` into `agents-neon.css`**
 
@@ -713,6 +722,7 @@ git commit -m "chore(css): merge legacy CSS files, rename -neon.css files to dro
 ### Task 10: Update all CSS import statements
 
 **Files:**
+
 - Modify: `src/renderer/src/assets/main.css`
 - Modify: `src/renderer/src/App.tsx`
 - Modify: `src/renderer/src/views/IDEView.tsx`
@@ -774,17 +784,17 @@ Replace the import block. The new imports (only files not lazy-loaded by compone
 
 For each file identified in Step 1:
 
-| Old import | New import |
-|---|---|
-| `import './assets/neon-shell.css'` | `import './assets/shell.css'` |
-| `import './assets/agents-neon.css'` | `import './assets/agents.css'` |
-| `import '../assets/ide-neon.css'` | `import '../assets/ide.css'` |
-| `import '../assets/dashboard-neon.css'` | `import '../assets/dashboard.css'` |
+| Old import                                       | New import                                  |
+| ------------------------------------------------ | ------------------------------------------- |
+| `import './assets/neon-shell.css'`               | `import './assets/shell.css'`               |
+| `import './assets/agents-neon.css'`              | `import './assets/agents.css'`              |
+| `import '../assets/ide-neon.css'`                | `import '../assets/ide.css'`                |
+| `import '../assets/dashboard-neon.css'`          | `import '../assets/dashboard.css'`          |
 | `import '../../assets/sprint-pipeline-neon.css'` | `import '../../assets/sprint-pipeline.css'` |
-| `import '../../assets/task-workbench-neon.css'` | `import '../../assets/task-workbench.css'` |
+| `import '../../assets/task-workbench-neon.css'`  | `import '../../assets/task-workbench.css'`  |
 | `import '../../assets/agent-launchpad-neon.css'` | `import '../../assets/agent-launchpad.css'` |
 | `import '../../assets/sankey-pipeline-neon.css'` | `import '../../assets/sankey-pipeline.css'` |
-| `import '../../assets/onboarding-neon.css'` | `import '../../assets/onboarding.css'` |
+| `import '../../assets/onboarding-neon.css'`      | `import '../../assets/onboarding.css'`      |
 
 - [ ] **Step 5: Verify no broken imports remain**
 
@@ -834,6 +844,7 @@ git commit -m "chore(css): update all CSS import paths to use renamed files — 
 ### Task 11: Delete `ParticleField` and `ScanlineOverlay`
 
 **Files:**
+
 - Delete: `src/renderer/src/components/neon/ParticleField.tsx`
 - Delete: `src/renderer/src/components/neon/ScanlineOverlay.tsx`
 - Modify: `src/renderer/src/components/neon/index.ts`
@@ -856,6 +867,7 @@ For each file found in Step 1 (besides the files being deleted), remove the impo
 - [ ] **Step 4: Remove exports from `index.ts`**
 
 In `src/renderer/src/components/neon/index.ts`, remove:
+
 ```ts
 export { ScanlineOverlay } from './ScanlineOverlay'
 export { ParticleField } from './ParticleField'
@@ -897,6 +909,7 @@ git commit -m "chore(css): delete ParticleField and ScanlineOverlay components"
 ### Task 12: Gut neon component internals
 
 **Files:**
+
 - Modify: `src/renderer/src/components/neon/NeonCard.tsx`
 - Modify: `src/renderer/src/components/neon/GlassPanel.tsx`
 - Modify: `src/renderer/src/components/neon/NeonBadge.tsx`
@@ -929,6 +942,7 @@ grep -n 'boxShadow\|textShadow\|backdropFilter\|blur\|glow\|glassShadow\|glassEd
 - [ ] **Step 2: For each component, remove glow/glass inline styles**
 
 For each `style={{ boxShadow: '0 0 ...' }}` or `style={{ backdropFilter: ... }}`:
+
 - Remove glow box-shadows entirely (delete the property)
 - Remove `backdropFilter` and `WebkitBackdropFilter` properties
 - Remove any `textShadow` glow properties
@@ -1014,6 +1028,7 @@ git commit -m "chore(css): strip all glow box-shadows and text-shadows from styl
 ### Task 14: Strip `backdrop-filter` + clean up `design-system.css` glass overrides
 
 **Files:**
+
 - Modify: all CSS files containing `backdrop-filter`
 - Modify: `src/renderer/src/assets/design-system.css`
 

@@ -205,7 +205,6 @@
   flex-shrink: 0;
 }
 
-
 /* ── Error Boundary ── */
 .pipeline-error-boundary {
   display: flex;
@@ -246,7 +245,6 @@
 .pipeline-error-boundary__retry:active:not(:disabled) {
   transform: scale(0.97);
 }
-
 
 /* ── Filter Bar ── */
 .pipeline-filter-bar {
@@ -403,7 +401,6 @@
   transform: scale(0.97);
 }
 
-
 /* ── Bulk Action Bar ── */
 .bulk-action-bar {
   display: flex;
@@ -440,7 +437,6 @@
   align-items: center;
   gap: var(--bde-space-1);
 }
-
 
 /* ── Assign Epic Popover ── */
 .assign-epic-popover {
@@ -497,7 +493,6 @@
   gap: var(--bde-space-2);
   justify-content: flex-end;
 }
-
 
 /* ── Conflict Drawer (right-slide overlay) ── */
 

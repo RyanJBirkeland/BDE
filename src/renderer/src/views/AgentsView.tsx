@@ -14,6 +14,7 @@ import { AgentLaunchpad } from '../components/agents/AgentLaunchpad'
 import { FleetGlance } from '../components/agents/FleetGlance'
 import { toast } from '../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 import { buildLocalAgentMessage } from '../adapters/attachments'
 import type { Attachment } from '../../../shared/types'
@@ -247,110 +248,112 @@ export function AgentsView(): React.JSX.Element {
   }, [])
 
   return (
-    <motion.div
-      className="agents-view"
-      variants={VARIANTS.fadeIn}
-      initial="initial"
-      animate="animate"
-      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-    >
-      <div className="view-layout">
-        <div className="agents-sidebar view-sidebar">
-          {/* Header */}
-          <div className="agents-view__sidebar-header">
-            <div className="agents-view__title-wrapper">
-              <span className="text-gradient-aurora agents-view__title">Fleet</span>
-              <div
-                className="agents-view__info-wrapper"
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-              >
-                <Info
-                  size={14}
-                  className="agents-view__info-icon"
-                  aria-describedby="scratchpad-tooltip"
-                />
-                {showTooltip && (
-                  <div id="scratchpad-tooltip" role="tooltip" className="agents-view__tooltip">
-                    <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents
-                    here run in isolated worktrees and aren&apos;t tracked in the sprint pipeline.
-                    When an agent finishes, click <em>Promote to Code Review</em> in its console
-                    header to flow the work into the review queue. For tracked sprint work, queue
-                    tasks from <em>Task Workbench</em>.
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedId(null)
-                setShowLaunchpad(true)
-              }}
-              title="New Agent"
-              className="agents-view__spawn-btn"
-            >
-              <Plus size={12} />
-            </button>
-          </div>
-
-          {/* Dismissable banner for first-time users */}
-          {showScratchpadBanner && (
-            <div role="status" className="agents-view__scratchpad-banner">
-              <div className="agents-view__scratchpad-banner-text">
-                <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents here
-                run in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an
-                agent finishes, click <em>Promote to Code Review</em> in its console header to
-                flow the work into the review queue. For tracked sprint work, queue tasks from{' '}
-                <em>Task Workbench</em>.
+    <ErrorBoundary name="AgentsView">
+      <motion.div
+        className="agents-view"
+        variants={VARIANTS.fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+      >
+        <div className="view-layout">
+          <div className="agents-sidebar view-sidebar">
+            {/* Header */}
+            <div className="agents-view__sidebar-header">
+              <div className="agents-view__title-wrapper">
+                <span className="text-gradient-aurora agents-view__title">Fleet</span>
+                <div
+                  className="agents-view__info-wrapper"
+                  onMouseEnter={() => setShowTooltip(true)}
+                  onMouseLeave={() => setShowTooltip(false)}
+                >
+                  <Info
+                    size={14}
+                    className="agents-view__info-icon"
+                    aria-describedby="scratchpad-tooltip"
+                  />
+                  {showTooltip && (
+                    <div id="scratchpad-tooltip" role="tooltip" className="agents-view__tooltip">
+                      <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents
+                      here run in isolated worktrees and aren&apos;t tracked in the sprint pipeline.
+                      When an agent finishes, click <em>Promote to Code Review</em> in its console
+                      header to flow the work into the review queue. For tracked sprint work, queue
+                      tasks from <em>Task Workbench</em>.
+                    </div>
+                  )}
+                </div>
               </div>
               <button
-                onClick={handleDismissBanner}
-                aria-label="Dismiss scratchpad notice"
-                className="agents-view__scratchpad-banner-dismiss"
+                onClick={() => {
+                  setSelectedId(null)
+                  setShowLaunchpad(true)
+                }}
+                title="New Agent"
+                className="agents-view__spawn-btn"
               >
-                <X size={14} />
+                <Plus size={12} />
               </button>
             </div>
-          )}
 
-          <AgentList
-            agents={agents}
-            selectedId={activeId}
-            onSelect={handleSelectAgent}
-            onKill={fetchAgents}
-            loading={!fetched && agents.length === 0 && !fetchError}
-            fetchError={fetchError}
-            onRetry={fetchAgents}
-            displayedCount={displayedCount}
-            hasMore={hasMore}
-            onLoadMore={loadMore}
-          />
-        </div>
-        <div className="view-content">
-          {showLaunchpad || (!selectedAgent && agents.length === 0) ? (
-            <AgentLaunchpad
-              onAgentSpawned={() => {
-                setShowLaunchpad(false)
-                fetchAgents()
-              }}
+            {/* Dismissable banner for first-time users */}
+            {showScratchpadBanner && (
+              <div role="status" className="agents-view__scratchpad-banner">
+                <div className="agents-view__scratchpad-banner-text">
+                  <strong className="agents-view__tooltip-strong">Scratchpad.</strong> Agents here
+                  run in isolated worktrees and aren&apos;t tracked in the sprint pipeline. When an
+                  agent finishes, click <em>Promote to Code Review</em> in its console header to
+                  flow the work into the review queue. For tracked sprint work, queue tasks from{' '}
+                  <em>Task Workbench</em>.
+                </div>
+                <button
+                  onClick={handleDismissBanner}
+                  aria-label="Dismiss scratchpad notice"
+                  className="agents-view__scratchpad-banner-dismiss"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            <AgentList
+              agents={agents}
+              selectedId={activeId}
+              onSelect={handleSelectAgent}
+              onKill={fetchAgents}
+              loading={!fetched && agents.length === 0 && !fetchError}
+              fetchError={fetchError}
+              onRetry={fetchAgents}
+              displayedCount={displayedCount}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
             />
-          ) : selectedAgent && activeId ? (
-            <AgentConsole agentId={activeId} onSteer={handleSteer} onCommand={handleCommand} />
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                overflow: 'auto'
-              }}
-            >
-              <FleetGlance agents={agents} onSelect={handleSelectAgent} />
-            </div>
-          )}
+          </div>
+          <div className="view-content">
+            {showLaunchpad || (!selectedAgent && agents.length === 0) ? (
+              <AgentLaunchpad
+                onAgentSpawned={() => {
+                  setShowLaunchpad(false)
+                  fetchAgents()
+                }}
+              />
+            ) : selectedAgent && activeId ? (
+              <AgentConsole agentId={activeId} onSteer={handleSteer} onCommand={handleCommand} />
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  overflow: 'auto'
+                }}
+              >
+                <FleetGlance agents={agents} onSelect={handleSelectAgent} />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </ErrorBoundary>
   )
 }

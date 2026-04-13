@@ -101,7 +101,9 @@ describe('classifyDiffCaptureError', () => {
   })
 
   it('classifies maxBuffer as max-buffer', () => {
-    expect(classifyDiffCaptureError(new Error('stdout maxBuffer length exceeded'))).toBe('max-buffer')
+    expect(classifyDiffCaptureError(new Error('stdout maxBuffer length exceeded'))).toBe(
+      'max-buffer'
+    )
   })
 
   it('classifies unknown errors as unknown', () => {

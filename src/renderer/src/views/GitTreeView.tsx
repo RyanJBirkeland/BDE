@@ -20,6 +20,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 import { useGitHubStatus } from '../hooks/useGitHubStatus'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
 export default function GitTreeView(): React.ReactElement {
   const reduced = useReducedMotion()
@@ -241,225 +242,227 @@ export default function GitTreeView(): React.ReactElement {
   }
 
   return (
-    <motion.div
-      className="git-tree-view"
-      variants={VARIANTS.fadeIn}
-      initial="initial"
-      animate="animate"
-      transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-    >
-      {/* Header */}
-      <div className="git-tree-view__header">
-        {/* Title */}
-        <div className="git-tree-view__title text-gradient-aurora">
-          <GitBranch size={14} />
-          Source Control
-        </div>
+    <ErrorBoundary name="GitTreeView">
+      <motion.div
+        className="git-tree-view"
+        variants={VARIANTS.fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
+      >
+        {/* Header */}
+        <div className="git-tree-view__header">
+          {/* Title */}
+          <div className="git-tree-view__title text-gradient-aurora">
+            <GitBranch size={14} />
+            Source Control
+          </div>
 
-        {/* Spacer */}
-        <div className="git-tree-view__spacer" />
+          {/* Spacer */}
+          <div className="git-tree-view__spacer" />
 
-        {/* Repo selector */}
-        {repoPaths.length > 1 && (
-          <select
-            value={activeRepo ?? ''}
-            onChange={handleRepoChange}
-            aria-label="Select repository"
-            className="git-tree-view__repo-select"
-          >
-            {repoPaths.map((p) => (
-              <option key={p} value={p}>
-                {p.split('/').pop() ?? p}
-              </option>
-            ))}
-          </select>
-        )}
+          {/* Repo selector */}
+          {repoPaths.length > 1 && (
+            <select
+              value={activeRepo ?? ''}
+              onChange={handleRepoChange}
+              aria-label="Select repository"
+              className="git-tree-view__repo-select"
+            >
+              {repoPaths.map((p) => (
+                <option key={p} value={p}>
+                  {p.split('/').pop() ?? p}
+                </option>
+              ))}
+            </select>
+          )}
 
-        {/* Branch selector */}
-        <BranchSelector
-          currentBranch={branch}
-          branches={branches}
-          hasUncommittedChanges={hasUncommittedChanges}
-          onCheckout={handleCheckout}
-        />
-
-        {/* Fetch button */}
-        <button
-          onClick={handleFetch}
-          aria-label="Fetch from remote"
-          title="Fetch"
-          disabled={loading}
-          className="git-tree-view__refresh-btn"
-        >
-          <Download size={14} />
-        </button>
-
-        {/* Pull button */}
-        <button
-          onClick={handlePull}
-          aria-label="Pull from remote"
-          title="Pull"
-          disabled={loading}
-          className="git-tree-view__refresh-btn"
-        >
-          <ArrowDownToLine size={14} />
-          Pull
-        </button>
-
-        {/* Refresh button */}
-        <button
-          onClick={handleRefresh}
-          aria-label="Refresh git status"
-          title="Refresh"
-          disabled={loading}
-          className={`git-tree-view__refresh-btn ${loading ? 'git-tree-view__refresh-btn--loading' : ''}`}
-        >
-          <RefreshCw
-            size={14}
-            style={{
-              animation: loading ? 'bde-spin 1s linear infinite' : 'none'
-            }}
+          {/* Branch selector */}
+          <BranchSelector
+            currentBranch={branch}
+            branches={branches}
+            hasUncommittedChanges={hasUncommittedChanges}
+            onCheckout={handleCheckout}
           />
-        </button>
-      </div>
 
-      {/* Commit box */}
-      <CommitBox
-        commitMessage={commitMessage}
-        stagedCount={staged.length}
-        commitLoading={commitLoading}
-        pushLoading={pushLoading}
-        pushDisabled={!ghConfigured}
-        pushDisabledTitle="Configure GitHub in Settings → Connections"
-        onMessageChange={setCommitMessage}
-        onCommit={handleCommit}
-        onPush={handlePush}
-      />
-
-      {/* Persistent error banner */}
-      {lastError && (
-        <div className="git-tree-view__error-banner" role="alert">
-          <AlertCircle size={14} />
-          <span className="git-tree-view__error-text">{lastError}</span>
+          {/* Fetch button */}
           <button
-            className="git-tree-view__error-retry"
-            onClick={() => {
-              clearError()
-              if (lastErrorOp === 'push') handlePush()
-              else if (lastErrorOp === 'commit') handleCommit()
-            }}
-            aria-label="Retry failed operation"
+            onClick={handleFetch}
+            aria-label="Fetch from remote"
+            title="Fetch"
+            disabled={loading}
+            className="git-tree-view__refresh-btn"
           >
-            Retry
+            <Download size={14} />
           </button>
+
+          {/* Pull button */}
           <button
-            className="git-tree-view__error-dismiss"
-            onClick={clearError}
-            aria-label="Dismiss error"
+            onClick={handlePull}
+            aria-label="Pull from remote"
+            title="Pull"
+            disabled={loading}
+            className="git-tree-view__refresh-btn"
           >
-            <X size={12} />
+            <ArrowDownToLine size={14} />
+            Pull
+          </button>
+
+          {/* Refresh button */}
+          <button
+            onClick={handleRefresh}
+            aria-label="Refresh git status"
+            title="Refresh"
+            disabled={loading}
+            className={`git-tree-view__refresh-btn ${loading ? 'git-tree-view__refresh-btn--loading' : ''}`}
+          >
+            <RefreshCw
+              size={14}
+              style={{
+                animation: loading ? 'bde-spin 1s linear infinite' : 'none'
+              }}
+            />
           </button>
         </div>
-      )}
 
-      {/* File sections — scrollable */}
-      <div className="git-tree-view__body">
-        {/* Staged changes */}
-        <FileTreeSection
-          title="Staged Changes"
-          files={staged}
-          isStaged={true}
-          selectedPath={selectedFile?.path}
-          onUnstageAll={handleUnstageAll}
-          onStageFile={handleStageFile}
-          onUnstageFile={handleUnstageFile}
-          onSelectFile={(path) => handleSelectFile(path, true)}
+        {/* Commit box */}
+        <CommitBox
+          commitMessage={commitMessage}
+          stagedCount={staged.length}
+          commitLoading={commitLoading}
+          pushLoading={pushLoading}
+          pushDisabled={!ghConfigured}
+          pushDisabledTitle="Configure GitHub in Settings → Connections"
+          onMessageChange={setCommitMessage}
+          onCommit={handleCommit}
+          onPush={handlePush}
         />
 
-        {/* Modified (unstaged tracked files) */}
-        {unstaged.length > 0 && (
-          <FileTreeSection
-            title="Modified"
-            files={unstaged}
-            isStaged={false}
-            selectedPath={selectedFile?.path}
-            onStageAll={
-              unstaged.length > 0
-                ? () => {
-                    if (!activeRepo) return
-                    const paths = unstaged.map((f) => f.path)
-                    window.api
-                      .gitStage(activeRepo, paths)
-                      .then(() => fetchStatus(activeRepo))
-                      .catch((e) => {
-                        setLastError(
-                          `Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`
-                        )
-                      })
-                  }
-                : undefined
-            }
-            onStageFile={handleStageFile}
-            onUnstageFile={handleUnstageFile}
-            onSelectFile={(path) => handleSelectFile(path, false)}
-          />
-        )}
-
-        {/* Untracked (new files not yet in git) */}
-        {untracked.length > 0 && (
-          <FileTreeSection
-            title="Untracked"
-            files={untracked}
-            isStaged={false}
-            selectedPath={selectedFile?.path}
-            onStageAll={
-              untracked.length > 0
-                ? () => {
-                    if (!activeRepo) return
-                    const paths = untracked.map((f) => f.path)
-                    window.api
-                      .gitStage(activeRepo, paths)
-                      .then(() => fetchStatus(activeRepo))
-                      .catch((e) => {
-                        setLastError(
-                          `Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`
-                        )
-                      })
-                  }
-                : undefined
-            }
-            onStageFile={handleStageFile}
-            onUnstageFile={handleUnstageFile}
-            onSelectFile={(path) => handleSelectFile(path, false)}
-          />
-        )}
-
-        {/* Loading skeleton */}
-        {loading && staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && (
-          <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div className="bde-skeleton" style={{ height: 24, width: '60%' }} />
-            <div className="bde-skeleton" style={{ height: 32 }} />
-            <div className="bde-skeleton" style={{ height: 32 }} />
-            <div className="bde-skeleton" style={{ height: 32 }} />
+        {/* Persistent error banner */}
+        {lastError && (
+          <div className="git-tree-view__error-banner" role="alert">
+            <AlertCircle size={14} />
+            <span className="git-tree-view__error-text">{lastError}</span>
+            <button
+              className="git-tree-view__error-retry"
+              onClick={() => {
+                clearError()
+                if (lastErrorOp === 'push') handlePush()
+                else if (lastErrorOp === 'commit') handleCommit()
+              }}
+              aria-label="Retry failed operation"
+            >
+              Retry
+            </button>
+            <button
+              className="git-tree-view__error-dismiss"
+              onClick={clearError}
+              aria-label="Dismiss error"
+            >
+              <X size={12} />
+            </button>
           </div>
         )}
 
-        {/* Empty state */}
-        {staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && !loading && (
-          <EmptyState
-            icon={<CheckCircle size={24} />}
-            title="Working tree clean"
-            description="No uncommitted changes. Edit files or pull updates to see changes here."
+        {/* File sections — scrollable */}
+        <div className="git-tree-view__body">
+          {/* Staged changes */}
+          <FileTreeSection
+            title="Staged Changes"
+            files={staged}
+            isStaged={true}
+            selectedPath={selectedFile?.path}
+            onUnstageAll={handleUnstageAll}
+            onStageFile={handleStageFile}
+            onUnstageFile={handleUnstageFile}
+            onSelectFile={(path) => handleSelectFile(path, true)}
           />
-        )}
-      </div>
 
-      {/* Inline diff drawer */}
-      <InlineDiffDrawer
-        selectedFile={selectedFile}
-        diffContent={diffContent}
-        onClose={clearSelection}
-      />
-    </motion.div>
+          {/* Modified (unstaged tracked files) */}
+          {unstaged.length > 0 && (
+            <FileTreeSection
+              title="Modified"
+              files={unstaged}
+              isStaged={false}
+              selectedPath={selectedFile?.path}
+              onStageAll={
+                unstaged.length > 0
+                  ? () => {
+                      if (!activeRepo) return
+                      const paths = unstaged.map((f) => f.path)
+                      window.api
+                        .gitStage(activeRepo, paths)
+                        .then(() => fetchStatus(activeRepo))
+                        .catch((e) => {
+                          setLastError(
+                            `Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`
+                          )
+                        })
+                    }
+                  : undefined
+              }
+              onStageFile={handleStageFile}
+              onUnstageFile={handleUnstageFile}
+              onSelectFile={(path) => handleSelectFile(path, false)}
+            />
+          )}
+
+          {/* Untracked (new files not yet in git) */}
+          {untracked.length > 0 && (
+            <FileTreeSection
+              title="Untracked"
+              files={untracked}
+              isStaged={false}
+              selectedPath={selectedFile?.path}
+              onStageAll={
+                untracked.length > 0
+                  ? () => {
+                      if (!activeRepo) return
+                      const paths = untracked.map((f) => f.path)
+                      window.api
+                        .gitStage(activeRepo, paths)
+                        .then(() => fetchStatus(activeRepo))
+                        .catch((e) => {
+                          setLastError(
+                            `Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`
+                          )
+                        })
+                    }
+                  : undefined
+              }
+              onStageFile={handleStageFile}
+              onUnstageFile={handleUnstageFile}
+              onSelectFile={(path) => handleSelectFile(path, false)}
+            />
+          )}
+
+          {/* Loading skeleton */}
+          {loading && staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && (
+            <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="bde-skeleton" style={{ height: 24, width: '60%' }} />
+              <div className="bde-skeleton" style={{ height: 32 }} />
+              <div className="bde-skeleton" style={{ height: 32 }} />
+              <div className="bde-skeleton" style={{ height: 32 }} />
+            </div>
+          )}
+
+          {/* Empty state */}
+          {staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && !loading && (
+            <EmptyState
+              icon={<CheckCircle size={24} />}
+              title="Working tree clean"
+              description="No uncommitted changes. Edit files or pull updates to see changes here."
+            />
+          )}
+        </div>
+
+        {/* Inline diff drawer */}
+        <InlineDiffDrawer
+          selectedFile={selectedFile}
+          diffContent={diffContent}
+          onClose={clearSelection}
+        />
+      </motion.div>
+    </ErrorBoundary>
   )
 }

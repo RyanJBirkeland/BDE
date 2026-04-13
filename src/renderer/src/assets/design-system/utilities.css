@@ -7,13 +7,25 @@
 }
 
 @keyframes bde-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 @keyframes bde-breathe {
-  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
-  50% { opacity: 0.6; box-shadow: 0 0 8px currentColor; }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 4px currentColor;
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 8px currentColor;
+  }
 }
 
 .bde-spinner {

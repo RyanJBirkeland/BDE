@@ -12,13 +12,13 @@
 
 Database snapshotted from `~/.bde/bde.db` (38 MB) to `.snapshot/bde.db` via SQLite online backup API. Integrity check: `ok`. Row counts at snapshot time:
 
-| Table          | Rows  |
-|----------------|-------|
-| sprint_tasks   | 525   |
-| agent_runs     | 500   |
-| agent_events   | 31490 |
-| cost_events    | 0     |
-| task_changes   | 20044 |
+| Table        | Rows  |
+| ------------ | ----- |
+| sprint_tasks | 525   |
+| agent_runs   | 500   |
+| agent_events | 31490 |
+| cost_events  | 0     |
+| task_changes | 20044 |
 
 All Team 4 (Token Economy) lens agents read from this snapshot, not the live db, so their numbers are mutually comparable.
 
@@ -51,12 +51,12 @@ The audit produced 10 lens files across 4 teams plus a synthesis. Start with `SY
 
 ### Teams and lenses
 
-| Team | Domain | Lenses |
-|------|--------|--------|
-| 1 | Pipeline Hot Path | Systems Profiler, Concurrency Auditor, SRE/Ops |
-| 2 | Renderer Performance | React Perf, Bundle/Asset |
-| 3 | Data Layer | DB Performance, Data Modeling Critic |
-| 4 | Token Economy | Prompt Engineer, Cost Analyst, Context Strategist |
+| Team | Domain               | Lenses                                            |
+| ---- | -------------------- | ------------------------------------------------- |
+| 1    | Pipeline Hot Path    | Systems Profiler, Concurrency Auditor, SRE/Ops    |
+| 2    | Renderer Performance | React Perf, Bundle/Asset                          |
+| 3    | Data Layer           | DB Performance, Data Modeling Critic              |
+| 4    | Token Economy        | Prompt Engineer, Cost Analyst, Context Strategist |
 
 ### Finding ID format
 
@@ -64,4 +64,4 @@ The audit produced 10 lens files across 4 teams plus a synthesis. Start with `SY
 
 ## Baseline
 
-Commit `00e32951` (earlier on 2026-04-07) capped vitest worker parallelism inside agent worktrees to `Math.max(1, Math.floor(cpuCount / activeTasks))`. That fix is treated as baseline; this audit hunts for what *else* drives CPU load during a Pipeline run. Team 1 lens agents are explicitly told not to re-report the vitest issue.
+Commit `00e32951` (earlier on 2026-04-07) capped vitest worker parallelism inside agent worktrees to `Math.max(1, Math.floor(cpuCount / activeTasks))`. That fix is treated as baseline; this audit hunts for what _else_ drives CPU load during a Pipeline run. Team 1 lens agents are explicitly told not to re-report the vitest issue.

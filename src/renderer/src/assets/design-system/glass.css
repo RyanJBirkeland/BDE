@@ -212,7 +212,9 @@ html.theme-pro-light .elevation-3-backdrop {
   position: absolute;
   inset: 0;
   background: transparent;
-  transition: background 150ms ease, box-shadow 150ms ease;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .drawer-resize-handle:hover::after,

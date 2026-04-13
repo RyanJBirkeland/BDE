@@ -17,6 +17,7 @@ Alpha Senior Dev flagged this as CRITICAL in the 2026-04-07 audit.
 Attach the keydown listener to the form's root `<div>` via a React `onKeyDown` prop instead of a `window.addEventListener`. The handler should only fire when focus is inside the Workbench form. Keep the existing pre-flight check behavior (`describeQueueBlocker` etc.) unchanged.
 
 Specifically:
+
 1. Find the `useEffect` that registers the `window.addEventListener('keydown', ...)` for Cmd+Enter (lines 348-369)
 2. Delete it
 3. On the outermost form container `<div>` (or `<form>` / `<section>`), add an `onKeyDown={handleKeyDown}` prop that calls the same logic

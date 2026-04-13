@@ -97,6 +97,7 @@ After:  <metric> = <value>
 ### Failure recovery
 
 If a fix causes a test failure that can't be resolved within the task scope:
+
 1. Revert the working tree changes (`git restore .`)
 2. Mark the task as `- [!]` (blocked) in this plan
 3. Add a note explaining the blocker
@@ -133,6 +134,7 @@ When you need more detail on a finding than the plan provides, look it up in `do
 ### Task P0.0: Create the Phase 0 answers doc
 
 **Files:**
+
 - Create: `docs/superpowers/audits/2026-04-07/perf-audit/PHASE-0-ANSWERS.md`
 
 - [ ] **Step 1: Create the file with the skeleton**
@@ -175,6 +177,7 @@ Find the migration that created `cost_events`. Note the migration version, the d
 - [ ] **Step 4: Make the decision and record it**
 
 Decision tree:
+
 - If a writer exists in code but is never called: **wire it** (Phase 1 finding becomes "fix the broken writer")
 - If no writer exists and no read site uses the table: **drop the table** (Phase 1 finding becomes "drop migration + add migration to remove it")
 - If a writer is intended but never built (TODO comment, etc.): **drop the table** with a note explaining the abandoned design
@@ -206,6 +209,7 @@ output_mode: content
 - [ ] **Step 2: For each match, classify the read site**
 
 Categories:
+
 - **Live-tail:** read happens during an agent run (e.g. UI streaming)
 - **Post-completion:** read happens after the task is `done`/`failed` (e.g. agent console replay)
 - **Background:** read happens in a poller, retention job, or migration
@@ -326,13 +330,13 @@ git commit -m "docs(audit): Phase 0 Q3 — MAX_ACTIVE_TASKS in production"
 In `/Users/ryan/worktrees/bde/perf-audit/src/renderer/src/main.tsx` at the top of the file (after imports):
 
 ```typescript
-console.log('[perf] main.tsx entry', Date.now());
+console.log('[perf] main.tsx entry', Date.now())
 ```
 
 In `/Users/ryan/worktrees/bde/perf-audit/src/renderer/src/App.tsx` at the very start of the `App` component body (or first render effect):
 
 ```typescript
-console.log('[perf] App first render', Date.now());
+console.log('[perf] App first render', Date.now())
 ```
 
 - [ ] **Step 2: Build the app**
@@ -385,6 +389,7 @@ git commit --allow-empty -m "chore(perf): phase 0 complete — research answers 
 **Goal:** Add `(pr_status, pr_number)` index so `listTasksWithOpenPrs` uses it instead of full-scanning `sprint_tasks`.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/db.ts` (append migration)
 
 - [ ] **Step 1: Capture before-state query plan**
@@ -454,6 +459,7 @@ Closes F-t3-db-1"
 **Goal:** Add composite index for orphaned-task and WIP queries.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/db.ts` (append migration)
 
 - [ ] **Step 1: Capture before-state query plan**
@@ -499,6 +505,7 @@ Closes F-t3-db-3"
 **Goal:** Eliminate temp sort on task history queries that already hit 2,600 rows per task.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/db.ts` (append migration)
 
 - [ ] **Steps:** Same pattern as 1.1 / 1.2.
@@ -568,6 +575,7 @@ Identify: where the function is defined, where it should be called, and the dead
 In the test file colocated with the writer (`<writer-dir>/<writer>.test.ts`):
 
 The test should:
+
 1. Set up an in-memory better-sqlite3 db with the `cost_events` schema
 2. Trigger the code path that should write a cost event (e.g. simulate a completed agent run)
 3. Assert exactly one row appears in `cost_events` with the expected `source`, `model`, `total_tokens`, `cost_usd`
@@ -609,6 +617,7 @@ Closes F-t3-model-3"
 **Goal:** Stop recording `task_changes` rows when `oldValue === newValue`. Eliminates the bulk of the 38-rows-per-task average.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/data/task-changes.ts` (function `recordTaskChanges` around lines 19-53)
 - Test: `/Users/ryan/worktrees/bde/perf-audit/src/main/data/task-changes.test.ts` (create or extend)
 
@@ -623,6 +632,7 @@ Note exact function signature, current diff logic (if any), and how `oldValue`/`
 - [ ] **Step 2: Write a failing test for "no row when value unchanged"**
 
 The test should:
+
 1. Set up an in-memory better-sqlite3 database with the `task_changes` schema
 2. Call `recordTaskChanges` with a payload where `oldValue === newValue` for all fields
 3. Assert zero rows in `task_changes`
@@ -681,6 +691,7 @@ Closes F-t3-model-1"
 **Goal:** Replace OR-clause that prevents index use with a UNION or explicit branch, allowing index lookup + smaller temp sort.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/data/sprint-queries.ts` (function `listTasksRecent`)
 
 - [ ] **Step 1: Read the current implementation, identify the OR clause and the affected indexes**
@@ -698,6 +709,7 @@ Closes F-t3-model-1"
 **Goal:** `markTaskDoneByPrNumber` currently inserts audit rows in a JS loop (one prepared-statement call per row). Wrap in a transaction or use a single prepared statement with multiple bindings.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/data/sprint-queries.ts` (function `markTaskDoneByPrNumber`)
 
 - [ ] **Step 1: Read the function**
@@ -713,6 +725,7 @@ Closes F-t3-model-1"
 **Goal:** Hot list queries pull 40+ columns including multi-KB blobs (`spec`, `review_diff_snapshot`). Replace with targeted column lists for the 5-10 columns the renderer actually uses.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/data/sprint-queries.ts` (functions `listTasksRecent`, `listTasksWithOpenPrs`, others using `SELECT *`)
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/shared/types.ts` (or wherever `SprintTaskListItem` lives — may need a new type)
 
@@ -759,16 +772,19 @@ git commit --allow-empty -m "chore(perf): phase 1 complete — 8 data layer find
 **Goal:** Repeatable test that spawns 3 trivial sprint tasks and verifies the pipeline handles them. Used as the verification gate for Tasks 2.1 - 2.9.
 
 **Files:**
+
 - Create: `/Users/ryan/worktrees/bde/perf-audit/scripts/perf-pipeline-smoke.sh`
 
 - [ ] **Step 1: Write the script**
 
 The script should:
+
 1. Insert 3 sprint tasks into the local SQLite db with `status='queued'` and a no-op spec ("echo hello > /tmp/perf-test-N")
 2. Wait for them to reach `done` or `failed` status (timeout 5 minutes)
 3. Print: total time, write count to `agent_events` (via row count delta), and exit code based on whether all 3 succeeded
 
 A starting structure is straightforward bash that uses the `sqlite3` CLI to:
+
 - Snapshot row counts at start
 - Insert 3 unique-id sprint tasks (use a timestamp prefix in the id)
 - Poll every 5s until all 3 inserted tasks reach a terminal status, with a 300s deadline
@@ -812,6 +828,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** `emitAgentEvent` currently broadcasts to renderer before persisting to SQLite. Under lock contention this loses events. Reverse the order: persist first, broadcast second.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-event-mapper.ts:83-95` (the `emitAgentEvent` function)
 - Test: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-event-mapper.test.ts` (create or extend)
 
@@ -829,6 +846,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** Replace per-message synchronous insert with a 50-event/100ms batch flushed in one transaction.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-event-mapper.ts`
 - Test: `src/main/agent-event-mapper.test.ts`
 
@@ -869,6 +887,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** Two `[...arr].sort()` allocations per task per drain tick. Cache a stable hash of `depends_on` at storage time, or detect "same array, same indices" fast path.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-manager/index.ts:608-625` (or wherever `_depsEqual` lives)
 - Test: corresponding `.test.ts`
 
@@ -885,6 +904,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** `JSON.stringify` runs synchronously per message in the event loop. Either skip when payload is unused or defer to the batch flush.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-event-mapper.ts`
 
 - [ ] Identify where `JSON.stringify` runs in the message handler
@@ -899,6 +919,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** Each task terminal triggers IPC broadcasts to all renderer windows. Coalesce so M windows × N concurrent terminations doesn't multiply.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-manager/completion.ts`
 
 - [ ] Identify the broadcast call site
@@ -911,6 +932,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** `resolveDependents()` runs synchronously per terminal event with no dedup. Coalesce multi-event runs.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-manager/resolve-dependents.ts`
 
 - [ ] Read current `resolveDependents` and its caller in completion path
@@ -923,6 +945,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** `taskStatusMap` is built once per drain loop; simultaneous completions can transition state inconsistently.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-manager/index.ts` (drain loop)
 
 - [ ] Read drain loop, identify where `taskStatusMap` is constructed and consumed
@@ -935,6 +958,7 @@ git commit -m "docs(audit): Phase 2 baseline — perf-pipeline-smoke before chan
 **Goal:** PR poller and sprint-PR poller fire on unsynchronized 60s intervals competing with the drain loop for DB locks.
 
 **Files:**
+
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/pr-poller.ts`
 - Modify: `/Users/ryan/worktrees/bde/perf-audit/src/main/sprint-pr-poller.ts`
 
@@ -1084,16 +1108,19 @@ git commit --allow-empty -m "chore(perf): phase 4 complete — 7 renderer findin
 ### Task 5.1: F-t2-bundle-1 / F-t2-bundle-6 — xterm + TerminalPane `React.lazy`
 
 **Files:**
+
 - `/Users/ryan/worktrees/bde/perf-audit/src/renderer/src/components/terminal/TerminalContent.tsx:50-74`
 - `/Users/ryan/worktrees/bde/perf-audit/src/renderer/src/components/terminal/TerminalPane.tsx:1-10`
 - Wherever TerminalPane is consumed in IDEView
 
 **Change:**
+
 - Wrap TerminalPane import in `React.lazy(() => import('./TerminalPane'))`
-- Wrap consumer in `<Suspense fallback={<TerminalPlaceholder />}>` 
+- Wrap consumer in `<Suspense fallback={<TerminalPlaceholder />}>`
 - Move xterm + addon imports inside TerminalPane so they're in the lazy chunk
 
 **Verify:**
+
 - `npm run build` produces a separate chunk for TerminalPane
 - Cold-start time-to-first-render improves vs the Phase 0 baseline
 - Open IDE → terminal still works (open tab, type, see output)
@@ -1171,6 +1198,7 @@ sqlite3 /Users/ryan/worktrees/bde/perf-audit/docs/superpowers/audits/2026-04-07/
 **Change:** `isBdeRepo(undefined)` currently returns `true`. Flip to `false`. Audit all spawn sites to confirm they pass `repoName` explicitly when they're actually working in BDE.
 
 **TDD:**
+
 - [ ] Test: `isBdeRepo(undefined) === false`
 - [ ] Test: `isBdeRepo('BDE') === true`, `isBdeRepo('other') === false`
 - [ ] Implement the flip
@@ -1183,13 +1211,15 @@ sqlite3 /Users/ryan/worktrees/bde/perf-audit/docs/superpowers/audits/2026-04-07/
 **Files:** `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-manager/prompt-composer.ts:265-268`, `/Users/ryan/worktrees/bde/perf-audit/src/main/agent-system/skills/index.ts`
 
 **Change:** Replace the unconditional skill bundle (~2,601 tokens) with:
-- Front-loaded: a 100-char skill *index* listing skill names + one-line descriptions
+
+- Front-loaded: a 100-char skill _index_ listing skill names + one-line descriptions
 - Lazy: full skill bodies loaded on demand via a tool call (e.g. `bde:getSkill(name)`)
 
 This is the architectural lazy-inject mechanism `F-t4-ctx-9` flags as missing — building it for skills is the proof-of-concept.
 
 **TDD:**
-- [ ] Test: prompt composer for an assistant agent contains skill *index* but not skill *bodies*
+
+- [ ] Test: prompt composer for an assistant agent contains skill _index_ but not skill _bodies_
 - [ ] Test: a `bde:getSkill(name)` tool call returns the full skill body
 - [ ] Implement the index generator + lazy fetch tool
 - [ ] Re-run pinned regression task, expect ~2,601 token drop (if the task didn't actually use skills)
@@ -1210,6 +1240,7 @@ This is the architectural lazy-inject mechanism `F-t4-ctx-9` flags as missing �
 **Change:** add a cap function that truncates `taskContent` at 2000 chars (~500 tokens) with a "...[truncated, see source]" marker. Also add UI-side validation that warns when a spec exceeds the cap before queueing.
 
 **TDD:**
+
 - [ ] Test: 1500-char input passes through unchanged
 - [ ] Test: 5000-char input is truncated to 2000 chars + marker
 - [ ] Implement
@@ -1220,7 +1251,7 @@ This is the architectural lazy-inject mechanism `F-t4-ctx-9` flags as missing �
 
 **Files:** wherever upstream context diffs are built (likely `src/main/agent-manager/prompt-composer.ts` or a `context-builder.ts`)
 
-**Change:** the 2000-char cap exists with no inline rationale. Either keep the cap with a code comment explaining *why* 2000, or replace with a configurable constant + JSDoc.
+**Change:** the 2000-char cap exists with no inline rationale. Either keep the cap with a code comment explaining _why_ 2000, or replace with a configurable constant + JSDoc.
 
 **Verify:** comment is present and references the audit finding.
 
@@ -1247,6 +1278,7 @@ This is the architectural lazy-inject mechanism `F-t4-ctx-9` flags as missing �
 **Change:** spec-drafting agents (copilot, synthesizer) currently inherit CLAUDE.md + BDE_FEATURES.md via SDK `settingSources`. They don't need that ~9,800 tokens. Override `settingSources` to `[]` (or just `['user']`) for spec-drafting agent types.
 
 **TDD:**
+
 - [ ] Test: copilot prompt does NOT include "BDE Performance Audit" or other BDE_FEATURES.md content
 - [ ] Test: pipeline prompt DOES include it (regression check)
 - [ ] Implement
@@ -1257,10 +1289,12 @@ This is the architectural lazy-inject mechanism `F-t4-ctx-9` flags as missing �
 **Files:** spec generation files + agent prompts; possibly add a new `task_class` field
 
 **Change:** introduce task classes (audit, refactor, generate, fix, doc) and per-class output caps. Implementations vary:
+
 - Soft: include the cap as a hint in the system prompt ("aim for ≤8K output tokens for refactor tasks")
 - Hard: enforce via SDK `max_tokens` parameter on the agent spawn
 
 **TDD:**
+
 - [ ] Test: agent spawn for a `generate` class task uses the right cap
 - [ ] Test: `audit` class uses a smaller cap
 - [ ] Implement classification (could be heuristic on task title for v1)
@@ -1281,6 +1315,7 @@ This is the architectural lazy-inject mechanism `F-t4-ctx-9` flags as missing �
 ### Task 6.11: F-t4-cost-4 — Resolve zero-input cohort (depends on Phase 0 Q1)
 
 **Branch on Phase 0 Q1 outcome:**
+
 - **Silent failures:** fix the failure path (becomes a reliability bug, not a perf fix)
 - **Cache hits:** document in PHASE-0-ANSWERS.md and CLOSE the finding without code change
 - **Ghost rows:** add a startup prune for `agent_runs WHERE tokens_in IS NULL`
@@ -1290,11 +1325,13 @@ This is the architectural lazy-inject mechanism `F-t4-ctx-9` flags as missing �
 > ⛔ **BLOCKED until Phase 0 Q6 is answered.** Read PHASE-0-ANSWERS.md → Q6 → Decision. If "already enforced" mark this task DONE without a code commit.
 
 **Branch on Phase 0 Q6 outcome:**
+
 - **Schema only / never read:** add enforcement in `run-agent.ts` — check `cost_usd` after each turn, abort if exceeded
 - **Already enforced:** mark task DONE before starting, no commit needed
 - **Read but no-op:** add the comparison + abort
 
 **TDD:**
+
 - [ ] Test: agent run with `max_cost_usd=0.10` aborts when cost reaches $0.10
 - [ ] Test: agent run without `max_cost_usd` runs to completion
 - [ ] Implement
@@ -1347,6 +1384,7 @@ Expected: pass, with elapsed time and event delta noted vs the Phase 2 baseline.
 ### Task F.5: Summary commit (optional doc update)
 
 Update PHASE-0-ANSWERS.md with a "Final Results" section summarizing:
+
 - Total findings landed
 - Most impactful improvements (with numbers)
 - Any items that were reverted
@@ -1359,6 +1397,7 @@ git commit -am "docs(audit): perf audit execution complete — final results"
 ### Task F.6: Decide next step
 
 Options:
+
 - **Merge to main locally** via `superpowers:finishing-a-development-branch`
 - **Open a single PR** for the entire branch
 - **Open one PR per phase** by cherry-picking phase commits onto separate branches (cleaner review, more work)

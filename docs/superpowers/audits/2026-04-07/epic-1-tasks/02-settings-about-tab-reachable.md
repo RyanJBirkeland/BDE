@@ -9,6 +9,7 @@ The Settings "About" page is fully built and registered in `SECTION_MAP` (line 5
 Add the `about` entry to the `SECTIONS` array in `SettingsView.tsx`. The icon should be `Info` from lucide-react (currently not imported in this file — add it to the existing lucide-react import on lines 6-17). Place the entry under the `'App'` category alongside Appearance, Notifications, Keybindings, Memory.
 
 The change is exactly two edits:
+
 1. Add `Info` to the lucide-react import (alphabetical order)
 2. Add `{ id: 'about', label: 'About', icon: Info, category: 'App' }` to the `SECTIONS` array (place it after `memory` so it lands at the bottom of the App category)
 

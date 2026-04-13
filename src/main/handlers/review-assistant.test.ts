@@ -1,9 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import {
-  handleAutoReview,
-  handleChatStream,
-  buildChatStreamDeps,
-} from './review-assistant'
+import { handleAutoReview, handleChatStream, buildChatStreamDeps } from './review-assistant'
 import type { ReviewService } from '../services/review-service'
 import type { IReviewRepository } from '../data/review-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
@@ -17,7 +13,7 @@ function fakeResult(): ReviewResult {
     openingMessage: 'ok',
     findings: { perFile: [] },
     model: 'claude-opus-4-6',
-    createdAt: 0,
+    createdAt: 0
   }
 }
 
@@ -29,7 +25,7 @@ function fakeTask() {
     repo: 'bde',
     branch: 'feat/auth',
     status: 'review' as const,
-    worktree_path: '/tmp/wt',
+    worktree_path: '/tmp/wt'
   } as any
 }
 
@@ -47,7 +43,7 @@ describe('buildChatStreamDeps', () => {
       getHeadCommitSha,
       getBranch,
       getDiff,
-      activeStreams,
+      activeStreams
     })
     expect(deps.taskRepo).toBe(taskRepo)
     expect(deps.reviewRepo).toBe(reviewRepo)
@@ -90,7 +86,7 @@ describe('handleChatStream', () => {
       reviewRepo: {
         getCached: () => fakeResult(),
         setCached: () => {},
-        invalidate: () => {},
+        invalidate: () => {}
       } as IReviewRepository,
       getHeadCommitSha: async () => 'sha-abc',
       getBranch: async () => 'feat/auth',
@@ -110,11 +106,11 @@ describe('handleChatStream', () => {
           return 'hello world'
         }
       ),
-      activeStreams: new Map<string, { close: () => void }>(),
+      activeStreams: new Map<string, { close: () => void }>()
     }
     const input: { taskId: string; messages: PartnerMessage[] } = {
       taskId: 'task-1',
-      messages: [{ id: 'u1', role: 'user', content: 'Hi', timestamp: 0 }],
+      messages: [{ id: 'u1', role: 'user', content: 'Hi', timestamp: 0 }]
     }
 
     const { streamId } = await handleChatStream(deps, input, sender as any)
@@ -141,7 +137,7 @@ describe('handleChatStream', () => {
       reviewRepo: {
         getCached: () => null,
         setCached: () => {},
-        invalidate: () => {},
+        invalidate: () => {}
       } as IReviewRepository,
       getHeadCommitSha: async () => 'sha-abc',
       getBranch: async () => 'feat/auth',
@@ -150,13 +146,9 @@ describe('handleChatStream', () => {
       runSdkStreaming: async () => {
         throw new Error('rate limit')
       },
-      activeStreams: new Map<string, { close: () => void }>(),
+      activeStreams: new Map<string, { close: () => void }>()
     }
-    await handleChatStream(
-      deps,
-      { taskId: 'task-1', messages: [] },
-      sender as any
-    )
+    await handleChatStream(deps, { taskId: 'task-1', messages: [] }, sender as any)
     await new Promise((r) => setImmediate(r))
     expect(chunks.some((c) => c.error?.includes('rate limit'))).toBe(true)
   })
@@ -171,7 +163,7 @@ describe('handleChatStream', () => {
       getDiff: async () => '',
       buildChatPrompt: () => '',
       runSdkStreaming: async () => '',
-      activeStreams: new Map(),
+      activeStreams: new Map()
     }
     await expect(
       handleChatStream(deps, { taskId: 'missing', messages: [] }, sender as any)

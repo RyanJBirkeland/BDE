@@ -22,12 +22,8 @@ test.describe('Terminal — IDE integration', () => {
     const ideView = window.locator('.ide-view')
     const ideEmpty = window.locator('.ide-empty-state')
 
-    const hasIDE = await ideView
-      .isVisible()
-      .catch(() => false)
-    const hasEmpty = await ideEmpty
-      .isVisible()
-      .catch(() => false)
+    const hasIDE = await ideView.isVisible().catch(() => false)
+    const hasEmpty = await ideEmpty.isVisible().catch(() => false)
     expect(hasIDE || hasEmpty).toBe(true)
 
     // If the IDE empty state is shown, the terminal won't be visible
@@ -49,9 +45,9 @@ test.describe('Terminal — tab management', () => {
     await window.keyboard.press('Meta+3')
 
     // Wait for IDE to render (either full view or empty state)
-    await expect(
-      window.locator('.ide-view, .ide-empty-state').first()
-    ).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('.ide-view, .ide-empty-state').first()).toBeVisible({
+      timeout: 5_000
+    })
 
     // If IDE has a folder open, terminal tab bar should be accessible
     // Check if terminal tab bar exists (may need Cmd+J to toggle in empty state)
