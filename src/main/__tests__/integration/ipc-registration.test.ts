@@ -34,7 +34,7 @@ function extractExpectedChannels(): Set<string> {
   const channelsDir = join(srcRoot, 'shared', 'ipc-channels')
   if (existsSync(channelsDir)) {
     const channelFiles = readdirSync(channelsDir)
-      .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
+      .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && f !== 'broadcast-channels.ts')
       .map((f) => join(channelsDir, f))
 
     for (const filePath of channelFiles) {

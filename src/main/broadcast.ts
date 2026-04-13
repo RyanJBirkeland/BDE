@@ -3,8 +3,13 @@
  * Service-layer code calls broadcast() instead of importing BrowserWindow directly.
  */
 import { BrowserWindow } from 'electron'
+import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
 
-export function broadcast(channel: string, data?: unknown): void {
+export function broadcast<K extends keyof BroadcastChannels>(
+  channel: K,
+  ...args: BroadcastChannels[K] extends void ? [] : [data: BroadcastChannels[K]]
+): void {
+  const data = args[0]
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send(channel, data)
   }
@@ -31,7 +36,10 @@ function flush(): void {
   }
 }
 
-export function broadcastCoalesced(channel: string, payload: unknown): void {
+export function broadcastCoalesced<K extends keyof BroadcastChannels>(
+  channel: K,
+  payload: BroadcastChannels[K]
+): void {
   const arr = _pending.get(channel) ?? []
   arr.push(payload)
   _pending.set(channel, arr)

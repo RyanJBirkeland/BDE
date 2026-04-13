@@ -2,13 +2,12 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
   AgentMeta,
-  PrListPayload,
   SpawnLocalAgentArgs,
-  AgentEvent,
   BatchOperation,
   EpicDependency
 } from '../shared/types'
 import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
+import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
 import type { WorkflowTemplate } from '../shared/workflow-types'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
@@ -241,8 +240,9 @@ const api = {
   deletePath: (targetPath: string) => typedInvoke('fs:delete', targetPath),
   stat: (targetPath: string) => typedInvoke('fs:stat', targetPath),
   listFiles: (rootPath: string) => typedInvoke('fs:listFiles', rootPath),
-  onDirChanged: (callback: (dirPath: string) => void) => {
-    const handler = (_event: unknown, dirPath: string): void => callback(dirPath)
+  onDirChanged: (callback: (dirPath: BroadcastChannels['fs:dirChanged']) => void) => {
+    const handler = (_event: unknown, dirPath: BroadcastChannels['fs:dirChanged']): void =>
+      callback(dirPath)
     ipcRenderer.on('fs:dirChanged', handler)
     return () => {
       ipcRenderer.removeListener('fs:dirChanged', handler)
@@ -253,31 +253,15 @@ const api = {
   // for any classified failure (billing, network, permission, rate-limit,
   // token-expired, etc.). Debounced per-kind (60s) at the source, so the
   // renderer never sees spam.
-  onGitHubError: (
-    cb: (data: {
-      kind:
-        | 'no-token'
-        | 'token-expired'
-        | 'rate-limit'
-        | 'billing'
-        | 'permission'
-        | 'not-found'
-        | 'validation'
-        | 'server'
-        | 'network'
-        | 'unknown'
-      message: string
-      status?: number
-    }) => void
-  ): (() => void) => {
-    const listener = (_e: unknown, data: Parameters<typeof cb>[0]): void => cb(data)
+  onGitHubError: (cb: (data: BroadcastChannels['github:error']) => void): (() => void) => {
+    const listener = (_e: unknown, data: BroadcastChannels['github:error']): void => cb(data)
     ipcRenderer.on('github:error', listener)
     return () => ipcRenderer.removeListener('github:error', listener)
   },
 
   // Open PR list — main-process poller push events
-  onPrListUpdated: (cb: (payload: PrListPayload) => void): (() => void) => {
-    const listener = (_e: unknown, data: PrListPayload): void => cb(data)
+  onPrListUpdated: (cb: (payload: BroadcastChannels['pr:listUpdated']) => void): (() => void) => {
+    const listener = (_e: unknown, data: BroadcastChannels['pr:listUpdated']): void => cb(data)
     ipcRenderer.on('pr:listUpdated', listener)
     return () => ipcRenderer.removeListener('pr:listUpdated', listener)
   },
@@ -285,23 +269,20 @@ const api = {
   refreshPrList: () => typedInvoke('pr:refreshList'),
 
   // Sprint DB file-watcher push events
-  onExternalSprintChange: (cb: () => void): (() => void) => {
-    ipcRenderer.on('sprint:externalChange', cb)
-    return () => ipcRenderer.removeListener('sprint:externalChange', cb)
+  onExternalSprintChange: (cb: (data: BroadcastChannels['sprint:externalChange']) => void): (() => void) => {
+    const listener = (_e: unknown, data: BroadcastChannels['sprint:externalChange']): void => cb(data)
+    ipcRenderer.on('sprint:externalChange', listener)
+    return () => ipcRenderer.removeListener('sprint:externalChange', listener)
   },
 
   // Agent event streaming (Phase 2)
   agentEvents: {
-    onEvent: (
-      callback: (payload: { agentId: string; event: AgentEvent }) => void
-    ): (() => void) => {
-      const handler = (
-        _e: IpcRendererEvent,
-        payload: { agentId: string; event: AgentEvent }
-      ): void => callback(payload)
+    onEvent: (callback: (payload: BroadcastChannels['agent:event']) => void): (() => void) => {
+      const handler = (_e: IpcRendererEvent, payload: BroadcastChannels['agent:event']): void =>
+        callback(payload)
       const batchHandler = (
         _e: IpcRendererEvent,
-        payloads: Array<{ agentId: string; event: AgentEvent }>
+        payloads: BroadcastChannels['agent:event:batch']
       ): void => {
         for (const p of payloads) {
           callback(p)
@@ -384,27 +365,9 @@ const api = {
     }) => typedInvoke('workbench:chatStream', input),
     cancelStream: (streamId: string) => typedInvoke('workbench:cancelStream', streamId),
     extractPlan: (markdown: string) => typedInvoke('workbench:extractPlan', markdown),
-    onChatChunk: (
-      cb: (data: {
-        streamId: string
-        chunk: string
-        done: boolean
-        fullText?: string
-        error?: string
-        toolUse?: { name: string; input: Record<string, unknown> }
-      }) => void
-    ): (() => void) => {
-      const listener = (
-        _e: unknown,
-        data: {
-          streamId: string
-          chunk: string
-          done: boolean
-          fullText?: string
-          error?: string
-          toolUse?: { name: string; input: Record<string, unknown> }
-        }
-      ): void => cb(data)
+    onChatChunk: (cb: (data: BroadcastChannels['workbench:chatChunk']) => void): (() => void) => {
+      const listener = (_e: unknown, data: BroadcastChannels['workbench:chatChunk']): void =>
+        cb(data)
       ipcRenderer.on('workbench:chatChunk', listener)
       return () => ipcRenderer.removeListener('workbench:chatChunk', listener)
     }
@@ -538,9 +501,7 @@ const api = {
       messages: import('../shared/types').PartnerMessage[]
     }) =>
       typedInvoke('review:chatStream', params),
-    onChatChunk: (
-      listener: (evt: unknown, chunk: import('../shared/types').ChatChunk) => void
-    ) => {
+    onChatChunk: (listener: (evt: unknown, chunk: BroadcastChannels['review:chatChunk']) => void) => {
       ipcRenderer.on('review:chatChunk', listener as never)
       return () => ipcRenderer.removeListener('review:chatChunk', listener as never)
     },
@@ -555,26 +516,9 @@ const api = {
     typedInvoke('synthesizer:revise', args),
   cancelSynthesis: (streamId: string) => typedInvoke('synthesizer:cancel', streamId),
   onSynthesizerChunk: (
-    cb: (data: {
-      streamId: string
-      chunk: string
-      done: boolean
-      fullText?: string
-      filesAnalyzed?: string[]
-      error?: string
-    }) => void
+    cb: (data: BroadcastChannels['synthesizer:chunk']) => void
   ): (() => void) => {
-    const listener = (
-      _e: unknown,
-      data: {
-        streamId: string
-        chunk: string
-        done: boolean
-        fullText?: string
-        filesAnalyzed?: string[]
-        error?: string
-      }
-    ): void => cb(data)
+    const listener = (_e: unknown, data: BroadcastChannels['synthesizer:chunk']): void => cb(data)
     ipcRenderer.on('synthesizer:chunk', listener)
     return () => ipcRenderer.removeListener('synthesizer:chunk', listener)
   },
@@ -586,16 +530,10 @@ const api = {
     clone: (owner: string, repo: string, destDir: string) =>
       typedInvoke('repos:clone', owner, repo, destDir),
     onCloneProgress: (
-      cb: (data: {
-        owner: string
-        repo: string
-        line: string
-        done: boolean
-        error?: string
-        localPath?: string
-      }) => void
+      cb: (data: BroadcastChannels['repos:cloneProgress']) => void
     ): (() => void) => {
-      const handler = (_e: unknown, data: Parameters<typeof cb>[0]): void => cb(data)
+      const handler = (_e: unknown, data: BroadcastChannels['repos:cloneProgress']): void =>
+        cb(data)
       ipcRenderer.on('repos:cloneProgress', handler)
       return () => ipcRenderer.removeListener('repos:cloneProgress', handler)
     }

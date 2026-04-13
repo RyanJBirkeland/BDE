@@ -15,6 +15,9 @@ export type {
   CostChannels
 } from './agent-channels'
 
+// Broadcast channels
+export type { BroadcastChannels } from './broadcast-channels'
+
 // Sprint channels
 export type {
   SprintChannels,

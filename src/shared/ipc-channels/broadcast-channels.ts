@@ -1,0 +1,80 @@
+import type { AgentEvent, ChatChunk, PrListPayload, SprintTask } from '../types'
+
+/**
+ * Type-safe broadcast channel registry.
+ * Maps channel names to payload types for push events sent from main → renderer.
+ */
+export interface BroadcastChannels {
+  // Agent events
+  'agent:event': { agentId: string; event: AgentEvent }
+  'agent:event:batch': Array<{ agentId: string; event: AgentEvent }>
+
+  // Agent manager
+  'agent-manager:circuit-breaker-open': {
+    consecutiveFailures: number
+    openUntil: number
+  }
+
+  // Filesystem
+  'fs:dirChanged': string
+
+  // GitHub
+  'github:error': {
+    kind:
+      | 'no-token'
+      | 'token-expired'
+      | 'rate-limit'
+      | 'billing'
+      | 'permission'
+      | 'not-found'
+      | 'validation'
+      | 'server'
+      | 'network'
+      | 'unknown'
+    message: string
+    status?: number
+  }
+
+  // Pull requests
+  'pr:listUpdated': PrListPayload
+
+  // Repository discovery
+  'repos:cloneProgress': {
+    owner: string
+    repo: string
+    line: string
+    done: boolean
+    error?: string
+    localPath?: string
+  }
+
+  // Code review streaming
+  'review:chatChunk': ChatChunk
+
+  // Sprint tasks
+  'sprint:externalChange': void
+  'sprint:mutation': { type: 'created' | 'updated' | 'deleted'; task: SprintTask }
+
+  // Synthesizer streaming
+  'synthesizer:chunk': {
+    streamId: string
+    chunk: string
+    done: boolean
+    fullText?: string
+    filesAnalyzed?: string[]
+    error?: string
+  }
+
+  // Task terminal
+  'task-terminal:resolution-error': { error: string }
+
+  // Workbench streaming
+  'workbench:chatChunk': {
+    streamId: string
+    chunk: string
+    done: boolean
+    fullText?: string
+    error?: string
+    toolUse?: { name: string; input: Record<string, unknown> }
+  }
+}
