@@ -17,6 +17,8 @@ export interface BatchHandlersDeps {
 }
 
 export function registerSprintBatchHandlers(deps: BatchHandlersDeps): void {
+  const effectiveRepo = deps.repo ?? createSprintTaskRepository()
+
   safeHandle('sprint:batchUpdate', async (
       _e,
       operations: Array<{ op: 'update' | 'delete'; id: string; patch?: Record<string, unknown> }>
@@ -130,7 +132,6 @@ export function registerSprintBatchHandlers(deps: BatchHandlersDeps): void {
       }>
     ) => {
       const { batchImportTasks } = await import('../services/batch-import')
-      const effectiveRepo = deps.repo ?? createSprintTaskRepository()
       const reposConfig =
         getSettingJson<Array<{ name: string; localPath: string }>>('repos') ?? []
       const configuredRepos = reposConfig.map((r) => r.name.toLowerCase())

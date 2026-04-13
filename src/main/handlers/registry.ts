@@ -43,7 +43,7 @@ export interface AppHandlerDeps {
   terminalDeps: TerminalDeps
   reviewService?: ReviewService
   reviewChatStreamDeps?: ChatStreamDeps
-  repo?: ISprintTaskRepository
+  repo: ISprintTaskRepository
 }
 
 /**
