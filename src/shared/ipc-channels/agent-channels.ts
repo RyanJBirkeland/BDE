@@ -71,10 +71,6 @@ export interface AgentChannels {
 }
 
 export interface AgentEventChannels {
-  'agent:event': {
-    args: [payload: { agentId: string; event: AgentEvent }]
-    result: void
-  }
   'agent:history': {
     args: [agentId: string]
     result: AgentEvent[]

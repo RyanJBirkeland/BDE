@@ -1076,7 +1076,8 @@ describe('createAgentManager', () => {
         expect.anything(), // getSetting
         expect.anything(), // epicIndex
         expect.anything(), // getGroup
-        expect.anything() // listGroupTasks
+        expect.anything(), // listGroupTasks
+        expect.anything() // onTaskTerminal
       )
     })
 
