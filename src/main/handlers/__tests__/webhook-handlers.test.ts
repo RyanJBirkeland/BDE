@@ -93,6 +93,50 @@ describe('webhook-handlers', () => {
     })
   })
 
+  describe('webhook URL host validation', () => {
+    const mockEvent = {}
+
+    it.each([
+      // [url, shouldPass, description]
+      ['https://example.com/hook', true, 'public HTTPS URL'],
+      ['https://hooks.slack.com/services/xxx', true, 'Slack webhook'],
+      ['http://example.com/hook', true, 'HTTP public URL'],
+      ['https://localhost/hook', false, 'localhost'],
+      ['https://127.0.0.1/hook', false, 'IPv4 loopback'],
+      ['https://[::1]/hook', false, 'IPv6 loopback'],
+      ['https://0.0.0.0/hook', false, 'all-interfaces'],
+      ['https://192.168.1.1/hook', false, 'RFC1918 192.168.x.x'],
+      ['https://10.0.0.1/hook', false, 'RFC1918 10.x.x.x'],
+      ['https://172.16.0.1/hook', false, 'RFC1918 172.16.x.x'],
+      ['https://172.31.255.255/hook', false, 'RFC1918 172.31.x.x'],
+      ['https://169.254.169.254/hook', false, 'link-local (AWS metadata)'],
+      ['https://169.254.0.1/hook', false, 'link-local range'],
+      ['ftp://example.com/hook', false, 'non-http scheme'],
+      ['not-a-url', false, 'invalid URL'],
+      ['', false, 'empty string'],
+    ])('webhook:create url="%s" (%s) → valid=%s', async (url, shouldPass, _desc) => {
+      const handler = handlers.get('webhook:create')!
+      if (shouldPass) {
+        await expect(handler(mockEvent, { url, events: [] })).resolves.toBeDefined()
+      } else {
+        await expect(handler(mockEvent, { url, events: [] })).rejects.toThrow(/invalid webhook url/i)
+      }
+    })
+
+    it.each([
+      ['https://example.com/hook', true],
+      ['https://localhost/hook', false],
+      ['https://10.0.0.1/hook', false],
+    ])('webhook:update url="%s" → valid=%s', async (url, shouldPass) => {
+      const handler = handlers.get('webhook:update')!
+      if (shouldPass) {
+        await expect(handler(mockEvent, { id: 'wh-123', url })).resolves.toBeDefined()
+      } else {
+        await expect(handler(mockEvent, { id: 'wh-123', url })).rejects.toThrow(/invalid webhook url/i)
+      }
+    })
+  })
+
   describe('webhook:test', () => {
     it('should throw if webhook not found', async () => {
       const handler = handlers.get('webhook:test')!

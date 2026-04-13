@@ -15,17 +15,86 @@ import {
 
 const logger = createLogger('webhook-handlers')
 
+/**
+ * Validates a webhook URL is a public HTTP/HTTPS endpoint.
+ * Rejects:
+ *   - Non-http(s) schemes (ftp://, javascript://, etc.)
+ *   - Loopback addresses: localhost, 127.x.x.x, ::1, 0.0.0.0
+ *   - RFC 1918 private ranges: 10.x, 172.16-31.x, 192.168.x
+ *   - Link-local range: 169.254.x.x (AWS/GCP metadata endpoint)
+ *
+ * Security: prevents SSRF — a compromised renderer could otherwise fire
+ * webhooks at internal AWS metadata services, local dev servers, or
+ * Kubernetes pod IPs.
+ */
+function validateWebhookUrl(url: string | undefined | null): void {
+  if (!url) {
+    throw new Error('Invalid webhook URL: URL must not be empty.')
+  }
+
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error(`Invalid webhook URL: "${url}" is not a valid URL.`)
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(
+      `Invalid webhook URL: scheme "${parsed.protocol}" is not allowed. Use http or https.`
+    )
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  // Loopback and zero-address
+  if (
+    hostname === 'localhost' ||
+    hostname === '0.0.0.0' ||
+    hostname === '::1' ||
+    hostname === '[::1]'
+  ) {
+    throw new Error(`Invalid webhook URL: loopback host "${hostname}" is not allowed.`)
+  }
+
+  // IPv4 ranges — only check if it looks like an IPv4 address
+  const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4) {
+    const [, a, b] = ipv4.map(Number)
+    // 127.x.x.x — loopback
+    if (a === 127) {
+      throw new Error(`Invalid webhook URL: loopback address "${hostname}" is not allowed.`)
+    }
+    // 10.x.x.x — RFC 1918
+    if (a === 10) {
+      throw new Error(`Invalid webhook URL: private address "${hostname}" is not allowed.`)
+    }
+    // 172.16.0.0 – 172.31.255.255 — RFC 1918
+    if (a === 172 && b >= 16 && b <= 31) {
+      throw new Error(`Invalid webhook URL: private address "${hostname}" is not allowed.`)
+    }
+    // 192.168.x.x — RFC 1918
+    if (a === 192 && b === 168) {
+      throw new Error(`Invalid webhook URL: private address "${hostname}" is not allowed.`)
+    }
+    // 169.254.x.x — link-local (AWS/GCP metadata)
+    if (a === 169 && b === 254) {
+      throw new Error(`Invalid webhook URL: link-local address "${hostname}" is not allowed.`)
+    }
+  }
+}
+
 export function registerWebhookHandlers(): void {
   safeHandle('webhook:list', async (_e) => {
     return listWebhooks()
   })
 
   safeHandle('webhook:create', async (_e, payload: { url: string; events: string[]; secret?: string }) => {
-      const webhook = createWebhook(payload)
-      logger.info(`Created webhook ${webhook.id} for ${payload.url}`)
-      return webhook
-    }
-  )
+    validateWebhookUrl(payload.url)
+    const webhook = createWebhook(payload)
+    logger.info(`Created webhook ${webhook.id} for ${payload.url}`)
+    return webhook
+  })
 
   safeHandle('webhook:update', async (
       _e,
@@ -37,6 +106,9 @@ export function registerWebhookHandlers(): void {
         enabled?: boolean
       }
     ) => {
+      if (payload.url !== undefined) {
+        validateWebhookUrl(payload.url)
+      }
       const webhook = updateWebhook(payload)
       logger.info(`Updated webhook ${payload.id}`)
       return webhook
