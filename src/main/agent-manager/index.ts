@@ -2,6 +2,7 @@ import type { AgentManagerConfig, ActiveAgent, SteerResult } from './types'
 import type { Logger } from '../logger'
 import { logError } from '../logger'
 import type { TaskDependency } from '../../shared/types'
+import { computeDepsFingerprint, refreshDependencyIndex } from './dependency-refresher'
 import {
   EXECUTOR_ID,
   WATCHDOG_INTERVAL_MS,
@@ -97,7 +98,6 @@ export interface AgentManager {
 
 import type { DependencyIndex } from '../services/dependency-service'
 import { nowIso } from '../../shared/time'
-import { isTerminal } from '../../shared/task-state-machine'
 
 export class AgentManagerImpl implements AgentManager {
   // Exposed state (testable via _ prefix)
@@ -204,12 +204,7 @@ export class AgentManagerImpl implements AgentManager {
 
   /**
    * Incrementally refresh the dependency index from the repository.
-   *
-   * - Removes tasks that have been deleted from both the dep-index and the
-   *   fingerprint cache.
-   * - Evicts terminal-status tasks from the fingerprint cache (their deps are
-   *   frozen; keeping entries just grows the map unboundedly).
-   * - Updates the dep-index for tasks whose dependency fingerprint changed.
+   * Delegates to the pure `refreshDependencyIndex` function.
    *
    * Returns a Map<taskId, status> built from the current task list.
    * On repo error, logs a warning and returns an empty map so the drain loop
@@ -218,48 +213,7 @@ export class AgentManagerImpl implements AgentManager {
    * Exposed via _ prefix convention (not private keyword) for testability.
    */
   _refreshDependencyIndex(): Map<string, string> {
-    try {
-      const allTasks = this.repo.getTasksWithDependencies()
-      const currentTaskIds = new Set(allTasks.map((t) => t.id))
-
-      // Remove deleted tasks from index
-      for (const oldId of this._lastTaskDeps.keys()) {
-        if (!currentTaskIds.has(oldId)) {
-          this._depIndex.remove(oldId)
-          this._lastTaskDeps.delete(oldId)
-        }
-      }
-
-      // Update tasks with changed dependencies.
-      // F-t1-sysprof-1/-4: Compare cached fingerprints — avoids re-sorting the
-      // unchanged-deps case (the common path for most drain ticks).
-      // F-t1-sre-6: Evict terminal-status tasks from _lastTaskDeps — their deps
-      // never change, so keeping fingerprint entries just grows the map forever
-      // (510 tasks in prod, most terminal). Evict on first terminal encounter;
-      // dep-index edges stay intact for dependency-satisfaction checks.
-      for (const task of allTasks) {
-        if (isTerminal(task.status)) {
-          // Terminal tasks' deps are frozen — evict from fingerprint cache so
-          // the map doesn't grow without bound (510 tasks in prod, most terminal).
-          // The dep-index retains the task's edges for dependency-satisfaction
-          // checks; we only drop the fingerprint entry.
-          this._lastTaskDeps.delete(task.id)
-          continue
-        }
-        const cached = this._lastTaskDeps.get(task.id)
-        const newDeps = task.depends_on ?? null
-        const newHash = AgentManagerImpl._depsFingerprint(newDeps)
-        if (!cached || cached.hash !== newHash) {
-          this._depIndex.update(task.id, newDeps)
-          this._lastTaskDeps.set(task.id, { deps: newDeps, hash: newHash })
-        }
-      }
-
-      return new Map(allTasks.map((t) => [t.id, t.status]))
-    } catch (err) {
-      this.logger.warn(`[agent-manager] Failed to refresh dependency index: ${err}`)
-      return new Map()
-    }
+    return refreshDependencyIndex(this._depIndex, this._lastTaskDeps, this.repo, this.logger)
   }
 
   async onTaskTerminal(taskId: string, status: string): Promise<void> {
@@ -439,20 +393,12 @@ export class AgentManagerImpl implements AgentManager {
   // ---- static helpers ----
 
   /**
-   * F-t1-sysprof-1: Compute a stable fingerprint of a dependency array.
-   * The fingerprint is sort-order-independent (sorted by id) so two equivalent
-   * arrays produce the same hash regardless of insertion order.
-   *
-   * Format: "id1:type1:cond1|id2:type2:cond2|..." with entries sorted by id.
-   * The pipe and colon separators are safe because TaskDependency.id is a
-   * task UUID and type/condition are enum strings without those characters.
+   * Backward compat delegate — tests that call `AgentManagerImpl._depsFingerprint`
+   * directly continue to work. New code should import `computeDepsFingerprint`
+   * from `dependency-refresher.ts` directly.
    */
   static _depsFingerprint(deps: TaskDependency[] | null): string {
-    if (!deps || deps.length === 0) return ''
-    return deps
-      .map((d) => `${d.id}:${d.type}:${d.condition ?? ''}`)
-      .sort()
-      .join('|')
+    return computeDepsFingerprint(deps)
   }
 
   // ---- drainLoop helpers ----
@@ -659,7 +605,7 @@ export class AgentManagerImpl implements AgentManager {
         const deps = task.depends_on ?? null
         this._lastTaskDeps.set(task.id, {
           deps,
-          hash: AgentManagerImpl._depsFingerprint(deps)
+          hash: computeDepsFingerprint(deps)
         })
       }
       this.logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
