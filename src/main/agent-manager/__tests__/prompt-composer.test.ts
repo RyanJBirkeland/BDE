@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { buildAgentPrompt, type AgentType } from '../prompt-composer'
 
 // Mock getUserMemory — default returns no files
@@ -6,9 +6,16 @@ vi.mock('../../agent-system/memory/user-memory', () => ({
   getUserMemory: vi.fn(() => ({ content: '', totalBytes: 0, fileCount: 0 }))
 }))
 
+// Mock buildReviewerPrompt so we can control its output length in tests
+vi.mock('../prompt-composer-reviewer', () => ({
+  buildReviewerPrompt: vi.fn(() => 'default reviewer prompt that is long enough to pass validation checks')
+}))
+
 // Re-import to get the mocked version for test manipulation
 import { getUserMemory } from '../../agent-system/memory/user-memory'
+import { buildReviewerPrompt } from '../prompt-composer-reviewer'
 const mockGetUserMemory = vi.mocked(getUserMemory)
+const mockBuildReviewerPrompt = vi.mocked(buildReviewerPrompt)
 
 describe('buildAgentPrompt', () => {
   describe('preambles', () => {
@@ -818,8 +825,8 @@ describe('buildAgentPrompt', () => {
       expect(prompt).not.toContain('## Upstream Task Context')
     })
 
-    it('caps upstream specs at 500 characters', () => {
-      const longSpec = 'A'.repeat(600)
+    it('caps upstream specs at 2000 characters', () => {
+      const longSpec = 'A'.repeat(2100)
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Build next feature',
@@ -833,13 +840,13 @@ describe('buildAgentPrompt', () => {
 
       expect(prompt).toContain('## Upstream Task Context')
       expect(prompt).toContain('### Long Spec Task')
-      // Should be capped at 500 chars + '...'
-      expect(prompt).toContain('A'.repeat(500) + '...')
-      // Should not contain the full 600 chars
-      expect(prompt).not.toContain('A'.repeat(600))
+      // Should be capped at 2000 chars + '...'
+      expect(prompt).toContain('A'.repeat(2000) + '...')
+      // Should not contain the full 2100 chars
+      expect(prompt).not.toContain('A'.repeat(2100))
     })
 
-    it('does not cap specs under 500 characters', () => {
+    it('does not cap specs under 2000 characters', () => {
       const shortSpec = 'This is a short spec about authentication'
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
@@ -992,6 +999,41 @@ describe('buildAgentPrompt', () => {
       })
       expect(prompt).not.toContain('## Task Scratchpad')
       expect(prompt).not.toContain('## Prior Attempt Context')
+    })
+  })
+
+  describe('prompt length validation guard', () => {
+    beforeEach(() => {
+      // Reset to a valid long prompt by default
+      mockBuildReviewerPrompt.mockReturnValue(
+        'default reviewer prompt that is long enough to pass validation checks'
+      )
+    })
+
+    it('throws if assembled prompt is under 200 characters', () => {
+      // Use the reviewer seam (mocked) to control the output length.
+      // The reviewer sub-builder is the only path whose output we can control
+      // without patching internals. A too-short return value exercises the guard.
+      mockBuildReviewerPrompt.mockReturnValue('short')
+
+      expect(() => buildAgentPrompt({ agentType: 'reviewer' })).toThrow(/too short/)
+    })
+
+    it('error message includes prompt length and agent type', () => {
+      mockBuildReviewerPrompt.mockReturnValue('x'.repeat(50))
+
+      expect(() => buildAgentPrompt({ agentType: 'reviewer' })).toThrow(/reviewer/)
+      expect(() => buildAgentPrompt({ agentType: 'reviewer' })).toThrow(/50 chars/)
+    })
+
+    it('does not throw for valid prompts from all agent types', () => {
+      // Each agent type should produce a prompt well over 200 chars — no throw expected.
+      const types: AgentType[] = ['pipeline', 'assistant', 'adhoc', 'copilot', 'synthesizer']
+      for (const agentType of types) {
+        expect(() => buildAgentPrompt({ agentType })).not.toThrow()
+        const prompt = buildAgentPrompt({ agentType })
+        expect(prompt.length).toBeGreaterThan(200)
+      }
     })
   })
 

@@ -16,6 +16,9 @@ import { getUserMemory } from '../agent-system/memory/user-memory'
 import { getAllSkills } from '../agent-system/skills'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { buildReviewerPrompt } from './prompt-composer-reviewer'
+import { createLogger } from '../logger'
+
+const logger = createLogger('prompt-composer')
 
 export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
 
@@ -238,7 +241,7 @@ function buildUpstreamContextSection(
   section += 'This task depends on the following completed tasks:\n\n'
 
   for (const upstream of upstreamContext) {
-    const cappedSpec = truncateSpec(upstream.spec, 500)
+    const cappedSpec = truncateSpec(upstream.spec, 2000)
     section += `### ${upstream.title}\n\n${cappedSpec}\n\n`
 
     if (upstream.partial_diff) {
@@ -642,18 +645,38 @@ function buildSynthesizerPrompt(input: BuildPromptInput): string {
 // Main Prompt Builder (Dispatcher)
 // ---------------------------------------------------------------------------
 
+const MIN_PROMPT_LENGTH = 200
+
 export function buildAgentPrompt(input: BuildPromptInput): string {
-  switch (input.agentType) {
+  const { agentType } = input
+
+  let prompt: string
+  switch (agentType) {
     case 'pipeline':
-      return buildPipelinePrompt(input)
+      prompt = buildPipelinePrompt(input)
+      break
     case 'assistant':
     case 'adhoc':
-      return buildAssistantPrompt(input)
+      prompt = buildAssistantPrompt(input)
+      break
     case 'copilot':
-      return buildCopilotPrompt(input)
+      prompt = buildCopilotPrompt(input)
+      break
     case 'synthesizer':
-      return buildSynthesizerPrompt(input)
+      prompt = buildSynthesizerPrompt(input)
+      break
     case 'reviewer':
-      return buildReviewerPrompt(input)
+      prompt = buildReviewerPrompt(input)
+      break
   }
+
+  if (prompt.length < MIN_PROMPT_LENGTH) {
+    throw new Error(
+      `[prompt-composer] Assembled prompt is too short (${prompt.length} chars) — check agent type '${agentType}' configuration`
+    )
+  }
+
+  logger.info(`[prompt-composer] Assembled prompt: ${prompt.length} chars for agent type '${agentType}'`)
+
+  return prompt
 }
