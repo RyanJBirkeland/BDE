@@ -27,19 +27,18 @@ Establish three explicit layers inside `src/main/agent-manager/`. Each layer has
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  ORCHESTRATION LAYER  (~100–150 lines each)         │
+│  ORCHESTRATION LAYER  (~150–200 lines each)         │
 │  index.ts · run-agent.ts · completion.ts            │
 │  "Wire the pieces together, make the calls"         │
 └──────────────────────┬──────────────────────────────┘
                        │ calls
 ┌──────────────────────▼──────────────────────────────┐
 │  DOMAIN LAYER  (decisions, rules, policies)         │
-│  task-mapper.ts         map + validate queue tasks  │
-│  message-consumer.ts    consume SDK message stream  │
-│  playground-handler.ts  detect + emit playground    │
+│  task-mapper.ts          map + validate queue tasks │
+│  message-consumer.ts     consume SDK message stream │
+│  playground-handler.ts   detect + emit playground   │
 │  partial-diff-capture.ts capture failed-agent diff  │
-│  auto-merge-rules.ts    load + evaluate merge rules │
-│  review-transition.ts   transition task → review    │
+│  review-transition.ts    transition task → review   │
 └──────────────────────┬──────────────────────────────┘
                        │ calls
 ┌──────────────────────▼──────────────────────────────┐
@@ -48,63 +47,108 @@ Establish three explicit layers inside `src/main/agent-manager/`. Each layer has
 │  sdk-adapter.ts     (already exists — extended)     │
 │  worktree.ts        (already exists — unchanged)    │
 └─────────────────────────────────────────────────────┘
+
+Auto-merge rules: src/main/services/auto-review.ts (already exists — already isolated)
 ```
 
 **Layer invariants:**
 - Infrastructure modules have no knowledge of tasks, rules, or state transitions
-- Domain modules contain decisions and policies but make no raw git/SDK calls
-- Orchestrators sequence calls but contain minimal logic of their own (~100–150 lines each after refactor)
+- Domain modules contain decisions and policies; they may call infrastructure but not vice versa
+- Orchestrators sequence calls but contain minimal logic of their own
+
+**Note on `partial-diff-capture.ts`:** `capturePartialDiff()` calls `execFile('git', ...)` directly because the git call is inseparable from the error-classification and size-capping policy. This is an accepted exception to the layer invariant — it is documented here so the implementer does not refactor it unnecessarily.
 
 ## Architecture
 
 ### New files (Domain Layer)
 
 **`task-mapper.ts`**  
-Owns `_mapQueuedTask()` and `_checkAndBlockDeps()`, extracted from `index.ts`. Pure functions: take raw record, return typed task or null. No side effects.
+Extracts `_mapQueuedTask()` and `_checkAndBlockDeps()` from `index.ts` as standalone functions.
+
+- `mapQueuedTask(raw, logger): MappedTask | null` — validates required fields, normalises types, returns null with a warning on invalid input. Takes `Logger` as a parameter since the current implementation calls `this.logger.warn()`.
+- `checkAndBlockDeps(taskId, rawDeps, taskStatusMap, repo, depIndex, logger): boolean` — checks dependency satisfaction and calls `repo.updateTask()` to block if unsatisfied. Takes `repo`, `depIndex`, and `logger` as parameters (replaces `this.repo`, `this._depIndex`, `this.logger` references).
+
+Both functions are pure in the sense that all dependencies are injected via parameters — no class state.
 
 **`message-consumer.ts`**  
-Owns `consumeMessages()`, `processSDKMessage()`, `trackAgentCosts()`, `handleOAuthRefresh()`. Extracted from `run-agent.ts`. Accepts an `ActiveAgent`, `TurnTracker`, and callbacks; returns `ConsumeMessagesResult`. Independently testable without spawning a real agent.
+Extracts the SDK message loop from `run-agent.ts`.
+
+Exported interface:
+```typescript
+export interface ConsumeMessagesOpts {
+  handle: AgentHandle
+  agent: ActiveAgent
+  task: RunAgentTask
+  worktreePath: string
+  agentRunId: string
+  turnTracker: TurnTracker
+  logger: Logger
+}
+
+export interface ConsumeMessagesResult {
+  exitCode: number | undefined
+  lastAgentOutput: string
+}
+
+export async function consumeMessages(opts: ConsumeMessagesOpts): Promise<ConsumeMessagesResult>
+```
+
+Internal helpers moved verbatim: `processSDKMessage()`, `trackAgentCosts()`, `detectPlaygroundWrite()`, `handleOAuthRefresh()`. Their signatures do not change — only their file location changes.
 
 **`playground-handler.ts`**  
-Owns `detectHtmlWrite()`, `tryEmitPlaygroundEvent()`. Extracted from `run-agent.ts`. Both functions are already well-tested — this extraction makes their home obvious.
+Extracts `detectHtmlWrite()` and `tryEmitPlaygroundEvent()` from `run-agent.ts`. Both functions are already well-tested and have no dependencies on the agent lifecycle — this extraction makes their home unambiguous.
 
 **`partial-diff-capture.ts`**  
-Owns `capturePartialDiff()`, `classifyDiffCaptureError()`. Extracted from `run-agent.ts`. Named to distinguish from `diff-snapshot.ts` (which captures full review diffs).
-
-**`auto-merge-rules.ts`**  
-Owns `AutoReviewRule` type, rule loading from settings, and rule evaluation logic. Extracted from `completion.ts`. Isolated rule evaluation is independently testable — no git operations needed to assert whether a diff passes a rule.
+Extracts `capturePartialDiff()` and `classifyDiffCaptureError()` from `run-agent.ts`. Named to distinguish from `diff-snapshot.ts` (which captures full review diffs for the Code Review Station). Contains a direct `execFile('git', ...)` call — this is intentional (see layer invariant note above).
 
 **`review-transition.ts`**  
-Owns `transitionToReview()`. Extracted from `completion.ts`. Handles the diff snapshot capture and `status: 'review'` update as a single atomic operation.
+Extracts `transitionToReview()` from `completion.ts`. Handles diff snapshot capture and the `status: 'review'` update as a single atomic operation. Signature unchanged.
+
+### Auto-merge rules — no new file needed
+
+`src/main/services/auto-review.ts` already exists and is already isolated. `completion.ts` already imports it via dynamic `import('../services/auto-review')`. The only cleanup needed: remove the duplicate `type AutoReviewRule` definition at `completion.ts:28` (which shadows the shared type from `src/shared/types/task-types.ts`) and ensure `completion.ts` imports `AutoReviewRule` from the shared types module directly.
 
 ### Infrastructure Layer extensions
 
 **`git-operations.ts`** (existing — extended)  
-Receives `autoCommitIfDirty()`, `cleanupWorktreeAndBranch()`, `executeSquashMerge()` from `completion.ts`. These are pure git command sequences with no task state knowledge — they return results and let callers decide what to do.
+Receives `autoCommitIfDirty()`, `cleanupWorktreeAndBranch()`, and `executeSquashMerge()` from `completion.ts`. These functions contain only git command sequences — no task state reads or writes. Callers in `completion.ts` receive results and decide what task state transitions to make.
+
+`executeSquashMerge()` signature after extraction:
+```typescript
+export async function executeSquashMerge(opts: {
+  branch: string
+  worktreePath: string
+  repoPath: string
+  title: string
+  logger: Logger
+}): Promise<'merged' | 'dirty-main' | 'failed'>
+```
+The task state update (`repo.updateTask`) and `onTaskTerminal` call remain in `completion.ts` — infrastructure does not touch task state.
 
 **`sdk-adapter.ts`** (existing — extended)  
-Receives `spawnWithTimeout()` from `run-agent.ts`. It is a thin timeout wrapper around `spawnAgent()`, which is already in `sdk-adapter.ts`.
+Receives `spawnWithTimeout()` from `run-agent.ts`. It is a thin timeout wrapper around `spawnAgent()`, which is already in `sdk-adapter.ts`. The wiring logic in `spawnAndWireAgent()` (stderr capture, `ActiveAgent` construction, `createAgentRecord`, `agent:started` event) stays in `run-agent.ts` — that is orchestration, not infrastructure.
 
-### Orchestration Layer (after refactor)
+### Orchestration Layer (after both phases complete)
 
-**`run-agent.ts`** (~120 lines)  
+**`run-agent.ts`** (~200 lines)  
 Sequences three phases:
 1. Build prompt (`prompt-composer.ts`)
-2. Spawn + wire agent (`sdk-adapter.ts` + `message-consumer.ts`)
-3. Finalize: classify exit, call `resolveSuccess`/`resolveFailure` (`completion.ts`)
+2. Spawn: call `spawnWithTimeout()` (`sdk-adapter.ts`), wire stderr + `ActiveAgent`, persist run record
+3. Consume: call `consumeMessages()` (`message-consumer.ts`)
+4. Finalize: classify exit, call `resolveSuccess`/`resolveFailure` (`completion.ts`)
 
-**`completion.ts`** (~150 lines)  
+**`completion.ts`** (~200 lines)  
 Sequences post-execution:
-1. Auto-commit dirty changes (`git-operations.ts`)
-2. Attempt auto-merge if rules pass (`auto-merge-rules.ts` + `git-operations.ts`)
-3. Otherwise transition to review (`review-transition.ts`)
+1. Auto-commit dirty changes (`autoCommitIfDirty` from `git-operations.ts`)
+2. Evaluate auto-merge rules (`auto-review.ts`)
+3. If merge: call `executeSquashMerge()` (`git-operations.ts`), update task to `done`
+4. Otherwise: call `transitionToReview()` (`review-transition.ts`)
 
-**`index.ts`** (~200 lines)  
+**`index.ts`** (~250 lines)  
 Sequences lifecycle:
-1. Drain loop: fetch queued tasks, map them (`task-mapper.ts`), claim, setup worktree, spawn
-2. Watchdog/orphan/prune timers
-3. Shutdown coordination
-4. Remove backward-compat re-exports — consumers import directly from source modules
+1. Drain loop: fetch queued tasks, call `mapQueuedTask()` + `checkAndBlockDeps()` (`task-mapper.ts`), claim, setup worktree, spawn
+2. Watchdog/orphan/prune timers (unchanged)
+3. Shutdown coordination (unchanged)
 
 ## Phase Plan
 
@@ -112,26 +156,34 @@ Sequences lifecycle:
 
 Extract independent pieces with no pipeline flow changes. Low regression risk.
 
-| Extract from | New home | Functions |
+| Extract from | New home | What moves |
 |---|---|---|
-| `run-agent.ts` | `playground-handler.ts` | `detectHtmlWrite`, `tryEmitPlaygroundEvent` |
-| `run-agent.ts` | `partial-diff-capture.ts` | `capturePartialDiff`, `classifyDiffCaptureError` |
-| `run-agent.ts` | `sdk-adapter.ts` | `spawnWithTimeout` |
-| `completion.ts` | `git-operations.ts` | `autoCommitIfDirty`, `cleanupWorktreeAndBranch`, `executeSquashMerge` |
-| `completion.ts` | `auto-merge-rules.ts` | `AutoReviewRule` type, rule loading, rule evaluation |
-| `index.ts` | `task-mapper.ts` | `_mapQueuedTask`, `_checkAndBlockDeps` |
-| `index.ts` | _(deleted)_ | Backward-compat re-exports (lines 49–58); update test imports |
+| `run-agent.ts` | `playground-handler.ts` (new) | `detectHtmlWrite`, `tryEmitPlaygroundEvent` |
+| `run-agent.ts` | `partial-diff-capture.ts` (new) | `capturePartialDiff`, `classifyDiffCaptureError` |
+| `run-agent.ts` | `sdk-adapter.ts` (extend) | `spawnWithTimeout` |
+| `completion.ts` | `git-operations.ts` (extend) | `autoCommitIfDirty`, `cleanupWorktreeAndBranch`, `executeSquashMerge` (see signature above) |
+| `completion.ts` | _(delete duplicate)_ | `type AutoReviewRule` at line 28 — import from `src/shared/types/task-types.ts` instead |
+| `completion.ts` | `review-transition.ts` (new) | `transitionToReview` |
+| `index.ts` | `task-mapper.ts` (new) | `_mapQueuedTask` → `mapQueuedTask`, `_checkAndBlockDeps` → `checkAndBlockDeps` (with injected deps) |
+| `index.ts` | _(remove)_ | Backward-compat re-exports at lines 49–58 |
+
+**Backward-compat re-export removal:** Grep `src/main/agent-manager/__tests__/` for `from '../index'`. Update each import to point at the source module:
+- `SPAWN_CIRCUIT_FAILURE_THRESHOLD`, `SPAWN_CIRCUIT_PAUSE_MS` → `../circuit-breaker`
+- `handleWatchdogVerdict`, `WatchdogVerdictResult`, `WatchdogCheck`, `WatchdogAction` → `../watchdog-handler`
+- `checkOAuthToken`, `invalidateCheckOAuthTokenCache`, `OAUTH_CHECK_CACHE_TTL_MS`, `OAUTH_CHECK_FAIL_CACHE_TTL_MS` → `../oauth-checker`
 
 **Verification after Phase 1:** `npm run typecheck && npm test && npm run test:main`
 
 ### Phase 2 — Orchestrator Thinning (~2–3 days)
 
-With the domain pieces extracted, slim the orchestrators.
+With the infrastructure extracted, slim the orchestrators.
 
-1. **Extract `message-consumer.ts`** from `run-agent.ts` — the message loop becomes independently testable
-2. **Slim `run-agent.ts`** to a 3-phase orchestrator calling domain + infra modules
-3. **Slim `completion.ts`** to call extracted `auto-merge-rules.ts`, `review-transition.ts`, `git-operations.ts`
-4. **Slim `index.ts`** drain loop to call `task-mapper.ts` functions instead of inline methods
+| Step | What changes |
+|---|---|
+| Extract `message-consumer.ts` | Move `consumeMessages`, `processSDKMessage`, `trackAgentCosts`, `handleOAuthRefresh`, `detectPlaygroundWrite` out of `run-agent.ts`. Use the `ConsumeMessagesOpts` / `ConsumeMessagesResult` interface defined above. |
+| Slim `run-agent.ts` | Replace inline message loop with `consumeMessages(opts)` call. `spawnAndWireAgent` logic stays in `run-agent.ts` (it is orchestration — wires stderr, builds `ActiveAgent`, persists run record). |
+| Slim `completion.ts` | Replace inline `executeSquashMerge`, `autoCommitIfDirty`, `cleanupWorktreeAndBranch` calls with imports from `git-operations.ts`. Replace inline `transitionToReview` with import from `review-transition.ts`. |
+| Slim `index.ts` drain loop | Replace `this._mapQueuedTask(raw)` and `this._checkAndBlockDeps(...)` with imported `mapQueuedTask` and `checkAndBlockDeps` from `task-mapper.ts`. Remove the instance methods from `AgentManagerImpl`. |
 
 **Verification after Phase 2:** `npm run typecheck && npm test && npm run test:main`
 
@@ -155,35 +207,38 @@ runAgent()
 ### After (run-agent.ts orchestrator)
 ```
 runAgent()
-  ├── buildAgentPrompt()          ← prompt-composer.ts
-  ├── spawnWithTimeout()          ← sdk-adapter.ts
-  ├── consumeMessages()           ← message-consumer.ts
-  └── finalizeAgentRun()
-        ├── resolveSuccess()      ← completion.ts
-        └── resolveFailure()      ← completion.ts
+  ├── buildAgentPrompt()       ← prompt-composer.ts
+  ├── spawnWithTimeout()       ← sdk-adapter.ts
+  ├── [wire stderr + ActiveAgent + persist record — stays here]
+  ├── consumeMessages(opts)    ← message-consumer.ts
+  └── [finalize: classify exit]
+        ├── resolveSuccess()   ← completion.ts
+        └── resolveFailure()   ← completion.ts
 ```
 
 ## Error Handling
 
 No changes to error handling behavior. All existing error paths are preserved — extraction moves functions, not logic. Existing tests validate error paths and will catch regressions.
 
-The one policy change: backward-compat re-exports in `index.ts` are removed. Affected test files update their imports to point at source modules. This is a purely mechanical change with no runtime effect.
+`executeSquashMerge()` returns a discriminated result (`'merged' | 'dirty-main' | 'failed'`) instead of throwing so the caller in `completion.ts` controls the task state response. This replaces the current pattern where `executeSquashMerge` calls `onTaskTerminal` directly — task state is the orchestrator's job, not the infrastructure's.
 
 ## Testing
 
-**Phase 1 adds no new tests** — existing tests continue to cover the extracted functions through their new import paths.
+**Phase 1 adds no new tests** — existing tests continue to cover the extracted functions through their new import paths. Update any `from '../index'` imports in test files as described above.
 
 **Phase 2 unlocks new unit tests** for previously-untestable internals:
-- `message-consumer.ts`: test cost tracking, OAuth refresh, rate-limit handling without spawning an agent
-- `auto-merge-rules.ts`: test rule evaluation with synthetic diff stats, no git required
-- `task-mapper.ts`: test field validation and coercion in isolation
+- `message-consumer.ts`: test cost tracking, OAuth refresh trigger, rate-limit count increment — without spawning a real agent process
+- `task-mapper.ts`: test field validation, type coercion, null returns for missing required fields — in complete isolation
 
 Existing integration tests for `runAgent()`, `resolveSuccess()`, and `AgentManagerImpl` continue to serve as the end-to-end safety net.
 
 ## Success Criteria
 
-1. `index.ts`, `run-agent.ts`, `completion.ts` each under 200 lines
+After **both phases** are complete:
+
+1. `index.ts`, `run-agent.ts`, `completion.ts` each under 250 lines
 2. Each new domain module has a single-sentence description that fits on one line
 3. `npm run typecheck && npm test && npm run test:main` pass after each phase
 4. No new external API surface — all changes are internal to `src/main/agent-manager/`
-5. Re-exports removed from `index.ts`; test imports updated to point at source modules
+5. Backward-compat re-exports removed from `index.ts`; all test imports updated
+6. `completion.ts` has no duplicate `AutoReviewRule` type definition
