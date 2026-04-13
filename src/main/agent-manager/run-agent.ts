@@ -359,22 +359,17 @@ export async function consumeMessages(
   return { exitCode, lastAgentOutput }
 }
 
-export async function runAgent(
+/**
+ * Phase 1: Validates task content and prepares the agent prompt.
+ * Throws if task has no content (early validation failure).
+ */
+async function validateAndPreparePrompt(
   task: RunAgentTask,
   worktree: { worktreePath: string; branch: string },
   repoPath: string,
   deps: RunAgentDeps
-): Promise<void> {
-  const {
-    activeAgents,
-    defaultModel,
-    logger,
-    onTaskTerminal,
-    repo,
-    onSpawnSuccess,
-    onSpawnFailure
-  } = deps
-  const effectiveModel = task.model || defaultModel
+): Promise<string> {
+  const { logger, repo, onTaskTerminal } = deps
 
   const taskContent = (task.prompt || task.spec || task.title || '').trim()
   if (!taskContent) {
@@ -399,7 +394,7 @@ export async function runAgent(
         `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`
       )
     }
-    return
+    throw new Error('Task has no content')
   }
 
   // Fetch upstream task specs for context propagation
@@ -420,24 +415,23 @@ export async function runAgent(
         }
       } catch (err) {
         logger.warn(`[agent-manager] Failed to fetch upstream task ${dep.id}: ${err}`)
-        // Continue with other dependencies
       }
     }
   }
 
-  // Create task scratchpad directory (idempotent — safe to call on retry)
+  // Create task scratchpad directory (idempotent)
   const scratchpadDir = join(BDE_TASK_MEMORY_DIR, task.id)
   mkdirSync(scratchpadDir, { recursive: true })
 
-  // Read prior scratchpad content if present (expected ENOENT on first run)
+  // Read prior scratchpad content if present
   let priorScratchpad = ''
   try {
     priorScratchpad = readFileSync(join(scratchpadDir, 'progress.md'), 'utf-8')
   } catch {
-    // Expected on first run — no prior scratchpad
+    // Expected on first run
   }
 
-  const prompt = buildAgentPrompt({
+  return buildAgentPrompt({
     agentType: 'pipeline',
     taskContent,
     branch: worktree.branch,
@@ -451,11 +445,25 @@ export async function runAgent(
     taskId: task.id,
     priorScratchpad
   })
+}
+
+/**
+ * Phase 2: Spawns the agent and initializes tracking infrastructure.
+ * Returns the active agent and turn tracker, or throws on spawn failure.
+ */
+async function spawnAndWireAgent(
+  task: RunAgentTask,
+  prompt: string,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  effectiveModel: string,
+  deps: RunAgentDeps
+): Promise<{ agent: ActiveAgent; agentRunId: string; turnTracker: TurnTracker }> {
+  const { activeAgents, logger, repo, onTaskTerminal, onSpawnSuccess, onSpawnFailure } = deps
 
   let handle: AgentHandle
   try {
     handle = await spawnWithTimeout(prompt, worktree.worktreePath, effectiveModel, logger)
-    // Notify circuit breaker that spawn succeeded — resets failure counter.
     try {
       onSpawnSuccess?.()
     } catch (cbErr) {
@@ -469,7 +477,6 @@ export async function runAgent(
     }
     logger.error(`[agent-manager] spawnAgent failed for task ${task.id}: ${err}`)
     const errMsg = getErrorMessage(err)
-    // Emit agent:error event so the failure is visible in agent console
     emitAgentEvent(task.id, {
       type: 'agent:error',
       message: `Spawn failed: ${errMsg}`,
@@ -500,12 +507,12 @@ export async function runAgent(
         `[agent-manager] Stale worktree for task ${task.id} at ${worktree.worktreePath} — manual cleanup needed: ${cleanupErr}`
       )
     }
-    return
+    throw err
   }
 
   const agentRunId = randomUUID()
 
-  // Wire up stderr capture — emit as agent:stderr events (non-blocking)
+  // Wire stderr capture
   handle.onStderr = (line: string) => {
     emitAgentEvent(agentRunId, { type: 'agent:stderr', text: line, timestamp: Date.now() })
   }
@@ -524,15 +531,18 @@ export async function runAgent(
     maxRuntimeMs: task.max_runtime_ms ?? null,
     maxCostUsd: task.max_cost_usd ?? null
   }
+
   activeAgents.set(task.id, agent)
   const turnTracker = new TurnTracker(agentRunId)
-  // Persist agent_run_id so LogDrawer can find logs after restart
+
+  // Persist agent_run_id
   try {
     repo.updateTask(task.id, { agent_run_id: agentRunId })
   } catch (err) {
     logger.warn(`[agent-manager] Failed to persist agent_run_id for task ${task.id}: ${err}`)
   }
-  // Persist agent run to local SQLite for log access and history
+
+  // Persist agent run to SQLite
   createAgentRecord({
     id: agentRunId,
     pid: null,
@@ -557,31 +567,38 @@ export async function runAgent(
   }).catch((err) =>
     logger.warn(`[agent-manager] Failed to create agent record for ${agentRunId}: ${err}`)
   )
-  // activeCount is derived from activeAgents.size — no manual increment needed
 
-  // Emit agent:started event for console display
+  // Emit agent:started event
   emitAgentEvent(agentRunId, {
     type: 'agent:started',
     model: effectiveModel,
     timestamp: Date.now()
   })
 
-  // Consume messages
-  const { exitCode, lastAgentOutput } = await consumeMessages(
-    handle,
-    agent,
-    task,
-    worktree.worktreePath,
-    agentRunId,
-    turnTracker,
-    logger
-  )
+  return { agent, agentRunId, turnTracker }
+}
 
-  // Agent exited
+/**
+ * Phase 3: Finalizes agent run — emits completion event, classifies exit,
+ * runs resolution handlers, and cleans up resources.
+ */
+async function finalizeAgentRun(
+  task: RunAgentTask,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  agent: ActiveAgent,
+  agentRunId: string,
+  turnTracker: TurnTracker,
+  exitCode: number | undefined,
+  lastAgentOutput: string,
+  deps: RunAgentDeps
+): Promise<void> {
+  const { activeAgents, logger, repo, onTaskTerminal } = deps
+
   const exitedAt = Date.now()
   const durationMs = exitedAt - agent.startedAt
 
-  // Emit agent:completed event for console display
+  // Emit completion event
   emitAgentEvent(agentRunId, {
     type: 'agent:completed',
     exitCode: exitCode ?? 0,
@@ -592,12 +609,10 @@ export async function runAgent(
     timestamp: exitedAt
   })
 
-  // Check if watchdog already cleaned up this agent
+  // Check if watchdog already cleaned up
   if (!activeAgents.has(task.id)) {
     logger.info(`[agent-manager] Agent ${task.id} already cleaned up by watchdog`)
-    // Capture partial diff before cleanup (watchdog timeout may have left partial work)
     await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
-
     cleanupWorktree({
       repoPath,
       worktreePath: worktree.worktreePath,
@@ -610,11 +625,7 @@ export async function runAgent(
     return
   }
 
-  // NOTE: Do NOT delete from activeAgents until completion handlers finish.
-  // Removing early creates a race where orphan recovery re-queues the task
-  // while resolveSuccess is still running (the task is still 'active' in the DB).
-
-  // Update agent run record with final state
+  // Update agent run record
   updateAgentMeta(agentRunId, {
     status: exitCode === 0 ? 'done' : 'failed',
     finishedAt: new Date(exitedAt).toISOString(),
@@ -626,7 +637,7 @@ export async function runAgent(
     logger.warn(`[agent-manager] Failed to update agent record for ${agentRunId}: ${err}`)
   )
 
-  // Persist cost breakdown (cache tokens) — non-fatal if it fails
+  // Persist cost breakdown
   try {
     const totals = turnTracker.totals()
     updateAgentRunCost(getDb(), agentRunId, {
@@ -642,7 +653,7 @@ export async function runAgent(
     logger.warn(`[agent-manager] Failed to persist cost breakdown for ${agentRunId}: ${err}`)
   }
 
-  // Classify exit (default to exit code 1 if not available, assuming failure)
+  // Classify exit
   const ffResult = classifyExit(agent.startedAt, exitedAt, exitCode ?? 1, task.fast_fail_count ?? 0)
   const now = nowIso()
 
@@ -676,7 +687,6 @@ export async function runAgent(
     // Normal exit — attempt success resolution
     try {
       const ghRepo = getGhRepo(task.repo) ?? task.repo
-
       await resolveSuccess(
         {
           taskId: task.id,
@@ -702,15 +712,13 @@ export async function runAgent(
     }
   }
 
-  // Safe to remove from active map now — completion handler has updated the DB
+  // Remove from active map
   activeAgents.delete(task.id)
 
-  // Cleanup worktree — but skip for review tasks (worktree preserved for code review)
+  // Cleanup worktree (preserve for review tasks)
   const currentTask = repo.getTask(task.id)
   if (currentTask?.status !== 'review') {
-    // Before cleanup, capture partial diff for failed tasks (salvage partial progress)
     await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
-
     cleanupWorktree({
       repoPath,
       worktreePath: worktree.worktreePath,
@@ -727,4 +735,57 @@ export async function runAgent(
   }
 
   logger.info(`[agent-manager] Agent completed for task ${task.id} (${ffResult})`)
+}
+
+export async function runAgent(
+  task: RunAgentTask,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  deps: RunAgentDeps
+): Promise<void> {
+  const { logger } = deps
+  const effectiveModel = task.model || deps.defaultModel
+
+  // Phase 1: Validate and prepare prompt
+  let prompt: string
+  try {
+    prompt = await validateAndPreparePrompt(task, worktree, repoPath, deps)
+  } catch {
+    return // Early exit — validation failed and cleaned up
+  }
+
+  // Phase 2: Spawn and wire agent
+  let agent: ActiveAgent, agentRunId: string, turnTracker: TurnTracker
+  try {
+    const result = await spawnAndWireAgent(task, prompt, worktree, repoPath, effectiveModel, deps)
+    agent = result.agent
+    agentRunId = result.agentRunId
+    turnTracker = result.turnTracker
+  } catch {
+    return // Early exit — spawn failed and cleaned up
+  }
+
+  // Phase 3: Consume messages
+  const { exitCode, lastAgentOutput } = await consumeMessages(
+    agent.handle,
+    agent,
+    task,
+    worktree.worktreePath,
+    agentRunId,
+    turnTracker,
+    logger
+  )
+
+  // Phase 4: Finalize — classify exit, resolve, cleanup
+  await finalizeAgentRun(
+    task,
+    worktree,
+    repoPath,
+    agent,
+    agentRunId,
+    turnTracker,
+    exitCode,
+    lastAgentOutput,
+    deps
+  )
 }
