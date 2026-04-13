@@ -14,6 +14,18 @@ import type { WorkflowTemplate } from '../shared/workflow-types'
 ipcRenderer.setMaxListeners(25)
 
 /**
+ * Creates a typed broadcast subscription for a one-way main→renderer channel.
+ * Registers via ipcRenderer.on and returns an unsubscribe function for cleanup.
+ */
+function onBroadcast<T>(channel: string) {
+  return (callback: (payload: T) => void): (() => void) => {
+    const listener = (_e: IpcRendererEvent, payload: T): void => callback(payload)
+    ipcRenderer.on(channel, listener)
+    return () => ipcRenderer.removeListener(channel, listener)
+  }
+}
+
+/**
  * Type-safe invoke for channels in IpcChannelMap.
  * Channel name typos and payload mismatches are caught at compile time.
  */
@@ -240,43 +252,23 @@ const api = {
   deletePath: (targetPath: string) => typedInvoke('fs:delete', targetPath),
   stat: (targetPath: string) => typedInvoke('fs:stat', targetPath),
   listFiles: (rootPath: string) => typedInvoke('fs:listFiles', rootPath),
-  onDirChanged: (callback: (dirPath: BroadcastChannels['fs:dirChanged']) => void) => {
-    const handler = (_event: unknown, dirPath: BroadcastChannels['fs:dirChanged']): void =>
-      callback(dirPath)
-    ipcRenderer.on('fs:dirChanged', handler)
-    return () => {
-      ipcRenderer.removeListener('fs:dirChanged', handler)
-    }
-  },
+  onDirChanged: onBroadcast<BroadcastChannels['fs:dirChanged']>('fs:dirChanged'),
 
   // GitHub structured error push event — fired by githubFetch / githubFetchJson
   // for any classified failure (billing, network, permission, rate-limit,
   // token-expired, etc.). Debounced per-kind (60s) at the source, so the
   // renderer never sees spam.
-  onGitHubError: (cb: (data: BroadcastChannels['github:error']) => void): (() => void) => {
-    const listener = (_e: unknown, data: BroadcastChannels['github:error']): void => cb(data)
-    ipcRenderer.on('github:error', listener)
-    return () => ipcRenderer.removeListener('github:error', listener)
-  },
+  onGitHubError: onBroadcast<BroadcastChannels['github:error']>('github:error'),
 
   // Open PR list — main-process poller push events
-  onPrListUpdated: (cb: (payload: BroadcastChannels['pr:listUpdated']) => void): (() => void) => {
-    const listener = (_e: unknown, data: BroadcastChannels['pr:listUpdated']): void => cb(data)
-    ipcRenderer.on('pr:listUpdated', listener)
-    return () => ipcRenderer.removeListener('pr:listUpdated', listener)
-  },
+  onPrListUpdated: onBroadcast<BroadcastChannels['pr:listUpdated']>('pr:listUpdated'),
   getPrList: () => typedInvoke('pr:getList'),
   refreshPrList: () => typedInvoke('pr:refreshList'),
 
   // Sprint DB file-watcher push events
-  onExternalSprintChange: (
-    cb: (data: BroadcastChannels['sprint:externalChange']) => void
-  ): (() => void) => {
-    const listener = (_e: unknown, data: BroadcastChannels['sprint:externalChange']): void =>
-      cb(data)
-    ipcRenderer.on('sprint:externalChange', listener)
-    return () => ipcRenderer.removeListener('sprint:externalChange', listener)
-  },
+  onExternalSprintChange: onBroadcast<BroadcastChannels['sprint:externalChange']>(
+    'sprint:externalChange'
+  ),
 
   // Agent event streaming (Phase 2)
   agentEvents: {
@@ -368,12 +360,7 @@ const api = {
     }) => typedInvoke('workbench:chatStream', input),
     cancelStream: (streamId: string) => typedInvoke('workbench:cancelStream', streamId),
     extractPlan: (markdown: string) => typedInvoke('workbench:extractPlan', markdown),
-    onChatChunk: (cb: (data: BroadcastChannels['workbench:chatChunk']) => void): (() => void) => {
-      const listener = (_e: unknown, data: BroadcastChannels['workbench:chatChunk']): void =>
-        cb(data)
-      ipcRenderer.on('workbench:chatChunk', listener)
-      return () => ipcRenderer.removeListener('workbench:chatChunk', listener)
-    }
+    onChatChunk: onBroadcast<BroadcastChannels['workbench:chatChunk']>('workbench:chatChunk')
   },
 
   // Tear-off window management
@@ -388,83 +375,23 @@ const api = {
     closeConfirmed: (payload: { action: 'return' | 'close'; remember: boolean }) =>
       typedInvoke('tearoff:closeConfirmed', payload),
     returnToMain: (windowId: string) => ipcRenderer.send('tearoff:returnToMain', { windowId }),
-    onTabRemoved: (
-      cb: (payload: { sourcePanelId: string; sourceTabIndex: number }) => void
-    ): (() => void) => {
-      const handler = (
-        _e: IpcRendererEvent,
-        payload: { sourcePanelId: string; sourceTabIndex: number }
-      ): void => cb(payload)
-      ipcRenderer.on('tearoff:tabRemoved', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:tabRemoved', handler)
-      }
-    },
-    onTabReturned: (cb: (payload: { view: string }) => void): (() => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { view: string }): void => cb(payload)
-      ipcRenderer.on('tearoff:tabReturned', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:tabReturned', handler)
-      }
-    },
-    onConfirmClose: (cb: () => void): (() => void) => {
-      const handler = (): void => cb()
-      ipcRenderer.on('tearoff:confirmClose', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:confirmClose', handler)
-      }
-    },
+    onTabRemoved: onBroadcast<{ sourcePanelId: string; sourceTabIndex: number }>(
+      'tearoff:tabRemoved'
+    ),
+    onTabReturned: onBroadcast<{ view: string }>('tearoff:tabReturned'),
+    onConfirmClose: onBroadcast<undefined>('tearoff:confirmClose'),
     // Cross-window drag
     startCrossWindowDrag: (payload: { windowId: string; viewKey: string }) =>
       typedInvoke('tearoff:startCrossWindowDrag', payload),
-    onDragIn: (
-      cb: (payload: { viewKey: string; localX: number; localY: number }) => void
-    ): (() => void) => {
-      const handler = (
-        _e: IpcRendererEvent,
-        payload: { viewKey: string; localX: number; localY: number }
-      ): void => cb(payload)
-      ipcRenderer.on('tearoff:dragIn', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:dragIn', handler)
-      }
-    },
-    onDragMove: (cb: (payload: { localX: number; localY: number }) => void): (() => void) => {
-      const handler = (_e: IpcRendererEvent, payload: { localX: number; localY: number }): void =>
-        cb(payload)
-      ipcRenderer.on('tearoff:dragMove', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:dragMove', handler)
-      }
-    },
-    onDragCancel: (cb: () => void): (() => void) => {
-      const handler = (): void => cb()
-      ipcRenderer.on('tearoff:dragCancel', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:dragCancel', handler)
-      }
-    },
+    onDragIn: onBroadcast<{ viewKey: string; localX: number; localY: number }>('tearoff:dragIn'),
+    onDragMove: onBroadcast<{ localX: number; localY: number }>('tearoff:dragMove'),
+    onDragCancel: onBroadcast<undefined>('tearoff:dragCancel'),
     sendDropComplete: (payload: { viewKey: string; targetPanelId: string; zone: string }) =>
       ipcRenderer.send('tearoff:dropComplete', payload),
-    onCrossWindowDrop: (
-      cb: (payload: { view: string; targetPanelId: string; zone: string }) => void
-    ): (() => void) => {
-      const handler = (
-        _e: IpcRendererEvent,
-        payload: { view: string; targetPanelId: string; zone: string }
-      ): void => cb(payload)
-      ipcRenderer.on('tearoff:crossWindowDrop', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:crossWindowDrop', handler)
-      }
-    },
-    onDragDone: (cb: () => void): (() => void) => {
-      const handler = (): void => cb()
-      ipcRenderer.on('tearoff:dragDone', handler)
-      return () => {
-        ipcRenderer.removeListener('tearoff:dragDone', handler)
-      }
-    },
+    onCrossWindowDrop: onBroadcast<{ view: string; targetPanelId: string; zone: string }>(
+      'tearoff:crossWindowDrop'
+    ),
+    onDragDone: onBroadcast<undefined>('tearoff:dragDone'),
     sendDragCancel: () => ipcRenderer.send('tearoff:dragCancelFromRenderer'),
     returnAll: (payload: { windowId: string; views: string[] }) =>
       ipcRenderer.send('tearoff:returnAll', payload),
@@ -503,11 +430,7 @@ const api = {
       taskId: string
       messages: import('../shared/types').PartnerMessage[]
     }) => typedInvoke('review:chatStream', params),
-    onChatChunk: (cb: (data: BroadcastChannels['review:chatChunk']) => void): (() => void) => {
-      const listener = (_e: unknown, data: BroadcastChannels['review:chatChunk']): void => cb(data)
-      ipcRenderer.on('review:chatChunk', listener)
-      return () => ipcRenderer.removeListener('review:chatChunk', listener)
-    },
+    onChatChunk: onBroadcast<BroadcastChannels['review:chatChunk']>('review:chatChunk'),
     abortChat: (streamId: string) => typedInvoke('review:chatAbort', streamId)
   },
 
@@ -517,13 +440,7 @@ const api = {
   reviseSpec: (args: import('../shared/types').ReviseRequest) =>
     typedInvoke('synthesizer:revise', args),
   cancelSynthesis: (streamId: string) => typedInvoke('synthesizer:cancel', streamId),
-  onSynthesizerChunk: (
-    cb: (data: BroadcastChannels['synthesizer:chunk']) => void
-  ): (() => void) => {
-    const listener = (_e: unknown, data: BroadcastChannels['synthesizer:chunk']): void => cb(data)
-    ipcRenderer.on('synthesizer:chunk', listener)
-    return () => ipcRenderer.removeListener('synthesizer:chunk', listener)
-  },
+  onSynthesizerChunk: onBroadcast<BroadcastChannels['synthesizer:chunk']>('synthesizer:chunk'),
 
   // Repository discovery
   repoDiscovery: {
@@ -531,14 +448,7 @@ const api = {
     listGithub: () => typedInvoke('repos:listGithub'),
     clone: (owner: string, repo: string, destDir: string) =>
       typedInvoke('repos:clone', owner, repo, destDir),
-    onCloneProgress: (
-      cb: (data: BroadcastChannels['repos:cloneProgress']) => void
-    ): (() => void) => {
-      const handler = (_e: unknown, data: BroadcastChannels['repos:cloneProgress']): void =>
-        cb(data)
-      ipcRenderer.on('repos:cloneProgress', handler)
-      return () => ipcRenderer.removeListener('repos:cloneProgress', handler)
-    }
+    onCloneProgress: onBroadcast<BroadcastChannels['repos:cloneProgress']>('repos:cloneProgress')
   }
 }
 
