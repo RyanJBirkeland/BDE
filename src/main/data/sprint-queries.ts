@@ -626,19 +626,17 @@ function transitionTasksToDone(
 
     // F-t3-db-4: Bulk audit trail (single prepared INSERT statement reused
     // across all affected tasks instead of one prepared statement per call)
-    try {
-      recordTaskChangesBulk(
-        affected.map((oldTask) => ({
-          taskId: oldTask.id as string,
-          oldTask,
-          newPatch: { status: 'done', completed_at: completedAt }
-        })),
-        changedBy,
-        db
-      )
-    } catch (err) {
-      logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
-    }
+    // F-t3-audit-trail-3: throw on audit failure so the wrapping transaction
+    // rolls back the status UPDATE — both must succeed atomically.
+    recordTaskChangesBulk(
+      affected.map((oldTask) => ({
+        taskId: oldTask.id as string,
+        oldTask,
+        newPatch: { status: 'done', completed_at: completedAt }
+      })),
+      changedBy,
+      db
+    )
 
     // Transition active tasks to done
     db.prepare(
@@ -672,19 +670,17 @@ function transitionTasksToCancelled(
     const completedAt = nowIso()
 
     // F-t3-db-4: Bulk audit trail
-    try {
-      recordTaskChangesBulk(
-        affected.map((oldTask) => ({
-          taskId: oldTask.id as string,
-          oldTask,
-          newPatch: { status: 'cancelled', completed_at: completedAt }
-        })),
-        changedBy,
-        db
-      )
-    } catch (err) {
-      logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
-    }
+    // F-t3-audit-trail-3: throw on audit failure so the wrapping transaction
+    // rolls back the status UPDATE — both must succeed atomically.
+    recordTaskChangesBulk(
+      affected.map((oldTask) => ({
+        taskId: oldTask.id as string,
+        oldTask,
+        newPatch: { status: 'cancelled', completed_at: completedAt }
+      })),
+      changedBy,
+      db
+    )
 
     // Transition active tasks to cancelled
     db.prepare(
@@ -723,19 +719,17 @@ function updatePrStatusBulk(
     : (db.prepare(selectQuery).all(prNumber) as Array<Record<string, unknown>>)
 
   // F-t3-db-4: Bulk audit trail for pr_status changes
-  try {
-    recordTaskChangesBulk(
-      prStatusAffected.map((oldTask) => ({
-        taskId: oldTask.id as string,
-        oldTask,
-        newPatch: { pr_status: newStatus }
-      })),
-      changedBy,
-      db
-    )
-  } catch (err) {
-    logger.warn(`[sprint-queries] Failed to record bulk pr_status changes: ${err}`)
-  }
+  // F-t3-audit-trail-3: throw on audit failure so the wrapping transaction
+  // rolls back the pr_status UPDATE — both must succeed atomically.
+  recordTaskChangesBulk(
+    prStatusAffected.map((oldTask) => ({
+      taskId: oldTask.id as string,
+      oldTask,
+      newPatch: { pr_status: newStatus }
+    })),
+    changedBy,
+    db
+  )
 
   // Execute the update
   if (statusFilter) {
@@ -797,9 +791,34 @@ export function listTasksWithOpenPrs(): SprintTask[] {
 export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): void {
   if (!mergeableState) return
   try {
-    getDb()
-      .prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?')
-      .run(mergeableState, prNumber)
+    const db = getDb()
+    // F-t3-audit-trail-1: record pr_mergeable_state changes in the audit trail.
+    // Read all affected tasks first so we can capture the old value per task.
+    const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE pr_number = ?`
+    const affected = db.prepare(sql).all(prNumber) as Array<Record<string, unknown>>
+
+    db.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
+      mergeableState,
+      prNumber
+    )
+
+    for (const oldTask of affected) {
+      try {
+        recordTaskChanges(
+          oldTask.id as string,
+          oldTask,
+          { pr_mergeable_state: mergeableState },
+          'pr-poller',
+          db
+        )
+      } catch (auditErr) {
+        // Audit failure is non-fatal here — the state update already committed.
+        // Log a warning so the gap is visible without blocking the poller.
+        logger.warn(
+          `[sprint-queries] updateTaskMergeableState: audit record failed for task ${oldTask.id as string}: ${auditErr}`
+        )
+      }
+    }
   } catch (err) {
     // DL-17: Standardize error message format
     const msg = getErrorMessage(err)

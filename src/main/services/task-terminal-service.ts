@@ -61,6 +61,8 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
           // we rebuild the dependency index once and process all resolutions together.
           // This differs from agent-manager's inline synchronous approach.
           // See ResolveDependentsParams in agent-manager/types.ts for the conceptual contract.
+          const failedTaskIds: string[] = []
+          const totalCount = _pendingResolution.size
           for (const [id, terminalStatus] of _pendingResolution) {
             try {
               resolveDependents(
@@ -76,10 +78,18 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
                 deps.listGroupTasks
               )
             } catch (err) {
+              failedTaskIds.push(id)
               deps.logger.error(
                 `[task-terminal-service] resolveDependents failed for ${id}: ${err}`
               )
             }
+          }
+          // F-t3-audit-trail-5: consolidated error summary so the full set of
+          // failures is visible in one log entry rather than scattered per-task.
+          if (failedTaskIds.length > 0) {
+            deps.logger.error(
+              `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
+            )
           }
         } catch (err) {
           deps.logger.error(`[task-terminal-service] rebuildIndex failed: ${err}`)

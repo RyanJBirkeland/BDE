@@ -16,8 +16,10 @@ vi.mock('../../db', async () => {
 
 // Mock task-changes to spy on audit trail calls
 const mockRecordTaskChanges = vi.fn()
+const mockRecordTaskChangesBulk = vi.fn()
 vi.mock('../task-changes', () => ({
-  recordTaskChanges: (...args: unknown[]) => mockRecordTaskChanges(...args)
+  recordTaskChanges: (...args: unknown[]) => mockRecordTaskChanges(...args),
+  recordTaskChangesBulk: (...args: unknown[]) => mockRecordTaskChangesBulk(...args)
 }))
 
 // Import AFTER mocks are set up
@@ -806,5 +808,64 @@ describe('pruneOldDiffSnapshots', () => {
     // 5-day window — SHOULD prune
     expect(pruneOldDiffSnapshots(5)).toBe(1)
     expect(getTask('mid-done')!.review_diff_snapshot).toBeNull()
+  })
+})
+
+// F-t3-audit-trail-3: recordTaskChangesBulk failure rolls back entire transaction
+describe('markTaskDoneByPrNumber — audit trail atomicity (F-t3-audit-trail-3)', () => {
+  it('rolls back status change when recordTaskChangesBulk throws', () => {
+    insertTask({ id: 'atomic-1', status: 'active', pr_number: 77, pr_status: 'open' })
+
+    // Make the bulk audit writer throw
+    mockRecordTaskChangesBulk.mockImplementationOnce(() => {
+      throw new Error('audit DB write failed')
+    })
+
+    // The outer function swallows and returns [] — transaction should have rolled back
+    const result = markTaskDoneByPrNumber(77)
+    expect(result).toEqual([])
+
+    // Status must still be 'active' — the UPDATE was rolled back with the audit failure
+    const task = getTask('atomic-1')!
+    expect(task.status).toBe('active')
+  })
+
+  it('rolls back status change in markTaskCancelledByPrNumber when recordTaskChangesBulk throws', () => {
+    insertTask({ id: 'atomic-2', status: 'active', pr_number: 78, pr_status: 'open' })
+
+    mockRecordTaskChangesBulk.mockImplementationOnce(() => {
+      throw new Error('audit DB write failed')
+    })
+
+    const result = markTaskCancelledByPrNumber(78)
+    expect(result).toEqual([])
+
+    const task = getTask('atomic-2')!
+    expect(task.status).toBe('active')
+  })
+})
+
+// F-t3-audit-trail-1: updateTaskMergeableState writes an audit record
+describe('updateTaskMergeableState — audit trail (F-t3-audit-trail-1)', () => {
+  it('calls recordTaskChanges with old and new pr_mergeable_state', () => {
+    insertTask({ id: 'merge-audit-1', pr_number: 55 })
+
+    updateTaskMergeableState(55, 'clean')
+
+    expect(mockRecordTaskChanges).toHaveBeenCalledWith(
+      'merge-audit-1',
+      expect.objectContaining({ pr_mergeable_state: null }),
+      expect.objectContaining({ pr_mergeable_state: 'clean' }),
+      'pr-poller',
+      expect.anything() // db instance
+    )
+  })
+
+  it('does not call recordTaskChanges when mergeableState is null (early return)', () => {
+    insertTask({ id: 'merge-audit-2', pr_number: 56 })
+
+    updateTaskMergeableState(56, null)
+
+    expect(mockRecordTaskChanges).not.toHaveBeenCalled()
   })
 })

@@ -7,6 +7,12 @@ vi.mock('../../broadcast', () => ({
   broadcastCoalesced: vi.fn()
 }))
 
+// Controllable mock for resolveDependents — used in the consolidated error test
+const mockResolveDependents = vi.fn()
+vi.mock('../../agent-manager/resolve-dependents', () => ({
+  resolveDependents: (...args: unknown[]) => mockResolveDependents(...args)
+}))
+
 function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTerminalServiceDeps {
   return {
     getTask: vi.fn().mockReturnValue({
@@ -31,6 +37,8 @@ function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTermina
 describe('createTaskTerminalService', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    // Default: resolveDependents succeeds (no-op); individual tests can override
+    mockResolveDependents.mockReset()
   })
 
   afterEach(() => {
@@ -41,40 +49,28 @@ describe('createTaskTerminalService', () => {
     const deps = makeDeps({
       getTasksWithDependencies: vi
         .fn()
-        .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }]),
-      getTask: vi.fn().mockImplementation((id: string) => {
-        if (id === 't1')
-          return {
-            id: 't1',
-            title: 'Task 1',
-            status: 'done',
-            depends_on: null,
-            notes: null,
-            group_id: null
-          }
-        if (id === 't2')
-          return {
-            id: 't2',
-            title: 'Task 2',
-            status: 'blocked',
-            depends_on: [{ id: 't1', type: 'hard' }],
-            notes: null,
-            group_id: null
-          }
-        return null
-      })
+        .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }])
     })
     const service = createTaskTerminalService(deps)
     service.onStatusTerminal('t1', 'done')
 
     // Resolution is deferred via setTimeout(0)
-    expect(deps.updateTask).not.toHaveBeenCalled()
+    expect(mockResolveDependents).not.toHaveBeenCalled()
 
     vi.runAllTimers()
 
-    expect(deps.updateTask).toHaveBeenCalledWith(
-      't2',
-      expect.objectContaining({ status: 'queued' })
+    // resolveDependents should have been called for t1
+    expect(mockResolveDependents).toHaveBeenCalledWith(
+      't1',
+      'done',
+      expect.anything(), // depIndex
+      deps.getTask,
+      deps.updateTask,
+      deps.logger,
+      deps.getSetting,
+      expect.anything(), // epicIndex
+      deps.getGroup,
+      deps.listGroupTasks
     )
   })
 
@@ -142,43 +138,70 @@ describe('createTaskTerminalService', () => {
     const deps = makeDeps({
       getTasksWithDependencies: vi
         .fn()
-        .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }]),
-      getTask: vi.fn().mockImplementation((id: string) => {
-        if (id === 't1')
-          return {
-            id: 't1',
-            title: 'Task 1',
-            status: 'done',
-            depends_on: null,
-            notes: null,
-            group_id: null
-          }
-        if (id === 't2')
-          return {
-            id: 't2',
-            title: 'Task 2',
-            status: 'blocked',
-            depends_on: [{ id: 't1', type: 'hard' }],
-            notes: null,
-            group_id: null
-          }
-        return null
-      })
+        .mockReturnValue([{ id: 't2', depends_on: [{ id: 't1', type: 'hard' }] }])
     })
     const service = createTaskTerminalService(deps)
 
-    // Call same task 3 times with different statuses (last write wins)
+    // Call same task 3 times with different statuses (last write wins via Map)
     service.onStatusTerminal('t1', 'done')
     service.onStatusTerminal('t1', 'failed')
     service.onStatusTerminal('t1', 'done')
 
     vi.runAllTimers()
 
-    // updateTask should be called once for t2 (t1's dependent)
-    expect(deps.updateTask).toHaveBeenCalledTimes(1)
-    expect(deps.updateTask).toHaveBeenCalledWith(
-      't2',
-      expect.objectContaining({ status: 'queued' })
+    // resolveDependents should be called exactly once for t1 (Map deduplicates)
+    expect(mockResolveDependents).toHaveBeenCalledTimes(1)
+    expect(mockResolveDependents).toHaveBeenCalledWith(
+      't1',
+      'done', // last status wins
+      expect.anything(),
+      deps.getTask,
+      deps.updateTask,
+      deps.logger,
+      deps.getSetting,
+      expect.anything(),
+      deps.getGroup,
+      deps.listGroupTasks
     )
+  })
+
+  // F-t3-audit-trail-5: consolidated error log when per-task resolutions fail
+  it('logs a consolidated error after the loop when some resolveDependents calls fail', () => {
+    // Use the module-level mockResolveDependents to control which resolution throws.
+    // Call 1 (for 'ta') throws; call 2 (for 'tb') succeeds.
+    let callCount = 0
+    mockResolveDependents.mockImplementation((id: string) => {
+      callCount++
+      if (callCount === 1) {
+        throw new Error(`resolution failure for ${id}`)
+      }
+    })
+
+    const deps = makeDeps({
+      getTasksWithDependencies: vi.fn().mockReturnValue([
+        { id: 'ta', depends_on: null },
+        { id: 'tb', depends_on: null }
+      ])
+    })
+    const service = createTaskTerminalService(deps)
+
+    service.onStatusTerminal('ta', 'done')
+    service.onStatusTerminal('tb', 'done')
+
+    vi.runAllTimers()
+
+    const errorCalls = (deps.logger.error as ReturnType<typeof vi.fn>).mock.calls
+
+    // Should have logged the individual per-task error (contains the failing task id)
+    const hasPerTaskError = errorCalls.some((args: unknown[]) =>
+      String(args[0]).includes('resolveDependents failed for')
+    )
+    expect(hasPerTaskError).toBe(true)
+
+    // Should have logged a consolidated summary error mentioning "N of M ... failed"
+    const hasConsolidatedError = errorCalls.some((args: unknown[]) =>
+      String(args[0]).includes('of') && String(args[0]).includes('failed')
+    )
+    expect(hasConsolidatedError).toBe(true)
   })
 })
