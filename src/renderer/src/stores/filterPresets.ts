@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { useSprintUI, type StatusFilter } from './sprintUI'
+import type { StatusFilter } from './sprintUI'
 
 const STORAGE_KEY = 'bde:filterPresets'
 
@@ -11,8 +11,8 @@ export interface FilterPreset {
 
 interface FilterPresetsState {
   presets: Record<string, FilterPreset>
-  savePreset: (name: string) => void
-  loadPreset: (name: string) => void
+  savePreset: (name: string, preset: FilterPreset) => void
+  loadPreset: (name: string) => FilterPreset | null
   deletePreset: (name: string) => void
   getPresetNames: () => string[]
   restoreFromStorage: () => void
@@ -34,10 +34,7 @@ function debouncedPersist(presets: Record<string, FilterPreset>): void {
 export const useFilterPresets = create<FilterPresetsState>((set, get) => ({
   presets: {},
 
-  savePreset: (name): void => {
-    const { repoFilter, searchQuery, statusFilter } = useSprintUI.getState()
-    const preset: FilterPreset = { repoFilter, searchQuery, statusFilter }
-
+  savePreset: (name, preset): void => {
     set((s) => {
       const newPresets = { ...s.presets, [name]: preset }
       debouncedPersist(newPresets)
@@ -45,15 +42,8 @@ export const useFilterPresets = create<FilterPresetsState>((set, get) => ({
     })
   },
 
-  loadPreset: (name): void => {
-    const preset = get().presets[name]
-    if (!preset) return
-
-    useSprintUI.setState({
-      repoFilter: preset.repoFilter,
-      searchQuery: preset.searchQuery,
-      statusFilter: preset.statusFilter
-    })
+  loadPreset: (name): FilterPreset | null => {
+    return get().presets[name] || null
   },
 
   deletePreset: (name): void => {

@@ -28,16 +28,15 @@ describe('filterPresets store', () => {
     expect(state.presets).toEqual({})
   })
 
-  it('savePreset captures current filters from sprintUI', () => {
-    // Set some filter state
-    useSprintUI.setState({
-      repoFilter: 'bde',
+  it('savePreset stores the provided filter state', () => {
+    const filterState = {
+      repoFilter: 'bde' as string | null,
       searchQuery: 'bug',
-      statusFilter: 'blocked'
-    })
+      statusFilter: 'blocked' as const
+    }
 
     // Save as preset
-    useFilterPresets.getState().savePreset('My Filters')
+    useFilterPresets.getState().savePreset('My Filters', filterState)
 
     const { presets } = useFilterPresets.getState()
     expect(presets['My Filters']).toEqual({
@@ -47,7 +46,7 @@ describe('filterPresets store', () => {
     })
   })
 
-  it('loadPreset applies filters to sprintUI', () => {
+  it('loadPreset returns the preset data', () => {
     // Save a preset
     useFilterPresets.setState({
       presets: {
@@ -60,28 +59,18 @@ describe('filterPresets store', () => {
     })
 
     // Load it
-    useFilterPresets.getState().loadPreset('Debug View')
+    const preset = useFilterPresets.getState().loadPreset('Debug View')
 
-    const ui = useSprintUI.getState()
-    expect(ui.repoFilter).toBe('claude-chat-service')
-    expect(ui.searchQuery).toBe('error')
-    expect(ui.statusFilter).toBe('failed')
+    expect(preset).toEqual({
+      repoFilter: 'claude-chat-service',
+      searchQuery: 'error',
+      statusFilter: 'failed'
+    })
   })
 
-  it('loadPreset is no-op for non-existent preset', () => {
-    useSprintUI.setState({
-      repoFilter: 'bde',
-      searchQuery: 'initial',
-      statusFilter: 'all'
-    })
-
-    useFilterPresets.getState().loadPreset('DoesNotExist')
-
-    // UI should be unchanged
-    const ui = useSprintUI.getState()
-    expect(ui.repoFilter).toBe('bde')
-    expect(ui.searchQuery).toBe('initial')
-    expect(ui.statusFilter).toBe('all')
+  it('loadPreset returns null for non-existent preset', () => {
+    const result = useFilterPresets.getState().loadPreset('DoesNotExist')
+    expect(result).toBeNull()
   })
 
   it('deletePreset removes a preset', () => {
@@ -156,13 +145,13 @@ describe('filterPresets store', () => {
   })
 
   it('auto-persists when a preset is saved', () => {
-    useSprintUI.setState({
-      repoFilter: 'life-os',
+    const filterState = {
+      repoFilter: 'life-os' as string | null,
       searchQuery: 'feature',
-      statusFilter: 'done'
-    })
+      statusFilter: 'done' as const
+    }
 
-    useFilterPresets.getState().savePreset('Life OS Complete')
+    useFilterPresets.getState().savePreset('Life OS Complete', filterState)
     vi.advanceTimersByTime(500)
 
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -197,8 +186,12 @@ describe('filterPresets store', () => {
       throw new Error('QuotaExceededError')
     })
 
-    useSprintUI.setState({ repoFilter: 'bde', searchQuery: 'test', statusFilter: 'all' })
-    useFilterPresets.getState().savePreset('Test')
+    const filterState = {
+      repoFilter: 'bde' as string | null,
+      searchQuery: 'test',
+      statusFilter: 'all' as const
+    }
+    useFilterPresets.getState().savePreset('Test', filterState)
 
     // Debounced persist should not throw
     expect(() => vi.advanceTimersByTime(500)).not.toThrow()

@@ -4,7 +4,6 @@
  * Convenience helpers: toast.success(), toast.error(), toast.info(), toast.undoable().
  */
 import { create } from 'zustand'
-import { useNotificationsStore } from './notifications'
 
 export type ToastType = 'success' | 'error' | 'info'
 
@@ -71,14 +70,10 @@ export const toast = {
   success: (msg: string, durationMs?: number): void => {
     useToastStore.getState().addToast(msg, 'success', durationMs)
   },
-  error: (msg: string, durationMs?: number): void => {
+  error: (msg: string, durationMs?: number, onError?: (msg: string) => void): void => {
     useToastStore.getState().addToast(msg, 'error', durationMs)
-    // Bridge error toasts to notification store for persistent history
-    useNotificationsStore.getState().addNotification({
-      type: 'app_error',
-      title: 'Error',
-      message: msg
-    })
+    // Caller can optionally handle error persistence
+    onError?.(msg)
   },
   info: (
     msg: string,

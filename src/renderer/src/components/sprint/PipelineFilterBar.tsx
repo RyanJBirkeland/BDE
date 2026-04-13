@@ -15,6 +15,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
   const repoFilter = useSprintUI((s) => s.repoFilter)
   const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
   const statusFilter = useSprintUI((s) => s.statusFilter)
+  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
   const tagFilter = useSprintUI((s) => s.tagFilter)
 
   const presets = useFilterPresets((s) => s.presets)
@@ -76,7 +77,17 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
         <div className="pipeline-filter-bar__presets">
           {presetNames.map((name) => (
             <span key={name} className="pipeline-filter-bar__preset">
-              <button className="pipeline-filter-bar__preset-name" onClick={() => loadPreset(name)}>
+              <button
+                className="pipeline-filter-bar__preset-name"
+                onClick={() => {
+                  const preset = loadPreset(name)
+                  if (preset) {
+                    setRepoFilter(preset.repoFilter)
+                    setSearchQuery(preset.searchQuery)
+                    setStatusFilter(preset.statusFilter)
+                  }
+                }}
+              >
                 {name}
               </button>
               <button
@@ -102,7 +113,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
         placeholder="e.g. Active BDE tasks"
         confirmLabel="Save"
         onConfirm={(name) => {
-          savePreset(name)
+          savePreset(name, { repoFilter, searchQuery, statusFilter })
           setShowSavePrompt(false)
         }}
         onCancel={() => setShowSavePrompt(false)}
