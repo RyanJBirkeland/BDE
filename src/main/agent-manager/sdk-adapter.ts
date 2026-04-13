@@ -1,5 +1,6 @@
 import type { AgentHandle, SteerResult } from './types'
 import type { Logger } from '../logger'
+import { SPAWN_TIMEOUT_MS } from './types'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { buildAgentEnv, getOAuthToken, getClaudeCliPath } from '../env-utils'
@@ -302,4 +303,25 @@ function spawnViaCli(
   }
 
   return handle
+}
+
+/**
+ * Spawns an agent with a timeout. Rejects if spawn takes longer than SPAWN_TIMEOUT_MS.
+ */
+export async function spawnWithTimeout(
+  prompt: string,
+  cwd: string,
+  model: string,
+  logger: Logger
+): Promise<AgentHandle> {
+  let timer: ReturnType<typeof setTimeout>
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Spawn timed out after ${SPAWN_TIMEOUT_MS / 1000}s`)),
+      SPAWN_TIMEOUT_MS
+    )
+  })
+  return await Promise.race([spawnAgent({ prompt, cwd, model, logger }), timeoutPromise]).finally(
+    () => clearTimeout(timer!)
+  )
 }

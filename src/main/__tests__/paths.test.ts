@@ -70,7 +70,7 @@ describe('validateTestDbPath', () => {
     expect(() => validateTestDbPath('/tmp/test.db')).not.toThrow()
   })
 
-  it('accepts a path in /private/tmp (macOS real tmpdir)', () => {
+  it.skipIf(process.platform !== 'darwin')('accepts a path in /private/tmp (macOS real tmpdir)', () => {
     expect(() => validateTestDbPath('/private/tmp/test.db')).not.toThrow()
   })
 

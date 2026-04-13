@@ -24,9 +24,14 @@ vi.mock('../worktree', () => ({
 
 vi.mock('../sdk-adapter', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../sdk-adapter')>()
+  const spawnAgent = vi.fn()
   return {
     ...actual,
-    spawnAgent: vi.fn()
+    spawnAgent,
+    spawnWithTimeout: vi.fn(
+      (_prompt: string, _cwd: string, _model: string, _logger: unknown) =>
+        spawnAgent({ prompt: _prompt, cwd: _cwd, model: _model, logger: _logger })
+    )
   }
 })
 
@@ -124,7 +129,8 @@ describe('runAgent — playground prompt injection', () => {
     logger: {
       info: vi.fn(),
       warn: vi.fn(),
-      error: vi.fn()
+      error: vi.fn(),
+      debug: vi.fn()
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo

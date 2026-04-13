@@ -7,8 +7,17 @@
 import { execFile as execFileCb } from 'node:child_process'
 import { promisify } from 'node:util'
 import type { Logger } from '../logger'
+import { buildAgentEnv } from '../env-utils'
+import { runPostMergeDedup } from '../services/post-merge-dedup'
+import { getErrorMessage } from '../../shared/errors'
 
 const execFile = promisify(execFileCb)
+
+/**
+ * Test artifact patterns to exclude from agent commits.
+ * These paths are unstaged during auto-commit to prevent polluting the diff with test outputs.
+ */
+const GIT_ARTIFACT_PATTERNS = ['test-results/', 'coverage/', '*.log', 'playwright-report/'] as const
 
 const PR_CREATE_MAX_ATTEMPTS = 3
 const PR_CREATE_BACKOFF_MS = [3000, 8000]
@@ -385,4 +394,155 @@ export async function addWorktree(
     cwd: repoPath,
     env
   })
+}
+
+/**
+ * Auto-commit any uncommitted changes in the worktree.
+ * Uses -A to capture new (untracked) files. Unstages test artifact paths before committing.
+ */
+export async function autoCommitIfDirty(
+  worktreePath: string,
+  title: string,
+  logger: Logger
+): Promise<void> {
+  const env = buildAgentEnv()
+  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
+    cwd: worktreePath,
+    env
+  })
+  if (statusOut.trim()) {
+    logger.info(`[completion] auto-committing uncommitted changes`)
+    // Use -A to capture new (untracked) files created by agents, not just modifications.
+    // The repo's .gitignore excludes node_modules, .env, etc.
+    await execFile('git', ['add', '-A'], { cwd: worktreePath, env })
+
+    // Unstage test artifacts that may have been previously tracked
+    for (const path of GIT_ARTIFACT_PATTERNS) {
+      try {
+        await execFile('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
+          cwd: worktreePath,
+          env
+        })
+      } catch (err) {
+        // Non-fatal — artifact may not exist or not be tracked
+        logger.info(`[completion] artifact cleanup failed for ${path}: ${getErrorMessage(err)}`)
+      }
+    }
+
+    // Re-check if staged changes remain (unstaging may have removed everything)
+    const { stdout: stagedOut } = await execFile('git', ['diff', '--cached', '--name-only'], {
+      cwd: worktreePath,
+      env
+    })
+
+    if (!stagedOut.trim()) {
+      logger.info(`[completion] no staged changes after unstaging test artifacts — skipping commit`)
+      return
+    }
+
+    const sanitizedTitle = sanitizeForGit(title)
+    await execFile(
+      'git',
+      ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
+      {
+        cwd: worktreePath,
+        env
+      }
+    )
+  }
+}
+
+/**
+ * Clean up worktree and branch after merge or discard.
+ * Best-effort cleanup — does not throw on failure.
+ */
+export async function cleanupWorktreeAndBranch(
+  worktreePath: string,
+  branch: string,
+  repoPath: string,
+  logger: Logger
+): Promise<void> {
+  const env = buildAgentEnv()
+  try {
+    await execFile('git', ['worktree', 'remove', worktreePath, '--force'], {
+      cwd: repoPath,
+      env
+    })
+  } catch (err) {
+    logger.warn(`[completion] Failed to remove worktree ${worktreePath}: ${err}`)
+  }
+
+  try {
+    await execFile('git', ['branch', '-D', branch], {
+      cwd: repoPath,
+      env
+    })
+  } catch (err) {
+    logger.warn(`[completion] Failed to delete branch ${branch}: ${err}`)
+  }
+}
+
+export interface SquashMergeOpts {
+  taskId: string
+  branch: string
+  worktreePath: string
+  repoPath: string
+  title: string
+  logger: Logger
+}
+
+/**
+ * Execute squash merge of agent branch into main repo.
+ * Returns 'merged' on success, 'dirty-main' if main has uncommitted changes, 'failed' on merge error.
+ * Task state updates are the caller's responsibility.
+ */
+export async function executeSquashMerge(
+  opts: SquashMergeOpts
+): Promise<'merged' | 'dirty-main' | 'failed'> {
+  const { taskId, branch, worktreePath, repoPath, title, logger } = opts
+  const env = buildAgentEnv()
+  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
+    cwd: repoPath,
+    env
+  })
+  if (statusOut.trim()) {
+    logger.warn(
+      `[completion] Skipping auto-merge: main repo has uncommitted changes`
+    )
+    return 'dirty-main'
+  }
+
+  try {
+    await execFile('git', ['merge', '--squash', branch], {
+      cwd: repoPath,
+      env
+    })
+    await execFile('git', ['commit', '-m', `${sanitizeForGit(title)} (#${taskId})`], {
+      cwd: repoPath,
+      env
+    })
+
+    try {
+      await runPostMergeDedup(repoPath)
+    } catch {
+      // Non-fatal
+    }
+
+    await cleanupWorktreeAndBranch(worktreePath, branch, repoPath, logger)
+
+    return 'merged'
+  } catch (mergeErr) {
+    logger.error(
+      `[completion] Auto-merge failed: ${mergeErr} — task remains in review`
+    )
+    try {
+      await execFile('git', ['merge', '--abort'], {
+        cwd: repoPath,
+        env
+      })
+    } catch {
+      /* best-effort */
+    }
+    return 'failed'
+  }
 }

@@ -3,7 +3,8 @@
  * watchdog race, fast-fail paths, and completion fallback.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { runAgent, detectHtmlWrite, tryEmitPlaygroundEvent, validateTaskForRun, assembleRunContext } from '../run-agent'
+import { runAgent, validateTaskForRun, assembleRunContext } from '../run-agent'
+import { detectHtmlWrite, tryEmitPlaygroundEvent } from '../playground-handler'
 import type { RunAgentTask, RunAgentDeps, RunAgentSpawnDeps, RunAgentDataDeps, RunAgentEventDeps } from '../run-agent'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
@@ -27,9 +28,14 @@ vi.mock('../worktree', () => ({
 
 vi.mock('../sdk-adapter', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../sdk-adapter')>()
+  const spawnAgent = vi.fn()
   return {
     ...actual,
-    spawnAgent: vi.fn()
+    spawnAgent,
+    spawnWithTimeout: vi.fn(
+      (_prompt: string, _cwd: string, _model: string, _logger: unknown) =>
+        spawnAgent({ prompt: _prompt, cwd: _cwd, model: _model, logger: _logger })
+    )
   }
 })
 

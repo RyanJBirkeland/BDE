@@ -1,10 +1,10 @@
 import type { ActiveAgent, AgentHandle } from './types'
 import type { Logger } from '../logger'
 import { logError } from '../logger'
-import { SPAWN_TIMEOUT_MS, LAST_OUTPUT_MAX_LENGTH } from './types'
+import { LAST_OUTPUT_MAX_LENGTH } from './types'
 import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'
-import { spawnAgent, asSDKMessage, getNumericField, isRateLimitMessage } from './sdk-adapter'
+import { asSDKMessage, getNumericField, isRateLimitMessage, spawnWithTimeout } from './sdk-adapter'
 import { resolveSuccess, resolveFailure } from './completion'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getGhRepo, BDE_TASK_MEMORY_DIR } from '../paths'
@@ -12,20 +12,15 @@ import { createAgentRecord, updateAgentMeta } from '../agent-history'
 import { updateAgentRunCost } from '../data/agent-queries'
 import { getDb } from '../db'
 import { randomUUID } from 'node:crypto'
-import { execFile as execFileCb } from 'node:child_process'
-import { promisify } from 'node:util'
 import { mkdirSync, readFileSync } from 'node:fs'
-import { readFile, stat } from 'node:fs/promises'
-import { extname, basename, join } from 'node:path'
-import { broadcast } from '../broadcast'
+import { join } from 'node:path'
 import { mapRawMessage, emitAgentEvent } from '../agent-event-mapper'
-import type { AgentEvent, TaskDependency } from '../../shared/types'
+import type { TaskDependency } from '../../shared/types'
 import { buildAgentPrompt } from './prompt-composer'
-import { sanitizePlaygroundHtml } from '../playground-sanitize'
 import { TurnTracker } from './turn-tracker'
 import { nowIso } from '../../shared/time'
-
-const execFile = promisify(execFileCb)
+import { detectHtmlWrite, tryEmitPlaygroundEvent } from './playground-handler'
+import { capturePartialDiff } from './partial-diff-capture'
 
 export interface RunAgentTask {
   id: string
@@ -74,163 +69,6 @@ export interface RunAgentEventDeps {
  */
 export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventDeps
 
-const MAX_PLAYGROUND_SIZE = 5 * 1024 * 1024 // 5MB
-const MAX_PARTIAL_DIFF_SIZE = 50 * 1024 // 50KB
-
-/**
- * Detects if a message is a tool_result for a Write tool that created an .html file.
- * Returns the file path if detected, null otherwise.
- */
-export function detectHtmlWrite(msg: unknown): string | null {
-  const m = asSDKMessage(msg)
-  if (!m) return null
-
-  // Check if this is a tool_result or result message
-  if (m.type !== 'tool_result' && m.type !== 'result') return null
-
-  // Check if the tool is Write (case-insensitive)
-  const toolName = m.tool_name ?? m.name ?? ''
-  if (toolName.toLowerCase() !== 'write') return null
-
-  // Extract file path from the tool input or output
-  // The Write tool typically has input with { file_path: "..." }
-  const filePath = m.input?.file_path as string | undefined
-
-  if (!filePath || extname(filePath).toLowerCase() !== '.html') return null
-
-  return filePath
-}
-
-/**
- * Attempts to read an HTML file and emit a playground event.
- * Silently fails if the file doesn't exist or is too large.
- */
-export async function tryEmitPlaygroundEvent(
-  taskId: string,
-  filePath: string,
-  worktreePath: string,
-  logger: Logger
-): Promise<void> {
-  try {
-    // Resolve absolute path
-    const absolutePath = filePath.startsWith('/') ? filePath : join(worktreePath, filePath)
-
-    // Validate path is within worktree (prevent traversal)
-    const { resolve } = await import('node:path')
-    const resolvedPath = resolve(absolutePath)
-    const resolvedWorktree = resolve(worktreePath)
-    if (!resolvedPath.startsWith(resolvedWorktree + '/') && resolvedPath !== resolvedWorktree) {
-      logger.warn(`[playground] Path traversal blocked: ${filePath} (resolved to ${resolvedPath})`)
-      return
-    }
-
-    // Check file size
-    const stats = await stat(absolutePath)
-    if (stats.size > MAX_PLAYGROUND_SIZE) {
-      logger.warn(`[playground] File too large (${stats.size} bytes), skipping: ${filePath}`)
-      return
-    }
-
-    // Read and sanitize file content
-    const rawHtml = await readFile(absolutePath, 'utf-8')
-    const sanitizedHtml = sanitizePlaygroundHtml(rawHtml)
-    const filename = basename(absolutePath)
-
-    // Emit playground event with sanitized HTML
-    const event: AgentEvent = {
-      type: 'agent:playground',
-      filename,
-      html: sanitizedHtml,
-      sizeBytes: stats.size,
-      timestamp: Date.now()
-    }
-
-    broadcast('agent:event', { agentId: taskId, event })
-    logger.info(`[playground] Emitted playground event for ${filename} (${stats.size} bytes)`)
-  } catch (err) {
-    logger.warn(`[playground] Failed to read HTML file ${filePath}: ${err}`)
-    // Silently ignore — file may not exist yet or may be inaccessible
-  }
-}
-
-export type DiffCaptureErrorClass =
-  | 'git-missing' // ENOENT on spawn — git binary not on PATH
-  | 'no-head' // agent has no commits yet — expected, benign
-  | 'not-a-repo' // cwd is not a git repository — unusual but benign
-  | 'max-buffer' // diff exceeded maxBuffer — expected, we cap at 50KB
-  | 'unknown' // other — needs investigation
-
-export function classifyDiffCaptureError(err: unknown): DiffCaptureErrorClass {
-  const code = (err as NodeJS.ErrnoException | null)?.code
-  if (code === 'ENOENT') return 'git-missing'
-  const msg = (err as Error | null)?.message ?? ''
-  if (/unknown revision|bad revision|ambiguous argument 'HEAD'/i.test(msg)) return 'no-head'
-  if (/not a git repository/i.test(msg)) return 'not-a-repo'
-  if (/maxBuffer/i.test(msg)) return 'max-buffer'
-  return 'unknown'
-}
-
-/**
- * Capture uncommitted/unstaged changes from a failed agent's worktree.
- * Runs `git diff HEAD` and stores the result (capped at 50KB) in task.partial_diff.
- * This preserves partial progress when the worktree is cleaned up after failure.
- */
-export async function capturePartialDiff(
-  taskId: string,
-  worktreePath: string,
-  repo: ISprintTaskRepository,
-  logger: Logger
-): Promise<void> {
-  try {
-    const { stdout } = await execFile('git', ['diff', 'HEAD'], {
-      cwd: worktreePath,
-      maxBuffer: MAX_PARTIAL_DIFF_SIZE
-    })
-
-    if (stdout.trim()) {
-      // Cap at 50KB
-      const diff = stdout.slice(0, MAX_PARTIAL_DIFF_SIZE)
-      const truncated = stdout.length > MAX_PARTIAL_DIFF_SIZE
-
-      repo.updateTask(taskId, {
-        partial_diff: truncated ? diff + '\n\n[... diff truncated at 50KB]' : diff
-      })
-
-      logger.info(
-        `[agent-manager] Captured partial diff for task ${taskId} (${diff.length} bytes${truncated ? ', truncated' : ''})`
-      )
-    }
-  } catch (err) {
-    const kind = classifyDiffCaptureError(err)
-    const base = `[agent-manager] Failed to capture partial diff for task ${taskId}`
-    if (kind === 'git-missing') {
-      logger.error(`${base}: git binary not found on PATH — install Xcode CLT or Homebrew (${err})`)
-    } else {
-      logger.warn(`${base} [${kind}]: ${err}`)
-    }
-  }
-}
-
-/**
- * Spawns an agent with a timeout. Rejects if spawn takes longer than SPAWN_TIMEOUT_MS.
- */
-export async function spawnWithTimeout(
-  prompt: string,
-  cwd: string,
-  model: string,
-  logger: Logger
-): Promise<AgentHandle> {
-  let timer: ReturnType<typeof setTimeout>
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`Spawn timed out after ${SPAWN_TIMEOUT_MS / 1000}s`)),
-      SPAWN_TIMEOUT_MS
-    )
-  })
-  return await Promise.race([spawnAgent({ prompt, cwd, model, logger }), timeoutPromise]).finally(
-    () => clearTimeout(timer!)
-  )
-}
 
 export interface ConsumeMessagesResult {
   exitCode: number | undefined

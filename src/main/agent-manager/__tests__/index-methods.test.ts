@@ -100,6 +100,8 @@ import {
   getOrphanedTasks,
   getTasksWithDependencies
 } from '../../data/sprint-queries'
+import { mapQueuedTask, checkAndBlockDeps } from '../task-mapper'
+import { createDependencyIndex } from '../../services/dependency-service'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -406,9 +408,9 @@ describe('AgentManagerImpl — class internals', () => {
   // 4. _mapQueuedTask
   // -------------------------------------------------------------------------
 
-  describe('_mapQueuedTask', () => {
+  describe('mapQueuedTask', () => {
     it('maps camelCase Queue API fields to local snake_case shape', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const logger = makeLogger()
       const raw = {
         id: 'task-42',
         title: 'Build feature',
@@ -420,7 +422,7 @@ describe('AgentManagerImpl — class internals', () => {
         playground_enabled: true,
         max_runtime_ms: 30000
       }
-      const result = manager._mapQueuedTask(raw)
+      const result = mapQueuedTask(raw, logger)
       expect(result).toEqual({
         id: 'task-42',
         title: 'Build feature',
@@ -439,19 +441,19 @@ describe('AgentManagerImpl — class internals', () => {
     })
 
     it('defaults prompt and spec to null when missing', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const logger = makeLogger()
       const raw = {
         id: 'task-43',
         title: 'Minimal task',
         repo: 'myrepo'
       }
-      const result = manager._mapQueuedTask(raw as Record<string, unknown>)
-      expect(result.prompt).toBeNull()
-      expect(result.spec).toBeNull()
+      const result = mapQueuedTask(raw as Record<string, unknown>, logger)
+      expect(result!.prompt).toBeNull()
+      expect(result!.spec).toBeNull()
     })
 
     it('defaults retry_count and fast_fail_count to 0 for non-numeric values', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const logger = makeLogger()
       const raw = {
         id: 'task-44',
         title: 'Bad counts',
@@ -459,21 +461,21 @@ describe('AgentManagerImpl — class internals', () => {
         retry_count: 'abc',
         fast_fail_count: undefined
       }
-      const result = manager._mapQueuedTask(raw as Record<string, unknown>)
-      expect(result.retry_count).toBe(0)
-      expect(result.fast_fail_count).toBe(0)
+      const result = mapQueuedTask(raw as Record<string, unknown>, logger)
+      expect(result!.retry_count).toBe(0)
+      expect(result!.fast_fail_count).toBe(0)
     })
 
     it('defaults max_runtime_ms to null for non-numeric values', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const logger = makeLogger()
       const raw = {
         id: 'task-45',
         title: 'No runtime',
         repo: 'myrepo',
         max_runtime_ms: 'invalid'
       }
-      const result = manager._mapQueuedTask(raw as Record<string, unknown>)
-      expect(result.max_runtime_ms).toBeNull()
+      const result = mapQueuedTask(raw as Record<string, unknown>, logger)
+      expect(result!.max_runtime_ms).toBeNull()
     })
   })
 
@@ -481,35 +483,46 @@ describe('AgentManagerImpl — class internals', () => {
   // 5. _checkAndBlockDeps
   // -------------------------------------------------------------------------
 
-  describe('_checkAndBlockDeps', () => {
+  describe('checkAndBlockDeps', () => {
     it('returns false when deps are satisfied', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+      const repo = makeMockRepo()
+      const depIndex = createDependencyIndex()
+      const logger = makeLogger()
       // Default mock: areDependenciesSatisfied returns { satisfied: true, blockedBy: [] }
       const statusMap = new Map([['dep-1', 'done']])
-      const result = manager._checkAndBlockDeps(
+      const result = checkAndBlockDeps(
         'task-1',
         JSON.stringify([{ taskId: 'dep-1', type: 'hard' }]),
-        statusMap
+        statusMap,
+        repo,
+        depIndex,
+        logger
       )
       expect(result).toBe(false)
     })
 
     it('returns false and does not block for empty deps array', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      const result = manager._checkAndBlockDeps('task-1', '[]', new Map())
+      const repo = makeMockRepo()
+      const depIndex = createDependencyIndex()
+      const logger = makeLogger()
+      const result = checkAndBlockDeps('task-1', '[]', new Map(), repo, depIndex, logger)
       expect(result).toBe(false)
       expect(updateTask).not.toHaveBeenCalled()
     })
 
     it('returns true and sets task to error when dep parsing fails (invalid JSON)', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      const result = manager._checkAndBlockDeps('task-1', '{bad json', new Map())
+      const repo = makeMockRepo()
+      const depIndex = createDependencyIndex()
+      const logger = makeLogger()
+      const result = checkAndBlockDeps('task-1', '{bad json', new Map(), repo, depIndex, logger)
       expect(result).toBe(true)
     })
 
     it('returns false for non-array deps', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      const result = manager._checkAndBlockDeps('task-1', '"just-a-string"', new Map())
+      const repo = makeMockRepo()
+      const depIndex = createDependencyIndex()
+      const logger = makeLogger()
+      const result = checkAndBlockDeps('task-1', '"just-a-string"', new Map(), repo, depIndex, logger)
       expect(result).toBe(false)
     })
   })

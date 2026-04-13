@@ -20,7 +20,7 @@ import {
 import { checkAgent } from './watchdog'
 import { setupWorktree, pruneStaleWorktrees } from './worktree'
 import { recoverOrphans } from './orphan-recovery'
-import { createDependencyIndex, formatBlockedNote } from '../services/dependency-service'
+import { createDependencyIndex } from '../services/dependency-service'
 import {
   createEpicDependencyIndex,
   type EpicDependencyIndex
@@ -32,30 +32,11 @@ import { getRepoPaths } from '../paths'
 import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
 import { getSetting, getSettingJson } from '../settings'
 import { flushAgentEventBatcher } from '../agent-event-mapper'
-import {
-  CircuitBreaker,
-  SPAWN_CIRCUIT_FAILURE_THRESHOLD,
-  SPAWN_CIRCUIT_PAUSE_MS
-} from './circuit-breaker'
-import {
-  checkOAuthToken,
-  invalidateCheckOAuthTokenCache,
-  OAUTH_CHECK_CACHE_TTL_MS,
-  OAUTH_CHECK_FAIL_CACHE_TTL_MS
-} from './oauth-checker'
-import { handleWatchdogVerdict, type WatchdogVerdictResult } from './watchdog-handler'
-import type { WatchdogCheck, WatchdogAction } from './types'
-
-// Re-export for backward compatibility with tests
-export { SPAWN_CIRCUIT_FAILURE_THRESHOLD, SPAWN_CIRCUIT_PAUSE_MS }
-export {
-  checkOAuthToken,
-  invalidateCheckOAuthTokenCache,
-  OAUTH_CHECK_CACHE_TTL_MS,
-  OAUTH_CHECK_FAIL_CACHE_TTL_MS
-}
-export { handleWatchdogVerdict }
-export type { WatchdogVerdictResult, WatchdogCheck, WatchdogAction }
+import { CircuitBreaker } from './circuit-breaker'
+import { checkOAuthToken } from './oauth-checker'
+import { handleWatchdogVerdict } from './watchdog-handler'
+import type { WatchdogAction } from './types'
+import { mapQueuedTask, checkAndBlockDeps } from './task-mapper'
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to createLogger
@@ -283,111 +264,6 @@ export class AgentManagerImpl implements AgentManager {
     return repoPaths[repoSlug.toLowerCase()] ?? null
   }
 
-  // ---- processQueuedTask helpers ----
-
-  /**
-   * Map Queue API camelCase response to local task shape.
-   * Ensures retry_count and fast_fail_count default to 0, prompt and spec default to null.
-   * Returns null if required fields are missing.
-   */
-  _mapQueuedTask(raw: Record<string, unknown>): {
-    id: string
-    title: string
-    prompt: string | null
-    spec: string | null
-    repo: string
-    retry_count: number
-    fast_fail_count: number
-    notes: string | null
-    playground_enabled: boolean
-    max_runtime_ms: number | null
-    max_cost_usd: number | null
-    model: string | null
-    group_id: string | null
-  } | null {
-    // Validate required fields
-    if (!raw.id || typeof raw.id !== 'string') {
-      this.logger.warn(`[agent-manager] Task missing or invalid 'id' field: ${JSON.stringify(raw)}`)
-      return null
-    }
-    if (!raw.title || typeof raw.title !== 'string') {
-      this.logger.warn(`[agent-manager] Task ${raw.id} missing or invalid 'title' field`)
-      return null
-    }
-    if (!raw.repo || typeof raw.repo !== 'string') {
-      this.logger.warn(`[agent-manager] Task ${raw.id} missing or invalid 'repo' field`)
-      return null
-    }
-
-    return {
-      id: raw.id,
-      title: raw.title,
-      prompt: (raw.prompt as string) ?? null,
-      spec: (raw.spec as string) ?? null,
-      repo: raw.repo,
-      retry_count: Number(raw.retry_count) || 0,
-      fast_fail_count: Number(raw.fast_fail_count) || 0,
-      notes: (raw.notes as string) ?? null,
-      playground_enabled: Boolean(raw.playground_enabled),
-      max_runtime_ms: Number(raw.max_runtime_ms) || null,
-      max_cost_usd: Number(raw.max_cost_usd) || null,
-      model: (raw.model as string) ?? null,
-      group_id: (raw.group_id as string) ?? null
-    }
-  }
-
-  /**
-   * Defense-in-depth: check dependencies before claiming.
-   * Tasks created via direct API may be 'queued' with unsatisfied deps.
-   * Returns true if the task was blocked (caller should return early), false to continue.
-   */
-  _checkAndBlockDeps(
-    taskId: string,
-    rawDeps: unknown,
-    taskStatusMap: Map<string, string>
-  ): boolean {
-    try {
-      const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
-      if (Array.isArray(deps) && deps.length > 0) {
-        const { satisfied, blockedBy } = this._depIndex.areDependenciesSatisfied(
-          taskId,
-          deps,
-          (depId: string) => taskStatusMap.get(depId)
-        )
-        if (!satisfied) {
-          this.logger.info(
-            `[agent-manager] Task ${taskId} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`
-          )
-          try {
-            this.repo.updateTask(taskId, {
-              status: 'blocked',
-              notes: formatBlockedNote(blockedBy)
-            })
-          } catch {
-            /* best-effort */
-          }
-          return true
-        }
-      }
-    } catch (err) {
-      // If dep parsing fails, set task to error instead of silently proceeding
-      this.logger.error(`[agent-manager] Task ${taskId} has malformed depends_on data: ${err}`)
-      try {
-        this.repo.updateTask(taskId, {
-          status: 'error',
-          notes: 'Malformed depends_on field - cannot validate dependencies',
-          claimed_by: null
-        })
-      } catch (updateErr) {
-        this.logger.warn(
-          `[agent-manager] Failed to update task ${taskId} after dep parse error: ${updateErr}`
-        )
-      }
-      return true // Block the task
-    }
-    return false
-  }
-
   /**
    * Fire-and-forget agent spawn — errors logged inside runAgent.
    */
@@ -417,11 +293,11 @@ export class AgentManagerImpl implements AgentManager {
     if (this._processingTasks.has(taskId)) return
     this._processingTasks.add(taskId)
     try {
-      const task = this._mapQueuedTask(raw)
+      const task = mapQueuedTask(raw, this.logger)
       if (!task) return // Skip tasks with invalid fields
 
       const rawDeps = raw.dependsOn ?? raw.depends_on
-      if (rawDeps && this._checkAndBlockDeps(task.id, rawDeps, taskStatusMap)) return
+      if (rawDeps && checkAndBlockDeps(task.id, rawDeps, taskStatusMap, this.repo, this._depIndex, this.logger)) return
 
       const repoPath = this.resolveRepoPath(task.repo)
       if (!repoPath) {

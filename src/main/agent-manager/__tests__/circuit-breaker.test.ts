@@ -26,7 +26,8 @@ vi.mock('../../paths', () => ({
   BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log'
 }))
 
-import { AgentManagerImpl, SPAWN_CIRCUIT_FAILURE_THRESHOLD, SPAWN_CIRCUIT_PAUSE_MS } from '../index'
+import { AgentManagerImpl } from '../index'
+import { SPAWN_CIRCUIT_FAILURE_THRESHOLD, SPAWN_CIRCUIT_PAUSE_MS } from '../circuit-breaker'
 import type { AgentManagerConfig } from '../types'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { broadcast } from '../../broadcast'

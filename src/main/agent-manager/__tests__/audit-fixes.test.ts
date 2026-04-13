@@ -4,12 +4,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { resolveFailure } from '../completion'
 import { sanitizeForGit } from '../git-operations'
-import { handleWatchdogVerdict } from '../index'
+import { handleWatchdogVerdict } from '../watchdog-handler'
 import { makeConcurrencyState } from '../concurrency'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import { MAX_RETRIES } from '../types'
 import { nowIso } from '../../../shared/time'
-import { tryEmitPlaygroundEvent } from '../run-agent'
+import { tryEmitPlaygroundEvent } from '../playground-handler'
 
 // ---------------------------------------------------------------------------
 // Mocks for tryEmitPlaygroundEvent tests

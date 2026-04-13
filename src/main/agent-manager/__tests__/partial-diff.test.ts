@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { promisify } from 'node:util'
-import { capturePartialDiff, classifyDiffCaptureError } from '../run-agent'
+import { capturePartialDiff, classifyDiffCaptureError } from '../partial-diff-capture'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 
 // Mock node:child_process before importing module under test

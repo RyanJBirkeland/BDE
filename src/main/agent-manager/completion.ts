@@ -7,35 +7,17 @@ import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
 import type { Logger } from '../logger'
 import { broadcastCoalesced } from '../broadcast'
 import type { AgentEvent, FailureReason } from '../../shared/types'
-import { runPostMergeDedup } from '../services/post-merge-dedup'
-import { captureDiffSnapshot } from './diff-snapshot'
+import type { AutoReviewRule } from '../../shared/types/task-types'
 import { nowIso } from '../../shared/time'
 import {
   rebaseOntoMain,
   findOrCreatePR as findOrCreatePRUtil,
-  sanitizeForGit
+  autoCommitIfDirty,
+  executeSquashMerge
 } from './git-operations'
-import { getErrorMessage } from '../../shared/errors'
+import { transitionToReview } from './review-transition'
 
 const execFile = promisify(execFileCb)
-
-/**
- * Test artifact patterns to exclude from agent commits.
- * These paths are unstaged during auto-commit to prevent polluting the diff with test outputs.
- */
-const GIT_ARTIFACT_PATTERNS = ['test-results/', 'coverage/', '*.log', 'playwright-report/'] as const
-
-type AutoReviewRule = {
-  id: string
-  name: string
-  enabled: boolean
-  conditions: {
-    maxLinesChanged?: number
-    filePatterns?: string[]
-    excludePatterns?: string[]
-  }
-  action: 'auto-merge' | 'auto-approve'
-}
 
 export interface ResolveSuccessOpts {
   taskId: string
@@ -53,27 +35,6 @@ export interface ResolveFailureOpts {
   retryCount: number
   notes?: string
   repo: ISprintTaskRepository
-}
-
-interface TransitionToReviewOpts {
-  taskId: string
-  worktreePath: string
-  rebaseNote: string | undefined
-  rebaseBaseSha: string | undefined
-  rebaseSucceeded: boolean
-  repo: ISprintTaskRepository
-  logger: Logger
-}
-
-interface MergeOpts {
-  taskId: string
-  title: string
-  branch: string
-  worktreePath: string
-  repoPath: string
-  repo: ISprintTaskRepository
-  logger: Logger
-  onTaskTerminal: (taskId: string, status: string) => Promise<void>
 }
 
 interface CommitCheckOpts {
@@ -106,188 +67,6 @@ async function detectBranch(worktreePath: string): Promise<string> {
   return stdout.trim()
 }
 
-async function autoCommitIfDirty(
-  worktreePath: string,
-  title: string,
-  logger: Logger
-): Promise<void> {
-  const env = buildAgentEnv()
-  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
-    cwd: worktreePath,
-    env
-  })
-  if (statusOut.trim()) {
-    logger.info(`[completion] auto-committing uncommitted changes`)
-    // Use -A to capture new (untracked) files created by agents, not just modifications.
-    // The repo's .gitignore excludes node_modules, .env, etc.
-    await execFile('git', ['add', '-A'], { cwd: worktreePath, env })
-
-    // Unstage test artifacts that may have been previously tracked
-    for (const path of GIT_ARTIFACT_PATTERNS) {
-      try {
-        await execFile('git', ['rm', '-r', '--cached', '--ignore-unmatch', path], {
-          cwd: worktreePath,
-          env
-        })
-      } catch (err) {
-        // Non-fatal — artifact may not exist or not be tracked
-        logger.info(`[completion] artifact cleanup failed for ${path}: ${getErrorMessage(err)}`)
-      }
-    }
-
-    // Re-check if staged changes remain (unstaging may have removed everything)
-    const { stdout: stagedOut } = await execFile('git', ['diff', '--cached', '--name-only'], {
-      cwd: worktreePath,
-      env
-    })
-
-    if (!stagedOut.trim()) {
-      logger.info(`[completion] no staged changes after unstaging test artifacts — skipping commit`)
-      return
-    }
-
-    const sanitizedTitle = sanitizeForGit(title)
-    await execFile(
-      'git',
-      ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
-      {
-        cwd: worktreePath,
-        env
-      }
-    )
-  }
-}
-
-/**
- * Clean up worktree and branch after merge or discard.
- * Best-effort cleanup — does not throw on failure.
- */
-async function cleanupWorktreeAndBranch(
-  worktreePath: string,
-  branch: string,
-  repoPath: string,
-  logger: Logger
-): Promise<void> {
-  const env = buildAgentEnv()
-  try {
-    await execFile('git', ['worktree', 'remove', worktreePath, '--force'], {
-      cwd: repoPath,
-      env
-    })
-  } catch (err) {
-    logger.warn(`[completion] Failed to remove worktree ${worktreePath}: ${err}`)
-  }
-
-  try {
-    await execFile('git', ['branch', '-D', branch], {
-      cwd: repoPath,
-      env
-    })
-  } catch (err) {
-    logger.warn(`[completion] Failed to delete branch ${branch}: ${err}`)
-  }
-}
-
-/**
- * Transition task to review status with diff snapshot and duration calculation.
- * Preserves worktree for human code review.
- */
-async function transitionToReview(opts: TransitionToReviewOpts): Promise<void> {
-  const { taskId, worktreePath, rebaseNote, rebaseBaseSha, rebaseSucceeded, repo, logger } = opts
-  const task = repo.getTask(taskId)
-  let durationMs: number | undefined
-  if (task?.started_at) {
-    const startTime = new Date(task.started_at).getTime()
-    const endTime = Date.now()
-    durationMs = endTime - startTime
-  }
-
-  let diffSnapshotJson: string | null = null
-  try {
-    const snapshot = await captureDiffSnapshot(worktreePath, 'origin/main', logger)
-    if (snapshot) {
-      diffSnapshotJson = JSON.stringify(snapshot)
-    }
-  } catch (err) {
-    logger.warn(`[completion] Diff snapshot capture failed for task ${taskId}: ${err}`)
-  }
-
-  try {
-    repo.updateTask(taskId, {
-      status: 'review',
-      worktree_path: worktreePath,
-      claimed_by: null,
-      ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
-      ...(rebaseNote ? { notes: rebaseNote } : {}),
-      ...(diffSnapshotJson ? { review_diff_snapshot: diffSnapshotJson } : {}),
-      rebase_base_sha: rebaseBaseSha ?? null,
-      rebased_at: rebaseSucceeded ? nowIso() : null
-    })
-  } catch (err) {
-    logger.error(`[completion] Failed to update task ${taskId} to review status: ${err}`)
-  }
-}
-
-/**
- * Execute squash merge of agent branch into main repo.
- * Handles merge, commit, post-merge dedup, worktree cleanup, and task completion.
- */
-async function executeSquashMerge(opts: MergeOpts): Promise<void> {
-  const { taskId, title, branch, worktreePath, repoPath, repo, logger, onTaskTerminal } = opts
-  const env = buildAgentEnv()
-  const { stdout: statusOut } = await execFile('git', ['status', '--porcelain'], {
-    cwd: repoPath,
-    env
-  })
-  if (statusOut.trim()) {
-    logger.warn(
-      `[completion] Skipping auto-merge for task ${taskId}: main repo has uncommitted changes`
-    )
-    return
-  }
-
-  try {
-    await execFile('git', ['merge', '--squash', branch], {
-      cwd: repoPath,
-      env
-    })
-    await execFile('git', ['commit', '-m', `${sanitizeForGit(title)} (#${taskId})`], {
-      cwd: repoPath,
-      env
-    })
-
-    try {
-      await runPostMergeDedup(repoPath)
-    } catch {
-      // Non-fatal
-    }
-
-    await cleanupWorktreeAndBranch(worktreePath, branch, repoPath, logger)
-
-    const reviewTask = repo.getTask(taskId)
-    repo.updateTask(taskId, {
-      status: 'done',
-      completed_at: nowIso(),
-      worktree_path: null,
-      ...(reviewTask?.duration_ms !== undefined ? { duration_ms: reviewTask.duration_ms } : {})
-    })
-
-    logger.info(`[completion] Task ${taskId} auto-merged successfully`)
-    await onTaskTerminal(taskId, 'done')
-  } catch (mergeErr) {
-    logger.error(
-      `[completion] Auto-merge failed for task ${taskId}: ${mergeErr} — task remains in review`
-    )
-    try {
-      await execFile('git', ['merge', '--abort'], {
-        cwd: repoPath,
-        env
-      })
-    } catch {
-      /* best-effort */
-    }
-  }
-}
 
 /**
  * Get diff file statistics from git diff --numstat.
@@ -450,16 +229,36 @@ async function attemptAutoMerge(opts: AutoMergeOpts): Promise<void> {
         return
       }
 
-      await executeSquashMerge({
+      const mergeResult = await executeSquashMerge({
         taskId,
-        title,
         branch,
         worktreePath,
         repoPath: repoConfig.localPath,
-        repo,
-        logger,
-        onTaskTerminal
+        title,
+        logger
       })
+
+      if (mergeResult === 'merged') {
+        const reviewTask = repo.getTask(taskId)
+        repo.updateTask(taskId, {
+          status: 'done',
+          completed_at: nowIso(),
+          worktree_path: null,
+          ...(reviewTask?.duration_ms !== undefined ? { duration_ms: reviewTask.duration_ms } : {})
+        })
+        logger.info(`[completion] Task ${taskId} auto-merged successfully`)
+        await onTaskTerminal(taskId, 'done')
+      } else if (mergeResult === 'dirty-main') {
+        // main has uncommitted changes — leave task in review for human action
+        logger.warn(
+          `[completion] Task ${taskId} auto-merge skipped: main repo has uncommitted changes — task remains in review`
+        )
+      } else {
+        // 'failed' — merge error, task stays in review
+        logger.error(
+          `[completion] Task ${taskId} auto-merge failed — task remains in review`
+        )
+      }
     }
   } catch (err) {
     logger.warn(`[completion] Auto-review check failed for task ${taskId}: ${err}`)
