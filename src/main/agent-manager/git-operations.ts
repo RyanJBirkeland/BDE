@@ -279,3 +279,116 @@ export async function findOrCreatePR(
 
   return createNewPr(worktreePath, branch, title, ghRepo, env, logger)
 }
+
+/**
+ * List all worktrees in porcelain format.
+ * Returns stdout containing worktree metadata.
+ */
+export async function listWorktrees(
+  repoPath: string,
+  env: NodeJS.ProcessEnv
+): Promise<string> {
+  const { stdout } = await execFile('git', ['worktree', 'list', '--porcelain'], {
+    cwd: repoPath,
+    env
+  })
+  return stdout
+}
+
+/**
+ * Remove a worktree forcefully.
+ */
+export async function removeWorktreeForce(
+  repoPath: string,
+  worktreePath: string,
+  env: NodeJS.ProcessEnv
+): Promise<void> {
+  await execFile('git', ['worktree', 'remove', '--force', worktreePath], {
+    cwd: repoPath,
+    env
+  })
+}
+
+/**
+ * Prune stale worktree administrative files.
+ */
+export async function pruneWorktrees(
+  repoPath: string,
+  env: NodeJS.ProcessEnv
+): Promise<void> {
+  await execFile('git', ['worktree', 'prune'], { cwd: repoPath, env })
+}
+
+/**
+ * Delete a branch forcefully (git branch -D).
+ */
+export async function deleteBranch(
+  repoPath: string,
+  branch: string,
+  env: NodeJS.ProcessEnv
+): Promise<void> {
+  await execFile('git', ['branch', '-D', branch], { cwd: repoPath, env })
+}
+
+/**
+ * Force delete a branch ref directly (bypasses worktree-in-use check).
+ */
+export async function forceDeleteBranchRef(
+  repoPath: string,
+  branch: string,
+  env: NodeJS.ProcessEnv
+): Promise<void> {
+  await execFile('git', ['update-ref', '-d', `refs/heads/${branch}`], {
+    cwd: repoPath,
+    env
+  })
+}
+
+/**
+ * Fetch origin/main with optional timeout.
+ */
+export async function fetchMain(
+  repoPath: string,
+  env: NodeJS.ProcessEnv,
+  logger: Logger,
+  timeoutMs = 30000
+): Promise<void> {
+  await execFile('git', ['fetch', 'origin', 'main', '--no-tags'], {
+    cwd: repoPath,
+    env,
+    timeout: timeoutMs
+  })
+  logger.info(`[git-ops] Fetched origin/main`)
+}
+
+/**
+ * Fast-forward merge origin/main into current branch.
+ */
+export async function ffMergeMain(
+  repoPath: string,
+  env: NodeJS.ProcessEnv,
+  logger: Logger,
+  timeoutMs = 10000
+): Promise<void> {
+  await execFile('git', ['merge', '--ff-only', 'origin/main'], {
+    cwd: repoPath,
+    env,
+    timeout: timeoutMs
+  })
+  logger.info(`[git-ops] Fast-forward merged origin/main`)
+}
+
+/**
+ * Create a new worktree with a new branch.
+ */
+export async function addWorktree(
+  repoPath: string,
+  branch: string,
+  worktreePath: string,
+  env: NodeJS.ProcessEnv
+): Promise<void> {
+  await execFile('git', ['worktree', 'add', '-b', branch, worktreePath], {
+    cwd: repoPath,
+    env
+  })
+}

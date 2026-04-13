@@ -6,6 +6,16 @@ import { buildAgentEnv } from '../env-utils'
 import { BRANCH_SLUG_MAX_LENGTH } from './types'
 import type { Logger } from '../logger'
 import {
+  listWorktrees,
+  removeWorktreeForce,
+  pruneWorktrees,
+  deleteBranch,
+  forceDeleteBranchRef,
+  fetchMain,
+  ffMergeMain,
+  addWorktree
+} from './git-operations'
+import {
   MIN_FREE_DISK_BYTES,
   DISK_RESERVATION_BYTES,
   reserveDisk,
@@ -72,10 +82,7 @@ async function cleanupStaleWorktrees(
 ): Promise<void> {
   // Remove any worktree that references this branch (may be at a different path)
   try {
-    const { stdout: wtList } = await execFileAsync('git', ['worktree', 'list', '--porcelain'], {
-      cwd: repoPath,
-      env
-    })
+    const wtList = await listWorktrees(repoPath, env)
     for (const block of wtList.split('\n\n')) {
       if (block.includes(`branch refs/heads/${branch}`)) {
         const pathLine = block.split('\n').find((l) => l.startsWith('worktree '))
@@ -83,10 +90,7 @@ async function cleanupStaleWorktrees(
           const stalePath = pathLine.replace('worktree ', '')
           log.warn(`[worktree] Removing stale worktree at ${stalePath} for branch ${branch}`)
           try {
-            await execFileAsync('git', ['worktree', 'remove', '--force', stalePath], {
-              cwd: repoPath,
-              env
-            })
+            await removeWorktreeForce(repoPath, stalePath, env)
           } catch {
             try {
               rmSync(stalePath, { recursive: true, force: true })
@@ -104,10 +108,7 @@ async function cleanupStaleWorktrees(
   // Remove the target worktree path if it exists (from a previous run at this exact path)
   if (existsSync(worktreePath)) {
     try {
-      await execFileAsync('git', ['worktree', 'remove', '--force', worktreePath], {
-        cwd: repoPath,
-        env
-      })
+      await removeWorktreeForce(repoPath, worktreePath, env)
     } catch {
       rmSync(worktreePath, { recursive: true, force: true })
     }
@@ -115,7 +116,7 @@ async function cleanupStaleWorktrees(
 
   // Prune stale worktree references from git's tracking
   try {
-    await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env })
+    await pruneWorktrees(repoPath, env)
   } catch {
     /* best effort */
   }
@@ -127,13 +128,10 @@ async function cleanupStaleWorktrees(
   // lower-level `git update-ref -d` which bypasses the worktree-in-use check
   // and deletes the ref directly.
   try {
-    await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
+    await deleteBranch(repoPath, branch, env)
   } catch {
     try {
-      await execFileAsync('git', ['update-ref', '-d', `refs/heads/${branch}`], {
-        cwd: repoPath,
-        env
-      })
+      await forceDeleteBranchRef(repoPath, branch, env)
     } catch {
       /* branch doesn't exist — fine */
     }
@@ -173,11 +171,7 @@ export async function setupWorktree(
     // own lock through 30s of network I/O fully serialized worktree setup
     // for multiple agents on the same repo (10 tasks → 5+ minute startup).
     try {
-      await execFileAsync('git', ['fetch', 'origin', 'main', '--no-tags'], {
-        cwd: repoPath,
-        env,
-        timeout: 30_000
-      })
+      await fetchMain(repoPath, env, log, 30_000)
       log.info(`[worktree] Fetched origin/main for task ${taskId}`)
     } catch (err) {
       // Non-fatal — proceed with whatever HEAD we have
@@ -198,20 +192,13 @@ export async function setupWorktree(
       // Fast-forward local main to match origin so the new worktree branches
       // off the latest commit. Non-destructive — only succeeds for true ff.
       try {
-        await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], {
-          cwd: repoPath,
-          env,
-          timeout: 10_000
-        })
+        await ffMergeMain(repoPath, env, log, 10_000)
       } catch (err) {
         log.warn(`[worktree] Failed to ff-merge origin/main (proceeding anyway): ${err}`)
       }
 
       // Create fresh worktree + branch
-      await execFileAsync('git', ['worktree', 'add', '-b', branch, worktreePath], {
-        cwd: repoPath,
-        env
-      })
+      await addWorktree(repoPath, branch, worktreePath, env)
     } catch (err) {
       // Clean up on failure
       try {
@@ -244,22 +231,19 @@ export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> 
   const log = logger ?? console
 
   try {
-    await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], {
-      cwd: repoPath,
-      env
-    })
+    await removeWorktreeForce(repoPath, worktreePath, env)
   } catch (err) {
     log.warn(`[worktree] Failed to remove worktree ${worktreePath}: ${err}`)
   }
 
   try {
-    await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath, env })
+    await pruneWorktrees(repoPath, env)
   } catch (err) {
     log.warn(`[worktree] Failed to prune worktrees: ${err}`)
   }
 
   try {
-    await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
+    await deleteBranch(repoPath, branch, env)
   } catch (err) {
     log.warn(`[worktree] Failed to delete branch ${branch}: ${err}`)
   }
