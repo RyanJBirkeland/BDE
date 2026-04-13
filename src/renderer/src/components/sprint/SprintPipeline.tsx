@@ -35,6 +35,16 @@ import { useSprintPipelineCommands } from '../../hooks/useSprintPipelineCommands
 
 import './SprintPipeline.css'
 
+/** Tasks that have an open PR with a merge conflict the user needs to resolve. */
+function hasOpenMergeConflict(t: SprintTask): boolean {
+  return (
+    !!t.pr_url &&
+    !!t.pr_number &&
+    t.pr_mergeable_state === 'dirty' &&
+    (t.status === 'active' || t.status === 'done')
+  )
+}
+
 export function SprintPipeline(): React.JSX.Element {
   // --- Store state ---
   const { tasks, loading, loadError } = useSprintTasks(
@@ -170,17 +180,7 @@ export function SprintPipeline(): React.JSX.Element {
   })
 
   // SP-7: Filter tasks with merge conflicts for ConflictDrawer
-  const conflictingTasks = useMemo(
-    () =>
-      tasks.filter(
-        (t) =>
-          t.pr_url &&
-          t.pr_number &&
-          t.pr_mergeable_state === 'dirty' &&
-          (t.status === 'active' || t.status === 'done')
-      ),
-    [tasks]
-  )
+  const conflictingTasks = useMemo(() => tasks.filter(hasOpenMergeConflict), [tasks])
 
   // Auto-select first active or queued task on load
   useEffect(() => {
