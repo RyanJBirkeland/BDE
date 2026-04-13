@@ -4,6 +4,17 @@
  */
 import type Database from 'better-sqlite3'
 import { getErrorMessage } from '../../shared/errors'
+import type { Logger } from '../logger'
+import { createLogger } from '../logger'
+
+let _logger: Logger = createLogger('settings-queries')
+
+/**
+ * Inject a logger. Called at app startup to route logs to the shared log file.
+ */
+export function setSettingsQueriesLogger(logger: Logger): void {
+  _logger = logger
+}
 
 export function getSetting(db: Database.Database, key: string): string | null {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as
@@ -35,13 +46,13 @@ export function getSettingJson<T>(
     const parsed: unknown = JSON.parse(raw)
     // DL-9: Optional validation to prevent unsafe deserialization
     if (validator && !validator(parsed)) {
-      console.warn(`[settings-queries] Validation failed for setting "${key}"`)
+      _logger.warn(`[settings-queries] Validation failed for setting "${key}"`)
       return null
     }
     return parsed as T
   } catch (err) {
     // DL-25: Log parse errors instead of swallowing silently
-    console.warn(
+    _logger.warn(
       `[settings-queries] Failed to parse JSON for setting "${key}": ${getErrorMessage(err)}`
     )
     return null

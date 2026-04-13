@@ -7,6 +7,18 @@ import type { TaskGroup, SprintTask, EpicDependency } from '../../shared/types'
 import { getDb } from '../db'
 import { mapRowsToTasks } from './sprint-queries'
 import { getErrorMessage } from '../../shared/errors'
+import type { Logger } from '../logger'
+import { createLogger } from '../logger'
+
+let _logger: Logger = createLogger('task-group-queries')
+
+/**
+ * Inject a logger. Called at app startup to route logs to the shared log file.
+ * Mirrors the pattern from sprint-queries.ts setSprintQueriesLogger().
+ */
+export function setTaskGroupQueriesLogger(logger: Logger): void {
+  _logger = logger
+}
 
 export interface CreateGroupInput {
   name: string
@@ -79,7 +91,7 @@ export function createGroup(input: CreateGroupInput, db?: Database.Database): Ta
     return row ? sanitizeGroup(row) : null
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] createGroup failed: ${msg}`)
+    _logger.error(`[task-group-queries] createGroup failed: ${msg}`)
     return null
   }
 }
@@ -97,7 +109,7 @@ export function listGroups(db?: Database.Database): TaskGroup[] {
     return rows.map(sanitizeGroup)
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] listGroups failed: ${msg}`)
+    _logger.error(`[task-group-queries] listGroups failed: ${msg}`)
     return []
   }
 }
@@ -114,7 +126,7 @@ export function getGroup(id: string, db?: Database.Database): TaskGroup | null {
     return row ? sanitizeGroup(row) : null
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] getGroup failed for id=${id}: ${msg}`)
+    _logger.error(`[task-group-queries] getGroup failed for id=${id}: ${msg}`)
     return null
   }
 }
@@ -154,7 +166,7 @@ export function updateGroup(
     return row ? sanitizeGroup(row) : null
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] updateGroup failed for id=${id}: ${msg}`)
+    _logger.error(`[task-group-queries] updateGroup failed for id=${id}: ${msg}`)
     return null
   }
 }
@@ -169,7 +181,7 @@ export function deleteGroup(id: string, db?: Database.Database): void {
     conn.prepare('DELETE FROM task_groups WHERE id = ?').run(id)
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] deleteGroup failed for id=${id}: ${msg}`)
+    _logger.error(`[task-group-queries] deleteGroup failed for id=${id}: ${msg}`)
     throw err
   }
 }
@@ -186,7 +198,7 @@ export function addTaskToGroup(taskId: string, groupId: string, db?: Database.Da
     return result.changes > 0
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] addTaskToGroup failed: ${msg}`)
+    _logger.error(`[task-group-queries] addTaskToGroup failed: ${msg}`)
     return false
   }
 }
@@ -201,7 +213,7 @@ export function removeTaskFromGroup(taskId: string, db?: Database.Database): boo
     return result.changes > 0
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] removeTaskFromGroup failed: ${msg}`)
+    _logger.error(`[task-group-queries] removeTaskFromGroup failed: ${msg}`)
     return false
   }
 }
@@ -220,7 +232,7 @@ export function getGroupTasks(groupId: string, db?: Database.Database): SprintTa
     return mapRowsToTasks(rows)
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] getGroupTasks failed for group=${groupId}: ${msg}`)
+    _logger.error(`[task-group-queries] getGroupTasks failed for group=${groupId}: ${msg}`)
     return []
   }
 }
@@ -239,7 +251,7 @@ export function queueAllGroupTasks(groupId: string, db?: Database.Database): num
     return result.changes
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] queueAllGroupTasks failed for group=${groupId}: ${msg}`)
+    _logger.error(`[task-group-queries] queueAllGroupTasks failed for group=${groupId}: ${msg}`)
     return 0
   }
 }
@@ -267,7 +279,7 @@ export function reorderGroupTasks(
     return true
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] reorderGroupTasks failed for group=${groupId}: ${msg}`)
+    _logger.error(`[task-group-queries] reorderGroupTasks failed for group=${groupId}: ${msg}`)
     return false
   }
 }
@@ -302,7 +314,7 @@ export function addGroupDependency(
     return updateGroup(groupId, { depends_on: newDeps }, conn)
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] addGroupDependency failed: ${msg}`)
+    _logger.error(`[task-group-queries] addGroupDependency failed: ${msg}`)
     throw err
   }
 }
@@ -326,7 +338,7 @@ export function removeGroupDependency(
     return updateGroup(groupId, { depends_on: newDeps.length > 0 ? newDeps : null }, conn)
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] removeGroupDependency failed: ${msg}`)
+    _logger.error(`[task-group-queries] removeGroupDependency failed: ${msg}`)
     throw err
   }
 }
@@ -357,7 +369,7 @@ export function updateGroupDependencyCondition(
     return updateGroup(groupId, { depends_on: newDeps }, conn)
   } catch (err) {
     const msg = getErrorMessage(err)
-    console.error(`[task-group-queries] updateGroupDependencyCondition failed: ${msg}`)
+    _logger.error(`[task-group-queries] updateGroupDependencyCondition failed: ${msg}`)
     throw err
   }
 }
