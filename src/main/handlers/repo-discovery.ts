@@ -154,6 +154,13 @@ export function cloneRepo(owner: string, repo: string, destDir: string): void {
   }
 
   const expanded = expandTilde(destDir)
+  const resolvedDest = path.resolve(expanded)
+  const homeDir = os.homedir()
+  if (!resolvedDest.startsWith(homeDir + '/') && resolvedDest !== homeDir) {
+    throw new Error(
+      `Clone destination must be within your home directory. Rejected: ${resolvedDest}`
+    )
+  }
   const target = path.join(expanded, repo)
   const url = `https://github.com/${owner}/${repo}.git`
 

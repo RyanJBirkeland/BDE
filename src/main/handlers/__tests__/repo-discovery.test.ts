@@ -150,6 +150,35 @@ describe('listGithubRepos', () => {
   })
 })
 
+describe('cloneRepo destDir validation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('rejects destDir outside home directory', () => {
+    expect(() => cloneRepo('owner', 'repo', '/etc/evil')).toThrow(
+      'Clone destination must be within your home directory'
+    )
+  })
+
+  it('rejects destDir that is an absolute path outside home', () => {
+    expect(() => cloneRepo('owner', 'repo', '/tmp/evil-dest')).toThrow(
+      'Clone destination must be within your home directory'
+    )
+  })
+
+  it('accepts destDir within home directory', () => {
+    vi.mocked(mkdir).mockResolvedValue(undefined as any)
+    vi.mocked(spawn).mockReturnValue({
+      stdout: { on: vi.fn() },
+      stderr: { on: vi.fn() },
+      on: vi.fn()
+    } as any)
+    // ~/projects expands to homedir/projects — should not throw
+    expect(() => cloneRepo('owner', 'repo', '~/projects')).not.toThrow()
+  })
+})
+
 describe('cloneRepo owner/repo validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
