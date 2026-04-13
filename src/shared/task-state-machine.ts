@@ -73,7 +73,7 @@ export const VALID_TRANSITIONS: Record<string, Set<string>> = {
   queued: new Set(['active', 'blocked', 'cancelled']),
   blocked: new Set(['queued', 'cancelled']),
   active: new Set(['review', 'done', 'failed', 'error', 'cancelled', 'queued']),
-  review: new Set(['queued', 'done', 'cancelled']),
+  review: new Set(['queued', 'done', 'cancelled', 'failed']),
   done: new Set(['cancelled']),
   failed: new Set(['queued', 'cancelled']),
   error: new Set(['queued', 'cancelled']),
