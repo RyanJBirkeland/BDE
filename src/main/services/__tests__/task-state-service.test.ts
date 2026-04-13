@@ -68,12 +68,9 @@ describe('validateTransition', () => {
       }
     })
 
-    it('should reject review → failed (not in state machine)', () => {
+    it('should allow review → failed (added for markFailed review action)', () => {
       const result = validateTransition('review', 'failed')
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.reason).toContain('review → failed')
-      }
+      expect(result.ok).toBe(true)
     })
   })
 

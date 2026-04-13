@@ -44,7 +44,7 @@ export interface GitOpDescriptor {
 // ============================================================================
 
 export interface ReviewActionInput {
-  action: 'mergeLocally' | 'createPr' | 'requestRevision' | 'discard' | 'shipIt' | 'rebase'
+  action: 'mergeLocally' | 'createPr' | 'requestRevision' | 'discard' | 'shipIt' | 'rebase' | 'markFailed'
   taskId: string
   task: Pick<
     SprintTask,
@@ -78,7 +78,7 @@ export interface ReviewActionPlan {
    * Terminal status to trigger dependency resolution.
    * null = no terminal callback.
    */
-  terminalStatus: 'done' | 'cancelled' | null
+  terminalStatus: 'done' | 'cancelled' | 'failed' | null
   /**
    * If true, throw if worktree_path is missing.
    * Used by actions that require a worktree.
@@ -286,6 +286,41 @@ export function classifyReviewAction(input: ReviewActionInput): ReviewActionPlan
       taskPatch: null, // baseSha is set by executor after rebase succeeds
       terminalStatus: null,
       errorOnMissingWorktree: true,
+      dedup: false
+    }
+  }
+
+  // ============================================================================
+  // markFailed
+  // ============================================================================
+  if (action === 'markFailed') {
+    const gitOps: GitOpDescriptor[] = []
+
+    // If worktree exists, clean it up
+    if (task.worktree_path) {
+      gitOps.push(
+        { type: 'getBranch', worktreePath: task.worktree_path },
+        {
+          type: 'cleanup',
+          worktreePath: task.worktree_path,
+          repoPath: repoConfig?.localPath
+        }
+      )
+    }
+
+    // Always clean scratchpad
+    gitOps.push({ type: 'scratchpadCleanup', taskId })
+
+    return {
+      gitOps,
+      taskPatch: {
+        status: 'failed',
+        failure_reason: feedback ?? 'Marked as permanently failed during review',
+        completed_at: new Date().toISOString(),
+        worktree_path: null
+      },
+      terminalStatus: 'failed',
+      errorOnMissingWorktree: false,
       dedup: false
     }
   }

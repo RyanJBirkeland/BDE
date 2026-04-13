@@ -293,4 +293,60 @@ describe('classifyReviewAction', () => {
       ).toThrow('strategy required')
     })
   })
+
+  describe('markFailed', () => {
+    const baseInput = {
+      action: 'markFailed' as const,
+      taskId: 'task-1',
+      task: {
+        id: 'task-1',
+        title: 'Test Task',
+        repo: 'bde',
+        worktree_path: null,
+        spec: null,
+        notes: null,
+        agent_run_id: null
+      },
+      repoConfig: null
+    }
+
+    it('returns terminalStatus: failed', () => {
+      const plan = classifyReviewAction(baseInput)
+      expect(plan.terminalStatus).toBe('failed')
+    })
+
+    it('sets status: failed in taskPatch', () => {
+      const plan = classifyReviewAction(baseInput)
+      expect(plan.taskPatch?.status).toBe('failed')
+    })
+
+    it('sets failure_reason from feedback when provided', () => {
+      const plan = classifyReviewAction({ ...baseInput, feedback: 'Too broken to fix' })
+      expect(plan.taskPatch?.failure_reason).toBe('Too broken to fix')
+    })
+
+    it('uses default failure_reason when no feedback', () => {
+      const plan = classifyReviewAction(baseInput)
+      expect(plan.taskPatch?.failure_reason).toContain('permanently failed')
+    })
+
+    it('includes worktree cleanup ops when worktree_path is set', () => {
+      const plan = classifyReviewAction({
+        ...baseInput,
+        task: { ...baseInput.task, worktree_path: '/worktrees/test' },
+        repoConfig: { localPath: '/projects/bde' }
+      })
+      expect(plan.gitOps.some((op) => op.type === 'cleanup')).toBe(true)
+    })
+
+    it('includes scratchpadCleanup regardless of worktree', () => {
+      const plan = classifyReviewAction(baseInput)
+      expect(plan.gitOps.some((op) => op.type === 'scratchpadCleanup')).toBe(true)
+    })
+
+    it('sets errorOnMissingWorktree to false', () => {
+      const plan = classifyReviewAction(baseInput)
+      expect(plan.errorOnMissingWorktree).toBe(false)
+    })
+  })
 })
