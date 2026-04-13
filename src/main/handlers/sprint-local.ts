@@ -102,8 +102,10 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
     }
 
     // updateTask (service) handles notifySprintMutation internally
+    // Fire terminal callback regardless of updateTask's return value so that
+    // dependents are unblocked even when the update is a no-op (e.g. task not found).
     const result = updateTask(id, patch)
-    if (result && patch.status && TERMINAL_STATUSES.has(patch.status as string)) {
+    if (patch.status && TERMINAL_STATUSES.has(patch.status as string)) {
       deps.onStatusTerminal(id, patch.status as string)
     }
     return result
