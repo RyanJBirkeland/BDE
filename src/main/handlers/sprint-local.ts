@@ -8,7 +8,7 @@ import type { WorkflowTemplate } from '../../shared/workflow-types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
 import { TERMINAL_STATUSES } from '../../shared/task-state-machine'
-import { buildBlockedNotes, computeBlockState, detectCycle } from '../services/dependency-service'
+import { detectCycle } from '../services/dependency-service'
 import {
   generatePrompt,
   validateSpecPath,
@@ -33,7 +33,7 @@ import { getAgentLogInfo } from '../data/agent-queries'
 import { readLog } from '../agent-history'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import { instantiateWorkflow } from '../services/workflow-engine'
-import { validateTaskSpec } from './sprint-validation-helpers'
+import { prepareQueueTransition, prepareUnblockTransition } from '../services/task-state-service'
 import { listGroups } from '../data/task-group-queries'
 
 const logger = createLogger('sprint-local')
@@ -95,36 +95,10 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
     }
     patch = filteredPatch
 
-    // SP-1: Read task inside validation block to reduce TOCTOU window
-    // If transitioning to queued, run quality checks
+    // SP-1: Queuing business rules delegated to TaskStateService
     if (patch.status === 'queued') {
-      const task = getTask(id)
-      if (!task) {
-        throw new Error(`Task ${id} not found`)
-      }
-
-      // Validate spec
-      const specText = (patch.spec as string) ?? task.spec ?? null
-      await validateTaskSpec({
-        title: task.title,
-        repo: task.repo,
-        spec: specText,
-        context: 'queue'
-      })
-
-      // Dependency check (task-level + epic-level)
-      const { shouldBlock, blockedBy } = computeBlockState(task, { logger, listTasks, listGroups })
-      if (shouldBlock) {
-        // Auto-block and record which dependencies are blocking, preserving user notes
-        patch = {
-          ...patch,
-          status: 'blocked',
-          notes: buildBlockedNotes(blockedBy, task.notes as string | null)
-        }
-      }
-
-      // Auto-set needs_review to false when queueing
-      patch.needs_review = false
+      const { patch: finalPatch } = await prepareQueueTransition(id, patch, { logger })
+      patch = finalPatch
     }
 
     // updateTask (service) handles notifySprintMutation internally
@@ -218,22 +192,8 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps): void {
   )
 
   safeHandle('sprint:unblockTask', async (_e, taskId: string) => {
-    const task = getTask(taskId)
-    if (!task) throw new Error(`Task ${taskId} not found`)
-    if (task.status !== 'blocked')
-      throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
-
-    // Validate spec before unblocking
-    await validateTaskSpec({
-      title: task.title,
-      repo: task.repo,
-      spec: task.spec ?? null,
-      context: 'unblock'
-    })
-
-    // updateTask (service) handles notifySprintMutation internally
-    const updated = updateTask(taskId, { status: 'queued' })
-    return updated
+    await prepareUnblockTransition(taskId)
+    return updateTask(taskId, { status: 'queued' })
   })
 
   safeHandle('sprint:getChanges', async (_e, taskId: string) => {
