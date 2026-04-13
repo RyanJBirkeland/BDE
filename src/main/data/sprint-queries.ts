@@ -608,73 +608,155 @@ export function getDoneTodayCount(): number {
   }
 }
 
+/**
+ * Transitions active tasks to done status for a given PR number.
+ * Records audit trail and returns affected task IDs.
+ */
+function transitionTasksToDone(
+  prNumber: number,
+  changedBy: string,
+  db: Database.Database
+): string[] {
+  // Get affected tasks with full state for audit trail
+  const affected = db
+    .prepare(
+      `SELECT ${SPRINT_TASK_COLUMNS}
+       FROM sprint_tasks WHERE pr_number = ? AND status = ?`
+    )
+    .all(prNumber, 'active') as Array<Record<string, unknown>>
+
+  const affectedIds = affected.map((r) => r.id as string)
+
+  if (affectedIds.length > 0) {
+    const completedAt = nowIso()
+
+    // F-t3-db-4: Bulk audit trail (single prepared INSERT statement reused
+    // across all affected tasks instead of one prepared statement per call)
+    try {
+      recordTaskChangesBulk(
+        affected.map((oldTask) => ({
+          taskId: oldTask.id as string,
+          oldTask,
+          newPatch: { status: 'done', completed_at: completedAt }
+        })),
+        changedBy,
+        db
+      )
+    } catch (err) {
+      logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
+    }
+
+    // Transition active tasks to done
+    db.prepare(
+      'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
+    ).run('done', completedAt, prNumber, 'active')
+  }
+
+  return affectedIds
+}
+
+/**
+ * Transitions active tasks to cancelled status for a given PR number.
+ * Records audit trail and returns affected task IDs.
+ */
+function transitionTasksToCancelled(
+  prNumber: number,
+  changedBy: string,
+  db: Database.Database
+): string[] {
+  // Get affected tasks with full state for audit trail
+  const affected = db
+    .prepare(
+      `SELECT ${SPRINT_TASK_COLUMNS}
+       FROM sprint_tasks WHERE pr_number = ? AND status = ?`
+    )
+    .all(prNumber, 'active') as Array<Record<string, unknown>>
+
+  const affectedIds = affected.map((r) => r.id as string)
+
+  if (affectedIds.length > 0) {
+    const completedAt = nowIso()
+
+    // F-t3-db-4: Bulk audit trail
+    try {
+      recordTaskChangesBulk(
+        affected.map((oldTask) => ({
+          taskId: oldTask.id as string,
+          oldTask,
+          newPatch: { status: 'cancelled', completed_at: completedAt }
+        })),
+        changedBy,
+        db
+      )
+    } catch (err) {
+      logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
+    }
+
+    // Transition active tasks to cancelled
+    db.prepare(
+      'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
+    ).run('cancelled', completedAt, prNumber, 'active')
+  }
+
+  return affectedIds
+}
+
+/**
+ * Updates pr_status field for tasks with a given PR number.
+ * Records audit trail. Optional statusFilter restricts which tasks are updated.
+ */
+function updatePrStatusBulk(
+  prNumber: number,
+  newStatus: 'merged' | 'closed',
+  changedBy: string,
+  db: Database.Database,
+  statusFilter?: string
+): void {
+  // Build query based on whether statusFilter is provided
+  const selectQuery = statusFilter
+    ? `SELECT ${SPRINT_TASK_COLUMNS}
+       FROM sprint_tasks WHERE pr_number = ? AND status = ? AND pr_status = 'open'`
+    : `SELECT ${SPRINT_TASK_COLUMNS}
+       FROM sprint_tasks WHERE pr_number = ? AND pr_status = 'open'`
+
+  const updateQuery = statusFilter
+    ? "UPDATE sprint_tasks SET pr_status = ? WHERE pr_number = ? AND status = ? AND pr_status = 'open'"
+    : "UPDATE sprint_tasks SET pr_status = ? WHERE pr_number = ? AND pr_status = 'open'"
+
+  // Get tasks where pr_status will change for audit
+  const prStatusAffected = statusFilter
+    ? (db.prepare(selectQuery).all(prNumber, statusFilter) as Array<Record<string, unknown>>)
+    : (db.prepare(selectQuery).all(prNumber) as Array<Record<string, unknown>>)
+
+  // F-t3-db-4: Bulk audit trail for pr_status changes
+  try {
+    recordTaskChangesBulk(
+      prStatusAffected.map((oldTask) => ({
+        taskId: oldTask.id as string,
+        oldTask,
+        newPatch: { pr_status: newStatus }
+      })),
+      changedBy,
+      db
+    )
+  } catch (err) {
+    logger.warn(`[sprint-queries] Failed to record bulk pr_status changes: ${err}`)
+  }
+
+  // Execute the update
+  if (statusFilter) {
+    db.prepare(updateQuery).run(newStatus, prNumber, statusFilter)
+  } else {
+    db.prepare(updateQuery).run(newStatus, prNumber)
+  }
+}
+
 export function markTaskDoneByPrNumber(prNumber: number): string[] {
   try {
     const db = getDb()
     return db.transaction(() => {
-      // Get affected tasks with full state for audit trail
-      const affected = db
-        .prepare(
-          `SELECT ${SPRINT_TASK_COLUMNS}
-           FROM sprint_tasks WHERE pr_number = ? AND status = ?`
-        )
-        .all(prNumber, 'active') as Array<Record<string, unknown>>
-
-      const affectedIds = affected.map((r) => r.id as string)
-
-      if (affectedIds.length > 0) {
-        const completedAt = nowIso()
-
-        // F-t3-db-4: Bulk audit trail (single prepared INSERT statement reused
-        // across all affected tasks instead of one prepared statement per call)
-        try {
-          recordTaskChangesBulk(
-            affected.map((oldTask) => ({
-              taskId: oldTask.id as string,
-              oldTask,
-              newPatch: { status: 'done', completed_at: completedAt }
-            })),
-            'pr-poller',
-            db
-          )
-        } catch (err) {
-          logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
-        }
-
-        // Transition active tasks to done
-        db.prepare(
-          'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
-        ).run('done', completedAt, prNumber, 'active')
-      }
-
-      // Get tasks where pr_status will change for audit
-      const prStatusAffected = db
-        .prepare(
-          `SELECT ${SPRINT_TASK_COLUMNS}
-           FROM sprint_tasks WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'`
-        )
-        .all(prNumber) as Array<Record<string, unknown>>
-
-      // F-t3-db-4: Bulk audit trail for pr_status changes
-      try {
-        recordTaskChangesBulk(
-          prStatusAffected.map((oldTask) => ({
-            taskId: oldTask.id as string,
-            oldTask,
-            newPatch: { pr_status: 'merged' }
-          })),
-          'pr-poller',
-          db
-        )
-      } catch (err) {
-        logger.warn(`[sprint-queries] Failed to record bulk pr_status changes: ${err}`)
-      }
-
-      // Set pr_status to merged for done tasks with open PRs
-      db.prepare(
-        "UPDATE sprint_tasks SET pr_status = 'merged' WHERE pr_number = ? AND status = 'done' AND pr_status = 'open'"
-      ).run(prNumber)
-
+      const affectedIds = transitionTasksToDone(prNumber, 'pr-poller', db)
+      updatePrStatusBulk(prNumber, 'merged', 'pr-poller', db, 'done')
       return affectedIds
     })()
   } catch (err) {
@@ -689,68 +771,8 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
   try {
     const db = getDb()
     return db.transaction(() => {
-      // Get affected tasks with full state for audit trail
-      const affected = db
-        .prepare(
-          `SELECT ${SPRINT_TASK_COLUMNS}
-           FROM sprint_tasks WHERE pr_number = ? AND status = ?`
-        )
-        .all(prNumber, 'active') as Array<Record<string, unknown>>
-
-      const affectedIds = affected.map((r) => r.id as string)
-
-      if (affectedIds.length > 0) {
-        const completedAt = nowIso()
-
-        // F-t3-db-4: Bulk audit trail
-        try {
-          recordTaskChangesBulk(
-            affected.map((oldTask) => ({
-              taskId: oldTask.id as string,
-              oldTask,
-              newPatch: { status: 'cancelled', completed_at: completedAt }
-            })),
-            'pr-poller',
-            db
-          )
-        } catch (err) {
-          logger.warn(`[sprint-queries] Failed to record bulk changes: ${err}`)
-        }
-
-        // Transition active tasks to cancelled
-        db.prepare(
-          'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
-        ).run('cancelled', completedAt, prNumber, 'active')
-      }
-
-      // Get ALL tasks where pr_status will change for audit (any status, not just done)
-      const prStatusAffected = db
-        .prepare(
-          `SELECT ${SPRINT_TASK_COLUMNS}
-           FROM sprint_tasks WHERE pr_number = ? AND pr_status = 'open'`
-        )
-        .all(prNumber) as Array<Record<string, unknown>>
-
-      // F-t3-db-4: Bulk audit trail for pr_status changes
-      try {
-        recordTaskChangesBulk(
-          prStatusAffected.map((oldTask) => ({
-            taskId: oldTask.id as string,
-            oldTask,
-            newPatch: { pr_status: 'closed' }
-          })),
-          'pr-poller',
-          db
-        )
-      } catch (err) {
-        logger.warn(`[sprint-queries] Failed to record bulk pr_status changes: ${err}`)
-      }
-
-      // Set pr_status to closed for ALL tasks with this PR number that still show open
-      db.prepare(
-        "UPDATE sprint_tasks SET pr_status = 'closed' WHERE pr_number = ? AND pr_status = 'open'"
-      ).run(prNumber)
-
+      const affectedIds = transitionTasksToCancelled(prNumber, 'pr-poller', db)
+      updatePrStatusBulk(prNumber, 'closed', 'pr-poller', db)
       return affectedIds
     })()
   } catch (err) {
