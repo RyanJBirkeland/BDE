@@ -9,6 +9,15 @@ export type { TaskStatus }
 export interface TaskDependency {
   id: string
   type: 'hard' | 'soft'
+  /**
+   * Condition under which this dependency unblocks the downstream task.
+   * - `on_success`: unblocks when upstream reaches `done`
+   * - `on_failure`: unblocks when upstream reaches a failure status
+   * - `always`: unblocks when upstream reaches any terminal status
+   *
+   * REQUIRED in a future version. Currently optional for backward compatibility;
+   * omitting it triggers a deprecation warning and falls back to `type`-based behavior.
+   */
   condition?: 'on_success' | 'on_failure' | 'always'
 }
 

@@ -23,7 +23,8 @@ export interface DependencyIndex {
   areDependenciesSatisfied(
     taskId: string,
     deps: TaskDependency[],
-    getTaskStatus: (id: string) => string | undefined
+    getTaskStatus: (id: string) => string | undefined,
+    logger?: { warn: (msg: string) => void }
   ): { satisfied: boolean; blockedBy: string[] }
 }
 
@@ -103,7 +104,7 @@ export function createDependencyIndex(): DependencyIndex {
      * Deleted upstream tasks (status `undefined`) are treated as satisfied to avoid
      * permanently blocking downstream tasks when an upstream task is removed.
      */
-    areDependenciesSatisfied(_taskId, deps, getTaskStatus) {
+    areDependenciesSatisfied(_taskId, deps, getTaskStatus, logger) {
       if (deps.length === 0) return { satisfied: true, blockedBy: [] }
       const blockedBy: string[] = []
       for (const dep of deps) {
@@ -121,6 +122,13 @@ export function createDependencyIndex(): DependencyIndex {
           }
         } else {
           // No condition = fallback to hard/soft behavior (backward compatibility)
+          // DEPRECATED: `condition` will be required in a future version.
+          // This branch will be removed once all existing deps are migrated.
+          ;(logger ?? console).warn(
+            `[deprecation] Dependency ${dep.id} on task ${_taskId} has no "condition" field — ` +
+              `falling back to type="${dep.type ?? 'hard'}" behavior. ` +
+              `Set an explicit condition ("on_success", "on_failure", or "always") to silence this warning.`
+          )
           if (dep.type === 'hard') {
             if (!HARD_SATISFIED_STATUSES.has(status)) blockedBy.push(dep.id)
           } else {

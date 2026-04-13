@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { createDependencyIndex, detectCycle } from '../services/dependency-service'
 
 describe('createDependencyIndex', () => {
@@ -132,6 +132,34 @@ describe('createDependencyIndex', () => {
       expect(result.blockedBy).toContain('soft-dep')
       expect(result.blockedBy).not.toContain('hard-dep')
     })
+  })
+})
+
+describe('areDependenciesSatisfied — deprecation warning for condition-less deps', () => {
+  it('emits no warning when all deps have condition field', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const idx = createDependencyIndex()
+    idx.areDependenciesSatisfied(
+      'task-a',
+      [{ id: 'dep-1', type: 'hard', condition: 'on_success' }],
+      () => 'done'
+    )
+    expect(warnSpy).not.toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('emits a deprecation warning when a dep lacks condition field', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const idx = createDependencyIndex()
+    idx.areDependenciesSatisfied(
+      'task-a',
+      [{ id: 'dep-1', type: 'hard' }],
+      () => 'done'
+    )
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[deprecation]')
+    )
+    warnSpy.mockRestore()
   })
 })
 
