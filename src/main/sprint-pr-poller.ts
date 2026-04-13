@@ -21,7 +21,8 @@ export interface SprintPrPollerDeps {
   markTaskDoneByPrNumber: (prNumber: number) => string[]
   markTaskCancelledByPrNumber: (prNumber: number) => string[]
   updateTaskMergeableState: (prNumber: number, state: string | null) => void
-  onTaskTerminal?: (taskId: string, status: string) => void
+  /** Required: called after PR merge/close to trigger dependency resolution. */
+  onTaskTerminal: (taskId: string, status: string) => void
   logger?: { info: (msg: string) => void; warn: (msg: string) => void }
   /**
    * F-t1-concur-5: Optional override for the startup delay. Production passes
@@ -38,6 +39,12 @@ export interface SprintPrPollerInstance {
 }
 
 export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerInstance {
+  if (!deps.onTaskTerminal) {
+    throw new Error(
+      '[createSprintPrPoller] onTaskTerminal is required — dependency resolution will not fire without it.'
+    )
+  }
+
   let timer: ReturnType<typeof setInterval> | null = null
 
   async function poll(): Promise<void> {
@@ -63,10 +70,10 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
         log.info(
           `[sprint-pr-poller] PR #${prNumber} merged — marked ${ids.length} task(s) done: ${ids.join(', ') || '(none)'}`
         )
-        if (deps.onTaskTerminal) {
+        {
           const promises = ids.map((id) => {
             log.info(`[sprint-pr-poller] Calling onTaskTerminal(${id}, 'done')`)
-            return Promise.resolve(deps.onTaskTerminal!(id, 'done'))
+            return Promise.resolve(deps.onTaskTerminal(id, 'done'))
           })
           const results = await Promise.allSettled(promises)
           const failed = results
@@ -79,10 +86,6 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
               `[sprint-pr-poller] onTaskTerminal failed; will retry next cycle: ${JSON.stringify(failed)}`
             )
           }
-        } else {
-          log.warn(
-            `[sprint-pr-poller] onTaskTerminal not wired — dependency resolution will not fire`
-          )
         }
       } else if (result.state === 'CLOSED') {
         const ids = deps.markTaskCancelledByPrNumber(prNumber)
@@ -90,8 +93,10 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
           log.info(
             `[sprint-pr-poller] PR #${prNumber} closed — cancelled ${ids.length} task(s): ${ids.join(', ')}`
           )
-          if (deps.onTaskTerminal) {
-            const promises = ids.map((id) => Promise.resolve(deps.onTaskTerminal!(id, 'cancelled')))
+          {
+            const promises = ids.map((id) =>
+              Promise.resolve(deps.onTaskTerminal(id, 'cancelled'))
+            )
             const results = await Promise.allSettled(promises)
             const failed = results
               .map((r, i) =>

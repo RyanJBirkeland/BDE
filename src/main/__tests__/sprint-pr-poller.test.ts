@@ -195,26 +195,11 @@ describe('createSprintPrPoller', () => {
     poller.stop()
   })
 
-  it('does not call onTaskTerminal when it is not provided', async () => {
-    const task = makeTask()
-    const { onTaskTerminal: _omit, ...depsWithoutTerminal } = makeDeps({
-      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
-      pollPrStatuses: vi
-        .fn()
-        .mockResolvedValue([
-          { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null }
-        ]),
-      markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1'])
-    })
-
-    const poller = createSprintPrPoller(depsWithoutTerminal)
-    poller.start()
-    poller.stop()
-
-    // Should not throw even without onTaskTerminal
-    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
-
-    expect(depsWithoutTerminal.markTaskDoneByPrNumber).toHaveBeenCalledWith(42)
+  it('throws at construction when onTaskTerminal is not provided', () => {
+    const { onTaskTerminal: _omit, ...depsWithoutTerminal } = makeDeps()
+    expect(() => createSprintPrPoller(depsWithoutTerminal as SprintPrPollerDeps)).toThrow(
+      /onTaskTerminal is required/
+    )
   })
 
   it('logs errors when onTaskTerminal rejects for merged PRs', async () => {
