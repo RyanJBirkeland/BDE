@@ -1041,6 +1041,44 @@ describe('buildAgentPrompt', () => {
     })
   })
 
+  describe('truncation guards', () => {
+    it('truncates priorScratchpad at PRIOR_SCRATCHPAD_CHARS for pipeline', () => {
+      const longScratchpad = 'x'.repeat(PROMPT_TRUNCATION.PRIOR_SCRATCHPAD_CHARS + 500)
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', priorScratchpad: longScratchpad })
+      expect(prompt).not.toContain(longScratchpad)
+      expect(prompt).toContain('x'.repeat(10)) // truncated version present
+      expect(prompt).not.toContain('x'.repeat(PROMPT_TRUNCATION.PRIOR_SCRATCHPAD_CHARS + 1))
+    })
+
+    it('truncates crossRepoContract at CROSS_REPO_CONTRACT_CHARS for pipeline', () => {
+      const longContract = 'y'.repeat(PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS + 500)
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', crossRepoContract: longContract })
+      expect(prompt).not.toContain(longContract)
+      expect(prompt).not.toContain('y'.repeat(PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS + 1))
+    })
+
+    it('truncates crossRepoContract at CROSS_REPO_CONTRACT_CHARS for assistant', () => {
+      const longContract = 'z'.repeat(PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS + 500)
+      const prompt = buildAgentPrompt({ agentType: 'assistant', crossRepoContract: longContract })
+      expect(prompt).not.toContain(longContract)
+      expect(prompt).not.toContain('z'.repeat(PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS + 1))
+    })
+
+    it('truncates taskContent at ASSISTANT_TASK_CHARS for assistant', () => {
+      const longTask = 'a'.repeat(PROMPT_TRUNCATION.ASSISTANT_TASK_CHARS + 500)
+      const prompt = buildAgentPrompt({ agentType: 'assistant', taskContent: longTask })
+      expect(prompt).not.toContain(longTask)
+      expect(prompt).not.toContain('a'.repeat(PROMPT_TRUNCATION.ASSISTANT_TASK_CHARS + 1))
+    })
+
+    it('truncates codebaseContext at SYNTHESIZER_CODEBASE_CONTEXT_CHARS for synthesizer', () => {
+      const longContext = 'b'.repeat(PROMPT_TRUNCATION.SYNTHESIZER_CODEBASE_CONTEXT_CHARS + 500)
+      const prompt = buildAgentPrompt({ agentType: 'synthesizer', codebaseContext: longContext })
+      expect(prompt).not.toContain(longContext)
+      expect(prompt).not.toContain('b'.repeat(PROMPT_TRUNCATION.SYNTHESIZER_CODEBASE_CONTEXT_CHARS + 1))
+    })
+  })
+
   describe('selective user memory (pipeline only)', () => {
     afterEach(() => {
       mockGetUserMemory.mockReturnValue({ content: '', totalBytes: 0, fileCount: 0 })
@@ -1245,5 +1283,14 @@ describe('synthesizer prompt XML wrapping', () => {
     })
     expect(prompt).toContain('<generation_instructions>')
     expect(prompt).toContain('</generation_instructions>')
+  })
+})
+
+describe('buildRetryContext truncation', () => {
+  it('truncates previousNotes at RETRY_NOTES_CHARS', () => {
+    const longNotes = 'n'.repeat(PROMPT_TRUNCATION.RETRY_NOTES_CHARS + 200)
+    const result = buildRetryContext(1, longNotes)
+    expect(result).not.toContain(longNotes)
+    expect(result).not.toContain('n'.repeat(PROMPT_TRUNCATION.RETRY_NOTES_CHARS + 1))
   })
 })

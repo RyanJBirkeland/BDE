@@ -12,8 +12,10 @@ import {
   PLAYGROUND_INSTRUCTIONS,
   buildPersonalitySection,
   buildUpstreamContextSection,
-  buildBranchAppendix
+  buildBranchAppendix,
+  truncateSpec,
 } from './prompt-sections'
+import { PROMPT_TRUNCATION } from './prompt-constants'
 import type { BuildPromptInput } from './prompt-composer'
 
 export function buildAssistantPrompt(input: BuildPromptInput): string {
@@ -63,7 +65,7 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
 
   // Task content
   if (taskContent) {
-    prompt += '\n\n## Task\n\n<user_task>\n' + taskContent + '\n</user_task>'
+    prompt += '\n\n## Task\n\n<user_task>\n' + truncateSpec(taskContent, PROMPT_TRUNCATION.ASSISTANT_TASK_CHARS) + '\n</user_task>'
   }
 
   // Cross-repo contract
@@ -71,7 +73,7 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
     prompt += '\n\n## Cross-Repo Contract\n\n'
     prompt += 'This task involves API contracts with other repositories. '
     prompt += 'Follow these contract specifications exactly:\n\n'
-    prompt += `<cross_repo_contract>\n${crossRepoContract}\n</cross_repo_contract>`
+    prompt += `<cross_repo_contract>\n${truncateSpec(crossRepoContract, PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS)}\n</cross_repo_contract>`
   }
 
   // Upstream task context

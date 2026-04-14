@@ -141,7 +141,7 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
   // Prior attempt context
   if (priorScratchpad) {
     prompt += '\n\n## Prior Attempt Context\n\n'
-    prompt += priorScratchpad
+    prompt += truncateSpec(priorScratchpad, PROMPT_TRUNCATION.PRIOR_SCRATCHPAD_CHARS)
   }
 
   // Scratchpad instructions
@@ -174,7 +174,7 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
     prompt += '\n\n## Cross-Repo Contract\n\n'
     prompt += 'This task involves API contracts with other repositories. '
     prompt += 'Follow these contract specifications exactly:\n\n'
-    prompt += `<cross_repo_contract>\n${crossRepoContract}\n</cross_repo_contract>`
+    prompt += `<cross_repo_contract>\n${truncateSpec(crossRepoContract, PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS)}\n</cross_repo_contract>`
   }
 
   // Upstream task context

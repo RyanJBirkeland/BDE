@@ -8,8 +8,10 @@ import {
   SPEC_DRAFTING_PREAMBLE,
   PLAYGROUND_INSTRUCTIONS,
   buildPersonalitySection,
-  buildUpstreamContextSection
+  buildUpstreamContextSection,
+  truncateSpec,
 } from './prompt-sections'
+import { PROMPT_TRUNCATION } from './prompt-constants'
 import type { BuildPromptInput } from './prompt-composer'
 
 const SYNTHESIZER_SPEC_REQUIREMENTS = `
@@ -80,7 +82,8 @@ export function buildSynthesizerPrompt(input: BuildPromptInput): string {
 
   // Codebase context
   if (codebaseContext) {
-    prompt += '\n\n## Codebase Context\n\n<codebase_context>\n' + codebaseContext + '\n</codebase_context>'
+    const cappedContext = truncateSpec(codebaseContext, PROMPT_TRUNCATION.SYNTHESIZER_CODEBASE_CONTEXT_CHARS)
+    prompt += '\n\n## Codebase Context\n\n<codebase_context>\n' + cappedContext + '\n</codebase_context>'
   }
 
   // Generation instructions
