@@ -62,19 +62,19 @@ describe('dashboardDataStore', () => {
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
       {
         id: 1,
-        agent_id: 'a1',
-        event_type: 'agent:completed',
-        payload: '{}',
+        agentId: 'a1',
+        eventType: 'agent:completed',
+        payload: {},
         timestamp: 1000,
-        task_title: 'Fix auth'
+        taskTitle: 'Fix auth'
       },
       {
         id: 2,
-        agent_id: 'a2',
-        event_type: 'agent:error',
-        payload: '{}',
+        agentId: 'a2',
+        eventType: 'agent:error',
+        payload: {},
         timestamp: 2000,
-        task_title: null
+        taskTitle: null
       }
     ])
     ;(window.api.pr.getList as any).mockResolvedValue({
@@ -189,11 +189,11 @@ describe('dashboardDataStore', () => {
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
       {
         id: 10,
-        agent_id: 'x',
-        event_type: 'unknown_type',
-        payload: '{}',
+        agentId: 'x',
+        eventType: 'unknown_type',
+        payload: {},
         timestamp: 500,
-        task_title: null
+        taskTitle: null
       }
     ])
     ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
@@ -210,27 +210,27 @@ describe('dashboardDataStore', () => {
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
       {
         id: 1,
-        agent_id: 'a1',
-        event_type: 'agent:text',
-        payload: '{}',
+        agentId: 'a1',
+        eventType: 'agent:text',
+        payload: {},
         timestamp: 1000,
-        task_title: null
+        taskTitle: null
       },
       {
         id: 2,
-        agent_id: 'a1',
-        event_type: 'agent:tool_call',
-        payload: '{}',
+        agentId: 'a1',
+        eventType: 'agent:tool_call',
+        payload: {},
         timestamp: 2000,
-        task_title: null
+        taskTitle: null
       },
       {
         id: 3,
-        agent_id: 'a1',
-        event_type: 'agent:completed',
-        payload: '{}',
+        agentId: 'a1',
+        eventType: 'agent:completed',
+        payload: {},
         timestamp: 3000,
-        task_title: 'Fix bug'
+        taskTitle: 'Fix bug'
       }
     ])
     ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
@@ -248,19 +248,19 @@ describe('dashboardDataStore', () => {
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([
       {
         id: 1,
-        agent_id: 'a1',
-        event_type: 'agent:started',
-        payload: '{}',
+        agentId: 'a1',
+        eventType: 'agent:started',
+        payload: {},
         timestamp: 1000,
-        task_title: 'Add feature'
+        taskTitle: 'Add feature'
       },
       {
         id: 2,
-        agent_id: 'a2',
-        event_type: 'agent:completed',
-        payload: '{}',
+        agentId: 'a2',
+        eventType: 'agent:completed',
+        payload: {},
         timestamp: 2000,
-        task_title: null
+        taskTitle: null
       }
     ])
     ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })

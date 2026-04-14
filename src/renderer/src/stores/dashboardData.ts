@@ -32,7 +32,7 @@ const EVENT_ACCENT: Record<string, FeedEvent['accent']> = {
 }
 
 /**
- * Maps event_type to human-readable action phrase.
+ * Maps eventType to human-readable action phrase.
  * Returns null for noisy events that shouldn't appear in the feed.
  */
 function formatEventAction(eventType: string): string | null {
@@ -97,16 +97,16 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
       if (events) {
         feedEvents = events
           .map((e) => {
-            const action = formatEventAction(e.event_type)
+            const action = formatEventAction(e.eventType)
             // Filter out noisy events (text, tool calls, etc.)
             if (action === null) return null
 
-            const label = e.task_title ? `Task ${e.task_title} ${action}` : action
+            const label = e.taskTitle ? `Task ${e.taskTitle} ${action}` : action
 
             return {
               id: String(e.id),
               label,
-              accent: EVENT_ACCENT[e.event_type] ?? ('purple' as const),
+              accent: EVENT_ACCENT[e.eventType] ?? ('purple' as const),
               timestamp: e.timestamp
             }
           })

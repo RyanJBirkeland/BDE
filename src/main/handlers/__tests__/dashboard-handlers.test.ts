@@ -82,7 +82,7 @@ describe('Dashboard handlers', () => {
 
   describe('getRecentEvents', () => {
     it('queries agent_events with JOINs and default limit of 20', () => {
-      const events = [
+      const dbRows = [
         {
           id: 1,
           agent_id: 'a1',
@@ -92,7 +92,7 @@ describe('Dashboard handlers', () => {
           task_title: 'Fix auth'
         }
       ]
-      mockAll.mockReturnValueOnce(events)
+      mockAll.mockReturnValueOnce(dbRows)
 
       const result = getRecentEvents()
 
@@ -100,7 +100,17 @@ describe('Dashboard handlers', () => {
       expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN agent_runs'))
       expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('LEFT JOIN sprint_tasks'))
       expect(mockAll).toHaveBeenCalledWith(20)
-      expect(result).toBe(events)
+      // Transform converts snake_case DB columns to camelCase DashboardEvent
+      expect(result).toEqual([
+        {
+          id: 1,
+          agentId: 'a1',
+          eventType: 'output',
+          payload: {},
+          timestamp: 1000,
+          taskTitle: 'Fix auth'
+        }
+      ])
     })
 
     it('uses provided limit', () => {
@@ -142,7 +152,7 @@ describe('Dashboard handlers', () => {
     })
 
     it('dashboard:recentEvents handler passes limit to getRecentEvents', async () => {
-      const events = [
+      const dbRows = [
         {
           id: 1,
           agent_id: 'a1',
@@ -152,13 +162,23 @@ describe('Dashboard handlers', () => {
           task_title: null
         }
       ]
-      mockAll.mockReturnValueOnce(events)
+      mockAll.mockReturnValueOnce(dbRows)
       const handlers = captureHandlers()
 
       const result = await handlers['dashboard:recentEvents'](mockEvent, 10)
 
       expect(mockAll).toHaveBeenCalledWith(10)
-      expect(result).toBe(events)
+      // Transform converts snake_case DB columns to camelCase DashboardEvent
+      expect(result).toEqual([
+        {
+          id: 1,
+          agentId: 'a1',
+          eventType: 'output',
+          payload: {},
+          timestamp: 1000,
+          taskTitle: null
+        }
+      ])
     })
 
     it('dashboard:recentEvents handler uses default limit when not provided', async () => {

@@ -3,6 +3,7 @@
  * Delegates to agent-queries.ts for actual SQL execution.
  */
 import type Database from 'better-sqlite3'
+import type { DashboardEvent } from '../../shared/ipc-channels/ui-channels'
 import { getDb } from '../db'
 import {
   getCompletionsPerHour as _getCompletionsPerHour,
@@ -17,16 +18,6 @@ export function getCompletionsPerHour(db?: Database.Database): {
   return _getCompletionsPerHour(db ?? getDb())
 }
 
-export function getRecentEvents(
-  limit: number = 20,
-  db?: Database.Database
-): {
-  id: number
-  agent_id: string
-  event_type: string
-  payload: string
-  timestamp: number
-  task_title: string | null
-}[] {
+export function getRecentEvents(limit: number = 20, db?: Database.Database): DashboardEvent[] {
   return _getRecentEvents(db ?? getDb(), limit)
 }

@@ -71,11 +71,11 @@ export interface CompletionBucket {
 
 export interface DashboardEvent {
   id: number
-  agent_id: string
-  event_type: string
-  payload: string
+  agentId: string
+  eventType: string
+  payload: Record<string, unknown>
   timestamp: number
-  task_title: string | null
+  taskTitle: string | null
 }
 
 export interface DailySuccessRate {

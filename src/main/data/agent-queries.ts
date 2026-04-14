@@ -5,6 +5,7 @@
  */
 import type Database from 'better-sqlite3'
 import type { AgentMeta } from '../../shared/types'
+import type { DashboardEvent } from '../../shared/ipc-channels/ui-channels'
 import { nowIso } from '../../shared/time'
 
 // --- Column mapping between snake_case DB rows and camelCase AgentMeta ---
@@ -398,20 +399,38 @@ export function getCompletionsPerHour(
   return rows
 }
 
-/**
- * Get recent agent events with task context.
- */
-export function getRecentEvents(
-  db: Database.Database,
-  limit: number = 20
-): {
+interface AgentEventRow {
   id: number
   agent_id: string
   event_type: string
   payload: string
   timestamp: number
   task_title: string | null
-}[] {
+}
+
+function rowToEvent(row: AgentEventRow): DashboardEvent {
+  let payload: Record<string, unknown> = {}
+  try {
+    payload = JSON.parse(row.payload) as Record<string, unknown>
+  } catch {
+    // Malformed payload — return empty object rather than crashing
+  }
+  return {
+    id: row.id,
+    agentId: row.agent_id,
+    eventType: row.event_type,
+    payload,
+    timestamp: row.timestamp,
+    taskTitle: row.task_title
+  }
+}
+
+/**
+ * Get recent agent events with task context.
+ * Transforms raw DB rows to camelCase `DashboardEvent` objects before returning,
+ * so the IPC boundary never leaks snake_case column names or unparsed JSON.
+ */
+export function getRecentEvents(db: Database.Database, limit: number = 20): DashboardEvent[] {
   const rows = db
     .prepare(
       `
@@ -429,13 +448,6 @@ export function getRecentEvents(
     LIMIT ?
   `
     )
-    .all(limit) as {
-    id: number
-    agent_id: string
-    event_type: string
-    payload: string
-    timestamp: number
-    task_title: string | null
-  }[]
-  return rows
+    .all(limit) as AgentEventRow[]
+  return rows.map(rowToEvent)
 }
