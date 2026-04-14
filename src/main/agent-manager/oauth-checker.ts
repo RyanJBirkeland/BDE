@@ -49,6 +49,19 @@ export async function checkOAuthToken(logger: Logger): Promise<boolean> {
   }
   try {
     const tokenPath = joinPath(home(), '.bde', 'oauth-token')
+    // Read with a size guard: reject files larger than 64KB before allocating
+    // the full buffer — a multi-gigabyte crafted file would otherwise cause
+    // memory exhaustion on every drain tick.
+    const MAX_TOKEN_FILE_BYTES = 64 * 1024
+    const tokenStats = await stat(tokenPath).catch(() => null)
+    if (tokenStats && tokenStats.size > MAX_TOKEN_FILE_BYTES) {
+      logger.warn(
+        `[oauth-checker] OAuth token file exceeds max size (${tokenStats.size} bytes) — skipping drain cycle`
+      )
+      _oauthCheckResult = false
+      _oauthCheckExpiry = Date.now() + OAUTH_CHECK_FAIL_CACHE_TTL_MS
+      return false
+    }
     const token = (await readFile(tokenPath, 'utf-8')).trim()
     if (!token || token.length < 20) {
       const refreshed = await refreshOAuthTokenFromKeychain()

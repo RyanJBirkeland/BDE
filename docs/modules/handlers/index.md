@@ -6,3 +6,4 @@ Source: `src/main/handlers/`
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
 | `git-handlers.ts` | Git and GitHub IPC handlers — source control, PR polling, GitHub API proxy | `registerGitHandlers`, `GitHandlersDeps` |
+| `window-handlers.ts` | Window and playground IPC handlers — external URL gating, window title, open-in-browser for playground HTML | `registerWindowHandlers` |

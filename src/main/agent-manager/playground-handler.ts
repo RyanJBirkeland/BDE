@@ -84,7 +84,15 @@ export async function tryEmitPlaygroundEvent(
       PLAYGROUND_IO_TIMEOUT_MS,
       `readFile(${filePath})`
     )
-    const sanitizedHtml = sanitizePlaygroundHtml(rawHtml)
+
+    let sanitizedHtml: string
+    try {
+      sanitizedHtml = sanitizePlaygroundHtml(rawHtml)
+    } catch (err) {
+      logger.error(`[playground] Sanitization failed for ${filePath}: ${err}`)
+      return // Drop event — never broadcast unsanitized HTML
+    }
+
     const filename = basename(absolutePath)
 
     const event: AgentEvent = {
