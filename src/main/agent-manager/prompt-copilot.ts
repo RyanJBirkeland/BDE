@@ -10,7 +10,7 @@ import {
   buildPersonalitySection,
   buildUpstreamContextSection
 } from './prompt-sections'
-import type { BuildPromptInput } from './prompt-composer'
+import type { BuildPromptInput } from '../lib/prompt-composer'
 
 export function buildCopilotPrompt(input: BuildPromptInput): string {
   const { messages, playgroundEnabled, upstreamContext } = input

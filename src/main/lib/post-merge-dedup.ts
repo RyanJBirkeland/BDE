@@ -11,10 +11,10 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { execFileAsync } from '../lib/async-utils'
+import { execFileAsync } from './async-utils'
 import { createLogger } from '../logger'
 import { buildAgentEnv } from '../env-utils'
-import { deduplicateCss } from './css-dedup'
+import { deduplicateCss } from '../services/css-dedup'
 
 const logger = createLogger('post-merge-dedup')
 

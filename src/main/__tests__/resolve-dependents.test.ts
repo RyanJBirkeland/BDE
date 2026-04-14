@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { resolveDependents } from '../agent-manager/resolve-dependents'
+import { resolveDependents } from '../lib/resolve-dependents'
 import type { DependencyIndex } from '../services/dependency-service'
 
 function mockIndex(overrides: Partial<DependencyIndex> = {}): DependencyIndex {

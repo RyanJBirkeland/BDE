@@ -1,14 +1,14 @@
 /** prompt-composer.ts — Thin dispatcher; routes to agent-type-specific prompt builders. */
 
-import { buildPipelinePrompt } from './prompt-pipeline'
-import { buildAssistantPrompt } from './prompt-assistant'
-import { buildCopilotPrompt } from './prompt-copilot'
-import { buildSynthesizerPrompt } from './prompt-synthesizer'
-import { buildReviewerPrompt } from './prompt-composer-reviewer'
+import { buildPipelinePrompt } from '../agent-manager/prompt-pipeline'
+import { buildAssistantPrompt } from '../agent-manager/prompt-assistant'
+import { buildCopilotPrompt } from '../agent-manager/prompt-copilot'
+import { buildSynthesizerPrompt } from '../agent-manager/prompt-synthesizer'
+import { buildReviewerPrompt } from '../agent-manager/prompt-composer-reviewer'
 import { createLogger } from '../logger'
 import type { AgentType } from '../agent-system/personality/types'
 
-export { classifyTask, type TaskClass } from './prompt-pipeline'
+export { classifyTask, type TaskClass } from '../agent-manager/prompt-pipeline'
 export type { AgentType } from '../agent-system/personality/types'
 
 const logger = createLogger('prompt-composer')

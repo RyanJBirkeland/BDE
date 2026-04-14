@@ -1,4 +1,4 @@
-import { resolveDependents } from '../agent-manager/resolve-dependents'
+import { resolveDependents } from '../lib/resolve-dependents'
 import {
   createDependencyIndex,
   type DependencyIndex,

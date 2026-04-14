@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildAgentPrompt, classifyTask } from '../agent-manager/prompt-composer'
-import type { BuildPromptInput } from '../agent-manager/prompt-composer'
+import { buildAgentPrompt, classifyTask } from '../lib/prompt-composer'
+import type { BuildPromptInput } from '../lib/prompt-composer'
 
 describe('buildAgentPrompt', () => {
   const baseInput: BuildPromptInput = {

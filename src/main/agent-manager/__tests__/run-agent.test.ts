@@ -22,7 +22,7 @@ import type {
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
 import { mkdirSync, readFileSync } from 'node:fs'
-import { buildAgentPrompt } from '../prompt-composer'
+import { buildAgentPrompt } from '../../lib/prompt-composer'
 import { TurnTracker } from '../turn-tracker'
 import { emitAgentEvent } from '../../agent-event-mapper'
 const mockMkdirSync = vi.mocked(mkdirSync)
@@ -53,7 +53,7 @@ vi.mock('../sdk-adapter', async (importOriginal) => {
   }
 })
 
-vi.mock('../prompt-composer', () => ({
+vi.mock('../../lib/prompt-composer', () => ({
   buildAgentPrompt: vi.fn((input) => {
     // Simple mock that concatenates taskContent with branch info
     return input.taskContent + (input.branch ? `\n\nBranch: ${input.branch}` : '')
@@ -645,7 +645,7 @@ describe('runAgent — prompt composer integration', () => {
   beforeEach(() => vi.clearAllMocks())
   it('calls buildAgentPrompt with pipeline agentType, taskContent, branch, and playground flag', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
-    const { buildAgentPrompt } = await import('../prompt-composer')
+    const { buildAgentPrompt } = await import('../../lib/prompt-composer')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
 
     const deps = makeDeps()
@@ -674,7 +674,7 @@ describe('runAgent — prompt composer integration', () => {
 
   it('calls spawnAgent with the composed prompt', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
-    const { buildAgentPrompt } = await import('../prompt-composer')
+    const { buildAgentPrompt } = await import('../../lib/prompt-composer')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle([{ exit_code: 0 }]))
     ;(buildAgentPrompt as ReturnType<typeof vi.fn>).mockReturnValue('COMPOSED_PROMPT')
 

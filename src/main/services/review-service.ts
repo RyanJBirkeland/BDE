@@ -3,7 +3,7 @@ import type { IReviewRepository } from '../data/review-repository'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { Logger } from '../logger'
 import type { SdkStreamingOptions } from '../sdk-streaming'
-import { buildAgentPrompt } from '../agent-manager/prompt-composer'
+import { buildAgentPrompt } from '../lib/prompt-composer'
 import { parseReviewResponse, MalformedReviewError } from './review-response-parser'
 import type { ParsedReview } from './review-response-parser'
 

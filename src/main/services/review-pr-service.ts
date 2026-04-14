@@ -5,7 +5,7 @@
  */
 import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
-import { pushBranch, checkExistingPr } from '../agent-manager/git-operations'
+import { pushBranch, checkExistingPr } from '../lib/git-operations'
 
 const logger = createLogger('review-pr-service')
 

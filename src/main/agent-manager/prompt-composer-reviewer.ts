@@ -5,7 +5,7 @@
  * Used by the Code Review Station for auto-review and chat modes.
  */
 
-import type { BuildPromptInput } from './prompt-composer'
+import type { BuildPromptInput } from '../lib/prompt-composer'
 
 // ---------------------------------------------------------------------------
 // Reviewer Preamble

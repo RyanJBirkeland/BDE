@@ -6,7 +6,7 @@ import { pipelinePersonality } from '../../agent-system/personality/pipeline-per
 import { assistantPersonality } from '../../agent-system/personality/assistant-personality'
 import { getAllMemory } from '../../agent-system/memory'
 import { getAllSkills, getSkillList } from '../../agent-system/skills'
-import { buildAgentPrompt } from '../prompt-composer'
+import { buildAgentPrompt } from '../../lib/prompt-composer'
 
 describe('Agent System Integration', () => {
   describe('Personality Module', () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../prompt-composer', () => ({
+vi.mock('../../lib/prompt-composer', () => ({
   buildAgentPrompt: vi.fn((input) => `prompt:${input.taskContent}:${input.branch}`)
 }))
 
@@ -27,7 +27,7 @@ import { validateTaskForRun, assembleRunContext, fetchUpstreamContext, readPrior
 import type { RunAgentDeps, RunAgentTask } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { mkdirSync, readFileSync } from 'node:fs'
-import { buildAgentPrompt } from '../prompt-composer'
+import { buildAgentPrompt } from '../../lib/prompt-composer'
 
 const mockRepo: IAgentTaskRepository = {
   getTask: vi.fn(),

@@ -1,7 +1,7 @@
 /**
  * Copilot service — AI-assisted spec drafting with read-only code access.
  */
-import { buildAgentPrompt } from '../agent-manager/prompt-composer'
+import { buildAgentPrompt } from '../lib/prompt-composer'
 import type { SdkStreamingOptions } from '../sdk-streaming'
 
 /**

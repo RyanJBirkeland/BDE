@@ -5,12 +5,12 @@
  * (worktree-lifecycle.ts) for backward compatibility with existing callers.
  */
 import type { Logger } from '../logger'
-import { execFileAsync } from '../lib/async-utils'
+import { execFileAsync } from './async-utils'
 import { buildAgentEnv } from '../env-utils'
-import { runPostMergeDedup } from '../services/post-merge-dedup'
+import { runPostMergeDedup } from './post-merge-dedup'
 import { getErrorMessage } from '../../shared/errors'
-import { sanitizeForGit } from './pr-operations'
-import { cleanupWorktreeAndBranch } from './worktree-lifecycle'
+import { sanitizeForGit } from '../agent-manager/pr-operations'
+import { cleanupWorktreeAndBranch } from '../agent-manager/worktree-lifecycle'
 
 // Re-export PR operations for backward compatibility
 export {
@@ -19,7 +19,7 @@ export {
   checkExistingPr,
   createNewPr,
   findOrCreatePR
-} from './pr-operations'
+} from '../agent-manager/pr-operations'
 
 // Re-export worktree lifecycle for backward compatibility
 export {
@@ -30,7 +30,7 @@ export {
   forceDeleteBranchRef,
   addWorktree,
   cleanupWorktreeAndBranch
-} from './worktree-lifecycle'
+} from '../agent-manager/worktree-lifecycle'
 
 /**
  * Test artifact patterns to exclude from agent commits.

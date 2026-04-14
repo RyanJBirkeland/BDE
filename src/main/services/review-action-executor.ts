@@ -18,14 +18,14 @@ import { execFileAsync } from '../lib/async-utils'
 import type { Logger } from '../logger'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import type { ReviewActionPlan, GitOpDescriptor } from './review-action-policy'
-import { rebaseOntoMain } from '../agent-manager/git-operations'
+import { rebaseOntoMain } from '../lib/git-operations'
 import {
   mergeAgentBranch,
   cleanupWorktree,
   executeMergeStrategy,
   extractConflictFiles
 } from './review-merge-service'
-import { runPostMergeDedup } from './post-merge-dedup'
+import { runPostMergeDedup } from '../lib/post-merge-dedup'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
 

@@ -1,7 +1,7 @@
 import type { WebContents } from 'electron'
 import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
-import { buildAgentPrompt } from '../agent-manager/prompt-composer'
+import { buildAgentPrompt } from '../lib/prompt-composer'
 import { runSdkStreaming } from '../sdk-streaming'
 import type { ReviewService } from '../services/review-service'
 import type { IReviewRepository } from '../data/review-repository'

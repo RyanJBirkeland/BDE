@@ -506,7 +506,7 @@
     "init_module": "/Users/ryan/.npm-init.js",
     "userconfig": "/Users/ryan/.npmrc",
     "globalconfig": "/opt/homebrew/etc/npmrc",
-    "local_prefix": "/Users/ryan/worktrees/BDE/Users-ryan-projects-BDE/01ff6fac-6784-4da1-902b-a7229cf626fc",
+    "local_prefix": "/Users/ryan/projects/BDE/.claude/worktrees/agent-accb9433",
     "global_prefix": "/opt/homebrew"
   },
   "target_defaults": {

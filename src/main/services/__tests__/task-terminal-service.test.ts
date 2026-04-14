@@ -9,7 +9,7 @@ vi.mock('../../broadcast', () => ({
 
 // Controllable mock for resolveDependents — used in the consolidated error test
 const mockResolveDependents = vi.fn()
-vi.mock('../../agent-manager/resolve-dependents', () => ({
+vi.mock('../../lib/resolve-dependents', () => ({
   resolveDependents: (...args: unknown[]) => mockResolveDependents(...args)
 }))
 

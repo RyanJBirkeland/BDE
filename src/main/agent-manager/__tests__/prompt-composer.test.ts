@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { buildAgentPrompt, type AgentType } from '../prompt-composer'
+import { buildAgentPrompt, type AgentType } from '../../lib/prompt-composer'
 import { PROMPT_TRUNCATION } from '../prompt-constants'
 import { buildUpstreamContextSection, buildRetryContext } from '../prompt-sections'
 

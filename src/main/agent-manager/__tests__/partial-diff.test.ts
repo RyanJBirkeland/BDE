@@ -41,7 +41,7 @@ vi.mock('../sdk-adapter', () => ({
 }))
 
 // Mock prompt-composer (required by run-agent imports)
-vi.mock('../prompt-composer', () => ({
+vi.mock('../../lib/prompt-composer', () => ({
   buildAgentPrompt: vi.fn().mockReturnValue('mock prompt')
 }))
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { runPostMergeDedup } from '../post-merge-dedup'
+import { runPostMergeDedup } from '../../lib/post-merge-dedup'
 import * as fs from 'node:fs'
 import * as cssDedup from '../css-dedup'
 

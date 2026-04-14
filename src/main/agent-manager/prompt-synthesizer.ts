@@ -11,7 +11,7 @@ import {
   truncateSpec,
 } from './prompt-sections'
 import { PROMPT_TRUNCATION } from './prompt-constants'
-import type { BuildPromptInput } from './prompt-composer'
+import type { BuildPromptInput } from '../lib/prompt-composer'
 
 const SYNTHESIZER_SPEC_REQUIREMENTS = `
 

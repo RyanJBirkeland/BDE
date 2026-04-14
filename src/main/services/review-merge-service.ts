@@ -6,8 +6,8 @@
 import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
-import { runPostMergeDedup } from './post-merge-dedup'
-import { rebaseOntoMain } from '../agent-manager/git-operations'
+import { runPostMergeDedup } from '../lib/post-merge-dedup'
+import { rebaseOntoMain } from '../lib/git-operations'
 
 const logger = createLogger('review-merge-service')
 

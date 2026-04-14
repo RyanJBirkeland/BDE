@@ -25,7 +25,7 @@ vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
   return { ...actual, existsSync: vi.fn(() => false), readFileSync: vi.fn() }
 })
-vi.mock('../agent-manager/prompt-composer', () => ({
+vi.mock('../lib/prompt-composer', () => ({
   buildAgentPrompt: vi.fn((input) => {
     // Mock that returns a composed prompt with preamble
     const preamble = input.agentType === 'assistant' ? '[ASSISTANT PREAMBLE]' : '[ADHOC PREAMBLE]'
@@ -48,7 +48,7 @@ vi.mock('../agent-manager/worktree', () => ({
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { importAgent, updateAgentMeta } from '../agent-history'
 import { broadcast } from '../broadcast'
-import { buildAgentPrompt } from '../agent-manager/prompt-composer'
+import { buildAgentPrompt } from '../lib/prompt-composer'
 import { setupWorktree } from '../agent-manager/worktree'
 import { nowIso } from '../../shared/time'
 

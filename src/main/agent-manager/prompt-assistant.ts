@@ -16,7 +16,7 @@ import {
   buildCrossRepoContractSection,
 } from './prompt-sections'
 import { PROMPT_TRUNCATION } from './prompt-constants'
-import type { BuildPromptInput } from './prompt-composer'
+import type { BuildPromptInput } from '../lib/prompt-composer'
 
 export function buildAssistantPrompt(input: BuildPromptInput): string {
   const { taskContent, branch, playgroundEnabled, upstreamContext, crossRepoContract, repoName } =

@@ -13,7 +13,7 @@ import {
   fetchMain,
   ffMergeMain,
   addWorktree
-} from './git-operations'
+} from '../lib/git-operations'
 import {
   MIN_FREE_DISK_BYTES,
   DISK_RESERVATION_BYTES,

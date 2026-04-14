@@ -4,7 +4,7 @@ import type { EpicDependencyIndex } from '../services/epic-dependency-service'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { AgentManagerConfig } from './types'
 import type { Logger } from '../logger'
-import { resolveDependents } from './resolve-dependents'
+import { resolveDependents } from '../lib/resolve-dependents'
 import { getSetting } from '../settings'
 import { getDb } from '../db'
 

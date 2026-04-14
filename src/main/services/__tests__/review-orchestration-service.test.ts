@@ -34,8 +34,8 @@ vi.mock('../../settings', () => ({
 vi.mock('../review-merge-service')
 vi.mock('../review-pr-service')
 vi.mock('../sprint-service')
-vi.mock('../post-merge-dedup')
-vi.mock('../../agent-manager/git-operations')
+vi.mock('../../lib/post-merge-dedup')
+vi.mock('../../lib/git-operations')
 vi.mock('../../handlers/sprint-listeners')
 vi.mock('../../shared/time', () => ({
   nowIso: vi.fn(() => '2026-04-11T12:00:00Z')
@@ -47,8 +47,8 @@ import { getSettingJson } from '../../settings'
 import * as reviewMerge from '../review-merge-service'
 import * as reviewPr from '../review-pr-service'
 import * as sprintService from '../sprint-service'
-import * as postMergeDedup from '../post-merge-dedup'
-import * as gitOps from '../../agent-manager/git-operations'
+import * as postMergeDedup from '../../lib/post-merge-dedup'
+import * as gitOps from '../../lib/git-operations'
 
 const execFileMock = vi.mocked(execFile)
 

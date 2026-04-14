@@ -32,7 +32,7 @@ vi.mock('../../services/dependency-service', () => ({
   }))
 }))
 
-vi.mock('../../agent-manager/resolve-dependents', () => ({
+vi.mock('../../lib/resolve-dependents', () => ({
   resolveDependents: vi.fn().mockReturnValue(undefined)
 }))
 
