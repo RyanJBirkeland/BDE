@@ -13,115 +13,115 @@ import { getSprintQueriesLogger } from './sprint-query-logger'
 import { mapRowToTask, mapRowsToTasks, serializeFieldForStorage } from './sprint-task-mapper'
 import { UPDATE_ALLOWLIST, COLUMN_MAP } from './sprint-task-types'
 import type { CreateTaskInput } from './sprint-task-types'
+import { withDataLayerError } from './data-utils'
 
 export function getTask(id: string, db?: Database.Database): SprintTask | null {
-  try {
-    const conn = db ?? getDb()
-
-    const row = conn
-      .prepare(`SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE id = ?`)
-      .get(id) as Record<string, unknown> | undefined
-    return row ? mapRowToTask(row) : null
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] getTask failed for id=${id}: ${msg}`)
-    return null
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      const row = conn
+        .prepare(`SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE id = ?`)
+        .get(id) as Record<string, unknown> | undefined
+      return row ? mapRowToTask(row) : null
+    },
+    `getTask(id=${id})`,
+    null,
+    getSprintQueriesLogger()
+  )
 }
 
 export function listTasks(status?: string, db?: Database.Database): SprintTask[] {
-  try {
-    const conn = db ?? getDb()
-    if (status) {
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      if (status) {
+        const rows = conn
+          .prepare(
+            `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE status = ? ORDER BY priority ASC, created_at ASC`
+          )
+          .all(status) as Record<string, unknown>[]
+        return mapRowsToTasks(rows)
+      }
       const rows = conn
         .prepare(
-          `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE status = ? ORDER BY priority ASC, created_at ASC`
+          `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks ORDER BY priority ASC, created_at ASC`
         )
-        .all(status) as Record<string, unknown>[]
+        .all() as Record<string, unknown>[]
       return mapRowsToTasks(rows)
-    }
-    const rows = conn
-      .prepare(
-        `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks ORDER BY priority ASC, created_at ASC`
-      )
-      .all() as Record<string, unknown>[]
-    return mapRowsToTasks(rows)
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] listTasks failed: ${msg}`)
-    return []
-  }
+    },
+    'listTasks',
+    [],
+    getSprintQueriesLogger()
+  )
 }
 
 export function listTasksRecent(db?: Database.Database): SprintTask[] {
-  try {
-    const conn = db ?? getDb()
-    // UNION ALL of two index-able branches instead of OR-clause.
-    // The original `WHERE status NOT IN (...) OR completed_at >= ...` forced
-    // a full SCAN because OR across columns prevents single-index use. The
-    // UNION ALL form lets each branch use idx_sprint_tasks_status:
-    //   1) active set: status IN (5 active statuses)
-    //   2) recent terminal set: status IN (4 terminal) AND completed_at recent
-    const rows = conn
-      .prepare(
-        `SELECT * FROM (
-           SELECT * FROM sprint_tasks
-             WHERE status IN ('backlog','queued','blocked','active','review')
-           UNION ALL
-           SELECT * FROM sprint_tasks
-             WHERE status IN ('done','cancelled','failed','error')
-               AND completed_at >= datetime('now', '-7 days')
-         )
-         ORDER BY priority ASC, created_at ASC`
-      )
-      .all() as Record<string, unknown>[]
-    return mapRowsToTasks(rows)
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] listTasksRecent failed: ${msg}`)
-    return []
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      // UNION ALL of two index-able branches instead of OR-clause.
+      // The original `WHERE status NOT IN (...) OR completed_at >= ...` forced
+      // a full SCAN because OR across columns prevents single-index use. The
+      // UNION ALL form lets each branch use idx_sprint_tasks_status:
+      //   1) active set: status IN (5 active statuses)
+      //   2) recent terminal set: status IN (4 terminal) AND completed_at recent
+      const rows = conn
+        .prepare(
+          `SELECT * FROM (
+             SELECT * FROM sprint_tasks
+               WHERE status IN ('backlog','queued','blocked','active','review')
+             UNION ALL
+             SELECT * FROM sprint_tasks
+               WHERE status IN ('done','cancelled','failed','error')
+                 AND completed_at >= datetime('now', '-7 days')
+           )
+           ORDER BY priority ASC, created_at ASC`
+        )
+        .all() as Record<string, unknown>[]
+      return mapRowsToTasks(rows)
+    },
+    'listTasksRecent',
+    [],
+    getSprintQueriesLogger()
+  )
 }
 
 export function createTask(input: CreateTaskInput, db?: Database.Database): SprintTask | null {
-  try {
-    const conn = db ?? getDb()
-    const dependsOn = sanitizeDependsOn(input.depends_on)
-    const tags = sanitizeTags(input.tags)
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      const dependsOn = sanitizeDependsOn(input.depends_on)
+      const tags = sanitizeTags(input.tags)
 
-    const result = conn
-      .prepare(
-        `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags, group_id, cross_repo_contract)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         RETURNING *`
-      )
-      .get(
-        input.title,
-        input.repo,
-        input.prompt ?? input.spec ?? input.title,
-        input.spec ?? null,
-        input.notes ?? null,
-        input.priority ?? 0,
-        input.status ?? 'backlog',
-        input.template_name ?? null,
-        dependsOn ? JSON.stringify(dependsOn) : null,
-        input.playground_enabled ? 1 : 0,
-        input.model ?? null,
-        tags ? JSON.stringify(tags) : null,
-        input.group_id ?? null,
-        input.cross_repo_contract ?? null
-      ) as Record<string, unknown> | undefined
+      const result = conn
+        .prepare(
+          `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags, group_id, cross_repo_contract)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           RETURNING *`
+        )
+        .get(
+          input.title,
+          input.repo,
+          input.prompt ?? input.spec ?? input.title,
+          input.spec ?? null,
+          input.notes ?? null,
+          input.priority ?? 0,
+          input.status ?? 'backlog',
+          input.template_name ?? null,
+          dependsOn ? JSON.stringify(dependsOn) : null,
+          input.playground_enabled ? 1 : 0,
+          input.model ?? null,
+          tags ? JSON.stringify(tags) : null,
+          input.group_id ?? null,
+          input.cross_repo_contract ?? null
+        ) as Record<string, unknown> | undefined
 
-    return result ? mapRowToTask(result) : null
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] createTask failed: ${msg}`)
-    return null
-  }
+      return result ? mapRowToTask(result) : null
+    },
+    'createTask',
+    null,
+    getSprintQueriesLogger()
+  )
 }
 
 /**
@@ -274,23 +274,24 @@ export function updateTask(id: string, patch: Record<string, unknown>, db?: Data
 }
 
 export function deleteTask(id: string, deletedBy: string = 'unknown', db?: Database.Database): void {
-  try {
-    const conn = db ?? getDb()
-    // DL-14 & DL-18: Record deletion in audit trail before removing task (pass db for consistency)
-    conn.transaction(() => {
-      const task = getTask(id, conn)
-      if (task) {
-        // Record deletion event with task snapshot
-        conn.prepare(
-          'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)'
-        ).run(id, '_deleted', JSON.stringify(task), null, deletedBy)
-      }
-      // Delete task and orphaned audit records
-      conn.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
-    })()
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] deleteTask failed for id=${id}: ${msg}`)
-  }
+  const conn = db ?? getDb()
+  withDataLayerError(
+    () => {
+      // DL-14 & DL-18: Record deletion in audit trail before removing task (pass db for consistency)
+      conn.transaction(() => {
+        const task = getTask(id, conn)
+        if (task) {
+          // Record deletion event with task snapshot
+          conn.prepare(
+            'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)'
+          ).run(id, '_deleted', JSON.stringify(task), null, deletedBy)
+        }
+        // Delete task and orphaned audit records
+        conn.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
+      })()
+    },
+    `deleteTask(id=${id})`,
+    undefined,
+    getSprintQueriesLogger()
+  )
 }

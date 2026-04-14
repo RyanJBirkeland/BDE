@@ -5,58 +5,59 @@ import { getDb } from '../db'
 import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
 import { mapRowsToTasks } from './sprint-task-mapper'
 import { getSprintQueriesLogger } from './sprint-query-logger'
-import { getErrorMessage } from '../../shared/errors'
 import type { QueueStats } from './sprint-task-types'
+import { withDataLayerError } from './data-utils'
+
+const EMPTY_QUEUE_STATS: QueueStats = {
+  backlog: 0,
+  queued: 0,
+  active: 0,
+  review: 0,
+  done: 0,
+  failed: 0,
+  cancelled: 0,
+  error: 0,
+  blocked: 0
+}
 
 export function getQueueStats(db?: Database.Database): QueueStats {
-  const stats: QueueStats = {
-    backlog: 0,
-    queued: 0,
-    active: 0,
-    review: 0,
-    done: 0,
-    failed: 0,
-    cancelled: 0,
-    error: 0,
-    blocked: 0
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      const stats: QueueStats = { ...EMPTY_QUEUE_STATS }
+      const rows = conn
+        .prepare('SELECT status, COUNT(*) as count FROM sprint_tasks GROUP BY status')
+        .all() as Array<{ status: string; count: number }>
 
-  try {
-    const conn = db ?? getDb()
-    const rows = conn
-      .prepare('SELECT status, COUNT(*) as count FROM sprint_tasks GROUP BY status')
-      .all() as Array<{ status: string; count: number }>
-
-    for (const row of rows) {
-      if (row.status in stats) {
-        stats[row.status as keyof QueueStats] = row.count
+      for (const row of rows) {
+        if (row.status in stats) {
+          stats[row.status as keyof QueueStats] = row.count
+        }
       }
-    }
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] getQueueStats failed: ${msg}`)
-  }
-
-  return stats
+      return stats
+    },
+    'getQueueStats',
+    { ...EMPTY_QUEUE_STATS },
+    getSprintQueriesLogger()
+  )
 }
 
 export function getOrphanedTasks(claimedBy: string, db?: Database.Database): SprintTask[] {
-  try {
-    const conn = db ?? getDb()
-    const rows = conn
-      .prepare(
-        `SELECT ${SPRINT_TASK_COLUMNS}
-         FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?`
-      )
-      .all(claimedBy) as Record<string, unknown>[]
-    return mapRowsToTasks(rows)
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] getOrphanedTasks failed: ${msg}`)
-    return []
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      const rows = conn
+        .prepare(
+          `SELECT ${SPRINT_TASK_COLUMNS}
+           FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?`
+        )
+        .all(claimedBy) as Record<string, unknown>[]
+      return mapRowsToTasks(rows)
+    },
+    `getOrphanedTasks(claimedBy=${claimedBy})`,
+    [],
+    getSprintQueriesLogger()
+  )
 }
 
 /**
@@ -66,54 +67,51 @@ export function getOrphanedTasks(claimedBy: string, db?: Database.Database): Spr
  * Returns the number of rows updated.
  */
 export function clearStaleClaimedBy(claimedBy: string, db?: Database.Database): number {
-  try {
-    const conn = db ?? getDb()
-    const result = conn
-      .prepare(`UPDATE sprint_tasks SET claimed_by = NULL WHERE claimed_by = ?`)
-      .run(claimedBy)
-    return result.changes
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(
-      `[sprint-queries] clearStaleClaimedBy failed for claimedBy=${claimedBy}: ${msg}`
-    )
-    return 0
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      const result = conn
+        .prepare(`UPDATE sprint_tasks SET claimed_by = NULL WHERE claimed_by = ?`)
+        .run(claimedBy)
+      return result.changes
+    },
+    `clearStaleClaimedBy(claimedBy=${claimedBy})`,
+    0,
+    getSprintQueriesLogger()
+  )
 }
 
 export function clearSprintTaskFk(agentRunId: string, db?: Database.Database): void {
-  try {
-    const conn = db ?? getDb()
-    conn
-      .prepare('UPDATE sprint_tasks SET agent_run_id = NULL WHERE agent_run_id = ?')
-      .run(agentRunId)
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(
-      `[sprint-queries] clearSprintTaskFk failed for agent_run_id=${agentRunId}: ${msg}`
-    )
-  }
+  const conn = db ?? getDb()
+  withDataLayerError(
+    () => {
+      conn
+        .prepare('UPDATE sprint_tasks SET agent_run_id = NULL WHERE agent_run_id = ?')
+        .run(agentRunId)
+    },
+    `clearSprintTaskFk(agentRunId=${agentRunId})`,
+    undefined,
+    getSprintQueriesLogger()
+  )
 }
 
 export function getHealthCheckTasks(db?: Database.Database): SprintTask[] {
-  try {
-    const conn = db ?? getDb()
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const rows = conn
-      .prepare(
-        `SELECT ${SPRINT_TASK_COLUMNS}
-         FROM sprint_tasks WHERE status = 'active' AND started_at < ?`
-      )
-      .all(oneHourAgo) as Record<string, unknown>[]
-    return mapRowsToTasks(rows)
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] getHealthCheckTasks failed: ${msg}`)
-    return []
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      const rows = conn
+        .prepare(
+          `SELECT ${SPRINT_TASK_COLUMNS}
+           FROM sprint_tasks WHERE status = 'active' AND started_at < ?`
+        )
+        .all(oneHourAgo) as Record<string, unknown>[]
+      return mapRowsToTasks(rows)
+    },
+    'getHealthCheckTasks',
+    [],
+    getSprintQueriesLogger()
+  )
 }
 
 export function getAllTaskIds(db?: Database.Database): Set<string> {

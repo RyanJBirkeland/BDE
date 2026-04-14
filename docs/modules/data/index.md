@@ -17,3 +17,4 @@ Source: `src/main/data/`
 | `reporting-queries.ts` | Analytics queries for sprint tasks. All functions accept optional `db?: Database.Database`. | `getDoneTodayCount`, `getFailureReasonBreakdown`, `getTaskRuntimeStats`, `getSuccessRateBySpecType`, `getDailySuccessRate` |
 | `sprint-maintenance.ts` | SQLite maintenance ops for sprint_tasks: diff-snapshot pruning, test-artifact cleanup | `pruneOldDiffSnapshots`, `cleanTestArtifacts`, `DIFF_SNAPSHOT_RETENTION_DAYS` |
 | `sprint-maintenance-facade.ts` | Stable re-export path for maintenance utilities (snapshot pruning, FK cleanup, update allowlist, test cleanup) | `cleanTestArtifacts`, `pruneOldDiffSnapshots`, `DIFF_SNAPSHOT_RETENTION_DAYS`, `UPDATE_ALLOWLIST`, `clearSprintTaskFk` |
+| `data-utils.ts` | Shared error-handling utility for the data layer. Eliminates the repeated try/catch log-and-return pattern. | `withDataLayerError` |

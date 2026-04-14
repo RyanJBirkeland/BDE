@@ -1,68 +1,25 @@
 import type Database from 'better-sqlite3'
 import type { SprintTask } from '../../shared/types'
+import type { TaskStatus } from '../../shared/task-state-machine'
 import { getDb } from '../db'
 import { recordTaskChangesBulk } from './task-changes'
 import { nowIso } from '../../shared/time'
 import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
 import { mapRowsToTasks } from './sprint-task-mapper'
 import { getSprintQueriesLogger } from './sprint-query-logger'
-import { getErrorMessage } from '../../shared/errors'
+import { withDataLayerError } from './data-utils'
 
 /**
- * Transitions active tasks to done status for a given PR number.
+ * Transitions active tasks to targetStatus for a given PR number.
  * Records audit trail and returns affected task IDs.
+ * Throws on audit failure so the wrapping transaction rolls back atomically.
  */
-function transitionTasksToDone(
+function transitionTasksByPrNumber(
+  db: Database.Database,
   prNumber: number,
-  changedBy: string,
-  db: Database.Database
+  targetStatus: TaskStatus,
+  changedBy: string
 ): string[] {
-  // Get affected tasks with full state for audit trail
-  const affected = db
-    .prepare(
-      `SELECT ${SPRINT_TASK_COLUMNS}
-       FROM sprint_tasks WHERE pr_number = ? AND status = ?`
-    )
-    .all(prNumber, 'active') as Array<Record<string, unknown>>
-
-  const affectedIds = affected.map((r) => r.id as string)
-
-  if (affectedIds.length > 0) {
-    const completedAt = nowIso()
-
-    // Bulk audit trail (single prepared INSERT statement reused
-    // across all affected tasks instead of one prepared statement per call).
-    // Throw on audit failure so the wrapping transaction rolls back the
-    // status UPDATE — both must succeed atomically.
-    recordTaskChangesBulk(
-      affected.map((oldTask) => ({
-        taskId: oldTask.id as string,
-        oldTask,
-        newPatch: { status: 'done', completed_at: completedAt }
-      })),
-      changedBy,
-      db
-    )
-
-    // Transition active tasks to done
-    db.prepare(
-      'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
-    ).run('done', completedAt, prNumber, 'active')
-  }
-
-  return affectedIds
-}
-
-/**
- * Transitions active tasks to cancelled status for a given PR number.
- * Records audit trail and returns affected task IDs.
- */
-function transitionTasksToCancelled(
-  prNumber: number,
-  changedBy: string,
-  db: Database.Database
-): string[] {
-  // Get affected tasks with full state for audit trail
   const affected = db
     .prepare(
       `SELECT ${SPRINT_TASK_COLUMNS}
@@ -81,16 +38,15 @@ function transitionTasksToCancelled(
       affected.map((oldTask) => ({
         taskId: oldTask.id as string,
         oldTask,
-        newPatch: { status: 'cancelled', completed_at: completedAt }
+        newPatch: { status: targetStatus, completed_at: completedAt }
       })),
       changedBy,
       db
     )
 
-    // Transition active tasks to cancelled
     db.prepare(
       'UPDATE sprint_tasks SET status = ?, completed_at = ? WHERE pr_number = ? AND status = ?'
-    ).run('cancelled', completedAt, prNumber, 'active')
+    ).run(targetStatus, completedAt, prNumber, 'active')
   }
 
   return affectedIds
@@ -144,89 +100,82 @@ function updatePrStatusBulk(
 }
 
 export function markTaskDoneByPrNumber(prNumber: number, db?: Database.Database): string[] {
-  try {
-    const conn = db ?? getDb()
-    return conn.transaction(() => {
-      const affectedIds = transitionTasksToDone(prNumber, 'pr-poller', conn)
-      updatePrStatusBulk(prNumber, 'merged', 'pr-poller', conn, 'done')
-      return affectedIds
-    })()
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(
-      `[sprint-queries] markTaskDoneByPrNumber failed for PR #${prNumber}: ${msg}`
-    )
-    return []
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () =>
+      conn.transaction(() => {
+        const affectedIds = transitionTasksByPrNumber(conn, prNumber, 'done', 'pr-poller')
+        updatePrStatusBulk(prNumber, 'merged', 'pr-poller', conn, 'done')
+        return affectedIds
+      })(),
+    `markTaskDoneByPrNumber(pr=${prNumber})`,
+    [],
+    getSprintQueriesLogger()
+  )
 }
 
 export function markTaskCancelledByPrNumber(prNumber: number, db?: Database.Database): string[] {
-  try {
-    const conn = db ?? getDb()
-    return conn.transaction(() => {
-      const affectedIds = transitionTasksToCancelled(prNumber, 'pr-poller', conn)
-      updatePrStatusBulk(prNumber, 'closed', 'pr-poller', conn)
-      return affectedIds
-    })()
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(
-      `[sprint-queries] markTaskCancelledByPrNumber failed for PR #${prNumber}: ${msg}`
-    )
-    return []
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () =>
+      conn.transaction(() => {
+        const affectedIds = transitionTasksByPrNumber(conn, prNumber, 'cancelled', 'pr-poller')
+        updatePrStatusBulk(prNumber, 'closed', 'pr-poller', conn)
+        return affectedIds
+      })(),
+    `markTaskCancelledByPrNumber(pr=${prNumber})`,
+    [],
+    getSprintQueriesLogger()
+  )
 }
 
 export function listTasksWithOpenPrs(db?: Database.Database): SprintTask[] {
-  try {
-    const conn = db ?? getDb()
-    const rows = conn
-      .prepare(
-        `SELECT ${SPRINT_TASK_COLUMNS}
-         FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'`
-      )
-      .all() as Record<string, unknown>[]
-    return mapRowsToTasks(rows)
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] listTasksWithOpenPrs failed: ${msg}`)
-    return []
-  }
+  const conn = db ?? getDb()
+  return withDataLayerError(
+    () => {
+      const rows = conn
+        .prepare(
+          `SELECT ${SPRINT_TASK_COLUMNS}
+           FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'`
+        )
+        .all() as Record<string, unknown>[]
+      return mapRowsToTasks(rows)
+    },
+    'listTasksWithOpenPrs',
+    [],
+    getSprintQueriesLogger()
+  )
 }
 
 export function updateTaskMergeableState(prNumber: number, mergeableState: string | null, db?: Database.Database): void {
   if (!mergeableState) return
-  try {
-    const conn = db ?? getDb()
-    conn.transaction(() => {
-      // Record pr_mergeable_state changes in the audit trail.
-      // Read all affected tasks first so we can capture the old value per task.
-      const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE pr_number = ?`
-      const affected = conn.prepare(sql).all(prNumber) as Array<Record<string, unknown>>
+  const conn = db ?? getDb()
+  withDataLayerError(
+    () => {
+      conn.transaction(() => {
+        // Record pr_mergeable_state changes in the audit trail.
+        // Read all affected tasks first so we can capture the old value per task.
+        const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE pr_number = ?`
+        const affected = conn.prepare(sql).all(prNumber) as Array<Record<string, unknown>>
 
-      conn.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
-        mergeableState,
-        prNumber
-      )
+        conn.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
+          mergeableState,
+          prNumber
+        )
 
-      recordTaskChangesBulk(
-        affected.map((oldTask) => ({
-          taskId: oldTask.id as string,
-          oldTask,
-          newPatch: { pr_mergeable_state: mergeableState }
-        })),
-        'pr-poller',
-        conn
-      )
-    })()
-  } catch (err) {
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(
-      `[sprint-queries] updateTaskMergeableState failed for PR #${prNumber}: ${msg}`
-    )
-  }
+        recordTaskChangesBulk(
+          affected.map((oldTask) => ({
+            taskId: oldTask.id as string,
+            oldTask,
+            newPatch: { pr_mergeable_state: mergeableState }
+          })),
+          'pr-poller',
+          conn
+        )
+      })()
+    },
+    `updateTaskMergeableState(pr=${prNumber})`,
+    undefined,
+    getSprintQueriesLogger()
+  )
 }

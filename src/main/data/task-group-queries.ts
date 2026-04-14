@@ -9,6 +9,7 @@ import { mapRowsToTasks } from './sprint-queries'
 import { getErrorMessage } from '../../shared/errors'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
+import { withDataLayerError } from './data-utils'
 
 let _logger: Logger = createLogger('task-group-queries')
 
@@ -70,65 +71,67 @@ function sanitizeGroup(row: Record<string, unknown>): TaskGroup {
  * Create a new task group.
  */
 export function createGroup(input: CreateGroupInput, db?: Database.Database): TaskGroup | null {
-  try {
-    const conn = db ?? getDb()
-    const dependsOnJson =
-      input.depends_on && input.depends_on.length > 0 ? JSON.stringify(input.depends_on) : null
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const dependsOnJson =
+        input.depends_on && input.depends_on.length > 0 ? JSON.stringify(input.depends_on) : null
 
-    const stmt = conn.prepare(`
-      INSERT INTO task_groups (name, icon, accent_color, goal, depends_on)
-      VALUES (?, ?, ?, ?, ?)
-      RETURNING *
-    `)
-    const row = stmt.get(
-      input.name,
-      input.icon ?? 'G',
-      input.accent_color ?? '#00ffcc',
-      input.goal ?? null,
-      dependsOnJson
-    ) as Record<string, unknown> | undefined
+      const stmt = conn.prepare(`
+        INSERT INTO task_groups (name, icon, accent_color, goal, depends_on)
+        VALUES (?, ?, ?, ?, ?)
+        RETURNING *
+      `)
+      const row = stmt.get(
+        input.name,
+        input.icon ?? 'G',
+        input.accent_color ?? '#00ffcc',
+        input.goal ?? null,
+        dependsOnJson
+      ) as Record<string, unknown> | undefined
 
-    return row ? sanitizeGroup(row) : null
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] createGroup failed: ${msg}`)
-    return null
-  }
+      return row ? sanitizeGroup(row) : null
+    },
+    'createGroup',
+    null,
+    _logger
+  )
 }
 
 /**
  * List all task groups.
  */
 export function listGroups(db?: Database.Database): TaskGroup[] {
-  try {
-    const conn = db ?? getDb()
-    const rows = conn.prepare('SELECT * FROM task_groups ORDER BY created_at DESC').all() as Record<
-      string,
-      unknown
-    >[]
-    return rows.map(sanitizeGroup)
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] listGroups failed: ${msg}`)
-    return []
-  }
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const rows = conn
+        .prepare('SELECT * FROM task_groups ORDER BY created_at DESC')
+        .all() as Record<string, unknown>[]
+      return rows.map(sanitizeGroup)
+    },
+    'listGroups',
+    [],
+    _logger
+  )
 }
 
 /**
  * Get a single group by ID.
  */
 export function getGroup(id: string, db?: Database.Database): TaskGroup | null {
-  try {
-    const conn = db ?? getDb()
-    const row = conn.prepare('SELECT * FROM task_groups WHERE id = ?').get(id) as
-      | Record<string, unknown>
-      | undefined
-    return row ? sanitizeGroup(row) : null
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] getGroup failed for id=${id}: ${msg}`)
-    return null
-  }
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const row = conn.prepare('SELECT * FROM task_groups WHERE id = ?').get(id) as
+        | Record<string, unknown>
+        | undefined
+      return row ? sanitizeGroup(row) : null
+    },
+    `getGroup(id=${id})`,
+    null,
+    _logger
+  )
 }
 
 /**
@@ -139,36 +142,37 @@ export function updateGroup(
   patch: UpdateGroupInput,
   db?: Database.Database
 ): TaskGroup | null {
-  try {
-    const conn = db ?? getDb()
-    const allowed = new Set(['name', 'icon', 'accent_color', 'goal', 'status', 'depends_on'])
-    const fields = Object.keys(patch).filter((k) => allowed.has(k))
-    if (fields.length === 0) return getGroup(id, db)
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const allowed = new Set(['name', 'icon', 'accent_color', 'goal', 'status', 'depends_on'])
+      const fields = Object.keys(patch).filter((k) => allowed.has(k))
+      if (fields.length === 0) return getGroup(id, db)
 
-    const setClauses = fields.map((f) => `${f} = ?`)
-    const values = fields.map((f) => {
-      const value = patch[f as keyof UpdateGroupInput]
-      // Serialize depends_on to JSON if present
-      if (f === 'depends_on') {
-        return value && Array.isArray(value) && value.length > 0 ? JSON.stringify(value) : null
-      }
-      return value
-    })
+      const setClauses = fields.map((f) => `${f} = ?`)
+      const values = fields.map((f) => {
+        const value = patch[f as keyof UpdateGroupInput]
+        // Serialize depends_on to JSON if present
+        if (f === 'depends_on') {
+          return value && Array.isArray(value) && value.length > 0 ? JSON.stringify(value) : null
+        }
+        return value
+      })
 
-    const stmt = conn.prepare(`
-      UPDATE task_groups
-      SET ${setClauses.join(', ')}
-      WHERE id = ?
-      RETURNING *
-    `)
-    const row = stmt.get(...values, id) as Record<string, unknown> | undefined
+      const stmt = conn.prepare(`
+        UPDATE task_groups
+        SET ${setClauses.join(', ')}
+        WHERE id = ?
+        RETURNING *
+      `)
+      const row = stmt.get(...values, id) as Record<string, unknown> | undefined
 
-    return row ? sanitizeGroup(row) : null
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] updateGroup failed for id=${id}: ${msg}`)
-    return null
-  }
+      return row ? sanitizeGroup(row) : null
+    },
+    `updateGroup(id=${id})`,
+    null,
+    _logger
+  )
 }
 
 /**
@@ -192,70 +196,76 @@ export function deleteGroup(id: string, db?: Database.Database): void {
  * Add a task to a group.
  */
 export function addTaskToGroup(taskId: string, groupId: string, db?: Database.Database): boolean {
-  try {
-    const conn = db ?? getDb()
-    const result = conn
-      .prepare('UPDATE sprint_tasks SET group_id = ? WHERE id = ?')
-      .run(groupId, taskId)
-    return result.changes > 0
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] addTaskToGroup failed: ${msg}`)
-    return false
-  }
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const result = conn
+        .prepare('UPDATE sprint_tasks SET group_id = ? WHERE id = ?')
+        .run(groupId, taskId)
+      return result.changes > 0
+    },
+    `addTaskToGroup(taskId=${taskId})`,
+    false,
+    _logger
+  )
 }
 
 /**
  * Remove a task from its group.
  */
 export function removeTaskFromGroup(taskId: string, db?: Database.Database): boolean {
-  try {
-    const conn = db ?? getDb()
-    const result = conn.prepare('UPDATE sprint_tasks SET group_id = NULL WHERE id = ?').run(taskId)
-    return result.changes > 0
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] removeTaskFromGroup failed: ${msg}`)
-    return false
-  }
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const result = conn
+        .prepare('UPDATE sprint_tasks SET group_id = NULL WHERE id = ?')
+        .run(taskId)
+      return result.changes > 0
+    },
+    `removeTaskFromGroup(taskId=${taskId})`,
+    false,
+    _logger
+  )
 }
 
 /**
  * Get all tasks in a group.
  */
 export function getGroupTasks(groupId: string, db?: Database.Database): SprintTask[] {
-  try {
-    const conn = db ?? getDb()
-    const rows = conn
-      .prepare(
-        'SELECT * FROM sprint_tasks WHERE group_id = ? ORDER BY sort_order ASC, priority DESC, created_at'
-      )
-      .all(groupId) as Record<string, unknown>[]
-    return mapRowsToTasks(rows)
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] getGroupTasks failed for group=${groupId}: ${msg}`)
-    return []
-  }
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const rows = conn
+        .prepare(
+          'SELECT * FROM sprint_tasks WHERE group_id = ? ORDER BY sort_order ASC, priority DESC, created_at'
+        )
+        .all(groupId) as Record<string, unknown>[]
+      return mapRowsToTasks(rows)
+    },
+    `getGroupTasks(groupId=${groupId})`,
+    [],
+    _logger
+  )
 }
 
 /**
  * Queue all backlog tasks in a group.
  */
 export function queueAllGroupTasks(groupId: string, db?: Database.Database): number {
-  try {
-    const conn = db ?? getDb()
-    const result = conn
-      .prepare(
-        `UPDATE sprint_tasks SET status = 'queued' WHERE group_id = ? AND status = 'backlog'`
-      )
-      .run(groupId)
-    return result.changes
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] queueAllGroupTasks failed for group=${groupId}: ${msg}`)
-    return 0
-  }
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const result = conn
+        .prepare(
+          `UPDATE sprint_tasks SET status = 'queued' WHERE group_id = ? AND status = 'backlog'`
+        )
+        .run(groupId)
+      return result.changes
+    },
+    `queueAllGroupTasks(groupId=${groupId})`,
+    0,
+    _logger
+  )
 }
 
 /**
@@ -267,23 +277,22 @@ export function reorderGroupTasks(
   orderedTaskIds: string[],
   db?: Database.Database
 ): boolean {
-  try {
-    const conn = db ?? getDb()
-    const updateStmt = conn.prepare('UPDATE sprint_tasks SET sort_order = ? WHERE id = ?')
+  return withDataLayerError(
+    () => {
+      const conn = db ?? getDb()
+      const updateStmt = conn.prepare('UPDATE sprint_tasks SET sort_order = ? WHERE id = ?')
 
-    const transaction = conn.transaction(() => {
-      orderedTaskIds.forEach((taskId, index) => {
-        updateStmt.run(index, taskId)
-      })
-    })
-
-    transaction()
-    return true
-  } catch (err) {
-    const msg = getErrorMessage(err)
-    _logger.error(`[task-group-queries] reorderGroupTasks failed for group=${groupId}: ${msg}`)
-    return false
-  }
+      conn.transaction(() => {
+        orderedTaskIds.forEach((taskId, index) => {
+          updateStmt.run(index, taskId)
+        })
+      })()
+      return true
+    },
+    `reorderGroupTasks(groupId=${groupId})`,
+    false,
+    _logger
+  )
 }
 
 /**
