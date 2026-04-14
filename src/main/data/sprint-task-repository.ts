@@ -8,7 +8,7 @@
  * delegates to this repository. The agent manager uses this interface directly
  * for dependency injection in tests.
  */
-import type { SprintTask, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
+import type { SprintTask, SprintTaskPR, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
 import * as queries from './sprint-queries'
 import * as reportingQueries from './reporting-queries'
 import * as groupQueries from './task-group-queries'
@@ -55,7 +55,7 @@ export interface IAgentTaskRepository {
 export interface ISprintPollerRepository {
   markTaskDoneByPrNumber(prNumber: number): string[]
   markTaskCancelledByPrNumber(prNumber: number): string[]
-  listTasksWithOpenPrs(): SprintTask[]
+  listTasksWithOpenPrs(): SprintTaskPR[]
   updateTaskMergeableState(prNumber: number, mergeableState: string | null): void
 }
 

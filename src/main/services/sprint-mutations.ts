@@ -15,7 +15,7 @@ import {
   type SpecTypeSuccessRate,
   type DailySuccessRate
 } from '../data/sprint-task-repository'
-import type { SprintTask } from '../../shared/types'
+import type { SprintTask, SprintTaskPR } from '../../shared/types'
 import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
 export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate }
@@ -44,7 +44,7 @@ export function getDoneTodayCount(): number {
   return repo.getDoneTodayCount()
 }
 
-export function listTasksWithOpenPrs(): SprintTask[] {
+export function listTasksWithOpenPrs(): SprintTaskPR[] {
   return repo.listTasksWithOpenPrs()
 }
 

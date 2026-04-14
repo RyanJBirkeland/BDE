@@ -4,7 +4,7 @@
  * are detected even when no BDE window is open.
  */
 import { parsePrUrl } from '../shared/github'
-import type { SprintTask } from '../shared/types'
+import type { SprintTaskPR } from '../shared/types'
 import type { PrStatusInput, PrStatusResult } from './github-pr-status'
 
 const POLL_INTERVAL_MS = 60_000
@@ -16,7 +16,7 @@ const POLL_INTERVAL_MS = 60_000
 const POLL_INITIAL_DELAY_MS = 30_000
 
 export interface SprintPrPollerDeps {
-  listTasksWithOpenPrs: () => SprintTask[]
+  listTasksWithOpenPrs: () => SprintTaskPR[]
   pollPrStatuses: (prs: PrStatusInput[]) => Promise<PrStatusResult[]>
   markTaskDoneByPrNumber: (prNumber: number) => string[]
   markTaskCancelledByPrNumber: (prNumber: number) => string[]
