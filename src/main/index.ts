@@ -22,7 +22,7 @@ import { createAgentManager } from './agent-manager'
 import { createSprintTaskRepository } from './data/sprint-task-repository'
 import { execFileAsync } from './lib/async-utils'
 import { getOAuthToken, ensureExtraPathsOnProcessEnv } from './env-utils'
-import { createLogger } from './logger'
+import { createLogger, logError } from './logger'
 import { setSprintQueriesLogger } from './data/sprint-queries'
 import { setTaskGroupQueriesLogger } from './data/task-group-queries'
 import { setSettingsQueriesLogger } from './data/settings-queries'
@@ -42,6 +42,20 @@ import {
   SHARED_WEB_PREFERENCES,
   restoreTearoffWindows
 } from './tearoff-manager'
+
+const logger = createLogger('main')
+
+process.on('uncaughtException', (err) => {
+  logError(logger, 'Uncaught exception', err)
+})
+
+process.on('unhandledRejection', (reason) => {
+  logError(
+    logger,
+    'Unhandled rejection',
+    reason instanceof Error ? reason : new Error(String(reason))
+  )
+})
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
