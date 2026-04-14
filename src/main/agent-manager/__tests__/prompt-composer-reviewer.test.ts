@@ -133,3 +133,55 @@ describe('direct builder exports', () => {
     expect(chatPrompt).not.toContain('qualityScore')
   })
 })
+
+describe('XML injection safety', () => {
+  it('wraps taskContent in review_context tags (structured)', () => {
+    const prompt = buildStructuredReviewPrompt({
+      agentType: 'reviewer',
+      taskContent: 'INJECTIONTEST_TASK',
+      diff: '+ change',
+      branch: 'feat/x'
+    })
+    expect(prompt).toContain('<review_context>')
+    expect(prompt).toContain('INJECTIONTEST_TASK')
+    expect(prompt).toContain('</review_context>')
+  })
+
+  it('wraps diff in review_diff tags (structured)', () => {
+    const prompt = buildStructuredReviewPrompt({
+      agentType: 'reviewer',
+      taskContent: '',
+      diff: 'INJECTIONTEST_DIFF',
+      branch: 'feat/x'
+    })
+    expect(prompt).toContain('<review_diff>')
+    expect(prompt).toContain('INJECTIONTEST_DIFF')
+    expect(prompt).toContain('</review_diff>')
+  })
+
+  it('wraps taskContent in review_context tags (interactive)', () => {
+    const prompt = buildInteractiveReviewPrompt({
+      agentType: 'reviewer',
+      taskContent: 'INJECTIONTEST_TASK2',
+      diff: '',
+      branch: 'feat/x',
+      messages: []
+    })
+    expect(prompt).toContain('<review_context>')
+    expect(prompt).toContain('INJECTIONTEST_TASK2')
+    expect(prompt).toContain('</review_context>')
+  })
+
+  it('wraps chat messages in chat_message block tags (interactive)', () => {
+    const prompt = buildInteractiveReviewPrompt({
+      agentType: 'reviewer',
+      taskContent: '',
+      diff: '',
+      branch: 'feat/x',
+      messages: [{ role: 'user', content: 'INJECTIONTEST_MSG' }]
+    })
+    expect(prompt).toContain('<chat_message>')
+    expect(prompt).toContain('INJECTIONTEST_MSG')
+    expect(prompt).toContain('</chat_message>')
+  })
+})

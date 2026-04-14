@@ -31,14 +31,19 @@ export function buildStructuredReviewPrompt(input: BuildPromptInput): string {
 You are the BDE Code Review Partner running a one-shot structured review pass. You do NOT write code. You analyze a git diff and emit a single JSON object describing what you see.
 
 ## Task Context
-Branch: ${branch}
+Branch: \`${branch}\`
 
+<review_context>
 ${taskContent}
+</review_context>
 
 ## Diff
+
+<review_diff>
 \`\`\`diff
 ${diff}
 \`\`\`
+</review_diff>
 
 ## Output Format
 Respond with ONLY a valid JSON object matching this schema — no markdown fences, no prose outside the JSON, no commentary:
@@ -81,7 +86,9 @@ Opening: ${reviewSeed.openingMessage}
 `
     : ''
 
-  const history = messages.map((m) => `**${m.role}:** ${m.content}`).join('\n\n')
+  const history = messages
+    .map((m) => `**${m.role}:** <chat_message>\n${m.content}\n</chat_message>`)
+    .join('\n\n')
 
   return `${REVIEWER_PREAMBLE}
 
@@ -91,16 +98,21 @@ You are the BDE Code Review Partner answering follow-up questions about a branch
 Cite specific file paths and line numbers where possible. Be concrete and brief.
 
 ## Task Context
-Branch: ${branch}
+Branch: \`${branch}\`
 
+<review_context>
 ${taskContent}
+</review_context>
 
 ${seedBlock}
 
 ## Diff
+
+<review_diff>
 \`\`\`diff
 ${diff}
 \`\`\`
+</review_diff>
 
 ## Conversation
 ${history}`
