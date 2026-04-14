@@ -1,4 +1,5 @@
 import { safeHandle } from '../ipc-utils'
+import { isValidAgentId } from '../lib/validation'
 import { getDb } from '../db'
 import { readFile } from 'fs/promises'
 import { createLogger } from '../logger'
@@ -155,10 +156,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
   })
 
   safeHandle('sprint:readLog', async (_e, agentId: string, rawFromByte?: number) => {
-    // Validate agentId to prevent path traversal (must be a valid UUID-like string)
-    if (!agentId || typeof agentId !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(agentId)) {
-      throw new Error('Invalid agent ID format')
-    }
+    if (!isValidAgentId(agentId)) throw new Error('Invalid agent ID format')
 
     const fromByte = typeof rawFromByte === 'number' ? rawFromByte : 0
     const info = getAgentLogInfo(getDb(), agentId)

@@ -495,7 +495,14 @@ export class AgentManagerImpl implements AgentManager {
       this._pruneLoop().catch((err) => this.logger.warn(`[agent-manager] Prune loop error: ${err}`))
     }, WORKTREE_PRUNE_INTERVAL_MS)
 
-    // Defer initial drain to let the event loop settle and orphan recovery complete
+    this._scheduleInitialDrain()
+
+    this.logger.info('[agent-manager] Started')
+  }
+
+  // Defer the first drain so the event loop settles and orphan recovery can complete
+  // before any queued task is claimed.
+  private _scheduleInitialDrain(): void {
     setTimeout(() => {
       this._drainInFlight = (async () => {
         // Wait for orphan recovery to complete before draining
@@ -511,8 +518,6 @@ export class AgentManagerImpl implements AgentManager {
           this._drainInFlight = null
         })
     }, INITIAL_DRAIN_DEFER_MS)
-
-    this.logger.info('[agent-manager] Started')
   }
 
   // finalizeAgentRun includes git rebase + PR creation which can take 30+ seconds

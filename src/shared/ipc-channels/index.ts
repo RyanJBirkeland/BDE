@@ -62,8 +62,8 @@
  *                       collection ops (`agents:list`, `agents:readLog`).
  *                       New channels should follow this singular/plural rule.
  *   - `dashboard:completionsPerHour`, `dashboard:recentEvents` — dashboard queries
- *                       that live in DashboardChannels but use the `agent:`
- *                       prefix instead of `dashboard:`.
+ *                       that live in DashboardChannels and correctly use the
+ *                       `dashboard:` prefix.
  *   - `clipboard:readImage` — lives inside SystemChannels despite having
  *                       its own `clipboard:` prefix.
  *
