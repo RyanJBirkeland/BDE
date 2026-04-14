@@ -14,7 +14,7 @@ export class WorktreeMissingError extends Error {
   }
 }
 
-export { MalformedReviewError }
+export { MalformedReviewError, parseReviewResponse }
 export type { ParsedReview }
 export type { ReviewFindings }
 
