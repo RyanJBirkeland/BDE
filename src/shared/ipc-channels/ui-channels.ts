@@ -40,6 +40,26 @@ export interface TearoffChannels {
     args: [{ windowId: string; viewKey: string }]
     result: { targetFound: boolean }
   }
+  'tearoff:dropComplete': {
+    args: [{ view: string; targetPanelId: string; zone: string }]
+    result: void
+  }
+  'tearoff:dragCancelFromRenderer': {
+    args: []
+    result: void
+  }
+  'tearoff:viewsChanged': {
+    args: [{ windowId: string; views: string[] }]
+    result: void
+  }
+  'tearoff:returnAll': {
+    args: [{ windowId: string; views: string[] }]
+    result: void
+  }
+  'tearoff:returnToMain': {
+    args: [{ windowId: string }]
+    result: void
+  }
 }
 
 /** Dashboard analytics */

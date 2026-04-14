@@ -13,7 +13,7 @@ import { BrowserWindow, ipcMain } from 'electron'
 import { randomUUID } from 'crypto'
 import { getSetting, getSettingJson, setSettingJson } from './settings'
 import { createLogger } from './logger'
-import { safeHandle } from './ipc-utils'
+import { safeHandle, safeOn } from './ipc-utils'
 import {
   SHARED_WEB_PREFERENCES,
   getEntry,
@@ -34,6 +34,8 @@ import {
 } from './cross-window-drag-coordinator'
 
 const logger = createLogger('tearoff-handlers')
+
+const WINDOW_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // ---------------------------------------------------------------------------
 // Shared persistence callback
@@ -158,30 +160,36 @@ export function registerTearoffHandlers(): void {
   )
 
   // tearoff:dropComplete — target window signals a drop was accepted
-  ipcMain.on(
-    'tearoff:dropComplete',
-    (_event, payload: { view: string; targetPanelId: string; zone: string }) => {
-      handleDropComplete(payload)
-    }
-  )
+  safeOn('tearoff:dropComplete', (_event, payload) => {
+    handleDropComplete(payload)
+  })
 
   // tearoff:dragCancelFromRenderer — renderer requests drag cancellation
-  ipcMain.on('tearoff:dragCancelFromRenderer', () => {
+  safeOn('tearoff:dragCancelFromRenderer', () => {
     cancelActiveDrag()
   })
 
   // tearoff:viewsChanged — tear-off window reports its current set of views
-  ipcMain.on('tearoff:viewsChanged', (_event, payload: { windowId: string; views: string[] }) => {
-    const entry = getEntry(payload.windowId)
+  safeOn('tearoff:viewsChanged', (_event, payload) => {
+    const { windowId, views } = payload
+    if (!WINDOW_ID_PATTERN.test(windowId)) {
+      logger.warn(`tearoff: invalid windowId format "${windowId}"`)
+      return
+    }
+    const entry = getEntry(windowId)
     if (entry) {
-      entry.views = payload.views
+      entry.views = views
       persistTearoffStateNow()
     }
   })
 
   // tearoff:returnAll — bulk return all tabs from a tear-off window to the main window
-  ipcMain.on('tearoff:returnAll', (_event, payload: { windowId: string; views: string[] }) => {
+  safeOn('tearoff:returnAll', (_event, payload) => {
     const { windowId, views } = payload ?? {}
+    if (!WINDOW_ID_PATTERN.test(windowId)) {
+      logger.warn(`tearoff: invalid windowId format "${windowId}"`)
+      return
+    }
     const entry = getEntry(windowId)
     if (!entry) {
       logger.warn(`[tearoff] returnAll: unknown windowId ${windowId}`)
@@ -205,8 +213,12 @@ export function registerTearoffHandlers(): void {
   })
 
   // tearoff:returnToMain — tear-off window requests to be returned to the main window
-  ipcMain.on('tearoff:returnToMain', (_event, payload: { windowId: string }) => {
+  safeOn('tearoff:returnToMain', (_event, payload) => {
     const { windowId } = payload ?? {}
+    if (!WINDOW_ID_PATTERN.test(windowId)) {
+      logger.warn(`tearoff: invalid windowId format "${windowId}"`)
+      return
+    }
     const entry = getEntry(windowId)
     if (!entry) {
       logger.warn(`[tearoff] returnToMain: unknown windowId ${windowId}`)
