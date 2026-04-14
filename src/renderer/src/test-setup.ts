@@ -144,6 +144,7 @@ vi.stubGlobal('api', {
     readSpecFile: vi.fn().mockResolvedValue(''),
     generatePrompt: vi.fn().mockResolvedValue({ taskId: '', spec: '', prompt: '' }),
     delete: vi.fn().mockResolvedValue({ ok: true }),
+    batchUpdate: vi.fn().mockResolvedValue([]),
     healthCheck: vi.fn().mockResolvedValue([]),
     unblockTask: vi.fn().mockResolvedValue({}),
     onExternalChange: vi.fn().mockReturnValue(() => {})

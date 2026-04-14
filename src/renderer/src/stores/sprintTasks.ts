@@ -13,6 +13,7 @@ import {
   type PendingUpdates
 } from '../lib/optimisticUpdateManager'
 import { getRepoPaths } from '../services/git'
+import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt } from '../services/sprint'
 
 export interface CreateTicketInput {
   title: string
@@ -76,7 +77,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   loadData: async (): Promise<void> => {
     set({ loadError: null, loading: true })
     try {
-      const result = (await window.api.sprint.list()) as SprintTask[]
+      const result = await listTasks()
       const incoming = (Array.isArray(result) ? result : []).map((t) => ({
         ...t,
         depends_on: sanitizeDependsOn(t.depends_on)
@@ -151,7 +152,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t))
     }))
     try {
-      const serverTask = (await window.api.sprint.update(taskId, patch)) as SprintTask | null
+      const serverTask = await updateTask(taskId, patch)
       // Apply server response (may differ from optimistic — e.g. auto-blocked) and clear pending
       // Only clear if this is still the most recent update for this task
       set((state) => {
@@ -196,7 +197,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
   deleteTask: async (taskId): Promise<void> => {
     try {
-      await window.api.sprint.delete(taskId)
+      await deleteTask(taskId)
       set((state) => ({
         tasks: state.tasks.filter((t) => t.id !== taskId),
         pendingUpdates: Object.fromEntries(
@@ -242,7 +243,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     }))
 
     try {
-      const result = (await window.api.sprint.create({
+      const result = await createTask({
         title: data.title,
         repo: repoEnum,
         prompt: data.prompt || data.title,
@@ -254,7 +255,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         playground_enabled: data.playground_enabled || undefined,
         ...(data.depends_on ? { depends_on: data.depends_on } : {}),
         ...(data.group_id ? { group_id: data.group_id } : {})
-      } as Parameters<typeof window.api.sprint.create>[0])) as SprintTask
+      } as Parameters<typeof window.api.sprint.create>[0])
 
       if (result?.id) {
         set((state) => ({
@@ -279,7 +280,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
   generateSpec: async (taskId, title, repo, templateHint): Promise<void> => {
     try {
-      const genResult = await window.api.sprint.generatePrompt({
+      const genResult = await generatePrompt({
         taskId,
         title,
         repo,
@@ -371,7 +372,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
     try {
       const operations = taskIds.map((id) => ({ op: 'delete' as const, id }))
-      const result = await window.api.sprint.batchUpdate(operations)
+      const result = await batchUpdate(operations)
 
       // Check for any errors
       const errors = result.results.filter((r) => !r.ok)
@@ -404,7 +405,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         id,
         patch: { status: TASK_STATUS.QUEUED }
       }))
-      const result = await window.api.sprint.batchUpdate(operations)
+      const result = await batchUpdate(operations)
 
       // Check for any errors
       const errors = result.results.filter((r) => !r.ok)

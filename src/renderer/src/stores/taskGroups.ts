@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { TaskGroup, SprintTask, EpicDependency } from '../../../shared/types'
 import { toast } from './toasts'
+import { createTask, updateTask } from '../services/sprint'
 
 interface TaskGroupsState {
   groups: TaskGroup[]
@@ -282,7 +283,7 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
       // Create tasks for the group
       for (const taskStub of template.tasks) {
         try {
-          const task = await window.api.sprint.create({
+          const task = await createTask({
             title: taskStub.title,
             repo,
             spec: taskStub.spec,
@@ -291,7 +292,7 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
           })
           if (task) {
             // Set spec_type via update since create doesn't support it
-            await window.api.sprint.update(task.id, { spec_type: taskStub.spec_type })
+            await updateTask(task.id, { spec_type: taskStub.spec_type })
             await window.api.groups.addTask(task.id, newGroup.id)
           }
         } catch (taskError) {
