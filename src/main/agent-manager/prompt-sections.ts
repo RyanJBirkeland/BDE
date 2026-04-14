@@ -105,14 +105,14 @@ export function buildUpstreamContextSection(
 
   for (const upstream of upstreamContext) {
     const cappedSpec = truncateSpec(upstream.spec, PROMPT_TRUNCATION.UPSTREAM_SPEC_CHARS)
-    section += `### ${upstream.title}\n\n${cappedSpec}\n\n`
+    section += `### ${upstream.title}\n\n<upstream_spec>\n${cappedSpec}\n</upstream_spec>\n\n`
 
     if (upstream.partial_diff) {
       const truncated = upstream.partial_diff.length > PROMPT_TRUNCATION.UPSTREAM_DIFF_CHARS
       const cappedDiff = truncated
         ? upstream.partial_diff.slice(0, PROMPT_TRUNCATION.UPSTREAM_DIFF_CHARS) + '\n\n[... diff truncated]'
         : upstream.partial_diff
-      section += `<details>\n<summary>Partial changes from upstream task</summary>\n\n\`\`\`diff\n${cappedDiff}\n\`\`\`\n</details>\n\n`
+      section += `<details>\n<summary>Partial changes from upstream task</summary>\n\n<upstream_diff>\n\`\`\`diff\n${cappedDiff}\n\`\`\`\n</upstream_diff>\n</details>\n\n`
     }
   }
 
@@ -138,7 +138,7 @@ export function buildRetryContext(retryCount: number, previousNotes?: string): s
   const attemptNum = retryCount + 1
   const maxAttempts = MAX_RETRIES_FOR_DISPLAY + 1
   const notesText = previousNotes
-    ? `Previous attempt failed: ${previousNotes}`
+    ? `Previous attempt failed:\n<failure_notes>\n${previousNotes}\n</failure_notes>`
     : 'No failure notes from previous attempt.'
   return `\n\n## Retry Context\nThis is attempt ${attemptNum} of ${maxAttempts}. ${notesText}\nDo NOT repeat the same approach. Analyze what went wrong and try a different strategy.\nIf the previous failure was a test/typecheck error, fix that specific error first.`
 }
