@@ -42,6 +42,12 @@ describe('pipeline agent SDK options', () => {
     expect(typeof callArgs?.options?.maxBudgetUsd).toBe('number')
     expect(callArgs?.options?.maxBudgetUsd).toBeGreaterThan(0)
   })
+
+  it('uses caller-supplied maxBudgetUsd over default', async () => {
+    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5', maxBudgetUsd: 5.0 })
+    const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
+    expect(callArgs?.options?.maxBudgetUsd).toBe(5.0)
+  })
 })
 
 describe('sdk-adapter', () => {
