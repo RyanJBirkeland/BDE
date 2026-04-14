@@ -957,7 +957,7 @@ describe('consumeMessages', () => {
     expect(result.exitCode).toBeUndefined()
     expect(emitAgentEvent).toHaveBeenCalledWith(
       'run-1',
-      expect.objectContaining({ type: 'agent:error', message: 'Stream closed unexpectedly' })
+      expect.objectContaining({ type: 'agent:error', message: 'Stream interrupted: Stream closed unexpectedly' })
     )
   })
 })
@@ -988,6 +988,19 @@ describe('runAgent — watchdog race: flushAgentEventBatcher', () => {
     await runAgent(makeTask(), worktree, repoPath, deps)
 
     expect(vi.mocked(flushAgentEventBatcher)).toHaveBeenCalled()
+    // Confirm the non-watchdog finalization path was NOT taken:
+    // initializeAgentTracking calls updateTask once (to record agent_run_id).
+    // resolveAgentExit would call it a second time to transition task status.
+    // Exactly 1 call proves the watchdog early-return prevented resolveAgentExit.
+    expect(mockRepo.updateTask).toHaveBeenCalledTimes(1)
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ agent_run_id: expect.any(String) })
+    )
+    expect(mockRepo.updateTask).not.toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ status: expect.any(String) })
+    )
   })
 })
 
@@ -1004,12 +1017,13 @@ describe('runAgent — stream error: structured event emission', () => {
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
 
-    expect(vi.mocked(emitAgentEvent)).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        type: 'agent:error',
-        message: 'Stream interrupted: EPIPE: broken pipe'
-      })
+    const streamErrorCalls = vi.mocked(emitAgentEvent).mock.calls.filter(
+      ([, event]) => event.type === 'agent:error'
     )
+    expect(streamErrorCalls).toHaveLength(1)
+    expect(streamErrorCalls[0][1]).toMatchObject({
+      type: 'agent:error',
+      message: 'Stream interrupted: EPIPE: broken pipe'
+    })
   })
 })

@@ -195,10 +195,11 @@ export async function consumeMessages(
   } catch (err) {
     logError(logger, `[agent-manager] Error consuming messages for task ${task.id}`, err)
     const errMsg = err instanceof Error ? err.message : String(err)
-    // Emit error event for console display
+    // Emit error event for console display — prefix signals infrastructure failure
+    // (network cut, OOM, pipe broken) rather than agent logic failure
     emitAgentEvent(agentRunId, {
       type: 'agent:error',
-      message: errMsg,
+      message: `Stream interrupted: ${errMsg}`,
       timestamp: Date.now()
     })
     // Invalidate cached OAuth token on auth errors so next agent gets a fresh token
@@ -761,14 +762,8 @@ export async function runAgent(
   )
   if (streamError) {
     logger.warn(`[agent-manager] Message stream failed for task ${task.id}: ${streamError.message}`)
-    // Emit a structured event so the UI shows stream failure rather than a generic error.
-    // This is distinct from agent logic failures — it signals infrastructure issues
-    // (network cut, OOM, pipe broken).
-    emitAgentEvent(agentRunId, {
-      type: 'agent:error',
-      message: `Stream interrupted: ${streamError.message}`,
-      timestamp: Date.now()
-    })
+    // agent:error was already emitted in consumeMessages' catch block with "Stream interrupted:" prefix.
+    // Don't emit a second event here — UI would show the error twice.
     // exitCode will be undefined; finalizeAgentRun's classifyExit treats undefined as exit code 1
   }
 
