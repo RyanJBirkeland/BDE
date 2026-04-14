@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
 import { PanelLeftOpen } from 'lucide-react'
@@ -16,8 +16,10 @@ import { IDEEmptyState } from '../components/ide/IDEEmptyState'
 import { useUnsavedDialog, UnsavedDialogModal } from '../components/ide/UnsavedDialog'
 import { QuickOpenPalette } from '../components/ide/QuickOpenPalette'
 import { useIDEKeyboard } from '../hooks/useIDEKeyboard'
+import { useIDEStateRestoration } from '../hooks/useIDEStateRestoration'
+import { useIDEFileOperations } from '../hooks/useIDEFileOperations'
+import { useIDEUnsavedGuard } from '../hooks/useIDEUnsavedGuard'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
-import { toast } from '../stores/toasts'
 import './IDEView.css'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
@@ -42,52 +44,8 @@ export function IDEView(): React.JSX.Element {
   const reduced = useReducedMotion()
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickOpen, setShowQuickOpen] = useState(false)
-  useEffect(() => {
-    const restore = async (): Promise<void> => {
-      try {
-        const saved = await window.api.settings.getJson('ide.state')
-        if (!saved || typeof saved !== 'object') return
-        const state = saved as {
-          rootPath?: string
-          openTabs?: { filePath: string }[]
-          activeFilePath?: string
-          sidebarCollapsed?: boolean
-          terminalCollapsed?: boolean
-          recentFolders?: string[]
-          expandedDirs?: Record<string, boolean> // IDE-11
-          minimapEnabled?: boolean
-          wordWrapEnabled?: boolean
-          fontSize?: number
-        }
-        // Set watchDir FIRST so ideRootPath is ready before any readFile calls
-        if (state.rootPath) await window.api.fs.watchDir(state.rootPath)
-        useIDEStore.setState({
-          rootPath: state.rootPath ?? null,
-          sidebarCollapsed: state.sidebarCollapsed ?? false,
-          terminalCollapsed: state.terminalCollapsed ?? false,
-          recentFolders: state.recentFolders ?? [],
-          expandedDirs: state.expandedDirs ?? {}, // IDE-11: Restore expanded directories
-          minimapEnabled: state.minimapEnabled ?? true,
-          wordWrapEnabled: state.wordWrapEnabled ?? false,
-          fontSize: state.fontSize ?? 13
-        })
-        if (state.openTabs) {
-          for (const tab of state.openTabs) {
-            useIDEStore.getState().openTab(tab.filePath)
-          }
-          if (state.activeFilePath) {
-            const match = useIDEStore
-              .getState()
-              .openTabs.find((t) => t.filePath === state.activeFilePath)
-            if (match) useIDEStore.getState().setActiveTab(match.id)
-          }
-        }
-      } catch (err) {
-        console.error('Failed to restore IDE state:', err)
-      }
-    }
-    void restore()
-  }, [])
+
+  useIDEStateRestoration()
 
   const {
     rootPath,
@@ -127,7 +85,7 @@ export function IDEView(): React.JSX.Element {
     }))
   )
 
-  const { fileContents, fileLoadingStates, setFileContent, setFileLoading } = useIDEFileCache(
+  const fileCache = useIDEFileCache(
     useShallow((s) => ({
       fileContents: s.fileContents,
       fileLoadingStates: s.fileLoadingStates,
@@ -135,11 +93,11 @@ export function IDEView(): React.JSX.Element {
       setFileLoading: s.setFileLoading
     }))
   )
+  const { fileContents, fileLoadingStates } = fileCache
 
   const activeView = usePanelLayoutStore((s) => s.activeView)
   const activeTab = openTabs.find((t) => t.id === activeTabId) ?? null
   const { confirmUnsaved, confirmProps } = useUnsavedDialog()
-  const savingPaths = useRef(new Set<string>())
   const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
   const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
   const sidebarPanelRef = usePanelRef()
@@ -152,96 +110,16 @@ export function IDEView(): React.JSX.Element {
     }
   }, [sidebarCollapsed, sidebarPanelRef])
 
-  // IDE-5, IDE-7, IDE-8, IDE-9: Load file content from store with proper error handling and loading states
-  useEffect(() => {
-    if (!activeTab) return
-    const { filePath } = activeTab
-    if (fileContents[filePath] !== undefined) return
-    if (fileLoadingStates[filePath]) return // Already loading
+  const { handleSave, handleContentChange, handleCloseTab, handleOpenFolder, handleOpenFile } =
+    useIDEFileOperations({
+      activeTab,
+      openTabs,
+      fileCache,
+      actions: { setRootPath, openTab, closeTab, setDirty, setFocusedPanel },
+      confirmUnsaved
+    })
 
-    setFileLoading(filePath, true)
-    window.api.fs
-      .readFile(filePath)
-      .then((content) => {
-        setFileContent(filePath, content ?? '')
-        setFileLoading(filePath, false)
-      })
-      .catch((err) => {
-        setFileLoading(filePath, false)
-        toast.error(`Failed to read file: ${err instanceof Error ? err.message : 'Unknown error'}`)
-        setFileContent(filePath, '') // Set empty content to prevent retry loop
-      })
-  }, [activeTab, fileContents, fileLoadingStates, setFileContent, setFileLoading])
-
-  // IDE-7: Save is async, preventing race conditions on rapid tab switches
-  const handleSave = useCallback(async () => {
-    if (!activeTab) return
-    const content = fileContents[activeTab.filePath]
-    if (content === undefined) return
-    const { filePath, id } = activeTab
-    if (savingPaths.current.has(filePath)) return // Already saving this file
-    savingPaths.current.add(filePath)
-    try {
-      await window.api.fs.writeFile(filePath, content)
-      setDirty(id, false)
-    } catch (err) {
-      toast.error(`Save failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
-    } finally {
-      savingPaths.current.delete(filePath)
-    }
-  }, [activeTab, fileContents, setDirty])
-
-  const handleContentChange = useCallback(
-    (content: string) => {
-      if (!activeTab) return
-      setFileContent(activeTab.filePath, content)
-      setDirty(activeTab.id, true)
-    },
-    [activeTab, setDirty, setFileContent]
-  )
-
-  const handleCloseTab = useCallback(
-    async (tabId: string, isDirty: boolean) => {
-      if (isDirty) {
-        const tab = openTabs.find((t) => t.id === tabId)
-        if (tab) {
-          const discard = await confirmUnsaved(tab.displayName)
-          if (!discard) return
-        }
-      }
-      closeTab(tabId)
-    },
-    [openTabs, confirmUnsaved, closeTab]
-  )
-
-  const handleOpenFolder = useCallback(async () => {
-    const dir = await window.api.fs.openDirDialog()
-    if (dir) {
-      setRootPath(dir)
-      await window.api.fs.watchDir(dir)
-    }
-  }, [setRootPath])
-
-  const handleOpenFile = useCallback(
-    (filePath: string) => {
-      openTab(filePath)
-      setFocusedPanel('editor')
-    },
-    [openTab, setFocusedPanel]
-  )
-
-  // IDE-10: Add beforeunload guard for unsaved changes
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
-      const hasDirtyTabs = openTabs.some((t) => t.isDirty)
-      if (hasDirtyTabs) {
-        e.preventDefault()
-        e.returnValue = ''
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [openTabs])
+  useIDEUnsavedGuard(openTabs)
 
   // Register IDE commands in command palette
   const handleNewTerminalTab = useCallback(() => {
