@@ -990,3 +990,26 @@ describe('runAgent — watchdog race: flushAgentEventBatcher', () => {
     expect(vi.mocked(flushAgentEventBatcher)).toHaveBeenCalled()
   })
 })
+
+describe('runAgent — stream error: structured event emission', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('emits agent:error event with "Stream interrupted:" prefix when stream throws', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(
+      makeErrorHandle(new Error('EPIPE: broken pipe'))
+    )
+
+    const deps = makeDeps()
+    await runAgent(makeTask(), worktree, repoPath, deps)
+
+    expect(vi.mocked(emitAgentEvent)).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        type: 'agent:error',
+        message: 'Stream interrupted: EPIPE: broken pipe'
+      })
+    )
+  })
+})

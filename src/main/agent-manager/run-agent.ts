@@ -761,6 +761,14 @@ export async function runAgent(
   )
   if (streamError) {
     logger.warn(`[agent-manager] Message stream failed for task ${task.id}: ${streamError.message}`)
+    // Emit a structured event so the UI shows stream failure rather than a generic error.
+    // This is distinct from agent logic failures — it signals infrastructure issues
+    // (network cut, OOM, pipe broken).
+    emitAgentEvent(agentRunId, {
+      type: 'agent:error',
+      message: `Stream interrupted: ${streamError.message}`,
+      timestamp: Date.now()
+    })
     // exitCode will be undefined; finalizeAgentRun's classifyExit treats undefined as exit code 1
   }
 
