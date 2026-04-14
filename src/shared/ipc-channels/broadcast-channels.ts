@@ -86,5 +86,5 @@ export interface BroadcastChannels {
   'tearoff:dragMove': { x: number; y: number }
   'tearoff:dragDone': void
   'tearoff:dragCancel': void
-  'tearoff:crossWindowDrop': { viewKey: string; x: number; y: number; sourceWindowId: string }
+  'tearoff:crossWindowDrop': { view: string; targetPanelId: string; zone: string }
 }
