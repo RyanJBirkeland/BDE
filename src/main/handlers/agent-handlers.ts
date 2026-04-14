@@ -2,8 +2,6 @@
  * Agent IPC handlers — manages agent lifecycle operations
  * and provides local history/log access from SQLite.
  */
-import { existsSync } from 'node:fs'
-import { execFileAsync } from '../lib/async-utils'
 import { safeHandle } from '../ipc-utils'
 import { tailAgentLog, cleanupOldLogs } from '../agent-log-manager'
 import type { TailLogArgs } from '../agent-log-manager'
@@ -12,13 +10,12 @@ import { getLatestAgentRunTurn } from '../data/agent-queries'
 import { getDb } from '../db'
 import type { AgentMeta } from '../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
-import { createReviewTaskFromAdhoc } from '../services/sprint-service'
-import { buildAgentEnv } from '../env-utils'
 import { createLogger, logError } from '../logger'
 import type { SpawnLocalAgentArgs } from '../../shared/types'
 import type { AgentManager } from '../agent-manager'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { IDashboardRepository } from '../data/sprint-task-repository'
+import { promoteAdhocToTask } from '../services/adhoc-promotion-service'
 
 const log = createLogger('agent-handlers')
 
@@ -127,63 +124,7 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
         if (!agent) {
           return { ok: false, error: `Agent ${agentId} not found` }
         }
-        if (!agent.worktreePath) {
-          return {
-            ok: false,
-            error:
-              'Agent has no worktree — only adhoc agents spawned with worktree support can be promoted'
-          }
-        }
-        if (!existsSync(agent.worktreePath)) {
-          return { ok: false, error: `Worktree no longer exists at ${agent.worktreePath}` }
-        }
-        if (!agent.branch) {
-          return { ok: false, error: 'Agent has no branch recorded' }
-        }
-
-        // Verify the worktree has at least one commit beyond main — otherwise
-        // there's nothing to review.
-        const env = buildAgentEnv()
-        try {
-          const { stdout } = await execFileAsync(
-            'git',
-            ['rev-list', '--count', `origin/main..${agent.branch}`],
-            { cwd: agent.worktreePath, env }
-          )
-          const commitCount = parseInt(stdout.trim(), 10)
-          if (!Number.isFinite(commitCount) || commitCount === 0) {
-            return {
-              ok: false,
-              error: 'Agent has not committed any work yet — nothing to promote'
-            }
-          }
-        } catch (err) {
-          log.warn(`[agents:promoteToReview] commit count check failed: ${err}`)
-          // Non-fatal — proceed anyway; the review UI will handle empty diffs
-        }
-
-        // Derive a title from the agent's task message (first non-blank line, capped)
-        const firstLine =
-          agent.task
-            .split('\n')
-            .find((l) => l.trim())
-            ?.trim() ?? 'Promoted adhoc agent'
-        const title = firstLine.length > 120 ? firstLine.slice(0, 117) + '...' : firstLine
-
-        const task = createReviewTaskFromAdhoc({
-          title,
-          repo: agent.repo,
-          spec: agent.task,
-          worktreePath: agent.worktreePath,
-          branch: agent.branch
-        })
-
-        if (!task) {
-          return { ok: false, error: 'Failed to create review task — see logs' }
-        }
-
-        log.info(`[agents:promoteToReview] Promoted agent ${agentId} → sprint task ${task.id}`)
-        return { ok: true, taskId: task.id }
+        return await promoteAdhocToTask(agentId, agent)
       } catch (err) {
         logError(log, '[agents:promoteToReview] failed', err)
         const msg = err instanceof Error ? err.message : String(err)
