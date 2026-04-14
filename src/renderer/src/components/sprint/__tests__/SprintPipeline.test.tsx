@@ -27,24 +27,30 @@ const mocks = vi.hoisted(() => {
   const mockSetHealthCheckDrawerOpen = vi.fn()
   const mockSetStatusFilter = vi.fn()
 
-  const uiState = {
+  const selectionState = {
     selectedTaskId: null as string | null,
     selectedTaskIds: new Set<string>(),
     drawerOpen: false,
     specPanelOpen: false,
-    doneViewOpen: false,
     logDrawerTaskId: null as string | null,
-    conflictDrawerOpen: false,
-    healthCheckDrawerOpen: false,
     setSelectedTaskId: mockSetSelectedTaskId,
     setDrawerOpen: mockSetDrawerOpen,
     setSpecPanelOpen: mockSetSpecPanelOpen,
-    setDoneViewOpen: mockSetDoneViewOpen,
     setLogDrawerTaskId: vi.fn(),
-    setConflictDrawerOpen: mockSetConflictDrawerOpen,
-    setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen,
-    setStatusFilter: mockSetStatusFilter,
     clearMultiSelection: vi.fn()
+  }
+
+  const uiState = {
+    doneViewOpen: false,
+    conflictDrawerOpen: false,
+    healthCheckDrawerOpen: false,
+    setDoneViewOpen: mockSetDoneViewOpen,
+    setConflictDrawerOpen: mockSetConflictDrawerOpen,
+    setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
+  }
+
+  const filtersState = {
+    setStatusFilter: mockSetStatusFilter
   }
 
   return {
@@ -60,7 +66,9 @@ const mocks = vi.hoisted(() => {
     mockSetStatusFilter,
     mockSetView,
     storeState,
-    uiState
+    selectionState,
+    uiState,
+    filtersState
   }
 })
 
@@ -94,6 +102,24 @@ vi.mock('../../../stores/sprintUI', () => ({
   useSprintUI: vi.fn((selector) => {
     if (typeof selector === 'function') {
       return selector(mocks.uiState)
+    }
+    return undefined
+  })
+}))
+
+vi.mock('../../../stores/sprintSelection', () => ({
+  useSprintSelection: vi.fn((selector) => {
+    if (typeof selector === 'function') {
+      return selector(mocks.selectionState)
+    }
+    return undefined
+  })
+}))
+
+vi.mock('../../../stores/sprintFilters', () => ({
+  useSprintFilters: vi.fn((selector) => {
+    if (typeof selector === 'function') {
+      return selector(mocks.filtersState)
     }
     return undefined
   })
@@ -346,21 +372,22 @@ describe('SprintPipeline', () => {
       updateTask: mocks.mockUpdateTask,
       createTask: mocks.mockCreateTask
     })
-    Object.assign(mocks.uiState, {
+    Object.assign(mocks.selectionState, {
       selectedTaskId: null,
       drawerOpen: false,
       specPanelOpen: false,
-      doneViewOpen: false,
       logDrawerTaskId: null,
-      conflictDrawerOpen: false,
-      healthCheckDrawerOpen: false,
       setSelectedTaskId: mocks.mockSetSelectedTaskId,
       setDrawerOpen: mocks.mockSetDrawerOpen,
-      setSpecPanelOpen: mocks.mockSetSpecPanelOpen,
+      setSpecPanelOpen: mocks.mockSetSpecPanelOpen
+    })
+    Object.assign(mocks.uiState, {
+      doneViewOpen: false,
+      conflictDrawerOpen: false,
+      healthCheckDrawerOpen: false,
       setDoneViewOpen: mocks.mockSetDoneViewOpen,
       setConflictDrawerOpen: mocks.mockSetConflictDrawerOpen,
-      setHealthCheckDrawerOpen: mocks.mockSetHealthCheckDrawerOpen,
-      setStatusFilter: mocks.mockSetStatusFilter
+      setHealthCheckDrawerOpen: mocks.mockSetHealthCheckDrawerOpen
     })
   })
 
@@ -389,7 +416,7 @@ describe('SprintPipeline', () => {
   it('shows TaskDetailDrawer when a task is selected', async () => {
     const task = makeTask({ id: 'sel-1', title: 'Selected Task', status: 'active' })
     Object.assign(mocks.storeState, { tasks: [task] })
-    Object.assign(mocks.uiState, { selectedTaskId: 'sel-1', drawerOpen: true })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'sel-1', drawerOpen: true })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
@@ -406,7 +433,7 @@ describe('SprintPipeline', () => {
   it('shows SpecPanel when specPanelOpen is true', async () => {
     const task = makeTask({ id: 'spec-1', title: 'Spec Task', spec: 'some spec content' })
     Object.assign(mocks.storeState, { tasks: [task] })
-    Object.assign(mocks.uiState, { selectedTaskId: 'spec-1', specPanelOpen: true })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'spec-1', specPanelOpen: true })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
@@ -415,7 +442,6 @@ describe('SprintPipeline', () => {
 
   it('shows DoneHistoryPanel when doneViewOpen is true', async () => {
     Object.assign(mocks.uiState, { doneViewOpen: true })
-
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
     expect(screen.getByTestId('done-history-panel')).toBeInTheDocument()
@@ -444,21 +470,22 @@ describe('SprintPipeline - additional scenarios', () => {
       updateTask: mocks.mockUpdateTask,
       createTask: mocks.mockCreateTask
     })
-    Object.assign(mocks.uiState, {
+    Object.assign(mocks.selectionState, {
       selectedTaskId: null,
       drawerOpen: false,
       specPanelOpen: false,
-      doneViewOpen: false,
       logDrawerTaskId: null,
-      conflictDrawerOpen: false,
-      healthCheckDrawerOpen: false,
       setSelectedTaskId: mocks.mockSetSelectedTaskId,
       setDrawerOpen: mocks.mockSetDrawerOpen,
-      setSpecPanelOpen: mocks.mockSetSpecPanelOpen,
+      setSpecPanelOpen: mocks.mockSetSpecPanelOpen
+    })
+    Object.assign(mocks.uiState, {
+      doneViewOpen: false,
+      conflictDrawerOpen: false,
+      healthCheckDrawerOpen: false,
       setDoneViewOpen: mocks.mockSetDoneViewOpen,
       setConflictDrawerOpen: mocks.mockSetConflictDrawerOpen,
-      setHealthCheckDrawerOpen: mocks.mockSetHealthCheckDrawerOpen,
-      setStatusFilter: mocks.mockSetStatusFilter
+      setHealthCheckDrawerOpen: mocks.mockSetHealthCheckDrawerOpen
     })
     mocks.mockSetSelectedTaskId.mockClear()
     mocks.mockSetDoneViewOpen.mockClear()
@@ -506,7 +533,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('auto-selects first active task when none is selected and active tasks exist', async () => {
     const tasks = [makeTask({ id: 'active-1', status: 'active' })]
     Object.assign(mocks.storeState, { tasks })
-    Object.assign(mocks.uiState, { selectedTaskId: null })
+    Object.assign(mocks.selectionState, { selectedTaskId: null })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
@@ -516,7 +543,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('auto-selects first queued task when no active task and queued tasks exist', async () => {
     const tasks = [makeTask({ id: 'queued-1', status: 'queued' })]
     Object.assign(mocks.storeState, { tasks })
-    Object.assign(mocks.uiState, { selectedTaskId: null })
+    Object.assign(mocks.selectionState, { selectedTaskId: null })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
@@ -555,7 +582,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('does not auto-select when selectedTaskId is already set', async () => {
     const tasks = [makeTask({ id: 'active-1', status: 'active' })]
     Object.assign(mocks.storeState, { tasks })
-    Object.assign(mocks.uiState, { selectedTaskId: 'already-set' })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'already-set' })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     render(<SprintPipeline />)
@@ -565,7 +592,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('calls setSpecPanelOpen(false) when SpecPanel close button is clicked', async () => {
     const task = makeTask({ id: 'spec-1', title: 'Spec Task', spec: 'spec content' })
     Object.assign(mocks.storeState, { tasks: [task] })
-    Object.assign(mocks.uiState, { selectedTaskId: 'spec-1', specPanelOpen: true })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'spec-1', specPanelOpen: true })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     const { fireEvent: fe } = await import('@testing-library/react')
@@ -587,7 +614,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('calls setView("agents") when drawer onViewLogs is triggered', async () => {
     const task = makeTask({ id: 'active-1', status: 'active' })
     Object.assign(mocks.storeState, { tasks: [task] })
-    Object.assign(mocks.uiState, { selectedTaskId: 'active-1', drawerOpen: true })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'active-1', drawerOpen: true })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     const { fireEvent: fe } = await import('@testing-library/react')
@@ -599,7 +626,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('calls setSpecPanelOpen(true) when drawer onOpenSpec is triggered', async () => {
     const task = makeTask({ id: 'spec-task', status: 'queued' })
     Object.assign(mocks.storeState, { tasks: [task] })
-    Object.assign(mocks.uiState, { selectedTaskId: 'spec-task', drawerOpen: true })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'spec-task', drawerOpen: true })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     const { fireEvent: fe } = await import('@testing-library/react')
@@ -611,7 +638,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('calls setView("task-workbench") when drawer onEdit is triggered', async () => {
     const task = makeTask({ id: 'edit-task', status: 'queued' })
     Object.assign(mocks.storeState, { tasks: [task] })
-    Object.assign(mocks.uiState, { selectedTaskId: 'edit-task', drawerOpen: true })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'edit-task', drawerOpen: true })
 
     const { SprintPipeline } = await import('../SprintPipeline')
     const { fireEvent: fe } = await import('@testing-library/react')
@@ -623,7 +650,7 @@ describe('SprintPipeline - additional scenarios', () => {
   it('calls setDrawerOpen(false) and setSelectedTaskId(null) when drawer is closed', async () => {
     const task = makeTask({ id: 'close-task', status: 'queued' })
     Object.assign(mocks.storeState, { tasks: [task] })
-    Object.assign(mocks.uiState, { selectedTaskId: 'close-task', drawerOpen: true })
+    Object.assign(mocks.selectionState, { selectedTaskId: 'close-task', drawerOpen: true })
     mocks.mockSetDrawerOpen.mockClear()
     mocks.mockSetSelectedTaskId.mockClear()
 

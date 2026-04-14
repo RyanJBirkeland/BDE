@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintFilters } from '../../stores/sprintFilters'
 import type { SprintTask } from '../../../../shared/types'
 import './PipelineFilterBanner.css'
 
@@ -12,11 +12,11 @@ export function PipelineFilterBanner({
   filteredTasks,
   totalTasks
 }: PipelineFilterBannerProps): React.JSX.Element | null {
-  const statusFilter = useSprintUI((s) => s.statusFilter)
-  const repoFilter = useSprintUI((s) => s.repoFilter)
-  const tagFilter = useSprintUI((s) => s.tagFilter)
-  const searchQuery = useSprintUI((s) => s.searchQuery)
-  const clearAllFilters = useSprintUI((s) => s.clearAllFilters)
+  const statusFilter = useSprintFilters((s) => s.statusFilter)
+  const repoFilter = useSprintFilters((s) => s.repoFilter)
+  const tagFilter = useSprintFilters((s) => s.tagFilter)
+  const searchQuery = useSprintFilters((s) => s.searchQuery)
+  const clearAllFilters = useSprintFilters((s) => s.clearAllFilters)
 
   // Only show when at least one filter is active
   const hasActiveFilters =

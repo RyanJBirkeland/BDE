@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
 import { useDashboardDataStore } from '../stores/dashboardData'
-import { useSprintUI, type StatusFilter } from '../stores/sprintUI'
+import { useSprintFilters, type StatusFilter } from '../stores/sprintFilters'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics'
 import { useBackoffInterval } from '../hooks/useBackoffInterval'
@@ -51,10 +51,10 @@ export default function DashboardView(): React.JSX.Element {
   const tasks = useSprintTasks((s) => s.tasks)
   const loadSprintData = useSprintTasks((s) => s.loadData)
   const localAgents = useCostDataStore((s) => s.localAgents)
-  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
-  const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
-  const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
-  const setTagFilter = useSprintUI((s) => s.setTagFilter)
+  const setStatusFilter = useSprintFilters((s) => s.setStatusFilter)
+  const setSearchQuery = useSprintFilters((s) => s.setSearchQuery)
+  const setRepoFilter = useSprintFilters((s) => s.setRepoFilter)
+  const setTagFilter = useSprintFilters((s) => s.setTagFilter)
   const setView = usePanelLayoutStore((s) => s.setView)
   const fetchDashboardData = useDashboardDataStore((s) => s.fetchAll)
   const registerCommands = useCommandPaletteStore((s) => s.registerCommands)

@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useSprintTasks } from '../stores/sprintTasks'
 import type { CreateTicketInput } from '../stores/sprintTasks'
 import { useSprintUI } from '../stores/sprintUI'
+import { useSprintSelection } from '../stores/sprintSelection'
 import { useConfirm } from '../components/ui/ConfirmModal'
 import { toast } from '../stores/toasts'
 import { TASK_STATUS } from '../../../shared/constants'
@@ -33,11 +34,11 @@ export function useSprintTaskActions(): SprintTaskActions {
   const launchTask = useSprintTasks((s) => s.launchTask)
   const loadData = useSprintTasks((s) => s.loadData)
 
-  const clearTaskIfSelected = useSprintUI((s) => s.clearTaskIfSelected)
+  const clearTaskIfSelected = useSprintSelection((s) => s.clearTaskIfSelected)
+  const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
+  const setDrawerOpen = useSprintSelection((s) => s.setDrawerOpen)
   const addGeneratingId = useSprintUI((s) => s.addGeneratingId)
   const removeGeneratingId = useSprintUI((s) => s.removeGeneratingId)
-  const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
-  const setDrawerOpen = useSprintUI((s) => s.setDrawerOpen)
 
   const { confirm, confirmProps } = useConfirm()
 

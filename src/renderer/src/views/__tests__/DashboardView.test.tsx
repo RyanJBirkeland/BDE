@@ -48,7 +48,7 @@ vi.mock('../../stores/dashboardData', () => {
 
 import DashboardView from '../DashboardView'
 import { useDashboardDataStore } from '../../stores/dashboardData'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintFilters } from '../../stores/sprintFilters'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useCostDataStore } from '../../stores/costData'
@@ -62,7 +62,7 @@ describe('DashboardView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.spyOn(Math, 'random').mockReturnValue(0)
-    useSprintUI.setState({ searchQuery: '', statusFilter: 'all' })
+    useSprintFilters.setState({ searchQuery: '', statusFilter: 'all' })
     useDashboardDataStore.setState({
       throughputData: [],
       loadData: null,
@@ -105,7 +105,7 @@ describe('DashboardView', () => {
     const activeStat = screen.getByText('Active').closest('button')!
     fireEvent.click(activeStat)
 
-    expect(useSprintUI.getState().statusFilter).toBe('in-progress')
+    expect(useSprintFilters.getState().statusFilter).toBe('in-progress')
     expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
@@ -117,7 +117,7 @@ describe('DashboardView', () => {
     const doneTile = doneTiles.find((el) => el.getAttribute('data-role') === 'rail-tile')!
     fireEvent.click(doneTile)
 
-    expect(useSprintUI.getState().statusFilter).toBe('done')
+    expect(useSprintFilters.getState().statusFilter).toBe('done')
     expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 
@@ -269,7 +269,7 @@ describe('DashboardView', () => {
     const queuedStat = queuedElements.find((el) => el.closest('button'))!.closest('button')!
     fireEvent.click(queuedStat)
 
-    expect(useSprintUI.getState().statusFilter).toBe('todo')
+    expect(useSprintFilters.getState().statusFilter).toBe('todo')
     expect(usePanelLayoutStore.getState().activeView).toBe('sprint')
   })
 

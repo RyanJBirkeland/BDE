@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import type { SprintTask } from '../../../../../shared/types'
 import { TaskDetailDrawer } from '../TaskDetailDrawer'
 import { useSprintTasks } from '../../../stores/sprintTasks'
-import { useSprintUI } from '../../../stores/sprintUI'
+import { useSprintSelection } from '../../../stores/sprintSelection'
 
 const baseTask: SprintTask = {
   id: 'task-1',
@@ -338,7 +338,7 @@ describe('TaskDetailDrawer - additional status combos', () => {
     render(<TaskDetailDrawer {...makeProps({ task })} />)
     // Click the first instance (from dependencies section, also appears in upstream outcomes)
     fireEvent.click(screen.getAllByText('Setup auth module')[0])
-    expect(useSprintUI.getState().selectedTaskId).toBe('dep-1')
+    expect(useSprintSelection.getState().selectedTaskId).toBe('dep-1')
   })
 
   it('does not show dependency section when depends_on is null', () => {

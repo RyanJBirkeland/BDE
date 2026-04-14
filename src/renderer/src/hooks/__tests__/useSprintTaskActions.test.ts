@@ -40,31 +40,38 @@ vi.mock('../../stores/sprintTasks', () => {
   return { useSprintTasks: store }
 })
 
-// Mock sprintUI store
 const mockClearTaskIfSelected = vi.fn()
 const mockAddGeneratingId = vi.fn()
 const mockRemoveGeneratingId = vi.fn()
 const mockSetSelectedTaskId = vi.fn()
 const mockSetDrawerOpen = vi.fn()
 
-vi.mock('../../stores/sprintUI', () => {
+vi.mock('../../stores/sprintSelection', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
     sel({
-      selectedTaskId: null,
       clearTaskIfSelected: mockClearTaskIfSelected,
-      addGeneratingId: mockAddGeneratingId,
-      removeGeneratingId: mockRemoveGeneratingId,
       setSelectedTaskId: mockSetSelectedTaskId,
       setDrawerOpen: mockSetDrawerOpen
     })
   )
   ;(store as any).getState = () => ({
-    selectedTaskId: null,
     clearTaskIfSelected: mockClearTaskIfSelected,
-    addGeneratingId: mockAddGeneratingId,
-    removeGeneratingId: mockRemoveGeneratingId,
     setSelectedTaskId: mockSetSelectedTaskId,
     setDrawerOpen: mockSetDrawerOpen
+  })
+  return { useSprintSelection: store }
+})
+
+vi.mock('../../stores/sprintUI', () => {
+  const store = vi.fn((sel: (s: unknown) => unknown) =>
+    sel({
+      addGeneratingId: mockAddGeneratingId,
+      removeGeneratingId: mockRemoveGeneratingId
+    })
+  )
+  ;(store as any).getState = () => ({
+    addGeneratingId: mockAddGeneratingId,
+    removeGeneratingId: mockRemoveGeneratingId
   })
   return { useSprintUI: store }
 })

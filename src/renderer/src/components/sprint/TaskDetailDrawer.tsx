@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintTasks } from '../../stores/sprintTasks'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintSelection } from '../../stores/sprintSelection'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { formatElapsed, getDotColor } from '../../lib/task-format'
 import { useBackoffInterval } from '../../hooks/useBackoffInterval'
@@ -83,7 +83,7 @@ export function TaskDetailDrawer({
     () => (depIds.length === 0 ? [] : allTasks.filter((t) => depIds.includes(t.id))),
     [depIds, allTasks]
   )
-  const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
+  const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
 
   const agentRunId = task.agent_run_id
   const agentEvents = useAgentEventsStore((s) =>

@@ -8,6 +8,8 @@ import { motion, LayoutGroup } from 'framer-motion'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintSelection } from '../../stores/sprintSelection'
+import { useSprintFilters } from '../../stores/sprintFilters'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import { useSprintEvents } from '../../stores/sprintEvents'
@@ -58,51 +60,47 @@ export function SprintPipeline(): React.JSX.Element {
   const loadData = useSprintTasks((s) => s.loadData)
   const batchRequeueTasks = useSprintTasks((s) => s.batchRequeueTasks)
 
-  const {
-    selectedTaskId,
-    selectedTaskIds,
-    drawerOpen,
-    specPanelOpen,
-    doneViewOpen,
-    logDrawerTaskId,
-    conflictDrawerOpen,
-    healthCheckDrawerOpen
-  } = useSprintUI(
-    useShallow((s) => ({
-      selectedTaskId: s.selectedTaskId,
-      selectedTaskIds: s.selectedTaskIds,
-      drawerOpen: s.drawerOpen,
-      specPanelOpen: s.specPanelOpen,
-      doneViewOpen: s.doneViewOpen,
-      logDrawerTaskId: s.logDrawerTaskId,
-      conflictDrawerOpen: s.conflictDrawerOpen,
-      healthCheckDrawerOpen: s.healthCheckDrawerOpen
-    }))
-  )
-  // Setters are stable Zustand references — no shallow-eq needed, one subscription
+  const { selectedTaskId, selectedTaskIds, drawerOpen, specPanelOpen, logDrawerTaskId } =
+    useSprintSelection(
+      useShallow((s) => ({
+        selectedTaskId: s.selectedTaskId,
+        selectedTaskIds: s.selectedTaskIds,
+        drawerOpen: s.drawerOpen,
+        specPanelOpen: s.specPanelOpen,
+        logDrawerTaskId: s.logDrawerTaskId
+      }))
+    )
   const {
     setSelectedTaskId,
     setDrawerOpen,
     setSpecPanelOpen,
-    setDoneViewOpen,
     setLogDrawerTaskId,
-    setConflictDrawerOpen,
-    setHealthCheckDrawerOpen,
-    setStatusFilter,
     clearMultiSelection
-  } = useSprintUI(
+  } = useSprintSelection(
     useShallow((s) => ({
       setSelectedTaskId: s.setSelectedTaskId,
       setDrawerOpen: s.setDrawerOpen,
       setSpecPanelOpen: s.setSpecPanelOpen,
-      setDoneViewOpen: s.setDoneViewOpen,
       setLogDrawerTaskId: s.setLogDrawerTaskId,
-      setConflictDrawerOpen: s.setConflictDrawerOpen,
-      setHealthCheckDrawerOpen: s.setHealthCheckDrawerOpen,
-      setStatusFilter: s.setStatusFilter,
       clearMultiSelection: s.clearMultiSelection
     }))
   )
+
+  const { doneViewOpen, conflictDrawerOpen, healthCheckDrawerOpen } = useSprintUI(
+    useShallow((s) => ({
+      doneViewOpen: s.doneViewOpen,
+      conflictDrawerOpen: s.conflictDrawerOpen,
+      healthCheckDrawerOpen: s.healthCheckDrawerOpen
+    }))
+  )
+  const { setDoneViewOpen, setConflictDrawerOpen, setHealthCheckDrawerOpen } = useSprintUI(
+    useShallow((s) => ({
+      setDoneViewOpen: s.setDoneViewOpen,
+      setConflictDrawerOpen: s.setConflictDrawerOpen,
+      setHealthCheckDrawerOpen: s.setHealthCheckDrawerOpen
+    }))
+  )
+  const setStatusFilter = useSprintFilters((s) => s.setStatusFilter)
 
   const setView = usePanelLayoutStore((s) => s.setView)
   const reduced = useReducedMotion()

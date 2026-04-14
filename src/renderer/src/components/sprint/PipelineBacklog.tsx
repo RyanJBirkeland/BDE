@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintSelection } from '../../stores/sprintSelection'
 
 import './PipelineBacklog.css'
 
@@ -28,8 +28,8 @@ function PipelineBacklogInner({
 }: PipelineBacklogProps): React.JSX.Element {
   const [failedExpanded, setFailedExpanded] = useState(false)
   const [backlogExpanded, setBacklogExpanded] = useState(false)
-  const selectedTaskIds = useSprintUI((s) => s.selectedTaskIds)
-  const toggleTaskSelection = useSprintUI((s) => s.toggleTaskSelection)
+  const selectedTaskIds = useSprintSelection((s) => s.selectedTaskIds)
+  const toggleTaskSelection = useSprintSelection((s) => s.toggleTaskSelection)
 
   const visibleFailed = failedExpanded ? failed : failed.slice(0, FAILED_VISIBLE_LIMIT)
   const hiddenCount = failed.length - FAILED_VISIBLE_LIMIT

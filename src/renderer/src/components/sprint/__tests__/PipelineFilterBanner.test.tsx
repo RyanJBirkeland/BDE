@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PipelineFilterBanner } from '../PipelineFilterBanner'
-import { useSprintUI } from '../../../stores/sprintUI'
+import { useSprintFilters } from '../../../stores/sprintFilters'
 import type { SprintTask } from '../../../../../shared/types'
 import { nowIso } from '../../../../../shared/time'
 
@@ -35,7 +35,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
 
 describe('PipelineFilterBanner', () => {
   beforeEach(() => {
-    useSprintUI.setState({
+    useSprintFilters.setState({
       statusFilter: 'all',
       repoFilter: null,
       tagFilter: null,
@@ -50,7 +50,7 @@ describe('PipelineFilterBanner', () => {
   })
 
   it('renders when statusFilter is not "all"', () => {
-    useSprintUI.setState({ statusFilter: 'in-progress' })
+    useSprintFilters.setState({ statusFilter: 'in-progress' })
     const tasks = [makeTask(), makeTask(), makeTask()]
     render(<PipelineFilterBanner filteredTasks={[tasks[0]]} totalTasks={tasks} />)
     expect(screen.getByText(/Showing 1 of 3 tasks/)).toBeInTheDocument()
@@ -58,21 +58,21 @@ describe('PipelineFilterBanner', () => {
   })
 
   it('renders when repoFilter is set', () => {
-    useSprintUI.setState({ repoFilter: 'bde' })
+    useSprintFilters.setState({ repoFilter: 'bde' })
     const tasks = [makeTask()]
     render(<PipelineFilterBanner filteredTasks={tasks} totalTasks={tasks} />)
     expect(screen.getByText(/repo: bde/)).toBeInTheDocument()
   })
 
   it('renders when tagFilter is set', () => {
-    useSprintUI.setState({ tagFilter: 'urgent' })
+    useSprintFilters.setState({ tagFilter: 'urgent' })
     const tasks = [makeTask()]
     render(<PipelineFilterBanner filteredTasks={tasks} totalTasks={tasks} />)
     expect(screen.getByText(/tag: urgent/)).toBeInTheDocument()
   })
 
   it('renders when searchQuery is non-empty', () => {
-    useSprintUI.setState({ searchQuery: 'foo' })
+    useSprintFilters.setState({ searchQuery: 'foo' })
     const tasks = [makeTask(), makeTask()]
     render(<PipelineFilterBanner filteredTasks={[tasks[0]]} totalTasks={tasks} />)
     expect(screen.getByText(/search:/)).toBeInTheDocument()
@@ -80,7 +80,7 @@ describe('PipelineFilterBanner', () => {
   })
 
   it('shows multiple chips when multiple filters are active', () => {
-    useSprintUI.setState({
+    useSprintFilters.setState({
       statusFilter: 'done',
       repoFilter: 'bde',
       tagFilter: 'urgent',
@@ -95,7 +95,7 @@ describe('PipelineFilterBanner', () => {
   })
 
   it('displays "Showing N of M tasks" count accurately', () => {
-    useSprintUI.setState({ statusFilter: 'done' })
+    useSprintFilters.setState({ statusFilter: 'done' })
     const all = [makeTask(), makeTask(), makeTask(), makeTask(), makeTask()]
     const filtered = [all[0], all[1]]
     render(<PipelineFilterBanner filteredTasks={filtered} totalTasks={all} />)
@@ -103,7 +103,7 @@ describe('PipelineFilterBanner', () => {
   })
 
   it('clear-all button resets every filter via clearAllFilters action', () => {
-    useSprintUI.setState({
+    useSprintFilters.setState({
       statusFilter: 'done',
       repoFilter: 'bde',
       tagFilter: 'urgent',
@@ -115,7 +115,7 @@ describe('PipelineFilterBanner', () => {
     const clearBtn = screen.getByRole('button', { name: /clear all filters/i })
     fireEvent.click(clearBtn)
 
-    const state = useSprintUI.getState()
+    const state = useSprintFilters.getState()
     expect(state.statusFilter).toBe('all')
     expect(state.repoFilter).toBeNull()
     expect(state.tagFilter).toBeNull()

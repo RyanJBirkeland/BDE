@@ -1,63 +1,245 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useSprintUI } from '../sprintUI'
+import { useSprintSelection } from '../sprintSelection'
+import { useSprintFilters } from '../sprintFilters'
 
-const initialState = {
-  selectedTaskId: null,
-  logDrawerTaskId: null,
-  repoFilter: null,
-  searchQuery: '',
-  statusFilter: 'all' as const,
-  generatingIds: [] as string[],
-  selectedTaskIds: new Set<string>()
-}
-
-describe('sprintUI store', () => {
+describe('sprintSelection store', () => {
   beforeEach(() => {
-    useSprintUI.setState(initialState)
+    useSprintSelection.setState({
+      selectedTaskId: null,
+      logDrawerTaskId: null,
+      selectedTaskIds: new Set<string>(),
+      drawerOpen: false,
+      specPanelOpen: false
+    })
   })
 
-  it('starts with all null values and empty generatingIds', () => {
-    const state = useSprintUI.getState()
+  it('starts with all null/false defaults', () => {
+    const state = useSprintSelection.getState()
     expect(state.selectedTaskId).toBeNull()
     expect(state.logDrawerTaskId).toBeNull()
-    expect(state.repoFilter).toBeNull()
-    expect(state.searchQuery).toBe('')
-    expect(state.statusFilter).toBe('all')
-    expect(state.generatingIds.length).toBe(0)
-    expect(Array.isArray(state.generatingIds)).toBe(true)
+    expect(state.drawerOpen).toBe(false)
+    expect(state.specPanelOpen).toBe(false)
+    expect(state.selectedTaskIds.size).toBe(0)
   })
 
   it('setSelectedTaskId updates selectedTaskId', () => {
-    useSprintUI.getState().setSelectedTaskId('task-123')
-    expect(useSprintUI.getState().selectedTaskId).toBe('task-123')
+    useSprintSelection.getState().setSelectedTaskId('task-123')
+    expect(useSprintSelection.getState().selectedTaskId).toBe('task-123')
   })
 
   it('setSelectedTaskId can set to null', () => {
-    useSprintUI.getState().setSelectedTaskId('task-123')
-    useSprintUI.getState().setSelectedTaskId(null)
-    expect(useSprintUI.getState().selectedTaskId).toBeNull()
+    useSprintSelection.getState().setSelectedTaskId('task-123')
+    useSprintSelection.getState().setSelectedTaskId(null)
+    expect(useSprintSelection.getState().selectedTaskId).toBeNull()
   })
 
   it('setLogDrawerTaskId updates logDrawerTaskId', () => {
-    useSprintUI.getState().setLogDrawerTaskId('task-456')
-    expect(useSprintUI.getState().logDrawerTaskId).toBe('task-456')
+    useSprintSelection.getState().setLogDrawerTaskId('task-456')
+    expect(useSprintSelection.getState().logDrawerTaskId).toBe('task-456')
   })
 
   it('setLogDrawerTaskId can set to null', () => {
-    useSprintUI.getState().setLogDrawerTaskId('task-456')
-    useSprintUI.getState().setLogDrawerTaskId(null)
-    expect(useSprintUI.getState().logDrawerTaskId).toBeNull()
+    useSprintSelection.getState().setLogDrawerTaskId('task-456')
+    useSprintSelection.getState().setLogDrawerTaskId(null)
+    expect(useSprintSelection.getState().logDrawerTaskId).toBeNull()
+  })
+
+  it('clearSelection clears selectedTaskIds', () => {
+    useSprintSelection.getState().toggleTaskSelection('task-1')
+    useSprintSelection.getState().toggleTaskSelection('task-2')
+    expect(useSprintSelection.getState().selectedTaskIds.size).toBe(2)
+    useSprintSelection.getState().clearSelection()
+    expect(useSprintSelection.getState().selectedTaskIds.size).toBe(0)
+  })
+
+  it('toggleTaskSelection adds task to selection', () => {
+    useSprintSelection.getState().toggleTaskSelection('task-1')
+    expect(useSprintSelection.getState().selectedTaskIds.has('task-1')).toBe(true)
+  })
+
+  it('toggleTaskSelection removes task from selection', () => {
+    useSprintSelection.getState().toggleTaskSelection('task-1')
+    expect(useSprintSelection.getState().selectedTaskIds.has('task-1')).toBe(true)
+    useSprintSelection.getState().toggleTaskSelection('task-1')
+    expect(useSprintSelection.getState().selectedTaskIds.has('task-1')).toBe(false)
+  })
+
+  it('toggleTaskSelection works with multiple tasks', () => {
+    useSprintSelection.getState().toggleTaskSelection('task-1')
+    useSprintSelection.getState().toggleTaskSelection('task-2')
+    useSprintSelection.getState().toggleTaskSelection('task-3')
+    const selected = useSprintSelection.getState().selectedTaskIds
+    expect(selected.size).toBe(3)
+    expect(selected.has('task-1')).toBe(true)
+    expect(selected.has('task-2')).toBe(true)
+    expect(selected.has('task-3')).toBe(true)
+  })
+
+  it('clearMultiSelection clears all selected tasks', () => {
+    useSprintSelection.getState().toggleTaskSelection('task-1')
+    useSprintSelection.getState().toggleTaskSelection('task-2')
+    expect(useSprintSelection.getState().selectedTaskIds.size).toBe(2)
+    useSprintSelection.getState().clearMultiSelection()
+    expect(useSprintSelection.getState().selectedTaskIds.size).toBe(0)
+  })
+
+  it('setSelectedTaskId toggles off when selecting same task', () => {
+    useSprintSelection.getState().setSelectedTaskId('task-1')
+    expect(useSprintSelection.getState().selectedTaskId).toBe('task-1')
+    expect(useSprintSelection.getState().drawerOpen).toBe(true)
+
+    useSprintSelection.getState().setSelectedTaskId('task-1')
+    expect(useSprintSelection.getState().selectedTaskId).toBeNull()
+    expect(useSprintSelection.getState().drawerOpen).toBe(false)
+  })
+
+  it('setSelectedTaskId opens drawer when selecting a task', () => {
+    useSprintSelection.getState().setSelectedTaskId('task-1')
+    expect(useSprintSelection.getState().drawerOpen).toBe(true)
+  })
+
+  it('setSelectedTaskId closes drawer when selecting null', () => {
+    useSprintSelection.getState().setSelectedTaskId('task-1')
+    useSprintSelection.getState().setSelectedTaskId(null)
+    expect(useSprintSelection.getState().drawerOpen).toBe(false)
+  })
+
+  it('setDrawerOpen toggles drawer', () => {
+    useSprintSelection.getState().setDrawerOpen(true)
+    expect(useSprintSelection.getState().drawerOpen).toBe(true)
+    useSprintSelection.getState().setDrawerOpen(false)
+    expect(useSprintSelection.getState().drawerOpen).toBe(false)
+  })
+
+  it('setSpecPanelOpen toggles spec panel', () => {
+    useSprintSelection.getState().setSpecPanelOpen(true)
+    expect(useSprintSelection.getState().specPanelOpen).toBe(true)
+    useSprintSelection.getState().setSpecPanelOpen(false)
+    expect(useSprintSelection.getState().specPanelOpen).toBe(false)
+  })
+
+  it('clearTaskIfSelected clears if task is selected', () => {
+    useSprintSelection.getState().setSelectedTaskId('task-1')
+    useSprintSelection.getState().clearTaskIfSelected('task-1')
+    expect(useSprintSelection.getState().selectedTaskId).toBeNull()
+    expect(useSprintSelection.getState().drawerOpen).toBe(false)
+  })
+
+  it('clearTaskIfSelected does nothing if task is not selected', () => {
+    useSprintSelection.getState().setSelectedTaskId('task-1')
+    useSprintSelection.getState().clearTaskIfSelected('task-2')
+    expect(useSprintSelection.getState().selectedTaskId).toBe('task-1')
+  })
+})
+
+describe('sprintFilters store', () => {
+  beforeEach(() => {
+    useSprintFilters.setState({
+      repoFilter: null,
+      tagFilter: null,
+      searchQuery: '',
+      statusFilter: 'all'
+    })
+  })
+
+  it('starts with all default filter values', () => {
+    const state = useSprintFilters.getState()
+    expect(state.repoFilter).toBeNull()
+    expect(state.tagFilter).toBeNull()
+    expect(state.searchQuery).toBe('')
+    expect(state.statusFilter).toBe('all')
   })
 
   it('setRepoFilter updates repoFilter', () => {
-    useSprintUI.getState().setRepoFilter('bde')
-    expect(useSprintUI.getState().repoFilter).toBe('bde')
+    useSprintFilters.getState().setRepoFilter('bde')
+    expect(useSprintFilters.getState().repoFilter).toBe('bde')
   })
 
   it('setRepoFilter can clear the filter', () => {
-    useSprintUI.getState().setRepoFilter('bde')
-    useSprintUI.getState().setRepoFilter(null)
-    expect(useSprintUI.getState().repoFilter).toBeNull()
+    useSprintFilters.getState().setRepoFilter('bde')
+    useSprintFilters.getState().setRepoFilter(null)
+    expect(useSprintFilters.getState().repoFilter).toBeNull()
+  })
+
+  it('setSearchQuery updates searchQuery', () => {
+    useSprintFilters.getState().setSearchQuery('hello')
+    expect(useSprintFilters.getState().searchQuery).toBe('hello')
+  })
+
+  it('setSearchQuery can clear query', () => {
+    useSprintFilters.getState().setSearchQuery('hello')
+    useSprintFilters.getState().setSearchQuery('')
+    expect(useSprintFilters.getState().searchQuery).toBe('')
+  })
+
+  it('setStatusFilter updates statusFilter', () => {
+    useSprintFilters.getState().setStatusFilter('blocked')
+    expect(useSprintFilters.getState().statusFilter).toBe('blocked')
+  })
+
+  it('setStatusFilter can reset to all', () => {
+    useSprintFilters.getState().setStatusFilter('done')
+    useSprintFilters.getState().setStatusFilter('all')
+    expect(useSprintFilters.getState().statusFilter).toBe('all')
+  })
+
+  it('setTagFilter updates tagFilter', () => {
+    useSprintFilters.getState().setTagFilter('urgent')
+    expect(useSprintFilters.getState().tagFilter).toBe('urgent')
+  })
+
+  it('setTagFilter can clear the filter', () => {
+    useSprintFilters.getState().setTagFilter('urgent')
+    useSprintFilters.getState().setTagFilter(null)
+    expect(useSprintFilters.getState().tagFilter).toBeNull()
+  })
+
+  it('clearAllFilters resets every filter to its default', () => {
+    useSprintFilters.getState().setStatusFilter('in-progress')
+    useSprintFilters.getState().setRepoFilter('bde')
+    useSprintFilters.getState().setTagFilter('urgent')
+    useSprintFilters.getState().setSearchQuery('hello')
+
+    useSprintFilters.getState().clearAllFilters()
+
+    const state = useSprintFilters.getState()
+    expect(state.statusFilter).toBe('all')
+    expect(state.repoFilter).toBeNull()
+    expect(state.tagFilter).toBeNull()
+    expect(state.searchQuery).toBe('')
+  })
+
+  it('clearAllFilters is a no-op when no filters are set', () => {
+    useSprintFilters.getState().clearAllFilters()
+
+    const state = useSprintFilters.getState()
+    expect(state.statusFilter).toBe('all')
+    expect(state.repoFilter).toBeNull()
+    expect(state.tagFilter).toBeNull()
+    expect(state.searchQuery).toBe('')
+  })
+})
+
+describe('sprintUI store', () => {
+  beforeEach(() => {
+    useSprintUI.setState({
+      generatingIds: [],
+      doneViewOpen: false,
+      conflictDrawerOpen: false,
+      healthCheckDrawerOpen: false,
+      quickCreateOpen: false,
+      pipelineDensity: 'card'
+    })
+  })
+
+  it('starts with default values', () => {
+    const state = useSprintUI.getState()
+    expect(state.generatingIds.length).toBe(0)
+    expect(Array.isArray(state.generatingIds)).toBe(true)
+    expect(state.doneViewOpen).toBe(false)
+    expect(state.quickCreateOpen).toBe(false)
+    expect(state.pipelineDensity).toBe('card')
   })
 
   it('setGeneratingIds adds an id', () => {
@@ -71,113 +253,6 @@ describe('sprintUI store', () => {
     const ids = useSprintUI.getState().generatingIds
     expect(ids.includes('task-1')).toBe(false)
     expect(ids.includes('task-2')).toBe(true)
-  })
-
-  // --- Search query tests ---
-
-  it('setSearchQuery updates searchQuery', () => {
-    useSprintUI.getState().setSearchQuery('hello')
-    expect(useSprintUI.getState().searchQuery).toBe('hello')
-  })
-
-  it('setSearchQuery can clear query', () => {
-    useSprintUI.getState().setSearchQuery('hello')
-    useSprintUI.getState().setSearchQuery('')
-    expect(useSprintUI.getState().searchQuery).toBe('')
-  })
-
-  // --- Status filter tests ---
-
-  it('setStatusFilter updates statusFilter', () => {
-    useSprintUI.getState().setStatusFilter('blocked')
-    expect(useSprintUI.getState().statusFilter).toBe('blocked')
-  })
-
-  it('setStatusFilter can reset to all', () => {
-    useSprintUI.getState().setStatusFilter('done')
-    useSprintUI.getState().setStatusFilter('all')
-    expect(useSprintUI.getState().statusFilter).toBe('all')
-  })
-
-  // clearSelection clears multi-selection
-  it('clearSelection clears selectedTaskIds', () => {
-    useSprintUI.getState().toggleTaskSelection('task-1')
-    useSprintUI.getState().toggleTaskSelection('task-2')
-    expect(useSprintUI.getState().selectedTaskIds.size).toBe(2)
-    useSprintUI.getState().clearSelection()
-    expect(useSprintUI.getState().selectedTaskIds.size).toBe(0)
-  })
-
-  // --- Multi-select tests ---
-
-  it('toggleTaskSelection adds task to selection', () => {
-    useSprintUI.getState().toggleTaskSelection('task-1')
-    expect(useSprintUI.getState().selectedTaskIds.has('task-1')).toBe(true)
-  })
-
-  it('toggleTaskSelection removes task from selection', () => {
-    useSprintUI.getState().toggleTaskSelection('task-1')
-    expect(useSprintUI.getState().selectedTaskIds.has('task-1')).toBe(true)
-    useSprintUI.getState().toggleTaskSelection('task-1')
-    expect(useSprintUI.getState().selectedTaskIds.has('task-1')).toBe(false)
-  })
-
-  it('toggleTaskSelection works with multiple tasks', () => {
-    useSprintUI.getState().toggleTaskSelection('task-1')
-    useSprintUI.getState().toggleTaskSelection('task-2')
-    useSprintUI.getState().toggleTaskSelection('task-3')
-    const selected = useSprintUI.getState().selectedTaskIds
-    expect(selected.size).toBe(3)
-    expect(selected.has('task-1')).toBe(true)
-    expect(selected.has('task-2')).toBe(true)
-    expect(selected.has('task-3')).toBe(true)
-  })
-
-  it('clearMultiSelection clears all selected tasks', () => {
-    useSprintUI.getState().toggleTaskSelection('task-1')
-    useSprintUI.getState().toggleTaskSelection('task-2')
-    expect(useSprintUI.getState().selectedTaskIds.size).toBe(2)
-    useSprintUI.getState().clearMultiSelection()
-    expect(useSprintUI.getState().selectedTaskIds.size).toBe(0)
-  })
-
-  // --- Toggle behavior of setSelectedTaskId ---
-
-  it('setSelectedTaskId toggles off when selecting same task', () => {
-    useSprintUI.getState().setSelectedTaskId('task-1')
-    expect(useSprintUI.getState().selectedTaskId).toBe('task-1')
-    expect(useSprintUI.getState().drawerOpen).toBe(true)
-
-    useSprintUI.getState().setSelectedTaskId('task-1')
-    expect(useSprintUI.getState().selectedTaskId).toBeNull()
-    expect(useSprintUI.getState().drawerOpen).toBe(false)
-  })
-
-  it('setSelectedTaskId opens drawer when selecting a task', () => {
-    useSprintUI.getState().setSelectedTaskId('task-1')
-    expect(useSprintUI.getState().drawerOpen).toBe(true)
-  })
-
-  it('setSelectedTaskId closes drawer when selecting null', () => {
-    useSprintUI.getState().setSelectedTaskId('task-1')
-    useSprintUI.getState().setSelectedTaskId(null)
-    expect(useSprintUI.getState().drawerOpen).toBe(false)
-  })
-
-  // --- Drawer / panel state ---
-
-  it('setDrawerOpen toggles drawer', () => {
-    useSprintUI.getState().setDrawerOpen(true)
-    expect(useSprintUI.getState().drawerOpen).toBe(true)
-    useSprintUI.getState().setDrawerOpen(false)
-    expect(useSprintUI.getState().drawerOpen).toBe(false)
-  })
-
-  it('setSpecPanelOpen toggles spec panel', () => {
-    useSprintUI.getState().setSpecPanelOpen(true)
-    expect(useSprintUI.getState().specPanelOpen).toBe(true)
-    useSprintUI.getState().setSpecPanelOpen(false)
-    expect(useSprintUI.getState().specPanelOpen).toBe(false)
   })
 
   it('setDoneViewOpen toggles done view', () => {
@@ -206,48 +281,6 @@ describe('sprintUI store', () => {
     expect(useSprintUI.getState().quickCreateOpen).toBe(true)
   })
 
-  // --- Tag filter ---
-
-  it('setTagFilter updates tagFilter', () => {
-    useSprintUI.getState().setTagFilter('urgent')
-    expect(useSprintUI.getState().tagFilter).toBe('urgent')
-  })
-
-  it('setTagFilter can clear the filter', () => {
-    useSprintUI.getState().setTagFilter('urgent')
-    useSprintUI.getState().setTagFilter(null)
-    expect(useSprintUI.getState().tagFilter).toBeNull()
-  })
-
-  // --- clearAllFilters ---
-
-  it('clearAllFilters resets every filter to its default', () => {
-    useSprintUI.getState().setStatusFilter('in-progress')
-    useSprintUI.getState().setRepoFilter('bde')
-    useSprintUI.getState().setTagFilter('urgent')
-    useSprintUI.getState().setSearchQuery('hello')
-
-    useSprintUI.getState().clearAllFilters()
-
-    const state = useSprintUI.getState()
-    expect(state.statusFilter).toBe('all')
-    expect(state.repoFilter).toBeNull()
-    expect(state.tagFilter).toBeNull()
-    expect(state.searchQuery).toBe('')
-  })
-
-  it('clearAllFilters is a no-op when no filters are set', () => {
-    useSprintUI.getState().clearAllFilters()
-
-    const state = useSprintUI.getState()
-    expect(state.statusFilter).toBe('all')
-    expect(state.repoFilter).toBeNull()
-    expect(state.tagFilter).toBeNull()
-    expect(state.searchQuery).toBe('')
-  })
-
-  // --- addGeneratingId / removeGeneratingId ---
-
   it('addGeneratingId adds an id', () => {
     useSprintUI.getState().addGeneratingId('task-1')
     expect(useSprintUI.getState().generatingIds).toContain('task-1')
@@ -266,23 +299,6 @@ describe('sprintUI store', () => {
     expect(useSprintUI.getState().generatingIds).not.toContain('task-1')
     expect(useSprintUI.getState().generatingIds).toContain('task-2')
   })
-
-  // --- clearTaskIfSelected ---
-
-  it('clearTaskIfSelected clears if task is selected', () => {
-    useSprintUI.getState().setSelectedTaskId('task-1')
-    useSprintUI.getState().clearTaskIfSelected('task-1')
-    expect(useSprintUI.getState().selectedTaskId).toBeNull()
-    expect(useSprintUI.getState().drawerOpen).toBe(false)
-  })
-
-  it('clearTaskIfSelected does nothing if task is not selected', () => {
-    useSprintUI.getState().setSelectedTaskId('task-1')
-    useSprintUI.getState().clearTaskIfSelected('task-2')
-    expect(useSprintUI.getState().selectedTaskId).toBe('task-1')
-  })
-
-  // --- Pipeline density ---
 
   it('setPipelineDensity changes the density', () => {
     useSprintUI.getState().setPipelineDensity('compact')

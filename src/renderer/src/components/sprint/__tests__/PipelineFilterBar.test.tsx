@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PipelineFilterBar } from '../PipelineFilterBar'
-import { useSprintUI } from '../../../stores/sprintUI'
+import { useSprintFilters } from '../../../stores/sprintFilters'
 import { useFilterPresets } from '../../../stores/filterPresets'
 import type { SprintTask } from '../../../../../shared/types'
 import { nowIso } from '../../../../../shared/time'
@@ -36,7 +36,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
 
 describe('PipelineFilterBar - Presets', () => {
   beforeEach(() => {
-    useSprintUI.setState({
+    useSprintFilters.setState({
       repoFilter: null,
       searchQuery: '',
       statusFilter: 'all'
@@ -45,7 +45,7 @@ describe('PipelineFilterBar - Presets', () => {
   })
 
   it('renders "Save View" button when filters are active', () => {
-    useSprintUI.setState({ searchQuery: 'test' })
+    useSprintFilters.setState({ searchQuery: 'test' })
     const tasks = [makeTask({ repo: 'BDE' })]
 
     render(<PipelineFilterBar tasks={tasks} />)
@@ -89,14 +89,14 @@ describe('PipelineFilterBar - Presets', () => {
     const presetChip = screen.getByText('Test Preset')
     fireEvent.click(presetChip)
 
-    const state = useSprintUI.getState()
+    const state = useSprintFilters.getState()
     expect(state.repoFilter).toBe('BDE')
     expect(state.searchQuery).toBe('feature')
     expect(state.statusFilter).toBe('done')
   })
 
   it('clicking "Save View" button opens prompt modal', () => {
-    useSprintUI.setState({ searchQuery: 'test' })
+    useSprintFilters.setState({ searchQuery: 'test' })
     const tasks = [makeTask({ repo: 'BDE' })]
 
     render(<PipelineFilterBar tasks={tasks} />)
@@ -109,7 +109,7 @@ describe('PipelineFilterBar - Presets', () => {
   })
 
   it('saves current filters as preset when name provided via modal', () => {
-    useSprintUI.setState({
+    useSprintFilters.setState({
       repoFilter: 'BDE',
       searchQuery: 'bug',
       statusFilter: 'blocked'
@@ -135,7 +135,7 @@ describe('PipelineFilterBar - Presets', () => {
   })
 
   it('does not save preset when prompt modal is cancelled', () => {
-    useSprintUI.setState({ searchQuery: 'test' })
+    useSprintFilters.setState({ searchQuery: 'test' })
     const tasks = [makeTask({ repo: 'BDE' })]
 
     render(<PipelineFilterBar tasks={tasks} />)

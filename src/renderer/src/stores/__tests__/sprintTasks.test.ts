@@ -16,7 +16,7 @@ vi.mock('../../../../shared/template-heuristics', () => ({
 }))
 
 import { useSprintTasks } from '../sprintTasks'
-import { useSprintUI } from '../sprintUI'
+import { useSprintSelection } from '../sprintSelection'
 import { toast } from '../toasts'
 import { nowIso } from '../../../../shared/time'
 
@@ -215,14 +215,14 @@ describe('sprintTasks store', () => {
 
     it('does not touch UI state (decoupled from sprintUI)', async () => {
       useSprintTasks.setState({ tasks: [makeTask('t1')] })
-      useSprintUI.setState({ selectedTaskId: 't1', drawerOpen: true })
+      useSprintSelection.setState({ selectedTaskId: 't1', drawerOpen: true })
       ;(window.api.sprint.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true })
 
       await useSprintTasks.getState().deleteTask('t1')
 
       // Store should not touch UI state - it's decoupled
-      expect(useSprintUI.getState().selectedTaskId).toBe('t1')
-      expect(useSprintUI.getState().drawerOpen).toBe(true)
+      expect(useSprintSelection.getState().selectedTaskId).toBe('t1')
+      expect(useSprintSelection.getState().drawerOpen).toBe(true)
     })
   })
 

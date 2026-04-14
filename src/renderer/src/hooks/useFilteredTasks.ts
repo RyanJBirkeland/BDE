@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
-import { useSprintUI, type StatusFilter } from '../stores/sprintUI'
+import { useSprintFilters, type StatusFilter } from '../stores/sprintFilters'
 import { partitionSprintTasks, type SprintPartition } from '../lib/partitionSprintTasks'
 import { parseTaskQuery, applyPredicates } from '../lib/task-query'
 import type { SprintTask } from '../../../shared/types'
@@ -20,7 +20,7 @@ interface FilteredTasksResult {
 export function useFilteredTasks(): FilteredTasksResult {
   const tasks = useSprintTasks((s) => s.tasks)
 
-  const { statusFilter, repoFilter, tagFilter, searchQuery } = useSprintUI(
+  const { statusFilter, repoFilter, tagFilter, searchQuery } = useSprintFilters(
     useShallow((s) => ({
       statusFilter: s.statusFilter,
       repoFilter: s.repoFilter,

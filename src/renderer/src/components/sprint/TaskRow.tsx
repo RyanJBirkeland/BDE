@@ -4,7 +4,7 @@ import type { SprintTask } from '../../../../shared/types'
 import { SPRINGS } from '../../lib/motion'
 import { formatElapsed, getDotColor } from '../../lib/task-format'
 import { useBackoffInterval } from '../../hooks/useBackoffInterval'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintSelection } from '../../stores/sprintSelection'
 
 import './TaskRow.css'
 
@@ -24,7 +24,7 @@ function TaskRowInner({ task, selected, onClick }: TaskRowProps): React.JSX.Elem
   const elapsed = task.status === 'active' && task.started_at ? formatElapsed(task.started_at) : ''
 
   const handleClick = (): void => {
-    useSprintUI.getState().clearSelection()
+    useSprintSelection.getState().clearSelection()
     onClick(task.id)
   }
 

@@ -7,7 +7,7 @@ import { SPRINGS } from '../../lib/motion'
 import { formatElapsed } from '../../lib/task-format'
 import { STATUS_METADATA } from '../../lib/task-status-ui'
 import { useBackoffInterval } from '../../hooks/useBackoffInterval'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintSelection } from '../../stores/sprintSelection'
 import { formatDuration } from '../../lib/format'
 import { useTaskCost } from '../../hooks/useTaskCost'
 import { TagBadge } from '../ui/TagBadge'
@@ -95,9 +95,9 @@ function TaskPillInner({
   const handleClick = (e: React.MouseEvent): void => {
     if (e.shiftKey || e.metaKey || e.ctrlKey) {
       e.preventDefault()
-      useSprintUI.getState().toggleTaskSelection(task.id)
+      useSprintSelection.getState().toggleTaskSelection(task.id)
     } else {
-      useSprintUI.getState().clearSelection()
+      useSprintSelection.getState().clearSelection()
       onClick(task.id)
     }
   }
@@ -114,7 +114,7 @@ function TaskPillInner({
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           if (e.shiftKey || e.metaKey || e.ctrlKey) {
-            useSprintUI.getState().toggleTaskSelection(task.id)
+            useSprintSelection.getState().toggleTaskSelection(task.id)
           } else {
             onClick(task.id)
           }

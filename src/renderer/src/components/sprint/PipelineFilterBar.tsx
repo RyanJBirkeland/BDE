@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Search, X } from 'lucide-react'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintFilters } from '../../stores/sprintFilters'
 import { useFilterPresets } from '../../stores/filterPresets'
 import { PromptModal } from '../ui/PromptModal'
 import type { SprintTask } from '../../../../shared/types'
@@ -10,13 +10,13 @@ interface PipelineFilterBarProps {
 }
 
 export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.Element | null {
-  const searchQuery = useSprintUI((s) => s.searchQuery)
-  const setSearchQuery = useSprintUI((s) => s.setSearchQuery)
-  const repoFilter = useSprintUI((s) => s.repoFilter)
-  const setRepoFilter = useSprintUI((s) => s.setRepoFilter)
-  const statusFilter = useSprintUI((s) => s.statusFilter)
-  const setStatusFilter = useSprintUI((s) => s.setStatusFilter)
-  const tagFilter = useSprintUI((s) => s.tagFilter)
+  const searchQuery = useSprintFilters((s) => s.searchQuery)
+  const setSearchQuery = useSprintFilters((s) => s.setSearchQuery)
+  const repoFilter = useSprintFilters((s) => s.repoFilter)
+  const setRepoFilter = useSprintFilters((s) => s.setRepoFilter)
+  const statusFilter = useSprintFilters((s) => s.statusFilter)
+  const setStatusFilter = useSprintFilters((s) => s.setStatusFilter)
+  const tagFilter = useSprintFilters((s) => s.tagFilter)
 
   const presets = useFilterPresets((s) => s.presets)
   const savePreset = useFilterPresets((s) => s.savePreset)

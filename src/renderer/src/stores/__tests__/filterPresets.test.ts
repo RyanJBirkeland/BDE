@@ -3,7 +3,7 @@
  */
 import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest'
 import { useFilterPresets } from '../filterPresets'
-import { useSprintUI } from '../sprintUI'
+import { useSprintFilters } from '../sprintFilters'
 
 const STORAGE_KEY = 'bde:filterPresets'
 
@@ -12,7 +12,7 @@ describe('filterPresets store', () => {
     vi.useFakeTimers()
     localStorage.clear()
     useFilterPresets.setState({ presets: {} })
-    useSprintUI.setState({
+    useSprintFilters.setState({
       repoFilter: null,
       searchQuery: '',
       statusFilter: 'all'

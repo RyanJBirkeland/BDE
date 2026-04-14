@@ -4,6 +4,7 @@
  * Note: Cmd+N global shortcut (in App.tsx) opens quick-create bar.
  */
 import { useEffect, type Dispatch, type SetStateAction } from 'react'
+import { useSprintSelection } from '../stores/sprintSelection'
 import { useSprintUI } from '../stores/sprintUI'
 import { useSprintTasks } from '../stores/sprintTasks'
 import type { SprintTask } from '../../../shared/types'
@@ -36,22 +37,23 @@ export function useSprintKeyboardShortcuts({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
-        const state = useSprintUI.getState()
+        const selState = useSprintSelection.getState()
+        const uiState = useSprintUI.getState()
 
         // If spec panel is open, let SpecPanel handle Escape (unsaved-changes guard)
-        if (state.specPanelOpen) return
+        if (selState.specPanelOpen) return
 
         // If drawer open or task selected → close drawer + deselect
-        if (state.drawerOpen || state.selectedTaskId) {
-          state.setSelectedTaskId(null)
-          state.setDrawerOpen(false)
+        if (selState.drawerOpen || selState.selectedTaskId) {
+          selState.setSelectedTaskId(null)
+          selState.setDrawerOpen(false)
           return
         }
 
         // Otherwise → close log/conflict/health drawers
-        state.setLogDrawerTaskId(null)
+        selState.setLogDrawerTaskId(null)
         setConflictDrawerOpen(false)
-        state.setHealthCheckDrawerOpen(false)
+        uiState.setHealthCheckDrawerOpen(false)
         return
       }
 
@@ -59,7 +61,7 @@ export function useSprintKeyboardShortcuts({
       if (e.metaKey || e.ctrlKey || e.altKey || isTextInput()) return
 
       // Action keys that operate on the selected task
-      const selectedId = useSprintUI.getState().selectedTaskId
+      const selectedId = useSprintSelection.getState().selectedTaskId
       if (selectedId) {
         const task = useSprintTasks.getState().tasks.find((t) => t.id === selectedId)
         if (!task) return

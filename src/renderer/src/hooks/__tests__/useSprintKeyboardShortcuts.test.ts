@@ -2,25 +2,33 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useSprintKeyboardShortcuts } from '../useSprintKeyboardShortcuts'
 
-// Mock sprintUI store
 const mockSetSelectedTaskId = vi.fn()
 const mockSetDrawerOpen = vi.fn()
 const mockSetLogDrawerTaskId = vi.fn()
 const mockSetHealthCheckDrawerOpen = vi.fn()
 
-let mockState = {
+let mockSelectionState = {
   selectedTaskId: null as string | null,
   drawerOpen: false,
   specPanelOpen: false,
   setSelectedTaskId: mockSetSelectedTaskId,
   setDrawerOpen: mockSetDrawerOpen,
-  setLogDrawerTaskId: mockSetLogDrawerTaskId,
+  setLogDrawerTaskId: mockSetLogDrawerTaskId
+}
+
+let mockUIState = {
   setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
 }
 
+vi.mock('../../stores/sprintSelection', () => {
+  const store = vi.fn((sel: (s: unknown) => unknown) => sel(mockSelectionState))
+  ;(store as any).getState = () => mockSelectionState
+  return { useSprintSelection: store }
+})
+
 vi.mock('../../stores/sprintUI', () => {
-  const store = vi.fn((sel: (s: unknown) => unknown) => sel(mockState))
-  ;(store as any).getState = () => mockState
+  const store = vi.fn((sel: (s: unknown) => unknown) => sel(mockUIState))
+  ;(store as any).getState = () => mockUIState
   return { useSprintUI: store }
 })
 
@@ -34,16 +42,17 @@ describe('useSprintKeyboardShortcuts', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockState = {
+    mockSelectionState = {
       selectedTaskId: null,
       drawerOpen: false,
       specPanelOpen: false,
       setSelectedTaskId: mockSetSelectedTaskId,
       setDrawerOpen: mockSetDrawerOpen,
-      setLogDrawerTaskId: mockSetLogDrawerTaskId,
+      setLogDrawerTaskId: mockSetLogDrawerTaskId
+    }
+    mockUIState = {
       setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
     }
-    // reset active element to body
     ;(document.activeElement as HTMLElement | null)?.blur?.()
   })
 
@@ -58,8 +67,8 @@ describe('useSprintKeyboardShortcuts', () => {
   })
 
   it('pressing Escape closes drawer and deselects task when task is selected', () => {
-    mockState.selectedTaskId = 'task-123'
-    mockState.drawerOpen = true
+    mockSelectionState.selectedTaskId = 'task-123'
+    mockSelectionState.drawerOpen = true
 
     renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
@@ -67,12 +76,11 @@ describe('useSprintKeyboardShortcuts', () => {
 
     expect(mockSetSelectedTaskId).toHaveBeenCalledWith(null)
     expect(mockSetDrawerOpen).toHaveBeenCalledWith(false)
-    // Should NOT close log/conflict drawers in this layer
     expect(mockSetLogDrawerTaskId).not.toHaveBeenCalled()
   })
 
   it('pressing Escape does nothing when spec panel is open (let SpecPanel handle it)', () => {
-    mockState.specPanelOpen = true
+    mockSelectionState.specPanelOpen = true
 
     renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
@@ -99,9 +107,8 @@ describe('useSprintKeyboardShortcuts', () => {
   it('reads state synchronously via getState() (no re-registration needed)', () => {
     renderHook(() => useSprintKeyboardShortcuts({ openWorkbench, setConflictDrawerOpen }))
 
-    // Change state after hook mounts — handler should see it via getState()
-    mockState.selectedTaskId = 'task-xyz'
-    mockState.drawerOpen = true
+    mockSelectionState.selectedTaskId = 'task-xyz'
+    mockSelectionState.drawerOpen = true
 
     fireKeydown('Escape')
 

@@ -10,7 +10,7 @@ import {
 import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
 import './NotificationBell.css'
 import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
-import { useSprintUI } from '../../stores/sprintUI'
+import { useSprintSelection } from '../../stores/sprintSelection'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { VIEW_LABELS } from '../../lib/view-registry'
 import { timeAgo } from '../../lib/format'
@@ -48,7 +48,7 @@ export function NotificationBell(): React.JSX.Element {
   const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead)
   const getUnreadCount = useNotificationsStore((s) => s.getUnreadCount)
   const setView = usePanelLayoutStore((s) => s.setView)
-  const setSelectedTaskId = useSprintUI((s) => s.setSelectedTaskId)
+  const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
   const selectCodeReviewTask = useCodeReviewStore((s) => s.selectTask)
 
   const unreadCount = getUnreadCount()
