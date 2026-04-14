@@ -29,16 +29,12 @@ async function resolveTerminalDependents(
   // so the drain loop can claim newly-unblocked tasks in the same tick.
   // This differs from task-terminal-service's batched setTimeout(0) approach.
   // See ResolveDependentsParams in types.ts for the conceptual contract.
-  // Rebuild dep index first to pick up any tasks created/modified since
-  // the last drain tick — stale index causes missed unblocking.
-  try {
-    const freshTasks = repo.getTasksWithDependencies()
-    depIndex.rebuild(freshTasks)
-  } catch (rebuildErr) {
-    logger.warn(
-      `[agent-manager] dep index rebuild failed before resolution for ${taskId}: ${rebuildErr}`
-    )
-  }
+  //
+  // The dep index is NOT rebuilt here. The drain loop keeps the index current
+  // via _refreshDependencyIndex() at the top of every tick. If the index is
+  // at most one poll interval stale, any missed edges are caught on the next
+  // drain tick. The caller sets _depIndexDirty=true so the next tick performs
+  // a full rebuild before processing queued tasks.
   try {
     resolveDependents(
       taskId,
@@ -65,8 +61,23 @@ export interface TerminalHandlerDeps {
   epicIndex: EpicDependencyIndex
   repo: ISprintTaskRepository
   config: AgentManagerConfig
-  terminalCalled: Set<string>
+  terminalCalled: Map<string, Promise<void>>
   logger: Logger
+}
+
+async function executeTerminal(
+  taskId: string,
+  status: string,
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>,
+  deps: TerminalHandlerDeps
+): Promise<void> {
+  const { metrics, depIndex, epicIndex, repo, config, logger } = deps
+  recordTerminalMetrics(status, metrics)
+  if (config.onStatusTerminal) {
+    config.onStatusTerminal(taskId, status)
+  } else {
+    await resolveTerminalDependents(taskId, status, depIndex, epicIndex, repo, onTaskTerminal, logger)
+  }
 }
 
 export async function handleTaskTerminal(
@@ -75,26 +86,19 @@ export async function handleTaskTerminal(
   onTaskTerminal: (taskId: string, status: string) => Promise<void>,
   deps: TerminalHandlerDeps
 ): Promise<void> {
-  const { metrics, depIndex, epicIndex, repo, config, terminalCalled, logger } = deps
+  const { terminalCalled, logger } = deps
 
-  // F-t3-lifecycle-1: Guard against double-invocation when watchdog and completion handler race.
-  // terminalCalled.add() fires immediately after the guard, before any side effects, so concurrent
-  // callers see the set membership before either begins logging metrics or calling resolveDependents.
-  if (terminalCalled.has(taskId)) {
-    logger.warn(`[agent-manager] onTaskTerminal duplicate for ${taskId}`)
-    return
+  const existing = terminalCalled.get(taskId)
+  if (existing) {
+    logger.warn(`[agent-manager] onTaskTerminal duplicate for ${taskId} — returning in-flight promise`)
+    return existing
   }
-  terminalCalled.add(taskId)
 
+  const work = executeTerminal(taskId, status, onTaskTerminal, deps)
+  terminalCalled.set(taskId, work)
   try {
-    recordTerminalMetrics(status, metrics)
-    if (config.onStatusTerminal) {
-      config.onStatusTerminal(taskId, status)
-    } else {
-      await resolveTerminalDependents(taskId, status, depIndex, epicIndex, repo, onTaskTerminal, logger)
-    }
+    await work
   } finally {
-    // F-t3-lifecycle-7: Bumped from 5000ms to 10_000ms to prevent premature eviction under load
-    setTimeout(() => terminalCalled.delete(taskId), 10_000)
+    terminalCalled.delete(taskId)
   }
 }
