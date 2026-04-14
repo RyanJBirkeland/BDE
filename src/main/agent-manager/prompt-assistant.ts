@@ -13,6 +13,7 @@ import {
   buildUpstreamContextSection,
   buildBranchAppendix,
   truncateSpec,
+  buildCrossRepoContractSection,
 } from './prompt-sections'
 import { PROMPT_TRUNCATION } from './prompt-constants'
 import type { BuildPromptInput } from './prompt-composer'
@@ -76,12 +77,7 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
   }
 
   // Cross-repo contract
-  if (crossRepoContract && crossRepoContract.trim()) {
-    prompt += '\n\n## Cross-Repo Contract\n\n'
-    prompt += 'This task involves API contracts with other repositories. '
-    prompt += 'Follow these contract specifications exactly:\n\n'
-    prompt += `<cross_repo_contract>\n${truncateSpec(crossRepoContract, PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS)}\n</cross_repo_contract>`
-  }
+  prompt += buildCrossRepoContractSection(crossRepoContract)
 
   // Upstream task context
   prompt += buildUpstreamContextSection(upstreamContext)

@@ -119,6 +119,20 @@ export function buildUpstreamContextSection(
   return section
 }
 
+/**
+ * Builds the cross-repo contract section, shared by pipeline and assistant builders.
+ * Returns empty string when contract is absent or whitespace-only.
+ */
+export function buildCrossRepoContractSection(contract?: string): string {
+  if (!contract?.trim()) return ''
+  return (
+    '\n\n## Cross-Repo Contract\n\n' +
+    'This task involves API contracts with other repositories. ' +
+    'Follow these contract specifications exactly:\n\n' +
+    `<cross_repo_contract>\n${truncateSpec(contract, PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS)}\n</cross_repo_contract>`
+  )
+}
+
 export function buildBranchAppendix(branch: string): string {
   return `
 

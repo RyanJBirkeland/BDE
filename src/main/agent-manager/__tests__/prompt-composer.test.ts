@@ -1397,3 +1397,28 @@ describe('buildRetryContext truncation', () => {
     expect(result).not.toContain('n'.repeat(PROMPT_TRUNCATION.RETRY_NOTES_CHARS + 1))
   })
 })
+
+describe('consistency fixes', () => {
+  it('pipeline and assistant produce identical cross-repo contract sections', () => {
+    const contract = 'API: POST /tasks returns {id, status}'
+    const pipelinePrompt = buildAgentPrompt({ agentType: 'pipeline', crossRepoContract: contract })
+    const assistantPrompt = buildAgentPrompt({ agentType: 'assistant', crossRepoContract: contract })
+    expect(pipelinePrompt).toContain('<cross_repo_contract>')
+    expect(assistantPrompt).toContain('<cross_repo_contract>')
+    const extractContract = (p: string) => {
+      const start = p.indexOf('<cross_repo_contract>')
+      const end = p.indexOf('</cross_repo_contract>') + '</cross_repo_contract>'.length
+      return p.slice(start, end)
+    }
+    expect(extractContract(pipelinePrompt)).toBe(extractContract(assistantPrompt))
+  })
+
+  it('synthesizer throws if messages array is provided', () => {
+    expect(() =>
+      buildAgentPrompt({
+        agentType: 'synthesizer',
+        messages: [{ role: 'user', content: 'hello' }]
+      })
+    ).toThrow(/single-turn/)
+  })
+})

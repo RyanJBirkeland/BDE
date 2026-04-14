@@ -57,6 +57,10 @@ Before outputting the spec, review each Implementation Step and confirm it is a 
 action, not a thinking/analysis step. Replace any vague step with an explicit instruction.`
 
 export function buildSynthesizerPrompt(input: BuildPromptInput): string {
+  if (input.messages && input.messages.length > 0) {
+    throw new Error('[prompt-synthesizer] Synthesizer is single-turn and does not support message history. Received messages array — check call site.')
+  }
+
   const { codebaseContext, taskContent, playgroundEnabled, upstreamContext } = input
 
   let prompt = SPEC_DRAFTING_PREAMBLE
