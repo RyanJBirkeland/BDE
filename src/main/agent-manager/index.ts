@@ -37,7 +37,7 @@ import { CircuitBreaker } from './circuit-breaker'
 import { checkOAuthToken } from './oauth-checker'
 import { handleWatchdogVerdict } from './watchdog-handler'
 import type { WatchdogAction } from './types'
-import { mapQueuedTask, checkAndBlockDeps } from './task-mapper'
+import { mapQueuedTask, checkAndBlockDeps, type MappedTask } from './task-mapper'
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to createLogger
@@ -254,6 +254,81 @@ export class AgentManagerImpl implements AgentManager {
 
   // ---- processQueuedTask ----
 
+  private async _validateAndClaimTask(
+    raw: Record<string, unknown>,
+    taskStatusMap: Map<string, string>
+  ): Promise<{ task: MappedTask; repoPath: string } | null> {
+    const task = mapQueuedTask(raw, this.logger)
+    if (!task) return null
+
+    const rawDeps = raw.dependsOn ?? raw.depends_on
+    if (rawDeps && checkAndBlockDeps(task.id, rawDeps, taskStatusMap, this.repo, this._depIndex, this.logger)) return null
+
+    const repoPath = this.resolveRepoPath(task.repo)
+    if (!repoPath) {
+      this.logger.warn(
+        `[agent-manager] No repo path for "${task.repo}" — setting task ${task.id} to error`
+      )
+      try {
+        this.repo.updateTask(task.id, {
+          status: 'error',
+          notes: `Repo "${task.repo}" is not configured in BDE settings. Add it in Settings > Repos, then reset this task to queued.`,
+          claimed_by: null
+        })
+      } catch (err) {
+        this.logger.warn(
+          `[agent-manager] Failed to update task ${task.id} after repo resolution failure: ${err}`
+        )
+      }
+      await this.onTaskTerminal(task.id, 'error').catch((err) =>
+        this.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
+      )
+      return null
+    }
+
+    const claimed = this.claimTask(task.id)
+    if (!claimed) {
+      this.logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
+      return null
+    }
+
+    return { task, repoPath }
+  }
+
+  private async _prepareWorktreeForTask(
+    task: MappedTask,
+    repoPath: string
+  ): Promise<{ worktreePath: string; branch: string } | null> {
+    try {
+      return await setupWorktree({
+        repoPath,
+        worktreeBase: this.config.worktreeBase,
+        taskId: task.id,
+        title: task.title,
+        groupId: task.group_id ?? undefined,
+        logger: this.logger
+      })
+    } catch (err) {
+      logError(this.logger, `[agent-manager] setupWorktree failed for task ${task.id}`, err)
+      const errMsg = err instanceof Error ? err.message : String(err)
+      const fullNote = `Worktree setup failed: ${errMsg}`
+      const notes =
+        fullNote.length > NOTES_MAX_LENGTH
+          ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
+          : fullNote
+      this.repo.updateTask(task.id, {
+        status: 'error',
+        completed_at: nowIso(),
+        notes,
+        claimed_by: null
+      })
+      await this.onTaskTerminal(task.id, 'error').catch((err) =>
+        this.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
+      )
+      return null
+    }
+  }
+
   async _processQueuedTask(
     raw: Record<string, unknown>,
     taskStatusMap: Map<string, string>
@@ -262,42 +337,11 @@ export class AgentManagerImpl implements AgentManager {
     if (this._processingTasks.has(taskId)) return
     this._processingTasks.add(taskId)
     try {
-      const task = mapQueuedTask(raw, this.logger)
-      if (!task) return // Skip tasks with invalid fields
+      const claimed = await this._validateAndClaimTask(raw, taskStatusMap)
+      if (!claimed) return
 
-      const rawDeps = raw.dependsOn ?? raw.depends_on
-      if (rawDeps && checkAndBlockDeps(task.id, rawDeps, taskStatusMap, this.repo, this._depIndex, this.logger)) return
+      const { task, repoPath } = claimed
 
-      const repoPath = this.resolveRepoPath(task.repo)
-      if (!repoPath) {
-        this.logger.warn(
-          `[agent-manager] No repo path for "${task.repo}" — setting task ${task.id} to error`
-        )
-        try {
-          this.repo.updateTask(task.id, {
-            status: 'error',
-            notes: `Repo "${task.repo}" is not configured in BDE settings. Add it in Settings > Repos, then reset this task to queued.`,
-            claimed_by: null
-          })
-        } catch (err) {
-          this.logger.warn(
-            `[agent-manager] Failed to update task ${task.id} after repo resolution failure: ${err}`
-          )
-        }
-        await this.onTaskTerminal(task.id, 'error').catch((err) =>
-          this.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
-        )
-        return
-      }
-
-      const claimed = this.claimTask(task.id)
-      if (!claimed) {
-        this.logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
-        return
-      }
-
-      // Refresh snapshot: re-fetch statuses of tasks that may have changed
-      // (only active + queued + blocked — terminal tasks are stable)
       try {
         const freshTasks = this.repo.getTasksWithDependencies()
         taskStatusMap.clear()
@@ -308,36 +352,8 @@ export class AgentManagerImpl implements AgentManager {
         // non-fatal: stale map is better than aborting the drain
       }
 
-      let wt: { worktreePath: string; branch: string }
-      try {
-        wt = await setupWorktree({
-          repoPath,
-          worktreeBase: this.config.worktreeBase,
-          taskId: task.id,
-          title: task.title,
-          groupId: task.group_id ?? undefined,
-          logger: this.logger
-        })
-      } catch (err) {
-        logError(this.logger, `[agent-manager] setupWorktree failed for task ${task.id}`, err)
-        const errMsg = err instanceof Error ? err.message : String(err)
-        // For git errors, keep the tail of the message (contains key diagnostic info)
-        const fullNote = `Worktree setup failed: ${errMsg}`
-        const notes =
-          fullNote.length > NOTES_MAX_LENGTH
-            ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
-            : fullNote
-        this.repo.updateTask(task.id, {
-          status: 'error',
-          completed_at: nowIso(),
-          notes,
-          claimed_by: null
-        })
-        await this.onTaskTerminal(task.id, 'error').catch((err) =>
-          this.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
-        )
-        return
-      }
+      const wt = await this._prepareWorktreeForTask(task, repoPath)
+      if (!wt) return
 
       this._spawnAgent(task, wt, repoPath)
     } finally {
