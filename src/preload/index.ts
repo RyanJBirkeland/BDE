@@ -1,12 +1,5 @@
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type {
-  AgentMeta,
-  SpawnLocalAgentArgs
-} from '../shared/types'
-import type { GitHubFetchInit } from '../shared/ipc-channels'
-import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
-import { typedInvoke, onBroadcast } from './ipc-helpers'
 import { settings, claudeConfig } from './api-settings'
 import {
   getRepoPaths,
@@ -23,54 +16,94 @@ import {
   gitPull
 } from './api-git'
 import { sprint, groups } from './api-sprint'
+import {
+  listMemoryFiles,
+  readMemoryFile,
+  writeMemoryFile,
+  searchMemory,
+  getActiveMemoryFiles,
+  setMemoryFileActive
+} from './api-memory'
+import {
+  getAgentProcesses,
+  spawnLocalAgent,
+  steerAgent,
+  killAgent,
+  getLatestCacheTokens,
+  tailAgentLog,
+  agents,
+  agentManager,
+  agentEvents
+} from './api-agents'
+import { webhooks } from './api-webhooks'
+import {
+  readClipboardImage,
+  openExternal,
+  openPlaygroundInBrowser,
+  setTitle,
+  github,
+  cost,
+  pollPrStatuses,
+  checkConflictFiles,
+  planner,
+  openFileDialog,
+  readFileAsBase64,
+  readFileAsText,
+  openDirectoryDialog,
+  readDir,
+  readFile,
+  writeFile,
+  watchDir,
+  unwatchDir,
+  createFile,
+  createDir,
+  rename,
+  deletePath,
+  stat,
+  listFiles,
+  onDirChanged,
+  onGitHubError,
+  onPrListUpdated,
+  getPrList,
+  refreshPrList,
+  onExternalSprintChange,
+  authStatus,
+  templates,
+  terminal,
+  dashboard,
+  system,
+  workbench,
+  tearoff,
+  review,
+  synthesizeSpec,
+  reviseSpec,
+  cancelSynthesis,
+  onSynthesizerChunk,
+  repoDiscovery
+} from './api-utilities'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
 ipcRenderer.setMaxListeners(25)
 
 const api = {
-  readClipboardImage: () => typedInvoke('clipboard:readImage'),
-  getRepoPaths,
-  openExternal: (url: string) => typedInvoke('window:openExternal', url),
-  openPlaygroundInBrowser: (html: string) => typedInvoke('playground:openInBrowser', html),
-  listMemoryFiles: () => typedInvoke('memory:listFiles'),
-  readMemoryFile: (path: string) => typedInvoke('memory:readFile', path),
-  writeMemoryFile: (path: string, content: string) =>
-    typedInvoke('memory:writeFile', path, content),
-  searchMemory: (query: string) => typedInvoke('memory:search', query),
-  getActiveMemoryFiles: () => typedInvoke('memory:getActiveFiles'),
-  setMemoryFileActive: (path: string, active: boolean) =>
-    typedInvoke('memory:setFileActive', path, active),
-  setTitle: (title: string): void => ipcRenderer.send('window:setTitle', title),
+  // Clipboard + window
+  readClipboardImage,
+  openExternal,
+  openPlaygroundInBrowser,
+  setTitle,
 
-  // Settings CRUD
+  // Settings
   settings,
-
-  // Claude CLI config (~/.claude/settings.json)
   claudeConfig,
 
-  // Webhook management
-  webhooks: {
-    list: () => typedInvoke('webhook:list'),
-    create: (payload: { url: string; events: string[]; secret?: string }) =>
-      typedInvoke('webhook:create', payload),
-    update: (payload: {
-      id: string
-      url?: string
-      events?: string[]
-      secret?: string | null
-      enabled?: boolean
-    }) => typedInvoke('webhook:update', payload),
-    delete: (payload: { id: string }) => typedInvoke('webhook:delete', payload),
-    test: (payload: { id: string }) => typedInvoke('webhook:test', payload)
-  },
+  // Webhooks
+  webhooks,
 
-  // GitHub API proxy — all GitHub REST calls routed through main process
-  github: {
-    fetch: (path: string, init?: GitHubFetchInit) => typedInvoke('github:fetch', path, init),
-    isConfigured: () => typedInvoke('github:isConfigured')
-  },
+  // GitHub
+  github,
 
   // Git client
+  getRepoPaths,
   gitStatus,
   gitDiff,
   gitStage,
@@ -83,269 +116,96 @@ const api = {
   gitFetch,
   gitPull,
 
-  // Local agent process detection + spawning
-  getAgentProcesses: () => typedInvoke('local:getAgentProcesses'),
-  spawnLocalAgent: (args: SpawnLocalAgentArgs) => typedInvoke('local:spawnClaudeAgent', args),
-  steerAgent: (
-    agentId: string,
-    message: string,
-    images?: Array<{ data: string; mimeType: string }>
-  ) => typedInvoke('agent:steer', { agentId, message, images }),
-  killAgent: (agentId: string) => typedInvoke('agent:kill', agentId),
-  getLatestCacheTokens: (runId: string) => typedInvoke('agent:latestCacheTokens', runId),
-  tailAgentLog: (args: { logPath: string; fromByte?: number }) =>
-    typedInvoke('local:tailAgentLog', args),
+  // Memory
+  listMemoryFiles,
+  readMemoryFile,
+  writeMemoryFile,
+  searchMemory,
+  getActiveMemoryFiles,
+  setMemoryFileActive,
 
-  // Agent history — persistent audit trail
-  agents: {
-    list: (args: { limit?: number; status?: string }) => typedInvoke('agents:list', args),
-    readLog: (args: { id: string; fromByte?: number }) => typedInvoke('agents:readLog', args),
-    import: (args: { meta: Partial<AgentMeta>; content: string }) =>
-      typedInvoke('agents:import', args),
-    promoteToReview: (agentId: string) => typedInvoke('agents:promoteToReview', agentId)
-  },
+  // Agent processes
+  getAgentProcesses,
+  spawnLocalAgent,
+  steerAgent,
+  killAgent,
+  getLatestCacheTokens,
+  tailAgentLog,
+  agents,
+  agentManager,
+  agentEvents,
 
   // Cost analytics
-  cost: {
-    summary: () => typedInvoke('cost:summary'),
-    agentRuns: (limit?: number) => typedInvoke('cost:agentRuns', { limit: limit ?? 20 }),
-    getAgentHistory: (args?: { limit?: number; offset?: number }) =>
-      typedInvoke('cost:getAgentHistory', args)
-  },
+  cost,
 
-  // PR status polling
-  pollPrStatuses: (prs: { taskId: string; prUrl: string }[]) => typedInvoke('pr:pollStatuses', prs),
+  // PR
+  pollPrStatuses,
+  checkConflictFiles,
+  onPrListUpdated,
+  getPrList,
+  refreshPrList,
+  onGitHubError,
 
-  // Conflict file detection
-  checkConflictFiles: (input: { owner: string; repo: string; prNumber: number }) =>
-    typedInvoke('pr:checkConflictFiles', input),
-
-  // Sprint tasks — SQLite-backed Kanban
+  // Sprint + groups
   sprint,
-
-  // Task groups
   groups,
 
-  // Plan import
-  planner: {
-    import: (repo: string) => typedInvoke('planner:import', repo)
-  },
+  // Planner
+  planner,
 
-  // File attachments
-  openFileDialog: (opts?: { filters?: { name: string; extensions: string[] }[] }) =>
-    typedInvoke('fs:openFileDialog', opts),
-  readFileAsBase64: (path: string) => typedInvoke('fs:readFileAsBase64', path),
-  readFileAsText: (path: string) => typedInvoke('fs:readFileAsText', path),
-  openDirectoryDialog: () => typedInvoke('fs:openDirectoryDialog'),
-  readDir: (dirPath: string) => typedInvoke('fs:readDir', dirPath),
-  readFile: (filePath: string) => typedInvoke('fs:readFile', filePath),
-  writeFile: (filePath: string, content: string) => typedInvoke('fs:writeFile', filePath, content),
-  watchDir: (dirPath: string) => typedInvoke('fs:watchDir', dirPath),
-  unwatchDir: () => typedInvoke('fs:unwatchDir'),
-  createFile: (filePath: string) => typedInvoke('fs:createFile', filePath),
-  createDir: (dirPath: string) => typedInvoke('fs:createDir', dirPath),
-  rename: (oldPath: string, newPath: string) => typedInvoke('fs:rename', oldPath, newPath),
-  deletePath: (targetPath: string) => typedInvoke('fs:delete', targetPath),
-  stat: (targetPath: string) => typedInvoke('fs:stat', targetPath),
-  listFiles: (rootPath: string) => typedInvoke('fs:listFiles', rootPath),
-  onDirChanged: onBroadcast<BroadcastChannels['fs:dirChanged']>('fs:dirChanged'),
+  // File system
+  openFileDialog,
+  readFileAsBase64,
+  readFileAsText,
+  openDirectoryDialog,
+  readDir,
+  readFile,
+  writeFile,
+  watchDir,
+  unwatchDir,
+  createFile,
+  createDir,
+  rename,
+  deletePath,
+  stat,
+  listFiles,
+  onDirChanged,
 
-  // GitHub structured error push event — fired by githubFetch / githubFetchJson
-  // for any classified failure (billing, network, permission, rate-limit,
-  // token-expired, etc.). Debounced per-kind (60s) at the source, so the
-  // renderer never sees spam.
-  onGitHubError: onBroadcast<BroadcastChannels['github:error']>('github:error'),
+  // Sprint DB broadcast
+  onExternalSprintChange,
 
-  // Open PR list — main-process poller push events
-  onPrListUpdated: onBroadcast<BroadcastChannels['pr:listUpdated']>('pr:listUpdated'),
-  getPrList: () => typedInvoke('pr:getList'),
-  refreshPrList: () => typedInvoke('pr:refreshList'),
+  // Auth
+  authStatus,
 
-  // Sprint DB file-watcher push events
-  onExternalSprintChange: onBroadcast<BroadcastChannels['sprint:externalChange']>(
-    'sprint:externalChange'
-  ),
+  // Templates
+  templates,
 
-  // Agent event streaming (Phase 2)
-  agentEvents: {
-    onEvent: (callback: (payload: BroadcastChannels['agent:event']) => void): (() => void) => {
-      const handler = (_e: IpcRendererEvent, payload: BroadcastChannels['agent:event']): void =>
-        callback(payload)
-      const batchHandler = (
-        _e: IpcRendererEvent,
-        payloads: BroadcastChannels['agent:event:batch']
-      ): void => {
-        for (const p of payloads) {
-          callback(p)
-        }
-      }
-      ipcRenderer.on('agent:event', handler)
-      ipcRenderer.on('agent:event:batch', batchHandler)
-      return () => {
-        ipcRenderer.removeListener('agent:event', handler)
-        ipcRenderer.removeListener('agent:event:batch', batchHandler)
-      }
-    },
-    getHistory: (agentId: string) => typedInvoke('agent:history', agentId)
-  },
+  // Terminal
+  terminal,
 
-  // Auth status
-  authStatus: () => typedInvoke('auth:status'),
+  // Dashboard
+  dashboard,
 
-  // Agent Manager
-  agentManager: {
-    status: () => typedInvoke('agent-manager:status'),
-    kill: (taskId: string) => typedInvoke('agent-manager:kill', taskId),
-    getMetrics: () => typedInvoke('agent-manager:metrics'),
-    reloadConfig: () => typedInvoke('agent-manager:reloadConfig'),
-    checkpoint: (taskId: string, message?: string) =>
-      typedInvoke('agent-manager:checkpoint', taskId, message)
-  },
+  // System
+  system,
 
-  // Template CRUD (Phase 2)
-  templates: {
-    list: () => typedInvoke('templates:list'),
-    save: (template: import('../shared/types').TaskTemplate) =>
-      typedInvoke('templates:save', template),
-    delete: (name: string) => typedInvoke('templates:delete', name),
-    reset: (name: string) => typedInvoke('templates:reset', name)
-  },
+  // Workbench
+  workbench,
 
-  // Terminal PTY
-  terminal: {
-    create: (opts: { cols: number; rows: number; shell?: string }) =>
-      typedInvoke('terminal:create', opts),
-    write: (id: number, data: string): void => ipcRenderer.send('terminal:write', { id, data }),
-    resize: (id: number, cols: number, rows: number) =>
-      typedInvoke('terminal:resize', { id, cols, rows }),
-    kill: (id: number) => typedInvoke('terminal:kill', id),
-    onData: (id: number, cb: (data: string) => void): (() => void) => {
-      const listener = (_: unknown, data: string): void => cb(data)
-      ipcRenderer.on('terminal:data:' + id, listener)
-      return () => ipcRenderer.removeListener('terminal:data:' + id, listener)
-    },
-    onExit: (id: number, cb: () => void): void => {
-      ipcRenderer.once('terminal:exit:' + id, cb)
-    }
-  },
-
-  // Dashboard analytics
-  dashboard: {
-    completionsPerHour: () => typedInvoke('agent:completionsPerHour'),
-    recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit),
-    dailySuccessRate: (days?: number) => typedInvoke('dashboard:dailySuccessRate', days)
-  },
-
-  // System metrics
-  system: {
-    loadAverage: () => typedInvoke('system:loadAverage')
-  },
-
-  // Task Workbench
-  workbench: {
-    generateSpec: (input: { title: string; repo: string; templateHint: string }) =>
-      typedInvoke('workbench:generateSpec', input),
-    checkSpec: (input: { title: string; repo: string; spec: string; specType?: string | null }) =>
-      typedInvoke('workbench:checkSpec', input),
-    checkOperational: (input: { repo: string }) => typedInvoke('workbench:checkOperational', input),
-    researchRepo: (input: { query: string; repo: string }) =>
-      typedInvoke('workbench:researchRepo', input),
-    chatStream: (input: {
-      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>
-      formContext: { title: string; repo: string; spec: string }
-    }) => typedInvoke('workbench:chatStream', input),
-    cancelStream: (streamId: string) => typedInvoke('workbench:cancelStream', streamId),
-    extractPlan: (markdown: string) => typedInvoke('workbench:extractPlan', markdown),
-    onChatChunk: onBroadcast<BroadcastChannels['workbench:chatChunk']>('workbench:chatChunk')
-  },
-
-  // Tear-off window management
-  tearoff: {
-    create: (payload: {
-      view: string
-      screenX: number
-      screenY: number
-      sourcePanelId: string
-      sourceTabIndex: number
-    }) => typedInvoke('tearoff:create', payload),
-    closeConfirmed: (payload: { action: 'return' | 'close'; remember: boolean }) =>
-      typedInvoke('tearoff:closeConfirmed', payload),
-    returnToMain: (windowId: string) => ipcRenderer.send('tearoff:returnToMain', { windowId }),
-    onTabRemoved: onBroadcast<{ sourcePanelId: string; sourceTabIndex: number }>(
-      'tearoff:tabRemoved'
-    ),
-    onTabReturned: onBroadcast<{ view: string }>('tearoff:tabReturned'),
-    onConfirmClose: onBroadcast<undefined>('tearoff:confirmClose'),
-    // Cross-window drag
-    startCrossWindowDrag: (payload: { windowId: string; viewKey: string }) =>
-      typedInvoke('tearoff:startCrossWindowDrag', payload),
-    onDragIn: onBroadcast<{ viewKey: string; localX: number; localY: number }>('tearoff:dragIn'),
-    onDragMove: onBroadcast<{ localX: number; localY: number }>('tearoff:dragMove'),
-    onDragCancel: onBroadcast<undefined>('tearoff:dragCancel'),
-    sendDropComplete: (payload: { viewKey: string; targetPanelId: string; zone: string }) =>
-      ipcRenderer.send('tearoff:dropComplete', payload),
-    onCrossWindowDrop: onBroadcast<{ view: string; targetPanelId: string; zone: string }>(
-      'tearoff:crossWindowDrop'
-    ),
-    onDragDone: onBroadcast<undefined>('tearoff:dragDone'),
-    sendDragCancel: () => ipcRenderer.send('tearoff:dragCancelFromRenderer'),
-    returnAll: (payload: { windowId: string; views: string[] }) =>
-      ipcRenderer.send('tearoff:returnAll', payload),
-    viewsChanged: (payload: { windowId: string; views: string[] }) =>
-      ipcRenderer.send('tearoff:viewsChanged', payload)
-  },
+  // Tear-off
+  tearoff,
 
   // Code Review
-  review: {
-    getDiff: (payload: { worktreePath: string; base: string }) =>
-      typedInvoke('review:getDiff', payload),
-    getCommits: (payload: { worktreePath: string; base: string }) =>
-      typedInvoke('review:getCommits', payload),
-    getFileDiff: (payload: { worktreePath: string; filePath: string; base: string }) =>
-      typedInvoke('review:getFileDiff', payload),
-    mergeLocally: (payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }) =>
-      typedInvoke('review:mergeLocally', payload),
-    createPr: (payload: { taskId: string; title: string; body: string }) =>
-      typedInvoke('review:createPr', payload),
-    requestRevision: (payload: { taskId: string; feedback: string; mode: 'resume' | 'fresh' }) =>
-      typedInvoke('review:requestRevision', payload),
-    discard: (payload: { taskId: string }) => typedInvoke('review:discard', payload),
-    shipIt: (payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }) =>
-      typedInvoke('review:shipIt', payload),
-    generateSummary: (payload: { taskId: string }) =>
-      typedInvoke('review:generateSummary', payload),
-    checkAutoReview: (payload: { taskId: string }) =>
-      typedInvoke('review:checkAutoReview', payload),
-    rebase: (payload: { taskId: string }) => typedInvoke('review:rebase', payload),
-    checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload),
-
-    // AI Review Partner
-    autoReview: (taskId: string, force?: boolean) =>
-      typedInvoke('review:autoReview', taskId, force ?? false),
-    chatStream: (params: {
-      taskId: string
-      messages: import('../shared/types').PartnerMessage[]
-    }) => typedInvoke('review:chatStream', params),
-    onChatChunk: onBroadcast<BroadcastChannels['review:chatChunk']>('review:chatChunk'),
-    abortChat: (streamId: string) => typedInvoke('review:chatAbort', streamId)
-  },
+  review,
 
   // Spec Synthesizer
-  synthesizeSpec: (args: import('../shared/types').SynthesizeRequest) =>
-    typedInvoke('synthesizer:generate', args),
-  reviseSpec: (args: import('../shared/types').ReviseRequest) =>
-    typedInvoke('synthesizer:revise', args),
-  cancelSynthesis: (streamId: string) => typedInvoke('synthesizer:cancel', streamId),
-  onSynthesizerChunk: onBroadcast<BroadcastChannels['synthesizer:chunk']>('synthesizer:chunk'),
+  synthesizeSpec,
+  reviseSpec,
+  cancelSynthesis,
+  onSynthesizerChunk,
 
   // Repository discovery
-  repoDiscovery: {
-    scanLocal: (dirs: string[]) => typedInvoke('repos:scanLocal', dirs),
-    listGithub: () => typedInvoke('repos:listGithub'),
-    clone: (owner: string, repo: string, destDir: string) =>
-      typedInvoke('repos:clone', owner, repo, destDir),
-    onCloneProgress: onBroadcast<BroadcastChannels['repos:cloneProgress']>('repos:cloneProgress')
-  }
+  repoDiscovery
 }
 
 if (process.contextIsolated) {
