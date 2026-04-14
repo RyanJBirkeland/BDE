@@ -10,7 +10,7 @@
 
 `SprintTask` has 43 fields across 6 semantic concerns: core identity, task spec/definition, agent execution state, PR/review state, dependency/grouping, and feature flags. Every consumer — agent manager, handlers, stores, components — imports and reasons about all 43 fields even when it only cares about 6. This creates:
 
-- Testing burden: mocking a full `SprintTask` requires constructing 46 fields
+- Testing burden: mocking a full `SprintTask` requires constructing 43 fields
 - Change risk: adding a field anywhere forces consideration of all consumers
 - Documentation gap: nothing in the type system communicates which fields belong to which lifecycle stage
 
@@ -60,14 +60,15 @@ All four types are exported from `src/shared/types/task-types.ts` alongside `Spr
 
 ### Migration Scope (This Pass)
 
-Only two repository methods are narrowed in this pass — both have callers that demonstrably use only a subset of fields.
+One repository method is narrowed in this pass — it has a caller that demonstrably uses only a focused subset of fields.
 
 #### `ISprintTaskRepository` (`src/main/data/sprint-task-repository.ts`)
 
 | Method | Old return | New return | Caller + reason |
 |--------|-----------|-----------|-----------------|
-| `getQueuedTasks(limit)` | `SprintTask[]` | `SprintTaskSpec[]` | Drain loop maps queued tasks via `mapQueuedTask` — reads id, title, repo, prompt, spec, retry_count, fast_fail_count, notes, playground_enabled, max_runtime_ms, max_cost_usd, model, group_id (all in Spec or Core) |
-| `listTasksWithOpenPrs()` | `SprintTask[]` | `SprintTaskPR[]` | Sprint PR poller only reads id, pr_url, pr_number, pr_status, pr_mergeable_state |
+| `listTasksWithOpenPrs()` | `SprintTask[]` | `SprintTaskPR[]` | Sprint PR poller only reads id, pr_url, pr_number, pr_status, pr_mergeable_state — all in PR or Core |
+
+`getQueuedTasks(limit)` is intentionally excluded from this pass: its drain loop consumer (`mapQueuedTask`) reads fields from both Spec (prompt, spec, model, playground_enabled) and Execution (retry_count, fast_fail_count) categories. No single view type covers the full set; narrowing would require a bespoke type that adds no clarity over `SprintTask` for this caller.
 
 All other repository methods stay `SprintTask` — they serve general reads where the full shape is appropriate.
 
@@ -84,7 +85,7 @@ All other repository methods stay `SprintTask` — they serve general reads wher
 | File | Change |
 |------|--------|
 | `src/shared/types/task-types.ts` | Add 4 exported view type aliases after `SprintTask` |
-| `src/main/data/sprint-task-repository.ts` | Narrow `getQueuedTasks` and `listTasksWithOpenPrs` return types |
+| `src/main/data/sprint-task-repository.ts` | Narrow `listTasksWithOpenPrs` return type |
 
 ## Testing
 
