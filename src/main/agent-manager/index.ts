@@ -364,7 +364,7 @@ export class AgentManagerImpl implements AgentManager {
    *
    * Exposed via _ prefix for testability.
    */
-  _validateDrainPreconditions(): boolean {
+  async _validateDrainPreconditions(): Promise<boolean> {
     if (this._shuttingDown) return false
     if (this._isCircuitOpen()) {
       this.logger.warn(
@@ -372,6 +372,11 @@ export class AgentManagerImpl implements AgentManager {
           this._circuitOpenUntil
         ).toISOString()}`
       )
+      return false
+    }
+    const tokenOk = await checkOAuthToken(this.logger)
+    if (!tokenOk) {
+      this.logger.warn('[drain] OAuth token invalid — skipping drain tick')
       return false
     }
     return true
@@ -415,7 +420,7 @@ export class AgentManagerImpl implements AgentManager {
     this.logger.info(
       `[agent-manager] Drain loop starting (shuttingDown=${this._shuttingDown}, slots=${availableSlots(this._concurrency, this._activeAgents.size)})`
     )
-    if (!this._validateDrainPreconditions()) return
+    if (!(await this._validateDrainPreconditions())) return
 
     this._metrics.increment('drainLoopCount')
     const drainStart = Date.now()
@@ -427,9 +432,6 @@ export class AgentManagerImpl implements AgentManager {
     if (available <= 0) return
 
     try {
-      const tokenOk = await checkOAuthToken(this.logger)
-      if (!tokenOk) return
-
       await this._drainQueuedTasks(available, taskStatusMap)
     } catch (err) {
       this.logger.error(`[agent-manager] Drain loop error: ${err}`)

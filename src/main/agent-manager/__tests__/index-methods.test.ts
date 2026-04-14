@@ -81,6 +81,10 @@ vi.mock('../../env-utils', () => ({
   buildAgentEnvWithAuth: vi.fn().mockResolvedValue({})
 }))
 
+vi.mock('../oauth-checker', () => ({
+  checkOAuthToken: vi.fn().mockResolvedValue(true)
+}))
+
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------
@@ -786,32 +790,32 @@ describe('AgentManagerImpl — class internals', () => {
   // -------------------------------------------------------------------------
 
   describe('_validateDrainPreconditions', () => {
-    it('returns false when _shuttingDown is true', () => {
+    it('returns false when _shuttingDown is true', async () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       manager._shuttingDown = true
-      expect(manager._validateDrainPreconditions()).toBe(false)
+      expect(await manager._validateDrainPreconditions()).toBe(false)
     })
 
-    it('returns false when circuit breaker is open', () => {
+    it('returns false when circuit breaker is open', async () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       // Force circuit open by recording enough failures
       vi.spyOn(manager, '_isCircuitOpen').mockReturnValue(true)
-      expect(manager._validateDrainPreconditions()).toBe(false)
+      expect(await manager._validateDrainPreconditions()).toBe(false)
     })
 
-    it('logs a warning when circuit breaker is open', () => {
+    it('logs a warning when circuit breaker is open', async () => {
       const logger = makeLogger()
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), logger)
       vi.spyOn(manager, '_isCircuitOpen').mockReturnValue(true)
-      manager._validateDrainPreconditions()
+      await manager._validateDrainPreconditions()
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('circuit breaker'))
     })
 
-    it('returns true when neither _shuttingDown nor circuit breaker is open', () => {
+    it('returns true when neither _shuttingDown nor circuit breaker is open', async () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       manager._shuttingDown = false
       vi.spyOn(manager, '_isCircuitOpen').mockReturnValue(false)
-      expect(manager._validateDrainPreconditions()).toBe(true)
+      expect(await manager._validateDrainPreconditions()).toBe(true)
     })
   })
 
