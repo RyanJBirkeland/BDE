@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react'
+import React, { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Edit2, AlertTriangle } from 'lucide-react'
+import { Edit2 } from 'lucide-react'
 import type { TaskGroup, SprintTask, EpicDependency } from '../../../../shared/types'
 import { STATUS_METADATA } from '../../lib/task-status-ui'
 import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
@@ -10,6 +10,8 @@ import { toast } from '../../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { EpicDependencySection } from './EpicDependencySection'
 import { EpicHeader } from './EpicHeader'
+import { EpicProgress } from './EpicProgress'
+import { TaskRow } from './TaskRow'
 import './EpicDetail.css'
 
 export interface EpicDetailProps {
@@ -31,14 +33,6 @@ export interface EpicDetailProps {
   onToggleReady?: () => void
   onReorderTasks?: (orderedTaskIds: string[]) => void
   onMarkCompleted?: () => void
-}
-
-interface StatusCounts {
-  done: number
-  active: number
-  queued: number
-  blocked: number
-  draft: number
 }
 
 export function EpicDetail({
@@ -64,22 +58,8 @@ export function EpicDetail({
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [editingSpec, setEditingSpec] = useState('')
   const [saving, setSaving] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { confirm, confirmProps } = useConfirm()
   const { prompt, promptProps } = usePrompt()
-
-  // Calculate status breakdown
-  const counts: StatusCounts = useMemo(() => {
-    const initial: StatusCounts = { done: 0, active: 0, queued: 0, blocked: 0, draft: 0 }
-    return tasks.reduce((acc, task) => {
-      if (task.status === 'done') acc.done++
-      else if (task.status === 'active') acc.active++
-      else if (task.status === 'queued') acc.queued++
-      else if (task.status === 'blocked') acc.blocked++
-      else if (task.status === 'backlog') acc.draft++
-      return acc
-    }, initial)
-  }, [tasks])
 
   // Count tasks missing specs (backlog/draft tasks with no spec)
   const tasksNeedingSpecs = useMemo(() => {
@@ -90,19 +70,6 @@ export function EpicDetail({
   const tasksReadyToQueue = useMemo(() => {
     return tasks.filter((t) => t.status === 'backlog' && t.spec && t.spec.trim() !== '').length
   }, [tasks])
-
-  // Progress percentage
-  const progressPercent = useMemo(() => {
-    if (tasks.length === 0) return 0
-    return Math.round((counts.done / tasks.length) * 100)
-  }, [counts.done, tasks.length])
-
-  const progressColor = useMemo(() => {
-    if (progressPercent === 100) return 'var(--bde-accent)'
-    if (progressPercent >= 50) return 'var(--bde-status-review)'
-    if (progressPercent > 0) return 'var(--bde-warning)'
-    return 'var(--bde-text-dim)'
-  }, [progressPercent])
 
   // Split tasks into outstanding vs completed for visual grouping
   const TERMINAL_STATUSES = new Set(['done', 'cancelled', 'failed', 'error'])
@@ -188,20 +155,6 @@ export function EpicDetail({
     }
   }
 
-  const handleSpecKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault()
-      void handleSaveEdit()
-    }
-  }
-
-  // Focus textarea when editing starts
-  useEffect(() => {
-    if (editingTaskId && textareaRef.current) {
-      textareaRef.current.focus()
-    }
-  }, [editingTaskId])
-
   const isReady = group.status === 'ready'
 
   // Drag and drop handlers
@@ -262,43 +215,11 @@ export function EpicDetail({
       />
 
       {/* Progress Section */}
-      <div className="epic-detail__progress">
-        <div className="epic-detail__progress-bar-track">
-          <div
-            className="epic-detail__progress-bar-fill"
-            style={{
-              width: `${progressPercent}%`,
-              background: progressColor
-            }}
-          />
-        </div>
-        <div className="epic-detail__status-breakdown">
-          <span className="epic-detail__status-count epic-detail__status-count--done">
-            {counts.done} done
-          </span>
-          <span className="epic-detail__status-count epic-detail__status-count--active">
-            {counts.active} active
-          </span>
-          <span className="epic-detail__status-count epic-detail__status-count--queued">
-            {counts.queued} queued
-          </span>
-          <span className="epic-detail__status-count epic-detail__status-count--blocked">
-            {counts.blocked} blocked
-          </span>
-          <span className="epic-detail__status-count epic-detail__status-count--draft">
-            {counts.draft} draft
-          </span>
-        </div>
-
-        {tasksNeedingSpecs > 0 && (
-          <div className="epic-detail__readiness-warning">
-            <AlertTriangle size={14} />
-            <span>
-              {tasksNeedingSpecs} task{tasksNeedingSpecs === 1 ? '' : 's'} missing specs
-            </span>
-          </div>
-        )}
-      </div>
+      <EpicProgress
+        tasks={tasks}
+        tasksNeedingSpecs={tasksNeedingSpecs}
+        tasksReadyToQueue={tasksReadyToQueue}
+      />
 
       {/* Epic Dependencies */}
       <EpicDependencySection
@@ -321,8 +242,6 @@ export function EpicDetail({
         ) : (
           <>
             {outstandingTasks.map((task) => {
-              const hasSpec = task.spec && task.spec.trim() !== ''
-              const hasDeps = task.depends_on && task.depends_on.length > 0
               const isDragging = draggedTaskId === task.id
               const isDragOver = dragOverTaskId === task.id
               const isEditing = editingTaskId === task.id
@@ -333,128 +252,24 @@ export function EpicDetail({
                   variants={VARIANTS.staggerChild}
                   transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
                 >
-                  <div
-                    className="epic-detail__task-row"
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, task.id)}
-                    onDragOver={(e) => handleDragOver(e, task.id)}
+                  <TaskRow
+                    task={task}
+                    isEditing={isEditing}
+                    editingSpec={editingSpec}
+                    saving={saving}
+                    isDragging={isDragging}
+                    isDragOver={isDragOver}
+                    onEditStart={handleTaskClick}
+                    onCancelEdit={handleCancelEdit}
+                    onSaveEdit={handleSaveEdit}
+                    onEdit={onEditTask}
+                    onSpecChange={setEditingSpec}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, task.id)}
+                    onDrop={handleDrop}
                     onDragEnd={handleDragEnd}
-                    style={{
-                      opacity: isDragging ? 0.5 : 1,
-                      borderTop: isDragOver ? `2px solid ${'var(--bde-accent)'}` : undefined,
-                      cursor: 'grab'
-                    }}
-                  >
-                    {!isEditing ? (
-                      <>
-                        <div
-                          className="epic-detail__task-status-dot"
-                          style={{ background: `var(${STATUS_METADATA[task.status].colorToken})` }}
-                        />
-                        <span
-                          className="epic-detail__task-title"
-                          onClick={() => handleTaskClick(task)}
-                          style={{
-                            cursor: task.status === 'backlog' ? 'pointer' : 'default'
-                          }}
-                        >
-                          {task.title}
-                        </span>
-                        {!hasSpec && task.status === 'backlog' && (
-                          <span className="epic-detail__task-flag epic-detail__task-flag--warning">
-                            no spec
-                          </span>
-                        )}
-                        {hasDeps && task.depends_on && (
-                          <span className="epic-detail__task-dep-ref">
-                            {task.depends_on.length} dep{task.depends_on.length === 1 ? '' : 's'}
-                          </span>
-                        )}
-                        <span
-                          className="epic-detail__task-status-badge"
-                          style={{ color: `var(${STATUS_METADATA[task.status].colorToken})` }}
-                        >
-                          {STATUS_METADATA[task.status].label}
-                        </span>
-                        <button
-                          type="button"
-                          className="epic-detail__task-edit-btn"
-                          onClick={() => onEditTask(task.id)}
-                          aria-label={`Edit ${task.title}`}
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px',
-                          width: '100%',
-                          padding: '8px'
-                        }}
-                      >
-                        <textarea
-                          ref={textareaRef}
-                          value={editingSpec}
-                          onChange={(e) => setEditingSpec(e.target.value)}
-                          onKeyDown={handleSpecKeyDown}
-                          placeholder="Enter task spec..."
-                          disabled={saving}
-                          style={{
-                            width: '100%',
-                            minHeight: '120px',
-                            padding: '8px',
-                            background: 'var(--bde-bg)',
-                            border: `1px solid ${'var(--bde-accent)'}40`,
-                            borderRadius: '4px',
-                            color: 'var(--bde-text)',
-                            fontFamily: 'monospace',
-                            fontSize: '13px',
-                            resize: 'vertical'
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                          <button
-                            type="button"
-                            onClick={handleCancelEdit}
-                            disabled={saving}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'transparent',
-                              border: `1px solid ${'var(--bde-text-dim)'}`,
-                              borderRadius: '4px',
-                              color: 'var(--bde-text)',
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              fontSize: '13px'
-                            }}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSaveEdit}
-                            disabled={saving}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'var(--bde-accent)',
-                              border: 'none',
-                              borderRadius: '4px',
-                              color: 'var(--bde-bg)',
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              fontSize: '13px',
-                              fontWeight: 500
-                            }}
-                          >
-                            {saving ? 'Saving...' : 'Save (⌘↵)'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  />
                 </motion.div>
               )
             })}
