@@ -23,12 +23,12 @@ export async function createTask(
 
 export async function batchUpdate(
   operations: Parameters<typeof window.api.sprint.batchUpdate>[0]
-) {
+): ReturnType<typeof window.api.sprint.batchUpdate> {
   return window.api.sprint.batchUpdate(operations)
 }
 
 export async function generatePrompt(
   params: Parameters<typeof window.api.sprint.generatePrompt>[0]
-) {
+): ReturnType<typeof window.api.sprint.generatePrompt> {
   return window.api.sprint.generatePrompt(params)
 }

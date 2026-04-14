@@ -2,7 +2,7 @@ export async function getRepoPaths(): Promise<Record<string, string>> {
   return window.api.git.getRepoPaths()
 }
 
-export async function getGitStatus(cwd: string) {
+export async function getGitStatus(cwd: string): ReturnType<typeof window.api.git.status> {
   return window.api.git.status(cwd)
 }
 
@@ -26,6 +26,6 @@ export async function push(cwd: string): Promise<string> {
   return window.api.git.push(cwd)
 }
 
-export async function getBranches(cwd: string) {
+export async function getBranches(cwd: string): ReturnType<typeof window.api.git.branches> {
   return window.api.git.branches(cwd)
 }

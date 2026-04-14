@@ -1,19 +1,23 @@
-export async function listGroups() {
+export async function listGroups(): ReturnType<typeof window.api.groups.list> {
   return window.api.groups.list()
 }
 
-export async function getGroupTasks(groupId: string) {
+export async function getGroupTasks(
+  groupId: string
+): ReturnType<typeof window.api.groups.getGroupTasks> {
   return window.api.groups.getGroupTasks(groupId)
 }
 
-export async function createGroup(input: Parameters<typeof window.api.groups.create>[0]) {
+export async function createGroup(
+  input: Parameters<typeof window.api.groups.create>[0]
+): ReturnType<typeof window.api.groups.create> {
   return window.api.groups.create(input)
 }
 
 export async function updateGroup(
   id: string,
   patch: Parameters<typeof window.api.groups.update>[1]
-) {
+): ReturnType<typeof window.api.groups.update> {
   return window.api.groups.update(id, patch)
 }
 
@@ -40,11 +44,14 @@ export async function reorderTasks(groupId: string, orderedTaskIds: string[]): P
 export async function addDependency(
   groupId: string,
   dep: Parameters<typeof window.api.groups.addDependency>[1]
-) {
+): ReturnType<typeof window.api.groups.addDependency> {
   return window.api.groups.addDependency(groupId, dep)
 }
 
-export async function removeDependency(groupId: string, upstreamId: string) {
+export async function removeDependency(
+  groupId: string,
+  upstreamId: string
+): ReturnType<typeof window.api.groups.removeDependency> {
   return window.api.groups.removeDependency(groupId, upstreamId)
 }
 
@@ -52,6 +59,6 @@ export async function updateDependencyCondition(
   groupId: string,
   upstreamId: string,
   condition: Parameters<typeof window.api.groups.updateDependencyCondition>[2]
-) {
+): ReturnType<typeof window.api.groups.updateDependencyCondition> {
   return window.api.groups.updateDependencyCondition(groupId, upstreamId, condition)
 }
