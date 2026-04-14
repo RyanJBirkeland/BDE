@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { toast } from './toasts'
-import { createDebouncedPersister } from '../lib/createDebouncedPersister'
+import { loadLayout, createLayoutPersister } from './panel-persistence'
 import {
   _resetIdCounter,
   createLeaf,
@@ -149,8 +149,7 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
 
   loadSavedLayout: async (): Promise<void> => {
     try {
-      if (typeof window === 'undefined' || !window.api?.settings) return
-      const saved = await window.api.settings.getJson('panel.layout')
+      const saved = await loadLayout()
       if (saved && isValidLayout(saved)) {
         const raw = saved as PanelNode
         const root = migrateLayout(raw)
@@ -230,33 +229,19 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
 // Persist layout on every mutation (debounced)
 // ---------------------------------------------------------------------------
 
+const layoutPersister = createLayoutPersister(500)
 let lastLayoutToSave: PanelNode | null = null
-
-const [persistLayout, cancelLayoutPersist] = createDebouncedPersister<PanelNode>((layout) => {
-  if (typeof window === 'undefined' || !window.api?.settings) return
-  window.api.settings.setJson('panel.layout', layout).catch((err) => {
-    console.error('Failed to save panel layout:', err)
-  })
-}, 500)
-
-function flushLayoutPersistence(): void {
-  cancelLayoutPersist()
-  if (lastLayoutToSave && typeof window !== 'undefined' && window.api?.settings) {
-    window.api.settings.setJson('panel.layout', lastLayoutToSave).catch((err) => {
-      console.error('Failed to save panel layout:', err)
-      toast.error('Settings save failed — changes may be lost on restart')
-    })
-  }
-}
 
 usePanelLayoutStore.subscribe((state) => {
   if (!state.persistable) return
   if (typeof window === 'undefined' || !window.api?.settings) return
   lastLayoutToSave = state.root
-  persistLayout(state.root)
+  layoutPersister.persist(state.root)
 })
 
 // Flush pending layout persistence on window close/reload
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', flushLayoutPersistence)
+  window.addEventListener('beforeunload', () => {
+    layoutPersister.flush(lastLayoutToSave)
+  })
 }
