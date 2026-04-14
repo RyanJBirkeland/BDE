@@ -17,6 +17,11 @@ interface SprintSelectionState {
   clearMultiSelection: () => void
 }
 
+export const selectIsTaskSelected =
+  (taskId: string) =>
+  (s: SprintSelectionState): boolean =>
+    s.selectedTaskIds.has(taskId)
+
 export const useSprintSelection = create<SprintSelectionState>((set, get) => ({
   selectedTaskId: null,
   selectedTaskIds: new Set<string>(),

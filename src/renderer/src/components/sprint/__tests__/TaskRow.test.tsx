@@ -123,7 +123,7 @@ describe('TaskRow', () => {
       started_at: new Date('2026-03-01T11:30:00Z').toISOString()
     }
     render(<TaskRow task={activeTask} selected={false} onClick={vi.fn()} />)
-    expect(screen.getByText('30m')).toBeInTheDocument()
+    expect(screen.getByText('30m 0s')).toBeInTheDocument()
   })
 
   it('does not render elapsed time for non-active tasks', () => {

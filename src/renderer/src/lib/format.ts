@@ -19,8 +19,10 @@ export function timeAgo(ts: number | string): string {
 
 /**
  * Live elapsed time from a start timestamp: "12s", "3m 12s", "1h 02m".
+ * Accepts epoch-ms (number) or an ISO/date string.
  */
-export function formatElapsed(startedAtMs: number): string {
+export function formatElapsed(input: number | string): string {
+  const startedAtMs = typeof input === 'string' ? Date.parse(input) : input
   const seconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000))
   if (seconds < 60) return `${seconds}s`
   const minutes = Math.floor(seconds / 60)

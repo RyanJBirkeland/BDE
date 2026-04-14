@@ -22,6 +22,11 @@ interface SprintUIState {
   removeGeneratingId: (id: string) => void
 }
 
+export const selectIsGenerating =
+  (taskId: string) =>
+  (s: SprintUIState): boolean =>
+    s.generatingIds.includes(taskId)
+
 export const useSprintUI = create<SprintUIState>((set) => ({
   doneViewOpen: false,
   conflictDrawerOpen: false,

@@ -4,6 +4,7 @@ import { TASK_STATUS, PR_STATUS } from '../../../shared/constants'
 import { toast } from './toasts'
 import { sanitizeDependsOn } from '../../../shared/sanitize-depends-on'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
+import { canLaunchTask } from '../lib/wip-policy'
 import { nowIso } from '../../../shared/time'
 
 export interface CreateTicketInput {
@@ -317,7 +318,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     // Block launch when WIP limit reached (unless task is already active)
     if (task.status !== TASK_STATUS.ACTIVE) {
       const activeCount = tasks.filter((t) => t.status === TASK_STATUS.ACTIVE).length
-      if (activeCount >= WIP_LIMIT_IN_PROGRESS) {
+      if (!canLaunchTask(activeCount, WIP_LIMIT_IN_PROGRESS)) {
         toast.error(
           `In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}) — finish or stop a task first`
         )

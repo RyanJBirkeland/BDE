@@ -173,6 +173,6 @@ describe('TaskPill - additional status classes', () => {
     const startedAt = new Date(now - 30 * 60 * 1000).toISOString()
     const activeTask: SprintTask = { ...baseTask, status: 'active', started_at: startedAt }
     render(<TaskPill task={activeTask} selected={false} onClick={vi.fn()} />)
-    expect(screen.getByText('30m')).toBeInTheDocument()
+    expect(screen.getByText('30m 0s')).toBeInTheDocument()
   })
 })

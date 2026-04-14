@@ -6,14 +6,14 @@ describe('formatElapsed', () => {
     vi.useRealTimers()
   })
 
-  it('returns minutes for durations under 1 hour', () => {
+  it('returns minutes and seconds for durations under 1 hour', () => {
     vi.useFakeTimers({ now: 300_000 }) // 5 minutes
-    expect(formatElapsed(new Date(0).toISOString())).toBe('5m')
+    expect(formatElapsed(new Date(0).toISOString())).toBe('5m 0s')
   })
 
-  it('returns 0m for very short durations', () => {
+  it('returns 0s for very short durations', () => {
     vi.useFakeTimers({ now: 10_000 })
-    expect(formatElapsed(new Date(0).toISOString())).toBe('0m')
+    expect(formatElapsed(new Date(0).toISOString())).toBe('10s')
   })
 
   it('returns hours and minutes for durations >= 1 hour', () => {
