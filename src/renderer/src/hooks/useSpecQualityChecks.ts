@@ -1,4 +1,4 @@
-import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
+import { useTaskWorkbenchValidation } from '../stores/taskWorkbenchValidation'
 import { useDebouncedAsync } from './useDebouncedAsync'
 import type { SpecType } from '../../../shared/spec-validation'
 
@@ -17,7 +17,7 @@ const MIN_SPEC_LENGTH_FOR_CHECK = 50
  * Debounce delay: 2 seconds after spec/title/repo/specType stops changing.
  */
 export function useSpecQualityChecks({ spec, title, repo, specType }: SpecQualityChecksProps): void {
-  const setSemanticChecks = useTaskWorkbenchStore((s) => s.setSemanticChecks)
+  const setSemanticChecks = useTaskWorkbenchValidation((s) => s.setSemanticChecks)
 
   useDebouncedAsync(
     async () => {
@@ -88,7 +88,7 @@ export function useSpecQualityChecks({ spec, title, repo, specType }: SpecQualit
       delayMs: 2000,
       onStart: () => {
         if (spec.trim() && spec.length >= MIN_SPEC_LENGTH_FOR_CHECK) {
-          useTaskWorkbenchStore.setState({ semanticLoading: true })
+          useTaskWorkbenchValidation.setState({ semanticLoading: true })
         }
       }
     }

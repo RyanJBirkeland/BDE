@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useIDEStore } from '../ide'
+import { useIDEFileCache } from '../ideFileCache'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -14,10 +15,9 @@ function resetStore(): void {
     focusedPanel: 'editor',
     sidebarCollapsed: false,
     terminalCollapsed: false,
-    recentFolders: [],
-    fileContents: {},
-    fileLoadingStates: {}
+    recentFolders: []
   })
+  useIDEFileCache.setState({ fileContents: {}, fileLoadingStates: {} })
 }
 
 // ---------------------------------------------------------------------------
@@ -213,7 +213,8 @@ describe('IDEStore', () => {
     })
 
     it('evicts fileContents and fileLoadingStates when tab is closed', () => {
-      const { openTab, closeTab, setFileContent, setFileLoading } = useIDEStore.getState()
+      const { openTab, closeTab } = useIDEStore.getState()
+      const { setFileContent, setFileLoading } = useIDEFileCache.getState()
       openTab('/test/file.ts')
       const tabId = useIDEStore.getState().openTabs[0].id
       setFileContent('/test/file.ts', 'const x = 1')
@@ -221,13 +222,14 @@ describe('IDEStore', () => {
 
       closeTab(tabId)
 
-      const state = useIDEStore.getState()
-      expect(state.fileContents['/test/file.ts']).toBeUndefined()
-      expect(state.fileLoadingStates['/test/file.ts']).toBeUndefined()
+      const cacheState = useIDEFileCache.getState()
+      expect(cacheState.fileContents['/test/file.ts']).toBeUndefined()
+      expect(cacheState.fileLoadingStates['/test/file.ts']).toBeUndefined()
     })
 
     it('does not evict fileContents when another tab for the same file is still open', () => {
-      const { openTab, closeTab, setFileContent } = useIDEStore.getState()
+      const { openTab, closeTab } = useIDEStore.getState()
+      const { setFileContent } = useIDEFileCache.getState()
       openTab('/test/file.ts')
       const firstTabId = useIDEStore.getState().openTabs[0].id
       // Inject a second tab with the same file path directly into the store
@@ -247,8 +249,8 @@ describe('IDEStore', () => {
 
       closeTab(firstTabId)
 
-      const state = useIDEStore.getState()
-      expect(state.fileContents['/test/file.ts']).toBe('const x = 1')
+      const cacheState = useIDEFileCache.getState()
+      expect(cacheState.fileContents['/test/file.ts']).toBe('const x = 1')
     })
   })
 

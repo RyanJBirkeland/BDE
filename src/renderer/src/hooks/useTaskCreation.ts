@@ -1,5 +1,6 @@
 import { useCallback, useRef, useEffect } from 'react'
 import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
+import { useTaskWorkbenchValidation } from '../stores/taskWorkbenchValidation'
 import { useSprintTasks, type CreateTicketInput } from '../stores/sprintTasks'
 import { useSprintTaskActions } from './useSprintTaskActions'
 import type { TaskDependency } from '../../../shared/types'
@@ -82,14 +83,14 @@ export function useTaskCreation({
     createTaskRef.current = createTask
   })
 
-  const setOperationalChecks = useTaskWorkbenchStore((s) => s.setOperationalChecks)
+  const setOperationalChecks = useTaskWorkbenchValidation((s) => s.setOperationalChecks)
   const setOperationalChecksRef = useRef(setOperationalChecks)
   useEffect(() => {
     setOperationalChecksRef.current = setOperationalChecks
   })
 
-  const structuralChecks = useTaskWorkbenchStore((s) => s.structuralChecks)
-  const semanticChecks = useTaskWorkbenchStore((s) => s.semanticChecks)
+  const structuralChecks = useTaskWorkbenchValidation((s) => s.structuralChecks)
+  const semanticChecks = useTaskWorkbenchValidation((s) => s.semanticChecks)
   const checksRef = useRef({ structural: structuralChecks, semantic: semanticChecks })
   useEffect(() => {
     checksRef.current = { structural: structuralChecks, semantic: semanticChecks }
@@ -154,7 +155,7 @@ export function useTaskCreation({
 
   const save = useCallback(async (targetStatus: 'backlog' | 'queued'): Promise<SaveResult> => {
     if (targetStatus === 'queued') {
-      useTaskWorkbenchStore.setState({ operationalLoading: true })
+      useTaskWorkbenchValidation.setState({ operationalLoading: true })
       const { repo } = formDataRef.current
       const opResult = await window.api.workbench.checkOperational({ repo })
       const opChecks = [

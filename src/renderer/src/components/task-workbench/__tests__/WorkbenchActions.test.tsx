@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { WorkbenchActions } from '../WorkbenchActions'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
+import { useTaskWorkbenchValidation } from '../../../stores/taskWorkbenchValidation'
 
 // 50+ character spec to satisfy minimum length validation
 const VALID_SPEC = 'This is a valid spec with enough content to pass the fifty character minimum.'
@@ -17,6 +18,13 @@ describe('WorkbenchActions', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useTaskWorkbenchStore.getState().resetForm()
+    useTaskWorkbenchValidation.setState({
+      structuralChecks: [],
+      semanticChecks: [],
+      operationalChecks: [],
+      semanticLoading: false,
+      operationalLoading: false
+    })
   })
 
   it('renders save and queue buttons', () => {
@@ -44,7 +52,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('all buttons disabled when structural checks have failures', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'fail', message: 'Missing' },
         { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
@@ -56,7 +64,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('Save to Backlog enabled when title check passes', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
@@ -67,7 +75,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('Queue Now disabled when not all tier 1 pass', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo-selected', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
@@ -78,9 +86,8 @@ describe('WorkbenchActions', () => {
   })
 
   it('Queue Now enabled when all tier 1 pass, no tier 3 fails, repo set, and spec long enough', () => {
-    useTaskWorkbenchStore.setState({
-      repo: 'BDE',
-      spec: VALID_SPEC,
+    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC })
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo-selected', label: 'Repo', tier: 1, status: 'pass', message: 'OK' }
@@ -92,7 +99,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('Queue Now disabled when tier 3 has fails', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ],
@@ -105,7 +112,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('calls onSaveBacklog when Save to Backlog clicked', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ]
@@ -116,9 +123,8 @@ describe('WorkbenchActions', () => {
   })
 
   it('calls onQueueNow when Queue Now clicked', () => {
-    useTaskWorkbenchStore.setState({
-      repo: 'BDE',
-      spec: VALID_SPEC,
+    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC })
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ]
@@ -129,7 +135,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('all buttons disabled when submitting=true', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ]
@@ -146,10 +152,8 @@ describe('WorkbenchActions', () => {
   })
 
   it('Queue Now enabled when advisory checks are warn status (test profile)', () => {
-    useTaskWorkbenchStore.setState({
-      repo: 'BDE',
-      spec: VALID_SPEC,
-      specType: 'test',
+    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC, specType: 'test' })
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo-selected', label: 'Repo', tier: 1, status: 'pass', message: 'OK' },
@@ -174,8 +178,8 @@ describe('WorkbenchActions', () => {
   })
 
   it('Queue Now disabled when required checks fail (feature profile)', () => {
-    useTaskWorkbenchStore.setState({
-      specType: 'feature',
+    useTaskWorkbenchStore.setState({ specType: 'feature' })
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo-selected', label: 'Repo', tier: 1, status: 'pass', message: 'OK' },
@@ -199,9 +203,8 @@ describe('WorkbenchActions', () => {
   })
 
   it('shows no hint when all validations pass', () => {
-    useTaskWorkbenchStore.setState({
-      repo: 'BDE',
-      spec: VALID_SPEC,
+    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC })
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
       ]

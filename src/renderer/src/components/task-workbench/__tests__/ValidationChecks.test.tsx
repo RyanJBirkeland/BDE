@@ -3,15 +3,23 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { ValidationChecks } from '../ValidationChecks'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
+import { useTaskWorkbenchValidation } from '../../../stores/taskWorkbenchValidation'
 
 describe('ValidationChecks', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useTaskWorkbenchStore.getState().resetForm()
+    useTaskWorkbenchValidation.setState({
+      structuralChecks: [],
+      semanticChecks: [],
+      operationalChecks: [],
+      semanticLoading: false,
+      operationalLoading: false
+    })
   })
 
   it('renders nothing when there are no checks', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [],
       semanticChecks: [],
       operationalChecks: []
@@ -21,7 +29,7 @@ describe('ValidationChecks', () => {
   })
 
   it('renders when checks are present', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
     render(<ValidationChecks />)
@@ -29,7 +37,7 @@ describe('ValidationChecks', () => {
   })
 
   it('displays correct pass count and total', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
@@ -43,7 +51,7 @@ describe('ValidationChecks', () => {
   })
 
   it('shows pass icon for passing checks', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
     render(<ValidationChecks />)
@@ -52,7 +60,7 @@ describe('ValidationChecks', () => {
   })
 
   it('shows fail icon for failing checks', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [{ id: 'repo', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }]
     })
     render(<ValidationChecks />)
@@ -61,7 +69,7 @@ describe('ValidationChecks', () => {
   })
 
   it('shows warn icon for warning checks', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       semanticChecks: [{ id: 'scope', label: 'Scope', tier: 2, status: 'warn', message: 'Vague' }]
     })
     render(<ValidationChecks />)
@@ -70,7 +78,7 @@ describe('ValidationChecks', () => {
   })
 
   it('shows pending icon for pending checks', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       operationalChecks: [
         { id: 'auth', label: 'Auth', tier: 3, status: 'pending', message: 'Checking...' }
       ]
@@ -81,7 +89,7 @@ describe('ValidationChecks', () => {
   })
 
   it('displays all check icons in summary', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }
@@ -98,10 +106,10 @@ describe('ValidationChecks', () => {
   })
 
   it('is collapsed by default', () => {
-    useTaskWorkbenchStore.setState({
-      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
-      checksExpanded: false
+    useTaskWorkbenchValidation.setState({
+      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: false })
     render(<ValidationChecks />)
 
     expect(screen.queryByText('Title')).not.toBeInTheDocument()
@@ -109,10 +117,10 @@ describe('ValidationChecks', () => {
   })
 
   it('expands when toggle button is clicked', () => {
-    useTaskWorkbenchStore.setState({
-      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
-      checksExpanded: false
+    useTaskWorkbenchValidation.setState({
+      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: false })
     render(<ValidationChecks />)
 
     const toggleButton = screen.getByRole('button')
@@ -122,22 +130,22 @@ describe('ValidationChecks', () => {
   })
 
   it('shows expanded icon when expanded', () => {
-    useTaskWorkbenchStore.setState({
-      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
-      checksExpanded: true
+    useTaskWorkbenchValidation.setState({
+      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: true })
     render(<ValidationChecks />)
 
     expect(screen.getByText('▾')).toBeInTheDocument()
   })
 
   it('displays check details when expanded', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'Looks good' }
-      ],
-      checksExpanded: true
+      ]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: true })
     render(<ValidationChecks />)
 
     expect(screen.getByText('Title')).toBeInTheDocument()
@@ -145,16 +153,16 @@ describe('ValidationChecks', () => {
   })
 
   it('displays multiple check details when expanded', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
         { id: 'repo', label: 'Repo', tier: 1, status: 'fail', message: 'Required' }
       ],
       semanticChecks: [
         { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Could be clearer' }
-      ],
-      checksExpanded: true
+      ]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: true })
     render(<ValidationChecks />)
 
     expect(screen.getByText('Title')).toBeInTheDocument()
@@ -166,10 +174,10 @@ describe('ValidationChecks', () => {
   })
 
   it('collapses when toggle button is clicked while expanded', () => {
-    useTaskWorkbenchStore.setState({
-      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
-      checksExpanded: true
+    useTaskWorkbenchValidation.setState({
+      structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: true })
     render(<ValidationChecks />)
 
     const toggleButton = screen.getByRole('button')
@@ -179,12 +187,12 @@ describe('ValidationChecks', () => {
   })
 
   it('hides details when collapsed', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'Looks good' }
-      ],
-      checksExpanded: false
+      ]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: false })
     render(<ValidationChecks />)
 
     // Only icon should be present via title attribute, not the text "Title"
@@ -193,7 +201,7 @@ describe('ValidationChecks', () => {
   })
 
   it('has danger border when there are failures', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [{ id: 'repo', label: 'Repo', tier: 1, status: 'fail', message: 'Missing' }]
     })
     const { container } = render(<ValidationChecks />)
@@ -204,7 +212,7 @@ describe('ValidationChecks', () => {
   })
 
   it('has normal border when no failures', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
       semanticChecks: [
         { id: 'clarity', label: 'Clarity', tier: 2, status: 'warn', message: 'Vague' }
@@ -218,7 +226,7 @@ describe('ValidationChecks', () => {
   })
 
   it('combines all three check types', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
       semanticChecks: [
         { id: 'clarity', label: 'Clarity', tier: 2, status: 'pass', message: 'Clear' }
@@ -233,16 +241,16 @@ describe('ValidationChecks', () => {
   })
 
   it('maintains check order: structural, semantic, operational', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'struct-1', label: 'Struct', tier: 1, status: 'pass', message: 'A' }
       ],
       semanticChecks: [{ id: 'sem-1', label: 'Semantic', tier: 2, status: 'pass', message: 'B' }],
       operationalChecks: [
         { id: 'op-1', label: 'Operational', tier: 3, status: 'pass', message: 'C' }
-      ],
-      checksExpanded: true
+      ]
     })
+    useTaskWorkbenchStore.setState({ checksExpanded: true })
     render(<ValidationChecks />)
 
     const labels = screen.getAllByText(/Struct|Semantic|Operational/)
@@ -252,7 +260,7 @@ describe('ValidationChecks', () => {
   })
 
   it('handles empty check arrays gracefully', () => {
-    useTaskWorkbenchStore.setState({
+    useTaskWorkbenchValidation.setState({
       structuralChecks: [{ id: 'title', label: 'Title', tier: 1, status: 'pass', message: 'OK' }],
       semanticChecks: [],
       operationalChecks: []

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useTaskWorkbenchStore } from '../taskWorkbench'
+import { useTaskWorkbenchValidation } from '../taskWorkbenchValidation'
 
 describe('taskWorkbench store', () => {
   beforeEach(() => {
@@ -71,7 +72,7 @@ describe('taskWorkbench store', () => {
   })
 
   it('loadTask clears stale checks', () => {
-    useTaskWorkbenchStore
+    useTaskWorkbenchValidation
       .getState()
       .setSemanticChecks([{ id: 'old', label: 'Old', tier: 2, status: 'pass', message: 'stale' }])
     useTaskWorkbenchStore.getState().loadTask({
@@ -97,8 +98,8 @@ describe('taskWorkbench store', () => {
       updated_at: '2026-01-01',
       created_at: '2026-01-01'
     })
-    expect(useTaskWorkbenchStore.getState().semanticChecks).toHaveLength(0)
-    expect(useTaskWorkbenchStore.getState().operationalChecks).toHaveLength(0)
+    expect(useTaskWorkbenchValidation.getState().semanticChecks).toHaveLength(0)
+    expect(useTaskWorkbenchValidation.getState().operationalChecks).toHaveLength(0)
   })
 
   it('isDirty returns false in pristine create mode', () => {

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { SprintTask, TaskDependency } from '../../../shared/types'
 import type { SpecType } from '../../../shared/spec-validation'
 import { createDebouncedPersister } from '../lib/createDebouncedPersister'
+import { useTaskWorkbenchValidation } from './taskWorkbenchValidation'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,13 +43,8 @@ interface TaskWorkbenchState {
   // --- Dirty state tracking ---
   originalSnapshot: PersistedDraft | null
 
-  // --- Validation ---
+  // --- Validation UI (expanded state only; check data lives in taskWorkbenchValidation) ---
   checksExpanded: boolean
-  structuralChecks: CheckResult[]
-  semanticChecks: CheckResult[]
-  operationalChecks: CheckResult[]
-  semanticLoading: boolean
-  operationalLoading: boolean
 
   // --- Actions ---
   setField: (field: string, value: unknown) => void
@@ -56,8 +52,11 @@ interface TaskWorkbenchState {
   resetForm: () => void
   loadTask: (task: SprintTask) => void
   toggleChecksExpanded: () => void
+  /** @deprecated Import from useTaskWorkbenchValidation instead */
   setStructuralChecks: (checks: CheckResult[]) => void
+  /** @deprecated Import from useTaskWorkbenchValidation instead */
   setSemanticChecks: (checks: CheckResult[]) => void
+  /** @deprecated Import from useTaskWorkbenchValidation instead */
   setOperationalChecks: (checks: CheckResult[]) => void
   isDirty: () => boolean
 }
@@ -160,11 +159,6 @@ type DefaultsShape = Pick<
   | 'pendingGroupId'
   | 'originalSnapshot'
   | 'checksExpanded'
-  | 'structuralChecks'
-  | 'semanticChecks'
-  | 'operationalChecks'
-  | 'semanticLoading'
-  | 'operationalLoading'
 >
 
 function emptyDefaults(): DefaultsShape {
@@ -185,12 +179,7 @@ function emptyDefaults(): DefaultsShape {
     crossRepoContract: null,
     pendingGroupId: null,
     originalSnapshot: null,
-    checksExpanded: false,
-    structuralChecks: [],
-    semanticChecks: [],
-    operationalChecks: [],
-    semanticLoading: false,
-    operationalLoading: false
+    checksExpanded: false
   }
 }
 
@@ -293,17 +282,18 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
       model: task.model ?? '',
       specType: (task.spec_type as SpecType) ?? null,
       crossRepoContract: task.cross_repo_contract ?? null,
-      originalSnapshot: snapshot,
-      semanticChecks: [],
-      operationalChecks: []
+      originalSnapshot: snapshot
     })
+    // Clear stale validation checks from prior editing session
+    useTaskWorkbenchValidation.setState({ semanticChecks: [], operationalChecks: [] })
   },
 
   toggleChecksExpanded: () => set((s) => ({ checksExpanded: !s.checksExpanded })),
 
-  setStructuralChecks: (checks) => set({ structuralChecks: checks }),
-  setSemanticChecks: (checks) => set({ semanticChecks: checks, semanticLoading: false }),
-  setOperationalChecks: (checks) => set({ operationalChecks: checks, operationalLoading: false }),
+  // Thin wrappers — delegate to the focused validation store
+  setStructuralChecks: (checks) => useTaskWorkbenchValidation.getState().setStructuralChecks(checks),
+  setSemanticChecks: (checks) => useTaskWorkbenchValidation.getState().setSemanticChecks(checks),
+  setOperationalChecks: (checks) => useTaskWorkbenchValidation.getState().setOperationalChecks(checks),
 
   isDirty: () => {
     const state = useTaskWorkbenchStore.getState()

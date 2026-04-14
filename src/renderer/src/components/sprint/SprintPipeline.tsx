@@ -3,21 +3,16 @@
  * Left: PipelineBacklog | Center: Pipeline stages | Right: TaskDetailDrawer (conditional)
  */
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
-import { useShallow } from 'zustand/react/shallow'
 import { motion, LayoutGroup } from 'framer-motion'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
-import { useSprintTasks } from '../../stores/sprintTasks'
-import { useSprintUI } from '../../stores/sprintUI'
-import { useSprintSelection } from '../../stores/sprintSelection'
 import { useSprintFilters } from '../../stores/sprintFilters'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
-import { useSprintEvents } from '../../stores/sprintEvents'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
 import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useVisibleStuckTasks } from '../../stores/healthCheck'
-import { useFilteredTasks } from '../../hooks/useFilteredTasks'
+import { useSprintPipelineState } from '../../hooks/useSprintPipelineState'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
 import { PipelineBacklog } from './PipelineBacklog'
@@ -31,77 +26,46 @@ import { PipelineOverlays } from './PipelineOverlays'
 import { DagOverlay } from './DagOverlay'
 import { BulkActionBar } from './BulkActionBar'
 import { NeonCard } from '../neon'
-import { useCodeReviewStore } from '../../stores/codeReview'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintPipelineCommands } from '../../hooks/useSprintPipelineCommands'
 
 import './SprintPipeline.css'
 
-/** Tasks that have an open PR with a merge conflict the user needs to resolve. */
-function hasOpenMergeConflict(t: SprintTask): boolean {
-  return (
-    !!t.pr_url &&
-    !!t.pr_number &&
-    t.pr_mergeable_state === 'dirty' &&
-    (t.status === 'active' || t.status === 'done')
-  )
-}
-
 export function SprintPipeline(): React.JSX.Element {
-  // --- Store state ---
-  const { tasks, loading, loadError } = useSprintTasks(
-    useShallow((s) => ({
-      tasks: s.tasks,
-      loading: s.loading,
-      loadError: s.loadError
-    }))
-  )
-  const updateTask = useSprintTasks((s) => s.updateTask)
-  const loadData = useSprintTasks((s) => s.loadData)
-  const batchRequeueTasks = useSprintTasks((s) => s.batchRequeueTasks)
-
-  const { selectedTaskId, selectedTaskIds, drawerOpen, specPanelOpen, logDrawerTaskId } =
-    useSprintSelection(
-      useShallow((s) => ({
-        selectedTaskId: s.selectedTaskId,
-        selectedTaskIds: s.selectedTaskIds,
-        drawerOpen: s.drawerOpen,
-        specPanelOpen: s.specPanelOpen,
-        logDrawerTaskId: s.logDrawerTaskId
-      }))
-    )
+  // --- Centralised store state ---
   const {
+    tasks,
+    loading,
+    loadError,
+    updateTask,
+    loadData,
+    batchRequeueTasks,
+    selectedTaskId,
+    selectedTaskIds,
+    drawerOpen,
+    specPanelOpen,
+    logDrawerTaskId,
     setSelectedTaskId,
     setDrawerOpen,
     setSpecPanelOpen,
     setLogDrawerTaskId,
-    clearMultiSelection
-  } = useSprintSelection(
-    useShallow((s) => ({
-      setSelectedTaskId: s.setSelectedTaskId,
-      setDrawerOpen: s.setDrawerOpen,
-      setSpecPanelOpen: s.setSpecPanelOpen,
-      setLogDrawerTaskId: s.setLogDrawerTaskId,
-      clearMultiSelection: s.clearMultiSelection
-    }))
-  )
+    clearMultiSelection,
+    doneViewOpen,
+    conflictDrawerOpen,
+    healthCheckDrawerOpen,
+    setDoneViewOpen,
+    setConflictDrawerOpen,
+    setHealthCheckDrawerOpen,
+    selectCodeReviewTask,
+    initTaskOutputListener,
+    filteredTasks,
+    filteredPartition,
+    partition,
+    selectedTask,
+    conflictingTasks
+  } = useSprintPipelineState()
 
-  const { doneViewOpen, conflictDrawerOpen, healthCheckDrawerOpen } = useSprintUI(
-    useShallow((s) => ({
-      doneViewOpen: s.doneViewOpen,
-      conflictDrawerOpen: s.conflictDrawerOpen,
-      healthCheckDrawerOpen: s.healthCheckDrawerOpen
-    }))
-  )
-  const { setDoneViewOpen, setConflictDrawerOpen, setHealthCheckDrawerOpen } = useSprintUI(
-    useShallow((s) => ({
-      setDoneViewOpen: s.setDoneViewOpen,
-      setConflictDrawerOpen: s.setConflictDrawerOpen,
-      setHealthCheckDrawerOpen: s.setHealthCheckDrawerOpen
-    }))
-  )
   const setStatusFilter = useSprintFilters((s) => s.setStatusFilter)
-
   const setView = usePanelLayoutStore((s) => s.setView)
   const reduced = useReducedMotion()
   const openWorkbench = useCallback(() => setView('task-workbench'), [setView])
@@ -124,8 +88,6 @@ export function SprintPipeline(): React.JSX.Element {
   // --- Focus management ---
   const triggerRef = useRef<HTMLElement | null>(null)
 
-  // Cross-domain store actions (not getState() calls)
-  const selectCodeReviewTask = useCodeReviewStore((s) => s.selectTask)
   const loadTaskInWorkbench = useTaskWorkbenchStore((s) => s.loadTask)
 
   // Register sprint commands in command palette
@@ -139,16 +101,7 @@ export function SprintPipeline(): React.JSX.Element {
   // --- Local UI state ---
   const [dagOpen, setDagOpen] = useState(false)
 
-  // Filter + partition tasks via extracted hook
-  const { filteredTasks, filteredPartition, partition } = useFilteredTasks()
-
-  const selectedTask = useMemo(
-    () => (selectedTaskId ? (tasks.find((t) => t.id === selectedTaskId) ?? null) : null),
-    [selectedTaskId, tasks]
-  )
-
   // Subscribe to live task output events
-  const initTaskOutputListener = useSprintEvents((s) => s.initTaskOutputListener)
   useEffect(() => {
     const cleanup = initTaskOutputListener()
     return cleanup
@@ -176,9 +129,6 @@ export function SprintPipeline(): React.JSX.Element {
       setConflictDrawerOpen(typeof value === 'function' ? value(conflictDrawerOpen) : value)
     }
   })
-
-  // SP-7: Filter tasks with merge conflicts for ConflictDrawer
-  const conflictingTasks = useMemo(() => tasks.filter(hasOpenMergeConflict), [tasks])
 
   // Auto-select first active or queued task on load
   useEffect(() => {
@@ -237,7 +187,7 @@ export function SprintPipeline(): React.JSX.Element {
   }, [])
 
   const handleReviewChanges = useCallback(
-    (task: SprintTask) => {
+    (task: SprintTask): void => {
       selectCodeReviewTask(task.id)
       setView('code-review')
     },

@@ -1,4 +1,5 @@
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
+import { useTaskWorkbenchValidation } from '../../stores/taskWorkbenchValidation'
 import './WorkbenchActions.css'
 
 interface WorkbenchActionsProps {
@@ -17,8 +18,8 @@ export function WorkbenchActions({
   const mode = useTaskWorkbenchStore((s) => s.mode)
   const repo = useTaskWorkbenchStore((s) => s.repo)
   const spec = useTaskWorkbenchStore((s) => s.spec)
-  const structural = useTaskWorkbenchStore((s) => s.structuralChecks)
-  const operational = useTaskWorkbenchStore((s) => s.operationalChecks)
+  const structural = useTaskWorkbenchValidation((s) => s.structuralChecks)
+  const operational = useTaskWorkbenchValidation((s) => s.operationalChecks)
 
   const titlePasses = structural.some((c) => c.id === 'title-present' && c.status === 'pass')
   const noTier1Fails = structural.every((c) => c.status !== 'fail')

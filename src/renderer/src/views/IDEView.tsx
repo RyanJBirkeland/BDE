@@ -4,6 +4,7 @@ import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
 import { PanelLeftOpen } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../stores/ide'
+import { useIDEFileCache } from '../stores/ideFileCache'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { EditorPane } from '../components/ide/EditorPane'
 import { EditorTabBar } from '../components/ide/EditorTabBar'
@@ -95,8 +96,6 @@ export function IDEView(): React.JSX.Element {
     sidebarCollapsed,
     terminalCollapsed,
     focusedPanel,
-    fileContents,
-    fileLoadingStates,
     minimapEnabled,
     wordWrapEnabled,
     fontSize,
@@ -106,9 +105,7 @@ export function IDEView(): React.JSX.Element {
     setDirty,
     setFocusedPanel,
     toggleSidebar,
-    toggleTerminal,
-    setFileContent,
-    setFileLoading
+    toggleTerminal
   } = useIDEStore(
     useShallow((s) => ({
       rootPath: s.rootPath,
@@ -117,8 +114,6 @@ export function IDEView(): React.JSX.Element {
       sidebarCollapsed: s.sidebarCollapsed,
       terminalCollapsed: s.terminalCollapsed,
       focusedPanel: s.focusedPanel,
-      fileContents: s.fileContents, // IDE-5
-      fileLoadingStates: s.fileLoadingStates, // IDE-9
       minimapEnabled: s.minimapEnabled,
       wordWrapEnabled: s.wordWrapEnabled,
       fontSize: s.fontSize,
@@ -128,9 +123,16 @@ export function IDEView(): React.JSX.Element {
       setDirty: s.setDirty,
       setFocusedPanel: s.setFocusedPanel,
       toggleSidebar: s.toggleSidebar,
-      toggleTerminal: s.toggleTerminal,
-      setFileContent: s.setFileContent, // IDE-5
-      setFileLoading: s.setFileLoading // IDE-9
+      toggleTerminal: s.toggleTerminal
+    }))
+  )
+
+  const { fileContents, fileLoadingStates, setFileContent, setFileLoading } = useIDEFileCache(
+    useShallow((s) => ({
+      fileContents: s.fileContents,
+      fileLoadingStates: s.fileLoadingStates,
+      setFileContent: s.setFileContent,
+      setFileLoading: s.setFileLoading
     }))
   )
 

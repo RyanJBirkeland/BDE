@@ -6,6 +6,12 @@ import { sanitizeDependsOn } from '../../../shared/sanitize-depends-on'
 import { WIP_LIMIT_IN_PROGRESS } from '../lib/constants'
 import { canLaunchTask } from '../lib/wip-policy'
 import { nowIso } from '../../../shared/time'
+import {
+  mergePendingFields,
+  expirePendingUpdates,
+  trackPendingOperation,
+  type PendingUpdates
+} from '../lib/optimisticUpdateManager'
 
 export interface CreateTicketInput {
   title: string
@@ -34,7 +40,7 @@ interface SprintTasksState {
   loadError: string | null
 
   // --- Optimistic update protection ---
-  pendingUpdates: Record<string, { ts: number; fields: string[] }> // taskId → {timestamp, field names}
+  pendingUpdates: PendingUpdates // taskId → {timestamp, field names}
   pendingCreates: string[] // temp IDs of optimistically created tasks
 
   // --- Actions ---
@@ -100,13 +106,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       set((state) => {
         const now = Date.now()
 
-        // Expire old pending updates (using a local Map for O(1) mutation)
-        const nextPendingMap = new Map(Object.entries(state.pendingUpdates))
-        for (const [id, pending] of nextPendingMap) {
-          if (now - pending.ts > PENDING_UPDATE_TTL) nextPendingMap.delete(id)
-        }
-        const nextPending: Record<string, { ts: number; fields: string[] }> =
-          Object.fromEntries(nextPendingMap)
+        const nextPending = expirePendingUpdates(state.pendingUpdates, PENDING_UPDATE_TTL)
 
         // Build a map of current optimistic tasks by ID for quick lookup
         const currentTaskMap = new Map(state.tasks.map((task) => [task.id, task]))
@@ -114,23 +114,10 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         // Merge incoming data, preserving only pending FIELDS from local version
         const mergedById = new Map<string, SprintTask>()
         for (const task of incoming) {
-          const pending = nextPending[task.id]
-          if (pending) {
-            const localTask = currentTaskMap.get(task.id)
-            if (localTask && now - pending.ts <= PENDING_UPDATE_TTL) {
-              // Merge: start with server data, overlay only the pending fields from local
-              const merged = { ...task } as unknown as Record<string, unknown>
-              for (const fieldName of pending.fields) {
-                merged[fieldName] = (localTask as unknown as Record<string, unknown>)[fieldName]
-              }
-              mergedById.set(task.id, merged as unknown as SprintTask)
-            } else {
-              // TTL expired or local task missing — use server data
-              mergedById.set(task.id, task)
-            }
-          } else {
-            mergedById.set(task.id, task)
-          }
+          mergedById.set(
+            task.id,
+            mergePendingFields(task, currentTaskMap.get(task.id), nextPending[task.id], now, PENDING_UPDATE_TTL)
+          )
         }
 
         // Preserve pending-create temp tasks that aren't in the DB yet
@@ -158,20 +145,10 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     const updateId = Date.now() // Unique ID for this update operation
 
     // Record pending update before optimistic patch, merging fields from prior pending updates
-    set((state) => {
-      const existing = state.pendingUpdates[taskId]
-      const existingFields = existing?.fields ?? []
-      const newFields = Object.keys(patch)
-      const mergedFields = [...new Set([...existingFields, ...newFields])]
-
-      return {
-        pendingUpdates: {
-          ...state.pendingUpdates,
-          [taskId]: { ts: updateId, fields: mergedFields }
-        },
-        tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t))
-      }
-    })
+    set((state) => ({
+      pendingUpdates: trackPendingOperation(state.pendingUpdates, taskId, Object.keys(patch), updateId),
+      tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t))
+    }))
     try {
       const serverTask = (await window.api.sprint.update(taskId, patch)) as SprintTask | null
       // Apply server response (may differ from optimistic — e.g. auto-blocked) and clear pending

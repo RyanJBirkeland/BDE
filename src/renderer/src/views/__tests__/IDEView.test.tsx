@@ -15,8 +15,6 @@ type MockIDEState = {
   sidebarCollapsed: boolean
   terminalCollapsed: boolean
   focusedPanel: 'editor' | 'terminal'
-  fileContents: Record<string, string>
-  fileLoadingStates: Record<string, boolean>
   setRootPath: ReturnType<typeof vi.fn>
   openTab: ReturnType<typeof vi.fn>
   closeTab: ReturnType<typeof vi.fn>
@@ -25,12 +23,17 @@ type MockIDEState = {
   setFocusedPanel: ReturnType<typeof vi.fn>
   toggleSidebar: ReturnType<typeof vi.fn>
   toggleTerminal: ReturnType<typeof vi.fn>
-  setFileContent: ReturnType<typeof vi.fn>
-  setFileLoading: ReturnType<typeof vi.fn>
   recentFolders: string[]
 }
 
-const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
+type MockFileCacheState = {
+  fileContents: Record<string, string>
+  fileLoadingStates: Record<string, boolean>
+  setFileContent: ReturnType<typeof vi.fn>
+  setFileLoading: ReturnType<typeof vi.fn>
+}
+
+const { mockUseIDEStore, mockUseIDEFileCache, mockSetFocusedPanel } = vi.hoisted(() => {
   const mockSetFocusedPanel = vi.fn()
   const defaultState: MockIDEState = {
     rootPath: null,
@@ -39,8 +42,6 @@ const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
     sidebarCollapsed: false,
     terminalCollapsed: false,
     focusedPanel: 'editor',
-    fileContents: {},
-    fileLoadingStates: {},
     setRootPath: vi.fn(),
     openTab: vi.fn(),
     closeTab: vi.fn(),
@@ -49,9 +50,13 @@ const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
     setFocusedPanel: mockSetFocusedPanel,
     toggleSidebar: vi.fn(),
     toggleTerminal: vi.fn(),
-    setFileContent: vi.fn(),
-    setFileLoading: vi.fn(),
     recentFolders: []
+  }
+  const defaultCacheState: MockFileCacheState = {
+    fileContents: {},
+    fileLoadingStates: {},
+    setFileContent: vi.fn(),
+    setFileLoading: vi.fn()
   }
   const mockUseIDEStore = vi.fn((selector: (s: MockIDEState) => unknown) =>
     selector(defaultState)
@@ -61,10 +66,19 @@ const { mockUseIDEStore, mockSetFocusedPanel } = vi.hoisted(() => {
   }
   mockUseIDEStore.getState = () => defaultState
   mockUseIDEStore.setState = vi.fn()
-  return { mockUseIDEStore, mockSetFocusedPanel }
+  const mockUseIDEFileCache = vi.fn((selector: (s: MockFileCacheState) => unknown) =>
+    selector(defaultCacheState)
+  ) as ReturnType<typeof vi.fn> & {
+    getState: () => MockFileCacheState
+    setState: (partial: Partial<MockFileCacheState>) => void
+  }
+  mockUseIDEFileCache.getState = () => defaultCacheState
+  mockUseIDEFileCache.setState = vi.fn()
+  return { mockUseIDEStore, mockUseIDEFileCache, mockSetFocusedPanel }
 })
 
 vi.mock('../../stores/ide', () => ({ useIDEStore: mockUseIDEStore }))
+vi.mock('../../stores/ideFileCache', () => ({ useIDEFileCache: mockUseIDEFileCache }))
 vi.mock('../../stores/panelLayout', () => ({
   usePanelLayoutStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ activeView: 'ide', setView: vi.fn() })
@@ -198,7 +212,12 @@ Object.defineProperty(window, 'api', {
   configurable: true
 })
 
-function setIDEState(overrides: Partial<MockIDEState>): void {
+function setIDEState(
+  overrides: Partial<MockIDEState> & Partial<MockFileCacheState>
+): void {
+  const { fileContents, fileLoadingStates, setFileContent, setFileLoading, ...ideOverrides } =
+    overrides
+
   const state: MockIDEState = {
     rootPath: null,
     openTabs: [],
@@ -206,8 +225,6 @@ function setIDEState(overrides: Partial<MockIDEState>): void {
     sidebarCollapsed: false,
     terminalCollapsed: false,
     focusedPanel: 'editor',
-    fileContents: {},
-    fileLoadingStates: {},
     setRootPath: vi.fn(),
     openTab: vi.fn(),
     closeTab: vi.fn(),
@@ -216,14 +233,22 @@ function setIDEState(overrides: Partial<MockIDEState>): void {
     setFocusedPanel: mockSetFocusedPanel,
     toggleSidebar: vi.fn(),
     toggleTerminal: vi.fn(),
-    setFileContent: vi.fn(),
-    setFileLoading: vi.fn(),
     recentFolders: [],
-    ...overrides
+    ...ideOverrides
+  }
+  const cacheState: MockFileCacheState = {
+    fileContents: fileContents ?? {},
+    fileLoadingStates: fileLoadingStates ?? {},
+    setFileContent: setFileContent ?? vi.fn(),
+    setFileLoading: setFileLoading ?? vi.fn()
   }
   mockUseIDEStore.mockImplementation((selector: (s: MockIDEState) => unknown) => selector(state))
   mockUseIDEStore.getState = () => state
   mockUseIDEStore.setState = vi.fn()
+  mockUseIDEFileCache.mockImplementation((selector: (s: MockFileCacheState) => unknown) =>
+    selector(cacheState)
+  )
+  mockUseIDEFileCache.getState = () => cacheState
 }
 
 beforeEach(() => {
@@ -863,8 +888,6 @@ describe('IDEView', () => {
         sidebarCollapsed: false,
         terminalCollapsed: false,
         focusedPanel: 'editor',
-        fileContents: {},
-        fileLoadingStates: {},
         setRootPath: vi.fn(),
         openTab: mockOpenTab,
         closeTab: vi.fn(),
@@ -872,8 +895,6 @@ describe('IDEView', () => {
         setFocusedPanel: mockSetFocusedPanel,
         toggleSidebar: vi.fn(),
         toggleTerminal: vi.fn(),
-        setFileContent: vi.fn(),
-        setFileLoading: vi.fn(),
         setActiveTab: vi.fn(),
         recentFolders: []
       }

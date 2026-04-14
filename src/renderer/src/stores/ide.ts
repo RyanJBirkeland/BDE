@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createDebouncedPersister } from '../lib/createDebouncedPersister'
+import { useIDEFileCache } from './ideFileCache'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -90,8 +91,6 @@ interface IDEState {
   sidebarCollapsed: boolean
   terminalCollapsed: boolean
   recentFolders: string[]
-  fileContents: Record<string, string> // IDE-5: Move from component state to store
-  fileLoadingStates: Record<string, boolean> // IDE-9: Track loading state per file
   minimapEnabled: boolean
   wordWrapEnabled: boolean
   fontSize: number
@@ -106,9 +105,12 @@ interface IDEState {
   toggleSidebar: () => void
   toggleTerminal: () => void
   setFocusedPanel: (panel: 'editor' | 'terminal') => void
-  setFileContent: (filePath: string, content: string) => void // IDE-5
-  setFileLoading: (filePath: string, loading: boolean) => void // IDE-9
-  clearFileContent: (filePath: string) => void // IDE-5
+  /** @deprecated Use useIDEFileCache instead */
+  setFileContent: (filePath: string, content: string) => void
+  /** @deprecated Use useIDEFileCache instead */
+  setFileLoading: (filePath: string, loading: boolean) => void
+  /** @deprecated Use useIDEFileCache instead */
+  clearFileContent: (filePath: string) => void
   toggleMinimap: () => void
   toggleWordWrap: () => void
   increaseFontSize: () => void
@@ -128,8 +130,6 @@ export const useIDEStore = create<IDEState>((set) => ({
   sidebarCollapsed: false,
   terminalCollapsed: false,
   recentFolders: [],
-  fileContents: {}, // IDE-5
-  fileLoadingStates: {}, // IDE-9
   minimapEnabled: true,
   wordWrapEnabled: false,
   fontSize: 13,
@@ -139,14 +139,13 @@ export const useIDEStore = create<IDEState>((set) => ({
       const prev = s.recentFolders.filter((f) => f !== path)
       const recentFolders = [path, ...prev].slice(0, 5)
       // IDE-14: Clear stale tabs from old root when changing root
+      useIDEFileCache.getState().clearAll()
       return {
         rootPath: path,
         expandedDirs: {},
         recentFolders,
         openTabs: [],
-        activeTabId: null,
-        fileContents: {},
-        fileLoadingStates: {}
+        activeTabId: null
       }
     })
   },
@@ -220,24 +219,13 @@ export const useIDEStore = create<IDEState>((set) => ({
 
       // Evict file content if no other tab references the same file
       const stillOpen = updatedTabs.some((t) => t.filePath === closedPath)
-      const newContents = stillOpen
-        ? s.fileContents
-        : (() => {
-            const { [closedPath]: _, ...rest } = s.fileContents
-            return rest
-          })()
-      const newLoading = stillOpen
-        ? s.fileLoadingStates
-        : (() => {
-            const { [closedPath]: _, ...rest } = s.fileLoadingStates
-            return rest
-          })()
+      if (!stillOpen) {
+        useIDEFileCache.getState().clearFileContent(closedPath)
+      }
 
       return {
         openTabs: updatedTabs,
-        activeTabId: newActiveTabId,
-        fileContents: newContents,
-        fileLoadingStates: newLoading
+        activeTabId: newActiveTabId
       }
     })
   },
@@ -264,25 +252,17 @@ export const useIDEStore = create<IDEState>((set) => ({
     set({ focusedPanel: panel })
   },
 
-  // IDE-5: File content management actions
+  // File content management — delegates to ideFileCache store
   setFileContent: (filePath: string, content: string): void => {
-    set((s) => ({
-      fileContents: { ...s.fileContents, [filePath]: content }
-    }))
+    useIDEFileCache.getState().setFileContent(filePath, content)
   },
 
   setFileLoading: (filePath: string, loading: boolean): void => {
-    set((s) => ({
-      fileLoadingStates: { ...s.fileLoadingStates, [filePath]: loading }
-    }))
+    useIDEFileCache.getState().setFileLoading(filePath, loading)
   },
 
   clearFileContent: (filePath: string): void => {
-    set((s) => {
-      const { [filePath]: _, ...rest } = s.fileContents
-      const { [filePath]: _loading, ...restLoading } = s.fileLoadingStates
-      return { fileContents: rest, fileLoadingStates: restLoading }
-    })
+    useIDEFileCache.getState().clearFileContent(filePath)
   },
 
   toggleMinimap: (): void => {

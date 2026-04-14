@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { Check, AlertTriangle, X, Loader2, CheckCircle2 } from 'lucide-react'
 import { useTaskWorkbenchStore, type CheckResult } from '../../stores/taskWorkbench'
+import { useTaskWorkbenchValidation } from '../../stores/taskWorkbenchValidation'
 import { NeonCard } from '../neon/NeonCard'
 import type { NeonAccent } from '../neon/types'
 import './ValidationChecks.css'
@@ -46,11 +47,11 @@ function CheckIcon({ status }: { status: CheckResult['status'] }): React.JSX.Ele
 }
 
 export function ValidationChecks(): React.JSX.Element | null {
-  const structural = useTaskWorkbenchStore((s) => s.structuralChecks)
-  const semantic = useTaskWorkbenchStore((s) => s.semanticChecks)
-  const operational = useTaskWorkbenchStore((s) => s.operationalChecks)
-  const semanticLoading = useTaskWorkbenchStore((s) => s.semanticLoading)
-  const operationalLoading = useTaskWorkbenchStore((s) => s.operationalLoading)
+  const structural = useTaskWorkbenchValidation((s) => s.structuralChecks)
+  const semantic = useTaskWorkbenchValidation((s) => s.semanticChecks)
+  const operational = useTaskWorkbenchValidation((s) => s.operationalChecks)
+  const semanticLoading = useTaskWorkbenchValidation((s) => s.semanticLoading)
+  const operationalLoading = useTaskWorkbenchValidation((s) => s.operationalLoading)
   const expanded = useTaskWorkbenchStore((s) => s.checksExpanded)
   const toggleExpanded = useTaskWorkbenchStore((s) => s.toggleChecksExpanded)
 

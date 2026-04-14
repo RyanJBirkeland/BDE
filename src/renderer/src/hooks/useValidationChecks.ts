@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useTaskWorkbenchStore, type CheckResult } from '../stores/taskWorkbench'
+import { useTaskWorkbenchValidation } from '../stores/taskWorkbenchValidation'
 import {
   MIN_SPEC_LENGTH,
   MIN_HEADING_COUNT,
@@ -285,7 +286,7 @@ export function useValidationChecks(): void {
   const repo = useTaskWorkbenchStore((s) => s.repo)
   const spec = useTaskWorkbenchStore((s) => s.spec)
   const specType = useTaskWorkbenchStore((s) => s.specType)
-  const setStructuralChecks = useTaskWorkbenchStore((s) => s.setStructuralChecks)
+  const setStructuralChecks = useTaskWorkbenchValidation((s) => s.setStructuralChecks)
 
   useEffect(() => {
     const checks = computeStructuralChecks({ title, repo, spec }, specType)
