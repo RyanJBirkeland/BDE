@@ -11,30 +11,30 @@ export interface MemorySearchResult {
 export async function listFiles(): Promise<
   { path: string; name: string; size: number; modifiedAt: number; active: boolean }[]
 > {
-  return window.api.listMemoryFiles()
+  return window.api.memory.listFiles()
 }
 
 export async function readFile(path: string): Promise<string> {
-  return window.api.readMemoryFile(path)
+  return window.api.memory.readFile(path)
 }
 
 export async function writeFile(path: string, content: string): Promise<void> {
-  return window.api.writeMemoryFile(path, content)
+  return window.api.memory.writeFile(path, content)
 }
 
 export async function search(
   query: string
 ): Promise<{ results: MemorySearchResult[]; timedOut: boolean }> {
-  return window.api.searchMemory(query)
+  return window.api.memory.search(query)
 }
 
 export async function getActiveFiles(): Promise<Record<string, boolean>> {
-  return window.api.getActiveMemoryFiles()
+  return window.api.memory.getActiveFiles()
 }
 
 export async function setFileActive(
   path: string,
   active: boolean
 ): Promise<Record<string, boolean>> {
-  return window.api.setMemoryFileActive(path, active)
+  return window.api.memory.setFileActive(path, active)
 }

@@ -90,13 +90,13 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         action: async () => {
           onClose()
           try {
-            const paths = await window.api.getRepoPaths()
+            const paths = await window.api.git.getRepoPaths()
             const repoPath = paths['BDE'] || paths[Object.keys(paths)[0]]
             if (!repoPath) {
               toast.error('No repo path found')
               return
             }
-            await window.api.spawnLocalAgent({
+            await window.api.agents.spawnLocal({
               task: "You are now ready to assist. Wait for the user's first message.",
               repoPath,
               assistant: true

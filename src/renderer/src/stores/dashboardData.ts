@@ -118,7 +118,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
 
     let prCount = 0
     try {
-      const prs = await window.api.getPrList()
+      const prs = await window.api.pr.getList()
       prCount = prs?.prs?.length ?? 0
     } catch {
       errors.prs = 'Failed to load PR data'

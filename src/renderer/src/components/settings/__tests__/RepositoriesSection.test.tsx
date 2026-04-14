@@ -12,11 +12,11 @@ vi.mock('../../../stores/toasts', () => ({
 beforeEach(() => {
   vi.mocked(window.api.settings.getJson).mockResolvedValue(null)
   vi.mocked(window.api.settings.setJson).mockResolvedValue(undefined)
-  vi.mocked(window.api.openDirectoryDialog).mockResolvedValue(null)
+  vi.mocked(window.api.fs.openDirDialog).mockResolvedValue(null)
   vi.clearAllMocks()
   vi.mocked(window.api.settings.getJson).mockResolvedValue(null)
   vi.mocked(window.api.settings.setJson).mockResolvedValue(undefined)
-  vi.mocked(window.api.openDirectoryDialog).mockResolvedValue(null)
+  vi.mocked(window.api.fs.openDirDialog).mockResolvedValue(null)
 })
 
 import { RepositoriesSection } from '../RepositoriesSection'
@@ -144,7 +144,7 @@ describe('RepositoriesSection', () => {
   })
 
   it('Browse button calls openDirectoryDialog and populates local path field', async () => {
-    vi.mocked(window.api.openDirectoryDialog).mockResolvedValue('/picked/path')
+    vi.mocked(window.api.fs.openDirDialog).mockResolvedValue('/picked/path')
     const user = userEvent.setup()
     render(<RepositoriesSection />)
 
@@ -154,7 +154,7 @@ describe('RepositoriesSection', () => {
     await user.click(browseButton)
 
     await waitFor(() => {
-      expect(window.api.openDirectoryDialog).toHaveBeenCalled()
+      expect(window.api.fs.openDirDialog).toHaveBeenCalled()
       expect((screen.getByPlaceholderText('Local path') as HTMLInputElement).value).toBe(
         '/picked/path'
       )

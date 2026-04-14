@@ -45,7 +45,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
   const { createTask } = useSprintTaskActions()
 
   useEffect(() => {
-    window.api.getRepoPaths().then((paths) => setRepoPaths(paths))
+    window.api.git.getRepoPaths().then((paths) => setRepoPaths(paths))
   }, [])
 
   const repoKeys = Object.keys(repoPaths)

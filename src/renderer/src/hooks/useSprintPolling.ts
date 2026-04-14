@@ -21,6 +21,6 @@ export function useSprintPolling(): void {
 
   // Instant refresh when an external process writes to bde.db
   useEffect(() => {
-    return window.api.onExternalSprintChange(loadData)
+    return window.api.sprint.onExternalChange(loadData)
   }, [loadData])
 }

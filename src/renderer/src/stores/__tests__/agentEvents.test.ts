@@ -23,17 +23,17 @@ function makeEvent(text = 'hello'): AgentEvent {
 describe('init', () => {
   it('subscribes to agentEvents.onEvent and returns an unsubscribe function', () => {
     const unsubscribe = vi.fn()
-    vi.mocked(window.api.agentEvents.onEvent).mockReturnValue(unsubscribe)
+    vi.mocked(window.api.agents.events.onEvent).mockReturnValue(unsubscribe)
 
     const cleanup = useAgentEventsStore.getState().init()
 
-    expect(window.api.agentEvents.onEvent).toHaveBeenCalledOnce()
+    expect(window.api.agents.events.onEvent).toHaveBeenCalledOnce()
     expect(cleanup).toBe(unsubscribe)
   })
 
   it('appends events to the correct agent bucket when an event arrives', () => {
     let capturedCallback: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       capturedCallback = cb
       return () => {}
     })
@@ -50,7 +50,7 @@ describe('init', () => {
 
   it('accumulates multiple events for the same agent', () => {
     let capturedCallback: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       capturedCallback = cb
       return () => {}
     })
@@ -65,7 +65,7 @@ describe('init', () => {
 
   it('keeps events for different agents isolated', () => {
     let capturedCallback: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       capturedCallback = cb
       return () => {}
     })
@@ -83,11 +83,11 @@ describe('init', () => {
 describe('loadHistory', () => {
   it('fetches history from IPC and stores it under the agent id', async () => {
     const history = [makeEvent('h1'), makeEvent('h2')]
-    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue(history)
+    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue(history)
 
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
-    expect(window.api.agentEvents.getHistory).toHaveBeenCalledWith('agent-z')
+    expect(window.api.agents.events.getHistory).toHaveBeenCalledWith('agent-z')
     expect(useAgentEventsStore.getState().events['agent-z']).toHaveLength(2)
     expect(
       (useAgentEventsStore.getState().events['agent-z'][0] as { type: string; text: string }).text
@@ -98,7 +98,7 @@ describe('loadHistory', () => {
     useAgentEventsStore.setState({
       events: { 'agent-z': [makeEvent('old-1'), makeEvent('old-2')] }
     })
-    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent('new-1')])
+    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([makeEvent('new-1')])
 
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
@@ -111,7 +111,7 @@ describe('loadHistory', () => {
     useAgentEventsStore.setState({
       events: { other: [makeEvent('o1')] }
     })
-    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue([makeEvent('n1')])
+    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([makeEvent('n1')])
 
     await useAgentEventsStore.getState().loadHistory('target')
 
@@ -158,7 +158,7 @@ describe('clear', () => {
 describe('event cap (MAX_EVENTS_PER_AGENT = 2000)', () => {
   it('allows up to 2000 events without eviction', () => {
     let capturedCallback: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       capturedCallback = cb
       return () => {}
     })
@@ -174,7 +174,7 @@ describe('event cap (MAX_EVENTS_PER_AGENT = 2000)', () => {
 
   it('evicts oldest events once cap is exceeded', () => {
     let capturedCallback: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       capturedCallback = cb
       return () => {}
     })
@@ -194,7 +194,7 @@ describe('event cap (MAX_EVENTS_PER_AGENT = 2000)', () => {
 
   it('caps loadHistory at 2000 events, keeping the most recent', async () => {
     const bigHistory = Array.from({ length: 2500 }, (_, i) => makeEvent(`h${i}`))
-    vi.mocked(window.api.agentEvents.getHistory).mockResolvedValue(bigHistory)
+    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue(bigHistory)
 
     await useAgentEventsStore.getState().loadHistory('agent-hist')
 

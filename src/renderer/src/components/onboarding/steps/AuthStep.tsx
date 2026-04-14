@@ -23,7 +23,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
   const checkAuth = async (): Promise<void> => {
     setChecking(true)
     try {
-      const result = await window.api.authStatus()
+      const result = await window.api.auth.status()
       setStatus(result)
     } catch {
       setStatus({ cliFound: false, tokenFound: false, tokenExpired: false })

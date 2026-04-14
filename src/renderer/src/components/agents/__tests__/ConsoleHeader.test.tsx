@@ -33,9 +33,13 @@ vi.mock('../../../components/ui/ConfirmModal', () => ({
 // Mock window.api
 Object.defineProperty(window, 'api', {
   value: {
-    killAgent: vi.fn().mockResolvedValue(undefined),
-    tailAgentLog: vi.fn().mockResolvedValue({ content: 'log content', fromByte: 0 }),
-    gitStatus: vi.fn().mockResolvedValue({ files: [], branch: 'main' })
+    agents: {
+      kill: vi.fn().mockResolvedValue(undefined),
+      tailLog: vi.fn().mockResolvedValue({ content: 'log content', fromByte: 0 })
+    },
+    git: {
+      status: vi.fn().mockResolvedValue({ files: [], branch: 'main' })
+    }
   },
   writable: true,
   configurable: true
@@ -200,7 +204,7 @@ describe('ConsoleHeader', () => {
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Copy log'))
     })
-    expect(window.api.tailAgentLog).toHaveBeenCalled()
+    expect(window.api.agents.tailLog).toHaveBeenCalled()
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('log content')
     expect(toast.success).toHaveBeenCalledWith('Log copied to clipboard')
   })
@@ -218,7 +222,7 @@ describe('ConsoleHeader', () => {
         variant: 'default'
       })
     )
-    expect(window.api.killAgent).toHaveBeenCalledWith(baseAgent.id)
+    expect(window.api.agents.kill).toHaveBeenCalledWith(baseAgent.id)
   })
 
   it('shows confirmation with git status when stopping agent with worktree', async () => {
@@ -227,7 +231,7 @@ describe('ConsoleHeader', () => {
       worktreePath: '/tmp/worktree',
       sprintTaskId: 'task-123'
     }
-    vi.mocked(window.api.gitStatus).mockResolvedValue({
+    vi.mocked(window.api.git.status).mockResolvedValue({
       files: [
         { path: 'file1.ts', status: 'M', staged: false },
         { path: 'file2.ts', status: 'A', staged: true }
@@ -238,7 +242,7 @@ describe('ConsoleHeader', () => {
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Stop agent'))
     })
-    expect(window.api.gitStatus).toHaveBeenCalledWith('/tmp/worktree')
+    expect(window.api.git.status).toHaveBeenCalledWith('/tmp/worktree')
     expect(mockConfirm).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Stop agent?',
@@ -247,7 +251,7 @@ describe('ConsoleHeader', () => {
         variant: 'danger'
       })
     )
-    expect(window.api.killAgent).toHaveBeenCalledWith('task-123')
+    expect(window.api.agents.kill).toHaveBeenCalledWith('task-123')
   })
 
   it('does not kill agent when user cancels confirmation', async () => {
@@ -257,11 +261,11 @@ describe('ConsoleHeader', () => {
       fireEvent.click(screen.getByLabelText('Stop agent'))
     })
     expect(mockConfirm).toHaveBeenCalled()
-    expect(window.api.killAgent).not.toHaveBeenCalled()
+    expect(window.api.agents.kill).not.toHaveBeenCalled()
   })
 
   it('shows error toast when stop fails', async () => {
-    vi.mocked(window.api.killAgent).mockRejectedValue(new Error('kill failed'))
+    vi.mocked(window.api.agents.kill).mockRejectedValue(new Error('kill failed'))
     const { toast } = await import('../../../stores/toasts')
     render(<ConsoleHeader agent={baseAgent} events={[]} />)
     await act(async () => {
@@ -271,7 +275,7 @@ describe('ConsoleHeader', () => {
   })
 
   it('shows error toast when copy log fails', async () => {
-    vi.mocked(window.api.tailAgentLog).mockRejectedValue(new Error('log read failed'))
+    vi.mocked(window.api.agents.tailLog).mockRejectedValue(new Error('log read failed'))
     const { toast } = await import('../../../stores/toasts')
     render(<ConsoleHeader agent={baseAgent} events={[]} />)
     await act(async () => {

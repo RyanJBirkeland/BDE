@@ -7,7 +7,7 @@ const mockOnDirChanged = vi.fn(() => vi.fn())
 
 // Mock window.api without replacing the full window object
 Object.defineProperty(window, 'api', {
-  value: { readDir: mockReadDir, onDirChanged: mockOnDirChanged },
+  value: { fs: { readDir: mockReadDir, onDirChanged: mockOnDirChanged } },
   writable: true,
   configurable: true
 })

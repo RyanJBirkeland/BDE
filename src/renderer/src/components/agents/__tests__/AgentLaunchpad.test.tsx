@@ -51,7 +51,10 @@ vi.mock('../../../hooks/useRepoOptions', () => ({
 Object.defineProperty(window, 'api', {
   value: {
     ...(window as unknown as { api: Record<string, unknown> }).api,
-    getRepoPaths: mockGetRepoPaths,
+    git: {
+      ...((window as unknown as { api: { git: Record<string, unknown> } }).api?.git ?? {}),
+      getRepoPaths: mockGetRepoPaths
+    },
     settings: {
       get: vi.fn(),
       set: vi.fn(),

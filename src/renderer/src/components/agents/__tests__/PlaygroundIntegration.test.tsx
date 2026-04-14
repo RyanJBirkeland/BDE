@@ -153,7 +153,7 @@ describe('PlaygroundModal — integration', () => {
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('Open in Browser button calls window.api.openPlaygroundInBrowser', async () => {
+  it('Open in Browser button calls window.api.window.openPlaygroundInBrowser', async () => {
     render(
       <PlaygroundModal
         html="<h1>Open me</h1>"
@@ -165,8 +165,8 @@ describe('PlaygroundModal — integration', () => {
     const openBtn = screen.getByLabelText('Open in browser')
     fireEvent.click(openBtn)
     // openPlaygroundInBrowser is mocked in test-setup
-    expect(window.api.openPlaygroundInBrowser).toHaveBeenCalled()
-    expect(window.api.openPlaygroundInBrowser).toHaveBeenCalledWith('<h1>Open me</h1>')
+    expect(window.api.window.openPlaygroundInBrowser).toHaveBeenCalled()
+    expect(window.api.window.openPlaygroundInBrowser).toHaveBeenCalledWith('<h1>Open me</h1>')
   })
 
   it('formats large file size as MB', () => {

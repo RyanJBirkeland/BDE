@@ -4,7 +4,7 @@ import { Onboarding } from '../Onboarding'
 
 beforeEach(() => {
   vi.clearAllMocks()
-  ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+  ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
     cliFound: true,
     tokenFound: true,
     tokenExpired: false,
@@ -53,7 +53,7 @@ describe('Onboarding', () => {
   })
 
   it('does not auto-advance when CLI is not found', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+    ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
       cliFound: false,
       tokenFound: false,
       tokenExpired: false
@@ -69,7 +69,7 @@ describe('Onboarding', () => {
   })
 
   it('shows Check Again button when checks fail', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+    ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
       cliFound: false,
       tokenFound: false,
       tokenExpired: false
@@ -84,7 +84,7 @@ describe('Onboarding', () => {
   })
 
   it('shows help text for failed checks', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+    ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
       cliFound: false,
       tokenFound: false,
       tokenExpired: false
@@ -101,7 +101,7 @@ describe('Onboarding', () => {
   })
 
   it('calls onReady when Continue Anyway is clicked', async () => {
-    ;(window.api as Record<string, unknown>).authStatus = vi.fn().mockResolvedValue({
+    ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
       cliFound: false,
       tokenFound: false,
       tokenExpired: false

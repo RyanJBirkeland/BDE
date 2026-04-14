@@ -36,7 +36,7 @@ export function usePrStatusPolling(): void {
       const withPr = taskList.filter((t) => t.pr_url && !prMergedRef.current[t.id])
       if (withPr.length === 0) return
       try {
-        const results = await window.api.pollPrStatuses(
+        const results = await window.api.pr.pollStatuses(
           withPr.map((t) => ({ taskId: t.id, prUrl: t.pr_url! }))
         )
         setPrMergedMap((prev) => {

@@ -144,7 +144,7 @@ export function AgentsView(): React.JSX.Element {
           ? [{ data: attachment.data, mimeType: attachment.mimeType }]
           : undefined
 
-      const result = await window.api.steerAgent(activeId, textFormattedMessage, images)
+      const result = await window.api.agents.steer(activeId, textFormattedMessage, images)
       if (!result.ok) {
         toast.error(result.error ?? 'Failed to send message to agent')
       }
@@ -158,7 +158,7 @@ export function AgentsView(): React.JSX.Element {
       switch (cmd) {
         case '/stop':
           try {
-            await window.api.killAgent(activeId)
+            await window.api.agents.kill(activeId)
           } catch (err) {
             toast.error(
               `Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`
@@ -179,7 +179,7 @@ export function AgentsView(): React.JSX.Element {
           break
         case '/focus':
           if (_args) {
-            const focusResult = await window.api.steerAgent(activeId, `Focus on: ${_args}`)
+            const focusResult = await window.api.agents.steer(activeId, `Focus on: ${_args}`)
             if (!focusResult.ok) toast.error(focusResult.error ?? 'Failed to send focus message')
           }
           break
@@ -206,7 +206,7 @@ export function AgentsView(): React.JSX.Element {
           break
         }
         case '/test': {
-          const result = await window.api.steerAgent(
+          const result = await window.api.agents.steer(
             activeId,
             'Please run the test suite now with `npm test` (or the project-appropriate command) and report the results before continuing.'
           )
@@ -219,7 +219,7 @@ export function AgentsView(): React.JSX.Element {
             toast.info('Usage: /scope <file> [file…]')
             break
           }
-          const result = await window.api.steerAgent(
+          const result = await window.api.agents.steer(
             activeId,
             `Please narrow your focus to only these files for now: ${_args}. Do not modify anything outside this scope without asking first.`
           )
@@ -228,7 +228,7 @@ export function AgentsView(): React.JSX.Element {
           break
         }
         case '/status': {
-          const result = await window.api.steerAgent(
+          const result = await window.api.agents.steer(
             activeId,
             'Please give a brief status report: what you have completed so far, what you are working on right now, and what remains.'
           )

@@ -68,7 +68,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
       [taskId]: { headBranch: '', baseBranch: '', files: [], loading: true }
     }))
 
-    window.api
+    window.api.pr
       .checkConflictFiles({
         owner: parsed.owner,
         repo: parsed.repo,
@@ -118,7 +118,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
     async (task: SprintTask) => {
       setResolving(task.id)
       try {
-        const repoPaths = await window.api.getRepoPaths()
+        const repoPaths = await window.api.git.getRepoPaths()
         const repoPath = repoPaths[task.repo.toLowerCase()] ?? repoPaths[task.repo]
         if (!repoPath) {
           toast.error(`No repo path configured for "${task.repo}"`)
@@ -147,7 +147,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
           'For props/interfaces, keep all fields from both sides.'
         ].join('\n')
 
-        await window.api.spawnLocalAgent({ task: prompt, repoPath })
+        await window.api.agents.spawnLocal({ task: prompt, repoPath })
         toast.success(`Conflict resolution agent launched for PR #${task.pr_number}`)
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to launch agent')
@@ -272,7 +272,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.api.openExternal(task.pr_url!)}
+                            onClick={() => window.api.window.openExternal(task.pr_url!)}
                             title="Open on GitHub"
                           >
                             <ExternalLink size={13} /> View PR

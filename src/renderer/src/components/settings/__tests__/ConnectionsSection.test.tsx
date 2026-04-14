@@ -18,9 +18,9 @@ const mockAuthStatus = vi.fn().mockResolvedValue({
 beforeEach(() => {
   vi.mocked(window.api.settings.get).mockResolvedValue(null)
   vi.mocked(window.api.settings.set).mockResolvedValue(undefined)
-  ;(window.api as unknown as Record<string, unknown>).authStatus = mockAuthStatus
+  ;(window.api.auth as unknown as Record<string, unknown>).status = mockAuthStatus
   vi.clearAllMocks()
-  ;(window.api as unknown as Record<string, unknown>).authStatus = mockAuthStatus
+  ;(window.api.auth as unknown as Record<string, unknown>).status = mockAuthStatus
 })
 
 import { ConnectionsSection } from '../ConnectionsSection'

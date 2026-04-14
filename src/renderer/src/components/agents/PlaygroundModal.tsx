@@ -142,7 +142,7 @@ export function PlaygroundModal({
   const handleOpenInBrowser = async (): Promise<void> => {
     try {
       // Write HTML to temp file and open in default browser
-      await window.api.openPlaygroundInBrowser(html)
+      await window.api.window.openPlaygroundInBrowser(html)
     } catch (err) {
       console.error('Failed to open playground in browser:', err)
     }

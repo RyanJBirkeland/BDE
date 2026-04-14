@@ -46,13 +46,13 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
   }, [])
 
   const handleBrowse = useCallback(async () => {
-    const dir = await window.api.openDirectoryDialog()
+    const dir = await window.api.fs.openDirDialog()
     if (!dir) return
     setNewPath(dir)
     const basename = dir.split('/').filter(Boolean).pop() ?? ''
     if (!newName.trim() && basename) setNewName(basename)
     try {
-      const detected = await window.api.gitDetectRemote(dir)
+      const detected = await window.api.git.detectRemote(dir)
       if (detected.isGitRepo && detected.owner && detected.repo) {
         if (!newOwner.trim()) setNewOwner(detected.owner)
         if (!newRepo.trim()) setNewRepo(detected.repo)

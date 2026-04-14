@@ -46,11 +46,14 @@ describe('AgentCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    // Save original and mock only killAgent
+    // Save original and mock only agents.kill
     originalApi = window.api
     window.api = {
       ...window.api,
-      killAgent: vi.fn().mockResolvedValue({ ok: true })
+      agents: {
+        ...window.api.agents,
+        kill: vi.fn().mockResolvedValue({ ok: true })
+      }
     }
   })
 
@@ -199,7 +202,7 @@ describe('AgentCard', () => {
     expect(screen.queryByLabelText('Stop agent')).not.toBeInTheDocument()
   })
 
-  it('calls window.api.killAgent with agent.id for adhoc agents', async () => {
+  it('calls window.api.agents.kill with agent.id for adhoc agents', async () => {
     const user = userEvent.setup()
     const agent = makeAgent({ status: 'running', id: 'agent-123', sprintTaskId: null })
     render(<AgentCard {...defaultProps} agent={agent} />)
@@ -211,10 +214,10 @@ describe('AgentCard', () => {
     const confirmButton = screen.getByRole('button', { name: 'Stop' })
     await user.click(confirmButton)
 
-    expect(window.api.killAgent).toHaveBeenCalledWith('agent-123')
+    expect(window.api.agents.kill).toHaveBeenCalledWith('agent-123')
   })
 
-  it('calls window.api.killAgent with sprintTaskId for pipeline agents', async () => {
+  it('calls window.api.agents.kill with sprintTaskId for pipeline agents', async () => {
     const user = userEvent.setup()
     const agent = makeAgent({ status: 'running', id: 'agent-123', sprintTaskId: 'task-456' })
     render(<AgentCard {...defaultProps} agent={agent} />)
@@ -226,7 +229,7 @@ describe('AgentCard', () => {
     const confirmButton = screen.getByRole('button', { name: 'Stop' })
     await user.click(confirmButton)
 
-    expect(window.api.killAgent).toHaveBeenCalledWith('task-456')
+    expect(window.api.agents.kill).toHaveBeenCalledWith('task-456')
   })
 
   it('shows success toast when agent is stopped successfully', async () => {
@@ -246,7 +249,7 @@ describe('AgentCard', () => {
 
   it('shows error toast when stopping agent fails', async () => {
     const user = userEvent.setup()
-    window.api.killAgent = vi.fn().mockRejectedValue(new Error('Agent not found'))
+    window.api.agents.kill = vi.fn().mockRejectedValue(new Error('Agent not found'))
     const agent = makeAgent({ status: 'running' })
     render(<AgentCard {...defaultProps} agent={agent} />)
 

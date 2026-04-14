@@ -327,14 +327,14 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     }
 
     try {
-      const repoPaths = await window.api.getRepoPaths()
+      const repoPaths = await window.api.git.getRepoPaths()
       const repoPath = repoPaths[task.repo.toLowerCase()] ?? repoPaths[task.repo]
       if (!repoPath) {
         toast.error(`No repo path configured for "${task.repo}"`)
         return
       }
 
-      const result = await window.api.spawnLocalAgent({
+      const result = await window.api.agents.spawnLocal({
         task: task.spec ?? task.title,
         repoPath
       })

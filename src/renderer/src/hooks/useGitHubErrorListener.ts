@@ -27,7 +27,7 @@ const BILLING_SETTINGS_URL = 'https://github.com/settings/billing'
  */
 export function useGitHubErrorListener(): void {
   useEffect(() => {
-    const unsub = window.api.onGitHubError((payload: GitHubErrorPayload) => {
+    const unsub = window.api.pr.onGitHubError((payload: GitHubErrorPayload) => {
       switch (payload.kind) {
         case 'billing':
           // Persistent, actionable: the user needs to actually go fix billing.
@@ -36,7 +36,7 @@ export function useGitHubErrorListener(): void {
             {
               action: 'Open billing settings',
               onAction: () => {
-                void window.api.openExternal(BILLING_SETTINGS_URL)
+                void window.api.window.openExternal(BILLING_SETTINGS_URL)
               },
               durationMs: 30_000
             }

@@ -6,7 +6,7 @@ const mockWatchDir = vi.fn()
 let mockRecentFolders: string[] = []
 
 Object.defineProperty(window, 'api', {
-  value: { watchDir: mockWatchDir },
+  value: { fs: { watchDir: mockWatchDir } },
   writable: true,
   configurable: true
 })

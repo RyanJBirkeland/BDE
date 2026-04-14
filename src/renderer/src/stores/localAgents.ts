@@ -60,7 +60,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
 
         fetchProcesses: async (): Promise<void> => {
           try {
-            const procs = await window.api.getAgentProcesses()
+            const procs = await window.api.agents.getProcesses()
             set({ processes: procs })
           } catch (err) {
             console.error('Failed to fetch agent processes:', err)
@@ -74,7 +74,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
         spawnAgent: async (args) => {
           set({ isSpawning: true })
           try {
-            const result = await window.api.spawnLocalAgent(args)
+            const result = await window.api.agents.spawnLocal(args)
             set((s) => ({
               spawnedAgents: [
                 ...s.spawnedAgents,
@@ -108,7 +108,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
 
         startLogPolling: (logPath): (() => void) => {
           return poller.startLogPolling((fromByte) =>
-            window.api.tailAgentLog({ logPath, fromByte })
+            window.api.agents.tailLog({ logPath, fromByte })
           )
         },
 

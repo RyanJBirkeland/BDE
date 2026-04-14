@@ -72,7 +72,7 @@ export function QuickOpenPalette({
   useEffect(() => {
     void (async () => {
       try {
-        const files = await window.api.listFiles(rootPath)
+        const files = await window.api.fs.listFiles(rootPath)
         setAllFiles(files)
         setFilteredFiles(files.slice(0, 50).map((path) => ({ path, score: 0, matches: [] })))
       } catch (err) {

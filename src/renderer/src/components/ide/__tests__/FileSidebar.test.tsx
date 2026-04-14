@@ -7,14 +7,16 @@ const mockWatchDir = vi.fn()
 
 Object.defineProperty(window, 'api', {
   value: {
-    openDirectoryDialog: mockOpenDirectoryDialog,
-    watchDir: mockWatchDir,
-    readDir: vi.fn().mockResolvedValue([]),
-    onDirChanged: vi.fn(() => vi.fn()),
-    createFile: vi.fn(),
-    createDir: vi.fn(),
-    rename: vi.fn(),
-    deletePath: vi.fn()
+    fs: {
+      openDirDialog: mockOpenDirectoryDialog,
+      watchDir: mockWatchDir,
+      readDir: vi.fn().mockResolvedValue([]),
+      onDirChanged: vi.fn(() => vi.fn()),
+      createFile: vi.fn(),
+      createDir: vi.fn(),
+      rename: vi.fn(),
+      deletePath: vi.fn()
+    }
   },
   writable: true,
   configurable: true

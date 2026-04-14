@@ -182,12 +182,14 @@ vi.mock('../../components/ide/EditorPane', () => ({
 // Mock window.api without clobbering the DOM window object
 Object.defineProperty(window, 'api', {
   value: {
-    readDir: vi.fn().mockResolvedValue([]),
-    readFile: vi.fn().mockResolvedValue(''),
-    writeFile: vi.fn().mockResolvedValue(undefined),
-    openDirectoryDialog: vi.fn().mockResolvedValue(null),
-    watchDir: vi.fn().mockResolvedValue(undefined),
-    onDirChanged: vi.fn().mockReturnValue(vi.fn()),
+    fs: {
+      readDir: vi.fn().mockResolvedValue([]),
+      readFile: vi.fn().mockResolvedValue(''),
+      writeFile: vi.fn().mockResolvedValue(undefined),
+      openDirDialog: vi.fn().mockResolvedValue(null),
+      watchDir: vi.fn().mockResolvedValue(undefined),
+      onDirChanged: vi.fn().mockReturnValue(vi.fn())
+    },
     settings: {
       getJson: vi.fn().mockResolvedValue(null)
     }
@@ -251,7 +253,7 @@ describe('IDEView', () => {
     it('handles file content loading when tab is active but content not yet loaded', async () => {
       const mockReadFile = vi.fn().mockResolvedValue('file content')
       Object.defineProperty(window, 'api', {
-        value: { ...window.api, readFile: mockReadFile },
+        value: { ...window.api, fs: { ...window.api.fs, readFile: mockReadFile } },
         writable: true,
         configurable: true
       })
@@ -277,7 +279,7 @@ describe('IDEView', () => {
     it('handles file read error gracefully by setting empty content', async () => {
       const mockReadFile = vi.fn().mockRejectedValue(new Error('File not found'))
       Object.defineProperty(window, 'api', {
-        value: { ...window.api, readFile: mockReadFile },
+        value: { ...window.api, fs: { ...window.api.fs, readFile: mockReadFile } },
         writable: true,
         configurable: true
       })
@@ -559,7 +561,7 @@ describe('IDEView', () => {
 
       render(<IDEView />)
       fireEvent.keyDown(window, { key: 'o', metaKey: true })
-      expect(window.api.openDirectoryDialog).toHaveBeenCalled()
+      expect(window.api.fs.openDirDialog).toHaveBeenCalled()
     })
 
     it('triggers save on Cmd+S with active tab', async () => {
@@ -582,7 +584,7 @@ describe('IDEView', () => {
 
       render(<IDEView />)
       fireEvent.keyDown(window, { key: 's', metaKey: true })
-      expect(window.api.writeFile).toHaveBeenCalledWith('/project/test.ts', 'content')
+      expect(window.api.fs.writeFile).toHaveBeenCalledWith('/project/test.ts', 'content')
     })
 
     it('does not trigger save on Cmd+S without active tab', () => {
@@ -590,7 +592,7 @@ describe('IDEView', () => {
 
       render(<IDEView />)
       fireEvent.keyDown(window, { key: 's', metaKey: true })
-      expect(window.api.writeFile).not.toHaveBeenCalled()
+      expect(window.api.fs.writeFile).not.toHaveBeenCalled()
     })
 
     it('toggles shortcuts overlay on Cmd+/', () => {
@@ -725,8 +727,7 @@ describe('IDEView', () => {
       Object.defineProperty(window, 'api', {
         value: {
           ...window.api,
-          openDirectoryDialog: mockOpenDir,
-          watchDir: mockWatchDir,
+          fs: { ...window.api.fs, openDirDialog: mockOpenDir, watchDir: mockWatchDir },
           settings: { getJson: vi.fn().mockResolvedValue(null) }
         },
         writable: true,
@@ -754,7 +755,7 @@ describe('IDEView', () => {
       Object.defineProperty(window, 'api', {
         value: {
           ...window.api,
-          openDirectoryDialog: mockOpenDir,
+          fs: { ...window.api.fs, openDirDialog: mockOpenDir },
           settings: { getJson: vi.fn().mockResolvedValue(null) }
         },
         writable: true,
@@ -788,7 +789,7 @@ describe('IDEView', () => {
         value: {
           ...window.api,
           settings: { getJson: mockGetJson },
-          watchDir: mockWatchDir
+          fs: { ...window.api.fs, watchDir: mockWatchDir }
         },
         writable: true,
         configurable: true
@@ -812,7 +813,7 @@ describe('IDEView', () => {
         value: {
           ...window.api,
           settings: { getJson: mockGetJson },
-          watchDir: mockWatchDir
+          fs: { ...window.api.fs, watchDir: mockWatchDir }
         },
         writable: true,
         configurable: true
@@ -840,7 +841,7 @@ describe('IDEView', () => {
         value: {
           ...window.api,
           settings: { getJson: mockGetJson },
-          watchDir: mockWatchDir
+          fs: { ...window.api.fs, watchDir: mockWatchDir }
         },
         writable: true,
         configurable: true
@@ -902,7 +903,7 @@ describe('IDEView', () => {
     it('does not call readFile when file content already in store', () => {
       const mockReadFile = vi.fn()
       Object.defineProperty(window, 'api', {
-        value: { ...window.api, readFile: mockReadFile },
+        value: { ...window.api, fs: { ...window.api.fs, readFile: mockReadFile } },
         writable: true,
         configurable: true
       })
@@ -929,7 +930,7 @@ describe('IDEView', () => {
     it('does not call readFile when file is already loading', () => {
       const mockReadFile = vi.fn()
       Object.defineProperty(window, 'api', {
-        value: { ...window.api, readFile: mockReadFile },
+        value: { ...window.api, fs: { ...window.api.fs, readFile: mockReadFile } },
         writable: true,
         configurable: true
       })

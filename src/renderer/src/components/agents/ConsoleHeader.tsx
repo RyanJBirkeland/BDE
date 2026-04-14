@@ -43,7 +43,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
   const [liveCtxTokens, setLiveCtxTokens] = useState<number | null>(null)
   const fetchCtx = useCallback(async () => {
     if (!isRunning) return
-    const result = await window.api.getLatestCacheTokens(agent.id)
+    const result = await window.api.agents.getLatestCacheTokens(agent.id)
     if (result != null) {
       setLiveCtxTokens(result.cacheTokensRead)
     }
@@ -84,7 +84,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
       if (agent.worktreePath) {
         // Fetch git status to check for uncommitted changes
         try {
-          const statusResult = await window.api.gitStatus(agent.worktreePath)
+          const statusResult = await window.api.git.status(agent.worktreePath)
           if (statusResult.files.length > 0) {
             hasUncommittedWork = true
             const fileList = statusResult.files
@@ -115,7 +115,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
 
       if (!confirmed) return
 
-      await window.api.killAgent(killId)
+      await window.api.agents.kill(killId)
     } catch (err) {
       toast.error(`Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
@@ -123,7 +123,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
 
   const handleCopyLog = async (): Promise<void> => {
     try {
-      const result = await window.api.tailAgentLog({ logPath: agent.logPath, fromByte: 0 })
+      const result = await window.api.agents.tailLog({ logPath: agent.logPath, fromByte: 0 })
       await navigator.clipboard.writeText(result.content)
       toast.success('Log copied to clipboard')
     } catch (err) {

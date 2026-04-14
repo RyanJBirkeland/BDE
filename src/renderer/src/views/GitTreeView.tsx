@@ -83,7 +83,7 @@ export default function GitTreeView(): React.ReactElement {
       return
     }
     window.api
-      .gitStage(activeRepo, allUnstaged)
+      .git.stage(activeRepo, allUnstaged)
       .then(() => fetchStatus(activeRepo))
       .catch((e) => {
         setLastError(`Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`)
@@ -167,7 +167,7 @@ export default function GitTreeView(): React.ReactElement {
   function handleCheckout(branchName: string): void {
     if (!activeRepo) return
     window.api
-      .gitCheckout(activeRepo, branchName)
+      .git.checkout(activeRepo, branchName)
       .then(() => {
         fetchStatus(activeRepo)
         fetchBranches(activeRepo)
@@ -210,7 +210,7 @@ export default function GitTreeView(): React.ReactElement {
   function handleFetch(): void {
     if (!activeRepo) return
     window.api
-      .gitFetch(activeRepo)
+      .git.fetch(activeRepo)
       .then((result) => {
         if (result.success) {
           toast.success('Fetched from origin')
@@ -227,7 +227,7 @@ export default function GitTreeView(): React.ReactElement {
   function handlePull(): void {
     if (!activeRepo || !branch) return
     window.api
-      .gitPull(activeRepo, branch)
+      .git.pull(activeRepo, branch)
       .then((result) => {
         if (result.success) {
           toast.success('Pulled from origin')
@@ -391,7 +391,7 @@ export default function GitTreeView(): React.ReactElement {
                       if (!activeRepo) return
                       const paths = unstaged.map((f) => f.path)
                       window.api
-                        .gitStage(activeRepo, paths)
+                        .git.stage(activeRepo, paths)
                         .then(() => fetchStatus(activeRepo))
                         .catch((e) => {
                           setLastError(
@@ -420,7 +420,7 @@ export default function GitTreeView(): React.ReactElement {
                       if (!activeRepo) return
                       const paths = untracked.map((f) => f.path)
                       window.api
-                        .gitStage(activeRepo, paths)
+                        .git.stage(activeRepo, paths)
                         .then(() => fetchStatus(activeRepo))
                         .catch((e) => {
                           setLastError(

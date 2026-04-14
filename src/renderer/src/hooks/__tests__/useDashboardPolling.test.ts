@@ -21,7 +21,7 @@ describe('useDashboardPolling', () => {
   beforeEach(() => {
     mockFetchAll.mockClear()
     mockUseBackoffInterval.mockClear()
-    vi.mocked(window.api.onExternalSprintChange).mockReturnValue(() => {})
+    vi.mocked(window.api.sprint.onExternalChange).mockReturnValue(() => {})
   })
 
   it('renders without error', () => {
@@ -42,12 +42,12 @@ describe('useDashboardPolling', () => {
 
   it('registers an external sprint change listener', () => {
     renderHook(() => useDashboardPolling())
-    expect(window.api.onExternalSprintChange).toHaveBeenCalled()
+    expect(window.api.sprint.onExternalChange).toHaveBeenCalled()
   })
 
   it('cleans up external sprint change listener on unmount', () => {
     const unsubscribe = vi.fn()
-    vi.mocked(window.api.onExternalSprintChange).mockReturnValue(unsubscribe)
+    vi.mocked(window.api.sprint.onExternalChange).mockReturnValue(unsubscribe)
 
     const { unmount } = renderHook(() => useDashboardPolling())
     unmount()

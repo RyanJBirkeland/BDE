@@ -177,7 +177,7 @@ function App(): React.JSX.Element {
   useEffect(() => {
     const title = 'BDE \u2014 ' + VIEW_LABELS[activeView]
     document.title = title
-    window.api.setTitle(title)
+    window.api.window.setTitle(title)
   }, [activeView])
 
   useEffect(() => {

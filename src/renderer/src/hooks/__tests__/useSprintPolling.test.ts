@@ -26,7 +26,7 @@ vi.mock('../../stores/sprintTasks', () => {
 describe('useSprintPolling', () => {
   beforeEach(() => {
     mockLoadData.mockClear()
-    vi.mocked(window.api.onExternalSprintChange).mockReturnValue(() => {})
+    vi.mocked(window.api.sprint.onExternalChange).mockReturnValue(() => {})
   })
 
   it('renders without error', () => {
@@ -42,12 +42,12 @@ describe('useSprintPolling', () => {
 
   it('registers an external sprint change listener', () => {
     renderHook(() => useSprintPolling())
-    expect(window.api.onExternalSprintChange).toHaveBeenCalledWith(mockLoadData)
+    expect(window.api.sprint.onExternalChange).toHaveBeenCalledWith(mockLoadData)
   })
 
   it('cleans up external sprint change listener on unmount', () => {
     const unsubscribe = vi.fn()
-    vi.mocked(window.api.onExternalSprintChange).mockReturnValue(unsubscribe)
+    vi.mocked(window.api.sprint.onExternalChange).mockReturnValue(unsubscribe)
 
     const { unmount } = renderHook(() => useSprintPolling())
     unmount()

@@ -39,7 +39,7 @@ export async function pickAndReadFiles(existing: Attachment[]): Promise<Attachme
   const remaining = MAX_ATTACHMENTS - existing.length
   if (remaining <= 0) return []
 
-  const paths = await window.api.openFileDialog()
+  const paths = await window.api.fs.openFileDialog()
   if (!paths || paths.length === 0) return []
 
   const toRead = paths.slice(0, remaining)
@@ -48,7 +48,7 @@ export async function pickAndReadFiles(existing: Attachment[]): Promise<Attachme
   for (const filePath of toRead) {
     const name = filePath.split('/').pop() ?? filePath
     if (isImageFile(name)) {
-      const { data, mimeType } = await window.api.readFileAsBase64(filePath)
+      const { data, mimeType } = await window.api.fs.readAsBase64(filePath)
       results.push({
         path: filePath,
         name,
@@ -58,7 +58,7 @@ export async function pickAndReadFiles(existing: Attachment[]): Promise<Attachme
         preview: `data:${mimeType};base64,${data}`
       })
     } else {
-      const { content } = await window.api.readFileAsText(filePath)
+      const { content } = await window.api.fs.readAsText(filePath)
       results.push({
         path: filePath,
         name,

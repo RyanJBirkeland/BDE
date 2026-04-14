@@ -54,7 +54,7 @@ export function FileTreeNode({
   // Only subscribe when this is an expanded directory to avoid listener leak
   useEffect(() => {
     if (type !== 'directory' || !isExpanded) return
-    const cleanup = window.api.onDirChanged((changedPath: string) => {
+    const cleanup = window.api.fs.onDirChanged((changedPath: string) => {
       // Refresh if this directory or a parent directory changed
       if (fullPath === changedPath || fullPath.startsWith(changedPath + '/')) {
         setRefreshTrigger((prev) => prev + 1)
@@ -65,7 +65,7 @@ export function FileTreeNode({
 
   useEffect(() => {
     if (type === 'directory' && isExpanded) {
-      window.api
+      window.api.fs
         .readDir(fullPath)
         .then((entries) => {
           setLoadError(false)

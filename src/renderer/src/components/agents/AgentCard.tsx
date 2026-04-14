@@ -95,7 +95,7 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
     try {
       // Pipeline agents are keyed by sprintTaskId in AgentManager, adhoc agents by id
       const killId = agent.sprintTaskId ?? agent.id
-      await window.api.killAgent(killId)
+      await window.api.agents.kill(killId)
       toast.success('Agent stopped')
       // Give the backend a moment to update DB status, then refresh the list
       setTimeout(() => onKill?.(), 500)

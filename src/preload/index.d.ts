@@ -28,26 +28,6 @@ declare global {
   interface Window {
     electron: ElectronAPI
     api: {
-      readClipboardImage: () => Promise<IpcResult<'clipboard:readImage'>>
-      getRepoPaths: () => Promise<IpcResult<'git:getRepoPaths'>>
-      openExternal: (
-        ...args: IpcArgs<'window:openExternal'>
-      ) => Promise<IpcResult<'window:openExternal'>>
-      openPlaygroundInBrowser: (
-        ...args: IpcArgs<'playground:openInBrowser'>
-      ) => Promise<IpcResult<'playground:openInBrowser'>>
-      listMemoryFiles: () => Promise<IpcResult<'memory:listFiles'>>
-      readMemoryFile: (...args: IpcArgs<'memory:readFile'>) => Promise<IpcResult<'memory:readFile'>>
-      writeMemoryFile: (
-        ...args: IpcArgs<'memory:writeFile'>
-      ) => Promise<IpcResult<'memory:writeFile'>>
-      searchMemory: (...args: IpcArgs<'memory:search'>) => Promise<IpcResult<'memory:search'>>
-      getActiveMemoryFiles: () => Promise<IpcResult<'memory:getActiveFiles'>>
-      setMemoryFileActive: (
-        ...args: IpcArgs<'memory:setFileActive'>
-      ) => Promise<IpcResult<'memory:setFileActive'>>
-      setTitle: (title: string) => void
-
       // Settings CRUD
       settings: {
         get: (...args: IpcArgs<'settings:get'>) => Promise<IpcResult<'settings:get'>>
@@ -104,78 +84,131 @@ declare global {
         isConfigured: () => Promise<IpcResult<'github:isConfigured'>>
       }
 
-      // Local agent process detection + spawning
-      getAgentProcesses: () => Promise<IpcResult<'local:getAgentProcesses'>>
-      spawnLocalAgent: (
-        ...args: IpcArgs<'local:spawnClaudeAgent'>
-      ) => Promise<IpcResult<'local:spawnClaudeAgent'>>
-      steerAgent: (
-        agentId: string,
-        message: string,
-        images?: Array<{ data: string; mimeType: string }>
-      ) => Promise<IpcResult<'agent:steer'>>
-      killAgent: (...args: IpcArgs<'agent:kill'>) => Promise<IpcResult<'agent:kill'>>
-      getLatestCacheTokens: (runId: string) => Promise<IpcResult<'agent:latestCacheTokens'>>
-      tailAgentLog: (
-        ...args: IpcArgs<'local:tailAgentLog'>
-      ) => Promise<IpcResult<'local:tailAgentLog'>>
-
-      // Agent event streaming (Phase 2)
-      agentEvents: {
-        onEvent: (callback: (payload: { agentId: string; event: AgentEvent }) => void) => () => void
-        getHistory: (agentId: string) => Promise<AgentEvent[]>
-      }
-
-      // Template CRUD (Phase 2)
-      templates: {
-        list: () => Promise<IpcResult<'templates:list'>>
-        save: (...args: IpcArgs<'templates:save'>) => Promise<IpcResult<'templates:save'>>
-        delete: (...args: IpcArgs<'templates:delete'>) => Promise<IpcResult<'templates:delete'>>
-        reset: (...args: IpcArgs<'templates:reset'>) => Promise<IpcResult<'templates:reset'>>
-      }
-
       // Git client
-      gitStatus: (...args: IpcArgs<'git:status'>) => Promise<IpcResult<'git:status'>>
-      gitDiff: (...args: IpcArgs<'git:diff'>) => Promise<IpcResult<'git:diff'>>
-      gitStage: (...args: IpcArgs<'git:stage'>) => Promise<IpcResult<'git:stage'>>
-      gitUnstage: (...args: IpcArgs<'git:unstage'>) => Promise<IpcResult<'git:unstage'>>
-      gitCommit: (...args: IpcArgs<'git:commit'>) => Promise<IpcResult<'git:commit'>>
-      gitPush: (...args: IpcArgs<'git:push'>) => Promise<IpcResult<'git:push'>>
-      gitBranches: (...args: IpcArgs<'git:branches'>) => Promise<IpcResult<'git:branches'>>
-      gitCheckout: (...args: IpcArgs<'git:checkout'>) => Promise<IpcResult<'git:checkout'>>
-      gitDetectRemote: (
-        ...args: IpcArgs<'git:detectRemote'>
-      ) => Promise<IpcResult<'git:detectRemote'>>
-      gitFetch: (...args: IpcArgs<'git:fetch'>) => Promise<IpcResult<'git:fetch'>>
-      gitPull: (...args: IpcArgs<'git:pull'>) => Promise<IpcResult<'git:pull'>>
-
-      // Agent history — persistent audit trail
-      agents: {
-        list: (...args: IpcArgs<'agents:list'>) => Promise<IpcResult<'agents:list'>>
-        readLog: (...args: IpcArgs<'agents:readLog'>) => Promise<IpcResult<'agents:readLog'>>
-        import: (...args: IpcArgs<'agents:import'>) => Promise<IpcResult<'agents:import'>>
-        promoteToReview: (
-          ...args: IpcArgs<'agents:promoteToReview'>
-        ) => Promise<IpcResult<'agents:promoteToReview'>>
+      git: {
+        getRepoPaths: () => Promise<IpcResult<'git:getRepoPaths'>>
+        status: (...args: IpcArgs<'git:status'>) => Promise<IpcResult<'git:status'>>
+        diff: (...args: IpcArgs<'git:diff'>) => Promise<IpcResult<'git:diff'>>
+        stage: (...args: IpcArgs<'git:stage'>) => Promise<IpcResult<'git:stage'>>
+        unstage: (...args: IpcArgs<'git:unstage'>) => Promise<IpcResult<'git:unstage'>>
+        commit: (...args: IpcArgs<'git:commit'>) => Promise<IpcResult<'git:commit'>>
+        push: (...args: IpcArgs<'git:push'>) => Promise<IpcResult<'git:push'>>
+        branches: (...args: IpcArgs<'git:branches'>) => Promise<IpcResult<'git:branches'>>
+        checkout: (...args: IpcArgs<'git:checkout'>) => Promise<IpcResult<'git:checkout'>>
+        detectRemote: (
+          ...args: IpcArgs<'git:detectRemote'>
+        ) => Promise<IpcResult<'git:detectRemote'>>
+        fetch: (...args: IpcArgs<'git:fetch'>) => Promise<IpcResult<'git:fetch'>>
+        pull: (...args: IpcArgs<'git:pull'>) => Promise<IpcResult<'git:pull'>>
       }
 
-      // Cost analytics
-      cost: {
-        summary: () => Promise<IpcResult<'cost:summary'>>
-        agentRuns: (limit?: number) => Promise<IpcResult<'cost:agentRuns'>>
-        getAgentHistory: (args?: {
-          limit?: number
-          offset?: number
-        }) => Promise<IpcResult<'cost:getAgentHistory'>>
+      // Memory
+      memory: {
+        listFiles: () => Promise<IpcResult<'memory:listFiles'>>
+        readFile: (...args: IpcArgs<'memory:readFile'>) => Promise<IpcResult<'memory:readFile'>>
+        writeFile: (...args: IpcArgs<'memory:writeFile'>) => Promise<IpcResult<'memory:writeFile'>>
+        search: (...args: IpcArgs<'memory:search'>) => Promise<IpcResult<'memory:search'>>
+        getActiveFiles: () => Promise<IpcResult<'memory:getActiveFiles'>>
+        setFileActive: (
+          ...args: IpcArgs<'memory:setFileActive'>
+        ) => Promise<IpcResult<'memory:setFileActive'>>
       }
 
-      // PR status polling
-      pollPrStatuses: (...args: IpcArgs<'pr:pollStatuses'>) => Promise<IpcResult<'pr:pollStatuses'>>
+      // File system
+      fs: {
+        openFileDialog: (
+          ...args: IpcArgs<'fs:openFileDialog'>
+        ) => Promise<IpcResult<'fs:openFileDialog'>>
+        readAsBase64: (
+          ...args: IpcArgs<'fs:readFileAsBase64'>
+        ) => Promise<IpcResult<'fs:readFileAsBase64'>>
+        readAsText: (
+          ...args: IpcArgs<'fs:readFileAsText'>
+        ) => Promise<IpcResult<'fs:readFileAsText'>>
+        openDirDialog: () => Promise<IpcResult<'fs:openDirectoryDialog'>>
+        readDir: (...args: IpcArgs<'fs:readDir'>) => Promise<IpcResult<'fs:readDir'>>
+        readFile: (...args: IpcArgs<'fs:readFile'>) => Promise<IpcResult<'fs:readFile'>>
+        writeFile: (...args: IpcArgs<'fs:writeFile'>) => Promise<IpcResult<'fs:writeFile'>>
+        watchDir: (...args: IpcArgs<'fs:watchDir'>) => Promise<IpcResult<'fs:watchDir'>>
+        unwatchDir: () => Promise<IpcResult<'fs:unwatchDir'>>
+        createFile: (...args: IpcArgs<'fs:createFile'>) => Promise<IpcResult<'fs:createFile'>>
+        createDir: (...args: IpcArgs<'fs:createDir'>) => Promise<IpcResult<'fs:createDir'>>
+        rename: (...args: IpcArgs<'fs:rename'>) => Promise<IpcResult<'fs:rename'>>
+        deletePath: (...args: IpcArgs<'fs:delete'>) => Promise<IpcResult<'fs:delete'>>
+        stat: (...args: IpcArgs<'fs:stat'>) => Promise<IpcResult<'fs:stat'>>
+        listFiles: (...args: IpcArgs<'fs:listFiles'>) => Promise<IpcResult<'fs:listFiles'>>
+        onDirChanged: (callback: (dirPath: string) => void) => () => void
+      }
 
-      // Conflict file detection
-      checkConflictFiles: (
-        ...args: IpcArgs<'pr:checkConflictFiles'>
-      ) => Promise<IpcResult<'pr:checkConflictFiles'>>
+      // PR lifecycle
+      pr: {
+        pollStatuses: (
+          ...args: IpcArgs<'pr:pollStatuses'>
+        ) => Promise<IpcResult<'pr:pollStatuses'>>
+        checkConflictFiles: (
+          ...args: IpcArgs<'pr:checkConflictFiles'>
+        ) => Promise<IpcResult<'pr:checkConflictFiles'>>
+        onListUpdated: (cb: (payload: PrListPayload) => void) => () => void
+        getList: () => Promise<IpcResult<'pr:getList'>>
+        refreshList: () => Promise<IpcResult<'pr:refreshList'>>
+        onGitHubError: (
+          cb: (data: {
+            kind:
+              | 'no-token'
+              | 'token-expired'
+              | 'rate-limit'
+              | 'billing'
+              | 'permission'
+              | 'not-found'
+              | 'validation'
+              | 'server'
+              | 'network'
+              | 'unknown'
+            message: string
+            status?: number
+          }) => void
+        ) => () => void
+      }
+
+      // Clipboard + window utilities
+      window: {
+        readClipboardImage: () => Promise<IpcResult<'clipboard:readImage'>>
+        openExternal: (
+          ...args: IpcArgs<'window:openExternal'>
+        ) => Promise<IpcResult<'window:openExternal'>>
+        openPlaygroundInBrowser: (
+          ...args: IpcArgs<'playground:openInBrowser'>
+        ) => Promise<IpcResult<'playground:openInBrowser'>>
+        setTitle: (title: string) => void
+      }
+
+      // Auth
+      auth: {
+        status: () => Promise<IpcResult<'auth:status'>>
+      }
+
+      // Spec Synthesizer
+      synthesizer: {
+        generate: (
+          ...args: IpcArgs<'synthesizer:generate'>
+        ) => Promise<IpcResult<'synthesizer:generate'>>
+        revise: (
+          ...args: IpcArgs<'synthesizer:revise'>
+        ) => Promise<IpcResult<'synthesizer:revise'>>
+        cancel: (
+          ...args: IpcArgs<'synthesizer:cancel'>
+        ) => Promise<IpcResult<'synthesizer:cancel'>>
+        onChunk: (
+          cb: (data: {
+            streamId: string
+            chunk: string
+            done: boolean
+            fullText?: string
+            filesAnalyzed?: string[]
+            error?: string
+          }) => void
+        ) => () => void
+      }
 
       // Sprint tasks — SQLite-backed Kanban
       sprint: {
@@ -214,6 +247,7 @@ declare global {
         exportTaskHistory: (taskId: string) => Promise<IpcResult<'sprint:exportTaskHistory'>>
         failureBreakdown: () => Promise<IpcResult<'sprint:failureBreakdown'>>
         getSuccessRateBySpecType: () => Promise<IpcResult<'sprint:getSuccessRateBySpecType'>>
+        onExternalChange: (cb: () => void) => () => void
       }
 
       // Task groups
@@ -250,61 +284,35 @@ declare global {
         import: (...args: IpcArgs<'planner:import'>) => Promise<IpcResult<'planner:import'>>
       }
 
-      // File attachments
-      openFileDialog: (
-        ...args: IpcArgs<'fs:openFileDialog'>
-      ) => Promise<IpcResult<'fs:openFileDialog'>>
-      readFileAsBase64: (
-        ...args: IpcArgs<'fs:readFileAsBase64'>
-      ) => Promise<IpcResult<'fs:readFileAsBase64'>>
-      readFileAsText: (
-        ...args: IpcArgs<'fs:readFileAsText'>
-      ) => Promise<IpcResult<'fs:readFileAsText'>>
-      openDirectoryDialog: () => Promise<IpcResult<'fs:openDirectoryDialog'>>
-      readDir: (...args: IpcArgs<'fs:readDir'>) => Promise<IpcResult<'fs:readDir'>>
-      readFile: (...args: IpcArgs<'fs:readFile'>) => Promise<IpcResult<'fs:readFile'>>
-      writeFile: (...args: IpcArgs<'fs:writeFile'>) => Promise<IpcResult<'fs:writeFile'>>
-      watchDir: (...args: IpcArgs<'fs:watchDir'>) => Promise<IpcResult<'fs:watchDir'>>
-      unwatchDir: () => Promise<IpcResult<'fs:unwatchDir'>>
-      createFile: (...args: IpcArgs<'fs:createFile'>) => Promise<IpcResult<'fs:createFile'>>
-      createDir: (...args: IpcArgs<'fs:createDir'>) => Promise<IpcResult<'fs:createDir'>>
-      rename: (...args: IpcArgs<'fs:rename'>) => Promise<IpcResult<'fs:rename'>>
-      deletePath: (...args: IpcArgs<'fs:delete'>) => Promise<IpcResult<'fs:delete'>>
-      stat: (...args: IpcArgs<'fs:stat'>) => Promise<IpcResult<'fs:stat'>>
-      listFiles: (...args: IpcArgs<'fs:listFiles'>) => Promise<IpcResult<'fs:listFiles'>>
-      onDirChanged: (callback: (dirPath: string) => void) => () => void
-
-      // GitHub structured error push event — unified channel for every
-      // classified GitHub failure (rate-limit, token-expired, billing,
-      // network, permission, etc.). Debounced 60s per-kind at source.
-      onGitHubError: (
-        cb: (data: {
-          kind:
-            | 'no-token'
-            | 'token-expired'
-            | 'rate-limit'
-            | 'billing'
-            | 'permission'
-            | 'not-found'
-            | 'validation'
-            | 'server'
-            | 'network'
-            | 'unknown'
-          message: string
-          status?: number
-        }) => void
-      ) => () => void
-
-      // Open PR list — main-process poller push events
-      onPrListUpdated: (cb: (payload: PrListPayload) => void) => () => void
-      getPrList: () => Promise<IpcResult<'pr:getList'>>
-      refreshPrList: () => Promise<IpcResult<'pr:refreshList'>>
-
-      // Sprint DB file-watcher push events
-      onExternalSprintChange: (cb: () => void) => () => void
-
-      // Auth status
-      authStatus: () => Promise<IpcResult<'auth:status'>>
+      // Agent history + process management
+      agents: {
+        list: (...args: IpcArgs<'agents:list'>) => Promise<IpcResult<'agents:list'>>
+        readLog: (...args: IpcArgs<'agents:readLog'>) => Promise<IpcResult<'agents:readLog'>>
+        import: (...args: IpcArgs<'agents:import'>) => Promise<IpcResult<'agents:import'>>
+        promoteToReview: (
+          ...args: IpcArgs<'agents:promoteToReview'>
+        ) => Promise<IpcResult<'agents:promoteToReview'>>
+        getProcesses: () => Promise<IpcResult<'local:getAgentProcesses'>>
+        spawnLocal: (
+          ...args: IpcArgs<'local:spawnClaudeAgent'>
+        ) => Promise<IpcResult<'local:spawnClaudeAgent'>>
+        steer: (
+          agentId: string,
+          message: string,
+          images?: Array<{ data: string; mimeType: string }>
+        ) => Promise<IpcResult<'agent:steer'>>
+        kill: (...args: IpcArgs<'agent:kill'>) => Promise<IpcResult<'agent:kill'>>
+        getLatestCacheTokens: (runId: string) => Promise<IpcResult<'agent:latestCacheTokens'>>
+        tailLog: (
+          ...args: IpcArgs<'local:tailAgentLog'>
+        ) => Promise<IpcResult<'local:tailAgentLog'>>
+        events: {
+          onEvent: (
+            callback: (payload: { agentId: string; event: AgentEvent }) => void
+          ) => () => void
+          getHistory: (agentId: string) => Promise<AgentEvent[]>
+        }
+      }
 
       // Agent Manager
       agentManager: {
@@ -316,6 +324,24 @@ declare global {
           taskId: string,
           message?: string
         ) => Promise<IpcResult<'agent-manager:checkpoint'>>
+      }
+
+      // Cost analytics
+      cost: {
+        summary: () => Promise<IpcResult<'cost:summary'>>
+        agentRuns: (limit?: number) => Promise<IpcResult<'cost:agentRuns'>>
+        getAgentHistory: (args?: {
+          limit?: number
+          offset?: number
+        }) => Promise<IpcResult<'cost:getAgentHistory'>>
+      }
+
+      // Template CRUD
+      templates: {
+        list: () => Promise<IpcResult<'templates:list'>>
+        save: (...args: IpcArgs<'templates:save'>) => Promise<IpcResult<'templates:save'>>
+        delete: (...args: IpcArgs<'templates:delete'>) => Promise<IpcResult<'templates:delete'>>
+        reset: (...args: IpcArgs<'templates:reset'>) => Promise<IpcResult<'templates:reset'>>
       }
 
       // Dashboard analytics
@@ -463,27 +489,6 @@ declare global {
         onChatChunk: (listener: (evt: unknown, chunk: ChatChunk) => void) => () => void
         abortChat: (streamId: string) => Promise<void>
       }
-
-      // Spec Synthesizer
-      synthesizeSpec: (
-        ...args: IpcArgs<'synthesizer:generate'>
-      ) => Promise<IpcResult<'synthesizer:generate'>>
-      reviseSpec: (
-        ...args: IpcArgs<'synthesizer:revise'>
-      ) => Promise<IpcResult<'synthesizer:revise'>>
-      cancelSynthesis: (
-        ...args: IpcArgs<'synthesizer:cancel'>
-      ) => Promise<IpcResult<'synthesizer:cancel'>>
-      onSynthesizerChunk: (
-        cb: (data: {
-          streamId: string
-          chunk: string
-          done: boolean
-          fullText?: string
-          filesAnalyzed?: string[]
-          error?: string
-        }) => void
-      ) => () => void
 
       // Repository discovery
       repoDiscovery: {

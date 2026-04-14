@@ -14,8 +14,8 @@ describe('localAgents store', () => {
     })
     vi.clearAllMocks()
     // Reset queued mockResolvedValueOnce from previous tests
-    vi.mocked(window.api.tailAgentLog).mockReset()
-    vi.mocked(window.api.tailAgentLog).mockResolvedValue({ content: '', nextByte: 0 })
+    vi.mocked(window.api.agents.tailLog).mockReset()
+    vi.mocked(window.api.agents.tailLog).mockResolvedValue({ content: '', nextByte: 0 })
   })
 
   afterEach(() => {
@@ -44,7 +44,7 @@ describe('localAgents store', () => {
         memMb: 80
       }
     ]
-    vi.mocked(window.api.getAgentProcesses).mockResolvedValue(mockProcs)
+    vi.mocked(window.api.agents.getProcesses).mockResolvedValue(mockProcs)
 
     await useLocalAgentsStore.getState().fetchProcesses()
 
@@ -54,7 +54,7 @@ describe('localAgents store', () => {
   })
 
   it('fetchProcesses silently handles errors', async () => {
-    vi.mocked(window.api.getAgentProcesses).mockRejectedValue(new Error('fail'))
+    vi.mocked(window.api.agents.getProcesses).mockRejectedValue(new Error('fail'))
 
     await useLocalAgentsStore.getState().fetchProcesses()
 
@@ -62,7 +62,7 @@ describe('localAgents store', () => {
   })
 
   it('spawnAgent calls spawnLocalAgent, adds to spawnedAgents, and persists', async () => {
-    vi.mocked(window.api.spawnLocalAgent).mockResolvedValue({
+    vi.mocked(window.api.agents.spawnLocal).mockResolvedValue({
       pid: 999,
       logPath: '/tmp/agent.log',
       id: 'spawn-1',
@@ -77,7 +77,7 @@ describe('localAgents store', () => {
 
     expect(result.pid).toBe(999)
     expect(result.id).toBe('spawn-1')
-    expect(window.api.spawnLocalAgent).toHaveBeenCalledWith({
+    expect(window.api.agents.spawnLocal).toHaveBeenCalledWith({
       task: 'write tests',
       repoPath: '/tmp/repo',
       model: 'opus'
@@ -91,7 +91,7 @@ describe('localAgents store', () => {
   })
 
   it('spawnAgent defaults model to sonnet when not provided', async () => {
-    vi.mocked(window.api.spawnLocalAgent).mockResolvedValue({
+    vi.mocked(window.api.agents.spawnLocal).mockResolvedValue({
       pid: 888,
       logPath: '/tmp/log',
       id: 'spawn-2',
@@ -107,7 +107,7 @@ describe('localAgents store', () => {
   })
 
   it('log polling accumulates content and advances logNextByte', async () => {
-    vi.mocked(window.api.tailAgentLog)
+    vi.mocked(window.api.agents.tailLog)
       .mockResolvedValueOnce({ content: 'chunk1 ', nextByte: 7 })
       .mockResolvedValueOnce({ content: 'chunk2', nextByte: 13 })
 
@@ -123,7 +123,7 @@ describe('localAgents store', () => {
   })
 
   it('stopLogPolling prevents further log accumulation', async () => {
-    vi.mocked(window.api.tailAgentLog)
+    vi.mocked(window.api.agents.tailLog)
       .mockResolvedValueOnce({ content: 'first ', nextByte: 6 })
       .mockResolvedValueOnce({ content: 'second', nextByte: 12 })
 
@@ -140,7 +140,7 @@ describe('localAgents store', () => {
   })
 
   it('selectLocalAgent resets log state and stops polling', async () => {
-    vi.mocked(window.api.tailAgentLog)
+    vi.mocked(window.api.agents.tailLog)
       .mockResolvedValueOnce({ content: 'existing', nextByte: 8 })
       .mockResolvedValueOnce({ content: 'more', nextByte: 12 })
 

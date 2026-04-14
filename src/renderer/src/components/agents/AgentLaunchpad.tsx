@@ -22,7 +22,7 @@ export function AgentLaunchpad({ onAgentSpawned }: AgentLaunchpadProps): React.J
 
   useEffect(() => {
     loadTemplates()
-    window.api
+    window.api.git
       .getRepoPaths()
       .then(setRepoPaths)
       .catch((err) => {

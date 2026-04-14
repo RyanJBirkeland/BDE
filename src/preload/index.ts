@@ -3,26 +3,26 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { settings, claudeConfig } from './api-settings'
 import {
   getRepoPaths,
-  gitStatus,
-  gitDiff,
-  gitStage,
-  gitUnstage,
-  gitCommit,
-  gitPush,
-  gitBranches,
-  gitCheckout,
-  gitDetectRemote,
-  gitFetch,
-  gitPull
+  gitStatus as status,
+  gitDiff as diff,
+  gitStage as stage,
+  gitUnstage as unstage,
+  gitCommit as commit,
+  gitPush as push,
+  gitBranches as branches,
+  gitCheckout as checkout,
+  gitDetectRemote as detectRemote,
+  gitFetch as fetch,
+  gitPull as pull
 } from './api-git'
 import { sprint, groups } from './api-sprint'
 import {
-  listMemoryFiles,
-  readMemoryFile,
-  writeMemoryFile,
-  searchMemory,
-  getActiveMemoryFiles,
-  setMemoryFileActive
+  listMemoryFiles as listFiles,
+  readMemoryFile as readFile,
+  writeMemoryFile as writeFile,
+  searchMemory as search,
+  getActiveMemoryFiles as getActiveFiles,
+  setMemoryFileActive as setFileActive
 } from './api-memory'
 import {
   getAgentProcesses,
@@ -51,8 +51,8 @@ import {
   readFileAsText,
   openDirectoryDialog,
   readDir,
-  readFile,
-  writeFile,
+  readFile as fsReadFile,
+  writeFile as fsWriteFile,
   watchDir,
   unwatchDir,
   createFile,
@@ -60,7 +60,7 @@ import {
   rename,
   deletePath,
   stat,
-  listFiles,
+  listFiles as fsListFiles,
   onDirChanged,
   onGitHubError,
   onPrListUpdated,
@@ -86,12 +86,6 @@ import {
 ipcRenderer.setMaxListeners(25)
 
 const api = {
-  // Clipboard + window
-  readClipboardImage,
-  openExternal,
-  openPlaygroundInBrowser,
-  setTitle,
-
   // Settings
   settings,
   claudeConfig,
@@ -99,83 +93,111 @@ const api = {
   // Webhooks
   webhooks,
 
-  // GitHub
+  // GitHub API proxy
   github,
 
   // Git client
-  getRepoPaths,
-  gitStatus,
-  gitDiff,
-  gitStage,
-  gitUnstage,
-  gitCommit,
-  gitPush,
-  gitBranches,
-  gitCheckout,
-  gitDetectRemote,
-  gitFetch,
-  gitPull,
+  git: {
+    getRepoPaths,
+    status,
+    diff,
+    stage,
+    unstage,
+    commit,
+    push,
+    branches,
+    checkout,
+    detectRemote,
+    fetch,
+    pull
+  },
 
   // Memory
-  listMemoryFiles,
-  readMemoryFile,
-  writeMemoryFile,
-  searchMemory,
-  getActiveMemoryFiles,
-  setMemoryFileActive,
+  memory: {
+    listFiles,
+    readFile,
+    writeFile,
+    search,
+    getActiveFiles,
+    setFileActive
+  },
 
-  // Agent processes
-  getAgentProcesses,
-  spawnLocalAgent,
-  steerAgent,
-  killAgent,
-  getLatestCacheTokens,
-  tailAgentLog,
-  agents,
-  agentManager,
-  agentEvents,
+  // File system
+  fs: {
+    openFileDialog,
+    readAsBase64: readFileAsBase64,
+    readAsText: readFileAsText,
+    openDirDialog: openDirectoryDialog,
+    readDir,
+    readFile: fsReadFile,
+    writeFile: fsWriteFile,
+    watchDir,
+    unwatchDir,
+    createFile,
+    createDir,
+    rename,
+    deletePath,
+    stat,
+    listFiles: fsListFiles,
+    onDirChanged
+  },
 
-  // Cost analytics
-  cost,
+  // PR lifecycle
+  pr: {
+    pollStatuses: pollPrStatuses,
+    checkConflictFiles,
+    onListUpdated: onPrListUpdated,
+    getList: getPrList,
+    refreshList: refreshPrList,
+    onGitHubError
+  },
 
-  // PR
-  pollPrStatuses,
-  checkConflictFiles,
-  onPrListUpdated,
-  getPrList,
-  refreshPrList,
-  onGitHubError,
+  // Clipboard + window utilities
+  window: {
+    readClipboardImage,
+    openExternal,
+    openPlaygroundInBrowser,
+    setTitle
+  },
 
-  // Sprint + groups
-  sprint,
+  // Auth
+  auth: {
+    status: authStatus
+  },
+
+  // Spec Synthesizer
+  synthesizer: {
+    generate: synthesizeSpec,
+    revise: reviseSpec,
+    cancel: cancelSynthesis,
+    onChunk: onSynthesizerChunk
+  },
+
+  // Sprint + groups (sprint expanded with onExternalChange)
+  sprint: {
+    ...sprint,
+    onExternalChange: onExternalSprintChange
+  },
   groups,
 
   // Planner
   planner,
 
-  // File system
-  openFileDialog,
-  readFileAsBase64,
-  readFileAsText,
-  openDirectoryDialog,
-  readDir,
-  readFile,
-  writeFile,
-  watchDir,
-  unwatchDir,
-  createFile,
-  createDir,
-  rename,
-  deletePath,
-  stat,
-  listFiles,
-  onDirChanged,
+  // Agent processes + history (expanded with flat ops + agentEvents)
+  agents: {
+    ...agents,
+    getProcesses: getAgentProcesses,
+    spawnLocal: spawnLocalAgent,
+    steer: steerAgent,
+    kill: killAgent,
+    getLatestCacheTokens,
+    tailLog: tailAgentLog,
+    events: agentEvents
+  },
+  agentManager,
 
-  // Sprint DB broadcast
-  onExternalSprintChange,
-
-  // Auth
-  authStatus,
+  // Cost analytics
+  cost,
 
   // Templates
   templates,
@@ -197,12 +219,6 @@ const api = {
 
   // Code Review
   review,
-
-  // Spec Synthesizer
-  synthesizeSpec,
-  reviseSpec,
-  cancelSynthesis,
-  onSynthesizerChunk,
 
   // Repository discovery
   repoDiscovery

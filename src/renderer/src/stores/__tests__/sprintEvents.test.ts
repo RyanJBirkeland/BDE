@@ -33,14 +33,14 @@ function makeTaskOutputEvent(taskId: string, type = 'agent:started'): TaskOutput
 // --- initTaskOutputListener ---
 
 describe('initTaskOutputListener', () => {
-  it('calls window.api.agentEvents.onEvent to subscribe', () => {
+  it('calls window.api.agents.events.onEvent to subscribe', () => {
     useSprintEvents.getState().initTaskOutputListener()
-    expect(window.api.agentEvents.onEvent).toHaveBeenCalledOnce()
+    expect(window.api.agents.events.onEvent).toHaveBeenCalledOnce()
   })
 
   it('returns a cleanup function that calls the unsubscribe fn', () => {
     const unsubscribe = vi.fn()
-    vi.mocked(window.api.agentEvents.onEvent).mockReturnValue(unsubscribe)
+    vi.mocked(window.api.agents.events.onEvent).mockReturnValue(unsubscribe)
 
     const cleanup = useSprintEvents.getState().initTaskOutputListener()
     cleanup()
@@ -49,7 +49,7 @@ describe('initTaskOutputListener', () => {
   })
 
   it('returns a cleanup function that is safe when onEvent returns undefined', () => {
-    vi.mocked(window.api.agentEvents.onEvent).mockReturnValue(undefined as unknown as () => void)
+    vi.mocked(window.api.agents.events.onEvent).mockReturnValue(undefined as unknown as () => void)
 
     const cleanup = useSprintEvents.getState().initTaskOutputListener()
     // should not throw
@@ -58,7 +58,7 @@ describe('initTaskOutputListener', () => {
 
   it('appends an event to the correct agent bucket when an event arrives', () => {
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       captured = cb
       return () => {}
     })
@@ -75,7 +75,7 @@ describe('initTaskOutputListener', () => {
 
   it('accumulates multiple events for the same agent', () => {
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       captured = cb
       return () => {}
     })
@@ -91,7 +91,7 @@ describe('initTaskOutputListener', () => {
 
   it('keeps events isolated between different agents', () => {
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       captured = cb
       return () => {}
     })
@@ -108,7 +108,7 @@ describe('initTaskOutputListener', () => {
 
   it('selectLatestEvent returns the most recently received event', () => {
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       captured = cb
       return () => {}
     })
@@ -129,7 +129,7 @@ describe('initTaskOutputListener', () => {
     })
 
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       captured = cb
       return () => {}
     })
@@ -144,7 +144,7 @@ describe('initTaskOutputListener', () => {
 
   it('caps events at MAX_EVENTS_PER_AGENT (500) to prevent memory leaks', () => {
     let captured: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       captured = cb
       return () => {}
     })
@@ -166,7 +166,7 @@ describe('initTaskOutputListener', () => {
 
   it('works with TaskOutputEvent shapes as well as AgentEvent shapes', () => {
     let captured: ((payload: { agentId: string; event: TaskOutputEvent }) => void) | null = null
-    vi.mocked(window.api.agentEvents.onEvent).mockImplementation((cb) => {
+    vi.mocked(window.api.agents.events.onEvent).mockImplementation((cb) => {
       captured = cb as unknown as typeof captured
       return () => {}
     })

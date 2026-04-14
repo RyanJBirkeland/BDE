@@ -21,10 +21,10 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
   const { prompt, promptProps } = usePrompt()
 
   async function handleOpenFolder(): Promise<void> {
-    const dir = await window.api.openDirectoryDialog()
+    const dir = await window.api.fs.openDirDialog()
     if (dir) {
       setRootPath(dir)
-      await window.api.watchDir(dir)
+      await window.api.fs.watchDir(dir)
     }
   }
 
@@ -53,7 +53,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
       return
     }
     try {
-      await window.api.createFile(`${parentPath}/${sanitized}`)
+      await window.api.fs.createFile(`${parentPath}/${sanitized}`)
     } catch (err) {
       toast.error(`Failed to create file: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
@@ -68,7 +68,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
       return
     }
     try {
-      await window.api.createDir(`${parentPath}/${sanitized}`)
+      await window.api.fs.createDir(`${parentPath}/${sanitized}`)
     } catch (err) {
       toast.error(
         `Failed to create folder: ${err instanceof Error ? err.message : 'Unknown error'}`
@@ -91,7 +91,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
       return
     }
     try {
-      await window.api.rename(path, [...parts.slice(0, -1), sanitized].join('/'))
+      await window.api.fs.rename(path, [...parts.slice(0, -1), sanitized].join('/'))
     } catch (err) {
       toast.error(`Rename failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
@@ -105,7 +105,7 @@ export function FileSidebar({ onOpenFile }: FileSidebarProps): React.JSX.Element
     })
     if (!confirmed) return
     try {
-      await window.api.deletePath(path)
+      await window.api.fs.deletePath(path)
     } catch (err) {
       toast.error(`Delete failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }

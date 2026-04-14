@@ -13,7 +13,7 @@ export function FileTree({ dirPath, onOpenFile }: FileTreeProps): React.JSX.Elem
   const [error, setError] = useState<string | null>(null)
 
   const loadEntries = useCallback(() => {
-    window.api
+    window.api.fs
       .readDir(dirPath)
       .then((raw) => {
         setEntries(
@@ -33,7 +33,7 @@ export function FileTree({ dirPath, onOpenFile }: FileTreeProps): React.JSX.Elem
     loadEntries()
   }, [loadEntries])
   useEffect(() => {
-    const unsubscribe = window.api.onDirChanged(() => loadEntries())
+    const unsubscribe = window.api.fs.onDirChanged(() => loadEntries())
     return unsubscribe
   }, [loadEntries])
 

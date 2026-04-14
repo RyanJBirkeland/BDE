@@ -34,7 +34,7 @@ export function AboutSection(): React.JSX.Element {
               variant="ghost"
               size="sm"
               className="settings-about__link"
-              onClick={() => window.api.openExternal(GITHUB_URL)}
+              onClick={() => window.api.window.openExternal(GITHUB_URL)}
               type="button"
             >
               GitHub <ExternalLink size={12} />

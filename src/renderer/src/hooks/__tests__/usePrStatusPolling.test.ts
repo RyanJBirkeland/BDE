@@ -107,7 +107,7 @@ describe('usePrStatusPolling', () => {
     mockSetPrMergedMap.mockClear()
     mockSetConflicts.mockClear()
     mockToastError.mockClear()
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([])
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([])
   })
 
   it('renders without error', () => {
@@ -119,21 +119,21 @@ describe('usePrStatusPolling', () => {
   it('does not call pollPrStatuses when there are no tasks with PRs', () => {
     renderHook(() => usePrStatusPolling())
     // Since currentTasks is empty, pollPrStatuses should not be invoked
-    expect(window.api.pollPrStatuses).not.toHaveBeenCalled()
+    expect(window.api.pr.pollStatuses).not.toHaveBeenCalled()
   })
 
   it('does not poll when tasks have no pr_url', async () => {
     currentTasks = [makeTask({ pr_url: null })]
     renderHook(() => usePrStatusPolling())
     await act(async () => {})
-    expect(window.api.pollPrStatuses).not.toHaveBeenCalled()
+    expect(window.api.pr.pollStatuses).not.toHaveBeenCalled()
   })
 
   it('calls pollPrStatuses with tasks that have pr_url', async () => {
     const task = makeTask({ id: 'task-1', pr_url: 'https://github.com/org/repo/pull/1' })
     currentTasks = [task]
 
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([
       { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' }
     ])
 
@@ -141,7 +141,7 @@ describe('usePrStatusPolling', () => {
 
     await act(async () => {})
 
-    expect(window.api.pollPrStatuses).toHaveBeenCalledWith([
+    expect(window.api.pr.pollStatuses).toHaveBeenCalledWith([
       { taskId: 'task-1', prUrl: 'https://github.com/org/repo/pull/1' }
     ])
   })
@@ -154,14 +154,14 @@ describe('usePrStatusPolling', () => {
     renderHook(() => usePrStatusPolling())
     await act(async () => {})
 
-    expect(window.api.pollPrStatuses).not.toHaveBeenCalled()
+    expect(window.api.pr.pollStatuses).not.toHaveBeenCalled()
   })
 
   it('calls setPrMergedMap when a PR is newly merged', async () => {
     const task = makeTask({ id: 'task-1', pr_url: 'https://github.com/org/repo/pull/1' })
     currentTasks = [task]
 
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([
       {
         taskId: 'task-1',
         merged: true,
@@ -187,7 +187,7 @@ describe('usePrStatusPolling', () => {
     const task = makeTask({ id: 'task-1', pr_url: 'https://github.com/org/repo/pull/1' })
     currentTasks = [task]
 
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([
       {
         taskId: 'task-1',
         merged: true,
@@ -208,7 +208,7 @@ describe('usePrStatusPolling', () => {
     const task = makeTask({ id: 'task-1', pr_url: 'https://github.com/org/repo/pull/1' })
     currentTasks = [task]
 
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([
       { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'dirty' }
     ])
 
@@ -223,7 +223,7 @@ describe('usePrStatusPolling', () => {
     const task = makeTask({ id: 'task-conflict', pr_url: 'https://github.com/org/repo/pull/1' })
     currentTasks = [task]
 
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([
       {
         taskId: 'task-conflict',
         merged: false,
@@ -244,7 +244,7 @@ describe('usePrStatusPolling', () => {
     const task = makeTask({ id: 'task-1', pr_url: 'https://github.com/org/repo/pull/1' })
     currentTasks = [task]
 
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([
       { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: 'clean' }
     ])
 
@@ -259,7 +259,7 @@ describe('usePrStatusPolling', () => {
     const task = makeTask({ id: 'task-1', pr_url: 'https://github.com/org/repo/pull/1' })
     currentTasks = [task]
 
-    vi.mocked(window.api.pollPrStatuses).mockRejectedValue(new Error('gh CLI unavailable'))
+    vi.mocked(window.api.pr.pollStatuses).mockRejectedValue(new Error('gh CLI unavailable'))
 
     expect(() => {
       renderHook(() => usePrStatusPolling())
@@ -276,7 +276,7 @@ describe('usePrStatusPolling', () => {
     currentTasks = [task]
 
     // merged: false with prev already having false
-    vi.mocked(window.api.pollPrStatuses).mockResolvedValue([
+    vi.mocked(window.api.pr.pollStatuses).mockResolvedValue([
       { taskId: 'task-1', merged: false, state: 'open', mergedAt: null, mergeableState: null }
     ])
 

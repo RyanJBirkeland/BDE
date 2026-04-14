@@ -125,7 +125,7 @@ export function RepositoriesSection(): React.JSX.Element {
   }, [cloneDir])
 
   const handleBrowse = useCallback(async () => {
-    const dir = await window.api.openDirectoryDialog()
+    const dir = await window.api.fs.openDirDialog()
     if (!dir) return
     setNewPath(dir)
 
@@ -138,7 +138,7 @@ export function RepositoriesSection(): React.JSX.Element {
 
     // Best-effort: detect GitHub remote and pre-fill owner/repo.
     try {
-      const detected = await window.api.gitDetectRemote(dir)
+      const detected = await window.api.git.detectRemote(dir)
       if (detected.isGitRepo && detected.owner && detected.repo) {
         if (!newOwner.trim()) setNewOwner(detected.owner)
         if (!newRepo.trim()) setNewRepo(detected.repo)

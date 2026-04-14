@@ -13,7 +13,7 @@ describe('dashboardDataStore', () => {
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
     ;(window.api.dashboard.dailySuccessRate as any).mockResolvedValue([])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
     mockLoadAverage.mockResolvedValue({ samples: [], cpuCount: 8 })
 
     // Reset store to initial state
@@ -77,7 +77,7 @@ describe('dashboardDataStore', () => {
         task_title: null
       }
     ])
-    ;(window.api.getPrList as any).mockResolvedValue({
+    ;(window.api.pr.getList as any).mockResolvedValue({
       prs: [{ number: 1 }, { number: 2 }, { number: 3 }]
     })
 
@@ -108,7 +108,7 @@ describe('dashboardDataStore', () => {
   it('fetchAll sets cardErrors on partial failure', async () => {
     ;(window.api.dashboard.completionsPerHour as any).mockRejectedValue(new Error('network'))
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 
@@ -124,7 +124,7 @@ describe('dashboardDataStore', () => {
     // First call: set errors
     ;(window.api.dashboard.completionsPerHour as any).mockRejectedValue(new Error('fail'))
     ;(window.api.dashboard.recentEvents as any).mockRejectedValue(new Error('fail'))
-    ;(window.api.getPrList as any).mockRejectedValue(new Error('fail'))
+    ;(window.api.pr.getList as any).mockRejectedValue(new Error('fail'))
 
     await useDashboardDataStore.getState().fetchAll()
     expect(Object.keys(useDashboardDataStore.getState().cardErrors).length).toBeGreaterThan(0)
@@ -132,7 +132,7 @@ describe('dashboardDataStore', () => {
     // Second call: all succeed
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 
@@ -149,7 +149,7 @@ describe('dashboardDataStore', () => {
     useDashboardDataStore.setState({ cardErrors: { loadAverage: 'Failed to load system metrics' } })
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 
@@ -161,7 +161,7 @@ describe('dashboardDataStore', () => {
   it('fetchAll sets loading false after completion', async () => {
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue([])
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue([])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
 
     expect(useDashboardDataStore.getState().loading).toBe(true)
 
@@ -173,7 +173,7 @@ describe('dashboardDataStore', () => {
   it('fetchAll handles null/undefined API responses gracefully', async () => {
     ;(window.api.dashboard.completionsPerHour as any).mockResolvedValue(null)
     ;(window.api.dashboard.recentEvents as any).mockResolvedValue(null)
-    ;(window.api.getPrList as any).mockResolvedValue(null)
+    ;(window.api.pr.getList as any).mockResolvedValue(null)
 
     await useDashboardDataStore.getState().fetchAll()
 
@@ -196,7 +196,7 @@ describe('dashboardDataStore', () => {
         task_title: null
       }
     ])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 
@@ -233,7 +233,7 @@ describe('dashboardDataStore', () => {
         task_title: 'Fix bug'
       }
     ])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 
@@ -263,7 +263,7 @@ describe('dashboardDataStore', () => {
         task_title: null
       }
     ])
-    ;(window.api.getPrList as any).mockResolvedValue({ prs: [] })
+    ;(window.api.pr.getList as any).mockResolvedValue({ prs: [] })
 
     await useDashboardDataStore.getState().fetchAll()
 

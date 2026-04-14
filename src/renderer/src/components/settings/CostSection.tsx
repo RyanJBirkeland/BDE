@@ -192,7 +192,7 @@ function TaskTable({
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        window.api.openExternal(r.pr_url!)
+                        window.api.window.openExternal(r.pr_url!)
                       }}
                     >
                       <ExternalLink size={12} />

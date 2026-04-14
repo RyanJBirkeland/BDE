@@ -156,7 +156,7 @@ export function CommandBar({
       e.preventDefault()
 
       try {
-        const result = await window.api.readClipboardImage()
+        const result = await window.api.window.readClipboardImage()
         if (result) {
           setAttachment({
             path: '',

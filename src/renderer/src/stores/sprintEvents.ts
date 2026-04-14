@@ -40,7 +40,7 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
     if (unsubscribe) {
       return unsubscribe // already subscribed
     }
-    unsubscribe = window.api.agentEvents?.onEvent(({ agentId, event }) => {
+    unsubscribe = window.api.agents.events?.onEvent(({ agentId, event }) => {
       set((s) => {
         const existing = s.taskEvents[agentId] ?? []
         let updated = [...existing, event]

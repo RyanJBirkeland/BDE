@@ -130,14 +130,14 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
 
     // Run auth check and extended checks concurrently
     const [authResult] = await Promise.allSettled([
-      window.api.authStatus().then((result) => {
+      window.api.auth.status().then((result) => {
         setStatus(result)
         return result
       })
     ])
 
     // Git check — try to call getRepoPaths (requires git CLI)
-    const gitCheck = window.api.getRepoPaths().then(
+    const gitCheck = window.api.git.getRepoPaths().then(
       () => 'pass' as CheckState,
       () => 'fail' as CheckState
     )

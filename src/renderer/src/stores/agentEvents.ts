@@ -33,7 +33,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
     if (unsubscribe) {
       return unsubscribe // already subscribed
     }
-    unsubscribe = window.api.agentEvents.onEvent(({ agentId, event }) => {
+    unsubscribe = window.api.agents.events.onEvent(({ agentId, event }) => {
       set((state) => {
         const existing = state.events[agentId] ?? []
         const updated = [...existing, event]
@@ -58,7 +58,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
   },
 
   async loadHistory(agentId: string) {
-    const history = await window.api.agentEvents.getHistory(agentId)
+    const history = await window.api.agents.events.getHistory(agentId)
     const wasEvicted = history.length > MAX_EVENTS_PER_AGENT
     set((state) => ({
       events: {

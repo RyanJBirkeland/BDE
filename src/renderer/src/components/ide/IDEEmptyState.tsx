@@ -12,7 +12,7 @@ export function IDEEmptyState({ onOpenFolder }: IDEEmptyStateProps): React.JSX.E
 
   async function handleRecentFolder(folderPath: string): Promise<void> {
     try {
-      const result = await window.api.watchDir(folderPath)
+      const result = await window.api.fs.watchDir(folderPath)
       if (result && 'success' in result && !result.success) {
         throw new Error(result.error || 'Failed to watch directory')
       }

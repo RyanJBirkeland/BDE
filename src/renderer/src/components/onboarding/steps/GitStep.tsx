@@ -18,7 +18,7 @@ export function GitStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Eleme
     setChecking(true)
     try {
       // Try to call a git command via IPC
-      await window.api.getRepoPaths()
+      await window.api.git.getRepoPaths()
       setGitAvailable(true)
     } catch {
       setGitAvailable(false)

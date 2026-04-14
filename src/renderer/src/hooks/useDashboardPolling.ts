@@ -13,7 +13,7 @@ export function useDashboardPolling(): void {
   useBackoffInterval(fetchAll, POLL_DASHBOARD_INTERVAL)
 
   useEffect(() => {
-    return window.api.onExternalSprintChange(() => {
+    return window.api.sprint.onExternalChange(() => {
       fetchAll()
     })
   }, [fetchAll])

@@ -6,14 +6,22 @@ import type { SprintTask } from '../../../../../shared/types'
 // Mock window.api
 beforeEach(() => {
   global.window.api = {
-    checkConflictFiles: vi.fn().mockResolvedValue({
-      headBranch: 'feature-branch',
-      baseBranch: 'main',
-      files: ['file1.ts', 'file2.ts']
-    }),
-    openExternal: vi.fn(),
-    getRepoPaths: vi.fn().mockResolvedValue({}),
-    spawnLocalAgent: vi.fn().mockResolvedValue(undefined),
+    pr: {
+      checkConflictFiles: vi.fn().mockResolvedValue({
+        headBranch: 'feature-branch',
+        baseBranch: 'main',
+        files: ['file1.ts', 'file2.ts']
+      })
+    },
+    window: {
+      openExternal: vi.fn()
+    },
+    git: {
+      getRepoPaths: vi.fn().mockResolvedValue({})
+    },
+    agents: {
+      spawnLocal: vi.fn().mockResolvedValue(undefined)
+    },
     github: {
       isConfigured: vi.fn().mockResolvedValue(true)
     }

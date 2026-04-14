@@ -26,7 +26,7 @@ describe('FileTreeNode', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(window.api.readDir).mockResolvedValue([])
+    vi.mocked(window.api.fs.readDir).mockResolvedValue([])
   })
 
   it('renders a file node with name', () => {

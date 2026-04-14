@@ -413,10 +413,10 @@ describe('sprintTasks store', () => {
 
     beforeEach(() => {
       useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
-      ;(window.api.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ;(window.api.git.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({
         bde: '/repos/bde'
       })
-      ;(window.api.spawnLocalAgent as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ;(window.api.agents.spawnLocal as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'agent-99',
         pid: 5678,
         logPath: '/tmp/log',
@@ -428,7 +428,7 @@ describe('sprintTasks store', () => {
     it('spawns agent and updates task status to active on success', async () => {
       await useSprintTasks.getState().launchTask(task)
 
-      expect(window.api.spawnLocalAgent).toHaveBeenCalledWith({
+      expect(window.api.agents.spawnLocal).toHaveBeenCalledWith({
         task: task.title,
         repoPath: '/repos/bde'
       })
@@ -444,17 +444,17 @@ describe('sprintTasks store', () => {
 
       await useSprintTasks.getState().launchTask(taskWithSpec)
 
-      expect(window.api.spawnLocalAgent).toHaveBeenCalledWith(
+      expect(window.api.agents.spawnLocal).toHaveBeenCalledWith(
         expect.objectContaining({ task: 'do the thing' })
       )
     })
 
     it('shows error and returns early when repo path is not configured', async () => {
-      ;(window.api.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({})
+      ;(window.api.git.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({})
 
       await useSprintTasks.getState().launchTask(task)
 
-      expect(window.api.spawnLocalAgent).not.toHaveBeenCalled()
+      expect(window.api.agents.spawnLocal).not.toHaveBeenCalled()
       expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('"bde"'))
     })
 
@@ -471,7 +471,7 @@ describe('sprintTasks store', () => {
 
       await useSprintTasks.getState().launchTask(task)
 
-      expect(window.api.spawnLocalAgent).not.toHaveBeenCalled()
+      expect(window.api.agents.spawnLocal).not.toHaveBeenCalled()
       expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('In Progress is full'))
     })
 
@@ -489,11 +489,11 @@ describe('sprintTasks store', () => {
       // Should not block even though there are 5 active tasks
       await useSprintTasks.getState().launchTask(alreadyActive)
 
-      expect(window.api.spawnLocalAgent).toHaveBeenCalled()
+      expect(window.api.agents.spawnLocal).toHaveBeenCalled()
     })
 
     it('shows error toast when spawnLocalAgent throws', async () => {
-      ;(window.api.spawnLocalAgent as ReturnType<typeof vi.fn>).mockRejectedValue(
+      ;(window.api.agents.spawnLocal as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error('spawn failed')
       )
 

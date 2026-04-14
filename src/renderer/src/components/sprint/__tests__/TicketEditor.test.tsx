@@ -7,7 +7,9 @@ import type { TicketDraft } from '../TicketEditor'
 beforeEach(() => {
   global.window = {
     api: {
-      getRepoPaths: vi.fn().mockResolvedValue({ 'test-repo': '/path/to/repo' })
+      git: {
+        getRepoPaths: vi.fn().mockResolvedValue({ 'test-repo': '/path/to/repo' })
+      }
     }
   } as any
 })

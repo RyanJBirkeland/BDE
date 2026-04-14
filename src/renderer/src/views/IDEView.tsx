@@ -59,7 +59,7 @@ export function IDEView(): React.JSX.Element {
           fontSize?: number
         }
         // Set watchDir FIRST so ideRootPath is ready before any readFile calls
-        if (state.rootPath) await window.api.watchDir(state.rootPath)
+        if (state.rootPath) await window.api.fs.watchDir(state.rootPath)
         useIDEStore.setState({
           rootPath: state.rootPath ?? null,
           sidebarCollapsed: state.sidebarCollapsed ?? false,
@@ -158,7 +158,7 @@ export function IDEView(): React.JSX.Element {
     if (fileLoadingStates[filePath]) return // Already loading
 
     setFileLoading(filePath, true)
-    window.api
+    window.api.fs
       .readFile(filePath)
       .then((content) => {
         setFileContent(filePath, content ?? '')
@@ -180,7 +180,7 @@ export function IDEView(): React.JSX.Element {
     if (savingPaths.current.has(filePath)) return // Already saving this file
     savingPaths.current.add(filePath)
     try {
-      await window.api.writeFile(filePath, content)
+      await window.api.fs.writeFile(filePath, content)
       setDirty(id, false)
     } catch (err) {
       toast.error(`Save failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
@@ -213,10 +213,10 @@ export function IDEView(): React.JSX.Element {
   )
 
   const handleOpenFolder = useCallback(async () => {
-    const dir = await window.api.openDirectoryDialog()
+    const dir = await window.api.fs.openDirDialog()
     if (dir) {
       setRootPath(dir)
-      await window.api.watchDir(dir)
+      await window.api.fs.watchDir(dir)
     }
   }, [setRootPath])
 

@@ -47,7 +47,7 @@ export function ConnectionsSection(): React.JSX.Element {
   const refreshAuth = useCallback(async () => {
     setAuthLoading(true)
     try {
-      const status = await window.api.authStatus()
+      const status = await window.api.auth.status()
       setAuthStatus(status)
     } catch {
       toast.error('Failed to check auth status')
@@ -217,7 +217,7 @@ export function ConnectionsSection(): React.JSX.Element {
               variant="ghost"
               size="sm"
               className="settings-about__link"
-              onClick={() => window.api.openExternal(GITHUB_URL)}
+              onClick={() => window.api.window.openExternal(GITHUB_URL)}
               type="button"
             >
               GitHub <ExternalLink size={12} />

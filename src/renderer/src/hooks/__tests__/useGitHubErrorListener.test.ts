@@ -21,7 +21,7 @@ describe('useGitHubErrorListener', () => {
     errorHandler = null
     vi.clearAllMocks()
 
-    vi.mocked(window.api.onGitHubError).mockImplementation((handler) => {
+    vi.mocked(window.api.pr.onGitHubError).mockImplementation((handler) => {
       errorHandler = handler
       return unsub
     })
@@ -29,7 +29,7 @@ describe('useGitHubErrorListener', () => {
 
   it('subscribes to github:error on mount', () => {
     renderHook(() => useGitHubErrorListener())
-    expect(window.api.onGitHubError).toHaveBeenCalledWith(expect.any(Function))
+    expect(window.api.pr.onGitHubError).toHaveBeenCalledWith(expect.any(Function))
   })
 
   it('unsubscribes on unmount', () => {
@@ -40,7 +40,7 @@ describe('useGitHubErrorListener', () => {
 
   it('shows a persistent info toast with a "Fix billing" action for kind=billing', async () => {
     const { toast } = await import('../../stores/toasts')
-    vi.mocked(window.api.openExternal).mockResolvedValue({} as never)
+    vi.mocked(window.api.window.openExternal).mockResolvedValue({} as never)
 
     renderHook(() => useGitHubErrorListener())
     errorHandler!({ kind: 'billing', message: 'GitHub Actions disabled', status: 403 })
@@ -61,7 +61,7 @@ describe('useGitHubErrorListener', () => {
 
   it('invokes openExternal(github.com/settings/billing) when billing action is clicked', async () => {
     const { toast } = await import('../../stores/toasts')
-    vi.mocked(window.api.openExternal).mockResolvedValue({} as never)
+    vi.mocked(window.api.window.openExternal).mockResolvedValue({} as never)
 
     renderHook(() => useGitHubErrorListener())
     errorHandler!({ kind: 'billing', message: 'GitHub Actions disabled', status: 403 })
@@ -71,7 +71,7 @@ describe('useGitHubErrorListener', () => {
     // Simulate the user clicking the toast action
     options.onAction?.()
 
-    expect(window.api.openExternal).toHaveBeenCalledWith(
+    expect(window.api.window.openExternal).toHaveBeenCalledWith(
       expect.stringContaining('github.com/settings/billing')
     )
   })
