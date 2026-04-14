@@ -53,7 +53,7 @@ const TASK_CLASS_CAP: Record<TaskClass, number> = {
 
 function buildOutputCapHint(taskClass: TaskClass): string {
   const cap = TASK_CLASS_CAP[taskClass]
-  return `\n\n## Output Budget\nThis task is classified as **${taskClass}**. Aim to produce ≤${cap.toLocaleString()} output tokens. Focus on precise, targeted changes — avoid generating boilerplate, verbose comments, or re-stating existing code that doesn't need to change.`
+  return `\n\n## Output Budget\nThis task is classified as **${taskClass}**. Keep output ≤${cap.toLocaleString()} tokens. Focus on precise, targeted changes — avoid generating boilerplate, verbose comments, or re-stating existing code that doesn't need to change.`
 }
 
 function buildTimeLimitSection(maxRuntimeMs: number): string {
@@ -65,7 +65,7 @@ const IDLE_TIMEOUT_WARNING = `\n\n## Idle Timeout Warning\nYou will be TERMINATE
 
 const PIPELINE_SETUP_RULE = `\n\n## Pipeline Worktree Setup\nYour worktree has NO \`node_modules\`. Run \`npm install\` before invoking any of the pre-commit verification commands (\`npm run typecheck\`, \`npm run test:coverage\`, \`npm run lint\`). You may read the spec and source files first to plan. If \`npm install\` fails, report the error clearly and exit.`
 
-const CONTEXT_EFFICIENCY_HINT = `\n\n## Context Efficiency\nEach tool result stays in the conversation for the rest of this run, accumulating cost on every subsequent turn. Read precisely:\n- Use \`Read\` with \`offset\` and \`limit\` when you know the relevant section rather than reading a whole file\n- Cap exploratory greps: \`grep -m 20\` or \`| head -20\` — refine if you need more\n- Use \`Glob\` or \`grep -l\` to locate files before reading their contents\n- Read one representative file to understand a pattern; don't read every similar file\n\nYou can always read more if a narrow read didn't answer the question. Start narrow.`
+const CONTEXT_EFFICIENCY_HINT = `\n\n## Context Efficiency\nEach tool result stays in the conversation for the rest of this run, accumulating cost on every subsequent turn. Start narrow:\n- Read with \`offset\`/\`limit\` when you know the relevant section — not the whole file\n- Cap exploratory greps: \`grep -m 20\` or \`| head -20\`\n- Use \`Glob\` or \`grep -l\` to locate files before reading their contents\n- Read one representative file per pattern. Expand only if that read left an unanswered question.`
 
 const PIPELINE_JUDGMENT_RULES = `\n\n## Judging Test Failures and Push Completion
 
@@ -73,7 +73,7 @@ const PIPELINE_JUDGMENT_RULES = `\n\n## Judging Test Failures and Push Completio
 
 ### Rules for judging test failures
 
-- NEVER label a test failure "pre-existing" or "unrelated" without proof. An agent who pushes broken tests blaming "flakes" is the #1 cause of rejected PRs.
+- Only label a test failure "pre-existing" or "unrelated" with proof. Agents who push broken tests blaming "flakes" are the #1 cause of rejected PRs.
 - If a test fails, **first re-run just that file in isolation**: \`npx vitest run <path-to-failing-test>\`. If it passes in isolation, the full-suite failure was a parallel-load flake — wait 30 seconds, then retry the full suite once more before concluding anything.
 - If the test still fails in isolation, run \`git log -5 -- <test-file>\` to check when it was last modified. If the last commit is not in \`main\`, check out \`origin/main\` in a scratch location and run the same test there. If it fails on main, THEN it's legitimately pre-existing.
 - If the test passes on \`origin/main\` but fails in your worktree, it is YOUR responsibility — even if you don't think you touched it. Something in your changes broke it. Fix it.
@@ -156,10 +156,8 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
 
     // Task specification
     prompt += '\n\n## Task Specification\n\n'
-    prompt += 'Read this entire specification before writing any code. '
     prompt += 'Address every section — especially **Files to Change**, **How to Test**, '
-    prompt += 'and **Out of Scope**. If the spec lists test files to create or modify, '
-    prompt += 'writing those tests is REQUIRED, not optional.\n\n'
+    prompt += 'and **Out of Scope**. If the spec lists test files, writing those tests is REQUIRED.\n\n'
     const truncatedContent = truncateSpec(taskContent, PROMPT_TRUNCATION.TASK_SPEC_CHARS)
     const wasTruncated = taskContent.length > PROMPT_TRUNCATION.TASK_SPEC_CHARS
     prompt += `<user_spec>\n${truncatedContent}`

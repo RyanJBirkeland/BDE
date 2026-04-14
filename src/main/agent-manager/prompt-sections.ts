@@ -140,7 +140,7 @@ export function buildRetryContext(retryCount: number, previousNotes?: string): s
   const notesText = previousNotes
     ? `Previous attempt failed:\n<failure_notes>\n${truncateSpec(previousNotes, PROMPT_TRUNCATION.RETRY_NOTES_CHARS)}\n</failure_notes>`
     : 'No failure notes from previous attempt.'
-  return `\n\n## Retry Context\nThis is attempt ${attemptNum} of ${maxAttempts}. ${notesText}\nDo NOT repeat the same approach. Analyze what went wrong and try a different strategy.\nIf the previous failure was a test/typecheck error, fix that specific error first.`
+  return `\n\n## Retry Context\nThis is attempt ${attemptNum} of ${maxAttempts}. ${notesText}\nDo not repeat your prior approach — analyze the failure and try something different.\nIf the failure was a test/typecheck error, fix that specific error first.`
 }
 
 // ---------------------------------------------------------------------------

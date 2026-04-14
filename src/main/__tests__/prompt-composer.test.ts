@@ -200,7 +200,7 @@ describe('buildAgentPrompt', () => {
     })
     expect(prompt).toContain('Files to Change')
     expect(prompt).toContain('How to Test')
-    expect(prompt).toContain('REQUIRED, not optional')
+    expect(prompt).toContain('writing those tests is REQUIRED')
   })
 })
 

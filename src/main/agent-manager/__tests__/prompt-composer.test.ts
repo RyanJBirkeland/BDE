@@ -495,7 +495,7 @@ describe('buildAgentPrompt', () => {
       expect(prompt).toContain('## Retry Context')
       expect(prompt).toContain('attempt 3 of 4')
       expect(prompt).toContain('npm test failed')
-      expect(prompt).toContain('Do NOT repeat the same approach')
+      expect(prompt).toContain('try something different')
     })
 
     it('handles retryCount > 0 with no previousNotes', () => {
@@ -628,8 +628,8 @@ describe('buildAgentPrompt', () => {
 
     it('forbids labeling failures pre-existing without proof', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
-      expect(prompt).toContain('NEVER label a test failure "pre-existing"')
-      expect(prompt).toContain('without proof')
+      expect(prompt).toContain('Only label a test failure "pre-existing"')
+      expect(prompt).toContain('with proof')
       expect(prompt).toContain('re-run just that file in isolation')
     })
 
@@ -667,7 +667,6 @@ describe('buildAgentPrompt', () => {
         repoName: 'bde'
       })
       expect(prompt).toContain('## Task Specification')
-      expect(prompt).toContain('Read this entire specification before writing any code')
       expect(prompt).toContain('Address every section')
       // Original spec content must still be present after the header
       const headerIdx = prompt.indexOf('## Task Specification')
@@ -1109,6 +1108,39 @@ describe('buildAgentPrompt', () => {
     it('pipeline uses selectUserMemory (filtered), not getUserMemory (full)', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'notes related task' })
       expect(prompt).toContain('## User Knowledge')
+    })
+  })
+
+  describe('pipeline language quality', () => {
+    it('does not contain redundant read-spec preamble', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Fix the auth bug in src/main/auth.ts'
+      })
+      expect(prompt).not.toContain('Read this entire specification before writing any code.')
+    })
+
+    it('uses positive framing for test failure labeling rule', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline' })
+      expect(prompt).not.toContain('NEVER label a test failure')
+      expect(prompt).toContain('Only label a test failure')
+    })
+
+    it('uses Keep output instead of Aim to produce', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Add a new button' })
+      expect(prompt).not.toContain('Aim to produce')
+      expect(prompt).toContain('Keep output')
+    })
+
+    it('context efficiency hint does not contain contradictory you-can-always-read-more', () => {
+      const prompt = buildAgentPrompt({ agentType: 'pipeline' })
+      expect(prompt).not.toContain('You can always read more if a narrow read')
+    })
+
+    it('retry context uses single directive not duplicate', () => {
+      const result = buildRetryContext(1, 'Some notes')
+      expect(result).not.toContain('try a different strategy')
+      expect(result).toContain('try something different')
     })
   })
 
