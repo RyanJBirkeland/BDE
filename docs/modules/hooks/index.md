@@ -17,3 +17,5 @@ Source: `src/renderer/src/hooks/`
 | `useBatchActions.ts` | Wraps useBatchReviewActions with confirm dialogs and in-flight state tracking for batch merge/ship/PR/discard. Used by TopBar. | `useBatchActions`, `BatchActionKey` |
 | `useGitCommands.ts` | Registers git operation commands (stage all, commit, push, switch branch) in the command palette. Extracted from GitTreeView. | `useGitCommands` |
 | `useWebhookManager.ts` | Owns all webhook CRUD state and async operations (list, create, update, delete, test). Returns state and handlers for the webhook settings UI. | `useWebhookManager`, `WebhookManager` |
+| `useVisibleStuckTasks.ts` | Derives the list of stuck tasks that have not been dismissed. Composes `useHealthCheckStore` + `useSprintTasks` — lives in hooks (not stores) to keep cross-store logic out of the store layer. | `useVisibleStuckTasks` |
+| `useBatchReviewActions.ts` | Batch review actions (merge locally, ship it, create PR, discard) over a set of tasks. Shared loop-count-toast logic extracted into file-private `executeBatchAction`. | `useBatchReviewActions`, `UseBatchReviewActionsResult` |

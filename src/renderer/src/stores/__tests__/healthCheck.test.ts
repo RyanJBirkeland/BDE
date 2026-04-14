@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
-import { useHealthCheckStore, useVisibleStuckTasks } from '../healthCheck'
+import { useHealthCheckStore } from '../healthCheck'
+import { useVisibleStuckTasks } from '../../hooks/useVisibleStuckTasks'
 import { useSprintTasks } from '../sprintTasks'
 import type { SprintTask } from '../../../../shared/types'
 import { nowIso } from '../../../../shared/time'

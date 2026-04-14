@@ -11,122 +11,96 @@ export interface UseBatchReviewActionsResult {
   batchDiscard: (tasks: Array<{ id: string; title: string }>) => Promise<void>
 }
 
+async function executeBatchAction<T>(
+  tasks: T[],
+  action: (task: T) => Promise<boolean>,
+  successMessage: (count: number) => string,
+  failureMessage: (succeeded: number, failed: number) => string,
+  afterAll: () => void
+): Promise<void> {
+  let succeeded = 0
+  let failed = 0
+
+  for (const task of tasks) {
+    try {
+      const ok = await action(task)
+      if (ok) succeeded++
+      else failed++
+    } catch {
+      failed++
+    }
+  }
+
+  afterAll()
+
+  if (failed === 0) {
+    toast.success(successMessage(succeeded))
+  } else {
+    toast.error(failureMessage(succeeded, failed))
+  }
+}
+
 export function useBatchReviewActions(): UseBatchReviewActionsResult {
   const loadData = useSprintTasks((s) => s.loadData)
 
-  const batchMergeLocally = async (
-    batchTasks: Array<{ id: string; title: string }>
-  ): Promise<void> => {
-    const clearBatch = useCodeReviewStore.getState().clearBatch
-    let succeeded = 0
-    let failed = 0
-
-    for (const batchTask of batchTasks) {
-      try {
-        const result = await window.api.review.mergeLocally({
-          taskId: batchTask.id,
-          strategy: 'squash'
-        })
-        if (result.success) succeeded++
-        else failed++
-      } catch {
-        failed++
-      }
-    }
-
-    clearBatch()
+  function afterBatch(): void {
+    useCodeReviewStore.getState().clearBatch()
     loadData()
-
-    if (failed === 0) {
-      toast.success(`Merged ${succeeded} tasks`)
-    } else {
-      toast.error(`Merged ${succeeded}, failed ${failed}`)
-    }
   }
 
-  const batchShipIt = async (batchTasks: Array<{ id: string; title: string }>): Promise<void> => {
-    const clearBatch = useCodeReviewStore.getState().clearBatch
-    let succeeded = 0
-    let failed = 0
+  const batchMergeLocally = (batchTasks: Array<{ id: string; title: string }>): Promise<void> =>
+    executeBatchAction(
+      batchTasks,
+      async (task) => {
+        const result = await window.api.review.mergeLocally({ taskId: task.id, strategy: 'squash' })
+        return result.success
+      },
+      (n) => `Merged ${n} tasks`,
+      (s, f) => `Merged ${s}, failed ${f}`,
+      afterBatch
+    )
 
-    for (const batchTask of batchTasks) {
-      try {
-        const result = await window.api.review.shipIt({
-          taskId: batchTask.id,
-          strategy: 'squash'
-        })
-        if (result.success) succeeded++
-        else failed++
-      } catch {
-        failed++
-      }
-    }
+  const batchShipIt = (batchTasks: Array<{ id: string; title: string }>): Promise<void> =>
+    executeBatchAction(
+      batchTasks,
+      async (task) => {
+        const result = await window.api.review.shipIt({ taskId: task.id, strategy: 'squash' })
+        return result.success
+      },
+      (n) => `Shipped ${n} tasks`,
+      (s, f) => `Shipped ${s}, failed ${f}`,
+      afterBatch
+    )
 
-    clearBatch()
-    loadData()
-
-    if (failed === 0) {
-      toast.success(`Shipped ${succeeded} tasks`)
-    } else {
-      toast.error(`Shipped ${succeeded}, failed ${failed}`)
-    }
-  }
-
-  const batchCreatePr = async (
+  const batchCreatePr = (
     batchTasks: Array<{ id: string; title: string; spec?: string; prompt?: string }>
-  ): Promise<void> => {
-    const clearBatch = useCodeReviewStore.getState().clearBatch
-    let succeeded = 0
-    let failed = 0
-
-    for (const batchTask of batchTasks) {
-      try {
+  ): Promise<void> =>
+    executeBatchAction(
+      batchTasks,
+      async (task) => {
         await window.api.review.createPr({
-          taskId: batchTask.id,
-          title: batchTask.title,
-          body: batchTask.spec || batchTask.prompt || ''
+          taskId: task.id,
+          title: task.title,
+          body: task.spec || task.prompt || ''
         })
-        succeeded++
-      } catch {
-        failed++
-      }
-    }
+        return true
+      },
+      (n) => `Created ${n} PRs`,
+      (s, f) => `Created ${s} PRs, failed ${f}`,
+      afterBatch
+    )
 
-    clearBatch()
-    loadData()
-
-    if (failed === 0) {
-      toast.success(`Created ${succeeded} PRs`)
-    } else {
-      toast.error(`Created ${succeeded} PRs, failed ${failed}`)
-    }
-  }
-
-  const batchDiscard = async (
-    batchTasks: Array<{ id: string; title: string }>
-  ): Promise<void> => {
-    const clearBatch = useCodeReviewStore.getState().clearBatch
-    let succeeded = 0
-    let failed = 0
-
-    for (const batchTask of batchTasks) {
-      try {
-        await window.api.review.discard({ taskId: batchTask.id })
-        succeeded++
-      } catch {
-        failed++
-      }
-    }
-
-    clearBatch()
-    loadData()
-
-    if (failed === 0) {
-      toast.success(`Discarded ${succeeded} tasks`)
-    } else {
-      toast.error(`Discarded ${succeeded} tasks, failed ${failed}`)
-    }
-  }
+  const batchDiscard = (batchTasks: Array<{ id: string; title: string }>): Promise<void> =>
+    executeBatchAction(
+      batchTasks,
+      async (task) => {
+        await window.api.review.discard({ taskId: task.id })
+        return true
+      },
+      (n) => `Discarded ${n} tasks`,
+      (s, f) => `Discarded ${s} tasks, failed ${f}`,
+      afterBatch
+    )
 
   return {
     batchMergeLocally,

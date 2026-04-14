@@ -178,7 +178,10 @@ vi.mock('../../../stores/healthCheck', () => ({
       dismiss: vi.fn(),
       clearDismissed: vi.fn()
     })
-  ),
+  )
+}))
+
+vi.mock('../../../hooks/useVisibleStuckTasks', () => ({
   useVisibleStuckTasks: vi.fn(() => ({
     visibleStuckTasks: [],
     dismissTask: vi.fn()
