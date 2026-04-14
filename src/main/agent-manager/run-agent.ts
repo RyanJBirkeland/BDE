@@ -74,6 +74,7 @@ export interface ConsumeMessagesResult {
   exitCode: number | undefined
   lastAgentOutput: string
   streamError?: Error
+  pendingPlaygroundPaths: string[]
 }
 
 /**
@@ -106,37 +107,20 @@ function trackAgentCosts(msg: unknown, agent: ActiveAgent, turnTracker: TurnTrac
 }
 
 /**
- * Detects HTML writes and emits playground events if enabled.
- */
-function detectPlaygroundWrite(
-  msg: unknown,
-  task: RunAgentTask,
-  worktreePath: string,
-  logger: Logger
-): void {
-  if (!task.playground_enabled) return
-  const htmlPath = detectHtmlWrite(msg)
-  if (htmlPath) {
-    tryEmitPlaygroundEvent(task.id, htmlPath, worktreePath, logger).catch((err) => {
-      logger.warn(`[run-agent] playground emit failed for task ${task.id}: ${err instanceof Error ? err.stack ?? err.message : String(err)}`)
-    })
-  }
-}
-
-/**
- * Processes a single message: tracks costs, emits events, detects playground.
+ * Processes a single message: tracks costs, emits events, detects playground HTML writes.
+ * Returns detectedHtmlPath instead of emitting playground events inline —
+ * callers accumulate paths and await emission after the stream ends,
+ * preventing worktree cleanup from racing the async file read.
  */
 function processSDKMessage(
   msg: unknown,
   agent: ActiveAgent,
   task: RunAgentTask,
-  worktreePath: string,
   agentRunId: string,
   turnTracker: TurnTracker,
-  logger: Logger,
   exitCode: number | undefined,
   lastAgentOutput: string
-): { exitCode: number | undefined; lastAgentOutput: string } {
+): { exitCode: number | undefined; lastAgentOutput: string; detectedHtmlPath: string | null } {
   agent.lastOutputAt = Date.now()
 
   if (isRateLimitMessage(msg)) {
@@ -151,30 +135,32 @@ function processSDKMessage(
     emitAgentEvent(agentRunId, event)
   }
 
-  detectPlaygroundWrite(msg, task, worktreePath, logger)
+  const detectedHtmlPath = task.playground_enabled ? detectHtmlWrite(msg) : null
 
   const m = asSDKMessage(msg)
   if (m?.type === 'assistant' && typeof m.text === 'string') {
     lastAgentOutput = m.text.slice(-LAST_OUTPUT_MAX_LENGTH)
   }
 
-  return { exitCode, lastAgentOutput }
+  return { exitCode, lastAgentOutput, detectedHtmlPath }
 }
 
 /**
- * Consumes SDK message stream, tracking costs, emitting events, and detecting playground writes.
+ * Consumes SDK message stream, tracking costs, emitting events, and accumulating playground paths.
+ * Playground HTML paths are collected but not emitted — the caller awaits emission
+ * after the stream ends to prevent worktree cleanup from racing async file reads.
  */
 export async function consumeMessages(
   handle: AgentHandle,
   agent: ActiveAgent,
   task: RunAgentTask,
-  worktreePath: string,
   agentRunId: string,
   turnTracker: TurnTracker,
   logger: Logger
 ): Promise<ConsumeMessagesResult> {
   let exitCode: number | undefined
   let lastAgentOutput = ''
+  const pendingPlaygroundPaths: string[] = []
 
   try {
     for await (const msg of handle.messages) {
@@ -182,27 +168,25 @@ export async function consumeMessages(
         msg,
         agent,
         task,
-        worktreePath,
         agentRunId,
         turnTracker,
-        logger,
         exitCode,
         lastAgentOutput
       )
       exitCode = result.exitCode
       lastAgentOutput = result.lastAgentOutput
+      if (result.detectedHtmlPath) {
+        pendingPlaygroundPaths.push(result.detectedHtmlPath)
+      }
     }
   } catch (err) {
     logError(logger, `[agent-manager] Error consuming messages for task ${task.id}`, err)
     const errMsg = err instanceof Error ? err.message : String(err)
-    // Emit error event for console display — prefix signals infrastructure failure
-    // (network cut, OOM, pipe broken) rather than agent logic failure
     emitAgentEvent(agentRunId, {
       type: 'agent:error',
       message: `Stream interrupted: ${errMsg}`,
       timestamp: Date.now()
     })
-    // Invalidate cached OAuth token on auth errors so next agent gets a fresh token
     if (
       errMsg.includes('Invalid API key') ||
       errMsg.includes('invalid_api_key') ||
@@ -213,11 +197,12 @@ export async function consumeMessages(
     return {
       exitCode,
       lastAgentOutput,
-      streamError: err instanceof Error ? err : new Error(errMsg)
+      streamError: err instanceof Error ? err : new Error(errMsg),
+      pendingPlaygroundPaths
     }
   }
 
-  return { exitCode, lastAgentOutput }
+  return { exitCode, lastAgentOutput, pendingPlaygroundPaths }
 }
 
 /**
@@ -751,15 +736,25 @@ export async function runAgent(
   }
 
   // Phase 3: Consume messages
-  const { exitCode, lastAgentOutput, streamError } = await consumeMessages(
+  const { exitCode, lastAgentOutput, streamError, pendingPlaygroundPaths } = await consumeMessages(
     agent.handle,
     agent,
     task,
-    worktree.worktreePath,
     agentRunId,
     turnTracker,
     logger
   )
+
+  // Await playground events before worktree cleanup.
+  // Previously fire-and-forget — worktree could be deleted before file I/O completed.
+  for (const htmlPath of pendingPlaygroundPaths) {
+    await tryEmitPlaygroundEvent(task.id, htmlPath, worktree.worktreePath, logger).catch((err) => {
+      logger.warn(
+        `[run-agent] playground emit failed for task ${task.id}: ${err instanceof Error ? err.stack ?? err.message : String(err)}`
+      )
+    })
+  }
+
   if (streamError) {
     logger.warn(`[agent-manager] Message stream failed for task ${task.id}: ${streamError.message}`)
     // agent:error was already emitted in consumeMessages' catch block with "Stream interrupted:" prefix.

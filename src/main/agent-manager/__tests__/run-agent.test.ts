@@ -946,7 +946,6 @@ describe('consumeMessages', () => {
       handle as any,
       agent,
       task,
-      '/tmp/wt',
       'run-1',
       turnTracker,
       logger
