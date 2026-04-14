@@ -21,7 +21,7 @@ import { runAgent as _runAgent, type RunAgentDeps, type RunAgentTask } from './r
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
 import { CircuitBreaker } from './circuit-breaker'
-import { checkOAuthToken } from './oauth-checker'
+
 import type { MappedTask } from './task-mapper'
 
 // Extracted module imports
@@ -309,28 +309,6 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   // ---- Drain loop delegates ----
-
-  /**
-   * Guard checks before running a drain tick. Delegates to drain-loop.ts.
-   * Exposed via _ prefix for testability.
-   */
-  async _validateDrainPreconditions(): Promise<boolean> {
-    if (this._shuttingDown) return false
-    if (this._isCircuitOpen()) {
-      this.logger.warn(
-        `[agent-manager] Skipping drain — circuit breaker open until ${new Date(
-          this._circuitOpenUntil
-        ).toISOString()}`
-      )
-      return false
-    }
-    const tokenOk = await checkOAuthToken(this.logger)
-    if (!tokenOk) {
-      this.logger.warn('[drain] OAuth token invalid — skipping drain tick')
-      return false
-    }
-    return true
-  }
 
   /**
    * Fetch queued tasks and process each one. Delegates to drain-loop.ts.
