@@ -8,14 +8,15 @@
  * review-orchestration-service.ts. Handlers should unpack IPC payloads,
  * call the service, and return results.
  */
-import { resolve } from 'path'
-import { homedir } from 'os'
 import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
-import { getSettingJson, getSetting } from '../settings'
+import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
 import { execFileAsync } from '../lib/async-utils'
 import { parseNumstat } from '../services/review-merge-service'
+import { validateGitRef, validateWorktreePath, validateFilePath } from '../lib/review-paths'
+import { checkAutoReview } from '../services/auto-review-service'
+import type { AutoReviewRule } from '../../shared/types'
 import * as reviewOrchestration from '../services/review-orchestration-service'
 
 const logger = createLogger('review-handlers')
@@ -35,70 +36,6 @@ function getRepoConfig(repoName: string): RepoConfig | null {
   const repos = getSettingJson<RepoConfig[]>('repos')
   const target = repoName.toLowerCase()
   return repos?.find((r) => r.name.toLowerCase() === target) ?? null
-}
-
-/**
- * Safe git ref pattern: commit SHAs, branch names, and remote refs.
- * Allows: a-z A-Z 0-9 / _ . -
- * Rejects: leading dashes (option flags), path traversal (..), shell metacharacters,
- *          tilde (~), caret (^), and other git special syntax.
- * Max length: 200 characters (git itself limits ref names to ~256 bytes).
- */
-const SAFE_REF_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9/_.-]{0,198}$/
-
-function validateGitRef(ref: string | undefined | null): void {
-  if (!ref || !SAFE_REF_PATTERN.test(ref)) {
-    throw new Error(`Invalid git ref: "${ref}". Must match pattern [a-zA-Z0-9/_.-], max 200 chars.`)
-  }
-}
-
-/**
- * Returns the configured worktree base directory, defaulting to ~/worktrees/bde.
- * Resolved to an absolute path (no trailing slash).
- */
-function getWorktreeBase(): string {
-  const configured = getSetting('agentManager.worktreeBase')
-  const raw = configured ?? `${homedir()}/worktrees/bde`
-  return resolve(raw)
-}
-
-/**
- * Validates that a renderer-supplied worktreePath is inside the configured
- * worktree base directory. Throws if not.
- *
- * Security: prevents a compromised renderer from running git commands in
- * arbitrary directories (e.g. /etc, /).
- */
-function validateWorktreePath(worktreePath: string | undefined | null): void {
-  if (!worktreePath) {
-    throw new Error('Invalid worktree path: must not be empty.')
-  }
-  const resolved = resolve(worktreePath)
-  const base = getWorktreeBase()
-  if (!resolved.startsWith(base + '/') && resolved !== base) {
-    throw new Error(
-      `Invalid worktree path: "${worktreePath}" is not inside the configured worktree base (${base}).`
-    )
-  }
-}
-
-/**
- * Validates a renderer-supplied file path for use inside a git diff command.
- * Rejects absolute paths and path traversal sequences.
- *
- * Security: git diff with '--' separator passes the file path directly to git;
- * absolute paths or traversal could reference files outside the worktree.
- */
-function validateFilePath(filePath: string | undefined | null): void {
-  if (!filePath) {
-    throw new Error('Invalid file path: must not be empty.')
-  }
-  if (filePath.startsWith('/')) {
-    throw new Error(`Invalid file path: "${filePath}" must not be an absolute path.`)
-  }
-  if (filePath.includes('..')) {
-    throw new Error(`Invalid file path: "${filePath}" must not contain path traversal sequences.`)
-  }
 }
 
 export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
@@ -242,81 +179,15 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     const task = getTask(taskId)
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (!task.worktree_path) {
-      return {
-        shouldAutoMerge: false,
-        shouldAutoApprove: false,
-        matchedRule: null
-      }
+      return { shouldAutoMerge: false, shouldAutoApprove: false, matchedRule: null }
     }
 
-    // Load auto-review rules from settings
-    const rules = getSettingJson<
-      Array<{
-        id: string
-        name: string
-        enabled: boolean
-        conditions: {
-          maxLinesChanged?: number
-          filePatterns?: string[]
-          excludePatterns?: string[]
-        }
-        action: 'auto-merge' | 'auto-approve'
-      }>
-    >('autoReview.rules')
+    const rules = getSettingJson<AutoReviewRule[]>('autoReview.rules')
     if (!rules || rules.length === 0) {
-      return {
-        shouldAutoMerge: false,
-        shouldAutoApprove: false,
-        matchedRule: null
-      }
+      return { shouldAutoMerge: false, shouldAutoApprove: false, matchedRule: null }
     }
 
-    // Get file diff stats
-    const { stdout: numstatOut } = await execFileAsync(
-      'git',
-      ['diff', '--numstat', 'origin/main...HEAD'],
-      { cwd: task.worktree_path, env }
-    )
-
-    if (!numstatOut.trim()) {
-      // No changes — don't auto-merge
-      return {
-        shouldAutoMerge: false,
-        shouldAutoApprove: false,
-        matchedRule: null
-      }
-    }
-
-    // Parse numstat into file summaries
-    const files = numstatOut
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        const parts = line.split('\t')
-        const additions = parts[0] === '-' ? 0 : parseInt(parts[0], 10)
-        const deletions = parts[1] === '-' ? 0 : parseInt(parts[1], 10)
-        const filePath = parts.slice(2).join('\t')
-        return { path: filePath, additions, deletions }
-      })
-
-    // Evaluate rules
-    const { evaluateAutoReviewRules } = await import('../services/auto-review')
-    const result = evaluateAutoReviewRules(rules, files)
-
-    if (!result) {
-      return {
-        shouldAutoMerge: false,
-        shouldAutoApprove: false,
-        matchedRule: null
-      }
-    }
-
-    return {
-      shouldAutoMerge: result.action === 'auto-merge',
-      shouldAutoApprove: result.action === 'auto-approve',
-      matchedRule: result.rule.name
-    }
+    return checkAutoReview({ worktreePath: task.worktree_path, rules, env })
   })
 
   // ============================================================================
