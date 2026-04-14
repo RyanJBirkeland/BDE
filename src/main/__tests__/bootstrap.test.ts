@@ -8,7 +8,7 @@ import {
 import * as db from '../db'
 import * as eventQueries from '../data/event-queries'
 import * as taskChanges from '../data/task-changes'
-import * as sprintQueries from '../data/sprint-queries'
+import * as sprintMaintenanceFacade from '../data/sprint-maintenance-facade'
 import * as pluginLoader from '../services/plugin-loader'
 import * as loadSampler from '../services/load-sampler'
 
@@ -91,7 +91,7 @@ describe('bootstrap', () => {
     vi.mocked(db.backupDatabase).mockImplementation(() => {})
     vi.mocked(eventQueries.pruneOldEvents).mockImplementation(() => {})
     vi.mocked(taskChanges.pruneOldChanges).mockReturnValue(5)
-    vi.mocked(sprintQueries.pruneOldDiffSnapshots).mockReturnValue(3)
+    vi.mocked(sprintMaintenanceFacade.pruneOldDiffSnapshots).mockReturnValue(3)
     vi.mocked(pluginLoader.loadPlugins).mockImplementation(() => {})
     vi.mocked(loadSampler.startLoadSampler).mockImplementation(() => {})
   })
@@ -149,7 +149,7 @@ describe('bootstrap', () => {
     it('should prune old diff snapshots on startup', () => {
       setupCleanupTasks()
 
-      expect(sprintQueries.pruneOldDiffSnapshots).toHaveBeenCalledWith(30)
+      expect(sprintMaintenanceFacade.pruneOldDiffSnapshots).toHaveBeenCalledWith(30)
     })
 
     it('should clean test task artifacts', () => {
@@ -165,13 +165,13 @@ describe('bootstrap', () => {
 
       vi.mocked(eventQueries.pruneOldEvents).mockClear()
       vi.mocked(taskChanges.pruneOldChanges).mockClear()
-      vi.mocked(sprintQueries.pruneOldDiffSnapshots).mockClear()
+      vi.mocked(sprintMaintenanceFacade.pruneOldDiffSnapshots).mockClear()
 
       vi.advanceTimersByTime(24 * 60 * 60 * 1000)
 
       expect(eventQueries.pruneOldEvents).toHaveBeenCalled()
       expect(taskChanges.pruneOldChanges).toHaveBeenCalled()
-      expect(sprintQueries.pruneOldDiffSnapshots).toHaveBeenCalled()
+      expect(sprintMaintenanceFacade.pruneOldDiffSnapshots).toHaveBeenCalled()
     })
 
     it('should handle cleanup errors gracefully', () => {
