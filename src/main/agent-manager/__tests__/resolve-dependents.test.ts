@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { resolveDependents } from '../resolve-dependents'
+import { resolveDependents } from '../../lib/resolve-dependents'
 import { createDependencyIndex, type DependencyIndex } from '../../services/dependency-service'
 import type { TaskDependency } from '../../../shared/types'
 import { TERMINAL_STATUSES } from '../../../shared/task-state-machine'

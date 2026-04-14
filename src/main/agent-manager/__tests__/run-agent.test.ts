@@ -323,7 +323,7 @@ describe('runAgent — watchdog race', () => {
     await runAgent(makeTask(), worktree, repoPath, deps)
 
     expect(deps.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('already cleaned up by watchdog')
+      expect.stringContaining('already cleaned up or superseded by retry')
     )
     expect(resolveSuccess).not.toHaveBeenCalled()
     expect(cleanupWorktree).toHaveBeenCalled()

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { promisify } from 'node:util'
 import { classifyFailureReason } from '../failure-classifier'
-import { sanitizeForGit } from '../git-operations'
+import { sanitizeForGit } from '../pr-operations'
 
 // Mock node:fs — existsSync must return true for worktree path guard
 vi.mock('node:fs', async () => {

@@ -22,7 +22,7 @@ vi.mock('../../services/dependency-service', () => ({
   }))
 }))
 
-vi.mock('../resolve-dependents', () => ({
+vi.mock('../../lib/resolve-dependents', () => ({
   resolveDependents: vi.fn().mockReturnValue(undefined)
 }))
 
@@ -1073,7 +1073,7 @@ describe('createAgentManager', () => {
 
   describe('onTaskTerminal', () => {
     it('resolves dependents via resolveDependents', async () => {
-      const { resolveDependents } = await import('../resolve-dependents')
+      const { resolveDependents } = await import('../../lib/resolve-dependents')
       vi.mocked(resolveDependents).mockClear()
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
@@ -1095,7 +1095,7 @@ describe('createAgentManager', () => {
     })
 
     it('logs error when resolveDependents throws', async () => {
-      const { resolveDependents } = await import('../resolve-dependents')
+      const { resolveDependents } = await import('../../lib/resolve-dependents')
       vi.mocked(resolveDependents).mockImplementationOnce(() => {
         throw new Error('dep error')
       })
@@ -1108,7 +1108,7 @@ describe('createAgentManager', () => {
     })
 
     it('guards against duplicate invocation for same taskId', async () => {
-      const { resolveDependents } = await import('../resolve-dependents')
+      const { resolveDependents } = await import('../../lib/resolve-dependents')
       vi.mocked(resolveDependents).mockClear()
 
       // Make resolveDependents block so the first call stays in-flight
@@ -1135,7 +1135,7 @@ describe('createAgentManager', () => {
     })
 
     it('duplicate call returns same in-flight promise', async () => {
-      const { resolveDependents } = await import('../resolve-dependents')
+      const { resolveDependents } = await import('../../lib/resolve-dependents')
       vi.mocked(resolveDependents).mockClear()
 
       let resolveFirst!: () => void
@@ -1159,7 +1159,7 @@ describe('createAgentManager', () => {
     })
 
     it('sets _depIndexDirty to true after terminal', async () => {
-      const { resolveDependents } = await import('../resolve-dependents')
+      const { resolveDependents } = await import('../../lib/resolve-dependents')
       vi.mocked(resolveDependents).mockClear()
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl

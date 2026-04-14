@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { resolveFailure } from '../completion'
-import { sanitizeForGit } from '../git-operations'
+import { sanitizeForGit } from '../pr-operations'
 import { handleWatchdogVerdict } from '../watchdog-handler'
 import { makeConcurrencyState } from '../concurrency'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
