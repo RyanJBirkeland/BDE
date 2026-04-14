@@ -16,7 +16,7 @@ vi.mock('react-resizable-panels', () => ({
   Separator: () => <div data-testid="resize-handle" />
 }))
 
-vi.mock('../../layout/view-resolver', () => ({
+vi.mock('../../../lib/view-resolver', () => ({
   resolveView: (viewKey: string) => {
     const labels: Record<string, string> = {
       agents: 'Agents',

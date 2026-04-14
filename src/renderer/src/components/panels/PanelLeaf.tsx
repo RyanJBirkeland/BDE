@@ -2,7 +2,7 @@ import React, { Suspense, useState, useCallback, useRef } from 'react'
 import { PanelLeafNode, View, DropZone, usePanelLayoutStore } from '../../stores/panelLayout'
 import { ErrorBoundary } from '../ui/ErrorBoundary'
 import { PanelDropOverlay } from './PanelDropOverlay'
-import { resolveView } from '../layout/view-resolver'
+import { resolveView } from '../../lib/view-resolver'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
 import './PanelLeaf.css'
 

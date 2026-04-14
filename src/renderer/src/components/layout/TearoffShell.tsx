@@ -10,7 +10,7 @@ import {
   type View
 } from '../../stores/panelLayout'
 import { VIEW_LABELS } from '../../lib/view-registry'
-import { resolveView } from './view-resolver'
+import { resolveView } from '../../lib/view-resolver'
 import { PanelRenderer } from '../panels/PanelRenderer'
 import { TearoffTabBar } from './TearoffTabBar'
 import { useCrossWindowDrop } from '../../hooks/useCrossWindowDrop'
