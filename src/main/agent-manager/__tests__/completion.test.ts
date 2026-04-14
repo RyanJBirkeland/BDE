@@ -569,35 +569,35 @@ describe('resolveSuccess — catch handler coverage', () => {
     })
   })
 
-  it('logs warning when updateTask fails after worktree eviction (line 73)', async () => {
+  it('logs error when updateTask fails after worktree eviction', async () => {
     vi.mocked(existsSync).mockReturnValueOnce(false)
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB error')
     })
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(
+    expect(noopLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after error')
     )
   })
 
-  it('logs warning when updateTask fails after branch detection error (line 89)', async () => {
+  it('logs error when updateTask fails after branch detection error', async () => {
     mockExecFileSequence([{ error: new Error('not a git repository') }])
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB error')
     })
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(
+    expect(noopLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after error')
     )
   })
 
-  it('logs warning when updateTask fails after empty branch (line 98)', async () => {
+  it('logs error when updateTask fails after empty branch', async () => {
     mockExecFileSequence([{ stdout: '\n' }])
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB error')
     })
     await resolveSuccess(catchOpts, noopLogger)
-    expect(noopLogger.warn).toHaveBeenCalledWith(
+    expect(noopLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to update task task-catch after error')
     )
   })

@@ -11,7 +11,7 @@ Source: `src/main/agent-manager/`
 | `prompt-assembly.ts` | Task validation + prompt context prep — upstream context, scratchpad, prompt build | `validateTaskForRun`, `assembleRunContext`, `fetchUpstreamContext`, `readPriorScratchpad` |
 | `message-consumer.ts` | SDK message stream iteration, OAuth refresh on auth error, playground path accumulation | `consumeMessages`, `ConsumeMessagesResult` |
 | `agent-telemetry.ts` | Cost/token tracking from SDK messages, SQL persistence of run telemetry | `trackAgentCosts`, `persistAgentRunTelemetry` |
-| `agent-initialization.ts` | Agent record creation, stderr wiring, activeAgents registration, agent:started event | `initializeAgentTracking` |
+| `agent-initialization.ts` | Agent record creation, stderr wiring, activeAgents registration, agent:started event. `createAgentRecord` failure is logged at `error` level (fire-and-forget: function is synchronous; untracked run is surfaced loudly so operators can investigate) | `initializeAgentTracking` |
 | `spawn-and-wire.ts` | Spawn orchestration and error recovery — calls spawnWithTimeout then initializeAgentTracking | `spawnAndWireAgent`, `handleSpawnFailure` |
 | `playground-sanitize.ts` (`src/main/`) | DOMPurify-based HTML sanitizer with explicit tag/attr allowlist — blocks iframe, embed, object, style; preserves canvas, svg, audio, video | `sanitizePlaygroundHtml` |
 | `playground-handler.ts` | Detects HTML file writes from agents, reads and sanitizes the file, broadcasts `agent:playground` events to renderer | `detectHtmlWrite`, `tryEmitPlaygroundEvent` |
@@ -32,7 +32,7 @@ Source: `src/main/agent-manager/`
 | `terminal-handler.ts` | Metrics recording and dependency resolution on task terminal events. Provides a `runInTransactionSafe` wrapper so cascade cancellations are atomic | `handleTaskTerminal`, `TerminalHandlerDeps` |
 | `resolve-dependents.ts` | Resolves blocked dependents when a task reaches terminal status. Re-throws `onTaskTerminal` errors during cascade so stale-state cascades fail loudly | `resolveDependents` |
 | `orphan-recovery.ts` | Detects tasks stuck in `active` status without a live agent and resets them to `queued` for retry | `recoverOrphans` |
-| `completion.ts` | Post-run completion logic — classifies exit, transitions task to `review` or retry, records cost/PR metadata | `handleAgentCompletion`, `RepoCompletionDeps` |
+| `completion.ts` | Post-run completion logic — worktree verification, branch detection, auto-commit, rebase, commit check, review transition. All catch blocks log at `error` level and document their swallow rationale (rebase/auto-merge failures are non-fatal; task reaches `review` for human action). `resolveFailure` returns `boolean` (not throws) to preserve terminal-status signal even on DB errors | `resolveSuccess`, `resolveFailure`, `findOrCreatePR`, `ResolveSuccessContext`, `ResolveFailureContext` |
 | `partial-diff-capture.ts` | Captures partial diffs from failed/cancelled agents for diagnostic notes | `capturePartialDiff` |
 | `review-transition.ts` | Transitions a completed task to `review` status, preserving worktree path and branch | `transitionToReview`, `TransitionToReviewOpts` |
 | `task-mapper.ts` | Maps raw sprint task rows to `RunAgentTask` shape and evaluates hard-dependency blocking | `checkAndBlockDeps`, `mapTaskForAgent` |

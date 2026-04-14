@@ -120,7 +120,9 @@ async function failTaskWithError(
       claimed_by: null
     })
   } catch (e) {
-    logger.warn(`[completion] Failed to update task ${taskId} after error: ${e}`)
+    // DB failure after an already-error path: log as error but do not re-throw —
+    // onTaskTerminal must still fire so dependency resolution and metrics run.
+    logger.error(`[completion] Failed to update task ${taskId} after error: ${e}`)
   }
 
   await onTaskTerminal(taskId, 'error')
@@ -157,8 +159,10 @@ async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<boolean>
       }
       return false
     }
-  } catch {
-    // If rev-list fails, assume commits exist and continue
+  } catch (err) {
+    // rev-list can fail if the remote ref doesn't exist yet (fresh worktree, no fetch).
+    // Assume commits exist so the agent's work proceeds to review rather than silently failing.
+    logger.warn(`[completion] git rev-list check failed for task ${taskId} — assuming commits exist: ${err}`)
   }
   return true
 }
@@ -217,7 +221,9 @@ async function attemptAutoMerge(opts: AutoMergeContext): Promise<void> {
       )
     }
   } catch (err) {
-    logger.warn(`[completion] Auto-review check failed for task ${taskId}: ${err}`)
+    // Auto-merge is best-effort: a failure here leaves the task in 'review' for human action,
+    // which is always the safe fallback. Do not re-throw — the task state is already consistent.
+    logger.error(`[completion] Auto-merge check failed for task ${taskId}: ${err}`)
   }
 }
 
@@ -303,8 +309,9 @@ async function autoCommitPendingChanges(
   try {
     await autoCommitIfDirty(worktreePath, title, logger)
   } catch (err) {
-    logger.warn(`[completion] Auto-commit failed for task ${taskId}: ${err}`)
-    // Continue — push will fail naturally if there are no commits
+    // Auto-commit is best-effort: if it fails the agent's explicit commits are still present.
+    // The subsequent rev-list check will catch the no-commits case if the worktree is truly empty.
+    logger.error(`[completion] Auto-commit failed for task ${taskId}: ${err}`)
   }
 }
 
@@ -327,7 +334,9 @@ async function rebaseOnMain(
     }
     return { rebaseNote: undefined, rebaseBaseSha: rebaseResult.baseSha, rebaseSucceeded: true }
   } catch (err) {
-    logger.warn(`[completion] Rebase step failed for task ${taskId}: ${err}`)
+    // Rebase failure (e.g. conflict) is non-fatal: the task transitions to 'review' with
+    // rebaseSucceeded=false so the Code Review Station can surface the conflict to the user.
+    logger.error(`[completion] Rebase step failed for task ${taskId}: ${err}`)
     return {
       rebaseNote: 'Rebase onto main failed — manual conflict resolution needed.',
       rebaseBaseSha: undefined,

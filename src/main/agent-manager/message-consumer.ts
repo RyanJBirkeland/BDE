@@ -28,6 +28,9 @@ export interface ConsumeMessagesResult {
 async function handleOAuthRefresh(logger: Logger): Promise<void> {
   const { invalidateOAuthToken, refreshOAuthTokenFromKeychain } = await import('../env-utils')
   invalidateOAuthToken()
+  // Intentionally fire-and-forget: Keychain access on macOS can block for several seconds.
+  // Awaiting it here would stall the entire message-consumer loop while the stream is still live.
+  // The next agent spawn will pick up the refreshed token; errors are logged via .catch() below.
   refreshOAuthTokenFromKeychain()
     .then((ok) => {
       if (ok)

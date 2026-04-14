@@ -78,9 +78,16 @@ export function initializeAgentTracking(
     sprintTaskId: task.id,
     worktreePath: worktree.worktreePath,
     branch: worktree.branch
-  }).catch((err) =>
-    logger.warn(`[agent-manager] Failed to create agent record for ${agentRunId}: ${err instanceof Error ? err.stack ?? err.message : String(err)}`)
-  )
+  }).catch((err) => {
+    // createAgentRecord failure means this run is untracked in the audit trail (agent_runs table).
+    // We cannot throw here: initializeAgentTracking is synchronous and has already registered the
+    // agent in activeAgents. An unhandled rejection at this point would bypass the drain-loop
+    // recovery path. Instead we log at error level so operators can investigate (e.g. DB
+    // corruption, schema mismatch) while the agent still runs and its task status is preserved.
+    logger.error(
+      `[agent-manager] Failed to create agent record for ${agentRunId} — run is untracked: ${err instanceof Error ? err.stack ?? err.message : String(err)}`
+    )
+  })
 
   emitAgentEvent(agentRunId, {
     type: 'agent:started',
