@@ -1,3 +1,6 @@
+// Composite pre-flight checks. Each check is independent; grouped here because
+// all must pass before task launch. This is not a domain service — it has no
+// shared state or invariants between checks.
 import { checkAuthStatus } from '../auth-guard'
 import { getRepoPath } from '../git'
 import { execFileAsync } from '../lib/async-utils'

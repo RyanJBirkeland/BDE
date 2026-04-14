@@ -85,7 +85,7 @@ Format: `{type}: {description}`
 - Dependency resolution after completion: `src/main/agent-manager/resolve-dependents.ts`
 - Shared sanitization: `src/shared/sanitize-depends-on.ts`
 - Agent auto-commit: `src/main/agent-manager/completion.ts` (uses `git add -A` to capture new files; `.gitignore` excludes node_modules etc.). Failure classification in `src/main/agent-manager/failure-classifier.ts`; auto-merge policy evaluation in `src/main/agent-manager/auto-merge-policy.ts`
-- Workbench operational checks: `src/main/services/workbench-checks-service.ts` — `runOperationalChecks()` + individual check fns; `workbench:checkOperational` handler is a thin wrapper
+- Workbench operational checks: `src/main/services/operational-checks-service.ts` — `runOperationalChecks()` + individual check fns; `workbench:checkOperational` handler is a thin wrapper
 - Review path validators: `src/main/lib/review-paths.ts` — `validateGitRef`, `validateWorktreePath`, `validateFilePath`, `getWorktreeBase`; import from here, don't redefine inline
 - Auto-review service: `src/main/services/auto-review-service.ts` — rule evaluation for `review:checkAutoReview`; handler is a thin wrapper
 - WIP limit policy: `src/renderer/src/lib/wip-policy.ts` — `canLaunchTask(activeCount, maxConcurrent)`; business rule lives here, not inline in the store

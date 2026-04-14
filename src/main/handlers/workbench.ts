@@ -13,7 +13,7 @@ import { buildChatPrompt, getCopilotSdkOptions } from '../services/copilot-servi
 import { generateSpec } from '../services/spec-generation-service'
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
-import { runOperationalChecks } from '../services/workbench-checks-service'
+import { runOperationalChecks } from '../services/operational-checks-service'
 
 const log = createLogger('workbench')
 
