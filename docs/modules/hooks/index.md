@@ -15,5 +15,8 @@ Source: `src/renderer/src/hooks/`
 | `useAgentViewCommands.ts` | Registers and unregisters Spawn Agent and Clear Console commands in the command palette while AgentsView is mounted. | `useAgentViewCommands` |
 | `useAgentSlashCommands.ts` | Handles slash commands in AgentConsole: /stop, /retry, /focus, /checkpoint, /test, /scope, /status. Returns handleCommand. | `useAgentSlashCommands` |
 | `useBatchActions.ts` | Wraps useBatchReviewActions with confirm dialogs and in-flight state tracking for batch merge/ship/PR/discard. Used by TopBar. | `useBatchActions`, `BatchActionKey` |
+| `useReviewFreshness.ts` | Fetches and tracks whether the agent branch is fresh, stale, or in conflict with main. Re-fetches on task id or rebased_at change. | `useReviewFreshness`, `Freshness`, `FreshnessStatus` |
+| `useReviewActionModals.ts` | Wires confirm dialogs and textarea prompt modals for review actions. Exposes trigger functions and props objects for rendering. | `useReviewActionModals` |
+| `useReviewActionState.ts` | Tracks per-action loading state (actionInFlight) and the selected merge strategy. | `useReviewActionState`, `MergeStrategy` |
 | `useGitCommands.ts` | Registers git operation commands (stage all, commit, push, switch branch) in the command palette. Extracted from GitTreeView. | `useGitCommands` |
 | `useWebhookManager.ts` | Owns all webhook CRUD state and async operations (list, create, update, delete, test). Returns state and handlers for the webhook settings UI. | `useWebhookManager`, `WebhookManager` |

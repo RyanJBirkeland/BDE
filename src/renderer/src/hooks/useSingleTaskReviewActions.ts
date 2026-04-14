@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react'
 import { useCodeReviewStore } from '../stores/codeReview'
 import { useSprintTasks } from '../stores/sprintTasks'
-import { useConfirm } from '../components/ui/ConfirmModal'
-import { useTextareaPrompt } from '../components/ui/TextareaPromptModal'
 import { toast } from '../stores/toasts'
 import { useGitHubStatus } from './useGitHubStatus'
+import { useReviewActionModals } from './useReviewActionModals'
+import { useReviewActionState } from './useReviewActionState'
+import { useReviewFreshness } from './useReviewFreshness'
+import { useConfirm } from '../components/ui/ConfirmModal'
+import { useTextareaPrompt } from '../components/ui/TextareaPromptModal'
 import { nowIso } from '../../../shared/time'
 
 function getNextReviewTaskId(
@@ -44,24 +46,12 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
   const tasks = useSprintTasks((s) => s.tasks)
   const loadData = useSprintTasks((s) => s.loadData)
   const task = tasks.find((t) => t.id === selectedTaskId)
-  const { confirm, confirmProps } = useConfirm()
-  const { prompt, promptProps } = useTextareaPrompt()
-  const { configured: ghConfigured } = useGitHubStatus()
-  const [mergeStrategy, setMergeStrategy] = useState<'squash' | 'merge' | 'rebase'>('squash')
-  const [actionInFlight, setActionInFlight] = useState<string | null>(null)
-  const [freshness, setFreshness] = useState<{
-    status: 'fresh' | 'stale' | 'conflict' | 'unknown' | 'loading'
-    commitsBehind?: number
-  }>({ status: 'loading' })
 
-  useEffect(() => {
-    if (!task || task.status !== 'review') return
-    setFreshness({ status: 'loading' })
-    window.api.review
-      .checkFreshness({ taskId: task.id })
-      .then(setFreshness)
-      .catch(() => setFreshness({ status: 'unknown' }))
-  }, [task?.id, task?.rebased_at])
+  const { confirm, prompt, confirmProps, promptProps } = useReviewActionModals()
+  const { mergeStrategy, setMergeStrategy, actionInFlight, setActionInFlight } =
+    useReviewActionState()
+  const { freshness, setFreshness } = useReviewFreshness(task?.id, task?.status, task?.rebased_at)
+  const { configured: ghConfigured } = useGitHubStatus()
 
   const shipIt = async (): Promise<void> => {
     if (!task) return
