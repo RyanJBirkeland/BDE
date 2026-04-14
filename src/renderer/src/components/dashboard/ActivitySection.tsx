@@ -4,7 +4,7 @@ import { useDashboardDataStore } from '../../stores/dashboardData'
 import { timeAgo, formatTokens } from '../../lib/format'
 import { CheckCircle, TrendingUp, Gauge } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
-import type { FeedEvent } from '../neon/ActivityFeed'
+import type { FeedEvent } from '../../lib/dashboard-types'
 import './ActivitySection.css'
 
 interface ActivitySectionProps {
