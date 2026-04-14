@@ -98,6 +98,7 @@ export async function spawnAgent(opts: {
   prompt: string
   cwd: string
   model: string
+  maxBudgetUsd?: number
   logger?: Logger
 }): Promise<AgentHandle> {
   const env = { ...buildAgentEnv() }
@@ -118,7 +119,7 @@ export async function spawnAgent(opts: {
 
 function spawnViaSdk(
   sdk: typeof import('@anthropic-ai/claude-agent-sdk'),
-  opts: { prompt: string; cwd: string; model: string },
+  opts: { prompt: string; cwd: string; model: string; maxBudgetUsd?: number },
   env: NodeJS.ProcessEnv,
   token: string | null,
   logger?: Logger
@@ -146,7 +147,11 @@ function spawnViaSdk(
       // Cap turns to prevent runaway loops. 20 turns covers complex multi-file
       // refactors. Agents that legitimately need more should use a smaller,
       // focused spec. The watchdog provides a time ceiling independently.
-      maxTurns: 20
+      maxTurns: 20,
+      // Pipeline agents are autonomous with no human at stdin. Cap spend per spawn
+      // to prevent runaway cost on loops. Default 2.0 USD covers complex multi-file
+      // refactors. Override via task.max_cost_usd for long-running tasks.
+      maxBudgetUsd: opts.maxBudgetUsd ?? 2.0
     }
   })
 
@@ -320,7 +325,8 @@ export async function spawnWithTimeout(
   prompt: string,
   cwd: string,
   model: string,
-  logger: Logger
+  logger: Logger,
+  maxBudgetUsd?: number
 ): Promise<AgentHandle> {
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -329,7 +335,8 @@ export async function spawnWithTimeout(
       SPAWN_TIMEOUT_MS
     )
   })
-  return await Promise.race([spawnAgent({ prompt, cwd, model, logger }), timeoutPromise]).finally(
-    () => clearTimeout(timer!)
-  )
+  return await Promise.race([
+    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd }),
+    timeoutPromise
+  ]).finally(() => clearTimeout(timer!))
 }

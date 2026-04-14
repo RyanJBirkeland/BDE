@@ -496,7 +496,13 @@ async function spawnAndWireAgent(
 
   let handle: AgentHandle
   try {
-    handle = await spawnWithTimeout(prompt, worktree.worktreePath, effectiveModel, logger)
+    handle = await spawnWithTimeout(
+      prompt,
+      worktree.worktreePath,
+      effectiveModel,
+      logger,
+      task.max_cost_usd ?? undefined
+    )
     try {
       onSpawnSuccess?.()
     } catch (cbErr) {
