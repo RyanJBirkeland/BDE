@@ -27,11 +27,6 @@ export type {
   FailureReasonBreakdown
 }
 
-// Re-export constants and functions for callers that need them
-export { UPDATE_ALLOWLIST } from './sprint-queries'
-export { pruneOldDiffSnapshots, DIFF_SNAPSHOT_RETENTION_DAYS } from './sprint-queries'
-export { clearSprintTaskFk } from './sprint-queries'
-export { getFailureReasonBreakdown } from './reporting-queries'
 
 /**
  * Methods used by the agent manager for pipeline execution.

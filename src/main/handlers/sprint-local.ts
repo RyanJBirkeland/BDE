@@ -28,8 +28,9 @@ import {
   getSuccessRateBySpecType,
   type CreateTaskInput
 } from '../services/sprint-service'
-import { UPDATE_ALLOWLIST, createSprintTaskRepository } from '../data/sprint-task-repository'
+import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
+import { UPDATE_ALLOWLIST } from '../data/sprint-maintenance-facade'
 import { validateAndFilterPatch } from '../lib/patch-validation'
 import { getAgentLogInfo } from '../data/agent-queries'
 import { readLog } from '../agent-history'
@@ -194,9 +195,8 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
     return getTaskChanges(taskId)
   })
 
-  safeHandle('sprint:failureBreakdown', async () => {
-    const { getFailureReasonBreakdown } = await import('../data/sprint-task-repository')
-    return getFailureReasonBreakdown()
+  safeHandle('sprint:failureBreakdown', () => {
+    return effectiveRepo.getFailureReasonBreakdown()
   })
 
   safeHandle('sprint:getSuccessRateBySpecType', () => {
