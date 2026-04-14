@@ -598,7 +598,7 @@ describe('createAgentManager', () => {
       const status = mgr.getStatus()
       expect(status.activeAgents.length).toBe(1)
       expect(status.concurrency.activeCount).toBe(1)
-      expect(status.concurrency.effectiveSlots).toBe(1)
+      expect(status.concurrency.capacityAfterBackpressure).toBe(1)
 
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()

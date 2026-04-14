@@ -104,7 +104,7 @@ describe('UPDATE_ALLOWLIST', () => {
     expect(UPDATE_ALLOWLIST.has('updated_at')).toBe(false)
   })
 
-  // F-t3-datalyr-7: COLUMN_MAP whitelist validation tests
+  // COLUMN_MAP whitelist validation tests
   it('COLUMN_MAP contains all UPDATE_ALLOWLIST entries', () => {
     expect(COLUMN_MAP.size).toBe(UPDATE_ALLOWLIST.size)
     for (const col of UPDATE_ALLOWLIST) {
@@ -312,7 +312,7 @@ describe('updateTask', () => {
     )
   })
 
-  // F-t3-model-1: write amplification fix — no-op updates short-circuit
+  // no-op updates short-circuit to avoid write amplification
   it('skips SQL update and audit row when patch fields all match current values', () => {
     const created = createTask({ title: 'No-op test', repo: 'bde', priority: 5 })!
     mockRecordTaskChanges.mockClear()
@@ -811,7 +811,7 @@ describe('pruneOldDiffSnapshots', () => {
   })
 })
 
-// F-t3-audit-trail-3: recordTaskChangesBulk failure rolls back entire transaction
+// recordTaskChangesBulk failure rolls back entire transaction
 describe('markTaskDoneByPrNumber — audit trail atomicity (F-t3-audit-trail-3)', () => {
   it('rolls back status change when recordTaskChangesBulk throws', () => {
     insertTask({ id: 'atomic-1', status: 'active', pr_number: 77, pr_status: 'open' })
@@ -845,7 +845,7 @@ describe('markTaskDoneByPrNumber — audit trail atomicity (F-t3-audit-trail-3)'
   })
 })
 
-// F-t3-audit-trail-1: updateTaskMergeableState writes an audit record
+// updateTaskMergeableState writes an audit record
 describe('updateTaskMergeableState — audit trail (F-t3-audit-trail-1)', () => {
   it('calls recordTaskChanges with old and new pr_mergeable_state', () => {
     insertTask({ id: 'merge-audit-1', pr_number: 55 })
@@ -870,7 +870,7 @@ describe('updateTaskMergeableState — audit trail (F-t3-audit-trail-1)', () => 
   })
 })
 
-// F-t3-tasktrans-3: updateTask transition enforcement
+// updateTask transition enforcement
 describe('updateTask — transition enforcement', () => {
   function seedTaskAtStatus(status: string): string {
     // Insert a task directly at the desired status, bypassing transitions
@@ -901,7 +901,7 @@ describe('updateTask — transition enforcement', () => {
   })
 })
 
-// F-t3-audit-trail-2: updateTaskMergeableState audit atomicity
+// updateTaskMergeableState audit atomicity
 describe('updateTaskMergeableState — audit atomicity (F-t3-audit-trail-2)', () => {
   it('rolls back pr_mergeable_state update when recordTaskChanges throws', () => {
     insertTask({ id: 'merge-atomic-1', pr_number: 99 })

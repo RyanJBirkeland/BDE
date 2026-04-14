@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron'
 import { typedInvoke, onBroadcast } from './ipc-helpers'
-import type { GitHubFetchInit, IpcChannelMap } from '../shared/ipc-channels'
+import type { GitHubFetchInit, IpcChannelMap, TerminalDataPayload } from '../shared/ipc-channels'
 import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
 import type {
   TaskTemplate,
@@ -136,8 +136,10 @@ export const terminal = {
   resize: (id: number, cols: number, rows: number) =>
     typedInvoke('terminal:resize', { id, cols, rows }),
   kill: (id: number) => typedInvoke('terminal:kill', id),
-  onData: (id: number, cb: (data: string) => void): (() => void) => {
-    const listener = (_: unknown, data: string): void => cb(data)
+  // Dynamic channels — `terminal:data:${id}` sends TerminalDataPayload (string),
+  // `terminal:exit:${id}` sends no payload. See TerminalDataPayload in system-channels.ts.
+  onData: (id: number, cb: (data: TerminalDataPayload['data']) => void): (() => void) => {
+    const listener = (_: unknown, data: TerminalDataPayload['data']): void => cb(data)
     ipcRenderer.on('terminal:data:' + id, listener)
     return () => ipcRenderer.removeListener('terminal:data:' + id, listener)
   },

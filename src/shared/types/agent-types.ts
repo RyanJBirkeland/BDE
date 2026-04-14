@@ -71,6 +71,24 @@ export interface AgentRunCostRow {
   pr_url: string | null
 }
 
+/** Camel-cased summary of an agent run with cost data, returned by cost:getRecentRuns IPC. */
+export interface AgentRunSummary {
+  id: string
+  task: string
+  repo: string
+  status: string
+  costUsd: number | null
+  tokensIn: number | null
+  tokensOut: number | null
+  cacheRead: number | null
+  cacheCreate: number | null
+  durationMs: number | null
+  numTurns: number | null
+  startedAt: string
+  finishedAt: string | null
+  prUrl: string | null
+}
+
 /** Aggregated cost summary for the Claude Code panel. */
 export interface CostSummary {
   tasksToday: number
@@ -155,11 +173,11 @@ export interface Attachment {
 
 export interface AgentManagerConcurrencyState {
   maxSlots: number
-  effectiveSlots: number
+  capacityAfterBackpressure: number
   activeCount: number
-  recoveryDueAt: number | null
+  recoveryScheduledAt: number | null
   consecutiveRateLimits: number
-  atFloor: boolean
+  atMinimumCapacity: boolean
 }
 
 export interface AgentManagerActiveAgent {

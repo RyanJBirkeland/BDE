@@ -55,9 +55,9 @@ export function refreshDependencyIndex(
     }
 
     // Update tasks with changed dependencies.
-    // F-t1-sysprof-1/-4: Compare cached fingerprints — avoids re-sorting the
+    // Compare cached fingerprints — avoids re-sorting the
     // unchanged-deps case (the common path for most drain ticks).
-    // F-t1-sre-6: Evict terminal-status tasks from fingerprints — their deps
+    // Evict terminal-status tasks from fingerprints — their deps
     // never change, so keeping fingerprint entries just grows the map forever.
     // Evict on first terminal encounter; dep-index edges stay intact for
     // dependency-satisfaction checks.

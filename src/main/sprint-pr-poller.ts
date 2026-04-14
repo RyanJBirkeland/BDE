@@ -9,7 +9,7 @@ import type { PrStatusInput, PrStatusResult } from './github-pr-status'
 
 const POLL_INTERVAL_MS = 60_000
 
-// F-t1-concur-5: Stagger start by half the interval so the sprint PR poller
+// Stagger start by half the interval so the sprint PR poller
 // doesn't fire in lockstep with the GitHub PR poller (also 60s) and the drain
 // loop tick. Reduces SQLite + GitHub API contention by spreading work across
 // the 60s window.
@@ -115,7 +115,7 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
 
   return {
     start() {
-      // F-t1-concur-5: Delay first poll so we don't fire simultaneously
+      // Delay first poll so we don't fire simultaneously
       // with the GitHub PR poller and drain loop on app startup.
       // initialDelay=0 fires immediately (used by tests with fake timers).
       if (initialDelay <= 0) {

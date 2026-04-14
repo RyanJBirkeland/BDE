@@ -30,10 +30,10 @@ function transitionTasksToDone(
   if (affectedIds.length > 0) {
     const completedAt = nowIso()
 
-    // F-t3-db-4: Bulk audit trail (single prepared INSERT statement reused
-    // across all affected tasks instead of one prepared statement per call)
-    // F-t3-audit-trail-3: throw on audit failure so the wrapping transaction
-    // rolls back the status UPDATE — both must succeed atomically.
+    // Bulk audit trail (single prepared INSERT statement reused
+    // across all affected tasks instead of one prepared statement per call).
+    // Throw on audit failure so the wrapping transaction rolls back the
+    // status UPDATE — both must succeed atomically.
     recordTaskChangesBulk(
       affected.map((oldTask) => ({
         taskId: oldTask.id as string,
@@ -75,8 +75,7 @@ function transitionTasksToCancelled(
   if (affectedIds.length > 0) {
     const completedAt = nowIso()
 
-    // F-t3-db-4: Bulk audit trail
-    // F-t3-audit-trail-3: throw on audit failure so the wrapping transaction
+    // Bulk audit trail — throw on failure so the wrapping transaction
     // rolls back the status UPDATE — both must succeed atomically.
     recordTaskChangesBulk(
       affected.map((oldTask) => ({
@@ -124,9 +123,8 @@ function updatePrStatusBulk(
     ? (db.prepare(selectQuery).all(prNumber, statusFilter) as Array<Record<string, unknown>>)
     : (db.prepare(selectQuery).all(prNumber) as Array<Record<string, unknown>>)
 
-  // F-t3-db-4: Bulk audit trail for pr_status changes
-  // F-t3-audit-trail-3: throw on audit failure so the wrapping transaction
-  // rolls back the pr_status UPDATE — both must succeed atomically.
+  // Bulk audit trail for pr_status changes — throw on failure so the
+  // wrapping transaction rolls back the pr_status UPDATE atomically.
   recordTaskChangesBulk(
     prStatusAffected.map((oldTask) => ({
       taskId: oldTask.id as string,
@@ -203,7 +201,7 @@ export function updateTaskMergeableState(prNumber: number, mergeableState: strin
   try {
     const db = getDb()
     db.transaction(() => {
-      // F-t3-audit-trail-1: record pr_mergeable_state changes in the audit trail.
+      // Record pr_mergeable_state changes in the audit trail.
       // Read all affected tasks first so we can capture the old value per task.
       const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE pr_number = ?`
       const affected = db.prepare(sql).all(prNumber) as Array<Record<string, unknown>>

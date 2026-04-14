@@ -57,7 +57,7 @@ export function listTasks(status?: string): SprintTask[] {
 export function listTasksRecent(): SprintTask[] {
   try {
     const db = getDb()
-    // F-t3-db-2: Rewrite OR-clause as UNION ALL of two index-able branches.
+    // UNION ALL of two index-able branches instead of OR-clause.
     // The original `WHERE status NOT IN (...) OR completed_at >= ...` forced
     // a full SCAN because OR across columns prevents single-index use. The
     // UNION ALL form lets each branch use idx_sprint_tasks_status:
@@ -190,7 +190,7 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
           }
         }
 
-        // F-t3-model-1: Filter unchanged fields at the caller level. Reduces
+        // Filter unchanged fields at the caller level. Reduces
         // write amplification on both sprint_tasks (no UPDATE) and task_changes
         // (no audit row). Defense-in-depth — recordTaskChanges also skips
         // unchanged values, but filtering here also avoids the SQL UPDATE.
@@ -213,7 +213,7 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
         const auditPatch: Record<string, unknown> = {}
 
         for (const [key, value] of changedEntries) {
-          // F-t3-datalyr-7: Whitelist Map replaces regex for defense-in-depth
+          // Whitelist Map replaces regex for defense-in-depth
           const colName = COLUMN_MAP.get(key)
           if (!colName) {
             throw new Error(`Invalid column name: ${key}`)

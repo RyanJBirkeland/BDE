@@ -73,11 +73,11 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
       // Build fingerprints to detect if tasks have changed
       const currentFingerprint = currentState.tasks
-        .map((t) => `${t.id}:${t.updated_at}`)
+        .map((task) => `${task.id}:${task.updated_at}`)
         .sort()
         .join('|')
       const incomingFingerprint = incoming
-        .map((t) => `${t.id}:${t.updated_at}`)
+        .map((task) => `${task.id}:${task.updated_at}`)
         .sort()
         .join('|')
 
@@ -91,11 +91,11 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         return
       }
 
-      set((s) => {
+      set((state) => {
         const now = Date.now()
 
         // Expire old pending updates (using a local Map for O(1) mutation)
-        const nextPendingMap = new Map(Object.entries(s.pendingUpdates))
+        const nextPendingMap = new Map(Object.entries(state.pendingUpdates))
         for (const [id, pending] of nextPendingMap) {
           if (now - pending.ts > PENDING_UPDATE_TTL) nextPendingMap.delete(id)
         }
@@ -103,7 +103,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
           Object.fromEntries(nextPendingMap)
 
         // Build a map of current optimistic tasks by ID for quick lookup
-        const currentTaskMap = new Map(s.tasks.map((t) => [t.id, t]))
+        const currentTaskMap = new Map(state.tasks.map((task) => [task.id, task]))
 
         // Merge incoming data, preserving only pending FIELDS from local version
         const mergedById = new Map<string, SprintTask>()
@@ -114,8 +114,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
             if (localTask && now - pending.ts <= PENDING_UPDATE_TTL) {
               // Merge: start with server data, overlay only the pending fields from local
               const merged = { ...task } as unknown as Record<string, unknown>
-              for (const field of pending.fields) {
-                merged[field] = (localTask as unknown as Record<string, unknown>)[field]
+              for (const fieldName of pending.fields) {
+                merged[fieldName] = (localTask as unknown as Record<string, unknown>)[fieldName]
               }
               mergedById.set(task.id, merged as unknown as SprintTask)
             } else {
@@ -128,7 +128,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         }
 
         // Preserve pending-create temp tasks that aren't in the DB yet
-        for (const tempId of s.pendingCreates) {
+        for (const tempId of state.pendingCreates) {
           if (!mergedById.has(tempId)) {
             const tempTask = currentTaskMap.get(tempId)
             if (tempTask) mergedById.set(tempId, tempTask)
@@ -152,57 +152,57 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     const updateId = Date.now() // Unique ID for this update operation
 
     // Record pending update before optimistic patch, merging fields from prior pending updates
-    set((s) => {
-      const existing = s.pendingUpdates[taskId]
+    set((state) => {
+      const existing = state.pendingUpdates[taskId]
       const existingFields = existing?.fields ?? []
       const newFields = Object.keys(patch)
       const mergedFields = [...new Set([...existingFields, ...newFields])]
 
       return {
         pendingUpdates: {
-          ...s.pendingUpdates,
+          ...state.pendingUpdates,
           [taskId]: { ts: updateId, fields: mergedFields }
         },
-        tasks: s.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t))
+        tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t))
       }
     })
     try {
       const serverTask = (await window.api.sprint.update(taskId, patch)) as SprintTask | null
       // Apply server response (may differ from optimistic — e.g. auto-blocked) and clear pending
       // Only clear if this is still the most recent update for this task
-      set((s) => {
-        const current = s.pendingUpdates[taskId]
+      set((state) => {
+        const current = state.pendingUpdates[taskId]
         const shouldClear = !current || current.ts === updateId
 
         return {
           pendingUpdates: shouldClear
             ? (() => {
-                const { [taskId]: _, ...rest } = s.pendingUpdates
+                const { [taskId]: _, ...rest } = state.pendingUpdates
                 return rest
               })()
-            : s.pendingUpdates,
+            : state.pendingUpdates,
           tasks: serverTask?.id
-            ? s.tasks.map((t) =>
+            ? state.tasks.map((t) =>
                 t.id === taskId
                   ? { ...serverTask, depends_on: sanitizeDependsOn(serverTask.depends_on) }
                   : t
               )
-            : s.tasks
+            : state.tasks
         }
       })
     } catch (e) {
       // Remove from pending on failure only if this is still the most recent update
-      set((s) => {
-        const current = s.pendingUpdates[taskId]
+      set((state) => {
+        const current = state.pendingUpdates[taskId]
         const shouldClear = !current || current.ts === updateId
 
         return {
           pendingUpdates: shouldClear
             ? (() => {
-                const { [taskId]: _, ...rest } = s.pendingUpdates
+                const { [taskId]: _, ...rest } = state.pendingUpdates
                 return rest
               })()
-            : s.pendingUpdates
+            : state.pendingUpdates
         }
       })
       toast.error(e instanceof Error ? e.message : 'Failed to update task')
@@ -213,12 +213,12 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   deleteTask: async (taskId): Promise<void> => {
     try {
       await window.api.sprint.delete(taskId)
-      set((s) => ({
-        tasks: s.tasks.filter((t) => t.id !== taskId),
+      set((state) => ({
+        tasks: state.tasks.filter((t) => t.id !== taskId),
         pendingUpdates: Object.fromEntries(
-          Object.entries(s.pendingUpdates).filter(([id]) => id !== taskId)
+          Object.entries(state.pendingUpdates).filter(([id]) => id !== taskId)
         ),
-        pendingCreates: s.pendingCreates.filter((id) => id !== taskId)
+        pendingCreates: state.pendingCreates.filter((id) => id !== taskId)
       }))
       toast.success('Task deleted')
     } catch (e) {
@@ -252,9 +252,9 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       updated_at: nowIso(),
       created_at: nowIso()
     }
-    set((s) => ({
-      tasks: [optimistic, ...s.tasks],
-      pendingCreates: [...s.pendingCreates, optimistic.id]
+    set((state) => ({
+      tasks: [optimistic, ...state.tasks],
+      pendingCreates: [...state.pendingCreates, optimistic.id]
     }))
 
     try {
@@ -273,9 +273,9 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       } as Parameters<typeof window.api.sprint.create>[0])) as SprintTask
 
       if (result?.id) {
-        set((s) => ({
-          tasks: s.tasks.map((t) => (t.id === optimistic.id ? result : t)),
-          pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id)
+        set((state) => ({
+          tasks: state.tasks.map((t) => (t.id === optimistic.id ? result : t)),
+          pendingCreates: state.pendingCreates.filter((id) => id !== optimistic.id)
         }))
 
         toast.success('Ticket created — saved to Backlog')
@@ -284,9 +284,9 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       toast.success('Ticket created — saved to Backlog')
       return null
     } catch (e) {
-      set((s) => ({
-        tasks: s.tasks.filter((t) => t.id !== optimistic.id),
-        pendingCreates: s.pendingCreates.filter((id) => id !== optimistic.id)
+      set((state) => ({
+        tasks: state.tasks.filter((t) => t.id !== optimistic.id),
+        pendingCreates: state.pendingCreates.filter((id) => id !== optimistic.id)
       }))
       toast.error(e instanceof Error ? e.message : 'Failed to create task')
       return null
@@ -301,8 +301,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         repo,
         templateHint
       })
-      set((s) => ({
-        tasks: s.tasks.map((t) =>
+      set((state) => ({
+        tasks: state.tasks.map((t) =>
           t.id === genResult.taskId
             ? { ...t, spec: genResult.spec || null, prompt: genResult.prompt }
             : t
@@ -351,8 +351,8 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   },
 
   mergeSseUpdate: (update): void => {
-    set((s) => {
-      const nextTasks = s.tasks.map((t) => {
+    set((state) => {
+      const nextTasks = state.tasks.map((t) => {
         if (t.id !== update.taskId) return t
         const merged = {
           ...t,
@@ -365,7 +365,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
           merged.pr_status = PR_STATUS.OPEN
         }
         // Protect pending optimistic fields (same logic as loadData)
-        const pending = s.pendingUpdates[t.id]
+        const pending = state.pendingUpdates[t.id]
         if (pending && Date.now() - pending.ts <= PENDING_UPDATE_TTL) {
           for (const field of pending.fields) {
             ;(merged as unknown as Record<string, unknown>)[field] = (
@@ -399,12 +399,12 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
       // Remove successfully deleted tasks from state
       const deletedIds = new Set(result.results.filter((r) => r.ok).map((r) => r.id))
-      set((s) => ({
-        tasks: s.tasks.filter((t) => !deletedIds.has(t.id)),
+      set((state) => ({
+        tasks: state.tasks.filter((t) => !deletedIds.has(t.id)),
         pendingUpdates: Object.fromEntries(
-          Object.entries(s.pendingUpdates).filter(([id]) => !deletedIds.has(id))
+          Object.entries(state.pendingUpdates).filter(([id]) => !deletedIds.has(id))
         ),
-        pendingCreates: s.pendingCreates.filter((id) => !deletedIds.has(id))
+        pendingCreates: state.pendingCreates.filter((id) => !deletedIds.has(id))
       }))
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to delete tasks')

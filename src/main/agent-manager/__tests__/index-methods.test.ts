@@ -533,7 +533,7 @@ describe('AgentManagerImpl — class internals', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // F-t1-sre-6: _lastTaskDeps evicts terminal-status tasks to prevent growth
+  // _lastTaskDeps evicts terminal-status tasks to prevent growth
   // ---------------------------------------------------------------------------
 
   describe('_lastTaskDeps TTL for terminal tasks (F-t1-sre-6)', () => {

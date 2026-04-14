@@ -36,14 +36,27 @@ export interface TaskTerminalService {
   onStatusTerminal: (taskId: string, status: string) => void
 }
 
+class BatchedTaskResolver {
+  private pending = new Map<string, string>() // taskId → terminal status
+  private timer: ReturnType<typeof setTimeout> | null = null
+
+  schedule(taskId: string, status: string, execute: (pending: Map<string, string>) => void): void {
+    this.pending.set(taskId, status)
+    if (!this.timer) {
+      this.timer = setTimeout(() => {
+        const snapshot = new Map(this.pending)
+        this.pending.clear()
+        this.timer = null
+        execute(snapshot)
+      }, 0)
+    }
+  }
+}
+
 export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTerminalService {
   const depIndex: DependencyIndex = createDependencyIndex()
   const epicIndex: EpicDependencyIndex = createEpicDependencyIndex()
-
-  // Pending resolution: taskIds that have reached terminal status and need dep resolution.
-  // setTimeout(0) coalesces multiple synchronous completions into one resolution pass.
-  const _pendingResolution = new Map<string, string>() // taskId → terminal status
-  let _resolveTimer: ReturnType<typeof setTimeout> | null = null
+  const resolver = new BatchedTaskResolver()
 
   function rebuildIndex(): void {
     const tasks = deps.getTasksWithDependencies()
@@ -53,56 +66,50 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
   }
 
   function scheduleResolution(taskId: string, status: string): void {
-    _pendingResolution.set(taskId, status)
-    if (!_resolveTimer) {
-      _resolveTimer = setTimeout(() => {
-        _resolveTimer = null
-        try {
-          rebuildIndex() // Rebuild once for the batch
-          // DESIGN: Batched resolution via setTimeout(0) for bulk PR merges.
-          // When multiple PRs merge simultaneously (e.g., sprint PR poller tick),
-          // we rebuild the dependency index once and process all resolutions together.
-          // This differs from agent-manager's inline synchronous approach.
-          // See ResolveDependentsParams in agent-manager/types.ts for the conceptual contract.
-          const failedTaskIds: string[] = []
-          const totalCount = _pendingResolution.size
-          for (const [id, terminalStatus] of _pendingResolution) {
-            try {
-              resolveDependents(
-                id,
-                terminalStatus,
-                depIndex,
-                deps.getTask,
-                deps.updateTask,
-                deps.logger,
-                deps.getSetting,
-                epicIndex,
-                deps.getGroup,
-                deps.listGroupTasks,
-                deps.runInTransaction
-              )
-            } catch (err) {
-              failedTaskIds.push(id)
-              deps.logger.error(
-                `[task-terminal-service] resolveDependents failed for ${id}: ${err}`
-              )
-            }
-          }
-          // F-t3-audit-trail-5: consolidated error summary so the full set of
-          // failures is visible in one log entry rather than scattered per-task.
-          if (failedTaskIds.length > 0) {
+    // DESIGN: Batched resolution via setTimeout(0) for bulk PR merges.
+    // When multiple PRs merge simultaneously (e.g., sprint PR poller tick),
+    // we rebuild the dependency index once and process all resolutions together.
+    // This differs from agent-manager's inline synchronous approach.
+    // See ResolveDependentsParams in agent-manager/types.ts for the conceptual contract.
+    resolver.schedule(taskId, status, (pending) => {
+      try {
+        rebuildIndex() // Rebuild once for the batch
+        const failedTaskIds: string[] = []
+        const totalCount = pending.size
+        for (const [id, terminalStatus] of pending) {
+          try {
+            resolveDependents(
+              id,
+              terminalStatus,
+              depIndex,
+              deps.getTask,
+              deps.updateTask,
+              deps.logger,
+              deps.getSetting,
+              epicIndex,
+              deps.getGroup,
+              deps.listGroupTasks,
+              deps.runInTransaction
+            )
+          } catch (err) {
+            failedTaskIds.push(id)
             deps.logger.error(
-              `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
+              `[task-terminal-service] resolveDependents failed for ${id}: ${err}`
             )
           }
-        } catch (err) {
-          deps.logger.error(`[task-terminal-service] rebuildIndex failed: ${err}`)
-          broadcast('task-terminal:resolution-error', { error: getErrorMessage(err) })
-        } finally {
-          _pendingResolution.clear()
         }
-      }, 0)
-    }
+        // Consolidated error summary so the full set of failures is visible
+        // in one log entry rather than scattered per-task.
+        if (failedTaskIds.length > 0) {
+          deps.logger.error(
+            `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
+          )
+        }
+      } catch (err) {
+        deps.logger.error(`[task-terminal-service] rebuildIndex failed: ${err}`)
+        broadcast('task-terminal:resolution-error', { error: getErrorMessage(err) })
+      }
+    })
   }
 
   function onStatusTerminal(taskId: string, status: string): void {

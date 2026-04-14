@@ -10,6 +10,7 @@ export type {
   SpawnLocalAgentArgs,
   SpawnLocalAgentResult,
   AgentRunCostRow,
+  AgentRunSummary,
   CostSummary,
   AgentCostRecord,
   UnifiedAgentSource,

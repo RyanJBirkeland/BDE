@@ -167,7 +167,7 @@ describe('createTaskTerminalService', () => {
     )
   })
 
-  // F-t3-audit-trail-5: consolidated error log when per-task resolutions fail
+  // consolidated error log when per-task resolutions fail
   it('logs a consolidated error after the loop when some resolveDependents calls fail', () => {
     // Use the module-level mockResolveDependents to control which resolution throws.
     // Call 1 (for 'ta') throws; call 2 (for 'tb') succeeds.

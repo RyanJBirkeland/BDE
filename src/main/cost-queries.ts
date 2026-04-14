@@ -8,15 +8,15 @@ import {
   getRecentAgentRunsWithCost as _getRecentAgentRunsWithCost,
   getAgentHistory as _getAgentHistory
 } from './data/cost-queries'
-import type { AgentRunCostRow, AgentCostRecord, CostSummary } from '../shared/types'
+import type { AgentRunCostRow, AgentRunSummary, AgentCostRecord, CostSummary } from '../shared/types'
 
-export type { AgentRunCostRow, AgentCostRecord, CostSummary }
+export type { AgentRunCostRow, AgentRunSummary, AgentCostRecord, CostSummary }
 
 export function getCostSummary(): CostSummary {
   return _getCostSummary(getDb())
 }
 
-export function getRecentAgentRunsWithCost(limit = 20): AgentRunCostRow[] {
+export function getRecentAgentRunsWithCost(limit = 20): AgentRunSummary[] {
   return _getRecentAgentRunsWithCost(getDb(), limit)
 }
 

@@ -9,21 +9,21 @@ import type { AgentManager } from '../agent-manager'
 
 type CheckStatus = 'pass' | 'warn' | 'fail'
 
-interface AuthResult { status: CheckStatus; message: string }
-interface RepoPathResult { status: 'pass' | 'fail'; message: string; path?: string }
-interface GitCleanResult { status: 'pass' | 'warn'; message: string }
-interface NoConflictResult { status: CheckStatus; message: string }
-interface SlotsResult { status: 'pass' | 'warn'; message: string; available: number; max: number }
+interface AuthCheckStatus { status: CheckStatus; message: string }
+interface RepoPathCheckStatus { status: 'pass' | 'fail'; message: string; path?: string }
+interface GitCleanStatus { status: 'pass' | 'warn'; message: string }
+interface ConflictCheckStatus { status: CheckStatus; message: string }
+interface AgentSlotCapacity { status: 'pass' | 'warn'; message: string; available: number; max: number }
 
 export interface OperationalCheckResults {
-  auth: AuthResult
-  repoPath: RepoPathResult
-  gitClean: GitCleanResult
-  noConflict: NoConflictResult
-  slotsAvailable: SlotsResult
+  auth: AuthCheckStatus
+  repoPath: RepoPathCheckStatus
+  gitClean: GitCleanStatus
+  noConflict: ConflictCheckStatus
+  slotsAvailable: AgentSlotCapacity
 }
 
-export async function checkAuth(): Promise<AuthResult> {
+export async function validateAuthStatus(): Promise<AuthCheckStatus> {
   const authStatus = await checkAuthStatus()
   if (!authStatus.tokenFound) {
     return { status: 'fail', message: 'No Claude subscription token found — run: claude login' }
@@ -43,7 +43,7 @@ export async function checkAuth(): Promise<AuthResult> {
   return { status: 'pass', message: 'Authentication valid' }
 }
 
-export function checkRepoPath(repo: string): RepoPathResult {
+export function validateRepoPath(repo: string): RepoPathCheckStatus {
   const repoPath = getRepoPath(repo)
   if (!repoPath) {
     return { status: 'fail', message: `No path configured for repo "${repo}"` }
@@ -51,7 +51,7 @@ export function checkRepoPath(repo: string): RepoPathResult {
   return { status: 'pass', message: 'Repo path configured', path: repoPath }
 }
 
-export async function checkGitStatus(repoPath: string | undefined): Promise<GitCleanResult> {
+export async function validateGitCleanStatus(repoPath: string | undefined): Promise<GitCleanStatus> {
   if (!repoPath) {
     return { status: 'warn', message: 'Cannot check git status (repo path not configured)' }
   }
@@ -69,7 +69,7 @@ export async function checkGitStatus(repoPath: string | undefined): Promise<GitC
   }
 }
 
-export function checkTaskConflicts(repo: string): NoConflictResult {
+export function validateNoTaskConflicts(repo: string): ConflictCheckStatus {
   try {
     const tasks = listTasks()
     const conflicting = tasks.filter(
@@ -89,7 +89,7 @@ export function checkTaskConflicts(repo: string): NoConflictResult {
   }
 }
 
-export function checkAgentSlots(am: AgentManager | undefined): SlotsResult {
+export function assessAgentSlotCapacity(am: AgentManager | undefined): AgentSlotCapacity {
   if (!am) {
     return { status: 'warn', message: 'Agent manager not available', available: 0, max: 0 }
   }
@@ -111,12 +111,12 @@ export async function runOperationalChecks(
   repo: string,
   am: AgentManager | undefined
 ): Promise<OperationalCheckResults> {
-  const repoPathResult = checkRepoPath(repo)
+  const repoPathResult = validateRepoPath(repo)
   const [auth, gitClean] = await Promise.all([
-    checkAuth(),
-    checkGitStatus(repoPathResult.path)
+    validateAuthStatus(),
+    validateGitCleanStatus(repoPathResult.path)
   ])
-  const noConflict = checkTaskConflicts(repo)
-  const slotsAvailable = checkAgentSlots(am)
+  const noConflict = validateNoTaskConflicts(repo)
+  const slotsAvailable = assessAgentSlotCapacity(am)
   return { auth, repoPath: repoPathResult, gitClean, noConflict, slotsAvailable }
 }

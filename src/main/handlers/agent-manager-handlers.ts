@@ -15,11 +15,11 @@ const STOPPED_STATUS: AgentManagerStatus = {
   shuttingDown: false,
   concurrency: {
     maxSlots: 0,
-    effectiveSlots: 0,
+    capacityAfterBackpressure: 0,
     activeCount: 0,
-    recoveryDueAt: null,
+    recoveryScheduledAt: null,
     consecutiveRateLimits: 0,
-    atFloor: false
+    atMinimumCapacity: false
   },
   activeAgents: []
 }

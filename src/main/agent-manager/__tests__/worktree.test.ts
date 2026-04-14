@@ -731,7 +731,7 @@ describe('pruneStaleWorktrees', () => {
 })
 
 // ---------------------------------------------------------------------------
-// F-t1-sre-5: Disk reservation prevents over-commit under concurrency
+// Disk reservation prevents over-commit under concurrency
 // ---------------------------------------------------------------------------
 
 describe('disk reservation (F-t1-sre-5)', () => {

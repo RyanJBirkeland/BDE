@@ -5,7 +5,7 @@
  */
 import './CostSection.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { AgentRunCostRow, CostSummary } from '../../../../shared/types'
+import type { AgentRunSummary, CostSummary } from '../../../../shared/types'
 import { EmptyState } from '../ui/EmptyState'
 import { Button } from '../ui/Button'
 import { Download, RefreshCw, BarChart, ExternalLink } from 'lucide-react'
@@ -26,17 +26,17 @@ function formatDate(iso: string): string {
   })
 }
 
-function cacheHitPct(row: AgentRunCostRow): number | null {
-  const cacheRead = row.cache_read ?? 0
-  const tokensIn = row.tokens_in ?? 0
+function cacheHitPct(row: AgentRunSummary): number | null {
+  const cacheRead = row.cacheRead ?? 0
+  const tokensIn = row.tokensIn ?? 0
   const total = cacheRead + tokensIn
   if (total === 0 || Number.isNaN(total)) return null
   const pct = (cacheRead / total) * 100
   return Number.isNaN(pct) ? null : pct
 }
 
-function totalTokens(row: AgentRunCostRow): number {
-  return (row.tokens_in ?? 0) + (row.tokens_out ?? 0)
+function totalTokens(row: AgentRunSummary): number {
+  return (row.tokensIn ?? 0) + (row.tokensOut ?? 0)
 }
 
 function truncate(s: string, max: number): string {
@@ -90,7 +90,7 @@ function ClaudeCodePanel({ summary }: { summary: CostSummary }): React.JSX.Eleme
 
 // ── Task Table ──────────────────────────────────────────
 
-type SortField = 'tokens' | 'duration_ms' | 'started_at'
+type SortField = 'tokens' | 'durationMs' | 'startedAt'
 
 function TaskTable({
   runs,
@@ -98,10 +98,10 @@ function TaskTable({
   onSort,
   onRowClick
 }: {
-  runs: AgentRunCostRow[]
+  runs: AgentRunSummary[]
   sortField: SortField
   onSort: (f: SortField) => void
-  onRowClick: (run: AgentRunCostRow) => void
+  onRowClick: (run: AgentRunSummary) => void
 }): React.JSX.Element {
   const sortIndicator = (f: SortField): string => (sortField === f ? ' \u25BE' : '')
 
@@ -130,13 +130,13 @@ function TaskTable({
             </th>
             <th
               className="cost-table__num cost-table__sortable"
-              onClick={() => onSort('duration_ms')}
-              onKeyDown={handleSortKeyDown('duration_ms')}
+              onClick={() => onSort('durationMs')}
+              onKeyDown={handleSortKeyDown('durationMs')}
               tabIndex={0}
               role="columnheader"
-              aria-sort={sortField === 'duration_ms' ? 'descending' : 'none'}
+              aria-sort={sortField === 'durationMs' ? 'descending' : 'none'}
             >
-              Duration{sortIndicator('duration_ms')}
+              Duration{sortIndicator('durationMs')}
             </th>
             <th className="cost-table__num">Turns</th>
             <th className="cost-table__num">Cache Hit %</th>
@@ -144,13 +144,13 @@ function TaskTable({
             <th>PR</th>
             <th
               className="cost-table__num cost-table__sortable"
-              onClick={() => onSort('started_at')}
-              onKeyDown={handleSortKeyDown('started_at')}
+              onClick={() => onSort('startedAt')}
+              onKeyDown={handleSortKeyDown('startedAt')}
               tabIndex={0}
               role="columnheader"
-              aria-sort={sortField === 'started_at' ? 'descending' : 'none'}
+              aria-sort={sortField === 'startedAt' ? 'descending' : 'none'}
             >
-              Date{sortIndicator('started_at')}
+              Date{sortIndicator('startedAt')}
             </th>
           </tr>
         </thead>
@@ -176,8 +176,8 @@ function TaskTable({
                   </span>
                 </td>
                 <td className="cost-table__num">{formatTokens(totalTokens(r))}</td>
-                <td className="cost-table__num">{formatDurationMs(r.duration_ms)}</td>
-                <td className="cost-table__num">{r.num_turns ?? '--'}</td>
+                <td className="cost-table__num">{formatDurationMs(r.durationMs)}</td>
+                <td className="cost-table__num">{r.numTurns ?? '--'}</td>
                 <td className="cost-table__num">
                   {cache !== null ? `${cache.toFixed(0)}%` : '--'}
                 </td>
@@ -185,14 +185,14 @@ function TaskTable({
                   <span className="cost-table__repo-badge">{r.repo || '--'}</span>
                 </td>
                 <td>
-                  {r.pr_url ? (
+                  {r.prUrl ? (
                     <a
                       className="cost-table__pr-link"
                       href="#"
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        window.api.window.openExternal(r.pr_url!)
+                        window.api.window.openExternal(r.prUrl!)
                       }}
                     >
                       <ExternalLink size={12} />
@@ -201,7 +201,7 @@ function TaskTable({
                     <span className="cost-table__no-pr">--</span>
                   )}
                 </td>
-                <td className="cost-table__num cost-table__date">{formatDate(r.started_at)}</td>
+                <td className="cost-table__num cost-table__date">{formatDate(r.startedAt)}</td>
               </tr>
             )
           })}
@@ -213,14 +213,14 @@ function TaskTable({
 
 // ── CSV Export ───────────────────────────────────────────
 
-function exportCsv(runs: AgentRunCostRow[]): void {
+function exportCsv(runs: AgentRunSummary[]): void {
   const header =
     'task,repo,tokens_total,tokens_in,tokens_out,duration_ms,turns,cache_hit_pct,pr_url,date'
   const rows = runs.map((r) => {
     const cache = cacheHitPct(r)
     const title = (r.task || r.id).replace(/,/g, ' ')
-    const date = new Date(r.started_at).toISOString()
-    return `${title},${r.repo},${totalTokens(r)},${r.tokens_in ?? ''},${r.tokens_out ?? ''},${r.duration_ms ?? ''},${r.num_turns ?? ''},${cache !== null ? cache.toFixed(1) : ''},${r.pr_url ?? ''},${date}`
+    const date = new Date(r.startedAt).toISOString()
+    return `${title},${r.repo},${totalTokens(r)},${r.tokensIn ?? ''},${r.tokensOut ?? ''},${r.durationMs ?? ''},${r.numTurns ?? ''},${cache !== null ? cache.toFixed(1) : ''},${r.prUrl ?? ''},${date}`
   })
   const csv = [header, ...rows].join('\n')
   navigator.clipboard.writeText(csv)
@@ -230,9 +230,9 @@ function exportCsv(runs: AgentRunCostRow[]): void {
 
 export function CostSection(): React.JSX.Element {
   const [summary, setSummary] = useState<CostSummary | null>(null)
-  const [runs, setRuns] = useState<AgentRunCostRow[]>([])
+  const [runs, setRuns] = useState<AgentRunSummary[]>([])
   const [loading, setLoading] = useState(true)
-  const [sortField, setSortField] = useState<SortField>('started_at')
+  const [sortField, setSortField] = useState<SortField>('startedAt')
   const [copied, setCopied] = useState(false)
   const refreshStore = useCostDataStore((s) => s.fetchLocalAgents)
 
@@ -259,8 +259,8 @@ export function CostSection(): React.JSX.Element {
 
   const sortedRuns = useMemo(() => {
     return [...runs].sort((a, b) => {
-      if (sortField === 'started_at') {
-        return new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+      if (sortField === 'startedAt') {
+        return new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
       }
       if (sortField === 'tokens') {
         return totalTokens(b) - totalTokens(a)
@@ -277,7 +277,7 @@ export function CostSection(): React.JSX.Element {
     setTimeout(() => setCopied(false), FLASH_DURATION_MS)
   }, [sortedRuns])
 
-  const handleRowClick = useCallback((run: AgentRunCostRow) => {
+  const handleRowClick = useCallback((run: AgentRunSummary) => {
     window.dispatchEvent(
       new CustomEvent('bde:navigate', {
         detail: { view: 'agents', sessionId: run.id }

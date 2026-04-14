@@ -2,6 +2,25 @@
  * System, terminal, workbench, webhook, and repo discovery IPC channels.
  */
 
+/**
+ * Payload types for dynamic terminal data streams.
+ *
+ * These channels use dynamic channel names — `terminal:data:${id}` and
+ * `terminal:exit:${id}` — because each PTY session needs its own event stream.
+ * They cannot be registered in the static IpcChannelMap or BroadcastChannels,
+ * but their payload types are documented here so callers can stay consistent.
+ *
+ * Main → renderer (via webContents.send):
+ *   `terminal:data:${id}`  payload: string  (raw PTY output data)
+ *   `terminal:exit:${id}`  payload: void    (PTY process has exited)
+ *
+ * Preload consumers: api-utilities.ts `terminal.onData()` and `terminal.onExit()`.
+ */
+export interface TerminalDataPayload {
+  /** Raw output bytes from the PTY process. */
+  data: string
+}
+
 /** Terminal PTY management */
 export interface TerminalChannels {
   'terminal:create': {

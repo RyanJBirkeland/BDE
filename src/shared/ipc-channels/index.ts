@@ -125,6 +125,7 @@ export type { FsChannels, MemoryChannels } from './fs-channels'
 // System channels
 export type {
   TerminalChannels,
+  TerminalDataPayload,
   WorkbenchChannels,
   WebhookChannels,
   SystemChannels,

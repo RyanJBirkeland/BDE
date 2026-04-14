@@ -4,7 +4,7 @@
  * Extracted from src/main/cost-queries.ts.
  */
 import type Database from 'better-sqlite3'
-import type { AgentRunCostRow, AgentCostRecord, CostSummary } from '../../shared/types'
+import type { AgentRunSummary, AgentCostRecord, CostSummary } from '../../shared/types'
 
 interface SummaryCountRow {
   cnt: number
@@ -56,6 +56,25 @@ interface AgentCostRow {
   pr_url: string | null
   repo: string | null
   sprint_task_id: string | null
+}
+
+function dbRowToSummary(row: AgentRunCostDbRow): AgentRunSummary {
+  return {
+    id: row.id,
+    task: row.task ?? '',
+    repo: row.repo ?? '',
+    status: row.status,
+    costUsd: row.cost_usd,
+    tokensIn: row.tokens_in,
+    tokensOut: row.tokens_out,
+    cacheRead: row.cache_read,
+    cacheCreate: row.cache_create,
+    durationMs: row.duration_ms,
+    numTurns: row.num_turns,
+    startedAt: row.started_at,
+    finishedAt: row.finished_at,
+    prUrl: row.pr_url
+  }
 }
 
 function rowToRecord(row: AgentCostRow): AgentCostRecord {
@@ -153,7 +172,7 @@ export function getCostSummary(db: Database.Database): CostSummary {
   }
 }
 
-export function getRecentAgentRunsWithCost(db: Database.Database, limit = 20): AgentRunCostRow[] {
+export function getRecentAgentRunsWithCost(db: Database.Database, limit = 20): AgentRunSummary[] {
   // DL-34: pr_url not in agent_runs - would require join with sprint_tasks
   const rows = db
     .prepare(
@@ -181,20 +200,5 @@ export function getRecentAgentRunsWithCost(db: Database.Database, limit = 20): A
     )
     .all(limit) as AgentRunCostDbRow[]
 
-  return rows.map((r) => ({
-    id: r.id,
-    task: r.task ?? '',
-    repo: r.repo ?? '',
-    status: r.status,
-    cost_usd: r.cost_usd,
-    tokens_in: r.tokens_in,
-    tokens_out: r.tokens_out,
-    cache_read: r.cache_read,
-    cache_create: r.cache_create,
-    duration_ms: r.duration_ms,
-    num_turns: r.num_turns,
-    started_at: r.started_at,
-    finished_at: r.finished_at,
-    pr_url: r.pr_url
-  }))
+  return rows.map(dbRowToSummary)
 }

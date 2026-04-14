@@ -175,11 +175,11 @@ describe('IPC handlers integration', () => {
         shuttingDown: false,
         concurrency: {
           maxSlots: 2,
-          effectiveSlots: 2,
+          capacityAfterBackpressure: 2,
           activeCount: 1,
-          recoveryDueAt: null,
+          recoveryScheduledAt: null,
           consecutiveRateLimits: 0,
-          atFloor: false
+          atMinimumCapacity: false
         },
         activeAgents: [
           {

@@ -177,10 +177,7 @@ function spawnViaSdk(
       abortController.abort()
     },
     async steer(message: string): Promise<SteerResult> {
-      // LSP violation: SDK query() does not support mid-session steering (unlike CLI).
-      // The SDK's query() API is fire-and-forget — once started, it cannot accept
-      // new user messages. CLI mode writes to stdin and can steer. Callers must
-      // handle SteerResult.delivered === false gracefully.
+      // SDK mode does not support mid-session steering — returns delivered: false. CLI mode writes to stdin. Callers must handle delivered === false.
       ;(logger ?? console).warn(
         `[agent-manager] Steer not supported in SDK mode: "${message.slice(0, 100)}"`
       )

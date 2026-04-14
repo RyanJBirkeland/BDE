@@ -8,7 +8,8 @@ import type {
   AgentMeta,
   AgentEvent,
   AgentManagerStatus,
-  MetricsSnapshot
+  MetricsSnapshot,
+  AgentRunSummary
 } from '../types'
 
 /** Agent lifecycle and interaction */
@@ -109,7 +110,7 @@ export interface CostChannels {
   }
   'cost:agentRuns': {
     args: [args: { limit?: number }]
-    result: import('../types').AgentRunCostRow[]
+    result: AgentRunSummary[]
   }
   'cost:getAgentHistory': {
     args: [args?: { limit?: number; offset?: number }]

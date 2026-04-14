@@ -243,11 +243,11 @@ export class AgentManagerImpl implements AgentManager {
    */
   _spawnAgent(
     task: RunAgentTask,
-    wt: { worktreePath: string; branch: string },
+    worktree: { worktreePath: string; branch: string },
     repoPath: string
   ): void {
     this._metrics.increment('agentsSpawned')
-    const p = _runAgent(task, wt, repoPath, this.runAgentDeps)
+    const p = _runAgent(task, worktree, repoPath, this.runAgentDeps)
       .catch((err) => {
         this.logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
       })
@@ -457,7 +457,7 @@ export class AgentManagerImpl implements AgentManager {
         const deps = task.depends_on ?? null
         this._lastTaskDeps.set(task.id, { deps, hash: computeDepsFingerprint(deps) })
       }
-      taskStatusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+      taskStatusMap = new Map(allTasks.map((task) => [task.id, task.status]))
       this._depIndexDirty = false
     } else {
       taskStatusMap = this._refreshDependencyIndex()

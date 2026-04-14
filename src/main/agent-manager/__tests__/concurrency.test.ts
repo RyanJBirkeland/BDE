@@ -21,16 +21,16 @@ describe('concurrency', () => {
   test('applyBackpressure reduces slots', () => {
     const s = makeConcurrencyState(2)
     const next = applyBackpressure(s, 1000)
-    expect(next.effectiveSlots).toBe(1)
-    expect(next.atFloor).toBe(true)
+    expect(next.capacityAfterBackpressure).toBe(1)
+    expect(next.atMinimumCapacity).toBe(true)
   })
 
-  test('at floor, backpressure does not reset recoveryDueAt', () => {
+  test('at floor, backpressure does not reset recoveryScheduledAt', () => {
     let s = makeConcurrencyState(2)
     s = applyBackpressure(s, 1000)
-    const rd = s.recoveryDueAt
+    const rd = s.recoveryScheduledAt
     s = applyBackpressure(s, 2000)
-    expect(s.recoveryDueAt).toBe(rd)
+    expect(s.recoveryScheduledAt).toBe(rd)
     expect(s.consecutiveRateLimits).toBe(2)
   })
 
@@ -38,16 +38,16 @@ describe('concurrency', () => {
     let s = makeConcurrencyState(2)
     s = applyBackpressure(s, 0)
     s = tryRecover(s, 60_001)
-    expect(s.effectiveSlots).toBe(2)
-    expect(s.atFloor).toBe(false)
-    expect(s.recoveryDueAt).toBeNull()
+    expect(s.capacityAfterBackpressure).toBe(2)
+    expect(s.atMinimumCapacity).toBe(false)
+    expect(s.recoveryScheduledAt).toBeNull()
   })
 
   test('tryRecover does nothing before cooldown', () => {
     let s = makeConcurrencyState(3)
     s = applyBackpressure(s, 0)
     s = tryRecover(s, 30_000)
-    expect(s.effectiveSlots).toBe(2)
+    expect(s.capacityAfterBackpressure).toBe(2)
   })
 
   describe('setMaxSlots (reloadConfig)', () => {
@@ -58,7 +58,7 @@ describe('concurrency', () => {
       // Lower to 2 — drain loop should NOT spawn more.
       setMaxSlots(s, 2)
       expect(s.maxSlots).toBe(2)
-      expect(s.effectiveSlots).toBe(2)
+      expect(s.capacityAfterBackpressure).toBe(2)
       expect(availableSlots(s)).toBe(0)
       // activeCount preserved — in-flight agents still tracked.
       expect(s.activeCount).toBe(5)
@@ -80,18 +80,18 @@ describe('concurrency', () => {
       expect(availableSlots(s)).toBe(0)
       setMaxSlots(s, 8)
       expect(s.maxSlots).toBe(8)
-      expect(s.effectiveSlots).toBe(8)
+      expect(s.capacityAfterBackpressure).toBe(8)
       expect(availableSlots(s)).toBe(6)
     })
 
-    test('atFloor flag tracks new effectiveSlots after lowering', () => {
+    test('atMinimumCapacity flag tracks new capacityAfterBackpressure after lowering', () => {
       const s = makeConcurrencyState(8)
       setMaxSlots(s, 1)
-      expect(s.effectiveSlots).toBe(1)
-      expect(s.atFloor).toBe(true)
+      expect(s.capacityAfterBackpressure).toBe(1)
+      expect(s.atMinimumCapacity).toBe(true)
     })
 
-    test('lowering does not clobber rate-limited effectiveSlots when below new cap', () => {
+    test('lowering does not clobber rate-limited capacityAfterBackpressure when below new cap', () => {
       // Rate-limited from 8 down to 3.
       let s = makeConcurrencyState(8)
       s = applyBackpressure(s, 0)
@@ -99,11 +99,11 @@ describe('concurrency', () => {
       s = applyBackpressure(s, 0)
       s = applyBackpressure(s, 0)
       s = applyBackpressure(s, 0)
-      expect(s.effectiveSlots).toBe(3)
-      // User sets max=5. effectiveSlots (3) is already below 5 — leave it.
+      expect(s.capacityAfterBackpressure).toBe(3)
+      // User sets max=5. capacityAfterBackpressure (3) is already below 5 — leave it.
       setMaxSlots(s, 5)
       expect(s.maxSlots).toBe(5)
-      expect(s.effectiveSlots).toBe(3)
+      expect(s.capacityAfterBackpressure).toBe(3)
     })
   })
 })

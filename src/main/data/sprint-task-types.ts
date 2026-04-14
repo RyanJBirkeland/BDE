@@ -40,7 +40,7 @@ export const UPDATE_ALLOWLIST = new Set([
   'review_diff_snapshot'
 ])
 
-// F-t3-datalyr-7: Whitelist Map for defense-in-depth column validation
+// Whitelist Map for defense-in-depth column validation
 export const COLUMN_MAP = new Map<string, string>(
   Array.from(UPDATE_ALLOWLIST).map((col) => [col, col])
 )

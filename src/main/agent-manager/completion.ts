@@ -17,7 +17,7 @@ import { transitionToReview } from './review-transition'
 import { classifyFailureReason } from './failure-classifier'
 import { evaluateAutoMergePolicy } from './auto-merge-policy'
 
-export interface ResolveSuccessOpts {
+export interface ResolveSuccessContext {
   taskId: string
   worktreePath: string
   title: string
@@ -28,14 +28,14 @@ export interface ResolveSuccessOpts {
   repo: ISprintTaskRepository
 }
 
-export interface ResolveFailureOpts {
+export interface ResolveFailureContext {
   taskId: string
   retryCount: number
   notes?: string
   repo: ISprintTaskRepository
 }
 
-interface CommitCheckOpts {
+interface CommitCheckContext {
   taskId: string
   branch: string
   worktreePath: string
@@ -46,7 +46,7 @@ interface CommitCheckOpts {
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
 }
 
-interface AutoMergeOpts {
+interface AutoMergeContext {
   taskId: string
   title: string
   branch: string
@@ -130,7 +130,7 @@ async function failTaskWithError(
  * Check if branch has any commits ahead of origin/main.
  * Returns true if commits exist, false if none (triggers retry/failure).
  */
-async function hasCommitsAheadOfMain(opts: CommitCheckOpts): Promise<boolean> {
+async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<boolean> {
   const { taskId, branch, worktreePath, agentSummary, retryCount, repo, logger, onTaskTerminal } =
     opts
   const env = buildAgentEnv()
@@ -163,7 +163,7 @@ async function hasCommitsAheadOfMain(opts: CommitCheckOpts): Promise<boolean> {
   return true
 }
 
-async function attemptAutoMerge(opts: AutoMergeOpts): Promise<void> {
+async function attemptAutoMerge(opts: AutoMergeContext): Promise<void> {
   const { taskId, title, branch, worktreePath, repo, logger, onTaskTerminal } = opts
   const { getSettingJson } = await import('../settings')
   const rules = getSettingJson<import('../../shared/types/task-types').AutoReviewRule[]>('autoReview.rules')
@@ -236,24 +236,34 @@ export async function findOrCreatePR(
   return findOrCreatePRUtil(worktreePath, branch, title, ghRepo, env, logger)
 }
 
-export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo } = opts
-  const env = buildAgentEnv()
-
-  // 0. Guard: worktree must still exist (macOS /tmp can evict it)
-  if (!existsSync(worktreePath)) {
-    await failTaskWithError(
-      taskId,
-      `Worktree path no longer exists for task ${taskId}: ${worktreePath}`,
-      `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
-      repo,
-      logger,
-      onTaskTerminal
-    )
-    return
+async function verifyWorktreeExists(
+  taskId: string,
+  worktreePath: string,
+  repo: ISprintTaskRepository,
+  logger: Logger,
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>
+): Promise<boolean> {
+  if (existsSync(worktreePath)) {
+    return true
   }
+  await failTaskWithError(
+    taskId,
+    `Worktree path no longer exists for task ${taskId}: ${worktreePath}`,
+    `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
+    repo,
+    logger,
+    onTaskTerminal
+  )
+  return false
+}
 
-  // 1. Detect current branch
+async function detectAgentBranch(
+  taskId: string,
+  worktreePath: string,
+  repo: ISprintTaskRepository,
+  logger: Logger,
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>
+): Promise<string | null> {
   let branch: string
   try {
     branch = await detectBranch(worktreePath)
@@ -266,7 +276,7 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       logger,
       onTaskTerminal
     )
-    return
+    return null
   }
 
   if (!branch) {
@@ -278,36 +288,65 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
       logger,
       onTaskTerminal
     )
-    return
+    return null
   }
 
-  // 2. Auto-commit any uncommitted changes (agents may not commit before exiting)
+  return branch
+}
+
+async function autoCommitPendingChanges(
+  taskId: string,
+  worktreePath: string,
+  title: string,
+  logger: Logger
+): Promise<void> {
   try {
     await autoCommitIfDirty(worktreePath, title, logger)
   } catch (err) {
     logger.warn(`[completion] Auto-commit failed for task ${taskId}: ${err}`)
     // Continue — push will fail naturally if there are no commits
   }
+}
 
-  // 3. Rebase onto origin/main to prevent stale branch merge conflicts
-  let rebaseNote: string | undefined
-  let rebaseBaseSha: string | undefined
-  let rebaseSucceeded = false
+interface RebaseOutcome {
+  rebaseNote: string | undefined
+  rebaseBaseSha: string | undefined
+  rebaseSucceeded: boolean
+}
+
+async function rebaseOnMain(
+  taskId: string,
+  worktreePath: string,
+  logger: Logger
+): Promise<RebaseOutcome> {
+  const env = buildAgentEnv()
   try {
     const rebaseResult = await rebaseOntoMain(worktreePath, env, logger)
     if (!rebaseResult.success) {
-      rebaseNote = rebaseResult.notes
-    } else {
-      rebaseBaseSha = rebaseResult.baseSha
-      rebaseSucceeded = true
+      return { rebaseNote: rebaseResult.notes, rebaseBaseSha: undefined, rebaseSucceeded: false }
     }
+    return { rebaseNote: undefined, rebaseBaseSha: rebaseResult.baseSha, rebaseSucceeded: true }
   } catch (err) {
     logger.warn(`[completion] Rebase step failed for task ${taskId}: ${err}`)
-    rebaseNote = 'Rebase onto main failed — manual conflict resolution needed.'
+    return {
+      rebaseNote: 'Rebase onto main failed — manual conflict resolution needed.',
+      rebaseBaseSha: undefined,
+      rebaseSucceeded: false
+    }
   }
+}
 
-  // 4. Check if there are any commits
-  const hasCommits = await hasCommitsAheadOfMain({
+async function verifyCommitsExist(
+  taskId: string,
+  branch: string,
+  worktreePath: string,
+  agentSummary: string | null | undefined,
+  retryCount: number,
+  repo: ISprintTaskRepository,
+  logger: Logger,
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>
+): Promise<boolean> {
+  return hasCommitsAheadOfMain({
     taskId,
     branch,
     worktreePath,
@@ -317,11 +356,18 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
     logger,
     onTaskTerminal
   })
-  if (!hasCommits) {
-    return
-  }
+}
 
-  // 5. Transition to review — preserve worktree for code review.
+async function transitionTaskToReview(
+  taskId: string,
+  branch: string,
+  worktreePath: string,
+  title: string,
+  rebaseOutcome: RebaseOutcome,
+  repo: ISprintTaskRepository,
+  logger: Logger,
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>
+): Promise<void> {
   logger.info(
     `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`
   )
@@ -329,21 +375,42 @@ export async function resolveSuccess(opts: ResolveSuccessOpts, logger: Logger): 
   await transitionToReview({
     taskId,
     worktreePath,
-    rebaseNote,
-    rebaseBaseSha,
-    rebaseSucceeded,
+    rebaseNote: rebaseOutcome.rebaseNote,
+    rebaseBaseSha: rebaseOutcome.rebaseBaseSha,
+    rebaseSucceeded: rebaseOutcome.rebaseSucceeded,
     repo,
     logger
   })
 
-  // 6. Check auto-review rules — if qualified, auto-merge
   await attemptAutoMerge({ taskId, title, branch, worktreePath, repo, logger, onTaskTerminal })
 
-  // NOTE: If not auto-merged, do NOT call onTaskTerminal — review is not a terminal status.
-  // Do NOT clean up worktree — it stays alive for review.
+  // The task enters 'review' status to await human inspection — this is NOT a terminal state.
+  // The worktree must stay alive so the Code Review Station can show diffs and allow merge/discard.
+  // onTaskTerminal is intentionally NOT called here; it fires only when the human takes a final action.
 }
 
-export function resolveFailure(opts: ResolveFailureOpts, logger?: Logger): boolean {
+export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger): Promise<void> {
+  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo } = opts
+
+  const worktreeExists = await verifyWorktreeExists(taskId, worktreePath, repo, logger, onTaskTerminal)
+  if (!worktreeExists) return
+
+  const branch = await detectAgentBranch(taskId, worktreePath, repo, logger, onTaskTerminal)
+  if (!branch) return
+
+  await autoCommitPendingChanges(taskId, worktreePath, title, logger)
+
+  const rebaseOutcome = await rebaseOnMain(taskId, worktreePath, logger)
+
+  const hasCommits = await verifyCommitsExist(
+    taskId, branch, worktreePath, agentSummary, retryCount, repo, logger, onTaskTerminal
+  )
+  if (!hasCommits) return
+
+  await transitionTaskToReview(taskId, branch, worktreePath, title, rebaseOutcome, repo, logger, onTaskTerminal)
+}
+
+export function resolveFailure(opts: ResolveFailureContext, logger?: Logger): boolean {
   const { taskId, retryCount, notes, repo } = opts
 
   // Classify failure reason for structured filtering
