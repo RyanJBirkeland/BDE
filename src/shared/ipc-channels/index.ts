@@ -5,6 +5,74 @@
  * Each entry maps a channel name to its `args` tuple and `result` type.
  * Both `safeHandle()` (main) and `typedInvoke()` (preload) derive their
  * types from this map, giving end-to-end compile-time safety.
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ * IPC Channel Naming Convention
+ * ─────────────────────────────────────────────────────────────────────
+ *
+ * All channels follow the pattern `domain:action` or, for sub-domains,
+ * `domain:entity` (e.g. `agent-manager:status`).
+ *
+ * Handler types (defined in src/main/ipc-utils.ts):
+ *
+ *   safeHandle  (request/reply)   Used for queries and mutations that
+ *                                  return a value. Renderer calls
+ *                                  `typedInvoke(channel, ...args)` and
+ *                                  awaits a result. This is the default
+ *                                  for all channels in IpcChannelMap.
+ *
+ *   safeOn      (one-way)         Fire-and-forget messages from renderer
+ *                                  → main that need no reply. Used
+ *                                  sparingly (e.g. `terminal:write`,
+ *                                  `window:setTitle`).
+ *
+ *   onBroadcast (main→renderer)   Server-push events broadcast from main
+ *                                  to all renderer windows. Defined in
+ *                                  BroadcastChannels (broadcast-channels.ts)
+ *                                  and registered via the `onBroadcast<T>`
+ *                                  factory in src/preload/index.ts.
+ *
+ * Naming patterns by semantic:
+ *
+ *   Queries:    `domain:get<Entity>`   or  `domain:list`
+ *               e.g. `settings:get`, `cost:summary`, `agents:list`,
+ *                    `groups:get`, `pr:getList`
+ *
+ *   Mutations:  `domain:<verb>` or `domain:<verb><Entity>`
+ *               e.g. `sprint:create`, `sprint:update`, `sprint:delete`,
+ *                    `git:commit`, `git:push`, `review:mergeLocally`
+ *
+ *   Streams:    `domain:<action>Stream`  (initiates; result is a streamId)
+ *               Chunks arrive via BroadcastChannels under a matching key.
+ *               e.g. `workbench:chatStream` → broadcast `workbench:chatChunk`
+ *                    `review:chatStream`    → broadcast `review:chatChunk`
+ *                    `synthesizer:generate` → broadcast `synthesizer:chunk`
+ *
+ *   Broadcasts: named as noun or past-tense verb to signal push semantics
+ *               e.g. `sprint:externalChange`, `sprint:mutation`,
+ *                    `pr:listUpdated`, `agent:event`, `fs:dirChanged`
+ *
+ * Legacy / irregular patterns (kept for backward compatibility):
+ *
+ *   - `local:*`      — early agent-spawn channels that predate the
+ *                       `agent:*` / `agents:*` split (`local:spawnClaudeAgent`,
+ *                       `local:getAgentProcesses`, `local:tailAgentLog`).
+ *   - `agent:*` vs `agents:*`  — singular used for per-agent actions
+ *                       (`agent:steer`, `agent:kill`), plural for
+ *                       collection ops (`agents:list`, `agents:readLog`).
+ *                       New channels should follow this singular/plural rule.
+ *   - `agent:completionsPerHour`, `agent:recentEvents` — dashboard queries
+ *                       that live in DashboardChannels but use the `agent:`
+ *                       prefix instead of `dashboard:`.
+ *   - `clipboard:readImage` — lives inside SystemChannels despite having
+ *                       its own `clipboard:` prefix.
+ *
+ * Adding new channels:
+ *   1. Add the channel to the appropriate domain file in this directory.
+ *   2. Export the interface from this index file.
+ *   3. Intersect the interface into `IpcChannelMap` below.
+ *   4. For broadcast-only channels add to BroadcastChannels instead.
+ * ─────────────────────────────────────────────────────────────────────
  */
 
 // Agent channels
