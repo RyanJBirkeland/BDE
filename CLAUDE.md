@@ -60,6 +60,50 @@ npm run lint        # Zero errors required (warnings OK)
 
 Do NOT commit with failing checks. Fix issues first. If you cannot fix a failure, do NOT commit — report the issue.
 
+## Module Documentation (MANDATORY pre-commit)
+
+Before every commit, update `docs/modules/` for every source file you created or modified:
+
+1. **Minimum:** ensure the module has a row in its layer `index.md`. Add one if missing.
+2. **If you changed exports or observable behavior:** update or create the individual `<module>.md` detail file and link it from the index row.
+
+**Layer → doc path:**
+
+| If you touched... | Update... |
+|---|---|
+| `src/main/services/*` | `docs/modules/services/index.md` |
+| `src/main/handlers/*` | `docs/modules/handlers/index.md` |
+| `src/main/data/*` | `docs/modules/data/index.md` |
+| `src/main/agent-manager/*` | `docs/modules/agent-manager/index.md` |
+| `src/renderer/src/components/**` | `docs/modules/components/index.md` (Group column = component subdirectory name) |
+| `src/renderer/src/views/*` | `docs/modules/views/index.md` |
+| `src/renderer/src/stores/*` | `docs/modules/stores/index.md` |
+| `src/renderer/src/hooks/*` | `docs/modules/hooks/index.md` |
+| `src/shared/*` | `docs/modules/shared/index.md` |
+| `src/main/lib/*` | `docs/modules/lib/main/index.md` |
+| `src/renderer/src/lib/*` | `docs/modules/lib/renderer/index.md` |
+
+**Module detail file template** (create at `docs/modules/<layer>/<module>.md`):
+
+```markdown
+# <module-name>
+
+**Layer:** <layer>
+**Source:** `<relative-path-from-repo-root>`
+
+## Purpose
+One or two sentences.
+
+## Public API
+- `exportedThing` — what it does
+(For React components: list the default export + any named types/hooks/sub-components)
+
+## Key Dependencies
+- `dependency.ts` — why it's used
+```
+
+Omit implementation details, private functions, and anything already clear from source comments. Keep it to what a caller needs to know. **File renamed?** Update the index row. **File deleted?** Remove the index row.
+
 ## Pre-Push Hook
 
 Every `git push` runs `typecheck + test + test:main + lint` via husky before the push is accepted. Full suite takes ~60s. Parallel pipeline-agent pushes serialize behind this hook — if N agents push at the same time, each hook runs sequentially. Account for this when estimating total wall time for multi-agent epics.
