@@ -224,7 +224,10 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         raw = await runSdkOnce(prompt, {
           model: REVIEWER_MODEL,
           maxTurns: 1,
-          tools: []
+          tools: [],
+          // Reviewer generates opinions, not code. CLAUDE.md implementation
+          // guidelines are irrelevant and waste ~5-10KB per review call.
+          settingSources: []
         })
       } catch (err) {
         logger.error(`Review SDK call failed for task=${taskId}: ${(err as Error).message}`)

@@ -33,7 +33,8 @@ async function runSdkQuery(prompt: string): Promise<string> {
       pathToClaudeCodeExecutable: getClaudeCliPath(),
       permissionMode: 'bypassPermissions' as const,
       allowDangerouslySkipPermissions: true,
-      settingSources: ['user', 'project', 'local'],
+      // Validation check only — implementation context from CLAUDE.md is irrelevant.
+      settingSources: [],
     },
   })
 
