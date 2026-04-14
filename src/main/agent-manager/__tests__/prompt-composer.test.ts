@@ -1210,6 +1210,24 @@ describe('copilot prompt XML wrapping', () => {
   })
 })
 
+describe('truncation constants', () => {
+  it('exports PRIOR_SCRATCHPAD_CHARS', () => {
+    expect(PROMPT_TRUNCATION.PRIOR_SCRATCHPAD_CHARS).toBeGreaterThan(0)
+  })
+  it('exports RETRY_NOTES_CHARS', () => {
+    expect(PROMPT_TRUNCATION.RETRY_NOTES_CHARS).toBeGreaterThan(0)
+  })
+  it('exports CROSS_REPO_CONTRACT_CHARS', () => {
+    expect(PROMPT_TRUNCATION.CROSS_REPO_CONTRACT_CHARS).toBeGreaterThan(0)
+  })
+  it('exports SYNTHESIZER_CODEBASE_CONTEXT_CHARS', () => {
+    expect(PROMPT_TRUNCATION.SYNTHESIZER_CODEBASE_CONTEXT_CHARS).toBeGreaterThan(0)
+  })
+  it('exports ASSISTANT_TASK_CHARS', () => {
+    expect(PROMPT_TRUNCATION.ASSISTANT_TASK_CHARS).toBeGreaterThan(0)
+  })
+})
+
 describe('synthesizer prompt XML wrapping', () => {
   it('wraps codebaseContext in <codebase_context> tags', () => {
     const prompt = buildAgentPrompt({
