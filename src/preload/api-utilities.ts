@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron'
 import { typedInvoke, onBroadcast } from './ipc-helpers'
-import type { GitHubFetchInit } from '../shared/ipc-channels'
+import type { GitHubFetchInit, IpcChannelMap } from '../shared/ipc-channels'
 import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
 import type {
   TaskTemplate,
@@ -10,11 +10,15 @@ import type {
 } from '../shared/types'
 
 // Clipboard
-export const readClipboardImage = () => typedInvoke('clipboard:readImage')
+export const readClipboardImage = (): Promise<IpcChannelMap['clipboard:readImage']['result']> =>
+  typedInvoke('clipboard:readImage')
 
 // Window
-export const openExternal = (url: string) => typedInvoke('window:openExternal', url)
-export const openPlaygroundInBrowser = (html: string) =>
+export const openExternal = (url: string): Promise<IpcChannelMap['window:openExternal']['result']> =>
+  typedInvoke('window:openExternal', url)
+export const openPlaygroundInBrowser = (
+  html: string
+): Promise<IpcChannelMap['playground:openInBrowser']['result']> =>
   typedInvoke('playground:openInBrowser', html)
 export const setTitle = (title: string): void => ipcRenderer.send('window:setTitle', title)
 
@@ -33,11 +37,16 @@ export const cost = {
 }
 
 // PR status polling
-export const pollPrStatuses = (prs: { taskId: string; prUrl: string }[]) =>
-  typedInvoke('pr:pollStatuses', prs)
+export const pollPrStatuses = (
+  prs: { taskId: string; prUrl: string }[]
+): Promise<IpcChannelMap['pr:pollStatuses']['result']> => typedInvoke('pr:pollStatuses', prs)
 
 // Conflict file detection
-export const checkConflictFiles = (input: { owner: string; repo: string; prNumber: number }) =>
+export const checkConflictFiles = (input: {
+  owner: string
+  repo: string
+  prNumber: number
+}): Promise<IpcChannelMap['pr:checkConflictFiles']['result']> =>
   typedInvoke('pr:checkConflictFiles', input)
 
 // Plan import
@@ -46,24 +55,49 @@ export const planner = {
 }
 
 // File system
-export const openFileDialog = (opts?: { filters?: { name: string; extensions: string[] }[] }) =>
+export const openFileDialog = (opts?: {
+  filters?: { name: string; extensions: string[] }[]
+}): Promise<IpcChannelMap['fs:openFileDialog']['result']> =>
   typedInvoke('fs:openFileDialog', opts)
-export const readFileAsBase64 = (path: string) => typedInvoke('fs:readFileAsBase64', path)
-export const readFileAsText = (path: string) => typedInvoke('fs:readFileAsText', path)
-export const openDirectoryDialog = () => typedInvoke('fs:openDirectoryDialog')
-export const readDir = (dirPath: string) => typedInvoke('fs:readDir', dirPath)
-export const readFile = (filePath: string) => typedInvoke('fs:readFile', filePath)
-export const writeFile = (filePath: string, content: string) =>
+export const readFileAsBase64 = (
+  path: string
+): Promise<IpcChannelMap['fs:readFileAsBase64']['result']> =>
+  typedInvoke('fs:readFileAsBase64', path)
+export const readFileAsText = (
+  path: string
+): Promise<IpcChannelMap['fs:readFileAsText']['result']> =>
+  typedInvoke('fs:readFileAsText', path)
+export const openDirectoryDialog =
+  (): Promise<IpcChannelMap['fs:openDirectoryDialog']['result']> =>
+    typedInvoke('fs:openDirectoryDialog')
+export const readDir = (dirPath: string): Promise<IpcChannelMap['fs:readDir']['result']> =>
+  typedInvoke('fs:readDir', dirPath)
+export const readFile = (filePath: string): Promise<IpcChannelMap['fs:readFile']['result']> =>
+  typedInvoke('fs:readFile', filePath)
+export const writeFile = (
+  filePath: string,
+  content: string
+): Promise<IpcChannelMap['fs:writeFile']['result']> =>
   typedInvoke('fs:writeFile', filePath, content)
-export const watchDir = (dirPath: string) => typedInvoke('fs:watchDir', dirPath)
-export const unwatchDir = () => typedInvoke('fs:unwatchDir')
-export const createFile = (filePath: string) => typedInvoke('fs:createFile', filePath)
-export const createDir = (dirPath: string) => typedInvoke('fs:createDir', dirPath)
-export const rename = (oldPath: string, newPath: string) =>
-  typedInvoke('fs:rename', oldPath, newPath)
-export const deletePath = (targetPath: string) => typedInvoke('fs:delete', targetPath)
-export const stat = (targetPath: string) => typedInvoke('fs:stat', targetPath)
-export const listFiles = (rootPath: string) => typedInvoke('fs:listFiles', rootPath)
+export const watchDir = (dirPath: string): Promise<IpcChannelMap['fs:watchDir']['result']> =>
+  typedInvoke('fs:watchDir', dirPath)
+export const unwatchDir = (): Promise<IpcChannelMap['fs:unwatchDir']['result']> =>
+  typedInvoke('fs:unwatchDir')
+export const createFile = (filePath: string): Promise<IpcChannelMap['fs:createFile']['result']> =>
+  typedInvoke('fs:createFile', filePath)
+export const createDir = (dirPath: string): Promise<IpcChannelMap['fs:createDir']['result']> =>
+  typedInvoke('fs:createDir', dirPath)
+export const rename = (
+  oldPath: string,
+  newPath: string
+): Promise<IpcChannelMap['fs:rename']['result']> => typedInvoke('fs:rename', oldPath, newPath)
+export const deletePath = (
+  targetPath: string
+): Promise<IpcChannelMap['fs:delete']['result']> => typedInvoke('fs:delete', targetPath)
+export const stat = (targetPath: string): Promise<IpcChannelMap['fs:stat']['result']> =>
+  typedInvoke('fs:stat', targetPath)
+export const listFiles = (rootPath: string): Promise<IpcChannelMap['fs:listFiles']['result']> =>
+  typedInvoke('fs:listFiles', rootPath)
 export const onDirChanged = onBroadcast<BroadcastChannels['fs:dirChanged']>('fs:dirChanged')
 
 // GitHub error broadcast
@@ -72,8 +106,10 @@ export const onGitHubError = onBroadcast<BroadcastChannels['github:error']>('git
 // PR list broadcast
 export const onPrListUpdated =
   onBroadcast<BroadcastChannels['pr:listUpdated']>('pr:listUpdated')
-export const getPrList = () => typedInvoke('pr:getList')
-export const refreshPrList = () => typedInvoke('pr:refreshList')
+export const getPrList = (): Promise<IpcChannelMap['pr:getList']['result']> =>
+  typedInvoke('pr:getList')
+export const refreshPrList = (): Promise<IpcChannelMap['pr:refreshList']['result']> =>
+  typedInvoke('pr:refreshList')
 
 // Sprint DB file-watcher broadcast
 export const onExternalSprintChange = onBroadcast<BroadcastChannels['sprint:externalChange']>(
@@ -81,7 +117,8 @@ export const onExternalSprintChange = onBroadcast<BroadcastChannels['sprint:exte
 )
 
 // Auth status
-export const authStatus = () => typedInvoke('auth:status')
+export const authStatus = (): Promise<IpcChannelMap['auth:status']['result']> =>
+  typedInvoke('auth:status')
 
 // Template CRUD
 export const templates = {
@@ -205,10 +242,12 @@ export const review = {
 }
 
 // Spec Synthesizer
-export const synthesizeSpec = (args: SynthesizeRequest) =>
+export const synthesizeSpec = (args: SynthesizeRequest): Promise<IpcChannelMap['synthesizer:generate']['result']> =>
   typedInvoke('synthesizer:generate', args)
-export const reviseSpec = (args: ReviseRequest) => typedInvoke('synthesizer:revise', args)
-export const cancelSynthesis = (streamId: string) => typedInvoke('synthesizer:cancel', streamId)
+export const reviseSpec = (args: ReviseRequest): Promise<IpcChannelMap['synthesizer:revise']['result']> =>
+  typedInvoke('synthesizer:revise', args)
+export const cancelSynthesis = (streamId: string): Promise<IpcChannelMap['synthesizer:cancel']['result']> =>
+  typedInvoke('synthesizer:cancel', streamId)
 export const onSynthesizerChunk =
   onBroadcast<BroadcastChannels['synthesizer:chunk']>('synthesizer:chunk')
 

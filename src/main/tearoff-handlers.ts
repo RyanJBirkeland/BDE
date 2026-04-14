@@ -60,8 +60,7 @@ export { onPersistBounds, SHARED_WEB_PREFERENCES }
 
 export function registerTearoffHandlers(): void {
   // tearoff:create — renderer requests a new tear-off window
-  safeHandle(
-    'tearoff:create',
+  safeHandle('tearoff:create',
     (
       _event,
       payload: {
@@ -126,8 +125,7 @@ export function registerTearoffHandlers(): void {
   // tearoff:closeConfirmed — tear-off window sends its close-dialog action back to the
   // main process. Routes to the per-window dynamic response channel that handleCloseRequest
   // is listening on via ipcMain.once.
-  safeHandle(
-    'tearoff:closeConfirmed',
+  safeHandle('tearoff:closeConfirmed',
     (event, payload: { action: 'return' | 'close'; remember: boolean }) => {
       // Identify which tear-off window sent this response
       const senderWin = BrowserWindow.fromWebContents(event.sender)
@@ -152,8 +150,7 @@ export function registerTearoffHandlers(): void {
   )
 
   // tearoff:startCrossWindowDrag — renderer initiates a cross-window drag
-  safeHandle(
-    'tearoff:startCrossWindowDrag',
+  safeHandle('tearoff:startCrossWindowDrag',
     (_event, payload: { windowId: string; viewKey: string }) => {
       return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
     }
