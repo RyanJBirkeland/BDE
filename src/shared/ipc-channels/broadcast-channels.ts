@@ -81,7 +81,7 @@ export interface BroadcastChannels {
   // Tearoff window tab/drag events (pushed via webContents.send from tearoff-manager.ts)
   'tearoff:confirmClose': { windowId: string }
   'tearoff:tabReturned': { windowId: string; view: string }
-  'tearoff:tabRemoved': { windowId: string; view: string; newWindow?: boolean }
+  'tearoff:tabRemoved': { windowId: string; sourcePanelId: string; sourceTabIndex: number }
   'tearoff:dragIn': { viewKey: string; x: number; y: number }
   'tearoff:dragMove': { x: number; y: number }
   'tearoff:dragDone': void
