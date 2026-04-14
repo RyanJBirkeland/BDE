@@ -61,9 +61,9 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
     prompt += PLAYGROUND_INSTRUCTIONS
   }
 
-  // Task content (simple append)
+  // Task content
   if (taskContent) {
-    prompt += '\n\n' + taskContent
+    prompt += '\n\n## Task\n\n<user_task>\n' + taskContent + '\n</user_task>'
   }
 
   // Cross-repo contract
@@ -71,7 +71,7 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
     prompt += '\n\n## Cross-Repo Contract\n\n'
     prompt += 'This task involves API contracts with other repositories. '
     prompt += 'Follow these contract specifications exactly:\n\n'
-    prompt += crossRepoContract
+    prompt += `<cross_repo_contract>\n${crossRepoContract}\n</cross_repo_contract>`
   }
 
   // Upstream task context
