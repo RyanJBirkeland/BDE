@@ -16,6 +16,7 @@ import {
   buildScratchpadSection
 } from './prompt-sections'
 import type { BuildPromptInput } from './prompt-composer'
+import { PROMPT_TRUNCATION } from './prompt-constants'
 
 // ---------------------------------------------------------------------------
 // Task Class — heuristic classifier + output cap hints
@@ -159,18 +160,13 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
     prompt += 'Address every section — especially **Files to Change**, **How to Test**, '
     prompt += 'and **Out of Scope**. If the spec lists test files to create or modify, '
     prompt += 'writing those tests is REQUIRED, not optional.\n\n'
-    // 8000 chars (~2000 words) covers the CLAUDE.md "under 500 words" guideline with
-    // headroom for well-structured specs including Files to Change + How to Test +
-    // Out of Scope sections. Previous 2000-char cap was silently truncating every
-    // mid-sized spec, cutting off the Files to Change / How to Test sections and
-    // causing agents to skip test writing. See 2026-04-11 RCA.
-    const MAX_TASK_CONTENT_CHARS = 8000
-    const truncatedContent = truncateSpec(taskContent, MAX_TASK_CONTENT_CHARS)
-    const wasTruncated = taskContent.length > MAX_TASK_CONTENT_CHARS
-    prompt += truncatedContent
+    const truncatedContent = truncateSpec(taskContent, PROMPT_TRUNCATION.TASK_SPEC_CHARS)
+    const wasTruncated = taskContent.length > PROMPT_TRUNCATION.TASK_SPEC_CHARS
+    prompt += `<user_spec>\n${truncatedContent}`
     if (wasTruncated) {
-      prompt += `\n\n[spec truncated at ${MAX_TASK_CONTENT_CHARS} chars — see full spec in task DB]`
+      prompt += `\n\n[spec truncated at ${PROMPT_TRUNCATION.TASK_SPEC_CHARS} chars — see full spec in task DB]`
     }
+    prompt += '\n</user_spec>'
   }
 
   // Cross-repo contract
@@ -178,7 +174,7 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
     prompt += '\n\n## Cross-Repo Contract\n\n'
     prompt += 'This task involves API contracts with other repositories. '
     prompt += 'Follow these contract specifications exactly:\n\n'
-    prompt += crossRepoContract
+    prompt += `<cross_repo_contract>\n${crossRepoContract}\n</cross_repo_contract>`
   }
 
   // Upstream task context

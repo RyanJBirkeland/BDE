@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { buildReviewerPrompt } from '../prompt-composer-reviewer'
+import {
+  buildReviewerPrompt,
+  buildStructuredReviewPrompt,
+  buildInteractiveReviewPrompt
+} from '../prompt-composer-reviewer'
 import type { ReviewResult } from '../../../shared/types'
 
 const reviewSeed: ReviewResult = {
@@ -95,5 +99,37 @@ describe('buildReviewerPrompt', () => {
       })
       expect(prompt).not.toContain('Respond with ONLY a valid JSON object')
     })
+  })
+})
+
+describe('direct builder exports', () => {
+  it('buildStructuredReviewPrompt produces JSON schema output format', () => {
+    const prompt = buildStructuredReviewPrompt({
+      agentType: 'reviewer',
+      taskContent: 'Fix auth bug',
+      diff: '+ new line',
+      branch: 'fix/auth'
+    })
+    expect(prompt).toContain('qualityScore')
+    expect(prompt).toContain('perFile')
+  })
+
+  it('buildInteractiveReviewPrompt produces conversational format', () => {
+    const prompt = buildInteractiveReviewPrompt({
+      agentType: 'reviewer',
+      taskContent: 'Fix auth bug',
+      diff: '+ new line',
+      branch: 'fix/auth',
+      messages: [{ role: 'user', content: 'what about line 5?' }]
+    })
+    expect(prompt).toContain('what about line 5?')
+    expect(prompt).not.toContain('qualityScore')
+  })
+
+  it('buildReviewerPrompt delegates to correct builder by mode', () => {
+    const reviewPrompt = buildReviewerPrompt({ agentType: 'reviewer', reviewerMode: 'review', diff: '', taskContent: '' })
+    const chatPrompt = buildReviewerPrompt({ agentType: 'reviewer', reviewerMode: 'chat', diff: '', taskContent: '' })
+    expect(reviewPrompt).toContain('qualityScore')
+    expect(chatPrompt).not.toContain('qualityScore')
   })
 })

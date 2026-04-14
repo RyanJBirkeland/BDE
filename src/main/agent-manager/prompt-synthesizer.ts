@@ -80,12 +80,12 @@ export function buildSynthesizerPrompt(input: BuildPromptInput): string {
 
   // Codebase context
   if (codebaseContext) {
-    prompt += '\n\n## Codebase Context\n\n' + codebaseContext
+    prompt += '\n\n## Codebase Context\n\n<codebase_context>\n' + codebaseContext + '\n</codebase_context>'
   }
 
   // Generation instructions
   if (taskContent) {
-    prompt += '\n\n## Generation Instructions\n\n' + taskContent
+    prompt += '\n\n## Generation Instructions\n\n<generation_instructions>\n' + taskContent + '\n</generation_instructions>'
   }
 
   // Upstream task context

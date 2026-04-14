@@ -54,9 +54,9 @@ export function buildCopilotPrompt(input: BuildPromptInput): string {
   if (input.formContext) {
     const { title, repo, spec } = input.formContext
     prompt += '\n\n## Task Context\n\n'
-    prompt += `Title: "${title}"\nRepo: ${repo}\n`
+    prompt += `Title:\n<task_title>\n${title}\n</task_title>\nRepo: ${repo}\n`
     if (spec) {
-      prompt += `\nSpec draft:\n${spec}\n`
+      prompt += `\nSpec draft:\n<spec_draft>\n${spec}\n</spec_draft>\n`
     } else {
       prompt += '\n(no spec yet)\n'
     }
@@ -65,7 +65,7 @@ export function buildCopilotPrompt(input: BuildPromptInput): string {
   // Conversation history
   if (messages) {
     const MAX_HISTORY_TURNS = 10
-    const recentMessages =
+    const cappedConversationHistory =
       messages.length > MAX_HISTORY_TURNS
         ? messages.slice(messages.length - MAX_HISTORY_TURNS)
         : messages
@@ -74,8 +74,8 @@ export function buildCopilotPrompt(input: BuildPromptInput): string {
     } else {
       prompt += '\n\n## Conversation\n\n'
     }
-    for (const msg of recentMessages) {
-      prompt += `**${msg.role}**: ${msg.content}\n\n`
+    for (const msg of cappedConversationHistory) {
+      prompt += `**${msg.role}**: <chat_message>${msg.content}</chat_message>\n\n`
     }
   }
 

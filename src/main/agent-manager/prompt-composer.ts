@@ -6,12 +6,12 @@ import { buildCopilotPrompt } from './prompt-copilot'
 import { buildSynthesizerPrompt } from './prompt-synthesizer'
 import { buildReviewerPrompt } from './prompt-composer-reviewer'
 import { createLogger } from '../logger'
+import type { AgentType } from '../agent-system/personality/types'
 
 export { classifyTask, type TaskClass } from './prompt-pipeline'
+export type { AgentType } from '../agent-system/personality/types'
 
 const logger = createLogger('prompt-composer')
-
-export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
 
 export interface BuildPromptInput {
   agentType: AgentType
@@ -59,6 +59,10 @@ export function buildAgentPrompt(input: BuildPromptInput): string {
     case 'reviewer':
       prompt = buildReviewerPrompt(input)
       break
+    default: {
+      const _exhaustive: never = agentType
+      throw new Error(`[prompt-composer] Unknown agent type: ${_exhaustive}`)
+    }
   }
 
   if (prompt.length < MIN_PROMPT_LENGTH) {
