@@ -14,6 +14,7 @@ import {
 } from '../lib/optimisticUpdateManager'
 import { getRepoPaths } from '../services/git'
 import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt } from '../services/sprint'
+import { spawnLocal } from '../services/agents'
 
 export interface CreateTicketInput {
   title: string
@@ -319,7 +320,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         return
       }
 
-      const result = await window.api.agents.spawnLocal({
+      const result = await spawnLocal({
         task: task.spec ?? task.title,
         repoPath
       })

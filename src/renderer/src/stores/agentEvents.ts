@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { AgentEvent } from '../../../shared/types'
+import { subscribeToAgentEvents, getAgentEventHistory } from '../services/agents'
 
 const MAX_EVENTS_PER_AGENT = 2000
 const EMPTY_EVENTS: AgentEvent[] = []
@@ -33,7 +34,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
     if (unsubscribe) {
       return unsubscribe // already subscribed
     }
-    unsubscribe = window.api.agents.events.onEvent(({ agentId, event }) => {
+    unsubscribe = subscribeToAgentEvents(({ agentId, event }) => {
       set((state) => {
         const existing = state.events[agentId] ?? []
         const updated = [...existing, event]
@@ -58,7 +59,7 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
   },
 
   async loadHistory(agentId: string) {
-    const history = await window.api.agents.events.getHistory(agentId)
+    const history = await getAgentEventHistory(agentId)
     const wasEvicted = history.length > MAX_EVENTS_PER_AGENT
     set((state) => ({
       events: {

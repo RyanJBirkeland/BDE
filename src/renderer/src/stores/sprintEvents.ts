@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { TaskOutputEvent } from '../../../shared/types'
 import type { AgentEvent } from '../../../shared/types'
+import { subscribeToAgentEvents } from '../services/agents'
 
 /** Union of event sources used in the sprint event pipeline. */
 export type AnyTaskEvent = TaskOutputEvent | AgentEvent
@@ -40,7 +41,7 @@ export const useSprintEvents = create<SprintEventsState>((set) => ({
     if (unsubscribe) {
       return unsubscribe // already subscribed
     }
-    unsubscribe = window.api.agents.events?.onEvent(({ agentId, event }) => {
+    unsubscribe = subscribeToAgentEvents(({ agentId, event }) => {
       set((s) => {
         const existing = s.taskEvents[agentId] ?? []
         let updated = [...existing, event]

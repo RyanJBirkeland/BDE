@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createLogPollerActions, type LogPollerState } from '../lib/logPoller'
+import { getProcesses, spawnLocal, tailLog } from '../services/agents'
 
 export interface LocalAgentProcess {
   pid: number
@@ -60,7 +61,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
 
         fetchProcesses: async (): Promise<void> => {
           try {
-            const procs = await window.api.agents.getProcesses()
+            const procs = await getProcesses()
             set({ processes: procs })
           } catch (err) {
             console.error('Failed to fetch agent processes:', err)
@@ -74,7 +75,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
         spawnAgent: async (args) => {
           set({ isSpawning: true })
           try {
-            const result = await window.api.agents.spawnLocal(args)
+            const result = await spawnLocal(args)
             set((s) => ({
               spawnedAgents: [
                 ...s.spawnedAgents,
@@ -108,7 +109,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
 
         startLogPolling: (logPath): (() => void) => {
           return poller.startLogPolling((fromByte) =>
-            window.api.agents.tailLog({ logPath, fromByte })
+            tailLog({ logPath, fromByte })
           )
         },
 

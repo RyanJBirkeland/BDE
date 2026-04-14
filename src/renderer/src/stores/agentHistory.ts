@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { AgentMeta } from '../../../shared/types'
 import { createLogPollerActions, type LogPollerState } from '../lib/logPoller'
 import { AGENT_LIST_FETCH_LIMIT } from '../lib/constants'
+import { listAgents, readAgentLog, importAgent } from '../services/agents'
 
 /**
  * Agent runtime monitoring store for Agents view and log streaming.
@@ -53,7 +54,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
     fetchAgents: async (): Promise<void> => {
       set({ fetchError: null })
       try {
-        const agents = await window.api.agents.list({ limit: AGENT_LIST_FETCH_LIMIT })
+        const agents = await listAgents({ limit: AGENT_LIST_FETCH_LIMIT })
         set({
           agents,
           fetched: true,
@@ -75,7 +76,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
         logTrimmedLines: 0
       })
       if (id) {
-        poller.startLogPolling((fromByte) => window.api.agents.readLog({ id, fromByte }))
+        poller.startLogPolling((fromByte) => readAgentLog({ id, fromByte }))
       }
     },
 
@@ -97,7 +98,7 @@ export const useAgentHistoryStore = create<AgentHistoryState>((set, get) => {
 
     importExternal: async (meta, content): Promise<void> => {
       try {
-        await window.api.agents.import({ meta, content })
+        await importAgent({ meta, content })
         await get().fetchAgents()
       } catch (err) {
         console.error('Failed to import agent:', err)
