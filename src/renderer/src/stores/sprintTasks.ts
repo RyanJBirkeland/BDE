@@ -297,10 +297,10 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   },
 
   launchTask: async (task): Promise<void> => {
-    const { tasks, updateTask } = get()
+    const { updateTask } = get()
     // Block launch when WIP limit reached (unless task is already active)
     if (task.status !== TASK_STATUS.ACTIVE) {
-      const activeCount = tasks.filter((t) => t.status === TASK_STATUS.ACTIVE).length
+      const activeCount = selectActiveTaskCount(get())
       if (!canLaunchTask(activeCount, WIP_LIMIT_IN_PROGRESS)) {
         toast.error(
           `In Progress is full (${WIP_LIMIT_IN_PROGRESS}/${WIP_LIMIT_IN_PROGRESS}) — finish or stop a task first`

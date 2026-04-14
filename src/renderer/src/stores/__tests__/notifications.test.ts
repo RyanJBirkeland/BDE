@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useNotificationsStore } from '../notifications'
+import { useNotificationsStore, selectUnreadCount } from '../notifications'
 
 describe('notifications store', () => {
   beforeEach(() => {
@@ -96,18 +96,18 @@ describe('notifications store', () => {
     expect(notifications.every((n) => n.read)).toBe(true)
   })
 
-  it('getUnreadCount returns correct count', () => {
+  it('selectUnreadCount returns correct count', () => {
     const { addNotification, markAsRead } = useNotificationsStore.getState()
     addNotification({ type: 'agent_completed', title: 'First', message: 'Message 1' })
     addNotification({ type: 'pr_merged', title: 'Second', message: 'Message 2' })
     addNotification({ type: 'agent_failed', title: 'Third', message: 'Message 3' })
 
-    let unreadCount = useNotificationsStore.getState().getUnreadCount()
+    let unreadCount = selectUnreadCount(useNotificationsStore.getState())
     expect(unreadCount).toBe(3)
 
     const firstId = useNotificationsStore.getState().notifications[0].id
     markAsRead(firstId)
-    unreadCount = useNotificationsStore.getState().getUnreadCount()
+    unreadCount = selectUnreadCount(useNotificationsStore.getState())
     expect(unreadCount).toBe(2)
   })
 

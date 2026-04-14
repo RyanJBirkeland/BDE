@@ -21,6 +21,13 @@ interface SprintUIState {
   removeGeneratingId: (id: string) => void
 }
 
+export const selectDoneViewOpen = (s: SprintUIState): boolean => s.doneViewOpen
+export const selectConflictDrawerOpen = (s: SprintUIState): boolean => s.conflictDrawerOpen
+export const selectHealthCheckDrawerOpen = (s: SprintUIState): boolean => s.healthCheckDrawerOpen
+export const selectQuickCreateOpen = (s: SprintUIState): boolean => s.quickCreateOpen
+export const selectPipelineDensity = (s: SprintUIState): PipelineDensity => s.pipelineDensity
+export const selectGeneratingIds = (s: SprintUIState): string[] => s.generatingIds
+
 export const selectIsGenerating =
   (taskId: string) =>
   (s: SprintUIState): boolean =>
