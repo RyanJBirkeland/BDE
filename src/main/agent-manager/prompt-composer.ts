@@ -36,34 +36,27 @@ export interface BuildPromptInput {
   reviewSeed?: import('../../shared/types').ReviewResult
 }
 
+type PromptBuilder = (input: BuildPromptInput) => string
+
+/** Registry mapping each agent type to its prompt builder. Add new agent types here. */
+const PROMPT_BUILDERS: Record<AgentType, PromptBuilder> = {
+  pipeline: buildPipelinePrompt,
+  assistant: buildAssistantPrompt,
+  adhoc: buildAssistantPrompt,
+  copilot: buildCopilotPrompt,
+  synthesizer: buildSynthesizerPrompt,
+  reviewer: buildReviewerPrompt,
+}
+
 const MIN_PROMPT_LENGTH = 200
 
 export function buildAgentPrompt(input: BuildPromptInput): string {
   const { agentType } = input
 
-  let prompt: string
-  switch (agentType) {
-    case 'pipeline':
-      prompt = buildPipelinePrompt(input)
-      break
-    case 'assistant':
-    case 'adhoc':
-      prompt = buildAssistantPrompt(input)
-      break
-    case 'copilot':
-      prompt = buildCopilotPrompt(input)
-      break
-    case 'synthesizer':
-      prompt = buildSynthesizerPrompt(input)
-      break
-    case 'reviewer':
-      prompt = buildReviewerPrompt(input)
-      break
-    default: {
-      const _exhaustive: never = agentType
-      throw new Error(`[prompt-composer] Unknown agent type: ${_exhaustive}`)
-    }
-  }
+  const builder = PROMPT_BUILDERS[agentType]
+  if (!builder) throw new Error(`[prompt-composer] Unknown agent type: ${agentType}`)
+
+  const prompt = builder(input)
 
   if (prompt.length < MIN_PROMPT_LENGTH) {
     throw new Error(

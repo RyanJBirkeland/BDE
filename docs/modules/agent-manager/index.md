@@ -21,7 +21,7 @@ Source: `src/main/agent-manager/`
 | `prompt-assistant.ts` | Assistant and adhoc agent prompt builder | `buildAssistantPrompt` |
 | `prompt-synthesizer.ts` | Synthesizer agent prompt builder (single-turn spec generation) | `buildSynthesizerPrompt` |
 | `prompt-copilot.ts` | Copilot agent prompt builder (interactive spec drafting) | `buildCopilotPrompt` |
-| `prompt-composer.ts` | Central dispatcher — routes `BuildPromptInput` to per-agent builders | `buildAgentPrompt`, `BuildPromptInput`, `AgentType` |
+| `prompt-composer.ts` | Central dispatcher — `PROMPT_BUILDERS` registry maps each `AgentType` to its builder; routes `BuildPromptInput` to the registered builder | `buildAgentPrompt`, `BuildPromptInput`, `AgentType` |
 | `prompt-constants.ts` | Truncation limits for all prompt builders | `PROMPT_TRUNCATION` |
 | `git-operations.ts` | Shared git utilities for agent completion and code review — rebase, push, commit, PR creation | `generatePrBody`, `rebaseOntoMain`, `pushBranch`, `checkExistingPr`, `findOrCreatePR`, `createNewPr`, `sanitizeForGit`, `autoCommitIfDirty`, `executeSquashMerge`, `cleanupWorktreeAndBranch` |
 | `index.ts` | `AgentManagerImpl` class — drain loop, watchdog, shutdown, `_validateAndClaimTask` (fresh-status guard), `onTaskTerminal` | `AgentManagerImpl`, `createAgentManager`, `AgentManager`, `AgentManagerStatus` |
