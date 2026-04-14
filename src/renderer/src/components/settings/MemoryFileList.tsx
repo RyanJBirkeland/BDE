@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Brain, FileText, Search, X } from 'lucide-react'
+import { Brain, FileText, Search } from 'lucide-react'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import type { MemorySearchResult } from '../../services/memory'
 import type { MemoryFile } from './useMemoryFiles'
+import { MemorySearch } from './MemorySearch'
 
 interface FileGroup {
   label: string
@@ -205,27 +206,11 @@ export function MemoryFileList({
         </div>
       )}
 
-      <div className="memory-sidebar__search">
-        <div className="memory-sidebar__search-input-wrapper">
-          <Search size={16} className="memory-sidebar__search-icon" />
-          <input
-            className="memory-sidebar__search-input"
-            value={searchQuery}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search memory files..."
-          />
-          {searchQuery && (
-            <button
-              className="memory-sidebar__search-clear"
-              onClick={onClearSearch}
-              title="Clear search"
-              aria-label="Clear search"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-      </div>
+      <MemorySearch
+        searchQuery={searchQuery}
+        onSearch={onSearch}
+        onClearSearch={onClearSearch}
+      />
 
       <div className="memory-sidebar__list" ref={sidebarRef}>
         {searchQuery ? (
