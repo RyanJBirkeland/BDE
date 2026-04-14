@@ -1,37 +1,27 @@
 import './TopBar.css'
 import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  GitMerge,
-  GitPullRequest,
-  Trash2,
-  Loader2,
-  Rocket,
-  ChevronDown,
-  Sparkles,
-  X
-} from 'lucide-react'
+import { ChevronDown, Sparkles } from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
-import { useConfirm, ConfirmModal } from '../ui/ConfirmModal'
-import { toast } from '../../stores/toasts'
+import { ConfirmModal } from '../ui/ConfirmModal'
 import { ReviewQueue } from './ReviewQueue'
 import { VARIANTS } from '../../lib/motion'
 import { useReviewActions } from '../../hooks/useReviewActions'
 import { useTaskAutoSelect } from '../../hooks/useTaskAutoSelect'
+import { useBatchActions } from '../../hooks/useBatchActions'
 import { BranchBar } from './BranchBar'
 import { ApproveDropdown } from './ApproveDropdown'
 import { useReviewPartnerStore } from '../../stores/reviewPartner'
 import { ReviewActionsBar } from './ReviewActionsBar'
+import { BatchActionsToolbar } from './BatchActionsToolbar'
 
 export function TopBar(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
   const selectedBatchIds = useCodeReviewStore((s) => s.selectedBatchIds)
   const clearBatch = useCodeReviewStore((s) => s.clearBatch)
   const tasks = useSprintTasks((s) => s.tasks)
-  const loadData = useSprintTasks((s) => s.loadData)
   const task = tasks.find((t) => t.id === selectedTaskId)
-  const { confirm, confirmProps: batchConfirmProps } = useConfirm()
   const panelOpen = useReviewPartnerStore((s) => s.panelOpen)
   const togglePanel = useReviewPartnerStore((s) => s.togglePanel)
   const reviewResult = useReviewPartnerStore((s) =>
@@ -40,7 +30,6 @@ export function TopBar(): React.JSX.Element {
   const branch = reviewResult?.findings.branch
 
   const [taskSwitcherOpen, setTaskSwitcherOpen] = useState(false)
-  const [batchActionInFlight, setBatchActionInFlight] = useState<string | null>(null)
   const taskSwitcherRef = useRef<HTMLDivElement>(null)
 
   const selectedTasks = tasks.filter((t) => selectedBatchIds.has(t.id) && t.status === 'review')
@@ -48,6 +37,14 @@ export function TopBar(): React.JSX.Element {
 
   // Call hook unconditionally (Rules of Hooks), but only use ghConfigured in batch mode
   const { ghConfigured } = useReviewActions()
+  const {
+    batchActionInFlight,
+    confirmProps: batchConfirmProps,
+    handleBatchMergeAll,
+    handleBatchShipAll,
+    handleBatchCreatePr,
+    handleBatchDiscard
+  } = useBatchActions()
 
   // Auto-select review tasks when current selection becomes invalid
   useTaskAutoSelect()
@@ -61,150 +58,6 @@ export function TopBar(): React.JSX.Element {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  const handleBatchMergeAll = async (): Promise<void> => {
-    const ok = await confirm({
-      title: `Merge ${selectedTasks.length} Tasks`,
-      message: `Merge all ${selectedTasks.length} selected tasks into your local branch using squash strategy?\n\n${selectedTasks.map((t) => `• ${t.title}`).join('\n')}`,
-      confirmLabel: 'Merge All',
-      variant: 'default'
-    })
-    if (!ok) return
-
-    setBatchActionInFlight('batchMerge')
-    let succeeded = 0
-    let failed = 0
-
-    for (const batchTask of selectedTasks) {
-      try {
-        const result = await window.api.review.mergeLocally({
-          taskId: batchTask.id,
-          strategy: 'squash'
-        })
-        if (result.success) succeeded++
-        else failed++
-      } catch {
-        failed++
-      }
-    }
-
-    setBatchActionInFlight(null)
-    clearBatch()
-    loadData()
-
-    if (failed === 0) {
-      toast.success(`Merged ${succeeded} tasks`)
-    } else {
-      toast.error(`Merged ${succeeded}, failed ${failed}`)
-    }
-  }
-
-  const handleBatchShipAll = async (): Promise<void> => {
-    const ok = await confirm({
-      title: `Ship ${selectedTasks.length} Tasks`,
-      message: `Merge all ${selectedTasks.length} selected tasks into main using squash, push to origin, and mark done?\n\n${selectedTasks.map((t) => `• ${t.title}`).join('\n')}\n\nThis will merge + push in one step.`,
-      confirmLabel: 'Ship All',
-      variant: 'default'
-    })
-    if (!ok) return
-
-    setBatchActionInFlight('batchShip')
-    let succeeded = 0
-    let failed = 0
-
-    for (const batchTask of selectedTasks) {
-      try {
-        const result = await window.api.review.shipIt({
-          taskId: batchTask.id,
-          strategy: 'squash'
-        })
-        if (result.success) succeeded++
-        else failed++
-      } catch {
-        failed++
-      }
-    }
-
-    setBatchActionInFlight(null)
-    clearBatch()
-    loadData()
-
-    if (failed === 0) {
-      toast.success(`Shipped ${succeeded} tasks`)
-    } else {
-      toast.error(`Shipped ${succeeded}, failed ${failed}`)
-    }
-  }
-
-  const handleBatchCreatePr = async (): Promise<void> => {
-    const ok = await confirm({
-      title: `Create ${selectedTasks.length} PRs`,
-      message: `Push branches to GitHub and create public PRs for all ${selectedTasks.length} selected tasks?\n\n${selectedTasks.map((t) => `• ${t.title}`).join('\n')}\n\nThis action cannot be undone.`,
-      confirmLabel: 'Create PRs',
-      variant: 'default'
-    })
-    if (!ok) return
-
-    setBatchActionInFlight('batchPr')
-    let succeeded = 0
-    let failed = 0
-
-    for (const batchTask of selectedTasks) {
-      try {
-        await window.api.review.createPr({
-          taskId: batchTask.id,
-          title: batchTask.title,
-          body: batchTask.spec || batchTask.prompt || ''
-        })
-        succeeded++
-      } catch {
-        failed++
-      }
-    }
-
-    setBatchActionInFlight(null)
-    clearBatch()
-    loadData()
-
-    if (failed === 0) {
-      toast.success(`Created ${succeeded} PRs`)
-    } else {
-      toast.error(`Created ${succeeded} PRs, failed ${failed}`)
-    }
-  }
-
-  const handleBatchDiscard = async (): Promise<void> => {
-    const ok = await confirm({
-      title: `Discard ${selectedTasks.length} Tasks`,
-      message: `Discard all work for ${selectedTasks.length} selected tasks? This cannot be undone.\n\n${selectedTasks.map((t) => `• ${t.title}`).join('\n')}`,
-      confirmLabel: 'Discard All',
-      variant: 'danger'
-    })
-    if (!ok) return
-
-    setBatchActionInFlight('batchDiscard')
-    let succeeded = 0
-    let failed = 0
-
-    for (const batchTask of selectedTasks) {
-      try {
-        await window.api.review.discard({ taskId: batchTask.id })
-        succeeded++
-      } catch {
-        failed++
-      }
-    }
-
-    setBatchActionInFlight(null)
-    clearBatch()
-    loadData()
-
-    if (failed === 0) {
-      toast.success(`Discarded ${succeeded} tasks`)
-    } else {
-      toast.error(`Discarded ${succeeded} tasks, failed ${failed}`)
-    }
-  }
 
   const hasAnyReviewTask = tasks.some((t) => t.status === 'review')
 
@@ -222,62 +75,16 @@ export function TopBar(): React.JSX.Element {
               exit="exit"
               transition={{ duration: 0.12 }}
             >
-              <span className="cr-topbar__batch-count">{selectedTasks.length} tasks selected</span>
-              <button
-                className="cr-topbar__btn cr-topbar__btn--primary"
-                onClick={handleBatchMergeAll}
-                disabled={!!batchActionInFlight}
-              >
-                {batchActionInFlight === 'batchMerge' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <GitMerge size={14} />
-                )}{' '}
-                Merge All
-              </button>
-              <button
-                className="cr-topbar__btn cr-topbar__btn--ship"
-                onClick={handleBatchShipAll}
-                disabled={!!batchActionInFlight || !ghConfigured}
-              >
-                {batchActionInFlight === 'batchShip' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <Rocket size={14} />
-                )}{' '}
-                Ship All
-              </button>
-              <button
-                className="cr-topbar__btn cr-topbar__btn--secondary"
-                onClick={handleBatchCreatePr}
-                disabled={!!batchActionInFlight || !ghConfigured}
-              >
-                {batchActionInFlight === 'batchPr' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <GitPullRequest size={14} />
-                )}{' '}
-                Create PRs
-              </button>
-              <button
-                className="cr-topbar__btn cr-topbar__btn--ghost"
-                onClick={handleBatchDiscard}
-                disabled={!!batchActionInFlight}
-              >
-                {batchActionInFlight === 'batchDiscard' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <Trash2 size={14} />
-                )}{' '}
-                Discard All
-              </button>
-              <button
-                className="cr-topbar__btn cr-topbar__btn--ghost"
-                onClick={clearBatch}
-                disabled={!!batchActionInFlight}
-              >
-                <X size={14} /> Clear
-              </button>
+              <BatchActionsToolbar
+                selectedCount={selectedTasks.length}
+                batchActionInFlight={batchActionInFlight}
+                ghConfigured={ghConfigured}
+                onMergeAll={() => handleBatchMergeAll(selectedTasks)}
+                onShipAll={() => handleBatchShipAll(selectedTasks, ghConfigured)}
+                onCreatePrs={() => handleBatchCreatePr(selectedTasks, ghConfigured)}
+                onDiscard={() => handleBatchDiscard(selectedTasks)}
+                onClear={clearBatch}
+              />
             </motion.div>
           ) : (
             <motion.span
@@ -311,62 +118,16 @@ export function TopBar(): React.JSX.Element {
             exit="exit"
             transition={{ duration: 0.12 }}
           >
-            <span className="cr-topbar__batch-count">{selectedTasks.length} tasks selected</span>
-            <button
-              className="cr-topbar__btn cr-topbar__btn--primary"
-              onClick={handleBatchMergeAll}
-              disabled={!!batchActionInFlight}
-            >
-              {batchActionInFlight === 'batchMerge' ? (
-                <Loader2 size={14} className="spin" />
-              ) : (
-                <GitMerge size={14} />
-              )}{' '}
-              Merge All
-            </button>
-            <button
-              className="cr-topbar__btn cr-topbar__btn--ship"
-              onClick={handleBatchShipAll}
-              disabled={!!batchActionInFlight || !ghConfigured}
-            >
-              {batchActionInFlight === 'batchShip' ? (
-                <Loader2 size={14} className="spin" />
-              ) : (
-                <Rocket size={14} />
-              )}{' '}
-              Ship All
-            </button>
-            <button
-              className="cr-topbar__btn cr-topbar__btn--secondary"
-              onClick={handleBatchCreatePr}
-              disabled={!!batchActionInFlight || !ghConfigured}
-            >
-              {batchActionInFlight === 'batchPr' ? (
-                <Loader2 size={14} className="spin" />
-              ) : (
-                <GitPullRequest size={14} />
-              )}{' '}
-              Create PRs
-            </button>
-            <button
-              className="cr-topbar__btn cr-topbar__btn--ghost"
-              onClick={handleBatchDiscard}
-              disabled={!!batchActionInFlight}
-            >
-              {batchActionInFlight === 'batchDiscard' ? (
-                <Loader2 size={14} className="spin" />
-              ) : (
-                <Trash2 size={14} />
-              )}{' '}
-              Discard All
-            </button>
-            <button
-              className="cr-topbar__btn cr-topbar__btn--ghost"
-              onClick={clearBatch}
-              disabled={!!batchActionInFlight}
-            >
-              <X size={14} /> Clear
-            </button>
+            <BatchActionsToolbar
+              selectedCount={selectedTasks.length}
+              batchActionInFlight={batchActionInFlight}
+              ghConfigured={ghConfigured}
+              onMergeAll={() => handleBatchMergeAll(selectedTasks)}
+              onShipAll={() => handleBatchShipAll(selectedTasks, ghConfigured)}
+              onCreatePrs={() => handleBatchCreatePr(selectedTasks, ghConfigured)}
+              onDiscard={() => handleBatchDiscard(selectedTasks)}
+              onClear={clearBatch}
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -433,6 +194,7 @@ export function TopBar(): React.JSX.Element {
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmModal {...batchConfirmProps} />
     </div>
   )
 }

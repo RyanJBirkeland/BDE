@@ -10,7 +10,9 @@ Source: `src/renderer/src/hooks/`
 | `useIDEKeyboard.ts` | Registers IDE keyboard shortcuts (Cmd+S/W/O/B/J/P, terminal shortcuts) while the IDE view is active. | `useIDEKeyboard` |
 | `useIDEStateRestoration.ts` | On mount, reads `ide.state` from settings and restores rootPath, open tabs, active tab, and display preferences to the IDE store. | `useIDEStateRestoration` |
 | `useIDEUnsavedGuard.ts` | Registers a `beforeunload` handler that blocks page unload when any open IDE tab has unsaved changes. | `useIDEUnsavedGuard` |
-| `useSprintPipelineState.ts` | Centralises all store subscriptions for `SprintPipeline`. Returns tasks, selection, UI overlay state, and derived values (selectedTask, conflictingTasks, partition). | `useSprintPipelineState` |
-| `useAgentViewLifecycle.ts` | Registers the five view-lifecycle effects for AgentsView: event listener init, agent history fetch on view activation, event history load on selection change, spawn-modal window event, and scratchpad banner dismissed state. | `useAgentViewLifecycle` |
-| `useAgentViewCommands.ts` | Registers and unregisters the Spawn Agent and Clear Console commands in the command palette while AgentsView is mounted. | `useAgentViewCommands` |
-| `useAgentSlashCommands.ts` | Handles all slash commands typed into the AgentConsole input: `/stop`, `/retry`, `/focus`, `/checkpoint`, `/test`, `/scope`, `/status`. Returns `handleCommand`. | `useAgentSlashCommands` |
+| `useSprintPipelineState.ts` | Centralises all store subscriptions for SprintPipeline. Returns tasks, selection, UI overlay state, and derived values. | `useSprintPipelineState` |
+| `useAgentViewLifecycle.ts` | Registers the five view-lifecycle effects for AgentsView: event listener init, history fetch, event history load, spawn-modal listener, scratchpad banner check. | `useAgentViewLifecycle` |
+| `useAgentViewCommands.ts` | Registers and unregisters Spawn Agent and Clear Console commands in the command palette while AgentsView is mounted. | `useAgentViewCommands` |
+| `useAgentSlashCommands.ts` | Handles slash commands in AgentConsole: /stop, /retry, /focus, /checkpoint, /test, /scope, /status. Returns handleCommand. | `useAgentSlashCommands` |
+| `useBatchActions.ts` | Wraps useBatchReviewActions with confirm dialogs and in-flight state tracking for batch merge/ship/PR/discard. Used by TopBar. | `useBatchActions`, `BatchActionKey` |
+| `useGitCommands.ts` | Registers git operation commands (stage all, commit, push, switch branch) in the command palette. Extracted from GitTreeView. | `useGitCommands` |
