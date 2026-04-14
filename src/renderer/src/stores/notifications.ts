@@ -43,6 +43,9 @@ interface NotificationsStore {
   clearAll: () => void
 }
 
+export const selectUnreadCount = (state: NotificationsStore): number =>
+  state.notifications.filter((n) => !n.read).length
+
 let nextId = 0
 
 // Load notifications from localStorage

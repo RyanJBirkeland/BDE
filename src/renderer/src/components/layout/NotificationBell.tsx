@@ -7,7 +7,11 @@ import {
   GitPullRequestClosed,
   AlertTriangle
 } from 'lucide-react'
-import { useNotificationsStore, type NotificationType } from '../../stores/notifications'
+import {
+  useNotificationsStore,
+  selectUnreadCount,
+  type NotificationType
+} from '../../stores/notifications'
 import './NotificationBell.css'
 import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
 import { useSprintSelection } from '../../stores/sprintSelection'
@@ -46,12 +50,10 @@ export function NotificationBell(): React.JSX.Element {
   const notifications = useNotificationsStore((s) => s.notifications)
   const markAsRead = useNotificationsStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead)
-  const getUnreadCount = useNotificationsStore((s) => s.getUnreadCount)
+  const unreadCount = useNotificationsStore(selectUnreadCount)
   const setView = usePanelLayoutStore((s) => s.setView)
   const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
   const selectCodeReviewTask = useCodeReviewStore((s) => s.selectTask)
-
-  const unreadCount = getUnreadCount()
 
   // Close dropdown when clicking outside
   useEffect(() => {

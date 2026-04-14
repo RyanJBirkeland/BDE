@@ -17,6 +17,12 @@ interface SprintSelectionState {
   clearMultiSelection: () => void
 }
 
+export const selectSelectedTaskId = (s: SprintSelectionState): string | null => s.selectedTaskId
+export const selectSelectedTaskIds = (s: SprintSelectionState): Set<string> => s.selectedTaskIds
+export const selectLogDrawerTaskId = (s: SprintSelectionState): string | null => s.logDrawerTaskId
+export const selectDrawerOpen = (s: SprintSelectionState): boolean => s.drawerOpen
+export const selectSpecPanelOpen = (s: SprintSelectionState): boolean => s.specPanelOpen
+
 export const selectIsTaskSelected =
   (taskId: string) =>
   (s: SprintSelectionState): boolean =>

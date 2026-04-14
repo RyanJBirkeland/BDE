@@ -23,6 +23,11 @@ interface SprintFiltersState {
   clearAllFilters: () => void
 }
 
+export const selectStatusFilter = (s: SprintFiltersState): StatusFilter => s.statusFilter
+export const selectRepoFilter = (s: SprintFiltersState): string | null => s.repoFilter
+export const selectTagFilter = (s: SprintFiltersState): string | null => s.tagFilter
+export const selectSearchQuery = (s: SprintFiltersState): string => s.searchQuery
+
 export const useSprintFilters = create<SprintFiltersState>((set) => ({
   statusFilter: 'all',
   repoFilter: null,
