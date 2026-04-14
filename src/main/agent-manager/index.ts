@@ -116,9 +116,13 @@ export class AgentManagerImpl implements AgentManager {
   // Exposed via _ prefix for testability (private by convention, not keyword).
   _lastTaskDeps = new Map<string, { deps: TaskDependency[] | null; hash: string }>()
 
-  // F-t4-lifecycle-5: Idempotency guard to prevent double dependency resolution
-  // when watchdog and completion handler race.
-  private readonly _terminalCalled = new Set<string>()
+  // Idempotency guard — maps taskId to the in-flight terminal promise.
+  // Duplicate callers receive the same promise; the entry is deleted in finally.
+  private readonly _terminalCalled = new Map<string, Promise<void>>()
+
+  // Set to true when a terminal event fires so the next drain tick performs
+  // a full dep index rebuild (instead of the incremental refresh).
+  _depIndexDirty = false
 
   // Circuit breaker — pauses drain loop after consecutive spawn failures.
   private readonly _circuitBreaker: CircuitBreaker
@@ -217,7 +221,7 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   async onTaskTerminal(taskId: string, status: string): Promise<void> {
-    return handleTaskTerminal(taskId, status, this.onTaskTerminal.bind(this), {
+    await handleTaskTerminal(taskId, status, this.onTaskTerminal.bind(this), {
       metrics: this._metrics,
       depIndex: this._depIndex,
       epicIndex: this._epicIndex,
@@ -226,6 +230,7 @@ export class AgentManagerImpl implements AgentManager {
       terminalCalled: this._terminalCalled,
       logger: this.logger
     })
+    this._depIndexDirty = true
   }
 
   private resolveRepoPath(repoSlug: string): string | null {
@@ -441,8 +446,22 @@ export class AgentManagerImpl implements AgentManager {
     this._metrics.increment('drainLoopCount')
     const drainStart = Date.now()
 
-    // Incrementally update dependency index instead of full rebuild
-    const taskStatusMap = this._refreshDependencyIndex()
+    // Full rebuild on dirty flag (terminal event fired since last tick);
+    // otherwise incremental refresh.
+    let taskStatusMap: Map<string, string>
+    if (this._depIndexDirty) {
+      const allTasks = this.repo.getTasksWithDependencies()
+      this._depIndex.rebuild(allTasks)
+      this._lastTaskDeps.clear()
+      for (const task of allTasks) {
+        const deps = task.depends_on ?? null
+        this._lastTaskDeps.set(task.id, { deps, hash: computeDepsFingerprint(deps) })
+      }
+      taskStatusMap = new Map(allTasks.map((t) => [t.id, t.status]))
+      this._depIndexDirty = false
+    } else {
+      taskStatusMap = this._refreshDependencyIndex()
+    }
 
     const available = availableSlots(this._concurrency, this._activeAgents.size)
     if (available <= 0) return

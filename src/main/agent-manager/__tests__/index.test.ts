@@ -1108,19 +1108,79 @@ describe('createAgentManager', () => {
     it('guards against duplicate invocation for same taskId', async () => {
       const { resolveDependents } = await import('../resolve-dependents')
       vi.mocked(resolveDependents).mockClear()
+
+      // Make resolveDependents block so the first call stays in-flight
+      let resolveFirst!: () => void
+      vi.mocked(resolveDependents).mockImplementationOnce(() => {
+        return new Promise<void>((r) => { resolveFirst = r }) as unknown as void
+      })
+
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger)
 
-      // First call should succeed
-      await mgr.onTaskTerminal('task-1', 'done')
-      expect(vi.mocked(resolveDependents)).toHaveBeenCalledTimes(1)
+      // Start first call without awaiting
+      const p1 = mgr.onTaskTerminal('task-1', 'done')
 
-      // Second call with same taskId should be no-op
-      await mgr.onTaskTerminal('task-1', 'done')
-      expect(vi.mocked(resolveDependents)).toHaveBeenCalledTimes(1)
+      // Second call while first is in-flight should be a no-op
+      const p2 = mgr.onTaskTerminal('task-1', 'done')
       expect(logger.warn).toHaveBeenCalledWith(
-        '[agent-manager] onTaskTerminal duplicate for task-1'
+        '[agent-manager] onTaskTerminal duplicate for task-1 — returning in-flight promise'
       )
+
+      resolveFirst()
+      await Promise.all([p1, p2])
+      expect(vi.mocked(resolveDependents)).toHaveBeenCalledTimes(1)
+    })
+
+    it('duplicate call returns same in-flight promise', async () => {
+      const { resolveDependents } = await import('../resolve-dependents')
+      vi.mocked(resolveDependents).mockClear()
+
+      let resolveFirst!: () => void
+      vi.mocked(resolveDependents).mockImplementationOnce(() => {
+        return new Promise<void>((r) => { resolveFirst = r }) as unknown as void
+      })
+
+      const logger = makeLogger()
+      const mgr = createAgentManager(baseConfig, mockRepo, logger)
+
+      // Fire two calls without awaiting the first
+      const p1 = mgr.onTaskTerminal('task-1', 'done')
+      const p2 = mgr.onTaskTerminal('task-1', 'done')
+
+      // Both should be the same promise (or at least both resolve once work completes)
+      resolveFirst()
+      await Promise.all([p1, p2])
+
+      // resolveDependents called exactly once
+      expect(vi.mocked(resolveDependents)).toHaveBeenCalledTimes(1)
+    })
+
+    it('sets _depIndexDirty to true after terminal', async () => {
+      const { resolveDependents } = await import('../resolve-dependents')
+      vi.mocked(resolveDependents).mockClear()
+      const logger = makeLogger()
+      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+      expect(mgr._depIndexDirty).toBe(false)
+      await mgr.onTaskTerminal('task-1', 'done')
+      expect(mgr._depIndexDirty).toBe(true)
+    })
+
+    it('drain loop does full rebuild when _depIndexDirty', async () => {
+      const logger = makeLogger()
+      setupDefaultMocks()
+      vi.mocked(getTasksWithDependencies).mockReturnValue([])
+      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+
+      // _depIndex is the DependencyIndex created in the constructor — grab its rebuild spy
+      const rebuildSpy = vi.mocked(mgr._depIndex.rebuild)
+      rebuildSpy.mockClear()
+
+      mgr._depIndexDirty = true
+      await mgr._drainLoop()
+
+      expect(mgr._depIndexDirty).toBe(false)
+      expect(rebuildSpy).toHaveBeenCalled()
     })
   })
 
