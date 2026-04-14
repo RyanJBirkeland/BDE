@@ -2,6 +2,7 @@
  * Webhook query functions — all webhook CRUD operations.
  * Extracted from webhook-handlers.ts to separate data access from IPC handling.
  */
+import type Database from 'better-sqlite3'
 import { getDb } from '../db'
 import type { WebhookConfig } from '../services/webhook-service'
 
@@ -33,24 +34,27 @@ function rowToWebhook(row: WebhookRow): Webhook {
   }
 }
 
-export function listWebhooks(): Webhook[] {
-  const db = getDb()
-  const rows = db.prepare('SELECT * FROM webhooks ORDER BY created_at DESC').all() as WebhookRow[]
+export function listWebhooks(db?: Database.Database): Webhook[] {
+  const conn = db ?? getDb()
+  const rows = conn.prepare('SELECT * FROM webhooks ORDER BY created_at DESC').all() as WebhookRow[]
   return rows.map(rowToWebhook)
 }
 
-export function createWebhook(payload: {
-  url: string
-  events: string[]
-  secret?: string
-}): Webhook {
+export function createWebhook(
+  payload: {
+    url: string
+    events: string[]
+    secret?: string
+  },
+  db?: Database.Database
+): Webhook {
   if (!payload.url) throw new Error('URL is required')
   if (!payload.url.startsWith('http://') && !payload.url.startsWith('https://')) {
     throw new Error('URL must start with http:// or https://')
   }
 
-  const db = getDb()
-  const stmt = db.prepare(`
+  const conn = db ?? getDb()
+  const stmt = conn.prepare(`
     INSERT INTO webhooks (url, events, secret, enabled)
     VALUES (?, ?, ?, 1)
     RETURNING *
@@ -64,13 +68,16 @@ export function createWebhook(payload: {
   return rowToWebhook(row)
 }
 
-export function updateWebhook(payload: {
-  id: string
-  url?: string
-  events?: string[]
-  secret?: string | null
-  enabled?: boolean
-}): Webhook {
+export function updateWebhook(
+  payload: {
+    id: string
+    url?: string
+    events?: string[]
+    secret?: string | null
+    enabled?: boolean
+  },
+  db?: Database.Database
+): Webhook {
   if (!payload.id) throw new Error('Webhook ID is required')
 
   const updates: string[] = []
@@ -105,8 +112,8 @@ export function updateWebhook(payload: {
 
   params.push(payload.id)
 
-  const db = getDb()
-  const stmt = db.prepare(`
+  const conn = db ?? getDb()
+  const stmt = conn.prepare(`
     UPDATE webhooks
     SET ${updates.join(', ')}
     WHERE id = ?
@@ -121,11 +128,11 @@ export function updateWebhook(payload: {
   return rowToWebhook(row)
 }
 
-export function deleteWebhook(id: string): { success: boolean } {
+export function deleteWebhook(id: string, db?: Database.Database): { success: boolean } {
   if (!id) throw new Error('Webhook ID is required')
 
-  const db = getDb()
-  const stmt = db.prepare('DELETE FROM webhooks WHERE id = ?')
+  const conn = db ?? getDb()
+  const stmt = conn.prepare('DELETE FROM webhooks WHERE id = ?')
   const result = stmt.run(id)
 
   if (result.changes === 0) {
@@ -135,11 +142,11 @@ export function deleteWebhook(id: string): { success: boolean } {
   return { success: true }
 }
 
-export function getWebhookById(id: string): Webhook | null {
+export function getWebhookById(id: string, db?: Database.Database): Webhook | null {
   if (!id) throw new Error('Webhook ID is required')
 
-  const db = getDb()
-  const row = db.prepare('SELECT * FROM webhooks WHERE id = ?').get(id) as WebhookRow | undefined
+  const conn = db ?? getDb()
+  const row = conn.prepare('SELECT * FROM webhooks WHERE id = ?').get(id) as WebhookRow | undefined
 
   return row ? rowToWebhook(row) : null
 }
@@ -148,9 +155,9 @@ export function getWebhookById(id: string): Webhook | null {
  * Get all webhooks as WebhookConfig for webhook service.
  * Used by sprint-listeners.ts.
  */
-export function getWebhooks(): WebhookConfig[] {
-  const db = getDb()
-  const rows = db.prepare('SELECT * FROM webhooks').all() as Array<{
+export function getWebhooks(db?: Database.Database): WebhookConfig[] {
+  const conn = db ?? getDb()
+  const rows = conn.prepare('SELECT * FROM webhooks').all() as Array<{
     id: string
     url: string
     events: string

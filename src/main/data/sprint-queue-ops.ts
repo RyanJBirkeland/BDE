@@ -24,24 +24,24 @@ function checkWipLimit(db: Database.Database, maxActive: number): boolean {
   return count < maxActive
 }
 
-export function claimTask(id: string, claimedBy: string, maxActive?: number): SprintTask | null {
+export function claimTask(id: string, claimedBy: string, maxActive?: number, db?: Database.Database): SprintTask | null {
   try {
-    const db = getDb()
+    const conn = db ?? getDb()
     const now = nowIso()
 
     // Atomic WIP check + claim in single transaction with retry on SQLITE_BUSY
     const result = withRetry(() =>
-      db.transaction(() => {
+      conn.transaction(() => {
         // Optional WIP limit enforcement
-        if (maxActive !== undefined && !checkWipLimit(db, maxActive)) {
+        if (maxActive !== undefined && !checkWipLimit(conn, maxActive)) {
           return null
         }
 
-        // DL-13 & DL-18: Record audit trail before update (pass db for consistency)
-        const oldTask = fetchTask(id, db)
+        // DL-13 & DL-18: Record audit trail before update (pass conn for consistency)
+        const oldTask = fetchTask(id, conn)
         if (!oldTask) return null
 
-        const updated = db
+        const updated = conn
           .prepare(
             `UPDATE sprint_tasks
              SET status = 'active', claimed_by = ?, started_at = ?
@@ -56,7 +56,7 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number): Sp
             oldTask as unknown as Record<string, unknown>,
             { status: 'active', claimed_by: claimedBy, started_at: now },
             claimedBy,
-            db
+            conn
           )
         }
 
@@ -73,15 +73,15 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number): Sp
   }
 }
 
-export function releaseTask(id: string, claimedBy: string): SprintTask | null {
+export function releaseTask(id: string, claimedBy: string, db?: Database.Database): SprintTask | null {
   try {
-    const db = getDb()
-    // DL-13 & DL-18: Record audit trail for release (pass db for consistency)
-    return db.transaction(() => {
-      const oldTask = fetchTask(id, db)
+    const conn = db ?? getDb()
+    // DL-13 & DL-18: Record audit trail for release (pass conn for consistency)
+    return conn.transaction(() => {
+      const oldTask = fetchTask(id, conn)
       if (!oldTask) return null
 
-      const result = db
+      const result = conn
         .prepare(
           `UPDATE sprint_tasks
            SET status = 'queued', claimed_by = NULL, started_at = NULL, agent_run_id = NULL
@@ -96,7 +96,7 @@ export function releaseTask(id: string, claimedBy: string): SprintTask | null {
           oldTask as unknown as Record<string, unknown>,
           { status: 'queued', claimed_by: null, started_at: null, agent_run_id: null },
           claimedBy,
-          db
+          conn
         )
         return mapRowToTask(result)
       }
@@ -111,9 +111,10 @@ export function releaseTask(id: string, claimedBy: string): SprintTask | null {
   }
 }
 
-export function getActiveTaskCount(): number {
+export function getActiveTaskCount(db?: Database.Database): number {
   try {
-    const result = getDb()
+    const conn = db ?? getDb()
+    const result = conn
       .prepare("SELECT COUNT(*) as count FROM sprint_tasks WHERE status = 'active'")
       .get() as { count: number }
     return result.count
@@ -127,9 +128,10 @@ export function getActiveTaskCount(): number {
   }
 }
 
-export function getQueuedTasks(limit: number): SprintTask[] {
+export function getQueuedTasks(limit: number, db?: Database.Database): SprintTask[] {
   try {
-    const rows = getDb()
+    const conn = db ?? getDb()
+    const rows = conn
       .prepare(
         `SELECT ${SPRINT_TASK_COLUMNS}
          FROM sprint_tasks

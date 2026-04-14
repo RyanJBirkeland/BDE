@@ -4,6 +4,7 @@
  *
  * All functions are synchronous and use the local SQLite database via getDb().
  */
+import type Database from 'better-sqlite3'
 import { getDb } from '../db'
 import { getErrorMessage } from '../../shared/errors'
 import type { Logger } from '../logger'
@@ -50,12 +51,13 @@ export interface DailySuccessRate {
 
 // --- Query Functions ---
 
-export function getDoneTodayCount(): number {
+export function getDoneTodayCount(db?: Database.Database): number {
   try {
+    const conn = db ?? getDb()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const result = getDb()
+    const result = conn
       .prepare('SELECT COUNT(*) as count FROM sprint_tasks WHERE status = ? AND completed_at >= ?')
       .get('done', today.toISOString()) as { count: number }
 
@@ -67,9 +69,10 @@ export function getDoneTodayCount(): number {
   }
 }
 
-export function getFailureReasonBreakdown(): FailureReasonBreakdown[] {
+export function getFailureReasonBreakdown(db?: Database.Database): FailureReasonBreakdown[] {
   try {
-    const rows = getDb()
+    const conn = db ?? getDb()
+    const rows = conn
       .prepare(
         `SELECT
           COALESCE(failure_reason, 'Unknown') as reason,
@@ -93,9 +96,10 @@ export function getFailureReasonBreakdown(): FailureReasonBreakdown[] {
  * Get runtime statistics from completed tasks with duration_ms populated.
  * Returns aggregate stats (avg, min, max) for terminal tasks.
  */
-export function getTaskRuntimeStats(): TaskRuntimeStats {
+export function getTaskRuntimeStats(db?: Database.Database): TaskRuntimeStats {
   try {
-    const result = getDb()
+    const conn = db ?? getDb()
+    const result = conn
       .prepare(
         `SELECT
           AVG(duration_ms) as avgDurationMs,
@@ -131,10 +135,10 @@ export function getTaskRuntimeStats(): TaskRuntimeStats {
   }
 }
 
-export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
+export function getSuccessRateBySpecType(db?: Database.Database): SpecTypeSuccessRate[] {
   try {
-    const db = getDb()
-    const rows = db
+    const conn = db ?? getDb()
+    const rows = conn
       .prepare(
         `SELECT
            spec_type,
@@ -164,11 +168,11 @@ export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
  * Success rate = done / (done + failed + error) per day.
  * Days with no terminal tasks return null success rate but are included in results.
  */
-export function getDailySuccessRate(days: number = 14): DailySuccessRate[] {
+export function getDailySuccessRate(days: number = 14, db?: Database.Database): DailySuccessRate[] {
   try {
-    const db = getDb()
+    const conn = db ?? getDb()
     // Generate continuous date range for last N days, then LEFT JOIN with task stats
-    const rows = db
+    const rows = conn
       .prepare(
         `WITH RECURSIVE dates(date) AS (
           SELECT date('now', '-${days - 1} days')

@@ -2,6 +2,7 @@
  * Agent event persistence and broadcast.
  * Batches events for SQLite writes while broadcasting immediately for live tail UX.
  */
+import type Database from 'better-sqlite3'
 import { broadcast } from './broadcast'
 import { insertEventBatch, type EventBatchItem } from './data/event-queries'
 import { getDb } from './db'
@@ -41,7 +42,7 @@ function scheduledFlush(): void {
  * Called either when the batch reaches BATCH_SIZE or after BATCH_INTERVAL_MS.
  * Also called on agent manager shutdown to ensure no events are lost.
  */
-export function flushAgentEventBatcher(): void {
+export function flushAgentEventBatcher(db?: Database.Database): void {
   if (_pending.length === 0) return
 
   const rows = _pending.splice(0)
@@ -52,7 +53,7 @@ export function flushAgentEventBatcher(): void {
       payload: JSON.stringify(event), // stringify deferred to here
       timestamp: event.timestamp
     }))
-    insertEventBatch(getDb(), batch)
+    insertEventBatch(db ?? getDb(), batch)
     _consecutiveFailures = 0
   } catch (err) {
     // SQLite write failure — re-queue events with circuit breaker

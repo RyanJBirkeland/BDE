@@ -143,12 +143,12 @@ function updatePrStatusBulk(
   }
 }
 
-export function markTaskDoneByPrNumber(prNumber: number): string[] {
+export function markTaskDoneByPrNumber(prNumber: number, db?: Database.Database): string[] {
   try {
-    const db = getDb()
-    return db.transaction(() => {
-      const affectedIds = transitionTasksToDone(prNumber, 'pr-poller', db)
-      updatePrStatusBulk(prNumber, 'merged', 'pr-poller', db, 'done')
+    const conn = db ?? getDb()
+    return conn.transaction(() => {
+      const affectedIds = transitionTasksToDone(prNumber, 'pr-poller', conn)
+      updatePrStatusBulk(prNumber, 'merged', 'pr-poller', conn, 'done')
       return affectedIds
     })()
   } catch (err) {
@@ -161,12 +161,12 @@ export function markTaskDoneByPrNumber(prNumber: number): string[] {
   }
 }
 
-export function markTaskCancelledByPrNumber(prNumber: number): string[] {
+export function markTaskCancelledByPrNumber(prNumber: number, db?: Database.Database): string[] {
   try {
-    const db = getDb()
-    return db.transaction(() => {
-      const affectedIds = transitionTasksToCancelled(prNumber, 'pr-poller', db)
-      updatePrStatusBulk(prNumber, 'closed', 'pr-poller', db)
+    const conn = db ?? getDb()
+    return conn.transaction(() => {
+      const affectedIds = transitionTasksToCancelled(prNumber, 'pr-poller', conn)
+      updatePrStatusBulk(prNumber, 'closed', 'pr-poller', conn)
       return affectedIds
     })()
   } catch (err) {
@@ -179,9 +179,10 @@ export function markTaskCancelledByPrNumber(prNumber: number): string[] {
   }
 }
 
-export function listTasksWithOpenPrs(): SprintTask[] {
+export function listTasksWithOpenPrs(db?: Database.Database): SprintTask[] {
   try {
-    const rows = getDb()
+    const conn = db ?? getDb()
+    const rows = conn
       .prepare(
         `SELECT ${SPRINT_TASK_COLUMNS}
          FROM sprint_tasks WHERE pr_number IS NOT NULL AND pr_status = 'open'`
@@ -196,17 +197,17 @@ export function listTasksWithOpenPrs(): SprintTask[] {
   }
 }
 
-export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): void {
+export function updateTaskMergeableState(prNumber: number, mergeableState: string | null, db?: Database.Database): void {
   if (!mergeableState) return
   try {
-    const db = getDb()
-    db.transaction(() => {
+    const conn = db ?? getDb()
+    conn.transaction(() => {
       // Record pr_mergeable_state changes in the audit trail.
       // Read all affected tasks first so we can capture the old value per task.
       const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE pr_number = ?`
-      const affected = db.prepare(sql).all(prNumber) as Array<Record<string, unknown>>
+      const affected = conn.prepare(sql).all(prNumber) as Array<Record<string, unknown>>
 
-      db.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
+      conn.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
         mergeableState,
         prNumber
       )
@@ -218,7 +219,7 @@ export function updateTaskMergeableState(prNumber: number, mergeableState: strin
           newPatch: { pr_mergeable_state: mergeableState }
         })),
         'pr-poller',
-        db
+        conn
       )
     })()
   } catch (err) {

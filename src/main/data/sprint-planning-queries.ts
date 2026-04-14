@@ -1,14 +1,18 @@
+import type Database from 'better-sqlite3'
 import { getDb } from '../db'
 import type { Sprint } from '../../shared/types'
 
-export function createSprint(input: {
-  name: string
-  goal?: string
-  start_date: string
-  end_date: string
-}): Sprint | null {
-  const db = getDb()
-  const row = db
+export function createSprint(
+  input: {
+    name: string
+    goal?: string
+    start_date: string
+    end_date: string
+  },
+  db?: Database.Database
+): Sprint | null {
+  const conn = db ?? getDb()
+  const row = conn
     .prepare(
       `INSERT INTO sprints (name, goal, start_date, end_date)
        VALUES (?, ?, ?, ?) RETURNING *`
@@ -32,9 +36,9 @@ export function createSprint(input: {
   }
 }
 
-export function getSprint(id: string): Sprint | null {
-  const db = getDb()
-  const row = db.prepare('SELECT * FROM sprints WHERE id = ?').get(id) as
+export function getSprint(id: string, db?: Database.Database): Sprint | null {
+  const conn = db ?? getDb()
+  const row = conn.prepare('SELECT * FROM sprints WHERE id = ?').get(id) as
     | Record<string, unknown>
     | undefined
 
@@ -52,9 +56,9 @@ export function getSprint(id: string): Sprint | null {
   }
 }
 
-export function getAllSprints(): Sprint[] {
-  const db = getDb()
-  const rows = db.prepare('SELECT * FROM sprints ORDER BY created_at DESC').all() as Record<
+export function getAllSprints(db?: Database.Database): Sprint[] {
+  const conn = db ?? getDb()
+  const rows = conn.prepare('SELECT * FROM sprints ORDER BY created_at DESC').all() as Record<
     string,
     unknown
   >[]
@@ -73,9 +77,10 @@ export function getAllSprints(): Sprint[] {
 
 export function updateSprint(
   id: string,
-  patch: Partial<Pick<Sprint, 'name' | 'goal' | 'start_date' | 'end_date' | 'status'>>
+  patch: Partial<Pick<Sprint, 'name' | 'goal' | 'start_date' | 'end_date' | 'status'>>,
+  db?: Database.Database
 ): Sprint | null {
-  const db = getDb()
+  const conn = db ?? getDb()
   const fields: string[] = []
   const values: unknown[] = []
 
@@ -100,11 +105,11 @@ export function updateSprint(
     values.push(patch.status)
   }
 
-  if (fields.length === 0) return getSprint(id)
+  if (fields.length === 0) return getSprint(id, db)
 
   values.push(id)
 
-  const row = db
+  const row = conn
     .prepare(`UPDATE sprints SET ${fields.join(', ')} WHERE id = ? RETURNING *`)
     .get(...values) as Record<string, unknown> | undefined
 
@@ -122,15 +127,15 @@ export function updateSprint(
   }
 }
 
-export function deleteSprint(id: string): boolean {
-  const db = getDb()
-  const result = db.prepare('DELETE FROM sprints WHERE id = ?').run(id)
+export function deleteSprint(id: string, db?: Database.Database): boolean {
+  const conn = db ?? getDb()
+  const result = conn.prepare('DELETE FROM sprints WHERE id = ?').run(id)
   return result.changes > 0
 }
 
-export function getSprintTasks(sprintId: string): string[] {
-  const db = getDb()
-  const rows = db
+export function getSprintTasks(sprintId: string, db?: Database.Database): string[] {
+  const conn = db ?? getDb()
+  const rows = conn
     .prepare('SELECT id FROM sprint_tasks WHERE sprint_id = ? ORDER BY created_at')
     .all(sprintId) as { id: string }[]
   return rows.map((row) => row.id)

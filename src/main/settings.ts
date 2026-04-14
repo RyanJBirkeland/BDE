@@ -1,3 +1,4 @@
+import type Database from 'better-sqlite3'
 import { getDb } from './db'
 import {
   getSetting as _getSetting,
@@ -7,24 +8,24 @@ import {
   setSettingJson as _setSettingJson
 } from './data/settings-queries'
 
-export function getSetting(key: string): string | null {
-  return _getSetting(getDb(), key)
+export function getSetting(key: string, db?: Database.Database): string | null {
+  return _getSetting(db ?? getDb(), key)
 }
 
-export function setSetting(key: string, value: string): void {
-  _setSetting(getDb(), key, value)
+export function setSetting(key: string, value: string, db?: Database.Database): void {
+  _setSetting(db ?? getDb(), key, value)
 }
 
-export function deleteSetting(key: string): void {
-  _deleteSetting(getDb(), key)
+export function deleteSetting(key: string, db?: Database.Database): void {
+  _deleteSetting(db ?? getDb(), key)
 }
 
-export function getSettingJson<T>(key: string): T | null {
-  return _getSettingJson<T>(getDb(), key)
+export function getSettingJson<T>(key: string, db?: Database.Database): T | null {
+  return _getSettingJson<T>(db ?? getDb(), key)
 }
 
-export function setSettingJson<T>(key: string, value: T): void {
-  _setSettingJson<T>(getDb(), key, value)
+export function setSettingJson<T>(key: string, value: T, db?: Database.Database): void {
+  _setSettingJson<T>(db ?? getDb(), key, value)
 }
 
 // Well-known setting keys

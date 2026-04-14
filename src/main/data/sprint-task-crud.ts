@@ -17,6 +17,7 @@ import type { CreateTaskInput } from './sprint-task-types'
 export function getTask(id: string, db?: Database.Database): SprintTask | null {
   try {
     const conn = db ?? getDb()
+
     const row = conn
       .prepare(`SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE id = ?`)
       .get(id) as Record<string, unknown> | undefined
@@ -29,18 +30,18 @@ export function getTask(id: string, db?: Database.Database): SprintTask | null {
   }
 }
 
-export function listTasks(status?: string): SprintTask[] {
+export function listTasks(status?: string, db?: Database.Database): SprintTask[] {
   try {
-    const db = getDb()
+    const conn = db ?? getDb()
     if (status) {
-      const rows = db
+      const rows = conn
         .prepare(
           `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE status = ? ORDER BY priority ASC, created_at ASC`
         )
         .all(status) as Record<string, unknown>[]
       return mapRowsToTasks(rows)
     }
-    const rows = db
+    const rows = conn
       .prepare(
         `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks ORDER BY priority ASC, created_at ASC`
       )
@@ -54,16 +55,16 @@ export function listTasks(status?: string): SprintTask[] {
   }
 }
 
-export function listTasksRecent(): SprintTask[] {
+export function listTasksRecent(db?: Database.Database): SprintTask[] {
   try {
-    const db = getDb()
+    const conn = db ?? getDb()
     // UNION ALL of two index-able branches instead of OR-clause.
     // The original `WHERE status NOT IN (...) OR completed_at >= ...` forced
     // a full SCAN because OR across columns prevents single-index use. The
     // UNION ALL form lets each branch use idx_sprint_tasks_status:
     //   1) active set: status IN (5 active statuses)
     //   2) recent terminal set: status IN (4 terminal) AND completed_at recent
-    const rows = db
+    const rows = conn
       .prepare(
         `SELECT * FROM (
            SELECT * FROM sprint_tasks
@@ -85,13 +86,13 @@ export function listTasksRecent(): SprintTask[] {
   }
 }
 
-export function createTask(input: CreateTaskInput): SprintTask | null {
+export function createTask(input: CreateTaskInput, db?: Database.Database): SprintTask | null {
   try {
-    const db = getDb()
+    const conn = db ?? getDb()
     const dependsOn = sanitizeDependsOn(input.depends_on)
     const tags = sanitizeTags(input.tags)
 
-    const result = db
+    const result = conn
       .prepare(
         `INSERT INTO sprint_tasks (title, repo, prompt, spec, notes, priority, status, template_name, depends_on, playground_enabled, model, tags, group_id, cross_repo_contract)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -165,18 +166,18 @@ export function createReviewTaskFromAdhoc(input: {
   return updated
 }
 
-export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
+export function updateTask(id: string, patch: Record<string, unknown>, db?: Database.Database): SprintTask | null {
   const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
   if (entries.length === 0) return null
 
   try {
-    const db = getDb()
+    const conn = db ?? getDb()
 
     // Wrap read, update, and audit in a single transaction with retry on SQLITE_BUSY
     return withRetry(() =>
-      db.transaction(() => {
+      conn.transaction(() => {
         // Fetch current state for change tracking
-        const oldTask = getTask(id, db)
+        const oldTask = getTask(id, conn)
         if (!oldTask) return null
 
         // Enforce status transition state machine
@@ -233,7 +234,7 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
 
         values.push(id)
 
-        const result = db
+        const result = conn
           .prepare(
             `UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ?
              RETURNING ${SPRINT_TASK_COLUMNS}`
@@ -249,7 +250,7 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
             oldTask as unknown as Record<string, unknown>,
             auditPatch,
             'unknown',
-            db
+            conn
           )
         } catch (err) {
           getSprintQueriesLogger().warn(`[sprint-queries] Failed to record task changes: ${err}`)
@@ -272,20 +273,20 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
   }
 }
 
-export function deleteTask(id: string, deletedBy: string = 'unknown'): void {
+export function deleteTask(id: string, deletedBy: string = 'unknown', db?: Database.Database): void {
   try {
-    const db = getDb()
+    const conn = db ?? getDb()
     // DL-14 & DL-18: Record deletion in audit trail before removing task (pass db for consistency)
-    db.transaction(() => {
-      const task = getTask(id, db)
+    conn.transaction(() => {
+      const task = getTask(id, conn)
       if (task) {
         // Record deletion event with task snapshot
-        db.prepare(
+        conn.prepare(
           'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)'
         ).run(id, '_deleted', JSON.stringify(task), null, deletedBy)
       }
       // Delete task and orphaned audit records
-      db.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
+      conn.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)
     })()
   } catch (err) {
     // DL-17: Standardize error message format

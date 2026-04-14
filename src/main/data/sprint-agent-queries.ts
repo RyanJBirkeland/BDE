@@ -1,3 +1,4 @@
+import type Database from 'better-sqlite3'
 import type { SprintTask, TaskDependency } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { getDb } from '../db'
@@ -7,7 +8,7 @@ import { getSprintQueriesLogger } from './sprint-query-logger'
 import { getErrorMessage } from '../../shared/errors'
 import type { QueueStats } from './sprint-task-types'
 
-export function getQueueStats(): QueueStats {
+export function getQueueStats(db?: Database.Database): QueueStats {
   const stats: QueueStats = {
     backlog: 0,
     queued: 0,
@@ -21,7 +22,8 @@ export function getQueueStats(): QueueStats {
   }
 
   try {
-    const rows = getDb()
+    const conn = db ?? getDb()
+    const rows = conn
       .prepare('SELECT status, COUNT(*) as count FROM sprint_tasks GROUP BY status')
       .all() as Array<{ status: string; count: number }>
 
@@ -39,9 +41,10 @@ export function getQueueStats(): QueueStats {
   return stats
 }
 
-export function getOrphanedTasks(claimedBy: string): SprintTask[] {
+export function getOrphanedTasks(claimedBy: string, db?: Database.Database): SprintTask[] {
   try {
-    const rows = getDb()
+    const conn = db ?? getDb()
+    const rows = conn
       .prepare(
         `SELECT ${SPRINT_TASK_COLUMNS}
          FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?`
@@ -62,9 +65,10 @@ export function getOrphanedTasks(claimedBy: string): SprintTask[] {
  * (e.g. tasks stuck in 'review' or other non-active statuses with a leftover claim).
  * Returns the number of rows updated.
  */
-export function clearStaleClaimedBy(claimedBy: string): number {
+export function clearStaleClaimedBy(claimedBy: string, db?: Database.Database): number {
   try {
-    const result = getDb()
+    const conn = db ?? getDb()
+    const result = conn
       .prepare(`UPDATE sprint_tasks SET claimed_by = NULL WHERE claimed_by = ?`)
       .run(claimedBy)
     return result.changes
@@ -78,9 +82,10 @@ export function clearStaleClaimedBy(claimedBy: string): number {
   }
 }
 
-export function clearSprintTaskFk(agentRunId: string): void {
+export function clearSprintTaskFk(agentRunId: string, db?: Database.Database): void {
   try {
-    getDb()
+    const conn = db ?? getDb()
+    conn
       .prepare('UPDATE sprint_tasks SET agent_run_id = NULL WHERE agent_run_id = ?')
       .run(agentRunId)
   } catch (err) {
@@ -92,10 +97,11 @@ export function clearSprintTaskFk(agentRunId: string): void {
   }
 }
 
-export function getHealthCheckTasks(): SprintTask[] {
+export function getHealthCheckTasks(db?: Database.Database): SprintTask[] {
   try {
+    const conn = db ?? getDb()
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const rows = getDb()
+    const rows = conn
       .prepare(
         `SELECT ${SPRINT_TASK_COLUMNS}
          FROM sprint_tasks WHERE status = 'active' AND started_at < ?`
@@ -110,14 +116,15 @@ export function getHealthCheckTasks(): SprintTask[] {
   }
 }
 
-export function getAllTaskIds(): Set<string> {
+export function getAllTaskIds(db?: Database.Database): Set<string> {
   // No try/catch: DB errors must propagate so callers get a 500,
   // not a misleading 400 "task IDs do not exist" from an empty Set.
-  const rows = getDb().prepare('SELECT id FROM sprint_tasks').all() as Array<{ id: string }>
+  const conn = db ?? getDb()
+  const rows = conn.prepare('SELECT id FROM sprint_tasks').all() as Array<{ id: string }>
   return new Set(rows.map((r) => r.id))
 }
 
-export function getTasksWithDependencies(): Array<{
+export function getTasksWithDependencies(db?: Database.Database): Array<{
   id: string
   depends_on: TaskDependency[] | null
   status: string
@@ -125,7 +132,8 @@ export function getTasksWithDependencies(): Array<{
   // No try/catch: DB errors must propagate (same rationale as getAllTaskIds).
   // Query ALL tasks, not just those with depends_on — cycle detection needs
   // the full graph to catch cycles involving tasks receiving their first dependency.
-  const rows = getDb().prepare('SELECT id, depends_on, status FROM sprint_tasks').all() as Array<{
+  const conn = db ?? getDb()
+  const rows = conn.prepare('SELECT id, depends_on, status FROM sprint_tasks').all() as Array<{
     id: string
     depends_on: string | null
     status: string

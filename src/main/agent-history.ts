@@ -7,6 +7,7 @@ import { mkdir, writeFile, appendFile, open, rm, readdir, rename, stat } from 'f
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
+import type Database from 'better-sqlite3'
 import { getDb } from './db'
 import { BDE_AGENTS_INDEX as AGENTS_INDEX, BDE_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
 import { clearSprintTaskFk } from './data/sprint-maintenance-facade'
@@ -35,23 +36,23 @@ export type { AgentMeta }
 
 // --- One-time migration from agents.json ---
 
-export async function migrateFromJson(): Promise<void> {
+export async function migrateFromJson(db?: Database.Database): Promise<void> {
   try {
     if (!existsSync(AGENTS_INDEX)) return
-    const db = getDb()
-    const count = db.prepare('SELECT COUNT(*) as cnt FROM agent_runs').get() as { cnt: number }
+    const conn = db ?? getDb()
+    const count = conn.prepare('SELECT COUNT(*) as cnt FROM agent_runs').get() as { cnt: number }
     if (count.cnt > 0) return
 
     const raw = readFileSync(AGENTS_INDEX, 'utf-8')
     const agents: AgentMeta[] = JSON.parse(raw)
     if (!Array.isArray(agents) || agents.length === 0) return
 
-    const insert = db.prepare(`
+    const insert = conn.prepare(`
       INSERT OR IGNORE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
-    const tx = db.transaction(() => {
+    const tx = conn.transaction(() => {
       for (const a of agents) {
         insert.run(
           a.id,
@@ -121,12 +122,12 @@ function datePrefix(iso: string): string {
   return iso.slice(0, 10)
 }
 
-export async function listAgents(limit = 100, status?: string): Promise<AgentMeta[]> {
+export async function listAgents(limit = 100, status?: string, db?: Database.Database): Promise<AgentMeta[]> {
   initAgentHistory()
-  return _listAgents(getDb(), limit, status)
+  return _listAgents(db ?? getDb(), limit, status)
 }
 
-export async function createAgentRecord(meta: Omit<AgentMeta, 'logPath'>): Promise<AgentMeta> {
+export async function createAgentRecord(meta: Omit<AgentMeta, 'logPath'>, db?: Database.Database): Promise<AgentMeta> {
   initAgentHistory()
   const date = datePrefix(meta.startedAt)
   const logDir = join(LOGS_DIR, date, meta.id)
@@ -138,14 +139,14 @@ export async function createAgentRecord(meta: Omit<AgentMeta, 'logPath'>): Promi
   const full: AgentMeta = { ...meta, logPath }
   await writeFile(join(logDir, 'meta.json'), JSON.stringify(full, null, 2), 'utf-8')
 
-  insertAgentRecord(getDb(), full)
+  insertAgentRecord(db ?? getDb(), full)
 
   return full
 }
 
-export async function appendLog(id: string, content: string): Promise<void> {
+export async function appendLog(id: string, content: string, db?: Database.Database): Promise<void> {
   initAgentHistory()
-  const logPath = getAgentLogPath(getDb(), id)
+  const logPath = getAgentLogPath(db ?? getDb(), id)
   if (!logPath) return
   await appendFile(logPath, content, 'utf-8')
 }
@@ -153,10 +154,11 @@ export async function appendLog(id: string, content: string): Promise<void> {
 export async function readLog(
   id: string,
   fromByte = 0,
-  maxBytes?: number
+  maxBytes?: number,
+  db?: Database.Database
 ): Promise<{ content: string; nextByte: number; totalBytes: number }> {
   initAgentHistory()
-  const logPath = getAgentLogPath(getDb(), id)
+  const logPath = getAgentLogPath(db ?? getDb(), id)
   if (!logPath) return { content: '', nextByte: fromByte, totalBytes: 0 }
   let fh: import('fs/promises').FileHandle | undefined
   try {
@@ -177,14 +179,14 @@ export async function readLog(
   }
 }
 
-export async function getAgentMeta(id: string): Promise<AgentMeta | null> {
+export async function getAgentMeta(id: string, db?: Database.Database): Promise<AgentMeta | null> {
   initAgentHistory()
-  return _getAgentMeta(getDb(), id)
+  return _getAgentMeta(db ?? getDb(), id)
 }
 
-export async function updateAgentMeta(id: string, patch: Partial<AgentMeta>): Promise<void> {
+export async function updateAgentMeta(id: string, patch: Partial<AgentMeta>, db?: Database.Database): Promise<void> {
   initAgentHistory()
-  const meta = _updateAgentMeta(getDb(), id, patch)
+  const meta = _updateAgentMeta(db ?? getDb(), id, patch)
 
   // Also update per-agent meta.json on disk
   // DL-33: updateAgentMeta now returns AgentMeta (not AgentRunRow), so use camelCase properties
@@ -230,14 +232,14 @@ export async function importAgent(meta: Partial<AgentMeta>, content: string): Pr
   return record
 }
 
-export async function pruneOldAgents(maxCount = 500): Promise<void> {
+export async function pruneOldAgents(maxCount = 500, db?: Database.Database): Promise<void> {
   initAgentHistory()
-  const db = getDb()
+  const conn = db ?? getDb()
 
-  const total = countAgents(db)
+  const total = countAgents(conn)
   if (total <= maxCount) return
 
-  const toRemove = getAgentsToRemove(db, maxCount)
+  const toRemove = getAgentsToRemove(conn, maxCount)
   if (toRemove.length === 0) return
 
   // Clear sprint task FK references first
@@ -247,14 +249,14 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
 
   // Prune associated events before removing agent records
   pruneEventsByAgentIds(
-    db,
+    conn,
     toRemove.map((r) => r.id)
   )
 
   // Then delete agents from local SQLite in a transaction
-  const tx = db.transaction(() => {
+  const tx = conn.transaction(() => {
     for (const row of toRemove) {
-      deleteAgent(db, row.id)
+      deleteAgent(conn, row.id)
     }
   })
   tx()
@@ -291,30 +293,31 @@ export async function pruneOldAgents(maxCount = 500): Promise<void> {
   }
 }
 
-export async function hasAgent(id: string): Promise<boolean> {
+export async function hasAgent(id: string, db?: Database.Database): Promise<boolean> {
   initAgentHistory()
-  return _hasAgent(getDb(), id)
+  return _hasAgent(db ?? getDb(), id)
 }
 
-export async function findAgentByPid(pid: number): Promise<AgentMeta | null> {
+export async function findAgentByPid(pid: number, db?: Database.Database): Promise<AgentMeta | null> {
   initAgentHistory()
-  return _findAgentByPid(getDb(), pid)
+  return _findAgentByPid(db ?? getDb(), pid)
 }
 
 export async function listAgentRunsByTaskId(
   sprintTaskId?: string,
-  limit?: number
+  limit?: number,
+  db?: Database.Database
 ): Promise<import('../shared/types').AgentMeta[]> {
   initAgentHistory()
-  return _listAgentRunsByTaskId(getDb(), sprintTaskId, limit)
+  return _listAgentRunsByTaskId(db ?? getDb(), sprintTaskId, limit)
 }
 
 /** Mark all agent_runs stuck in 'running' older than maxAgeMs as 'failed'. */
-export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000): number {
-  const db = getDb()
+export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000, db?: Database.Database): number {
+  const conn = db ?? getDb()
   const cutoff = new Date(Date.now() - maxAgeMs).toISOString()
   const now = nowIso()
-  const stmt = db.prepare(
+  const stmt = conn.prepare(
     `UPDATE agent_runs SET status = 'failed', finished_at = ?
      WHERE status = 'running' AND started_at < ?`
   )
@@ -333,15 +336,15 @@ export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000): n
  * lifecycle is finalized either by completeSession() during normal close or
  * by finalizeAllRunningAgentRuns() at the next app startup.
  */
-export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boolean): number {
-  const db = getDb()
-  const rows = db
+export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boolean, db?: Database.Database): number {
+  const conn = db ?? getDb()
+  const rows = conn
     .prepare(`SELECT id, sprint_task_id FROM agent_runs WHERE status = 'running'`)
     .all() as Array<{ id: string; sprint_task_id: string | null }>
 
   let cleaned = 0
   const now = nowIso()
-  const finalize = db.prepare(
+  const finalize = conn.prepare(
     `UPDATE agent_runs SET status = 'failed', finished_at = ? WHERE id = ?`
   )
 
@@ -361,10 +364,10 @@ export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boo
  * Finalize ALL agent_runs still marked 'running'.
  * Called at app startup — no agents can actually be running when the process starts fresh.
  */
-export function finalizeAllRunningAgentRuns(): number {
-  const db = getDb()
+export function finalizeAllRunningAgentRuns(db?: Database.Database): number {
+  const conn = db ?? getDb()
   const now = nowIso()
-  const stmt = db.prepare(
+  const stmt = conn.prepare(
     `UPDATE agent_runs SET status = 'failed', finished_at = ?
      WHERE status = 'running'`
   )
@@ -386,12 +389,12 @@ export function finalizeAllRunningAgentRuns(): number {
  * marker). Idempotent: the LIKE clause only matches the broken shape, so a
  * second invocation is a no-op.
  */
-export function backfillUtcTimestamps(): number {
-  const db = getDb()
+export function backfillUtcTimestamps(db?: Database.Database): number {
+  const conn = db ?? getDb()
   // Match rows whose finished_at looks like '2026-04-07 02:30:01' (no T, no Z).
   // SQLite's `||` concatenates; replace ' ' with 'T' and append 'Z' to produce
   // canonical ISO 8601 UTC.
-  const stmt = db.prepare(
+  const stmt = conn.prepare(
     `UPDATE agent_runs
         SET finished_at = REPLACE(finished_at, ' ', 'T') || 'Z'
       WHERE finished_at IS NOT NULL
