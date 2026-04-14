@@ -197,6 +197,69 @@ describe('Config handlers', () => {
           })
         }
       })
+
+      describe('settings:loadProfile', () => {
+        for (const name of invalidNames) {
+          it(`rejects invalid name: "${name.slice(0, 20)}"`, () => {
+            const handlers = captureHandlers()
+            expect(() =>
+              handlers['settings:loadProfile'](mockEvent, name)
+            ).toThrow(/invalid profile name/i)
+            expect(loadProfile).not.toHaveBeenCalled()
+          })
+        }
+
+        for (const name of validNames) {
+          it(`accepts valid name: "${name}"`, () => {
+            const handlers = captureHandlers()
+            expect(() =>
+              handlers['settings:loadProfile'](mockEvent, name)
+            ).not.toThrow()
+          })
+        }
+      })
+
+      describe('settings:applyProfile', () => {
+        for (const name of invalidNames) {
+          it(`rejects invalid name: "${name.slice(0, 20)}"`, () => {
+            const handlers = captureHandlers()
+            expect(() =>
+              handlers['settings:applyProfile'](mockEvent, name)
+            ).toThrow(/invalid profile name/i)
+            expect(applyProfile).not.toHaveBeenCalled()
+          })
+        }
+
+        for (const name of validNames) {
+          it(`accepts valid name: "${name}"`, () => {
+            const handlers = captureHandlers()
+            expect(() =>
+              handlers['settings:applyProfile'](mockEvent, name)
+            ).not.toThrow()
+          })
+        }
+      })
+
+      describe('settings:deleteProfile', () => {
+        for (const name of invalidNames) {
+          it(`rejects invalid name: "${name.slice(0, 20)}"`, () => {
+            const handlers = captureHandlers()
+            expect(() =>
+              handlers['settings:deleteProfile'](mockEvent, name)
+            ).toThrow(/invalid profile name/i)
+            expect(deleteProfile).not.toHaveBeenCalled()
+          })
+        }
+
+        for (const name of validNames) {
+          it(`accepts valid name: "${name}"`, () => {
+            const handlers = captureHandlers()
+            expect(() =>
+              handlers['settings:deleteProfile'](mockEvent, name)
+            ).not.toThrow()
+          })
+        }
+      })
     })
 
     describe('settings:set — worktreeBase path validation', () => {
