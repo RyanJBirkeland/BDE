@@ -6,12 +6,12 @@ import { buildCopilotPrompt } from './prompt-copilot'
 import { buildSynthesizerPrompt } from './prompt-synthesizer'
 import { buildReviewerPrompt } from './prompt-composer-reviewer'
 import { createLogger } from '../logger'
+import type { AgentType } from '../agent-system/personality/types'
 
 export { classifyTask, type TaskClass } from './prompt-pipeline'
+export type { AgentType } from '../agent-system/personality/types'
 
 const logger = createLogger('prompt-composer')
-
-export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
 
 export interface BuildPromptInput {
   agentType: AgentType

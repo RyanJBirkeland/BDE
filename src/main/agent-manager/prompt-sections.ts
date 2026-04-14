@@ -7,6 +7,7 @@
 import { join } from 'node:path'
 import { BDE_TASK_MEMORY_DIR } from '../paths'
 import { PROMPT_TRUNCATION } from './prompt-constants'
+import type { AgentPersonality } from '../agent-system/personality/types'
 
 // ---------------------------------------------------------------------------
 // Preambles (coding agents vs spec-drafting agents)
@@ -63,18 +64,11 @@ Keep playgrounds focused on one component or layout at a time. Do NOT run
 // Personality
 // ---------------------------------------------------------------------------
 
-interface Personality {
-  voice: string
-  roleFrame: string
-  constraints: string[]
-  patterns?: string[]
-}
-
 /**
  * Formats a personality object into a standard prompt section.
  * Used by all agent types to inject their personality traits.
  */
-export function buildPersonalitySection(personality: Personality): string {
+export function buildPersonalitySection(personality: AgentPersonality): string {
   let section = '\n\n## Voice\n' + personality.voice
   section += '\n\n## Your Role\n' + personality.roleFrame
   section += '\n\n## Constraints\n' + personality.constraints.map((c) => `- ${c}`).join('\n')
