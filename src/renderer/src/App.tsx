@@ -29,6 +29,7 @@ import { VIEW_LABELS } from './lib/view-registry'
 import { PollingProvider } from './components/PollingProvider'
 import { SHORTCUT_CATEGORIES } from './lib/shortcuts-data'
 import { FeatureGuideModal } from './components/help/FeatureGuideModal'
+import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 // Query params are read once at module load time — outside any component to avoid
 // violating Rules of Hooks if we need to conditionally skip the full App render.
@@ -276,9 +277,17 @@ function App(): React.JSX.Element {
  */
 function AppRoot(): React.JSX.Element {
   if (_tearoffView && _tearoffWindowId) {
-    return <TearoffShell view={_tearoffView} windowId={_tearoffWindowId} />
+    return (
+      <ErrorBoundary name="AppRoot">
+        <TearoffShell view={_tearoffView} windowId={_tearoffWindowId} />
+      </ErrorBoundary>
+    )
   }
-  return <App />
+  return (
+    <ErrorBoundary name="AppRoot">
+      <App />
+    </ErrorBoundary>
+  )
 }
 
 export { App, AppRoot }
