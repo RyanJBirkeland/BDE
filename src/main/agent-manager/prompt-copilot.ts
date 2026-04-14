@@ -42,6 +42,15 @@ export function buildCopilotPrompt(input: BuildPromptInput): string {
     'to explore the target repo whenever you need ground-truth answers about ' +
     'files, APIs, or existing patterns.'
 
+  // Spec output format guidance
+  prompt += '\n\n## Spec Output Format\n'
+  prompt += 'Output specs as markdown with exactly these four sections in this order:\n'
+  prompt += '1. `## Overview` — 2–3 sentences on what and why\n'
+  prompt += '2. `## Files to Change` — exact file paths, bulleted\n'
+  prompt += '3. `## Implementation Steps` — numbered, concrete actions only\n'
+  prompt += '4. `## How to Test` — commands or manual steps\n\n'
+  prompt += 'After each revision, show the complete updated spec in a markdown code block. Keep specs under 500 words.'
+
   // Target repository pinning
   if (input.repoPath) {
     prompt += '\n\n## Target Repository\n\n'

@@ -1373,6 +1373,21 @@ describe('synthesizer prompt XML wrapping', () => {
   })
 })
 
+describe('output format guidance', () => {
+  it('assistant prompt contains response format section', () => {
+    const prompt = buildAgentPrompt({ agentType: 'assistant' })
+    expect(prompt).toContain('## Response Format')
+  })
+
+  it('copilot prompt contains spec output format guidance', () => {
+    const prompt = buildAgentPrompt({ agentType: 'copilot' })
+    expect(prompt).toContain('## Overview')
+    expect(prompt).toContain('## Files to Change')
+    expect(prompt).toContain('## Implementation Steps')
+    expect(prompt).toContain('## How to Test')
+  })
+})
+
 describe('buildRetryContext truncation', () => {
   it('truncates previousNotes at RETRY_NOTES_CHARS', () => {
     const longNotes = 'n'.repeat(PROMPT_TRUNCATION.RETRY_NOTES_CHARS + 200)

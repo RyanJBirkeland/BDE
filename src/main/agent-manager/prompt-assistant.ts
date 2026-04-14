@@ -27,6 +27,11 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
   const personality = input.agentType === 'assistant' ? assistantPersonality : adhocPersonality
   prompt += buildPersonalitySection(personality)
 
+  // Response format guidance (assistant only)
+  if (input.agentType === 'assistant') {
+    prompt += '\n\n## Response Format\nAnswer the direct question first. Show code or examples second. Explain trade-offs only if relevant. Keep explanations under 200 words unless the user asks for depth.'
+  }
+
   // Inject memory
   const memoryText = getAllMemory({ repoName: repoName ?? undefined })
   if (memoryText.trim()) {
