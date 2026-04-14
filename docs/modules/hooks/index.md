@@ -11,3 +11,6 @@ Source: `src/renderer/src/hooks/`
 | `useIDEStateRestoration.ts` | On mount, reads `ide.state` from settings and restores rootPath, open tabs, active tab, and display preferences to the IDE store. | `useIDEStateRestoration` |
 | `useIDEUnsavedGuard.ts` | Registers a `beforeunload` handler that blocks page unload when any open IDE tab has unsaved changes. | `useIDEUnsavedGuard` |
 | `useSprintPipelineState.ts` | Centralises all store subscriptions for `SprintPipeline`. Returns tasks, selection, UI overlay state, and derived values (selectedTask, conflictingTasks, partition). | `useSprintPipelineState` |
+| `useAgentViewLifecycle.ts` | Registers the five view-lifecycle effects for AgentsView: event listener init, agent history fetch on view activation, event history load on selection change, spawn-modal window event, and scratchpad banner dismissed state. | `useAgentViewLifecycle` |
+| `useAgentViewCommands.ts` | Registers and unregisters the Spawn Agent and Clear Console commands in the command palette while AgentsView is mounted. | `useAgentViewCommands` |
+| `useAgentSlashCommands.ts` | Handles all slash commands typed into the AgentConsole input: `/stop`, `/retry`, `/focus`, `/checkpoint`, `/test`, `/scope`, `/status`. Returns `handleCommand`. | `useAgentSlashCommands` |

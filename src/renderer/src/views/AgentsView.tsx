@@ -1,7 +1,7 @@
 /**
  * AgentsView — Neon command center: Fleet List + Agent Console (two-pane).
  */
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Info, X } from 'lucide-react'
 import './AgentsView.css'
@@ -15,9 +15,11 @@ import { FleetGlance } from '../components/agents/FleetGlance'
 import { toast } from '../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
-import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 import { buildLocalAgentMessage } from '../adapters/attachments'
 import type { Attachment } from '../../../shared/types'
+import { useAgentViewLifecycle } from '../hooks/useAgentViewLifecycle'
+import { useAgentViewCommands } from '../hooks/useAgentViewCommands'
+import { useAgentSlashCommands } from '../hooks/useAgentSlashCommands'
 
 export function AgentsView(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -39,53 +41,26 @@ export function AgentsView(): React.JSX.Element {
   const [showLaunchpad, setShowLaunchpad] = useState(false)
   const [showScratchpadBanner, setShowScratchpadBanner] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
-  const cleanupRef = useRef<(() => void) | null>(null)
-  const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
-  const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
 
-  // Initialize event listener once
-  useEffect(() => {
-    cleanupRef.current = initEvents()
-    return () => cleanupRef.current?.()
-  }, [initEvents])
-
-  // Fetch agent history when view becomes active
-  useEffect(() => {
-    if (activeView !== 'agents') return
-    fetchAgents()
-  }, [fetchAgents, activeView])
-
-  // Load event history when selection changes
-  useEffect(() => {
-    if (activeId) {
-      loadHistory(activeId)
-    }
-  }, [activeId, loadHistory])
-
-  // Listen for spawn modal trigger from CommandPalette
-  useEffect(() => {
-    const handler = (): void => {
-      setSelectedId(null)
-      setShowLaunchpad(true)
-    }
-    window.addEventListener('bde:open-spawn-modal', handler)
-    return () => window.removeEventListener('bde:open-spawn-modal', handler)
-  }, [])
-
-  // Check if scratchpad banner has been dismissed
-  useEffect(() => {
-    window.api.settings.get('scratchpad.noticeDismissed').then((val) => {
-      if (!val) {
-        setShowScratchpadBanner(true)
-      }
-    })
-  }, [])
-
-  // Register agent commands in command palette
-  const handleSpawnAgent = useCallback(() => {
+  // openLaunchpad clears selection so the launchpad replaces any active console
+  const openLaunchpad = useCallback(() => {
     setSelectedId(null)
     setShowLaunchpad(true)
   }, [])
+
+  useAgentViewLifecycle({
+    activeView,
+    activeId,
+    initEvents,
+    fetchAgents,
+    loadHistory,
+    setShowLaunchpad: openLaunchpad,
+    setShowScratchpadBanner
+  })
+
+  const handleSpawnAgent = useCallback(() => {
+    openLaunchpad()
+  }, [openLaunchpad])
 
   const handleClearConsole = useCallback(() => {
     if (!activeId) {
@@ -96,35 +71,12 @@ export function AgentsView(): React.JSX.Element {
     window.dispatchEvent(new CustomEvent('agent:clear-console', { detail: { agentId: activeId } }))
   }, [activeId])
 
+  useAgentViewCommands({ handleSpawnAgent, handleClearConsole })
+
   const handleDismissBanner = useCallback(() => {
     setShowScratchpadBanner(false)
     window.api.settings.set('scratchpad.noticeDismissed', 'true')
   }, [])
-
-  useEffect(() => {
-    const commands: Command[] = [
-      {
-        id: 'agent-spawn',
-        label: 'Spawn Agent',
-        category: 'action',
-        keywords: ['spawn', 'new', 'agent', 'create', 'launch'],
-        action: handleSpawnAgent
-      },
-      {
-        id: 'agent-clear-console',
-        label: 'Clear Console',
-        category: 'action',
-        keywords: ['clear', 'console', 'reset', 'clean'],
-        action: handleClearConsole
-      }
-    ]
-
-    registerCommands(commands)
-
-    return () => {
-      unregisterCommands(commands.map((c) => c.id))
-    }
-  }, [handleSpawnAgent, handleClearConsole, registerCommands, unregisterCommands])
 
   const selectedAgent = agents.find((a) => a.id === activeId)
 
@@ -152,95 +104,7 @@ export function AgentsView(): React.JSX.Element {
     [activeId]
   )
 
-  const handleCommand = useCallback(
-    async (cmd: string, _args?: string) => {
-      if (!activeId || !selectedAgent) return
-      switch (cmd) {
-        case '/stop':
-          try {
-            await window.api.agents.kill(activeId)
-          } catch (err) {
-            toast.error(
-              `Failed to stop agent: ${err instanceof Error ? err.message : 'Unknown error'}`
-            )
-          }
-          break
-        case '/retry':
-          if (selectedAgent.sprintTaskId) {
-            try {
-              await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' })
-              toast.success('Task re-queued')
-            } catch (err) {
-              toast.error(`Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
-            }
-          } else {
-            toast.info('Adhoc agents cannot be retried — spawn a new agent instead')
-          }
-          break
-        case '/focus':
-          if (_args) {
-            const focusResult = await window.api.agents.steer(activeId, `Focus on: ${_args}`)
-            if (!focusResult.ok) toast.error(focusResult.error ?? 'Failed to send focus message')
-          }
-          break
-        case '/checkpoint': {
-          const taskId = selectedAgent.sprintTaskId
-          if (!taskId) {
-            toast.info('/checkpoint only works for pipeline agents with a sprint task')
-            break
-          }
-          try {
-            const result = await window.api.agentManager.checkpoint(taskId, _args)
-            if (result.ok) {
-              toast.success(
-                result.committed ? 'Checkpoint committed' : (result.error ?? 'Nothing to commit')
-              )
-            } else {
-              toast.error(`Checkpoint failed: ${result.error ?? 'unknown error'}`)
-            }
-          } catch (err) {
-            toast.error(
-              `Checkpoint failed: ${err instanceof Error ? err.message : 'Unknown error'}`
-            )
-          }
-          break
-        }
-        case '/test': {
-          const result = await window.api.agents.steer(
-            activeId,
-            'Please run the test suite now with `npm test` (or the project-appropriate command) and report the results before continuing.'
-          )
-          if (!result.ok) toast.error(result.error ?? 'Failed to send /test steering')
-          else toast.success('Asked agent to run tests')
-          break
-        }
-        case '/scope': {
-          if (!_args) {
-            toast.info('Usage: /scope <file> [file…]')
-            break
-          }
-          const result = await window.api.agents.steer(
-            activeId,
-            `Please narrow your focus to only these files for now: ${_args}. Do not modify anything outside this scope without asking first.`
-          )
-          if (!result.ok) toast.error(result.error ?? 'Failed to send /scope steering')
-          else toast.success('Scope updated')
-          break
-        }
-        case '/status': {
-          const result = await window.api.agents.steer(
-            activeId,
-            'Please give a brief status report: what you have completed so far, what you are working on right now, and what remains.'
-          )
-          if (!result.ok) toast.error(result.error ?? 'Failed to send /status steering')
-          break
-        }
-        default:
-          break
-      }
-    },
-    [activeId, selectedAgent]
-  )
+  const { handleCommand } = useAgentSlashCommands({ activeId, selectedAgent })
 
   const handleSelectAgent = useCallback((id: string) => {
     setSelectedId(id)
@@ -284,10 +148,7 @@ export function AgentsView(): React.JSX.Element {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  setSelectedId(null)
-                  setShowLaunchpad(true)
-                }}
+                onClick={openLaunchpad}
                 title="New Agent"
                 className="agents-view__spawn-btn"
               >
