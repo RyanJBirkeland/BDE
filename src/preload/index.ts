@@ -6,35 +6,14 @@ import type {
   BatchOperation,
   EpicDependency
 } from '../shared/types'
-import type { IpcChannelMap, GitHubFetchInit } from '../shared/ipc-channels'
+import type { GitHubFetchInit } from '../shared/ipc-channels'
 import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
 import type { WorkflowTemplate } from '../shared/workflow-types'
+import { typedInvoke, onBroadcast } from './ipc-helpers'
+import { settings, claudeConfig } from './api-settings'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
 ipcRenderer.setMaxListeners(25)
-
-/**
- * Creates a typed broadcast subscription for a one-way main→renderer channel.
- * Registers via ipcRenderer.on and returns an unsubscribe function for cleanup.
- */
-function onBroadcast<T>(channel: string) {
-  return (callback: (payload: T) => void): (() => void) => {
-    const listener = (_e: IpcRendererEvent, payload: T): void => callback(payload)
-    ipcRenderer.on(channel, listener)
-    return () => ipcRenderer.removeListener(channel, listener)
-  }
-}
-
-/**
- * Type-safe invoke for channels in IpcChannelMap.
- * Channel name typos and payload mismatches are caught at compile time.
- */
-function typedInvoke<K extends keyof IpcChannelMap>(
-  channel: K,
-  ...args: IpcChannelMap[K]['args']
-): Promise<IpcChannelMap[K]['result']> {
-  return ipcRenderer.invoke(channel, ...args)
-}
 
 const api = {
   readClipboardImage: () => typedInvoke('clipboard:readImage'),
@@ -52,25 +31,10 @@ const api = {
   setTitle: (title: string): void => ipcRenderer.send('window:setTitle', title),
 
   // Settings CRUD
-  settings: {
-    get: (key: string) => typedInvoke('settings:get', key),
-    set: (key: string, value: string) => typedInvoke('settings:set', key, value),
-    getJson: (key: string) => typedInvoke('settings:getJson', key),
-    setJson: (key: string, value: unknown) => typedInvoke('settings:setJson', key, value),
-    delete: (key: string) => typedInvoke('settings:delete', key),
-    saveProfile: (name: string) => typedInvoke('settings:saveProfile', name),
-    loadProfile: (name: string) => typedInvoke('settings:loadProfile', name),
-    applyProfile: (name: string) => typedInvoke('settings:applyProfile', name),
-    listProfiles: () => typedInvoke('settings:listProfiles'),
-    deleteProfile: (name: string) => typedInvoke('settings:deleteProfile', name)
-  },
+  settings,
 
   // Claude CLI config (~/.claude/settings.json)
-  claudeConfig: {
-    get: () => typedInvoke('claude:getConfig'),
-    setPermissions: (permissions: { allow: string[]; deny: string[] }) =>
-      typedInvoke('claude:setPermissions', permissions)
-  },
+  claudeConfig,
 
   // Webhook management
   webhooks: {
