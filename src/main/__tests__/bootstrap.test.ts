@@ -154,11 +154,11 @@ describe('bootstrap', () => {
     })
 
     it('should clean test task artifacts', () => {
+      vi.mocked(sprintMaintenanceFacade.cleanTestArtifacts).mockReturnValue(2)
+
       setupCleanupTasks()
 
-      expect(mockDb.prepare).toHaveBeenCalledWith(
-        expect.stringContaining("DELETE FROM sprint_tasks WHERE title LIKE 'Test task%'")
-      )
+      expect(sprintMaintenanceFacade.cleanTestArtifacts).toHaveBeenCalled()
     })
 
     it('should schedule periodic cleanup tasks', () => {

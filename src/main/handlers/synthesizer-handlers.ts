@@ -5,8 +5,35 @@ import { safeHandle } from '../ipc-utils'
 import { synthesizeSpec, reviseSpec, cancelSynthesis } from '../services/spec-synthesizer'
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
+import type { SynthesizeRequest, ReviseRequest } from '../../shared/types'
 
 const log = createLogger('synthesizer')
+
+const MAX_FIELD_CHARS = 10_000
+
+function validateSynthesizeRequest(request: unknown): request is SynthesizeRequest {
+  if (!request || typeof request !== 'object') return false
+  const r = request as Record<string, unknown>
+  if (typeof r.templateName !== 'string' || r.templateName.length > 500) return false
+  if (typeof r.repo !== 'string' || r.repo.length === 0) return false
+  if (typeof r.repoPath !== 'string' || r.repoPath.length === 0) return false
+  if (!r.answers || typeof r.answers !== 'object' || Array.isArray(r.answers)) return false
+  if (r.customPrompt !== undefined && typeof r.customPrompt !== 'string') return false
+  if (typeof r.customPrompt === 'string' && r.customPrompt.length > MAX_FIELD_CHARS) return false
+  return true
+}
+
+function validateReviseRequest(request: unknown): request is ReviseRequest {
+  if (!request || typeof request !== 'object') return false
+  const r = request as Record<string, unknown>
+  if (typeof r.currentSpec !== 'string' || r.currentSpec.length === 0) return false
+  if (r.currentSpec.length > MAX_FIELD_CHARS) return false
+  if (typeof r.instruction !== 'string' || r.instruction.length === 0) return false
+  if (r.instruction.length > MAX_FIELD_CHARS) return false
+  if (typeof r.repo !== 'string' || r.repo.length === 0) return false
+  if (typeof r.repoPath !== 'string' || r.repoPath.length === 0) return false
+  return true
+}
 
 /**
  * Register all synthesizer IPC handlers.
@@ -15,6 +42,10 @@ const log = createLogger('synthesizer')
 export function registerSynthesizerHandlers(): void {
   // --- Generate spec from template + answers ---
   safeHandle('synthesizer:generate', async (e, request) => {
+    if (!validateSynthesizeRequest(request)) {
+      log.warn('[synthesizer] generate: invalid request payload rejected')
+      throw new Error('Invalid synthesizer:generate request payload')
+    }
     const streamId = `synthesizer-gen-${Date.now()}`
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer
@@ -63,6 +94,10 @@ export function registerSynthesizerHandlers(): void {
 
   // --- Revise existing spec ---
   safeHandle('synthesizer:revise', async (e, request) => {
+    if (!validateReviseRequest(request)) {
+      log.warn('[synthesizer] revise: invalid request payload rejected')
+      throw new Error('Invalid synthesizer:revise request payload')
+    }
     const streamId = `synthesizer-rev-${Date.now()}`
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer

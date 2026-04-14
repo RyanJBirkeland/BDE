@@ -14,7 +14,7 @@ import { pruneOldChanges } from './data/task-changes'
 import { getEventRetentionDays } from './config'
 import { createLogger } from './logger'
 import { getErrorMessage } from '../shared/errors'
-import { pruneOldDiffSnapshots, DIFF_SNAPSHOT_RETENTION_DAYS } from './data/sprint-maintenance-facade'
+import { pruneOldDiffSnapshots, DIFF_SNAPSHOT_RETENTION_DAYS, cleanTestArtifacts } from './data/sprint-maintenance-facade'
 import { loadPlugins } from './services/plugin-loader'
 import { startLoadSampler, stopLoadSampler } from './services/load-sampler'
 import type { TaskTerminalService } from './services/task-terminal-service'
@@ -149,10 +149,9 @@ export function setupCleanupTasks(): void {
 
   // Clean up test task artifacts (agents running tests create "Test task" records)
   try {
-    const db = getDb()
-    const result = db.prepare("DELETE FROM sprint_tasks WHERE title LIKE 'Test task%'").run()
-    if (result.changes > 0) {
-      logger.info(`Cleaned ${result.changes} test task artifacts`)
+    const cleaned = cleanTestArtifacts()
+    if (cleaned > 0) {
+      logger.info(`Cleaned ${cleaned} test task artifacts`)
     }
   } catch {
     /* non-fatal */

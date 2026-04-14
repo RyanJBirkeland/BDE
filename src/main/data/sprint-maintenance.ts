@@ -10,6 +10,19 @@ import { getDb } from '../db'
 export const DIFF_SNAPSHOT_RETENTION_DAYS = 30
 
 /**
+ * Delete sprint_tasks rows created by agents running `npm test` in worktrees.
+ * Vitest's task-runner integration inserts "Test task" records during test
+ * execution; this cleanup removes them on startup before the UI loads.
+ * Returns the number of rows deleted.
+ */
+export function cleanTestArtifacts(db?: Database.Database): number {
+  const conn = db ?? getDb()
+  const sql = "DELETE FROM sprint_tasks WHERE title LIKE 'Test task%'"
+  const result = conn.prepare(sql).run()
+  return result.changes
+}
+
+/**
  * Null out `review_diff_snapshot` for tasks in terminal states older than
  * `retentionDays` days. Returns the number of rows updated.
  *

@@ -228,15 +228,26 @@ export async function handleCloseRequest(windowId: string, win: BrowserWindow): 
 
 function askRendererForAction(windowId: string, win: BrowserWindow): Promise<'return' | 'close'> {
   return new Promise<'return' | 'close'>((resolve) => {
+    // Dynamic per-window channel: tearoff:closeResponse:<windowId>.
+    // This cannot be a static safeHandle() registration because the channel name
+    // encodes the windowId — each window needs its own one-shot listener that
+    // resolves the Promise returned to handleCloseRequest. The outer handler
+    // (tearoff:closeConfirmed in tearoff-handlers.ts) is already wrapped in
+    // safeHandle(); this ipcMain.once is an internal relay, not a renderer-facing
+    // entry point.
     const responseChannel = `tearoff:closeResponse:${windowId}`
 
     const timeout = setTimeout(() => {
       ipcMain.removeAllListeners(responseChannel)
+      logger.warn(`[tearoff] close-dialog timed out for ${windowId} — defaulting to 'close'`)
       resolve('close')
     }, 5000)
 
     ipcMain.once(responseChannel, (_event, payload: { action: 'return' | 'close' }) => {
       clearTimeout(timeout)
+      if (!payload?.action) {
+        logger.warn(`[tearoff] close-dialog response for ${windowId} had no action — defaulting to 'close'`)
+      }
       resolve(payload?.action ?? 'close')
     })
 
