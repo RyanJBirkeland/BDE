@@ -5,6 +5,14 @@ Source: `src/main/agent-manager/`
 
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
+| `sdk-message-protocol.ts` | SDK wire protocol type guards and field accessors | `SDKWireMessage`, `asSDKMessage`, `getNumericField`, `getSessionId`, `isRateLimitMessage` |
+| `spawn-sdk.ts` | SDK-based agent spawn — session ID extraction, abort wiring, steer stub | `spawnViaSdk` |
+| `spawn-cli.ts` | CLI fallback spawn — stream-json protocol, V8 heap cap, stdin steer | `spawnViaCli`, `withMaxOldSpaceOption`, `AGENT_PROCESS_MAX_OLD_SPACE_MB` |
+| `prompt-assembly.ts` | Task validation + prompt context prep — upstream context, scratchpad, prompt build | `validateTaskForRun`, `assembleRunContext`, `fetchUpstreamContext`, `readPriorScratchpad` |
+| `message-consumer.ts` | SDK message stream iteration, OAuth refresh on auth error, playground path accumulation | `consumeMessages`, `ConsumeMessagesResult` |
+| `agent-telemetry.ts` | Cost/token tracking from SDK messages, SQL persistence of run telemetry | `trackAgentCosts`, `persistAgentRunTelemetry` |
+| `agent-initialization.ts` | Agent record creation, stderr wiring, activeAgents registration, agent:started event | `initializeAgentTracking` |
+| `spawn-and-wire.ts` | Spawn orchestration and error recovery — calls spawnWithTimeout then initializeAgentTracking | `spawnAndWireAgent`, `handleSpawnFailure` |
 | `playground-sanitize.ts` (`src/main/`) | DOMPurify-based HTML sanitizer with explicit tag/attr allowlist — blocks iframe, embed, object, style; preserves canvas, svg, audio, video | `sanitizePlaygroundHtml` |
 | `playground-handler.ts` | Detects HTML file writes from agents, reads and sanitizes the file, broadcasts `agent:playground` events to renderer | `detectHtmlWrite`, `tryEmitPlaygroundEvent` |
 | `oauth-checker.ts` | OAuth token validation with TTL cache — size-guards reads before allocating buffer, proactively refreshes on age | `checkOAuthToken`, `invalidateCheckOAuthTokenCache`, `OAUTH_CHECK_CACHE_TTL_MS` |
@@ -17,7 +25,7 @@ Source: `src/main/agent-manager/`
 | `prompt-constants.ts` | Truncation limits for all prompt builders | `PROMPT_TRUNCATION` |
 | `git-operations.ts` | Shared git utilities for agent completion and code review — rebase, push, commit, PR creation | `generatePrBody`, `rebaseOntoMain`, `pushBranch`, `checkExistingPr`, `findOrCreatePR`, `createNewPr`, `sanitizeForGit`, `autoCommitIfDirty`, `executeSquashMerge`, `cleanupWorktreeAndBranch` |
 | `index.ts` | `AgentManagerImpl` class — drain loop, watchdog, shutdown, `_validateAndClaimTask` (fresh-status guard), `onTaskTerminal` | `AgentManagerImpl`, `createAgentManager`, `AgentManager`, `AgentManagerStatus` |
-| `run-agent.ts` | Core agent run lifecycle — spawn, consume messages, finalize. Flushes event batcher on stream error and after `resolveAgentExit`. `logCleanupWarning` helper centralises worktree cleanup error messages | `runAgent`, `consumeMessages`, `validateTaskForRun`, `assembleRunContext`, `fetchUpstreamContext`, `RunAgentDeps`, `RunAgentTask`, `ConsumeMessagesResult` |
+| `run-agent.ts` | Orchestrator — delegates to prompt-assembly, message-consumer, agent-telemetry, spawn-and-wire; re-exports public symbols from extracted modules for backward compat | `runAgent`, `consumeMessages`, `validateTaskForRun`, `assembleRunContext`, `fetchUpstreamContext`, `RunAgentDeps`, `RunAgentTask`, `ConsumeMessagesResult` |
 | `turn-tracker.ts` | Per-agent token/turn tracking — writes turn records to SQLite via optional `db?: Database.Database` constructor injection (defaults to `getDb()`). | `TurnTracker` |
 | `agent-event-mapper.ts` (`src/main/`) | Maps SDK wire-protocol messages to AgentEvents and batches them to SQLite. `flushAgentEventBatcher(db?)` accepts optional db for injection. | `mapRawMessage`, `emitAgentEvent`, `flushAgentEventBatcher` |
 | `agent-event-persister.ts` (`src/main/`) | Agent event persistence and broadcast (batcher twin). `flushAgentEventBatcher(db?)` accepts optional db for injection. | `emitAgentEvent`, `flushAgentEventBatcher` |
