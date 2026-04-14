@@ -110,6 +110,62 @@ export interface SprintTask {
   created_at: string
 }
 
+// ---------------------------------------------------------------------------
+// SprintTask view types — focused Pick subsets for consumers that don't need
+// the full 43-field shape. SprintTask satisfies all four structurally.
+// ---------------------------------------------------------------------------
+
+/** Always meaningful regardless of task status. Every consumer can use this. */
+export type SprintTaskCore = Pick<
+  SprintTask,
+  'id' | 'title' | 'repo' | 'status' | 'priority' | 'notes' | 'tags' | 'group_id' | 'sprint_id' | 'created_at' | 'updated_at'
+>
+
+/** Task definition fields — workbench, spec drafting, prompt building. */
+export type SprintTaskSpec = SprintTaskCore &
+  Pick<
+    SprintTask,
+    | 'prompt'
+    | 'spec'
+    | 'spec_type'
+    | 'template_name'
+    | 'needs_review'
+    | 'playground_enabled'
+    | 'depends_on'
+    | 'cross_repo_contract'
+    | 'max_cost_usd'
+    | 'max_runtime_ms'
+    | 'model'
+  >
+
+/** Agent runtime state — drain loop, watchdog, completion handler. */
+export type SprintTaskExecution = SprintTaskCore &
+  Pick<
+    SprintTask,
+    | 'claimed_by'
+    | 'agent_run_id'
+    | 'started_at'
+    | 'completed_at'
+    | 'retry_count'
+    | 'fast_fail_count'
+    | 'retry_context'
+    | 'next_eligible_at'
+    | 'session_id'
+    | 'duration_ms'
+    | 'worktree_path'
+    | 'rebase_base_sha'
+    | 'rebased_at'
+    | 'failure_reason'
+    | 'partial_diff'
+  >
+
+/** PR and review lifecycle — code review station, sprint PR poller. */
+export type SprintTaskPR = SprintTaskCore &
+  Pick<
+    SprintTask,
+    'pr_url' | 'pr_number' | 'pr_status' | 'pr_mergeable_state' | 'revision_feedback' | 'review_diff_snapshot'
+  >
+
 /** Shape of the `review_diff_snapshot` JSON blob. */
 export interface ReviewDiffSnapshot {
   capturedAt: string
