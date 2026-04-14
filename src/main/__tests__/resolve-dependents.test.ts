@@ -278,4 +278,55 @@ describe('cascade cancellation atomicity', () => {
 
     expect(rollbackCalled.value).toBe(true)
   })
+
+  it('calls onTaskTerminal for each cascade-cancelled dependent', () => {
+    // Dependency chain: A (fails) → B (hard) → C (hard)
+    // When A fails with cascade=cancel, both B and C should be cancelled
+    // and onTaskTerminal should be called for both B and C
+    const index = mockIndex({
+      getDependents: vi.fn((id: string) => {
+        if (id === 'task-a') return new Set(['task-b'])
+        if (id === 'task-b') return new Set(['task-c'])
+        return new Set()
+      })
+    })
+
+    const taskA = mockTask({ id: 'task-a', status: 'failed', title: 'Task A', depends_on: [] })
+    const taskB = mockTask({ id: 'task-b', status: 'blocked', title: 'Task B', depends_on: [{ id: 'task-a', type: 'hard' }] })
+    const taskC = mockTask({ id: 'task-c', status: 'blocked', title: 'Task C', depends_on: [{ id: 'task-b', type: 'hard' }] })
+
+    const getTask = vi.fn((id: string) => {
+      if (id === 'task-a') return taskA
+      if (id === 'task-b') return taskB
+      if (id === 'task-c') return taskC
+      return null
+    })
+
+    const updateTask = vi.fn()
+    const onTaskTerminal = vi.fn()
+
+    resolveDependents(
+      'task-a',
+      'failed',
+      index,
+      getTask,
+      updateTask,
+      undefined,
+      () => 'cancel', // cascade behavior
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      onTaskTerminal
+    )
+
+    // Verify both B and C were cancelled
+    expect(updateTask).toHaveBeenCalledWith('task-b', expect.objectContaining({ status: 'cancelled' }))
+    expect(updateTask).toHaveBeenCalledWith('task-c', expect.objectContaining({ status: 'cancelled' }))
+
+    // Verify onTaskTerminal was called for both B and C
+    expect(onTaskTerminal).toHaveBeenCalledWith('task-b', 'cancelled')
+    expect(onTaskTerminal).toHaveBeenCalledWith('task-c', 'cancelled')
+    expect(onTaskTerminal).toHaveBeenCalledTimes(2)
+  })
 })
