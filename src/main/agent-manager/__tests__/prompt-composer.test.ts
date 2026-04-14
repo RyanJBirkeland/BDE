@@ -1381,6 +1381,7 @@ describe('output format guidance', () => {
 
   it('copilot prompt contains spec output format guidance', () => {
     const prompt = buildAgentPrompt({ agentType: 'copilot' })
+    expect(prompt).toContain('## Spec Output Format')
     expect(prompt).toContain('## Overview')
     expect(prompt).toContain('## Files to Change')
     expect(prompt).toContain('## Implementation Steps')
