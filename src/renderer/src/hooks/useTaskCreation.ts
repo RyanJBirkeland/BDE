@@ -88,6 +88,13 @@ export function useTaskCreation({
     setOperationalChecksRef.current = setOperationalChecks
   })
 
+  const structuralChecks = useTaskWorkbenchStore((s) => s.structuralChecks)
+  const semanticChecks = useTaskWorkbenchStore((s) => s.semanticChecks)
+  const checksRef = useRef({ structural: structuralChecks, semantic: semanticChecks })
+  useEffect(() => {
+    checksRef.current = { structural: structuralChecks, semantic: semanticChecks }
+  }, [structuralChecks, semanticChecks])
+
   /**
    * Core create/update — reads all form data from ref so it is always fresh.
    */
@@ -199,8 +206,8 @@ export function useTaskCreation({
       }
 
       // Collect ALL warnings: operational + advisory structural/semantic
-      const allStructural = useTaskWorkbenchStore.getState().structuralChecks
-      const allSemantic = useTaskWorkbenchStore.getState().semanticChecks
+      const allStructural = checksRef.current.structural
+      const allSemantic = checksRef.current.semantic
       const advisoryWarnings = [...allStructural, ...allSemantic].filter(
         (c) => c.status === 'warn'
       )

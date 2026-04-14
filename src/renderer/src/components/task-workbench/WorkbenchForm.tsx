@@ -76,6 +76,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
   } = form
 
   const allTasks = useSprintTasks((s) => s.tasks)
+  const structuralChecks = useTaskWorkbenchStore((s) => s.structuralChecks)
+  const operationalChecks = useTaskWorkbenchStore((s) => s.operationalChecks)
 
   const [submitting, setSubmitting] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -183,8 +185,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
 
       if (submitting) return // ignore while a submit is in flight
 
-      const state = useTaskWorkbenchStore.getState()
-      const reason = describeQueueBlocker(state)
+      const reason = describeQueueBlocker({ repo, spec, structuralChecks, operationalChecks })
 
       if (reason === null) {
         handleSubmit('queue')
@@ -195,7 +196,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
       toast.error(`Can't queue: ${reason}`)
       useTaskWorkbenchStore.setState({ checksExpanded: true })
     },
-    [submitting, handleSubmit]
+    [submitting, handleSubmit, repo, spec, structuralChecks, operationalChecks]
   )
 
   return (
