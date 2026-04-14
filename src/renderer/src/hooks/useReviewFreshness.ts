@@ -25,11 +25,12 @@ export function useReviewFreshness(
 
   useEffect(() => {
     if (!taskId || taskStatus !== 'review') return
-    setFreshness({ status: 'loading' })
+    let cancelled = false
     window.api.review
       .checkFreshness({ taskId })
-      .then(setFreshness)
-      .catch(() => setFreshness({ status: 'unknown' }))
+      .then(result => { if (!cancelled) setFreshness(result) })
+      .catch(() => { if (!cancelled) setFreshness({ status: 'unknown' }) })
+    return () => { cancelled = true }
   }, [taskId, rebasedAt, taskStatus])
 
   return { freshness, setFreshness }
