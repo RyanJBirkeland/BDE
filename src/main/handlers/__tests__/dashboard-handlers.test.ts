@@ -29,8 +29,8 @@ describe('Dashboard handlers', () => {
     registerDashboardHandlers()
 
     expect(safeHandle).toHaveBeenCalledTimes(5)
-    expect(safeHandle).toHaveBeenCalledWith('agent:completionsPerHour', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('agent:recentEvents', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('dashboard:completionsPerHour', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('dashboard:recentEvents', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('dashboard:dailySuccessRate', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('system:loadAverage', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('clipboard:readImage', expect.any(Function))
@@ -131,17 +131,17 @@ describe('Dashboard handlers', () => {
 
     const mockEvent = {} as IpcMainInvokeEvent
 
-    it('agent:completionsPerHour handler returns completions', async () => {
+    it('dashboard:completionsPerHour handler returns completions', async () => {
       const buckets = [{ hour: '2026-03-24T10:00:00', successCount: 2, failedCount: 0 }]
       mockAll.mockReturnValueOnce(buckets)
       const handlers = captureHandlers()
 
-      const result = await handlers['agent:completionsPerHour'](mockEvent)
+      const result = await handlers['dashboard:completionsPerHour'](mockEvent)
 
       expect(result).toBe(buckets)
     })
 
-    it('agent:recentEvents handler passes limit to getRecentEvents', async () => {
+    it('dashboard:recentEvents handler passes limit to getRecentEvents', async () => {
       const events = [
         {
           id: 1,
@@ -155,17 +155,17 @@ describe('Dashboard handlers', () => {
       mockAll.mockReturnValueOnce(events)
       const handlers = captureHandlers()
 
-      const result = await handlers['agent:recentEvents'](mockEvent, 10)
+      const result = await handlers['dashboard:recentEvents'](mockEvent, 10)
 
       expect(mockAll).toHaveBeenCalledWith(10)
       expect(result).toBe(events)
     })
 
-    it('agent:recentEvents handler uses default limit when not provided', async () => {
+    it('dashboard:recentEvents handler uses default limit when not provided', async () => {
       mockAll.mockReturnValueOnce([])
       const handlers = captureHandlers()
 
-      await handlers['agent:recentEvents'](mockEvent, undefined)
+      await handlers['dashboard:recentEvents'](mockEvent, undefined)
 
       expect(mockAll).toHaveBeenCalledWith(20)
     })

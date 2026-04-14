@@ -4,11 +4,11 @@ import { getLoadSnapshot } from '../services/load-sampler'
 import { getCompletionsPerHour, getRecentEvents } from '../data/dashboard-queries'
 
 export function registerDashboardHandlers(): void {
-  safeHandle('agent:completionsPerHour', async () => {
+  safeHandle('dashboard:completionsPerHour', async () => {
     return getCompletionsPerHour()
   })
 
-  safeHandle('agent:recentEvents', async (_e: unknown, limit?: number) => {
+  safeHandle('dashboard:recentEvents', async (_e: unknown, limit?: number) => {
     return getRecentEvents(limit)
   })
 

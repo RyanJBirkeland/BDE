@@ -7,7 +7,7 @@ import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { partitionSprintTasks } from '../lib/partitionSprintTasks'
 import { toast } from '../stores/toasts'
-import type { StatusFilter } from '../stores/sprintUI'
+import type { StatusFilter } from '../stores/sprintFilters'
 import type { SprintTask } from '../../../shared/types'
 
 export interface UseSprintPipelineCommandsProps {

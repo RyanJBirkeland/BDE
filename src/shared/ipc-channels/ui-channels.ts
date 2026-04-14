@@ -86,7 +86,7 @@ export interface DailySuccessRate {
 }
 
 export interface DashboardChannels {
-  'agent:completionsPerHour': { args: []; result: CompletionBucket[] }
-  'agent:recentEvents': { args: [limit?: number]; result: DashboardEvent[] }
+  'dashboard:completionsPerHour': { args: []; result: CompletionBucket[] }
+  'dashboard:recentEvents': { args: [limit?: number]; result: DashboardEvent[] }
   'dashboard:dailySuccessRate': { args: [days?: number]; result: DailySuccessRate[] }
 }

@@ -346,8 +346,8 @@ declare global {
 
       // Dashboard analytics
       dashboard: {
-        completionsPerHour: () => Promise<IpcResult<'agent:completionsPerHour'>>
-        recentEvents: (limit?: number) => Promise<IpcResult<'agent:recentEvents'>>
+        completionsPerHour: () => Promise<IpcResult<'dashboard:completionsPerHour'>>
+        recentEvents: (limit?: number) => Promise<IpcResult<'dashboard:recentEvents'>>
         dailySuccessRate: (days?: number) => Promise<IpcResult<'dashboard:dailySuccessRate'>>
       }
 

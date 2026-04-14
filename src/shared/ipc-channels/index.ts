@@ -61,7 +61,7 @@
  *                       (`agent:steer`, `agent:kill`), plural for
  *                       collection ops (`agents:list`, `agents:readLog`).
  *                       New channels should follow this singular/plural rule.
- *   - `agent:completionsPerHour`, `agent:recentEvents` — dashboard queries
+ *   - `dashboard:completionsPerHour`, `dashboard:recentEvents` — dashboard queries
  *                       that live in DashboardChannels but use the `agent:`
  *                       prefix instead of `dashboard:`.
  *   - `clipboard:readImage` — lives inside SystemChannels despite having

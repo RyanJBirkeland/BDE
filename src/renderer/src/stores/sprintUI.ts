@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 
-export type { StatusFilter } from './sprintFilters'
 export type PipelineDensity = 'card' | 'compact'
 
 interface SprintUIState {

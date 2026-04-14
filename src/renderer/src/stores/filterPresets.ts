@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { createDebouncedPersister } from '../lib/createDebouncedPersister'
-import type { StatusFilter } from './sprintUI'
+import type { StatusFilter } from './sprintFilters'
 
 const STORAGE_KEY = 'bde:filterPresets'
 

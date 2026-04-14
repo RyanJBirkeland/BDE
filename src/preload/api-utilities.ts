@@ -148,8 +148,8 @@ export const terminal = {
 
 // Dashboard analytics
 export const dashboard = {
-  completionsPerHour: () => typedInvoke('agent:completionsPerHour'),
-  recentEvents: (limit?: number) => typedInvoke('agent:recentEvents', limit),
+  completionsPerHour: () => typedInvoke('dashboard:completionsPerHour'),
+  recentEvents: (limit?: number) => typedInvoke('dashboard:recentEvents', limit),
   dailySuccessRate: (days?: number) => typedInvoke('dashboard:dailySuccessRate', days)
 }
 

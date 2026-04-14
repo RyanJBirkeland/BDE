@@ -7,7 +7,7 @@ import type {
   LoadSnapshot,
   DailySuccessRate
 } from '../../../../shared/ipc-channels'
-import type { StatusFilter } from '../../stores/sprintUI'
+import type { StatusFilter } from '../../stores/sprintFilters'
 import { Activity, Zap, TrendingUp, Cpu, Coins } from 'lucide-react'
 import { useDashboardDataStore } from '../../stores/dashboardData'
 import './CenterColumn.css'
