@@ -11,8 +11,8 @@ import type { PendingComment } from '../../stores/pendingReview'
 import { PlainDiffContent } from './PlainDiffContent'
 import { VirtualizedDiffContent } from './VirtualizedDiffContent'
 import { VirtualizedDiffBanner } from './VirtualizedDiffBanner'
-import type { FlatRow, HunkAddress } from './VirtualizedDiffContent'
-import { rowHeight, ROW_HEIGHT, FILE_HEADER_HEIGHT, HUNK_HEADER_HEIGHT } from './VirtualizedDiffContent'
+import type { FlatRow, HunkAddress } from './virtualized-diff-utils'
+import { rowHeight, ROW_HEIGHT, FILE_HEADER_HEIGHT, HUNK_HEADER_HEIGHT } from './virtualized-diff-utils'
 
 export interface LineRange {
   file: string

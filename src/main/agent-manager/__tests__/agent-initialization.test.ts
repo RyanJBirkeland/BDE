@@ -20,7 +20,7 @@ import type { TurnTracker } from '../turn-tracker'
 import { createAgentRecord } from '../../agent-history'
 import { emitAgentEvent } from '../../agent-event-mapper'
 
-function makeTurnTrackerStub(): TurnTracker {
+function _makeTurnTrackerStub(): TurnTracker {
   return {
     processMessage: vi.fn(),
     totals: vi.fn().mockReturnValue({ tokensIn: 0, tokensOut: 0, turnCount: 0, cacheTokensRead: 0, cacheTokensCreated: 0 })

@@ -17,7 +17,6 @@ const PlannerView = lazy(() => import('../views/PlannerView'))
 // Lazy view preloading map — used by Sidebar for hover-based preloading
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const VIEW_LOADERS: Partial<Record<View, () => Promise<unknown>>> = {
   dashboard: () => import('../views/DashboardView'),
   sprint: () => import('../views/SprintView'),
