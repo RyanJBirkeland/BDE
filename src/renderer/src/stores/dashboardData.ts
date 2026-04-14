@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { CompletionBucket, LoadSnapshot } from '../../../shared/ipc-channels'
 import type { FeedEvent } from '../lib/dashboard-types'
+import { getCompletionsPerHour, getRecentEvents, getPrList, getDailySuccessRate, getLoadAverage } from '../services/dashboard'
 
 interface DailySuccessRate {
   date: string
@@ -85,7 +86,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
 
     let throughputData: CompletionBucket[] = []
     try {
-      const data = await window.api.dashboard?.completionsPerHour()
+      const data = await getCompletionsPerHour()
       if (data) throughputData = data
     } catch {
       errors.throughput = 'Failed to load completions'
@@ -93,7 +94,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
 
     let feedEvents: FeedEvent[] = []
     try {
-      const events = await window.api.dashboard?.recentEvents(30)
+      const events = await getRecentEvents(30)
       if (events) {
         feedEvents = events
           .map((e) => {
@@ -118,7 +119,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
 
     let prCount = 0
     try {
-      const prs = await window.api.pr.getList()
+      const prs = await getPrList()
       prCount = prs?.prs?.length ?? 0
     } catch {
       errors.prs = 'Failed to load PR data'
@@ -126,7 +127,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
 
     let successTrendData: DailySuccessRate[] = []
     try {
-      const data = await window.api.dashboard?.dailySuccessRate(14)
+      const data = await getDailySuccessRate(14)
       if (data) {
         successTrendData = data
       }
@@ -152,7 +153,7 @@ export const useDashboardDataStore = create<DashboardDataState>((set) => ({
 
   fetchLoad: async () => {
     try {
-      const data = await window.api.system?.loadAverage()
+      const data = await getLoadAverage()
       if (data) {
         set((state) => {
           const nextErrors = { ...state.cardErrors }
