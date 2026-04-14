@@ -7,6 +7,16 @@ import { readFile, stat } from 'node:fs/promises'
 import { extname, basename, join } from 'node:path'
 
 const MAX_PLAYGROUND_SIZE = 5 * 1024 * 1024 // 5MB
+const PLAYGROUND_IO_TIMEOUT_MS = 5_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`I/O timeout after ${ms}ms: ${label}`)), ms)
+    )
+  ])
+}
 
 /**
  * Detects if a message is a tool_result for a Write tool that created an .html file.
@@ -34,7 +44,9 @@ export function detectHtmlWrite(msg: unknown): string | null {
 
 /**
  * Attempts to read an HTML file and emit a playground event.
- * Silently fails if the file doesn't exist or is too large.
+ * Races each I/O step against PLAYGROUND_IO_TIMEOUT_MS to prevent a stalled
+ * filesystem from blocking indefinitely.
+ * Silently fails if the file doesn't exist, is too large, or times out.
  */
 export async function tryEmitPlaygroundEvent(
   taskId: string,
@@ -55,19 +67,26 @@ export async function tryEmitPlaygroundEvent(
       return
     }
 
-    // Check file size
-    const stats = await stat(absolutePath)
+    // Check file size — race against timeout in case of filesystem stall
+    const stats = await withTimeout(
+      stat(absolutePath),
+      PLAYGROUND_IO_TIMEOUT_MS,
+      `stat(${filePath})`
+    )
     if (stats.size > MAX_PLAYGROUND_SIZE) {
       logger.warn(`[playground] File too large (${stats.size} bytes), skipping: ${filePath}`)
       return
     }
 
-    // Read and sanitize file content
-    const rawHtml = await readFile(absolutePath, 'utf-8')
+    // Read and sanitize file content — race against timeout
+    const rawHtml = await withTimeout(
+      readFile(absolutePath, 'utf-8'),
+      PLAYGROUND_IO_TIMEOUT_MS,
+      `readFile(${filePath})`
+    )
     const sanitizedHtml = sanitizePlaygroundHtml(rawHtml)
     const filename = basename(absolutePath)
 
-    // Emit playground event with sanitized HTML
     const event: AgentEvent = {
       type: 'agent:playground',
       filename,
@@ -80,6 +99,6 @@ export async function tryEmitPlaygroundEvent(
     logger.info(`[playground] Emitted playground event for ${filename} (${stats.size} bytes)`)
   } catch (err) {
     logger.warn(`[playground] Failed to read HTML file ${filePath}: ${err}`)
-    // Silently ignore — file may not exist yet or may be inaccessible
+    // Silently ignore — covers I/O timeouts, missing files, permission errors
   }
 }
