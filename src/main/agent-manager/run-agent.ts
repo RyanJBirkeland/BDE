@@ -206,10 +206,6 @@ export async function consumeMessages(
 }
 
 /**
- * Phase 1: Validates task content and prepares the agent prompt.
- * Throws if task has no content (early validation failure).
- */
-/**
  * Validation phase: verifies the task has executable content.
  * On failure, transitions the task to 'error' status, calls onTaskTerminal,
  * and cleans up the worktree before throwing 'Task has no content'.

@@ -6,6 +6,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { runAgent } from '../run-agent'
 import { isRateLimitMessage, getNumericField } from '../sdk-adapter'
+import { tryEmitPlaygroundEvent } from '../playground-handler'
+import { cleanupWorktree } from '../worktree'
 import type { RunAgentTask, RunAgentDeps } from '../run-agent'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
@@ -21,6 +23,14 @@ vi.mock('../fast-fail', () => ({
 vi.mock('../worktree', () => ({
   cleanupWorktree: vi.fn().mockResolvedValue(undefined)
 }))
+
+vi.mock('../playground-handler', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../playground-handler')>()
+  return {
+    ...actual,
+    tryEmitPlaygroundEvent: vi.fn().mockResolvedValue(undefined)
+  }
+})
 
 vi.mock('../sdk-adapter', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../sdk-adapter')>()
@@ -318,5 +328,88 @@ describe('RunAgentTask interface', () => {
       fast_fail_count: 0
     }
     expect(taskWithoutPlayground.playground_enabled).toBeUndefined()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Ordering guarantee: playground events must be emitted before worktree cleanup
+// ---------------------------------------------------------------------------
+
+describe('runAgent — playground-before-cleanup ordering', () => {
+  const mockRepo: ISprintTaskRepository = {
+    getTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
+    getQueuedTasks: vi.fn(),
+    getTasksWithDependencies: vi.fn().mockResolvedValue([]),
+    getOrphanedTasks: vi.fn(),
+    clearStaleClaimedBy: vi.fn().mockReturnValue(0),
+    getActiveTaskCount: vi.fn().mockResolvedValue(0),
+    claimTask: vi.fn()
+  }
+
+  const createDeps = (): RunAgentDeps => ({
+    activeAgents: new Map<string, ActiveAgent>(),
+    defaultModel: 'claude-sonnet-4-20250514',
+    logger: {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn()
+    },
+    onTaskTerminal: vi.fn().mockResolvedValue(undefined),
+    repo: mockRepo
+  })
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+
+    const sdkAdapter = await import('../sdk-adapter')
+    const spawnAgentMock = sdkAdapter.spawnAgent as ReturnType<typeof vi.fn>
+
+    // Stream yields a tool_result for a Write to an .html file, then exits
+    const messages = {
+      async *[Symbol.asyncIterator]() {
+        yield {
+          type: 'tool_result',
+          tool_name: 'Write',
+          input: { file_path: '/tmp/test.html' },
+          exit_code: 0
+        }
+        yield { exit_code: 0, cost_usd: 0.01, tokens_in: 100, tokens_out: 50 }
+      }
+    }
+    spawnAgentMock.mockImplementation(async () => ({
+      messages,
+      result: Promise.resolve({ exitCode: 0 })
+    }))
+  })
+
+  it('awaits playground events before worktree cleanup', async () => {
+    const callOrder: string[] = []
+
+    vi.mocked(tryEmitPlaygroundEvent).mockImplementation(async () => {
+      callOrder.push('emit')
+    })
+    vi.mocked(cleanupWorktree).mockImplementation(async () => {
+      callOrder.push('cleanup')
+      return undefined
+    })
+
+    const task: RunAgentTask = {
+      id: 'task-order-1',
+      title: 'Ordering test',
+      prompt: 'Build something visual',
+      spec: null,
+      repo: 'BDE',
+      retry_count: 0,
+      fast_fail_count: 0,
+      playground_enabled: true
+    }
+
+    await runAgent(task, { worktreePath: '/tmp/wt', branch: 'agent/test' }, '/repo', createDeps())
+
+    expect(callOrder).toContain('emit')
+    expect(callOrder).toContain('cleanup')
+    expect(callOrder.indexOf('emit')).toBeLessThan(callOrder.indexOf('cleanup'))
   })
 })
