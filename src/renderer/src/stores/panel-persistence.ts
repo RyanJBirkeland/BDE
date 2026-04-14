@@ -1,5 +1,6 @@
 import { createDebouncedPersister } from '../lib/createDebouncedPersister'
 import type { PanelNode } from './panel-tree'
+import { setJsonSetting, getJsonSetting } from '../services/settings-storage'
 
 // ---------------------------------------------------------------------------
 // Layout persistence helpers — wraps IPC settings calls, no Zustand/React
@@ -9,8 +10,7 @@ import type { PanelNode } from './panel-tree'
  * Saves layout to the settings store. Pass null to clear the saved layout.
  */
 export function saveLayout(layout: PanelNode | null): void {
-  if (typeof window === 'undefined' || !window.api?.settings) return
-  window.api.settings.setJson('panel.layout', layout).catch((err) => {
+  setJsonSetting('panel.layout', layout).catch((err) => {
     console.error('Failed to save panel layout:', err)
   })
 }
@@ -20,9 +20,8 @@ export function saveLayout(layout: PanelNode | null): void {
  * Returns null if no layout is saved or settings are unavailable.
  */
 export async function loadLayout(): Promise<PanelNode | null> {
-  if (typeof window === 'undefined' || !window.api?.settings) return null
-  const saved = await window.api.settings.getJson('panel.layout')
-  return (saved as PanelNode | null) ?? null
+  const saved = await getJsonSetting<PanelNode>('panel.layout')
+  return saved ?? null
 }
 
 export interface LayoutPersister {

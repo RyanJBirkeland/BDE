@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { getSetting, setSetting } from '../services/settings-storage'
 
 /**
  * Keybindings store — manages customizable keyboard shortcuts.
@@ -87,7 +88,7 @@ export const useKeybindingsStore = create<KeybindingsStore>((set, get) => ({
 
   init: async () => {
     try {
-      const saved = await window.api.settings.get('keybindings')
+      const saved = await getSetting('keybindings')
       if (saved) {
         const parsed = JSON.parse(saved) as Record<ActionId, string>
         // Merge with defaults to handle new actions added in updates
@@ -105,7 +106,7 @@ export const useKeybindingsStore = create<KeybindingsStore>((set, get) => ({
     const updated = { ...get().bindings, [actionId]: combo }
     set({ bindings: updated })
     try {
-      await window.api.settings.set('keybindings', JSON.stringify(updated))
+      await setSetting('keybindings', JSON.stringify(updated))
     } catch (err) {
       console.error('Failed to save keybindings:', err)
     }
@@ -114,7 +115,7 @@ export const useKeybindingsStore = create<KeybindingsStore>((set, get) => ({
   resetToDefaults: async () => {
     set({ bindings: { ...DEFAULT_KEYBINDINGS } })
     try {
-      await window.api.settings.set('keybindings', JSON.stringify(DEFAULT_KEYBINDINGS))
+      await setSetting('keybindings', JSON.stringify(DEFAULT_KEYBINDINGS))
     } catch (err) {
       console.error('Failed to reset keybindings:', err)
     }

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { toast } from './toasts'
 import { loadLayout, createLayoutPersister } from './panel-persistence'
+import { setJsonSetting } from '../services/settings-storage'
 import {
   _resetIdCounter,
   createLeaf,
@@ -139,12 +140,10 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
     _resetIdCounter()
     const fresh = createLeaf('dashboard')
     set({ root: fresh, focusedPanelId: fresh.panelId, activeView: 'dashboard' })
-    if (typeof window !== 'undefined' && window.api?.settings) {
-      window.api.settings.setJson('panel.layout', null).catch((err) => {
-        console.error('Failed to clear panel layout:', err)
-        toast.error('Settings save failed — changes may be lost on restart')
-      })
-    }
+    setJsonSetting('panel.layout', null).catch((err) => {
+      console.error('Failed to clear panel layout:', err)
+      toast.error('Settings save failed — changes may be lost on restart')
+    })
   },
 
   loadSavedLayout: async (): Promise<void> => {

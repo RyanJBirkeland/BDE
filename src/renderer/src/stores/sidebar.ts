@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { View } from './panelLayout'
 import { toast } from './toasts'
+import { getJsonSetting, setSetting } from '../services/settings-storage'
 
 const ALL_VIEWS: View[] = [
   'dashboard',
@@ -44,7 +45,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
 
   loadSaved: async () => {
     try {
-      const saved = await window.api.settings.getJson('sidebar.pinnedViews')
+      const saved = await getJsonSetting<string[]>('sidebar.pinnedViews')
       if (Array.isArray(saved) && saved.length > 0) {
         // Filter to only valid views
         const valid = saved.filter((v: string) => ALL_VIEWS.includes(v as View)) as View[]
@@ -59,7 +60,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
 function persistPinned(views: View[]): void {
   // settings.set expects a string value, settings.getJson parses it back
   // Verify this contract by reading src/preload/index.ts and src/main/handlers/config-handlers.ts
-  window.api.settings.set('sidebar.pinnedViews', JSON.stringify(views)).catch((err) => {
+  setSetting('sidebar.pinnedViews', JSON.stringify(views)).catch((err) => {
     console.error('Failed to save pinned views:', err)
     toast.error('Settings save failed — changes may be lost on restart')
   })

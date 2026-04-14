@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createDebouncedPersister } from '../lib/createDebouncedPersister'
 import { useIDEFileCache } from './ideFileCache'
+import { setJsonSetting } from '../services/settings-storage'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -290,7 +291,7 @@ let lastSerialized = ''
 let lastToSave: unknown = null
 
 const [persistIDEState, cancelIDEPersist] = createDebouncedPersister<unknown>((state) => {
-  window.api.settings.setJson('ide.state', state)
+  setJsonSetting('ide.state', state)
 }, 2000)
 
 function flushPersistence(): void {

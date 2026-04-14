@@ -7,6 +7,7 @@
 import { create } from 'zustand'
 import type { PromptTemplate } from '../lib/launchpad-types'
 import { DEFAULT_TEMPLATES } from '../lib/default-templates'
+import { getJsonSetting, setJsonSetting } from '../services/settings-storage'
 
 const SETTINGS_KEY = 'prompt_templates'
 
@@ -75,7 +76,7 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
   loadTemplates: async () => {
     set({ loading: true })
     try {
-      const saved = (await window.api.settings.getJson(SETTINGS_KEY)) as PromptTemplate[] | null
+      const saved = await getJsonSetting<PromptTemplate[]>(SETTINGS_KEY)
       const merged = mergeTemplates(saved ?? [])
       set({ templates: merged, loading: false })
     } catch (err) {
@@ -96,7 +97,7 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
     }
 
     set({ templates: updated })
-    await window.api.settings.setJson(SETTINGS_KEY, toPersistedTemplates(updated))
+    await setJsonSetting(SETTINGS_KEY, toPersistedTemplates(updated))
   },
 
   deleteTemplate: async (id) => {
@@ -108,7 +109,7 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
 
     const updated = templates.filter((t) => t.id !== id)
     set({ templates: updated })
-    await window.api.settings.setJson(SETTINGS_KEY, toPersistedTemplates(updated))
+    await setJsonSetting(SETTINGS_KEY, toPersistedTemplates(updated))
   },
 
   reorderTemplates: async (orderedIds) => {
@@ -131,6 +132,6 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
       t.id === id && t.builtIn ? { ...t, hidden: !t.hidden } : t
     )
     set({ templates: updated })
-    await window.api.settings.setJson(SETTINGS_KEY, toPersistedTemplates(updated))
+    await setJsonSetting(SETTINGS_KEY, toPersistedTemplates(updated))
   }
 }))
