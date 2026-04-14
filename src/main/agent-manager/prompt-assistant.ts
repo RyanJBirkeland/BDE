@@ -6,7 +6,7 @@ import { assistantPersonality } from '../agent-system/personality/assistant-pers
 import { adhocPersonality } from '../agent-system/personality/adhoc-personality'
 import { getAllMemory, isBdeRepo } from '../agent-system/memory'
 import { getUserMemory } from '../agent-system/memory/user-memory'
-import { getAllSkills } from '../agent-system/skills'
+import { selectSkills } from '../agent-system/skills'
 import {
   CODING_AGENT_PREAMBLE,
   PLAYGROUND_INSTRUCTIONS,
@@ -44,8 +44,11 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
 
   // Inject skills (BDE-specific, interactive agents only)
   if (isBdeRepo(repoName)) {
-    prompt += '\n\n## Available Skills\n'
-    prompt += getAllSkills()
+    const skills = selectSkills(taskContent ?? '')
+    if (skills.trim()) {
+      prompt += '\n\n## Available Skills\n'
+      prompt += skills
+    }
 
     prompt += '\n\n## Note\n'
     prompt += 'You have BDE-native skills and conventions loaded. '

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getAllSkills, getSkillList } from '../index'
+import { getAllSkills, getSkillList, selectSkills } from '../index'
 import { systemIntrospectionSkill } from '../system-introspection'
 import { taskOrchestrationSkill } from '../task-orchestration'
 import { codePatternsSkill } from '../code-patterns'
@@ -69,6 +69,40 @@ describe('Skills System', () => {
         expect(skill.description).toBeTruthy()
         expect(skill.guidance).toBeTruthy()
       }
+    })
+  })
+
+  describe('selectSkills', () => {
+    it('always includes code-patterns skill', () => {
+      const result = selectSkills('write a button component')
+      const codePatterns = getSkillList().find(s => s.id === 'code-patterns')!
+      expect(result).toContain(codePatterns.guidance.slice(0, 50))
+    })
+
+    it('includes pr-review skill when task mentions PR', () => {
+      const result = selectSkills('review this PR and check for merge conflicts')
+      const prSkill = getSkillList().find(s => s.id === 'pr-review')!
+      expect(result).toContain(prSkill.guidance.slice(0, 50))
+    })
+
+    it('returns all skills when task has no relevant keywords', () => {
+      const result = selectSkills('add a zustand selector for task count')
+      // Generic task with no skill-related keywords falls back to all skills
+      expect(result).toBe(getAllSkills())
+    })
+
+    it('includes debugging skill when task mentions failed task', () => {
+      const result = selectSkills('debug why this pipeline task keeps failing with agent errors')
+      const debugSkill = getSkillList().find(s => s.id === 'debugging')!
+      expect(result).toContain(debugSkill.guidance.slice(0, 50))
+    })
+
+    it('falls back to all skills when taskContent is empty', () => {
+      expect(selectSkills('')).toBe(getAllSkills())
+    })
+
+    it('falls back to all skills when taskContent is whitespace', () => {
+      expect(selectSkills('   ')).toBe(getAllSkills())
     })
   })
 })
