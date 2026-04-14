@@ -11,13 +11,27 @@ import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channel
 import type { WorkflowTemplate } from '../shared/workflow-types'
 import { typedInvoke, onBroadcast } from './ipc-helpers'
 import { settings, claudeConfig } from './api-settings'
+import {
+  getRepoPaths,
+  gitStatus,
+  gitDiff,
+  gitStage,
+  gitUnstage,
+  gitCommit,
+  gitPush,
+  gitBranches,
+  gitCheckout,
+  gitDetectRemote,
+  gitFetch,
+  gitPull
+} from './api-git'
 
 // Prevent MaxListenersExceededWarning during HMR dev cycles
 ipcRenderer.setMaxListeners(25)
 
 const api = {
   readClipboardImage: () => typedInvoke('clipboard:readImage'),
-  getRepoPaths: () => typedInvoke('git:getRepoPaths'),
+  getRepoPaths,
   openExternal: (url: string) => typedInvoke('window:openExternal', url),
   openPlaygroundInBrowser: (html: string) => typedInvoke('playground:openInBrowser', html),
   listMemoryFiles: () => typedInvoke('memory:listFiles'),
@@ -59,17 +73,17 @@ const api = {
   },
 
   // Git client
-  gitStatus: (cwd: string) => typedInvoke('git:status', cwd),
-  gitDiff: (cwd: string, file?: string) => typedInvoke('git:diff', cwd, file),
-  gitStage: (cwd: string, files: string[]) => typedInvoke('git:stage', cwd, files),
-  gitUnstage: (cwd: string, files: string[]) => typedInvoke('git:unstage', cwd, files),
-  gitCommit: (cwd: string, message: string) => typedInvoke('git:commit', cwd, message),
-  gitPush: (cwd: string) => typedInvoke('git:push', cwd),
-  gitBranches: (cwd: string) => typedInvoke('git:branches', cwd),
-  gitCheckout: (cwd: string, branch: string) => typedInvoke('git:checkout', cwd, branch),
-  gitDetectRemote: (cwd: string) => typedInvoke('git:detectRemote', cwd),
-  gitFetch: (cwd: string) => typedInvoke('git:fetch', cwd),
-  gitPull: (cwd: string, currentBranch: string) => typedInvoke('git:pull', cwd, currentBranch),
+  gitStatus,
+  gitDiff,
+  gitStage,
+  gitUnstage,
+  gitCommit,
+  gitPush,
+  gitBranches,
+  gitCheckout,
+  gitDetectRemote,
+  gitFetch,
+  gitPull,
 
   // Local agent process detection + spawning
   getAgentProcesses: () => typedInvoke('local:getAgentProcesses'),
