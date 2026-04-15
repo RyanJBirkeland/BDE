@@ -4,7 +4,6 @@
 
 import { pipelinePersonality } from '../agent-system/personality/pipeline-personality'
 import { getAllMemory, isBdeRepo, selectUserMemory } from '../agent-system/memory'
-import { getUserMemory } from '../agent-system/memory/user-memory'
 import {
   CODING_AGENT_PREAMBLE,
   PLAYGROUND_INSTRUCTIONS,
@@ -122,7 +121,7 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
   }
 
   // Inject user memory (selective pre-loading for pipeline agents)
-  const userMem = taskContent ? selectUserMemory(taskContent) : getUserMemory()
+  const userMem = selectUserMemory(taskContent ?? '')
   if (userMem.fileCount > 0) {
     prompt += '\n\n## User Knowledge\n'
     prompt += userMem.content
