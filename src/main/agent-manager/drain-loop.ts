@@ -168,7 +168,7 @@ export async function drainQueuedTasks(
         const errMsg = err instanceof Error ? err.message : String(err)
         const note = `Task processing failed ${count} consecutive times in the drain loop: ${errMsg}. Check ~/.bde/bde.log for details.`
         const truncated = note.length > NOTES_MAX_LENGTH
-          ? '...' + note.slice(-(NOTES_MAX_LENGTH - 3))
+          ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...'
           : note
         try {
           const currentTask = deps.repo.getTask(taskId)

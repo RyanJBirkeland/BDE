@@ -104,6 +104,21 @@ describe('drainQueuedTasks — quarantine', () => {
     expect(counts.has('task-abc')).toBe(false)
   })
 
+  it('preserves failure count when quarantine updateTask throws', async () => {
+    const counts = new Map<string, number>([['task-abc', DRAIN_QUARANTINE_THRESHOLD - 1]])
+    // Pass updateTask override via makeRepo's partial overrides path (not top-level repo override)
+    const failingUpdateTask = vi.fn().mockImplementation(() => { throw new Error('disk full') })
+    const deps = makeDeps({}, counts)
+    // Replace updateTask on the already-constructed repo mock
+    ;(deps.repo.updateTask as ReturnType<typeof vi.fn>) = failingUpdateTask
+
+    await drainQueuedTasks(4, new Map(), deps)
+
+    // Quarantine attempt failed — count must still be at threshold, not cleared
+    expect(counts.has('task-abc')).toBe(true)
+    expect(counts.get('task-abc')).toBe(DRAIN_QUARANTINE_THRESHOLD)
+  })
+
   it('clears failure count on successful processing', async () => {
     const counts = new Map<string, number>([['task-abc', 2]])
     const deps = makeDeps({ processQueuedTask: vi.fn().mockResolvedValue(undefined) }, counts)
