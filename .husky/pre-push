@@ -40,7 +40,7 @@ PID_TYPECHECK=$!
 npm test &
 PID_TEST=$!
 
-(node-gyp rebuild --directory=node_modules/better-sqlite3 2>&1 && \
+(./node_modules/.bin/node-gyp rebuild --directory=node_modules/better-sqlite3 2>&1 && \
   npx vitest run --config src/main/vitest.main.config.ts) &
 PID_MAIN=$!
 
