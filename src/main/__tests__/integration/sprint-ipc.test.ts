@@ -392,11 +392,18 @@ describe('Sprint IPC handlers — integration', () => {
   // 6. Create task with dependencies → auto-blocks if deps unsatisfied
   describe('sprint:create — dependency auto-blocking', () => {
     const validSpec = [
-      '## Problem',
-      'The login page does not handle expired tokens correctly.',
+      '## Overview',
+      'Fix token refresh logic on the login page.',
       '',
-      '## Solution',
-      'Add token refresh logic before redirecting to the login page.'
+      '## Files to Change',
+      '- src/renderer/src/views/LoginView.tsx',
+      '',
+      '## Implementation Steps',
+      '1. Add token refresh call before redirect in LoginView',
+      '2. Handle refresh failure by clearing auth state',
+      '',
+      '## How to Test',
+      '1. Simulate an expired token and verify redirect does not flash',
     ].join('\n')
 
     it('auto-blocks a queued task when dependencies are unsatisfied', async () => {
