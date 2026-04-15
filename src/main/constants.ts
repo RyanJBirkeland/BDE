@@ -15,7 +15,7 @@ export const TOOL_RESULT_SUMMARY_MAX_CHARS = 200
 export const STUCK_TASK_THRESHOLD_MS = 3_600_000
 
 /** Cursor position poll interval for cross-window drag */
-export const CURSOR_POLL_INTERVAL_MS = 32
+export const CURSOR_POLL_INTERVAL_MS = 64
 
 /** Timeout for cross-window drag detection */
 export const CROSS_WINDOW_DRAG_TIMEOUT_MS = 10_000

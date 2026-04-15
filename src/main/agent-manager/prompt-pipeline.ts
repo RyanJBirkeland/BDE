@@ -150,9 +150,11 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
     prompt += buildScratchpadSection(taskId)
   }
 
+  // Classify once — used for both the output-budget hint and judgment-rules gating
+  const taskClass: TaskClass = taskContent ? classifyTask(taskContent) : 'generate'
+
   // Output budget hint
   if (taskContent) {
-    const taskClass = classifyTask(taskContent)
     prompt += buildOutputCapHint(taskClass)
 
     // Task specification
@@ -192,7 +194,11 @@ Before your final push, verify:
   // Pipeline-only operational sections
   prompt += PIPELINE_SETUP_RULE
   prompt += CONTEXT_EFFICIENCY_HINT
-  prompt += PIPELINE_JUDGMENT_RULES
+  // Only inject test/push judgment rules for tasks that involve code changes with tests.
+  // Doc, audit, and generation tasks don't need flake-handling or push-verification guidance.
+  if (taskClass === 'fix' || taskClass === 'refactor') {
+    prompt += PIPELINE_JUDGMENT_RULES
+  }
   if (maxRuntimeMs && maxRuntimeMs > 0) {
     prompt += buildTimeLimitSection(maxRuntimeMs)
   }
