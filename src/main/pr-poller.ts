@@ -116,9 +116,11 @@ function safePoll(): void {
 }
 
 export function startPrPoller(): void {
-  // Single interval — backoff is enforced via nextPollAt state, not timer
-  // recreation (the old clearInterval+setInterval-per-tick pattern leaked
-  // orphaned timers and called safePoll twice on every error tick).
+  // Guard against double-start — clear any existing interval first.
+  if (timer) clearInterval(timer)
+  // Reset backoff state so a previous error backoff doesn't delay the
+  // first poll after a settings change or app restart.
+  errorCount = 0
   nextPollAt = 0
   safePoll()
   timer = setInterval(safePoll, POLL_INTERVAL_MS)
