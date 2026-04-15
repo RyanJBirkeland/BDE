@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # bde-watcher.sh — polls origin/main every 60s and restarts the dev service on new commits
+#
+# DEV ONLY — NOT bundled in the BDE app DMG.
+# Before use, replace /Users/RBTECHBOT/Documents/Repositories/BDE with your actual repo path.
+# See scripts/dev/README.md for full setup instructions.
 
 set -euo pipefail
 

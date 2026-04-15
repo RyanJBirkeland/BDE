@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- DEV ONLY — NOT bundled in the BDE app DMG.
+     This plist launches BDE.app as a launchd agent.
+     Assumes BDE is installed at /Applications/BDE.app — adjust path if needed.
+     See scripts/dev/README.md for full setup instructions. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
