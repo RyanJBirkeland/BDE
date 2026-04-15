@@ -641,3 +641,23 @@ describe('git:pull handler', () => {
     })
   })
 })
+
+describe('git:checkout handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('throws when branch name starts with -- (flag abuse)', () => {
+    const handler = captureHandler('git:checkout')
+
+    expect(() => handler(mockEvent, '/Users/test/projects/BDE', '--force')).toThrow(
+      /Invalid git ref/
+    )
+  })
+
+  it('throws when branch name is empty', () => {
+    const handler = captureHandler('git:checkout')
+
+    expect(() => handler(mockEvent, '/Users/test/projects/BDE', '')).toThrow(/Invalid git ref/)
+  })
+})
