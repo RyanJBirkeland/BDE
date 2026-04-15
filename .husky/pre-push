@@ -4,7 +4,7 @@
 # Git's pre-push hook receives one line per ref on stdin:
 #   <local ref> <local sha> <remote ref> <remote sha>
 # For a delete push, <local sha> is 40 zeros. If every ref being pushed
-# is a delete, there's no new code to verify — skip the ~60s test suite.
+# is a delete, there's no new code to verify — skip the test suite.
 has_non_delete=""
 zero_sha="0000000000000000000000000000000000000000"
 while read -r local_ref local_sha remote_ref remote_sha; do
@@ -19,4 +19,34 @@ if [ -z "$has_non_delete" ]; then
   exit 0
 fi
 
-npm run typecheck && npm test && npm run test:main
+# Run typecheck, renderer tests, and main-process tests in parallel.
+#
+# test:main is run directly via vitest (not `npm run test:main`) to skip the
+# pretest/posttest native-module rebuilds. Those scripts switch better-sqlite3
+# between Node and Electron ABIs for local dev — in agent worktrees the
+# worktree is cleaned up after the push, so the posttest electron-rebuild is
+# pure waste. We rebuild to Node ABI here (required by vitest), then let the
+# worktree be discarded without switching back.
+#
+# The EXIT trap kills all background jobs when the hook finishes (success or
+# failure). Without it, orphaned background jobs from a failed hook run can
+# race with node-gyp on retries, corrupting the build directory.
+cleanup() { kill $(jobs -p) 2>/dev/null; true; }
+trap cleanup EXIT
+
+npm run typecheck &
+PID_TYPECHECK=$!
+
+npm test &
+PID_TEST=$!
+
+(node-gyp rebuild --directory=node_modules/better-sqlite3 2>&1 && \
+  npx vitest run --config src/main/vitest.main.config.ts) &
+PID_MAIN=$!
+
+FAIL=0
+wait "$PID_TYPECHECK" || FAIL=1
+wait "$PID_TEST"      || FAIL=1
+wait "$PID_MAIN"      || FAIL=1
+
+[ "$FAIL" -eq 0 ] || exit 1

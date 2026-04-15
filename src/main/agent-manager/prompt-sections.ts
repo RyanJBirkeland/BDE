@@ -30,8 +30,14 @@ export const CODING_AGENT_PREAMBLE = `You are a BDE (Birkeland Development Envir
 ## MANDATORY Pre-Commit Verification (DO NOT SKIP)
 Before EVERY commit, you MUST run ALL of these and they MUST pass:
 1. \`npm run typecheck\` — TypeScript must compile with zero errors
-2. \`npm run test:coverage\` — Tests must pass and coverage thresholds (enforced in vitest config) must be met
+2. \`npm test\` — Renderer unit tests must pass
 3. \`npm run lint\` — Must have zero errors (warnings are OK)
+
+NEVER run \`npm run test:coverage\` or \`npm run test:e2e\` in a worktree.
+\`test:coverage\` instruments all files and writes 3 report formats to disk — it is ~2× slower
+than \`npm test\` and its output is discarded when the worktree is cleaned up.
+\`test:e2e\` requires a fully built Electron app that does not exist in a worktree.
+CI enforces both — you do not need to run them manually.
 
 If ANY check fails, fix the issue before committing. Do NOT commit with failing tests,
 type errors, or lint errors. If you cannot fix a failure, do NOT commit — report the

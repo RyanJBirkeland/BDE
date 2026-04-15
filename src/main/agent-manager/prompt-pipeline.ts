@@ -64,13 +64,13 @@ function buildTimeLimitSection(maxRuntimeMs: number): string {
 
 const IDLE_TIMEOUT_WARNING = `\n\n## Idle Timeout Warning\nYou will be TERMINATED if you produce no output for 15 minutes. If running long commands (npm install, test suites), emit a progress message before and after.`
 
-const PIPELINE_SETUP_RULE = `\n\n## Pipeline Worktree Setup\nYour worktree has NO \`node_modules\`. Run \`npm install\` before invoking any of the pre-commit verification commands (\`npm run typecheck\`, \`npm run test:coverage\`, \`npm run lint\`). You may read the spec and source files first to plan. If \`npm install\` fails, report the error clearly and exit.`
+const PIPELINE_SETUP_RULE = `\n\n## Pipeline Worktree Setup\nYour worktree has NO \`node_modules\`. Run \`npm install\` before invoking any of the pre-commit verification commands (\`npm run typecheck\`, \`npm test\`, \`npm run lint\`). You may read the spec and source files first to plan. If \`npm install\` fails, report the error clearly and exit.`
 
 const CONTEXT_EFFICIENCY_HINT = `\n\n## Context Efficiency\nEach tool result stays in the conversation for the rest of this run, accumulating cost on every subsequent turn. Start narrow:\n- Read with \`offset\`/\`limit\` when you know the relevant section — not the whole file\n- Cap exploratory greps: \`grep -m 20\` or \`| head -20\`\n- Use \`Glob\` or \`grep -l\` to locate files before reading their contents\n- Read one representative file per pattern. Expand only if that read left an unanswered question.`
 
 const PIPELINE_JUDGMENT_RULES = `\n\n## Judging Test Failures and Push Completion
 
-**Other pipeline agents may be running in parallel on this machine.** When 2+ agents run \`npm run test:coverage\` simultaneously, the system can become CPU-saturated and tests that normally pass may time out intermittently. This is NOT a reason to declare a failure "pre-existing" or "unrelated".
+**Other pipeline agents may be running in parallel on this machine.** When 2+ agents run \`npm test\` simultaneously, the system can become CPU-saturated and tests that normally pass may time out intermittently. This is NOT a reason to declare a failure "pre-existing" or "unrelated".
 
 ### Rules for judging test failures
 
@@ -86,7 +86,7 @@ const PIPELINE_JUDGMENT_RULES = `\n\n## Judging Test Failures and Push Completio
 - Do NOT tail bash output files, sleep-and-recheck logs, or poll stdout caches to detect push completion. Those files can be stale, truncated, or overwritten, and have caused agents to hang for minutes on pushes that had already succeeded.
 - If \`git push\` appears to be still running when you check, wait 5 seconds and re-run \`git ls-remote\` — not the output file.`
 
-const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npm run test:coverage\` passes (tests + coverage thresholds)\n4. \`npm run lint\` passes with zero errors\n5. Your commit is on \`origin/<your-branch>\` (verified via \`git ls-remote\`, not by reading bash output files)\nDo NOT exit without verifying all five.`
+const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npm test\` passes (renderer unit tests)\n4. \`npm run lint\` passes with zero errors\n5. Your commit is on \`origin/<your-branch>\` (verified via \`git ls-remote\`, not by reading bash output files)\nDo NOT exit without verifying all five.`
 
 export function buildPipelinePrompt(input: BuildPromptInput): string {
   const {
