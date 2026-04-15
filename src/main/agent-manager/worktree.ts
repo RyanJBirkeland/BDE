@@ -16,24 +16,12 @@ import {
 } from '../lib/git-operations'
 import {
   MIN_FREE_DISK_BYTES,
-  DISK_RESERVATION_BYTES,
-  reserveDisk,
-  releaseDisk,
-  getPendingReservation,
-  ensureFreeDiskSpace,
-  InsufficientDiskSpaceError
-} from './disk-space'
-import { acquireLock, releaseLock } from './file-lock'
-
-// Re-export for backward compatibility
-export {
-  InsufficientDiskSpaceError,
-  DISK_RESERVATION_BYTES,
   reserveDisk,
   releaseDisk,
   getPendingReservation,
   ensureFreeDiskSpace
-}
+} from './disk-space'
+import { acquireLock, releaseLock } from './file-lock'
 
 export function branchNameForTask(title: string, taskId?: string, groupId?: string): string {
   const slug = title

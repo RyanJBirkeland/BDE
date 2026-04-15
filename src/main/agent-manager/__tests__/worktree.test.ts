@@ -506,13 +506,13 @@ describe('ensureFreeDiskSpace', () => {
   })
 
   it('succeeds when there is plenty of space', async () => {
-    const { ensureFreeDiskSpace } = await import('../worktree')
+    const { ensureFreeDiskSpace } = await import('../disk-space')
     // 1 byte threshold — always satisfied on a working system
     await expect(ensureFreeDiskSpace(os.tmpdir(), 1)).resolves.toBeUndefined()
   })
 
   it('does not throw when statfs fails on a non-existent path', async () => {
-    const { ensureFreeDiskSpace } = await import('../worktree')
+    const { ensureFreeDiskSpace } = await import('../disk-space')
     const log = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
     await expect(
       ensureFreeDiskSpace('/definitely/not/a/real/path', 1, log)
@@ -737,7 +737,7 @@ describe('pruneStaleWorktrees', () => {
 describe('disk reservation (F-t1-sre-5)', () => {
   it('reserveDisk increments reservation and releaseDisk decrements it', async () => {
     const { reserveDisk, releaseDisk, getPendingReservation, DISK_RESERVATION_BYTES } =
-      await import('../worktree')
+      await import('../disk-space')
 
     const base = '/tmp/test-worktree-base'
     expect(getPendingReservation(base)).toBe(0)
@@ -761,7 +761,7 @@ describe('disk reservation (F-t1-sre-5)', () => {
 
   it('concurrent reservations add up so disk check sees cumulative headroom needed', async () => {
     const { reserveDisk, releaseDisk, getPendingReservation, DISK_RESERVATION_BYTES } =
-      await import('../worktree')
+      await import('../disk-space')
 
     const base = '/tmp/test-concurrent-base'
 
