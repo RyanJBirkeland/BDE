@@ -29,7 +29,7 @@ import {
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
 import { createLogger } from '../logger'
 import { getSettingJson } from '../settings'
-import { validateGitRef } from '../lib/review-paths'
+import { validateGitRef, validateFilePath } from '../lib/review-paths'
 
 const logger = createLogger('git-handlers')
 
@@ -222,6 +222,7 @@ export function registerGitHandlers(deps: GitHandlersDeps): void {
     return result.data
   })
   safeHandle('git:diff', async (_e, cwd: string, file?: string) => {
+    if (file !== undefined) validateFilePath(file)
     const result = await gitDiffFile(validateRepoPath(cwd), file)
     if (!result.ok) {
       logger.warn(`git:diff ${result.error}`)
