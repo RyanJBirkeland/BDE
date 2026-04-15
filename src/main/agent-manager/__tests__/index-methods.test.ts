@@ -160,7 +160,9 @@ function makeActiveAgent(taskId: string): ActiveAgent {
     tokensIn: 0,
     tokensOut: 0,
     maxRuntimeMs: null,
-    maxCostUsd: null
+    maxCostUsd: null,
+    worktreePath: `/tmp/worktrees/${taskId}`,
+    branch: `agent/${taskId}`
   }
 }
 

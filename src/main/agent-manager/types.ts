@@ -83,6 +83,8 @@ export interface ActiveAgent {
   tokensOut: number
   maxRuntimeMs: number | null
   maxCostUsd: number | null
+  worktreePath: string
+  branch: string
 }
 
 // Watchdog verdict types

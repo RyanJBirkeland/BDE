@@ -50,6 +50,8 @@ function makeAgent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
     tokensOut: 0,
     maxRuntimeMs: null,
     maxCostUsd: null,
+    worktreePath: '/tmp/worktrees/task-1',
+    branch: 'agent/task-1',
     ...overrides
   }
 }

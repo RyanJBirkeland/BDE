@@ -39,7 +39,7 @@ Source: `src/main/agent-manager/`
 | `review-transition.ts` | Transitions a completed task to `review` status, preserving worktree path and branch | `transitionToReview`, `TransitionToReviewOpts` |
 | `task-mapper.ts` | Maps raw sprint task rows to `AgentRunClaim` shape and evaluates hard-dependency blocking | `checkAndBlockDeps`, `mapTaskForAgent` |
 | `dependency-refresher.ts` | Rebuilds the in-memory dependency index from SQLite; debounced on task mutations | `refreshDependencyIndex`, `computeDepsFingerprint` |
-| `types.ts` | Shared type definitions for agent manager internals | `ActiveAgent`, `AgentHandle`, `AgentManagerConfig`, `ResolveDependentsParams` |
+| `types.ts` | Shared type definitions for agent manager internals. `ActiveAgent` now includes `worktreePath` and `branch` fields populated at spawn time | `ActiveAgent`, `AgentHandle`, `AgentManagerConfig`, `ResolveDependentsParams` |
 | `drain-loop.ts` | Polling orchestration — precondition checks, dep-index refresh, queued-task fetching and processing | `runDrain`, `validateDrainPreconditions`, `buildTaskStatusMap`, `drainQueuedTasks`, `DrainLoopDeps` |
 | `watchdog-loop.ts` | Agent health checks — idle/timeout/rate-limit/cost verdicts, kill helper | `runWatchdog`, `killActiveAgent`, `WatchdogLoopDeps` |
 | `task-claimer.ts` | Task claim pipeline — fresh-status guard, dep blocking, repo path resolution, worktree setup, agent spawn. Passes `config.maxConcurrent` to `claimTask` for atomic DB-level WIP enforcement. | `validateAndClaimTask`, `prepareWorktreeForTask`, `processQueuedTask`, `resolveRepoPath` |

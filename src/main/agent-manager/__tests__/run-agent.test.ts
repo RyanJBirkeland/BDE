@@ -969,7 +969,9 @@ describe('consumeMessages', () => {
       tokensIn: 0,
       tokensOut: 0,
       maxRuntimeMs: null,
-      maxCostUsd: null
+      maxCostUsd: null,
+      worktreePath: '/tmp/worktrees/task-1',
+      branch: 'agent/task-1'
     }
     const task = makeTask()
     const turnTracker = new TurnTracker('run-1')

@@ -97,7 +97,9 @@ const mockAgent: ActiveAgent = {
   tokensIn: 0,
   tokensOut: 0,
   maxRuntimeMs: null,
-  maxCostUsd: null
+  maxCostUsd: null,
+  worktreePath: '/tmp/wt',
+  branch: 'agent/test-1'
 }
 
 describe('spawnAndWireAgent', () => {

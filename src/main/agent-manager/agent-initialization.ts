@@ -46,7 +46,9 @@ export function initializeAgentTracking(
     tokensIn: 0,
     tokensOut: 0,
     maxRuntimeMs: task.max_runtime_ms ?? null,
-    maxCostUsd: task.max_cost_usd ?? null
+    maxCostUsd: task.max_cost_usd ?? null,
+    worktreePath: worktree.worktreePath,
+    branch: worktree.branch
   }
   activeAgents.set(task.id, agent)
   const turnTracker = new TurnTracker(agentRunId)
