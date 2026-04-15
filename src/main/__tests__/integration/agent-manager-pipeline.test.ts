@@ -38,6 +38,7 @@ vi.mock('../../lib/resolve-dependents', () => ({
 
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
+  getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'myrepo', localPath: '/repos/myrepo' }]),
   getGhRepo: vi.fn(),
   BDE_AGENT_LOG_PATH: '/tmp/bde-agent-integration-test.log',
   BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'

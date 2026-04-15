@@ -41,6 +41,7 @@ vi.mock('../../broadcast', () => ({
 
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
+  getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'myrepo', localPath: '/repos/myrepo' }]),
   getGhRepo: vi.fn(),
   BDE_DIR: '/tmp/bde-test',
   BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',

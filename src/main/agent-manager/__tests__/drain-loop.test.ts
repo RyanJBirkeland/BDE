@@ -14,6 +14,9 @@ vi.mock('../concurrency', async () => {
   const actual = await vi.importActual<typeof import('../concurrency')>('../concurrency')
   return { ...actual }
 })
+vi.mock('../../paths', () => ({
+  getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'bde', localPath: '/tmp/bde' }])
+}))
 
 import {
   validateDrainPreconditions,
@@ -26,6 +29,7 @@ import { checkOAuthToken } from '../oauth-checker'
 import { refreshDependencyIndex } from '../dependency-refresher'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
+import { getConfiguredRepos } from '../../paths'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
@@ -104,6 +108,14 @@ describe('validateDrainPreconditions', () => {
     })
     expect(await validateDrainPreconditions(deps)).toBe(false)
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('circuit breaker open'))
+  })
+
+  it('returns false and logs when no repositories are configured', async () => {
+    vi.mocked(getConfiguredRepos).mockReturnValue([])
+    const deps = makeDeps()
+    expect(await validateDrainPreconditions(deps)).toBe(false)
+    expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('No repositories configured'))
+    vi.mocked(getConfiguredRepos).mockReturnValue([{ name: 'bde', localPath: '/tmp/bde' }])
   })
 
   it('returns false and logs when OAuth token is invalid', async () => {

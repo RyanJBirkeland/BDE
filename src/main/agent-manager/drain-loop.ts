@@ -19,6 +19,7 @@ import {
   refreshDependencyIndex,
   type DepsFingerprint
 } from './dependency-refresher'
+import { getConfiguredRepos } from '../paths'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -64,6 +65,14 @@ export async function validateDrainPreconditions(deps: DrainLoopDeps): Promise<b
       `[agent-manager] Skipping drain — circuit breaker open until ${new Date(
         deps.circuitOpenUntil
       ).toISOString()}`
+    )
+    return false
+  }
+
+  const repos = getConfiguredRepos()
+  if (repos.length === 0) {
+    deps.logger.warn(
+      '[drain] No repositories configured — skipping drain cycle. Configure repos in Settings.'
     )
     return false
   }
