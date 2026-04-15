@@ -36,6 +36,8 @@ export interface DrainLoopDeps {
   activeAgents: Map<string, ActiveAgent>
   /** Returns the live ConcurrencyState — called each time to avoid stale captures. */
   getConcurrency: () => ConcurrencyState
+  /** Returns the count of spawned agents not yet registered in activeAgents. */
+  getPendingSpawns: () => number
   lastTaskDeps: DepsFingerprint
   isDepIndexDirty: () => boolean
   setDepIndexDirty: (dirty: boolean) => void
@@ -117,7 +119,7 @@ export async function drainQueuedTasks(
   deps.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
   for (const raw of queued) {
     if (deps.isShuttingDown()) break
-    if (availableSlots(deps.getConcurrency(), deps.activeAgents.size) <= 0) {
+    if (availableSlots(deps.getConcurrency(), deps.activeAgents.size + deps.getPendingSpawns()) <= 0) {
       deps.logger.info('[agent-manager] No slots available — stopping drain iteration')
       break
     }

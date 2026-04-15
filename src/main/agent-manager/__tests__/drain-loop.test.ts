@@ -77,6 +77,7 @@ function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
     circuitOpenUntil: 0,
     activeAgents: new Map(),
     getConcurrency: () => concurrency,
+    getPendingSpawns: () => 0,
     lastTaskDeps: new Map(),
     isDepIndexDirty: () => false,
     setDepIndexDirty: vi.fn(),

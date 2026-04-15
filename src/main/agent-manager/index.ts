@@ -125,6 +125,11 @@ export class AgentManagerImpl implements AgentManager {
   // Circuit breaker — pauses drain loop after consecutive spawn failures.
   private readonly _circuitBreaker: CircuitBreaker
 
+  // Counts agents that have been fired via _spawnAgent but have not yet called
+  // initializeAgentTracking (i.e. not yet in _activeAgents). Used by the drain
+  // loop to prevent over-claiming slots during the async spawn window.
+  _pendingSpawns = 0
+
   // Private timers
   private pollTimer: ReturnType<typeof setInterval> | null = null
   private watchdogTimer: ReturnType<typeof setInterval> | null = null
@@ -157,8 +162,14 @@ export class AgentManagerImpl implements AgentManager {
       logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
       repo,
-      onSpawnSuccess: () => this._circuitBreaker.recordSuccess(),
-      onSpawnFailure: () => this._circuitBreaker.recordFailure()
+      onSpawnSuccess: () => {
+        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
+        this._circuitBreaker.recordSuccess()
+      },
+      onSpawnFailure: () => {
+        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
+        this._circuitBreaker.recordFailure()
+      }
     }
   }
 
@@ -232,6 +243,7 @@ export class AgentManagerImpl implements AgentManager {
     repoPath: string
   ): Promise<void> {
     this._metrics.increment('agentsSpawned')
+    this._pendingSpawns++
     const p = _runAgent(task, worktree, repoPath, this.runAgentDeps)
       .catch((err) => {
         this.logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
@@ -325,7 +337,7 @@ export class AgentManagerImpl implements AgentManager {
     this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
     for (const raw of queued) {
       if (this._shuttingDown) break
-      if (availableSlots(this._concurrency, this._activeAgents.size) <= 0) {
+      if (availableSlots(this._concurrency, this._activeAgents.size + this._pendingSpawns) <= 0) {
         this.logger.info('[agent-manager] No slots available — stopping drain iteration')
         break
       }
@@ -359,6 +371,7 @@ export class AgentManagerImpl implements AgentManager {
       circuitOpenUntil: circuitBreaker.openUntilTimestamp,
       activeAgents: this._activeAgents,
       getConcurrency: () => this._concurrency,
+      getPendingSpawns: () => this._pendingSpawns,
       lastTaskDeps: this._lastTaskDeps,
       isDepIndexDirty: () => this._depIndexDirty,
       setDepIndexDirty: (dirty) => { this._depIndexDirty = dirty },

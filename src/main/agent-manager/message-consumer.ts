@@ -126,6 +126,29 @@ export async function consumeMessages(
       if (result.detectedHtmlPath) {
         pendingPlaygroundPaths.push(result.detectedHtmlPath)
       }
+
+      // Per-turn budget check: abort immediately if cost exceeds limit
+      if (agent.maxCostUsd !== null && agent.costUsd >= agent.maxCostUsd) {
+        logger.warn(
+          `[agent-manager] Cost budget $${agent.maxCostUsd.toFixed(2)} exceeded ($${agent.costUsd.toFixed(2)} spent) — aborting task ${task.id}`
+        )
+        handle.abort()
+        const budgetError = new Error(
+          `Cost budget $${agent.maxCostUsd.toFixed(2)} exceeded ($${agent.costUsd.toFixed(2)} spent)`
+        )
+        emitAgentEvent(agentRunId, {
+          type: 'agent:error',
+          message: budgetError.message,
+          timestamp: Date.now()
+        })
+        flushAgentEventBatcher()
+        return {
+          exitCode,
+          lastAgentOutput,
+          streamError: budgetError,
+          pendingPlaygroundPaths
+        }
+      }
     }
   } catch (err) {
     logError(logger, `[agent-manager] Error consuming messages for task ${task.id}`, err)
