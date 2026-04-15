@@ -49,7 +49,7 @@ vi.mock('../agent-manager/worktree', () => ({
 
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { importAgent, updateAgentMeta } from '../agent-history'
-import { broadcast } from '../broadcast'
+import { broadcastCoalesced } from '../broadcast'
 import { buildAgentPrompt } from '../lib/prompt-composer'
 import { setupWorktree } from '../agent-manager/worktree'
 import { nowIso } from '../../shared/time'
@@ -187,9 +187,9 @@ describe('spawnAdhocAgent', () => {
     mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
-    await vi.waitFor(() => expect(broadcast).toHaveBeenCalled(), { timeout: 1000 })
+    await vi.waitFor(() => expect(broadcastCoalesced).toHaveBeenCalled(), { timeout: 1000 })
 
-    expect(broadcast).toHaveBeenCalledWith('agent:event', {
+    expect(broadcastCoalesced).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
       event: expect.objectContaining({ type: 'agent:started', model: 'sonnet' })
     })
@@ -204,14 +204,14 @@ describe('spawnAdhocAgent', () => {
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
     await vi.waitFor(
       () =>
-        expect(broadcast).toHaveBeenCalledWith(
+        expect(broadcastCoalesced).toHaveBeenCalledWith(
           'agent:event',
           expect.objectContaining({ event: expect.objectContaining({ type: 'agent:text' }) })
         ),
       { timeout: 1000 }
     )
 
-    expect(broadcast).toHaveBeenCalledWith('agent:event', {
+    expect(broadcastCoalesced).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
       event: expect.objectContaining({ type: 'agent:text', text: 'Hello' })
     })
@@ -229,14 +229,14 @@ describe('spawnAdhocAgent', () => {
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
     await vi.waitFor(
       () =>
-        expect(broadcast).toHaveBeenCalledWith(
+        expect(broadcastCoalesced).toHaveBeenCalledWith(
           'agent:event',
           expect.objectContaining({ event: expect.objectContaining({ type: 'agent:tool_call' }) })
         ),
       { timeout: 1000 }
     )
 
-    expect(broadcast).toHaveBeenCalledWith('agent:event', {
+    expect(broadcastCoalesced).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
       event: expect.objectContaining({ type: 'agent:tool_call', tool: 'Read' })
     })
@@ -248,18 +248,18 @@ describe('spawnAdhocAgent', () => {
 
     const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
     // Wait for the first turn to complete, then close the session to trigger completion
-    await vi.waitFor(() => expect(broadcast).toHaveBeenCalled(), { timeout: 1000 })
+    await vi.waitFor(() => expect(broadcastCoalesced).toHaveBeenCalled(), { timeout: 1000 })
     getAdhocHandle(result.id)?.close()
     await vi.waitFor(
       () =>
-        expect(broadcast).toHaveBeenCalledWith(
+        expect(broadcastCoalesced).toHaveBeenCalledWith(
           'agent:event',
           expect.objectContaining({ event: expect.objectContaining({ type: 'agent:completed' }) })
         ),
       { timeout: 1000 }
     )
 
-    expect(broadcast).toHaveBeenCalledWith('agent:event', {
+    expect(broadcastCoalesced).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
       event: expect.objectContaining({ type: 'agent:completed' })
     })
@@ -289,7 +289,7 @@ describe('spawnAdhocAgent', () => {
     const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
 
     // Wait for first turn to complete
-    await vi.waitFor(() => expect(broadcast).toHaveBeenCalled(), { timeout: 1000 })
+    await vi.waitFor(() => expect(broadcastCoalesced).toHaveBeenCalled(), { timeout: 1000 })
 
     // Run a second turn
     await getAdhocHandle(result.id)?.send('follow up')
@@ -300,7 +300,7 @@ describe('spawnAdhocAgent', () => {
 
     await vi.waitFor(
       () =>
-        expect(broadcast).toHaveBeenCalledWith(
+        expect(broadcastCoalesced).toHaveBeenCalledWith(
           'agent:event',
           expect.objectContaining({ event: expect.objectContaining({ type: 'agent:completed' }) })
         ),
@@ -308,7 +308,7 @@ describe('spawnAdhocAgent', () => {
     )
 
     const completedCall = vi
-      .mocked(broadcast)
+      .mocked(broadcastCoalesced)
       .mock.calls.find(
         ([, payload]) =>
           typeof payload === 'object' &&
@@ -388,14 +388,14 @@ describe('spawnAdhocAgent', () => {
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
     await vi.waitFor(
       () =>
-        expect(broadcast).toHaveBeenCalledWith(
+        expect(broadcastCoalesced).toHaveBeenCalledWith(
           'agent:event',
           expect.objectContaining({ event: expect.objectContaining({ type: 'agent:error' }) })
         ),
       { timeout: 1000 }
     )
 
-    expect(broadcast).toHaveBeenCalledWith('agent:event', {
+    expect(broadcastCoalesced).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
       event: expect.objectContaining({ type: 'agent:error', message: 'SDK crash' })
     })

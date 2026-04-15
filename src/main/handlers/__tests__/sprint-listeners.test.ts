@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { TERMINAL_STATUSES } from '../../../shared/task-state-machine'
 
 const mockBroadcast = vi.fn()
@@ -36,7 +36,12 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
 
 describe('sprint-listeners', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   describe('onSprintMutation', () => {
@@ -144,6 +149,7 @@ describe('sprint-listeners', () => {
     it('sends sprint:externalChange via broadcast', () => {
       const task = makeTask()
       notifySprintMutation('created', task)
+      vi.runAllTimers()
 
       expect(mockBroadcast).toHaveBeenCalledTimes(1)
       expect(mockBroadcast).toHaveBeenCalledWith('sprint:externalChange')
@@ -151,6 +157,7 @@ describe('sprint-listeners', () => {
 
     it('calls broadcast on every mutation', () => {
       expect(() => notifySprintMutation('updated', makeTask())).not.toThrow()
+      vi.runAllTimers()
       expect(mockBroadcast).toHaveBeenCalledTimes(1)
       expect(mockBroadcast).toHaveBeenCalledWith('sprint:externalChange')
     })

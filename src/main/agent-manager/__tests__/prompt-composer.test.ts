@@ -620,21 +620,22 @@ describe('buildAgentPrompt', () => {
 
   describe('pipeline judgment rules (test flake + push detection)', () => {
     it('warns about parallel agents causing load-induced flakes', () => {
-      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      // Judgment rules only injected for fix/refactor tasks
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Fix the auth error' })
       expect(prompt).toContain('## Judging Test Failures and Push Completion')
       expect(prompt).toContain('Other pipeline agents may be running in parallel')
       expect(prompt).toContain('CPU-saturated')
     })
 
     it('forbids labeling failures pre-existing without proof', () => {
-      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Fix the auth error' })
       expect(prompt).toContain('Only label a test failure "pre-existing"')
       expect(prompt).toContain('with proof')
       expect(prompt).toContain('re-run just that file in isolation')
     })
 
     it('requires git ls-remote for push completion detection', () => {
-      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Fix the auth error' })
       expect(prompt).toContain('git ls-remote origin')
       expect(prompt).toContain('exit code')
       expect(prompt).toContain('Do NOT tail bash output files')
@@ -1121,7 +1122,8 @@ describe('buildAgentPrompt', () => {
     })
 
     it('uses positive framing for test failure labeling rule', () => {
-      const prompt = buildAgentPrompt({ agentType: 'pipeline' })
+      // Judgment rules only injected for fix/refactor tasks
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Fix the startup crash' })
       expect(prompt).not.toContain('NEVER label a test failure')
       expect(prompt).toContain('Only label a test failure')
     })

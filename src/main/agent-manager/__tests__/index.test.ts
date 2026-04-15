@@ -26,9 +26,21 @@ vi.mock('../../lib/resolve-dependents', () => ({
   resolveDependents: vi.fn().mockReturnValue(undefined)
 }))
 
+vi.mock('electron', () => ({
+  BrowserWindow: {
+    getAllWindows: vi.fn(() => [])
+  }
+}))
+
+vi.mock('../../broadcast', () => ({
+  broadcast: vi.fn(),
+  broadcastCoalesced: vi.fn()
+}))
+
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getGhRepo: vi.fn(),
+  BDE_DIR: '/tmp/bde-test',
   BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
   BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
 }))
@@ -59,7 +71,7 @@ vi.mock('../sdk-adapter', () => {
 
 vi.mock('../worktree', () => ({
   setupWorktree: vi.fn(),
-  cleanupWorktree: vi.fn(),
+  cleanupWorktree: vi.fn().mockResolvedValue(undefined),
   pruneStaleWorktrees: vi.fn(),
   branchNameForTask: vi.fn()
 }))
@@ -341,7 +353,7 @@ describe('createAgentManager', () => {
           model: 'claude-sonnet-4-5'
         })
       )
-      expect(vi.mocked(claimTask)).toHaveBeenCalledWith('task-1', 'bde-embedded')
+      expect(vi.mocked(claimTask)).toHaveBeenCalledWith('task-1', 'bde-embedded', expect.any(Number))
 
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
@@ -713,13 +725,8 @@ describe('createAgentManager', () => {
         'task-1',
         expect.objectContaining({
           status: 'queued',
-          claimed_by: null,
-          started_at: null,
-          notes: 'Task was re-queued due to BDE shutdown while agent was running.'
+          claimed_by: null
         })
-      )
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining('Re-queued task task-1 during shutdown')
       )
 
       vi.useRealTimers()

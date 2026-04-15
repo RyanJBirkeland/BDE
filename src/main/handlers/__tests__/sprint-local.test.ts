@@ -1,7 +1,7 @@
 /**
  * Sprint local handler unit tests
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 
 // Mock ipc-utils — must come before handler import
@@ -259,7 +259,12 @@ describe('sprint:list handler', () => {
 
 describe('sprint:create handler', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('creates a task and fires mutation notification', async () => {
@@ -270,6 +275,7 @@ describe('sprint:create handler', () => {
 
     const handler = captureHandler('sprint:create')
     const result = await handler(mockEvent, input)
+    vi.runAllTimers()
 
     expect(_createTask).toHaveBeenCalledWith(input)
     expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
@@ -279,7 +285,12 @@ describe('sprint:create handler', () => {
 
 describe('sprint:update handler', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('updates a task and returns the updated row', async () => {
@@ -294,6 +305,7 @@ describe('sprint:update handler', () => {
 
     const handler = captureHandler('sprint:update')
     const result = await handler(mockEvent, '1', { title: 'Updated' })
+    vi.runAllTimers()
 
     expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' })
     expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
@@ -358,7 +370,12 @@ describe('sprint:update handler', () => {
 
 describe('sprint:delete handler', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('deletes the task and fires deleted mutation notification', async () => {
@@ -369,6 +386,7 @@ describe('sprint:delete handler', () => {
     const handler = captureHandler('sprint:delete')
     const result = await handler(mockEvent, '1')
 
+    vi.runAllTimers()
     expect(_deleteTask).toHaveBeenCalledWith('1')
     expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
     expect(result).toEqual({ ok: true })

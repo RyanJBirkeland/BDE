@@ -263,7 +263,7 @@ describe('handleStartCrossWindowDrag', () => {
 
     // dragIn sent at start. Now move cursor within targetWin
     mockScreen.getCursorScreenPoint.mockReturnValue({ x: 600, y: 300 })
-    vi.advanceTimersByTime(32)
+    vi.advanceTimersByTime(65)
 
     expect(targetWin.webContents.send).toHaveBeenCalledWith('tearoff:dragMove', {
       x: 200, // 600 - 400
@@ -284,7 +284,7 @@ describe('handleStartCrossWindowDrag', () => {
 
     // Move cursor to desktop (no window)
     mockScreen.getCursorScreenPoint.mockReturnValue({ x: 5000, y: 5000 })
-    vi.advanceTimersByTime(32)
+    vi.advanceTimersByTime(65)
 
     expect(targetWin.webContents.send).toHaveBeenCalledWith('tearoff:dragCancel')
   })

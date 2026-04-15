@@ -690,7 +690,7 @@ describe('resolveFailure', () => {
         status: 'queued',
         retry_count: 1,
         notes: 'Agent produced no commits',
-        failure_reason: 'unknown'
+        failure_reason: 'no_commits'
       })
     )
     expect(result).toBe(false)
@@ -709,7 +709,7 @@ describe('resolveFailure', () => {
       expect.objectContaining({
         status: 'failed',
         notes: 'Agent produced no commits',
-        failure_reason: 'unknown'
+        failure_reason: 'no_commits'
       })
     )
     expect(result).toBe(true)

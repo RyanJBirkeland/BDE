@@ -28,10 +28,23 @@ vi.mock('../resolve-dependents', () => ({
   resolveDependents: vi.fn().mockReturnValue(undefined)
 }))
 
+vi.mock('electron', () => ({
+  BrowserWindow: {
+    getAllWindows: vi.fn(() => [])
+  }
+}))
+
+vi.mock('../../broadcast', () => ({
+  broadcast: vi.fn(),
+  broadcastCoalesced: vi.fn()
+}))
+
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getGhRepo: vi.fn(),
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log'
+  BDE_DIR: '/tmp/bde-test',
+  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
+  BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
 }))
 
 vi.mock('../sdk-adapter', () => ({
@@ -40,7 +53,7 @@ vi.mock('../sdk-adapter', () => ({
 
 vi.mock('../worktree', () => ({
   setupWorktree: vi.fn(),
-  cleanupWorktree: vi.fn(),
+  cleanupWorktree: vi.fn().mockResolvedValue(undefined),
   pruneStaleWorktrees: vi.fn(),
   branchNameForTask: vi.fn()
 }))
@@ -185,7 +198,7 @@ function setupDefaultMocks() {
   vi.mocked(getRepoPaths).mockReturnValue({ myrepo: '/repos/myrepo' })
   vi.mocked(claimTask).mockReturnValue({ id: 'task-1' } as ReturnType<typeof vi.fn>)
   vi.mocked(updateTask).mockReturnValue(null)
-  vi.mocked(getTask).mockReturnValue({ id: 'task-1', status: 'queued' } as any)
+  vi.mocked(getTask).mockReturnValue({ id: 'task-1', status: 'queued', repo: 'myrepo' } as any)
   vi.mocked(recoverOrphans).mockResolvedValue(0)
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
   vi.mocked(setupWorktree).mockResolvedValue({

@@ -126,7 +126,7 @@ describe('createSprintTaskRepository', () => {
 
       const result = repo.claimTask('1', 'executor-1')
 
-      expect(queries.claimTask).toHaveBeenCalledWith('1', 'executor-1')
+      expect(queries.claimTask).toHaveBeenCalledWith('1', 'executor-1', undefined)
       expect(result).toBe(mockTask)
     })
   })
