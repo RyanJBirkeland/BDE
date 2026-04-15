@@ -42,12 +42,12 @@ launchctl load ~/Library/LaunchAgents/com.rbtechbot.bde.plist
 
 ```bash
 cp scripts/dev/com.rbtechbot.bde-watcher.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.rbtechdog.bde-watcher.plist
+launchctl load ~/Library/LaunchAgents/com.rbtechbot.bde-watcher.plist
 ```
 
 To stop either agent:
 
 ```bash
 launchctl unload ~/Library/LaunchAgents/com.rbtechbot.bde.plist
-launchctl unload ~/Library/LaunchAgents/com.rbtechdog.bde-watcher.plist
+launchctl unload ~/Library/LaunchAgents/com.rbtechbot.bde-watcher.plist
 ```
