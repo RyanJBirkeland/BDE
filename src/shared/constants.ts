@@ -3,19 +3,10 @@
  * Use these instead of raw string literals to prevent typos and enable refactoring.
  */
 
-export const TASK_STATUS = {
-  BACKLOG: 'backlog',
-  QUEUED: 'queued',
-  BLOCKED: 'blocked',
-  ACTIVE: 'active',
-  REVIEW: 'review',
-  DONE: 'done',
-  CANCELLED: 'cancelled',
-  FAILED: 'failed',
-  ERROR: 'error'
-} as const
-
-export type TaskStatusValue = (typeof TASK_STATUS)[keyof typeof TASK_STATUS]
+// Task status constants — re-exported from the canonical source so all
+// consumers have a stable import path without duplicating the string values.
+export { TASK_STATUS } from './task-statuses'
+export type { TaskStatus as TaskStatusValue } from './task-state-machine'
 
 export const PR_STATUS = {
   OPEN: 'open',

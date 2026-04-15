@@ -35,6 +35,25 @@ import { TASK_STATUSES } from './task-state-machine'
  */
 export const ALL_TASK_STATUSES = TASK_STATUSES
 
+/**
+ * Object-style status constants for use in comparisons and assignments.
+ * Derived from TASK_STATUSES so no string duplication occurs.
+ *
+ * Prefer `TASK_STATUS.ACTIVE` over the raw string literal `'active'`
+ * to catch typos at compile time.
+ */
+export const TASK_STATUS = {
+  BACKLOG: 'backlog',
+  QUEUED: 'queued',
+  BLOCKED: 'blocked',
+  ACTIVE: 'active',
+  REVIEW: 'review',
+  DONE: 'done',
+  CANCELLED: 'cancelled',
+  FAILED: 'failed',
+  ERROR: 'error'
+} as const satisfies Record<Uppercase<TaskStatus>, TaskStatus>
+
 // ---------------------------------------------------------------------------
 // UI metadata — kept in shared so tests and shared modules can reference it
 // without importing from the renderer layer (which would invert the dependency).
