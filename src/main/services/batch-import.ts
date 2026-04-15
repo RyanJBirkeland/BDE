@@ -1,5 +1,6 @@
 import type { IDashboardRepository, CreateTaskInput } from '../data/sprint-task-repository'
 import type { SprintTask, TaskDependency } from '../../shared/types'
+import { TASK_STATUSES } from '../../shared/task-state-machine'
 
 export interface BatchTaskInput {
   title: string
@@ -43,6 +44,14 @@ export function batchImportTasks(
     // Validate required fields
     if (!t.title || !t.repo) {
       errors.push(`Task[${i}]: missing required title or repo`)
+      continue
+    }
+
+    // Validate status against known statuses if provided
+    if (t.status !== undefined && !(TASK_STATUSES as readonly string[]).includes(t.status)) {
+      errors.push(
+        `Task[${i}]: invalid status "${t.status}". Valid statuses: ${TASK_STATUSES.join(', ')}`
+      )
       continue
     }
 

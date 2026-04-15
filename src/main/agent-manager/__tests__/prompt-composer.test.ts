@@ -619,19 +619,18 @@ describe('buildAgentPrompt', () => {
   })
 
   describe('pipeline judgment rules (test flake + push detection)', () => {
-    it('warns about parallel agents causing load-induced flakes', () => {
+    it('injects judgment rules section for fix tasks', () => {
       // Judgment rules only injected for fix/refactor tasks
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Fix the auth error' })
       expect(prompt).toContain('## Judging Test Failures and Push Completion')
-      expect(prompt).toContain('Other pipeline agents may be running in parallel')
-      expect(prompt).toContain('CPU-saturated')
+      expect(prompt).toContain('npx vitest run')
+      expect(prompt).toContain('Do not retry the same test repeatedly')
     })
 
-    it('forbids labeling failures pre-existing without proof', () => {
+    it('instructs agents to run targeted tests only, not full suite', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Fix the auth error' })
-      expect(prompt).toContain('Only label a test failure "pre-existing"')
-      expect(prompt).toContain('with proof')
-      expect(prompt).toContain('re-run just that file in isolation')
+      expect(prompt).toContain('npx vitest run <your-test-file>')
+      expect(prompt).toContain('Do NOT run `npm test`')
     })
 
     it('requires git ls-remote for push completion detection', () => {
@@ -1121,11 +1120,10 @@ describe('buildAgentPrompt', () => {
       expect(prompt).not.toContain('Read this entire specification before writing any code.')
     })
 
-    it('uses positive framing for test failure labeling rule', () => {
-      // Judgment rules only injected for fix/refactor tasks
-      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Fix the startup crash' })
-      expect(prompt).not.toContain('NEVER label a test failure')
-      expect(prompt).toContain('Only label a test failure')
+    it('judgment rules section is absent for non-fix/refactor tasks', () => {
+      // Judgment rules only injected for fix/refactor tasks, not for generate tasks
+      const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Add a new settings tab' })
+      expect(prompt).not.toContain('## Judging Test Failures and Push Completion')
     })
 
     it('uses Keep output instead of Aim to produce', () => {

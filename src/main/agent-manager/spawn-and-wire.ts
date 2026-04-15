@@ -12,7 +12,7 @@ import type { AgentRunClaim, RunAgentDeps } from './run-agent'
 import { spawnWithTimeout } from './sdk-adapter'
 import { initializeAgentTracking } from './agent-initialization'
 import { cleanupWorktree } from './worktree'
-import { emitAgentEvent } from '../agent-event-mapper'
+import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
 import { nowIso } from '../../shared/time'
 import { TurnTracker } from './turn-tracker'
 
@@ -56,6 +56,9 @@ export async function handleSpawnFailure(
     message: `Spawn failed: ${errMsg}`,
     timestamp: Date.now()
   })
+  // Flush buffered events before the status transition so the error event is
+  // persisted to SQLite before the task appears as 'error' in the UI.
+  flushAgentEventBatcher()
   try {
     repo.updateTask(task.id, {
       status: 'error',

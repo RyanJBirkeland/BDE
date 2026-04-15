@@ -24,7 +24,7 @@ vi.mock('../../services/dependency-service', () => ({
   }))
 }))
 
-vi.mock('../resolve-dependents', () => ({
+vi.mock('../../lib/resolve-dependents', () => ({
   resolveDependents: vi.fn().mockReturnValue(undefined)
 }))
 
@@ -148,7 +148,7 @@ function makeMockRepo(): IAgentTaskRepository {
       (getOrphanedTasks as ReturnType<typeof vi.fn>)(...args),
     clearStaleClaimedBy: vi.fn().mockReturnValue(0),
     getActiveTaskCount: vi.fn().mockReturnValue(0),
-    claimTask: (...args: [string, string]) => (claimTask as ReturnType<typeof vi.fn>)(...args),
+    claimTask: (...args: [string, string, number?]) => (claimTask as ReturnType<typeof vi.fn>)(...args),
     getGroup: vi.fn().mockReturnValue(null),
     getGroupTasks: vi.fn().mockReturnValue([]),
     getGroupsWithDependencies: vi.fn().mockReturnValue([])

@@ -3,7 +3,7 @@ import { asSDKMessage } from './sdk-adapter'
 import { broadcast } from '../broadcast'
 import type { AgentEvent } from '../../shared/types'
 import { sanitizePlaygroundHtml } from '../playground-sanitize'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile, stat, realpath } from 'node:fs/promises'
 import { extname, basename, join } from 'node:path'
 
 const MAX_PLAYGROUND_SIZE = 5 * 1024 * 1024 // 5MB
@@ -58,10 +58,14 @@ export async function tryEmitPlaygroundEvent(
     // Resolve absolute path
     const absolutePath = filePath.startsWith('/') ? filePath : join(worktreePath, filePath)
 
-    // Validate path is within worktree (prevent traversal)
-    const { resolve } = await import('node:path')
-    const resolvedPath = resolve(absolutePath)
-    const resolvedWorktree = resolve(worktreePath)
+    // Validate path is within worktree (prevent traversal + symlink bypass).
+    // realpath resolves symlinks before comparing, which resolve() does not.
+    const resolvedPath = await realpath(absolutePath).catch(() => null)
+    const resolvedWorktree = await realpath(worktreePath).catch(() => null)
+    if (!resolvedPath || !resolvedWorktree) {
+      logger.warn(`[playground] Path does not exist: ${filePath}`)
+      return
+    }
     if (!resolvedPath.startsWith(resolvedWorktree + '/') && resolvedPath !== resolvedWorktree) {
       logger.warn(`[playground] Path traversal blocked: ${filePath} (resolved to ${resolvedPath})`)
       return

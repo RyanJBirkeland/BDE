@@ -9,6 +9,7 @@ import { createGroup } from '../data/task-group-queries'
 import { createTask } from '../services/sprint-service'
 import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
+import { getConfiguredRepos } from '../paths'
 
 const logger = createLogger('planner-import')
 
@@ -166,6 +167,16 @@ export interface PlannerImportDeps {
  */
 export function registerPlannerImportHandlers(deps: PlannerImportDeps): void {
   safeHandle('planner:import', async (_e, repo: string) => {
+    // Validate repo against configured repos to prevent arbitrary repo imports
+    const configuredRepos = getConfiguredRepos()
+    const isConfigured = configuredRepos.some((r) => r.name.toLowerCase() === repo.toLowerCase())
+    if (!isConfigured) {
+      const names = configuredRepos.map((r) => r.name).join(', ')
+      throw new Error(
+        `Repo "${repo}" is not configured. Configured repos: ${names || 'none'}`
+      )
+    }
+
     // Show file picker
     const result = await deps.dialog.showOpenDialog({
       title: 'Import Plan Document',
