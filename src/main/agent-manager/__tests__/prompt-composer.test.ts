@@ -32,7 +32,7 @@ describe('buildAgentPrompt', () => {
         expect(prompt).toContain('NEVER push to, checkout, or merge into `main`')
         expect(prompt).toContain('## MANDATORY Pre-Commit Verification')
         expect(prompt).toContain('`npm run typecheck`')
-        expect(prompt).toContain('`npm run test:coverage`')
+        expect(prompt).toContain('`npm test`')
         expect(prompt).toContain('`npm run lint`')
       }
     })
@@ -585,7 +585,7 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
       expect(prompt).toContain('## Definition of Done')
       expect(prompt).toContain('npm run typecheck')
-      expect(prompt).toContain('npm run test:coverage')
+      expect(prompt).toContain('npm test')
       expect(prompt).toContain('npm run lint')
     })
 
