@@ -24,12 +24,21 @@ describe('OnboardingWizard', () => {
     await user.click(screen.getByRole('button', { name: /next/i }))
     expect(screen.getByRole('heading', { name: /git setup/i })).toBeInTheDocument()
 
-    // Navigate to step 4
+    // Navigate to step 4 (GitHub CLI)
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /github cli/i })).toBeInTheDocument()
+    )
+
+    // Navigate to step 5 (Repositories)
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /next/i })).not.toBeDisabled()
+    )
     await user.click(screen.getByRole('button', { name: /next/i }))
     expect(screen.getByRole('heading', { name: /repository configuration/i })).toBeInTheDocument()
 
-    // Step 4 has inline repo-add; "Next" is disabled until a repo is added.
-    // Use "Skip for now" to advance to step 5.
+    // Step 5 has inline repo-add; "Next" is disabled until a repo is added.
+    // Use "Skip for now" to advance to step 6.
     await user.click(screen.getByRole('button', { name: /skip for now/i }))
     expect(screen.getByRole('heading', { name: /you're ready/i })).toBeInTheDocument()
   })
@@ -39,12 +48,18 @@ describe('OnboardingWizard', () => {
     const user = userEvent.setup()
     render(<OnboardingWizard onComplete={onComplete} />)
 
-    // Click Next for steps 1-3 (Welcome → Auth → Git → Repo)
+    // Click Next for steps 1-3 (Welcome → Auth → Git)
     for (let i = 0; i < 3; i++) {
       await user.click(screen.getByRole('button', { name: /next/i }))
     }
 
-    // Step 4 (Repositories): inline add form means Next is disabled; use Skip for now.
+    // Step 4 (GitHub CLI): wait for check to resolve then click Next
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /next/i })).not.toBeDisabled()
+    )
+    await user.click(screen.getByRole('button', { name: /next/i }))
+
+    // Step 5 (Repositories): inline add form means Next is disabled; use Skip for now.
     await user.click(screen.getByRole('button', { name: /skip for now/i }))
 
     // Final step - click "Get Started"
@@ -68,9 +83,9 @@ describe('OnboardingWizard', () => {
   it('shows progress indicators for all steps', () => {
     render(<OnboardingWizard onComplete={vi.fn()} />)
 
-    // Should show 5 step indicators
+    // Should show 6 step indicators (Welcome, Auth, Git, GitHub CLI, Repos, Done)
     const stepIndicators = screen.getAllByTestId(/step-indicator-\d/)
-    expect(stepIndicators).toHaveLength(5)
+    expect(stepIndicators).toHaveLength(6)
   })
 
   describe('inline-add-repo happy path', () => {
@@ -114,9 +129,14 @@ describe('OnboardingWizard', () => {
 
       render(<OnboardingWizard onComplete={vi.fn()} />)
 
-      // Walk to step 4 (Repositories) — Welcome → Auth → Git → Repo
+      // Walk to step 5 (Repositories) — Welcome → Auth → Git → GitHub CLI → Repo
       await user.click(screen.getByRole('button', { name: /next/i }))
       await user.click(screen.getByRole('button', { name: /next/i }))
+      await user.click(screen.getByRole('button', { name: /next/i }))
+      // GhStep: wait for check to resolve, then advance
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: /next/i })).not.toBeDisabled()
+      )
       await user.click(screen.getByRole('button', { name: /next/i }))
       expect(screen.getByRole('heading', { name: /repository configuration/i })).toBeInTheDocument()
 
