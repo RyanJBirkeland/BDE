@@ -1,5 +1,6 @@
 import { safeHandle } from '../ipc-utils'
 import { getSetting, setSetting, getSettingJson, setSettingJson, deleteSetting } from '../settings'
+import { SENSITIVE_SETTING_KEYS } from '../secure-storage'
 import {
   saveProfile,
   loadProfile,
@@ -26,7 +27,15 @@ function validateProfileName(name: string): void {
 
 export function registerConfigHandlers(): void {
   // Settings CRUD
-  safeHandle('settings:get', (_e, key: string) => getSetting(key))
+  safeHandle('settings:get', (_e, key: string) => {
+    // Sensitive keys are never returned to the renderer — use settings:hasSecret instead
+    if (SENSITIVE_SETTING_KEYS.has(key)) return null
+    return getSetting(key)
+  })
+  safeHandle('settings:hasSecret', (_e, key: string) => {
+    if (!SENSITIVE_SETTING_KEYS.has(key)) return false
+    return getSetting(key) !== null
+  })
   safeHandle('settings:set', (_e, key: string, value: string) => {
     const validate = PATH_VALIDATORS[key]
     if (validate) validate(value)

@@ -24,6 +24,10 @@ export interface SettingsChannels {
     args: [key: string]
     result: void
   }
+  'settings:hasSecret': {
+    args: [key: string]
+    result: boolean
+  }
   'settings:saveProfile': {
     args: [name: string]
     result: void

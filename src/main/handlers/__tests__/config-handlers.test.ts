@@ -26,6 +26,10 @@ vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn()
 }))
 
+vi.mock('../../secure-storage', () => ({
+  SENSITIVE_SETTING_KEYS: new Set(['github.token', 'anthropic.apiKey'])
+}))
+
 import { registerConfigHandlers } from '../config-handlers'
 import { safeHandle } from '../../ipc-utils'
 import {
@@ -48,11 +52,12 @@ describe('Config handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers all 10 settings channels', () => {
+  it('registers all 11 settings channels', () => {
     registerConfigHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(10)
+    expect(safeHandle).toHaveBeenCalledTimes(11)
     expect(safeHandle).toHaveBeenCalledWith('settings:get', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('settings:hasSecret', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:set', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:getJson', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:setJson', expect.any(Function))
@@ -84,6 +89,44 @@ describe('Config handlers', () => {
 
       expect(getSetting).toHaveBeenCalledWith('myKey')
       expect(result).toBe('myValue')
+    })
+
+    it('settings:get returns null for sensitive keys without calling getSetting', () => {
+      const handlers = captureHandlers()
+
+      const result = handlers['settings:get'](mockEvent, 'github.token')
+
+      expect(getSetting).not.toHaveBeenCalled()
+      expect(result).toBeNull()
+    })
+
+    it('settings:hasSecret returns false for non-sensitive keys', () => {
+      const handlers = captureHandlers()
+
+      const result = handlers['settings:hasSecret'](mockEvent, 'some.setting')
+
+      expect(getSetting).not.toHaveBeenCalled()
+      expect(result).toBe(false)
+    })
+
+    it('settings:hasSecret returns true when a sensitive key has a value', () => {
+      vi.mocked(getSetting).mockReturnValue('secret-value')
+      const handlers = captureHandlers()
+
+      const result = handlers['settings:hasSecret'](mockEvent, 'github.token')
+
+      expect(getSetting).toHaveBeenCalledWith('github.token')
+      expect(result).toBe(true)
+    })
+
+    it('settings:hasSecret returns false when a sensitive key has no value', () => {
+      vi.mocked(getSetting).mockReturnValue(null)
+      const handlers = captureHandlers()
+
+      const result = handlers['settings:hasSecret'](mockEvent, 'github.token')
+
+      expect(getSetting).toHaveBeenCalledWith('github.token')
+      expect(result).toBe(false)
     })
 
     it('settings:set calls setSetting with key and value', () => {

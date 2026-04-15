@@ -35,6 +35,7 @@ declare global {
         getJson: (...args: IpcArgs<'settings:getJson'>) => Promise<IpcResult<'settings:getJson'>>
         setJson: (...args: IpcArgs<'settings:setJson'>) => Promise<IpcResult<'settings:setJson'>>
         delete: (...args: IpcArgs<'settings:delete'>) => Promise<IpcResult<'settings:delete'>>
+        hasSecret: (...args: IpcArgs<'settings:hasSecret'>) => Promise<IpcResult<'settings:hasSecret'>>
         saveProfile: (
           ...args: IpcArgs<'settings:saveProfile'>
         ) => Promise<IpcResult<'settings:saveProfile'>>

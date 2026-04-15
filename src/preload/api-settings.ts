@@ -2,6 +2,7 @@ import { typedInvoke } from './ipc-helpers'
 
 export const settings = {
   get: (key: string) => typedInvoke('settings:get', key),
+  hasSecret: (key: string) => typedInvoke('settings:hasSecret', key),
   set: (key: string, value: string) => typedInvoke('settings:set', key, value),
   getJson: (key: string) => typedInvoke('settings:getJson', key),
   setJson: (key: string, value: unknown) => typedInvoke('settings:setJson', key, value),
