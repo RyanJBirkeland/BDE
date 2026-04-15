@@ -173,9 +173,9 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
 
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     const eligibleAt = new Date(patch.next_eligible_at as string).getTime()
-    // retryCount=0: min(300000, 30000 * 2^0) = 30000ms
-    expect(eligibleAt).toBeGreaterThanOrEqual(before + 29000)
-    expect(eligibleAt).toBeLessThanOrEqual(after + 31000)
+    // retryCount=0: 30000ms base ±20% jitter → [24000, 36000]
+    expect(eligibleAt).toBeGreaterThanOrEqual(before + 24000)
+    expect(eligibleAt).toBeLessThanOrEqual(after + 36000)
   })
 
   it('doubles backoff on second retry (retry_count=1, 60s backoff)', () => {
@@ -186,9 +186,9 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
 
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     const eligibleAt = new Date(patch.next_eligible_at as string).getTime()
-    // retryCount=1: min(300000, 30000 * 2^1) = 60000ms
-    expect(eligibleAt).toBeGreaterThanOrEqual(before + 59000)
-    expect(eligibleAt).toBeLessThanOrEqual(after + 61000)
+    // retryCount=1: 60000ms base ±20% jitter → [48000, 72000]
+    expect(eligibleAt).toBeGreaterThanOrEqual(before + 48000)
+    expect(eligibleAt).toBeLessThanOrEqual(after + 72000)
   })
 
   it('third retry uses 120s backoff (max before terminal)', () => {
@@ -207,9 +207,9 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
 
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     const eligibleAt = new Date(patch.next_eligible_at as string).getTime()
-    // retryCount=2: min(300000, 30000 * 2^2) = 120000ms
-    expect(eligibleAt).toBeGreaterThanOrEqual(before + 119000)
-    expect(eligibleAt).toBeLessThanOrEqual(after + 121000)
+    // retryCount=2: 120000ms base ±20% jitter → [96000, 144000]
+    expect(eligibleAt).toBeGreaterThanOrEqual(before + 96000)
+    expect(eligibleAt).toBeLessThanOrEqual(after + 144000)
   })
 
   it('does NOT set next_eligible_at when task is terminal (retries exhausted)', () => {

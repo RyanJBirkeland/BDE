@@ -771,28 +771,39 @@ describe('resolveFailure', () => {
 })
 
 describe('calculateRetryBackoff', () => {
-  it('returns base delay for first retry (retryCount=0)', () => {
-    expect(calculateRetryBackoff(0)).toBe(RETRY_BACKOFF_BASE_MS)
+  // With ±20% jitter, results are in range [base*0.8, base*1.2].
+  // For capped values, range is [cap*0.8, cap*1.2].
+
+  it('returns base delay ±20% for first retry (retryCount=0)', () => {
+    const result = calculateRetryBackoff(0)
+    expect(result).toBeGreaterThanOrEqual(Math.round(RETRY_BACKOFF_BASE_MS * 0.8))
+    expect(result).toBeLessThanOrEqual(Math.round(RETRY_BACKOFF_BASE_MS * 1.2))
   })
 
-  it('doubles delay for second retry (retryCount=1)', () => {
-    expect(calculateRetryBackoff(1)).toBe(RETRY_BACKOFF_BASE_MS * 2)
+  it('doubles base delay ±20% for second retry (retryCount=1)', () => {
+    const result = calculateRetryBackoff(1)
+    expect(result).toBeGreaterThanOrEqual(Math.round(RETRY_BACKOFF_BASE_MS * 2 * 0.8))
+    expect(result).toBeLessThanOrEqual(Math.round(RETRY_BACKOFF_BASE_MS * 2 * 1.2))
   })
 
-  it('quadruples delay for third retry (retryCount=2)', () => {
-    expect(calculateRetryBackoff(2)).toBe(RETRY_BACKOFF_BASE_MS * 4)
+  it('quadruples base delay ±20% for third retry (retryCount=2)', () => {
+    const result = calculateRetryBackoff(2)
+    expect(result).toBeGreaterThanOrEqual(Math.round(RETRY_BACKOFF_BASE_MS * 4 * 0.8))
+    expect(result).toBeLessThanOrEqual(Math.round(RETRY_BACKOFF_BASE_MS * 4 * 1.2))
   })
 
-  it('caps delay at RETRY_BACKOFF_CAP_MS for high retry counts', () => {
+  it('caps delay at RETRY_BACKOFF_CAP_MS ±20% for high retry counts', () => {
     // retryCount=10 would be 30000 * 2^10 = 30,720,000ms without cap
-    expect(calculateRetryBackoff(10)).toBe(RETRY_BACKOFF_CAP_MS)
+    const result = calculateRetryBackoff(10)
+    expect(result).toBeGreaterThanOrEqual(Math.round(RETRY_BACKOFF_CAP_MS * 0.8))
+    expect(result).toBeLessThanOrEqual(Math.round(RETRY_BACKOFF_CAP_MS * 1.2))
   })
 
   it('respects cap when exactly at threshold', () => {
-    // Find retryCount where exponential exactly equals cap
-    // 30000 * 2^n = 300000 → 2^n = 10 → n ≈ 3.32
-    // So at retryCount=4: 30000 * 16 = 480000 > 300000 (capped)
-    expect(calculateRetryBackoff(4)).toBe(RETRY_BACKOFF_CAP_MS)
+    // 30000 * 2^4 = 480000 > 300000 cap
+    const result = calculateRetryBackoff(4)
+    expect(result).toBeGreaterThanOrEqual(Math.round(RETRY_BACKOFF_CAP_MS * 0.8))
+    expect(result).toBeLessThanOrEqual(Math.round(RETRY_BACKOFF_CAP_MS * 1.2))
   })
 })
 

@@ -24,7 +24,9 @@ export interface ResolveFailureContext {
  * Returns delay in milliseconds, capped at RETRY_BACKOFF_CAP_MS.
  */
 export function calculateRetryBackoff(retryCount: number): number {
-  return Math.min(RETRY_BACKOFF_CAP_MS, RETRY_BACKOFF_BASE_MS * Math.pow(2, retryCount))
+  const base = Math.min(RETRY_BACKOFF_CAP_MS, RETRY_BACKOFF_BASE_MS * Math.pow(2, retryCount))
+  // ±20% jitter to prevent thundering-herd when multiple agents fail simultaneously
+  return Math.round(base * (0.8 + Math.random() * 0.4))
 }
 
 // Keep the last N chars of failure notes — root causes are at the tail (end of stack traces).
