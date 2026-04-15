@@ -15,9 +15,9 @@ export function getDb(): Database.Database {
     // that were created without the mode parameter.
     try {
       chmodSync(DB_DIR, 0o700)
-    } catch {
+    } catch (err) {
       // Non-fatal: log but continue — app can still function
-      console.warn('[db] Failed to enforce .bde directory permissions')
+      console.warn('[db] Failed to enforce .bde directory permissions:', err)
     }
     const dbExists = existsSync(DB_PATH)
     _db = new Database(DB_PATH)

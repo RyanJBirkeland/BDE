@@ -23,9 +23,9 @@ function ensureLogDir(): void {
   // that were created without the mode parameter.
   try {
     chmodSync(BDE_DIR, 0o700)
-  } catch {
+  } catch (err) {
     // Non-fatal: log but continue — app can still function
-    console.warn('[logger] Failed to enforce .bde directory permissions')
+    console.warn('[logger] Failed to enforce .bde directory permissions:', err)
   }
 }
 
