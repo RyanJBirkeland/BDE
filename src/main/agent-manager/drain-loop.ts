@@ -162,7 +162,6 @@ export async function drainQueuedTasks(
       const count = (deps.drainFailureCounts.get(taskId) ?? 0) + 1
       deps.drainFailureCounts.set(taskId, count)
       if (count >= DRAIN_QUARANTINE_THRESHOLD) {
-        deps.drainFailureCounts.delete(taskId)
         deps.logger.error(
           `[agent-manager] Task ${taskId} failed ${count} consecutive times — quarantining to prevent drain churn`
         )
@@ -172,8 +171,12 @@ export async function drainQueuedTasks(
           ? '...' + note.slice(-(NOTES_MAX_LENGTH - 3))
           : note
         try {
-          deps.repo.updateTask(taskId, { status: 'error', notes: truncated, claimed_by: null })
-          await deps.onTaskTerminal(taskId, 'error').catch((termErr) =>
+          const currentTask = deps.repo.getTask(taskId)
+          const quarantineStatus: 'cancelled' | 'error' =
+            currentTask?.status === 'queued' ? 'cancelled' : 'error'
+          deps.repo.updateTask(taskId, { status: quarantineStatus, notes: truncated, claimed_by: null })
+          deps.drainFailureCounts.delete(taskId)
+          await deps.onTaskTerminal(taskId, quarantineStatus).catch((termErr) =>
             deps.logger.warn(`[agent-manager] onTerminal failed for quarantined task ${taskId}: ${termErr}`)
           )
         } catch (quarantineErr) {

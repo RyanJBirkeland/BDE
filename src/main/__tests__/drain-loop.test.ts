@@ -83,11 +83,11 @@ describe('drainQueuedTasks — quarantine', () => {
     expect(counts.get('task-abc')).toBe(2)
     expect(deps.repo.updateTask).not.toHaveBeenCalledWith(
       'task-abc',
-      expect.objectContaining({ status: 'error' })
+      expect.objectContaining({ status: expect.stringMatching(/cancelled|error/) })
     )
   })
 
-  it(`marks task error after ${DRAIN_QUARANTINE_THRESHOLD} consecutive failures`, async () => {
+  it(`marks task cancelled (queued→cancelled) after ${DRAIN_QUARANTINE_THRESHOLD} consecutive failures`, async () => {
     const counts = new Map<string, number>()
     const deps = makeDeps({}, counts)
 
@@ -97,9 +97,9 @@ describe('drainQueuedTasks — quarantine', () => {
 
     expect(deps.repo.updateTask).toHaveBeenCalledWith(
       'task-abc',
-      expect.objectContaining({ status: 'error', notes: expect.stringContaining('DB corruption') })
+      expect.objectContaining({ status: 'cancelled', notes: expect.stringContaining('DB corruption') })
     )
-    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-abc', 'error')
+    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-abc', 'cancelled')
     // Count cleared after quarantine
     expect(counts.has('task-abc')).toBe(false)
   })
