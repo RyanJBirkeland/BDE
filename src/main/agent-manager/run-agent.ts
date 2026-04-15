@@ -23,6 +23,8 @@ import type { ConsumeMessagesResult } from './message-consumer'
 import { persistAgentRunTelemetry } from './agent-telemetry'
 import { spawnAndWireAgent } from './spawn-and-wire'
 import { MAX_TURNS } from './spawn-sdk'
+import { sleep } from '../lib/async-utils'
+import { NOTES_MAX_LENGTH } from './types'
 
 export type { ConsumeMessagesResult }
 
@@ -77,19 +79,53 @@ export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventD
 export { validateTaskForRun, assembleRunContext, fetchUpstreamContext, readPriorScratchpad } from './prompt-assembly'
 export { consumeMessages } from './message-consumer'
 
+const CLEANUP_RETRY_DELAYS_MS = [100, 500, 2000]
+
 /**
- * Logs a worktree cleanup warning with consistent format.
+ * Attempts worktree cleanup up to 4 times (1 initial + 3 retries with backoff).
+ * On persistent failure: logs a warning and surfaces the error to the task's
+ * `notes` field so the user sees it in the Task Pipeline view.
+ *
+ * Exported for unit testing.
  */
-function logCleanupWarning(
+export async function cleanupWorktreeWithRetry(
   taskId: string,
-  worktreePath: string,
-  err: unknown,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  repo: IAgentTaskRepository,
   logger: Logger
-): void {
-  const detail = err instanceof Error ? (err.stack ?? err.message) : String(err)
-  logger.warn(
-    `[agent-manager] Stale worktree for task ${taskId} at ${worktreePath} — manual cleanup needed: ${detail}`
-  )
+): Promise<void> {
+  const args = { repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch }
+  for (let attempt = 0; attempt < CLEANUP_RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      await cleanupWorktree(args)
+      return
+    } catch (err) {
+      const delayMs = CLEANUP_RETRY_DELAYS_MS[attempt]
+      logger.warn(
+        `[agent-manager] Worktree cleanup attempt ${attempt + 1} failed for task ${taskId} — retrying in ${delayMs}ms: ${err}`
+      )
+      await sleep(delayMs)
+    }
+  }
+  // Final attempt — no more retries
+  try {
+    await cleanupWorktree(args)
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err)
+    logger.warn(
+      `[agent-manager] Stale worktree for task ${taskId} at ${worktree.worktreePath} — manual cleanup needed: ${detail}`
+    )
+    const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktree.worktreePath}`
+    const truncated = note.length > NOTES_MAX_LENGTH
+      ? '...' + note.slice(-(NOTES_MAX_LENGTH - 3))
+      : note
+    try {
+      repo.updateTask(taskId, { notes: truncated })
+    } catch (updateErr) {
+      logger.error(`[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`)
+    }
+  }
 }
 
 /**
@@ -187,11 +223,7 @@ async function cleanupOrPreserveWorktree(
   const currentTask = repo.getTask(task.id)
   if (currentTask?.status !== 'review') {
     await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
-    cleanupWorktree({
-      repoPath,
-      worktreePath: worktree.worktreePath,
-      branch: worktree.branch
-    }).catch((err: unknown) => logCleanupWarning(task.id, worktree.worktreePath, err, logger))
+    await cleanupWorktreeWithRetry(task.id, worktree, repoPath, repo, logger)
   } else {
     logger.info(
       `[agent-manager] Preserving worktree for review task ${task.id} at ${worktree.worktreePath}`
@@ -239,11 +271,7 @@ async function finalizeAgentRun(
     // batch of events is broadcast to the UI but never persisted.
     flushAgentEventBatcher()
     await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
-    cleanupWorktree({
-      repoPath,
-      worktreePath: worktree.worktreePath,
-      branch: worktree.branch
-    }).catch((cleanupErr: unknown) => logCleanupWarning(task.id, worktree.worktreePath, cleanupErr, logger))
+    await cleanupWorktreeWithRetry(task.id, worktree, repoPath, repo, logger)
     return
   }
 
