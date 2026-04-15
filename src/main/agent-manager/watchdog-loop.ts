@@ -29,6 +29,12 @@ export interface WatchdogLoopDeps {
   getConcurrency: () => ConcurrencyState
   setConcurrency: (state: ConcurrencyState) => void
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
+  /**
+   * Optional hook to clean up the agent's git worktree after a watchdog kill.
+   * Called only when the task is NOT in `review` status (review worktrees are
+   * preserved for human inspection). Errors are caught and logged by the caller.
+   */
+  cleanupAgentWorktree?: (agent: ActiveAgent) => Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -86,6 +92,7 @@ export function runWatchdog(deps: WatchdogLoopDeps): void {
     }
 
     killActiveAgent(agent, deps.activeAgents, deps.logger)
+    cleanupWorktreeIfNotInReview(agent, deps)
 
     const now = nowIso()
     const maxRuntimeMs = agent.maxRuntimeMs ?? deps.config.maxRuntimeMs
@@ -109,4 +116,26 @@ export function runWatchdog(deps: WatchdogLoopDeps): void {
       )
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Private helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Fires worktree cleanup for a just-killed agent unless the task is already in
+ * `review` status — review worktrees are preserved for human inspection.
+ * Errors are caught and logged so cleanup failure never blocks the watchdog.
+ */
+function cleanupWorktreeIfNotInReview(agent: ActiveAgent, deps: WatchdogLoopDeps): void {
+  if (!deps.cleanupAgentWorktree) return
+
+  const task = deps.repo.getTask(agent.taskId)
+  if (task?.status === 'review') return
+
+  deps.cleanupAgentWorktree(agent).catch((err) => {
+    deps.logger.warn(
+      `[agent-manager] Worktree cleanup failed for task ${agent.taskId} after watchdog kill: ${err}`
+    )
+  })
 }

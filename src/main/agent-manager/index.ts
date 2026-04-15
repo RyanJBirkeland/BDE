@@ -33,7 +33,8 @@ import {
   processQueuedTask
 } from './task-claimer'
 import { checkIsReviewTask, runPruneLoop } from './worktree-manager'
-import { pruneStaleWorktrees } from './worktree'
+import { pruneStaleWorktrees, cleanupWorktree } from './worktree'
+import { resolveRepoPath } from './task-claimer'
 import { executeShutdown } from './shutdown-coordinator'
 import { reloadConfiguration } from './config-manager'
 
@@ -382,7 +383,18 @@ export class AgentManagerImpl implements AgentManager {
       processingTasks: this._processingTasks,
       getConcurrency: () => this._concurrency,
       setConcurrency: (state) => { this._concurrency = state },
-      onTaskTerminal: this.onTaskTerminal.bind(this)
+      onTaskTerminal: this.onTaskTerminal.bind(this),
+      cleanupAgentWorktree: (agent) => {
+        const task = this.repo.getTask(agent.taskId)
+        const repoPath = task ? resolveRepoPath(task.repo) : null
+        if (!repoPath) return Promise.resolve()
+        return cleanupWorktree({
+          repoPath,
+          worktreePath: agent.worktreePath,
+          branch: agent.branch,
+          logger: this.logger
+        })
+      }
     }
     runWatchdog(watchdogDeps)
   }
