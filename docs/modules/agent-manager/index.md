@@ -9,7 +9,7 @@ Source: `src/main/agent-manager/`
 | `spawn-sdk.ts` | SDK-based agent spawn — session ID extraction, abort wiring, steer stub | `spawnViaSdk` |
 | `spawn-cli.ts` | CLI fallback spawn — stream-json protocol, V8 heap cap, stdin steer | `spawnViaCli`, `withMaxOldSpaceOption`, `AGENT_PROCESS_MAX_OLD_SPACE_MB` |
 | `prompt-assembly.ts` | Task validation + prompt context prep — upstream context, scratchpad, prompt build | `validateTaskForRun`, `assembleRunContext`, `fetchUpstreamContext`, `readPriorScratchpad` |
-| `message-consumer.ts` | SDK message stream iteration, OAuth refresh on auth error, playground path accumulation | `consumeMessages`, `ConsumeMessagesResult` |
+| `message-consumer.ts` | SDK message stream iteration, OAuth refresh on auth error, playground path accumulation. Per-turn budget enforcement: aborts and emits `agent:error` if `agent.costUsd >= agent.maxCostUsd` after each message. | `consumeMessages`, `ConsumeMessagesResult` |
 | `agent-telemetry.ts` | Cost/token tracking from SDK messages, SQL persistence of run telemetry | `trackAgentCosts`, `persistAgentRunTelemetry` |
 | `agent-initialization.ts` | Agent record creation, stderr wiring, activeAgents registration, agent:started event. `createAgentRecord` failure is logged at `error` level (fire-and-forget: function is synchronous; untracked run is surfaced loudly so operators can investigate) | `initializeAgentTracking` |
 | `spawn-and-wire.ts` | Spawn orchestration and error recovery — calls spawnWithTimeout then initializeAgentTracking | `spawnAndWireAgent`, `handleSpawnFailure` |
@@ -40,7 +40,7 @@ Source: `src/main/agent-manager/`
 | `task-mapper.ts` | Maps raw sprint task rows to `AgentRunClaim` shape and evaluates hard-dependency blocking | `checkAndBlockDeps`, `mapTaskForAgent` |
 | `dependency-refresher.ts` | Rebuilds the in-memory dependency index from SQLite; debounced on task mutations | `refreshDependencyIndex`, `computeDepsFingerprint` |
 | `types.ts` | Shared type definitions for agent manager internals. `ActiveAgent` now includes `worktreePath` and `branch` fields populated at spawn time | `ActiveAgent`, `AgentHandle`, `AgentManagerConfig`, `ResolveDependentsParams` |
-| `drain-loop.ts` | Polling orchestration — precondition checks, dep-index refresh, queued-task fetching and processing | `runDrain`, `validateDrainPreconditions`, `buildTaskStatusMap`, `drainQueuedTasks`, `DrainLoopDeps` |
+| `drain-loop.ts` | Polling orchestration — precondition checks, dep-index refresh, queued-task fetching and processing. Slot check uses `activeAgents.size + getPendingSpawns()` to prevent over-claim during async spawn window. | `runDrain`, `validateDrainPreconditions`, `buildTaskStatusMap`, `drainQueuedTasks`, `DrainLoopDeps` |
 | `watchdog-loop.ts` | Agent health checks — idle/timeout/rate-limit/cost verdicts, kill helper. `WatchdogLoopDeps.cleanupAgentWorktree` optional hook triggers immediate worktree removal on kill (skipped for `review` tasks) | `runWatchdog`, `killActiveAgent`, `WatchdogLoopDeps` |
 | `task-claimer.ts` | Task claim pipeline — fresh-status guard, dep blocking, repo path resolution, worktree setup, agent spawn. Passes `config.maxConcurrent` to `claimTask` for atomic DB-level WIP enforcement. `spawnAgent` callback typed `Promise<void>` (fire-and-forget; call site awaits for accurate slot accounting). | `validateAndClaimTask`, `prepareWorktreeForTask`, `processQueuedTask`, `resolveRepoPath` |
 | `worktree-manager.ts` | Worktree prune pass and review-status check helper | `runPruneLoop`, `checkIsReviewTask`, `WorktreeManagerDeps` |
