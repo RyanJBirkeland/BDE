@@ -110,6 +110,7 @@ async function resolveAgentExit(
   const now = nowIso()
 
   if (ffResult === 'fast-fail-exhausted') {
+    flushAgentEventBatcher()
     try {
       repo.updateTask(task.id, {
         status: 'error',
@@ -136,6 +137,10 @@ async function resolveAgentExit(
     } catch (err) {
       logger.error(`[agent-manager] Failed to requeue fast-fail task ${task.id}: ${err}`)
     }
+    // Notify terminal listeners even on requeue so blocked dependents are unblocked.
+    // A fast-fail-requeue ends the current agent run — dependents should not remain
+    // blocked indefinitely waiting for a run that already ended.
+    await onTaskTerminal(task.id, 'queued')
   } else {
     try {
       const ghRepo = getGhRepo(task.repo) ?? task.repo

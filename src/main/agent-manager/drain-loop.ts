@@ -112,8 +112,12 @@ export async function drainQueuedTasks(
   taskStatusMap: Map<string, string>,
   deps: DrainLoopDeps
 ): Promise<void> {
-  deps.logger.info(`[agent-manager] Fetching queued tasks (limit=${available})...`)
-  const queued = deps.repo.getQueuedTasks(available) as unknown as Array<Record<string, unknown>>
+  // Re-read slots at dispatch time to account for agents that registered between
+  // the slot check in runDrain and the actual fetch — limits how many tasks we pull.
+  const freshSlots = availableSlots(deps.getConcurrency(), deps.activeAgents.size)
+  const limit = Math.min(available, freshSlots)
+  deps.logger.info(`[agent-manager] Fetching queued tasks (limit=${limit})...`)
+  const queued = deps.repo.getQueuedTasks(limit) as unknown as Array<Record<string, unknown>>
   deps.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
   for (const raw of queued) {
     if (deps.isShuttingDown()) break

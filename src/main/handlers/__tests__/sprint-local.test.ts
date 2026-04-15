@@ -649,13 +649,23 @@ describe('sprint:update spec validation on queue transition', () => {
     expect(result).toEqual({ id: 'abc', status: 'queued' })
   })
 
-  it('does NOT trigger validation for non-queued transitions', async () => {
+  it('does NOT trigger spec validation for non-queued transitions, but DOES check state machine', async () => {
+    // active → done is a valid transition — should succeed without spec validation
+    vi.mocked(_getTask).mockReturnValue({
+      id: 'abc',
+      title: 'Test',
+      repo: 'bde',
+      spec: 'too short',
+      status: 'active'
+    } as any)
     vi.mocked(_updateTask).mockReturnValue({ id: 'abc', status: 'done' } as any)
 
     const handler = captureHandler('sprint:update')
     await handler(mockEvent, 'abc', { status: 'done' })
 
-    expect(_getTask).not.toHaveBeenCalled()
+    // State machine check IS called (getTask called for transition validation)
+    expect(_getTask).toHaveBeenCalled()
+    // But spec quality validation is NOT called for non-queued transitions
     expect(mockValidateFull).not.toHaveBeenCalled()
   })
 

@@ -10,4 +10,5 @@ Source: `src/main/handlers/`
 | `synthesizer-handlers.ts` | IPC handlers for AI spec generation and revision (`synthesizer:generate`, `synthesizer:revise`, `synthesizer:cancel`). Validates request payloads before delegating to `spec-synthesizer` service. | `registerSynthesizerHandlers` |
 | `agent-handlers.ts` | Agent lifecycle IPC handlers — spawn adhoc agents, steer/kill agents, list/read agent history, promote to code review | `registerAgentHandlers`, `PromoteToReviewResult` |
 | `review-assistant.ts` | Chat stream IPC handler for the interactive code review assistant | `registerReviewAssistantHandler`, `ChatStreamDeps`, `buildChatStreamDeps` |
-| `sprint-local.ts` | Sprint task lifecycle IPC handlers — create, update, queue, log reads, dependency management | `registerSprintLocalHandlers` |
+| `sprint-local.ts` | Sprint task lifecycle IPC handlers — create, update, queue, log reads, dependency management. Validates status transitions at the handler boundary via `isValidTransition` before delegating to data layer. | `registerSprintLocalHandlers` |
+| `planner-import.ts` | Markdown plan import — parses H1/H2/H3 plan files into epics + tasks, validates repo against configured list | `registerPlannerImportHandlers`, `parsePlanMarkdown`, `importPlanFile` |

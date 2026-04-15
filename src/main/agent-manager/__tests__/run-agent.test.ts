@@ -97,7 +97,9 @@ vi.mock('../../broadcast', () => ({
 
 vi.mock('node:fs/promises', () => ({
   stat: vi.fn(),
-  readFile: vi.fn()
+  readFile: vi.fn(),
+  // realpath resolves symlinks; default mock returns the path unchanged (no symlinks in tests)
+  realpath: vi.fn().mockImplementation((p: string) => Promise.resolve(p))
 }))
 
 vi.mock('../../env-utils', () => ({

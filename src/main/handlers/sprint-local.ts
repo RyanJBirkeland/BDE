@@ -8,7 +8,7 @@ import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import type { WorkflowTemplate } from '../../shared/workflow-types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
-import { TERMINAL_STATUSES } from '../../shared/task-state-machine'
+import { TERMINAL_STATUSES, isValidTransition } from '../../shared/task-state-machine'
 import { detectCycle } from '../services/dependency-service'
 import {
   generatePrompt,
@@ -92,6 +92,18 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
       throw new Error('No valid fields to update')
     }
     patch = filteredPatch
+
+    // Validate status transition at the handler boundary before touching the DB.
+    // The data layer also validates, but catching it early produces a clearer error
+    // and prevents unnecessary DB round-trips for invalid input.
+    if (patch.status && typeof patch.status === 'string') {
+      const current = getTask(id)
+      if (current && !isValidTransition(current.status, patch.status)) {
+        throw new Error(
+          `Invalid status transition: ${current.status} → ${patch.status} for task ${id}`
+        )
+      }
+    }
 
     // SP-1: Queuing business rules delegated to TaskStateService
     if (patch.status === 'queued') {
