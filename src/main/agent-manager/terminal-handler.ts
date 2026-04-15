@@ -4,9 +4,12 @@ import type { EpicDependencyIndex } from '../services/epic-dependency-service'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { AgentManagerConfig } from './types'
 import type { Logger } from '../logger'
+import { createLogger } from '../logger'
 import { resolveDependents } from '../lib/resolve-dependents'
 import { getSetting } from '../settings'
 import { getDb } from '../db'
+
+const logger = createLogger('terminal-handler')
 
 /**
  * Wraps a synchronous function in a better-sqlite3 transaction so cascade
@@ -15,7 +18,14 @@ import { getDb } from '../db'
 function runInTransactionSafe(fn: () => void): void {
   const db = getDb()
   const tx = db.transaction(fn)
-  tx()
+  try {
+    tx()
+  } catch (err) {
+    // Log with module context before propagating — the outer caller's catch
+    // has the taskId but not the transaction scope.
+    logger.error(`SQLite transaction failed: ${err}`)
+    throw err
+  }
 }
 
 function recordTerminalMetrics(status: string, metrics: MetricsCollector): void {
