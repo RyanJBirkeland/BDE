@@ -366,6 +366,21 @@ describe('sprint:update handler', () => {
 
     expect(_updateTask).toHaveBeenCalledWith('1', expect.objectContaining({ status: 'blocked' }))
   })
+
+  it('rejects an unrecognized status string before touching the DB', async () => {
+    vi.mocked(_getTask).mockReturnValue({
+      id: '1',
+      title: 'Task 1',
+      status: 'backlog',
+      depends_on: null
+    } as any)
+
+    const handler = captureHandler('sprint:update')
+    await expect(handler(mockEvent, '1', { status: 'banana' })).rejects.toThrow(
+      'Invalid status "banana"'
+    )
+    expect(_updateTask).not.toHaveBeenCalled()
+  })
 })
 
 describe('sprint:delete handler', () => {

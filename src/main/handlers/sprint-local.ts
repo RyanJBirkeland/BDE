@@ -8,7 +8,7 @@ import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import type { WorkflowTemplate } from '../../shared/workflow-types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
-import { TERMINAL_STATUSES, isValidTransition } from '../../shared/task-state-machine'
+import { TASK_STATUSES, TERMINAL_STATUSES, isValidTransition } from '../../shared/task-state-machine'
 import { detectCycle } from '../services/dependency-service'
 import {
   generatePrompt,
@@ -106,6 +106,15 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
       throw new Error('No valid fields to update')
     }
     patch = filteredPatch
+
+    // Validate status string at the handler boundary — defense-in-depth before DB round-trips.
+    if (patch.status !== undefined) {
+      if (typeof patch.status !== 'string' || !(TASK_STATUSES as readonly string[]).includes(patch.status)) {
+        throw new Error(
+          `Invalid status "${patch.status}". Valid statuses: ${TASK_STATUSES.join(', ')}`
+        )
+      }
+    }
 
     // Validate status transition at the handler boundary before touching the DB.
     // The data layer also validates, but catching it early produces a clearer error
