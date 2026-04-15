@@ -17,6 +17,7 @@ playwright-report/
 
 # Build artifacts
 release/
+build/config.gypi
 
 # Git worktrees
 .worktrees/
