@@ -1,4 +1,4 @@
-import { appendFileSync, statSync, mkdirSync, existsSync, renameSync, rmSync } from 'node:fs'
+import { appendFileSync, statSync, mkdirSync, chmodSync, existsSync, renameSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { nowIso } from '../shared/time'
@@ -16,7 +16,16 @@ export interface Logger {
 
 function ensureLogDir(): void {
   if (!existsSync(BDE_DIR)) {
-    mkdirSync(BDE_DIR, { recursive: true })
+    mkdirSync(BDE_DIR, { recursive: true, mode: 0o700 })
+  }
+  // Enforce restrictive permissions on the .bde directory on every startup.
+  // mkdirSync mode is only respected on creation — chmod fixes existing installs
+  // that were created without the mode parameter.
+  try {
+    chmodSync(BDE_DIR, 0o700)
+  } catch {
+    // Non-fatal: log but continue — app can still function
+    console.warn('[logger] Failed to enforce .bde directory permissions')
   }
 }
 

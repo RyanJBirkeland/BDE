@@ -9,7 +9,16 @@ let _db: Database.Database | null = null
 
 export function getDb(): Database.Database {
   if (!_db) {
-    mkdirSync(DB_DIR, { recursive: true })
+    mkdirSync(DB_DIR, { recursive: true, mode: 0o700 })
+    // Enforce restrictive permissions on the .bde directory on every startup.
+    // mkdirSync mode is only respected on creation — chmod fixes existing installs
+    // that were created without the mode parameter.
+    try {
+      chmodSync(DB_DIR, 0o700)
+    } catch {
+      // Non-fatal: log but continue — app can still function
+      console.warn('[db] Failed to enforce .bde directory permissions')
+    }
     const dbExists = existsSync(DB_PATH)
     _db = new Database(DB_PATH)
 
