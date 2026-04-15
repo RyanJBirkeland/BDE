@@ -1,5 +1,25 @@
 import DOMPurify from 'dompurify'
 
+const ALLOWED_HREF_PROTOCOLS = ['https:', 'http:', 'mailto:']
+
+// Install once — safe to call multiple times (DOMPurify deduplicates hooks)
+if (typeof DOMPurify.addHook === 'function') {
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if ('href' in node) {
+      const href = (node as HTMLAnchorElement).getAttribute('href') ?? ''
+      try {
+        const { protocol } = new URL(href)
+        if (!ALLOWED_HREF_PROTOCOLS.includes(protocol)) {
+          node.removeAttribute('href')
+        }
+      } catch {
+        // Relative URL or malformed — remove href to be safe
+        node.removeAttribute('href')
+      }
+    }
+  })
+}
+
 /** Convert markdown to HTML. */
 function markdownToHtml(md: string): string {
   return md
