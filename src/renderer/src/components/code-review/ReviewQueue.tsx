@@ -93,17 +93,7 @@ export function ReviewQueue(): React.JSX.Element {
         <span
           aria-live="polite"
           aria-atomic="true"
-          style={{
-            position: 'absolute',
-            width: 1,
-            height: 1,
-            padding: 0,
-            margin: -1,
-            overflow: 'hidden',
-            clip: 'rect(0,0,0,0)',
-            whiteSpace: 'nowrap',
-            borderWidth: 0
-          }}
+          className="sr-only"
         >
           {selectedBatchIds.size > 0 ? `${selectedBatchIds.size} tasks selected` : ''}
         </span>
