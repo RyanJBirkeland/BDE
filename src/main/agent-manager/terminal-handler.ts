@@ -77,7 +77,7 @@ async function resolveTerminalDependents(
     logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${errMsg}`)
     const note = `Dependency resolution failed: ${errMsg}. Downstream tasks may remain blocked — check and manually re-queue them.`
     const truncated = note.length > NOTES_MAX_LENGTH
-      ? '...' + note.slice(-(NOTES_MAX_LENGTH - 3))
+      ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...'
       : note
     try {
       repo.updateTask(taskId, { notes: truncated })
