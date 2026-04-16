@@ -1166,13 +1166,65 @@ describe('createAgentManager', () => {
       expect(vi.mocked(resolveDependents)).toHaveBeenCalledTimes(1)
     })
 
-    it('sets _depIndexDirty to true after terminal', async () => {
+    it('sets _depIndexDirty to true synchronously on terminal (before async work completes)', async () => {
       const { resolveDependents } = await import('../../lib/resolve-dependents')
       vi.mocked(resolveDependents).mockClear()
+
+      // Block resolveDependents so we can observe the dirty flag mid-flight
+      let resolveResolveDependents!: () => void
+      vi.mocked(resolveDependents).mockImplementationOnce(
+        () => new Promise<void>((r) => { resolveResolveDependents = r }) as unknown as void
+      )
+
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
       expect(mgr._depIndexDirty).toBe(false)
-      await mgr.onTaskTerminal('task-1', 'done')
+
+      // Start terminal without awaiting — dirty flag should be set before async work finishes
+      const p = mgr.onTaskTerminal('task-1', 'done')
+      // At this point handleTaskTerminal is still awaited — but the flag must already be true
+      expect(mgr._depIndexDirty).toBe(true)
+
+      resolveResolveDependents()
+      await p
+      expect(mgr._depIndexDirty).toBe(true)
+    })
+
+    it('concurrent terminal completions both set _depIndexDirty before drain tick can read stale index', async () => {
+      // Scenario: two tasks complete concurrently. A drain tick must not see a
+      // stale dep index between the two completions — the dirty flag must be
+      // raised synchronously when each terminal event fires.
+      const { resolveDependents } = await import('../../lib/resolve-dependents')
+      vi.mocked(resolveDependents).mockClear()
+
+      // Both terminal handlers block until we release them
+      let resolveA!: () => void
+      let resolveB!: () => void
+      vi.mocked(resolveDependents)
+        .mockImplementationOnce(
+          () => new Promise<void>((r) => { resolveA = r }) as unknown as void
+        )
+        .mockImplementationOnce(
+          () => new Promise<void>((r) => { resolveB = r }) as unknown as void
+        )
+
+      const logger = makeLogger()
+      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+      expect(mgr._depIndexDirty).toBe(false)
+
+      // Fire two concurrent terminal events for different tasks
+      const pA = mgr.onTaskTerminal('task-a', 'done')
+      const pB = mgr.onTaskTerminal('task-b', 'done')
+
+      // Both must have set the dirty flag synchronously before either resolves
+      expect(mgr._depIndexDirty).toBe(true)
+
+      // A drain tick that fires here will see dirty=true and do a full rebuild
+      // instead of reading a partially-updated stale index.
+
+      resolveA()
+      resolveB()
+      await Promise.all([pA, pB])
       expect(mgr._depIndexDirty).toBe(true)
     })
 

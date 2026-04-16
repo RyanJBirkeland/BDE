@@ -224,6 +224,10 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   async onTaskTerminal(taskId: string, status: string): Promise<void> {
+    // Mark dirty synchronously so any concurrent drain tick that fires while
+    // handleTaskTerminal is awaited will see the flag and do a full rebuild,
+    // rather than reading a stale dependency index.
+    this._depIndexDirty = true
     await handleTaskTerminal(taskId, status, this.onTaskTerminal.bind(this), {
       metrics: this._metrics,
       depIndex: this._depIndex,
@@ -233,7 +237,6 @@ export class AgentManagerImpl implements AgentManager {
       terminalCalled: this._terminalCalled,
       logger: this.logger
     })
-    this._depIndexDirty = true
   }
 
   /**
