@@ -49,11 +49,11 @@ export interface RepoOption {
   color: string
 }
 
-export const REPO_OPTIONS: RepoOption[] = [
-  { label: 'BDE', owner: 'RyanJBirkeland', color: '#6C8EEF' },
-  { label: 'life-os', owner: 'RyanJBirkeland', color: '#00D37F' },
-  { label: 'feast', owner: 'RyanJBirkeland', color: '#FF8A00' }
-]
+// REPO_OPTIONS is kept as an empty fallback. Components should use
+// useRepoOptions() hook for the live list from user settings.
+// repoColor() accepts an explicit list so it can be called with
+// whatever repo data the caller already has.
+export const REPO_OPTIONS: RepoOption[] = []
 
 // WIP limits (matches task runner concurrency)
 export const WIP_LIMIT_IN_PROGRESS = 5
