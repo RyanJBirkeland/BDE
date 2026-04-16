@@ -16,6 +16,10 @@ export interface WindowChannels {
     args: [html: string]
     result: string
   }
+  'playground:sanitize': {
+    args: [html: string]
+    result: string
+  }
 }
 
 /** Tear-off window management */

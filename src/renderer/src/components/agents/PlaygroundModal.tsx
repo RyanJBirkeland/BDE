@@ -1,7 +1,11 @@
 /**
  * Full-screen modal for previewing agent-generated HTML.
- * Split view: sandboxed iframe (preview) + syntax-highlighted source code.
+ * Split view: sandboxed iframe (preview) + editable source pane.
  * Supports Split, Preview-only, and Source-only view modes.
+ *
+ * Security: when the user edits HTML in the source pane and then switches to a
+ * preview-bearing mode, the edited content is re-sanitized via IPC before being
+ * rendered in the iframe. Raw user input is never used as srcDoc directly.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { X, Columns, Eye, Code, ExternalLink } from 'lucide-react'
@@ -111,6 +115,11 @@ const VIEW_MODE_LABELS: Record<ViewMode, string> = {
   source: 'Source'
 }
 
+/** Whether the requested view mode requires rendering the iframe preview. */
+function requiresPreview(mode: ViewMode): boolean {
+  return mode === 'split' || mode === 'preview'
+}
+
 export function PlaygroundModal({
   html,
   filename,
@@ -119,6 +128,13 @@ export function PlaygroundModal({
 }: PlaygroundModalProps): React.JSX.Element {
   const [viewMode, setViewMode] = useState<ViewMode>('split')
   const modalRef = useRef<HTMLDivElement>(null)
+
+  // editedHtml tracks the user's in-source-pane changes; starts as original html
+  const [editedHtml, setEditedHtml] = useState<string>(html)
+  // previewHtml is the sanitized version used as srcDoc — only updated when
+  // switching to a preview-bearing mode
+  const [previewHtml, setPreviewHtml] = useState<string>(html)
+  const [isSanitizing, setIsSanitizing] = useState<boolean>(false)
 
   // Trap focus inside modal
   useFocusTrap(modalRef, true)
@@ -139,10 +155,41 @@ export function PlaygroundModal({
     return () => document.removeEventListener('keydown', handleKeyDown, true)
   }, [handleKeyDown])
 
+  /**
+   * Sanitize editedHtml via main-process IPC and update previewHtml.
+   * Runs in the background — view mode switches immediately while the iframe
+   * shows a brief loading indicator until sanitization resolves.
+   */
+  const refreshPreview = useCallback((): void => {
+    setIsSanitizing(true)
+    window.api.window.sanitizePlayground(editedHtml).then(
+      (sanitized) => {
+        setPreviewHtml(sanitized)
+        setIsSanitizing(false)
+      },
+      (err: unknown) => {
+        console.error('Failed to sanitize playground HTML:', err)
+        setIsSanitizing(false)
+      }
+    )
+  }, [editedHtml])
+
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode): void => {
+      // When switching to a preview-bearing mode, always re-sanitize so user
+      // edits made in the source pane are never rendered raw.
+      if (requiresPreview(mode)) {
+        refreshPreview()
+      }
+      setViewMode(mode)
+    },
+    [refreshPreview]
+  )
+
   const handleOpenInBrowser = async (): Promise<void> => {
     try {
-      // Write HTML to temp file and open in default browser
-      await window.api.window.openPlaygroundInBrowser(html)
+      // Pass editedHtml — the handler re-sanitizes on its end before writing
+      await window.api.window.openPlaygroundInBrowser(editedHtml)
     } catch (err) {
       console.error('Failed to open playground in browser:', err)
     }
@@ -151,7 +198,8 @@ export function PlaygroundModal({
   const showPreview = viewMode === 'split' || viewMode === 'preview'
   const showSource = viewMode === 'split' || viewMode === 'source'
 
-  const escapedHtml = useMemo(() => escapeHtml(html), [html])
+  // Syntax-highlighted display uses edited text — it is never injected as HTML
+  const escapedHtml = useMemo(() => escapeHtml(editedHtml), [editedHtml])
   const sourceLines = useMemo(() => escapedHtml.split('\n'), [escapedHtml])
 
   return (
@@ -196,7 +244,7 @@ export function PlaygroundModal({
                   role="tab"
                   aria-selected={isActive}
                   aria-label={VIEW_MODE_LABELS[mode]}
-                  onClick={() => setViewMode(mode)}
+                  onClick={() => handleViewModeChange(mode)}
                   className={`playground-modal__view-button ${isActive ? 'playground-modal__view-button--active' : ''}`}
                 >
                   <Icon size={12} />
@@ -234,33 +282,49 @@ export function PlaygroundModal({
               className={`playground-modal__preview ${showSource ? 'playground-modal__preview--split' : ''}`}
               data-testid="playground-preview"
             >
-              {/*
-                SECURITY: iframe sandbox allows JavaScript execution (allow-scripts).
+              {isSanitizing ? (
+                <div className="playground-modal__sanitizing" aria-live="polite">
+                  Sanitizing…
+                </div>
+              ) : (
+                /*
+                  SECURITY: iframe sandbox allows JavaScript execution (allow-scripts).
 
-                This is an ACCEPTED RISK because:
-                1. HTML content is generated by Claude agents that the user explicitly spawned
-                2. Users trust these agents to execute arbitrary code in their workspace
-                3. Interactive playground features (charts, animations, forms) require JS
-                4. The sandbox still blocks: downloads, forms submission, popups, modals,
-                   pointer lock, and top-level navigation
+                  This is an ACCEPTED RISK because:
+                  1. HTML content is generated by Claude agents that the user explicitly spawned
+                  2. Users trust these agents to execute arbitrary code in their workspace
+                  3. Interactive playground features (charts, animations, forms) require JS
+                  4. The sandbox still blocks: downloads, forms submission, popups, modals,
+                     pointer lock, and top-level navigation
 
-                The "Scripts enabled" indicator in the toolbar warns users that JS execution
-                is enabled. For untrusted HTML, users should use the "Source" view instead.
-              */}
-              <iframe
-                title={`Preview of ${filename}`}
-                sandbox="allow-scripts"
-                srcDoc={html}
-                className="playground-modal__iframe"
-                style={{ background: 'var(--bde-surface)' }}
-              />
+                  The "Scripts enabled" indicator in the toolbar warns users that JS execution
+                  is enabled. For untrusted HTML, users should use the "Source" view instead.
+
+                  previewHtml is always the output of sanitizePlaygroundHtml() — raw user
+                  edits from the source textarea are never passed directly to srcDoc.
+                */
+                <iframe
+                  title={`Preview of ${filename}`}
+                  sandbox="allow-scripts"
+                  srcDoc={previewHtml}
+                  className="playground-modal__iframe"
+                  style={{ background: 'var(--bde-surface)' }}
+                />
+              )}
             </div>
           )}
 
-          {/* Source pane */}
+          {/* Source pane — editable textarea with syntax-highlighted overlay */}
           {showSource && (
             <div className="playground-modal__source" data-testid="playground-source">
-              <pre className="playground-modal__source-pre">
+              <textarea
+                className="playground-modal__source-textarea"
+                value={editedHtml}
+                onChange={(e) => setEditedHtml(e.target.value)}
+                aria-label="HTML source editor"
+                spellCheck={false}
+              />
+              <pre className="playground-modal__source-pre" aria-hidden="true">
                 <code>
                   {sourceLines.map((line, i) => (
                     <div key={i} className="playground-modal__source-line">

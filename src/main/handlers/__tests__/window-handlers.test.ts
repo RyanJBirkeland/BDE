@@ -44,11 +44,12 @@ describe('Window handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers 2 safeHandle channels and 1 safeOn channel', () => {
+  it('registers 3 safeHandle channels and 1 safeOn channel', () => {
     registerWindowHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(2)
+    expect(safeHandle).toHaveBeenCalledTimes(3)
     expect(safeHandle).toHaveBeenCalledWith('window:openExternal', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('playground:sanitize', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('playground:openInBrowser', expect.any(Function))
   })
 
@@ -110,6 +111,26 @@ describe('Window handlers', () => {
         )
 
         expect(shell.openExternal).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('playground:sanitize', () => {
+      it('returns sanitized HTML string', () => {
+        const handlers = captureHandlers()
+        const html = '<h1 onclick="alert(1)">Hello</h1>'
+        const result = handlers['playground:sanitize'](mockEvent, html)
+        // DOMPurify should strip the event handler
+        expect(typeof result).toBe('string')
+        expect(result).toContain('<h1>')
+        expect(result).not.toContain('onclick')
+      })
+
+      it('strips script tags', () => {
+        const handlers = captureHandlers()
+        const html = '<p>safe</p><script>alert("xss")</script>'
+        const result = handlers['playground:sanitize'](mockEvent, html)
+        expect(result).toContain('<p>')
+        expect(result).not.toContain('<script>')
       })
     })
 

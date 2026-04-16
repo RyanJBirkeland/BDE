@@ -119,6 +119,7 @@ vi.stubGlobal('api', {
     readClipboardImage: vi.fn().mockResolvedValue(null),
     openExternal: vi.fn().mockResolvedValue(undefined),
     openPlaygroundInBrowser: vi.fn().mockResolvedValue('/tmp/bde-playground-123.html'),
+    sanitizePlayground: vi.fn().mockImplementation((html: string) => Promise.resolve(html)),
     setTitle: vi.fn()
   },
 

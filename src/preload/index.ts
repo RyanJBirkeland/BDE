@@ -41,6 +41,7 @@ import {
   readClipboardImage,
   openExternal,
   openPlaygroundInBrowser,
+  sanitizePlaygroundHtml,
   setTitle,
   github,
   cost,
@@ -160,6 +161,7 @@ const api = {
     readClipboardImage,
     openExternal,
     openPlaygroundInBrowser,
+    sanitizePlayground: sanitizePlaygroundHtml,
     setTitle
   },
 

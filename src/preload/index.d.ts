@@ -182,6 +182,9 @@ declare global {
         openPlaygroundInBrowser: (
           ...args: IpcArgs<'playground:openInBrowser'>
         ) => Promise<IpcResult<'playground:openInBrowser'>>
+        sanitizePlayground: (
+          ...args: IpcArgs<'playground:sanitize'>
+        ) => Promise<IpcResult<'playground:sanitize'>>
         setTitle: (title: string) => void
       }
 
