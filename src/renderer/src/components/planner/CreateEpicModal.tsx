@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui/Button'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { useTaskGroups } from '../../stores/taskGroups'
 import { EPIC_TEMPLATES, type EpicTemplate } from './epicTemplates'
 import type { TaskGroup } from '../../../../shared/types'
@@ -28,6 +29,7 @@ const ACCENT_COLORS = [
 
 export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.JSX.Element {
   const reduced = useReducedMotion()
+  const repoOptions = useRepoOptions()
   const { createGroup, createGroupFromTemplate, selectGroup } = useTaskGroups()
 
   const [name, setName] = useState('')
@@ -85,7 +87,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
             goal: goal.trim() || selectedTemplate.goal,
             tasks: selectedTemplate.tasks
           },
-          'BDE' // Default to BDE repo
+          repoOptions[0]?.label ?? ''
         )
       } else {
         // Create empty group
@@ -112,6 +114,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
     goal,
     submitting,
     selectedTemplate,
+    repoOptions,
     createGroup,
     createGroupFromTemplate,
     selectGroup,
