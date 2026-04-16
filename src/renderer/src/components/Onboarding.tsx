@@ -178,6 +178,9 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
   const instruction = getInstruction(status)
   const allPassed = status?.cliFound && status?.tokenFound && !status?.tokenExpired
 
+  const requiredStates = [cliState, tokenState, expiryState, extended.gitAvailable]
+  const anyRequiredFailed = requiredStates.some((s) => s === 'fail')
+
   return (
     <div className="onboarding-backdrop">
       <div className="onboarding-card">
@@ -245,7 +248,7 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
               Continue
             </Button>
           ) : (
-            <Button variant="ghost" onClick={onReady} disabled={checking}>
+            <Button variant="ghost" onClick={onReady} disabled={checking || anyRequiredFailed}>
               Continue Anyway
             </Button>
           )}
