@@ -21,7 +21,7 @@ import type { TaskTerminalService } from './services/task-terminal-service'
 import type { DialogService } from './dialog-service'
 import { BACKUP_INTERVAL_MS, PRUNE_CHANGES_DAYS } from './constants'
 import { getSetting as _getRawSetting } from './data/settings-queries'
-import { SENSITIVE_SETTING_KEYS } from './secure-storage'
+import { SENSITIVE_SETTING_KEYS, ENCRYPTED_PREFIX } from './secure-storage'
 
 const logger = createLogger('bootstrap')
 
@@ -71,14 +71,14 @@ export function warnPlaintextSensitiveSettings(): void {
 
   for (const key of SENSITIVE_SETTING_KEYS) {
     const raw = _getRawSetting(db, key)
-    if (raw !== null && !raw.startsWith('ENC:')) {
+    if (raw !== null && !raw.startsWith(ENCRYPTED_PREFIX)) {
       plaintextKeys.push(key)
     }
   }
 
   if (plaintextKeys.length > 0) {
     logger.warn(
-      `Sensitive settings stored as plaintext (missing ENC: prefix): ${plaintextKeys.join(', ')}. ` +
+      `Sensitive settings stored as plaintext (missing ${ENCRYPTED_PREFIX} prefix): ${plaintextKeys.join(', ')}. ` +
         'These values are unencrypted in SQLite. Re-save each credential via Settings to encrypt it.'
     )
   }

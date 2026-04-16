@@ -3,7 +3,7 @@ import { createLogger } from './logger'
 
 const logger = createLogger('secure-storage')
 
-const ENCRYPTED_PREFIX = 'ENC:'
+export const ENCRYPTED_PREFIX = 'ENC:'
 
 export const SENSITIVE_SETTING_KEYS: ReadonlySet<string> = new Set([
   'github.token',
