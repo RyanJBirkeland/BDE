@@ -2,6 +2,7 @@ import { ArrowLeft, CheckCircle, Rocket } from 'lucide-react'
 import { Button } from '../../ui/Button'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
 import { usePanelLayoutStore } from '../../../stores/panelLayout'
+import { useRepoOptions } from '../../../hooks/useRepoOptions'
 import { SAMPLE_FIRST_TASK } from './sample-first-task'
 
 interface StepProps {
@@ -16,11 +17,12 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
   const setField = useTaskWorkbenchStore((s) => s.setField)
   const setSpecType = useTaskWorkbenchStore((s) => s.setSpecType)
   const setView = usePanelLayoutStore((s) => s.setView)
+  const repoOptions = useRepoOptions()
 
   const handleCreateFirstTask = (): void => {
     setField('title', SAMPLE_FIRST_TASK.title)
     setField('spec', SAMPLE_FIRST_TASK.spec)
-    setField('repo', SAMPLE_FIRST_TASK.repo)
+    setField('repo', repoOptions[0]?.label ?? '')
     setSpecType(SAMPLE_FIRST_TASK.specType)
     window.api.settings.set('onboarding.completed', 'true').catch((err) => {
       console.error('Failed to mark onboarding as completed:', err)
