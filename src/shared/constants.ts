@@ -37,14 +37,9 @@ export const DEFAULT_TASK_TEMPLATES = [
       '## Bug Description\n\nWhat is the symptom? Include:\n- Exact reproduction steps\n- Expected vs actual behavior\n- Error messages (if any)\n\n## Root Cause\n\nWhat code is causing it?\n- File: `src/.../file.ts`\n- Function: `functionName()`\n- Description of the bug\n\n## Fix\n\nExact change to make (include before/after code if possible)\n\n## Files to Change\n\n- `src/.../file.ts` — describe the change\n- `src/.../file.test.ts` — add regression test\n\n## How to Test\n\n1. Run `npm test` — all tests pass\n2. Run `npm run typecheck` — no errors\n3. Regression test description\n\n## Out of Scope\n\n- (list items NOT to change)\n'
   },
   {
-    name: 'Feature (Renderer)',
+    name: 'Feature',
     promptPrefix:
-      '## Problem\n\nWhat user-facing problem does this solve?\n\n## Solution\n\nDescribe the feature:\n- UI behavior (what the user sees/does)\n- Component hierarchy (new components, where they mount)\n- State management (which Zustand store, new fields)\n\n## Files to Change\n\n- `src/renderer/src/components/[area]/NewComponent.tsx` — create, describe props\n- `src/renderer/src/stores/[store].ts` — add state fields\n- `src/renderer/src/assets/[area]-neon.css` — add CSS classes\n- Tests in corresponding `__tests__/` directory\n\n## Wiring Checklist\n\n- [ ] IPC channels in `src/shared/ipc-channels.ts` (if needed)\n- [ ] Preload bridge in `src/preload/index.ts` + `index.d.ts` (if IPC)\n- [ ] View type union in `panelLayout.ts` (if new view)\n\n## How to Test\n\n1. `npm run typecheck` — zero errors\n2. `npm test` — all tests pass\n3. Manual verification steps\n\n## Out of Scope\n\n- (list items)\n'
-  },
-  {
-    name: 'Feature (Main Process)',
-    promptPrefix:
-      '## Problem\n\nWhat capability is missing in the main process?\n\n## Solution\n\nDescribe the handler/service:\n- IPC channel name(s)\n- Input/output shapes\n- Error handling approach\n\n## Files to Change\n\n- `src/main/handlers/[module].ts` — add handler(s) using `safeHandle()`\n- `src/shared/ipc-channels.ts` — add channel constant(s)\n- `src/preload/index.ts` — add bridge method(s)\n- `src/preload/index.d.ts` — add type declaration(s)\n- `src/main/handlers/__tests__/[module].test.ts` — handler count + unit tests\n\n## Handler Count\n\nCurrent count for this module: N\nNew count after change: N+1\n\n## How to Test\n\n1. `npm run typecheck`\n2. `npm test`\n3. `npm run test:main`\n\n## Out of Scope\n\n- (list items)\n'
+      '## Problem\n\nWhat user-facing problem does this solve?\n\n## Solution\n\nDescribe the feature:\n- What the user sees or can do\n- How it works at a high level\n- Key components or modules involved\n\n## Files to Change\n\n- `path/to/file.ts` — describe the change\n- `path/to/file.test.ts` — describe the tests\n\n## How to Test\n\n1. Run the test suite — all tests pass\n2. Run the type checker — zero errors\n3. Manual verification steps\n\n## Out of Scope\n\n- (list items NOT to change)\n'
   },
   {
     name: 'Refactor',

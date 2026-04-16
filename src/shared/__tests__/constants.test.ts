@@ -2,16 +2,15 @@ import { describe, it, expect } from 'vitest'
 import { DEFAULT_TASK_TEMPLATES } from '../constants'
 
 describe('DEFAULT_TASK_TEMPLATES', () => {
-  it('contains exactly 5 templates', () => {
-    expect(DEFAULT_TASK_TEMPLATES).toHaveLength(5)
+  it('contains exactly 4 templates', () => {
+    expect(DEFAULT_TASK_TEMPLATES).toHaveLength(4)
   })
 
   it('has the expected template names', () => {
     const names = DEFAULT_TASK_TEMPLATES.map((t) => t.name)
     expect(names).toEqual([
       'Bug Fix',
-      'Feature (Renderer)',
-      'Feature (Main Process)',
+      'Feature',
       'Refactor',
       'Test Coverage'
     ])
