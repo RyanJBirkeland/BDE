@@ -3,12 +3,18 @@
  */
 import './ConnectionsSection.css'
 import { useCallback, useEffect, useState } from 'react'
-import { RefreshCw, ExternalLink } from 'lucide-react'
+import { RefreshCw, ExternalLink, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { CredentialForm, type CredentialField } from './CredentialForm'
 import { SettingsCard } from './SettingsCard'
+
+// --- Encryption Status types ---
+interface EncryptionStatus {
+  available: boolean
+  reason?: string
+}
 
 const APP_VERSION = __APP_VERSION__
 const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE'
@@ -40,6 +46,15 @@ function formatExpiry(iso: string): string {
 }
 
 export function ConnectionsSection(): React.JSX.Element {
+  // --- Encryption status state ---
+  const [encryptionStatus, setEncryptionStatus] = useState<EncryptionStatus | null>(null)
+
+  useEffect(() => {
+    window.api.settings.getEncryptionStatus().then(setEncryptionStatus).catch(() => {
+      // Non-fatal — omit the banner on error
+    })
+  }, [])
+
   // --- Auth status state ---
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
@@ -145,6 +160,23 @@ export function ConnectionsSection(): React.JSX.Element {
   return (
     <section className="settings-section">
       <h2 className="settings-section__title bde-section-title">Connections</h2>
+
+      {/* Encryption status banner */}
+      {encryptionStatus !== null && (
+        <div
+          className={`encryption-status-banner encryption-status-banner--${encryptionStatus.available ? 'active' : 'unavailable'}`}
+          role="status"
+        >
+          {encryptionStatus.available ? (
+            <ShieldCheck size={14} aria-hidden="true" />
+          ) : (
+            <ShieldAlert size={14} aria-hidden="true" />
+          )}
+          {encryptionStatus.available
+            ? 'Credential encryption: Active'
+            : `Credential encryption: UNAVAILABLE — ${encryptionStatus.reason ?? 'Credentials may be stored in plaintext'}`}
+        </div>
+      )}
 
       {/* Claude CLI Auth Card */}
       <SettingsCard

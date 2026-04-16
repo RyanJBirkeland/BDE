@@ -3,9 +3,17 @@ import {
   buildConnectSrc,
   initializeDatabase,
   startBackgroundServices,
-  setupCleanupTasks
+  setupCleanupTasks,
+  warnPlaintextSensitiveSettings
 } from '../bootstrap'
+
+const mockLogger = vi.hoisted(() => ({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn()
+}))
 import * as db from '../db'
+import * as settingsQueries from '../data/settings-queries'
 import * as eventQueries from '../data/event-queries'
 import * as taskChanges from '../data/task-changes'
 import * as sprintMaintenanceFacade from '../data/sprint-maintenance-facade'
@@ -60,16 +68,26 @@ vi.mock('../config', () => ({
   getEventRetentionDays: vi.fn(() => 30)
 }))
 vi.mock('../logger', () => ({
-  createLogger: () => ({
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn()
-  })
+  createLogger: () => mockLogger
 }))
 vi.mock('../data/sprint-queries')
 vi.mock('../data/sprint-maintenance-facade')
 vi.mock('../services/plugin-loader')
 vi.mock('../services/load-sampler')
+vi.mock('../data/settings-queries', () => ({
+  getSetting: vi.fn(() => null),
+  setSetting: vi.fn(),
+  deleteSetting: vi.fn(),
+  getSettingJson: vi.fn(() => null),
+  setSettingJson: vi.fn()
+}))
+vi.mock('../secure-storage', () => ({
+  ENCRYPTED_PREFIX: 'ENC:',
+  SENSITIVE_SETTING_KEYS: new Set(['github.token', 'supabase.serviceKey']),
+  encryptSetting: vi.fn((v: string) => 'ENC:' + v),
+  decryptSetting: vi.fn((v: string) => v),
+  isEncryptionAvailable: vi.fn(() => true)
+}))
 
 const mockWindow = {
   webContents: {
@@ -131,6 +149,28 @@ describe('bootstrap', () => {
 
       expect(pluginLoader.loadPlugins).toHaveBeenCalled()
       expect(loadSampler.startLoadSampler).toHaveBeenCalled()
+    })
+  })
+
+  describe('warnPlaintextSensitiveSettings', () => {
+    it('should not warn when all sensitive settings return null', () => {
+      vi.mocked(settingsQueries.getSetting).mockReturnValue(null)
+
+      warnPlaintextSensitiveSettings()
+
+      expect(mockLogger.warn).not.toHaveBeenCalled()
+    })
+
+    it('should warn when a sensitive setting has a plaintext value without ENC: prefix', () => {
+      vi.mocked(settingsQueries.getSetting).mockImplementation((_db, key) => {
+        if (key === 'github.token') return 'ghp_plaintext'
+        return null
+      })
+
+      warnPlaintextSensitiveSettings()
+
+      expect(mockLogger.warn).toHaveBeenCalledOnce()
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('github.token'))
     })
   })
 

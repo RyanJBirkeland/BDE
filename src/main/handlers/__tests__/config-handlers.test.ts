@@ -6,6 +6,12 @@ import type { IpcMainInvokeEvent } from 'electron'
 import { homedir } from 'os'
 import { join } from 'path'
 
+vi.mock('electron', () => ({
+  safeStorage: {
+    isEncryptionAvailable: vi.fn()
+  }
+}))
+
 vi.mock('../../settings', () => ({
   getSetting: vi.fn(),
   setSetting: vi.fn(),
@@ -32,6 +38,7 @@ vi.mock('../../secure-storage', () => ({
 
 import { registerConfigHandlers } from '../config-handlers'
 import { safeHandle } from '../../ipc-utils'
+import { safeStorage } from 'electron'
 import {
   getSetting,
   setSetting,
@@ -52,10 +59,10 @@ describe('Config handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers all 11 settings channels', () => {
+  it('registers all 12 settings channels', () => {
     registerConfigHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(11)
+    expect(safeHandle).toHaveBeenCalledTimes(12)
     expect(safeHandle).toHaveBeenCalledWith('settings:get', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:hasSecret', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:set', expect.any(Function))
@@ -67,6 +74,7 @@ describe('Config handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('settings:applyProfile', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:listProfiles', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:deleteProfile', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('settings:getEncryptionStatus', expect.any(Function))
   })
 
   describe('handler functions', () => {
@@ -207,6 +215,26 @@ describe('Config handlers', () => {
       handlers['settings:deleteProfile'](mockEvent, 'dev-mode')
 
       expect(deleteProfile).toHaveBeenCalledWith('dev-mode')
+    })
+
+    it('settings:getEncryptionStatus returns available true with undefined reason when encryption available', () => {
+      vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true)
+      const handlers = captureHandlers()
+
+      const result = handlers['settings:getEncryptionStatus'](mockEvent)
+
+      expect(safeStorage.isEncryptionAvailable).toHaveBeenCalled()
+      expect(result).toEqual({ available: true, reason: undefined })
+    })
+
+    it('settings:getEncryptionStatus returns available false with reason when encryption unavailable', () => {
+      vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false)
+      const handlers = captureHandlers()
+
+      const result = handlers['settings:getEncryptionStatus'](mockEvent)
+
+      expect(safeStorage.isEncryptionAvailable).toHaveBeenCalled()
+      expect(result).toEqual({ available: false, reason: 'System keychain unavailable' })
     })
 
     describe('profile name validation', () => {

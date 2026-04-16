@@ -24,12 +24,13 @@ export interface MemorySearchResponse {
 }
 
 /**
- * Search memory files using grep.
+ * Search memory files using grep with fixed-string matching (-F).
+ * Fixed-string mode treats the query as a literal string, not a regex pattern.
+ * This prevents ReDoS from catastrophic backtracking on attacker-controlled patterns.
  * Returns an object with matching file results and a timedOut flag.
  * timedOut is true when the grep process was killed due to the 5-second timeout.
  */
 async function searchMemory(query: string): Promise<MemorySearchResponse> {
-  // Input validation
   if (typeof query !== 'string' || query.length > 200) {
     logger.warn('memory:search query rejected: exceeds 200 char limit')
     throw new Error('Query must be a string of 200 characters or fewer')
@@ -39,18 +40,8 @@ async function searchMemory(query: string): Promise<MemorySearchResponse> {
     return { results: [], timedOut: false }
   }
 
-  // Strip catastrophic backtracking patterns
-  const safeQuery = query
-    .replace(/(\(\?:.*\))[+*]/g, '') // non-capturing groups with quantifiers
-    .replace(/\([^)]*\)[+*]{2,}/g, '') // groups with multiple sequential quantifiers
-    .replace(/\([^)]*[+*|][^)]*\)[+*{]/g, '') // capturing groups with nested quantifiers
-
-  if (safeQuery !== query) {
-    logger.warn('memory:search: stripped dangerous backtracking patterns from query')
-  }
-
   try {
-    const { stdout } = await execFileAsync('grep', ['-rni', '--', safeQuery, '.'], {
+    const { stdout } = await execFileAsync('grep', ['-Frni', '--', query, '.'], {
       cwd: BDE_MEMORY_DIR,
       encoding: 'utf-8',
       maxBuffer: 5 * 1024 * 1024, // 5MB

@@ -2,6 +2,7 @@
  * Agent manager IPC handlers — delegates to the in-process AgentManager.
  */
 import { safeHandle } from '../ipc-utils'
+import { isValidTaskId } from '../lib/validation'
 import type { AgentManager } from '../agent-manager'
 import type { AgentManagerStatus } from '../../shared/types'
 import { getTask } from '../services/sprint-service'
@@ -31,6 +32,7 @@ export function registerAgentManagerHandlers(am: AgentManager | undefined): void
   })
 
   safeHandle('agent-manager:kill', async (_e, taskId: string) => {
+    if (!isValidTaskId(taskId)) return { ok: false, error: 'Invalid task ID format' }
     if (!am) return { ok: false, error: 'Agent manager not available' }
     try {
       am.killAgent(taskId)
@@ -57,6 +59,7 @@ export function registerAgentManagerHandlers(am: AgentManager | undefined): void
       taskId: string,
       message?: string
     ): Promise<{ ok: boolean; committed: boolean; error?: string }> => {
+      if (!isValidTaskId(taskId)) return { ok: false, committed: false, error: 'Invalid task ID format' }
       const task = getTask(taskId)
       if (!task) return { ok: false, committed: false, error: `Task ${taskId} not found` }
       const worktreePath = task.worktree_path

@@ -119,6 +119,7 @@ vi.stubGlobal('api', {
     readClipboardImage: vi.fn().mockResolvedValue(null),
     openExternal: vi.fn().mockResolvedValue(undefined),
     openPlaygroundInBrowser: vi.fn().mockResolvedValue('/tmp/bde-playground-123.html'),
+    sanitizePlayground: vi.fn().mockImplementation((html: string) => Promise.resolve(html)),
     setTitle: vi.fn()
   },
 
@@ -249,7 +250,8 @@ vi.stubGlobal('api', {
     set: vi.fn().mockResolvedValue(undefined),
     getJson: vi.fn().mockResolvedValue(null),
     setJson: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(undefined)
+    delete: vi.fn().mockResolvedValue(undefined),
+    getEncryptionStatus: vi.fn().mockResolvedValue({ available: true })
   },
 
   // Claude CLI config

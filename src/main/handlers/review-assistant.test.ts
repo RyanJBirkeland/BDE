@@ -75,6 +75,27 @@ describe('handleAutoReview', () => {
     const reviewChanges = vi.fn().mockRejectedValue(new Error('nope'))
     await expect(handleAutoReview({ reviewChanges }, 'task-y', false)).rejects.toThrow('nope')
   })
+
+  it('rejects invalid taskId format', async () => {
+    const reviewChanges = vi.fn()
+    const svc: ReviewService = { reviewChanges }
+    // Path traversal attempt
+    await expect(handleAutoReview(svc, '../../../etc/passwd', false)).rejects.toThrow(
+      'Invalid task ID format'
+    )
+    // Shell injection attempt
+    await expect(handleAutoReview(svc, 'task; rm -rf /', false)).rejects.toThrow(
+      'Invalid task ID format'
+    )
+    // Empty string
+    await expect(handleAutoReview(svc, '', false)).rejects.toThrow('Invalid task ID format')
+    // Non-string
+    await expect(handleAutoReview(svc, null as any, false)).rejects.toThrow(
+      'Invalid task ID format'
+    )
+    // Service should never be called for invalid IDs
+    expect(reviewChanges).not.toHaveBeenCalled()
+  })
 })
 
 describe('handleChatStream', () => {
@@ -168,5 +189,38 @@ describe('handleChatStream', () => {
     await expect(
       handleChatStream(deps, { taskId: 'missing', messages: [] }, sender as any)
     ).rejects.toThrow(/not found/i)
+  })
+
+  it('rejects invalid taskId format before task lookup', async () => {
+    const sender = { send: () => {} }
+    const taskRepo = { getTask: vi.fn() }
+    const deps = {
+      taskRepo: taskRepo as unknown as IAgentTaskRepository,
+      reviewRepo: { getCached: () => null, setCached: () => {}, invalidate: () => {} },
+      getHeadCommitSha: async () => 'sha',
+      getBranch: async () => 'feat/auth',
+      getDiff: async () => '',
+      buildChatPrompt: () => '',
+      runSdkStreaming: async () => '',
+      activeStreams: new Map()
+    }
+    // Path traversal attempt
+    await expect(
+      handleChatStream(deps, { taskId: '../../../etc/passwd', messages: [] }, sender as any)
+    ).rejects.toThrow('Invalid task ID format')
+    // Shell injection attempt
+    await expect(
+      handleChatStream(deps, { taskId: 'task; rm -rf /', messages: [] }, sender as any)
+    ).rejects.toThrow('Invalid task ID format')
+    // Empty string
+    await expect(
+      handleChatStream(deps, { taskId: '', messages: [] }, sender as any)
+    ).rejects.toThrow('Invalid task ID format')
+    // Non-string
+    await expect(
+      handleChatStream(deps, { taskId: null as any, messages: [] }, sender as any)
+    ).rejects.toThrow('Invalid task ID format')
+    // Task lookup should never be called for invalid IDs
+    expect(taskRepo.getTask).not.toHaveBeenCalled()
   })
 })

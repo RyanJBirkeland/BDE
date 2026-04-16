@@ -49,6 +49,7 @@ declare global {
         deleteProfile: (
           ...args: IpcArgs<'settings:deleteProfile'>
         ) => Promise<IpcResult<'settings:deleteProfile'>>
+        getEncryptionStatus: () => Promise<IpcResult<'settings:getEncryptionStatus'>>
       }
 
       // Claude CLI config (~/.claude/settings.json)
@@ -181,6 +182,9 @@ declare global {
         openPlaygroundInBrowser: (
           ...args: IpcArgs<'playground:openInBrowser'>
         ) => Promise<IpcResult<'playground:openInBrowser'>>
+        sanitizePlayground: (
+          ...args: IpcArgs<'playground:sanitize'>
+        ) => Promise<IpcResult<'playground:sanitize'>>
         setTitle: (title: string) => void
       }
 

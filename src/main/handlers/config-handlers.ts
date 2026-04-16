@@ -1,3 +1,4 @@
+import { safeStorage } from 'electron'
 import { safeHandle } from '../ipc-utils'
 import { getSetting, setSetting, getSettingJson, setSettingJson, deleteSetting } from '../settings'
 import { SENSITIVE_SETTING_KEYS } from '../secure-storage'
@@ -70,5 +71,13 @@ export function registerConfigHandlers(): void {
   safeHandle('settings:deleteProfile', (_e, name: string) => {
     validateProfileName(name)
     return deleteProfile(name)
+  })
+
+  safeHandle('settings:getEncryptionStatus', () => {
+    const available = safeStorage.isEncryptionAvailable()
+    return {
+      available,
+      reason: available ? undefined : 'System keychain unavailable'
+    }
   })
 }

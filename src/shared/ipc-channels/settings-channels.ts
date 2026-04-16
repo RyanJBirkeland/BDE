@@ -48,6 +48,10 @@ export interface SettingsChannels {
     args: [name: string]
     result: void
   }
+  'settings:getEncryptionStatus': {
+    args: []
+    result: { available: boolean; reason?: string }
+  }
 }
 
 /** Claude Config */

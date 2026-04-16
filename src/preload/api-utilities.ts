@@ -20,6 +20,10 @@ export const openPlaygroundInBrowser = (
   html: string
 ): Promise<IpcChannelMap['playground:openInBrowser']['result']> =>
   typedInvoke('playground:openInBrowser', html)
+export const sanitizePlaygroundHtml = (
+  html: string
+): Promise<IpcChannelMap['playground:sanitize']['result']> =>
+  typedInvoke('playground:sanitize', html)
 export const setTitle = (title: string): void => ipcRenderer.send('window:setTitle', title)
 
 // GitHub API proxy

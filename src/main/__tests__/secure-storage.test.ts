@@ -72,12 +72,10 @@ describe('encryptSetting', () => {
     expect(mockEncryptString).toHaveBeenCalledWith('test-value')
   })
 
-  it('returns plaintext (no ENC: prefix) when encryption is unavailable', () => {
+  it('throws when encryption is unavailable', () => {
     mockIsEncryptionAvailable.mockReturnValue(false)
 
-    const result = encryptSetting('plain-secret')
-    expect(result).toBe('plain-secret')
-    expect(result.startsWith('ENC:')).toBe(false)
+    expect(() => encryptSetting('plain-secret')).toThrow('Cannot store sensitive setting')
     expect(mockEncryptString).not.toHaveBeenCalled()
   })
 })

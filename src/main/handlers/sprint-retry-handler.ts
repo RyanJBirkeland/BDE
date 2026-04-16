@@ -5,6 +5,7 @@
 
 import { execFileAsync } from '../lib/async-utils'
 import { safeHandle } from '../ipc-utils'
+import { isValidTaskId } from '../lib/validation'
 import { getTask, updateTask } from '../services/sprint-service'
 import { getSettingJson } from '../settings'
 import { getErrorMessage } from '../../shared/errors'
@@ -14,6 +15,7 @@ const logger = createLogger('sprint-retry-handler')
 
 export function registerSprintRetryHandler(): void {
   safeHandle('sprint:retry', async (_e, taskId: string) => {
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
     const task = getTask(taskId)
     if (!task) throw new Error(`Task ${taskId} not found`)
     if (task.status !== 'failed' && task.status !== 'error') {

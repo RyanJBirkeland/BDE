@@ -21,7 +21,7 @@ const logger = createLogger('tearoff-window-manager')
 
 export const SHARED_WEB_PREFERENCES = {
   preload: join(__dirname, '../preload/index.js'),
-  sandbox: false,
+  sandbox: true,
   contextIsolation: true
 }
 

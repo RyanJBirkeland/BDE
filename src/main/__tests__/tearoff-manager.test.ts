@@ -203,7 +203,7 @@ const defaultPayload = {
 describe('SHARED_WEB_PREFERENCES', () => {
   it('has correct shape', () => {
     expect(SHARED_WEB_PREFERENCES).toMatchObject({
-      sandbox: false,
+      sandbox: true,
       contextIsolation: true
     })
     expect(SHARED_WEB_PREFERENCES.preload).toContain('preload/index.js')

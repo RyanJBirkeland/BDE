@@ -10,11 +10,20 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { homedir, userInfo } from 'node:os'
 import { getErrorMessage } from '../shared/errors'
+import { createLogger } from './logger'
+import { broadcast } from './broadcast'
+
+const logger = createLogger('env-utils')
 
 const customPaths = process.env.BDE_EXTRA_PATHS?.split(':').filter(Boolean) ?? []
 const EXTRA_PATHS = [...customPaths, '/usr/local/bin', '/opt/homebrew/bin', `${homedir()}/.local/bin`]
 
 let _cachedEnv: Record<string, string | undefined> | null = null
+let keychainConsecutiveFailures = 0
+
+const KEYCHAIN_FAILURE_WARNING_THRESHOLD = 3
+const KEYCHAIN_WARNING_MESSAGE =
+  "Keychain access failing — run `claude login` to refresh your token"
 
 // Allowlist of environment variables that agents need
 const ENV_ALLOWLIST = [
@@ -114,11 +123,18 @@ export function getOAuthToken(): string | null {
       }
       const mode = lstats.mode & 0o777
       if (mode !== 0o600) {
-        console.warn(
-          `[env-utils] OAuth token file has insecure permissions: ${mode.toString(8)}. Expected: 600`
+        logger.error(
+          `[env-utils] OAuth token rejected: insecure permissions ${mode.toString(8)}. ` +
+            `Run: chmod 600 ${tokenPath}`
         )
+        return null
       }
       _cachedOAuthToken = readFileSync(tokenPath, 'utf8').trim()
+      // Validate token format: reject empty strings or tokens too short to be valid
+      if (!_cachedOAuthToken || _cachedOAuthToken.length < 20) {
+        logger.warn('[env-utils] OAuth token is too short or empty — ignoring')
+        _cachedOAuthToken = null
+      }
     } else {
       _cachedOAuthToken = null
     }
@@ -268,9 +284,28 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
       ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-w'],
       { timeout: 10_000, env: buildAgentEnv() }
     )
-    creds = JSON.parse(credJson.trim()) as ClaudeCreds
-  } catch {
-    // Keychain access can fail (locked, not found, permissions)
+    const parsed = JSON.parse(credJson.trim()) as unknown
+    // Validate Keychain JSON schema before using — guard against corrupted or manually edited entries
+    if (!parsed || typeof parsed !== 'object' ||
+        !('claudeAiOauth' in parsed) || typeof (parsed as Record<string, unknown>).claudeAiOauth !== 'object') {
+      logger.error('[env-utils] Keychain JSON has unexpected format — run claude login to reset')
+      return false
+    }
+    const oauth = (parsed as Record<string, unknown>).claudeAiOauth as Record<string, unknown>
+    if (!oauth.accessToken || typeof oauth.accessToken !== 'string') {
+      logger.error('[env-utils] Keychain JSON has unexpected format — run claude login to reset')
+      return false
+    }
+    creds = parsed as ClaudeCreds
+    keychainConsecutiveFailures = 0
+  } catch (err) {
+    keychainConsecutiveFailures++
+    logger.error(
+      `Keychain read failed (consecutive failures: ${keychainConsecutiveFailures}): ${getErrorMessage(err)}`
+    )
+    if (keychainConsecutiveFailures >= KEYCHAIN_FAILURE_WARNING_THRESHOLD) {
+      broadcast('manager:warning', { message: KEYCHAIN_WARNING_MESSAGE })
+    }
     return false
   }
 

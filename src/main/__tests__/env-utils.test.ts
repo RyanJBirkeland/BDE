@@ -7,7 +7,8 @@ vi.mock('node:fs', async () => {
     readFileSync: vi.fn(),
     existsSync: vi.fn(),
     writeFileSync: vi.fn(),
-    statSync: vi.fn().mockReturnValue({ mode: 0o100600 })
+    statSync: vi.fn().mockReturnValue({ mode: 0o100600 }),
+    lstatSync: vi.fn().mockReturnValue({ mode: 0o100600, isSymbolicLink: () => false, size: 100 })
   }
 })
 
@@ -23,25 +24,98 @@ import {
   buildAgentEnv,
   _resetEnvCache
 } from '../env-utils'
-import { readFileSync, existsSync, writeFileSync } from 'node:fs'
+import { readFileSync, existsSync, writeFileSync, lstatSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 
 describe('OAuth token cache', () => {
   beforeEach(() => {
     invalidateOAuthToken()
     vi.mocked(existsSync).mockReturnValue(true)
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+  })
+
+  it('returns null when token file has world-readable permissions', () => {
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100644,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+    vi.mocked(readFileSync).mockReturnValue('some-token')
+
+    const result = getOAuthToken()
+
+    expect(result).toBeNull()
+    expect(vi.mocked(readFileSync)).not.toHaveBeenCalled()
   })
 
   it('invalidateOAuthToken forces next call to re-read from disk', () => {
-    vi.mocked(readFileSync).mockReturnValue('token-v1')
+    vi.mocked(readFileSync).mockReturnValue('token-v1-long-enough-token')
     const t1 = getOAuthToken()
-    expect(t1).toBe('token-v1')
+    expect(t1).toBe('token-v1-long-enough-token')
 
-    vi.mocked(readFileSync).mockReturnValue('token-v2')
-    expect(getOAuthToken()).toBe('token-v1') // still cached
+    vi.mocked(readFileSync).mockReturnValue('token-v2-long-enough-token')
+    expect(getOAuthToken()).toBe('token-v1-long-enough-token') // still cached
 
     invalidateOAuthToken()
-    expect(getOAuthToken()).toBe('token-v2') // re-read
+    expect(getOAuthToken()).toBe('token-v2-long-enough-token') // re-read
+  })
+
+  it('returns null when token is too short (less than 20 chars)', () => {
+    vi.mocked(readFileSync).mockReturnValue('abc')
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBeNull()
+  })
+
+  it('returns null when token is empty after trimming', () => {
+    vi.mocked(readFileSync).mockReturnValue('   ')
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBeNull()
+  })
+
+  it('returns token when length is exactly 20 chars', () => {
+    const validToken = '12345678901234567890' // exactly 20 chars
+    vi.mocked(readFileSync).mockReturnValue(validToken)
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBe(validToken)
+  })
+
+  it('returns token when length is greater than 20 chars', () => {
+    const validToken = 'this_is_a_valid_oauth_token_that_is_long'
+    vi.mocked(readFileSync).mockReturnValue(validToken)
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBe(validToken)
   })
 })
 
@@ -91,6 +165,55 @@ describe('refreshOAuthTokenFromKeychain', () => {
     const result = await refreshOAuthTokenFromKeychain()
     expect(result).toBe(false)
     expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+  })
+
+  it('returns false when JSON has missing claudeAiOauth field', async () => {
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: JSON.stringify({ someOtherField: 'value' }), stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(false)
+    expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+  })
+
+  it('returns false when claudeAiOauth is not an object', async () => {
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: JSON.stringify({ claudeAiOauth: 'not-an-object' }), stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(false)
+    expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+  })
+
+  it('returns false when parsed JSON is null', async () => {
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: 'null', stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(false)
+    expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+  })
+
+  it('succeeds when JSON has valid claudeAiOauth with accessToken', async () => {
+    const validCreds = { claudeAiOauth: { accessToken: 'valid-token-123' } }
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: JSON.stringify(validCreds), stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(true)
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+      expect.stringContaining('oauth-token'),
+      'valid-token-123',
+      expect.objectContaining({ mode: 0o600 })
+    )
   })
 
   describe('OAuth refresh when accessToken is expired', () => {

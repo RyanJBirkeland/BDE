@@ -25,6 +25,10 @@ export function registerWindowHandlers(): void {
     if (win && typeof title === 'string') win.setTitle(title)
   })
 
+  safeHandle('playground:sanitize', (_e, html: string) => {
+    return sanitizePlaygroundHtml(html)
+  })
+
   safeHandle('playground:openInBrowser', async (_e, html: string) => {
     // Re-sanitize before writing — renderer HTML may differ from the original
     // sanitized version (e.g. user edits in source view). Use a cryptographically

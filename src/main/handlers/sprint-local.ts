@@ -1,5 +1,5 @@
 import { safeHandle } from '../ipc-utils'
-import { isValidAgentId } from '../lib/validation'
+import { isValidAgentId, isValidTaskId } from '../lib/validation'
 import { getDb } from '../db'
 import { readFile } from 'fs/promises'
 import { createLogger } from '../logger'
@@ -108,6 +108,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
   })
 
   safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown>) => {
+    if (!isValidTaskId(id)) throw new Error('Invalid task ID format')
     // SP-6: Filter patch fields through UPDATE_ALLOWLIST
     const filteredPatch = validateAndFilterPatch(patch, UPDATE_ALLOWLIST)
     if (filteredPatch === null) {
@@ -153,6 +154,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
   })
 
   safeHandle('sprint:delete', async (_e, id: string) => {
+    if (!isValidTaskId(id)) throw new Error('Invalid task ID format')
     const task = getTask(id)
     if (!task) {
       throw new Error(`Task ${id} not found`)
@@ -174,6 +176,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
   safeHandle('sprint:generatePrompt', (_e, args: GeneratePromptRequest): GeneratePromptResponse => generatePrompt(args))
 
   safeHandle('sprint:claimTask', async (_e, taskId: string): Promise<ClaimedTask | null> => {
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
     const task = getTask(taskId)
     if (!task) return null
 
@@ -210,6 +213,7 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
   })
 
   safeHandle('sprint:validateDependencies', async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
+      if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
       // Validate all dep targets exist
       for (const dep of proposedDeps) {
         const target = getTask(dep.id)
@@ -227,11 +231,13 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
   )
 
   safeHandle('sprint:unblockTask', async (_e, taskId: string) => {
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
     await prepareUnblockTransition(taskId)
     return updateTask(taskId, { status: 'queued' })
   })
 
   safeHandle('sprint:getChanges', async (_e, taskId: string) => {
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
     const { getTaskChanges } = await import('../data/task-changes')
     return getTaskChanges(taskId)
   })

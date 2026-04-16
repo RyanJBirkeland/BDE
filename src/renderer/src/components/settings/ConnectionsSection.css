@@ -54,6 +54,31 @@
   margin: 0;
 }
 
+/* ─── Encryption Status Banner ───────────────────────────────────────────── */
+
+.encryption-status-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-2) var(--bde-space-3);
+  border-radius: var(--bde-radius);
+  font-size: var(--bde-size-sm);
+  font-weight: 500;
+  margin-bottom: var(--bde-space-3);
+}
+
+.encryption-status-banner--active {
+  background: color-mix(in srgb, var(--bde-success) 12%, transparent);
+  color: var(--bde-success);
+  border: 1px solid color-mix(in srgb, var(--bde-success) 30%, transparent);
+}
+
+.encryption-status-banner--unavailable {
+  background: color-mix(in srgb, var(--bde-danger) 12%, transparent);
+  color: var(--bde-danger);
+  border: 1px solid color-mix(in srgb, var(--bde-danger) 30%, transparent);
+}
+
 /* ─── Auth Status Row ─────────────────────────────────────────────────────── */
 
 .settings-field__row {

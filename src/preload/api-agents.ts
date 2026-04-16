@@ -1,5 +1,5 @@
 import { ipcRenderer, type IpcRendererEvent } from 'electron'
-import { typedInvoke } from './ipc-helpers'
+import { typedInvoke, onBroadcast } from './ipc-helpers'
 import type { AgentMeta, SpawnLocalAgentArgs } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
@@ -60,7 +60,8 @@ export const agentManager = {
     taskId: string,
     message?: string
   ): Promise<IpcChannelMap['agent-manager:checkpoint']['result']> =>
-    typedInvoke('agent-manager:checkpoint', taskId, message)
+    typedInvoke('agent-manager:checkpoint', taskId, message),
+  onWarning: onBroadcast<BroadcastChannels['manager:warning']>('manager:warning')
 }
 
 export const agentEvents = {

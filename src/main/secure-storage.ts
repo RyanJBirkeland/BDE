@@ -3,7 +3,7 @@ import { createLogger } from './logger'
 
 const logger = createLogger('secure-storage')
 
-const ENCRYPTED_PREFIX = 'ENC:'
+export const ENCRYPTED_PREFIX = 'ENC:'
 
 export const SENSITIVE_SETTING_KEYS: ReadonlySet<string> = new Set([
   'github.token',
@@ -16,8 +16,10 @@ export function isEncryptionAvailable(): boolean {
 
 export function encryptSetting(value: string): string {
   if (!safeStorage.isEncryptionAvailable()) {
-    logger.warn('safeStorage encryption unavailable — storing value as plaintext')
-    return value
+    throw new Error(
+      'Cannot store sensitive setting: safeStorage encryption is unavailable. ' +
+        'Unlock your system keychain or run BDE in a supported environment.'
+    )
   }
   const encrypted = safeStorage.encryptString(value)
   return ENCRYPTED_PREFIX + encrypted.toString('base64')

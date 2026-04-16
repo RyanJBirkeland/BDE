@@ -11,7 +11,8 @@ export const settings = {
   loadProfile: (name: string) => typedInvoke('settings:loadProfile', name),
   applyProfile: (name: string) => typedInvoke('settings:applyProfile', name),
   listProfiles: () => typedInvoke('settings:listProfiles'),
-  deleteProfile: (name: string) => typedInvoke('settings:deleteProfile', name)
+  deleteProfile: (name: string) => typedInvoke('settings:deleteProfile', name),
+  getEncryptionStatus: () => typedInvoke('settings:getEncryptionStatus')
 }
 
 export const claudeConfig = {

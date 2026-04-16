@@ -3,6 +3,7 @@ import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
 import { buildAgentPrompt } from '../lib/prompt-composer'
 import { runSdkStreaming } from '../sdk-streaming'
+import { isValidTaskId } from '../lib/validation'
 import type { ReviewService } from '../services/review-service'
 import type { IReviewRepository } from '../data/review-repository'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
@@ -19,6 +20,9 @@ export async function handleAutoReview(
   taskId: string,
   force: boolean
 ): Promise<ReviewResult> {
+  if (!isValidTaskId(taskId)) {
+    throw new Error('Invalid task ID format')
+  }
   log.info(`review:autoReview task=${taskId} force=${force}`)
   return svc.reviewChanges(taskId, { force })
 }
@@ -44,6 +48,9 @@ export async function handleChatStream(
   input: { taskId: string; messages: PartnerMessage[] },
   sender: Pick<WebContents, 'send'> | null
 ): Promise<{ streamId: string }> {
+  if (!isValidTaskId(input.taskId)) {
+    throw new Error('Invalid task ID format')
+  }
   const streamId = `review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   log.info(`review:chatStream task=${input.taskId} stream=${streamId}`)
 
