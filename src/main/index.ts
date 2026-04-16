@@ -81,6 +81,8 @@ process.on('uncaughtException', async (err) => {
   logError(logger, 'Uncaught exception', err)
   try {
     await gracefulShutdown()
+  } catch (cleanupErr) {
+    logger.warn(`[main] Graceful shutdown failed: ${cleanupErr}`)
   } finally {
     process.exit(1)
   }
