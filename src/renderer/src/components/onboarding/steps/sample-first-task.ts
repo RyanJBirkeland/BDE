@@ -13,7 +13,7 @@ export const SAMPLE_FIRST_TASK: {
   specType: SpecType
 } = {
   title: 'Add an entry-point comment to the project',
-  repo: 'BDE',
+  repo: 'bde',
   specType: 'feature',
   spec: `## Problem
 
