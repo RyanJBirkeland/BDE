@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// Mock child_process.execFile before importing the module under test
+// Mock child_process before importing the module under test
 vi.mock('node:child_process', () => ({
-  execFile: vi.fn()
+  execFile: vi.fn(),
+  spawnSync: vi.fn()
 }))
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn()
 }))
 
-import { execFile } from 'node:child_process'
+import { execFile, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { checkAuthStatus, ensureSubscriptionAuth, MacOSCredentialStore } from './auth-guard'
 import type { CredentialStore } from './auth-guard'
@@ -72,6 +73,8 @@ describe('auth-guard', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     savedEnv = { ...process.env }
+    // Default: spawnSync which-probe succeeds (CLI found), existsSync fallback also succeeds
+    vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: '/usr/local/bin/claude\n', stderr: '', pid: 1, output: [], signal: null, error: undefined })
     vi.mocked(existsSync).mockReturnValue(true)
   })
 
@@ -219,13 +222,22 @@ describe('auth-guard', () => {
       expect(payload).toBeNull()
     })
 
-    it('detects CLI via existsSync', () => {
+    it('detects CLI via which probe', () => {
+      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: '/usr/local/bin/claude\n', stderr: '', pid: 1, output: [], signal: null, error: undefined })
+      const store = new MacOSCredentialStore()
+      expect(store.detectCli()).toBe(true)
+    })
+
+    it('falls back to existsSync when which is unavailable', () => {
+      // which probe fails (e.g., /usr/bin/which not present)
+      vi.mocked(spawnSync).mockReturnValue({ status: 1, stdout: '', stderr: '', pid: 1, output: [], signal: null, error: undefined })
       vi.mocked(existsSync).mockReturnValue(true)
       const store = new MacOSCredentialStore()
       expect(store.detectCli()).toBe(true)
     })
 
-    it('returns false when CLI not found', () => {
+    it('returns false when CLI not found via which or existsSync', () => {
+      vi.mocked(spawnSync).mockReturnValue({ status: 1, stdout: '', stderr: '', pid: 1, output: [], signal: null, error: undefined })
       vi.mocked(existsSync).mockReturnValue(false)
       const store = new MacOSCredentialStore()
       expect(store.detectCli()).toBe(false)
