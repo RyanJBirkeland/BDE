@@ -172,6 +172,7 @@ describe('ConsoleCard', () => {
       type: 'playground',
       filename: 'chart.html',
       html: '<html></html>',
+      contentType: 'html',
       sizeBytes: 2048,
       timestamp: Date.now()
     }

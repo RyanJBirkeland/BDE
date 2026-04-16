@@ -11,7 +11,7 @@ import {
   readPriorScratchpad,
   consumeMessages
 } from '../run-agent'
-import { detectHtmlWrite, tryEmitPlaygroundEvent } from '../playground-handler'
+import { detectHtmlWrite, detectPlaygroundWrite, tryEmitPlaygroundEvent } from '../playground-handler'
 import type {
   AgentRunClaim,
   RunAgentDeps,
@@ -477,6 +477,75 @@ describe('detectHtmlWrite', () => {
   })
 })
 
+describe('detectPlaygroundWrite', () => {
+  it('detects .svg file writes with contentType svg', () => {
+    const result = detectPlaygroundWrite({
+      type: 'tool_result',
+      tool_name: 'Write',
+      input: { file_path: '/tmp/wt/diagram.svg' }
+    })
+    expect(result).toEqual({ path: '/tmp/wt/diagram.svg', contentType: 'svg' })
+  })
+  it('detects .md file writes with contentType markdown', () => {
+    const result = detectPlaygroundWrite({
+      type: 'tool_result',
+      tool_name: 'Write',
+      input: { file_path: '/tmp/wt/notes.md' }
+    })
+    expect(result).toEqual({ path: '/tmp/wt/notes.md', contentType: 'markdown' })
+  })
+  it('detects .markdown file writes with contentType markdown', () => {
+    const result = detectPlaygroundWrite({
+      type: 'tool_result',
+      tool_name: 'Write',
+      input: { file_path: '/tmp/wt/readme.markdown' }
+    })
+    expect(result).toEqual({ path: '/tmp/wt/readme.markdown', contentType: 'markdown' })
+  })
+  it('detects .json file writes with contentType json', () => {
+    const result = detectPlaygroundWrite({
+      type: 'tool_result',
+      tool_name: 'Write',
+      input: { file_path: '/tmp/wt/data.json' }
+    })
+    expect(result).toEqual({ path: '/tmp/wt/data.json', contentType: 'json' })
+  })
+  it('detects .html file writes with contentType html', () => {
+    const result = detectPlaygroundWrite({
+      type: 'tool_result',
+      tool_name: 'Write',
+      input: { file_path: '/tmp/wt/index.html' }
+    })
+    expect(result).toEqual({ path: '/tmp/wt/index.html', contentType: 'html' })
+  })
+  it('returns null for unsupported file types', () => {
+    expect(
+      detectPlaygroundWrite({
+        type: 'tool_result',
+        tool_name: 'Write',
+        input: { file_path: '/tmp/wt/file.ts' }
+      })
+    ).toBeNull()
+  })
+  it('returns null for non-Write tools', () => {
+    expect(
+      detectPlaygroundWrite({
+        type: 'tool_result',
+        tool_name: 'Read',
+        input: { file_path: '/tmp/wt/diagram.svg' }
+      })
+    ).toBeNull()
+  })
+  it('is case-insensitive for file extension', () => {
+    const result = detectPlaygroundWrite({
+      type: 'tool_result',
+      tool_name: 'Write',
+      input: { file_path: 'output.SVG' }
+    })
+    expect(result).toEqual({ path: 'output.SVG', contentType: 'svg' })
+  })
+})
+
 describe('tryEmitPlaygroundEvent', () => {
   beforeEach(() => vi.clearAllMocks())
   it('emits playground event for a valid HTML file', async () => {
@@ -522,7 +591,9 @@ describe('tryEmitPlaygroundEvent', () => {
     vi.mocked(stat).mockRejectedValue(new Error('ENOENT'))
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     await tryEmitPlaygroundEvent('task-1', '/wt/missing.html', '/wt', logger)
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to read HTML file'))
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to read playground file')
+    )
   })
 })
 

@@ -9,7 +9,12 @@ interface ToolGroupCardProps {
   tools: ToolBlock[]
   timestamp: number
   searchClass: string
-  onPlaygroundClick?: (block: { filename: string; html: string; sizeBytes: number }) => void
+  onPlaygroundClick?: (block: {
+    filename: string
+    html: string
+    contentType: import('../../../../../shared/types').PlaygroundContentType
+    sizeBytes: number
+  }) => void
   searchHighlight?: 'match' | 'active'
 }
 

@@ -18,7 +18,12 @@ import { PlaygroundCard } from './PlaygroundCard'
 
 interface ConsoleCardProps {
   block: ChatBlock
-  onPlaygroundClick?: (block: { filename: string; html: string; sizeBytes: number }) => void
+  onPlaygroundClick?: (block: {
+    filename: string
+    html: string
+    contentType: import('../../../../../shared/types').PlaygroundContentType
+    sizeBytes: number
+  }) => void
   searchHighlight?: 'match' | 'active'
 }
 
@@ -147,6 +152,7 @@ export function ConsoleCard({
           searchClass={getSearchClass()}
           onPlaygroundClick={onPlaygroundClick}
           html={block.html}
+          contentType={block.contentType}
         />
       )
   }

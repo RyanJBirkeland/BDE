@@ -6,6 +6,7 @@ describe('PlaygroundCard', () => {
   const onClick = vi.fn()
   const defaultProps = {
     filename: 'preview.html',
+    contentType: 'html' as const,
     sizeBytes: 1234,
     onClick
   }

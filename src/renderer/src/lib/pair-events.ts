@@ -37,7 +37,14 @@ export type ChatBlock =
       durationMs: number
       timestamp: number
     }
-  | { type: 'playground'; filename: string; html: string; sizeBytes: number; timestamp: number }
+  | {
+      type: 'playground'
+      filename: string
+      html: string
+      contentType: import('../../../shared/types').PlaygroundContentType
+      sizeBytes: number
+      timestamp: number
+    }
 
 // --- Event Pairing Logic ---
 
@@ -136,6 +143,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
           type: 'playground',
           filename: ev.filename,
           html: ev.html,
+          contentType: ev.contentType,
           sizeBytes: ev.sizeBytes,
           timestamp: ev.timestamp
         })

@@ -4,6 +4,8 @@
 
 export type AgentType = 'pipeline' | 'assistant' | 'adhoc' | 'copilot' | 'synthesizer' | 'reviewer'
 
+export type PlaygroundContentType = 'html' | 'svg' | 'markdown' | 'json'
+
 export interface AgentMeta {
   id: string
   pid: number | null
@@ -255,6 +257,7 @@ export type AgentEvent =
       type: 'agent:playground'
       filename: string
       html: string
+      contentType: PlaygroundContentType
       sizeBytes: number
       timestamp: number
     }

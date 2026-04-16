@@ -15,7 +15,7 @@ import { ConsoleCard } from './cards/ConsoleCard'
 import { CommandBar } from './CommandBar'
 import { PlaygroundModal } from './PlaygroundModal'
 import { ConsoleSearchBar } from './ConsoleSearchBar'
-import type { Attachment } from '../../../../shared/types'
+import type { Attachment, PlaygroundContentType } from '../../../../shared/types'
 
 const EMPTY_EVENTS: never[] = []
 
@@ -36,6 +36,7 @@ export function AgentConsole({
   const [playgroundBlock, setPlaygroundBlock] = useState<{
     filename: string
     html: string
+    contentType: PlaygroundContentType
     sizeBytes: number
   } | null>(null)
   const [pendingMessages, setPendingMessages] = useState<string[]>([])
@@ -303,6 +304,7 @@ export function AgentConsole({
         <PlaygroundModal
           html={playgroundBlock.html}
           filename={playgroundBlock.filename}
+          contentType={playgroundBlock.contentType}
           sizeBytes={playgroundBlock.sizeBytes}
           onClose={() => setPlaygroundBlock(null)}
         />

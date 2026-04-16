@@ -9,6 +9,7 @@ describe('PlaygroundModal', () => {
   const defaultProps = {
     html: SAMPLE_HTML,
     filename: 'preview.html',
+    contentType: 'html' as const,
     sizeBytes: 1234,
     onClose
   }

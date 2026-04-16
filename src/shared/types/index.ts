@@ -27,7 +27,8 @@ export type {
   AgentEvent,
   AgentSpawnOptions,
   AgentHandle,
-  AgentProvider
+  AgentProvider,
+  PlaygroundContentType
 } from './agent-types'
 
 // Task types

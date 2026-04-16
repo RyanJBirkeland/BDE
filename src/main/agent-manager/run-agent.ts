@@ -335,8 +335,14 @@ export async function runAgent(
 
   // Await playground events before worktree cleanup.
   // Previously fire-and-forget — worktree could be deleted before file I/O completed.
-  for (const htmlPath of pendingPlaygroundPaths) {
-    await tryEmitPlaygroundEvent(task.id, htmlPath, worktree.worktreePath, logger).catch((err) => {
+  for (const playgroundWrite of pendingPlaygroundPaths) {
+    await tryEmitPlaygroundEvent(
+      task.id,
+      playgroundWrite.path,
+      worktree.worktreePath,
+      logger,
+      playgroundWrite.contentType
+    ).catch((err) => {
       logger.warn(
         `[run-agent] playground emit failed for task ${task.id}: ${err instanceof Error ? err.stack ?? err.message : String(err)}`
       )

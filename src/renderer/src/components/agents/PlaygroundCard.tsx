@@ -1,15 +1,25 @@
 /**
  * Compact inline card for playground previews in agent chat.
- * Appears when agent writes HTML files. Click to open PlaygroundModal.
+ * Appears when agent writes HTML, SVG, Markdown, or JSON files. Click to open PlaygroundModal.
  */
 import { FileCode, Eye } from 'lucide-react'
 import './PlaygroundCard.css'
+import type { PlaygroundContentType } from '../../../../shared/types'
+
+const CONTENT_TYPE_LABELS: Record<PlaygroundContentType, string> = {
+  html: 'HTML',
+  svg: 'SVG',
+  markdown: 'Markdown',
+  json: 'JSON'
+}
 
 export interface PlaygroundCardProps {
   /** Original filename */
   filename: string
   /** File size in bytes */
   sizeBytes: number
+  /** Content type for display */
+  contentType: PlaygroundContentType
   /** Click handler to open modal */
   onClick: () => void
 }
@@ -23,6 +33,7 @@ function formatFileSize(bytes: number): string {
 export function PlaygroundCard({
   filename,
   sizeBytes,
+  contentType,
   onClick
 }: PlaygroundCardProps): React.JSX.Element {
   return (
@@ -64,17 +75,35 @@ export function PlaygroundCard({
       {/* Filename and size */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
-          className="playground-card__filename"
           style={{
-            fontFamily: 'var(--bde-font-code)',
-            fontSize: 'var(--bde-size-sm)',
-            fontWeight: 500,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--bde-space-2)',
+            overflow: 'hidden'
           }}
         >
-          {filename}
+          <div
+            className="playground-card__filename"
+            style={{
+              fontFamily: 'var(--bde-font-code)',
+              fontSize: 'var(--bde-size-sm)',
+              fontWeight: 500,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {filename}
+          </div>
+          <span
+            className="playground-card__content-type-badge"
+            style={{
+              fontSize: 'var(--bde-size-xs)',
+              flexShrink: 0
+            }}
+          >
+            {CONTENT_TYPE_LABELS[contentType]}
+          </span>
         </div>
         <div
           className="playground-card__filesize"
