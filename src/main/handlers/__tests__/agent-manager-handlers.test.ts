@@ -251,6 +251,46 @@ describe('Agent manager handlers', () => {
       })
     })
 
+    describe('agent-manager:kill — task ID validation', () => {
+      it('rejects a path-traversal task ID', async () => {
+        const handlers = captureHandlers()
+        const result = await handlers['agent-manager:kill'](mockEvent, '../../etc/passwd')
+        expect(result).toEqual({ ok: false, error: 'Invalid task ID format' })
+      })
+
+      it('accepts a valid ULID-style task ID', async () => {
+        const mockKillAgent = vi.fn()
+        const mockAm = { killAgent: mockKillAgent }
+        const handlers = captureHandlersWithAm(mockAm as any)
+        const result = await handlers['agent-manager:kill'](mockEvent, '01HXXXXXXXXXXXXXXXXXXXXXXX')
+        expect(result).toEqual({ ok: true })
+      })
+    })
+
+    describe('agent-manager:checkpoint — task ID validation', () => {
+      it('rejects a path-traversal task ID', async () => {
+        const handlers = captureHandlers()
+        const result = await handlers['agent-manager:checkpoint'](mockEvent, '../../etc/passwd')
+        expect(result).toEqual({ ok: false, committed: false, error: 'Invalid task ID format' })
+      })
+
+      it('accepts a valid ULID-style task ID', async () => {
+        vi.mocked(getTask).mockReturnValue({ id: '01HXXXXXXXXXXXXXXXXXXXXXXX', worktree_path: '/tmp/wt' } as never)
+        queueExec({ stdout: '' })        // git add
+        queueExec({ stdout: '' })        // git diff --cached (nothing staged)
+        const handlers = captureHandlers()
+        const result = await handlers['agent-manager:checkpoint'](mockEvent, '01HXXXXXXXXXXXXXXXXXXXXXXX')
+        expect(result.ok).toBe(true)
+      })
+
+      function queueExec(result: { stdout: string; stderr?: string } | { error: Error }): void {
+        mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, cb: (err: Error | null, result?: { stdout: string; stderr: string }) => void) => {
+          if ('error' in result) cb(result.error)
+          else cb(null, { stdout: result.stdout, stderr: result.stderr ?? '' })
+        })
+      }
+    })
+
     describe('agent-manager:metrics', () => {
       it('returns null when am is undefined', async () => {
         const handlers = captureHandlers()

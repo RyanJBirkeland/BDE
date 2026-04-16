@@ -9,6 +9,7 @@
  * call the service, and return results.
  */
 import { safeHandle } from '../ipc-utils'
+import { isValidTaskId } from '../lib/validation'
 import { createLogger } from '../logger'
 import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
@@ -124,6 +125,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   // review:checkFreshness — check if task's rebase is current with origin/main
   safeHandle('review:checkFreshness', async (_e, payload) => {
     const { taskId } = payload
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
 
     // Import task functions inline to avoid top-level coupling
     const { getTask } = await import('../services/sprint-service')
@@ -174,6 +176,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   // review:checkAutoReview — check if task qualifies for auto-review
   safeHandle('review:checkAutoReview', async (_e, payload) => {
     const { taskId } = payload
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
 
     const { getTask } = await import('../services/sprint-service')
     const task = getTask(taskId)
@@ -195,6 +198,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   // ============================================================================
 
   safeHandle('review:mergeLocally', async (_e, payload) => {
+    if (!isValidTaskId(payload.taskId)) throw new Error('Invalid task ID format')
     return reviewOrchestration.mergeLocally({
       taskId: payload.taskId,
       strategy: payload.strategy,
@@ -204,6 +208,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   })
 
   safeHandle('review:createPr', async (_e, payload) => {
+    if (!isValidTaskId(payload.taskId)) throw new Error('Invalid task ID format')
     const result = await reviewOrchestration.createPr({
       taskId: payload.taskId,
       title: payload.title,
@@ -218,6 +223,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   })
 
   safeHandle('review:requestRevision', async (_e, payload) => {
+    if (!isValidTaskId(payload.taskId)) throw new Error('Invalid task ID format')
     return reviewOrchestration.requestRevision({
       taskId: payload.taskId,
       feedback: payload.feedback,
@@ -226,6 +232,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   })
 
   safeHandle('review:discard', async (_e, payload) => {
+    if (!isValidTaskId(payload.taskId)) throw new Error('Invalid task ID format')
     return reviewOrchestration.discard({
       taskId: payload.taskId,
       env,
@@ -234,6 +241,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   })
 
   safeHandle('review:shipIt', async (_e, payload) => {
+    if (!isValidTaskId(payload.taskId)) throw new Error('Invalid task ID format')
     return reviewOrchestration.shipIt({
       taskId: payload.taskId,
       strategy: payload.strategy,
@@ -243,6 +251,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   })
 
   safeHandle('review:rebase', async (_e, payload) => {
+    if (!isValidTaskId(payload.taskId)) throw new Error('Invalid task ID format')
     return reviewOrchestration.rebase({
       taskId: payload.taskId,
       env

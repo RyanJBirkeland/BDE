@@ -1094,4 +1094,85 @@ describe('Review handlers', () => {
       }
     })
   })
+
+  describe('input validation — taskId', () => {
+    function captureHandlers(): Record<string, (...args: unknown[]) => unknown> {
+      const handlers: Record<string, (...args: unknown[]) => unknown> = {}
+      vi.mocked(safeHandle).mockImplementation((channel: string, handler: unknown) => {
+        handlers[channel] = handler as (...args: unknown[]) => unknown
+      })
+      registerReviewHandlers({ onStatusTerminal: vi.fn() })
+      return handlers
+    }
+
+    const _mockEvent = {} as IpcMainInvokeEvent
+    const INVALID_TASK_IDS = ['../../etc/passwd', '../secret', 'id;rm -rf /', '', 'a'.repeat(65)]
+    const ACTION_CHANNELS = [
+      'review:mergeLocally',
+      'review:createPr',
+      'review:requestRevision',
+      'review:discard',
+      'review:shipIt',
+      'review:rebase',
+      'review:checkFreshness',
+      'review:checkAutoReview',
+    ]
+
+    it.each(ACTION_CHANNELS)('%s rejects path-traversal task ID', async (channel) => {
+      const handlers = captureHandlers()
+      await expect(
+        handlers[channel](_mockEvent, { taskId: '../../etc/passwd' })
+      ).rejects.toThrow('Invalid task ID format')
+    })
+
+    it.each(INVALID_TASK_IDS)(
+      'review:mergeLocally rejects invalid task ID "%s"',
+      async (badId) => {
+        const handlers = captureHandlers()
+        await expect(
+          handlers['review:mergeLocally'](_mockEvent, { taskId: badId })
+        ).rejects.toThrow('Invalid task ID format')
+      }
+    )
+
+    it('review:mergeLocally accepts a valid ULID-style task ID', async () => {
+      const { getTask, updateTask } = await import('../../data/sprint-queries')
+      const { getSettingJson } = await import('../../settings')
+
+      vi.mocked(getTask).mockReturnValue({
+        id: '01HXXXXXXXXXXXXXXXXXXXXXXX',
+        repo: 'test-repo',
+        worktree_path: '/tmp/worktrees/test',
+        status: 'review',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z'
+      })
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'test-repo', localPath: '/repos/test' }])
+      vi.mocked(updateTask).mockReturnValue({
+        id: '01HXXXXXXXXXXXXXXXXXXXXXXX',
+        repo: 'test-repo',
+        status: 'done',
+        title: 'Test Task',
+        prompt: 'Test prompt',
+        priority: 1,
+        depends_on: [],
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+        completed_at: '2026-01-01T01:00:00Z'
+      })
+
+      const handlers = captureHandlers()
+      // Should proceed past validation (may fail for git reasons in unit test — that's OK)
+      await expect(
+        handlers['review:mergeLocally'](_mockEvent, {
+          taskId: '01HXXXXXXXXXXXXXXXXXXXXXXX',
+          strategy: 'merge'
+        })
+      ).resolves.not.toThrow()
+    })
+  })
 })
