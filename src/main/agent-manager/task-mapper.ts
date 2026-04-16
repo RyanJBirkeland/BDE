@@ -28,6 +28,7 @@ export type MappedTask = {
   max_cost_usd: number | null
   model: string | null
   group_id: string | null
+  revision_feedback: { timestamp: string; feedback: string; attempt: number }[] | null
 }
 
 // ---------------------------------------------------------------------------
@@ -67,7 +68,21 @@ export function mapQueuedTask(raw: Record<string, unknown>, logger: Logger): Map
     max_runtime_ms: Number(raw.max_runtime_ms) || null,
     max_cost_usd: Number(raw.max_cost_usd) || null,
     model: (raw.model as string) ?? null,
-    group_id: (raw.group_id as string) ?? null
+    group_id: (raw.group_id as string) ?? null,
+    revision_feedback: parseRevisionFeedback(raw.revision_feedback)
+  }
+}
+
+function parseRevisionFeedback(
+  raw: unknown
+): { timestamp: string; feedback: string; attempt: number }[] | null {
+  if (!raw) return null
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (!Array.isArray(parsed)) return null
+    return parsed as { timestamp: string; feedback: string; attempt: number }[]
+  } catch {
+    return null
   }
 }
 

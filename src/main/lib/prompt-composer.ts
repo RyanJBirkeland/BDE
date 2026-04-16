@@ -30,6 +30,7 @@ export interface BuildPromptInput {
   repoName?: string | null // target repo name (used to scope BDE-specific memory injection)
   taskId?: string // pipeline only — used to build scratchpad path
   priorScratchpad?: string // content of progress.md from prior attempt (empty string if none)
+  revisionFeedback?: { timestamp: string; feedback: string; attempt: number }[] // human revision requests
   // Reviewer-only fields
   reviewerMode?: 'review' | 'chat'
   diff?: string

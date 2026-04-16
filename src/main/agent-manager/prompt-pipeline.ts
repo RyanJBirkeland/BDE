@@ -104,7 +104,8 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
     upstreamContext,
     crossRepoContract,
     taskId,
-    priorScratchpad
+    priorScratchpad,
+    revisionFeedback
   } = input
 
   let prompt = CODING_AGENT_PREAMBLE
@@ -167,9 +168,8 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
   }
 
   // Retry context (after spec and scratchpad — failure notes are most useful with full task context in mind)
-  if (retryCount && retryCount > 0) {
-    prompt += buildRetryContext(retryCount, previousNotes)
-  }
+  // Emitted when there is an auto-retry in progress OR human revision feedback to act on.
+  prompt += buildRetryContext(retryCount ?? 0, previousNotes, revisionFeedback ?? undefined)
 
   // Self-review checklist
   prompt += `\n\n## Self-Review Checklist

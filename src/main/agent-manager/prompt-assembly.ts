@@ -142,7 +142,8 @@ export async function assembleRunContext(
     crossRepoContract: task.cross_repo_contract ?? undefined,
     repoName: task.repo,
     taskId: task.id,
-    priorScratchpad
+    priorScratchpad,
+    revisionFeedback: task.revision_feedback ?? undefined
   })
 }
 

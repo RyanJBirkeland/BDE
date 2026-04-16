@@ -467,7 +467,8 @@ describe('AgentManagerImpl — class internals', () => {
         max_runtime_ms: 30000,
         max_cost_usd: null,
         model: null,
-        group_id: null
+        group_id: null,
+        revision_feedback: null
       })
     })
 

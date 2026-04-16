@@ -470,28 +470,28 @@ describe('buildAgentPrompt', () => {
   })
 
   describe('retry context injection', () => {
-    it('does not include retry section when retryCount is 0', () => {
+    it('does not include retry section when retryCount is 0 and no revision feedback', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Do something',
         retryCount: 0
       })
-      expect(prompt).not.toContain('## Retry Context')
+      expect(prompt).not.toContain('<retry_context>')
     })
 
-    it('does not include retry section when retryCount is undefined', () => {
+    it('does not include retry section when retryCount is undefined and no revision feedback', () => {
       const prompt = buildAgentPrompt({ agentType: 'pipeline', taskContent: 'Do something' })
-      expect(prompt).not.toContain('## Retry Context')
+      expect(prompt).not.toContain('<retry_context>')
     })
 
-    it('includes retry section when retryCount > 0', () => {
+    it('includes auto-retry section when retryCount > 0', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Do something',
         retryCount: 2,
         previousNotes: 'npm test failed'
       })
-      expect(prompt).toContain('## Retry Context')
+      expect(prompt).toContain('## Auto-Retry')
       expect(prompt).toContain('attempt 3 of 4')
       expect(prompt).toContain('npm test failed')
       expect(prompt).toContain('try something different')
@@ -503,9 +503,21 @@ describe('buildAgentPrompt', () => {
         taskContent: 'Do something',
         retryCount: 1
       })
-      expect(prompt).toContain('## Retry Context')
+      expect(prompt).toContain('## Auto-Retry')
       expect(prompt).toContain('attempt 2 of 4')
-      expect(prompt).toContain('No failure notes from previous attempt')
+      expect(prompt).toContain('retry attempt 1')
+    })
+
+    it('includes revision feedback section when revisionFeedback is provided', () => {
+      const prompt = buildAgentPrompt({
+        agentType: 'pipeline',
+        taskContent: 'Do something',
+        retryCount: 0,
+        revisionFeedback: [{ timestamp: '2026-01-01', feedback: 'Fix button color', attempt: 1 }]
+      })
+      expect(prompt).toContain('Human Revision Request')
+      expect(prompt).toContain('Fix button color')
+      expect(prompt).toContain('<revision_feedback>')
     })
 
     it('does not include retry section for non-pipeline agents', () => {
@@ -514,7 +526,7 @@ describe('buildAgentPrompt', () => {
         retryCount: 2,
         previousNotes: 'some failure'
       })
-      expect(prompt).not.toContain('## Retry Context')
+      expect(prompt).not.toContain('## Auto-Retry')
     })
   })
 

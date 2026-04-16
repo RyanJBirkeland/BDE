@@ -173,13 +173,39 @@ If you need to push, use: \`git push origin ${branch}\``
 
 const MAX_RETRIES_FOR_DISPLAY = 3
 
-export function buildRetryContext(retryCount: number, previousNotes?: string): string {
-  const attemptNum = retryCount + 1
-  const maxAttempts = MAX_RETRIES_FOR_DISPLAY + 1
-  const notesText = previousNotes
-    ? `Previous attempt failed:\n<failure_notes>\n${escapeXmlContent(truncateSpec(previousNotes, PROMPT_TRUNCATION.RETRY_NOTES_CHARS))}\n</failure_notes>`
-    : 'No failure notes from previous attempt.'
-  return `\n\n## Retry Context\nThis is attempt ${attemptNum} of ${maxAttempts}. ${notesText}\nDo not repeat your prior approach — analyze the failure and try something different.\nIf the failure was a test/typecheck error, fix that specific error first.`
+export function buildRetryContext(
+  retryCount: number,
+  previousNotes?: string,
+  revisionFeedback?: { timestamp: string; feedback: string; attempt: number }[]
+): string {
+  const hasRevision = (revisionFeedback?.length ?? 0) > 0
+  const hasAutoRetry = retryCount > 0
+
+  if (!hasRevision && !hasAutoRetry) return ''
+
+  let section = `\n\n<retry_context>\n`
+
+  if (hasRevision) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const latest = revisionFeedback![revisionFeedback!.length - 1]
+    section += `## Human Revision Request\n`
+    section += `Attempt ${latest.attempt} — ${latest.timestamp}\n\n`
+    section += `The human reviewed your previous work and requested changes:\n`
+    section += `<revision_feedback>\n${escapeXmlContent(truncateSpec(latest.feedback, PROMPT_TRUNCATION.REVISION_FEEDBACK_CHARS))}\n</revision_feedback>\n\n`
+    section += `Address this feedback directly. Do not repeat work the human has already accepted.\n`
+  }
+
+  if (hasAutoRetry) {
+    const attemptNum = retryCount + 1
+    const maxAttempts = MAX_RETRIES_FOR_DISPLAY + 1
+    const notesText = previousNotes
+      ? `Previous attempt failed:\n<failure_notes>\n${escapeXmlContent(truncateSpec(previousNotes, PROMPT_TRUNCATION.RETRY_NOTES_CHARS))}\n</failure_notes>`
+      : `This is retry attempt ${retryCount}.`
+    section += `## Auto-Retry\nThis is attempt ${attemptNum} of ${maxAttempts}. ${notesText}\nDo not repeat your prior approach — analyze the failure and try something different.\nIf the failure was a test/typecheck error, fix that specific error first.\n`
+  }
+
+  section += `\n</retry_context>`
+  return section
 }
 
 // ---------------------------------------------------------------------------

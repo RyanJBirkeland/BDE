@@ -43,6 +43,7 @@ export interface AgentRunClaim {
   model?: string | null
   depends_on?: TaskDependency[] | null
   cross_repo_contract?: string | null
+  revision_feedback?: { timestamp: string; feedback: string; attempt: number }[] | null
 }
 
 /** Spawn lifecycle and agent process management. */
