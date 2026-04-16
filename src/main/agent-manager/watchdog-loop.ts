@@ -12,6 +12,7 @@ import type { ConcurrencyState } from './concurrency'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { checkAgent } from './watchdog'
 import { handleWatchdogVerdict } from './watchdog-handler'
+import { flushAgentEventBatcher } from '../agent-event-mapper'
 import { nowIso } from '../../shared/time'
 
 // ---------------------------------------------------------------------------
@@ -117,7 +118,11 @@ export function runWatchdog(deps: WatchdogLoopDeps): void {
     const result = handleWatchdogVerdict(verdict, deps.getConcurrency(), now, maxRuntimeMs)
     deps.setConcurrency(result.concurrency)
 
-    // Step 2: Persist the status change to DB before removing from map.
+    // Step 2: Flush buffered agent events before the DB write — the 100ms batcher
+    // timer is not guaranteed to fire before the watchdog kill lands.
+    flushAgentEventBatcher()
+
+    // Step 3: Persist the status change to DB before removing from map.
     // If the DB write fails the agent is still gone from the process level,
     // so we remove from the map anyway — but the task stays in `active` in DB
     // until orphan-recovery resets it on the next startup.
@@ -131,11 +136,11 @@ export function runWatchdog(deps: WatchdogLoopDeps): void {
       }
     }
 
-    // Step 3: Remove from map only after DB write attempt so the watchdog does
+    // Step 4: Remove from map only after DB write attempt so the watchdog does
     // not re-kill the same agent on the next tick before the status lands.
     removeAgentFromMap(agent, deps.activeAgents)
 
-    // Step 4: Notify terminal handler after map removal so downstream logic
+    // Step 5: Notify terminal handler after map removal so downstream logic
     // (dep resolution, metrics) sees a consistent state.
     if (result.shouldNotifyTerminal && result.terminalStatus) {
       deps.onTaskTerminal(agent.taskId, result.terminalStatus).catch((err) =>

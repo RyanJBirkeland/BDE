@@ -11,10 +11,14 @@ vi.mock('../watchdog-handler', () => ({
 vi.mock('../../../shared/time', () => ({
   nowIso: vi.fn().mockReturnValue('2026-01-01T00:00:00.000Z')
 }))
+vi.mock('../../agent-event-mapper', () => ({
+  flushAgentEventBatcher: vi.fn()
+}))
 
 import { killActiveAgent, runWatchdog, type WatchdogLoopDeps } from '../watchdog-loop'
 import { checkAgent } from '../watchdog'
 import { handleWatchdogVerdict } from '../watchdog-handler'
+import { flushAgentEventBatcher } from '../../agent-event-mapper'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
 
@@ -197,6 +201,31 @@ describe('runWatchdog', () => {
     runWatchdog(deps)
 
     expect(deps.onTaskTerminal).not.toHaveBeenCalled()
+  })
+
+  it('flushes agent events before updating task status', () => {
+    const agent = makeAgent('task-1')
+    const concurrency = makeConcurrencyState(2)
+    const repo = makeRepo()
+    const callOrder: string[] = []
+    vi.mocked(flushAgentEventBatcher).mockImplementation(() => callOrder.push('flush'))
+    vi.mocked(repo.updateTask).mockImplementation(() => { callOrder.push('updateTask'); return undefined as any })
+    const deps = makeDeps({
+      activeAgents: new Map([['task-1', agent]]),
+      repo,
+      getConcurrency: () => concurrency
+    })
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      concurrency,
+      shouldNotifyTerminal: true,
+      terminalStatus: 'error'
+    })
+
+    runWatchdog(deps)
+
+    expect(callOrder.indexOf('flush')).toBeLessThan(callOrder.indexOf('updateTask'))
   })
 
   it('logs a warning when updateTask throws', () => {
