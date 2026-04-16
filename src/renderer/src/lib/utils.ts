@@ -1,13 +1,9 @@
 /**
  * Convert a working directory path to a short repo label for display.
- * Recognises ~/Documents/Repositories/<name> and .worktrees/<name> patterns.
+ * Returns the last path component, working on both Unix and Windows paths.
  */
 export function cwdToRepoLabel(cwd: string | null): string {
   if (!cwd) return 'unknown'
-  const parts = cwd.split('/')
-  const repoIdx = parts.indexOf('Repositories')
-  if (repoIdx !== -1) return parts[repoIdx + 1] ?? parts[parts.length - 1]
-  const worktreeIdx = parts.indexOf('worktrees')
-  if (worktreeIdx !== -1) return parts.slice(worktreeIdx + 1).join('/')
-  return parts[parts.length - 1]
+  const parts = cwd.split(/[/\\]/).filter(Boolean)
+  return parts[parts.length - 1] ?? cwd
 }

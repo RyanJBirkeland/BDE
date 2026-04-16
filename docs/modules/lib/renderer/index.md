@@ -17,3 +17,4 @@ Source: `src/renderer/src/lib/`
 | `services/agents.ts` | Agent management IPC adapter — wraps `window.api.agents.*` | `subscribeToAgentEvents`, `getAgentEventHistory`, `listAgents`, `readAgentLog`, `importAgent`, `getProcesses`, `spawnLocal`, `tailLog` |
 | `services/dashboard.ts` | Dashboard/system/PR metrics IPC adapter — wraps `window.api.dashboard.*`, `window.api.system.*`, `window.api.pr.*` | `getCompletionsPerHour`, `getRecentEvents`, `getPrList`, `getDailySuccessRate`, `getLoadAverage` |
 | `services/cost.ts` | Cost history IPC adapter — wraps `window.api.cost.*` | `getAgentCostHistory` |
+| `utils.ts` | Shared renderer utilities. | `cwdToRepoLabel` |

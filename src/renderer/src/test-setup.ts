@@ -57,9 +57,9 @@ vi.stubGlobal('api', {
   git: {
     checkInstalled: vi.fn().mockResolvedValue(true),
     getRepoPaths: vi.fn().mockResolvedValue({
-      bde: '/Users/test/Documents/Repositories/BDE',
-      'life-os': '/Users/test/Documents/Repositories/life-os',
-      feast: '/Users/test/Documents/Repositories/feast'
+      bde: '/Users/test/projects/BDE',
+      'life-os': '/Users/test/projects/life-os',
+      feast: '/Users/test/projects/feast'
     }),
     status: vi.fn().mockResolvedValue({ files: [] }),
     diff: vi.fn().mockResolvedValue(''),

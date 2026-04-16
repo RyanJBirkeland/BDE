@@ -12,22 +12,32 @@ describe('cwdToRepoLabel', () => {
     })
   })
 
-  describe('Repositories path pattern', () => {
-    it('extracts the repo name from a standard Repositories path', () => {
-      expect(cwdToRepoLabel('/Users/ryan/Documents/Repositories/BDE')).toBe('BDE')
+  describe('Unix paths', () => {
+    it('returns the last path segment for a projects-style path', () => {
+      expect(cwdToRepoLabel('/Users/alice/projects/BDE')).toBe('BDE')
     })
 
-    it('extracts the repo name from a deeper Repositories path', () => {
-      expect(cwdToRepoLabel('/Users/ryan/Documents/Repositories/life-os/src/lib')).toBe('life-os')
+    it('returns the last path segment for a src-style path', () => {
+      expect(cwdToRepoLabel('/home/alice/src/my-app')).toBe('my-app')
+    })
+
+    it('returns the last path segment from a deep path', () => {
+      expect(cwdToRepoLabel('/Users/ryan/projects/life-os/src/lib')).toBe('lib')
     })
   })
 
-  describe('worktrees path pattern', () => {
-    it('returns the path segment(s) after "worktrees"', () => {
-      expect(cwdToRepoLabel('/Users/ryan/.bde/worktrees/feat/my-feature')).toBe('feat/my-feature')
+  describe('Windows paths', () => {
+    it('returns the last path segment for a Windows path', () => {
+      expect(cwdToRepoLabel('C:\\Users\\alice\\projects\\BDE')).toBe('BDE')
+    })
+  })
+
+  describe('worktrees paths', () => {
+    it('returns the last segment of a worktree path', () => {
+      expect(cwdToRepoLabel('/Users/ryan/worktrees/BDE/feat/my-feature')).toBe('my-feature')
     })
 
-    it('returns single segment after "worktrees"', () => {
+    it('returns single segment after worktrees root', () => {
       expect(cwdToRepoLabel('/tmp/worktrees/my-branch')).toBe('my-branch')
     })
   })
