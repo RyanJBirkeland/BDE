@@ -137,6 +137,8 @@ export function getGhRepo(repoSlug: string): string | null {
 
 export function getSpecsRoot(): string | null {
   const repos = getConfiguredRepos()
+  // TODO: Make spec root configurable via settings instead of hardcoding 'bde'.
+  // Currently only BDE's own development workflow uses this feature.
   const bdeRepo = repos.find((r) => r.name.toLowerCase() === 'bde')
   if (!bdeRepo) return null
   return resolve(bdeRepo.localPath, 'docs', 'specs')

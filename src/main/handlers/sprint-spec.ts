@@ -29,7 +29,7 @@ export interface GeneratePromptResponse {
 export function validateSpecPath(relativePath: string): string {
   const specsRoot = getSpecsRoot()
   if (!specsRoot) {
-    throw new Error('Cannot resolve spec path: BDE repo not configured')
+    throw new Error('Spec file storage is not configured for this repository')
   }
   const resolved = resolve(specsRoot, relativePath)
   // SP-5: Resolve symlinks before checking path containment
