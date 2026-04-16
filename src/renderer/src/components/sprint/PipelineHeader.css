@@ -142,3 +142,31 @@
 .sprint-pipeline__badge--warning:hover {
   background: var(--bde-warning-surface);
 }
+
+/* WIP slot capacity badge */
+.sprint-pipeline__wip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bde-surface-2);
+  font-size: 10px;
+  color: var(--bde-text-dim);
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+.sprint-pipeline__wip-active {
+  color: var(--bde-text);
+  font-weight: 600;
+}
+
+.sprint-pipeline__wip-sep {
+  color: var(--bde-text-dim);
+}
+
+.sprint-pipeline__wip-label {
+  margin-left: 3px;
+  letter-spacing: 0.02em;
+}

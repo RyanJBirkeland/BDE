@@ -37,6 +37,7 @@ export function PipelineHeader({
   const setPipelineDensity = useSprintUI((s) => s.setPipelineDensity)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [wipSlots, setWipSlots] = useState<{ active: number; max: number } | null>(null)
 
   const handleExport = async (format: 'json' | 'csv'): Promise<void> => {
     setShowExportMenu(false)
@@ -63,6 +64,24 @@ export function PipelineHeader({
     return () => document.removeEventListener('click', handleClickOutside)
   }, [showExportMenu])
 
+  // Poll agent manager status for WIP slot capacity
+  useEffect(() => {
+    const fetchStatus = async (): Promise<void> => {
+      try {
+        const status = await window.api.agentManager.status()
+        setWipSlots({
+          active: status.concurrency.activeCount,
+          max: status.concurrency.maxSlots
+        })
+      } catch {
+        // agent manager may not be running — badge stays hidden
+      }
+    }
+    void fetchStatus()
+    const interval = setInterval(() => void fetchStatus(), 5000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <header className="sprint-pipeline__header">
       <h1 className="sprint-pipeline__title text-gradient-aurora">Task Pipeline</h1>
@@ -81,6 +100,14 @@ export function PipelineHeader({
             <b className="sprint-pipeline__stat-count">{stat.count}</b> {stat.label}
           </span>
         ))}
+        {wipSlots !== null && (
+          <span className="sprint-pipeline__wip-badge" title="Agent slots active / maximum">
+            <span className="sprint-pipeline__wip-active">{wipSlots.active}</span>
+            <span className="sprint-pipeline__wip-sep">/</span>
+            <span className="sprint-pipeline__wip-max">{wipSlots.max}</span>
+            <span className="sprint-pipeline__wip-label">slots</span>
+          </span>
+        )}
       </div>
       <button
         className="sprint-pipeline__density-toggle"

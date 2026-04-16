@@ -49,3 +49,18 @@ Source: `src/main/agent-manager/`
 | `config-manager.ts` | Hot-reload settings — updates maxConcurrent, maxRuntimeMs, defaultModel in place; flags worktreeBase as restart-required | `reloadConfiguration`, `ConfigManagerDeps` |
 | `wip-tracker.ts` | Thin facade over ConcurrencyState for readable slot queries | `createConcurrencyState`, `getAvailableSlots`, `updateMaxSlots` |
 | `failure-classifier.ts` | Maps agent error notes to a `FailureReason` via a keyword-based pattern registry. Patterns cover auth, timeout, test_failure, compilation, spawn, no_commits, and unknown. | `classifyFailureReason`, `registerFailurePattern`, `FailurePattern` |
+
+## Agent Personality System
+
+Source: `src/main/agent-system/personality/`
+
+Defines voice, role frame, constraints, and communication patterns for each agent type. Personalities are injected into prompts during agent initialization via `buildAgentPrompt()` in `prompt-composer.ts`.
+
+| Personality | Purpose |
+|---|---|
+| `pipeline-personality.ts` | Concise, action-oriented pipeline executor — focused on spec compliance and test verification |
+| `assistant-personality.ts` | BDE Project Assistant — pipeline-aware advisor for sprint health, task status, and diagnostics. Leads with answers, checks state before responding, recommends based on actual data |
+| `adhoc-personality.ts` | Interactive multi-turn collaborator — answers codebase questions, debugs issues, explores code |
+| `copilot-personality.ts` | Text-only spec drafting helper — conversational, non-tool-using (no file access, no exploration) |
+| `synthesizer-personality.ts` | Structured spec generator from user intent — single-turn, receives code snippets + file tree, outputs markdown with heading sections |
+| `types.ts` | `AgentPersonality` interface: `voice`, `roleFrame`, `constraints[]`, `patterns[]` |

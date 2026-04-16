@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PipelineHeader } from '../PipelineHeader'
 import { useSprintUI } from '../../../stores/sprintUI'
-import type { SprintTask } from '../../../../../shared/types'
+import type { SprintTask, AgentManagerStatus } from '../../../../../shared/types'
 import { nowIso } from '../../../../../shared/time'
 
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
@@ -46,6 +46,16 @@ describe('PipelineHeader', () => {
   beforeEach(() => {
     // Reset store to default state
     useSprintUI.getState().setPipelineDensity('card')
+    // Setup default window.api mock
+    global.window.api = {
+      agentManager: {
+        status: vi.fn()
+      }
+    } as any
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
   })
 
   it('renders title "Task Pipeline"', () => {
@@ -345,5 +355,103 @@ describe('PipelineHeader', () => {
     )
     const toggleButton = screen.getByLabelText('Switch to card view')
     expect(toggleButton).toHaveAttribute('title', 'Switch to card view')
+  })
+
+  describe('WIP slot badge', () => {
+    it('renders WIP badge when agent manager status is available', async () => {
+      const mockStatus: AgentManagerStatus = {
+        running: true,
+        shuttingDown: false,
+        concurrency: {
+          maxSlots: 2,
+          activeCount: 1,
+          capacityAfterBackpressure: 2,
+          recoveryScheduledAt: null,
+          consecutiveRateLimits: 0,
+          atMinimumCapacity: false
+        },
+        activeAgents: []
+      }
+
+      vi.mocked(window.api.agentManager.status).mockResolvedValue(mockStatus)
+
+      render(
+        <PipelineHeader
+          stats={defaultStats}
+          conflictingTasks={[]}
+          visibleStuckTasks={[]}
+          onFilterClick={vi.fn()}
+          onConflictClick={vi.fn()}
+          onHealthCheckClick={vi.fn()}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('slots')).toBeInTheDocument()
+        const badge = screen.getByTitle('Agent slots active / maximum')
+        expect(badge.textContent).toContain('1')
+        expect(badge.textContent).toContain('2')
+      })
+    })
+
+    it('does not render WIP badge when agent manager throws error', async () => {
+      vi.mocked(window.api.agentManager.status).mockRejectedValue(
+        new Error('Agent manager not available')
+      )
+
+      render(
+        <PipelineHeader
+          stats={defaultStats}
+          conflictingTasks={[]}
+          visibleStuckTasks={[]}
+          onFilterClick={vi.fn()}
+          onConflictClick={vi.fn()}
+          onHealthCheckClick={vi.fn()}
+        />
+      )
+
+      // Wait a bit to ensure the effect has run and failed
+      await waitFor(() => {
+        // Badge should not render when slots are null
+        expect(screen.queryByText('slots')).not.toBeInTheDocument()
+      })
+    })
+
+    it('displays active and max slots correctly', async () => {
+      const mockStatus: AgentManagerStatus = {
+        running: true,
+        shuttingDown: false,
+        concurrency: {
+          maxSlots: 3,
+          activeCount: 2,
+          capacityAfterBackpressure: 3,
+          recoveryScheduledAt: null,
+          consecutiveRateLimits: 0,
+          atMinimumCapacity: false
+        },
+        activeAgents: []
+      }
+
+      vi.mocked(window.api.agentManager.status).mockResolvedValue(mockStatus)
+
+      render(
+        <PipelineHeader
+          stats={defaultStats}
+          conflictingTasks={[]}
+          visibleStuckTasks={[]}
+          onFilterClick={vi.fn()}
+          onConflictClick={vi.fn()}
+          onHealthCheckClick={vi.fn()}
+        />
+      )
+
+      await waitFor(() => {
+        const badge = screen.getByTitle('Agent slots active / maximum')
+        expect(badge).toBeInTheDocument()
+        expect(badge.textContent).toContain('2')
+        expect(badge.textContent).toContain('3')
+        expect(badge.textContent).toContain('slots')
+      })
+    })
   })
 })
