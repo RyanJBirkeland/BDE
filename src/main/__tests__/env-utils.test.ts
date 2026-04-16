@@ -53,15 +53,69 @@ describe('OAuth token cache', () => {
   })
 
   it('invalidateOAuthToken forces next call to re-read from disk', () => {
-    vi.mocked(readFileSync).mockReturnValue('token-v1')
+    vi.mocked(readFileSync).mockReturnValue('token-v1-long-enough-token')
     const t1 = getOAuthToken()
-    expect(t1).toBe('token-v1')
+    expect(t1).toBe('token-v1-long-enough-token')
 
-    vi.mocked(readFileSync).mockReturnValue('token-v2')
-    expect(getOAuthToken()).toBe('token-v1') // still cached
+    vi.mocked(readFileSync).mockReturnValue('token-v2-long-enough-token')
+    expect(getOAuthToken()).toBe('token-v1-long-enough-token') // still cached
 
     invalidateOAuthToken()
-    expect(getOAuthToken()).toBe('token-v2') // re-read
+    expect(getOAuthToken()).toBe('token-v2-long-enough-token') // re-read
+  })
+
+  it('returns null when token is too short (less than 20 chars)', () => {
+    vi.mocked(readFileSync).mockReturnValue('abc')
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBeNull()
+  })
+
+  it('returns null when token is empty after trimming', () => {
+    vi.mocked(readFileSync).mockReturnValue('   ')
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBeNull()
+  })
+
+  it('returns token when length is exactly 20 chars', () => {
+    const validToken = '12345678901234567890' // exactly 20 chars
+    vi.mocked(readFileSync).mockReturnValue(validToken)
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBe(validToken)
+  })
+
+  it('returns token when length is greater than 20 chars', () => {
+    const validToken = 'this_is_a_valid_oauth_token_that_is_long'
+    vi.mocked(readFileSync).mockReturnValue(validToken)
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    const result = getOAuthToken()
+
+    expect(result).toBe(validToken)
   })
 })
 

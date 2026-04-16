@@ -130,6 +130,11 @@ export function getOAuthToken(): string | null {
         return null
       }
       _cachedOAuthToken = readFileSync(tokenPath, 'utf8').trim()
+      // Validate token format: reject empty strings or tokens too short to be valid
+      if (!_cachedOAuthToken || _cachedOAuthToken.length < 20) {
+        logger.warn('[env-utils] OAuth token is too short or empty — ignoring')
+        _cachedOAuthToken = null
+      }
     } else {
       _cachedOAuthToken = null
     }
