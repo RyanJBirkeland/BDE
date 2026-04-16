@@ -2,6 +2,7 @@ import './ConsoleCard.css'
 import { formatTime, getToolMeta } from './util'
 import { CollapsibleBlock } from '../CollapsibleBlock'
 import type { ToolBlock } from '../../../lib/pair-events'
+import type { PlaygroundContentType } from '../../../../../shared/types'
 import { ToolCallCard } from './ToolCallCard'
 import { ToolPairCard } from './ToolPairCard'
 
@@ -12,7 +13,7 @@ interface ToolGroupCardProps {
   onPlaygroundClick?: (block: {
     filename: string
     html: string
-    contentType: import('../../../../../shared/types').PlaygroundContentType
+    contentType: PlaygroundContentType
     sizeBytes: number
   }) => void
   searchHighlight?: 'match' | 'active'

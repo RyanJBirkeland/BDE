@@ -3,6 +3,7 @@
  * Extracted from ConsoleLine.tsx as part of cards/ restructure.
  */
 import type { ChatBlock } from '../../../lib/pair-events'
+import type { PlaygroundContentType } from '../../../../../shared/types'
 import { StartedCard } from './StartedCard'
 import { TextCard } from './TextCard'
 import { UserMessageCard } from './UserMessageCard'
@@ -21,7 +22,7 @@ interface ConsoleCardProps {
   onPlaygroundClick?: (block: {
     filename: string
     html: string
-    contentType: import('../../../../../shared/types').PlaygroundContentType
+    contentType: PlaygroundContentType
     sizeBytes: number
   }) => void
   searchHighlight?: 'match' | 'active'

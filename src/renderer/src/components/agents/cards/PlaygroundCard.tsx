@@ -1,13 +1,7 @@
 import '../ConsoleLine.css'
 import { formatTime } from './util'
 import type { PlaygroundContentType } from '../../../../../shared/types'
-
-const CONTENT_TYPE_LABELS: Record<PlaygroundContentType, string> = {
-  html: 'HTML',
-  svg: 'SVG',
-  markdown: 'MD',
-  json: 'JSON'
-}
+import { PLAYGROUND_CONTENT_TYPE_LABELS } from '../../../../../shared/types'
 
 interface PlaygroundCardProps {
   filename: string
@@ -33,7 +27,7 @@ export function PlaygroundCard({
   html,
   contentType
 }: PlaygroundCardProps): React.JSX.Element {
-  const label = CONTENT_TYPE_LABELS[contentType]
+  const label = PLAYGROUND_CONTENT_TYPE_LABELS[contentType]
   return (
     <div
       className={`console-line console-line--playground${searchClass}${onPlaygroundClick ? ' console-line--clickable' : ''}`}

@@ -185,11 +185,11 @@ export function PlaygroundModal({
   const [viewMode, setViewMode] = useState<ViewMode>('split')
   const modalRef = useRef<HTMLDivElement>(null)
 
-  // editedHtml tracks the user's in-source-pane changes; starts as original html
-  const [editedHtml, setEditedHtml] = useState<string>(html)
-  // previewHtml is the sanitized version used as srcDoc — only updated when
+  // editedContent tracks the user's in-source-pane changes; starts as original html
+  const [editedContent, setEditedHtml] = useState<string>(html)
+  // previewContent is the sanitized version used as srcDoc — only updated when
   // switching to a preview-bearing mode
-  const [previewHtml, setPreviewHtml] = useState<string>(html)
+  const [previewContent, setPreviewHtml] = useState<string>(html)
   const [isSanitizing, setIsSanitizing] = useState<boolean>(false)
 
   // Trap focus inside modal
@@ -212,13 +212,13 @@ export function PlaygroundModal({
   }, [handleKeyDown])
 
   /**
-   * Sanitize editedHtml via main-process IPC and update previewHtml.
+   * Sanitize editedContent via main-process IPC and update previewContent.
    * Runs in the background — view mode switches immediately while the iframe
    * shows a brief loading indicator until sanitization resolves.
    */
   const refreshPreview = useCallback((): void => {
     setIsSanitizing(true)
-    window.api.window.sanitizePlayground(editedHtml).then(
+    window.api.window.sanitizePlayground(editedContent).then(
       (sanitized) => {
         setPreviewHtml(sanitized)
         setIsSanitizing(false)
@@ -228,7 +228,7 @@ export function PlaygroundModal({
         setIsSanitizing(false)
       }
     )
-  }, [editedHtml])
+  }, [editedContent])
 
   const handleViewModeChange = useCallback(
     (mode: ViewMode): void => {
@@ -244,8 +244,8 @@ export function PlaygroundModal({
 
   const handleOpenInBrowser = async (): Promise<void> => {
     try {
-      // Pass editedHtml — the handler re-sanitizes on its end before writing
-      await window.api.window.openPlaygroundInBrowser(editedHtml)
+      // Pass editedContent — the handler re-sanitizes on its end before writing
+      await window.api.window.openPlaygroundInBrowser(editedContent)
     } catch (err) {
       console.error('Failed to open playground in browser:', err)
     }
@@ -255,7 +255,7 @@ export function PlaygroundModal({
   const showSource = viewMode === 'split' || viewMode === 'source'
 
   // Syntax-highlighted display uses edited text — it is never injected as HTML
-  const escapedHtml = useMemo(() => escapeHtml(editedHtml), [editedHtml])
+  const escapedHtml = useMemo(() => escapeHtml(editedContent), [editedContent])
   const sourceLines = useMemo(() => escapedHtml.split('\n'), [escapedHtml])
 
   return (
@@ -351,11 +351,11 @@ export function PlaygroundModal({
                   interactive playgrounds; SVG uses an empty sandbox (no scripts needed).
                   Markdown and JSON are rendered as plain text via <pre> — no HTML injection.
 
-                  previewHtml is always the output of sanitizePlaygroundHtml() — raw user
+                  previewContent is always the output of sanitizePlaygroundHtml() — raw user
                   edits from the source textarea are never passed directly to the preview.
                 */
                 <PlaygroundPreview
-                  content={previewHtml}
+                  content={previewContent}
                   filename={filename}
                   contentType={contentType}
                 />
@@ -368,7 +368,7 @@ export function PlaygroundModal({
             <div className="playground-modal__source" data-testid="playground-source">
               <textarea
                 className="playground-modal__source-textarea"
-                value={editedHtml}
+                value={editedContent}
                 onChange={(e) => setEditedHtml(e.target.value)}
                 aria-label="Source editor"
                 spellCheck={false}
