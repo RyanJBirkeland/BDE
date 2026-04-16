@@ -167,6 +167,55 @@ describe('refreshOAuthTokenFromKeychain', () => {
     expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
   })
 
+  it('returns false when JSON has missing claudeAiOauth field', async () => {
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: JSON.stringify({ someOtherField: 'value' }), stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(false)
+    expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+  })
+
+  it('returns false when claudeAiOauth is not an object', async () => {
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: JSON.stringify({ claudeAiOauth: 'not-an-object' }), stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(false)
+    expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+  })
+
+  it('returns false when parsed JSON is null', async () => {
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: 'null', stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(false)
+    expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+  })
+
+  it('succeeds when JSON has valid claudeAiOauth with accessToken', async () => {
+    const validCreds = { claudeAiOauth: { accessToken: 'valid-token-123' } }
+    vi.mocked(execFile).mockImplementation((_cmd, _args, _opts, callback: any) => {
+      callback(null, { stdout: JSON.stringify(validCreds), stderr: '' })
+      return {} as any
+    })
+
+    const result = await refreshOAuthTokenFromKeychain()
+    expect(result).toBe(true)
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+      expect.stringContaining('oauth-token'),
+      'valid-token-123',
+      expect.objectContaining({ mode: 0o600 })
+    )
+  })
+
   describe('OAuth refresh when accessToken is expired', () => {
     const ORIG_FETCH = globalThis.fetch
     afterEach(() => {

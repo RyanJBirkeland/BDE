@@ -284,7 +284,19 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
       ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-w'],
       { timeout: 10_000, env: buildAgentEnv() }
     )
-    creds = JSON.parse(credJson.trim()) as ClaudeCreds
+    const parsed = JSON.parse(credJson.trim()) as unknown
+    // Validate Keychain JSON schema before using — guard against corrupted or manually edited entries
+    if (!parsed || typeof parsed !== 'object' ||
+        !('claudeAiOauth' in parsed) || typeof (parsed as Record<string, unknown>).claudeAiOauth !== 'object') {
+      logger.error('[env-utils] Keychain JSON has unexpected format — run claude login to reset')
+      return false
+    }
+    const oauth = (parsed as Record<string, unknown>).claudeAiOauth as Record<string, unknown>
+    if (!oauth.accessToken || typeof oauth.accessToken !== 'string') {
+      logger.error('[env-utils] Keychain JSON has unexpected format — run claude login to reset')
+      return false
+    }
+    creds = parsed as ClaudeCreds
     keychainConsecutiveFailures = 0
   } catch (err) {
     keychainConsecutiveFailures++
