@@ -157,20 +157,19 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
     const feedback = await prompt({
       title: 'Request Revision',
       message: 'What should the agent fix or improve?',
-      placeholder: 'Describe the changes needed...',
-      confirmLabel: 'Re-queue Task'
+      placeholder: 'Describe what needs to change — the agent will see this directly...',
+      confirmLabel: 'Send to Agent'
     })
     if (!feedback) return
     setActionInFlight('revise')
     try {
       const priorEntries = Array.isArray(task.revision_feedback) ? task.revision_feedback : []
-      const attempt = priorEntries.length + 1
       const nextEntries = [
         ...priorEntries,
         {
           timestamp: nowIso(),
           feedback,
-          attempt
+          attempt: priorEntries.length + 1
         }
       ]
       await window.api.sprint.update(task.id, { revision_feedback: nextEntries })
@@ -179,7 +178,7 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
         feedback,
         mode: 'fresh'
       })
-      toast.success('Task re-queued with revision feedback')
+      toast.success('Revision requested — agent will re-run with your feedback')
       const nextTaskId = getNextReviewTaskId(task.id, tasks)
       selectTask(nextTaskId)
       if (!nextTaskId) toast.info('Review queue empty')
