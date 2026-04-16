@@ -66,6 +66,13 @@ describe('parseActionMarkers', () => {
     const result = parseActionMarkers(input)
     expect(result.actions).toHaveLength(2)
   })
+
+  it('ignores unknown action types', () => {
+    const input = '[ACTION:unknown-type]{"title":"T1"}[/ACTION]valid text'
+    const result = parseActionMarkers(input)
+    expect(result.actions).toHaveLength(0)
+    expect(result.cleanText).toBe('valid text')
+  })
 })
 
 describe('PlannerAssistant', () => {
