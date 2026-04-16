@@ -15,4 +15,4 @@ All views listed below are wrapped in `<ErrorBoundary name="ViewName">` so a ren
 | `SprintView.tsx` | Sprint pipeline execution monitor: three-zone layout (backlog, stages, task detail). | `SprintView` (default) |
 | `AgentsView.tsx` | Adhoc and assistant agent sessions: spawn, chat, and monitor multi-turn agent conversations. | `AgentsView` (default) |
 | `TaskWorkbenchView.tsx` | File kept on disk but removed from `VIEW_REGISTRY` and `View` union — no longer navigable. Task creation now lives in `WorkbenchPanel` inside `PlannerView`. | `TaskWorkbenchView` (default) |
-| `SettingsView.tsx` | App configuration organized into 7 tabs (connections, repositories, agents, templates, memory, appearance, about). | `SettingsView` (default) |
+| `SettingsView.tsx` | Settings layout with sidebar + content area. 7 tabs: Connections, Repositories, Templates, Agents, Memory, Appearance & Shortcuts, About & Usage. Driven by `useSettingsNavStore`. | `SettingsView` (default) |

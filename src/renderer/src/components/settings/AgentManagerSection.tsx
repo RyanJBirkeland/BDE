@@ -1,31 +1,20 @@
 /**
  * AgentManagerSection — configure AgentManager: concurrency, model, worktree base,
- * max runtime, auto-start, and webhooks. Changes take effect after app restart.
+ * max runtime, and auto-start. Also embeds agent permission settings.
+ * Changes to pipeline configuration take effect after app restart.
  */
 import './AgentManagerSection.css'
 import { useCallback, useEffect, useState } from 'react'
-import { Trash2, Plus, Send, Eye, EyeOff } from 'lucide-react'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { SettingsCard } from './SettingsCard'
-import { useWebhookManager } from '../../hooks/useWebhookManager'
+import { AgentPermissionsSection } from './AgentPermissionsSection'
 
 const DEFAULT_MAX_CONCURRENT = 2
 const DEFAULT_MODEL = 'claude-sonnet-4-5'
 const DEFAULT_WORKTREE_BASE = '~/worktrees/bde'
 const DEFAULT_MAX_RUNTIME_MINUTES = 60
 const DEFAULT_AUTO_START = true
-
-const EVENT_OPTIONS = [
-  { value: 'task.created', label: 'Task Created' },
-  { value: 'task.started', label: 'Task Started' },
-  { value: 'task.completed', label: 'Task Completed' },
-  { value: 'task.failed', label: 'Task Failed' },
-  { value: 'task.review', label: 'Task Ready for Review' },
-  { value: 'task.updated', label: 'Task Updated' },
-  { value: 'task.deleted', label: 'Task Deleted' },
-  { value: '*', label: 'All Events' }
-]
 
 export function AgentManagerSection(): React.JSX.Element {
   const [maxConcurrent, setMaxConcurrent] = useState(DEFAULT_MAX_CONCURRENT)
@@ -35,22 +24,6 @@ export function AgentManagerSection(): React.JSX.Element {
   const [autoStart, setAutoStart] = useState(DEFAULT_AUTO_START)
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
-
-  const {
-    webhooks,
-    webhooksLoaded,
-    visibleSecrets,
-    testing,
-    handleAddWebhook,
-    handleRemoveWebhook,
-    handleUrlChange,
-    handleEventToggle,
-    handleSecretChange,
-    handleSecretBlur,
-    handleToggleEnabled,
-    handleTestWebhook,
-    toggleSecretVisibility
-  } = useWebhookManager()
 
   useEffect(() => {
     async function loadSettings(): Promise<void> {
@@ -228,119 +201,7 @@ export function AgentManagerSection(): React.JSX.Element {
         </label>
       </SettingsCard>
 
-      {webhooksLoaded && webhooks.length === 0 && (
-        <span className="settings-repos__empty">No webhooks configured</span>
-      )}
-
-      {webhooks.map((webhook) => (
-        <SettingsCard
-          key={webhook.id}
-          title={webhook.url}
-          status={
-            webhook.enabled
-              ? { label: 'Enabled', variant: 'success' }
-              : { label: 'Disabled', variant: 'neutral' }
-          }
-          footer={
-            <div className="settings-card-footer-actions">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleToggleEnabled(webhook.id, !webhook.enabled)}
-                type="button"
-                aria-label={webhook.enabled ? 'Disable webhook' : 'Enable webhook'}
-              >
-                {webhook.enabled ? 'Disable' : 'Enable'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleTestWebhook(webhook.id)}
-                disabled={testing.has(webhook.id)}
-                type="button"
-                aria-label="Test webhook"
-              >
-                <Send size={14} />
-                {testing.has(webhook.id) ? 'Sending...' : 'Test'}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleRemoveWebhook(webhook.id)}
-                type="button"
-                aria-label="Remove webhook"
-              >
-                <Trash2 size={14} />
-                Delete
-              </Button>
-            </div>
-          }
-        >
-          <div className="settings-webhook-row">
-            <label className="settings-field">
-              <span className="settings-field__label">URL</span>
-              <input
-                className="settings-field__input"
-                placeholder="https://example.com/webhook"
-                value={webhook.url}
-                onChange={(e) => handleUrlChange(webhook.id, e.target.value)}
-              />
-            </label>
-
-            <label className="settings-field">
-              <span className="settings-field__label">Secret (optional)</span>
-              <div className="settings-secret-input">
-                <input
-                  className="settings-field__input"
-                  type={visibleSecrets.has(webhook.id) ? 'text' : 'password'}
-                  placeholder="Optional HMAC signing secret"
-                  value={webhook.secret || ''}
-                  onChange={(e) => handleSecretChange(webhook.id, e.target.value)}
-                  onBlur={() => handleSecretBlur(webhook.id)}
-                />
-                {webhook.secret && (
-                  <button
-                    type="button"
-                    className="settings-secret-input__toggle"
-                    onClick={() => toggleSecretVisibility(webhook.id)}
-                    aria-label={visibleSecrets.has(webhook.id) ? 'Hide secret' : 'Show secret'}
-                  >
-                    {visibleSecrets.has(webhook.id) ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                )}
-              </div>
-            </label>
-
-            <fieldset className="settings-field settings-fieldset-bare">
-              <legend className="settings-field__label">Events</legend>
-              <div className="settings-event-grid">
-                {EVENT_OPTIONS.map((option) => (
-                  <label key={option.value} className="settings-event-option">
-                    <input
-                      type="checkbox"
-                      checked={webhook.events.includes(option.value)}
-                      onChange={(e) =>
-                        handleEventToggle(webhook.id, option.value, e.target.checked)
-                      }
-                    />
-                    {option.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
-        </SettingsCard>
-      ))}
-
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleAddWebhook}
-        type="button"
-        className="settings-repos__add-btn"
-      >
-        <Plus size={14} /> Add Webhook
-      </Button>
+      <AgentPermissionsSection />
     </div>
   )
 }

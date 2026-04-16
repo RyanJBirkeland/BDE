@@ -41,8 +41,8 @@ describe('SettingsView', () => {
     expect(screen.getAllByText('Connections').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Repositories').length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByText('Templates').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText('Agent Manager').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText('Appearance').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Agents').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Appearance & Shortcuts').length).toBeGreaterThanOrEqual(1)
   })
 
   it('shows Connections section by default', () => {
@@ -50,11 +50,11 @@ describe('SettingsView', () => {
     expect(screen.getByText('Claude CLI Auth')).toBeInTheDocument()
   })
 
-  it('switches to Appearance section on sidebar click', async () => {
+  it('switches to Appearance & Shortcuts section on sidebar click', async () => {
     const user = userEvent.setup()
     render(<SettingsView />)
     // Click the sidebar item (role="link")
-    const appearanceLinks = screen.getAllByText('Appearance')
+    const appearanceLinks = screen.getAllByText('Appearance & Shortcuts')
     await user.click(appearanceLinks[0])
     expect(screen.getByText('Theme')).toBeInTheDocument()
     expect(screen.getByText('Accent Color')).toBeInTheDocument()

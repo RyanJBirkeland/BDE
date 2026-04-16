@@ -4,19 +4,7 @@
  */
 import './SettingsView.css'
 import { motion } from 'framer-motion'
-import {
-  Palette,
-  Link,
-  GitBranch,
-  FileText,
-  Cpu,
-  DollarSign,
-  Brain,
-  Shield,
-  Info,
-  Keyboard,
-  Bell
-} from 'lucide-react'
+import { Palette, Link, GitBranch, FileText, Cpu, Brain, Info } from 'lucide-react'
 import { SettingsSidebar } from '../components/settings/SettingsSidebar'
 import type { SettingsSection } from '../components/settings/SettingsSidebar'
 import { SettingsPageHeader } from '../components/settings/SettingsPageHeader'
@@ -24,65 +12,53 @@ import { AppearanceSection } from '../components/settings/AppearanceSection'
 import { ConnectionsSection } from '../components/settings/ConnectionsSection'
 import { RepositoriesSection } from '../components/settings/RepositoriesSection'
 import { TaskTemplatesSection } from '../components/settings/TaskTemplatesSection'
-import { AgentPermissionsSection } from '../components/settings/AgentPermissionsSection'
 import { AgentManagerSection } from '../components/settings/AgentManagerSection'
-import { CostSection } from '../components/settings/CostSection'
 import { MemorySection } from '../components/settings/MemorySection'
 import { AboutSection } from '../components/settings/AboutSection'
-import { KeybindingsSettings } from '../components/settings/KeybindingsSettings'
-import { NotificationsSection } from '../components/settings/NotificationsSection'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useSettingsNavStore } from '../stores/settingsNav'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 
 const SECTIONS: SettingsSection[] = [
   { id: 'connections', label: 'Connections', icon: Link, category: 'Account' },
-  { id: 'permissions', label: 'Permissions', icon: Shield, category: 'Account' },
   { id: 'repositories', label: 'Repositories', icon: GitBranch, category: 'Projects' },
   { id: 'templates', label: 'Templates', icon: FileText, category: 'Projects' },
-  { id: 'agentManager', label: 'Agent Manager', icon: Cpu, category: 'Pipeline' },
-  { id: 'cost', label: 'Cost & Usage', icon: DollarSign, category: 'Pipeline' },
-  { id: 'appearance', label: 'Appearance', icon: Palette, category: 'App' },
-  { id: 'notifications', label: 'Notifications', icon: Bell, category: 'App' },
-  { id: 'keybindings', label: 'Keybindings', icon: Keyboard, category: 'App' },
+  { id: 'agents', label: 'Agents', icon: Cpu, category: 'Pipeline' },
   { id: 'memory', label: 'Memory', icon: Brain, category: 'App' },
-  { id: 'about', label: 'About', icon: Info, category: 'App' }
+  { id: 'appearance', label: 'Appearance & Shortcuts', icon: Palette, category: 'App' },
+  { id: 'about', label: 'About & Usage', icon: Info, category: 'App' }
 ]
 
 const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   connections: ConnectionsSection,
-  permissions: AgentPermissionsSection,
   repositories: RepositoriesSection,
   templates: TaskTemplatesSection,
-  agentManager: AgentManagerSection,
-  cost: CostSection,
+  agents: AgentManagerSection,
   memory: MemorySection,
   appearance: AppearanceSection,
-  keybindings: KeybindingsSettings,
-  notifications: NotificationsSection,
   about: AboutSection
 }
 
 const SECTION_META: Record<string, { title: string; subtitle: string; wide: boolean }> = {
   connections: {
     title: 'Connections',
-    subtitle: 'Manage authentication tokens and API access',
+    subtitle: 'Manage authentication tokens, API access, and webhooks',
     wide: false
   },
-  permissions: { title: 'Permissions', subtitle: 'Tool access and security rules', wide: false },
   repositories: { title: 'Repositories', subtitle: 'Configure project repositories', wide: false },
   templates: { title: 'Templates', subtitle: 'Task prompt templates', wide: false },
-  agentManager: { title: 'Agent Manager', subtitle: 'Pipeline execution settings', wide: false },
-  cost: { title: 'Cost & Usage', subtitle: 'Agent execution costs and history', wide: true },
-  memory: { title: 'Memory', subtitle: 'Agent memory files', wide: true },
-  appearance: { title: 'Appearance', subtitle: 'Theme and visual preferences', wide: false },
-  keybindings: { title: 'Keybindings', subtitle: 'Customize keyboard shortcuts', wide: false },
-  notifications: {
-    title: 'Notifications',
-    subtitle: 'Desktop and in-app notification preferences',
+  agents: {
+    title: 'Agents',
+    subtitle: 'Pipeline execution settings and agent permissions',
     wide: false
   },
-  about: { title: 'About', subtitle: 'Version and application info', wide: false }
+  memory: { title: 'Memory', subtitle: 'Agent memory files', wide: true },
+  appearance: {
+    title: 'Appearance & Shortcuts',
+    subtitle: 'Theme, notifications, and keyboard shortcuts',
+    wide: false
+  },
+  about: { title: 'About & Usage', subtitle: 'Version info and API usage history', wide: true }
 }
 
 export default function SettingsView(): React.JSX.Element {

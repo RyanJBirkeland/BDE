@@ -7,15 +7,11 @@ import { create } from 'zustand'
 
 export type SettingsSectionId =
   | 'connections'
-  | 'permissions'
   | 'repositories'
+  | 'agents'
   | 'templates'
-  | 'agentManager'
-  | 'webhooks'
-  | 'cost'
   | 'memory'
   | 'appearance'
-  | 'keybindings'
   | 'about'
 
 interface SettingsNavStore {

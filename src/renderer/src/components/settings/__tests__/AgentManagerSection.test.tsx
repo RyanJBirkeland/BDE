@@ -9,6 +9,12 @@ vi.mock('../../../stores/toasts', () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() }
 }))
 
+// AgentPermissionsSection adds its own Save button — stub it out so tests
+// for AgentManagerSection can use unambiguous getByRole('button') queries.
+vi.mock('../AgentPermissionsSection', () => ({
+  AgentPermissionsSection: () => null
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(window.api.settings.get).mockResolvedValue(null)

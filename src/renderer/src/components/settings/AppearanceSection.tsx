@@ -1,11 +1,14 @@
 /**
- * AppearanceSection — theme toggle, accent color picker, and window behavior.
+ * AppearanceSection — theme toggle, accent color picker, window behavior,
+ * notification preferences, and keyboard shortcut customization.
  */
 import './AppearanceSection.css'
 import { useCallback, useEffect, useState } from 'react'
 import { useThemeStore } from '../../stores/theme'
 import { toast } from '../../stores/toasts'
 import { SettingsCard } from './SettingsCard'
+import { NotificationsSection } from './NotificationsSection'
+import { KeybindingsSettings } from './KeybindingsSettings'
 
 const ACCENT_PRESETS = [
   { color: '#00D37F', label: 'Green' },
@@ -140,6 +143,12 @@ export function AppearanceSection(): React.JSX.Element {
             <span className="settings-help-text settings-help-text--dim">Ask each time</span>
           )}
         </div>
+      </SettingsCard>
+
+      <NotificationsSection />
+
+      <SettingsCard title="Keyboard Shortcuts" subtitle="Customize keyboard shortcuts">
+        <KeybindingsSettings />
       </SettingsCard>
     </>
   )

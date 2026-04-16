@@ -14,3 +14,4 @@ Source: `src/renderer/src/stores/`
 | `healthCheck.ts` | Tracks stuck task IDs and dismissed IDs for the health-check overlay. Cross-store derived view (`useVisibleStuckTasks`) lives in `hooks/useVisibleStuckTasks.ts`. | `useHealthCheckStore` |
 | `taskWorkbenchValidation.ts` | Validation check results for the Task Workbench (structural, semantic, operational). Extracted from `taskWorkbench.ts` for cohesion. | `useTaskWorkbenchValidation` |
 | `ideFileCache.ts` | File content and loading-state cache for the IDE editor. Extracted from `ide.ts` for cohesion. | `useIDEFileCache` |
+| `settingsNav.ts` | Settings navigation store — tracks active section for deep linking. 7 section IDs: `connections`, `repositories`, `agents`, `templates`, `memory`, `appearance`, `about`. | `useSettingsNavStore`, `SettingsSectionId` |

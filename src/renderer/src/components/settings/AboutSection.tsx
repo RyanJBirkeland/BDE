@@ -1,10 +1,11 @@
 /**
- * AboutSection — app version and source link.
+ * AboutSection — app version, source link, and API usage stats.
  */
 import './AboutSection.css'
 import { ExternalLink, Keyboard } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { SettingsCard } from './SettingsCard'
+import { CostSection } from './CostSection'
 
 const APP_VERSION = __APP_VERSION__
 const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE'
@@ -54,6 +55,8 @@ export function AboutSection(): React.JSX.Element {
           </div>
         </div>
       </SettingsCard>
+
+      <CostSection />
     </section>
   )
 }
