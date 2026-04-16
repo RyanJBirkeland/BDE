@@ -33,7 +33,7 @@ function getCheckState(
 function getExpiryState(status: AuthStatus | null): CheckState {
   if (!status) return 'loading'
   if (!status.tokenFound) return 'fail'
-  return status.tokenExpired ? 'warn' : 'pass'
+  return status.tokenExpired ? 'fail' : 'pass'
 }
 
 function StatusIcon({ state }: { state: CheckState }): React.JSX.Element {
@@ -158,10 +158,10 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
 
     setChecking(false)
 
-    // Auto-advance only if required checks pass
+    // Auto-advance only if all required checks pass (auth + git)
     if (authResult.status === 'fulfilled') {
       const res = authResult.value
-      if (res.cliFound && res.tokenFound && !res.tokenExpired) {
+      if (res.cliFound && res.tokenFound && !res.tokenExpired && git === 'pass') {
         onReady()
       }
     }
@@ -176,7 +176,11 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
   const tokenState = getCheckState(status, 'tokenFound')
   const expiryState = getExpiryState(status)
   const instruction = getInstruction(status)
-  const allPassed = status?.cliFound && status?.tokenFound && !status?.tokenExpired
+  const allPassed =
+    status?.cliFound &&
+    status?.tokenFound &&
+    !status?.tokenExpired &&
+    extended.gitAvailable === 'pass'
 
   const requiredStates = [cliState, tokenState, expiryState, extended.gitAvailable]
   const anyRequiredFailed = requiredStates.some((s) => s === 'fail')
