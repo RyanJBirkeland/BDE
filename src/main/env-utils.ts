@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path'
 import { homedir, userInfo } from 'node:os'
 import { getErrorMessage } from '../shared/errors'
 import { createLogger } from './logger'
+import { broadcast } from './broadcast'
 
 const logger = createLogger('env-utils')
 
@@ -18,6 +19,11 @@ const customPaths = process.env.BDE_EXTRA_PATHS?.split(':').filter(Boolean) ?? [
 const EXTRA_PATHS = [...customPaths, '/usr/local/bin', '/opt/homebrew/bin', `${homedir()}/.local/bin`]
 
 let _cachedEnv: Record<string, string | undefined> | null = null
+let keychainConsecutiveFailures = 0
+
+const KEYCHAIN_FAILURE_WARNING_THRESHOLD = 3
+const KEYCHAIN_WARNING_MESSAGE =
+  "Keychain access failing — run `claude login` to refresh your token"
 
 // Allowlist of environment variables that agents need
 const ENV_ALLOWLIST = [
@@ -274,8 +280,15 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
       { timeout: 10_000, env: buildAgentEnv() }
     )
     creds = JSON.parse(credJson.trim()) as ClaudeCreds
-  } catch {
-    // Keychain access can fail (locked, not found, permissions)
+    keychainConsecutiveFailures = 0
+  } catch (err) {
+    keychainConsecutiveFailures++
+    logger.error(
+      `Keychain read failed (consecutive failures: ${keychainConsecutiveFailures}): ${getErrorMessage(err)}`
+    )
+    if (keychainConsecutiveFailures >= KEYCHAIN_FAILURE_WARNING_THRESHOLD) {
+      broadcast('manager:warning', { message: KEYCHAIN_WARNING_MESSAGE })
+    }
     return false
   }
 

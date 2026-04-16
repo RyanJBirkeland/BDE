@@ -16,6 +16,9 @@ export interface BroadcastChannels {
     openUntil: number
   }
 
+  // Manager warnings (e.g. Keychain repeated failures)
+  'manager:warning': { message: string }
+
   // Filesystem
   'fs:dirChanged': string
 
