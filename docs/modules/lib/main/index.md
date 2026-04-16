@@ -5,7 +5,8 @@ Source: `src/main/lib/`
 
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
-| `env-utils.ts` | Environment setup — PATH augmentation, OAuth token management with symlink/size guards, agent environment building | `ensureExtraPathsOnProcessEnv`, `buildAgentEnv`, `getOAuthToken`, `invalidateOAuthToken`, `buildAgentEnvWithAuth`, `refreshOAuthTokenFromKeychain` |
+| `env-utils.ts` | Environment setup — PATH augmentation (with optional `BDE_EXTRA_PATHS` prefix), OAuth token management with symlink/size guards, agent environment building | `ensureExtraPathsOnProcessEnv`, `buildAgentEnv`, `getOAuthToken`, `invalidateOAuthToken`, `buildAgentEnvWithAuth`, `refreshOAuthTokenFromKeychain` |
+| `paths.ts` | BDE data-directory constants — `BDE_DIR` (overridable via `BDE_DATA_DIR`), `BDE_DB_PATH` (overridable via `BDE_DB_PATH` or `BDE_TEST_DB`), and derived paths. Also exports repo config helpers. | `BDE_DIR`, `BDE_DB_PATH`, `BDE_AGENTS_INDEX`, `BDE_MEMORY_DIR`, `validateWorktreeBase`, `validateTestDbPath`, `getConfiguredRepos`, `getRepoPath` |
 | `async-utils.ts` | Promisified `execFile` and `sleep` | `execFileAsync`, `sleep` |
 | `patch-validation.ts` | Validates and filters patch content before applying | `validateAndFilterPatch` |
 | `review-paths.ts` | Path validators for review git refs, worktree paths, and file paths | `validateGitRef`, `validateWorktreePath`, `validateFilePath`, `getWorktreeBase` |
