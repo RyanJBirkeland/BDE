@@ -32,31 +32,42 @@ describe('Personality System', () => {
   })
 
   describe('assistant personality', () => {
-    it('should have conversational voice', () => {
-      expect(assistantPersonality.voice).toContain('conversational')
-      expect(assistantPersonality.voice).toContain('concise')
+    it('should have conversational voice with pipeline awareness', () => {
+      expect(assistantPersonality.voice).toContain('Conversational')
+      expect(assistantPersonality.voice).toContain('informative')
+      expect(assistantPersonality.voice).toContain('pipeline/status questions')
     })
 
-    it('should frame role as interactive assistant', () => {
-      expect(assistantPersonality.roleFrame).toContain('interactive')
-      expect(assistantPersonality.roleFrame).toContain('BDE assistant')
+    it('should frame role as BDE Project Assistant', () => {
+      expect(assistantPersonality.roleFrame).toContain('BDE Assistant')
+      expect(assistantPersonality.roleFrame).toContain('BDE (Birkeland Development Environment)')
+      expect(assistantPersonality.roleFrame).toContain('sprint pipeline')
     })
 
-    it('should describe full tool access in role frame', () => {
-      expect(assistantPersonality.roleFrame).toContain('full tool access')
+    it('should have read-only focus (advisor, not executor)', () => {
+      expect(assistantPersonality.roleFrame).toContain('full read access')
+      expect(assistantPersonality.roleFrame).toContain('sprint pipeline, agent logs, task statuses')
     })
 
-    it('should include behavioral boundaries (not capability descriptions)', () => {
+    it('should constrain to advisor role with read-first behavior', () => {
+      expect(assistantPersonality.constraints.some((c) => c.includes('Full tool access'))).toBe(
+        true
+      )
       expect(
-        assistantPersonality.constraints.some((c) => c.includes('Confirm before destructive'))
+        assistantPersonality.constraints.some((c) =>
+          c.includes('Do NOT make code changes without explicit request')
+        )
       ).toBe(true)
       expect(
-        assistantPersonality.constraints.some((c) => c.includes("user's current request"))
+        assistantPersonality.constraints.some((c) => c.includes('Always check current state'))
       ).toBe(true)
     })
 
-    it('should include BDE-specific patterns', () => {
-      expect(assistantPersonality.patterns.some((p) => p.includes('sprint tasks'))).toBe(true)
+    it('should include diagnostic and state-inspection patterns', () => {
+      expect(assistantPersonality.patterns.some((p) => p.includes('why did X fail'))).toBe(true)
+      expect(assistantPersonality.patterns.some((p) => p.includes('status of my pipeline'))).toBe(
+        true
+      )
       expect(assistantPersonality.patterns.some((p) => p.includes('Dev Playground'))).toBe(true)
     })
   })
@@ -157,50 +168,52 @@ describe('Personality System', () => {
   })
 
   describe('adhoc personality', () => {
-    it('should have terse and execution-focused voice', () => {
-      expect(adhocPersonality.voice).toContain('terse')
+    it('should have direct and execution-focused voice', () => {
+      expect(adhocPersonality.voice).toContain('Direct')
       expect(adhocPersonality.voice).toContain('execution-focused')
     })
 
-    it('should frame role as user-spawned task executor', () => {
-      expect(adhocPersonality.roleFrame).toContain('user-spawned task executor')
+    it('should frame role as BDE Dev Agent - conversational coding partner', () => {
+      expect(adhocPersonality.roleFrame).toContain('BDE Dev Agent')
+      expect(adhocPersonality.roleFrame).toContain('conversational coding partner')
       expect(adhocPersonality.roleFrame).toContain('full tool access')
     })
 
-    it('should include tool access and worktree constraints', () => {
+    it('should emphasize direct repo work without isolated worktree', () => {
       expect(adhocPersonality.constraints.some((c) => c.includes('Full tool access'))).toBe(true)
-      // Adhoc agents now run in isolated worktrees and must NOT push (push is the
-      // user's decision via Promote to Code Review). The previous "never push to
-      // main" framing was replaced when the Code Review flow was introduced.
-      expect(adhocPersonality.constraints.some((c) => c.toLowerCase().includes('worktree'))).toBe(
+      expect(adhocPersonality.constraints.some((c) => c.includes('directly in the repo'))).toBe(
         true
       )
       expect(adhocPersonality.constraints.some((c) => c.includes('git push'))).toBe(true)
     })
 
-    it('should include execution-first patterns', () => {
-      expect(adhocPersonality.patterns.some((p) => p.includes('Execute first'))).toBe(true)
+    it('should include commit-frequently and playground patterns', () => {
       expect(adhocPersonality.patterns.some((p) => p.includes('Commit frequently'))).toBe(true)
+      expect(adhocPersonality.patterns.some((p) => p.includes('Dev Playground'))).toBe(true)
+    })
+
+    it('should suggest sprint pipeline tasks for larger work', () => {
+      expect(adhocPersonality.patterns.some((p) => p.includes('Sprint Pipeline task'))).toBe(true)
     })
   })
 
   describe('adhoc vs assistant differentiation', () => {
     it('should have different voice styles', () => {
       expect(adhocPersonality.voice).not.toEqual(assistantPersonality.voice)
-      expect(adhocPersonality.voice).toContain('terse')
+      expect(adhocPersonality.voice).toContain('Direct')
       expect(assistantPersonality.voice).toContain('conversational')
     })
 
     it('should have different role frames', () => {
       expect(adhocPersonality.roleFrame).not.toEqual(assistantPersonality.roleFrame)
-      expect(adhocPersonality.roleFrame).toContain('task executor')
-      expect(assistantPersonality.roleFrame).toContain('assistant')
+      expect(adhocPersonality.roleFrame).toContain('Dev Agent')
+      expect(assistantPersonality.roleFrame).toContain('BDE assistant')
     })
 
     it('should have different patterns', () => {
       expect(adhocPersonality.patterns).not.toEqual(assistantPersonality.patterns)
       expect(adhocPersonality.patterns.some((p) => p.includes('Execute first'))).toBe(true)
-      expect(assistantPersonality.patterns.some((p) => p.includes('sprint tasks'))).toBe(true)
+      expect(assistantPersonality.patterns.some((p) => p.includes('why did X fail'))).toBe(true)
     })
   })
 })
