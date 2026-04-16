@@ -3,7 +3,7 @@ import { mkdirSync, existsSync, chmodSync, statSync, unlinkSync } from 'fs'
 import path from 'path'
 import { BDE_DIR as DB_DIR, BDE_DB_PATH as DB_PATH, BDE_TASK_MEMORY_DIR } from './paths'
 import { getErrorMessage } from '../shared/errors'
-import { loadMigrations, type Migration } from './migrations/loader'
+import { loadMigrations, getPendingMigrations, type Migration } from './migrations/loader'
 
 let _db: Database.Database | null = null
 
@@ -104,9 +104,7 @@ export const migrations: Migration[] = loadMigrations()
 export function runMigrations(db: Database.Database): void {
   const currentVersion = db.pragma('user_version', { simple: true }) as number
 
-  const pending = migrations
-    .filter((m) => m.version > currentVersion)
-    .sort((a, b) => a.version - b.version)
+  const pending = getPendingMigrations(migrations, currentVersion)
 
   if (pending.length === 0) return
 
