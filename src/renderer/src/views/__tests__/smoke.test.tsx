@@ -174,7 +174,26 @@ Object.defineProperty(window, 'api', {
       set: vi.fn().mockResolvedValue(undefined),
       getJson: vi.fn().mockResolvedValue(null),
       setJson: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
+      hasSecret: vi.fn().mockResolvedValue(false),
+      getEncryptionStatus: vi.fn().mockResolvedValue({ available: true })
+    },
+    auth: {
+      status: vi.fn().mockResolvedValue({
+        cliFound: true,
+        tokenFound: true,
+        tokenExpired: false
+      })
+    },
+    webhooks: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockResolvedValue({}),
+      update: vi.fn().mockResolvedValue({}),
+      delete: vi.fn().mockResolvedValue(undefined),
+      test: vi.fn().mockResolvedValue(undefined)
+    },
+    window: {
+      openExternal: vi.fn()
     },
     github: {
       fetch: vi.fn().mockResolvedValue({ ok: true, status: 200, body: {}, linkNext: null }),
