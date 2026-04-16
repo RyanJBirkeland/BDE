@@ -157,7 +157,7 @@ describe('buildAgentPrompt', () => {
 
   it('assistant role mentions interactive assistant', () => {
     const prompt = buildAgentPrompt({ ...baseInput, agentType: 'assistant' })
-    expect(prompt).toContain('interactive BDE assistant')
+    expect(prompt).toContain('BDE Assistant')
   })
 
   it('copilot role mentions spec drafting', () => {

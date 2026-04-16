@@ -20,10 +20,10 @@ describe('Agent System Integration', () => {
 
     it('exports assistant personality with all required fields', () => {
       expect(assistantPersonality).toBeDefined()
-      expect(assistantPersonality.voice).toContain('conversational')
-      expect(assistantPersonality.roleFrame).toContain('BDE assistant')
+      expect(assistantPersonality.voice).toContain('Conversational')
+      expect(assistantPersonality.roleFrame).toContain('BDE Assistant')
       expect(assistantPersonality.constraints.length).toBeGreaterThan(0)
-      expect(assistantPersonality.patterns[0]).toContain('Suggest creating sprint tasks')
+      expect(assistantPersonality.patterns[0]).toContain('why did X fail')
     })
   })
 
@@ -81,9 +81,9 @@ describe('Agent System Integration', () => {
       })
 
       expect(prompt).toContain('## Voice')
-      expect(prompt).toContain('conversational')
+      expect(prompt).toContain('Conversational')
       expect(prompt).toContain('## Your Role')
-      expect(prompt).toContain('BDE assistant')
+      expect(prompt).toContain('BDE Assistant')
       expect(prompt).not.toContain('## BDE Conventions')
       expect(prompt).toContain('## Available Skills')
       expect(prompt).toContain('System Introspection')

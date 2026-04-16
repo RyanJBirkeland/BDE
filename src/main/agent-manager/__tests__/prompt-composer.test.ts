@@ -94,17 +94,17 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'assistant' })
 
       expect(prompt).toContain('## Your Role')
-      expect(prompt).toContain('interactive BDE assistant')
-      expect(prompt).toContain('conversational but concise')
-      expect(prompt).toContain('full tool access')
+      expect(prompt).toContain('BDE Assistant')
+      expect(prompt).toContain('Conversational and informative')
+      expect(prompt).toContain('Full tool access')
     })
 
     it('includes adhoc-specific personality for adhoc agent', () => {
       const prompt = buildAgentPrompt({ agentType: 'adhoc' })
 
       expect(prompt).toContain('## Your Role')
-      expect(prompt).toContain('task executor')
-      expect(prompt).toContain('terse and execution-focused')
+      expect(prompt).toContain('BDE Dev Agent')
+      expect(prompt).toContain('execution-focused')
     })
 
     it('includes copilot-specific personality for copilot agent', () => {
@@ -917,7 +917,7 @@ describe('buildAgentPrompt', () => {
 
       // Should contain preamble, personality, and skills
       expect(prompt).toContain('You are a BDE')
-      expect(prompt).toContain('interactive BDE assistant')
+      expect(prompt).toContain('BDE Assistant')
       expect(prompt).not.toContain('## Git Branch')
       // No playground unless explicitly enabled
     })

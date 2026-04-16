@@ -176,12 +176,11 @@ describe('Personality System', () => {
     it('should frame role as BDE Dev Agent - conversational coding partner', () => {
       expect(adhocPersonality.roleFrame).toContain('BDE Dev Agent')
       expect(adhocPersonality.roleFrame).toContain('conversational coding partner')
-      expect(adhocPersonality.roleFrame).toContain('full tool access')
     })
 
-    it('should emphasize direct repo work without isolated worktree', () => {
+    it('should describe isolated worktree and tool access in constraints', () => {
       expect(adhocPersonality.constraints.some((c) => c.includes('Full tool access'))).toBe(true)
-      expect(adhocPersonality.constraints.some((c) => c.includes('directly in the repo'))).toBe(
+      expect(adhocPersonality.constraints.some((c) => c.includes('isolated git worktree'))).toBe(
         true
       )
       expect(adhocPersonality.constraints.some((c) => c.includes('git push'))).toBe(true)
@@ -201,13 +200,13 @@ describe('Personality System', () => {
     it('should have different voice styles', () => {
       expect(adhocPersonality.voice).not.toEqual(assistantPersonality.voice)
       expect(adhocPersonality.voice).toContain('Direct')
-      expect(assistantPersonality.voice).toContain('conversational')
+      expect(assistantPersonality.voice).toContain('Conversational')
     })
 
     it('should have different role frames', () => {
       expect(adhocPersonality.roleFrame).not.toEqual(assistantPersonality.roleFrame)
       expect(adhocPersonality.roleFrame).toContain('Dev Agent')
-      expect(assistantPersonality.roleFrame).toContain('BDE assistant')
+      expect(assistantPersonality.roleFrame).toContain('BDE Assistant')
     })
 
     it('should have different patterns', () => {
