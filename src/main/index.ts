@@ -17,8 +17,8 @@ import { buildChatStreamDeps } from './handlers/review-assistant'
 import { createReviewRepository } from './data/review-repository'
 import { createReviewService } from './services/review-service'
 import { runSdkOnce } from './sdk-streaming'
-import { getDb } from './db'
-import { closeDb } from './db'
+import { getDb, closeDb } from './db'
+import { flushAgentEventBatcher } from './agent-event-mapper'
 import { createAgentManager } from './agent-manager'
 import { createSprintTaskRepository } from './data/sprint-task-repository'
 import { execFileAsync } from './lib/async-utils'
@@ -57,8 +57,33 @@ const logger = createLogger('main')
 
 const ALLOWED_EXTERNAL_SCHEMES = ['https:', 'http:', 'mailto:']
 
-process.on('uncaughtException', (err) => {
+const GRACEFUL_SHUTDOWN_TIMEOUT_MS = 3000
+
+async function gracefulShutdown(): Promise<void> {
+  const cleanup = async (): Promise<void> => {
+    flushAgentEventBatcher()
+    try {
+      getDb().close()
+    } catch (_) {
+      // DB may already be closed — ignore
+    }
+    logger.info('Process exiting after uncaught exception')
+  }
+  await Promise.race([
+    cleanup(),
+    new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('cleanup timeout')), GRACEFUL_SHUTDOWN_TIMEOUT_MS)
+    )
+  ])
+}
+
+process.on('uncaughtException', async (err) => {
   logError(logger, 'Uncaught exception', err)
+  try {
+    await gracefulShutdown()
+  } finally {
+    process.exit(1)
+  }
 })
 
 process.on('unhandledRejection', (reason) => {
