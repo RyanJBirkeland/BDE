@@ -10,8 +10,8 @@ import './SpecEditor.css'
 const SPEC_TEMPLATES: Array<{ label: string; spec: string; specType: SpecType }> = [
   { label: 'Feature', specType: 'feature', spec: DEFAULT_TASK_TEMPLATES[1].promptPrefix },
   { label: 'Bug Fix', specType: 'bugfix', spec: DEFAULT_TASK_TEMPLATES[0].promptPrefix },
-  { label: 'Refactor', specType: 'refactor', spec: DEFAULT_TASK_TEMPLATES[3].promptPrefix },
-  { label: 'Test', specType: 'test', spec: DEFAULT_TASK_TEMPLATES[4].promptPrefix }
+  { label: 'Refactor', specType: 'refactor', spec: DEFAULT_TASK_TEMPLATES[2].promptPrefix },
+  { label: 'Test', specType: 'test', spec: DEFAULT_TASK_TEMPLATES[3].promptPrefix }
 ]
 
 interface SpecEditorProps {

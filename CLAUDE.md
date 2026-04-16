@@ -279,7 +279,7 @@ npm run package      # Alias for build:mac
 - Optimistic updates track fields, not just task IDs — only pending fields preserved on poll merge
 - Status transitions validated by `isValidTransition()` in `src/shared/task-transitions.ts`, currently enforced at the data layer in `updateTask()` (note: this mixes business policy with data access; future refactoring may move validation to a service layer)
 - Pipeline agent prompts include retry context, time limits, idle warnings, and scope enforcement — see `prompt-composer.ts`
-- Spec templates with required sections in `src/shared/constants.ts` — Bug Fix, Feature (Renderer), Feature (Main), Refactor, Test Coverage
+- Spec templates with required sections in `src/shared/constants.ts` — Bug Fix, Feature, Refactor, Test Coverage
 
 ## Pipeline Agent Spec Guidelines
 
