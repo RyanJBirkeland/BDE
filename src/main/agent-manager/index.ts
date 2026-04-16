@@ -167,11 +167,9 @@ export class AgentManagerImpl implements AgentManager {
       onTaskTerminal: this.onTaskTerminal.bind(this),
       repo,
       onSpawnSuccess: () => {
-        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
         this._circuitBreaker.recordSuccess()
       },
       onSpawnFailure: () => {
-        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
         this._circuitBreaker.recordFailure()
       }
     }
@@ -240,6 +238,11 @@ export class AgentManagerImpl implements AgentManager {
 
   /**
    * Fire-and-forget agent spawn — errors logged inside runAgent.
+   *
+   * _pendingSpawns is always decremented in finally, regardless of whether
+   * the error occurred before, during, or after the actual spawn call.
+   * This prevents the concurrency counter from leaking when runAgent throws
+   * early (e.g. validation failure before spawnAndWireAgent is reached).
    */
   _spawnAgent(
     task: AgentRunClaim,
@@ -251,8 +254,20 @@ export class AgentManagerImpl implements AgentManager {
     const agentPromise = _runAgent(task, worktree, repoPath, this.runAgentDeps)
       .catch((err) => {
         this.logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
+        // Release the claim so the task does not remain stuck 'active'.
+        // validateTaskForRun and handleSpawnFailure already do this on their
+        // own code paths — this catch handles any remaining gap (e.g. an
+        // unexpected throw before either of those paths is reached).
+        try {
+          this.repo.updateTask(task.id, { status: 'error', claimed_by: null, notes: String(err) })
+        } catch (updateErr) {
+          this.logger.error(
+            `[agent-manager] Failed to release claim for task ${task.id}: ${updateErr}`
+          )
+        }
       })
       .finally(() => {
+        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
         this._agentPromises.delete(agentPromise)
       })
     this._agentPromises.add(agentPromise)

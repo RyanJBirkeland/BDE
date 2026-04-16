@@ -4,6 +4,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mocks — must be declared before imports
 // ---------------------------------------------------------------------------
 
+vi.mock('../run-agent', () => ({
+  runAgent: vi.fn().mockResolvedValue(undefined)
+}))
+
 vi.mock('../../data/sprint-queries', () => ({
   getQueuedTasks: vi.fn(),
   claimTask: vi.fn(),
@@ -120,6 +124,7 @@ import {
 } from '../../data/sprint-queries'
 import { mapQueuedTask, checkAndBlockDeps } from '../task-mapper'
 import { createDependencyIndex } from '../../services/dependency-service'
+import { runAgent } from '../run-agent'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -893,6 +898,97 @@ describe('AgentManagerImpl — class internals', () => {
       // Both tasks attempted — error didn't stop the loop
       expect(manager._processQueuedTask).toHaveBeenCalledTimes(2)
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('task-1'))
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // _spawnAgent — _pendingSpawns always decremented (F-t2-agent-life-1)
+  // -------------------------------------------------------------------------
+
+  describe('_spawnAgent — _pendingSpawns always decremented on failure', () => {
+    const mockWorktree = { worktreePath: '/tmp/wt/task-1', branch: 'agent/task-1' }
+    const mockRepoPath = '/repos/myrepo'
+
+    function makeSpawnTask() {
+      return {
+        id: 'task-spawn-1',
+        title: 'Spawn test task',
+        prompt: 'Do the thing',
+        spec: null,
+        repo: 'myrepo',
+        retry_count: 0,
+        fast_fail_count: 0,
+        playground_enabled: false,
+        max_runtime_ms: null,
+        max_cost_usd: null,
+        model: null,
+        group_id: null,
+        notes: null
+      }
+    }
+
+    it('decrements _pendingSpawns to 0 when runAgent throws before spawn callbacks', async () => {
+      vi.mocked(runAgent).mockRejectedValue(new Error('early validation failure'))
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      expect(manager._pendingSpawns).toBe(0)
+
+      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+
+      // _pendingSpawns is incremented synchronously before the async work
+      expect(manager._pendingSpawns).toBe(1)
+
+      // Wait for all pending promises to settle
+      await Promise.allSettled(Array.from(manager._agentPromises))
+
+      expect(manager._pendingSpawns).toBe(0)
+    })
+
+    it('decrements _pendingSpawns to 0 when runAgent resolves successfully', async () => {
+      vi.mocked(runAgent).mockResolvedValue(undefined)
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager._agentPromises))
+
+      expect(manager._pendingSpawns).toBe(0)
+    })
+
+    it('releases task claim (status=error, claimed_by=null) when runAgent throws unexpectedly', async () => {
+      const spawnError = new Error('unexpected spawn crash')
+      vi.mocked(runAgent).mockRejectedValue(spawnError)
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+      const task = makeSpawnTask()
+
+      manager._spawnAgent(task, mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager._agentPromises))
+
+      expect(updateTask).toHaveBeenCalledWith(
+        task.id,
+        expect.objectContaining({ status: 'error', claimed_by: null })
+      )
+    })
+
+    it('does not double-decrement _pendingSpawns across multiple spawn failures', async () => {
+      vi.mocked(runAgent).mockRejectedValue(new Error('crash'))
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      manager._spawnAgent({ ...makeSpawnTask(), id: 'task-spawn-2' }, mockWorktree, mockRepoPath)
+
+      expect(manager._pendingSpawns).toBe(2)
+
+      await Promise.allSettled(Array.from(manager._agentPromises))
+
+      expect(manager._pendingSpawns).toBe(0)
     })
   })
 })
