@@ -5,6 +5,7 @@ import { getDb } from '../db'
 import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
 import { mapRowsToTasks } from './sprint-task-mapper'
 import { getSprintQueriesLogger } from './sprint-query-logger'
+import { recordTaskChangesBulk } from './task-changes'
 import type { QueueStats } from './sprint-task-types'
 import { withDataLayerError } from './data-utils'
 
@@ -64,17 +65,35 @@ export function getOrphanedTasks(claimedBy: string, db?: Database.Database): Spr
  * Clears claimed_by for all tasks held by the given executor, regardless of status.
  * Used on startup to release stale claims from the previous process session
  * (e.g. tasks stuck in 'review' or other non-active statuses with a leftover claim).
+ * Wrapped in a transaction so the audit trail and the UPDATE succeed or fail together.
  * Returns the number of rows updated.
  */
 export function clearStaleClaimedBy(claimedBy: string, db?: Database.Database): number {
   const conn = db ?? getDb()
   return withDataLayerError(
-    () => {
-      const result = conn
-        .prepare(`UPDATE sprint_tasks SET claimed_by = NULL WHERE claimed_by = ?`)
-        .run(claimedBy)
-      return result.changes
-    },
+    () =>
+      conn.transaction(() => {
+        const affected = conn
+          .prepare(`SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE claimed_by = ?`)
+          .all(claimedBy) as Array<Record<string, unknown>>
+
+        if (affected.length === 0) return 0
+
+        recordTaskChangesBulk(
+          affected.map((oldTask) => ({
+            taskId: oldTask.id as string,
+            oldTask,
+            newPatch: { claimed_by: null }
+          })),
+          'system:startup',
+          conn
+        )
+
+        const result = conn
+          .prepare(`UPDATE sprint_tasks SET claimed_by = NULL WHERE claimed_by = ?`)
+          .run(claimedBy)
+        return result.changes
+      })(),
     `clearStaleClaimedBy(claimedBy=${claimedBy})`,
     0,
     getSprintQueriesLogger()
