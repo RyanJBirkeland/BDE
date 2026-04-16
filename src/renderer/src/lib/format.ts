@@ -1,6 +1,6 @@
 // Pure formatting functions — may import from lib/ but not from stores, components, or IPC
 
-import { REPO_OPTIONS } from './constants'
+import type { RepoOption } from './constants'
 
 /**
  * Human-readable relative time: "just now", "3m ago", "2h ago", "5d ago".
@@ -120,11 +120,12 @@ export function repoBadgeVariant(repo: string): 'info' | 'warning' | 'success' |
 }
 
 /**
- * Repo dot color from REPO_OPTIONS. Case-insensitive lookup.
+ * Repo dot color. Case-insensitive lookup against provided repo options.
+ * Falls back to dim text color when no match found.
  */
-export function repoColor(repoName: string): string {
+export function repoColor(repoName: string, repos: RepoOption[]): string {
   return (
-    REPO_OPTIONS.find((r) => r.label.toLowerCase() === repoName.toLowerCase())?.color ??
+    repos.find((r) => r.label.toLowerCase() === repoName.toLowerCase())?.color ??
     'var(--bde-text-dim)'
   )
 }

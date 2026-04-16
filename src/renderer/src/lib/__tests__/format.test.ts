@@ -145,18 +145,26 @@ describe('repoBadgeVariant', () => {
 })
 
 describe('repoColor', () => {
-  it('returns the configured color for known repos', () => {
-    expect(repoColor('BDE')).toBe('#6C8EEF')
-    expect(repoColor('life-os')).toBe('#00D37F')
-    expect(repoColor('feast')).toBe('#FF8A00')
+  const mockRepos = [
+    { label: 'my-project', owner: 'acme', color: '#FF0000' },
+    { label: 'other-repo', owner: 'acme', color: '#00FF00' }
+  ]
+
+  it('returns the configured color for a known repo', () => {
+    expect(repoColor('my-project', mockRepos)).toBe('#FF0000')
+    expect(repoColor('other-repo', mockRepos)).toBe('#00FF00')
   })
 
   it('is case-insensitive', () => {
-    expect(repoColor('bde')).toBe('#6C8EEF')
+    expect(repoColor('MY-PROJECT', mockRepos)).toBe('#FF0000')
   })
 
   it('returns fallback for unknown repos', () => {
-    expect(repoColor('unknown')).toBe('var(--bde-text-dim)')
+    expect(repoColor('unknown', mockRepos)).toBe('var(--bde-text-dim)')
+  })
+
+  it('returns fallback when repo list is empty', () => {
+    expect(repoColor('my-project', [])).toBe('var(--bde-text-dim)')
   })
 })
 

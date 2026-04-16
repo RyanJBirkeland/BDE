@@ -15,7 +15,7 @@ import { FormField } from './FormField'
 import './WorkbenchForm.css'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { GlassPanel } from '../neon/GlassPanel'
-import { REPO_OPTIONS } from '../../lib/constants'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { toast } from '../../stores/toasts'
 
 const PRIORITY_OPTIONS = [
@@ -76,6 +76,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
     setField,
     resetForm
   } = form
+
+  const repoOptions = useRepoOptions()
 
   // Scoped to only the fields DependencyPicker needs; avoids re-render on unrelated task changes.
   const allTasks = useSprintTasks(useShallow((s) => s.tasks))
@@ -227,7 +229,8 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
             onChange={(e) => setField('repo', e.target.value)}
             className="wb-form__select"
           >
-            {REPO_OPTIONS.map((r) => (
+            <option value="" disabled>Select a repository...</option>
+            {repoOptions.map((r) => (
               <option key={r.label} value={r.label}>
                 {r.label}
               </option>

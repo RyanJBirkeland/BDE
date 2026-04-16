@@ -8,6 +8,7 @@ import { parsePrUrl } from '../../../../shared/github'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { useGitHubStatus } from '../../hooks/useGitHubStatus'
 import { useDrawerResize } from '../../hooks/useDrawerResize'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import type { SprintTask } from '../../../../shared/types'
 
 type ConflictDrawerProps = {
@@ -29,6 +30,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const fetchedRef = useRef<Set<string>>(new Set())
   const drawerRef = useRef<HTMLDivElement>(null)
+  const repoOptions = useRepoOptions()
   const { configured: ghConfigured } = useGitHubStatus()
   const {
     width,
@@ -220,7 +222,7 @@ export function ConflictDrawer({ open, tasks, onClose }: ConflictDrawerProps): R
                   >
                     <span
                       className="conflict-row__repo-dot"
-                      style={{ background: repoColor(task.repo) }}
+                      style={{ background: repoColor(task.repo, repoOptions) }}
                       title={task.repo}
                     />
                     <div className="conflict-row__info">

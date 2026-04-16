@@ -24,6 +24,9 @@ beforeEach(() => {
     },
     github: {
       isConfigured: vi.fn().mockResolvedValue(true)
+    },
+    settings: {
+      getJson: vi.fn().mockResolvedValue([])
     }
   } as any
 })

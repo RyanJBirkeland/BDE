@@ -18,3 +18,4 @@ Source: `src/renderer/src/lib/`
 | `services/dashboard.ts` | Dashboard/system/PR metrics IPC adapter — wraps `window.api.dashboard.*`, `window.api.system.*`, `window.api.pr.*` | `getCompletionsPerHour`, `getRecentEvents`, `getPrList`, `getDailySuccessRate`, `getLoadAverage` |
 | `services/cost.ts` | Cost history IPC adapter — wraps `window.api.cost.*` | `getAgentCostHistory` |
 | `utils.ts` | Shared renderer utilities. | `cwdToRepoLabel` |
+| `format.ts` | Pure formatting utilities for the renderer. `repoColor(repoName, repos)` accepts an explicit repo list (no global constant) for case-insensitive color lookup. Also exports `timeAgo`, `formatElapsed`, `formatDuration`, `formatDurationMs`, `modelBadgeLabel`, `repoBadgeVariant`, `formatDate`, `formatTime`. | `timeAgo`, `formatElapsed`, `formatDuration`, `formatDurationMs`, `modelBadgeLabel`, `repoBadgeVariant`, `repoColor`, `formatDate`, `formatTime` |

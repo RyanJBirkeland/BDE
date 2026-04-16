@@ -56,6 +56,13 @@ vi.mock('../../../hooks/useValidationChecks', () => ({
   useValidationChecks: vi.fn()
 }))
 
+vi.mock('../../../hooks/useRepoOptions', () => ({
+  useRepoOptions: () => [
+    { label: 'BDE', owner: 'RyanJBirkeland', color: '#6C8EEF' },
+    { label: 'life-os', owner: 'RyanJBirkeland', color: '#00D37F' }
+  ]
+}))
+
 const mockCreateTask = vi.fn().mockResolvedValue('new-task-id')
 vi.mock('../../../hooks/useSprintTaskActions', () => ({
   useSprintTaskActions: () => ({
@@ -135,6 +142,7 @@ describe('WorkbenchForm', () => {
   })
 
   it('updates store repo on select change', () => {
+    useTaskWorkbenchStore.setState({ repo: 'BDE' })
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
     const select = screen.getByDisplayValue('BDE')
     fireEvent.change(select, { target: { value: 'life-os' } })
