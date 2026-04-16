@@ -157,6 +157,11 @@ vi.mock('../../db', () => ({
   getDb: vi.fn(() => ({}))
 }))
 
+// Mock git (getRepoPaths used by sprint:create repo-existence check)
+vi.mock('../../git', () => ({
+  getRepoPaths: vi.fn(() => ({ BDE: '/Users/ryan/projects/BDE' }))
+}))
+
 // Mock agent-queries and agent-history (used by sprint:readLog)
 vi.mock('../../data/agent-queries', () => ({
   getAgentLogInfo: vi.fn(() => null)

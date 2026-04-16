@@ -119,6 +119,11 @@ vi.mock('fs/promises', () => ({
   readFile: vi.fn()
 }))
 
+// Mock git (getRepoPaths used by sprint:create repo-existence check)
+vi.mock('../../git', () => ({
+  getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' }))
+}))
+
 // Mock dependency-index (used lazily inside sprint:update and sprint:validateDependencies)
 vi.mock('../../services/dependency-service', async (importOriginal) => {
   const actual = await importOriginal()
@@ -168,6 +173,7 @@ import { broadcast } from '../../broadcast'
 import { getSettingJson } from '../../settings'
 import { getAgentLogInfo } from '../../data/agent-queries'
 import { readLog } from '../../agent-history'
+import { getRepoPaths as _getRepoPaths } from '../../git'
 
 const mockEvent = {} as IpcMainInvokeEvent
 
@@ -269,7 +275,7 @@ describe('sprint:create handler', () => {
 
   it('creates a task and fires mutation notification', async () => {
     const validSpec = `${'x'.repeat(60)}\n## Overview\nContext\n## Files to Change\n- src/foo.ts\n## Implementation Steps\n1. Do it\n## How to Test\nRun tests`
-    const input = { title: 'New task', repo: 'BDE', status: 'queued', spec: validSpec }
+    const input = { title: 'New task', repo: 'bde', status: 'queued', spec: validSpec }
     const created = { id: 'abc', ...input }
     vi.mocked(_createTask).mockReturnValue(created as any)
 
@@ -647,6 +653,33 @@ describe('sprint:create spec validation', () => {
     })
 
     expect(result.id).toBe('new-1')
+  })
+
+  it('rejects task creation when repo is not configured in Settings', async () => {
+    vi.mocked(_getRepoPaths).mockReturnValue({})
+
+    const handler = captureHandler('sprint:create')
+    await expect(
+      handler(mockEvent, { title: 'Fix bug', repo: 'bde', status: 'backlog' })
+    ).rejects.toThrow(/not configured/)
+
+    expect(_createTask).not.toHaveBeenCalled()
+  })
+
+  it('allows task creation when repo is configured', async () => {
+    vi.mocked(_getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
+    vi.mocked(_createTask).mockReturnValue({
+      id: 'new-2',
+      title: 'Fix bug',
+      repo: 'bde',
+      status: 'backlog'
+    } as any)
+
+    const handler = captureHandler('sprint:create')
+    const result = await handler(mockEvent, { title: 'Fix bug', repo: 'bde', status: 'backlog' })
+
+    expect(result.id).toBe('new-2')
+    expect(_createTask).toHaveBeenCalled()
   })
 })
 

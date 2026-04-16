@@ -3,6 +3,7 @@ import { isValidAgentId } from '../lib/validation'
 import { getDb } from '../db'
 import { readFile } from 'fs/promises'
 import { createLogger } from '../logger'
+import { getRepoPaths } from '../git'
 import type { DialogService } from '../dialog-service'
 import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import type { WorkflowTemplate } from '../../shared/workflow-types'
@@ -75,6 +76,13 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
       if (sectionErrors.length > 0) {
         throw new Error(`Spec quality checks failed: ${sectionErrors[0].message}`)
       }
+    }
+
+    const repoPaths = getRepoPaths()
+    if (!repoPaths[validation.task.repo]) {
+      throw new Error(
+        `Repo "${validation.task.repo}" is not configured. Add it in Settings > Repositories, then try again.`
+      )
     }
 
     // createTask (service) handles notifySprintMutation internally
