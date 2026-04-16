@@ -3,7 +3,7 @@
  */
 
 import { pipelinePersonality } from '../agent-system/personality/pipeline-personality'
-import { getAllMemory, isBdeRepo, selectUserMemory } from '../agent-system/memory'
+import { getAllMemory, selectUserMemory } from '../agent-system/memory'
 import {
   CODING_AGENT_PREAMBLE,
   PLAYGROUND_INSTRUCTIONS,
@@ -125,13 +125,6 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
   if (userMem.fileCount > 0) {
     prompt += '\n\n## User Knowledge\n'
     prompt += userMem.content
-  }
-
-  // Plugin disable note (only when BDE context is loaded)
-  if (isBdeRepo(repoName)) {
-    prompt += '\n\n## Note\n'
-    prompt += 'You have BDE-native skills and conventions loaded. '
-    prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
   }
 
   // Add branch appendix

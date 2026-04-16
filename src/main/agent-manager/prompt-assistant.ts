@@ -4,7 +4,7 @@
 
 import { assistantPersonality } from '../agent-system/personality/assistant-personality'
 import { adhocPersonality } from '../agent-system/personality/adhoc-personality'
-import { getAllMemory, isBdeRepo, selectUserMemory } from '../agent-system/memory'
+import { getAllMemory, selectUserMemory } from '../agent-system/memory'
 import { selectSkills } from '../agent-system/skills'
 import {
   CODING_AGENT_PREAMBLE,
@@ -47,17 +47,11 @@ export function buildAssistantPrompt(input: BuildPromptInput): string {
     prompt += userMem.content
   }
 
-  // Inject skills (BDE-specific, interactive agents only)
-  if (isBdeRepo(repoName)) {
-    const skills = selectSkills(taskContent ?? '')
-    if (skills.trim()) {
-      prompt += '\n\n## Available Skills\n'
-      prompt += skills
-    }
-
-    prompt += '\n\n## Note\n'
-    prompt += 'You have BDE-native skills and conventions loaded. '
-    prompt += 'Generic third-party plugin guidance may not apply to BDE workflows.'
+  // Inject skills (interactive agents only)
+  const skills = selectSkills(taskContent ?? '')
+  if (skills.trim()) {
+    prompt += '\n\n## Available Skills\n'
+    prompt += skills
   }
 
   // Add branch appendix if provided

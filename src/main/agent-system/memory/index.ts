@@ -1,58 +1,22 @@
-import { ipcConventions } from './ipc-conventions'
-import { testingPatterns } from './testing-patterns'
-import { architectureRules } from './architecture-rules'
-
 export { selectUserMemory } from './select-user-memory'
 
-/**
- * Returns true when the given repo name refers to the BDE repository.
- *
- * BDE-specific memory modules (IPC conventions, testing patterns, architecture
- * rules) only apply when the agent is working inside the BDE codebase. For
- * other repos, injecting them wastes tokens and can mislead the agent.
- *
- * Match is case-insensitive and accepts a few common forms ("bde",
- * "BDE", "ryan/bde", etc.). When `repoName` is null/undefined/empty we
- * default to `false` — unknown repo should not receive BDE-specific memory.
- */
-export function isBdeRepo(repoName?: string | null): boolean {
-  if (repoName == null) return false
-  const normalized = repoName.trim().toLowerCase()
-  if (!normalized) return false
-  // Match exact "bde" or any path segment ending in "/bde"
-  if (normalized === 'bde') return true
-  if (normalized.endsWith('/bde')) return true
-  return false
-}
-
 export interface GetAllMemoryOptions {
-  /** Target repo for the agent. When provided and not BDE, BDE-specific
-   * memory modules are skipped. */
+  /** Kept for call-site compatibility. No longer used — convention injection
+   * has been removed entirely (Option A debranding decision). */
   repoName?: string | null
 }
 
 /**
- * Consolidate all BDE convention modules into a single markdown string.
+ * Returns the shared memory/convention block for agents.
  *
- * Memory modules document patterns and conventions that BDE agents should
- * internalize: IPC handler patterns (safeHandle usage, registration), testing
- * standards, and architecture rules (process boundaries, Zustand patterns,
- * IPC surface minimalism).
+ * BDE-specific codebase conventions (IPC patterns, Zustand architecture,
+ * testing standards) were removed in the Option A debranding decision — those
+ * modules were tightly coupled to BDE internals and mislead agents working on
+ * other repos. The universal preamble in the prompt composer already covers
+ * generic guidance (commit format, test discipline, branch hygiene).
  *
- * For agents working in non-BDE repos, BDE-specific guidance is omitted —
- * those modules are tightly coupled to the BDE codebase and only mislead
- * agents working elsewhere.
- *
- * @param options - Optional scoping options
- * @returns Markdown string with applicable memory modules concatenated, or
- *   an empty string when no modules apply.
+ * @returns Empty string — no convention injection for any repo.
  */
-export function getAllMemory(options: GetAllMemoryOptions = {}): string {
-  if (!isBdeRepo(options.repoName)) {
-    // Non-BDE repo: skip all BDE-coupled modules. The universal preamble in
-    // the prompt composer already covers generic guidance (commit format,
-    // test discipline, branch hygiene), so there is nothing else to inject.
-    return ''
-  }
-  return [ipcConventions, testingPatterns, architectureRules].join('\n\n---\n\n')
+export function getAllMemory(_options: GetAllMemoryOptions = {}): string {
+  return ''
 }

@@ -28,13 +28,10 @@ describe('Agent System Integration', () => {
   })
 
   describe('Memory Module', () => {
-    it('exports getAllMemory function that returns conventions', () => {
-      const memory = getAllMemory({ repoName: 'bde' })
-      expect(memory).toContain('IPC Conventions')
-      expect(memory).toContain('Testing Patterns')
-      expect(memory).toContain('Architecture Rules')
-      expect(memory).toContain('safeHandle')
-      expect(memory.length).toBeGreaterThan(500)
+    it('exports getAllMemory function that returns empty string (Option A debranding)', () => {
+      expect(getAllMemory()).toBe('')
+      expect(getAllMemory({ repoName: 'bde' })).toBe('')
+      expect(getAllMemory({ repoName: 'life-os' })).toBe('')
     })
   })
 
@@ -58,7 +55,7 @@ describe('Agent System Integration', () => {
   })
 
   describe('Prompt Composer Integration', () => {
-    it('includes personality and memory for pipeline agent', () => {
+    it('includes personality for pipeline agent (no BDE Conventions — Option A debranding)', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Build feature X',
@@ -71,12 +68,12 @@ describe('Agent System Integration', () => {
       expect(prompt).toContain('## Your Role')
       expect(prompt).toContain('## Constraints')
       expect(prompt).toContain('NEVER push to, checkout, or merge into')
-      expect(prompt).toContain('## BDE Conventions')
-      expect(prompt).toContain('IPC Conventions')
+      expect(prompt).not.toContain('## BDE Conventions')
+      expect(prompt).not.toContain('IPC Conventions')
       expect(prompt).toContain('Build feature X')
     })
 
-    it('includes personality, memory, and skills for assistant agent', () => {
+    it('includes personality and skills for assistant agent (no BDE Conventions — Option A debranding)', () => {
       const prompt = buildAgentPrompt({
         agentType: 'assistant',
         taskContent: 'Help me understand X',
@@ -87,7 +84,7 @@ describe('Agent System Integration', () => {
       expect(prompt).toContain('conversational')
       expect(prompt).toContain('## Your Role')
       expect(prompt).toContain('BDE assistant')
-      expect(prompt).toContain('## BDE Conventions')
+      expect(prompt).not.toContain('## BDE Conventions')
       expect(prompt).toContain('## Available Skills')
       expect(prompt).toContain('System Introspection')
     })

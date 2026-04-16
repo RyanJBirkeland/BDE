@@ -700,66 +700,40 @@ describe('buildAgentPrompt', () => {
     })
   })
 
-  describe('repo-aware memory injection', () => {
-    it('injects BDE Conventions when repoName is bde', () => {
-      const prompt = buildAgentPrompt({
-        agentType: 'pipeline',
-        taskContent: 'Do something',
-        repoName: 'bde'
-      })
-      expect(prompt).toContain('## BDE Conventions')
+  // BDE-specific codebase convention injection was removed in the Option A
+  // debranding decision. getAllMemory() now returns '' unconditionally — no
+  // repo receives IPC conventions, testing patterns, or architecture rules.
+  describe('memory injection (Option A debranding — no convention injection)', () => {
+    it('never injects BDE Conventions header for any repo', () => {
+      for (const repoName of ['bde', 'BDE', 'life-os', undefined]) {
+        const prompt = buildAgentPrompt({
+          agentType: 'pipeline',
+          taskContent: 'Do something',
+          repoName
+        })
+        expect(prompt).not.toContain('## BDE Conventions')
+      }
     })
 
-    it('omits BDE Conventions when repoName is undefined (unknown repo)', () => {
-      const prompt = buildAgentPrompt({
-        agentType: 'pipeline',
-        taskContent: 'Do something'
-      })
-      expect(prompt).not.toContain('## BDE Conventions')
+    it('never injects IPC Conventions or safeHandle for any repo', () => {
+      for (const repoName of ['bde', 'life-os', undefined]) {
+        const prompt = buildAgentPrompt({
+          agentType: 'pipeline',
+          taskContent: 'Do something',
+          repoName
+        })
+        expect(prompt).not.toContain('## IPC Conventions')
+        expect(prompt).not.toContain('safeHandle')
+      }
     })
 
-    it('omits BDE Conventions for non-BDE repos', () => {
+    it('universal preamble is always present regardless of repo', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Do something',
         repoName: 'life-os'
       })
-      expect(prompt).not.toContain('## BDE Conventions')
-      // The universal preamble should still be present
       expect(prompt).toContain('You are a BDE')
-    })
-
-    // End-to-end integration check: assert that distinctive BDE memory
-    // module content (Zustand store rules, safeHandle IPC pattern) is
-    // actually absent from a non-BDE prompt and present in a BDE prompt.
-    // The unit test in memory.test.ts covers getAllMemory directly; this
-    // locks in the wiring through buildAgentPrompt so that a future change
-    // to memory injection cannot silently leak BDE guidance into life-os
-    // agents.
-    it('end-to-end: non-BDE repo (life-os) gets a slimmer prompt without BDE-specific memory phrases', () => {
-      const lifeOsPrompt = buildAgentPrompt({
-        agentType: 'pipeline',
-        taskContent: 'Do something',
-        repoName: 'life-os'
-      })
-      const bdePrompt = buildAgentPrompt({
-        agentType: 'pipeline',
-        taskContent: 'Do something',
-        repoName: 'bde'
-      })
-
-      // Distinctive BDE memory phrases that come from the BDE memory modules
-      expect(bdePrompt).toContain('Zustand')
-      expect(bdePrompt).toContain('safeHandle')
-      expect(bdePrompt).toContain('## IPC Conventions')
-
-      // None of those should leak into a non-BDE prompt
-      expect(lifeOsPrompt).not.toContain('Zustand')
-      expect(lifeOsPrompt).not.toContain('safeHandle')
-      expect(lifeOsPrompt).not.toContain('## IPC Conventions')
-
-      // And the life-os prompt should be measurably smaller than the BDE prompt
-      expect(lifeOsPrompt.length).toBeLessThan(bdePrompt.length)
     })
   })
 
