@@ -135,18 +135,23 @@ describe('Window handlers', () => {
     })
 
     describe('playground:openInBrowser', () => {
-      it('writes HTML to temp file and opens it', async () => {
+      it('sanitizes HTML before writing to temp file', async () => {
         vi.mocked(tmpdir).mockReturnValue('/tmp')
 
         const handlers = captureHandlers()
-        const html = '<h1>Test</h1>'
+        const dirtyHtml = '<h1 onclick="xss()">Test</h1><script>alert("xss")</script>'
 
-        const result = await handlers['playground:openInBrowser'](mockEvent, html)
+        const result = await handlers['playground:openInBrowser'](mockEvent, dirtyHtml)
 
         expect(writeFileSync).toHaveBeenCalledOnce()
         const writeCall = vi.mocked(writeFileSync).mock.calls[0]
         expect(writeCall[0]).toMatch(/^\/tmp\/bde-playground-[0-9a-f]+\.html$/)
-        expect(writeCall[1]).toBe(html)
+
+        // Verify sanitization: dirty HTML is cleaned before writing
+        const writtenHtml = writeCall[1] as string
+        expect(writtenHtml).toContain('<h1>')
+        expect(writtenHtml).not.toContain('onclick')
+        expect(writtenHtml).not.toContain('<script>')
         expect(writeCall[2]).toBe('utf-8')
 
         expect(shell.openPath).toHaveBeenCalledOnce()

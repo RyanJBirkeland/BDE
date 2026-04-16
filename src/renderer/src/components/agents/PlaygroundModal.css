@@ -1,25 +1,4 @@
 /* ── Playground Modal ──────────────────────────────────── */
-
-.playground-modal__overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bde-overlay);
-  z-index: 9999;
-}
-
-/* Simple CSS-based syntax highlighting for HTML source code */
-.playground-modal__source {
-  color: var(--bde-text-muted);
-}
-
-/* HTML tags */
-.playground-modal__source::before {
-  content: '';
-}
-
-/* Basic highlighting via regex-like patterns (limited, but no deps) */
-/* This is minimal - real highlighting would need a proper parser */
-/* ── Playground Modal ── */
 .playground-modal__overlay {
   position: fixed;
   inset: 0;
