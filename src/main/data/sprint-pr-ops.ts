@@ -172,11 +172,6 @@ export function updateTaskMergeableState(prNumber: number, mergeableState: strin
         const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE pr_number = ?`
         const affected = conn.prepare(sql).all(prNumber) as Array<Record<string, unknown>>
 
-        conn.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
-          mergeableState,
-          prNumber
-        )
-
         recordTaskChangesBulk(
           affected.map((oldTask) => ({
             taskId: oldTask.id as string,
@@ -185,6 +180,11 @@ export function updateTaskMergeableState(prNumber: number, mergeableState: strin
           })),
           'pr-poller',
           conn
+        )
+
+        conn.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
+          mergeableState,
+          prNumber
         )
       })()
     },
