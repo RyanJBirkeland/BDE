@@ -57,12 +57,6 @@ export default function PlannerView(): React.JSX.Element {
     return groups.find((g) => g.id === selectedGroupId) || null
   }, [groups, selectedGroupId])
 
-  // Close assistant drawer if epic is deselected
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!selectedGroup) setAssistantOpen(false)
-  }, [selectedGroup])
-
   // Handlers
   const handleCreateNew = (): void => {
     setShowCreateModal(true)
@@ -202,7 +196,7 @@ export default function PlannerView(): React.JSX.Element {
                 onOpenAssistant={() => setAssistantOpen(true)}
               />
             )}
-            {assistantOpen && (
+            {assistantOpen && selectedGroup && (
               <div className="planner-assistant-placeholder" />
             )}
             {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}
