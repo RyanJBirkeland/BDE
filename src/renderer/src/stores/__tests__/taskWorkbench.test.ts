@@ -12,7 +12,7 @@ describe('taskWorkbench store', () => {
     expect(s.mode).toBe('create')
     expect(s.taskId).toBeNull()
     expect(s.title).toBe('')
-    expect(s.repo).toBe('BDE')
+    expect(s.repo).toBe('')
     expect(s.priority).toBe(3)
     expect(s.spec).toBe('')
   })

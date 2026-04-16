@@ -166,7 +166,7 @@ function emptyDefaults(): DefaultsShape {
     mode: 'create',
     taskId: null,
     title: '',
-    repo: 'BDE',
+    repo: '',
     priority: 3,
     spec: '',
     taskTemplateName: '',
