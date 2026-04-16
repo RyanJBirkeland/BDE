@@ -55,6 +55,7 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
 vi.stubGlobal('api', {
   // Git client
   git: {
+    checkInstalled: vi.fn().mockResolvedValue(true),
     getRepoPaths: vi.fn().mockResolvedValue({
       bde: '/Users/test/Documents/Repositories/BDE',
       'life-os': '/Users/test/Documents/Repositories/life-os',

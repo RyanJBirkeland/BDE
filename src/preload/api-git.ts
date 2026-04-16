@@ -1,6 +1,9 @@
 import { typedInvoke } from './ipc-helpers'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 
+export const checkInstalled = (): Promise<IpcChannelMap['git:checkInstalled']['result']> =>
+  typedInvoke('git:checkInstalled')
+
 export const getRepoPaths = (): Promise<IpcChannelMap['git:getRepoPaths']['result']> =>
   typedInvoke('git:getRepoPaths')
 

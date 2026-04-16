@@ -9,6 +9,11 @@ vi.mock('../../ipc-utils', () => ({
   safeHandle: vi.fn()
 }))
 
+// Mock async-utils (used by git:checkInstalled)
+vi.mock('../../lib/async-utils', () => ({
+  execFileAsync: vi.fn()
+}))
+
 // Mock git module
 vi.mock('../../git', () => ({
   getRepoPaths: vi.fn(),
@@ -94,6 +99,7 @@ vi.mock('../../lib/review-paths', () => ({
 import { registerGitHandlers } from '../git-handlers'
 import { safeHandle } from '../../ipc-utils'
 import { getRepoPaths, gitStatus, gitDiffFile, gitCommit, gitFetch, gitPull } from '../../git'
+import { execFileAsync } from '../../lib/async-utils'
 import { getGitHubToken } from '../../config'
 import { githubFetch, parseNextLink } from '../../github-fetch'
 import { getLatestPrList, refreshPrList } from '../../pr-poller'
@@ -143,6 +149,7 @@ describe('registerGitHandlers', () => {
     expect(channels).toContain('pr:checkConflictFiles')
     expect(channels).toContain('pr:getList')
     expect(channels).toContain('pr:refreshList')
+    expect(channels).toContain('git:checkInstalled')
   })
 })
 
@@ -746,6 +753,31 @@ describe('git:checkout handler', () => {
     expect(() => {
       handler(mockEvent, '/Users/test/projects/BDE', '')
     }).toThrow(/Invalid git ref/)
+  })
+})
+
+describe('git:checkInstalled handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns true when git --version succeeds', async () => {
+    vi.mocked(execFileAsync).mockResolvedValue({ stdout: 'git version 2.40.0', stderr: '' } as any)
+
+    const handler = captureHandler('git:checkInstalled')
+    const result = await handler(mockEvent)
+
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['--version'])
+    expect(result).toBe(true)
+  })
+
+  it('returns false when git --version throws', async () => {
+    vi.mocked(execFileAsync).mockRejectedValue(new Error('command not found: git'))
+
+    const handler = captureHandler('git:checkInstalled')
+    const result = await handler(mockEvent)
+
+    expect(result).toBe(false)
   })
 })
 

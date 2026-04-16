@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { settings, claudeConfig } from './api-settings'
 import {
+  checkInstalled,
   getRepoPaths,
   gitStatus as status,
   gitDiff as diff,
@@ -99,6 +100,7 @@ const api = {
 
   // Git client
   git: {
+    checkInstalled,
     getRepoPaths,
     status,
     diff,

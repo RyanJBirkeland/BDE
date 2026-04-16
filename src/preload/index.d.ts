@@ -87,6 +87,7 @@ declare global {
 
       // Git client
       git: {
+        checkInstalled: () => Promise<IpcResult<'git:checkInstalled'>>
         getRepoPaths: () => Promise<IpcResult<'git:getRepoPaths'>>
         status: (...args: IpcArgs<'git:status'>) => Promise<IpcResult<'git:status'>>
         diff: (...args: IpcArgs<'git:diff'>) => Promise<IpcResult<'git:diff'>>

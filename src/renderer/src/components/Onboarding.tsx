@@ -136,10 +136,9 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
       })
     ])
 
-    // Git check — try to call getRepoPaths (requires git CLI)
-    const gitCheck = window.api.git.getRepoPaths().then(
-      () => 'pass' as CheckState,
-      () => 'fail' as CheckState
+    // Git check — verify git CLI is installed by running git --version
+    const gitCheck = window.api.git.checkInstalled().then(
+      (ok) => (ok ? 'pass' : 'fail') as CheckState
     )
 
     // Repos configured check — look for 'repos' setting

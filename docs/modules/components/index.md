@@ -16,4 +16,4 @@ Source: `src/renderer/src/components/`
 | `VirtualizedDiffBanner.tsx` | diff | Banner shown above large diffs in virtualized mode, with a "Load full diff" button to disable virtualization and enable commenting. | `VirtualizedDiffBanner` |
 | `GhStep.tsx` | onboarding | Onboarding step that checks gh CLI availability via `onboarding:checkGhCli` IPC. Shows loading/success/error states. Next button disabled until gh is confirmed available. | `GhStep` |
 | `AuthStep.tsx` | onboarding | Onboarding step that checks Claude Code CLI auth via `auth.status` IPC. Shows per-check status icons. Next button disabled while checking or when any prerequisite (cliFound, tokenFound, tokenExpired) is unmet. | `AuthStep` |
-| `GitStep.tsx` | onboarding | Onboarding step that checks git availability via `git.getRepoPaths` IPC. Shows check status icon. Next button disabled while checking or when git is unavailable. | `GitStep` |
+| `GitStep.tsx` | onboarding | Onboarding step that checks git availability via `git.checkInstalled` IPC (runs `git --version`). Shows check status icon. Next button disabled while checking or when git is unavailable. | `GitStep` |

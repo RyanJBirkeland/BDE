@@ -75,6 +75,10 @@ export interface GitChannels {
     args: [cwd: string, currentBranch: string]
     result: { success: boolean; error?: string; stdout?: string }
   }
+  'git:checkInstalled': {
+    args: []
+    result: boolean
+  }
 }
 
 /** Pull request operations */

@@ -30,6 +30,7 @@ import type { GitHubFetchInit } from '../../shared/ipc-channels'
 import { createLogger } from '../logger'
 import { getSettingJson } from '../settings'
 import { validateGitRef, validateFilePath } from '../lib/review-paths'
+import { execFileAsync } from '../lib/async-utils'
 
 const logger = createLogger('git-handlers')
 
@@ -208,6 +209,15 @@ export function registerGitHandlers(deps: GitHandlersDeps): void {
     const linkNext = parseNextLink(res.headers.get('Link'))
 
     return { ok: res.ok, status: res.status, body, linkNext }
+  })
+
+  safeHandle('git:checkInstalled', async () => {
+    try {
+      await execFileAsync('git', ['--version'])
+      return true
+    } catch {
+      return false
+    }
   })
 
   safeHandle('git:getRepoPaths', () => getRepoPaths())

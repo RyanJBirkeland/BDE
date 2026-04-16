@@ -5,7 +5,7 @@ Source: `src/main/handlers/`
 
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
-| `git-handlers.ts` | Git and GitHub IPC handlers — source control, PR polling, GitHub API proxy | `registerGitHandlers`, `GitHandlersDeps` |
+| `git-handlers.ts` | Git and GitHub IPC handlers — source control, PR polling, GitHub API proxy. Includes `git:checkInstalled` which runs `git --version` to verify the CLI is present (returns `true`/`false`). | `registerGitHandlers`, `GitHandlersDeps` |
 | `window-handlers.ts` | Window and playground IPC handlers — external URL gating, window title, open-in-browser for playground HTML | `registerWindowHandlers` |
 | `synthesizer-handlers.ts` | IPC handlers for AI spec generation and revision (`synthesizer:generate`, `synthesizer:revise`, `synthesizer:cancel`). Validates request payloads before delegating to `spec-synthesizer` service. | `registerSynthesizerHandlers` |
 | `agent-handlers.ts` | Agent lifecycle IPC handlers — spawn adhoc agents, steer/kill agents, list/read agent history, promote to code review | `registerAgentHandlers`, `PromoteToReviewResult` |
