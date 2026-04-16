@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import type { RepoOption } from '../lib/constants'
 
 interface RepoConfig {
@@ -23,7 +23,6 @@ function toRepoOptions(configs: RepoConfig[]): RepoOption[] {
  */
 export function useRepoOptions(): RepoOption[] {
   const [repos, setRepos] = useState<RepoOption[] | null>(null)
-  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     window.api.settings
@@ -35,17 +34,11 @@ export function useRepoOptions(): RepoOption[] {
         } else {
           setRepos([])
         }
-        setLoaded(true)
       })
       .catch(() => {
         setRepos([])
-        setLoaded(true)
       })
   }, [])
 
-  // Memoize to prevent reference instability causing unnecessary re-renders
-  return useMemo(() => {
-    if (!loaded || !repos) return []
-    return repos
-  }, [loaded, repos])
+  return repos ?? []
 }
