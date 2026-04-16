@@ -63,4 +63,5 @@ Defines voice, role frame, constraints, and communication patterns for each agen
 | `adhoc-personality.ts` | BDE Dev Agent — conversational coding partner with full tool access, working directly in the user's repository. Emphasizes execution, commits frequently, and suggests sprint pipeline tasks for autonomous work |
 | `copilot-personality.ts` | Text-only spec drafting helper — conversational, non-tool-using (no file access, no exploration) |
 | `synthesizer-personality.ts` | Structured spec generator from user intent — single-turn, receives code snippets + file tree, outputs markdown with heading sections |
+| `bde-advisor-personality.ts` | BDE Advisor — always-available floating agent. Concise and diagnostic; leads with real data. Full read access; does NOT make code changes without explicit request. Suggests Adhoc session for coding work. |
 | `types.ts` | `AgentPersonality` interface: `voice`, `roleFrame`, `constraints[]`, `patterns[]` |

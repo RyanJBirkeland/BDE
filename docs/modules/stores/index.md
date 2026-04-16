@@ -15,3 +15,4 @@ Source: `src/renderer/src/stores/`
 | `taskWorkbenchValidation.ts` | Validation check results for the Task Workbench (structural, semantic, operational). Extracted from `taskWorkbench.ts` for cohesion. | `useTaskWorkbenchValidation` |
 | `ideFileCache.ts` | File content and loading-state cache for the IDE editor. Extracted from `ide.ts` for cohesion. | `useIDEFileCache` |
 | `settingsNav.ts` | Settings navigation store — tracks active section for deep linking. 7 section IDs: `connections`, `repositories`, `agents`, `templates`, `memory`, `appearance`, `about`. | `useSettingsNavStore`, `SettingsSectionId` |
+| `floatingAgent.ts` | Floating BDE Advisor state — session ID, messages, token estimate, open/close. Persists to `bde:floating-agent` localStorage. Resets on 24h inactivity. Token trim drops oldest messages above 50k token estimate. | `useFloatingAgentStore`, `FloatingAgentMessage` |
