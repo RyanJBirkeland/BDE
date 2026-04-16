@@ -19,9 +19,15 @@ export function registerOnboardingHandlers(): void {
     try {
       const { stdout } = await execFileAsync('gh', ['--version'])
       const version = stdout.trim().split('\n')[0] ?? undefined
-      return { available: true, version }
+      // Check authentication separately — `gh` installed but not logged in causes silent PR failures
+      try {
+        await execFileAsync('gh', ['auth', 'status'])
+        return { available: true, authenticated: true, version }
+      } catch {
+        return { available: true, authenticated: false, version }
+      }
     } catch {
-      return { available: false }
+      return { available: false, authenticated: false }
     }
   })
 }

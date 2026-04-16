@@ -143,9 +143,22 @@ export function initializeDatabase(): void {
       }
     })
 
-  // Run backup on startup and every 24 hours
-  backupDatabase()
-  const backupInterval = setInterval(backupDatabase, BACKUP_INTERVAL_MS)
+  // Run backup on startup and every 24 hours.
+  // Backup failure (disk full, bad permissions) must not abort startup with a misleading
+  // "Database Migration Failed" dialog — it is non-fatal.
+  try {
+    backupDatabase()
+  } catch (err) {
+    logger.warn(`Startup backup failed (non-fatal): ${getErrorMessage(err)}`)
+  }
+  const safeBackup = (): void => {
+    try {
+      backupDatabase()
+    } catch (err) {
+      logger.warn(`Scheduled backup failed (non-fatal): ${getErrorMessage(err)}`)
+    }
+  }
+  const backupInterval = setInterval(safeBackup, BACKUP_INTERVAL_MS)
   app.on('will-quit', () => clearInterval(backupInterval))
 
   // One-time async import from Supabase (no-op if local table already has rows or credentials missing)

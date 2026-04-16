@@ -12,6 +12,7 @@ interface StepProps {
 
 export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Element {
   const [ghAvailable, setGhAvailable] = useState<boolean | null>(null)
+  const [ghAuthenticated, setGhAuthenticated] = useState<boolean | null>(null)
   const [ghVersion, setGhVersion] = useState<string | undefined>(undefined)
   const [checking, setChecking] = useState(true)
 
@@ -20,9 +21,11 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
     try {
       const result = await window.api.onboarding.checkGhCli()
       setGhAvailable(result.available)
+      setGhAuthenticated(result.authenticated)
       setGhVersion(result.version)
     } catch {
       setGhAvailable(false)
+      setGhAuthenticated(false)
     }
     setChecking(false)
   }
@@ -31,6 +34,8 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void checkGh()
   }, [])
+
+  const ready = ghAvailable && ghAuthenticated
 
   return (
     <div className="onboarding-step">
@@ -57,6 +62,19 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
             {ghAvailable && ghVersion ? `gh CLI is available (${ghVersion})` : 'gh CLI is available on PATH'}
           </span>
         </div>
+
+        {ghAvailable && (
+          <div className="onboarding-step__check">
+            {checking ? (
+              <div className="onboarding-step__check-icon">⏳</div>
+            ) : ghAuthenticated ? (
+              <Check size={20} className="onboarding-step__check-icon--success" />
+            ) : (
+              <X size={20} className="onboarding-step__check-icon--error" />
+            )}
+            <span>gh CLI authenticated</span>
+          </div>
+        )}
       </div>
 
       {!checking && !ghAvailable && (
@@ -66,6 +84,14 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
             <a href="https://cli.github.com" target="_blank" rel="noreferrer">
               Install from cli.github.com
             </a>
+          </p>
+        </div>
+      )}
+
+      {!checking && ghAvailable && !ghAuthenticated && (
+        <div className="onboarding-step__help">
+          <p>
+            Run <code>gh auth login</code> in your terminal to authenticate with GitHub.
           </p>
         </div>
       )}
@@ -83,7 +109,7 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
             Back
           </Button>
         )}
-        <Button variant="primary" onClick={onNext} disabled={checking || !ghAvailable}>
+        <Button variant="primary" onClick={onNext} disabled={checking || !ready}>
           Next
           <ArrowRight size={16} />
         </Button>

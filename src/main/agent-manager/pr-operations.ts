@@ -7,6 +7,7 @@
 import type { Logger } from '../logger'
 import { execFileAsync, sleep } from '../lib/async-utils'
 import { validateGitRef } from '../lib/review-paths'
+import { broadcast } from '../broadcast'
 
 const PR_CREATE_MAX_ATTEMPTS = 3
 const PR_CREATE_BACKOFF_MS = [3000, 8000]
@@ -186,9 +187,11 @@ export async function createNewPr(
     }
   }
 
-  logger.warn(
-    `[git-ops] PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}: ${lastError}`
-  )
+  const failureMsg =
+    `PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}. ` +
+    `Run \`gh auth status\` to verify GitHub CLI authentication. Check ~/.bde/bde.log for details.`
+  logger.warn(`[git-ops] ${failureMsg}: ${lastError}`)
+  broadcast('manager:warning', { message: failureMsg })
   return { prUrl: null, prNumber: null }
 }
 

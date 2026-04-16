@@ -19,7 +19,6 @@ type CheckState = 'loading' | 'pass' | 'fail' | 'warn'
 interface ExtendedCheckState {
   gitAvailable: CheckState
   reposConfigured: CheckState
-  supabaseConnected: CheckState
 }
 
 function getCheckState(
@@ -117,7 +116,6 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
   const [extended, setExtended] = useState<ExtendedCheckState>({
     gitAvailable: 'loading',
     reposConfigured: 'loading',
-    supabaseConnected: 'loading'
   })
 
   const runCheck = useCallback(async () => {
@@ -125,7 +123,6 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
     setExtended({
       gitAvailable: 'loading',
       reposConfigured: 'loading',
-      supabaseConnected: 'loading'
     })
 
     // Run auth check and extended checks concurrently
@@ -147,14 +144,8 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
       () => 'warn' as CheckState
     )
 
-    // Supabase connected check — try a quick sprint list
-    const supabaseCheck = window.api.sprint.list().then(
-      () => 'pass' as CheckState,
-      () => 'warn' as CheckState
-    )
-
-    const [git, repos, supabase] = await Promise.all([gitCheck, reposCheck, supabaseCheck])
-    setExtended({ gitAvailable: git, reposConfigured: repos, supabaseConnected: supabase })
+    const [git, repos] = await Promise.all([gitCheck, reposCheck])
+    setExtended({ gitAvailable: git, reposConfigured: repos })
 
     setChecking(false)
 
@@ -223,12 +214,6 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
             state={extended.reposConfigured}
             label="Repositories configured"
             helpText="Add repos in Settings to enable agent task dispatch"
-            optional
-          />
-          <CheckRow
-            state={extended.supabaseConnected}
-            label="Supabase connected"
-            helpText="Set supabase.url and supabase.serviceKey in Settings to enable Sprint tasks"
             optional
           />
         </div>

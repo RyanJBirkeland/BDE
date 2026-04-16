@@ -33,7 +33,6 @@ describe('Onboarding', () => {
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)
     expect(screen.getByText('Repositories configured')).toBeInTheDocument()
-    expect(screen.getByText('Supabase connected')).toBeInTheDocument()
   })
 
   it('auto-advances when all required checks pass', async () => {
@@ -120,15 +119,11 @@ describe('Onboarding', () => {
     ;(window.api.settings as unknown as Record<string, unknown>).get = vi.fn().mockRejectedValue(
       new Error('no repos')
     )
-    ;(window.api.sprint as unknown as Record<string, unknown>).list = vi.fn().mockRejectedValue(
-      new Error('no supabase')
-    )
 
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)
 
-    // All required pass — should auto-advance, so this case isn't "Continue Anyway"
-    // but if we set git to fail we can test the boundary
+    // All required checks pass — should auto-advance even when optional repos check fails
     await waitFor(() => {
       expect(onReady).toHaveBeenCalled()
     })

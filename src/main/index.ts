@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 import { homedir } from 'os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { ProxyAgent, setGlobalDispatcher } from 'undici'
 import {
   startDbWatcher,
   initializeDatabase,
@@ -32,6 +33,23 @@ import { setSettingsQueriesLogger } from './data/settings-queries'
 // CLIs (claude, gh, git, node) when launched from Finder/Spotlight. Must run
 // before any whenReady-time spawn (agent-manager, status-server, adhoc agents).
 ensureExtraPathsOnProcessEnv()
+
+// Configure global undici ProxyAgent so all main-process fetch() calls respect
+// corporate proxy settings. Node.js 22's built-in fetch (undici) does NOT read
+// HTTP_PROXY/HTTPS_PROXY automatically — this global dispatcher bridges the gap.
+// subprocess spawns inherit proxy vars via ENV_ALLOWLIST in env-utils.ts.
+const proxyUrl = process.env.HTTPS_PROXY ?? process.env.https_proxy ??
+  process.env.HTTP_PROXY ?? process.env.http_proxy
+if (proxyUrl) {
+  setGlobalDispatcher(new ProxyAgent(proxyUrl))
+}
+
+// Prevent two BDE instances from running simultaneously. A second launch focuses
+// the existing window instead of opening a new one, avoiding concurrent DB writes.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+  process.exit(0)
+}
 import { getSetting, getSettingJson } from './settings'
 import { createTaskTerminalService } from './services/task-terminal-service'
 import { createStatusServer } from './services/status-server'
@@ -144,6 +162,15 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 }
+
+app.on('second-instance', () => {
+  // A second BDE instance was launched — focus the existing window instead
+  const win = BrowserWindow.getAllWindows()[0]
+  if (win) {
+    if (win.isMinimized()) win.restore()
+    win.focus()
+  }
+})
 
 app.on('before-quit', () => {
   setQuitting()

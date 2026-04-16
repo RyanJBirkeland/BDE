@@ -78,6 +78,6 @@ export interface AuthChannels {
 export interface OnboardingChannels {
   'onboarding:checkGhCli': {
     args: []
-    result: { available: boolean; version?: string }
+    result: { available: boolean; authenticated: boolean; version?: string }
   }
 }

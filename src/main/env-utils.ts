@@ -25,7 +25,8 @@ const KEYCHAIN_FAILURE_WARNING_THRESHOLD = 3
 const KEYCHAIN_WARNING_MESSAGE =
   "Keychain access failing — run `claude login` to refresh your token"
 
-// Allowlist of environment variables that agents need
+// Allowlist of environment variables that agents need.
+// Proxy and auth vars are required for corporate network environments.
 const ENV_ALLOWLIST = [
   'PATH',
   'HOME',
@@ -42,7 +43,26 @@ const ENV_ALLOWLIST = [
   'GIT_COMMITTER_NAME',
   'GIT_COMMITTER_EMAIL',
   'NODE_PATH',
-  'VITEST_MAX_WORKERS'
+  'VITEST_MAX_WORKERS',
+  // Corporate proxy — without these every agent subprocess call is blind behind a proxy
+  'HTTP_PROXY',
+  'HTTPS_PROXY',
+  'NO_PROXY',
+  'http_proxy',
+  'https_proxy',
+  'no_proxy',
+  'ALL_PROXY',
+  'all_proxy',
+  // SSH agent — required for git push/fetch via SSH-authenticated GitHub remotes
+  'SSH_AUTH_SOCK',
+  'SSH_AGENT_PID',
+  // GitHub auth — required for gh CLI subprocesses (pr create, pr list, etc.)
+  'GH_TOKEN',
+  'GITHUB_TOKEN',
+  // Corporate CA certificates — required when network uses SSL inspection (MITM proxy)
+  'NODE_EXTRA_CA_CERTS',
+  'GIT_SSL_CAINFO',
+  'SSL_CERT_FILE',
 ]
 
 /**
@@ -243,7 +263,7 @@ async function postOAuthRefresh(refreshToken: string): Promise<RefreshResponse> 
  */
 async function writeKeychainCreds(account: string, creds: ClaudeCreds): Promise<void> {
   await execFilePromise(
-    'security',
+    '/usr/bin/security',
     [
       'add-generic-password',
       '-U',
@@ -280,7 +300,7 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
   let creds: ClaudeCreds
   try {
     const { stdout: credJson } = await execFilePromise(
-      'security',
+      '/usr/bin/security',
       ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-w'],
       { timeout: 10_000, env: buildAgentEnv() }
     )

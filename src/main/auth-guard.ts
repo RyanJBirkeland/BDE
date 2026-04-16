@@ -1,7 +1,7 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { homedir } from 'node:os'
 
 function execFileAsync(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -35,7 +35,8 @@ export interface CredentialStore {
   detectCli(): boolean
 }
 
-const CLI_SEARCH_PATHS = ['/usr/local/bin', '/opt/homebrew/bin', join(homedir(), '.local', 'bin')]
+// Fallback paths used only when `which` is unavailable — kept for robustness
+const CLI_FALLBACK_PATHS = ['/usr/local/bin', '/opt/homebrew/bin', join(homedir(), '.local', 'bin')]
 
 // DL-22: Rate limiting for keychain reads to prevent abuse
 const KEYCHAIN_RATE_LIMIT_MS = 1000 // 1 second between reads
@@ -53,7 +54,7 @@ export class MacOSCredentialStore implements CredentialStore {
     lastKeychainRead = now
 
     try {
-      const { stdout } = await execFileAsync('security', [
+      const { stdout } = await execFileAsync('/usr/bin/security', [
         'find-generic-password',
         '-s',
         'Claude Code-credentials',
@@ -68,7 +69,12 @@ export class MacOSCredentialStore implements CredentialStore {
   }
 
   detectCli(): boolean {
-    return CLI_SEARCH_PATHS.some((dir) => existsSync(join(dir, 'claude')))
+    // Try `which claude` first — handles nvm, npm-global, mise, asdf, and any other install location.
+    // Using /usr/bin/which directly to avoid PATH shadowing and because this runs synchronously.
+    const result = spawnSync('/usr/bin/which', ['claude'], { encoding: 'utf8' })
+    if (result.status === 0 && result.stdout.trim()) return true
+    // Fallback: check common paths directly in case `which` itself is unavailable
+    return CLI_FALLBACK_PATHS.some((dir) => existsSync(join(dir, 'claude')))
   }
 }
 

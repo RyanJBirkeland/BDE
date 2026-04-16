@@ -324,6 +324,6 @@ vi.stubGlobal('api', {
 
   // Onboarding prerequisite checks
   onboarding: {
-    checkGhCli: vi.fn().mockResolvedValue({ available: true, version: '2.40.0' })
+    checkGhCli: vi.fn().mockResolvedValue({ available: true, authenticated: true, version: '2.40.0' })
   }
 })
