@@ -112,7 +112,7 @@
   /* Grid: row 1 = checkbox + title block, row 2 = action button (full width).
      A flex-row layout squeezed the title to ~30px in the 200px sidebar. */
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas:
     'checkbox select'
     'action   action';
@@ -229,6 +229,9 @@
 .failed-card__title {
   font-size: var(--font-xs, 11px);
   color: var(--bde-danger);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .failed-card__meta {
