@@ -56,6 +56,11 @@
   border-color: var(--bde-text-muted);
 }
 
+.planner-epic-list__import-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .planner-epic-list__search {
   position: relative;
   padding: var(--bde-space-2) var(--bde-space-3);
@@ -97,6 +102,11 @@
   transform: scale(0.97);
 }
 
+.planner-epic-list__new-button:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 /* Epic Item — uses .bde-card base */
 .planner-epic-item {
   width: 100%;
@@ -111,6 +121,11 @@
 .planner-epic-item--selected {
   background: var(--bde-surface-high);
   border-color: var(--bde-accent);
+}
+
+.planner-epic-item:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .planner-epic-item__accent {
@@ -208,6 +223,11 @@
 
 .planner-epic-list__section-toggle:hover {
   color: var(--bde-text);
+}
+
+.planner-epic-list__section-toggle:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .planner-epic-list__section-chevron {
