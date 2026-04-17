@@ -45,7 +45,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
       <div
         style={{
           position: 'relative',
-          fontFamily: 'ui-monospace, Menlo, monospace',
+          fontFamily: 'var(--bde-font-code)',
           fontSize: 10,
           color: '#94a3b8',
           height,
@@ -136,7 +136,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
     <div
       style={{
         position: 'relative',
-        fontFamily: 'ui-monospace, Menlo, monospace',
+        fontFamily: 'var(--bde-font-code)',
         fontSize: 10,
         color: '#94a3b8'
       }}
