@@ -254,35 +254,17 @@ export function ConnectionsSection(): React.JSX.Element {
           testing={ghTesting}
           testResult={ghTestResult}
         />
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 'var(--bde-space-2)',
-            marginTop: 'var(--bde-space-3)',
-            padding: 'var(--bde-space-2)',
-            borderRadius: '4px',
-            background: 'var(--bde-surface, rgba(0,0,0,0.04))',
-            cursor: 'pointer'
-          }}
-        >
+        <label className="settings-readonly-toggle">
           <input
             type="checkbox"
+            className="settings-readonly-toggle__input"
             checked={githubOptedOut}
             onChange={(e) => handleToggleOptedOut(e.target.checked)}
-            style={{ marginTop: '3px' }}
             aria-describedby="github-opt-out-description"
           />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 500 }}>Read-only mode (skip GitHub)</div>
-            <div
-              id="github-opt-out-description"
-              style={{
-                fontSize: 'var(--bde-size-xs)',
-                color: 'var(--bde-text-muted)',
-                marginTop: '2px'
-              }}
-            >
+          <div className="settings-readonly-toggle__body">
+            <div className="settings-readonly-toggle__title">Read-only mode (skip GitHub)</div>
+            <div id="github-opt-out-description" className="settings-readonly-toggle__desc">
               When enabled, BDE will not invoke <code>gh</code> for PR creation or status checks.
               A banner appears in Task Workbench and Code Review reminding you PR actions are
               disabled. Pipeline agents attempting PR actions will fail loudly with guidance.

@@ -114,3 +114,35 @@
 .settings-field__refresh-icon {
   margin-right: var(--bde-space-1);
 }
+
+
+/* ── Read-only toggle (T-88) ── */
+
+.settings-readonly-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bde-space-2);
+  margin-top: var(--bde-space-3);
+  padding: var(--bde-space-2);
+  border-radius: var(--bde-radius-md);
+  background: var(--bde-surface);
+  cursor: pointer;
+}
+
+.settings-readonly-toggle__input {
+  margin-top: 3px;
+}
+
+.settings-readonly-toggle__body {
+  flex: 1;
+}
+
+.settings-readonly-toggle__title {
+  font-weight: 500;
+}
+
+.settings-readonly-toggle__desc {
+  font-size: var(--bde-size-xs);
+  color: var(--bde-text-muted);
+  margin-top: 2px;
+}
