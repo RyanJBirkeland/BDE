@@ -86,7 +86,7 @@
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-lg);
   box-shadow: var(--bde-shadow-lg);
-  z-index: 1000;
+  z-index: var(--z-dropdown);
 }
 
 .cr-topbar__freshness {

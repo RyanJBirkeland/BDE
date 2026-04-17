@@ -35,7 +35,7 @@
   max-height: 480px;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: var(--z-dropdown);
   border-radius: var(--bde-radius-lg);
   border: 1px solid var(--bde-border);
   overflow: hidden;

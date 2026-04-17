@@ -121,7 +121,7 @@
   margin-top: var(--bde-space-1);
   border-radius: var(--bde-radius-sm);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: var(--z-dropdown);
   min-width: 80px;
 }
 

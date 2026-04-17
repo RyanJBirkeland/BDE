@@ -453,7 +453,7 @@
   padding: var(--bde-space-3);
   min-width: 240px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  z-index: var(--z-dropdown);
 }
 
 .assign-epic-popover__header {
@@ -1082,7 +1082,7 @@
   right: 0;
   bottom: 0;
   background: var(--bde-bg);
-  z-index: 1000;
+  z-index: var(--z-dropdown);
   display: flex;
   flex-direction: column;
   font-family: var(--bde-font-code);
