@@ -11,7 +11,7 @@
   color: var(--bde-status-active);
   font-family: var(--bde-font-code);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   flex-shrink: 0;
 }
 
@@ -21,7 +21,7 @@
   border: none;
   color: var(--bde-text);
   font-family: var(--bde-font-code);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   outline: none;
 }
 
@@ -50,7 +50,7 @@
 .command-bar__attachment-name {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-family: var(--bde-font-code);
   color: var(--bde-text-muted);
   overflow: hidden;
@@ -80,7 +80,7 @@
   border-radius: var(--bde-radius-md);
   cursor: pointer;
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-family: var(--bde-font-code);
   transition:
     background 100ms ease,
@@ -99,6 +99,6 @@
 }
 
 .command-autocomplete__item-description {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
 }

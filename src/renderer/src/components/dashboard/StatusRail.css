@@ -25,19 +25,19 @@
 }
 
 .dashboard-ring__rate {
-  font-size: 20px;
+  font-size: var(--bde-size-xxl);
   font-weight: 700;
 }
 
 .dashboard-ring__breakdown {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   opacity: 0.85;
 }
 
 .dashboard-ring-empty {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
 }
 
 /* Attention Card */
@@ -50,7 +50,7 @@
   background: none;
   border: none;
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   cursor: pointer;
   transition: background 0.15s ease;
   width: 100%;
@@ -78,7 +78,7 @@
   background: var(--bde-accent-surface);
   border: 1px solid var(--bde-accent-border);
   color: var(--bde-accent);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -101,7 +101,7 @@
 
 /* Spec Type Success Rate */
 .spec-rate__title {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 600;
   color: var(--bde-text-muted);
   text-transform: uppercase;
@@ -111,7 +111,7 @@
 
 .spec-rate__empty {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
 }
 
 .spec-rate__list {
@@ -133,14 +133,14 @@
 }
 
 .spec-rate__label {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 500;
   color: var(--bde-text);
   text-transform: capitalize;
 }
 
 .spec-rate__value {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
 }
 

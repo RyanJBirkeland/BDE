@@ -18,11 +18,11 @@
 }
 
 .pipeline-empty-state__title {
-  font-size: 18px;
+  font-size: var(--bde-size-xxl);
 }
 
 .pipeline-empty-state__hint {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   opacity: 0.7;
 }
 

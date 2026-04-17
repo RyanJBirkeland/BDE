@@ -32,7 +32,7 @@
 }
 
 .task-drawer__title {
-  font-size: 16px;
+  font-size: var(--bde-size-xl);
   font-weight: 700;
   color: var(--bde-text);
   margin-bottom: 10px;
@@ -63,7 +63,7 @@
   background: none;
   border: none;
   color: var(--bde-text-dim);
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   cursor: pointer;
   padding: var(--bde-space-2);
   min-width: 28px;
@@ -105,7 +105,7 @@
 
 .task-drawer__value {
   display: block;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-text-muted);
   line-height: 1.5;
 }
@@ -434,7 +434,7 @@
 }
 
 .task-drawer__failure-label {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -442,27 +442,27 @@
 }
 
 .task-drawer__failure-reason {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-family: var(--bde-font-code);
 }
 
 .task-drawer__failure-notes {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   white-space: pre-wrap;
   word-break: break-word;
   font-family: var(--bde-font-code);
 }
 
 .task-drawer__failure-reason {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   opacity: 0.8;
   margin-bottom: 6px;
   font-family: var(--bde-font-code);
 }
 
 .task-drawer__failure-notes-label {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: var(--bde-space-1);
@@ -470,11 +470,11 @@
 
 .task-drawer__failure-errors {
   margin-top: var(--bde-space-2);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
 }
 
 .task-drawer__failure-errors-label {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   text-transform: uppercase;
   opacity: 0.6;
   margin-bottom: var(--bde-space-1);
@@ -487,6 +487,6 @@
 }
 
 .task-drawer__status-text {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   opacity: 0.6;
 }

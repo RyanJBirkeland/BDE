@@ -2,7 +2,7 @@
 
 .cr-changes__snapshot-banner {
   grid-column: 1 / -1;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   padding: 6px 10px;
   background: var(--bde-surface-raised, rgba(255, 255, 255, 0.04));
   border-bottom: 1px solid var(--bde-border, rgba(255, 255, 255, 0.08));
@@ -29,7 +29,7 @@
   margin: 0;
   padding: var(--bde-space-3);
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-muted);
   white-space: pre-wrap;
   word-break: break-word;

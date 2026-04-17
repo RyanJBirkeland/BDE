@@ -19,7 +19,7 @@
 }
 
 .planner-header__title {
-  font-size: 18px;
+  font-size: var(--bde-size-xxl);
   font-weight: 600;
   color: var(--bde-accent);
   margin: 0;
@@ -47,7 +47,7 @@
   border: 1px solid var(--bde-border);
   border-radius: 6px;
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-family: var(--bde-font-code);
   outline: none;
   transition:
@@ -86,7 +86,7 @@
 }
 
 .planner-empty__text {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   color: var(--bde-text-dim);
   margin: 0;
 }

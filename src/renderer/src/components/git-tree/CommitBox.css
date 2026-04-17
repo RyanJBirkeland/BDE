@@ -31,7 +31,7 @@
 }
 
 .git-commit-box__char-count {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-dim);
   text-align: right;
   margin-top: -4px;

@@ -60,7 +60,7 @@
 }
 .ide-editor-tab__dirty {
   color: var(--bde-accent);
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   flex-shrink: 0;
 }
 .ide-editor-tab__close {

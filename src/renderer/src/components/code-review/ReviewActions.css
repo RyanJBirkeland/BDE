@@ -12,7 +12,7 @@
 
 .cr-actions__hint {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
 }
 
 .cr-actions__primary,
@@ -34,7 +34,7 @@
   gap: 6px;
   padding: 6px var(--bde-space-3);
   border-radius: var(--bde-radius-md);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-family: var(--bde-font-code);
   font-weight: 600;
   cursor: pointer;
@@ -86,7 +86,7 @@
   border-left: none;
   border-radius: 0 var(--bde-radius-md) var(--bde-radius-md) 0;
   color: var(--bde-text-muted);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-family: var(--bde-font-code);
   cursor: pointer;
 }
@@ -151,7 +151,7 @@
 }
 
 .cr-actions__freshness {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 600;
   padding: 2px var(--bde-space-2);
   border-radius: var(--bde-radius-sm);

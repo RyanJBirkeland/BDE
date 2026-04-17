@@ -8,7 +8,7 @@
 
 .wb-deps__help {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted, rgba(255, 255, 255, 0.55));
   line-height: 1.4;
 }
@@ -23,7 +23,7 @@
   background: none;
   border: none;
   color: var(--bde-accent);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
   text-align: center;
   cursor: pointer;
@@ -61,7 +61,7 @@
 
 .wb-deps__title {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text);
   white-space: nowrap;
   overflow: hidden;
@@ -73,7 +73,7 @@
   flex-shrink: 0;
   padding: 1px 6px;
   border-radius: var(--bde-radius-sm);
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -114,7 +114,7 @@
   border: none;
   color: var(--bde-text-muted);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   line-height: 1;
   padding: 1px 3px;
   border-radius: var(--bde-radius-sm);
@@ -139,7 +139,7 @@
   border: 1px dashed var(--bde-accent-border);
   border-radius: var(--bde-radius-md);
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   cursor: pointer;
   padding: var(--bde-space-1) 10px;
   font-family: inherit;
@@ -174,7 +174,7 @@
   border: none;
   border-bottom: 1px solid var(--bde-accent-border);
   color: var(--bde-text);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-family: inherit;
   outline: none;
 }
@@ -204,7 +204,7 @@
   background: none;
   border: none;
   color: var(--bde-text);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-family: inherit;
   cursor: pointer;
   text-align: left;
@@ -230,7 +230,7 @@
 
 .wb-deps__result-status {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -238,7 +238,7 @@
 
 .wb-deps__empty {
   padding: var(--bde-space-2) 10px;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-muted);
   font-style: italic;
 }

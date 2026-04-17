@@ -21,7 +21,7 @@
 
 .dashboard-completions-empty {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
 }
 
 .dashboard-completion-row {
@@ -44,7 +44,7 @@
 
 .dashboard-completion-title {
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -60,14 +60,14 @@
 
 .dashboard-completion-cost {
   color: var(--bde-warning);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .dashboard-completion-time {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   white-space: nowrap;
   opacity: 0.85;
 }
@@ -75,7 +75,7 @@
 /* Failure Breakdown */
 .dashboard-failure-breakdown-empty {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   opacity: 0.6;
   text-align: center;
   padding: var(--bde-space-2);
@@ -103,7 +103,7 @@
 
 .dashboard-failure-breakdown-reason {
   color: var(--bde-text);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -112,7 +112,7 @@
 
 .dashboard-failure-breakdown-count {
   color: var(--bde-danger);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
@@ -120,7 +120,7 @@
 
 .dashboard-card-loading {
   color: var(--bde-text-dim);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   opacity: 0.6;
   text-align: center;
   padding: var(--bde-space-2);

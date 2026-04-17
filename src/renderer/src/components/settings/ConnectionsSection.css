@@ -7,7 +7,7 @@
 }
 
 .settings-connection__label {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;

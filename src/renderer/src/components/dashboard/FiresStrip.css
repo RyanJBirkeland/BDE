@@ -8,7 +8,7 @@
   border: 1px solid var(--bde-danger-border);
   border-radius: var(--bde-radius-md);
   font-family: ui-monospace, Menlo, monospace;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-danger-text);
 }
 

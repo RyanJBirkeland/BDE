@@ -74,7 +74,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 600;
   color: var(--bde-status-active);
 }
@@ -93,7 +93,7 @@
 }
 
 .onboarding-wizard__step-title {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
   text-align: center;
 }
@@ -146,7 +146,7 @@
 }
 
 .onboarding-step__description {
-  font-size: 16px;
+  font-size: var(--bde-size-xl);
   color: var(--bde-text-dim);
   text-align: center;
   line-height: 1.6;
@@ -170,13 +170,13 @@
 }
 
 .onboarding-step__feature strong {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 600;
   color: var(--bde-accent);
 }
 
 .onboarding-step__feature span {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-text-dim);
 }
 
@@ -195,7 +195,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   color: var(--bde-text);
 }
 
@@ -233,13 +233,13 @@
   border: 1px solid var(--bde-warning-border);
   border-radius: 4px;
   font-family: 'Monaco', 'Courier New', monospace;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-warning);
 }
 
 .onboarding-step__help p {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-text-dim);
 }
 

@@ -9,7 +9,7 @@
 .wb-actions__btn {
   border-radius: var(--bde-radius-md);
   padding: var(--bde-space-2) var(--bde-space-4);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-family: inherit;
   transition:
     background 150ms ease,
@@ -111,7 +111,7 @@
 }
 
 .wb-actions__hint {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
   white-space: nowrap;
 }

@@ -27,7 +27,7 @@
 }
 
 .spec-panel__title {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 700;
   color: var(--bde-text);
 }
@@ -38,7 +38,7 @@
   color: var(--bde-text-dim);
   cursor: pointer;
   padding: var(--bde-space-1);
-  font-size: 18px;
+  font-size: var(--bde-size-xxl);
 }
 
 .spec-panel__body {
@@ -123,7 +123,7 @@
   background: none;
   border: none;
   color: var(--bde-text-dim);
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   cursor: pointer;
   padding: var(--bde-space-1);
   border-radius: var(--bde-radius-sm);
@@ -140,7 +140,7 @@
 }
 
 .done-history__title {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 700;
   color: var(--bde-status-done);
 }
@@ -218,7 +218,7 @@
 }
 
 .pipeline-error-boundary__title {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   color: var(--bde-danger);
 }
 
@@ -550,7 +550,7 @@
 }
 
 .conflict-drawer__title {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 600;
   color: var(--bde-text);
 }
@@ -564,7 +564,7 @@
 .conflict-drawer__empty {
   padding: var(--bde-space-8) var(--bde-space-4);
   color: var(--bde-text-muted);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   text-align: center;
 }
 
@@ -623,7 +623,7 @@
 }
 
 .conflict-row__title {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -748,7 +748,7 @@
 }
 
 .health-drawer__title {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 600;
   color: var(--bde-text);
 }
@@ -762,7 +762,7 @@
 .health-drawer__empty {
   padding: var(--bde-space-8) var(--bde-space-4);
   color: var(--bde-text-muted);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   text-align: center;
 }
 
@@ -798,7 +798,7 @@
 }
 
 .health-row__title {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1102,7 +1102,7 @@
 .dag-overlay__title {
   color: var(--bde-accent);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   margin: 0;
   flex: 1;
 }
@@ -1111,7 +1111,7 @@
   display: flex;
   align-items: center;
   gap: var(--bde-space-4);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
 }
 
@@ -1181,7 +1181,7 @@
   justify-content: center;
   height: 100%;
   color: var(--bde-text-dim);
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
 }
 
 .dag-overlay__node {

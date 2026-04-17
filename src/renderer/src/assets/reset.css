@@ -18,7 +18,7 @@ body {
   color: var(--bde-text);
   background: var(--bde-bg);
   font-family: var(--bde-font-ui);
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

@@ -74,7 +74,7 @@
 
 .unified-header__logo-letter {
   color: var(--bde-status-active);
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 800;
   letter-spacing: 1px;
 }
@@ -111,7 +111,7 @@
   align-items: center;
   padding: 0 12px;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
   cursor: pointer;
   -webkit-app-region: no-drag;
@@ -186,7 +186,7 @@
   padding: 8px 12px;
   cursor: pointer;
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   transition:
     background 100ms ease,
     color 100ms ease;
@@ -205,7 +205,7 @@
 .overflow-menu__item-pin {
   margin-left: auto;
   color: var(--bde-status-active);
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   opacity: 0;
   transition: opacity 100ms ease;
   background: none;
@@ -222,7 +222,7 @@
 
 .overflow-menu__empty {
   padding: 12px;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
   text-align: center;
 }
@@ -239,7 +239,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-style: italic;
   display: flex;
   align-items: center;
@@ -265,7 +265,7 @@
   display: flex;
   align-items: center;
   padding: 0 10px;
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-dim);
   background: var(--bde-surface-high);
   border: none;
@@ -290,7 +290,7 @@
 
 .panel-label-dirty-dot {
   color: var(--bde-status-active);
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   line-height: 1;
 }
 
@@ -395,7 +395,7 @@
   border: none;
   outline: none;
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-family: var(--bde-font-code);
 }
 .quick-create-bar__input::placeholder {
@@ -410,7 +410,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-dim);
 }
 .quick-create-bar__hint kbd {
@@ -418,7 +418,7 @@
   border-radius: var(--bde-radius-sm);
   background: var(--bde-surface-high);
   border: 1px solid var(--bde-border);
-  font-size: 9px;
+  font-size: var(--bde-size-2xs);
 }
 .quick-create-bar__hint--queue {
   color: var(--bde-warning);

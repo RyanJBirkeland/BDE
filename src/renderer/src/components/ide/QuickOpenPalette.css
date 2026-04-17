@@ -41,7 +41,7 @@
   padding: var(--bde-space-2) var(--bde-space-3);
   color: var(--bde-text);
   font-family: var(--bde-font-mono, monospace);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   outline: none;
 }
 
@@ -85,7 +85,7 @@
   padding: var(--bde-space-2) var(--bde-space-3);
   cursor: pointer;
   font-family: var(--bde-font-mono, monospace);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
   border-radius: var(--bde-radius-sm);
   transition: background 0.1s ease;
@@ -111,5 +111,5 @@
   padding: var(--bde-space-8);
   text-align: center;
   color: var(--bde-text-muted);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
 }

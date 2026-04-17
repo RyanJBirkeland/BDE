@@ -57,13 +57,13 @@
 }
 .diff-comment-widget__body code {
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   background: var(--bde-surface);
   padding: 1px 3px;
   border-radius: var(--bde-radius-sm);
 }
 .diff-comment-widget__pending-badge {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   font-weight: 600;
   color: var(--bde-warning);
   background: color-mix(in srgb, var(--bde-warning) 15%, transparent);

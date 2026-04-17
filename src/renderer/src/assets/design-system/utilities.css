@@ -259,7 +259,7 @@
 
 .logotype {
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
   background: var(--gradient-aurora);
@@ -271,7 +271,7 @@
 .logotype-glow {
   position: absolute;
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
   color: var(--bde-accent);

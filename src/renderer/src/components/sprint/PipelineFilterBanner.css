@@ -8,7 +8,7 @@
   background: var(--bde-warning-surface, rgba(255, 184, 0, 0.08));
   border: 1px solid var(--bde-accent-border, rgba(0, 255, 170, 0.2));
   border-radius: var(--bde-radius-sm);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-primary, #e0e0e0);
 }
 
@@ -38,7 +38,7 @@
   background: var(--bde-surface-elevated, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--bde-accent-border, rgba(0, 255, 170, 0.2));
   border-radius: var(--bde-radius-sm);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-family: var(--font-mono, 'Courier New', monospace);
   color: var(--bde-accent-text);
   white-space: nowrap;
@@ -52,7 +52,7 @@
   background: transparent;
   border: 1px solid var(--bde-accent-border, rgba(0, 255, 170, 0.3));
   border-radius: var(--bde-radius-sm);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 500;
   color: var(--bde-accent-text);
   cursor: pointer;

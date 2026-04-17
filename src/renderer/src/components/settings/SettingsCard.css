@@ -52,13 +52,13 @@
 }
 
 .stg-card__title {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 600;
   color: var(--bde-text);
 }
 
 .stg-card__subtitle {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   margin-top: 2px;
 }
@@ -88,7 +88,7 @@
 }
 
 .stg-field__label {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   text-transform: uppercase;
   color: var(--bde-text-muted);
   letter-spacing: var(--tracking-wide);

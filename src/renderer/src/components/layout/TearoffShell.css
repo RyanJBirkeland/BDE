@@ -20,7 +20,7 @@
 
 .tearoff-shell__title {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
   color: var(--bde-text-muted);
   text-transform: uppercase;
@@ -81,7 +81,7 @@
   min-width: 300px;
   text-align: center;
   color: var(--bde-text);
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
 }
 
 .tearoff-shell__dialog-remember {
@@ -90,7 +90,7 @@
   justify-content: center;
   gap: 6px;
   margin: 12px 0;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
 }
 
@@ -113,7 +113,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-muted);
   cursor: pointer;
   border-right: 1px solid var(--bde-border);

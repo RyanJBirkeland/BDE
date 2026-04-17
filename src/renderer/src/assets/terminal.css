@@ -30,7 +30,7 @@
 }
 
 .terminal-view__title {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -432,7 +432,7 @@
 }
 
 .agent-picker__icon {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   flex-shrink: 0;
 }
 

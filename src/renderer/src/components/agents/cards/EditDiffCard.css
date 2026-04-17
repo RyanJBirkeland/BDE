@@ -1,6 +1,6 @@
 .edit-diff-card {
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   line-height: 1.5;
   margin-top: var(--bde-space-2);
   border: 1px solid var(--bde-border);

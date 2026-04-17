@@ -37,13 +37,13 @@
 }
 
 .planner-template-card__description {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   opacity: 0.7;
   line-height: 1.4;
 }
 
 .planner-template-card__meta {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   opacity: 0.5;
   margin-top: 6px;
 }
@@ -78,7 +78,7 @@
 }
 
 .planner-selected-template__description {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   opacity: 0.7;
 }
 

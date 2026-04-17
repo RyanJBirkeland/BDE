@@ -50,7 +50,7 @@
 
 .editor-toolbar__font-size {
   font-family: var(--bde-font-mono, monospace);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   min-width: 20px;
   text-align: center;

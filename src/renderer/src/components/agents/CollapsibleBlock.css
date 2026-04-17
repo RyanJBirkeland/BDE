@@ -14,7 +14,7 @@
   transition:
     transform 150ms ease,
     color 150ms ease;
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
 }
 
 .console-line--collapsible:hover .console-line__chevron {

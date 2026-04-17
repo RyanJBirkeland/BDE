@@ -4,7 +4,7 @@
   align-items: flex-start;
   gap: var(--bde-space-2);
   padding: var(--bde-space-1) var(--bde-space-3);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-family: var(--bde-font-code);
   line-height: 1.5;
   transition: background 100ms ease;
@@ -73,7 +73,7 @@
 .console-line__timestamp {
   margin-left: auto;
   color: var(--bde-text-dim);
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   flex-shrink: 0;
   font-family: var(--bde-font-code);
 }
@@ -101,13 +101,13 @@
   color: var(--bde-accent);
   padding: 1px 5px;
   border-radius: var(--bde-radius-sm);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
 }
 
 .console-md-heading {
   font-weight: 700;
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   display: block;
   margin-top: var(--bde-space-2);
   margin-bottom: 2px;
@@ -121,7 +121,7 @@
   width: 18px;
   height: 18px;
   border-radius: var(--bde-radius-sm);
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   flex-shrink: 0;
   font-weight: 700;
   font-family: var(--bde-font-code);
@@ -178,7 +178,7 @@
   gap: var(--bde-space-2);
   margin-bottom: var(--bde-space-3);
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
 }
 
 .console-completion-card__stats {
@@ -192,7 +192,7 @@
 }
 
 .console-completion-card__stat-value {
-  font-size: 18px;
+  font-size: var(--bde-size-xxl);
   font-weight: 700;
   font-family: var(--bde-font-code);
 }
@@ -211,7 +211,7 @@
 }
 
 .console-completion-card__stat-label {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -256,7 +256,7 @@
   display: inline-block;
   padding: 0 6px;
   border-radius: var(--bde-radius-sm);
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   flex-shrink: 0;
   font-weight: 600;
   font-family: var(--bde-font-code);

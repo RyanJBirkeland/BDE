@@ -59,7 +59,7 @@
 }
 
 .fleet-glance__stat-label {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -67,7 +67,7 @@
 }
 
 .fleet-glance__stat-value {
-  font-size: 18px;
+  font-size: var(--bde-size-xxl);
   font-weight: 600;
   color: var(--bde-text);
   font-family: 'JetBrains Mono', monospace;
@@ -81,7 +81,7 @@
 }
 
 .fleet-glance__section-title {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 600;
   color: var(--bde-text-dim);
   text-transform: uppercase;
@@ -141,7 +141,7 @@
 
 .fleet-glance__task {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   color: var(--bde-text);
   white-space: nowrap;
   overflow: hidden;
@@ -149,13 +149,13 @@
 }
 
 .fleet-glance__hint {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
   font-family: 'JetBrains Mono', monospace;
 }
 
 .fleet-glance__duration {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
   font-family: 'JetBrains Mono', monospace;
   min-width: 60px;
@@ -163,7 +163,7 @@
 }
 
 .fleet-glance__cost {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-warning);
   font-family: 'JetBrains Mono', monospace;
   min-width: 50px;
@@ -171,7 +171,7 @@
 }
 
 .fleet-glance__ago {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
   font-family: 'JetBrains Mono', monospace;
   min-width: 60px;
@@ -199,11 +199,11 @@
 
 .fleet-glance__empty p {
   margin: 0 0 12px;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
 }
 
 .fleet-glance__empty-hint {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dimmer);
 }
 

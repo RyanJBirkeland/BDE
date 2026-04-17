@@ -30,7 +30,7 @@
 .settings-repo__github {
   display: inline-block;
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   padding: 2px var(--bde-space-2);
   border-radius: var(--bde-space-1);
@@ -133,7 +133,7 @@
   padding: var(--bde-space-2) var(--bde-space-4);
   color: var(--bde-text-dim);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 500;
 }
 
@@ -160,7 +160,7 @@
   border: none;
   outline: none;
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   flex: 1;
 }
 
@@ -193,7 +193,7 @@
 }
 
 .settings-discovery-row__name {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 500;
   color: var(--bde-text);
   display: flex;
@@ -203,7 +203,7 @@
 
 .settings-discovery-row__path,
 .settings-discovery-row__desc {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -211,18 +211,18 @@
 }
 
 .settings-discovery-row__github {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-accent);
 }
 
 .settings-discovery-row__progress {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
   font-family: var(--bde-font-mono, monospace);
 }
 
 .settings-discovery-row__error {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-danger);
 }
 
@@ -233,7 +233,7 @@
   gap: var(--bde-space-2);
   padding: 40px var(--bde-space-5);
   color: var(--bde-text-dim);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
 }
 
 .settings-discovery-error {
@@ -242,7 +242,7 @@
   gap: var(--bde-space-2);
   padding: var(--bde-space-3) var(--bde-space-5);
   color: var(--bde-danger);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
 }
 
 .settings-discovery-spinner {

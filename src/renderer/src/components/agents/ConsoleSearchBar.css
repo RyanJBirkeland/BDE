@@ -21,7 +21,7 @@
   border: none;
   color: var(--bde-text);
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   outline: none;
 }
 
@@ -35,7 +35,7 @@
 }
 
 .console-search-bar__count {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   font-family: var(--bde-font-code);
   flex-shrink: 0;

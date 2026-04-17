@@ -74,7 +74,7 @@
   box-shadow: var(--bde-shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.4));
 }
 .ide-shortcuts-panel__title {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 600;
   color: var(--bde-text, #fff);
   margin-bottom: 16px;
@@ -94,7 +94,7 @@
   min-width: 72px;
   text-align: right;
   font-family: var(--bde-font-mono, monospace);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-accent, #00e5ff);
   background: var(--bde-accent-surface, rgba(0, 229, 255, 0.08));
   border: 1px solid var(--bde-accent-border, rgba(0, 229, 255, 0.2));
@@ -102,12 +102,12 @@
   padding: 2px 6px;
 }
 .ide-shortcuts-panel__desc {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
 }
 .ide-shortcuts-panel__hint {
   margin-top: 14px;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
 }

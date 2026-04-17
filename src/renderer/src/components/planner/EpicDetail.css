@@ -23,7 +23,7 @@
   justify-content: center;
   border: 1px solid;
   border-radius: var(--bde-radius-lg);
-  font-size: 20px;
+  font-size: var(--bde-size-xxl);
   font-weight: 700;
 }
 
@@ -33,14 +33,14 @@
 }
 
 .epic-detail__name {
-  font-size: 18px;
+  font-size: var(--bde-size-xxl);
   font-weight: 700;
   color: var(--bde-text);
   margin: 0 0 var(--bde-space-1) 0;
 }
 
 .epic-detail__goal {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-style: italic;
   color: var(--bde-text-dim);
   margin: 0;
@@ -106,7 +106,7 @@
 }
 
 .epic-detail__status-count {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
 }
 
@@ -139,7 +139,7 @@
   border: 1px solid var(--bde-warning);
   border-radius: var(--bde-radius-md);
   color: var(--bde-warning);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
 }
 
@@ -180,7 +180,7 @@
 
 .epic-detail__task-title {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-text);
   white-space: nowrap;
   overflow: hidden;
@@ -189,7 +189,7 @@
 }
 
 .epic-detail__task-flag {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -205,13 +205,13 @@
 }
 
 .epic-detail__task-dep-ref {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   flex-shrink: 0;
 }
 
 .epic-detail__task-status-badge {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -246,7 +246,7 @@
   border: 1px dashed var(--bde-accent);
   border-radius: var(--bde-radius-md);
   color: var(--bde-accent);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -282,7 +282,7 @@
 }
 
 .epic-detail__completed-divider-label {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -319,7 +319,7 @@
   display: flex;
   align-items: center;
   gap: var(--bde-space-2);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   flex: 1;
   min-width: 0;
 }
@@ -344,7 +344,7 @@
   border: none;
   border-radius: var(--bde-radius-md);
   color: var(--bde-bg);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -387,7 +387,7 @@
   color: var(--bde-accent-text);
   padding: 3px 10px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   cursor: pointer;
   white-space: nowrap;
 }

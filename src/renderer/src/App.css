@@ -50,7 +50,7 @@
 
 .view-router__placeholder {
   color: var(--bde-text-muted);
-  font-size: 16px;
+  font-size: var(--bde-size-xl);
   font-weight: 500;
 }
 
@@ -78,7 +78,7 @@
 }
 
 .shortcuts-overlay__title {
-  font-size: 16px;
+  font-size: var(--bde-size-xl);
   font-weight: 600;
   margin-bottom: 16px;
 }

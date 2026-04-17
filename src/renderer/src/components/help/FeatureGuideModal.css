@@ -32,7 +32,7 @@
 }
 
 .feature-guide__title {
-  font-size: 18px;
+  font-size: var(--bde-size-xxl);
   font-weight: 600;
   color: var(--bde-text);
 }
@@ -134,7 +134,7 @@
 }
 
 .feature-guide__content-title {
-  font-size: 20px;
+  font-size: var(--bde-size-xxl);
   font-weight: 600;
   color: var(--bde-text);
   margin-bottom: 8px;

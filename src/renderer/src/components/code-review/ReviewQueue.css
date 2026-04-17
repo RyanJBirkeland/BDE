@@ -30,7 +30,7 @@
 }
 
 .cr-queue__title {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: var(--bde-status-active);
@@ -38,7 +38,7 @@
 }
 
 .cr-queue__count {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
 }
 
@@ -93,7 +93,7 @@
 }
 
 .cr-queue__item-title {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -101,7 +101,7 @@
 }
 
 .cr-queue__item-repo {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-dim);
 }
 
@@ -109,7 +109,7 @@
   padding: var(--bde-space-6) var(--bde-space-3);
   text-align: center;
   color: var(--bde-text-dim);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
 }
 
 /* Batch actions bar */
@@ -124,7 +124,7 @@
 }
 
 .cr-batch__count {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
   color: var(--bde-accent);
   font-family: var(--bde-font-code);

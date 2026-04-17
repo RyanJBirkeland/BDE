@@ -14,7 +14,7 @@
   right: -4px;
   background: var(--bde-danger);
   color: var(--bde-surface);
-  font-size: 9px;
+  font-size: var(--bde-size-2xs);
   font-weight: 600;
   font-family: var(--bde-font-ui);
   padding: 1px 4px;

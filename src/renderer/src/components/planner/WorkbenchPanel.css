@@ -22,7 +22,7 @@
 }
 
 .workbench-panel__title {
-  font-size: 16px;
+  font-size: var(--bde-size-xl);
   font-weight: 600;
   color: var(--bde-text);
   margin: 0;
@@ -33,7 +33,7 @@
   border: none;
   color: var(--bde-text-dim);
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--bde-size-xl);
   padding: 4px 8px;
   border-radius: 4px;
 }

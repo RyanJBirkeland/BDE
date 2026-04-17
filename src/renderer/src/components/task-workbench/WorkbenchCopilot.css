@@ -19,7 +19,7 @@
 }
 
 .wb-copilot__title {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 700;
   color: var(--bde-status-active);
   text-transform: uppercase;
@@ -31,7 +31,7 @@
   border: none;
   color: var(--bde-text-muted);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   line-height: 1;
   padding: 0;
   transition: color 150ms ease;
@@ -63,7 +63,7 @@
   max-width: 90%;
   padding: var(--bde-space-2) var(--bde-space-3);
   border-radius: var(--bde-radius-md);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   color: var(--bde-text);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -88,7 +88,7 @@
   border: 1px solid var(--bde-border);
   font-style: italic;
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
 }
 
 /*
@@ -99,7 +99,7 @@
 .wb-copilot__bubble--tool-use {
   font-family: var(--bde-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   padding: var(--bde-space-1) var(--bde-space-2);
   opacity: 0.85;
 }
@@ -118,7 +118,7 @@
 }
 
 .wb-copilot__time {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
 }
 
@@ -128,7 +128,7 @@
   border-radius: var(--bde-radius-sm);
   color: var(--bde-accent);
   padding: 1px var(--bde-space-2);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   cursor: pointer;
   font-family: inherit;
   transition:
@@ -160,7 +160,7 @@
 
 .wb-copilot__loading-text {
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-style: italic;
 }
 
@@ -170,7 +170,7 @@
   border-radius: var(--bde-radius-sm);
   color: var(--bde-text-muted);
   padding: 1px var(--bde-space-2);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   cursor: pointer;
   font-family: inherit;
   transition:
@@ -208,7 +208,7 @@
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-md);
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-family: inherit;
   outline: none;
   transition:
@@ -231,7 +231,7 @@
   padding: var(--bde-space-2) var(--bde-space-3);
   border: none;
   border-radius: var(--bde-radius-md);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
   font-family: inherit;
   transition:

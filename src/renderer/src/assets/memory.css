@@ -49,7 +49,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -108,7 +108,7 @@
 .memory-sidebar__search-input {
   width: 100%;
   padding: 6px 32px 6px 32px;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   background: var(--glass-tint-mid, var(--bde-surface));
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius-sm);
@@ -183,7 +183,7 @@
 }
 
 .memory-search-result__path {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 500;
   color: var(--bde-text);
   overflow: hidden;
@@ -192,7 +192,7 @@
 }
 
 .memory-search-result__count {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   flex-shrink: 0;
 }
@@ -206,7 +206,7 @@
 .memory-search-result__match {
   display: flex;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-muted);
   overflow: hidden;
 }
@@ -215,7 +215,7 @@
   flex-shrink: 0;
   color: var(--bde-text-dim);
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
 }
 
 .memory-search-result__content {
@@ -227,7 +227,7 @@
 /* Active summary in sidebar */
 .memory-sidebar__active-summary {
   padding: var(--bde-space-1) var(--bde-space-3);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-accent);
   opacity: 0.8;
 }
@@ -262,7 +262,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   padding: var(--bde-space-1) var(--bde-space-2);
   border-radius: 4px;
   color: var(--bde-text-muted, #888);
@@ -284,7 +284,7 @@
 /* Size warning banner */
 .memory-editor__size-banner {
   padding: 6px var(--bde-space-3);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted, #888);
   border-bottom: 1px solid var(--bde-border);
 }
@@ -312,7 +312,7 @@
 }
 
 .memory-sidebar__title {
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
@@ -321,7 +321,7 @@
 }
 
 .memory-sidebar__count {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
 }
 
 .memory-sidebar__actions {
@@ -341,7 +341,7 @@
   border-radius: 5px;
   padding: 6px var(--bde-space-2);
   color: var(--bde-text);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-family: var(--bde-font-code);
 }
 
@@ -385,7 +385,7 @@
 }
 
 .memory-file__name {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text);
   white-space: nowrap;
   overflow: hidden;
@@ -393,7 +393,7 @@
 }
 
 .memory-file__meta {
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-muted);
   margin-top: 2px;
 }
@@ -412,7 +412,7 @@
 }
 
 .memory-group__label {
-  font-size: 9px;
+  font-size: var(--bde-size-2xs);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 600;
@@ -452,7 +452,7 @@
 
 .memory-editor__path {
   font-family: var(--bde-font-code);
-  font-size: 11px;
+  font-size: var(--bde-size-xs);
   color: var(--bde-text-muted);
   flex: 1;
   white-space: nowrap;
@@ -481,6 +481,6 @@
   background: transparent;
   color: var(--bde-text);
   font-family: var(--bde-font-code);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   line-height: 1.6;
 }

@@ -12,7 +12,7 @@
 .sprint-pipeline__title {
   color: var(--bde-accent);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
 }
 
 .sprint-pipeline__stats {
@@ -87,7 +87,7 @@
   background: transparent;
   text-align: left;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   transition: background 150ms ease;
 }
 
@@ -176,7 +176,7 @@
   padding: 2px 8px;
   border-radius: 4px;
   background: var(--bde-surface-2);
-  font-size: 10px;
+  font-size: var(--bde-size-2xs);
   color: var(--bde-text-dim);
   font-variant-numeric: tabular-nums;
   margin-left: 4px;

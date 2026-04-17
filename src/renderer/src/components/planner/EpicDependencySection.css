@@ -17,7 +17,7 @@
 }
 
 .epic-deps__title {
-  font-size: 14px;
+  font-size: var(--bde-size-lg);
   font-weight: 600;
   color: var(--bde-text);
   margin: 0;
@@ -32,7 +32,7 @@
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius);
   color: var(--bde-text);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -48,7 +48,7 @@
 }
 
 .epic-deps__empty {
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-style: italic;
   color: var(--bde-text-dim);
   margin: 0;
@@ -88,7 +88,7 @@
 .epic-dep-row__name {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   font-weight: 500;
   color: var(--bde-text);
   overflow: hidden;
@@ -102,7 +102,7 @@
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius);
   color: var(--bde-text);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   cursor: pointer;
   transition: border-color 0.15s ease;
 }
@@ -182,7 +182,7 @@
 }
 
 .modal-radio-hint {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text-dim);
   margin-left: calc(var(--bde-space-2) + 16px); /* Align with radio text */
 }
@@ -194,7 +194,7 @@
   border: 1px solid var(--bde-border);
   border-radius: var(--bde-radius);
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   cursor: pointer;
   transition: border-color 0.15s ease;
 }

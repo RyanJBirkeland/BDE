@@ -10,7 +10,7 @@
 }
 
 .wb-form__heading {
-  font-size: 16px;
+  font-size: var(--bde-size-xl);
   font-weight: 700;
   color: var(--bde-accent);
 }
@@ -37,7 +37,7 @@
 }
 
 .wb-form__label {
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   font-weight: 600;
   color: var(--bde-text-dim);
   text-transform: uppercase;
@@ -50,7 +50,7 @@
   border: 1px solid var(--bde-accent-border);
   border-radius: var(--bde-radius-md);
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   outline: none;
   width: 100%;
   font-family: inherit;
@@ -92,7 +92,7 @@
   border: 1px solid var(--bde-accent-border);
   border-radius: var(--bde-radius-md);
   color: var(--bde-text);
-  font-size: 13px;
+  font-size: var(--bde-size-md);
   outline: none;
   width: 100%;
   font-family: inherit;
@@ -116,7 +116,7 @@
   background: none;
   border: none;
   color: var(--bde-text-muted);
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   cursor: pointer;
   padding: 0;
   font-family: inherit;
@@ -157,6 +157,6 @@
 .wb-form__checkbox-label {
   margin: 0;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--bde-size-sm);
   color: var(--bde-text);
 }
