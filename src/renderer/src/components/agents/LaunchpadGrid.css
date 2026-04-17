@@ -65,9 +65,9 @@
   text-align: center;
   cursor: pointer;
   transition:
-    transform 150ms ease,
-    box-shadow 150ms ease,
-    border-color 150ms ease;
+    transform var(--bde-transition-base) ease,
+    box-shadow var(--bde-transition-base) ease,
+    border-color var(--bde-transition-base) ease;
   position: relative;
   overflow: hidden;
 }
@@ -150,7 +150,7 @@
   color: var(--bde-text);
   font-size: var(--bde-size-md);
   outline: none;
-  transition: border-color 200ms ease;
+  transition: border-color var(--bde-transition-slow) ease;
   font-family: inherit;
   resize: none;
   min-height: 48px;
@@ -186,7 +186,7 @@
   font-size: var(--bde-size-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: all var(--bde-transition-base) ease;
   white-space: nowrap;
 }
 
@@ -324,7 +324,7 @@
   font-size: var(--bde-size-2xs);
   font-weight: 600;
   cursor: pointer;
-  transition: all 150ms ease;
+  transition: all var(--bde-transition-base) ease;
   border: 1px solid var(--bde-border);
   color: var(--bde-text-dim);
   background: var(--bde-border);

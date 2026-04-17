@@ -51,7 +51,7 @@
   color: var(--bde-text);
   font-size: var(--bde-size-sm);
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background var(--bde-transition-fast) ease;
 }
 
 .cr-topbar__task-btn:hover {
@@ -129,7 +129,7 @@
   border: none;
   border-radius: var(--bde-radius-md);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--bde-transition-fast) ease;
   white-space: nowrap;
 }
 
@@ -214,7 +214,7 @@
   color: var(--bde-text);
   cursor: pointer;
   font-size: var(--bde-size-sm);
-  transition: all 120ms ease;
+  transition: all var(--bde-transition-fast) ease;
   white-space: nowrap;
 }
 
