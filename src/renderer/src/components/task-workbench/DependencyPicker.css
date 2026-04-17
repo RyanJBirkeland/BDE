@@ -22,7 +22,7 @@
   padding: var(--bde-space-2) var(--bde-space-3);
   background: none;
   border: none;
-  color: var(--bde-accent, #22d3ee);
+  color: var(--bde-accent);
   font-size: 12px;
   font-weight: 600;
   text-align: center;
@@ -35,7 +35,7 @@
 }
 
 .wb-deps__show-all:focus-visible {
-  outline: 2px solid var(--bde-accent, #22d3ee);
+  outline: 2px solid var(--bde-accent);
   outline-offset: -2px;
 }
 
