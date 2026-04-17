@@ -80,7 +80,9 @@ export function ShellPicker({ onSelect, onClose }: ShellPickerProps): React.JSX.
       <div className="shell-picker__divider" />
       {showCustom ? (
         <div className="shell-picker__custom-row">
+          <label htmlFor="custom-shell-path">Custom shell path</label>
           <input
+            id="custom-shell-path"
             ref={customInputRef}
             className="shell-picker__custom-input"
             type="text"
