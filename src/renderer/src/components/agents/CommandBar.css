@@ -47,6 +47,17 @@
   color: var(--bde-text-dim);
 }
 
+.command-bar__attachment-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-family: var(--bde-font-code);
+  color: var(--bde-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Command Autocomplete ── */
 .command-autocomplete {
   position: absolute;

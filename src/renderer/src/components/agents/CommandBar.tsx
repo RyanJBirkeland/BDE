@@ -222,14 +222,7 @@ export function CommandBar({
               objectFit: 'contain'
             }}
           />
-          <span
-            style={{
-              fontSize: '11px',
-              color: 'var(--bde-text-muted)',
-              flex: 1,
-              fontFamily: 'var(--bde-font-code)'
-            }}
-          >
+          <span className="command-bar__attachment-name">
             {attachment.name}
           </span>
           <button
