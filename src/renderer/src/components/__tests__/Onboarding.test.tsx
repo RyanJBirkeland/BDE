@@ -10,6 +10,9 @@ beforeEach(() => {
     tokenExpired: false,
     expiresAt: '2026-12-31'
   })
+  ;(window.api.git as unknown as Record<string, unknown>).checkInstalled = vi
+    .fn()
+    .mockResolvedValue(true)
 })
 
 describe('Onboarding', () => {
@@ -62,12 +65,12 @@ describe('Onboarding', () => {
     render(<Onboarding onReady={onReady} />)
 
     await waitFor(() => {
-      expect(screen.getByText('Continue Anyway')).toBeInTheDocument()
+      expect(screen.getByText('Continue without 3 required checks')).toBeInTheDocument()
     })
     expect(onReady).not.toHaveBeenCalled()
   })
 
-  it('shows Check Again button when checks fail', async () => {
+  it('shows Re-check button when checks fail', async () => {
     ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
       cliFound: false,
       tokenFound: false,
@@ -78,7 +81,7 @@ describe('Onboarding', () => {
     render(<Onboarding onReady={onReady} />)
 
     await waitFor(() => {
-      expect(screen.getByText('Check Again')).toBeInTheDocument()
+      expect(screen.getByText('Re-check')).toBeInTheDocument()
     })
   })
 
@@ -99,7 +102,7 @@ describe('Onboarding', () => {
     })
   })
 
-  it('disables Continue Anyway when required checks fail', async () => {
+  it('enables bypass button and surfaces a risk callout when required checks fail', async () => {
     ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
       cliFound: false,
       tokenFound: false,
@@ -109,10 +112,32 @@ describe('Onboarding', () => {
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)
 
-    await waitFor(() => {
-      expect(screen.getByText('Continue Anyway')).toBeInTheDocument()
+    const bypassButton = await waitFor(() =>
+      screen.getByText('Continue without 3 required checks')
+    )
+    expect(bypassButton.closest('button')).not.toBeDisabled()
+
+    const callout = screen.getByRole('alert')
+    expect(callout.textContent).toContain('Claude CLI')
+    expect(callout.textContent).toContain('Claude login')
+    expect(callout.textContent).toContain('valid token')
+  })
+
+  it('labels the bypass button with the single failing check when only one fails', async () => {
+    ;(window.api.auth as unknown as Record<string, unknown>).status = vi.fn().mockResolvedValue({
+      cliFound: true,
+      tokenFound: true,
+      tokenExpired: false
     })
-    expect(screen.getByText('Continue Anyway').closest('button')).toBeDisabled()
+    ;(window.api.git as unknown as Record<string, unknown>).checkInstalled = vi
+      .fn()
+      .mockResolvedValue(false)
+
+    const onReady = vi.fn()
+    render(<Onboarding onReady={onReady} />)
+
+    const bypassButton = await waitFor(() => screen.getByText('Continue without git'))
+    expect(bypassButton.closest('button')).not.toBeDisabled()
   })
 
   it('enables Continue Anyway when only optional checks fail', async () => {

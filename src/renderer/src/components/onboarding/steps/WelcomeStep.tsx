@@ -1,4 +1,4 @@
-import { ArrowRight, Zap } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Zap } from 'lucide-react'
 import { Button } from '../../ui/Button'
 
 interface StepProps {
@@ -9,7 +9,7 @@ interface StepProps {
   isLast: boolean
 }
 
-export function WelcomeStep({ onNext, isFirst }: StepProps): React.JSX.Element {
+export function WelcomeStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Element {
   return (
     <div className="onboarding-step">
       <div className="onboarding-step__icon">
@@ -40,7 +40,8 @@ export function WelcomeStep({ onNext, isFirst }: StepProps): React.JSX.Element {
 
       <div className="onboarding-step__actions">
         {!isFirst && (
-          <Button variant="ghost" onClick={() => {}}>
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft size={16} />
             Back
           </Button>
         )}

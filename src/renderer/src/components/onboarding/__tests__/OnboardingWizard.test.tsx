@@ -78,8 +78,12 @@ describe('OnboardingWizard', () => {
     // Step 5 (Repositories): inline add form means Next is disabled; use Skip for now.
     await user.click(screen.getByRole('button', { name: /skip for now/i }))
 
-    // Final step - click "Get Started"
-    await user.click(screen.getByRole('button', { name: /get started/i }))
+    // Final step — "Explore BDE" when no repos configured (we skipped the repo step).
+    // Otherwise the label is "Get Started". Accept either to keep the assertion focused on onComplete.
+    const completeBtn = await waitFor(() =>
+      screen.getByRole('button', { name: /explore bde|get started/i })
+    )
+    await user.click(completeBtn)
     expect(onComplete).toHaveBeenCalled()
   })
 
