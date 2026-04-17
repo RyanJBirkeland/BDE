@@ -232,12 +232,14 @@ export function CostSection(): React.JSX.Element {
   const [summary, setSummary] = useState<CostSummary | null>(null)
   const [runs, setRuns] = useState<AgentRunSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [sortField, setSortField] = useState<SortField>('startedAt')
   const [copied, setCopied] = useState(false)
   const refreshStore = useCostDataStore((s) => s.fetchLocalAgents)
 
   const fetchData = useCallback(async () => {
     try {
+      setError(null)
       const [s, r] = await Promise.all([
         window.api.cost.summary(),
         window.api.cost.agentRuns(AGENT_HISTORY_LIMIT)
@@ -246,8 +248,8 @@ export function CostSection(): React.JSX.Element {
       setRuns(r)
       // Keep the shared cost store in sync so TitleBar totalTokens updates
       refreshStore()
-    } catch {
-      // Silently fail — will retry on next poll
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load cost data')
     } finally {
       setLoading(false)
     }
