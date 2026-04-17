@@ -84,6 +84,26 @@ vi.mock('../../agent-system/memory/user-memory', () => ({
   getUserMemory: vi.fn(() => ({ content: '', totalBytes: 0, fileCount: 0 }))
 }))
 
+vi.mock('../../services/credential-service', () => ({
+  getDefaultCredentialService: vi.fn(() => ({
+    getCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    refreshCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    invalidateCache: vi.fn()
+  }))
+}))
+
 // ---------------------------------------------------------------------------
 // Pure helper tests
 // ---------------------------------------------------------------------------

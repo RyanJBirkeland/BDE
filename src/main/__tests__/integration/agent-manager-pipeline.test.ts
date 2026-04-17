@@ -128,6 +128,26 @@ vi.mock('../../env-utils', () => ({
     .mockReturnValue({ PATH: '/usr/bin', ANTHROPIC_API_KEY: 'test-token' })
 }))
 
+vi.mock('../../services/credential-service', () => ({
+  getDefaultCredentialService: vi.fn(() => ({
+    getCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    refreshCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    invalidateCache: vi.fn()
+  }))
+}))
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------

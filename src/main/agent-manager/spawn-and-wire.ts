@@ -15,6 +15,7 @@ import { cleanupWorktree } from './worktree'
 import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
 import { nowIso } from '../../shared/time'
 import { TurnTracker } from './turn-tracker'
+import { getDefaultCredentialService } from '../services/credential-service'
 
 /**
  * Logs a worktree cleanup warning with consistent format.
@@ -98,6 +99,20 @@ export async function spawnAndWireAgent(
   deps: RunAgentDeps
 ): Promise<{ agent: ActiveAgent; agentRunId: string; turnTracker: TurnTracker }> {
   const { activeAgents, logger, repo, onSpawnSuccess } = deps
+
+  // V0.6 — refresh credentials immediately before spawn. The drain-loop
+  // precondition caches for 5 minutes; assembleRunContext + validateTaskForRun
+  // can spend enough wall time that the cached result is stale by spawn time.
+  // Adhoc agents already do this in adhoc-agent.ts; pipeline agents did not.
+  const credService = getDefaultCredentialService(logger)
+  const credResult = await credService.refreshCredential('claude')
+  if (credResult.status !== 'ok') {
+    const message = credResult.actionable
+      ? `Pre-spawn credential check failed: ${credResult.actionable}`
+      : `Pre-spawn credential check failed (${credResult.status})`
+    await handleSpawnFailure(new Error(message), task, worktree, repoPath, deps)
+    throw new Error(message) // unreachable
+  }
 
   let handle: AgentHandle
   try {
