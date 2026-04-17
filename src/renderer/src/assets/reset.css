@@ -59,13 +59,6 @@ code {
   outline-offset: 2px;
 }
 
-/* Inputs/textareas already show focus via border-color */
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: none;
-}
-
 /* ── Animations ──────────────────────────────────────── */
 
 @keyframes bde-fade-in {
