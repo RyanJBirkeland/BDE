@@ -118,3 +118,38 @@
   gap: var(--bde-space-2);
   align-items: center;
 }
+
+
+/* ── Settings form input base (T-15) ── */
+
+.settings-field__input {
+  width: 100%;
+  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--bde-overlay);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  color: var(--bde-text);
+  font-family: inherit;
+  font-size: var(--bde-size-md);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.settings-field__input::placeholder {
+  color: var(--bde-text-dim);
+}
+
+.settings-field__input:focus-visible {
+  border-color: var(--bde-accent);
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.settings-field__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-field__input[aria-invalid='true'] {
+  border-color: var(--bde-danger);
+}
