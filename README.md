@@ -318,7 +318,21 @@ On first launch, BDE checks for Claude Code authentication and guides you throug
 npm run build:mac    # → release/BDE-*.dmg (unsigned)
 ```
 
-> **Note:** The app is unsigned. Right-click → Open to bypass macOS Gatekeeper on first launch.
+### Install from DMG (macOS)
+
+BDE is currently distributed unsigned. macOS Gatekeeper will block the first launch until you explicitly allow it. See [INSTALL.md](./INSTALL.md) for screenshots and a troubleshooting walkthrough.
+
+1. Double-click `BDE-*.dmg` to mount it.
+2. Drag `BDE.app` onto `Applications` in the mounted window.
+3. Open the `Applications` folder in Finder.
+4. **Right-click** (or Control-click) `BDE.app` and choose **Open**. *Do not double-click.*
+5. Gatekeeper will warn "BDE cannot be verified" — click **Open** in the dialog. The choice is remembered; subsequent launches open normally.
+
+**Power-user shortcut** — clear the quarantine attribute in one command, then double-click to launch:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/BDE.app
+```
 
 ### Run Tests
 

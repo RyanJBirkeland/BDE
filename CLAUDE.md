@@ -26,6 +26,10 @@ Electron desktop app (electron-vite + React + TypeScript) — the Birkeland Deve
 
 ## Build & Test
 
+**Node ≥22.12.0 required.** `@electron/rebuild` v4 needs it, and the native-module rebuild pipeline (`postinstall`, `predev`, `package`, `posttest:main`) silently fails on older Node versions. `package.json` still declares `^20.19.0 || >=22.12.0` for engine compatibility, but BDE development requires the 22.12+ branch.
+
+**Electron version pin.** The `electron-rebuild` invocations hardcode `-v 39.8.6` to match the `electron` devDependency locked in `package-lock.json`. When bumping Electron, update all four script sites in `package.json` (`postinstall`, `predev`, `package`, `posttest:main`).
+
 ```bash
 npm install          # Install dependencies
 npm run dev          # Dev server with HMR
