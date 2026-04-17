@@ -165,7 +165,7 @@ html.theme-pro-dark .glass::after {
 html.theme-pro-dark .elevation-3 {
   background: var(--bde-surface-high);
   border: 1px solid var(--bde-border-hover);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--bde-shadow-lg);
 }
 
 html.theme-pro-dark .elevation-3-backdrop {
@@ -176,7 +176,7 @@ html.theme-pro-dark .elevation-3-backdrop {
 
 html.theme-pro-light .glass-modal {
   background: var(--bde-surface);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--bde-shadow-lg);
 }
 
 html.theme-pro-light .glass-highlight {
@@ -189,7 +189,7 @@ html.theme-pro-light .glass::after {
 
 html.theme-pro-light .elevation-3 {
   background: var(--bde-surface);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--bde-shadow-lg);
 }
 
 html.theme-pro-light .elevation-3-backdrop {
