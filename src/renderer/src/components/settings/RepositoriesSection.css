@@ -46,7 +46,7 @@
 
 .settings-repo-form__row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--bde-space-2);
   align-items: start;
 }
