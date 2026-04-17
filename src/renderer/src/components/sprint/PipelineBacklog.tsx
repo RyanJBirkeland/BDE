@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintSelection } from '../../stores/sprintSelection'
+import { EmptyState } from '../ui/EmptyState'
+import { Inbox } from 'lucide-react'
 
 import './PipelineBacklog.css'
 
@@ -94,7 +96,13 @@ function PipelineBacklogInner({
             Show less
           </button>
         )}
-        {backlog.length === 0 && <div className="pipeline-sidebar__empty">No backlog tasks</div>}
+        {backlog.length === 0 && (
+          <EmptyState
+            icon={<Inbox size={24} />}
+            title="No backlog tasks"
+            description="Tasks will appear here when you add them to the sprint backlog"
+          />
+        )}
       </div>
       {failed.length > 0 && (
         <div className="pipeline-sidebar__section">
