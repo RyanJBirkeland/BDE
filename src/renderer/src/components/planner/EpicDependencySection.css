@@ -87,6 +87,7 @@
 
 .epic-dep-row__name {
   flex: 1;
+  min-width: 0;
   font-size: 13px;
   font-weight: 500;
   color: var(--bde-text);
