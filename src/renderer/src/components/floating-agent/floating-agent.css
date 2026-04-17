@@ -26,6 +26,11 @@
   box-shadow: 0 0 12px color-mix(in srgb, var(--bde-neon-cyan, #00e5ff) 40%, transparent);
 }
 
+.fa-fab:focus-visible {
+  outline: 2px solid var(--bde-neon-cyan, #00e5ff);
+  outline-offset: 2px;
+}
+
 .fa-fab__icon {
   line-height: 1;
 }
@@ -103,6 +108,12 @@
   background: var(--bde-surface-3);
 }
 
+.fa-panel__close:focus-visible,
+.fa-panel__new-chat:focus-visible {
+  outline: 2px solid var(--bde-neon-cyan, #00e5ff);
+  outline-offset: 2px;
+}
+
 /* Messages area */
 .fa-panel__messages {
   flex: 1;
@@ -178,7 +189,7 @@
   line-height: 1.4;
 }
 
-.fa-panel__input:focus {
+.fa-panel__input:focus-visible {
   outline: none;
   border-color: var(--bde-neon-cyan, #00e5ff);
 }
@@ -205,4 +216,9 @@
 .fa-panel__send:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.fa-panel__send:focus-visible {
+  outline: 2px solid var(--bde-neon-cyan, #00e5ff);
+  outline-offset: 2px;
 }
