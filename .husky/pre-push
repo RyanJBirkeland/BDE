@@ -37,6 +37,51 @@ trap cleanup EXIT
 
 current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
 
+# ---------------------------------------------------------------------------
+# Native module rebuild — idempotent with on-disk cache.
+#
+# The better-sqlite3 build directory accumulates stale .deps/*.raw dependency
+# files that node-gyp occasionally tries to read before writing, producing:
+#   .deps/Release/obj.target/.../sqlite3.o.d.raw: No such file or directory
+# Wiping .deps before every rebuild is the cheap, reliable fix.
+#
+# We also cache the compiled .node artifact under ~/.bde/native-cache keyed by
+# (node version, electron version, better-sqlite3 version). If the key hits,
+# we restore the binary in place and skip rebuild entirely.
+# ---------------------------------------------------------------------------
+rebuild_better_sqlite3() {
+  module_root="node_modules/better-sqlite3"
+  build_artifact="$module_root/build/Release/better_sqlite3.node"
+
+  node_version=$(node --version 2>/dev/null || echo "unknown")
+  electron_version=$(node -p "require('./package.json').devDependencies.electron" 2>/dev/null || echo "unknown")
+  module_version=$(node -p "require('./package.json').dependencies['better-sqlite3']" 2>/dev/null || echo "unknown")
+  cache_key="${node_version}-${electron_version}-${module_version}"
+  cache_dir="$HOME/.bde/native-cache/$cache_key"
+  cache_artifact="$cache_dir/better_sqlite3.node"
+
+  if [ -f "$cache_artifact" ]; then
+    echo "pre-push: native cache hit ($cache_key) — restoring better-sqlite3 binary"
+    mkdir -p "$module_root/build/Release"
+    cp "$cache_artifact" "$build_artifact"
+    return 0
+  fi
+
+  echo "pre-push: native cache miss ($cache_key) — rebuilding better-sqlite3"
+  rm -rf "$module_root/.deps" "$module_root/build"
+  if ! ./node_modules/.bin/node-gyp rebuild --directory="$module_root"; then
+    return 1
+  fi
+
+  if [ -f "$build_artifact" ]; then
+    mkdir -p "$cache_dir"
+    if ! cp "$build_artifact" "$cache_artifact" 2>/dev/null; then
+      echo "pre-push: warning — failed to write native cache at $cache_artifact (continuing)"
+    fi
+  fi
+  return 0
+}
+
 npm run typecheck &
 PID_TYPECHECK=$!
 
@@ -49,7 +94,7 @@ case "$current_branch" in
     echo "pre-push: agent branch — skipping test:main (CI enforces it on merge)"
     ;;
   *)
-    (./node_modules/.bin/node-gyp rebuild --directory=node_modules/better-sqlite3 2>&1 && \
+    (rebuild_better_sqlite3 && \
       npx vitest run --config src/main/vitest.main.config.ts) &
     PID_MAIN=$!
     ;;

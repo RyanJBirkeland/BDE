@@ -19,6 +19,7 @@ import { checkAutoReview } from '../services/auto-review-service'
 import type { AutoReviewRule } from '../../shared/types'
 import * as reviewOrchestration from '../services/review-orchestration-service'
 import { parseNumstat } from '../services/review-orchestration-service'
+import { shipBatch } from '../services/review-ship-batch'
 
 const logger = createLogger('review-handlers')
 
@@ -244,6 +245,21 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     if (!isValidTaskId(payload.taskId)) throw new Error('Invalid task ID format')
     return reviewOrchestration.shipIt({
       taskId: payload.taskId,
+      strategy: payload.strategy,
+      env,
+      onStatusTerminal: deps.onStatusTerminal
+    })
+  })
+
+  safeHandle('review:shipBatch', async (_e, payload) => {
+    if (!Array.isArray(payload.taskIds) || payload.taskIds.length === 0) {
+      throw new Error('taskIds must be a non-empty array')
+    }
+    for (const id of payload.taskIds) {
+      if (!isValidTaskId(id)) throw new Error(`Invalid task ID format: ${id}`)
+    }
+    return shipBatch({
+      taskIds: payload.taskIds,
       strategy: payload.strategy,
       env,
       onStatusTerminal: deps.onStatusTerminal

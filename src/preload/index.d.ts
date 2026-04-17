@@ -495,6 +495,10 @@ declare global {
           taskId: string
           strategy: 'squash' | 'merge' | 'rebase'
         }) => Promise<IpcResult<'review:shipIt'>>
+        shipBatch: (payload: {
+          taskIds: string[]
+          strategy: 'squash' | 'merge' | 'rebase'
+        }) => Promise<IpcResult<'review:shipBatch'>>
         rebase: (payload: { taskId: string }) => Promise<IpcResult<'review:rebase'>>
         checkFreshness: (payload: { taskId: string }) => Promise<IpcResult<'review:checkFreshness'>>
         // AI Review Partner

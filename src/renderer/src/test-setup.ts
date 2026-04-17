@@ -281,6 +281,9 @@ vi.stubGlobal('api', {
     discard: vi.fn().mockResolvedValue(undefined),
     checkFreshness: vi.fn().mockResolvedValue({ status: 'fresh', commitsBehind: 0 }),
     shipIt: vi.fn().mockResolvedValue({ success: true, pushed: true }),
+    shipBatch: vi
+      .fn()
+      .mockResolvedValue({ success: true, pushed: true, shippedTaskIds: [] }),
     rebase: vi.fn().mockResolvedValue({ success: true })
   },
 

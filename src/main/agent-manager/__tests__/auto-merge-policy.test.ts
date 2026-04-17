@@ -63,7 +63,7 @@ describe('evaluateAutoMergePolicy', () => {
     it('returns shouldMerge: false without calling git when rules list is empty', async () => {
       const result = await evaluateAutoMergePolicy([], '/tmp/worktree')
 
-      expect(result).toEqual({ shouldMerge: false })
+      expect(result).toEqual({ shouldMerge: false, cssOnly: false })
       expect(execFileAsync).not.toHaveBeenCalled()
     })
   })
@@ -74,7 +74,7 @@ describe('evaluateAutoMergePolicy', () => {
 
       const result = await evaluateAutoMergePolicy([makeRule()], '/tmp/worktree')
 
-      expect(result).toEqual({ shouldMerge: false })
+      expect(result).toEqual({ shouldMerge: false, cssOnly: false })
       expect(evaluateAutoReviewRules).not.toHaveBeenCalled()
     })
 
@@ -83,7 +83,7 @@ describe('evaluateAutoMergePolicy', () => {
 
       const result = await evaluateAutoMergePolicy([makeRule()], '/tmp/worktree')
 
-      expect(result).toEqual({ shouldMerge: false })
+      expect(result).toEqual({ shouldMerge: false, cssOnly: false })
     })
   })
 
@@ -149,7 +149,7 @@ describe('evaluateAutoMergePolicy', () => {
 
       const result = await evaluateAutoMergePolicy([makeRule()], '/tmp/worktree')
 
-      expect(result).toEqual({ shouldMerge: false })
+      expect(result).toEqual({ shouldMerge: false, cssOnly: false })
     })
 
     it('returns shouldMerge: false when evaluateAutoReviewRules returns non-auto-merge action', async () => {
@@ -159,7 +159,7 @@ describe('evaluateAutoMergePolicy', () => {
 
       const result = await evaluateAutoMergePolicy([rule], '/tmp/worktree')
 
-      expect(result).toEqual({ shouldMerge: false })
+      expect(result).toEqual({ shouldMerge: false, cssOnly: false })
     })
 
     it('returns shouldMerge: true with ruleName when action is auto-merge', async () => {
@@ -169,7 +169,7 @@ describe('evaluateAutoMergePolicy', () => {
 
       const result = await evaluateAutoMergePolicy([rule], '/tmp/worktree')
 
-      expect(result).toEqual({ shouldMerge: true, ruleName: 'my-merge-rule' })
+      expect(result).toEqual({ shouldMerge: true, ruleName: 'my-merge-rule', cssOnly: false })
     })
 
     it('uses the matched rule name (not the first rule name) in the result', async () => {
@@ -179,7 +179,44 @@ describe('evaluateAutoMergePolicy', () => {
 
       const result = await evaluateAutoMergePolicy(rules, '/tmp/worktree')
 
-      expect(result).toEqual({ shouldMerge: true, ruleName: 'rule-b' })
+      expect(result).toEqual({ shouldMerge: true, ruleName: 'rule-b', cssOnly: false })
     })
+
+    it('sets cssOnly: true when every diffed file is a stylesheet', async () => {
+      mockNumstat('5\t2\tsrc/theme.css\n3\t1\tsrc/components/button.scss\n')
+      const rule = makeRule({ name: 'css-merge-rule' })
+      vi.mocked(evaluateAutoReviewRules).mockReturnValue({ rule, action: 'auto-merge' })
+
+      const result = await evaluateAutoMergePolicy([rule], '/tmp/worktree')
+
+      expect(result).toEqual({ shouldMerge: true, ruleName: 'css-merge-rule', cssOnly: true })
+    })
+
+    it('sets cssOnly: false when any non-stylesheet file is touched', async () => {
+      mockNumstat('5\t2\tsrc/theme.css\n3\t1\tsrc/component.tsx\n')
+      const rule = makeRule({ name: 'mixed-merge-rule' })
+      vi.mocked(evaluateAutoReviewRules).mockReturnValue({ rule, action: 'auto-merge' })
+
+      const result = await evaluateAutoMergePolicy([rule], '/tmp/worktree')
+
+      expect(result).toEqual({ shouldMerge: true, ruleName: 'mixed-merge-rule', cssOnly: false })
+    })
+  })
+})
+
+describe('isCssOnlyChange', () => {
+  it('returns false for an empty list', async () => {
+    const { isCssOnlyChange } = await import('../auto-merge-policy')
+    expect(isCssOnlyChange([])).toBe(false)
+  })
+
+  it('returns true when every path ends in .css or .scss', async () => {
+    const { isCssOnlyChange } = await import('../auto-merge-policy')
+    expect(isCssOnlyChange(['src/theme.css', 'src/button.scss'])).toBe(true)
+  })
+
+  it('returns false when any path is not a stylesheet', async () => {
+    const { isCssOnlyChange } = await import('../auto-merge-policy')
+    expect(isCssOnlyChange(['src/theme.css', 'src/index.ts'])).toBe(false)
   })
 })

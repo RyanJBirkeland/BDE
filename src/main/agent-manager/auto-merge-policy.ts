@@ -2,16 +2,34 @@ import type { AutoReviewRule } from '../../shared/types/task-types'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 
+/**
+ * `cssOnly` flags diffs that touch only stylesheet files. Downstream callers
+ * can use this to skip the full test suite in the pre-push hook — CSS changes
+ * cannot break unit/integration tests. The policy itself does not act on it.
+ */
 export interface AutoMergeDecision {
   shouldMerge: true
   ruleName: string
+  cssOnly: boolean
 }
 
 export interface AutoMergeSkip {
   shouldMerge: false
+  cssOnly: boolean
 }
 
 export type AutoMergePolicyResult = AutoMergeDecision | AutoMergeSkip
+
+const STYLE_FILE_PATTERN = /\.(css|scss)$/i
+
+/**
+ * Returns true when every path in the diff is a stylesheet (.css or .scss).
+ * Empty input returns false — "no changes" is not a CSS-only change.
+ */
+export function isCssOnlyChange(diffPaths: string[]): boolean {
+  if (diffPaths.length === 0) return false
+  return diffPaths.every((path) => STYLE_FILE_PATTERN.test(path))
+}
 
 async function getDiffFileStats(
   worktreePath: string
@@ -45,20 +63,22 @@ export async function evaluateAutoMergePolicy(
   worktreePath: string
 ): Promise<AutoMergePolicyResult> {
   if (rules.length === 0) {
-    return { shouldMerge: false }
+    return { shouldMerge: false, cssOnly: false }
   }
 
   const files = await getDiffFileStats(worktreePath)
   if (!files) {
-    return { shouldMerge: false }
+    return { shouldMerge: false, cssOnly: false }
   }
+
+  const cssOnly = isCssOnlyChange(files.map((f) => f.path))
 
   const { evaluateAutoReviewRules } = await import('../services/auto-review')
   const result = evaluateAutoReviewRules(rules, files)
 
   if (result && result.action === 'auto-merge') {
-    return { shouldMerge: true, ruleName: result.rule.name }
+    return { shouldMerge: true, ruleName: result.rule.name, cssOnly }
   }
 
-  return { shouldMerge: false }
+  return { shouldMerge: false, cssOnly }
 }

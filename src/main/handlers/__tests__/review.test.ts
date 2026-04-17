@@ -104,6 +104,7 @@ vi.mock('../../logger', () => ({
 vi.mock('../../data/sprint-queries', () => ({
   getTask: vi.fn(),
   updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
   listTasks: vi.fn(),
   listTasksRecent: vi.fn(),
   createTask: vi.fn(),
@@ -161,11 +162,11 @@ describe('Review handlers', () => {
     mockExecFileAsync.mockImplementation(defaultGitImpl)
   })
 
-  it('registers all 12 review channels', () => {
+  it('registers all 13 review channels', () => {
     const mockDeps = { onStatusTerminal: vi.fn() }
     registerReviewHandlers(mockDeps)
 
-    expect(safeHandle).toHaveBeenCalledTimes(12)
+    expect(safeHandle).toHaveBeenCalledTimes(13)
     expect(safeHandle).toHaveBeenCalledWith('review:getDiff', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getCommits', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getFileDiff', expect.any(Function))
@@ -174,6 +175,7 @@ describe('Review handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('review:requestRevision', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:discard', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:shipIt', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('review:shipBatch', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:rebase', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:checkFreshness', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:generateSummary', expect.any(Function))

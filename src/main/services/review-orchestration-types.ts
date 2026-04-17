@@ -33,6 +33,16 @@ export type ShipItResult =
   | { success: true; pushed: true }
   | { success: false; error: string; conflicts?: string[] }
 
+export type ShipBatchResult =
+  | { success: true; pushed: true; shippedTaskIds: string[] }
+  | {
+      success: false
+      error: string
+      failedTaskId: string | null
+      shippedTaskIds: string[]
+      conflicts?: string[]
+    }
+
 export interface RebaseResult {
   success: boolean
   baseSha?: string
@@ -73,6 +83,13 @@ export interface DiscardInput {
 
 export interface ShipItInput {
   taskId: string
+  strategy: 'merge' | 'squash' | 'rebase'
+  env: NodeJS.ProcessEnv
+  onStatusTerminal: (taskId: string, status: string) => void | Promise<void>
+}
+
+export interface ShipBatchInput {
+  taskIds: string[]
   strategy: 'merge' | 'squash' | 'rebase'
   env: NodeJS.ProcessEnv
   onStatusTerminal: (taskId: string, status: string) => void | Promise<void>

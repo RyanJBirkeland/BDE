@@ -84,7 +84,8 @@ describe('evaluateAutoMerge', () => {
     })
     vi.mocked(evaluateAutoMergePolicy).mockResolvedValue({
       shouldMerge: true,
-      ruleName: 'always-merge'
+      ruleName: 'always-merge',
+      cssOnly: false
     })
     vi.mocked(executeSquashMerge).mockResolvedValue('merged')
   })
@@ -117,7 +118,7 @@ describe('evaluateAutoMerge', () => {
     it('does nothing when policy says shouldMerge=false', async () => {
       vi.mocked(evaluateAutoMergePolicy).mockResolvedValue({
         shouldMerge: false,
-        ruleName: null
+        cssOnly: false
       })
 
       await evaluateAutoMerge(makeContext())

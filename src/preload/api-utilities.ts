@@ -249,6 +249,8 @@ export const review = {
   discard: (payload: { taskId: string }) => typedInvoke('review:discard', payload),
   shipIt: (payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }) =>
     typedInvoke('review:shipIt', payload),
+  shipBatch: (payload: { taskIds: string[]; strategy: 'squash' | 'merge' | 'rebase' }) =>
+    typedInvoke('review:shipBatch', payload),
   generateSummary: (payload: { taskId: string }) => typedInvoke('review:generateSummary', payload),
   checkAutoReview: (payload: { taskId: string }) =>
     typedInvoke('review:checkAutoReview', payload),

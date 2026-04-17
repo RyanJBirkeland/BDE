@@ -192,6 +192,22 @@ export interface ReviewChannels {
       | { success: true; pushed: true }
       | { success: false; error: string; conflicts?: string[] }
   }
+  'review:shipBatch': {
+    // Batch Ship It: merges each task's agent branch onto local main in the
+    // supplied order, then issues a SINGLE push at the end. Aborts on the
+    // first task failure and reports which task failed — any tasks merged
+    // before the failure remain on local main but are NOT pushed.
+    args: [payload: { taskIds: string[]; strategy: 'squash' | 'merge' | 'rebase' }]
+    result:
+      | { success: true; pushed: true; shippedTaskIds: string[] }
+      | {
+          success: false
+          error: string
+          failedTaskId: string | null
+          shippedTaskIds: string[]
+          conflicts?: string[]
+        }
+  }
   'review:generateSummary': {
     args: [payload: { taskId: string }]
     result: { summary: string }

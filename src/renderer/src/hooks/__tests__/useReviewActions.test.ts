@@ -49,6 +49,9 @@ describe('useReviewActions', () => {
       review: {
         checkFreshness: vi.fn().mockResolvedValue({ status: 'fresh' }),
         shipIt: vi.fn().mockResolvedValue({ success: true, pushed: true }),
+        shipBatch: vi
+          .fn()
+          .mockResolvedValue({ success: true, pushed: true, shippedTaskIds: [] }),
         mergeLocally: vi.fn().mockResolvedValue({ success: true }),
         createPr: vi.fn().mockResolvedValue({ prUrl: 'https://github.com/pr/123' }),
         requestRevision: vi.fn().mockResolvedValue(undefined),
@@ -374,7 +377,7 @@ describe('useReviewActions', () => {
       expect(mockLoadData).toHaveBeenCalled()
     })
 
-    it('should handle batchShipIt all-success', async () => {
+    it('should handle batchShipIt all-success via shipBatch', async () => {
       const mockLoadData = vi.fn()
       const mockClearBatch = vi.fn()
 
@@ -390,7 +393,11 @@ describe('useReviewActions', () => {
         clearBatch: mockClearBatch
       })
 
-      window.api.review.shipIt = vi.fn().mockResolvedValue({ success: true, pushed: true })
+      window.api.review.shipBatch = vi.fn().mockResolvedValue({
+        success: true,
+        pushed: true,
+        shippedTaskIds: mockBatchTasks.map((t) => t.id)
+      })
 
       const { result } = renderHook(() => useReviewActions())
 
@@ -398,7 +405,11 @@ describe('useReviewActions', () => {
         await result.current.batchShipIt(mockBatchTasks)
       })
 
-      expect(window.api.review.shipIt).toHaveBeenCalledTimes(2)
+      expect(window.api.review.shipBatch).toHaveBeenCalledTimes(1)
+      expect(window.api.review.shipBatch).toHaveBeenCalledWith({
+        taskIds: mockBatchTasks.map((t) => t.id),
+        strategy: 'squash'
+      })
       expect(mockClearBatch).toHaveBeenCalled()
       expect(mockLoadData).toHaveBeenCalled()
     })

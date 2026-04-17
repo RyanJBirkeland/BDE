@@ -60,17 +60,29 @@ export function useBatchReviewActions(): UseBatchReviewActionsResult {
       afterBatch
     )
 
-  const batchShipIt = (batchTasks: Array<{ id: string; title: string }>): Promise<void> =>
-    executeBatchAction(
-      batchTasks,
-      async (task) => {
-        const result = await window.api.review.shipIt({ taskId: task.id, strategy: 'squash' })
-        return result.success
-      },
-      (n) => `Shipped ${n} tasks`,
-      (s, f) => `Shipped ${s}, failed ${f}`,
-      afterBatch
-    )
+  /**
+   * Batch Ship It routes through the server-side `review:shipBatch` handler
+   * so every task merges onto local main with a SINGLE terminal `git push`
+   * — instead of N per-task pushes that serialize behind the pre-push hook.
+   */
+  const batchShipIt = async (batchTasks: Array<{ id: string; title: string }>): Promise<void> => {
+    if (batchTasks.length === 0) {
+      afterBatch()
+      return
+    }
+    const result = await window.api.review.shipBatch({
+      taskIds: batchTasks.map((t) => t.id),
+      strategy: 'squash'
+    })
+    afterBatch()
+    if (result.success) {
+      toast.success(`Shipped ${result.shippedTaskIds.length} tasks`)
+      return
+    }
+    const shipped = result.shippedTaskIds.length
+    const failedLabel = result.failedTaskId ? ` (task ${result.failedTaskId})` : ''
+    toast.error(`Shipped ${shipped}, batch aborted${failedLabel}: ${result.error}`)
+  }
 
   const batchCreatePr = (
     batchTasks: Array<{ id: string; title: string; spec?: string; prompt?: string }>
