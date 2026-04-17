@@ -82,10 +82,14 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
       onDragLeave={handleDragLeave}
     >
       {isFocused ? null : (
-        <div className="panel-label-slim" onClick={() => focusPanel(node.panelId)}>
+        <button
+          type="button"
+          className="panel-label-slim"
+          onClick={() => focusPanel(node.panelId)}
+        >
           {node.tabs[node.activeTab]?.label ?? 'Untitled'}
           {showDirtyIndicator && <span className="panel-label-dirty-dot"> •</span>}
-        </div>
+        </button>
       )}
       <div className="panel-leaf__content">
         {node.tabs.map((tab, index) => {

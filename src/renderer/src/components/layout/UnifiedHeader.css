@@ -268,13 +268,23 @@
   font-size: 10px;
   color: var(--bde-text-dim);
   background: var(--bde-surface-high);
+  border: none;
   border-bottom: 1px solid var(--bde-border);
   cursor: pointer;
   transition: color 100ms ease;
   flex-shrink: 0;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
 }
 
 .panel-label-slim:hover {
+  color: var(--bde-text-muted);
+}
+
+.panel-label-slim:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: -2px;
   color: var(--bde-text-muted);
 }
 
