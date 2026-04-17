@@ -110,7 +110,7 @@ export function PipelineHeader({
         )}
       </div>
       <button
-        className="sprint-pipeline__density-toggle"
+        className="sprint-pipeline__badge"
         onClick={() => setPipelineDensity(pipelineDensity === 'card' ? 'compact' : 'card')}
         title={pipelineDensity === 'card' ? 'Switch to compact view' : 'Switch to card view'}
         aria-label={pipelineDensity === 'card' ? 'Switch to compact view' : 'Switch to card view'}
