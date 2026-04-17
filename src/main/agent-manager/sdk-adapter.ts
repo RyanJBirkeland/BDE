@@ -6,6 +6,7 @@
  */
 import type { AgentHandle } from './types'
 import type { Logger } from '../logger'
+import type { AgentType } from '../agent-system/personality/types'
 import { dirname, resolve as resolvePath } from 'node:path'
 import { homedir } from 'node:os'
 import { DEFAULT_CONFIG, SPAWN_TIMEOUT_MS } from './types'
@@ -13,6 +14,8 @@ import { buildAgentEnv, getOAuthToken } from '../env-utils'
 import { resolveNodeExecutable } from './resolve-node'
 import { spawnViaSdk, type PipelineSpawnTuning } from './spawn-sdk'
 import { spawnViaCli } from './spawn-cli'
+import { loadBackendSettings, resolveBackend } from './backend-selector'
+import { spawnLocalAgent } from './local-adapter'
 
 /**
  * Pipeline agents must only spawn with a `cwd` inside a BDE-managed worktree
@@ -62,6 +65,14 @@ export async function spawnAgent(opts: {
   maxBudgetUsd?: number
   logger?: Logger
   /**
+   * Which agent type is being spawned. Routes through the backend-selector to
+   * pick Claude vs. the local `rbt-coding-agent` backend based on settings.
+   * Defaults to `'pipeline'` because today only the Pipeline path flows
+   * through this function — other agent types (adhoc, copilot, synthesizer,
+   * assistant, reviewer) have their own dedicated spawn paths.
+   */
+  agentType?: AgentType
+  /**
    * Pipeline-agent-only overrides for SDK options. Adhoc, assistant, copilot,
    * and synthesizer agents use their own spawn paths and never set this.
    */
@@ -75,6 +86,39 @@ export async function spawnAgent(opts: {
     assertCwdIsInsideWorktreeBase(opts.cwd)
   }
 
+  const agentType: AgentType = opts.agentType ?? 'pipeline'
+  const settings = loadBackendSettings()
+  const resolved = resolveBackend(agentType, settings)
+
+  if (resolved.backend === 'local') {
+    try {
+      return await spawnLocalAgent({
+        prompt: opts.prompt,
+        cwd: opts.cwd,
+        model: resolved.model,
+        endpoint: settings.localEndpoint,
+        logger: opts.logger
+      })
+    } catch (err) {
+      opts.logger?.warn(
+        `[agent-manager] local backend for ${agentType} failed; falling back to Claude: ${(err as Error).message}`
+      )
+      // Fall through to Claude path below.
+    }
+  }
+
+  const modelForClaude = resolved.backend === 'claude' ? resolved.model : opts.model
+  return spawnClaudeAgent({ ...opts, model: modelForClaude })
+}
+
+async function spawnClaudeAgent(opts: {
+  prompt: string
+  cwd: string
+  model: string
+  maxBudgetUsd?: number
+  logger?: Logger
+  pipelineTuning?: PipelineSpawnTuning
+}): Promise<AgentHandle> {
   const env = { ...buildAgentEnv() }
   prependResolvedNodeDirToPath(env, opts.logger)
 
