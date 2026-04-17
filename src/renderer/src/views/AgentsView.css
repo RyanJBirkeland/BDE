@@ -49,8 +49,8 @@
   font-size: var(--bde-size-2xs);
   line-height: 1.4;
   color: var(--bde-text-muted);
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: var(--z-tooltip);
+  box-shadow: var(--bde-shadow-md);
 }
 
 .agents-view__tooltip-strong {
