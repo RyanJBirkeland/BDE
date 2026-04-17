@@ -548,7 +548,7 @@
   border-top: 1px solid var(--bde-border);
 }
 .cr-approve__danger {
-  color: var(--bde-error);
+  color: var(--bde-danger);
 }
 .cr-approve__trigger:disabled {
   opacity: 0.7;
