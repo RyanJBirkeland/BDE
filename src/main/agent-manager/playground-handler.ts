@@ -1,6 +1,6 @@
 import type { Logger } from '../logger'
 import { asSDKMessage } from './sdk-adapter'
-import { broadcast } from '../broadcast'
+import { emitAgentEvent } from '../agent-event-mapper'
 import type { AgentEvent, PlaygroundContentType } from '../../shared/types'
 import { sanitizePlaygroundHtml } from '../playground-sanitize'
 import { readFile, stat, realpath } from 'node:fs/promises'
@@ -133,7 +133,7 @@ export async function tryEmitPlaygroundEvent(
       timestamp: Date.now()
     }
 
-    broadcast('agent:event', { agentId: taskId, event })
+    emitAgentEvent(taskId, event)
     logger.info(`[playground] Emitted playground event for ${filename} (${stats.size} bytes)`)
   } catch (err) {
     logger.warn(`[playground] Failed to read playground file ${filePath}: ${err}`)

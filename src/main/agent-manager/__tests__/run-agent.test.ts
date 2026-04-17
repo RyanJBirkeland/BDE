@@ -571,20 +571,17 @@ describe('tryEmitPlaygroundEvent', () => {
   it('emits playground event for a valid HTML file', async () => {
     const { stat } = await import('node:fs/promises')
     const { readFile } = await import('node:fs/promises')
-    const { broadcast } = await import('../../broadcast')
+    const { emitAgentEvent } = await import('../../agent-event-mapper')
     vi.mocked(stat).mockResolvedValue({ size: 1024 } as any)
     vi.mocked(readFile).mockResolvedValue('<html>hello</html>')
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     await tryEmitPlaygroundEvent('task-1', '/wt/index.html', '/wt', logger)
-    expect(broadcast).toHaveBeenCalledWith(
-      'agent:event',
+    expect(emitAgentEvent).toHaveBeenCalledWith(
+      'task-1',
       expect.objectContaining({
-        agentId: 'task-1',
-        event: expect.objectContaining({
-          type: 'agent:playground',
-          filename: 'index.html',
-          html: expect.any(String)
-        })
+        type: 'agent:playground',
+        filename: 'index.html',
+        html: expect.any(String)
       })
     )
   })
@@ -599,12 +596,12 @@ describe('tryEmitPlaygroundEvent', () => {
   })
   it('skips file that is too large', async () => {
     const { stat } = await import('node:fs/promises')
-    const { broadcast } = await import('../../broadcast')
+    const { emitAgentEvent } = await import('../../agent-event-mapper')
     vi.mocked(stat).mockResolvedValue({ size: 10 * 1024 * 1024 } as any)
     const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
     await tryEmitPlaygroundEvent('task-1', '/wt/big.html', '/wt', logger)
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('File too large'))
-    expect(broadcast).not.toHaveBeenCalled()
+    expect(emitAgentEvent).not.toHaveBeenCalled()
   })
   it('logs warning on file read error', async () => {
     const { stat } = await import('node:fs/promises')

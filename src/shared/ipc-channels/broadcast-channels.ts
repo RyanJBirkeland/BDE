@@ -6,7 +6,11 @@ import type { AgentEvent, ChatChunk, PrListPayload, SprintTask } from '../types'
  */
 export interface BroadcastChannels {
   // Agent events
-  // Deprecated: use agent:event:batch (emitted via broadcastCoalesced in agent-event-mapper.ts)
+  // `agent:event` is the *payload type key* used by `broadcastCoalesced` —
+  // nothing should call `broadcast('agent:event', …)` directly. The renderer
+  // only listens to `agent:event:batch`; calling `broadcast` on the single
+  // channel drops the event. All emission goes through
+  // `agent-event-mapper.emitAgentEvent`, which routes into the batch path.
   'agent:event': { agentId: string; event: AgentEvent }
   'agent:event:batch': Array<{ agentId: string; event: AgentEvent }>
 

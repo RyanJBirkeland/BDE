@@ -20,6 +20,11 @@ vi.mock('../../broadcast', () => ({
   broadcastCoalesced: vi.fn()
 }))
 
+vi.mock('../../agent-event-mapper', () => ({
+  emitAgentEvent: vi.fn(),
+  flushAgentEventBatcher: vi.fn()
+}))
+
 vi.mock('node:fs/promises', () => ({
   stat: vi.fn(),
   readFile: vi.fn(),
@@ -235,7 +240,7 @@ describe('tryEmitPlaygroundEvent — path containment (Fix 4: trailing slash)', 
   beforeEach(() => vi.clearAllMocks())
 
   it('blocks a sibling directory that shares a path prefix (trailing slash fix)', async () => {
-    const { broadcast } = await import('../../broadcast')
+    const { emitAgentEvent } = await import('../../agent-event-mapper')
     const { stat } = await import('node:fs/promises')
     vi.mocked(stat).mockResolvedValue({ size: 100 } as any)
 
@@ -251,11 +256,11 @@ describe('tryEmitPlaygroundEvent — path containment (Fix 4: trailing slash)', 
     )
 
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Path traversal blocked'))
-    expect(broadcast).not.toHaveBeenCalled()
+    expect(emitAgentEvent).not.toHaveBeenCalled()
   })
 
   it('allows a file directly inside the worktree root', async () => {
-    const { broadcast } = await import('../../broadcast')
+    const { emitAgentEvent } = await import('../../agent-event-mapper')
     const { stat, readFile } = await import('node:fs/promises')
     vi.mocked(stat).mockResolvedValue({ size: 100 } as any)
     vi.mocked(readFile).mockResolvedValue('<html/>' as any)
@@ -269,11 +274,11 @@ describe('tryEmitPlaygroundEvent — path containment (Fix 4: trailing slash)', 
       logger
     )
 
-    expect(broadcast).toHaveBeenCalled()
+    expect(emitAgentEvent).toHaveBeenCalled()
   })
 
   it('allows a file in a subdirectory inside the worktree', async () => {
-    const { broadcast } = await import('../../broadcast')
+    const { emitAgentEvent } = await import('../../agent-event-mapper')
     const { stat, readFile } = await import('node:fs/promises')
     vi.mocked(stat).mockResolvedValue({ size: 100 } as any)
     vi.mocked(readFile).mockResolvedValue('<html/>' as any)
@@ -287,6 +292,6 @@ describe('tryEmitPlaygroundEvent — path containment (Fix 4: trailing slash)', 
       logger
     )
 
-    expect(broadcast).toHaveBeenCalled()
+    expect(emitAgentEvent).toHaveBeenCalled()
   })
 })
