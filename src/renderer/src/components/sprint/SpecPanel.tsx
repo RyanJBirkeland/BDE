@@ -83,6 +83,8 @@ export function SpecPanel({ taskTitle, spec, onClose, onSave }: SpecPanelProps):
                 className="spec-panel__textarea"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
+                aria-label="Task spec"
+                placeholder="Enter task specification..."
               />
             ) : (
               <div className="spec-panel__rendered">{renderAgentMarkdown(spec)}</div>
