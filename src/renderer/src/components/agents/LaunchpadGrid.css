@@ -82,6 +82,12 @@
   transform: translateY(0);
 }
 
+.launchpad__tile:focus-visible {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+  outline: none;
+}
+
 .launchpad__tile:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -194,6 +200,12 @@
   transform: translateY(0);
 }
 
+.launchpad__submit-btn:focus-visible {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+  outline: none;
+}
+
 .launchpad__submit-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -223,6 +235,12 @@
 
 .launchpad__repo-chip:hover {
   border-color: var(--bde-surface);
+}
+
+.launchpad__repo-chip:focus-visible {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+  outline: none;
 }
 
 .launchpad__repo-dot {
@@ -315,6 +333,12 @@
 .launchpad__model-pill:hover {
   border-color: var(--bde-surface);
   color: var(--bde-text-muted);
+}
+
+.launchpad__model-pill:focus-visible {
+  background: var(--bde-surface);
+  color: var(--bde-text);
+  outline: none;
 }
 
 .launchpad__model-pill--active {
