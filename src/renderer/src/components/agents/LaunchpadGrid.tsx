@@ -256,6 +256,7 @@ export function LaunchpadGrid({
           onKeyDown={handleKeyDown}
           rows={2}
           disabled={spawning}
+          aria-label="Agent prompt"
         />
         <button
           type="button"
