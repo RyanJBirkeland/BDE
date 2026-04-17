@@ -99,6 +99,7 @@ export function FindBar(): React.JSX.Element | null {
         ref={inputRef}
         className="terminal-find__input"
         type="text"
+        aria-label="Find in terminal"
         placeholder="Find…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
