@@ -602,6 +602,11 @@
   background: var(--bde-surface-high);
 }
 
+.conflict-row__header:focus-visible {
+  outline: 2px solid var(--bde-accent-primary);
+  outline-offset: -2px;
+}
+
 .conflict-row__repo-dot {
   width: 8px;
   height: 8px;
