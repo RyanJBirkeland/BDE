@@ -61,7 +61,7 @@ export function MemoryFileEditor({
       ) : selectedPath ? (
         <>
           <div className="memory-editor__toolbar">
-            <span className="memory-editor__path">
+            <span id="memory-file-path-label" className="memory-editor__path">
               memory/{selectedPath}
               {isDirty && <span className="memory-editor__dirty"> &bull;</span>}
             </span>
@@ -105,6 +105,7 @@ export function MemoryFileEditor({
             value={content}
             onChange={(e) => onContentChange(e.target.value)}
             spellCheck={false}
+            aria-labelledby="memory-file-path-label"
           />
         </>
       ) : (
