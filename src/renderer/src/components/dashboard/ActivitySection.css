@@ -42,6 +42,11 @@
   background: var(--bde-border);
 }
 
+.dashboard-completion-row[role='button']:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .dashboard-completion-title {
   color: var(--bde-text);
   font-size: var(--bde-size-md);
@@ -99,6 +104,11 @@
 
 .dashboard-failure-breakdown-row:hover {
   background: var(--bde-border);
+}
+
+.dashboard-failure-breakdown-row:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 .dashboard-failure-breakdown-reason {
