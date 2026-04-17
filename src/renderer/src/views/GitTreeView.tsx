@@ -229,7 +229,7 @@ export default function GitTreeView(): React.ReactElement {
               value={activeRepo ?? ''}
               onChange={handleRepoChange}
               aria-label="Select repository"
-              className="git-tree-view__repo-select"
+              className="git-tree-view__repo-select bde-select"
             >
               {repoPaths.map((p) => (
                 <option key={p} value={p}>

@@ -157,7 +157,7 @@ export function DependencyPicker({
                 />
               </button>
               <select
-                className="wb-deps__condition"
+                className="wb-deps__condition bde-select"
                 value={dep.condition ?? ''}
                 onChange={(e) =>
                   handleChangeCondition(

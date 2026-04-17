@@ -227,7 +227,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
             id="wb-form-repo"
             value={repo}
             onChange={(e) => setField('repo', e.target.value)}
-            className="wb-form__select"
+            className="wb-form__select bde-select"
           >
             <option value="" disabled>Select a repository...</option>
             {repoOptions.map((r) => (
@@ -249,7 +249,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
             id="wb-form-priority"
             value={priority}
             onChange={(e) => setField('priority', Number(e.target.value))}
-            className="wb-form__select"
+            className="wb-form__select bde-select"
           >
             {PRIORITY_OPTIONS.map((p) => (
               <option key={p.value} value={p.value}>
@@ -289,7 +289,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
                     id="wb-form-model"
                     value={model}
                     onChange={(e) => setField('model', e.target.value)}
-                    className="wb-form__select"
+                    className="wb-form__select bde-select"
                   >
                     <option value="">Default (Sonnet)</option>
                     <option value="claude-opus-4">Claude Opus 4</option>

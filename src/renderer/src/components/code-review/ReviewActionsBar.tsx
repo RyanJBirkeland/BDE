@@ -146,7 +146,7 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
                   Merge Locally
                 </button>
                 <select
-                  className="rab__strategy"
+                  className="rab__strategy bde-select"
                   value={mergeStrategy}
                   onChange={(e) =>
                     setMergeStrategy(e.target.value as 'squash' | 'merge' | 'rebase')
