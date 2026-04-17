@@ -10,7 +10,7 @@ import { dirname } from 'node:path'
 import { SPAWN_TIMEOUT_MS } from './types'
 import { buildAgentEnv, getOAuthToken } from '../env-utils'
 import { resolveNodeExecutable } from './resolve-node'
-import { spawnViaSdk } from './spawn-sdk'
+import { spawnViaSdk, type PipelineSpawnTuning } from './spawn-sdk'
 import { spawnViaCli } from './spawn-cli'
 
 // Re-export protocol helpers so existing imports don't break
@@ -31,6 +31,11 @@ export async function spawnAgent(opts: {
   model: string
   maxBudgetUsd?: number
   logger?: Logger
+  /**
+   * Pipeline-agent-only overrides for SDK options. Adhoc, assistant, copilot,
+   * and synthesizer agents use their own spawn paths and never set this.
+   */
+  pipelineTuning?: PipelineSpawnTuning
 }): Promise<AgentHandle> {
   const env = { ...buildAgentEnv() }
   prependResolvedNodeDirToPath(env, opts.logger)
@@ -62,7 +67,8 @@ export async function spawnWithTimeout(
   cwd: string,
   model: string,
   logger: Logger,
-  maxBudgetUsd?: number
+  maxBudgetUsd?: number,
+  pipelineTuning?: PipelineSpawnTuning
 ): Promise<AgentHandle> {
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -72,7 +78,7 @@ export async function spawnWithTimeout(
     )
   })
   return await Promise.race([
-    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd }),
+    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning }),
     timeoutPromise
   ]).finally(() => clearTimeout(timer!))
 }

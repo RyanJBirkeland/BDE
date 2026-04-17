@@ -63,6 +63,25 @@ function buildTimeLimitSection(maxRuntimeMs: number): string {
 
 const IDLE_TIMEOUT_WARNING = `\n\n## Idle Timeout Warning\nYou will be TERMINATED if you produce no output for 15 minutes. If running long commands (npm install, test suites), emit a progress message before and after.`
 
+const RULES_OF_ENGAGEMENT = `\n\n### Rules of engagement
+
+TRUST THE SPEC. The task's spec below is the complete description of what to change. Do NOT run reconnaissance commands — no \`git log\`, \`git status\`, \`git diff\`, \`git ls-remote\`, \`git reflog\`, \`git log --grep\`, or similar. If the spec says "change X to Y in file Z", just open Z, make the change, and move on.
+
+Use \`Bash\` only for:
+- \`npm run typecheck\` (verification)
+- \`npm test\` (verification)
+- The specific verification command the spec tells you to run
+
+Skip exploring directories outside the file list. The spec is the source of truth; the codebase may contain conflicting context but your job is to execute the spec as written.`
+
+const TESTING_GUIDANCE = `\n\n### Testing guidance
+
+After making code changes, search for tests that reference the symbols you changed (selectors, placeholder text, function names, ARIA attributes, className values). Common locations:
+- \`<name>.test.tsx\` next to the component
+- \`__tests__/<name>.test.tsx\` in a sibling directory
+
+Update failing tests to match your changes. Run \`npm run typecheck\` and (when relevant) \`npm test\` in your worktree before committing. If you cannot reconcile a test with the new code, flag it in the commit body rather than deleting the test.`
+
 const PIPELINE_SETUP_RULE = `\n\n## Pipeline Worktree Setup\nYour worktree has NO \`node_modules\`. Run \`npm install\` before invoking any of the pre-commit verification commands (\`npm run typecheck\`, \`npm test\`, \`npm run lint\`). You may read the spec and source files first to plan. If \`npm install\` fails, report the error clearly and exit.`
 
 const CONTEXT_EFFICIENCY_HINT = `\n\n## Context Efficiency\nEach tool result stays in the conversation for the rest of this run, accumulating cost on every subsequent turn. Start narrow:\n- Read with \`offset\`/\`limit\` when you know the relevant section — not the whole file\n- Cap exploratory greps: \`grep -m 20\` or \`| head -20\`\n- Use \`Glob\` or \`grep -l\` to locate files before reading their contents\n- Read one representative file per pattern. Expand only if that read left an unanswered question.`
@@ -109,6 +128,10 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
   } = input
 
   let prompt = CODING_AGENT_PREAMBLE
+
+  // Rules of engagement — placed before personality/memory so the "trust the spec,
+  // no reconnaissance" directive frames everything the agent reads downstream.
+  prompt += RULES_OF_ENGAGEMENT
 
   // Inject personality
   prompt += buildPersonalitySection(pipelinePersonality)
@@ -183,6 +206,10 @@ Before your final push, verify:
 
   // Definition of Done directly after self-review so it's read before operational boilerplate
   prompt += DEFINITION_OF_DONE
+
+  // Testing guidance — sits adjacent to Definition of Done so the test-update
+  // expectation is read alongside the verification checklist.
+  prompt += TESTING_GUIDANCE
 
   // Operational sections (setup, efficiency, push mechanics)
   prompt += PIPELINE_SETUP_RULE

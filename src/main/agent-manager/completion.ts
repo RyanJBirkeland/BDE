@@ -22,6 +22,11 @@ import {
 } from './resolve-success-phases'
 import { resolveFailure as resolveFailurePhase } from './resolve-failure-phases'
 import { evaluateAutoMerge } from './auto-merge-coordinator'
+import {
+  detectUntouchedTests,
+  listChangedFiles,
+  formatAdvisory,
+} from './test-touch-check'
 
 export type { ResolveFailureContext } from './resolve-failure-phases'
 
@@ -34,6 +39,13 @@ export interface ResolveSuccessContext {
   agentSummary?: string | null
   retryCount: number
   repo: IAgentTaskRepository
+  /**
+   * Absolute path to the MAIN repo checkout (not the worktree). Used by the
+   * untouched-test advisory to look up test files alongside changed source.
+   * When omitted (legacy callers, tests), the advisory falls back to the
+   * worktree path.
+   */
+  repoPath?: string
 }
 
 /**
@@ -52,7 +64,7 @@ export async function findOrCreatePR(
 }
 
 export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo } = opts
+  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo, repoPath } = opts
 
   const worktreeExists = await verifyWorktreeExists(taskId, worktreePath, repo, logger, onTaskTerminal)
   if (!worktreeExists) return
@@ -77,7 +89,64 @@ export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger
   })
   if (!hasCommits) return
 
+  await annotateIfTestsUntouched(taskId, branch, worktreePath, repoPath, repo, logger)
+
   await transitionTaskToReview(taskId, branch, worktreePath, title, rebaseOutcome, repo, logger, onTaskTerminal, evaluateAutoMerge)
+}
+
+/**
+ * Pre-review advisory: checks whether the agent changed source files whose
+ * sibling test files exist but were not also changed. Appends a single-line
+ * warning to the task's `notes` so the human reviewer sees it in Code Review.
+ *
+ * Intentionally advisory-only — never blocks the review transition. Failures
+ * in git diff or fs lookups are logged and swallowed so a flaky check cannot
+ * stall the success path.
+ */
+async function annotateIfTestsUntouched(
+  taskId: string,
+  agentBranch: string,
+  worktreePath: string,
+  repoPath: string | undefined,
+  repo: IAgentTaskRepository,
+  logger: Logger
+): Promise<void> {
+  const testCheckRepoPath = repoPath ?? worktreePath
+  const env = buildAgentEnv()
+
+  try {
+    const changedFiles = await listChangedFiles(agentBranch, worktreePath, env, { logger })
+    if (changedFiles.length === 0) return
+
+    const untouched = detectUntouchedTests(changedFiles, testCheckRepoPath, { logger })
+    if (untouched.length === 0) return
+
+    appendAdvisoryNote(taskId, formatAdvisory(untouched), repo, logger)
+  } catch (err) {
+    logger.warn(
+      `[completion] Untouched-test check skipped for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`
+    )
+  }
+}
+
+/**
+ * Appends an advisory line to the task's existing `notes`, preserving any
+ * prior notes (e.g. rebase warnings) so multiple advisories can coexist.
+ */
+function appendAdvisoryNote(
+  taskId: string,
+  advisory: string,
+  repo: IAgentTaskRepository,
+  logger: Logger
+): void {
+  try {
+    const existing = repo.getTask(taskId)?.notes ?? ''
+    const combined = existing ? `${existing}\n${advisory}` : advisory
+    repo.updateTask(taskId, { notes: combined })
+    logger.info(`[completion] Annotated task ${taskId} with test-touch advisory: ${advisory}`)
+  } catch (err) {
+    logger.warn(`[completion] Failed to persist test-touch advisory for ${taskId}: ${err}`)
+  }
 }
 
 export function resolveFailure(

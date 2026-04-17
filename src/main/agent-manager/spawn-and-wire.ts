@@ -16,6 +16,7 @@ import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
 import { nowIso } from '../../shared/time'
 import { TurnTracker } from './turn-tracker'
 import { getDefaultCredentialService } from '../services/credential-service'
+import { computeMaxTurns, PIPELINE_DISALLOWED_TOOLS } from './turn-budget'
 
 /**
  * Logs a worktree cleanup warning with consistent format.
@@ -114,6 +115,12 @@ export async function spawnAndWireAgent(
     throw new Error(message) // unreachable
   }
 
+  const specForTurnBudget = task.spec ?? task.prompt ?? task.title ?? ''
+  const pipelineTuning = {
+    maxTurns: computeMaxTurns(specForTurnBudget),
+    disallowedTools: PIPELINE_DISALLOWED_TOOLS
+  }
+
   let handle: AgentHandle
   try {
     handle = await spawnWithTimeout(
@@ -121,7 +128,8 @@ export async function spawnAndWireAgent(
       worktree.worktreePath,
       effectiveModel,
       logger,
-      task.max_cost_usd ?? undefined
+      task.max_cost_usd ?? undefined,
+      pipelineTuning
     )
     try {
       onSpawnSuccess?.()
