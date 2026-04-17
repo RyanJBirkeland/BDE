@@ -3,6 +3,7 @@ import type { AgentManager } from '../agent-manager'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { createLogger } from '../logger'
 import { nowIso } from '../../shared/time'
+import { broadcast } from '../broadcast'
 
 const logger = createLogger('status-server')
 
@@ -73,6 +74,15 @@ export function createStatusServer(
 
         server.on('error', (err) => {
           logger.error(`[status-server] Server error: ${err}`)
+          const errMsg = err instanceof Error ? err.message : String(err)
+          const isAddrInUse =
+            (err as NodeJS.ErrnoException).code === 'EADDRINUSE' || errMsg.includes('EADDRINUSE')
+          const message = isAddrInUse
+            ? `Status server could not bind to port ${port} — another BDE instance may be running.`
+            : `Status server failed to start: ${errMsg}`
+          // broadcast is a no-op before any window exists (early bootstrap);
+          // the logger still captures the error for triage in that case.
+          broadcast('manager:warning', { message })
           reject(err)
         })
 

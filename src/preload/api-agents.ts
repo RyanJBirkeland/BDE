@@ -61,7 +61,10 @@ export const agentManager = {
     message?: string
   ): Promise<IpcChannelMap['agent-manager:checkpoint']['result']> =>
     typedInvoke('agent-manager:checkpoint', taskId, message),
-  onWarning: onBroadcast<BroadcastChannels['manager:warning']>('manager:warning')
+  onWarning: onBroadcast<BroadcastChannels['manager:warning']>('manager:warning'),
+  onCircuitBreakerOpen: onBroadcast<BroadcastChannels['agent-manager:circuit-breaker-open']>(
+    'agent-manager:circuit-breaker-open'
+  )
 }
 
 export const agentEvents = {

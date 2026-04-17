@@ -7,6 +7,16 @@ const BDE_DIR = join(homedir(), '.bde')
 const LOG_PATH = join(BDE_DIR, 'bde.log')
 const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
 
+/**
+ * Mirror logger output to stdout/stderr only in development. In packaged
+ * production builds console writes duplicate every file write (~397 per
+ * startup) with no visible benefit — the user cannot see them, and
+ * `~/.bde/bde.log` remains the authoritative source. `BDE_CONSOLE_LOG=1`
+ * re-enables mirroring for targeted debugging of packaged builds.
+ */
+const CONSOLE_LOG_ENABLED =
+  process.env.NODE_ENV !== 'production' || process.env.BDE_CONSOLE_LOG === '1'
+
 export interface Logger {
   info(msg: string): void
   warn(msg: string): void
@@ -80,19 +90,19 @@ export function createLogger(name: string): Logger {
   rotateIfNeeded()
   return {
     info: (m: string) => {
-      console.log(`[${name}]`, m)
+      if (CONSOLE_LOG_ENABLED) console.log(`[${name}]`, m)
       fileLog('INFO', name, m)
     },
     warn: (m: string) => {
-      console.warn(`[${name}]`, m)
+      if (CONSOLE_LOG_ENABLED) console.warn(`[${name}]`, m)
       fileLog('WARN', name, m)
     },
     error: (m: string) => {
-      console.error(`[${name}]`, m)
+      if (CONSOLE_LOG_ENABLED) console.error(`[${name}]`, m)
       fileLog('ERROR', name, m)
     },
     debug: (m: string) => {
-      console.debug(`[${name}]`, m)
+      if (CONSOLE_LOG_ENABLED) console.debug(`[${name}]`, m)
       fileLog('DEBUG', name, m)
     }
   }

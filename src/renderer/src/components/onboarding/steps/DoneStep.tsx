@@ -1,4 +1,5 @@
-import { ArrowLeft, CheckCircle, Rocket } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Rocket, Settings as SettingsIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '../../ui/Button'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
 import { usePanelLayoutStore } from '../../../stores/panelLayout'
@@ -18,19 +19,30 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
   const setSpecType = useTaskWorkbenchStore((s) => s.setSpecType)
   const setView = usePanelLayoutStore((s) => s.setView)
   const repoOptions = useRepoOptions()
+  const [repoOverride, setRepoOverride] = useState<string | null>(null)
+  const selectedRepoLabel = repoOverride ?? repoOptions[0]?.label ?? ''
 
   const handleCreateFirstTask = (): void => {
     setField('title', SAMPLE_FIRST_TASK.title)
     setField('spec', SAMPLE_FIRST_TASK.spec)
-    setField('repo', repoOptions[0]?.label ?? '')
+    setField('repo', selectedRepoLabel)
     setSpecType(SAMPLE_FIRST_TASK.specType)
     window.api.settings.set('onboarding.completed', 'true').catch((err) => {
       console.error('Failed to mark onboarding as completed:', err)
     })
     onComplete()
-    // Defer navigation so the wizard unmounts first
     setTimeout(() => setView('planner'), 0)
   }
+
+  const handleOpenRepoSettings = (): void => {
+    window.api.settings.set('onboarding.completed', 'true').catch((err) => {
+      console.error('Failed to mark onboarding as completed:', err)
+    })
+    onComplete()
+    setTimeout(() => setView('settings'), 0)
+  }
+
+  const hasRepos = repoOptions.length > 0
 
   return (
     <div className="onboarding-step">
@@ -64,6 +76,41 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
         </div>
       </div>
 
+      {hasRepos && repoOptions.length > 1 && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--bde-space-1)',
+            marginTop: 'var(--bde-space-3)'
+          }}
+        >
+          <label
+            htmlFor="onboarding-done-repo-select"
+            style={{ fontSize: 'var(--bde-size-xs)', color: 'var(--bde-color-text-muted)' }}
+          >
+            Start in repository
+          </label>
+          <select
+            id="onboarding-done-repo-select"
+            value={selectedRepoLabel}
+            onChange={(e) => setRepoOverride(e.target.value)}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '4px',
+              border: '1px solid var(--bde-color-border)',
+              background: 'var(--bde-color-surface)'
+            }}
+          >
+            {repoOptions.map((opt) => (
+              <option key={opt.label} value={opt.label}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="onboarding-step__actions">
         {!isFirst && (
           <Button variant="ghost" onClick={onBack}>
@@ -71,13 +118,27 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
             Back
           </Button>
         )}
-        <Button variant="ghost" onClick={onComplete}>
-          Get Started
-        </Button>
-        <Button variant="primary" onClick={handleCreateFirstTask}>
-          <Rocket size={16} />
-          Create your first task
-        </Button>
+        {hasRepos ? (
+          <>
+            <Button variant="ghost" onClick={onComplete}>
+              Get Started
+            </Button>
+            <Button variant="primary" onClick={handleCreateFirstTask}>
+              <Rocket size={16} />
+              Create your first task
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="ghost" onClick={onComplete}>
+              Explore BDE
+            </Button>
+            <Button variant="primary" onClick={handleOpenRepoSettings}>
+              <SettingsIcon size={16} />
+              Add a repository
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

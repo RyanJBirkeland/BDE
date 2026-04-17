@@ -1,5 +1,8 @@
 appId: com.rbtechbot.bde
 productName: BDE
+copyright: Copyright © 2026 BDE
+npmRebuild: true
+afterSign: scripts/after-sign.cjs
 directories:
   buildResources: resources
   output: release
@@ -13,6 +16,10 @@ mac:
       arch: arm64
   identity: null
   hardenedRuntime: false
+  # gatekeeperAssess stays false until code signing is configured (Phase 5 —
+  # S5.2/S5.3). With identity: null, spctl assessment always rejects the
+  # ad-hoc signature and breaks the package build. Flip to true after signing
+  # lands so the build fails loudly on signature regressions.
   gatekeeperAssess: false
   icon: resources/icon.icns
 dmg:
@@ -20,10 +27,12 @@ dmg:
   contents:
     - x: 130
       y: 220
+      name: BDE
     - x: 410
       y: 220
       type: link
       path: /Applications
+      name: Applications
   window:
     width: 540
     height: 380

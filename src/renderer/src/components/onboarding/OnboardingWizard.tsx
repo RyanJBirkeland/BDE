@@ -42,20 +42,31 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.J
   const StepComponent = steps[currentStep].component
 
   return (
-    <div className="onboarding-wizard-backdrop">
+    <div className="onboarding-wizard-backdrop" role="dialog" aria-modal="true" aria-label="BDE setup wizard">
       <div className="onboarding-wizard">
-        <div className="onboarding-wizard__progress">
+        <ol
+          className="onboarding-wizard__progress"
+          role="progressbar"
+          aria-valuemin={1}
+          aria-valuemax={steps.length}
+          aria-valuenow={currentStep + 1}
+          aria-valuetext={`Step ${currentStep + 1} of ${steps.length}: ${steps[currentStep].title}`}
+        >
           {steps.map((step, index) => (
-            <div
+            <li
               key={index}
               className={`onboarding-wizard__step-indicator ${index === currentStep ? 'active' : ''} ${index < currentStep ? 'completed' : ''}`}
               data-testid={`step-indicator-${index}`}
+              aria-current={index === currentStep ? 'step' : undefined}
+              aria-label={`Step ${index + 1} of ${steps.length}: ${step.title}${index < currentStep ? ' (completed)' : ''}`}
             >
-              <div className="onboarding-wizard__step-number">{index + 1}</div>
+              <div className="onboarding-wizard__step-number" aria-hidden="true">
+                {index + 1}
+              </div>
               <div className="onboarding-wizard__step-title">{step.title}</div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
 
         <div className="onboarding-wizard__content">
           <StepComponent

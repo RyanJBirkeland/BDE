@@ -173,8 +173,18 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
     !status?.tokenExpired &&
     extended.gitAvailable === 'pass'
 
-  const requiredStates = [cliState, tokenState, expiryState, extended.gitAvailable]
-  const anyRequiredFailed = requiredStates.some((s) => s === 'fail')
+  const failedChecks: string[] = []
+  if (cliState === 'fail') failedChecks.push('Claude CLI')
+  if (tokenState === 'fail') failedChecks.push('Claude login')
+  if (expiryState === 'fail') failedChecks.push('valid token')
+  if (extended.gitAvailable === 'fail') failedChecks.push('git')
+
+  const bypassLabel =
+    failedChecks.length === 0
+      ? 'Continue Anyway'
+      : failedChecks.length === 1
+        ? `Continue without ${failedChecks[0]}`
+        : `Continue without ${failedChecks.length} required checks`
 
   return (
     <div className="onboarding-backdrop">
@@ -221,14 +231,38 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
         {instruction && !checking && (
           <div className="onboarding-instruction">
             <code className="onboarding-instruction__code">{instruction}</code>
+            <p
+              style={{
+                margin: 'var(--bde-space-1) 0 0 0',
+                fontSize: 'var(--bde-size-xs)',
+                color: 'var(--bde-color-text-muted)'
+              }}
+            >
+              After running the command, click <strong>Re-check</strong> below to verify.
+            </p>
           </div>
+        )}
+
+        {!allPassed && !checking && failedChecks.length > 0 && (
+          <p
+            className="onboarding-risk-callout"
+            role="alert"
+            style={{
+              margin: 'var(--bde-space-3) 0 0 0',
+              fontSize: 'var(--bde-size-xs)',
+              color: 'var(--bde-color-warning, #ff9f43)'
+            }}
+          >
+            Continuing skips: {failedChecks.join(', ')}. Agents and related features will fail until
+            these are resolved — you can still explore the UI and fix them in Settings.
+          </p>
         )}
 
         <div className="onboarding-actions">
           {!allPassed && (
             <Button variant="ghost" onClick={runCheck} loading={checking} disabled={checking}>
               <RefreshCw size={14} />
-              Check Again
+              Re-check
             </Button>
           )}
           {allPassed ? (
@@ -237,8 +271,8 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
               Continue
             </Button>
           ) : (
-            <Button variant="ghost" onClick={onReady} disabled={checking || anyRequiredFailed}>
-              Continue Anyway
+            <Button variant="ghost" onClick={onReady} disabled={checking}>
+              {bypassLabel}
             </Button>
           )}
         </div>

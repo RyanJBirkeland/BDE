@@ -21,6 +21,26 @@ vi.mock('../../agent-event-mapper', () => ({
   flushAgentEventBatcher: vi.fn()
 }))
 
+vi.mock('../../services/credential-service', () => ({
+  getDefaultCredentialService: vi.fn(() => ({
+    getCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    refreshCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    invalidateCache: vi.fn()
+  }))
+}))
+
 import { spawnAndWireAgent, handleSpawnFailure } from '../spawn-and-wire'
 import { spawnWithTimeout } from '../sdk-adapter'
 import { initializeAgentTracking } from '../agent-initialization'

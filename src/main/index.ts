@@ -115,18 +115,33 @@ process.on('unhandledRejection', (reason) => {
 })
 
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    minWidth: 900,
-    minHeight: 600,
-    show: false,
-    backgroundColor: '#0A0A0A',
-    titleBarStyle: 'hiddenInset',
-    autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: SHARED_WEB_PREFERENCES
-  })
+  let mainWindow: BrowserWindow
+  try {
+    mainWindow = new BrowserWindow({
+      width: 1280,
+      height: 800,
+      minWidth: 900,
+      minHeight: 600,
+      show: false,
+      backgroundColor: '#0A0A0A',
+      titleBarStyle: 'hiddenInset',
+      autoHideMenuBar: true,
+      ...(process.platform === 'linux' ? { icon } : {}),
+      webPreferences: SHARED_WEB_PREFERENCES
+    })
+  } catch (err) {
+    logError(logger, 'Failed to create main BrowserWindow', err instanceof Error ? err : new Error(String(err)))
+    // Headless systems (no display server) cause `new BrowserWindow()` to
+    // throw. Without this guard the process hangs silently. Surface the
+    // failure and quit so the launcher's exit code is diagnostic.
+    const message = err instanceof Error ? err.message : String(err)
+    dialog.showErrorBox(
+      'BDE could not open its window',
+      `The application failed to create its main window.\n\nDetails: ${message}\n\nThis typically means BDE was launched on a system with no display, or Electron could not initialize a graphics context.`
+    )
+    app.quit()
+    return
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()

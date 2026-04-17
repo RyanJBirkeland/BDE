@@ -13,6 +13,7 @@ import { OnboardingWizard } from './components/onboarding/OnboardingWizard'
 import { Button } from './components/ui/Button'
 import { Kbd } from './components/ui/Kbd'
 import { useGitHubErrorListener } from './hooks/useGitHubErrorListener'
+import { useManagerEventListener } from './hooks/useManagerEventListener'
 import { useDesktopNotifications } from './hooks/useDesktopNotifications'
 import { useAppShortcuts } from './hooks/useAppShortcuts'
 import { useOnboardingCheck } from './hooks/useOnboardingCheck'
@@ -125,6 +126,7 @@ function App(): React.JSX.Element {
   useAppShortcuts({ paletteOpen, shortcutsOpen, setShortcutsOpen })
 
   useGitHubErrorListener()
+  useManagerEventListener()
   useDesktopNotifications()
   const crossDrop = useCrossWindowDrop()
 

@@ -116,6 +116,27 @@ vi.mock('../../env-utils', () => ({
     .mockReturnValue({ PATH: '/usr/bin', ANTHROPIC_API_KEY: 'test-token' })
 }))
 
+// Mock the credential service so pre-spawn refresh returns ok in tests.
+vi.mock('../../services/credential-service', () => ({
+  getDefaultCredentialService: vi.fn(() => ({
+    getCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test-token',
+      expiresAt: null,
+      cliFound: true
+    }),
+    refreshCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test-token',
+      expiresAt: null,
+      cliFound: true
+    }),
+    invalidateCache: vi.fn()
+  }))
+}))
+
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------

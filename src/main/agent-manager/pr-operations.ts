@@ -8,6 +8,21 @@ import type { Logger } from '../logger'
 import { execFileAsync, sleep } from '../lib/async-utils'
 import { validateGitRef } from '../lib/review-paths'
 import { broadcast } from '../broadcast'
+import { getDefaultCredentialService } from '../services/credential-service'
+
+/**
+ * Guards PR actions behind a GitHub credential check. Throws with an
+ * actionable error message when `gh` is unavailable or the user opted out —
+ * the caller surfaces the message to the user (task notes, toast) instead of
+ * letting `gh` fail with a cryptic exit code deep in the retry loop.
+ */
+async function ensureGithubCredential(logger: Logger): Promise<void> {
+  const service = getDefaultCredentialService(logger)
+  const result = await service.getCredential('github')
+  if (result.status === 'ok') return
+  const hint = result.actionable ?? 'GitHub is disabled (read-only mode)'
+  throw new Error(`GitHub credential unavailable — ${hint}`)
+}
 
 const PR_CREATE_MAX_ATTEMPTS = 3
 const PR_CREATE_BACKOFF_MS = [3000, 8000]
@@ -130,6 +145,8 @@ export async function createNewPr(
   logger: Logger,
   customBody?: string
 ): Promise<{ prUrl: string | null; prNumber: number | null }> {
+  await ensureGithubCredential(logger)
+
   let prUrl: string | null = null
   let prNumber: number | null = null
   let lastError: unknown = null

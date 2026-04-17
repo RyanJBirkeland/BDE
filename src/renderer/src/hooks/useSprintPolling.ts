@@ -23,4 +23,12 @@ export function useSprintPolling(): void {
   useEffect(() => {
     return window.api.sprint.onExternalChange(loadData)
   }, [loadData])
+
+  // Granular refresh when the main process broadcasts a specific task mutation
+  // (e.g., review-action-executor updates). A full reload is coarser than
+  // necessary but guarantees consistency — a future optimization can patch
+  // the store in place from the mutation payload.
+  useEffect(() => {
+    return window.api.sprint.onMutation(() => loadData())
+  }, [loadData])
 }

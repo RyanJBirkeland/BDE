@@ -107,6 +107,26 @@ vi.mock('../../env-utils', () => ({
   refreshOAuthTokenFromKeychain: vi.fn().mockResolvedValue(false)
 }))
 
+vi.mock('../../services/credential-service', () => ({
+  getDefaultCredentialService: vi.fn(() => ({
+    getCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    refreshCredential: vi.fn().mockResolvedValue({
+      kind: 'claude',
+      status: 'ok',
+      token: 'test',
+      expiresAt: null,
+      cliFound: true
+    }),
+    invalidateCache: vi.fn()
+  }))
+}))
+
 vi.mock('../../agent-event-mapper', () => ({
   mapRawMessage: vi.fn().mockReturnValue([]),
   emitAgentEvent: vi.fn(),

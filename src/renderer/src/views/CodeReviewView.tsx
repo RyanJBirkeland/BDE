@@ -13,6 +13,7 @@ import { useAutoReview } from '../hooks/useAutoReview'
 import { toast } from '../stores/toasts'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
+import { GitHubOptedOutBanner } from '../components/GitHubOptedOutBanner'
 
 export default function CodeReviewView(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -118,6 +119,7 @@ export default function CodeReviewView(): React.JSX.Element {
         animate="animate"
         transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
       >
+        <GitHubOptedOutBanner />
         <TopBar />
         <div className="cr-panels">
           <FileTreePanel />

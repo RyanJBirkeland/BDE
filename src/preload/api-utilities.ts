@@ -120,6 +120,15 @@ export const onExternalSprintChange = onBroadcast<BroadcastChannels['sprint:exte
   'sprint:externalChange'
 )
 
+// Sprint task mutation broadcast (granular — carries the changed task payload)
+export const onSprintMutation =
+  onBroadcast<BroadcastChannels['sprint:mutation']>('sprint:mutation')
+
+// Task terminal resolution error broadcast
+export const onTaskTerminalError = onBroadcast<
+  BroadcastChannels['task-terminal:resolution-error']
+>('task-terminal:resolution-error')
+
 // Auth status
 export const authStatus = (): Promise<IpcChannelMap['auth:status']['result']> =>
   typedInvoke('auth:status')

@@ -259,6 +259,10 @@ declare global {
         failureBreakdown: () => Promise<IpcResult<'sprint:failureBreakdown'>>
         getSuccessRateBySpecType: () => Promise<IpcResult<'sprint:getSuccessRateBySpecType'>>
         onExternalChange: (cb: () => void) => () => void
+        onMutation: (
+          cb: (payload: { type: 'created' | 'updated' | 'deleted'; task: SprintTask }) => void
+        ) => () => void
+        onTerminalError: (cb: (payload: { error: string }) => void) => () => void
       }
 
       // Task groups
@@ -335,6 +339,10 @@ declare global {
           taskId: string,
           message?: string
         ) => Promise<IpcResult<'agent-manager:checkpoint'>>
+        onWarning: (cb: (payload: { message: string }) => void) => () => void
+        onCircuitBreakerOpen: (
+          cb: (payload: { consecutiveFailures: number; openUntil: number }) => void
+        ) => () => void
       }
 
       // Cost analytics

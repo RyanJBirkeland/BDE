@@ -151,7 +151,9 @@ vi.stubGlobal('api', {
     batchUpdate: vi.fn().mockResolvedValue({ results: [] }),
     healthCheck: vi.fn().mockResolvedValue([]),
     unblockTask: vi.fn().mockResolvedValue({}),
-    onExternalChange: vi.fn().mockReturnValue(() => {})
+    onExternalChange: vi.fn().mockReturnValue(() => {}),
+    onMutation: vi.fn().mockReturnValue(() => {}),
+    onTerminalError: vi.fn().mockReturnValue(() => {})
   },
 
   // Task groups
@@ -206,7 +208,9 @@ vi.stubGlobal('api', {
         atMinimumCapacity: false
       }
     }),
-    kill: vi.fn().mockResolvedValue({ ok: true })
+    kill: vi.fn().mockResolvedValue({ ok: true }),
+    onWarning: vi.fn().mockReturnValue(() => {}),
+    onCircuitBreakerOpen: vi.fn().mockReturnValue(() => {})
   },
 
   // Cost analytics

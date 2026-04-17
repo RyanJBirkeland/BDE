@@ -42,15 +42,15 @@ describe('DoneStep', () => {
 
     render(<DoneStep {...stepProps} />)
 
-    await user.click(screen.getByRole('button', { name: /create your first task/i }))
+    const btn = await screen.findByRole('button', { name: /create your first task/i })
+    await user.click(btn)
 
     await waitFor(() => {
       expect(mockSetField).toHaveBeenCalledWith('repo', 'my-project')
     })
   })
 
-  it('pre-fills repo as empty string when no repos are configured', async () => {
-    const user = userEvent.setup()
+  it('shows Add a repository affordance when no repos are configured', async () => {
     const api = (globalThis as unknown as { api: Record<string, unknown> }).api
     const settings = api.settings as { getJson: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
 
@@ -58,19 +58,39 @@ describe('DoneStep', () => {
 
     render(<DoneStep {...stepProps} />)
 
-    await user.click(screen.getByRole('button', { name: /create your first task/i }))
+    const btn = await waitFor(() => screen.getByRole('button', { name: /add a repository/i }))
+    expect(btn).toBeInTheDocument()
+    // The "Create your first task" CTA should be absent in the empty state.
+    expect(screen.queryByRole('button', { name: /create your first task/i })).toBeNull()
+  })
 
-    await waitFor(() => {
-      expect(mockSetField).toHaveBeenCalledWith('repo', '')
-    })
+  it('renders a repo picker when multiple repos are configured', async () => {
+    const api = (globalThis as unknown as { api: Record<string, unknown> }).api
+    const settings = api.settings as { getJson: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+
+    settings.getJson.mockResolvedValue([
+      { name: 'project-a', localPath: '/tmp/a', githubOwner: 'me' },
+      { name: 'project-b', localPath: '/tmp/b', githubOwner: 'me' }
+    ])
+
+    render(<DoneStep {...stepProps} />)
+
+    const select = await waitFor(() => screen.getByLabelText(/Start in repository/i))
+    expect(select).toBeInTheDocument()
   })
 
   it('calls onComplete when Get Started is clicked', async () => {
+    const api = (globalThis as unknown as { api: Record<string, unknown> }).api
+    const settings = api.settings as { getJson: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+    settings.getJson.mockResolvedValue([
+      { name: 'my-project', localPath: '/tmp/my-project', githubOwner: 'me' }
+    ])
     const user = userEvent.setup()
     const onComplete = vi.fn()
     render(<DoneStep {...stepProps} onComplete={onComplete} />)
 
-    await user.click(screen.getByRole('button', { name: /get started/i }))
+    const btn = await screen.findByRole('button', { name: /get started/i })
+    await user.click(btn)
     expect(onComplete).toHaveBeenCalled()
   })
 })

@@ -69,6 +69,8 @@ import {
   getPrList,
   refreshPrList,
   onExternalSprintChange,
+  onSprintMutation,
+  onTaskTerminalError,
   authStatus,
   onboarding,
   templates,
@@ -181,10 +183,12 @@ const api = {
     onChunk: onSynthesizerChunk
   },
 
-  // Sprint + groups (sprint expanded with onExternalChange)
+  // Sprint + groups (sprint expanded with onExternalChange + onMutation)
   sprint: {
     ...sprint,
-    onExternalChange: onExternalSprintChange
+    onExternalChange: onExternalSprintChange,
+    onMutation: onSprintMutation,
+    onTerminalError: onTaskTerminalError
   },
   groups,
 

@@ -1,6 +1,18 @@
-import { ArrowRight, ArrowLeft, Github, Check, X } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Github, Check, X, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../../ui/Button'
+import { toast } from '../../../stores/toasts'
+
+const GH_AUTH_LOGIN_COMMAND = 'gh auth login'
+
+async function copyToClipboard(text: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success('Copied to clipboard')
+  } catch {
+    toast.error('Could not copy — please copy manually')
+  }
+}
 
 interface StepProps {
   onNext: () => void
@@ -90,9 +102,35 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
 
       {!checking && ghAvailable && !ghAuthenticated && (
         <div className="onboarding-step__help">
-          <p>
-            Run <code>gh auth login</code> in your terminal to authenticate with GitHub.
-          </p>
+          <p>Run this in your terminal to authenticate with GitHub:</p>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--bde-space-2)',
+              marginTop: 'var(--bde-space-2)'
+            }}
+          >
+            <code
+              style={{
+                padding: '4px 10px',
+                background: 'var(--bde-color-surface-alt, rgba(0,0,0,0.08))',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+                fontSize: 'var(--bde-size-sm)'
+              }}
+            >
+              {GH_AUTH_LOGIN_COMMAND}
+            </code>
+            <Button
+              variant="ghost"
+              onClick={() => copyToClipboard(GH_AUTH_LOGIN_COMMAND)}
+              aria-label="Copy command to clipboard"
+            >
+              <Copy size={14} />
+              Copy
+            </Button>
+          </div>
         </div>
       )}
 
@@ -109,7 +147,25 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
             Back
           </Button>
         )}
-        <Button variant="primary" onClick={onNext} disabled={checking || !ready}>
+        {!ready && !checking && (
+          <Button
+            variant="ghost"
+            onClick={async () => {
+              await window.api.settings.set('githubOptedOut', 'true')
+              onNext()
+            }}
+          >
+            Skip — read-only mode
+          </Button>
+        )}
+        <Button
+          variant="primary"
+          onClick={async () => {
+            await window.api.settings.set('githubOptedOut', 'false')
+            onNext()
+          }}
+          disabled={checking || !ready}
+        >
           Next
           <ArrowRight size={16} />
         </Button>

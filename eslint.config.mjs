@@ -69,6 +69,14 @@ export default defineConfig(
       'no-restricted-exports': 'off'
     }
   },
+  // .cjs files are CommonJS by definition — require() is the only option
+  {
+    files: ['**/*.cjs'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off'
+    }
+  },
   // Require safeHandle channel name on same line as safeHandle( for reliable grep-based tooling
   {
     plugins: {
