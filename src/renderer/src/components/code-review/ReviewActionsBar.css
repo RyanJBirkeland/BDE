@@ -177,11 +177,28 @@
   font-size: 11px;
   font-family: var(--bde-font-code);
   cursor: pointer;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
 }
 
 .rab__strategy:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.rab__strategy:focus-visible {
+  outline: 2px solid var(--bde-status-review);
+  outline-offset: 2px;
+}
+
+.rab__strategy:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.rab__strategy:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* Loading spinner for action buttons */
