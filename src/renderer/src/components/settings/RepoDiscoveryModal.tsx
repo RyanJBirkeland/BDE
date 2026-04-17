@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Search, Plus, Lock, Globe, Loader2, AlertCircle, X } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
+import { REPO_COLOR_PALETTE } from '../../lib/repo-colors'
 
 interface RepoConfig {
   name: string
@@ -33,17 +34,6 @@ interface CloneState {
   error?: string
   localPath?: string
 }
-
-const REPO_COLOR_PALETTE = [
-  '#6C8EEF',
-  '#00D37F',
-  '#FF8A00',
-  '#EF4444',
-  '#8B5CF6',
-  '#3B82F6',
-  '#F97316',
-  '#06B6D4'
-]
 
 interface Props {
   open: boolean

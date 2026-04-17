@@ -9,17 +9,7 @@ import { Button } from '../ui/Button'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 import { SettingsCard } from './SettingsCard'
 import { RepoDiscoveryModal } from './RepoDiscoveryModal'
-
-const REPO_COLOR_PALETTE = [
-  '#6C8EEF',
-  '#00D37F',
-  '#FF8A00',
-  '#EF4444',
-  '#8B5CF6',
-  '#3B82F6',
-  '#F97316',
-  '#06B6D4'
-]
+import { REPO_COLOR_PALETTE } from '../../lib/repo-colors'
 
 interface RepoConfig {
   name: string
