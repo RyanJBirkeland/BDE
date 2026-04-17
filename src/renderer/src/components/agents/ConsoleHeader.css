@@ -91,3 +91,8 @@
 .console-header__action-btn:active {
   background: var(--bde-surface);
 }
+
+.console-header__action-btn:focus-visible {
+  outline: 2px solid var(--bde-primary);
+  outline-offset: 2px;
+}
