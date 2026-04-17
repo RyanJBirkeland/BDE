@@ -21,7 +21,8 @@
   border: none;
   cursor: pointer;
   pointer-events: auto;
-  white-space: nowrap;
+  max-width: min(480px, calc(100vw - 32px));
+  overflow-wrap: anywhere;
   box-shadow: var(--bde-shadow-md);
   text-align: left;
 }
