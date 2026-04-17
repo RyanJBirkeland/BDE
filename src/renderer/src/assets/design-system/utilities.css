@@ -183,6 +183,26 @@
   border-radius: var(--bde-radius-md);
 }
 
+.bde-loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-3);
+}
+
+.bde-loading-skeleton__row {
+  height: 56px;
+  background: linear-gradient(
+    90deg,
+    var(--bde-surface) 25%,
+    var(--bde-surface-high) 50%,
+    var(--bde-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: bde-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--bde-radius-md);
+}
+
 /* ── Section Title ───────────────────────────────────── */
 
 .bde-section-title {
