@@ -213,6 +213,53 @@ export function WorkbenchCopilot({ onClose }: WorkbenchCopilotProps): React.JSX.
 
       {/* Messages */}
       <div ref={scrollRef} className="wb-copilot__messages" aria-live="polite">
+        {messages.length === 0 && !loading && (
+          <div className="wb-copilot__empty">
+            <svg
+              className="wb-copilot__empty-icon"
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <p className="wb-copilot__empty-intro">Ask me anything about your task spec...</p>
+            <div className="wb-copilot__empty-prompts">
+              <button
+                className="wb-copilot__prompt-chip"
+                onClick={() => setInput('What files should I focus on first?')}
+              >
+                What files should I focus on first?
+              </button>
+              <button
+                className="wb-copilot__prompt-chip"
+                onClick={() => setInput('Explain the acceptance criteria')}
+              >
+                Explain the acceptance criteria
+              </button>
+              <button
+                className="wb-copilot__prompt-chip"
+                onClick={() => setInput('What testing strategy should I use?')}
+              >
+                What testing strategy should I use?
+              </button>
+              <button
+                className="wb-copilot__prompt-chip"
+                onClick={() => setInput('Are there any edge cases to consider?')}
+              >
+                Are there any edge cases to consider?
+              </button>
+            </div>
+          </div>
+        )}
         {messages.map((msg) => (
           <MessageBubble
             key={msg.id}

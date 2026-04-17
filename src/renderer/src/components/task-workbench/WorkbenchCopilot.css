@@ -59,6 +59,67 @@
   gap: var(--bde-space-2);
 }
 
+.wb-copilot__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-4);
+  margin: auto;
+  text-align: center;
+  max-width: 400px;
+}
+
+.wb-copilot__empty-icon {
+  color: var(--bde-text-muted);
+  opacity: 0.5;
+}
+
+.wb-copilot__empty-intro {
+  font-size: var(--bde-size-md);
+  color: var(--bde-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.wb-copilot__empty-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bde-space-2);
+  width: 100%;
+}
+
+.wb-copilot__prompt-chip {
+  background: var(--bde-border);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+  color: var(--bde-text);
+  padding: var(--bde-space-2) var(--bde-space-3);
+  font-size: var(--bde-size-sm);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.wb-copilot__prompt-chip:hover:not(:disabled) {
+  background: var(--bde-accent-surface);
+  border-color: var(--bde-accent);
+}
+
+.wb-copilot__prompt-chip:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.wb-copilot__prompt-chip:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .wb-copilot__bubble {
   max-width: 90%;
   padding: var(--bde-space-2) var(--bde-space-3);
