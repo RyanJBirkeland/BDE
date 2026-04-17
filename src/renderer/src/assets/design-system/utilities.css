@@ -190,6 +190,20 @@
   padding: var(--bde-space-3);
 }
 
+.bde-btn--bare {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.bde-btn--bare:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .bde-loading-skeleton__row {
   height: 56px;
   background: linear-gradient(
