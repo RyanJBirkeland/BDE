@@ -18,6 +18,11 @@
   border-color: var(--bde-border-hover);
 }
 
+.task-row:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .task-row--selected {
   border-color: var(--bde-accent-border);
   background: var(--bde-accent-surface);
