@@ -37,6 +37,7 @@ export {
   createTask,
   createReviewTaskFromAdhoc,
   updateTask,
+  forceUpdateTask,
   deleteTask
 } from './sprint-task-crud'
 

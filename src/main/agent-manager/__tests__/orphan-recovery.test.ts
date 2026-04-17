@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../../data/sprint-queries', () => ({
   getOrphanedTasks: vi.fn(),
-  updateTask: vi.fn()
+  updateTask: vi.fn(),
+  forceUpdateTask: vi.fn()
 }))
 
 vi.mock('../../agent-history', () => ({

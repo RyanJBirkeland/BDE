@@ -81,6 +81,12 @@ export interface IDashboardRepository {
   }): SprintTask | null
   getDailySuccessRate(days?: number): DailySuccessRate[]
   getFailureReasonBreakdown(): FailureReasonBreakdown[]
+  /**
+   * Operator escape-hatch — writes a terminal status without running the
+   * state-machine transition check. Used only by manual-override handlers
+   * (sprint:forceFailTask / sprint:forceDoneTask).
+   */
+  forceUpdateTask(id: string, patch: Record<string, unknown>): SprintTask | null
 }
 
 /**
@@ -122,6 +128,7 @@ export function createSprintTaskRepository(): ISprintTaskRepository {
     getSuccessRateBySpecType: reportingQueries.getSuccessRateBySpecType,
     createReviewTaskFromAdhoc: queries.createReviewTaskFromAdhoc,
     getDailySuccessRate: reportingQueries.getDailySuccessRate,
-    getFailureReasonBreakdown: reportingQueries.getFailureReasonBreakdown
+    getFailureReasonBreakdown: reportingQueries.getFailureReasonBreakdown,
+    forceUpdateTask: queries.forceUpdateTask
   }
 }

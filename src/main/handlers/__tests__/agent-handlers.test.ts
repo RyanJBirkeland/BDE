@@ -71,6 +71,7 @@ vi.mock('../../data/sprint-queries', () => ({
   createReviewTaskFromAdhoc: vi.fn(),
   getTask: vi.fn(),
   updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
   listTasks: vi.fn(),
   listTasksRecent: vi.fn(),
   createTask: vi.fn(),

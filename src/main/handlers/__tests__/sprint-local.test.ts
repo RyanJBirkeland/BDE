@@ -53,6 +53,7 @@ vi.mock('../../data/sprint-queries', () => ({
   listTasksRecent: vi.fn(),
   createTask: vi.fn(),
   updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
   deleteTask: vi.fn(),
   claimTask: vi.fn(),
   releaseTask: vi.fn(),
@@ -203,13 +204,13 @@ describe('registerSprintLocalHandlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers 15 handlers', () => {
+  it('registers 17 handlers', () => {
     const mockDeps = {
       onStatusTerminal: vi.fn(),
       dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() }
     }
     registerSprintLocalHandlers(mockDeps)
-    expect(safeHandle).toHaveBeenCalledTimes(15)
+    expect(safeHandle).toHaveBeenCalledTimes(17)
   })
 
   it('registers the expected channel names', () => {

@@ -33,6 +33,7 @@ vi.mock('../../data/sprint-queries', () => ({
   getTask: (...args: unknown[]) => mockGetTask(...args),
   createTask: (...args: unknown[]) => mockCreateTask(...args),
   updateTask: (...args: unknown[]) => mockUpdateTask(...args),
+  forceUpdateTask: vi.fn(),
   deleteTask: (...args: unknown[]) => mockDeleteTask(...args),
   claimTask: (...args: unknown[]) => mockClaimTask(...args),
   releaseTask: (...args: unknown[]) => mockReleaseTask(...args),

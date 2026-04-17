@@ -74,6 +74,10 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
   return repo.updateTask(id, patch)
 }
 
+export function forceUpdateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
+  return repo.forceUpdateTask(id, patch)
+}
+
 export function deleteTask(id: string): void {
   repo.deleteTask(id)
 }

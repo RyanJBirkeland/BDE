@@ -50,6 +50,7 @@ vi.mock('../../data/sprint-queries', () => ({
   listTasksRecent: vi.fn(),
   createTask: vi.fn(),
   updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
   deleteTask: vi.fn(),
   claimTask: vi.fn(),
   releaseTask: vi.fn(),

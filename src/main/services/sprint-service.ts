@@ -59,6 +59,16 @@ export function updateTask(id: string, patch: Record<string, unknown>): SprintTa
   return result
 }
 
+/**
+ * Manual operator override — writes a terminal status bypassing the state machine.
+ * See `forceUpdateTask` in sprint-task-crud for rationale.
+ */
+export function forceUpdateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
+  const result = mutations.forceUpdateTask(id, patch)
+  if (result) broadcaster.notifySprintMutation('updated', result)
+  return result
+}
+
 export function deleteTask(id: string): void {
   const task = mutations.getTask(id)
   mutations.deleteTask(id)

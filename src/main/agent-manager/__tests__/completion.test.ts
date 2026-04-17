@@ -20,7 +20,8 @@ vi.mock('node:child_process', () => {
 
 // Mock sprint-queries
 vi.mock('../../data/sprint-queries', () => ({
-  updateTask: vi.fn()
+  updateTask: vi.fn(),
+  forceUpdateTask: vi.fn()
 }))
 
 // Mock broadcast — completion.ts calls broadcastCoalesced() which requires Electron's BrowserWindow

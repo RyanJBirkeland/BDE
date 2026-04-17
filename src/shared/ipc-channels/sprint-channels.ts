@@ -142,6 +142,14 @@ export interface SprintChannels {
     args: []
     result: SpecTypeSuccessRate[]
   }
+  'sprint:forceFailTask': {
+    args: [payload: { taskId: string; reason?: string; force?: boolean }]
+    result: { ok: true }
+  }
+  'sprint:forceDoneTask': {
+    args: [payload: { taskId: string; reason?: string; force?: boolean }]
+    result: { ok: true }
+  }
 }
 
 export interface ReviewChannels {

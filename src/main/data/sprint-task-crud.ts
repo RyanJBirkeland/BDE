@@ -167,6 +167,40 @@ export function createReviewTaskFromAdhoc(input: {
 }
 
 export function updateTask(id: string, patch: Record<string, unknown>, db?: Database.Database): SprintTask | null {
+  return writeTaskUpdate(id, patch, { enforceTransitionCheck: true, changedBy: 'unknown' }, db)
+}
+
+/**
+ * Operator escape-hatch for manual overrides (sprint:forceFailTask / sprint:forceDoneTask).
+ * Writes a terminal status without running the state-machine transition check, so humans
+ * can rescue tasks stuck in states that have no lawful path to the desired terminal
+ * state (e.g. `blocked → failed`). Changes are still recorded in `task_changes` for
+ * the audit trail, attributed to `'manual-override'`.
+ */
+export function forceUpdateTask(
+  id: string,
+  patch: Record<string, unknown>,
+  db?: Database.Database
+): SprintTask | null {
+  return writeTaskUpdate(
+    id,
+    patch,
+    { enforceTransitionCheck: false, changedBy: 'manual-override' },
+    db
+  )
+}
+
+interface WriteTaskUpdateOptions {
+  enforceTransitionCheck: boolean
+  changedBy: string
+}
+
+function writeTaskUpdate(
+  id: string,
+  patch: Record<string, unknown>,
+  options: WriteTaskUpdateOptions,
+  db?: Database.Database
+): SprintTask | null {
   const entries = Object.entries(patch).filter(([k]) => UPDATE_ALLOWLIST.has(k))
   if (entries.length === 0) return null
 
@@ -180,8 +214,12 @@ export function updateTask(id: string, patch: Record<string, unknown>, db?: Data
         const oldTask = getTask(id, conn)
         if (!oldTask) return null
 
-        // Enforce status transition state machine
-        if (patch.status && typeof patch.status === 'string') {
+        // Enforce status transition state machine (skipped for manual overrides)
+        if (
+          options.enforceTransitionCheck &&
+          patch.status &&
+          typeof patch.status === 'string'
+        ) {
           const currentStatus = oldTask.status as string
           const validationResult = validateTransition(currentStatus, patch.status)
           if (!validationResult.ok) {
@@ -249,7 +287,7 @@ export function updateTask(id: string, patch: Record<string, unknown>, db?: Data
             id,
             oldTask as unknown as Record<string, unknown>,
             auditPatch,
-            'unknown',
+            options.changedBy,
             conn
           )
         } catch (err) {

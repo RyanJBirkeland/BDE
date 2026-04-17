@@ -256,6 +256,12 @@ declare global {
         exportTaskHistory: (taskId: string) => Promise<IpcResult<'sprint:exportTaskHistory'>>
         failureBreakdown: () => Promise<IpcResult<'sprint:failureBreakdown'>>
         getSuccessRateBySpecType: () => Promise<IpcResult<'sprint:getSuccessRateBySpecType'>>
+        forceFailTask: (
+          ...args: IpcArgs<'sprint:forceFailTask'>
+        ) => Promise<IpcResult<'sprint:forceFailTask'>>
+        forceDoneTask: (
+          ...args: IpcArgs<'sprint:forceDoneTask'>
+        ) => Promise<IpcResult<'sprint:forceDoneTask'>>
         onExternalChange: (cb: () => void) => () => void
         onMutation: (
           cb: (payload: { type: 'created' | 'updated' | 'deleted'; task: SprintTask }) => void

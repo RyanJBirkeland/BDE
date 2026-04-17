@@ -10,8 +10,16 @@ import { AgentActivityPreview } from './AgentActivityPreview'
 import { UpstreamOutcomes } from './UpstreamOutcomes'
 import { useGitHubStatus } from '../../hooks/useGitHubStatus'
 import { useDrawerResize } from '../../hooks/useDrawerResize'
+import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
+import { TextareaPromptModal, useTextareaPrompt } from '../ui/TextareaPromptModal'
 
 import './TaskDetailDrawer.css'
+
+const FORCE_FAIL_VISIBLE_STATUSES: ReadonlySet<SprintTask['status']> = new Set([
+  'queued',
+  'active',
+  'blocked'
+])
 
 export interface TaskDetailDrawerProps {
   task: SprintTask
@@ -106,6 +114,36 @@ export function TaskDetailDrawer({
       })
       .filter((e) => e.content.length > 0)
   }, [agentEvents])
+
+  const { prompt: promptForReason, promptProps: reasonPromptProps } = useTextareaPrompt()
+  const { confirm: confirmForceDone, confirmProps: forceDoneConfirmProps } = useConfirm()
+
+  const showMarkFailed = FORCE_FAIL_VISIBLE_STATUSES.has(task.status)
+  const showForceDone = task.status !== 'done'
+
+  async function handleMarkFailed(): Promise<void> {
+    const reason = await promptForReason({
+      title: 'Mark task as failed?',
+      message:
+        'Agent will stop retrying and downstream tasks will unblock as if the task had failed normally. Optionally provide a reason for the audit trail.',
+      placeholder: 'Reason (optional) — e.g. "scope changed, dropping this task"',
+      confirmLabel: 'Mark Failed'
+    })
+    if (reason === null) return
+    await window.api.sprint.forceFailTask({ taskId: task.id, reason: reason.trim() || undefined })
+  }
+
+  async function handleForceDone(): Promise<void> {
+    const approved = await confirmForceDone({
+      title: 'Force mark task as done?',
+      message:
+        'This will trigger dependency resolution as if the agent succeeded. Use only if you have manually shipped the work.',
+      confirmLabel: 'Force Done',
+      variant: 'danger'
+    })
+    if (!approved) return
+    await window.api.sprint.forceDoneTask({ taskId: task.id, force: true })
+  }
 
   return (
     <aside className="task-drawer" data-testid="task-detail-drawer" style={{ width }}>
@@ -300,6 +338,33 @@ export function TaskDetailDrawer({
           </div>
         )}
 
+        {/* Override — operator escape-hatches */}
+        {(showMarkFailed || showForceDone) && (
+          <div className="task-drawer__override" data-testid="task-drawer-override">
+            <span className="task-drawer__label">Override</span>
+            <div className="task-drawer__override-buttons">
+              {showMarkFailed && (
+                <button
+                  className="task-drawer__btn task-drawer__btn--danger"
+                  onClick={handleMarkFailed}
+                  data-testid="task-drawer-mark-failed"
+                >
+                  Mark Failed
+                </button>
+              )}
+              {showForceDone && (
+                <button
+                  className="task-drawer__btn task-drawer__btn--danger"
+                  onClick={handleForceDone}
+                  data-testid="task-drawer-force-done"
+                >
+                  Force Done
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Branch-only: PR creation failed */}
         {task.pr_status === 'branch_only' && (
           <div className="task-drawer__branch-only" data-testid="branch-only-section">
@@ -347,6 +412,9 @@ export function TaskDetailDrawer({
           onExport={onExport}
         />
       </div>
+
+      <TextareaPromptModal {...reasonPromptProps} />
+      <ConfirmModal {...forceDoneConfirmProps} />
     </aside>
   )
 }

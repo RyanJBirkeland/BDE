@@ -10,6 +10,7 @@ import * as reportingQueries from '../reporting-queries'
 vi.mock('../sprint-queries', () => ({
   getTask: vi.fn(),
   updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
   getQueuedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn(),
   getOrphanedTasks: vi.fn(),
@@ -63,6 +64,18 @@ describe('createSprintTaskRepository', () => {
       const result = repo.updateTask('1', patch)
 
       expect(queries.updateTask).toHaveBeenCalledWith('1', patch)
+      expect(result).toBe(mockTask)
+    })
+
+    it('should delegate forceUpdateTask to queries.forceUpdateTask', () => {
+      const repo = createSprintTaskRepository()
+      const mockTask = { id: '1' }
+      const patch = { status: 'failed' }
+      vi.mocked(queries.forceUpdateTask).mockReturnValue(mockTask as any)
+
+      const result = repo.forceUpdateTask('1', patch)
+
+      expect(queries.forceUpdateTask).toHaveBeenCalledWith('1', patch)
       expect(result).toBe(mockTask)
     })
 

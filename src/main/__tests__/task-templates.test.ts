@@ -68,6 +68,7 @@ vi.mock('../data/sprint-queries', () => ({
   ]),
   // Additional methods needed by ISprintTaskRepository
   updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
   createTask: vi.fn(),
   deleteTask: vi.fn(),
   claimTask: vi.fn(),

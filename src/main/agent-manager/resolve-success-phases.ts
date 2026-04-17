@@ -310,38 +310,6 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
   return true
 }
 
-export async function transitionTaskToReview(
-  taskId: string,
-  branch: string,
-  worktreePath: string,
-  title: string,
-  rebaseOutcome: RebaseOutcome,
-  repo: IAgentTaskRepository,
-  logger: Logger,
-  onTaskTerminal: (taskId: string, status: string) => Promise<void>,
-  attemptAutoMerge: (opts: { taskId: string; title: string; branch: string; worktreePath: string; repo: IAgentTaskRepository; logger: Logger; onTaskTerminal: (taskId: string, status: string) => Promise<void> }) => Promise<void>
-): Promise<void> {
-  logger.info(
-    `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`
-  )
-
-  await transitionToReview({
-    taskId,
-    worktreePath,
-    rebaseNote: rebaseOutcome.rebaseNote,
-    rebaseBaseSha: rebaseOutcome.rebaseBaseSha,
-    rebaseSucceeded: rebaseOutcome.rebaseSucceeded,
-    repo,
-    logger
-  })
-
-  await attemptAutoMerge({ taskId, title, branch, worktreePath, repo, logger, onTaskTerminal })
-
-  // The task enters 'review' status to await human inspection — this is NOT a terminal state.
-  // The worktree must stay alive so the Code Review Station can show diffs and allow merge/discard.
-  // onTaskTerminal is intentionally NOT called here; it fires only when the human takes a final action.
-}
-
 /**
  * Terminal-fail a task that has hit the no_commits retry cap.
  *
@@ -386,4 +354,36 @@ async function failTaskExhaustedNoCommits(
   }
 
   await onTaskTerminal(taskId, 'failed')
+}
+
+export async function transitionTaskToReview(
+  taskId: string,
+  branch: string,
+  worktreePath: string,
+  title: string,
+  rebaseOutcome: RebaseOutcome,
+  repo: IAgentTaskRepository,
+  logger: Logger,
+  onTaskTerminal: (taskId: string, status: string) => Promise<void>,
+  attemptAutoMerge: (opts: { taskId: string; title: string; branch: string; worktreePath: string; repo: IAgentTaskRepository; logger: Logger; onTaskTerminal: (taskId: string, status: string) => Promise<void> }) => Promise<void>
+): Promise<void> {
+  logger.info(
+    `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`
+  )
+
+  await transitionToReview({
+    taskId,
+    worktreePath,
+    rebaseNote: rebaseOutcome.rebaseNote,
+    rebaseBaseSha: rebaseOutcome.rebaseBaseSha,
+    rebaseSucceeded: rebaseOutcome.rebaseSucceeded,
+    repo,
+    logger
+  })
+
+  await attemptAutoMerge({ taskId, title, branch, worktreePath, repo, logger, onTaskTerminal })
+
+  // The task enters 'review' status to await human inspection — this is NOT a terminal state.
+  // The worktree must stay alive so the Code Review Station can show diffs and allow merge/discard.
+  // onTaskTerminal is intentionally NOT called here; it fires only when the human takes a final action.
 }

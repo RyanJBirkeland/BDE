@@ -10,6 +10,7 @@ import type { WorkflowTemplate } from '../../shared/workflow-types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
 import { TASK_STATUSES, TERMINAL_STATUSES, isValidTransition } from '../../shared/task-state-machine'
+import { nowIso } from '../../shared/time'
 import { detectCycle } from '../services/dependency-service'
 import {
   generatePrompt,
@@ -23,6 +24,7 @@ import { RequiredSectionsValidator } from '../services/spec-quality/validators/s
 import {
   getTask,
   updateTask,
+  forceUpdateTask,
   createTask,
   deleteTask,
   getHealthCheckTasks,
@@ -249,4 +251,69 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
   safeHandle('sprint:getSuccessRateBySpecType', () => {
     return getSuccessRateBySpecType()
   })
+
+  safeHandle('sprint:forceFailTask', async (_e, args: ForceOverrideArgs) => {
+    return overrideTaskStatus({ ...args, targetStatus: 'failed', deps })
+  })
+
+  safeHandle('sprint:forceDoneTask', async (_e, args: ForceOverrideArgs) => {
+    return overrideTaskStatus({ ...args, targetStatus: 'done', deps })
+  })
+}
+
+// --- Operator escape-hatches ---
+
+interface ForceOverrideArgs {
+  taskId: string
+  reason?: string
+  force?: boolean
+}
+
+interface OverrideTaskStatusArgs {
+  taskId: string
+  reason?: string
+  force?: boolean
+  targetStatus: 'failed' | 'done'
+  deps: SprintLocalDeps
+}
+
+function overrideTaskStatus(args: OverrideTaskStatusArgs): { ok: true } {
+  if (!isValidTaskId(args.taskId)) throw new Error('Invalid task ID format')
+
+  const task = getTask(args.taskId)
+  if (!task) throw new Error(`Task ${args.taskId} not found`)
+
+  if (TERMINAL_STATUSES.has(task.status) && !args.force) {
+    throw new Error(
+      `Task ${args.taskId} is already terminal (${task.status}). Pass force: true to override.`
+    )
+  }
+
+  const patch = buildOverridePatch(args.targetStatus, args.reason)
+  const updated = forceUpdateTask(args.taskId, patch)
+  if (!updated) throw new Error(`Failed to force ${args.targetStatus} on task ${args.taskId}`)
+
+  args.deps.onStatusTerminal(args.taskId, args.targetStatus)
+  return { ok: true }
+}
+
+function buildOverridePatch(
+  targetStatus: 'failed' | 'done',
+  reason: string | undefined
+): Record<string, unknown> {
+  const timestamp = nowIso()
+  if (targetStatus === 'failed') {
+    const trimmedReason = reason?.trim() || 'manual-override'
+    return {
+      status: 'failed',
+      failure_reason: 'unknown',
+      notes: `Marked failed manually by user at ${timestamp}. reason: ${trimmedReason}`
+    }
+  }
+  return {
+    status: 'done',
+    completed_at: timestamp,
+    failure_reason: null,
+    notes: `Marked done manually by user at ${timestamp}.`
+  }
 }

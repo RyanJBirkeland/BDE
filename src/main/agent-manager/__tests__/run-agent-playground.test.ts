@@ -50,7 +50,8 @@ vi.mock('../completion', () => ({
 }))
 
 vi.mock('../../data/sprint-queries', () => ({
-  updateTask: vi.fn().mockResolvedValue(undefined)
+  updateTask: vi.fn().mockResolvedValue(undefined),
+  forceUpdateTask: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../../paths', () => ({

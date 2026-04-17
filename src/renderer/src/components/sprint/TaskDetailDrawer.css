@@ -424,6 +424,20 @@
   color: var(--bde-warning);
 }
 
+.task-drawer__override {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bde-space-1);
+  padding: var(--bde-space-2) 0;
+  border-top: 1px solid var(--bde-border-subtle);
+}
+
+.task-drawer__override-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bde-space-2);
+}
+
 .task-drawer__branch-only {
   padding: var(--bde-space-2) 0;
   border-top: 1px solid var(--bde-warning-border);

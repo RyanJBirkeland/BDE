@@ -35,6 +35,7 @@ vi.mock('node:child_process', () => {
 
 vi.mock('../../data/sprint-queries', () => ({
   updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
   getTask: vi.fn(),
   listTasks: vi.fn().mockReturnValue([]),
   listTasksRecent: vi.fn().mockReturnValue([])

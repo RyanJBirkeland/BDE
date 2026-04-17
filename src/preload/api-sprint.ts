@@ -51,7 +51,11 @@ export const sprint = {
   exportTaskHistory: (taskId: string) => typedInvoke('sprint:exportTaskHistory', taskId),
   failureBreakdown: () => typedInvoke('sprint:failureBreakdown'),
   getSuccessRateBySpecType: () => typedInvoke('sprint:getSuccessRateBySpecType'),
-  getChanges: (taskId: string) => typedInvoke('sprint:getChanges', taskId)
+  getChanges: (taskId: string) => typedInvoke('sprint:getChanges', taskId),
+  forceFailTask: (payload: { taskId: string; reason?: string; force?: boolean }) =>
+    typedInvoke('sprint:forceFailTask', payload),
+  forceDoneTask: (payload: { taskId: string; reason?: string; force?: boolean }) =>
+    typedInvoke('sprint:forceDoneTask', payload)
 }
 
 export const groups = {
