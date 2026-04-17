@@ -15,6 +15,7 @@ const mockLogger = vi.hoisted(() => ({
 }))
 import * as db from '../db'
 import * as settingsQueries from '../data/settings-queries'
+import * as secureStorage from '../secure-storage'
 import * as eventQueries from '../data/event-queries'
 import * as taskChanges from '../data/task-changes'
 import * as sprintMaintenanceFacade from '../data/sprint-maintenance-facade'
@@ -167,7 +168,7 @@ describe('bootstrap', () => {
       expect(mockLogger.warn).not.toHaveBeenCalled()
     })
 
-    it('should warn when a sensitive setting has a plaintext value without ENC: prefix', () => {
+    it('should re-encrypt a plaintext sensitive setting at startup', () => {
       vi.mocked(settingsQueries.getSetting).mockImplementation((_db, key) => {
         if (key === 'github.token') return 'ghp_plaintext'
         return null
@@ -175,8 +176,36 @@ describe('bootstrap', () => {
 
       warnPlaintextSensitiveSettings()
 
-      expect(mockLogger.warn).toHaveBeenCalledOnce()
+      expect(settingsQueries.setSetting).toHaveBeenCalledWith(
+        mockDb,
+        'github.token',
+        'ENC:ghp_plaintext'
+      )
+      expect(mockLogger.warn).not.toHaveBeenCalled()
+    })
+
+    it('should warn when re-encryption fails', () => {
+      vi.mocked(settingsQueries.getSetting).mockImplementation((_db, key) => {
+        if (key === 'github.token') return 'ghp_plaintext'
+        return null
+      })
+      vi.mocked(settingsQueries.setSetting).mockImplementation(() => {
+        throw new Error('disk full')
+      })
+
+      warnPlaintextSensitiveSettings()
+
       expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('github.token'))
+    })
+
+    it('should skip re-encryption when safeStorage is unavailable', () => {
+      vi.mocked(secureStorage.isEncryptionAvailable).mockReturnValueOnce(false)
+      vi.mocked(settingsQueries.getSetting).mockReturnValue('ghp_plaintext')
+
+      warnPlaintextSensitiveSettings()
+
+      expect(settingsQueries.setSetting).not.toHaveBeenCalled()
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('unavailable'))
     })
   })
 

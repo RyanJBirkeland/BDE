@@ -20,9 +20,9 @@ import { startLoadSampler, stopLoadSampler } from './services/load-sampler'
 import type { TaskTerminalService } from './services/task-terminal-service'
 import type { DialogService } from './dialog-service'
 import { BACKUP_INTERVAL_MS, PRUNE_CHANGES_DAYS } from './constants'
-import { getSetting as _getRawSetting } from './data/settings-queries'
+import { getSetting as _getRawSetting, setSetting as _setSetting } from './data/settings-queries'
 import { getConfiguredRepos } from './paths'
-import { SENSITIVE_SETTING_KEYS, ENCRYPTED_PREFIX } from './secure-storage'
+import { SENSITIVE_SETTING_KEYS, ENCRYPTED_PREFIX, encryptSetting, isEncryptionAvailable } from './secure-storage'
 import { broadcast } from './broadcast'
 
 const logger = createLogger('bootstrap')
@@ -102,24 +102,39 @@ export function buildConnectSrc(): string {
 }
 
 /**
- * Scan sensitive settings for plaintext values (missing ENC: prefix) and warn.
- * Runs once at startup to surface credentials that were stored before encryption was enforced.
+ * Scan sensitive settings for plaintext values (missing ENC: prefix) and re-encrypt them in place.
+ * Runs once at startup so credentials stored before encryption was enforced are migrated
+ * immediately rather than waiting for the lazy migration in getSetting().
+ *
+ * If safeStorage is unavailable (headless CI, locked keychain), we log a warning and skip —
+ * the values remain readable so BDE continues to function.
  */
 export function warnPlaintextSensitiveSettings(): void {
+  if (!isEncryptionAvailable()) {
+    logger.warn('safeStorage unavailable — plaintext sensitive settings will not be re-encrypted at startup')
+    return
+  }
+
   const db = getDb()
-  const plaintextKeys: string[] = []
+  const stillPlaintext: string[] = []
 
   for (const key of SENSITIVE_SETTING_KEYS) {
     const raw = _getRawSetting(db, key)
-    if (raw !== null && !raw.startsWith(ENCRYPTED_PREFIX)) {
-      plaintextKeys.push(key)
+    if (raw === null || raw.startsWith(ENCRYPTED_PREFIX)) continue
+
+    try {
+      _setSetting(db, key, encryptSetting(raw))
+      logger.info(`Re-encrypted "${key}" at startup`)
+    } catch (err) {
+      stillPlaintext.push(key)
+      logger.warn(`Could not re-encrypt "${key}" at startup: ${getErrorMessage(err)}`)
     }
   }
 
-  if (plaintextKeys.length > 0) {
+  if (stillPlaintext.length > 0) {
     logger.warn(
-      `Sensitive settings stored as plaintext (missing ${ENCRYPTED_PREFIX} prefix): ${plaintextKeys.join(', ')}. ` +
-        'These values are unencrypted in SQLite. Re-save each credential via Settings to encrypt it.'
+      `Sensitive settings remain as plaintext: ${stillPlaintext.join(', ')}. ` +
+        'Re-save each credential via Settings → Connections to encrypt it.'
     )
   }
 }
