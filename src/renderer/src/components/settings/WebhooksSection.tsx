@@ -236,8 +236,11 @@ export function WebhooksSection(): React.JSX.Element {
               <span className="settings-field__label">URL</span>
               <input
                 className="settings-field__input"
+                type="url"
+                required
                 placeholder="https://example.com/webhook"
                 value={webhook.url}
+                aria-invalid={webhook.url !== '' && !/^https?:\/\//.test(webhook.url)}
                 onChange={(e) => handleUrlChange(webhook.id, e.target.value)}
               />
             </label>
