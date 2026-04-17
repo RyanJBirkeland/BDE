@@ -29,6 +29,11 @@
   background: var(--bde-accent-hover);
 }
 
+.cr-assistant__expand-btn:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 @media (max-width: 1120px) {
   .cr-assistant:not(.cr-assistant--expanded) .cr-assistant__expand-btn {
     display: flex;
@@ -86,6 +91,11 @@
   color: var(--bde-text);
 }
 
+.cr-assistant__kebab:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
 .cr-assistant__menu {
   position: absolute;
   top: calc(100% + var(--bde-space-1));
@@ -113,6 +123,11 @@
 
 .cr-assistant__menu-item:hover {
   background: var(--bde-hover);
+}
+
+.cr-assistant__menu-item:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
 }
 
 /* Messages container */
