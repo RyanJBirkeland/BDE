@@ -202,7 +202,7 @@
   border-color: var(--bde-accent);
 }
 
-.modal-select:focus {
+.modal-select:focus-visible {
   outline: 2px solid var(--bde-accent);
   outline-offset: 2px;
 }
