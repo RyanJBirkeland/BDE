@@ -251,3 +251,32 @@
   margin-top: auto;
   padding-top: 24px;
 }
+
+
+.onboarding-instruction {
+  margin: var(--bde-space-3) 0;
+  padding: var(--bde-space-3);
+  background: var(--bde-surface);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-md);
+}
+
+.onboarding-instruction__code {
+  display: block;
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text);
+  padding: var(--bde-space-2);
+  background: var(--bde-bg);
+  border-radius: var(--bde-radius-sm);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.onboarding-risk-callout {
+  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--bde-warning-surface);
+  border: 1px solid var(--bde-warning-border);
+  border-radius: var(--bde-radius-md);
+  color: var(--bde-warning);
+}

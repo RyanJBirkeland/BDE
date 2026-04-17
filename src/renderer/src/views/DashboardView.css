@@ -39,15 +39,6 @@
   gap: 6px;
 }
 
-.dashboard-retry-btn {
-  background: none;
-  border-radius: 3px;
-  padding: 1px 6px;
-  font-size: var(--bde-size-2xs);
-  cursor: pointer;
-  line-height: 14px;
-}
-
 /* 3-Column Ops Deck Grid */
 .dashboard-grid {
   flex: 1;
