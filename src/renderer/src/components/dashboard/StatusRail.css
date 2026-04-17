@@ -157,3 +157,19 @@
   border-radius: var(--bde-radius-sm);
   transition: width 300ms ease;
 }
+
+
+.dashboard-tile {
+  background: var(--bde-bg);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-sm);
+  padding: 10px 8px;
+  color: var(--bde-text-muted);
+  font-family: var(--bde-font-code);
+  font-size: var(--bde-size-2xs);
+}
+
+.dashboard-tile:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

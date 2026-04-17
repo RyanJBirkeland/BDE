@@ -37,16 +37,9 @@ interface Tile {
 }
 
 const tileBase: React.CSSProperties = {
-  background: 'var(--bde-bg)',
-  border: '1px solid #1e293b',
-  borderRadius: 5,
-  padding: '10px 8px',
-  textAlign: 'center',
-  cursor: 'pointer',
   width: '100%',
-  color: 'var(--bde-text-muted)',
-  fontFamily: 'ui-monospace, Menlo, monospace',
-  fontSize: 10
+  textAlign: 'center',
+  cursor: 'pointer'
 }
 
 export function StatusRail({
@@ -100,6 +93,7 @@ export function StatusRail({
             key={t.key}
             type="button"
             data-role="rail-tile"
+            className="dashboard-tile"
             disabled={!clickable}
             onClick={() => {
               if (t.filter) onFilterClick(t.filter)
