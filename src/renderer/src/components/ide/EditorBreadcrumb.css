@@ -11,6 +11,8 @@
   font-size: 11px;
   color: var(--bde-text-muted);
   overflow: hidden;
+  mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
 }
 
 .editor-breadcrumb__item {
