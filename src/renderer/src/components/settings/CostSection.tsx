@@ -304,6 +304,12 @@ export function CostSection(): React.JSX.Element {
   return (
     <div className="cost-view cost-view--glass" style={{ height: '100%' }}>
       <div className="cost-view__scroll">
+        {error && (
+          <div className="cost-view__error" role="alert">
+            <span>Failed to load cost data: {error}</span>
+            <button type="button" onClick={fetchData}>Retry</button>
+          </div>
+        )}
         {summary && (
           <SettingsCard title="Claude Code Usage" subtitle="Token usage and agent metrics">
             <ClaudeCodePanel summary={summary} />
