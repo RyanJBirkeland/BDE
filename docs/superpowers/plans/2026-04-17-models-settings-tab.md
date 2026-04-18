@@ -57,7 +57,7 @@ The file already re-exports `AgentChannels` from `index.ts`, which is intersecte
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npm run typecheck
+cd $REPO_ROOT && npm run typecheck
 ```
 
 Expected: no errors. If the test-setup mock or any existing code references this channel with the wrong shape, this will surface it.
@@ -65,7 +65,7 @@ Expected: no errors. If the test-setup mock or any existing code references this
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/shared/ipc-channels/agent-channels.ts
 git commit -m "feat(ipc): add agents:testLocalEndpoint channel type"
 ```
@@ -188,7 +188,7 @@ describe('testLocalEndpoint', () => {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/main/handlers/__tests__/agent-handlers-test-endpoint.test.ts
+cd $REPO_ROOT && npx vitest run src/main/handlers/__tests__/agent-handlers-test-endpoint.test.ts
 ```
 
 Expected: FAIL — `testLocalEndpoint` is not exported from `../agent-handlers`.
@@ -256,7 +256,7 @@ export async function testLocalEndpoint(
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/main/handlers/__tests__/agent-handlers-test-endpoint.test.ts
+cd $REPO_ROOT && npx vitest run src/main/handlers/__tests__/agent-handlers-test-endpoint.test.ts
 ```
 
 Expected: PASS — all 6 tests green.
@@ -265,7 +265,7 @@ Expected: PASS — all 6 tests green.
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npm run typecheck
+cd $REPO_ROOT && npm run typecheck
 ```
 
 Expected: no errors.
@@ -273,7 +273,7 @@ Expected: no errors.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/main/handlers/agent-handlers.ts src/main/handlers/__tests__/agent-handlers-test-endpoint.test.ts
 git commit -m "feat(handlers): testLocalEndpoint handler for LM Studio reachability"
 ```
@@ -337,7 +337,7 @@ Preserve any existing trailing fields after the current `spawnLocal` mock — on
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npm run typecheck && npm test -- --run
+cd $REPO_ROOT && npm run typecheck && npm test -- --run
 ```
 
 Expected: typecheck clean; all 3654+ tests still passing.
@@ -345,7 +345,7 @@ Expected: typecheck clean; all 3654+ tests still passing.
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/preload/api-agents.ts src/renderer/src/test-setup.ts
 git commit -m "feat(preload): expose agents.testLocalEndpoint"
 ```
@@ -379,7 +379,7 @@ export type SettingsSectionId =
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npm run typecheck
+cd $REPO_ROOT && npm run typecheck
 ```
 
 Expected: no errors. (No consumer code references `'models'` yet; the union is additive.)
@@ -387,7 +387,7 @@ Expected: no errors. (No consumer code references `'models'` yet; the union is a
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/renderer/src/stores/settingsNav.ts
 git commit -m "feat(settings-nav): add 'models' to SettingsSectionId union"
 ```
@@ -464,7 +464,7 @@ describe('ModelsSection — scaffold', () => {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: FAIL — cannot resolve `../ModelsSection`.
@@ -632,7 +632,7 @@ export function ModelsSection(): React.JSX.Element {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: PASS — all 3 scaffold tests green.
@@ -640,7 +640,7 @@ Expected: PASS — all 3 scaffold tests green.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/renderer/src/components/settings/ModelsSection.tsx \
         src/renderer/src/components/settings/ModelsSection.css \
         src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
@@ -697,7 +697,7 @@ describe('ModelsSection — agent type rows', () => {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: FAIL — new `describe` block fails because the rows don't exist.
@@ -855,7 +855,7 @@ function AgentTypeRow({ type, disabled }: AgentTypeRowProps): React.JSX.Element 
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: PASS — scaffold + row tests all green.
@@ -863,7 +863,7 @@ Expected: PASS — scaffold + row tests all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/renderer/src/components/settings/ModelsSection.tsx \
         src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 git commit -m "feat(settings): render six agent-type rows (Pipeline active, rest disabled)"
@@ -963,7 +963,7 @@ describe('ModelsSection — backend toggle + model picker', () => {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: FAIL — no segmented control or select in the rendered rows.
@@ -1240,7 +1240,7 @@ function ModelPicker({ backend, model, onChange, disabled }: ModelPickerProps): 
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: PASS — scaffold + rows + toggle/picker tests all green.
@@ -1248,7 +1248,7 @@ Expected: PASS — scaffold + rows + toggle/picker tests all green.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/renderer/src/components/settings/ModelsSection.tsx \
         src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 git commit -m "feat(settings): backend toggle + conditional model picker per row"
@@ -1326,7 +1326,7 @@ describe('ModelsSection — save orchestration', () => {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: FAIL — no Save button yet.
@@ -1456,7 +1456,7 @@ export function ModelsSection(): React.JSX.Element {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: PASS — save orchestration tests green along with all earlier tests.
@@ -1464,7 +1464,7 @@ Expected: PASS — save orchestration tests green along with all earlier tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/renderer/src/components/settings/ModelsSection.tsx \
         src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 git commit -m "feat(settings): save BackendSettings atomically from ModelsSection"
@@ -1564,7 +1564,7 @@ describe('ModelsSection — test connection', () => {
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: FAIL — no Test connection button yet.
@@ -1657,7 +1657,7 @@ function TestConnIndicator({ state }: { state: TestConnState }): React.JSX.Eleme
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 ```
 
 Expected: PASS — test-connection tests green along with all earlier tests.
@@ -1665,7 +1665,7 @@ Expected: PASS — test-connection tests green along with all earlier tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/renderer/src/components/settings/ModelsSection.tsx \
         src/renderer/src/components/settings/__tests__/ModelsSection.test.tsx
 git commit -m "feat(settings): Test connection button with ok/fail/pending states"
@@ -1706,7 +1706,7 @@ Open `src/renderer/src/components/settings/__tests__/SettingsView.test.tsx` and 
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/SettingsView.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/SettingsView.test.tsx
 ```
 
 Expected: FAIL — `Models` is not in the sidebar.
@@ -1773,7 +1773,7 @@ Place it directly after the `agents` entry, matching the alphabetical-ish groupi
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/components/settings/__tests__/SettingsView.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/components/settings/__tests__/SettingsView.test.tsx
 ```
 
 Expected: PASS — all 5+ tests green.
@@ -1789,7 +1789,7 @@ expect(screen.getAllByText('Models').length).toBeGreaterThanOrEqual(1)
 If the view-level test is purely structural and doesn't list sections, no change is needed. Run:
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npx vitest run src/renderer/src/views/__tests__/SettingsView.test.tsx
+cd $REPO_ROOT && npx vitest run src/renderer/src/views/__tests__/SettingsView.test.tsx
 ```
 
 Expected: PASS. If anything breaks because the file enumerates the union type literally, update it to include `'models'`.
@@ -1798,7 +1798,7 @@ Expected: PASS. If anything breaks because the file enumerates the union type li
 
 Run:
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npm run typecheck && npm test -- --run
+cd $REPO_ROOT && npm run typecheck && npm test -- --run
 ```
 
 Expected: typecheck clean; all renderer + main tests pass.
@@ -1806,7 +1806,7 @@ Expected: typecheck clean; all renderer + main tests pass.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE
+cd $REPO_ROOT
 git add src/renderer/src/views/SettingsView.tsx \
         src/renderer/src/components/settings/__tests__/SettingsView.test.tsx \
         src/renderer/src/views/__tests__/SettingsView.test.tsx
@@ -1822,7 +1822,7 @@ Quick human-in-the-loop check that the UI reads and writes correctly against a r
 - [ ] **Step 1: Build and start BDE**
 
 ```bash
-cd /Users/ryanbirkeland/Projects/git-repos/BDE && npm run dev
+cd $REPO_ROOT && npm run dev
 ```
 
 - [ ] **Step 2: Open Settings → Models**

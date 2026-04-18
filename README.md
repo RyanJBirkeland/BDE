@@ -12,7 +12,7 @@ You write specs. BDE queues them, spawns Claude Code sessions, monitors progress
 
 <br/>
 
-![BDE Dashboard — pipeline health, status counters, cost tracking, and live activity feed]
+![BDE Dashboard — pipeline health, status counters, cost tracking, and live activity feed](docs/screenshots/dashboard-dark.png)
 
 _Dashboard: 6 active Claude Code sessions, 21 queued, 225 completed — all visible at a glance._
 
