@@ -184,6 +184,7 @@ vi.stubGlobal('api', {
     spawnLocal: vi
       .fn()
       .mockResolvedValue({ pid: 1234, logPath: '/tmp/log', id: 'agent-1', interactive: false }),
+    testLocalEndpoint: vi.fn().mockResolvedValue({ ok: true, latencyMs: 1, modelCount: 0 }),
     steer: vi.fn().mockResolvedValue({ ok: true }),
     kill: vi.fn().mockResolvedValue({ ok: true }),
     getLatestCacheTokens: vi.fn().mockResolvedValue(null),

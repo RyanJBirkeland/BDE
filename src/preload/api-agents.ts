@@ -44,7 +44,11 @@ export const agents = {
     content: string
   }): Promise<IpcChannelMap['agents:import']['result']> => typedInvoke('agents:import', args),
   promoteToReview: (agentId: string): Promise<IpcChannelMap['agents:promoteToReview']['result']> =>
-    typedInvoke('agents:promoteToReview', agentId)
+    typedInvoke('agents:promoteToReview', agentId),
+  testLocalEndpoint: (
+    endpoint: string
+  ): Promise<IpcChannelMap['agents:testLocalEndpoint']['result']> =>
+    typedInvoke('agents:testLocalEndpoint', { endpoint })
 }
 
 export const agentManager = {
