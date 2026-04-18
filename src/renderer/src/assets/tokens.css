@@ -338,6 +338,11 @@ html.theme-pro-dark {
   --bde-bg-secondary: var(--bde-surface);
   --bde-surface-hover: var(--bde-hover);
   --bde-success-surface: rgba(95, 173, 101, 0.1);
+
+  /* ── Surface elevation tiers ────────────────────────── */
+  --bde-surface-1: var(--bde-surface);
+  --bde-surface-2: var(--bde-surface-high);
+  --bde-surface-3: var(--bde-border-hover);
 }
 
 /* ── Pro Light — IntelliJ-inspired professional light theme ── */
@@ -510,4 +515,9 @@ html.theme-pro-light {
   --bde-bg-secondary: var(--bde-surface);
   --bde-surface-hover: var(--bde-hover);
   --bde-success-surface: rgba(73, 160, 75, 0.08);
+
+  /* ── Surface elevation tiers ────────────────────────── */
+  --bde-surface-1: var(--bde-surface);
+  --bde-surface-2: var(--bde-surface-raised);
+  --bde-surface-3: var(--bde-surface-high);
 }
