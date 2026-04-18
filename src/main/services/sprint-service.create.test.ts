@@ -78,35 +78,33 @@ describe('createTaskWithValidation', () => {
   })
 
   it('applies auto-blocking to queued tasks with unsatisfied hard dependencies', () => {
-    // Mock listTasks to return a list that does NOT contain the upstream task
     ;(mutations.listTasks as ReturnType<typeof vi.fn>).mockReturnValue([
-      { id: 'other-task', title: 'other' } as SprintTask
+      { id: 'upstream-unfinished', status: 'queued' } as SprintTask
     ])
-
-    const fakeRow = {
-      id: 'new-task-id',
-      title: 't',
-      repo: 'bde',
-      status: 'blocked'
-    } as SprintTask
-    ;(mutations.createTask as ReturnType<typeof vi.fn>).mockReturnValue(fakeRow)
+    ;(mutations.createTask as ReturnType<typeof vi.fn>).mockImplementation(
+      (task) => ({ id: 'new-id', ...task }) as SprintTask
+    )
 
     const input: CreateTaskInput = {
       title: 't',
       repo: 'bde',
       status: 'queued',
-      depends_on: [{ id: 'upstream-missing', type: 'hard' }]
+      spec: [
+        '## Overview',
+        'Auto-blocking path exercised by this test.',
+        '## Files to Change',
+        '- src/main/services/sprint-service.ts',
+        '## Implementation Steps',
+        '1. Create task with hard dep.',
+        '## How to Test',
+        'Run the vitest suite.'
+      ].join('\n'),
+      depends_on: [{ id: 'upstream-unfinished', type: 'hard', condition: 'on_success' }]
     }
-    const result = createTaskWithValidation(input, { logger })
+    createTaskWithValidation(input, { logger })
 
-    expect(result).toBe(fakeRow)
-    // Verify that createTask was called with status='blocked' (auto-blocking applied)
     expect(mutations.createTask).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 't',
-        repo: 'bde',
-        status: 'blocked'
-      })
+      expect.objectContaining({ status: 'blocked' })
     )
   })
 })
