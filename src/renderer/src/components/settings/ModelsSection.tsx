@@ -13,6 +13,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { SettingsCard } from './SettingsCard'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
+import type { BackendKind, AgentBackendConfig, BackendSettings } from '../../../../shared/types/backend-settings'
+import { CLAUDE_MODELS, DEFAULT_MODEL } from '../../../../shared/models'
 
 type TestConnState =
   | { kind: 'idle' }
@@ -21,10 +23,9 @@ type TestConnState =
   | { kind: 'fail'; error: string }
 
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1'
-const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-4-5'
+const DEFAULT_CLAUDE_MODEL = DEFAULT_MODEL.modelId
 const DEFAULT_LOCAL_MODEL = ''
 const LOCAL_MODEL_PLACEHOLDER = 'openai/qwen/qwen3.6-35b-a3b'
-const CLAUDE_MODELS = ['claude-sonnet-4-5', 'claude-opus-4-7', 'claude-haiku-4-5'] as const
 
 type AgentTypeId =
   | 'pipeline'
@@ -33,8 +34,6 @@ type AgentTypeId =
   | 'assistant'
   | 'adhoc'
   | 'reviewer'
-
-type BackendKind = 'claude' | 'local'
 
 interface AgentTypeMeta {
   id: AgentTypeId
@@ -53,21 +52,6 @@ const NOT_YET_ROUTED_TYPES: AgentTypeMeta[] = [
   { id: 'adhoc', label: 'Adhoc', description: 'Freeform agent runs outside the sprint pipeline.' },
   { id: 'reviewer', label: 'Reviewer', description: 'Reviews PRs before merge.' }
 ]
-
-interface AgentBackendConfig {
-  backend: BackendKind
-  model: string
-}
-
-interface BackendSettings {
-  pipeline: AgentBackendConfig
-  synthesizer: AgentBackendConfig
-  copilot: AgentBackendConfig
-  assistant: AgentBackendConfig
-  adhoc: AgentBackendConfig
-  reviewer: AgentBackendConfig
-  localEndpoint: string
-}
 
 const DEFAULT_ROW: AgentBackendConfig = { backend: 'claude', model: DEFAULT_CLAUDE_MODEL }
 
@@ -330,9 +314,9 @@ function ModelPicker({ backend, model, onChange, disabled }: ModelPickerProps): 
         disabled={disabled}
         aria-label="Claude model"
       >
-        {CLAUDE_MODELS.map((id) => (
-          <option key={id} value={id}>
-            {id}
+        {CLAUDE_MODELS.map((m) => (
+          <option key={m.id} value={m.modelId}>
+            {m.label}
           </option>
         ))}
       </select>

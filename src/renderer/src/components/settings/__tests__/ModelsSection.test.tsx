@@ -95,9 +95,9 @@ describe('ModelsSection — backend toggle + model picker', () => {
     expect(select).toBeInTheDocument()
     const options = Array.from(select.options).map((o) => o.value)
     expect(options).toEqual([
-      'claude-sonnet-4-5',
-      'claude-opus-4-7',
-      'claude-haiku-4-5'
+      'claude-haiku-4-5-20251001',
+      'claude-sonnet-4-6',
+      'claude-opus-4-6'
     ])
   })
 
@@ -119,7 +119,7 @@ describe('ModelsSection — backend toggle + model picker', () => {
     })
   })
 
-  it('switches back to Claude resets model to claude-sonnet-4-5', async () => {
+  it('switches back to Claude resets model to claude-sonnet-4-6', async () => {
     const user = userEvent.setup()
     render(<ModelsSection />)
     const pipelineRow = screen.getByTestId('models-row-pipeline')
@@ -136,7 +136,7 @@ describe('ModelsSection — backend toggle + model picker', () => {
 
     await waitFor(() => {
       const select = pipelineRow.querySelector('select') as HTMLSelectElement
-      expect(select.value).toBe('claude-sonnet-4-5')
+      expect(select.value).toBe('claude-sonnet-4-6')
     })
   })
 
@@ -190,7 +190,7 @@ describe('ModelsSection — save orchestration', () => {
         'agents.backendConfig',
         expect.objectContaining({
           pipeline: { backend: 'local', model: 'openai/qwen/qwen3.6-35b-a3b' },
-          synthesizer: { backend: 'claude', model: 'claude-sonnet-4-5' },
+          synthesizer: { backend: 'claude', model: 'claude-sonnet-4-6' },
           localEndpoint: 'http://localhost:1234/v1'
         })
       )

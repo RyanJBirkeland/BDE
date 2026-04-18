@@ -11,25 +11,11 @@
  * (every type on `claude` — zero behaviour change for existing users).
  */
 import type { AgentType } from '../agent-system/personality/types'
+import type { BackendKind, AgentBackendConfig, BackendSettings } from '../../shared/types/backend-settings'
 import { DEFAULT_CONFIG } from './types'
 import { getSettingJson, setSettingJson } from '../settings'
 
-export type BackendKind = 'claude' | 'local'
-
-export interface AgentBackendConfig {
-  backend: BackendKind
-  model: string
-}
-
-export interface BackendSettings {
-  pipeline: AgentBackendConfig
-  synthesizer: AgentBackendConfig
-  copilot: AgentBackendConfig
-  assistant: AgentBackendConfig
-  adhoc: AgentBackendConfig
-  reviewer: AgentBackendConfig
-  localEndpoint: string
-}
+export type { BackendKind, AgentBackendConfig, BackendSettings }
 
 export const SETTING_BACKEND_CONFIG = 'agents.backendConfig'
 
