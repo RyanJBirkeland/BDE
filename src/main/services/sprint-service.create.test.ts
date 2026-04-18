@@ -76,4 +76,37 @@ describe('createTaskWithValidation', () => {
       expect.objectContaining({ title: 't', repo: 'bde' })
     )
   })
+
+  it('applies auto-blocking to queued tasks with unsatisfied hard dependencies', () => {
+    // Mock listTasks to return a list that does NOT contain the upstream task
+    ;(mutations.listTasks as ReturnType<typeof vi.fn>).mockReturnValue([
+      { id: 'other-task', title: 'other' } as SprintTask
+    ])
+
+    const fakeRow = {
+      id: 'new-task-id',
+      title: 't',
+      repo: 'bde',
+      status: 'blocked'
+    } as SprintTask
+    ;(mutations.createTask as ReturnType<typeof vi.fn>).mockReturnValue(fakeRow)
+
+    const input: CreateTaskInput = {
+      title: 't',
+      repo: 'bde',
+      status: 'queued',
+      depends_on: [{ id: 'upstream-missing', type: 'hard' }]
+    }
+    const result = createTaskWithValidation(input, { logger })
+
+    expect(result).toBe(fakeRow)
+    // Verify that createTask was called with status='blocked' (auto-blocking applied)
+    expect(mutations.createTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 't',
+        repo: 'bde',
+        status: 'blocked'
+      })
+    )
+  })
 })

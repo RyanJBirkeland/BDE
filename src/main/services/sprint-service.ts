@@ -11,6 +11,12 @@
 import * as mutations from './sprint-mutations'
 import * as broadcaster from './sprint-mutation-broadcaster'
 import type { SprintTask } from '../../shared/types'
+import { validateTaskCreation } from './task-validation'
+import { SpecParser } from './spec-quality/spec-parser'
+import { RequiredSectionsValidator } from './spec-quality/validators/sync-validators'
+import { getRepoPaths } from '../git'
+import { listGroups } from '../data/task-group-queries'
+import type { Logger } from '../logger'
 
 export type {
   CreateTaskInput,
@@ -93,28 +99,17 @@ export function createReviewTaskFromAdhoc(input: {
   return row
 }
 
-import { validateTaskCreation } from './task-validation'
-import { SpecParser } from './spec-quality/spec-parser'
-import { RequiredSectionsValidator } from './spec-quality/validators/sync-validators'
-import { getRepoPaths } from '../git'
-import { listGroups } from '../data/task-group-queries'
-import type { Logger } from '../logger'
-
 export interface CreateTaskWithValidationDeps {
   logger: Logger
 }
 
-/**
- * Single entry point for task creation used by both the IPC handler and the
- * MCP server. Runs spec-quality validation, checks repo configuration, then
- * delegates to createTask (which notifies sprint-mutation-broadcaster).
- */
+/** Shared task-creation entry point for the sprint:create IPC handler and the MCP server. */
 export function createTaskWithValidation(
   input: mutations.CreateTaskInput,
   deps: CreateTaskWithValidationDeps
 ): SprintTask {
   const validation = validateTaskCreation(input, {
-    logger: { warn: (msg) => deps.logger.warn(String(msg)) },
+    logger: { warn: (msg) => deps.logger.warn(msg as string) },
     listTasks: mutations.listTasks,
     listGroups
   })
