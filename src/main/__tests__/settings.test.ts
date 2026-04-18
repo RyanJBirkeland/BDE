@@ -141,12 +141,5 @@ describe('settings.ts', () => {
       expect(raw?.value.startsWith('ENC:')).toBe(true)
     })
 
-    it('setSetting encrypts supabase.serviceKey before storage', () => {
-      setSetting('supabase.serviceKey', 'service_role_key_abc')
-      const raw = db
-        .prepare('SELECT value FROM settings WHERE key = ?')
-        .get('supabase.serviceKey') as { value: string } | undefined
-      expect(raw?.value.startsWith('ENC:')).toBe(true)
-    })
   })
 })

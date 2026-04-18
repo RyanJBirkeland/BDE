@@ -49,8 +49,6 @@ export function setSettingJson<T>(key: string, value: T, db?: Database.Database)
 }
 
 // Well-known setting keys
-export const SETTING_SUPABASE_URL = 'supabase.url'
-export const SETTING_SUPABASE_KEY = 'supabase.serviceKey'
 export const SETTING_DEPENDENCY_CASCADE_BEHAVIOR = 'dependency.cascadeBehavior'
 export const SETTING_MCP_ENABLED = 'mcp.enabled'
 export const SETTING_MCP_PORT = 'mcp.port'

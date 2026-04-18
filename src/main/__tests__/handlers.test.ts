@@ -99,9 +99,7 @@ vi.mock('../settings', () => ({
   setSetting: vi.fn(),
   getSettingJson: vi.fn().mockReturnValue(null),
   setSettingJson: vi.fn(),
-  deleteSetting: vi.fn(),
-  SETTING_SUPABASE_URL: 'supabase.url',
-  SETTING_SUPABASE_KEY: 'supabase.serviceKey'
+  deleteSetting: vi.fn()
 }))
 
 vi.mock('fs/promises', () => ({

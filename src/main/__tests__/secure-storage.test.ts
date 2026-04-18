@@ -26,9 +26,8 @@ import {
 } from '../secure-storage'
 
 describe('SENSITIVE_SETTING_KEYS', () => {
-  it('includes github.token and supabase.serviceKey', () => {
+  it('includes github.token', () => {
     expect(SENSITIVE_SETTING_KEYS.has('github.token')).toBe(true)
-    expect(SENSITIVE_SETTING_KEYS.has('supabase.serviceKey')).toBe(true)
   })
 
   it('does not include repos or agent.eventRetentionDays', () => {
