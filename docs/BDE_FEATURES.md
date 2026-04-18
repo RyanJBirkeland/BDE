@@ -12,7 +12,7 @@ This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.m
 4. **Review** — Agents complete work and transition tasks to `review` status, preserving the worktree. Code Review Station provides diff inspection, commit history, and action buttons (merge locally, create PR, request revision, discard). Users review changes before integration
 5. **Complete** — Merged PRs or local merges mark tasks `done`. Dependency resolution automatically unblocks downstream tasks with satisfied dependencies
 
-**Supporting views:** Dashboard (aggregated metrics), IDE (Monaco editor + terminal), Source Control (git staging/commits/push), Settings (9 configuration tabs)
+**Supporting views:** Dashboard (aggregated metrics), IDE (Monaco editor + terminal), Source Control (git staging/commits/push), Settings (7 configuration tabs)
 
 ## Task System
 
@@ -200,7 +200,7 @@ Flexible split-pane layout system for arranging views side-by-side with drag-and
 
 ### Settings
 
-Application configuration organized into 9 tabs. Most settings persisted to SQLite `settings` table.
+Application configuration organized into 7 tabs. Most settings persisted to SQLite `settings` table.
 
 - **Connections**: GitHub token configuration, Claude API auth status, token refresh
 - **Repositories**: Add/remove repos with `name`, `localPath`, `githubOwner`, `githubRepo`
