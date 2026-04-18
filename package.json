@@ -41,6 +41,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-virtual": "^3.13.23",
     "better-sqlite3": "^12.8.0",
