@@ -23,7 +23,17 @@ export interface LocalSpawnOptions {
 }
 
 export async function spawnLocalAgent(opts: LocalSpawnOptions): Promise<AgentHandle> {
-  const { spawnBdeAgent } = await import('rbt-coding-agent/adapters/bde')
+  let spawnBdeAgent: typeof import('rbt-coding-agent/adapters/bde')['spawnBdeAgent']
+  try {
+    ;({ spawnBdeAgent } = await import('rbt-coding-agent/adapters/bde'))
+  } catch (err) {
+    throw new Error(
+      'The "local" agent backend requires the optional rbt-coding-agent package, ' +
+        'which is not installed. Install it (sibling repo or npm) or switch the ' +
+        'agent backend to another option in Settings. ' +
+        `Original error: ${err instanceof Error ? err.message : String(err)}`
+    )
+  }
 
   const previousBase = process.env.OPENAI_API_BASE
   process.env.OPENAI_API_BASE = opts.endpoint

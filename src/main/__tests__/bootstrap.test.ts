@@ -22,7 +22,6 @@ import * as sprintMaintenanceFacade from '../data/sprint-maintenance-facade'
 import * as pluginLoader from '../services/plugin-loader'
 import * as loadSampler from '../services/load-sampler'
 import * as broadcastModule from '../broadcast'
-import * as supabaseImport from '../data/supabase-import'
 
 vi.mock('fs', async () => {
   const actual = await vi.importActual('fs')
@@ -55,9 +54,6 @@ vi.mock('@electron-toolkit/utils', () => ({
 }))
 
 vi.mock('../db')
-vi.mock('../data/supabase-import', () => ({
-  importSprintTasksFromSupabase: vi.fn(() => Promise.resolve())
-}))
 vi.mock('../pr-poller', () => ({
   startPrPoller: vi.fn(),
   stopPrPoller: vi.fn()
@@ -90,7 +86,7 @@ vi.mock('../data/settings-queries', () => ({
 }))
 vi.mock('../secure-storage', () => ({
   ENCRYPTED_PREFIX: 'ENC:',
-  SENSITIVE_SETTING_KEYS: new Set(['github.token', 'supabase.serviceKey']),
+  SENSITIVE_SETTING_KEYS: new Set(['github.token']),
   encryptSetting: vi.fn((v: string) => 'ENC:' + v),
   decryptSetting: vi.fn((v: string) => v),
   isEncryptionAvailable: vi.fn(() => true)
@@ -266,34 +262,5 @@ describe('bootstrap', () => {
       expect(broadcastModule.broadcast).not.toHaveBeenCalled()
     })
 
-    it('should broadcast manager:warning for non-trivial Supabase import errors', async () => {
-      vi.mocked(supabaseImport.importSprintTasksFromSupabase).mockRejectedValueOnce(
-        new Error('EACCES: permission denied, open /var/db/sprint.db')
-      )
-
-      initializeDatabase()
-      // Flush the rejected promise microtask queue without advancing timers
-      await Promise.resolve()
-      await Promise.resolve()
-
-      expect(broadcastModule.broadcast).toHaveBeenCalledWith('manager:warning', {
-        message: expect.stringContaining('Supabase import failed')
-      })
-    })
-
-    it('should not broadcast for trivial errors like missing credentials', async () => {
-      vi.mocked(supabaseImport.importSprintTasksFromSupabase).mockRejectedValueOnce(
-        new Error('credentials not configured — skipping import')
-      )
-
-      initializeDatabase()
-      await Promise.resolve()
-      await Promise.resolve()
-
-      expect(broadcastModule.broadcast).not.toHaveBeenCalledWith(
-        'manager:warning',
-        expect.anything()
-      )
-    })
   })
 })

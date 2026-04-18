@@ -6,7 +6,6 @@ import { app, BrowserWindow, session } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { BDE_DB_PATH } from './paths'
 import { getDb, backupDatabase } from './db'
-import { importSprintTasksFromSupabase } from './data/supabase-import'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
 import { pruneOldEvents } from './data/event-queries'
@@ -195,17 +194,6 @@ export function initializeDatabase(): void {
   }
   const backupInterval = setInterval(safeBackup, BACKUP_INTERVAL_MS)
   app.on('will-quit', () => clearInterval(backupInterval))
-
-  // One-time async import from Supabase (no-op if local table already has rows or credentials missing)
-  importSprintTasksFromSupabase(getDb()).catch((err) => {
-    const message = `Supabase import failed: ${getErrorMessage(err)}`
-    logger.warn(message)
-    if (isNonTrivialError(message)) {
-      // This may resolve after the window is ready — emit directly rather than relying on
-      // emitStartupWarnings() which is called at window load time.
-      broadcast('manager:warning', { message })
-    }
-  })
 }
 
 /**
