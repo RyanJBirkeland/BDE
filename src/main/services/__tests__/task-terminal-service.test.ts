@@ -26,8 +26,11 @@ function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTermina
     updateTask: vi.fn(),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
     getGroup: vi.fn().mockReturnValue(null),
-    getGroupsWithDependencies: vi.fn().mockReturnValue([]),
     listGroupTasks: vi.fn().mockReturnValue([]),
+    epicDepsReader: {
+      getDependentEpics: vi.fn().mockReturnValue(new Set()),
+      areEpicDepsSatisfied: vi.fn().mockReturnValue({ satisfied: true, blockedBy: [] })
+    },
     getSetting: vi.fn().mockReturnValue(null),
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
     ...overrides

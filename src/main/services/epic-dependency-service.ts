@@ -9,10 +9,12 @@ import { TERMINAL_STATUSES, HARD_SATISFIED_STATUSES } from './dependency-service
 // Re-export canonical status sets for epic satisfaction checks
 export { TERMINAL_STATUSES, HARD_SATISFIED_STATUSES }
 
-export interface EpicDependencyIndex {
-  rebuild(epics: Array<{ id: string; depends_on: EpicDependency[] | null }>): void
-  update(epicId: string, deps: EpicDependency[] | null): void
-  remove(epicId: string): void
+/**
+ * Read-only view of the epic dependency graph. Callers that only resolve
+ * dependents (agent-manager, task-terminal-service) accept this narrower
+ * interface so they cannot mutate the graph behind the owner's back.
+ */
+export interface EpicDepsReader {
   getDependentEpics(epicId: string): Set<string>
   areEpicDepsSatisfied(
     epicId: string,
@@ -20,6 +22,12 @@ export interface EpicDependencyIndex {
     getEpicStatus: (id: string) => string | undefined,
     getEpicTasks: (id: string) => Array<{ status: string }> | undefined
   ): { satisfied: boolean; blockedBy: string[] }
+}
+
+export interface EpicDependencyIndex extends EpicDepsReader {
+  rebuild(epics: Array<{ id: string; depends_on: EpicDependency[] | null }>): void
+  update(epicId: string, deps: EpicDependency[] | null): void
+  remove(epicId: string): void
 }
 
 export function createEpicDependencyIndex(): EpicDependencyIndex {

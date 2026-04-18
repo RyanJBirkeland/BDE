@@ -8,6 +8,7 @@ import type {
   CreateGroupInput,
   UpdateGroupInput
 } from '../data/task-group-queries'
+import type { EpicDepsReader } from './epic-dependency-service'
 import {
   createGroup as defaultCreateGroup,
   listGroups as defaultListGroups,
@@ -45,7 +46,7 @@ export interface EpicGroupQueries {
   ) => TaskGroup | null
 }
 
-export interface EpicGroupService {
+export interface EpicGroupService extends EpicDepsReader {
   listEpics: () => TaskGroup[]
   getEpic: (id: string) => TaskGroup | null
   getEpicTasks: (id: string) => SprintTask[]
@@ -104,6 +105,10 @@ export function createEpicGroupService(
     listEpics: () => queries.listGroups(),
     getEpic: (id) => queries.getGroup(id),
     getEpicTasks: (id) => queries.getGroupTasks(id),
+
+    getDependentEpics: (epicId) => index.getDependentEpics(epicId),
+    areEpicDepsSatisfied: (epicId, deps, getEpicStatus, getEpicTasks) =>
+      index.areEpicDepsSatisfied(epicId, deps, getEpicStatus, getEpicTasks),
 
     createEpic(input) {
       const created = queries.createGroup(input)
