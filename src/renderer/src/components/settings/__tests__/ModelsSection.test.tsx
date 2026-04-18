@@ -149,3 +149,55 @@ describe('ModelsSection — backend toggle + model picker', () => {
     if (select) expect(select).toBeDisabled()
   })
 })
+
+describe('ModelsSection — save orchestration', () => {
+  it('renders a Save button initially disabled', () => {
+    render(<ModelsSection />)
+    const btn = screen.getByRole('button', { name: /save changes/i })
+    expect(btn).toBeDisabled()
+  })
+
+  it('enables Save after the user edits the endpoint', async () => {
+    const user = userEvent.setup()
+    render(<ModelsSection />)
+    const endpoint = screen.getByPlaceholderText('http://localhost:1234/v1') as HTMLInputElement
+    await user.clear(endpoint)
+    await user.type(endpoint, 'http://localhost:4321/v1')
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save changes/i })).not.toBeDisabled()
+    })
+  })
+
+  it('Save calls setJson with the full BackendSettings object once and clears dirty', async () => {
+    const user = userEvent.setup()
+    render(<ModelsSection />)
+    const pipelineRow = screen.getByTestId('models-row-pipeline')
+    const localBtn = pipelineRow.querySelector(
+      'button[role="radio"][data-value="local"]'
+    ) as HTMLButtonElement
+    await user.click(localBtn)
+
+    const localInput = pipelineRow.querySelector(
+      'input[placeholder="openai/qwen/qwen3.6-35b-a3b"]'
+    ) as HTMLInputElement
+    await user.type(localInput, 'openai/qwen/qwen3.6-35b-a3b')
+
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+    await waitFor(() => {
+      expect(window.api.settings.setJson).toHaveBeenCalledTimes(1)
+      expect(window.api.settings.setJson).toHaveBeenCalledWith(
+        'agents.backendConfig',
+        expect.objectContaining({
+          pipeline: { backend: 'local', model: 'openai/qwen/qwen3.6-35b-a3b' },
+          synthesizer: { backend: 'claude', model: 'claude-sonnet-4-5' },
+          localEndpoint: 'http://localhost:1234/v1'
+        })
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled()
+    })
+  })
+})

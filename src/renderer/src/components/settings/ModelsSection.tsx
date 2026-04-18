@@ -9,8 +9,10 @@
  * Saves the entire BackendSettings object in one atomic setJson call.
  */
 import './ModelsSection.css'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { SettingsCard } from './SettingsCard'
+import { Button } from '../ui/Button'
+import { toast } from '../../stores/toasts'
 
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1'
 const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-4-5'
@@ -77,6 +79,8 @@ function defaultBackendSettings(): BackendSettings {
 
 export function ModelsSection(): React.JSX.Element {
   const [settings, setSettings] = useState<BackendSettings>(defaultBackendSettings)
+  const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function load(): Promise<void> {
@@ -89,9 +93,31 @@ export function ModelsSection(): React.JSX.Element {
     void load()
   }, [])
 
-  function updateRow(id: AgentTypeId, next: AgentBackendConfig): void {
-    setSettings((s) => ({ ...s, [id]: next }))
+  function updateSettings(next: BackendSettings): void {
+    setSettings(next)
+    setDirty(true)
   }
+
+  function updateRow(id: AgentTypeId, next: AgentBackendConfig): void {
+    updateSettings({ ...settings, [id]: next })
+  }
+
+  function updateEndpoint(next: string): void {
+    updateSettings({ ...settings, localEndpoint: next })
+  }
+
+  const handleSave = useCallback(async (): Promise<void> => {
+    setSaving(true)
+    try {
+      await window.api.settings.setJson('agents.backendConfig', settings)
+      setDirty(false)
+      toast.success('Model routing saved')
+    } catch {
+      toast.error('Failed to save model routing')
+    } finally {
+      setSaving(false)
+    }
+  }, [settings])
 
   return (
     <div className="settings-cards-list">
@@ -105,9 +131,7 @@ export function ModelsSection(): React.JSX.Element {
             className="settings-field__input"
             type="text"
             value={settings.localEndpoint}
-            onChange={(e) =>
-              setSettings((s) => ({ ...s, localEndpoint: e.target.value }))
-            }
+            onChange={(e) => updateEndpoint(e.target.value)}
             placeholder={DEFAULT_LOCAL_ENDPOINT}
           />
         </label>
@@ -139,6 +163,19 @@ export function ModelsSection(): React.JSX.Element {
           />
         ))}
       </SettingsCard>
+
+      <div className="models-save-row">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleSave}
+          disabled={!dirty || saving}
+          loading={saving}
+          type="button"
+        >
+          {saving ? 'Saving…' : 'Save changes'}
+        </Button>
+      </div>
     </div>
   )
 }
