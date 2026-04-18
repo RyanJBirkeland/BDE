@@ -10,3 +10,4 @@ Source: `src/main/mcp-server/`
 | [`token-store.ts`](./token-store.md) | Persistent bearer token storage at `~/.bde/mcp-token` — generates 64-char hex token on first read, returns existing token on subsequent reads, supports regeneration | `readOrCreateToken`, `regenerateToken`, `tokenFilePath` |
 | `tools/` | MCP tool implementations — read-only introspection and CRUD operations | See subdirectory |
 | [`tools/meta.ts`](./meta.md) | Read-only meta tools exposing BDE enums and configuration: `meta.repos`, `meta.taskStatuses`, `meta.dependencyConditions` | `registerMetaTools`, `defaultGetRepos`, `MetaToolsDeps` |
+| `tools/tasks.ts` | Task read tools (`tasks.list`, `tasks.get`, `tasks.history`) plus write-tool stub for T11 | `registerTaskTools`, `TaskToolsDeps` |
