@@ -52,3 +52,17 @@ export function setSettingJson<T>(key: string, value: T, db?: Database.Database)
 export const SETTING_SUPABASE_URL = 'supabase.url'
 export const SETTING_SUPABASE_KEY = 'supabase.serviceKey'
 export const SETTING_DEPENDENCY_CASCADE_BEHAVIOR = 'dependency.cascadeBehavior'
+export const SETTING_MCP_ENABLED = 'mcp.enabled'
+export const SETTING_MCP_PORT = 'mcp.port'
+export const MCP_DEFAULT_PORT = 18792
+
+export function getMcpEnabled(): boolean {
+  return getSetting(SETTING_MCP_ENABLED) === 'true'
+}
+
+export function getMcpPort(): number {
+  const raw = getSetting(SETTING_MCP_PORT)
+  if (!raw) return MCP_DEFAULT_PORT
+  const port = Number(raw)
+  return Number.isInteger(port) && port > 0 && port < 65536 ? port : MCP_DEFAULT_PORT
+}
