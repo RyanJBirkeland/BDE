@@ -311,6 +311,7 @@ declare global {
         promoteToReview: (
           ...args: IpcArgs<'agents:promoteToReview'>
         ) => Promise<IpcResult<'agents:promoteToReview'>>
+        testLocalEndpoint: (endpoint: string) => Promise<IpcResult<'agents:testLocalEndpoint'>>
         getProcesses: () => Promise<IpcResult<'local:getAgentProcesses'>>
         spawnLocal: (
           ...args: IpcArgs<'local:spawnClaudeAgent'>

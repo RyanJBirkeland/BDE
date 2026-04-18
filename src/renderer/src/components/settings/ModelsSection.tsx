@@ -156,7 +156,7 @@ export function ModelsSection(): React.JSX.Element {
         <div className="models-row__controls" style={{ marginTop: '8px' }}>
           <Button
             type="button"
-            variant="secondary"
+            variant="ghost"
             size="sm"
             onClick={handleTestConnection}
             disabled={testConn.kind === 'pending'}
