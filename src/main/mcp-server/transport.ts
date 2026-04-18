@@ -2,6 +2,10 @@
  * Thin HTTP wrapper around the MCP SDK's Streamable HTTP transport.
  * Adds bearer-token auth and structured error logging before delegating
  * to the SDK's own request handler.
+ *
+ * The MCP SDK's stateless transport cannot be reused across requests — each
+ * HTTP request requires a fresh transport + server instance. We accept a
+ * factory so that each inbound request gets its own isolated pair.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
@@ -15,15 +19,10 @@ export interface TransportHandler {
 }
 
 export function createTransportHandler(
-  mcpServer: McpServer,
+  buildMcpServer: () => McpServer,
   token: string,
   logger: Logger
 ): TransportHandler {
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined // stateless — one transport serves all requests
-  })
-  mcpServer.connect(transport).catch((err) => logger.error(`mcp connect: ${err}`))
-
   return {
     async handle(req, res) {
       if (req.url !== '/mcp') {
@@ -40,8 +39,16 @@ export function createTransportHandler(
         res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: auth.message } }))
         return
       }
+
+      const server = buildMcpServer()
+      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
       try {
+        await server.connect(transport)
         await transport.handleRequest(req, res)
+        res.on('close', () => {
+          transport.close().catch((err) => logger.warn(`transport close: ${err}`))
+          server.close().catch((err) => logger.warn(`server close: ${err}`))
+        })
       } catch (err) {
         logger.error(`mcp transport: ${err}`)
         if (!res.headersSent) {
@@ -51,7 +58,7 @@ export function createTransportHandler(
       }
     },
     async close() {
-      await transport.close()
+      // Nothing to close — stateless mode creates no persistent resources.
     }
   }
 }

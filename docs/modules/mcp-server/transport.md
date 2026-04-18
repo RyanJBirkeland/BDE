@@ -7,7 +7,7 @@
 Wraps the MCP SDK's `StreamableHTTPServerTransport` with bearer-token authentication and structured error logging. Returns a `TransportHandler` that guards all requests before delegating to the SDK.
 
 ## Public API
-- `createTransportHandler(mcpServer, token, logger)` — creates the handler; connects the MCP server to the transport immediately
+- `createTransportHandler(buildMcpServer, token, logger)` — creates the handler; accepts a factory that produces a fresh `McpServer` per request (required by the SDK's stateless transport, which cannot be reused across requests)
 - `TransportHandler` — interface with `handle(req, res)` and `close()` methods
 
 ## Key Dependencies
