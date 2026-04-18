@@ -5,12 +5,11 @@ import './LocalMcpServerSection.css'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from '../../stores/toasts'
 import { SettingsCard } from './SettingsCard'
-
-const DEFAULT_MCP_PORT = 3282
+import { MCP_DEFAULT_PORT } from '../../../../shared/mcp-constants'
 
 export function LocalMcpServerSection(): React.JSX.Element {
   const [enabled, setEnabled] = useState(false)
-  const [port, setPort] = useState(DEFAULT_MCP_PORT)
+  const [port, setPort] = useState(MCP_DEFAULT_PORT)
   const [token, setToken] = useState<string | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -109,7 +108,7 @@ export function LocalMcpServerSection(): React.JSX.Element {
           <div className="settings-readonly-toggle__title">Enable MCP server</div>
           <div className="settings-readonly-toggle__desc">
             When enabled, BDE listens on localhost for MCP tool calls from Claude Code, Cursor, and
-            compatible agents. Changes take effect on next app restart.
+            compatible agents.
           </div>
         </div>
       </label>
@@ -127,6 +126,7 @@ export function LocalMcpServerSection(): React.JSX.Element {
           value={port}
           onChange={(e) => handlePortChange(Number(e.target.value))}
         />
+        <div className="settings-field__hint">Port changes take effect immediately.</div>
       </div>
 
       <div className="settings-field">

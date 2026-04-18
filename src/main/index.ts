@@ -308,11 +308,18 @@ app.whenReady().then(() => {
     }
 
     onSettingChanged(({ key, value }) => {
-      if (key !== 'mcp.enabled') return
-      if (value === 'true') {
-        startMcpServer().catch(() => {})
-      } else {
-        stopMcpServer().catch(() => {})
+      if (key === 'mcp.enabled') {
+        if (value === 'true') {
+          startMcpServer().catch(() => {})
+        } else {
+          stopMcpServer().catch(() => {})
+        }
+        return
+      }
+      if (key === 'mcp.port' && mcp !== null) {
+        stopMcpServer()
+          .then(() => startMcpServer())
+          .catch(() => {})
       }
     })
 

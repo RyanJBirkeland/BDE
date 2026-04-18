@@ -3,6 +3,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { createMcpServer, type McpServerHandle } from './index'
 import { createEpicGroupService } from '../services/epic-group-service'
+import { deleteTask } from '../services/sprint-service'
 import { readOrCreateToken } from './token-store'
 import { getSettingJson } from '../settings'
 import type { RepoConfig } from '../paths'
@@ -13,6 +14,7 @@ let handle: McpServerHandle
 let client: Client
 let port: number
 let token: string
+const createdIds: string[] = []
 
 beforeAll(async () => {
   const epicService = createEpicGroupService()
@@ -32,6 +34,13 @@ beforeAll(async () => {
 }, 30_000)
 
 afterAll(async () => {
+  for (const id of createdIds) {
+    try {
+      deleteTask(id)
+    } catch {
+      // best-effort cleanup — row may already be gone
+    }
+  }
   await client?.close()
   await handle?.stop()
 })
@@ -65,6 +74,7 @@ describe('MCP server integration', () => {
     const createdBody = JSON.parse((created.content[0] as { type: 'text'; text: string }).text)
     expect(createdBody.title).toBe('mcp integration demo')
     const id = createdBody.id
+    createdIds.push(id)
 
     const list = await client.callTool({
       name: 'tasks.list',

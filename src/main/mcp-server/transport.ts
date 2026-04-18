@@ -36,7 +36,7 @@ export function createTransportHandler(
           'Content-Type': 'application/json',
           'WWW-Authenticate': 'Bearer realm="bde-mcp"'
         })
-        res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: auth.message } }))
+        res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: auth.message } }))
         return
       }
 

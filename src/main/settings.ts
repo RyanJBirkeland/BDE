@@ -54,7 +54,8 @@ export const SETTING_SUPABASE_KEY = 'supabase.serviceKey'
 export const SETTING_DEPENDENCY_CASCADE_BEHAVIOR = 'dependency.cascadeBehavior'
 export const SETTING_MCP_ENABLED = 'mcp.enabled'
 export const SETTING_MCP_PORT = 'mcp.port'
-export const MCP_DEFAULT_PORT = 18792
+export { MCP_DEFAULT_PORT } from '../shared/mcp-constants'
+import { MCP_DEFAULT_PORT } from '../shared/mcp-constants'
 
 export function getMcpEnabled(): boolean {
   return getSetting(SETTING_MCP_ENABLED) === 'true'
