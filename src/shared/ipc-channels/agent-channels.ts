@@ -60,6 +60,12 @@ export interface AgentChannels {
     args: [agentId: string]
     result: { ok: boolean; taskId?: string; error?: string }
   }
+  'agents:testLocalEndpoint': {
+    args: [args: { endpoint: string }]
+    result:
+      | { ok: true; latencyMs: number; modelCount: number }
+      | { ok: false; error: string }
+  }
   'agent:latestCacheTokens': {
     args: [runId: string]
     result: {
