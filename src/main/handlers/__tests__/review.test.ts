@@ -143,6 +143,15 @@ vi.mock('child_process', () => ({
   execFile: vi.fn()
 }))
 
+// fs is mocked so the worktree-existence pre-flight check passes for the
+// synthetic test paths (which don't exist on disk). Individual tests can
+// override existsSync to simulate a missing worktree.
+const { mockExistsSync } = vi.hoisted(() => ({ mockExistsSync: vi.fn(() => true) }))
+vi.mock('fs', async () => {
+  const actual = await vi.importActual<typeof import('fs')>('fs')
+  return { ...actual, existsSync: mockExistsSync }
+})
+
 vi.mock('util', () => ({
   promisify: vi.fn(() => mockExecFileAsync)
 }))
@@ -160,6 +169,9 @@ describe('Review handlers', () => {
     // git impl so tests that override via mockImplementation don't leak into
     // the next test.
     mockExecFileAsync.mockImplementation(defaultGitImpl)
+    // Default to "worktree exists" — individual tests override via
+    // mockExistsSync.mockReturnValueOnce(false) to simulate cleanup.
+    mockExistsSync.mockReturnValue(true)
   })
 
   it('registers all 13 review channels', () => {
@@ -1026,6 +1038,7 @@ describe('Review handlers', () => {
 
     it.each([
       [`${homedir()}/worktrees/bde/Users-ryan-projects-BDE/abc123`, true],
+      [`${homedir()}/worktrees/bde-adhoc/Users-ryan-projects-BDE/abc123`, true],
       ['/etc/passwd', false],
       ['../../etc', false],
       ['/tmp/evil', false],
@@ -1041,6 +1054,47 @@ describe('Review handlers', () => {
           handlers['review:getDiff'](_mockEvent, { worktreePath, base: VALID_BASE })
         ).rejects.toThrow(/invalid worktree path/i)
       }
+    })
+
+    it('review:getDiff accepts adhoc-base worktree path', async () => {
+      // Pins the fix for the bug where adhoc-spawned tasks could not be
+      // reviewed because validateWorktreePath only knew the pipeline base.
+      const handlers = captureHandlers()
+      const adhocPath = `${homedir()}/worktrees/bde-adhoc/Users-ryan-projects-BDE/abc123`
+      await expect(
+        handlers['review:getDiff'](_mockEvent, { worktreePath: adhocPath, base: VALID_BASE })
+      ).resolves.not.toThrow()
+    })
+
+    it('review:getDiff throws WorktreeMissingError when worktree directory is gone', async () => {
+      // Pins the fix for the misleading "spawn git ENOENT" — when the
+      // worktree directory has been pruned but the task row still references
+      // it, we want a clear error instead of "git not found".
+      mockExistsSync.mockReturnValue(false)
+      const handlers = captureHandlers()
+      await expect(
+        handlers['review:getDiff'](_mockEvent, { worktreePath: VALID_WORKTREE, base: VALID_BASE })
+      ).rejects.toThrow(/worktree directory no longer exists/i)
+    })
+
+    it('review:getCommits throws WorktreeMissingError when worktree directory is gone', async () => {
+      mockExistsSync.mockReturnValue(false)
+      const handlers = captureHandlers()
+      await expect(
+        handlers['review:getCommits'](_mockEvent, { worktreePath: VALID_WORKTREE, base: VALID_BASE })
+      ).rejects.toThrow(/worktree directory no longer exists/i)
+    })
+
+    it('review:getFileDiff throws WorktreeMissingError when worktree directory is gone', async () => {
+      mockExistsSync.mockReturnValue(false)
+      const handlers = captureHandlers()
+      await expect(
+        handlers['review:getFileDiff'](_mockEvent, {
+          worktreePath: VALID_WORKTREE,
+          base: VALID_BASE,
+          filePath: 'src/foo.ts'
+        })
+      ).rejects.toThrow(/worktree directory no longer exists/i)
     })
 
     it.each([

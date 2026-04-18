@@ -1,6 +1,8 @@
+import { existsSync } from 'fs'
 import { resolve } from 'path'
 import { homedir } from 'os'
 import { getSetting } from '../settings'
+import { ADHOC_WORKTREE_BASE } from '../paths'
 
 /**
  * Safe git ref pattern: commit SHAs, branch names, and remote refs.
@@ -18,8 +20,9 @@ export function validateGitRef(ref: string | undefined | null): void {
 }
 
 /**
- * Returns the configured worktree base directory, defaulting to ~/worktrees/bde.
- * Resolved to an absolute path (no trailing slash).
+ * Returns the configured pipeline worktree base, defaulting to ~/worktrees/bde.
+ * Resolved to an absolute path (no trailing slash). Used by the agent manager
+ * and disk-space tracking — they only know about pipeline worktrees.
  */
 export function getWorktreeBase(): string {
   const configured = getSetting('agentManager.worktreeBase')
@@ -28,8 +31,17 @@ export function getWorktreeBase(): string {
 }
 
 /**
- * Validates that a renderer-supplied worktreePath is inside the configured
- * worktree base directory. Throws if not.
+ * Returns every worktree base the review handlers should accept. Pipeline
+ * agents and adhoc agents use different bases (see `ADHOC_WORKTREE_BASE`),
+ * and a sprint task can be backed by a worktree from either path.
+ */
+export function getAllowedWorktreeBases(): string[] {
+  return [getWorktreeBase(), resolve(ADHOC_WORKTREE_BASE)]
+}
+
+/**
+ * Validates that a renderer-supplied worktreePath is inside one of the
+ * allowed worktree bases (pipeline or adhoc). Throws if not.
  *
  * Security: prevents a compromised renderer from running git commands in
  * arbitrary directories (e.g. /etc, /).
@@ -39,11 +51,40 @@ export function validateWorktreePath(worktreePath: string | undefined | null): v
     throw new Error('Invalid worktree path: must not be empty.')
   }
   const resolved = resolve(worktreePath)
-  const base = getWorktreeBase()
-  if (!resolved.startsWith(base + '/') && resolved !== base) {
+  const allowed = getAllowedWorktreeBases()
+  const isInsideAllowed = allowed.some(
+    (base) => resolved === base || resolved.startsWith(base + '/')
+  )
+  if (!isInsideAllowed) {
     throw new Error(
-      `Invalid worktree path: "${worktreePath}" is not inside the configured worktree base (${base}).`
+      `Invalid worktree path: "${worktreePath}" is not inside an allowed worktree base ` +
+        `(${allowed.join(', ')}).`
     )
+  }
+}
+
+/**
+ * Thrown when a worktree directory has been removed from disk but the
+ * sprint task row still references it. Distinguished from generic spawn
+ * errors so the renderer can surface a clear message ("Worktree was
+ * cleaned up — discard the task or re-run") instead of "git not found".
+ */
+export class WorktreeMissingError extends Error {
+  constructor(public readonly path: string) {
+    super(`Worktree directory no longer exists on disk: ${path}`)
+    this.name = 'WorktreeMissingError'
+  }
+}
+
+/**
+ * Confirms the worktree directory still exists on disk. Without this check,
+ * a follow-on `child_process.spawn(..., { cwd })` call against a deleted
+ * worktree returns the misleading `spawn git ENOENT` — Node reports the
+ * binary as missing whenever the cwd is missing.
+ */
+export function assertWorktreeExists(worktreePath: string): void {
+  if (!existsSync(worktreePath)) {
+    throw new WorktreeMissingError(worktreePath)
   }
 }
 

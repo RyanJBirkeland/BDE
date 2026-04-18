@@ -21,9 +21,9 @@
  * the work into a sprint task via `agents:promoteToReview`.
  */
 import { randomUUID } from 'node:crypto'
-import { basename, join } from 'node:path'
-import { homedir } from 'node:os'
+import { basename } from 'node:path'
 import { importAgent, updateAgentMeta, getAgentMeta } from './agent-history'
+import { ADHOC_WORKTREE_BASE } from './paths'
 import { updateAgentRunCost } from './data/agent-queries'
 import { execFileAsync } from './lib/async-utils'
 import { buildAgentEnvWithAuth, getClaudeCliPath, refreshOAuthTokenFromKeychain } from './env-utils'
@@ -39,12 +39,8 @@ import { createLogger } from './logger'
 
 const log = createLogger('adhoc-agent')
 
-/**
- * Dedicated worktree base for adhoc agents. Kept separate from the pipeline
- * worktree base so the pipeline pruner (which only knows about sprint task IDs)
- * never accidentally deletes a live adhoc worktree.
- */
-const ADHOC_WORKTREE_BASE = join(homedir(), 'worktrees', 'bde-adhoc')
+// ADHOC_WORKTREE_BASE is defined in src/main/paths.ts so the review handlers'
+// worktree validator can recognize adhoc worktree paths.
 
 /**
  * Derive a short, branch-safe slug from the user's first task message.

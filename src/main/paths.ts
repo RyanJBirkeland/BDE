@@ -91,6 +91,16 @@ export const BDE_AGENT_LOG_PATH = join(BDE_DIR, 'agent-manager.log')
 export const BDE_MEMORY_DIR = join(BDE_DIR, 'memory')
 export const BDE_TASK_MEMORY_DIR = join(BDE_MEMORY_DIR, 'tasks')
 
+/**
+ * Dedicated worktree base for adhoc agents. Kept separate from the pipeline
+ * worktree base (`agentManager.worktreeBase`, default `~/worktrees/bde`) so the
+ * pipeline pruner can't see adhoc worktrees and accidentally delete them.
+ *
+ * Exported here so any module that needs to recognize an adhoc worktree path
+ * (e.g. the review handlers' worktree validator) shares the same constant.
+ */
+export const ADHOC_WORKTREE_BASE = join(homedir(), 'worktrees', 'bde-adhoc')
+
 // --- Dynamic repo configuration (backed by settings table) ---
 
 import { getSettingJson } from './settings'

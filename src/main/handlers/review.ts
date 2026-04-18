@@ -14,7 +14,12 @@ import { createLogger } from '../logger'
 import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
 import { execFileAsync } from '../lib/async-utils'
-import { validateGitRef, validateWorktreePath, validateFilePath } from '../lib/review-paths'
+import {
+  validateGitRef,
+  validateWorktreePath,
+  validateFilePath,
+  assertWorktreeExists
+} from '../lib/review-paths'
 import { checkAutoReview } from '../services/auto-review-service'
 import type { AutoReviewRule } from '../../shared/types'
 import * as reviewOrchestration from '../services/review-orchestration-service'
@@ -52,6 +57,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     const { worktreePath, base } = payload
     validateGitRef(base)
     validateWorktreePath(worktreePath)
+    assertWorktreeExists(worktreePath)
 
     // Get numstat for structured data
     const { stdout: numstatOut } = await execFileAsync(
@@ -88,6 +94,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     const { worktreePath, base } = payload
     validateGitRef(base)
     validateWorktreePath(worktreePath)
+    assertWorktreeExists(worktreePath)
 
     const { stdout } = await execFileAsync(
       'git',
@@ -112,6 +119,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     const { worktreePath, filePath, base } = payload
     validateGitRef(base)
     validateWorktreePath(worktreePath)
+    assertWorktreeExists(worktreePath)
     validateFilePath(filePath)
 
     const { stdout } = await execFileAsync('git', ['diff', `${base}...HEAD`, '--', filePath], {
