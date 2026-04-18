@@ -50,7 +50,10 @@ if (!app.requestSingleInstanceLock()) {
   app.quit()
   process.exit(0)
 }
-import { getSetting, getSettingJson } from './settings'
+import { getSetting, getSettingJson, getMcpEnabled, getMcpPort } from './settings'
+import { createMcpServer, type McpServerHandle } from './mcp-server'
+import { onSettingChanged } from './mcp-server/settings-events'
+import { getEpicGroupService } from './handlers/group-handlers'
 import { createTaskTerminalService } from './services/task-terminal-service'
 import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
@@ -275,6 +278,47 @@ app.whenReady().then(() => {
       createLogger('startup').error(`Failed to start status server: ${err}`)
     })
     app.on('will-quit', () => statusServer.stop())
+
+    // MCP server (opt-in; controlled by mcp.enabled setting)
+    let mcp: McpServerHandle | null = null
+
+    async function startMcpServer(): Promise<void> {
+      if (mcp) return
+      const port = getMcpPort()
+      const handle = createMcpServer(
+        { epicService: getEpicGroupService(), onStatusTerminal: terminalService.onStatusTerminal },
+        { port }
+      )
+      try {
+        await handle.start()
+        mcp = handle
+      } catch (err) {
+        createLogger('startup').error(`Failed to start MCP server: ${err}`)
+      }
+    }
+
+    async function stopMcpServer(): Promise<void> {
+      if (!mcp) return
+      await mcp.stop()
+      mcp = null
+    }
+
+    if (getMcpEnabled()) {
+      startMcpServer().catch(() => {})
+    }
+
+    onSettingChanged(({ key, value }) => {
+      if (key !== 'mcp.enabled') return
+      if (value === 'true') {
+        startMcpServer().catch(() => {})
+      } else {
+        stopMcpServer().catch(() => {})
+      }
+    })
+
+    app.on('will-quit', () => {
+      stopMcpServer().catch(() => {})
+    })
 
     agentManager = am
   }
