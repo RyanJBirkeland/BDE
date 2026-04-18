@@ -7,7 +7,7 @@ import {
   FAILURE_STATUSES,
   TERMINAL_STATUSES
 } from '../services/dependency-service'
-import type { EpicDependencyIndex } from '../services/epic-dependency-service'
+import type { EpicDepsReader } from '../services/epic-dependency-service'
 
 /**
  * When a task reaches a terminal status, check all tasks that depend on it.
@@ -35,7 +35,7 @@ export function resolveDependents(
   updateTask: (id: string, patch: Record<string, unknown>) => unknown,
   logger?: Logger,
   getSetting?: (key: string) => string | null,
-  epicIndex?: EpicDependencyIndex,
+  epicIndex?: EpicDepsReader,
   getGroup?: (id: string) => TaskGroup | null,
   listGroupTasks?: (groupId: string) => SprintTask[],
   runInTransaction?: (fn: () => void) => void,

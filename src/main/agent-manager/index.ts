@@ -15,7 +15,7 @@ import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex } from '../services/dependency-service'
 import {
   createEpicDependencyIndex,
-  type EpicDependencyIndex
+  type EpicDepsReader
 } from '../services/epic-dependency-service'
 import { runAgent as _runAgent, type RunAgentDeps, type AgentRunClaim } from './run-agent'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
@@ -108,7 +108,8 @@ export class AgentManagerImpl implements AgentManager {
   _drainInFlight: Promise<void> | null = null
   readonly _agentPromises = new Set<Promise<void>>()
   readonly _depIndex: DependencyIndex
-  readonly _epicIndex: EpicDependencyIndex
+  /** Injected epic dependency graph, owned by EpicGroupService. */
+  readonly _epicIndex: EpicDepsReader
   readonly _metrics: MetricsCollector
   // F-t1-sysprof-1/-4: Cache a stable fingerprint alongside the deps array so
   // subsequent drain ticks can short-circuit the deep compare via hash equality.
@@ -155,12 +156,13 @@ export class AgentManagerImpl implements AgentManager {
   constructor(
     config: AgentManagerConfig,
     readonly repo: IAgentTaskRepository,
-    readonly logger: Logger = defaultLogger
+    readonly logger: Logger = defaultLogger,
+    epicDepsReader: EpicDepsReader = createEpicDependencyIndex()
   ) {
     this.config = config
     this._concurrency = makeConcurrencyState(config.maxConcurrent)
     this._depIndex = createDependencyIndex()
-    this._epicIndex = createEpicDependencyIndex()
+    this._epicIndex = epicDepsReader
     this._metrics = createMetricsCollector()
     this._circuitBreaker = new CircuitBreaker(logger)
 
@@ -504,12 +506,11 @@ export class AgentManagerImpl implements AgentManager {
       }
     )
 
-    // Build dependency index and initialize dependency tracking
+    // Build dependency index and initialize dependency tracking.
+    // The epic graph is owned by EpicGroupService — this.repo does not rebuild it.
     try {
       const tasks = this.repo.getTasksWithDependencies()
       this._depIndex.rebuild(tasks)
-      const groups = this.repo.getGroupsWithDependencies()
-      this._epicIndex.rebuild(groups)
       // Initialize _lastTaskDeps to avoid false positives on first drain
       this._lastTaskDeps.clear()
       for (const task of tasks) {
@@ -699,9 +700,10 @@ export class AgentManagerImpl implements AgentManager {
 export function createAgentManager(
   config: AgentManagerConfig,
   repo: IAgentTaskRepository,
-  logger: Logger = defaultLogger
+  logger: Logger = defaultLogger,
+  epicDepsReader?: EpicDepsReader
 ): AgentManager {
-  return new AgentManagerImpl(config, repo, logger)
+  return new AgentManagerImpl(config, repo, logger, epicDepsReader)
 }
 
 // Re-export killActiveAgent for callers that need to kill agents directly

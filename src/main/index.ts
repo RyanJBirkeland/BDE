@@ -220,14 +220,19 @@ app.whenReady().then(() => {
   // (always) and the agent manager (when autoStart).
   const repo = createSprintTaskRepository()
 
+  // The epic dependency graph has one owner — EpicGroupService. Terminal
+  // resolution and the agent manager both read from it instead of maintaining
+  // their own copies.
+  const epicGroupService = getEpicGroupService()
+
   // --- Task terminal service (unified dependency resolution) ---
   const terminalService = createTaskTerminalService({
     getTask,
     updateTask,
     getTasksWithDependencies: () => repo.getTasksWithDependencies(),
     getGroup: (id) => repo.getGroup(id),
-    getGroupsWithDependencies: () => repo.getGroupsWithDependencies(),
     listGroupTasks: (groupId) => repo.getGroupTasks(groupId),
+    epicDepsReader: epicGroupService,
     getSetting,
     runInTransaction: (fn) => getDb().transaction(fn)(),
     logger: createLogger('task-terminal')
@@ -267,7 +272,8 @@ app.whenReady().then(() => {
     const am = createAgentManager(
       { ...amConfig, onStatusTerminal: terminalService.onStatusTerminal },
       repo,
-      logger
+      logger,
+      epicGroupService
     )
     am.start()
     app.on('will-quit', () => am.stop(10_000))
@@ -286,7 +292,7 @@ app.whenReady().then(() => {
       if (mcp) return
       const port = getMcpPort()
       const handle = createMcpServer(
-        { epicService: getEpicGroupService(), onStatusTerminal: terminalService.onStatusTerminal },
+        { epicService: epicGroupService, onStatusTerminal: terminalService.onStatusTerminal },
         { port }
       )
       try {

@@ -4,8 +4,8 @@ import {
   type DependencyIndex,
   TERMINAL_STATUSES
 } from './dependency-service'
-import { createEpicDependencyIndex, type EpicDependencyIndex } from './epic-dependency-service'
-import type { SprintTask, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
+import type { EpicDepsReader } from './epic-dependency-service'
+import type { SprintTask, TaskDependency, TaskGroup } from '../../shared/types'
 import { broadcast } from '../broadcast'
 import { getErrorMessage } from '../../shared/errors'
 import { refreshDependencyIndex, type DepsFingerprint } from '../agent-manager/dependency-refresher'
@@ -24,8 +24,9 @@ export interface TaskTerminalServiceDeps {
     status: string
   }>
   getGroup: (id: string) => TaskGroup | null
-  getGroupsWithDependencies: () => Array<{ id: string; depends_on: EpicDependency[] | null }>
   listGroupTasks: (groupId: string) => SprintTask[]
+  /** Canonical epic dependency graph, owned by EpicGroupService. */
+  epicDepsReader: EpicDepsReader
   getSetting?: (key: string) => string | null
   runInTransaction?: (fn: () => void) => void
   logger: {
@@ -59,11 +60,10 @@ class BatchedTaskResolver {
 
 export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTerminalService {
   const depIndex: DependencyIndex = createDependencyIndex()
-  const epicIndex: EpicDependencyIndex = createEpicDependencyIndex()
   const resolver = new BatchedTaskResolver()
   const fingerprints: DepsFingerprint = new Map()
 
-  function rebuildIndex(): void {
+  function refreshTaskDepIndex(): void {
     // Use incremental refresher for task dependencies (same as agent-manager drain loop)
     // to avoid stale index issues when tasks are created after last refresh.
     const repo = { getTasksWithDependencies: deps.getTasksWithDependencies } as Pick<
@@ -71,10 +71,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
       'getTasksWithDependencies'
     >
     refreshDependencyIndex(depIndex, fingerprints, repo as IAgentTaskRepository, deps.logger)
-
-    // Epic dependencies still use full rebuild
-    const groups = deps.getGroupsWithDependencies()
-    epicIndex.rebuild(groups)
+    // Epic dependency graph is owned by EpicGroupService — read via deps.epicDepsReader.
   }
 
   function scheduleDependencyResolution(taskId: string, status: string): void {
@@ -85,7 +82,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
     // See ResolveDependentsParams in agent-manager/types.ts for the conceptual contract.
     resolver.schedule(taskId, status, (pending) => {
       try {
-        rebuildIndex() // Rebuild once for the batch
+        refreshTaskDepIndex() // Refresh task graph once for the batch; epic graph is always live.
         const failedTaskIds: string[] = []
         const totalCount = pending.size
         for (const [id, terminalStatus] of pending) {
@@ -98,7 +95,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
               deps.updateTask,
               deps.logger,
               deps.getSetting,
-              epicIndex,
+              deps.epicDepsReader,
               deps.getGroup,
               deps.listGroupTasks,
               deps.runInTransaction
@@ -110,15 +107,13 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
             )
           }
         }
-        // Consolidated error summary so the full set of failures is visible
-        // in one log entry rather than scattered per-task.
         if (failedTaskIds.length > 0) {
           deps.logger.error(
             `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
           )
         }
       } catch (err) {
-        deps.logger.error(`[task-terminal-service] rebuildIndex failed: ${err}`)
+        deps.logger.error(`[task-terminal-service] refreshTaskDepIndex failed: ${err}`)
         broadcast('task-terminal:resolution-error', { error: getErrorMessage(err) })
       }
     })

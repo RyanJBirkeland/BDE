@@ -96,4 +96,29 @@ describe('createEpicGroupService', () => {
     const svc = createEpicGroupService(queries)
     expect(() => svc.updateDependencyCondition('g1', 'upstream', 'on_success')).toThrow(/Failed to update dependency condition/)
   })
+
+  it('exposes an EpicDepsReader — getDependentEpics reflects the live graph', () => {
+    queries.listGroups.mockReturnValue([
+      fakeGroup({ id: 'parent', depends_on: null }),
+      fakeGroup({ id: 'child', depends_on: [{ id: 'parent', condition: 'on_success' }] })
+    ])
+    const svc = createEpicGroupService(queries)
+    expect(svc.getDependentEpics('parent')).toEqual(new Set(['child']))
+    expect(svc.getDependentEpics('child').size).toBe(0)
+  })
+
+  it('areEpicDepsSatisfied returns satisfied=true when all upstream tasks are done', () => {
+    queries.listGroups.mockReturnValue([
+      fakeGroup({ id: 'parent' }),
+      fakeGroup({ id: 'child', depends_on: [{ id: 'parent', condition: 'on_success' }] })
+    ])
+    const svc = createEpicGroupService(queries)
+    const result = svc.areEpicDepsSatisfied(
+      'child',
+      [{ id: 'parent', condition: 'on_success' }],
+      () => 'ready',
+      () => [{ status: 'done' }]
+    )
+    expect(result.satisfied).toBe(true)
+  })
 })
