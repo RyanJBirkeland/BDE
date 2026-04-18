@@ -90,28 +90,8 @@
   word-break: break-word;
 }
 
-/* ── Markdown Rendering in Agent Text ── */
-.console-md-bold {
-  font-weight: 700;
-  color: var(--bde-text);
-}
-
-.console-md-code {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
-  padding: 1px 5px;
-  border-radius: var(--bde-radius-sm);
-  font-size: var(--bde-size-xs);
-}
-
-.console-md-heading {
-  font-weight: 700;
-  color: var(--bde-text);
-  font-size: var(--bde-size-md);
-  display: block;
-  margin-top: var(--bde-space-2);
-  margin-bottom: 2px;
-}
+/* Markdown primitives (.console-md-*) live in render-agent-markdown.css,
+   colocated with the renderer that emits them. */
 
 /* ── Tool-Specific Icons ── */
 .console-tool-icon {
@@ -244,11 +224,6 @@
 .console-line__content--grouped {
   border-left: 2px solid var(--bde-accent-border);
   padding-left: var(--bde-space-2);
-}
-
-/* ── Paragraph Break Spacer ── */
-.console-md-paragraph-break {
-  height: var(--bde-space-2);
 }
 
 /* ── Console Badge ── */

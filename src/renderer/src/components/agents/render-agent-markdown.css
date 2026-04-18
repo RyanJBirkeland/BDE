@@ -1,0 +1,28 @@
+/* Markdown primitives emitted by renderAgentMarkdown. Colocated with the
+   renderer so styles travel with any consumer that imports it. */
+
+.console-md-bold {
+  font-weight: 700;
+  color: var(--bde-text);
+}
+
+.console-md-code {
+  background: var(--bde-accent-surface);
+  color: var(--bde-accent);
+  padding: 1px 5px;
+  border-radius: var(--bde-radius-sm);
+  font-size: var(--bde-size-xs);
+}
+
+.console-md-heading {
+  font-weight: 700;
+  color: var(--bde-text);
+  font-size: var(--bde-size-md);
+  display: block;
+  margin-top: var(--bde-space-2);
+  margin-bottom: 2px;
+}
+
+.console-md-paragraph-break {
+  height: var(--bde-space-2);
+}

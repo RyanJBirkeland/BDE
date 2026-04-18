@@ -4,6 +4,7 @@
  * Handles: **bold**, `code`, ## headings. Unicode emojis pass through natively.
  */
 import React from 'react'
+import './render-agent-markdown.css'
 
 /** Process inline markdown: **bold** and `code` */
 function renderInlineMarkdown(text: string): React.ReactNode[] {
