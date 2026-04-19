@@ -6,15 +6,14 @@ export function sanitizeTags(value: unknown): string[] | null {
   // Handle null/undefined
   if (value == null) return null
 
-  // If it's a string, try to parse it
   if (typeof value === 'string') {
-    if (value.trim() === '') return null
+    const trimmed = value.trim()
+    if (trimmed === '') return null
     try {
-      const parsed = JSON.parse(value)
-      return sanitizeTags(parsed) // Recursive call
-    } catch (err) {
-      console.error('[sanitizeTags] Failed to parse tags string:', value, err)
-      return null
+      return sanitizeTags(JSON.parse(trimmed))
+    } catch {
+      // Legacy CSV format: tags seeded via direct SQL inserts bypass JSON.stringify.
+      return sanitizeTags(trimmed.split(',').map((tag) => tag.trim()))
     }
   }
 
