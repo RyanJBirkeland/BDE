@@ -4,6 +4,7 @@ import type { DialogService } from '../dialog-service'
 import type { ReviewService } from '../services/review-service'
 import type { ChatStreamDeps } from './review-assistant'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
+import type { EpicGroupService } from '../services/epic-group-service'
 
 import { registerAgentHandlers } from './agent-handlers'
 import { registerGitHandlers } from './git-handlers'
@@ -44,6 +45,7 @@ export interface AppHandlerDeps {
   reviewService?: ReviewService
   reviewChatStreamDeps?: ChatStreamDeps
   repo: ISprintTaskRepository
+  epicGroupService: EpicGroupService
 }
 
 /**
@@ -51,7 +53,7 @@ export interface AppHandlerDeps {
  * Consolidates handler registration to reduce coupling in index.ts.
  */
 export function registerAllHandlers(deps: AppHandlerDeps): void {
-  const { agentManager, terminalDeps, reviewService, reviewChatStreamDeps, repo } = deps
+  const { agentManager, terminalDeps, reviewService, reviewChatStreamDeps, repo, epicGroupService } = deps
 
   // Agent-related handlers (conditional on agentManager presence)
   if (agentManager) {
@@ -101,7 +103,7 @@ export function registerAllHandlers(deps: AppHandlerDeps): void {
 
   // Planning and discovery handlers
   registerWebhookHandlers()
-  registerGroupHandlers()
+  registerGroupHandlers(epicGroupService)
   registerPlannerImportHandlers({ dialog: terminalDeps.dialog })
   registerRepoDiscoveryHandlers()
 }

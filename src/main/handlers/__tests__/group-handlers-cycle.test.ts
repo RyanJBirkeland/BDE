@@ -26,6 +26,7 @@ vi.mock('../../ipc-utils', () => ({
 import { registerGroupHandlers } from '../group-handlers'
 import { safeHandle } from '../../ipc-utils'
 import * as groupQueries from '../../data/task-group-queries'
+import { createEpicGroupService } from '../../services/epic-group-service'
 
 type Handler = (event: unknown, ...args: unknown[]) => unknown
 
@@ -39,7 +40,7 @@ describe('groups:addDependency cycle detection', () => {
     vi.mocked(safeHandle).mockImplementation((channel, handler) => {
       handlers[channel as string] = handler as Handler
     })
-    registerGroupHandlers()
+    registerGroupHandlers(createEpicGroupService())
   })
 
   it('throws on self-cycle (epicId === dep.id)', () => {

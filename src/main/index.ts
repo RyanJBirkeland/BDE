@@ -60,7 +60,7 @@ if (!app.requestSingleInstanceLock()) {
 import { getSetting, getSettingJson, getMcpEnabled, getMcpPort } from './settings'
 import { createMcpServer, type McpServerHandle } from './mcp-server'
 import { onSettingChanged } from './events/settings-events'
-import { getEpicGroupService } from './handlers/group-handlers'
+import { createEpicGroupService } from './services/epic-group-service'
 import { createTaskTerminalService } from './services/task-terminal-service'
 import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
@@ -279,10 +279,12 @@ app.whenReady().then(() => {
   // (always) and the agent manager (when autoStart).
   const repo = createSprintTaskRepository()
 
-  // The epic dependency graph has one owner — EpicGroupService. Terminal
-  // resolution and the agent manager both read from it instead of maintaining
-  // their own copies.
-  const epicGroupService = getEpicGroupService()
+  // The epic dependency graph has one owner — EpicGroupService, constructed
+  // at the composition root and injected to every consumer (task-terminal-
+  // service, agent manager, MCP server, IPC handlers). Terminal resolution
+  // and the agent manager both read from it instead of maintaining their
+  // own copies.
+  const epicGroupService = createEpicGroupService()
 
   // --- Task terminal service (unified dependency resolution) ---
   const terminalService = createTaskTerminalService({
@@ -463,7 +465,8 @@ app.whenReady().then(() => {
     terminalDeps,
     reviewService,
     reviewChatStreamDeps,
-    repo
+    repo,
+    epicGroupService
   }
   registerAllHandlers(handlerDeps)
 
