@@ -74,7 +74,6 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
   return {
     async start(): Promise<number> {
       const token = await readOrCreateToken()
-      transportHandler = createTransportHandler(buildMcp, token, config.port, logger)
 
       return new Promise<number>((resolve, reject) => {
         httpServer = http.createServer((req, res) => {
@@ -99,6 +98,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
         httpServer.listen(config.port, '127.0.0.1', () => {
           const addr = httpServer!.address()
           const actualPort = typeof addr === 'object' && addr ? addr.port : config.port
+          transportHandler = createTransportHandler(buildMcp, token, actualPort, logger)
           logger.info(`Listening on http://127.0.0.1:${actualPort}/mcp`)
           resolve(actualPort)
         })
