@@ -5,8 +5,7 @@ import { createMcpServer, type McpServerHandle } from './index'
 import { createEpicGroupService } from '../services/epic-group-service'
 import { deleteTask } from '../services/sprint-service'
 import { readOrCreateToken } from './token-store'
-import { getSettingJson } from '../settings'
-import type { RepoConfig } from '../paths'
+import { seedBdeRepo } from './test-setup'
 
 vi.mock('../broadcast', () => ({ broadcast: vi.fn() }))
 
@@ -17,6 +16,7 @@ let token: string
 const createdIds: string[] = []
 
 beforeAll(async () => {
+  seedBdeRepo()
   const epicService = createEpicGroupService()
   handle = createMcpServer(
     { epicService, onStatusTerminal: () => {} },
@@ -60,13 +60,6 @@ describe('MCP server integration', () => {
   })
 
   it('create → list → update → history round-trip', async () => {
-    const repos = getSettingJson<RepoConfig[]>('repos') ?? []
-    const bdeConfigured = repos.some((r) => r.name === 'bde')
-    if (!bdeConfigured) {
-      console.warn('Skipping round-trip test: "bde" repo is not configured in settings')
-      return
-    }
-
     const created = await client.callTool({
       name: 'tasks.create',
       arguments: { title: 'mcp integration demo', repo: 'bde', status: 'backlog' }

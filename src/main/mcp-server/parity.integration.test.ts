@@ -7,8 +7,7 @@ import { createTaskWithValidation, updateTask, deleteTask } from '../services/sp
 import { getTaskChanges } from '../data/task-changes'
 import { readOrCreateToken } from './token-store'
 import { createLogger } from '../logger'
-import { getSettingJson } from '../settings'
-import type { RepoConfig } from '../paths'
+import { seedBdeRepo } from './test-setup'
 
 vi.mock('../broadcast', () => ({ broadcast: vi.fn() }))
 
@@ -18,6 +17,7 @@ let port: number
 const createdIds: string[] = []
 
 beforeAll(async () => {
+  seedBdeRepo()
   handle = createMcpServer(
     { epicService: createEpicGroupService(), onStatusTerminal: () => {} },
     { port: 0 }
@@ -55,10 +55,7 @@ function withoutVolatileFields(task: Record<string, unknown>) {
 }
 
 describe('IPC vs MCP parity', () => {
-  const repos = getSettingJson<RepoConfig[]>('repos') ?? []
-  const hasBdeRepo = repos.some((r) => r.name === 'bde')
-
-  it.runIf(hasBdeRepo)('creates identical tasks and produces identical audit trails', async () => {
+  it('creates identical tasks and produces identical audit trails', async () => {
     const logger = createLogger('parity-test')
     const input = { title: 'parity-test', repo: 'bde', status: 'backlog' as const, priority: 3 }
 
@@ -80,9 +77,5 @@ describe('IPC vs MCP parity', () => {
     const ipcHistory = changeFields(getTaskChanges(ipcTask.id))
     const mcpHistory = changeFields(getTaskChanges(mcpTask.id))
     expect(mcpHistory).toEqual(ipcHistory)
-  })
-
-  it.skipIf(hasBdeRepo)('skipped: no "bde" repo configured in settings', () => {
-    expect(true).toBe(true)
   })
 })
