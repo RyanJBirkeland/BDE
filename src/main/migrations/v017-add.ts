@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3'
 
 export const version = 17
-export const description = 'Add '
+export const description = 'Add blocked status to sprint_tasks CHECK constraint'
 
 export const up: (db: Database.Database) => void = (db) => {
   // SQLite cannot ALTER CHECK constraints — recreate the table with updated CHECK.
