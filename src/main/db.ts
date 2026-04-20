@@ -108,7 +108,13 @@ export function backupDatabase(): void {
 export const migrations: Migration[] = loadMigrations()
 
 export function runMigrations(db: Database.Database): void {
-  const currentVersion = db.pragma('user_version', { simple: true }) as number
+  const rawVersion = db.pragma('user_version', { simple: true })
+  if (typeof rawVersion !== 'number') {
+    throw new Error(
+      `PRAGMA user_version returned non-number value: ${JSON.stringify(rawVersion)} (type: ${typeof rawVersion})`
+    )
+  }
+  const currentVersion = rawVersion
 
   const pending = getPendingMigrations(migrations, currentVersion)
 
