@@ -59,7 +59,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 import { getSetting, getSettingJson, getMcpEnabled, getMcpPort } from './settings'
 import { createMcpServer, type McpServerHandle } from './mcp-server'
-import { onSettingChanged } from './mcp-server/settings-events'
+import { onSettingChanged } from './events/settings-events'
 import { getEpicGroupService } from './handlers/group-handlers'
 import { createTaskTerminalService } from './services/task-terminal-service'
 import { createStatusServer } from './services/status-server'

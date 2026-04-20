@@ -10,7 +10,7 @@ import {
   deleteProfile
 } from '../services/settings-profiles'
 import { validateWorktreeBase } from '../paths'
-import { emitSettingChanged } from '../mcp-server/settings-events'
+import { emitSettingChanged } from '../events/settings-events'
 
 /** Setting keys that require path safety validation before writing. */
 const PATH_VALIDATORS: Record<string, (value: string) => void> = {
