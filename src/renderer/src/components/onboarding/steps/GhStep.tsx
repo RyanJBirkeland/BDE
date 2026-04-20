@@ -1,18 +1,9 @@
 import { ArrowRight, ArrowLeft, Github, Check, X, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../../ui/Button'
-import { toast } from '../../../stores/toasts'
+import { copyToClipboard } from '../../../lib/copy-to-clipboard'
 
 const GH_AUTH_LOGIN_COMMAND = 'gh auth login'
-
-async function copyToClipboard(text: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text)
-    toast.success('Copied to clipboard')
-  } catch {
-    toast.error('Could not copy — please copy manually')
-  }
-}
 
 interface StepProps {
   onNext: () => void

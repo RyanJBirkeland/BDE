@@ -1,7 +1,7 @@
 import { ArrowRight, ArrowLeft, Terminal, Check, X, Copy, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../../ui/Button'
-import { toast } from '../../../stores/toasts'
+import { copyToClipboard } from '../../../lib/copy-to-clipboard'
 
 interface StepProps {
   onNext: () => void
@@ -21,15 +21,6 @@ const AUTH_CHECK_TIMEOUT_MS = 10_000
 const CLAUDE_INSTALL_DOCS_URL = 'https://docs.claude.com/en/docs/claude-code'
 const CLAUDE_INSTALL_COMMAND = 'curl -fsSL https://claude.ai/install.sh | bash'
 const CLAUDE_LOGIN_COMMAND = 'claude login'
-
-async function copyToClipboard(text: string, label: string): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text)
-    toast.success(`${label} copied`)
-  } catch {
-    toast.error('Could not copy — please copy manually')
-  }
-}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -185,7 +176,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
             </code>
             <Button
               variant="ghost"
-              onClick={() => copyToClipboard(CLAUDE_INSTALL_COMMAND, 'Install command')}
+              onClick={() => copyToClipboard(CLAUDE_INSTALL_COMMAND)}
               aria-label="Copy install command"
             >
               <Copy size={14} />
@@ -216,7 +207,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
             </code>
             <Button
               variant="ghost"
-              onClick={() => copyToClipboard(CLAUDE_LOGIN_COMMAND, 'Login command')}
+              onClick={() => copyToClipboard(CLAUDE_LOGIN_COMMAND)}
               aria-label="Copy login command"
             >
               <Copy size={14} />
