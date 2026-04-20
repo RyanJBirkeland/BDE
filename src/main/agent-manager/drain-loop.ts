@@ -21,6 +21,7 @@ import {
   type DepsFingerprint
 } from './dependency-refresher'
 import { getConfiguredRepos } from '../paths'
+import type { SprintTask } from '../../shared/types/task-types'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -47,7 +48,7 @@ export interface DrainLoopDeps {
   setDepIndexDirty: (dirty: boolean) => void
   setConcurrency: (state: ConcurrencyState) => void
   processQueuedTask: (
-    raw: Record<string, unknown>,
+    rawTask: SprintTask,
     taskStatusMap: Map<string, string>
   ) => Promise<void>
   /** Counts consecutive drain-loop failures per task. Lives on AgentManagerImpl, passed in to persist across ticks. */
@@ -143,17 +144,17 @@ export async function drainQueuedTasks(
   const freshSlots = availableSlots(deps.getConcurrency(), deps.activeAgents.size)
   const limit = Math.min(available, freshSlots)
   deps.logger.info(`[agent-manager] Fetching queued tasks (limit=${limit})...`)
-  const queued = deps.repo.getQueuedTasks(limit) as unknown as Array<Record<string, unknown>>
+  const queued = deps.repo.getQueuedTasks(limit)
   deps.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
-  for (const raw of queued) {
+  for (const rawTask of queued) {
     if (deps.isShuttingDown()) break
     if (availableSlots(deps.getConcurrency(), deps.activeAgents.size + deps.getPendingSpawns()) <= 0) {
       deps.logger.info('[agent-manager] No slots available — stopping drain iteration')
       break
     }
-    const taskId = String((raw as Record<string, unknown>).id ?? '')
+    const taskId = rawTask.id
     try {
-      await deps.processQueuedTask(raw, taskStatusMap)
+      await deps.processQueuedTask(rawTask, taskStatusMap)
       // Clear failure count on successful processing — task is no longer churning.
       if (taskId) deps.drainFailureCounts.delete(taskId)
     } catch (err) {

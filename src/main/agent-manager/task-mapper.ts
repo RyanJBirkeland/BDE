@@ -9,6 +9,7 @@ import type { Logger } from '../logger'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { DependencyIndex } from '../services/dependency-service'
 import { formatBlockedNote } from '../services/dependency-service'
+import type { SprintTask } from '../../shared/types/task-types'
 
 // ---------------------------------------------------------------------------
 // MappedTask type
@@ -36,53 +37,39 @@ export type MappedTask = {
 // ---------------------------------------------------------------------------
 
 /**
- * Map Queue API camelCase response to local task shape.
- * Ensures retry_count and fast_fail_count default to 0, prompt and spec default to null.
- * Returns null (with logged warning) if required fields are missing.
+ * Project a typed SprintTask into the narrower MappedTask shape used by the
+ * drain loop. The defensive null-returns guard against rows that slipped
+ * past SQLite constraints via direct-SQL insertion.
  */
-export function mapQueuedTask(raw: Record<string, unknown>, logger: Logger): MappedTask | null {
-  // Validate required fields
-  if (!raw.id || typeof raw.id !== 'string') {
-    logger.warn(`[agent-manager] Task missing or invalid 'id' field: ${JSON.stringify(raw)}`)
+export function mapQueuedTask(task: SprintTask, logger: Logger): MappedTask | null {
+  if (!task.id) {
+    logger.warn(`[agent-manager] Task missing 'id' field: ${JSON.stringify(task)}`)
     return null
   }
-  if (!raw.title || typeof raw.title !== 'string') {
-    logger.warn(`[agent-manager] Task ${raw.id} missing or invalid 'title' field`)
+  if (!task.title) {
+    logger.warn(`[agent-manager] Task ${task.id} missing 'title' field`)
     return null
   }
-  if (!raw.repo || typeof raw.repo !== 'string') {
-    logger.warn(`[agent-manager] Task ${raw.id} missing or invalid 'repo' field`)
+  if (!task.repo) {
+    logger.warn(`[agent-manager] Task ${task.id} missing 'repo' field`)
     return null
   }
 
   return {
-    id: raw.id,
-    title: raw.title,
-    prompt: (raw.prompt as string) ?? null,
-    spec: (raw.spec as string) ?? null,
-    repo: raw.repo,
-    retry_count: Number(raw.retry_count) || 0,
-    fast_fail_count: Number(raw.fast_fail_count) || 0,
-    notes: (raw.notes as string) ?? null,
-    playground_enabled: Boolean(raw.playground_enabled),
-    max_runtime_ms: Number(raw.max_runtime_ms) || null,
-    max_cost_usd: Number(raw.max_cost_usd) || null,
-    model: (raw.model as string) ?? null,
-    group_id: (raw.group_id as string) ?? null,
-    revision_feedback: parseRevisionFeedback(raw.revision_feedback)
-  }
-}
-
-function parseRevisionFeedback(
-  raw: unknown
-): { timestamp: string; feedback: string; attempt: number }[] | null {
-  if (!raw) return null
-  try {
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
-    if (!Array.isArray(parsed)) return null
-    return parsed as { timestamp: string; feedback: string; attempt: number }[]
-  } catch {
-    return null
+    id: task.id,
+    title: task.title,
+    prompt: task.prompt ?? null,
+    spec: task.spec ?? null,
+    repo: task.repo,
+    retry_count: task.retry_count ?? 0,
+    fast_fail_count: task.fast_fail_count ?? 0,
+    notes: task.notes ?? null,
+    playground_enabled: task.playground_enabled ?? false,
+    max_runtime_ms: task.max_runtime_ms ?? null,
+    max_cost_usd: task.max_cost_usd ?? null,
+    model: task.model ?? null,
+    group_id: task.group_id ?? null,
+    revision_feedback: task.revision_feedback ?? null
   }
 }
 

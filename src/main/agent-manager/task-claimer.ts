@@ -13,6 +13,7 @@ import { EXECUTOR_ID, NOTES_MAX_LENGTH } from './types'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { DependencyIndex } from '../services/dependency-service'
 import { mapQueuedTask, checkAndBlockDeps, type MappedTask } from './task-mapper'
+import type { SprintTask } from '../../shared/types/task-types'
 import { getRepoPaths } from '../paths'
 import { setupWorktree } from './worktree'
 import { nowIso } from '../../shared/time'
@@ -56,11 +57,11 @@ export function resolveRepoPath(repoSlug: string): string | null {
  * Returns `{ task, repoPath }` on success or `null` to signal "skip this task".
  */
 export async function validateAndClaimTask(
-  raw: Record<string, unknown>,
+  rawTask: SprintTask,
   taskStatusMap: Map<string, string>,
   deps: TaskClaimerDeps
 ): Promise<{ task: MappedTask; repoPath: string } | null> {
-  const task = mapQueuedTask(raw, deps.logger)
+  const task = mapQueuedTask(rawTask, deps.logger)
   if (!task) return null
 
   // Fresh-status guard — the task may have been claimed by another drain tick
@@ -73,10 +74,9 @@ export async function validateAndClaimTask(
     return null
   }
 
-  const rawDeps = raw.dependsOn ?? raw.depends_on
   if (
-    rawDeps &&
-    checkAndBlockDeps(task.id, rawDeps, taskStatusMap, deps.repo, deps.depIndex, deps.logger)
+    rawTask.depends_on &&
+    checkAndBlockDeps(task.id, rawTask.depends_on, taskStatusMap, deps.repo, deps.depIndex, deps.logger)
   ) {
     return null
   }
@@ -103,7 +103,7 @@ export async function validateAndClaimTask(
     return null
   }
 
-  if (await skipIfAlreadyOnMain(task, raw, repoPath, deps)) {
+  if (await skipIfAlreadyOnMain(task, rawTask, repoPath, deps)) {
     return null
   }
 
@@ -125,11 +125,11 @@ export async function validateAndClaimTask(
  */
 async function skipIfAlreadyOnMain(
   task: MappedTask,
-  raw: Record<string, unknown>,
+  rawTask: SprintTask,
   repoPath: string,
   deps: TaskClaimerDeps
 ): Promise<boolean> {
-  const agentRunId = typeof raw.agent_run_id === 'string' ? raw.agent_run_id : null
+  const agentRunId = rawTask.agent_run_id ?? null
   const match = await taskHasMatchingCommitOnMain(
     { id: task.id, title: task.title, agent_run_id: agentRunId },
     repoPath,
@@ -240,15 +240,15 @@ export interface ProcessQueuedTaskDeps extends TaskClaimerDeps {
  * windows when processing subsequent tasks in the same drain tick.
  */
 export async function processQueuedTask(
-  raw: Record<string, unknown>,
+  rawTask: SprintTask,
   taskStatusMap: Map<string, string>,
   deps: ProcessQueuedTaskDeps
 ): Promise<void> {
-  const taskId = raw.id as string
+  const taskId = rawTask.id
   if (deps.processingTasks.has(taskId)) return
   deps.processingTasks.add(taskId)
   try {
-    const claimed = await validateAndClaimTask(raw, taskStatusMap, deps)
+    const claimed = await validateAndClaimTask(rawTask, taskStatusMap, deps)
     if (!claimed) return
 
     const { task, repoPath } = claimed

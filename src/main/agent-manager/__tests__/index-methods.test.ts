@@ -441,20 +441,42 @@ describe('AgentManagerImpl — class internals', () => {
   // -------------------------------------------------------------------------
 
   describe('mapQueuedTask', () => {
-    it('maps camelCase Queue API fields to local snake_case shape', () => {
+    const baseTask = {
+      id: 'task-42',
+      title: 'Build feature',
+      repo: 'myrepo',
+      prompt: null,
+      priority: 1,
+      status: 'queued' as const,
+      notes: null,
+      spec: null,
+      retry_count: 0,
+      fast_fail_count: 0,
+      agent_run_id: null,
+      pr_number: null,
+      pr_status: null,
+      pr_url: null,
+      claimed_by: null,
+      started_at: null,
+      completed_at: null,
+      template_name: null,
+      depends_on: null,
+      updated_at: '2026-04-20T00:00:00.000Z',
+      created_at: '2026-04-20T00:00:00.000Z'
+    }
+
+    it('projects a typed SprintTask into MappedTask shape', () => {
       const logger = makeLogger()
-      const raw = {
-        id: 'task-42',
-        title: 'Build feature',
+      const task = {
+        ...baseTask,
         prompt: 'Add login page',
         spec: 'Login spec',
-        repo: 'myrepo',
         retry_count: 2,
         fast_fail_count: 1,
         playground_enabled: true,
         max_runtime_ms: 30000
       }
-      const result = mapQueuedTask(raw, logger)
+      const result = mapQueuedTask(task, logger)
       expect(result).toEqual({
         id: 'task-42',
         title: 'Build feature',
@@ -473,42 +495,23 @@ describe('AgentManagerImpl — class internals', () => {
       })
     })
 
-    it('defaults prompt and spec to null when missing', () => {
+    it('defaults optional fields to null when absent on SprintTask', () => {
       const logger = makeLogger()
-      const raw = {
-        id: 'task-43',
-        title: 'Minimal task',
-        repo: 'myrepo'
-      }
-      const result = mapQueuedTask(raw as Record<string, unknown>, logger)
+      const task = { ...baseTask, id: 'task-43', title: 'Minimal task' }
+      const result = mapQueuedTask(task, logger)
       expect(result!.prompt).toBeNull()
       expect(result!.spec).toBeNull()
-    })
-
-    it('defaults retry_count and fast_fail_count to 0 for non-numeric values', () => {
-      const logger = makeLogger()
-      const raw = {
-        id: 'task-44',
-        title: 'Bad counts',
-        repo: 'myrepo',
-        retry_count: 'abc',
-        fast_fail_count: undefined
-      }
-      const result = mapQueuedTask(raw as Record<string, unknown>, logger)
-      expect(result!.retry_count).toBe(0)
-      expect(result!.fast_fail_count).toBe(0)
-    })
-
-    it('defaults max_runtime_ms to null for non-numeric values', () => {
-      const logger = makeLogger()
-      const raw = {
-        id: 'task-45',
-        title: 'No runtime',
-        repo: 'myrepo',
-        max_runtime_ms: 'invalid'
-      }
-      const result = mapQueuedTask(raw as Record<string, unknown>, logger)
       expect(result!.max_runtime_ms).toBeNull()
+      expect(result!.max_cost_usd).toBeNull()
+      expect(result!.model).toBeNull()
+      expect(result!.group_id).toBeNull()
+    })
+
+    it('returns null when the task row has an empty id or title or repo', () => {
+      const logger = makeLogger()
+      expect(mapQueuedTask({ ...baseTask, id: '' }, logger)).toBeNull()
+      expect(mapQueuedTask({ ...baseTask, title: '' }, logger)).toBeNull()
+      expect(mapQueuedTask({ ...baseTask, repo: '' }, logger)).toBeNull()
     })
   })
 

@@ -1,6 +1,7 @@
 import type { AgentManagerConfig, ActiveAgent, SteerResult } from './types'
 import type { Logger } from '../logger'
 import type { TaskDependency } from '../../shared/types'
+import type { SprintTask } from '../../shared/types/task-types'
 import { computeDepsFingerprint, refreshDependencyIndex } from './dependency-refresher'
 import { handleTaskTerminal } from './terminal-handler'
 import {
@@ -296,10 +297,10 @@ export class AgentManagerImpl implements AgentManager {
    * Exposed via _ prefix for testability.
    */
   async _validateAndClaimTask(
-    raw: Record<string, unknown>,
+    rawTask: SprintTask,
     taskStatusMap: Map<string, string>
   ): Promise<{ task: MappedTask; repoPath: string } | null> {
-    return validateAndClaimTask(raw, taskStatusMap, {
+    return validateAndClaimTask(rawTask, taskStatusMap, {
       config: this.config,
       repo: this.repo,
       depIndex: this._depIndex,
@@ -330,10 +331,10 @@ export class AgentManagerImpl implements AgentManager {
    * Exposed via _ prefix for testability.
    */
   async _processQueuedTask(
-    raw: Record<string, unknown>,
+    rawTask: SprintTask,
     taskStatusMap: Map<string, string>
   ): Promise<void> {
-    return processQueuedTask(raw, taskStatusMap, {
+    return processQueuedTask(rawTask, taskStatusMap, {
       config: this.config,
       repo: this.repo,
       depIndex: this._depIndex,
@@ -366,20 +367,20 @@ export class AgentManagerImpl implements AgentManager {
     available: number,
     taskStatusMap: Map<string, string>
   ): Promise<void> {
-    const queued = this.repo.getQueuedTasks(available) as unknown as Array<Record<string, unknown>>
+    const queued = this.repo.getQueuedTasks(available)
     this.logger.info(`[agent-manager] Fetching queued tasks (limit=${available})...`)
     this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
-    for (const raw of queued) {
+    for (const rawTask of queued) {
       if (this._shuttingDown) break
       if (availableSlots(this._concurrency, this._activeAgents.size + this._pendingSpawns) <= 0) {
         this.logger.info('[agent-manager] No slots available — stopping drain iteration')
         break
       }
       try {
-        await this._processQueuedTask(raw, taskStatusMap)
+        await this._processQueuedTask(rawTask, taskStatusMap)
       } catch (err) {
         this.logger.error(
-          `[agent-manager] Failed to process task ${(raw as Record<string, unknown>).id}: ${err}`
+          `[agent-manager] Failed to process task ${rawTask.id}: ${err}`
         )
       }
     }
