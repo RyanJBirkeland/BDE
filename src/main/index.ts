@@ -28,6 +28,13 @@ import { createLogger, logError } from './logger'
 import { setSprintQueriesLogger } from './data/sprint-queries'
 import { setTaskGroupQueriesLogger } from './data/task-group-queries'
 import { setSettingsQueriesLogger } from './data/settings-queries'
+import {
+  attachRendererLoadRetry,
+  MAX_RENDERER_LOAD_RETRIES,
+  RENDERER_RETRY_BASE_DELAY_MS,
+  ERR_ABORTED,
+  READY_TO_SHOW_FALLBACK_MS
+} from './renderer-load-retry'
 
 // Augment process.env.PATH so child_process.spawn() can find user-installed
 // CLIs (claude, gh, git, node) when launched from Finder/Spotlight. Must run
@@ -150,6 +157,8 @@ function createWindow(): void {
     mainWindow.show()
     emitStartupWarnings()
   })
+
+  attachRendererLoadRetry(mainWindow)
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     try {
@@ -423,3 +432,12 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+// Re-export renderer load retry utilities for external use
+export {
+  attachRendererLoadRetry,
+  MAX_RENDERER_LOAD_RETRIES,
+  RENDERER_RETRY_BASE_DELAY_MS,
+  ERR_ABORTED,
+  READY_TO_SHOW_FALLBACK_MS
+}
