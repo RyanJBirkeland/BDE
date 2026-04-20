@@ -25,7 +25,7 @@ function mockServer() {
   }
 }
 
-const fakeTask = (overrides: Partial<SprintTask> = {}): SprintTask => ({
+const baseTask: SprintTask = {
   id: 't1',
   title: 'demo',
   repo: 'bde',
@@ -67,9 +67,10 @@ const fakeTask = (overrides: Partial<SprintTask> = {}): SprintTask => ({
   rebased_at: null,
   revision_feedback: null,
   review_diff_snapshot: null,
-  duration_ms: null,
-  ...(overrides as SprintTask)
-}) as SprintTask
+  duration_ms: null
+}
+
+const fakeTask = (overrides: Partial<SprintTask> = {}): SprintTask => ({ ...baseTask, ...overrides })
 
 function fakeDeps(overrides: Partial<TaskToolsDeps> = {}): TaskToolsDeps {
   return {
