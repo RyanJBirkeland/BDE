@@ -6,9 +6,9 @@ import { z } from 'zod'
 
 function execFileAsync(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, (err, stdout, stderr) => {
+    execFile(cmd, args, { encoding: 'utf8' }, (err, stdout, stderr) => {
       if (err) return reject(err)
-      resolve({ stdout: stdout as string, stderr: stderr as string })
+      resolve({ stdout, stderr })
     })
   })
 }
