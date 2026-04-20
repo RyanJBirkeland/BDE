@@ -12,6 +12,9 @@ import { getSessionId } from './sdk-message-protocol'
 
 /**
  * Baseline turn limit used when a caller does not supply a spec-aware override.
+ * Set to 20 as a defense against runaway loops in pipeline agents — balances
+ * reasonable task completion (most audited tasks finish in 8–12 turns) with
+ * cost containment (20 turns × ~$0.10/turn = ~$2 ceiling before human review).
  * Kept exported for callers (e.g. `message-consumer.ts`) that defend against
  * runaway loops independently of the SDK-level cap.
  */

@@ -64,9 +64,12 @@ vi.mock('../paths', () => ({
   getRepoPaths: vi.fn().mockReturnValue({ bde: '/repo' })
 }))
 
-vi.mock('../agent-manager/spawn-sdk', () => ({
-  MAX_TURNS: 20
-}))
+vi.mock('../agent-manager/spawn-sdk', async () => {
+  const actual = await vi.importActual<typeof import('../agent-manager/spawn-sdk')>('../agent-manager/spawn-sdk')
+  return {
+    MAX_TURNS: actual.MAX_TURNS
+  }
+})
 
 vi.mock('../../../shared/time', () => ({
   nowIso: vi.fn().mockReturnValue('2026-01-01T00:00:00.000Z')
