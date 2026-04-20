@@ -124,10 +124,13 @@ process.on('unhandledRejection', (reason) => {
   )
 })
 
-function createWindow(): void {
-  let mainWindow: BrowserWindow
+/**
+ * Creates the main BrowserWindow with standard configuration.
+ * Returns null if window creation fails (e.g., headless system).
+ */
+function createMainWindow(): BrowserWindow | null {
   try {
-    mainWindow = new BrowserWindow({
+    return new BrowserWindow({
       width: 1280,
       height: 800,
       minWidth: 900,
@@ -150,17 +153,42 @@ function createWindow(): void {
       `The application failed to create its main window.\n\nDetails: ${message}\n\nThis typically means BDE was launched on a system with no display, or Electron could not initialize a graphics context.`
     )
     app.quit()
-    return
+    return null
   }
+}
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-    emitStartupWarnings()
+/**
+ * Installs a fallback timer to show the window if ready-to-show doesn't fire within the timeout period.
+ * Clears the timer when the window is closed.
+ */
+function installReadyToShowFallback(win: BrowserWindow): void {
+  let windowShown = false
+  const fallbackTimer = setTimeout(() => {
+    if (!windowShown) {
+      win.show()
+      emitStartupWarnings()
+      windowShown = true
+    }
+  }, READY_TO_SHOW_FALLBACK_MS)
+
+  win.on('ready-to-show', () => {
+    if (!windowShown) {
+      win.show()
+      emitStartupWarnings()
+      windowShown = true
+    }
   })
 
-  attachRendererLoadRetry(mainWindow)
+  win.on('closed', () => {
+    clearTimeout(fallbackTimer)
+  })
+}
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+/**
+ * Configures the window-open handler to allow external links in approved schemes and deny all popup windows.
+ */
+function installExternalLinkHandler(win: BrowserWindow): void {
+  win.webContents.setWindowOpenHandler((details) => {
     try {
       const parsed = new URL(details.url)
       if (ALLOWED_EXTERNAL_SCHEMES.includes(parsed.protocol)) {
@@ -171,23 +199,47 @@ function createWindow(): void {
     }
     return { action: 'deny' }
   })
+}
 
-  const appUrl =
-    is.dev && process.env['ELECTRON_RENDERER_URL']
-      ? process.env['ELECTRON_RENDERER_URL']
-      : `file://${join(__dirname, '../renderer/index.html')}`
-
-  mainWindow.webContents.on('will-navigate', (event, url) => {
+/**
+ * Prevents navigation to URLs outside the application's origin.
+ */
+function installNavigationGuard(win: BrowserWindow, appUrl: string): void {
+  win.webContents.on('will-navigate', (event, url) => {
     if (!url.startsWith(appUrl)) {
       event.preventDefault()
     }
   })
+}
 
+/**
+ * Resolves the application URL based on environment (dev server or production file path).
+ */
+function resolveAppUrl(): string {
+  return is.dev && process.env['ELECTRON_RENDERER_URL']
+    ? process.env['ELECTRON_RENDERER_URL']
+    : `file://${join(__dirname, '../renderer/index.html')}`
+}
+
+/**
+ * Loads the renderer entry point using the appropriate method for the environment.
+ */
+function loadRendererEntry(win: BrowserWindow): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+function createWindow(): void {
+  const mainWindow = createMainWindow()
+  if (!mainWindow) return
+  installReadyToShowFallback(mainWindow)
+  attachRendererLoadRetry(mainWindow)
+  installExternalLinkHandler(mainWindow)
+  installNavigationGuard(mainWindow, resolveAppUrl())
+  loadRendererEntry(mainWindow)
 }
 
 app.on('second-instance', () => {
@@ -440,4 +492,14 @@ export {
   RENDERER_RETRY_BASE_DELAY_MS,
   ERR_ABORTED,
   READY_TO_SHOW_FALLBACK_MS
+}
+
+// Export window helper functions for testing
+export {
+  createMainWindow,
+  installReadyToShowFallback,
+  installExternalLinkHandler,
+  installNavigationGuard,
+  resolveAppUrl,
+  loadRendererEntry
 }
