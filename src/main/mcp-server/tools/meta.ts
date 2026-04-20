@@ -3,7 +3,6 @@ import {
   TASK_STATUSES,
   VALID_TRANSITIONS
 } from '../../../shared/task-state-machine'
-import { getSettingJson } from '../../settings'
 import type { RepoConfig } from '../../paths'
 
 export interface MetaToolsDeps {
@@ -58,8 +57,4 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
       ]
     })
   )
-}
-
-export function defaultGetRepos(): RepoConfig[] {
-  return getSettingJson<RepoConfig[]>('repos') ?? []
 }
