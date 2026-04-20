@@ -271,7 +271,7 @@ export function setupCleanupTasks(): void {
   }
 
   // Prune task_changes periodically (every 24 hours)
-  const pruneTakeChangesInterval = setInterval(
+  const pruneTaskChangesInterval = setInterval(
     () => {
       try {
         pruneOldChanges(30)
@@ -281,7 +281,7 @@ export function setupCleanupTasks(): void {
     },
     24 * 60 * 60 * 1000
   )
-  app.on('will-quit', () => clearInterval(pruneTakeChangesInterval))
+  app.on('will-quit', () => clearInterval(pruneTaskChangesInterval))
 
   // Prune review_diff_snapshot periodically (every 24 hours)
   const pruneDiffSnapshotsInterval = setInterval(
