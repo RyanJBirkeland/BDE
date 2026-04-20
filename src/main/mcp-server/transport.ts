@@ -21,6 +21,7 @@ export interface TransportHandler {
 export function createTransportHandler(
   buildMcpServer: () => McpServer,
   token: string,
+  port: number,
   logger: Logger
 ): TransportHandler {
   return {
@@ -41,7 +42,12 @@ export function createTransportHandler(
       }
 
       const server = buildMcpServer()
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+        enableDnsRebindingProtection: true,
+        allowedHosts: ['127.0.0.1', 'localhost', `127.0.0.1:${port}`, `localhost:${port}`],
+        allowedOrigins: []
+      })
       try {
         await server.connect(transport)
         await transport.handleRequest(req, res)

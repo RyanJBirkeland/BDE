@@ -74,7 +74,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
   return {
     async start(): Promise<number> {
       const token = await readOrCreateToken()
-      transportHandler = createTransportHandler(buildMcp, token, logger)
+      transportHandler = createTransportHandler(buildMcp, token, config.port, logger)
 
       return new Promise<number>((resolve, reject) => {
         httpServer = http.createServer((req, res) => {
