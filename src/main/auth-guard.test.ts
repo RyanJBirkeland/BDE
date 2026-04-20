@@ -222,6 +222,23 @@ describe('auth-guard', () => {
       expect(payload).toBeNull()
     })
 
+    it('returns null when keychain payload is not valid JSON', async () => {
+      vi.setSystemTime(Date.now() + 5000)
+      mockExecFileResult('not json at all')
+      const store = new MacOSCredentialStore()
+      const payload = await store.readToken()
+      expect(payload).toBeNull()
+    })
+
+    it('returns null when keychain payload has wrong field types', async () => {
+      vi.setSystemTime(Date.now() + 5000)
+      // accessToken should be a string; number should be rejected by the schema
+      mockExecFileResult(JSON.stringify({ claudeAiOauth: { accessToken: 123 } }))
+      const store = new MacOSCredentialStore()
+      const payload = await store.readToken()
+      expect(payload).toBeNull()
+    })
+
     it('detects CLI via which probe', () => {
       vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: '/usr/local/bin/claude\n', stderr: '', pid: 1, output: [], signal: null, error: undefined })
       const store = new MacOSCredentialStore()

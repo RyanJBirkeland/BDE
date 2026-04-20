@@ -2,6 +2,7 @@ import { execFile, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
+import { z } from 'zod'
 
 function execFileAsync(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -19,14 +20,28 @@ export interface AuthStatus {
   expiresAt?: Date
 }
 
-export interface KeychainOAuth {
-  accessToken?: string
-  expiresAt?: string
-}
+/**
+ * Shape of the JSON value the macOS `security` CLI prints for the
+ * 'Claude Code-credentials' entry. We can't trust the OS to hand us the
+ * exact shape (user could edit the entry; different SDK versions may write
+ * different fields), so validate at the parse boundary and treat any
+ * structural mismatch as "no credential".
+ */
+const KeychainOAuthSchema = z
+  .object({
+    accessToken: z.string().optional(),
+    expiresAt: z.string().optional()
+  })
+  .passthrough()
 
-export interface KeychainPayload {
-  claudeAiOauth?: KeychainOAuth
-}
+const KeychainPayloadSchema = z
+  .object({
+    claudeAiOauth: KeychainOAuthSchema.optional()
+  })
+  .passthrough()
+
+export type KeychainOAuth = z.infer<typeof KeychainOAuthSchema>
+export type KeychainPayload = z.infer<typeof KeychainPayloadSchema>
 
 // ── CredentialStore abstraction ─────────────────────────────────────
 
@@ -60,7 +75,12 @@ export class MacOSCredentialStore implements CredentialStore {
         'Claude Code-credentials',
         '-w'
       ])
-      cachedKeychainResult = JSON.parse(stdout.trim()) as KeychainPayload
+      const parsed = KeychainPayloadSchema.safeParse(JSON.parse(stdout.trim()))
+      if (!parsed.success) {
+        cachedKeychainResult = null
+        return null
+      }
+      cachedKeychainResult = parsed.data
       return cachedKeychainResult
     } catch {
       cachedKeychainResult = null
