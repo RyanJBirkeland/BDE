@@ -99,6 +99,7 @@ describe('Window helper functions', () => {
       show: vi.fn(),
       loadURL: vi.fn(),
       loadFile: vi.fn(),
+      isDestroyed: vi.fn(() => false),
       on: vi.fn((event: string, handler: Function) => {
         if (event === 'ready-to-show') readyToShowHandler = handler
         if (event === 'closed') closedHandler = handler
@@ -230,6 +231,33 @@ describe('Window helper functions', () => {
 
       // Timer should be cleared, so advancing time should not show window
       vi.advanceTimersByTime(10000)
+      expect(mockWindow.show).not.toHaveBeenCalled()
+    })
+
+    it('does not call show() on a destroyed window when timer fires', async () => {
+      vi.resetModules()
+      const { installReadyToShowFallback } = await import('../index')
+      const { READY_TO_SHOW_FALLBACK_MS } = await import('../renderer-load-retry')
+
+      mockWindow.isDestroyed = vi.fn(() => true)
+
+      installReadyToShowFallback(mockWindow as unknown as BrowserWindow)
+
+      vi.advanceTimersByTime(READY_TO_SHOW_FALLBACK_MS)
+
+      expect(mockWindow.show).not.toHaveBeenCalled()
+    })
+
+    it('does not call show() on a destroyed window when ready-to-show fires', async () => {
+      vi.resetModules()
+      const { installReadyToShowFallback } = await import('../index')
+
+      mockWindow.isDestroyed = vi.fn(() => true)
+
+      installReadyToShowFallback(mockWindow as unknown as BrowserWindow)
+
+      readyToShowHandler!()
+
       expect(mockWindow.show).not.toHaveBeenCalled()
     })
   })

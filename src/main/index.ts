@@ -164,19 +164,17 @@ function createMainWindow(): BrowserWindow | null {
 function installReadyToShowFallback(win: BrowserWindow): void {
   let windowShown = false
   const fallbackTimer = setTimeout(() => {
-    if (!windowShown) {
-      win.show()
-      emitStartupWarnings()
-      windowShown = true
-    }
+    if (windowShown || win.isDestroyed()) return
+    win.show()
+    emitStartupWarnings()
+    windowShown = true
   }, READY_TO_SHOW_FALLBACK_MS)
 
   win.on('ready-to-show', () => {
-    if (!windowShown) {
-      win.show()
-      emitStartupWarnings()
-      windowShown = true
-    }
+    if (windowShown || win.isDestroyed()) return
+    win.show()
+    emitStartupWarnings()
+    windowShown = true
   })
 
   win.on('closed', () => {
