@@ -30,6 +30,7 @@ import { buildAgentEnvWithAuth, getClaudeCliPath, refreshOAuthTokenFromKeychain 
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
 import { buildAgentPrompt } from './lib/prompt-composer'
+import { resolveAgentRuntime } from './agent-manager/backend-selector'
 import { setupWorktree } from './agent-manager/worktree'
 import { TurnTracker } from './agent-manager/turn-tracker'
 import type { IDashboardRepository } from './data/sprint-task-repository'
@@ -78,11 +79,13 @@ export function getAdhocHandle(agentId: string): AdhocSession | undefined {
 export async function spawnAdhocAgent(args: {
   task: string
   repoPath: string
-  model?: string
   assistant?: boolean
   repo: IDashboardRepository
 }): Promise<SpawnLocalAgentResult> {
-  const model = args.model || 'claude-sonnet-4-5'
+  // Route through agents.backendConfig — the Settings UI is the single source
+  // of truth for which model runs each agent type. Assistant and adhoc each
+  // get their own entry so they can diverge without code changes.
+  const { model } = resolveAgentRuntime(args.assistant ? 'assistant' : 'adhoc')
 
   // Proactively refresh the OAuth token before spawning — the pipeline drain
   // loop handles this for pipeline agents, but adhoc agents bypass that path.

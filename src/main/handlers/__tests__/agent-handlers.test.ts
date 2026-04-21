@@ -347,18 +347,21 @@ describe('local:spawnClaudeAgent handler', () => {
     const handler = captureHandler('local:spawnClaudeAgent')
     const result = await handler(mockEvent, {
       task: 'Build the feature',
-      repoPath: '/Users/test/projects/BDE',
-      model: 'claude-opus-4'
+      repoPath: '/Users/test/projects/BDE'
     })
 
+    // Model is resolved inside spawnAdhocAgent via agents.backendConfig —
+    // the renderer no longer forwards a model through this IPC channel.
     expect(spawnAdhocAgent).toHaveBeenCalledWith(
       expect.objectContaining({
         task: 'Build the feature',
         repoPath: '/Users/test/projects/BDE',
-        model: 'claude-opus-4',
         assistant: undefined
       })
     )
+    // And the handler must NOT relay a model field from the renderer.
+    const callArg = vi.mocked(spawnAdhocAgent).mock.calls[0][0] as Record<string, unknown>
+    expect(callArg).not.toHaveProperty('model')
     expect(result).toEqual(spawnResult)
   })
 })

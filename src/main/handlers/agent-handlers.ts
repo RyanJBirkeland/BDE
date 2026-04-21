@@ -76,7 +76,6 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
     return spawnAdhocAgent({
       task: args.task,
       repoPath: args.repoPath,
-      model: args.model,
       assistant: args.assistant,
       repo: effectiveRepo
     })

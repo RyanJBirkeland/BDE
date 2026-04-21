@@ -46,6 +46,21 @@ vi.mock('../agent-manager/worktree', () => ({
     branch: TEST_BRANCH
   }))
 }))
+// Mock backend-selector so assertions can pin distinct sentinel models to
+// the 'adhoc' vs 'assistant' agent types. These sentinels are deliberately
+// NOT 'claude-sonnet-4-5' — that value collides with the prior hardcoded
+// default and would not prove the routing came from settings.
+vi.mock('../agent-manager/backend-selector', () => ({
+  resolveAgentRuntime: (type: import('../agent-system/personality/types').AgentType) => ({
+    backend: 'claude' as const,
+    model:
+      type === 'adhoc'
+        ? 'claude-haiku-4-5-20251001'
+        : type === 'assistant'
+          ? 'claude-opus-4-6'
+          : 'claude-sonnet-4-5'
+  })
+}))
 
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { importAgent, updateAgentMeta } from '../agent-history'
@@ -96,8 +111,7 @@ describe('spawnAdhocAgent', () => {
 
     const result = await spawnAdhocAgent({
       task: 'fix the bug',
-      repoPath: '/tmp/test-repo',
-      model: 'sonnet'
+      repoPath: '/tmp/test-repo'
     })
 
     // Worktree must be created BEFORE the SDK is invoked, scoped to the
@@ -113,11 +127,16 @@ describe('spawnAdhocAgent', () => {
     )
 
     // The SDK must be invoked with the worktree path (NOT the repo path)
-    // so the agent never touches the user's main checkout.
+    // so the agent never touches the user's main checkout. Model comes
+    // from the mocked backend-selector — adhoc type resolves to the haiku
+    // sentinel.
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: expect.anything(),
-        options: expect.objectContaining({ model: 'sonnet', cwd: TEST_WORKTREE_PATH })
+        options: expect.objectContaining({
+          model: 'claude-haiku-4-5-20251001',
+          cwd: TEST_WORKTREE_PATH
+        })
       })
     )
     expect(importAgent).toHaveBeenCalled()
@@ -132,8 +151,7 @@ describe('spawnAdhocAgent', () => {
 
     await spawnAdhocAgent({
       task: 'fix the bug',
-      repoPath: '/tmp/test-repo',
-      model: 'sonnet'
+      repoPath: '/tmp/test-repo'
     })
 
     // The Promote handler later reads worktreePath + branch off agent_runs,
@@ -169,15 +187,30 @@ describe('spawnAdhocAgent', () => {
     )
   })
 
-  it('defaults model to claude-sonnet-4-5 when not provided', async () => {
+  it('resolves the adhoc model from settings when assistant flag is false', async () => {
     const handle = createMockQueryHandle([])
     mockQuery.mockReturnValue(handle)
 
     await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
 
+    // adhoc path → resolveAgentRuntime('adhoc') → haiku sentinel from the mock
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        options: expect.objectContaining({ model: 'claude-sonnet-4-5' })
+        options: expect.objectContaining({ model: 'claude-haiku-4-5-20251001' })
+      })
+    )
+  })
+
+  it('resolves the assistant model from settings when assistant flag is true', async () => {
+    const handle = createMockQueryHandle([])
+    mockQuery.mockReturnValue(handle)
+
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', assistant: true })
+
+    // assistant path → resolveAgentRuntime('assistant') → opus sentinel
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({ model: 'claude-opus-4-6' })
       })
     )
   })
@@ -186,12 +219,12 @@ describe('spawnAdhocAgent', () => {
     const handle = createMockQueryHandle([])
     mockQuery.mockReturnValue(handle)
 
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
     await vi.waitFor(() => expect(broadcastCoalesced).toHaveBeenCalled(), { timeout: 1000 })
 
     expect(broadcastCoalesced).toHaveBeenCalledWith('agent:event', {
       agentId: 'agent-1',
-      event: expect.objectContaining({ type: 'agent:started', model: 'sonnet' })
+      event: expect.objectContaining({ type: 'agent:started', model: 'claude-haiku-4-5-20251001' })
     })
   })
 
@@ -201,7 +234,7 @@ describe('spawnAdhocAgent', () => {
     ])
     mockQuery.mockReturnValue(handle)
 
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
     await vi.waitFor(
       () =>
         expect(broadcastCoalesced).toHaveBeenCalledWith(
@@ -226,7 +259,7 @@ describe('spawnAdhocAgent', () => {
     ])
     mockQuery.mockReturnValue(handle)
 
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
     await vi.waitFor(
       () =>
         expect(broadcastCoalesced).toHaveBeenCalledWith(
@@ -246,7 +279,7 @@ describe('spawnAdhocAgent', () => {
     const handle = createMockQueryHandle([])
     mockQuery.mockReturnValue(handle)
 
-    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
     // Wait for the first turn to complete, then close the session to trigger completion
     await vi.waitFor(() => expect(broadcastCoalesced).toHaveBeenCalled(), { timeout: 1000 })
     getAdhocHandle(result.id)?.close()
@@ -286,7 +319,7 @@ describe('spawnAdhocAgent', () => {
     ])
     mockQuery.mockReturnValueOnce(turn1Handle).mockReturnValueOnce(turn2Handle)
 
-    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
 
     // Wait for first turn to complete
     await vi.waitFor(() => expect(broadcastCoalesced).toHaveBeenCalled(), { timeout: 1000 })
@@ -333,7 +366,7 @@ describe('spawnAdhocAgent', () => {
     const turn2 = createMockQueryHandle([])
     mockQuery.mockReturnValueOnce(turn1).mockReturnValueOnce(turn2)
 
-    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    const result = await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
     await vi.waitFor(() => expect(mockQuery).toHaveBeenCalledTimes(1), { timeout: 1000 })
 
     // Send a steering message with an image attachment
@@ -367,7 +400,7 @@ describe('spawnAdhocAgent', () => {
     const handle = createMockQueryHandle([])
     mockQuery.mockReturnValue(handle)
 
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
     await vi.waitFor(() => expect(mockQuery).toHaveBeenCalledTimes(1), { timeout: 1000 })
 
     // The first turn's prompt should be a plain string (no session_id available)
@@ -385,7 +418,7 @@ describe('spawnAdhocAgent', () => {
     }
     mockQuery.mockReturnValue(handle)
 
-    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r', model: 'sonnet' })
+    await spawnAdhocAgent({ task: 'test', repoPath: '/tmp/r' })
     await vi.waitFor(
       () =>
         expect(broadcastCoalesced).toHaveBeenCalledWith(
@@ -418,8 +451,7 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
 
     await spawnAdhocAgent({
       task: 'fix the bug',
-      repoPath: '/tmp/test-repo',
-      model: 'sonnet'
+      repoPath: '/tmp/test-repo'
     })
 
     expect(buildAgentPrompt).toHaveBeenCalledWith(
@@ -437,7 +469,6 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
     await spawnAdhocAgent({
       task: 'help me understand the codebase',
       repoPath: '/tmp/test-repo',
-      model: 'sonnet',
       assistant: true
     })
 

@@ -51,7 +51,6 @@ export interface AgentMeta {
 export interface SpawnLocalAgentArgs {
   task: string
   repoPath: string
-  model?: string
   assistant?: boolean
 }
 

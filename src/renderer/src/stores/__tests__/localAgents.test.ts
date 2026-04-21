@@ -77,10 +77,13 @@ describe('localAgents store', () => {
 
     expect(result.pid).toBe(999)
     expect(result.id).toBe('spawn-1')
+    // The store no longer forwards `model` through IPC — the main process
+    // resolves it from agents.backendConfig. The caller's `model` is kept
+    // only as a local display hint on the spawnedAgent record.
     expect(window.api.agents.spawnLocal).toHaveBeenCalledWith({
       task: 'write tests',
       repoPath: '/tmp/repo',
-      model: 'opus'
+      assistant: undefined
     })
 
     const state = useLocalAgentsStore.getState()

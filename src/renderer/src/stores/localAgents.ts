@@ -75,7 +75,14 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
         spawnAgent: async (args) => {
           set({ isSpawning: true })
           try {
-            const result = await spawnLocal(args)
+            // Main process resolves the model from agents.backendConfig; the
+            // caller's `model` is kept only as a display hint on the local
+            // record and is NOT forwarded through IPC.
+            const result = await spawnLocal({
+              task: args.task,
+              repoPath: args.repoPath,
+              assistant: args.assistant
+            })
             set((s) => ({
               spawnedAgents: [
                 ...s.spawnedAgents,
