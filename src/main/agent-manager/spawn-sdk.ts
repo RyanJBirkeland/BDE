@@ -8,7 +8,9 @@ import type { AgentHandle, SteerResult } from './types'
 import type { Logger } from '../logger'
 import { randomUUID } from 'node:crypto'
 import { getClaudeCliPath } from '../env-utils'
+import { getRepoPaths } from '../paths'
 import { getSessionId } from './sdk-message-protocol'
+import { createWorktreeIsolationHook } from './worktree-isolation-hook'
 
 /**
  * Baseline turn limit used when a caller does not supply a spec-aware override.
@@ -61,10 +63,19 @@ export function spawnViaSdk(
       pathToClaudeCodeExecutable: getClaudeCliPath(),
       ...(token ? { apiKey: token } : {}),
       abortController,
-      // Pipeline agents are autonomous (no human at stdin) and run in
-      // isolated worktrees. Auto-allow all tools to prevent hanging on
-      // permission prompts. Safety comes from worktree isolation + PR review.
-      canUseTool: async () => ({ behavior: 'allow' as const }),
+      // Pipeline agents run in isolated worktrees — the isolation hook
+      // refuses any write/edit/bash path that escapes the worktree and points
+      // at a configured main-repo checkout, so a stray absolute path cannot
+      // mutate the primary working copy. Non-pipeline spawns (adhoc,
+      // assistant, copilot, synthesizer, reviewer) run in the repo directly
+      // and stay on the permissive fallback.
+      canUseTool: opts.pipelineTuning
+        ? createWorktreeIsolationHook({
+            worktreePath: opts.cwd,
+            mainRepoPaths: Object.values(getRepoPaths()),
+            logger
+          })
+        : async () => ({ behavior: 'allow' as const }),
       // Pipeline agents receive BDE conventions via the composed prompt —
       // loading CLAUDE.md via 'project' would double-inject conventions and
       // costs ~5-10KB extra per spawn. User hooks kept for permission settings;

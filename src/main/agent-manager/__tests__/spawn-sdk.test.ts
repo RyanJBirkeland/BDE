@@ -6,6 +6,10 @@ vi.mock('../../env-utils', () => ({
   getClaudeCliPath: vi.fn(() => '/mock/path/to/claude')
 }))
 
+vi.mock('../../paths', () => ({
+  getRepoPaths: vi.fn(() => ({ bde: '/Users/test/projects/BDE' }))
+}))
+
 let mockMessages: unknown[] = []
 const mockQuery = vi.fn()
 
@@ -130,5 +134,60 @@ describe('spawnViaSdk', () => {
     const handle = spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken, logger)
     await handle.steer('steer message')
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Steer not supported in SDK mode'))
+  })
+})
+
+describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockMessages = []
+    setupMockQuery()
+  })
+
+  it('attaches a canUseTool that denies main-checkout writes when pipelineTuning is set', async () => {
+    spawnViaSdk(
+      sdk,
+      {
+        prompt: 'test',
+        cwd: '/Users/test/worktrees/bde/abc',
+        model: 'sonnet',
+        pipelineTuning: { maxTurns: 20 }
+      },
+      mockEnv,
+      mockToken
+    )
+    const callArgs = mockQuery.mock.calls[0]?.[0]
+    const canUseTool = callArgs?.options?.canUseTool as
+      | ((toolName: string, input: Record<string, unknown>, ctx: { signal: AbortSignal }) => Promise<{
+          behavior: 'deny' | 'allow'
+          message?: string
+        }>)
+      | undefined
+    expect(typeof canUseTool).toBe('function')
+
+    const result = await canUseTool!(
+      'Write',
+      { file_path: '/Users/test/projects/BDE/src/main/foo.ts', content: 'y' },
+      { signal: new AbortController().signal }
+    )
+    expect(result.behavior).toBe('deny')
+  })
+
+  it('leaves canUseTool permissive when pipelineTuning is not set (non-pipeline agents)', async () => {
+    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    const callArgs = mockQuery.mock.calls[0]?.[0]
+    const canUseTool = callArgs?.options?.canUseTool as
+      | ((toolName: string, input: Record<string, unknown>, ctx: { signal: AbortSignal }) => Promise<{
+          behavior: 'deny' | 'allow'
+        }>)
+      | undefined
+    expect(typeof canUseTool).toBe('function')
+
+    const result = await canUseTool!(
+      'Write',
+      { file_path: '/Users/test/projects/BDE/src/main/foo.ts', content: 'y' },
+      { signal: new AbortController().signal }
+    )
+    expect(result.behavior).toBe('allow')
   })
 })
