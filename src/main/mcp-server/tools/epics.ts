@@ -10,13 +10,10 @@ import {
   EpicUpdateSchema,
   EpicWriteFieldsSchema
 } from '../schemas'
+import { jsonContent } from './response'
 
 export interface EpicToolsDeps {
   epicService: EpicGroupService
-}
-
-function json(value: unknown): { content: Array<{ type: 'text'; text: string }> } {
-  return { content: [{ type: 'text' as const, text: JSON.stringify(value) }] }
 }
 
 export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void {
@@ -34,7 +31,7 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
         const q = args.search.toLowerCase()
         rows = rows.filter((e) => e.name.toLowerCase().includes(q))
       }
-      return json(rows)
+      return jsonContent(rows)
     }
   )
 
@@ -47,9 +44,9 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       const epic = svc.getEpic(id)
       if (!epic) throw new McpDomainError(`Epic ${id} not found`, McpErrorCode.NotFound, { id })
       if (includeTasks) {
-        return json({ ...epic, tasks: svc.getEpicTasks(id) })
+        return jsonContent({ ...epic, tasks: svc.getEpicTasks(id) })
       }
-      return json(epic)
+      return jsonContent(epic)
     }
   )
 
@@ -59,7 +56,7 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
     EpicWriteFieldsSchema.shape,
     async (rawArgs) => {
       const { goal, ...rest } = parseToolArgs(EpicWriteFieldsSchema, rawArgs)
-      return json(svc.createEpic({ ...rest, goal: goal ?? undefined }))
+      return jsonContent(svc.createEpic({ ...rest, goal: goal ?? undefined }))
     }
   )
 
@@ -70,7 +67,7 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
     async (rawArgs) => {
       const { id, patch } = parseToolArgs(EpicUpdateSchema, rawArgs)
       const { goal, ...rest } = patch
-      return json(svc.updateEpic(id, { ...rest, goal: goal ?? undefined }))
+      return jsonContent(svc.updateEpic(id, { ...rest, goal: goal ?? undefined }))
     }
   )
 
@@ -81,7 +78,7 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
     async (rawArgs) => {
       const { id } = parseToolArgs(EpicIdSchema, rawArgs)
       svc.deleteEpic(id)
-      return json({ deleted: true, id })
+      return jsonContent({ deleted: true, id })
     }
   )
 
@@ -92,7 +89,7 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
     async (rawArgs) => {
       const { epicId, taskId } = parseToolArgs(EpicAddTaskSchema, rawArgs)
       svc.addTask(epicId, taskId)
-      return json({ ok: true, epicId, taskId })
+      return jsonContent({ ok: true, epicId, taskId })
     }
   )
 
@@ -103,7 +100,7 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
     async (rawArgs) => {
       const { taskId } = parseToolArgs(EpicRemoveTaskSchema, rawArgs)
       svc.removeTask(taskId)
-      return json({ ok: true, taskId })
+      return jsonContent({ ok: true, taskId })
     }
   )
 
@@ -115,7 +112,7 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       const { id, dependencies } = parseToolArgs(EpicSetDependenciesSchema, rawArgs)
       try {
         const updated = svc.setDependencies(id, dependencies)
-        return json(updated)
+        return jsonContent(updated)
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         if (/not found/i.test(message)) {

@@ -16,6 +16,7 @@ import {
   TaskUpdateSchema
 } from '../schemas'
 import { TERMINAL_STATUSES } from '../../../shared/task-state-machine'
+import { jsonContent } from './response'
 
 /**
  * Patch fragment that clears stale terminal-state fields. Applied when an
@@ -56,10 +57,6 @@ export interface TaskToolsDeps {
   logger: CreateTaskWithValidationDeps['logger']
 }
 
-function json(value: unknown): { content: [{ type: 'text'; text: string }] } {
-  return { content: [{ type: 'text' as const, text: JSON.stringify(value) }] }
-}
-
 function filterInMemory(
   tasks: SprintTask[],
   args: ReturnType<typeof TaskListSchema.parse>
@@ -88,7 +85,7 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
     async (rawArgs) => {
       const args = parseToolArgs(TaskListSchema, rawArgs)
       const rows = deps.listTasks(args.status)
-      return json(filterInMemory(rows, args))
+      return jsonContent(filterInMemory(rows, args))
     }
   )
 
@@ -96,7 +93,7 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
     const { id } = parseToolArgs(TaskIdSchema, rawArgs)
     const row = deps.getTask(id)
     if (!row) throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
-    return json(row)
+    return jsonContent(row)
   })
 
   server.tool(
@@ -109,7 +106,7 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
       if (!task) throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
       const effectiveLimit = (limit ?? 100) + (offset ?? 0)
       const rows = deps.getTaskChanges(id, effectiveLimit)
-      return json(rows.slice(offset ?? 0))
+      return jsonContent(rows.slice(offset ?? 0))
     }
   )
 
@@ -131,7 +128,7 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
           : deps.createTaskWithValidation(createInput as CreateTaskInput, delegateDeps, {
               skipReadinessCheck
             })
-      return json(row)
+      return jsonContent(row)
     }
   )
 
@@ -150,7 +147,7 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
       }
       const row = deps.updateTask(id, effectivePatch)
       if (!row) throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
-      return json(row)
+      return jsonContent(row)
     }
   )
 
@@ -162,7 +159,7 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
       const { id, reason } = parseToolArgs(TaskCancelSchema, rawArgs)
       const row = await deps.cancelTask(id, reason)
       if (!row) throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
-      return json(row)
+      return jsonContent(row)
     }
   )
 }

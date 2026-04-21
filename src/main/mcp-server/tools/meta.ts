@@ -4,6 +4,7 @@ import {
   VALID_TRANSITIONS
 } from '../../../shared/task-state-machine'
 import type { RepoConfig } from '../../paths'
+import { jsonContent } from './response'
 
 export interface MetaToolsDeps {
   getRepos: () => RepoConfig[]
@@ -14,11 +15,7 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
     'meta.repos',
     'List repositories configured in BDE Settings.',
     {},
-    async () => ({
-      content: [
-        { type: 'text', text: JSON.stringify(deps.getRepos()) }
-      ]
-    })
+    async () => jsonContent(deps.getRepos())
   )
 
   server.tool(
@@ -30,14 +27,7 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
       for (const [from, targets] of Object.entries(VALID_TRANSITIONS)) {
         transitions[from] = [...targets]
       }
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({ statuses: TASK_STATUSES, transitions })
-          }
-        ]
-      }
+      return jsonContent({ statuses: TASK_STATUSES, transitions })
     }
   )
 
@@ -45,16 +35,10 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
     'meta.dependencyConditions',
     'List valid dependency condition values for tasks and epics.',
     {},
-    async () => ({
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            task: ['hard', 'soft'],
-            epic: ['on_success', 'always', 'manual']
-          })
-        }
-      ]
-    })
+    async () =>
+      jsonContent({
+        task: ['hard', 'soft'],
+        epic: ['on_success', 'always', 'manual']
+      })
   )
 }
