@@ -547,12 +547,15 @@ describe('AgentManagerImpl — class internals', () => {
       expect(updateTask).not.toHaveBeenCalled()
     })
 
-    it('returns true and sets task to error when dep parsing fails (invalid JSON)', () => {
+    it('returns false and does not mutate the task when depends_on is unparseable JSON', () => {
       const repo = makeMockRepo()
       const depIndex = createDependencyIndex()
       const logger = makeLogger()
+      // sanitizeDependsOn treats unparseable strings as "no deps" rather than throwing,
+      // so the drain loop proceeds to claim the task normally instead of marking it 'error'.
       const result = checkAndBlockDeps('task-1', '{bad json', new Map(), repo, depIndex, logger)
-      expect(result).toBe(true)
+      expect(result).toBe(false)
+      expect(updateTask).not.toHaveBeenCalled()
     })
 
     it('returns false for non-array deps', () => {
