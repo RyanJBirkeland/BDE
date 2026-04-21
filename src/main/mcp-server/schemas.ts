@@ -58,7 +58,6 @@ export const TaskWriteFieldsSchema = z.object({
     .optional()
     .describe('Per-task watchdog timeout in ms (60000 to 86400000 = 1min to 24h)'),
   template_name: z.string().min(1).max(200).optional().describe('Task template name (1-200 chars)'),
-  model: z.string().min(1).max(100).optional().describe('Agent model override (1-100 chars)'),
   cross_repo_contract: z
     .string()
     .max(10_000)

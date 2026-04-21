@@ -274,30 +274,11 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           aria-expanded={advancedOpen}
           aria-controls="wb-form-advanced"
         >
-          {advancedOpen ? '\u25be' : '\u25b8'} Advanced (cost, model, playground)
+          {advancedOpen ? '\u25be' : '\u25b8'} Advanced (cost, playground)
         </button>
         {advancedOpen && (
           <div id="wb-form-advanced">
             <GlassPanel accent="purple" blur="sm" className="wb-form__advanced">
-              <div className="wb-form__field--row">
-                <FormField
-                  label="Model"
-                  htmlFor="wb-form-model"
-                  className="wb-form__field wb-form__field--flex"
-                >
-                  <select
-                    id="wb-form-model"
-                    value={model}
-                    onChange={(e) => setField('model', e.target.value)}
-                    className="wb-form__select bde-select"
-                  >
-                    <option value="">Default (Sonnet)</option>
-                    <option value="claude-opus-4">Claude Opus 4</option>
-                    <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-                    <option value="claude-haiku-3-5">Claude Haiku 3.5</option>
-                  </select>
-                </FormField>
-              </div>
               <FormField label="Max Cost (USD)" htmlFor="wb-form-max-cost">
                 <input
                   id="wb-form-max-cost"

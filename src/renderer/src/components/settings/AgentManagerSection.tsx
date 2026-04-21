@@ -1,7 +1,9 @@
 /**
- * AgentManagerSection — configure AgentManager: concurrency, model, worktree base,
+ * AgentManagerSection — configure AgentManager: concurrency, worktree base,
  * max runtime, and auto-start. Also embeds agent permission settings.
  * Changes to pipeline configuration take effect after app restart.
+ *
+ * Model selection lives in Settings → Models (per agent type) — not here.
  */
 import './AgentManagerSection.css'
 import { useCallback, useEffect, useState } from 'react'
@@ -11,14 +13,12 @@ import { SettingsCard } from './SettingsCard'
 import { AgentPermissionsSection } from './AgentPermissionsSection'
 
 const DEFAULT_MAX_CONCURRENT = 2
-const DEFAULT_MODEL = 'claude-sonnet-4-5'
 const DEFAULT_WORKTREE_BASE = '~/worktrees/bde'
 const DEFAULT_MAX_RUNTIME_MINUTES = 60
 const DEFAULT_AUTO_START = true
 
 export function AgentManagerSection(): React.JSX.Element {
   const [maxConcurrent, setMaxConcurrent] = useState(DEFAULT_MAX_CONCURRENT)
-  const [defaultModel, setDefaultModel] = useState(DEFAULT_MODEL)
   const [worktreeBase, setWorktreeBase] = useState(DEFAULT_WORKTREE_BASE)
   const [maxRuntimeMinutes, setMaxRuntimeMinutes] = useState(DEFAULT_MAX_RUNTIME_MINUTES)
   const [autoStart, setAutoStart] = useState(DEFAULT_AUTO_START)
@@ -27,15 +27,13 @@ export function AgentManagerSection(): React.JSX.Element {
 
   useEffect(() => {
     async function loadSettings(): Promise<void> {
-      const [maxC, model, wtBase, maxRtMs, autoS] = await Promise.all([
+      const [maxC, wtBase, maxRtMs, autoS] = await Promise.all([
         window.api.settings.getJson('agentManager.maxConcurrent'),
-        window.api.settings.get('agentManager.defaultModel'),
         window.api.settings.get('agentManager.worktreeBase'),
         window.api.settings.getJson('agentManager.maxRuntimeMs'),
         window.api.settings.getJson('agentManager.autoStart')
       ])
       if (typeof maxC === 'number') setMaxConcurrent(maxC)
-      if (typeof model === 'string' && model) setDefaultModel(model)
       if (typeof wtBase === 'string' && wtBase) setWorktreeBase(wtBase)
       if (typeof maxRtMs === 'number') setMaxRuntimeMinutes(maxRtMs / 60_000)
       if (typeof autoS === 'boolean') setAutoStart(autoS)
@@ -48,7 +46,6 @@ export function AgentManagerSection(): React.JSX.Element {
     try {
       await Promise.all([
         window.api.settings.setJson('agentManager.maxConcurrent', maxConcurrent),
-        window.api.settings.set('agentManager.defaultModel', defaultModel),
         window.api.settings.set('agentManager.worktreeBase', worktreeBase),
         window.api.settings.setJson('agentManager.maxRuntimeMs', maxRuntimeMinutes * 60_000),
         window.api.settings.setJson('agentManager.autoStart', autoStart)
@@ -73,7 +70,7 @@ export function AgentManagerSection(): React.JSX.Element {
     } finally {
       setSaving(false)
     }
-  }, [maxConcurrent, defaultModel, worktreeBase, maxRuntimeMinutes, autoStart])
+  }, [maxConcurrent, worktreeBase, maxRuntimeMinutes, autoStart])
 
   function markDirty(): void {
     setDirty(true)
@@ -144,20 +141,6 @@ export function AgentManagerSection(): React.JSX.Element {
               work. Recommended: 3 or lower.
             </span>
           )}
-        </label>
-
-        <label className="settings-field">
-          <span className="settings-field__label">Default model</span>
-          <input
-            className="settings-field__input"
-            type="text"
-            value={defaultModel}
-            onChange={(e) => {
-              setDefaultModel(e.target.value)
-              markDirty()
-            }}
-            placeholder="claude-sonnet-4-5"
-          />
         </label>
 
         <label className="settings-field">

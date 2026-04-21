@@ -377,26 +377,16 @@ describe('WorkbenchForm', () => {
     })
   })
 
-  it('shows model selector in advanced options and updates store', () => {
+  it('does not show a per-task model picker in advanced options', () => {
+    // Model routing lives in Settings → Models per agent type; the per-task
+    // picker was removed because the underlying `task.model` field is dead in
+    // the default Claude backend. The Advanced section keeps cost/playground,
+    // but the model select is gone.
     useTaskWorkbenchStore.setState({ advancedOpen: true })
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
 
-    // Find the model dropdown by its label
-    const modelLabel = screen.getByText('Model')
-    expect(modelLabel).toBeInTheDocument()
-
-    // The select should have 4 options: Default, Opus, Sonnet, Haiku
-    const modelSelect = screen.getByLabelText('Model')
-    expect(modelSelect).toBeInTheDocument()
-
-    // Verify all options are present
-    expect(screen.getByText('Default (Sonnet)')).toBeInTheDocument()
-    expect(screen.getByText('Claude Opus 4')).toBeInTheDocument()
-    expect(screen.getByText('Claude Sonnet 4.5')).toBeInTheDocument()
-    expect(screen.getByText('Claude Haiku 3.5')).toBeInTheDocument()
-
-    // Select Opus
-    fireEvent.change(modelSelect, { target: { value: 'claude-opus-4' } })
-    expect(useTaskWorkbenchStore.getState().model).toBe('claude-opus-4')
+    expect(screen.queryByLabelText('Model')).not.toBeInTheDocument()
+    expect(screen.queryByText('Default (Sonnet)')).not.toBeInTheDocument()
+    expect(screen.queryByText('Claude Opus 4')).not.toBeInTheDocument()
   })
 })

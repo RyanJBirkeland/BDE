@@ -34,10 +34,11 @@ describe('AgentManagerSection', () => {
   it('renders config field labels', () => {
     render(<AgentManagerSection />)
     expect(screen.getByText('Max concurrent agents')).toBeInTheDocument()
-    expect(screen.getByText('Default model')).toBeInTheDocument()
     expect(screen.getByText('Worktree base')).toBeInTheDocument()
     expect(screen.getByText('Max runtime (minutes)')).toBeInTheDocument()
     expect(screen.getByText('Auto-start')).toBeInTheDocument()
+    // The "Default model" field was removed — model routing lives in Settings → Models.
+    expect(screen.queryByText('Default model')).not.toBeInTheDocument()
   })
 
   it('renders hot-reload / restart hint', () => {
@@ -58,7 +59,6 @@ describe('AgentManagerSection', () => {
 
   it('loads settings on mount', async () => {
     vi.mocked(window.api.settings.get).mockImplementation((key: string) => {
-      if (key === 'agentManager.defaultModel') return Promise.resolve('claude-opus-4')
       if (key === 'agentManager.worktreeBase') return Promise.resolve('/tmp/worktrees/custom')
       return Promise.resolve(null)
     })
@@ -70,10 +70,10 @@ describe('AgentManagerSection', () => {
     })
     render(<AgentManagerSection />)
     await waitFor(() => {
-      const inputs = screen.getAllByDisplayValue('claude-opus-4') as HTMLInputElement[]
-      expect(inputs.length).toBeGreaterThanOrEqual(1)
-      expect(inputs[0].placeholder).toBe('claude-sonnet-4-5')
+      expect(screen.getByDisplayValue('/tmp/worktrees/custom')).toBeInTheDocument()
     })
+    expect(screen.getByDisplayValue('4')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('60')).toBeInTheDocument()
   })
 
   it('changing max concurrent enables Save button', async () => {
@@ -142,10 +142,10 @@ describe('AgentManagerSection', () => {
       expect(screen.getByDisplayValue('120')).toBeInTheDocument()
     })
 
-    // Mark dirty by changing model so Save is enabled
-    const modelInput = screen.getByPlaceholderText('claude-sonnet-4-5') as HTMLInputElement
-    await user.clear(modelInput)
-    await user.type(modelInput, 'claude-opus-4')
+    // Mark dirty by changing worktree base so Save is enabled.
+    const worktreeInput = screen.getByPlaceholderText('~/worktrees/bde') as HTMLInputElement
+    await user.clear(worktreeInput)
+    await user.type(worktreeInput, '/tmp/worktrees/custom')
 
     await user.click(screen.getByRole('button', { name: /save/i }))
 

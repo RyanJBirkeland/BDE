@@ -128,7 +128,6 @@ describe('tasks.* write tools', () => {
       playground_enabled: true,
       max_runtime_ms: 600_000,
       template_name: 'Feature',
-      model: 'claude-sonnet-4-5',
       cross_repo_contract: 'needs api change in other-repo',
       group_id: 'epic-1'
     }
