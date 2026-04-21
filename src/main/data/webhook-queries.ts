@@ -4,7 +4,47 @@
  */
 import type Database from 'better-sqlite3'
 import { getDb } from '../db'
+import { createLogger } from '../logger'
 import type { WebhookConfig } from '../services/webhook-service'
+
+const log = createLogger('webhook-queries')
+
+/**
+ * Parse and validate the `events` column from a webhook row. The column is
+ * nominally a JSON-encoded `string[]`, but corrupted rows (non-array JSON,
+ * mixed element types, malformed JSON, null) must not propagate to callers.
+ *
+ * Any recoverable anomaly is logged at `warn` and coerced to `[]` or a filtered
+ * array of strings. The function never throws.
+ */
+export function parseWebhookEvents(raw: unknown): string[] {
+  if (raw == null) return []
+
+  if (typeof raw === 'string') {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      log.warn(`Malformed events JSON; coercing to []: ${message}`)
+      return []
+    }
+    return parseWebhookEvents(parsed)
+  }
+
+  if (Array.isArray(raw)) {
+    const stringEntries = raw.filter((entry): entry is string => typeof entry === 'string')
+    if (stringEntries.length !== raw.length) {
+      log.warn(
+        `Dropped ${raw.length - stringEntries.length} non-string events entry(ies) from webhook row`
+      )
+    }
+    return stringEntries
+  }
+
+  log.warn(`Unexpected events type "${typeof raw}"; coercing to []`)
+  return []
+}
 
 export interface WebhookRow {
   id: string
@@ -29,7 +69,7 @@ export interface Webhook {
 function rowToWebhook(row: WebhookRow): Webhook {
   return {
     ...row,
-    events: JSON.parse(row.events) as string[],
+    events: parseWebhookEvents(row.events),
     enabled: row.enabled === 1
   }
 }
@@ -168,7 +208,7 @@ export function getWebhooks(db?: Database.Database): WebhookConfig[] {
   return rows.map((row) => ({
     id: row.id,
     url: row.url,
-    events: JSON.parse(row.events) as string[],
+    events: parseWebhookEvents(row.events),
     secret: row.secret,
     enabled: row.enabled === 1
   }))
