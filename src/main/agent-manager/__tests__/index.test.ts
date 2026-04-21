@@ -1398,14 +1398,14 @@ describe('createAgentManager', () => {
         {
           id: 'task-dep',
           status: 'queued',
-          depends_on: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }])
+          depends_on: JSON.stringify([{ id: 'blocker-1', type: 'hard' }])
         } as any
       ])
-      // Return a task with depends_on
+      // Return a task with depends_on — the TaskDependency shape uses `id`, not `taskId`
       const taskWithDeps = makeTask({
         id: 'task-dep',
-        depends_on: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }]),
-        dependsOn: JSON.stringify([{ taskId: 'blocker-1', type: 'hard' }])
+        depends_on: JSON.stringify([{ id: 'blocker-1', type: 'hard' }]),
+        dependsOn: JSON.stringify([{ id: 'blocker-1', type: 'hard' }])
       })
       vi.mocked(getQueuedTasks).mockReturnValueOnce([taskWithDeps])
 

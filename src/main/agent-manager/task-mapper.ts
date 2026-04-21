@@ -10,6 +10,7 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { DependencyIndex } from '../services/dependency-service'
 import { formatBlockedNote } from '../services/dependency-service'
 import type { SprintTask } from '../../shared/types/task-types'
+import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 
 // ---------------------------------------------------------------------------
 // MappedTask type
@@ -90,44 +91,26 @@ export function checkAndBlockDeps(
   depIndex: DependencyIndex,
   logger: Logger
 ): boolean {
+  const deps = sanitizeDependsOn(rawDeps)
+  if (!deps) return false
+
+  const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
+    taskId,
+    deps,
+    (depId: string) => taskStatusMap.get(depId)
+  )
+  if (satisfied) return false
+
+  logger.info(
+    `[agent-manager] Task ${taskId} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`
+  )
   try {
-    const deps = typeof rawDeps === 'string' ? JSON.parse(rawDeps) : rawDeps
-    if (Array.isArray(deps) && deps.length > 0) {
-      const { satisfied, blockedBy } = depIndex.areDependenciesSatisfied(
-        taskId,
-        deps,
-        (depId: string) => taskStatusMap.get(depId)
-      )
-      if (!satisfied) {
-        logger.info(
-          `[agent-manager] Task ${taskId} has unsatisfied deps [${blockedBy.join(', ')}] — auto-blocking`
-        )
-        try {
-          repo.updateTask(taskId, {
-            status: 'blocked',
-            notes: formatBlockedNote(blockedBy)
-          })
-        } catch {
-          /* best-effort */
-        }
-        return true
-      }
-    }
-  } catch (err) {
-    // If dep parsing fails, set task to error instead of silently proceeding
-    logger.error(`[agent-manager] Task ${taskId} has malformed depends_on data: ${err}`)
-    try {
-      repo.updateTask(taskId, {
-        status: 'error',
-        notes: 'Malformed depends_on field - cannot validate dependencies',
-        claimed_by: null
-      })
-    } catch (updateErr) {
-      logger.warn(
-        `[agent-manager] Failed to update task ${taskId} after dep parse error: ${updateErr}`
-      )
-    }
-    return true // Block the task
+    repo.updateTask(taskId, {
+      status: 'blocked',
+      notes: formatBlockedNote(blockedBy)
+    })
+  } catch {
+    /* best-effort */
   }
-  return false
+  return true
 }
