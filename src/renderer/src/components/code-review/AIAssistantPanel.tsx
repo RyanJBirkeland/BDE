@@ -67,7 +67,6 @@ export function AIAssistantPanel(): JSX.Element {
           <Sparkles size={14} className="cr-assistant__sparkle" />
           <div>
             <div className="cr-assistant__title-label">AI Review Partner</div>
-            <div className="cr-assistant__title-model">Claude 4.6 Opus</div>
           </div>
         </div>
         <div className="cr-assistant__header-actions" ref={menuRef}>

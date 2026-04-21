@@ -36,3 +36,8 @@ The `LaunchpadGrid` model picker (the Haiku/Sonnet/Opus pills on the Agents view
 - `resolveBackend` was renamed to `resolveAgentRuntime`. The old name is a `@deprecated` alias kept for one release; it will be removed in a follow-up.
 - `SdkStreamingOptions.model` is now a required field. Any future integration that calls `runSdkStreaming` or `runSdkOnce` must resolve a model via `resolveAgentRuntime(type).model`.
 - `spawnAdhocAgent`, `getCopilotSdkOptions`, and `SpawnLocalAgentArgs` no longer accept a caller-supplied `model` — settings are the single source of truth.
+
+## What this feature does NOT route
+
+- **Spec-quality validators** (`src/main/services/spec-quality/validators/`) still pin Haiku directly. They run as part of the Task Workbench "Check spec" flow, not as a user-facing agent, and the Haiku pin is a deliberate latency/cost choice. These validators are not exposed in Settings → Models.
+- **`agentManager.defaultModel` and per-task `task.model`** remain vestigial in the default Claude backend — `resolveAgentRuntime('pipeline').model` takes precedence over both. Cleaning those up is a separate concern tracked outside this feature.

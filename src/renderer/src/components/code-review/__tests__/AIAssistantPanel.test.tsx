@@ -122,7 +122,9 @@ describe('AIAssistantPanel', () => {
   it('renders header with AI Review Partner title', () => {
     render(<AIAssistantPanel />)
     expect(screen.getByText('AI Review Partner')).toBeInTheDocument()
-    expect(screen.getByText('Claude 4.6 Opus')).toBeInTheDocument()
+    // Model label was removed — the actual model comes from Settings → Models
+    // and the header no longer advertises a specific value it can't verify.
+    expect(screen.queryByText(/Claude \d/)).not.toBeInTheDocument()
   })
 
   it('renders close button that calls togglePanel', () => {
