@@ -48,9 +48,13 @@ function isRevivingTerminalTask(currentStatus: string, targetStatus: unknown): b
   return TERMINAL_STATUSES.has(currentStatus)
 }
 
-export interface TaskToolsDeps {
-  listTasks: (status?: string) => SprintTask[]
-  getTask: (id: string) => SprintTask | null
+/**
+ * Write-side operations. Pure commands — nothing that merely inspects
+ * data belongs here. `onStatusTerminal` lives alongside the writes
+ * because a command (`tasks.update` into a terminal status) is what
+ * triggers it.
+ */
+export interface TaskCommandPort {
   createTaskWithValidation: (
     input: CreateTaskInput,
     deps: CreateTaskWithValidationDeps,
@@ -58,8 +62,6 @@ export interface TaskToolsDeps {
   ) => SprintTask
   updateTask: (id: string, patch: TaskPatch) => SprintTask | null
   cancelTask: (id: string, reason?: string) => Promise<SprintTask | null> | SprintTask | null
-  /** Mirrors the data-layer signature: (taskId, limit?). Offset is applied in the tool handler via slice. */
-  getTaskChanges: (id: string, limit?: number) => TaskChange[]
   /**
    * Fired when `tasks.update` drives a task into a terminal status from a
    * non-terminal one. Routes to `TaskTerminalService.onStatusTerminal` so
@@ -67,6 +69,34 @@ export interface TaskToolsDeps {
    * The revival direction (terminal → queued/backlog) never triggers this.
    */
   onStatusTerminal: (taskId: string, status: string) => void | Promise<void>
+}
+
+/**
+ * Read-side task queries used by `tasks.list` and `tasks.get`.
+ */
+export interface TaskQueryPort {
+  listTasks: (status?: string) => SprintTask[]
+  getTask: (id: string) => SprintTask | null
+}
+
+/**
+ * Audit-log queries used by `tasks.history`.
+ */
+export interface TaskHistoryPort {
+  /** Mirrors the data-layer signature: (taskId, limit?). Offset is applied in the tool handler via slice. */
+  getTaskChanges: (id: string, limit?: number) => TaskChange[]
+}
+
+/**
+ * Union of the three role-specific ports plus the shared logger, so
+ * `registerTaskTools` still takes a single `deps` argument. Individual
+ * tool functions can depend on a narrower port when they're lifted
+ * out of this file.
+ */
+export interface TaskToolsDeps
+  extends TaskCommandPort,
+    TaskQueryPort,
+    TaskHistoryPort {
   logger: CreateTaskWithValidationDeps['logger']
 }
 
