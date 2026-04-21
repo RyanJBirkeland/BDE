@@ -81,7 +81,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
 
   return {
     async start(): Promise<number> {
-      const token = await readOrCreateToken()
+      const { token, created, path: tokenPath } = await readOrCreateToken(undefined, { logger })
 
       return new Promise<number>((resolve, reject) => {
         httpServer = http.createServer((req, res) => {
@@ -107,6 +107,12 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
           const actualPort = typeof addr === 'object' && addr ? addr.port : config.port
           transportHandler = createTransportHandler(buildMcp, token, actualPort, logger)
           logger.info(`Listening on http://127.0.0.1:${actualPort}/mcp`)
+          logger.info(`MCP bearer token at ${tokenPath}${created ? ' (newly minted)' : ''}`)
+          if (created) {
+            broadcast('manager:warning', {
+              message: `BDE MCP: fresh token minted at ${tokenPath}. Re-copy into your MCP client config.`
+            })
+          }
           resolve(actualPort)
         })
       })

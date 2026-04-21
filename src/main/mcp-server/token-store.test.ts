@@ -28,50 +28,59 @@ describe('token-store', () => {
   })
 
   it('generates a 64-hex-char token when file is absent', async () => {
-    const token = await readOrCreateToken(filePath)
-    expect(token).toMatch(HEX_TOKEN)
+    const result = await readOrCreateToken(filePath)
+    expect(result.token).toMatch(HEX_TOKEN)
+    expect(result.created).toBe(true)
+    expect(result.path).toBe(filePath)
     const stat = await fs.stat(filePath)
     expect(stat.mode & 0o777).toBe(0o600)
   })
 
-  it('returns existing token on second call', async () => {
+  it('returns existing token on second call with created=false', async () => {
     const first = await readOrCreateToken(filePath)
     const second = await readOrCreateToken(filePath)
-    expect(second).toBe(first)
+    expect(second.token).toBe(first.token)
+    expect(second.created).toBe(false)
+    expect(second.path).toBe(filePath)
   })
 
-  it('regenerateToken overwrites the file with a new value', async () => {
+  it('regenerateToken overwrites the file with a new value and flags created=true', async () => {
     const first = await readOrCreateToken(filePath)
     const second = await regenerateToken(filePath)
-    expect(second).not.toBe(first)
-    expect(second).toMatch(HEX_TOKEN)
+    expect(second.token).not.toBe(first.token)
+    expect(second.token).toMatch(HEX_TOKEN)
+    expect(second.created).toBe(true)
+    expect(second.path).toBe(filePath)
     const onDisk = (await fs.readFile(filePath, 'utf8')).trim()
-    expect(onDisk).toBe(second)
+    expect(onDisk).toBe(second.token)
   })
 
-  it('regenerates when existing file contains non-hex content', async () => {
+  it('regenerates when existing file contains non-hex content and flags created=true', async () => {
     await fs.writeFile(filePath, 'not-a-token\n')
-    const token = await readOrCreateToken(filePath)
-    expect(token).toMatch(HEX_TOKEN)
+    const result = await readOrCreateToken(filePath)
+    expect(result.token).toMatch(HEX_TOKEN)
+    expect(result.created).toBe(true)
     const onDisk = (await fs.readFile(filePath, 'utf8')).trim()
-    expect(onDisk).toBe(token)
+    expect(onDisk).toBe(result.token)
   })
 
   it('regenerates when existing file contains wrong-length hex', async () => {
     await fs.writeFile(filePath, 'a'.repeat(32) + '\n')
-    const token = await readOrCreateToken(filePath)
-    expect(token).toMatch(HEX_TOKEN)
-    expect(token).not.toBe('a'.repeat(32))
+    const result = await readOrCreateToken(filePath)
+    expect(result.token).toMatch(HEX_TOKEN)
+    expect(result.token).not.toBe('a'.repeat(32))
+    expect(result.created).toBe(true)
     const onDisk = (await fs.readFile(filePath, 'utf8')).trim()
-    expect(onDisk).toBe(token)
+    expect(onDisk).toBe(result.token)
   })
 
   it('regenerates when existing file contains only whitespace', async () => {
     await fs.writeFile(filePath, '   \n')
-    const token = await readOrCreateToken(filePath)
-    expect(token).toMatch(HEX_TOKEN)
+    const result = await readOrCreateToken(filePath)
+    expect(result.token).toMatch(HEX_TOKEN)
+    expect(result.created).toBe(true)
     const onDisk = (await fs.readFile(filePath, 'utf8')).trim()
-    expect(onDisk).toBe(token)
+    expect(onDisk).toBe(result.token)
   })
 
   it('creates a missing parent directory on first generation', async () => {
@@ -79,8 +88,9 @@ describe('token-store', () => {
     const missingDir = join(tmpdir(), `bde-mcp-token-missing-${suffix}`)
     const nestedPath = join(missingDir, 'nested', 'mcp-token')
     try {
-      const token = await readOrCreateToken(nestedPath)
-      expect(token).toMatch(HEX_TOKEN)
+      const result = await readOrCreateToken(nestedPath)
+      expect(result.token).toMatch(HEX_TOKEN)
+      expect(result.created).toBe(true)
       const stat = await fs.stat(nestedPath)
       expect(stat.isFile()).toBe(true)
     } finally {
@@ -128,9 +138,10 @@ describe('token-store', () => {
     const logger = makeTestLogger()
     await fs.writeFile(filePath, 'not-a-token\n')
 
-    const token = await readOrCreateToken(filePath, { logger })
+    const result = await readOrCreateToken(filePath, { logger })
 
-    expect(token).toMatch(HEX_TOKEN)
+    expect(result.token).toMatch(HEX_TOKEN)
+    expect(result.created).toBe(true)
     expect(logger.warn).toHaveBeenCalledTimes(1)
     const message = logger.warn.mock.calls[0][0] as string
     expect(message).toContain('corrupt token')
@@ -143,9 +154,10 @@ describe('token-store', () => {
     await fs.writeFile(filePath, validToken + '\n')
     await fs.chmod(filePath, 0o644)
 
-    const token = await readOrCreateToken(filePath, { logger })
+    const result = await readOrCreateToken(filePath, { logger })
 
-    expect(token).toBe(validToken)
+    expect(result.token).toBe(validToken)
+    expect(result.created).toBe(false)
     expect(logger.warn).toHaveBeenCalledTimes(1)
     const message = logger.warn.mock.calls[0][0] as string
     expect(message).toContain('drifted')
@@ -156,8 +168,9 @@ describe('token-store', () => {
     const logger = makeTestLogger()
     await readOrCreateToken(filePath, { logger })
 
-    await readOrCreateToken(filePath, { logger })
+    const result = await readOrCreateToken(filePath, { logger })
 
+    expect(result.created).toBe(false)
     expect(logger.warn).not.toHaveBeenCalled()
   })
 

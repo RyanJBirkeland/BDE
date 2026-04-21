@@ -17,6 +17,12 @@ export interface TokenStoreOptions {
   logger?: TokenStoreLogger
 }
 
+export interface TokenReadResult {
+  token: string
+  created: boolean
+  path: string
+}
+
 export function tokenFilePath(): string {
   return join(homedir(), '.bde', 'mcp-token')
 }
@@ -81,14 +87,14 @@ async function warnIfModeDrifted(
 export async function readOrCreateToken(
   filePath: string = tokenFilePath(),
   options: TokenStoreOptions = {}
-): Promise<string> {
+): Promise<TokenReadResult> {
   const { logger } = options
   try {
     const contents = await fs.readFile(filePath, 'utf8')
     const token = contents.trim()
     if (isWellFormedToken(token)) {
       await warnIfModeDrifted(filePath, logger)
-      return token
+      return { token, created: false, path: filePath }
     }
     logger?.warn(`token-store: corrupt token at ${filePath} — regenerating`)
   } catch (err) {
@@ -99,11 +105,13 @@ export async function readOrCreateToken(
       throw err
     }
   }
-  return generateAndWrite(filePath)
+  const token = await generateAndWrite(filePath)
+  return { token, created: true, path: filePath }
 }
 
 export async function regenerateToken(
   filePath: string = tokenFilePath()
-): Promise<string> {
-  return generateAndWrite(filePath)
+): Promise<TokenReadResult> {
+  const token = await generateAndWrite(filePath)
+  return { token, created: true, path: filePath }
 }

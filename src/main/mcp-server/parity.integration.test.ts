@@ -23,7 +23,7 @@ beforeAll(async () => {
     { port: 0 }
   )
   port = await handle.start()
-  const token = await readOrCreateToken()
+  const { token } = await readOrCreateToken()
 
   client = new Client({ name: 'parity', version: '0.0.0' }, { capabilities: {} })
   await client.connect(

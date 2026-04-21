@@ -51,7 +51,11 @@ class FakeHttpServer extends EventEmitter {
 const hoisted = vi.hoisted(() => {
   const fakeServerRef: { current: FakeHttpServerShape | null } = { current: null }
   const mockBroadcast = vi.fn()
-  const mockReadOrCreateToken = vi.fn(async () => 'deadbeef'.repeat(8))
+  const mockReadOrCreateToken = vi.fn(async () => ({
+    token: 'deadbeef'.repeat(8),
+    created: false,
+    path: '/tmp/bde-mcp-token-test'
+  }))
   const mockTransportHandle = vi.fn(async () => {})
   const mockTransportClose = vi.fn(async () => {})
   const mockCreateTransportHandler = vi.fn(() => ({
@@ -221,6 +225,53 @@ describe('createMcpServer lifecycle', () => {
     expect(port).toBe(12345)
     expect(fakeServer.listenCalls).toEqual([{ port: 0, host: '127.0.0.1' }])
     expect(mockCreateTransportHandler).toHaveBeenCalledTimes(1)
+  })
+
+  it('start() logs the token path without "newly minted" when the token already existed', async () => {
+    mockReadOrCreateToken.mockResolvedValueOnce({
+      token: 'cafebabe'.repeat(8),
+      created: false,
+      path: '/tmp/bde-existing-token'
+    })
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
+
+    await handle.start()
+
+    const tokenLog = mockLogger.info.mock.calls
+      .map((call) => call[0] as string)
+      .find((msg) => msg.includes('MCP bearer token at'))
+    expect(tokenLog).toBe('MCP bearer token at /tmp/bde-existing-token')
+    expect(mockBroadcast).not.toHaveBeenCalled()
+  })
+
+  it('start() broadcasts a manager:warning when the token was freshly minted', async () => {
+    mockReadOrCreateToken.mockResolvedValueOnce({
+      token: 'feedface'.repeat(8),
+      created: true,
+      path: '/tmp/bde-fresh-token'
+    })
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
+
+    await handle.start()
+
+    const tokenLog = mockLogger.info.mock.calls
+      .map((call) => call[0] as string)
+      .find((msg) => msg.includes('MCP bearer token at'))
+    expect(tokenLog).toBe('MCP bearer token at /tmp/bde-fresh-token (newly minted)')
+    expect(mockBroadcast).toHaveBeenCalledWith(
+      'manager:warning',
+      expect.objectContaining({
+        message: expect.stringContaining('fresh token minted at /tmp/bde-fresh-token')
+      })
+    )
+  })
+
+  it('start() passes the logger through to readOrCreateToken for diagnostics', async () => {
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
+
+    await handle.start()
+
+    expect(mockReadOrCreateToken).toHaveBeenCalledWith(undefined, { logger: mockLogger })
   })
 
   it('start() rejects with EADDRINUSE and broadcasts manager:warning', async () => {
