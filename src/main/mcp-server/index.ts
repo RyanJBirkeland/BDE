@@ -12,13 +12,12 @@ import {
   updateTask
 } from '../services/sprint-service'
 import type { EpicGroupService } from '../services/epic-group-service'
-import { getSettingJson } from '../settings'
-import type { RepoConfig } from '../paths'
 import { readOrCreateToken } from './token-store'
 import { createTransportHandler } from './transport'
 import { registerTaskTools } from './tools/tasks'
 import { registerEpicTools } from './tools/epics'
 import { registerMetaTools } from './tools/meta'
+import { createReposCache } from './repos-cache'
 import { McpDomainError, McpErrorCode, writeJsonRpcError } from './errors'
 import { wrapServerWithSafeToolHandlers } from './safe-tool-handler'
 import { closeQuietly } from './close-quietly'
@@ -53,6 +52,7 @@ export interface McpServerHandle {
 export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): McpServerHandle {
   let httpServer: http.Server | null = null
   let transportHandler: ReturnType<typeof createTransportHandler> | null = null
+  const reposCache = createReposCache()
 
   function buildMcp(): McpServer {
     const mcp = wrapServerWithSafeToolHandlers(
@@ -61,7 +61,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
     )
 
     registerMetaTools(mcp, {
-      getRepos: () => getSettingJson<RepoConfig[]>('repos') ?? []
+      getRepos: reposCache.getRepos
     })
 
     registerTaskTools(mcp, {

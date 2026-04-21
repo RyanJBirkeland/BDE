@@ -24,6 +24,7 @@ Factory that assembles the full MCP server: registers all tool groups, creates t
 ## Key Dependencies
 - `transport.ts` — HTTP layer with bearer-token auth
 - `tools/tasks.ts`, `tools/epics.ts`, `tools/meta.ts` — tool registrations
+- `repos-cache.ts` — `createReposCache()` memoizes the parsed `repos` setting; its `getRepos` is passed to `registerMetaTools` so `meta.repos` doesn't re-parse SQLite on every call. The cache invalidates on `settings-changed` events.
 - `services/sprint-service.ts` — task CRUD + audit history (`getTaskChanges`) injected into task tools; also supplies `TaskTransitionError` so the MCP `tasks.cancel` closure can translate invalid-transition throws into structured JSON-RPC errors. All data access routes through the service layer — `data/task-changes` is no longer imported directly.
 - `token-store.ts` — reads or generates the bearer token on `start()`
 - `safe-tool-handler.ts` — `wrapServerWithSafeToolHandlers()` intercepts every `server.tool(...)` registration so unknown throws from any tool handler are logged with the tool name before propagating
