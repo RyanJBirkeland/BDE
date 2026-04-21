@@ -91,6 +91,24 @@ describe('createEpicGroupService', () => {
     expect(() => svc.updateEpic('missing', { name: 'y' })).toThrow(EpicNotFoundError)
   })
 
+  it('forwards goal: null through createEpic (clear-on-create semantic)', () => {
+    const svc = createEpicGroupService(queries)
+    svc.createEpic({ name: 'new', goal: null })
+    expect(queries.createGroup).toHaveBeenCalledWith({ name: 'new', goal: null })
+  })
+
+  it('forwards goal: null through updateEpic (clear-goal signal)', () => {
+    const svc = createEpicGroupService(queries)
+    svc.updateEpic('g1', { goal: null })
+    expect(queries.updateGroup).toHaveBeenCalledWith('g1', { goal: null })
+  })
+
+  it('forwards goal: undefined through updateEpic (leave-untouched signal)', () => {
+    const svc = createEpicGroupService(queries)
+    svc.updateEpic('g1', { name: 'renamed' })
+    expect(queries.updateGroup).toHaveBeenCalledWith('g1', { name: 'renamed' })
+  })
+
   it('throws on removeDependency when queries return null', () => {
     queries.removeGroupDependency.mockReturnValue(null)
     const svc = createEpicGroupService(queries)
