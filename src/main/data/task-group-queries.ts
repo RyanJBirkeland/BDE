@@ -7,6 +7,7 @@ import type { TaskGroup, SprintTask, EpicDependency } from '../../shared/types'
 import { getDb } from '../db'
 import { mapRowsToTasks } from './sprint-queries'
 import { getErrorMessage } from '../../shared/errors'
+import { sanitizeEpicDependsOn } from '../../shared/sanitize-epic-depends-on'
 import type { Logger } from '../logger'
 import { withDataLayerError } from './data-utils'
 
@@ -53,17 +54,8 @@ export interface UpdateGroupInput {
  * Sanitize a single group row from SQLite.
  */
 function sanitizeGroup(row: Record<string, unknown>): TaskGroup {
-  let depends_on: EpicDependency[] | null = null
-  if (row.depends_on && typeof row.depends_on === 'string') {
-    try {
-      const parsed = JSON.parse(row.depends_on)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        depends_on = parsed
-      }
-    } catch {
-      // Malformed JSON → null
-    }
-  }
+  const sanitized = sanitizeEpicDependsOn(row.depends_on)
+  const depends_on: EpicDependency[] | null = sanitized.length > 0 ? sanitized : null
 
   return {
     id: String(row.id),
@@ -417,8 +409,11 @@ export function getGroupsWithDependencies(
     depends_on: string | null
   }>
 
-  return rows.map((row) => ({
-    id: row.id,
-    depends_on: row.depends_on ? (JSON.parse(row.depends_on) as EpicDependency[]) : null
-  }))
+  return rows.map((row) => {
+    const sanitized = sanitizeEpicDependsOn(row.depends_on)
+    return {
+      id: row.id,
+      depends_on: sanitized.length > 0 ? sanitized : null
+    }
+  })
 }
