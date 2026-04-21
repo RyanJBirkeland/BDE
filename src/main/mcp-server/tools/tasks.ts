@@ -20,7 +20,9 @@ import {
   TaskListSchema,
   TaskUpdateSchema,
   TASK_HISTORY_DEFAULT_LIMIT,
-  TASK_HISTORY_MAX_WINDOW
+  TASK_HISTORY_MAX_WINDOW,
+  TASK_LIST_DEFAULT_LIMIT,
+  TASK_LIST_DEFAULT_OFFSET
 } from '../schemas'
 import { TERMINAL_STATUSES } from '../../../shared/task-state-machine'
 import { jsonContent, safeToolResponse } from './response'
@@ -121,14 +123,6 @@ export interface TaskToolsDeps
     TaskHistoryPort {
   logger: CreateTaskWithValidationDeps['logger']
 }
-
-/**
- * Default pagination window for `tasks.list` when the caller omits
- * `limit`/`offset`. Mirrors the previous in-memory `slice` default so
- * existing clients see the same page size after the SQL push-down.
- */
-const TASK_LIST_DEFAULT_LIMIT = 100
-const TASK_LIST_DEFAULT_OFFSET = 0
 
 /**
  * Attribution label the MCP adapter passes through to the audit trail

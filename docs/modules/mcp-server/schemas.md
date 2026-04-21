@@ -10,6 +10,7 @@ Zod schemas for every MCP tool argument shape — tasks and epics. Each length-c
 ## Public API
 
 - `TaskStatusSchema`, `TaskDependencySchema`, `TaskWriteFieldsSchema`, `TaskCreateSchema`, `TaskUpdateSchema`, `TaskListSchema`, `TaskIdSchema`, `TaskCancelSchema`, `TaskHistorySchema`
+- `TASK_LIST_DEFAULT_LIMIT` (100), `TASK_LIST_DEFAULT_OFFSET` (0) — defaults the `tasks.list` handler applies when the caller omits `limit`/`offset`, shared across the schema, tool, and data layer so the default lives in one place
 - `TASK_HISTORY_DEFAULT_LIMIT` (100), `TASK_HISTORY_MAX_WINDOW` (500) — constants the `tasks.history` handler uses to cap `limit + offset` so an unbounded pagination reach cannot hit the DB
 - `EpicDependencySchema`, `EpicWriteFieldsSchema`, `EpicListSchema`, `EpicIdSchema`, `EpicUpdateSchema`, `EpicAddTaskSchema`, `EpicRemoveTaskSchema`, `EpicSetDependenciesSchema`
 

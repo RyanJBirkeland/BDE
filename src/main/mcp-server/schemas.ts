@@ -79,6 +79,16 @@ export const TaskUpdateSchema = z.object({
   patch: TaskWriteFieldsSchema.partial()
 })
 
+/**
+ * Default pagination window for `tasks.list` when the caller omits
+ * `limit`/`offset`. Mirrors the previous in-memory `slice` default so
+ * existing clients see the same page size after the SQL push-down, and
+ * keeps the default as a single source of truth (schema + data layer +
+ * tool all reach for the same constant).
+ */
+export const TASK_LIST_DEFAULT_LIMIT = 100
+export const TASK_LIST_DEFAULT_OFFSET = 0
+
 export const TaskListSchema = z.object({
   status: TaskStatusSchema.optional(),
   repo: z.string().min(1).optional().describe('Filter by repository slug'),
