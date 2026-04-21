@@ -100,7 +100,7 @@ export function MemoryFileList({
   creating,
   onNewFileNameChange,
   onNewFileSubmit,
-  onNewFileCancel,
+  onNewFileCancel
 }: MemoryFileListProps): React.JSX.Element {
   const [focusIndex, setFocusIndex] = useState(-1)
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -140,7 +140,8 @@ export function MemoryFileList({
 
       if (e.key === 'Enter' && focusIndex >= 0 && focusIndex < flatFiles.length) {
         e.preventDefault()
-        handleSelectFile(flatFiles[focusIndex].path)
+        const target = flatFiles[focusIndex]
+        if (target) handleSelectFile(target.path)
       }
     }
     window.addEventListener('keydown', handler)
@@ -206,11 +207,7 @@ export function MemoryFileList({
         </div>
       )}
 
-      <MemorySearch
-        searchQuery={searchQuery}
-        onSearch={onSearch}
-        onClearSearch={onClearSearch}
-      />
+      <MemorySearch searchQuery={searchQuery} onSearch={onSearch} onClearSearch={onClearSearch} />
 
       <div className="memory-sidebar__list" ref={sidebarRef}>
         {searchQuery ? (

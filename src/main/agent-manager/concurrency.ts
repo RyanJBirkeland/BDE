@@ -67,7 +67,11 @@ export function applyBackpressure(s: ConcurrencyState, now: number): Concurrency
 }
 
 export function tryRecover(s: ConcurrencyState, now: number): ConcurrencyState {
-  if (s.recoveryScheduledAt !== null && now >= s.recoveryScheduledAt && s.capacityAfterBackpressure < s.maxSlots) {
+  if (
+    s.recoveryScheduledAt !== null &&
+    now >= s.recoveryScheduledAt &&
+    s.capacityAfterBackpressure < s.maxSlots
+  ) {
     const newSlots = Math.min(s.maxSlots, s.capacityAfterBackpressure + 1)
     return {
       ...s,

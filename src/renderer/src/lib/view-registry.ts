@@ -21,7 +21,7 @@ export interface ViewMetadata {
   icon: LucideIcon
   shortcut: string // Display format (e.g., '⌘1')
   shortcutKey: string // Key for keyboard handler (e.g., '1')
-  hidden?: true
+  hidden?: true | undefined
 }
 
 export const VIEW_REGISTRY: Record<View, ViewMetadata> = {

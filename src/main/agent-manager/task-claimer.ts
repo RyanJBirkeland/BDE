@@ -76,7 +76,14 @@ export async function validateAndClaimTask(
 
   if (
     rawTask.depends_on &&
-    checkAndBlockDeps(task.id, rawTask.depends_on, taskStatusMap, deps.repo, deps.depIndex, deps.logger)
+    checkAndBlockDeps(
+      task.id,
+      rawTask.depends_on,
+      taskStatusMap,
+      deps.repo,
+      deps.depIndex,
+      deps.logger
+    )
   ) {
     return null
   }
@@ -97,9 +104,9 @@ export async function validateAndClaimTask(
         `[agent-manager] Failed to update task ${task.id} after repo resolution failure: ${err}`
       )
     }
-    await deps.onTaskTerminal(task.id, 'error').catch((err) =>
-      deps.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
-    )
+    await deps
+      .onTaskTerminal(task.id, 'error')
+      .catch((err) => deps.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`))
     return null
   }
 
@@ -153,9 +160,11 @@ async function skipIfAlreadyOnMain(
     )
   }
 
-  await deps.onTaskTerminal(task.id, 'done').catch((err) =>
-    deps.logger.warn(`[agent-manager] onTerminal failed for already-done task ${task.id}: ${err}`)
-  )
+  await deps
+    .onTaskTerminal(task.id, 'done')
+    .catch((err) =>
+      deps.logger.warn(`[agent-manager] onTerminal failed for already-done task ${task.id}: ${err}`)
+    )
   return true
 }
 
@@ -211,9 +220,9 @@ export async function prepareWorktreeForTask(
         )
       }
     }
-    await deps.onTaskTerminal(task.id, 'error').catch((err) =>
-      deps.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`)
-    )
+    await deps
+      .onTaskTerminal(task.id, 'error')
+      .catch((err) => deps.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`))
     return null
   }
 }

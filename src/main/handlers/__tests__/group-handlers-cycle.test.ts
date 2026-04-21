@@ -45,13 +45,22 @@ describe('groups:addDependency cycle detection', () => {
 
   it('throws on self-cycle (epicId === dep.id)', () => {
     vi.mocked(groupQueries.getGroup).mockReturnValue({
-      id: 'epic-A', name: 'Epic A', icon: 'G', accent_color: '#fff',
-      goal: null, status: 'draft', created_at: '', updated_at: '',
+      id: 'epic-A',
+      name: 'Epic A',
+      icon: 'G',
+      accent_color: '#fff',
+      goal: null,
+      status: 'draft',
+      created_at: '',
+      updated_at: '',
       depends_on: []
     })
 
     expect(() =>
-      handlers['groups:addDependency'](mockEvent, 'epic-A', { id: 'epic-A', condition: 'on_success' })
+      handlers['groups:addDependency'](mockEvent, 'epic-A', {
+        id: 'epic-A',
+        condition: 'on_success'
+      })
     ).toThrow(/cycle/i)
 
     expect(groupQueries.addGroupDependency).not.toHaveBeenCalled()
@@ -61,14 +70,27 @@ describe('groups:addDependency cycle detection', () => {
     vi.mocked(groupQueries.getGroup).mockImplementation((id: string) => {
       if (id === 'epic-A') {
         return {
-          id: 'epic-A', name: 'A', icon: 'G', accent_color: '#fff', goal: null,
-          status: 'draft', created_at: '', updated_at: '', depends_on: []
+          id: 'epic-A',
+          name: 'A',
+          icon: 'G',
+          accent_color: '#fff',
+          goal: null,
+          status: 'draft',
+          created_at: '',
+          updated_at: '',
+          depends_on: []
         }
       }
       if (id === 'epic-B') {
         return {
-          id: 'epic-B', name: 'B', icon: 'G', accent_color: '#fff', goal: null,
-          status: 'draft', created_at: '', updated_at: '',
+          id: 'epic-B',
+          name: 'B',
+          icon: 'G',
+          accent_color: '#fff',
+          goal: null,
+          status: 'draft',
+          created_at: '',
+          updated_at: '',
           depends_on: [{ id: 'epic-A', condition: 'on_success' as const }]
         }
       }
@@ -86,17 +108,33 @@ describe('groups:addDependency cycle detection', () => {
 
   it('allows adding a non-cyclical dependency', () => {
     vi.mocked(groupQueries.getGroup).mockImplementation((id: string) => ({
-      id, name: id, icon: 'G', accent_color: '#fff', goal: null,
-      status: 'draft', created_at: '', updated_at: '', depends_on: []
+      id,
+      name: id,
+      icon: 'G',
+      accent_color: '#fff',
+      goal: null,
+      status: 'draft',
+      created_at: '',
+      updated_at: '',
+      depends_on: []
     }))
     vi.mocked(groupQueries.addGroupDependency).mockReturnValue({
-      id: 'epic-A', name: 'A', icon: 'G', accent_color: '#fff', goal: null,
-      status: 'draft', created_at: '', updated_at: '',
+      id: 'epic-A',
+      name: 'A',
+      icon: 'G',
+      accent_color: '#fff',
+      goal: null,
+      status: 'draft',
+      created_at: '',
+      updated_at: '',
       depends_on: [{ id: 'epic-B', condition: 'on_success' as const }]
     })
 
     expect(() =>
-      handlers['groups:addDependency'](mockEvent, 'epic-A', { id: 'epic-B', condition: 'on_success' })
+      handlers['groups:addDependency'](mockEvent, 'epic-A', {
+        id: 'epic-B',
+        condition: 'on_success'
+      })
     ).not.toThrow()
 
     expect(groupQueries.addGroupDependency).toHaveBeenCalledOnce()

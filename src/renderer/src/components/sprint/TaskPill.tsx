@@ -17,7 +17,7 @@ import './TaskPill.css'
 interface TaskPillProps {
   task: SprintTask
   selected: boolean
-  multiSelected?: boolean
+  multiSelected?: boolean | undefined
   onClick: (id: string) => void
 }
 

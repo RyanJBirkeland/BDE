@@ -262,13 +262,13 @@ describe('pr-poller', () => {
   it('startPrPoller clears any existing interval before creating a new one (double-start guard)', () => {
     const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')
 
-    startPrPoller()         // first start — timer is null, no clearInterval called
-    startPrPoller()         // second start — WITHOUT the fix, timer is not cleared
+    startPrPoller() // first start — timer is null, no clearInterval called
+    startPrPoller() // second start — WITHOUT the fix, timer is not cleared
 
     // Without the guard, clearInterval is never called between starts (only from stopPrPoller).
     // With the guard, clearInterval is called once (to clear the first timer before creating a new one).
     expect(clearIntervalSpy).toHaveBeenCalledTimes(1)
 
-    stopPrPoller()          // cleans up; adds a second clearInterval call
+    stopPrPoller() // cleans up; adds a second clearInterval call
   })
 })

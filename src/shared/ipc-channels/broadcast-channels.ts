@@ -56,7 +56,7 @@ export interface BroadcastChannels {
       | 'network'
       | 'unknown'
     message: string
-    status?: number
+    status?: number | undefined
   }
 
   // Pull requests
@@ -68,8 +68,8 @@ export interface BroadcastChannels {
     repo: string
     line: string
     done: boolean
-    error?: string
-    localPath?: string
+    error?: string | undefined
+    localPath?: string | undefined
   }
 
   // Code review streaming
@@ -84,9 +84,9 @@ export interface BroadcastChannels {
     streamId: string
     chunk: string
     done: boolean
-    fullText?: string
-    filesAnalyzed?: string[]
-    error?: string
+    fullText?: string | undefined
+    filesAnalyzed?: string[] | undefined
+    error?: string | undefined
   }
 
   // Task terminal
@@ -97,8 +97,8 @@ export interface BroadcastChannels {
     streamId: string
     chunk: string
     done: boolean
-    fullText?: string
-    error?: string
+    fullText?: string | undefined
+    error?: string | undefined
     toolUse?: { name: string; input: Record<string, unknown> }
   }
 

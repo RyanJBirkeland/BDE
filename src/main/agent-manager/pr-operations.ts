@@ -33,7 +33,9 @@ const PR_CREATE_BACKOFF_MS = [3000, 8000]
 function parsePrOutput(stdout: string): { prUrl: string | null; prNumber: number | null } {
   const urlMatch = stdout.match(/https:\/\/github\.com\/[^\s]+\/pull\/(\d+)/)
   if (!urlMatch) return { prUrl: null, prNumber: null }
-  return { prUrl: urlMatch[0], prNumber: parseInt(urlMatch[1], 10) }
+  const prNumberText = urlMatch[1]
+  if (!prNumberText) return { prUrl: null, prNumber: null }
+  return { prUrl: urlMatch[0], prNumber: parseInt(prNumberText, 10) }
 }
 
 /**
@@ -48,10 +50,14 @@ export async function generatePrBody(
   const sections: string[] = []
 
   try {
-    const { stdout: log } = await execFileAsync('git', ['log', '--oneline', `origin/main..${branch}`], {
-      cwd: worktreePath,
-      env
-    })
+    const { stdout: log } = await execFileAsync(
+      'git',
+      ['log', '--oneline', `origin/main..${branch}`],
+      {
+        cwd: worktreePath,
+        env
+      }
+    )
     if (log.trim()) {
       sections.push(
         '## Commits\n' +
@@ -67,10 +73,14 @@ export async function generatePrBody(
   }
 
   try {
-    const { stdout: stat } = await execFileAsync('git', ['diff', '--stat', `origin/main..${branch}`], {
-      cwd: worktreePath,
-      env
-    })
+    const { stdout: stat } = await execFileAsync(
+      'git',
+      ['diff', '--stat', `origin/main..${branch}`],
+      {
+        cwd: worktreePath,
+        env
+      }
+    )
     if (stat.trim()) {
       sections.push('## Changes\n```\n' + stat.trim() + '\n```')
     }
@@ -155,8 +165,8 @@ export async function createNewPr(
 
   for (let attempt = 0; attempt < PR_CREATE_MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) {
-      const delayMs =
-        PR_CREATE_BACKOFF_MS[attempt - 1] ?? PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1]
+      const fallbackDelay = PR_CREATE_BACKOFF_MS[PR_CREATE_BACKOFF_MS.length - 1] ?? 8000
+      const delayMs = PR_CREATE_BACKOFF_MS[attempt - 1] ?? fallbackDelay
       logger.info(
         `[git-ops] Retrying PR creation for branch ${branch} (attempt ${attempt + 1}/${PR_CREATE_MAX_ATTEMPTS}) after ${delayMs}ms`
       )

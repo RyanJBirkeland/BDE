@@ -122,7 +122,9 @@ export function CenterColumn({
           ) : loadData ? (
             <LoadAverageChart samples={loadData.samples} cpuCount={loadData.cpuCount} />
           ) : (
-            <div style={{ color: 'var(--bde-text-dim)', fontSize: 10, padding: 12 }}>Loading...</div>
+            <div style={{ color: 'var(--bde-text-dim)', fontSize: 10, padding: 12 }}>
+              Loading...
+            </div>
           )}
         </NeonCard>
       </div>

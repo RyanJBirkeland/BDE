@@ -57,8 +57,8 @@ export async function spawnAgent(opts: {
   prompt: string
   cwd: string
   model: string
-  maxBudgetUsd?: number
-  logger?: Logger
+  maxBudgetUsd?: number | undefined
+  logger?: Logger | undefined
   /**
    * Which agent type is being spawned. Routes through the backend-selector to
    * pick Claude vs. the local `rbt-coding-agent` backend based on settings.
@@ -66,18 +66,18 @@ export async function spawnAgent(opts: {
    * through this function — other agent types (adhoc, copilot, synthesizer,
    * assistant, reviewer) have their own dedicated spawn paths.
    */
-  agentType?: AgentType
+  agentType?: AgentType | undefined
   /**
    * Pipeline-agent-only overrides for SDK options. Adhoc, assistant, copilot,
    * and synthesizer agents use their own spawn paths and never set this.
    */
-  pipelineTuning?: PipelineSpawnTuning
+  pipelineTuning?: PipelineSpawnTuning | undefined
   /**
    * Configured worktree base for the pipeline cwd allowlist check. Required
    * when `pipelineTuning` is set; ignored otherwise. Default retained for
    * call sites that don't have access to live config (smoke tests, etc.).
    */
-  worktreeBase?: string
+  worktreeBase?: string | undefined
 }): Promise<AgentHandle> {
   // Worktree-base cwd assertion applies only to pipeline agents — adhoc,
   // assistant, copilot, and synthesizer agents run in the user's repo or
@@ -127,9 +127,9 @@ async function spawnClaudeAgent(opts: {
   prompt: string
   cwd: string
   model: string
-  maxBudgetUsd?: number
-  logger?: Logger
-  pipelineTuning?: PipelineSpawnTuning
+  maxBudgetUsd?: number | undefined
+  logger?: Logger | undefined
+  pipelineTuning?: PipelineSpawnTuning | undefined
 }): Promise<AgentHandle> {
   const env = { ...buildAgentEnv() }
   prependResolvedNodeDirToPath(env, opts.logger)

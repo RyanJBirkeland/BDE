@@ -4,9 +4,9 @@ import type { RepoOption } from '../lib/constants'
 interface RepoConfig {
   name: string
   localPath: string
-  githubOwner?: string
-  githubRepo?: string
-  color?: string
+  githubOwner?: string | undefined
+  githubRepo?: string | undefined
+  color?: string | undefined
 }
 
 function toRepoOptions(configs: RepoConfig[]): RepoOption[] {

@@ -10,8 +10,7 @@ export function PreloadBridgeError(): React.JSX.Element {
         padding: '24px',
         background: '#0A0A0A',
         color: '#E5E5E5',
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif'
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif'
       }}
     >
       <div style={{ maxWidth: 560 }}>

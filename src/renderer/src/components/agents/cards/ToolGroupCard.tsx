@@ -10,13 +10,15 @@ interface ToolGroupCardProps {
   tools: ToolBlock[]
   timestamp: number
   searchClass: string
-  onPlaygroundClick?: (block: {
-    filename: string
-    html: string
-    contentType: PlaygroundContentType
-    sizeBytes: number
-  }) => void
-  searchHighlight?: 'match' | 'active'
+  onPlaygroundClick?:
+    | ((block: {
+        filename: string
+        html: string
+        contentType: PlaygroundContentType
+        sizeBytes: number
+      }) => void)
+    | undefined
+  searchHighlight?: 'match' | 'active' | undefined
 }
 
 function renderToolBlock(tool: ToolBlock, searchHighlight?: 'match' | 'active'): React.JSX.Element {
@@ -58,7 +60,7 @@ export function ToolGroupCard({
 }: ToolGroupCardProps): React.JSX.Element {
   const total = tools.length
 
-  if (total === 1) {
+  if (total === 1 && tools[0]) {
     return renderToolBlock(tools[0], searchHighlight)
   }
 

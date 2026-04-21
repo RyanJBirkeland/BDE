@@ -122,12 +122,19 @@ function datePrefix(iso: string): string {
   return iso.slice(0, 10)
 }
 
-export async function listAgents(limit = 100, status?: string, db?: Database.Database): Promise<AgentMeta[]> {
+export async function listAgents(
+  limit = 100,
+  status?: string,
+  db?: Database.Database
+): Promise<AgentMeta[]> {
   initAgentHistory()
   return _listAgents(db ?? getDb(), limit, status)
 }
 
-export async function createAgentRecord(meta: Omit<AgentMeta, 'logPath'>, db?: Database.Database): Promise<AgentMeta> {
+export async function createAgentRecord(
+  meta: Omit<AgentMeta, 'logPath'>,
+  db?: Database.Database
+): Promise<AgentMeta> {
   initAgentHistory()
   const date = datePrefix(meta.startedAt)
   const logDir = join(LOGS_DIR, date, meta.id)
@@ -144,7 +151,11 @@ export async function createAgentRecord(meta: Omit<AgentMeta, 'logPath'>, db?: D
   return full
 }
 
-export async function appendLog(id: string, content: string, db?: Database.Database): Promise<void> {
+export async function appendLog(
+  id: string,
+  content: string,
+  db?: Database.Database
+): Promise<void> {
   initAgentHistory()
   const logPath = getAgentLogPath(db ?? getDb(), id)
   if (!logPath) return
@@ -184,7 +195,11 @@ export async function getAgentMeta(id: string, db?: Database.Database): Promise<
   return _getAgentMeta(db ?? getDb(), id)
 }
 
-export async function updateAgentMeta(id: string, patch: Partial<AgentMeta>, db?: Database.Database): Promise<void> {
+export async function updateAgentMeta(
+  id: string,
+  patch: Partial<AgentMeta>,
+  db?: Database.Database
+): Promise<void> {
   initAgentHistory()
   const meta = _updateAgentMeta(db ?? getDb(), id, patch)
 
@@ -298,7 +313,10 @@ export async function hasAgent(id: string, db?: Database.Database): Promise<bool
   return _hasAgent(db ?? getDb(), id)
 }
 
-export async function findAgentByPid(pid: number, db?: Database.Database): Promise<AgentMeta | null> {
+export async function findAgentByPid(
+  pid: number,
+  db?: Database.Database
+): Promise<AgentMeta | null> {
   initAgentHistory()
   return _findAgentByPid(db ?? getDb(), pid)
 }
@@ -313,7 +331,10 @@ export async function listAgentRunsByTaskId(
 }
 
 /** Mark all agent_runs stuck in 'running' older than maxAgeMs as 'failed'. */
-export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000, db?: Database.Database): number {
+export function finalizeStaleAgentRuns(
+  maxAgeMs: number = 2 * 60 * 60 * 1000,
+  db?: Database.Database
+): number {
   const conn = db ?? getDb()
   const cutoff = new Date(Date.now() - maxAgeMs).toISOString()
   const now = nowIso()
@@ -336,7 +357,10 @@ export function finalizeStaleAgentRuns(maxAgeMs: number = 2 * 60 * 60 * 1000, db
  * lifecycle is finalized either by completeSession() during normal close or
  * by finalizeAllRunningAgentRuns() at the next app startup.
  */
-export function reconcileRunningAgentRuns(isAgentActive: (taskId: string) => boolean, db?: Database.Database): number {
+export function reconcileRunningAgentRuns(
+  isAgentActive: (taskId: string) => boolean,
+  db?: Database.Database
+): number {
   const conn = db ?? getDb()
   const rows = conn
     .prepare(`SELECT id, sprint_task_id FROM agent_runs WHERE status = 'running'`)

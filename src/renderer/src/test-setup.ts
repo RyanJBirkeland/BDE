@@ -125,9 +125,7 @@ vi.stubGlobal('api', {
 
   // Auth
   auth: {
-    status: vi
-      .fn()
-      .mockResolvedValue({ cliFound: true, tokenFound: true, tokenExpired: false })
+    status: vi.fn().mockResolvedValue({ cliFound: true, tokenFound: true, tokenExpired: false })
   },
 
   // Spec Synthesizer
@@ -283,9 +281,7 @@ vi.stubGlobal('api', {
     discard: vi.fn().mockResolvedValue(undefined),
     checkFreshness: vi.fn().mockResolvedValue({ status: 'fresh', commitsBehind: 0 }),
     shipIt: vi.fn().mockResolvedValue({ success: true, pushed: true }),
-    shipBatch: vi
-      .fn()
-      .mockResolvedValue({ success: true, pushed: true, shippedTaskIds: [] }),
+    shipBatch: vi.fn().mockResolvedValue({ success: true, pushed: true, shippedTaskIds: [] }),
     rebase: vi.fn().mockResolvedValue({ success: true })
   },
 
@@ -333,12 +329,18 @@ vi.stubGlobal('api', {
 
   // Onboarding prerequisite checks
   onboarding: {
-    checkGhCli: vi.fn().mockResolvedValue({ available: true, authenticated: true, version: '2.40.0' })
+    checkGhCli: vi
+      .fn()
+      .mockResolvedValue({ available: true, authenticated: true, version: '2.40.0' })
   },
 
   // MCP server management
   mcp: {
-    getToken: vi.fn().mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'),
-    regenerateToken: vi.fn().mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2')
+    getToken: vi
+      .fn()
+      .mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'),
+    regenerateToken: vi
+      .fn()
+      .mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2')
   }
 })

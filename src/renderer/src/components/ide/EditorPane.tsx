@@ -16,11 +16,11 @@ export interface EditorPaneProps {
   filePath: string | null
   content: string | null
   language: string
-  onContentChange?: (content: string) => void
-  onSave?: () => void
-  minimapEnabled?: boolean
-  wordWrapEnabled?: boolean
-  fontSize?: number
+  onContentChange?: ((content: string) => void) | undefined
+  onSave?: (() => void) | undefined
+  minimapEnabled?: boolean | undefined
+  wordWrapEnabled?: boolean | undefined
+  fontSize?: number | undefined
 }
 
 export function EditorPane({

@@ -1,5 +1,5 @@
 type DividerProps = {
-  direction?: 'horizontal' | 'vertical'
+  direction?: 'horizontal' | 'vertical' | undefined
 }
 
 export function Divider({ direction = 'horizontal' }: DividerProps): React.JSX.Element {

@@ -1,15 +1,15 @@
 import { forwardRef, type ReactNode } from 'react'
 
 type ButtonProps = {
-  variant?: 'primary' | 'ghost' | 'danger' | 'icon'
-  size?: 'sm' | 'md' | 'lg'
-  loading?: boolean
-  disabled?: boolean
-  onClick?: () => void
+  variant?: 'primary' | 'ghost' | 'danger' | 'icon' | undefined
+  size?: 'sm' | 'md' | 'lg' | undefined
+  loading?: boolean | undefined
+  disabled?: boolean | undefined
+  onClick?: (() => void) | undefined
   children: ReactNode
-  title?: string
-  className?: string
-  type?: 'button' | 'submit' | 'reset'
+  title?: string | undefined
+  className?: string | undefined
+  type?: 'button' | 'submit' | 'reset' | undefined
   'aria-label'?: string
   'aria-pressed'?: boolean | 'true' | 'false' | 'mixed'
   'aria-expanded'?: boolean | 'true' | 'false'

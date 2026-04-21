@@ -9,13 +9,13 @@ export interface CopilotMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: number
-  insertable?: boolean
+  insertable?: boolean | undefined
   /**
    * Optional kind discriminator for system messages. `tool-use` indicates the
    * copilot invoked a read-only tool (Read/Grep/Glob) — rendered compactly so
    * users can see what the copilot is grounding its answer in.
    */
-  kind?: 'tool-use'
+  kind?: 'tool-use' | undefined
 }
 
 interface CopilotState {

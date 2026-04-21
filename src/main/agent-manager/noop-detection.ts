@@ -45,7 +45,8 @@ function looksLikeAiderScratch(
   deps: NoOpDetectionDeps
 ): boolean {
   if (AIDER_SCRATCH_PATH_PATTERN.test(path)) return true
-  if (path === '.gitignore') return gitignoreContainsOnlyAiderPatterns(join(worktreePath, path), deps)
+  if (path === '.gitignore')
+    return gitignoreContainsOnlyAiderPatterns(join(worktreePath, path), deps)
   return false
 }
 

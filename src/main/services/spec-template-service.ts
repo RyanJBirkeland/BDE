@@ -35,5 +35,5 @@ export function getTemplateScaffold(templateHint: string): string {
     audit: `## Audit Scope\n\n## Criteria\n\n## Deliverable`,
     infra: `## What's Being Changed\n\n## Steps\n\n## Verification`
   }
-  return SCAFFOLDS[templateHint] ?? SCAFFOLDS.feature
+  return SCAFFOLDS[templateHint] ?? SCAFFOLDS.feature ?? ''
 }

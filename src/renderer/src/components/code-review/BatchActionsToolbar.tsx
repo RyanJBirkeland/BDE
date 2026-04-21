@@ -36,11 +36,7 @@ export function BatchActionsToolbar({
 }: BatchActionsToolbarProps): React.JSX.Element {
   return (
     <>
-      <span
-        className="cr-topbar__batch-count"
-        aria-live="polite"
-        aria-atomic="true"
-      >
+      <span className="cr-topbar__batch-count" aria-live="polite" aria-atomic="true">
         {selectedCount} tasks selected
       </span>
       <button
@@ -49,7 +45,11 @@ export function BatchActionsToolbar({
         disabled={!!batchActionInFlight}
         aria-label={`Merge all ${selectedCount} selected tasks locally`}
       >
-        <ActionIcon inFlight={batchActionInFlight} actionKey="batchMerge" icon={<GitMerge size={14} />} />{' '}
+        <ActionIcon
+          inFlight={batchActionInFlight}
+          actionKey="batchMerge"
+          icon={<GitMerge size={14} />}
+        />{' '}
         Merge All
       </button>
       <button
@@ -58,7 +58,11 @@ export function BatchActionsToolbar({
         disabled={!!batchActionInFlight || !ghConfigured}
         aria-label={`Ship all ${selectedCount} selected tasks as pull requests`}
       >
-        <ActionIcon inFlight={batchActionInFlight} actionKey="batchShip" icon={<Rocket size={14} />} />{' '}
+        <ActionIcon
+          inFlight={batchActionInFlight}
+          actionKey="batchShip"
+          icon={<Rocket size={14} />}
+        />{' '}
         Ship All
       </button>
       <button
@@ -67,7 +71,11 @@ export function BatchActionsToolbar({
         disabled={!!batchActionInFlight || !ghConfigured}
         aria-label={`Create pull requests for all ${selectedCount} selected tasks`}
       >
-        <ActionIcon inFlight={batchActionInFlight} actionKey="batchPr" icon={<GitPullRequest size={14} />} />{' '}
+        <ActionIcon
+          inFlight={batchActionInFlight}
+          actionKey="batchPr"
+          icon={<GitPullRequest size={14} />}
+        />{' '}
         Create PRs
       </button>
       <button
@@ -76,7 +84,11 @@ export function BatchActionsToolbar({
         disabled={!!batchActionInFlight}
         aria-label={`Discard all ${selectedCount} selected tasks`}
       >
-        <ActionIcon inFlight={batchActionInFlight} actionKey="batchDiscard" icon={<Trash2 size={14} />} />{' '}
+        <ActionIcon
+          inFlight={batchActionInFlight}
+          actionKey="batchDiscard"
+          icon={<Trash2 size={14} />}
+        />{' '}
         Discard All
       </button>
       <button

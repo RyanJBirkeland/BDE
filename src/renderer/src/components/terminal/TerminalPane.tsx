@@ -24,8 +24,8 @@ export function getSearchAddon(tabId: string): SearchAddon | undefined {
 
 interface TerminalPaneProps {
   tabId: string
-  shell?: string
-  cwd?: string
+  shell?: string | undefined
+  cwd?: string | undefined
   visible: boolean
 }
 

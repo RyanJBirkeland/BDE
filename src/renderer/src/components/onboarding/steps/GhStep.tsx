@@ -62,7 +62,9 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
             <X size={20} className="onboarding-step__check-icon--error" />
           )}
           <span>
-            {ghAvailable && ghVersion ? `gh CLI is available (${ghVersion})` : 'gh CLI is available on PATH'}
+            {ghAvailable && ghVersion
+              ? `gh CLI is available (${ghVersion})`
+              : 'gh CLI is available on PATH'}
           </span>
         </div>
 

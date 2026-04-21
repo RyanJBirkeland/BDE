@@ -9,7 +9,7 @@ export interface ReviewActionsState {
   setMergeStrategy: (strategy: 'squash' | 'merge' | 'rebase') => void
   freshness: {
     status: 'fresh' | 'stale' | 'conflict' | 'unknown' | 'loading'
-    commitsBehind?: number
+    commitsBehind?: number | undefined
   }
   ghConfigured: boolean
 }

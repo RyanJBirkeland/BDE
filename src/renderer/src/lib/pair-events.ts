@@ -13,7 +13,7 @@ export type ToolBlock =
       type: 'tool_pair'
       tool: string
       summary: string
-      input?: unknown
+      input?: unknown | undefined
       result: { success: boolean; summary: string; output?: unknown }
       timestamp: number
     }
@@ -53,6 +53,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i]
+    if (!ev) continue
 
     switch (ev.type) {
       case 'agent:started':
@@ -71,7 +72,7 @@ export function pairEvents(events: AgentEvent[]): ChatBlock[] {
         blocks.push({
           type: 'thinking',
           tokenCount: ev.tokenCount,
-          text: ev.text,
+          ...(ev.text !== undefined ? { text: ev.text } : {}),
           timestamp: ev.timestamp
         })
         break

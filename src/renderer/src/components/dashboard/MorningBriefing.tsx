@@ -48,10 +48,9 @@ export function MorningBriefing({
   return (
     <motion.div
       className="dashboard-briefing"
-      variants={reduced ? undefined : VARIANTS.fadeIn}
-      initial={reduced ? undefined : 'initial'}
-      animate={reduced ? undefined : 'animate'}
-      exit={reduced ? undefined : 'exit'}
+      {...(reduced
+        ? {}
+        : { variants: VARIANTS.fadeIn, initial: 'initial', animate: 'animate', exit: 'exit' })}
       transition={transition}
     >
       <NeonCard accent="cyan" title="Morning Briefing">

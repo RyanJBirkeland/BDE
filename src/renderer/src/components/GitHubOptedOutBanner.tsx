@@ -47,8 +47,7 @@ export function GitHubOptedOutBanner(): React.JSX.Element | null {
       <AlertTriangle size={14} color="var(--bde-warning, #ff9f43)" />
       <span style={{ flex: 1 }}>
         GitHub disabled — PR actions unavailable. Enable in Onboarding or run{' '}
-        <code>gh auth login</code>, then unset{' '}
-        <code>githubOptedOut</code> in Settings.
+        <code>gh auth login</code>, then unset <code>githubOptedOut</code> in Settings.
       </span>
       <button
         aria-label="Dismiss"

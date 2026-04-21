@@ -12,10 +12,12 @@ const baseProps = {
 }
 
 function setCheckInstalled(result: boolean | Promise<boolean>): void {
-  const api = (globalThis as unknown as { api: { git: { checkInstalled: ReturnType<typeof vi.fn> } } }).api
-  api.git.checkInstalled = vi.fn().mockReturnValue(
-    typeof result === 'object' ? result : Promise.resolve(result)
-  )
+  const api = (
+    globalThis as unknown as { api: { git: { checkInstalled: ReturnType<typeof vi.fn> } } }
+  ).api
+  api.git.checkInstalled = vi
+    .fn()
+    .mockReturnValue(typeof result === 'object' ? result : Promise.resolve(result))
 }
 
 describe('GitStep', () => {
@@ -42,7 +44,9 @@ describe('GitStep', () => {
   })
 
   it('re-runs the check when "Check Again" is clicked', async () => {
-    const api = (globalThis as unknown as { api: { git: { checkInstalled: ReturnType<typeof vi.fn> } } }).api
+    const api = (
+      globalThis as unknown as { api: { git: { checkInstalled: ReturnType<typeof vi.fn> } } }
+    ).api
     api.git.checkInstalled = vi.fn().mockResolvedValue(false)
 
     const user = userEvent.setup()

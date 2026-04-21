@@ -49,10 +49,5 @@ export function checkIsReviewTask(taskId: string, repo: IAgentTaskRepository): b
  * appropriate log message (initial prune vs. periodic prune).
  */
 export async function runPruneLoop(deps: WorktreeManagerDeps): Promise<void> {
-  await pruneStaleWorktrees(
-    deps.worktreeBase,
-    deps.isActiveAgent,
-    deps.logger,
-    deps.isReviewTask
-  )
+  await pruneStaleWorktrees(deps.worktreeBase, deps.isActiveAgent, deps.logger, deps.isReviewTask)
 }

@@ -17,7 +17,7 @@ function MessageBubble({
   onInsert
 }: {
   msg: CopilotMessage
-  onInsert?: () => void
+  onInsert?: (() => void) | undefined
 }): React.JSX.Element {
   const isUser = msg.role === 'user'
   const isSystem = msg.role === 'system'

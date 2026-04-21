@@ -21,16 +21,13 @@ const log = createLogger('agent-handlers')
 
 export interface PromoteToReviewResult {
   ok: boolean
-  taskId?: string
-  error?: string
+  taskId?: string | undefined
+  error?: string | undefined
 }
 
 export async function testLocalEndpoint(
   endpoint: string
-): Promise<
-  | { ok: true; latencyMs: number; modelCount: number }
-  | { ok: false; error: string }
-> {
+): Promise<{ ok: true; latencyMs: number; modelCount: number } | { ok: false; error: string }> {
   const started = Date.now()
   try {
     const trimmed = endpoint.replace(/\/$/, '')
@@ -57,7 +54,7 @@ export async function testLocalEndpoint(
     if (err instanceof DOMException && err.name === 'AbortError') {
       return { ok: false, error: 'timeout after 2s' }
     }
-    const cause = (err as { cause?: { code?: string } })?.cause
+    const cause = (err as { cause?: { code?: string | undefined } })?.cause
     if (cause?.code) {
       return { ok: false, error: cause.code }
     }
@@ -81,34 +78,31 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
     })
   })
   safeHandle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
-  safeHandle('agent:steer', async (
-      _e,
-      {
-        agentId,
-        message,
-        images
-      }: { agentId: string; message: string; images?: Array<{ data: string; mimeType: string }> }
-    ) => {
-      // Try ad-hoc agents first
-      const adhocHandle = getAdhocHandle(agentId)
-      if (adhocHandle) {
-        try {
-          await adhocHandle.send(message, images)
-          return { ok: true }
-        } catch (err) {
-          logError(log, '[agents:send] adhoc send failed', err)
-          return { ok: false, error: err instanceof Error ? err.message : String(err) }
-        }
+  type SteerArgs = {
+    agentId: string
+    message: string
+    images?: Array<{ data: string; mimeType: string }> | undefined
+  }
+  safeHandle('agent:steer', async (_e, { agentId, message, images }: SteerArgs) => {
+    // Try ad-hoc agents first
+    const adhocHandle = getAdhocHandle(agentId)
+    if (adhocHandle) {
+      try {
+        await adhocHandle.send(message, images)
+        return { ok: true }
+      } catch (err) {
+        logError(log, '[agents:send] adhoc send failed', err)
+        return { ok: false, error: err instanceof Error ? err.message : String(err) }
       }
-      // Try local AgentManager
-      if (am) {
-        const result = await am.steerAgent(agentId, message)
-        if (result.delivered) return { ok: true }
-        return { ok: false, error: result.error }
-      }
-      return { ok: false, error: 'No agent manager available' }
     }
-  )
+    // Try local AgentManager
+    if (am) {
+      const result = await am.steerAgent(agentId, message)
+      if (result.delivered) return { ok: true }
+      return { ok: false, error: result.error }
+    }
+    return { ok: false, error: 'No agent manager available' }
+  })
   safeHandle('agent:kill', async (_e, agentId: string) => {
     // Try ad-hoc agents first
     const adhocHandle = getAdhocHandle(agentId)
@@ -137,12 +131,10 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
   cleanupOldLogs()
 
   // --- Agent history IPC ---
-  safeHandle('agents:list', (_e, args: { limit?: number; status?: string }) =>
-    listAgents(args.limit, args.status)
-  )
-  safeHandle('agents:readLog', (_e, args: { id: string; fromByte?: number }) =>
-    readLog(args.id, args.fromByte)
-  )
+  type ListAgentsArgs = { limit?: number | undefined; status?: string | undefined }
+  safeHandle('agents:list', (_e, args: ListAgentsArgs) => listAgents(args.limit, args.status))
+  type ReadLogArgs = { id: string; fromByte?: number | undefined }
+  safeHandle('agents:readLog', (_e, args: ReadLogArgs) => readLog(args.id, args.fromByte))
   safeHandle('agents:import', (_e, args: { meta: Partial<AgentMeta>; content: string }) =>
     importAgent(args.meta, args.content)
   )
@@ -158,20 +150,24 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
    *  2. Create a NEW sprint task in `review` status pointing at that worktree
    *  3. Return the new task id so the UI can switch to Code Review and select it
    */
-  safeHandle('agents:promoteToReview', async (_e, agentId: string): Promise<PromoteToReviewResult> => {
-      try {
-        const agent = await getAgentMeta(agentId)
-        if (!agent) {
-          return { ok: false, error: `Agent ${agentId} not found` }
-        }
-        return await promoteAdhocToTask(agentId, agent)
-      } catch (err) {
-        logError(log, '[agents:promoteToReview] failed', err)
-        const msg = err instanceof Error ? err.message : String(err)
-        return { ok: false, error: msg }
+  type PromoteHandler = (
+    _e: Electron.IpcMainInvokeEvent,
+    agentId: string
+  ) => Promise<PromoteToReviewResult>
+  const promoteToReview: PromoteHandler = async (_e, agentId) => {
+    try {
+      const agent = await getAgentMeta(agentId)
+      if (!agent) {
+        return { ok: false, error: `Agent ${agentId} not found` }
       }
+      return await promoteAdhocToTask(agentId, agent)
+    } catch (err) {
+      logError(log, '[agents:promoteToReview] failed', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      return { ok: false, error: msg }
     }
-  )
+  }
+  safeHandle('agents:promoteToReview', promoteToReview)
 
   safeHandle('agents:testLocalEndpoint', (_e, args: { endpoint: string }) =>
     testLocalEndpoint(args.endpoint)

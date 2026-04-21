@@ -8,8 +8,8 @@ const MAX_TASKS_IN_LOCAL_STORAGE = 20
 
 export interface ReviewState {
   status: 'idle' | 'loading' | 'ready' | 'error'
-  result?: ReviewResult
-  error?: string
+  result?: ReviewResult | undefined
+  error?: string | undefined
 }
 
 interface PersistedMessages {

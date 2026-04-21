@@ -14,7 +14,9 @@ export const readClipboardImage = (): Promise<IpcChannelMap['clipboard:readImage
   typedInvoke('clipboard:readImage')
 
 // Window
-export const openExternal = (url: string): Promise<IpcChannelMap['window:openExternal']['result']> =>
+export const openExternal = (
+  url: string
+): Promise<IpcChannelMap['window:openExternal']['result']> =>
   typedInvoke('window:openExternal', url)
 export const openPlaygroundInBrowser = (
   html: string
@@ -61,19 +63,16 @@ export const planner = {
 // File system
 export const openFileDialog = (opts?: {
   filters?: { name: string; extensions: string[] }[]
-}): Promise<IpcChannelMap['fs:openFileDialog']['result']> =>
-  typedInvoke('fs:openFileDialog', opts)
+}): Promise<IpcChannelMap['fs:openFileDialog']['result']> => typedInvoke('fs:openFileDialog', opts)
 export const readFileAsBase64 = (
   path: string
 ): Promise<IpcChannelMap['fs:readFileAsBase64']['result']> =>
   typedInvoke('fs:readFileAsBase64', path)
 export const readFileAsText = (
   path: string
-): Promise<IpcChannelMap['fs:readFileAsText']['result']> =>
-  typedInvoke('fs:readFileAsText', path)
-export const openDirectoryDialog =
-  (): Promise<IpcChannelMap['fs:openDirectoryDialog']['result']> =>
-    typedInvoke('fs:openDirectoryDialog')
+): Promise<IpcChannelMap['fs:readFileAsText']['result']> => typedInvoke('fs:readFileAsText', path)
+export const openDirectoryDialog = (): Promise<IpcChannelMap['fs:openDirectoryDialog']['result']> =>
+  typedInvoke('fs:openDirectoryDialog')
 export const readDir = (dirPath: string): Promise<IpcChannelMap['fs:readDir']['result']> =>
   typedInvoke('fs:readDir', dirPath)
 export const readFile = (filePath: string): Promise<IpcChannelMap['fs:readFile']['result']> =>
@@ -95,9 +94,8 @@ export const rename = (
   oldPath: string,
   newPath: string
 ): Promise<IpcChannelMap['fs:rename']['result']> => typedInvoke('fs:rename', oldPath, newPath)
-export const deletePath = (
-  targetPath: string
-): Promise<IpcChannelMap['fs:delete']['result']> => typedInvoke('fs:delete', targetPath)
+export const deletePath = (targetPath: string): Promise<IpcChannelMap['fs:delete']['result']> =>
+  typedInvoke('fs:delete', targetPath)
 export const stat = (targetPath: string): Promise<IpcChannelMap['fs:stat']['result']> =>
   typedInvoke('fs:stat', targetPath)
 export const listFiles = (rootPath: string): Promise<IpcChannelMap['fs:listFiles']['result']> =>
@@ -108,26 +106,23 @@ export const onDirChanged = onBroadcast<BroadcastChannels['fs:dirChanged']>('fs:
 export const onGitHubError = onBroadcast<BroadcastChannels['github:error']>('github:error')
 
 // PR list broadcast
-export const onPrListUpdated =
-  onBroadcast<BroadcastChannels['pr:listUpdated']>('pr:listUpdated')
+export const onPrListUpdated = onBroadcast<BroadcastChannels['pr:listUpdated']>('pr:listUpdated')
 export const getPrList = (): Promise<IpcChannelMap['pr:getList']['result']> =>
   typedInvoke('pr:getList')
 export const refreshPrList = (): Promise<IpcChannelMap['pr:refreshList']['result']> =>
   typedInvoke('pr:refreshList')
 
 // Sprint DB file-watcher broadcast
-export const onExternalSprintChange = onBroadcast<BroadcastChannels['sprint:externalChange']>(
-  'sprint:externalChange'
-)
+export const onExternalSprintChange =
+  onBroadcast<BroadcastChannels['sprint:externalChange']>('sprint:externalChange')
 
 // Sprint task mutation broadcast (granular — carries the changed task payload)
-export const onSprintMutation =
-  onBroadcast<BroadcastChannels['sprint:mutation']>('sprint:mutation')
+export const onSprintMutation = onBroadcast<BroadcastChannels['sprint:mutation']>('sprint:mutation')
 
 // Task terminal resolution error broadcast
-export const onTaskTerminalError = onBroadcast<
-  BroadcastChannels['task-terminal:resolution-error']
->('task-terminal:resolution-error')
+export const onTaskTerminalError = onBroadcast<BroadcastChannels['task-terminal:resolution-error']>(
+  'task-terminal:resolution-error'
+)
 
 // Auth status
 export const authStatus = (): Promise<IpcChannelMap['auth:status']['result']> =>
@@ -252,8 +247,7 @@ export const review = {
   shipBatch: (payload: { taskIds: string[]; strategy: 'squash' | 'merge' | 'rebase' }) =>
     typedInvoke('review:shipBatch', payload),
   generateSummary: (payload: { taskId: string }) => typedInvoke('review:generateSummary', payload),
-  checkAutoReview: (payload: { taskId: string }) =>
-    typedInvoke('review:checkAutoReview', payload),
+  checkAutoReview: (payload: { taskId: string }) => typedInvoke('review:checkAutoReview', payload),
   rebase: (payload: { taskId: string }) => typedInvoke('review:rebase', payload),
   checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload),
   autoReview: (taskId: string, force?: boolean) =>
@@ -265,11 +259,16 @@ export const review = {
 }
 
 // Spec Synthesizer
-export const synthesizeSpec = (args: SynthesizeRequest): Promise<IpcChannelMap['synthesizer:generate']['result']> =>
+export const synthesizeSpec = (
+  args: SynthesizeRequest
+): Promise<IpcChannelMap['synthesizer:generate']['result']> =>
   typedInvoke('synthesizer:generate', args)
-export const reviseSpec = (args: ReviseRequest): Promise<IpcChannelMap['synthesizer:revise']['result']> =>
-  typedInvoke('synthesizer:revise', args)
-export const cancelSynthesis = (streamId: string): Promise<IpcChannelMap['synthesizer:cancel']['result']> =>
+export const reviseSpec = (
+  args: ReviseRequest
+): Promise<IpcChannelMap['synthesizer:revise']['result']> => typedInvoke('synthesizer:revise', args)
+export const cancelSynthesis = (
+  streamId: string
+): Promise<IpcChannelMap['synthesizer:cancel']['result']> =>
   typedInvoke('synthesizer:cancel', streamId)
 export const onSynthesizerChunk =
   onBroadcast<BroadcastChannels['synthesizer:chunk']>('synthesizer:chunk')

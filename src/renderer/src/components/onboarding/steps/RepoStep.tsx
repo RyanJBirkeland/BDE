@@ -14,9 +14,9 @@ interface StepProps {
 interface RepoConfig {
   name: string
   localPath: string
-  githubOwner?: string
-  githubRepo?: string
-  color?: string
+  githubOwner?: string | undefined
+  githubRepo?: string | undefined
+  color?: string | undefined
 }
 
 export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Element {

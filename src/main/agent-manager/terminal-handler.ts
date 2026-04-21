@@ -76,13 +76,14 @@ async function resolveTerminalDependents(
     const errMsg = err instanceof Error ? err.message : String(err)
     logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${errMsg}`)
     const note = `Dependency resolution failed: ${errMsg}. Downstream tasks may remain blocked — check and manually re-queue them.`
-    const truncated = note.length > NOTES_MAX_LENGTH
-      ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...'
-      : note
+    const truncated =
+      note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
     try {
       repo.updateTask(taskId, { notes: truncated })
     } catch (updateErr) {
-      logger.error(`[agent-manager] Failed to surface dep-resolution failure for ${taskId}: ${updateErr}`)
+      logger.error(
+        `[agent-manager] Failed to surface dep-resolution failure for ${taskId}: ${updateErr}`
+      )
     }
   }
 }
@@ -108,7 +109,15 @@ async function executeTerminal(
   if (config.onStatusTerminal) {
     config.onStatusTerminal(taskId, status)
   } else {
-    await resolveTerminalDependents(taskId, status, depIndex, epicIndex, repo, onTaskTerminal, logger)
+    await resolveTerminalDependents(
+      taskId,
+      status,
+      depIndex,
+      epicIndex,
+      repo,
+      onTaskTerminal,
+      logger
+    )
   }
 }
 
@@ -122,7 +131,9 @@ export async function handleTaskTerminal(
 
   const existing = terminalCalled.get(taskId)
   if (existing) {
-    logger.warn(`[agent-manager] onTaskTerminal duplicate for ${taskId} — returning in-flight promise`)
+    logger.warn(
+      `[agent-manager] onTaskTerminal duplicate for ${taskId} — returning in-flight promise`
+    )
     return existing
   }
 

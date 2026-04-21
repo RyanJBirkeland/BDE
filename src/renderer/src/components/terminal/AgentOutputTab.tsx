@@ -5,8 +5,8 @@ import { ConsoleCard } from '../agents/cards/ConsoleCard'
 
 interface AgentOutputTabProps {
   agentId: string
-  agentOutput?: string[]
-  sessionKey?: string
+  agentOutput?: string[] | undefined
+  sessionKey?: string | undefined
 }
 
 export function AgentOutputTab({

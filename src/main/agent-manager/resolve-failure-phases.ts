@@ -15,7 +15,7 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 export interface ResolveFailureContext {
   taskId: string
   retryCount: number
-  notes?: string
+  notes?: string | undefined
   repo: IAgentTaskRepository
 }
 

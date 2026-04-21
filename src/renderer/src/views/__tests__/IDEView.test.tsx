@@ -212,9 +212,7 @@ Object.defineProperty(window, 'api', {
   configurable: true
 })
 
-function setIDEState(
-  overrides: Partial<MockIDEState> & Partial<MockFileCacheState>
-): void {
+function setIDEState(overrides: Partial<MockIDEState> & Partial<MockFileCacheState>): void {
   const { fileContents, fileLoadingStates, setFileContent, setFileLoading, ...ideOverrides } =
     overrides
 

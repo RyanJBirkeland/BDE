@@ -76,7 +76,7 @@ export function LaunchpadGrid({
   const repoDropdownRef = useRef<HTMLDivElement>(null)
 
   // Derive effective repo: use selected repo if set, otherwise first available
-  const effectiveRepo = repo || (repos.length > 0 ? repos[0].label : '')
+  const effectiveRepo = repo || (repos.length > 0 ? (repos[0]?.label ?? '') : '')
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

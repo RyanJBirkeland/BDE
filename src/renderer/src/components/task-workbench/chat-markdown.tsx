@@ -23,7 +23,7 @@ export function renderContent(text: string): React.JSX.Element {
     }
 
     const lang = match[1]
-    const codeContent = match[2]
+    const codeContent = match[2] ?? ''
 
     if (lang === 'tickets-json') {
       try {

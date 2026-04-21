@@ -57,6 +57,7 @@ async function searchMemory(query: string): Promise<MemorySearchResponse> {
       if (!match) continue
 
       const [, filePath, lineNum, content] = match
+      if (!filePath || !lineNum || content === undefined) continue
 
       if (!fileMap.has(filePath)) {
         fileMap.set(filePath, [])

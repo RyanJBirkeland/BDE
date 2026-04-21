@@ -2,10 +2,10 @@ import { CheckCircle2, Shield, TrendingUp } from 'lucide-react'
 import type { JSX, ReactNode } from 'react'
 
 interface Props {
-  qualityScore?: number
-  issuesCount?: number
-  filesCount?: number
-  loading?: boolean
+  qualityScore?: number | undefined
+  issuesCount?: number | undefined
+  filesCount?: number | undefined
+  loading?: boolean | undefined
 }
 
 export function ReviewMetricsRow({

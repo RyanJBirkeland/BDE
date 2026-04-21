@@ -955,16 +955,16 @@ describe('Review handlers', () => {
 
     it.each([
       ['main', true],
-      ['abc123def456abc1', true],        // 16-char hex SHA prefix
-      ['a'.repeat(40), true],            // full SHA
+      ['abc123def456abc1', true], // 16-char hex SHA prefix
+      ['a'.repeat(40), true], // full SHA
       ['feat/my-branch', true],
       ['origin/main', true],
-      ['HEAD~1', false],                  // tilde not allowed
-      ['--format=%(body)', false],        // flag injection
-      ['../../etc/passwd', false],        // path traversal
-      ['', false],                        // empty
-      ['; rm -rf /', false],             // shell metachar
-      ['a'.repeat(201), false],          // too long
+      ['HEAD~1', false], // tilde not allowed
+      ['--format=%(body)', false], // flag injection
+      ['../../etc/passwd', false], // path traversal
+      ['', false], // empty
+      ['; rm -rf /', false], // shell metachar
+      ['a'.repeat(201), false] // too long
     ])('review:getDiff base="%s" → valid=%s', async (base, shouldPass) => {
       const handlers = captureHandlers()
       if (shouldPass) {
@@ -984,7 +984,7 @@ describe('Review handlers', () => {
       ['abc123def456abc1', true],
       ['--format=%(body)', false],
       ['../../etc', false],
-      ['', false],
+      ['', false]
     ])('review:getCommits base="%s" → valid=%s', async (base, shouldPass) => {
       const handlers = captureHandlers()
       if (shouldPass) {
@@ -1002,7 +1002,7 @@ describe('Review handlers', () => {
       ['main', true],
       ['abc123def456abc1', true],
       ['--format=%(body)', false],
-      ['', false],
+      ['', false]
     ])('review:getFileDiff base="%s" → valid=%s', async (base, shouldPass) => {
       const handlers = captureHandlers()
       if (shouldPass) {
@@ -1045,7 +1045,7 @@ describe('Review handlers', () => {
       ['/etc/passwd', false],
       ['../../etc', false],
       ['/tmp/evil', false],
-      ['', false],
+      ['', false]
     ])('review:getDiff worktreePath="%s" → valid=%s', async (worktreePath, shouldPass) => {
       const handlers = captureHandlers()
       if (shouldPass) {
@@ -1084,7 +1084,10 @@ describe('Review handlers', () => {
       mockExistsSync.mockReturnValue(false)
       const handlers = captureHandlers()
       await expect(
-        handlers['review:getCommits'](_mockEvent, { worktreePath: VALID_WORKTREE, base: VALID_BASE })
+        handlers['review:getCommits'](_mockEvent, {
+          worktreePath: VALID_WORKTREE,
+          base: VALID_BASE
+        })
       ).rejects.toThrow(/worktree directory no longer exists/i)
     })
 
@@ -1103,7 +1106,7 @@ describe('Review handlers', () => {
     it.each([
       [VALID_WORKTREE, true],
       ['/etc', false],
-      ['', false],
+      ['', false]
     ])('review:getCommits worktreePath="%s" → valid=%s', async (worktreePath, shouldPass) => {
       const handlers = captureHandlers()
       if (shouldPass) {
@@ -1136,19 +1139,27 @@ describe('Review handlers', () => {
       ['src/main/foo.ts', true],
       ['README.md', true],
       ['src/renderer/src/App.tsx', true],
-      ['../../etc/passwd', false],        // path traversal
-      ['/etc/hosts', false],              // absolute path
-      ['src/../../../etc', false],        // embedded traversal
-      ['', false],                        // empty
+      ['../../etc/passwd', false], // path traversal
+      ['/etc/hosts', false], // absolute path
+      ['src/../../../etc', false], // embedded traversal
+      ['', false] // empty
     ])('review:getFileDiff filePath="%s" → valid=%s', async (filePath, shouldPass) => {
       const handlers = captureHandlers()
       if (shouldPass) {
         await expect(
-          handlers['review:getFileDiff'](_mockEvent, { worktreePath: VALID_WORKTREE, base: VALID_BASE, filePath })
+          handlers['review:getFileDiff'](_mockEvent, {
+            worktreePath: VALID_WORKTREE,
+            base: VALID_BASE,
+            filePath
+          })
         ).resolves.not.toThrow()
       } else {
         await expect(
-          handlers['review:getFileDiff'](_mockEvent, { worktreePath: VALID_WORKTREE, base: VALID_BASE, filePath })
+          handlers['review:getFileDiff'](_mockEvent, {
+            worktreePath: VALID_WORKTREE,
+            base: VALID_BASE,
+            filePath
+          })
         ).rejects.toThrow(/invalid file path/i)
       }
     })
@@ -1174,25 +1185,22 @@ describe('Review handlers', () => {
       'review:shipIt',
       'review:rebase',
       'review:checkFreshness',
-      'review:checkAutoReview',
+      'review:checkAutoReview'
     ]
 
     it.each(ACTION_CHANNELS)('%s rejects path-traversal task ID', async (channel) => {
       const handlers = captureHandlers()
-      await expect(
-        handlers[channel](_mockEvent, { taskId: '../../etc/passwd' })
-      ).rejects.toThrow('Invalid task ID format')
+      await expect(handlers[channel](_mockEvent, { taskId: '../../etc/passwd' })).rejects.toThrow(
+        'Invalid task ID format'
+      )
     })
 
-    it.each(INVALID_TASK_IDS)(
-      'review:mergeLocally rejects invalid task ID "%s"',
-      async (badId) => {
-        const handlers = captureHandlers()
-        await expect(
-          handlers['review:mergeLocally'](_mockEvent, { taskId: badId })
-        ).rejects.toThrow('Invalid task ID format')
-      }
-    )
+    it.each(INVALID_TASK_IDS)('review:mergeLocally rejects invalid task ID "%s"', async (badId) => {
+      const handlers = captureHandlers()
+      await expect(handlers['review:mergeLocally'](_mockEvent, { taskId: badId })).rejects.toThrow(
+        'Invalid task ID format'
+      )
+    })
 
     it('review:mergeLocally accepts a valid ULID-style task ID', async () => {
       const { getTask, updateTask } = await import('../../data/sprint-queries')

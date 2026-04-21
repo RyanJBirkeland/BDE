@@ -5,7 +5,7 @@ import './WorkbenchActions.css'
 interface WorkbenchActionsProps {
   onSaveBacklog: () => void
   onQueueNow: () => void
-  onCancel?: () => void
+  onCancel?: (() => void) | undefined
   submitting: boolean
 }
 

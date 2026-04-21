@@ -18,7 +18,7 @@ export interface TaskDependency {
    * REQUIRED in a future version. Currently optional for backward compatibility;
    * omitting it triggers a deprecation warning and falls back to `type`-based behavior.
    */
-  condition?: 'on_success' | 'on_failure' | 'always'
+  condition?: 'on_success' | 'on_failure' | 'always' | undefined
 }
 
 export interface EpicDependency {
@@ -70,7 +70,15 @@ export interface SprintTask {
   agent_run_id: string | null
   pr_number: number | null
   pr_status: 'open' | 'merged' | 'closed' | 'draft' | 'branch_only' | null
-  pr_mergeable_state?: 'clean' | 'dirty' | 'blocked' | 'behind' | 'unstable' | 'unknown' | null
+  pr_mergeable_state?:
+    | 'clean'
+    | 'dirty'
+    | 'blocked'
+    | 'behind'
+    | 'unstable'
+    | 'unknown'
+    | null
+    | undefined
   pr_url: string | null
   claimed_by: string | null
   started_at: string | null
@@ -122,7 +130,17 @@ export interface SprintTask {
 /** Always meaningful regardless of task status. Every consumer can use this. */
 export type SprintTaskCore = Pick<
   SprintTask,
-  'id' | 'title' | 'repo' | 'status' | 'priority' | 'notes' | 'tags' | 'group_id' | 'sprint_id' | 'created_at' | 'updated_at'
+  | 'id'
+  | 'title'
+  | 'repo'
+  | 'status'
+  | 'priority'
+  | 'notes'
+  | 'tags'
+  | 'group_id'
+  | 'sprint_id'
+  | 'created_at'
+  | 'updated_at'
 >
 
 /** Task definition fields — workbench, spec drafting, prompt building. */
@@ -167,7 +185,12 @@ export type SprintTaskExecution = SprintTaskCore &
 export type SprintTaskPR = SprintTaskCore &
   Pick<
     SprintTask,
-    'pr_url' | 'pr_number' | 'pr_status' | 'pr_mergeable_state' | 'revision_feedback' | 'review_diff_snapshot'
+    | 'pr_url'
+    | 'pr_number'
+    | 'pr_status'
+    | 'pr_mergeable_state'
+    | 'revision_feedback'
+    | 'review_diff_snapshot'
   >
 
 /** Shape of the `review_diff_snapshot` JSON blob. */
@@ -201,7 +224,7 @@ export interface Sprint {
 export interface TaskTemplate {
   name: string
   promptPrefix: string
-  isBuiltIn?: boolean
+  isBuiltIn?: boolean | undefined
 }
 
 /** A claimed task with an optional template prompt prefix. */
@@ -233,14 +256,14 @@ export interface ReviseRequest {
 export interface BatchOperation {
   op: 'update' | 'delete'
   id: string
-  patch?: Record<string, unknown>
+  patch?: Record<string, unknown> | undefined
 }
 
 export interface BatchResult {
   id: string
   op: 'update' | 'delete'
   ok: boolean
-  error?: string
+  error?: string | undefined
 }
 
 // Field allowlist for general task updates

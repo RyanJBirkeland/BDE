@@ -117,7 +117,8 @@ export function useIDEKeyboard({
             e.stopPropagation()
             const { tabs, activeTabId: tid } = useTerminalStore.getState()
             const idx = tabs.findIndex((t) => t.id === tid)
-            if (idx > 0) termSetActiveTab(tabs[idx - 1].id)
+            const prevTab = tabs[idx - 1]
+            if (idx > 0 && prevTab) termSetActiveTab(prevTab.id)
             return
           }
           if (e.key === ']' && e.shiftKey) {
@@ -125,7 +126,8 @@ export function useIDEKeyboard({
             e.stopPropagation()
             const { tabs, activeTabId: tid } = useTerminalStore.getState()
             const idx = tabs.findIndex((t) => t.id === tid)
-            if (idx < tabs.length - 1) termSetActiveTab(tabs[idx + 1].id)
+            const nextTab = tabs[idx + 1]
+            if (idx < tabs.length - 1 && nextTab) termSetActiveTab(nextTab.id)
             return
           }
           if (e.key === '=' || e.key === '+') {

@@ -76,7 +76,7 @@ function parseCssBlocks(css: string, context: string): ParsedBlock[] {
 
   while (i < len) {
     // Skip whitespace
-    if (/\s/.test(css[i])) {
+    if (/\s/.test(css[i] ?? '')) {
       i++
       continue
     }
@@ -145,7 +145,7 @@ function parseCssBlocks(css: string, context: string): ParsedBlock[] {
     if (/^@keyframes\s+/i.test(selectorNorm)) {
       // @keyframes <name>
       const nameMatch = selectorNorm.match(/^@keyframes\s+(\S+)/i)
-      const name = nameMatch ? nameMatch[1] : selectorNorm
+      const name = nameMatch?.[1] ?? selectorNorm
       blocks.push({ type: 'keyframes', selector: name, body, context, raw })
     } else if (/^@media\b|^@supports\b/i.test(selectorNorm)) {
       // @media / @supports — recurse into body for inner dedup
@@ -196,6 +196,7 @@ function dedupBlocks(blocks: BlockWithIndex[]): DedupBlocksResult {
 
   for (let idx = 0; idx < blocks.length; idx++) {
     const block = blocks[idx]
+    if (!block) continue
     if (block.type !== 'rule' && block.type !== 'keyframes') continue
 
     const key = `${block.context}|||${block.selector}`
@@ -220,7 +221,9 @@ function dedupBlocks(blocks: BlockWithIndex[]): DedupBlocksResult {
 
     if (byBody.size === 1) {
       // All occurrences are exact duplicates — keep last, remove the rest
-      const lastIdx = entries[entries.length - 1].idx
+      const lastEntry = entries[entries.length - 1]
+      if (!lastEntry) continue
+      const lastIdx = lastEntry.idx
       for (const { block, idx } of entries) {
         if (idx !== lastIdx) {
           removeSet.add(idx)
@@ -229,8 +232,10 @@ function dedupBlocks(blocks: BlockWithIndex[]): DedupBlocksResult {
       }
     } else {
       // Near-duplicates: same selector, different bodies — warn, keep all
-      const selector = entries[0].block.selector
-      const context = entries[0].block.context
+      const firstEntry = entries[0]
+      if (!firstEntry) continue
+      const selector = firstEntry.block.selector
+      const context = firstEntry.block.context
       const ctxLabel = context ? ` (inside ${context})` : ''
       warnings.push(
         `Near-duplicate selector "${selector}"${ctxLabel} — ${byBody.size} different definitions found. All kept.`
@@ -261,7 +266,7 @@ function processMediaBlock(block: BlockWithIndex): MediaBlockDeduped {
 function buildMediaRaw(processed: MediaBlockDeduped): string {
   const { block, dedupedInner } = processed
   const headerMatch = block.raw.match(/^([^{]*)/)
-  const header = headerMatch ? headerMatch[1].trim() : block.selector
+  const header = headerMatch?.[1]?.trim() ?? block.selector
   const innerCss = dedupedInner.kept.map((b) => b.raw).join('\n')
   return `${header} {\n${innerCss}\n}`
 }

@@ -22,7 +22,9 @@ import type { TurnTracker } from '../turn-tracker'
 import { updateAgentMeta } from '../../agent-history'
 import { updateAgentRunCost } from '../../data/agent-queries'
 
-function makeTurnTracker(overrides: Partial<Pick<TurnTracker, 'processMessage' | 'totals'>> = {}): TurnTracker {
+function makeTurnTracker(
+  overrides: Partial<Pick<TurnTracker, 'processMessage' | 'totals'>> = {}
+): TurnTracker {
   return {
     processMessage: vi.fn(),
     totals: vi.fn().mockReturnValue({
@@ -73,14 +75,14 @@ describe('trackAgentCosts', () => {
   it('updates costUsd from total_cost_usd when cost_usd absent', () => {
     const agent = makeAgent()
     const turnTracker = makeTurnTracker()
-    trackAgentCosts({ total_cost_usd: 0.10 }, agent, turnTracker)
-    expect(agent.costUsd).toBe(0.10)
+    trackAgentCosts({ total_cost_usd: 0.1 }, agent, turnTracker)
+    expect(agent.costUsd).toBe(0.1)
   })
 
   it('prefers cost_usd over total_cost_usd', () => {
     const agent = makeAgent()
     const turnTracker = makeTurnTracker()
-    trackAgentCosts({ cost_usd: 0.05, total_cost_usd: 0.10 }, agent, turnTracker)
+    trackAgentCosts({ cost_usd: 0.05, total_cost_usd: 0.1 }, agent, turnTracker)
     expect(agent.costUsd).toBe(0.05)
   })
 
@@ -116,7 +118,10 @@ describe('persistAgentRunTelemetry', () => {
     const turnTracker = makeTurnTracker()
     const exitedAt = Date.now()
     persistAgentRunTelemetry('run-1', agent, 0, turnTracker, exitedAt, 5000, makeLogger())
-    expect(updateAgentMeta).toHaveBeenCalledWith('run-1', expect.objectContaining({ status: 'done', exitCode: 0 }))
+    expect(updateAgentMeta).toHaveBeenCalledWith(
+      'run-1',
+      expect.objectContaining({ status: 'done', exitCode: 0 })
+    )
   })
 
   it('calls updateAgentMeta with failed status on non-zero exitCode', () => {
@@ -124,7 +129,10 @@ describe('persistAgentRunTelemetry', () => {
     const turnTracker = makeTurnTracker()
     const exitedAt = Date.now()
     persistAgentRunTelemetry('run-1', agent, 1, turnTracker, exitedAt, 5000, makeLogger())
-    expect(updateAgentMeta).toHaveBeenCalledWith('run-1', expect.objectContaining({ status: 'failed' }))
+    expect(updateAgentMeta).toHaveBeenCalledWith(
+      'run-1',
+      expect.objectContaining({ status: 'failed' })
+    )
   })
 
   it('calls updateAgentMeta with failed status on undefined exitCode', () => {
@@ -132,7 +140,10 @@ describe('persistAgentRunTelemetry', () => {
     const turnTracker = makeTurnTracker()
     const exitedAt = Date.now()
     persistAgentRunTelemetry('run-1', agent, undefined, turnTracker, exitedAt, 5000, makeLogger())
-    expect(updateAgentMeta).toHaveBeenCalledWith('run-1', expect.objectContaining({ status: 'failed', exitCode: null }))
+    expect(updateAgentMeta).toHaveBeenCalledWith(
+      'run-1',
+      expect.objectContaining({ status: 'failed', exitCode: null })
+    )
   })
 
   it('calls updateAgentRunCost with telemetry data', () => {
@@ -159,15 +170,21 @@ describe('persistAgentRunTelemetry', () => {
     persistAgentRunTelemetry('run-1', agent, 0, turnTracker, Date.now(), 5000, logger)
     // Allow microtask to run
     await new Promise((r) => setTimeout(r, 10))
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update agent record'))
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to update agent record')
+    )
   })
 
   it('logs warning when updateAgentRunCost throws', () => {
-    vi.mocked(updateAgentRunCost).mockImplementationOnce(() => { throw new Error('SQLite error') })
+    vi.mocked(updateAgentRunCost).mockImplementationOnce(() => {
+      throw new Error('SQLite error')
+    })
     const agent = makeAgent()
     const turnTracker = makeTurnTracker()
     const logger = makeLogger()
     persistAgentRunTelemetry('run-1', agent, 0, turnTracker, Date.now(), 5000, logger)
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to persist cost breakdown'))
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to persist cost breakdown')
+    )
   })
 })

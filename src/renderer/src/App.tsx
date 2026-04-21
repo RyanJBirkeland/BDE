@@ -93,7 +93,7 @@ function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Eleme
           role="tabpanel"
           className="shortcuts-overlay__content"
         >
-          {currentCategory.shortcuts.map((shortcut) => (
+          {currentCategory?.shortcuts.map((shortcut) => (
             <div key={shortcut.keys} className="shortcuts-overlay__row">
               <Kbd>{shortcut.keys}</Kbd>
               <span>{shortcut.description}</span>

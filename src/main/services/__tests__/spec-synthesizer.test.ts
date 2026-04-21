@@ -1,16 +1,17 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { SdkStreamingOptions } from '../../sdk-streaming'
 
-const runSdkStreamingMock = vi.fn<
-  (
-    prompt: string,
-    onChunk: (c: string) => void,
-    streams: Map<string, { close: () => void }>,
-    id: string,
-    timeout?: number,
-    opts?: SdkStreamingOptions
-  ) => Promise<string>
->()
+const runSdkStreamingMock =
+  vi.fn<
+    (
+      prompt: string,
+      onChunk: (c: string) => void,
+      streams: Map<string, { close: () => void }>,
+      id: string,
+      timeout?: number,
+      opts?: SdkStreamingOptions
+    ) => Promise<string>
+  >()
 vi.mock('../../sdk-streaming', () => ({
   runSdkStreaming: (...args: Parameters<typeof runSdkStreamingMock>) => runSdkStreamingMock(...args)
 }))

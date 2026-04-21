@@ -74,10 +74,9 @@ async function pushLocalMain(repoPath: string, env: NodeJS.ProcessEnv): Promise<
   await execFileAsync('git', ['push', 'origin', 'HEAD'], { cwd: repoPath, env })
 }
 
-function requireCommonRepoConfig(
-  tasks: Array<Pick<SprintTask, 'id' | 'repo'>>
-): RepoConfig {
+function requireCommonRepoConfig(tasks: Array<Pick<SprintTask, 'id' | 'repo'>>): RepoConfig {
   const first = tasks[0]
+  if (!first) throw new Error('Batch ship requires at least one task.')
   const repoConfig = getRepoConfig(first.repo)
   if (!repoConfig) {
     throw new Error(`Repo "${first.repo}" not found in settings`)

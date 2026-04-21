@@ -19,8 +19,8 @@ interface PipelineHeaderProps {
   onFilterClick: (filter: StatBadge['filter']) => void
   onConflictClick: () => void
   onHealthCheckClick: () => void
-  onDagToggle?: () => void
-  dagOpen?: boolean
+  onDagToggle?: (() => void) | undefined
+  dagOpen?: boolean | undefined
 }
 
 export function PipelineHeader({

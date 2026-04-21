@@ -14,9 +14,9 @@ interface SankeyPipelineProps {
     blocked: number
     failed: number
   }
-  onStageClick?: (stage: SankeyStageKey) => void
-  animated?: boolean
-  className?: string
+  onStageClick?: ((stage: SankeyStageKey) => void) | undefined
+  animated?: boolean | undefined
+  className?: string | undefined
 }
 
 /** Node layout positions within the SVG viewBox (540x160). */
@@ -69,10 +69,13 @@ function buildHappyPathD(): string {
     const p = NODE_POS[k]
     return { x: p.x + p.w / 2, y: p.y + p.h / 2 }
   })
-  let d = `M ${centers[0].x} ${centers[0].y}`
+  const start = centers[0]
+  if (!start) return ''
+  let d = `M ${start.x} ${start.y}`
   for (let i = 0; i < centers.length - 1; i++) {
     const c1 = centers[i]
     const c2 = centers[i + 1]
+    if (!c1 || !c2) continue
     const cpx = (c1.x + c2.x) / 2
     d += ` C ${cpx} ${c1.y}, ${cpx} ${c2.y}, ${c2.x} ${c2.y}`
   }

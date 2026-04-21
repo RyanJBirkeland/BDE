@@ -16,10 +16,7 @@ interface StatusCounts {
   draft: number
 }
 
-export function EpicProgress({
-  tasks,
-  tasksNeedingSpecs
-}: EpicProgressProps): React.JSX.Element {
+export function EpicProgress({ tasks, tasksNeedingSpecs }: EpicProgressProps): React.JSX.Element {
   const counts: StatusCounts = useMemo(() => {
     const initial: StatusCounts = { done: 0, active: 0, queued: 0, blocked: 0, draft: 0 }
     return tasks.reduce((acc, task) => {

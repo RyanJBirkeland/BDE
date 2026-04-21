@@ -2,10 +2,10 @@ import type { ReactNode } from 'react'
 
 type CardProps = {
   children: ReactNode
-  padding?: 'none' | 'sm' | 'md' | 'lg'
-  className?: string
-  onClick?: () => void
-  active?: boolean
+  padding?: 'none' | 'sm' | 'md' | 'lg' | undefined
+  className?: string | undefined
+  onClick?: (() => void) | undefined
+  active?: boolean | undefined
 }
 
 export function Card({

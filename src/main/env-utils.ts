@@ -16,14 +16,19 @@ import { broadcast } from './broadcast'
 const logger = createLogger('env-utils')
 
 const customPaths = process.env.BDE_EXTRA_PATHS?.split(':').filter(Boolean) ?? []
-const EXTRA_PATHS = [...customPaths, '/usr/local/bin', '/opt/homebrew/bin', `${homedir()}/.local/bin`]
+const EXTRA_PATHS = [
+  ...customPaths,
+  '/usr/local/bin',
+  '/opt/homebrew/bin',
+  `${homedir()}/.local/bin`
+]
 
 let _cachedEnv: Record<string, string | undefined> | null = null
 let keychainConsecutiveFailures = 0
 
 const KEYCHAIN_FAILURE_WARNING_THRESHOLD = 3
 const KEYCHAIN_WARNING_MESSAGE =
-  "Keychain access failing — run `claude login` to refresh your token"
+  'Keychain access failing — run `claude login` to refresh your token'
 
 // Allowlist of environment variables that agents need.
 // Proxy and auth vars are required for corporate network environments.
@@ -62,7 +67,7 @@ const ENV_ALLOWLIST = [
   // Corporate CA certificates — required when network uses SSL inspection (MITM proxy)
   'NODE_EXTRA_CA_CERTS',
   'GIT_SSL_CAINFO',
-  'SSL_CERT_FILE',
+  'SSL_CERT_FILE'
 ]
 
 /**
@@ -306,8 +311,12 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
     )
     const parsed = JSON.parse(credJson.trim()) as unknown
     // Validate Keychain JSON schema before using — guard against corrupted or manually edited entries
-    if (!parsed || typeof parsed !== 'object' ||
-        !('claudeAiOauth' in parsed) || typeof (parsed as Record<string, unknown>).claudeAiOauth !== 'object') {
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      !('claudeAiOauth' in parsed) ||
+      typeof (parsed as Record<string, unknown>).claudeAiOauth !== 'object'
+    ) {
       logger.error('[env-utils] Keychain JSON has unexpected format — run claude login to reset')
       return false
     }

@@ -49,7 +49,8 @@ export function buildCopilotPrompt(input: BuildPromptInput): string {
   prompt += '2. `## Files to Change` — exact file paths, bulleted\n'
   prompt += '3. `## Implementation Steps` — numbered, concrete actions only\n'
   prompt += '4. `## How to Test` — commands or manual steps\n\n'
-  prompt += 'After each revision, show the complete updated spec in a markdown code block. Keep specs under 500 words.'
+  prompt +=
+    'After each revision, show the complete updated spec in a markdown code block. Keep specs under 500 words.'
 
   // Target repository pinning
   if (input.repoPath) {

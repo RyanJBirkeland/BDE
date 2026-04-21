@@ -230,24 +230,31 @@ describe('cascade cancellation atomicity', () => {
         if (id === 'dep-1') return new Set(['task-1', 'task-2'])
         return new Set()
       }),
-      areDependenciesSatisfied: vi
-        .fn()
-        .mockReturnValue({ satisfied: false, blockedBy: ['dep-1'] })
+      areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['dep-1'] })
     })
 
-    const task1 = mockTask({ id: 'task-1', status: 'blocked', depends_on: [{ id: 'dep-1', type: 'hard' }] })
-    const task2 = mockTask({ id: 'task-2', status: 'blocked', depends_on: [{ id: 'dep-1', type: 'hard' }] })
+    const task1 = mockTask({
+      id: 'task-1',
+      status: 'blocked',
+      depends_on: [{ id: 'dep-1', type: 'hard' }]
+    })
+    const task2 = mockTask({
+      id: 'task-2',
+      status: 'blocked',
+      depends_on: [{ id: 'dep-1', type: 'hard' }]
+    })
     const getTask = vi.fn((id: string) => {
       if (id === 'task-1') return task1
       if (id === 'task-2') return task2
-      if (id === 'dep-1') return mockTask({ id: 'dep-1', status: 'failed', title: 'dep-1', depends_on: [] })
+      if (id === 'dep-1')
+        return mockTask({ id: 'dep-1', status: 'failed', title: 'dep-1', depends_on: [] })
       return null
     })
     const updateTask = vi.fn()
 
     resolveDependents(
       'dep-1',
-      'failed',       // trigger cascade
+      'failed', // trigger cascade
       index,
       getTask,
       updateTask,
@@ -256,7 +263,7 @@ describe('cascade cancellation atomicity', () => {
       undefined,
       undefined,
       undefined,
-      transactionFn   // new parameter
+      transactionFn // new parameter
     )
 
     // Transaction wrapper should be called once for the entire cascade
@@ -279,8 +286,14 @@ describe('cascade cancellation atomicity', () => {
     })
 
     const getTask = vi.fn((id: string) => {
-      if (id === 'dep-1') return mockTask({ id: 'dep-1', status: 'failed', title: 'dep-1', depends_on: [] })
-      return mockTask({ id, status: 'blocked', depends_on: [{ id: 'dep-1', type: 'hard' }], notes: null })
+      if (id === 'dep-1')
+        return mockTask({ id: 'dep-1', status: 'failed', title: 'dep-1', depends_on: [] })
+      return mockTask({
+        id,
+        status: 'blocked',
+        depends_on: [{ id: 'dep-1', type: 'hard' }],
+        notes: null
+      })
     })
     let callCount = 0
     const updateTask = vi.fn(() => {
@@ -289,7 +302,19 @@ describe('cascade cancellation atomicity', () => {
     })
 
     expect(() =>
-      resolveDependents('dep-1', 'failed', index, getTask, updateTask, undefined, () => 'cancel', undefined, undefined, undefined, transactionFn)
+      resolveDependents(
+        'dep-1',
+        'failed',
+        index,
+        getTask,
+        updateTask,
+        undefined,
+        () => 'cancel',
+        undefined,
+        undefined,
+        undefined,
+        transactionFn
+      )
     ).toThrow('Transaction rolled back')
 
     expect(rollbackCalled.value).toBe(true)
@@ -309,17 +334,12 @@ describe('cascade cancellation atomicity', () => {
     const getTask = vi.fn().mockReturnValue(task)
     const updateTask = vi.fn()
 
-    resolveDependents(
-      'dep-1',
-      'failed',
-      index,
-      getTask,
-      updateTask,
-      undefined,
-      () => 'cancel'
-    )
+    resolveDependents('dep-1', 'failed', index, getTask, updateTask, undefined, () => 'cancel')
 
-    expect(updateTask).not.toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'cancelled' }))
+    expect(updateTask).not.toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'cancelled' })
+    )
   })
 
   it('cascade cancels when dep has condition "on_success" and upstream fails', () => {
@@ -328,7 +348,12 @@ describe('cascade cancellation atomicity', () => {
       getDependents: vi.fn().mockReturnValue(new Set(['task-1'])),
       areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: false, blockedBy: ['dep-1'] })
     })
-    const failedTask = mockTask({ id: 'dep-1', title: 'Dep Task', status: 'failed', depends_on: [] })
+    const failedTask = mockTask({
+      id: 'dep-1',
+      title: 'Dep Task',
+      status: 'failed',
+      depends_on: []
+    })
     const task = mockTask({
       id: 'task-1',
       status: 'blocked',
@@ -340,17 +365,12 @@ describe('cascade cancellation atomicity', () => {
     })
     const updateTask = vi.fn()
 
-    resolveDependents(
-      'dep-1',
-      'failed',
-      index,
-      getTask,
-      updateTask,
-      undefined,
-      () => 'cancel'
-    )
+    resolveDependents('dep-1', 'failed', index, getTask, updateTask, undefined, () => 'cancel')
 
-    expect(updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'cancelled' }))
+    expect(updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'cancelled' })
+    )
   })
 
   it('calls onTaskTerminal for each cascade-cancelled dependent', () => {
@@ -366,8 +386,18 @@ describe('cascade cancellation atomicity', () => {
     })
 
     const taskA = mockTask({ id: 'task-a', status: 'failed', title: 'Task A', depends_on: [] })
-    const taskB = mockTask({ id: 'task-b', status: 'blocked', title: 'Task B', depends_on: [{ id: 'task-a', type: 'hard' }] })
-    const taskC = mockTask({ id: 'task-c', status: 'blocked', title: 'Task C', depends_on: [{ id: 'task-b', type: 'hard' }] })
+    const taskB = mockTask({
+      id: 'task-b',
+      status: 'blocked',
+      title: 'Task B',
+      depends_on: [{ id: 'task-a', type: 'hard' }]
+    })
+    const taskC = mockTask({
+      id: 'task-c',
+      status: 'blocked',
+      title: 'Task C',
+      depends_on: [{ id: 'task-b', type: 'hard' }]
+    })
 
     const getTask = vi.fn((id: string) => {
       if (id === 'task-a') return taskA
@@ -395,8 +425,14 @@ describe('cascade cancellation atomicity', () => {
     )
 
     // Verify both B and C were cancelled
-    expect(updateTask).toHaveBeenCalledWith('task-b', expect.objectContaining({ status: 'cancelled' }))
-    expect(updateTask).toHaveBeenCalledWith('task-c', expect.objectContaining({ status: 'cancelled' }))
+    expect(updateTask).toHaveBeenCalledWith(
+      'task-b',
+      expect.objectContaining({ status: 'cancelled' })
+    )
+    expect(updateTask).toHaveBeenCalledWith(
+      'task-c',
+      expect.objectContaining({ status: 'cancelled' })
+    )
 
     // Verify onTaskTerminal was called for both B and C
     expect(onTaskTerminal).toHaveBeenCalledWith('task-b', 'cancelled')

@@ -52,14 +52,14 @@ export function parsePlanMarkdown(markdown: string): ParsedPlan {
   for (const line of lines) {
     // Extract H1 as epic name
     const h1Match = line.match(/^# (.+)$/)
-    if (h1Match) {
+    if (h1Match?.[1]) {
       epicName = h1Match[1].trim()
       continue
     }
 
     // Detect Tasks section
     const h2Match = line.match(/^## (.+)$/)
-    if (h2Match) {
+    if (h2Match?.[1]) {
       const sectionName = h2Match[1].trim()
       inTasksSection = sectionName === 'Tasks'
       // If we left the Tasks section, stop collecting tasks
@@ -72,7 +72,7 @@ export function parsePlanMarkdown(markdown: string): ParsedPlan {
 
     // Extract H3 as task titles (only if in Tasks section)
     const h3Match = line.match(/^### (.+)$/)
-    if (h3Match && inTasksSection) {
+    if (h3Match?.[1] && inTasksSection) {
       // Save previous task if exists
       if (currentTask) {
         tasks.push(currentTask)
@@ -121,8 +121,7 @@ export function importPlanFile(markdown: string, options: ImportOptions): Import
     {
       name: parsed.epicName,
       icon: 'P',
-      accent_color: '#00ffcc',
-      goal: undefined
+      accent_color: '#00ffcc'
     },
     db
   )
@@ -139,11 +138,10 @@ export function importPlanFile(markdown: string, options: ImportOptions): Import
     const task = createTask({
       title: parsedTask.title,
       repo,
-      spec: parsedTask.spec || undefined,
-      prompt: undefined,
       status: 'backlog',
       priority: 1,
-      group_id: epic.id
+      group_id: epic.id,
+      ...(parsedTask.spec ? { spec: parsedTask.spec } : {})
     })
 
     if (!task) {
@@ -172,9 +170,7 @@ export function registerPlannerImportHandlers(deps: PlannerImportDeps): void {
     const isConfigured = configuredRepos.some((r) => r.name.toLowerCase() === repo.toLowerCase())
     if (!isConfigured) {
       const names = configuredRepos.map((r) => r.name).join(', ')
-      throw new Error(
-        `Repo "${repo}" is not configured. Configured repos: ${names || 'none'}`
-      )
+      throw new Error(`Repo "${repo}" is not configured. Configured repos: ${names || 'none'}`)
     }
 
     // Show file picker
@@ -192,6 +188,9 @@ export function registerPlannerImportHandlers(deps: PlannerImportDeps): void {
     }
 
     const filePath = result.filePaths[0]
+    if (!filePath) {
+      throw new Error('No file selected')
+    }
     logger.info(`Importing plan from: ${filePath}`)
 
     // Read file

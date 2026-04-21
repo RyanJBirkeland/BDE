@@ -21,16 +21,12 @@ import {
   hasCommitsAheadOfMain,
   transitionTaskToReview,
   assertBranchTipMatches,
-  BranchTipMismatchError,
+  BranchTipMismatchError
 } from './resolve-success-phases'
 import { resolveFailure as resolveFailurePhase } from './resolve-failure-phases'
 import { evaluateAutoMerge } from './auto-merge-coordinator'
 import { nowIso } from '../../shared/time'
-import {
-  detectUntouchedTests,
-  listChangedFiles,
-  formatAdvisory,
-} from './test-touch-check'
+import { detectUntouchedTests, listChangedFiles, formatAdvisory } from './test-touch-check'
 import { detectNoOpRun } from './noop-detection'
 
 export type { ResolveFailureContext } from './resolve-failure-phases'
@@ -91,9 +87,16 @@ export async function deleteAgentBranchBeforeRetry(
 }
 
 export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo, repoPath } = opts
+  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo, repoPath } =
+    opts
 
-  const worktreeExists = await verifyWorktreeExists(taskId, worktreePath, repo, logger, onTaskTerminal)
+  const worktreeExists = await verifyWorktreeExists(
+    taskId,
+    worktreePath,
+    repo,
+    logger,
+    onTaskTerminal
+  )
   if (!worktreeExists) return
 
   const branch = await detectAgentBranch(taskId, worktreePath, repo, logger, onTaskTerminal)
@@ -112,19 +115,44 @@ export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger
     repo,
     logger,
     onTaskTerminal,
-    resolveFailure: resolveFailurePhase,
+    resolveFailure: resolveFailurePhase
   })
   if (!hasCommits) return
 
-  const isNoOp = await detectNoOpAndFailIfSo(taskId, branch, worktreePath, retryCount, repo, logger, onTaskTerminal)
+  const isNoOp = await detectNoOpAndFailIfSo(
+    taskId,
+    branch,
+    worktreePath,
+    retryCount,
+    repo,
+    logger,
+    onTaskTerminal
+  )
   if (isNoOp) return
 
-  const tipVerified = await verifyBranchTipOrFail(taskId, branch, repoPath, repo, logger, onTaskTerminal)
+  const tipVerified = await verifyBranchTipOrFail(
+    taskId,
+    branch,
+    repoPath,
+    repo,
+    logger,
+    onTaskTerminal
+  )
   if (!tipVerified) return
 
   await annotateIfTestsUntouched(taskId, branch, worktreePath, repoPath, repo, logger)
 
-  await transitionTaskToReview(taskId, branch, worktreePath, title, rebaseOutcome, repo, logger, onTaskTerminal, evaluateAutoMerge)
+  await transitionTaskToReview(
+    taskId,
+    branch,
+    worktreePath,
+    title,
+    rebaseOutcome,
+    repo,
+    logger,
+    onTaskTerminal,
+    evaluateAutoMerge
+  )
 }
 
 /**
@@ -264,7 +292,9 @@ async function verifyBranchTipOrFail(
           notes: failureNotes
         })
       } catch (updateErr) {
-        logger.error(`[completion] Failed to persist tip-mismatch status for task ${taskId}: ${updateErr}`)
+        logger.error(
+          `[completion] Failed to persist tip-mismatch status for task ${taskId}: ${updateErr}`
+        )
       }
       await onTaskTerminal(taskId, 'failed')
       return false
@@ -279,7 +309,12 @@ async function verifyBranchTipOrFail(
 }
 
 export function resolveFailure(
-  opts: { taskId: string; retryCount: number; notes?: string; repo: IAgentTaskRepository },
+  opts: {
+    taskId: string
+    retryCount: number
+    notes?: string | undefined
+    repo: IAgentTaskRepository
+  },
   logger?: Logger
 ): boolean {
   return resolveFailurePhase(opts, logger)

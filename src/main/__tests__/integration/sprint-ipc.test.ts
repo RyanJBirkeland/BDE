@@ -410,7 +410,7 @@ describe('Sprint IPC handlers — integration', () => {
       '2. Handle refresh failure by clearing auth state',
       '',
       '## How to Test',
-      '1. Simulate an expired token and verify redirect does not flash',
+      '1. Simulate an expired token and verify redirect does not flash'
     ].join('\n')
 
     it('auto-blocks a queued task when dependencies are unsatisfied', async () => {

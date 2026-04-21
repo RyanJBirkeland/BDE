@@ -7,8 +7,8 @@ import type { DropZone } from '../../stores/panelLayout'
 
 interface DragPayload {
   viewKey: string
-  sourcePanelId?: string
-  sourceTabIndex?: number
+  sourcePanelId?: string | undefined
+  sourceTabIndex?: number | undefined
 }
 
 interface PanelDropOverlayProps {

@@ -5,7 +5,7 @@ import './ThroughputChart.css'
 
 interface ThroughputChartProps {
   data: CompletionBucket[]
-  height?: number
+  height?: number | undefined
 }
 
 interface HourSlot {
@@ -80,7 +80,7 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
   const sum = totals.reduce((a, b) => a + b, 0)
   const avg = sum / 24
   const peakIdx = totals.indexOf(peak)
-  const peakLabel = peakIdx >= 0 ? slots[peakIdx].label : ''
+  const peakLabel = peakIdx >= 0 ? (slots[peakIdx]?.label ?? '') : ''
   const allZero = sum === 0
 
   const plotW = SVG_W - PAD.left - PAD.right
@@ -108,7 +108,9 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
         }}
       >
         <div>
-          <strong style={{ color: 'var(--bde-text)', fontSize: isNarrow ? 24 : 20, fontWeight: 700 }}>
+          <strong
+            style={{ color: 'var(--bde-text)', fontSize: isNarrow ? 24 : 20, fontWeight: 700 }}
+          >
             {lastHour}
           </strong>
           <span style={{ color: 'var(--bde-text-dim)', marginLeft: 6 }}> last hour</span>
@@ -178,7 +180,13 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
           >
             {yMax}
           </text>
-          <text x={PAD.left - 6} y={y(yMax / 2) + 3} textAnchor="end" fontSize="9" fill="var(--bde-text-dim)">
+          <text
+            x={PAD.left - 6}
+            y={y(yMax / 2) + 3}
+            textAnchor="end"
+            fontSize="9"
+            fill="var(--bde-text-dim)"
+          >
             {yMax / 2}
           </text>
           <text

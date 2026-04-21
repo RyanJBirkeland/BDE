@@ -19,7 +19,7 @@ export interface TaskListProps {
   onSaveEdit: () => Promise<void>
   onEditTask: (taskId: string) => void
   onAddTask: () => void
-  onReorderTasks?: (orderedTaskIds: string[]) => void
+  onReorderTasks?: ((orderedTaskIds: string[]) => void) | undefined
   onSpecChange: (spec: string) => void
 }
 
@@ -82,6 +82,7 @@ export function TaskList({
     // Reorder the task list
     const reordered = [...tasks]
     const [removed] = reordered.splice(draggedIndex, 1)
+    if (!removed) return
     reordered.splice(targetIndex, 0, removed)
 
     // Call the reorder callback with new order

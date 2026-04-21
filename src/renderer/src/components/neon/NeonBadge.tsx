@@ -3,7 +3,7 @@ import { type NeonAccent, neonVar } from './types'
 interface NeonBadgeProps {
   accent: NeonAccent
   label: string
-  pulse?: boolean
+  pulse?: boolean | undefined
 }
 
 export function NeonBadge({ accent, label, pulse = false }: NeonBadgeProps): React.JSX.Element {

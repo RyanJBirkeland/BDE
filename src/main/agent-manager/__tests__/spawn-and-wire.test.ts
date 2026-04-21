@@ -130,7 +130,10 @@ describe('spawnAndWireAgent', () => {
     vi.mocked(initializeAgentTracking).mockReturnValue({
       agent: mockAgent,
       agentRunId: 'run-1',
-      turnTracker: { processMessage: vi.fn(), totals: vi.fn() } as unknown as import('../turn-tracker').TurnTracker
+      turnTracker: {
+        processMessage: vi.fn(),
+        totals: vi.fn()
+      } as unknown as import('../turn-tracker').TurnTracker
     })
 
     const deps = makeDeps()
@@ -145,7 +148,10 @@ describe('spawnAndWireAgent', () => {
     vi.mocked(initializeAgentTracking).mockReturnValue({
       agent: mockAgent,
       agentRunId: 'run-1',
-      turnTracker: { processMessage: vi.fn(), totals: vi.fn() } as unknown as import('../turn-tracker').TurnTracker
+      turnTracker: {
+        processMessage: vi.fn(),
+        totals: vi.fn()
+      } as unknown as import('../turn-tracker').TurnTracker
     })
 
     const onSpawnSuccess = vi.fn()
@@ -157,14 +163,21 @@ describe('spawnAndWireAgent', () => {
   it('throws and marks error when spawn fails', async () => {
     vi.mocked(spawnWithTimeout).mockRejectedValue(new Error('Spawn failed'))
     const deps = makeDeps()
-    await expect(spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)).rejects.toThrow('Spawn failed')
-    expect(mockRepo.updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'error' }))
+    await expect(
+      spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)
+    ).rejects.toThrow('Spawn failed')
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'error' })
+    )
   })
 
   it('calls onTaskTerminal when spawn fails', async () => {
     vi.mocked(spawnWithTimeout).mockRejectedValue(new Error('Timeout'))
     const deps = makeDeps()
-    await expect(spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)).rejects.toThrow()
+    await expect(
+      spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)
+    ).rejects.toThrow()
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 
@@ -172,7 +185,9 @@ describe('spawnAndWireAgent', () => {
     vi.mocked(spawnWithTimeout).mockRejectedValue(new Error('Timeout'))
     const onSpawnFailure = vi.fn()
     const deps = makeDeps({ onSpawnFailure })
-    await expect(spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)).rejects.toThrow()
+    await expect(
+      spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)
+    ).rejects.toThrow()
     expect(onSpawnFailure).toHaveBeenCalled()
   })
 })
@@ -183,36 +198,51 @@ describe('handleSpawnFailure', () => {
   it('emits agent:error event', async () => {
     const deps = makeDeps()
     const err = new Error('Binary not found')
-    await expect(handleSpawnFailure(err, makeTask(), worktree, repoPath, deps)).rejects.toThrow('Binary not found')
-    expect(emitAgentEvent).toHaveBeenCalledWith('task-1', expect.objectContaining({
-      type: 'agent:error',
-      message: expect.stringContaining('Spawn failed:')
-    }))
+    await expect(handleSpawnFailure(err, makeTask(), worktree, repoPath, deps)).rejects.toThrow(
+      'Binary not found'
+    )
+    expect(emitAgentEvent).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({
+        type: 'agent:error',
+        message: expect.stringContaining('Spawn failed:')
+      })
+    )
   })
 
   it('calls cleanupWorktree', async () => {
     const deps = makeDeps()
-    await expect(handleSpawnFailure(new Error('err'), makeTask(), worktree, repoPath, deps)).rejects.toThrow()
-    expect(cleanupWorktree).toHaveBeenCalledWith(expect.objectContaining({
-      repoPath,
-      worktreePath: worktree.worktreePath,
-      branch: worktree.branch
-    }))
+    await expect(
+      handleSpawnFailure(new Error('err'), makeTask(), worktree, repoPath, deps)
+    ).rejects.toThrow()
+    expect(cleanupWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repoPath,
+        worktreePath: worktree.worktreePath,
+        branch: worktree.branch
+      })
+    )
   })
 
   it('logs warning when onSpawnFailure hook throws', async () => {
     const logger = makeLogger()
     const deps = makeDeps({
       logger,
-      onSpawnFailure: () => { throw new Error('hook error') }
+      onSpawnFailure: () => {
+        throw new Error('hook error')
+      }
     })
-    await expect(handleSpawnFailure(new Error('spawn err'), makeTask(), worktree, repoPath, deps)).rejects.toThrow('spawn err')
+    await expect(
+      handleSpawnFailure(new Error('spawn err'), makeTask(), worktree, repoPath, deps)
+    ).rejects.toThrow('spawn err')
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('onSpawnFailure hook threw'))
   })
 
   it('re-throws the original error', async () => {
     const deps = makeDeps()
     const originalErr = new Error('Original spawn error')
-    await expect(handleSpawnFailure(originalErr, makeTask(), worktree, repoPath, deps)).rejects.toBe(originalErr)
+    await expect(
+      handleSpawnFailure(originalErr, makeTask(), worktree, repoPath, deps)
+    ).rejects.toBe(originalErr)
   })
 })

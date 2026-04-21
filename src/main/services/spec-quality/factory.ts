@@ -5,7 +5,7 @@ import {
   FilePathsValidator,
   NumberedStepsValidator,
   BannedPhrasesValidator,
-  SizeWarningsValidator,
+  SizeWarningsValidator
 } from './validators/sync-validators'
 import { PrescriptivenessValidator } from './validators/prescriptiveness-validator'
 
@@ -18,7 +18,7 @@ export function createSpecQualityService(): SpecQualityService {
       new FilePathsValidator(),
       new NumberedStepsValidator(),
       new BannedPhrasesValidator(),
-      new SizeWarningsValidator(),
+      new SizeWarningsValidator()
     ],
     [new PrescriptivenessValidator()]
   )

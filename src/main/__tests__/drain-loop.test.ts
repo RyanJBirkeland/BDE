@@ -97,7 +97,10 @@ describe('drainQueuedTasks — quarantine', () => {
 
     expect(deps.repo.updateTask).toHaveBeenCalledWith(
       'task-abc',
-      expect.objectContaining({ status: 'cancelled', notes: expect.stringContaining('DB corruption') })
+      expect.objectContaining({
+        status: 'cancelled',
+        notes: expect.stringContaining('DB corruption')
+      })
     )
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-abc', 'cancelled')
     // Count cleared after quarantine
@@ -107,7 +110,9 @@ describe('drainQueuedTasks — quarantine', () => {
   it('preserves failure count when quarantine updateTask throws', async () => {
     const counts = new Map<string, number>([['task-abc', DRAIN_QUARANTINE_THRESHOLD - 1]])
     // Pass updateTask override via makeRepo's partial overrides path (not top-level repo override)
-    const failingUpdateTask = vi.fn().mockImplementation(() => { throw new Error('disk full') })
+    const failingUpdateTask = vi.fn().mockImplementation(() => {
+      throw new Error('disk full')
+    })
     const deps = makeDeps({}, counts)
     // Replace updateTask on the already-constructed repo mock
     ;(deps.repo.updateTask as ReturnType<typeof vi.fn>) = failingUpdateTask

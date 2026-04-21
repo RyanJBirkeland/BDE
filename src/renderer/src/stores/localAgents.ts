@@ -41,7 +41,7 @@ interface LocalAgentsState extends LogPollerState {
   spawnAgent: (args: {
     task: string
     repoPath: string
-    assistant?: boolean
+    assistant?: boolean | undefined
   }) => Promise<{ pid: number; logPath: string; id: string }>
   selectLocalAgent: (pid: number | null) => void
   startLogPolling: (logPath: string) => () => void
@@ -115,9 +115,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
         },
 
         startLogPolling: (logPath): (() => void) => {
-          return poller.startLogPolling((fromByte) =>
-            tailLog({ logPath, fromByte })
-          )
+          return poller.startLogPolling((fromByte) => tailLog({ logPath, fromByte }))
         },
 
         stopLogPolling: poller.stopLogPolling

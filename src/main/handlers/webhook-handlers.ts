@@ -59,7 +59,7 @@ function validateWebhookUrl(url: string | undefined | null): void {
   // IPv4 ranges — only check if it looks like an IPv4 address
   const ipv4 = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
   if (ipv4) {
-    const [, a, b] = ipv4.map(Number)
+    const [, a = 0, b = 0] = ipv4.map(Number)
     // 127.x.x.x — loopback
     if (a === 127) {
       throw new Error(`Invalid webhook URL: loopback address "${hostname}" is not allowed.`)
@@ -88,31 +88,29 @@ export function registerWebhookHandlers(): void {
     return listWebhooks()
   })
 
-  safeHandle('webhook:create', async (_e, payload: { url: string; events: string[]; secret?: string }) => {
+  type CreateWebhookInput = { url: string; events: string[]; secret?: string | undefined }
+  safeHandle('webhook:create', async (_e, payload: CreateWebhookInput) => {
     validateWebhookUrl(payload.url)
     const webhook = createWebhook(payload)
     logger.info(`Created webhook ${webhook.id} for ${payload.url}`)
     return webhook
   })
 
-  safeHandle('webhook:update', async (
-      _e,
-      payload: {
-        id: string
-        url?: string
-        events?: string[]
-        secret?: string | null
-        enabled?: boolean
-      }
-    ) => {
-      if (payload.url !== undefined) {
-        validateWebhookUrl(payload.url)
-      }
-      const webhook = updateWebhook(payload)
-      logger.info(`Updated webhook ${payload.id}`)
-      return webhook
+  type UpdateWebhookInput = {
+    id: string
+    url?: string | undefined
+    events?: string[] | undefined
+    secret?: string | undefined | null
+    enabled?: boolean | undefined
+  }
+  safeHandle('webhook:update', async (_e, payload: UpdateWebhookInput) => {
+    if (payload.url !== undefined) {
+      validateWebhookUrl(payload.url)
     }
-  )
+    const webhook = updateWebhook(payload)
+    logger.info(`Updated webhook ${payload.id}`)
+    return webhook
+  })
 
   safeHandle('webhook:delete', async (_e, payload: { id: string }) => {
     const result = deleteWebhook(payload.id)

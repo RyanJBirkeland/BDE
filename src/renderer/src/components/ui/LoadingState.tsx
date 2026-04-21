@@ -1,6 +1,6 @@
 interface LoadingStateProps {
-  message?: string
-  className?: string
+  message?: string | undefined
+  className?: string | undefined
 }
 
 export function LoadingState({

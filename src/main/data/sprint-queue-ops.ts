@@ -12,9 +12,9 @@ import { validateTransition } from '../../shared/task-state-machine'
 
 /** Module-private: read one task by id within an open transaction. */
 function fetchTask(id: string, db: Database.Database): SprintTask | null {
-  const row = db
-    .prepare(`SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE id = ?`)
-    .get(id) as Record<string, unknown> | undefined
+  const row = db.prepare(`SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE id = ?`).get(id) as
+    | Record<string, unknown>
+    | undefined
   return row ? mapRowToTask(row) : null
 }
 
@@ -25,7 +25,12 @@ function checkWipLimit(db: Database.Database, maxActive: number): boolean {
   return count < maxActive
 }
 
-export function claimTask(id: string, claimedBy: string, maxActive?: number, db?: Database.Database): SprintTask | null {
+export function claimTask(
+  id: string,
+  claimedBy: string,
+  maxActive?: number,
+  db?: Database.Database
+): SprintTask | null {
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {
@@ -87,7 +92,11 @@ export function claimTask(id: string, claimedBy: string, maxActive?: number, db?
   )
 }
 
-export function releaseTask(id: string, claimedBy: string, db?: Database.Database): SprintTask | null {
+export function releaseTask(
+  id: string,
+  claimedBy: string,
+  db?: Database.Database
+): SprintTask | null {
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {

@@ -9,10 +9,14 @@ import { useSidebarStore, getUnpinnedViews } from '../../stores/sidebar'
 import { usePanelLayoutStore, getOpenViews, type View } from '../../stores/panelLayout'
 import { VIEW_LOADERS } from '../../lib/view-resolver'
 import { VIEW_REGISTRY } from '../../lib/view-registry'
-import { useSprintTasks, selectReviewTaskCount, selectFailedTaskCount } from '../../stores/sprintTasks'
+import {
+  useSprintTasks,
+  selectReviewTaskCount,
+  selectFailedTaskCount
+} from '../../stores/sprintTasks'
 
 interface SidebarProps {
-  model?: string
+  model?: string | undefined
 }
 
 export function Sidebar({ model }: SidebarProps): React.JSX.Element {

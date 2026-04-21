@@ -142,5 +142,14 @@ export async function spawnAndWireAgent(
     throw err // unreachable — handleSpawnFailure always throws; satisfies TypeScript
   }
 
-  return initializeAgentTracking(task, handle, effectiveModel, worktree, prompt, activeAgents, repo, logger)
+  return initializeAgentTracking(
+    task,
+    handle,
+    effectiveModel,
+    worktree,
+    prompt,
+    activeAgents,
+    repo,
+    logger
+  )
 }

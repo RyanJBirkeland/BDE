@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
 
 type PanelProps = {
-  title?: string
-  actions?: ReactNode
+  title?: string | undefined
+  actions?: ReactNode | undefined
   children: ReactNode
-  className?: string
+  className?: string | undefined
 }
 
 export function Panel({ title, actions, children, className }: PanelProps): React.JSX.Element {

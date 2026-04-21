@@ -112,9 +112,7 @@ describe('Onboarding', () => {
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)
 
-    const bypassButton = await waitFor(() =>
-      screen.getByText('Continue without 3 required checks')
-    )
+    const bypassButton = await waitFor(() => screen.getByText('Continue without 3 required checks'))
     expect(bypassButton.closest('button')).not.toBeDisabled()
 
     const callout = screen.getByRole('alert')
@@ -141,9 +139,9 @@ describe('Onboarding', () => {
   })
 
   it('enables Continue Anyway when only optional checks fail', async () => {
-    ;(window.api.settings as unknown as Record<string, unknown>).get = vi.fn().mockRejectedValue(
-      new Error('no repos')
-    )
+    ;(window.api.settings as unknown as Record<string, unknown>).get = vi
+      .fn()
+      .mockRejectedValue(new Error('no repos'))
 
     const onReady = vi.fn()
     render(<Onboarding onReady={onReady} />)

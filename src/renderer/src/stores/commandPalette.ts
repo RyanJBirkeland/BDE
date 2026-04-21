@@ -15,9 +15,9 @@ export interface Command {
   id: string
   label: string
   category: CommandCategory
-  hint?: string
+  hint?: string | undefined
   action: () => void
-  keywords?: string[] // Additional search terms
+  keywords?: string[] // Additional search terms | undefined
 }
 
 interface CommandPaletteStore {

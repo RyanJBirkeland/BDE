@@ -156,7 +156,8 @@ function makeMockRepo(): IAgentTaskRepository {
       (getOrphanedTasks as ReturnType<typeof vi.fn>)(...args),
     clearStaleClaimedBy: vi.fn().mockReturnValue(0),
     getActiveTaskCount: vi.fn().mockReturnValue(0),
-    claimTask: (...args: [string, string, number?]) => (claimTask as ReturnType<typeof vi.fn>)(...args),
+    claimTask: (...args: [string, string, number?]) =>
+      (claimTask as ReturnType<typeof vi.fn>)(...args),
     getGroup: vi.fn().mockReturnValue(null),
     getGroupTasks: vi.fn().mockReturnValue([]),
     getGroupsWithDependencies: vi.fn().mockReturnValue([])
@@ -558,7 +559,14 @@ describe('AgentManagerImpl — class internals', () => {
       const repo = makeMockRepo()
       const depIndex = createDependencyIndex()
       const logger = makeLogger()
-      const result = checkAndBlockDeps('task-1', '"just-a-string"', new Map(), repo, depIndex, logger)
+      const result = checkAndBlockDeps(
+        'task-1',
+        '"just-a-string"',
+        new Map(),
+        repo,
+        depIndex,
+        logger
+      )
       expect(result).toBe(false)
     })
   })
@@ -820,9 +828,7 @@ describe('AgentManagerImpl — class internals', () => {
   // -------------------------------------------------------------------------
 
   describe('_drainQueuedTasks', () => {
-    function makeInlineRepo(
-      queuedTasks: Array<Record<string, unknown>>
-    ): ISprintTaskRepository {
+    function makeInlineRepo(queuedTasks: Array<Record<string, unknown>>): ISprintTaskRepository {
       return {
         getTask: vi.fn(),
         updateTask: vi.fn().mockReturnValue(null),

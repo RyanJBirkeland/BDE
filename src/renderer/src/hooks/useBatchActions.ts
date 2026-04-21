@@ -52,10 +52,7 @@ export function useBatchActions(): UseBatchActionsResult {
     setBatchActionInFlight(null)
   }
 
-  const handleBatchCreatePr = async (
-    tasks: SprintTask[],
-    ghConfigured: boolean
-  ): Promise<void> => {
+  const handleBatchCreatePr = async (tasks: SprintTask[], ghConfigured: boolean): Promise<void> => {
     if (!ghConfigured) return
     const ok = await confirm({
       title: `Create ${tasks.length} PRs`,
@@ -66,7 +63,9 @@ export function useBatchActions(): UseBatchActionsResult {
     if (!ok) return
 
     setBatchActionInFlight('batchPr')
-    await batchCreatePr(tasks.map((t) => ({ ...t, spec: t.spec ?? undefined, prompt: t.prompt ?? undefined })))
+    await batchCreatePr(
+      tasks.map((t) => ({ ...t, spec: t.spec ?? undefined, prompt: t.prompt ?? undefined }))
+    )
     setBatchActionInFlight(null)
   }
 

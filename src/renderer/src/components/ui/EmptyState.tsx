@@ -1,21 +1,21 @@
 import type { ReactNode } from 'react'
 
 type RichEmptyStateProps = {
-  icon?: ReactNode
+  icon?: ReactNode | undefined
   title: string
-  message?: never
-  description?: string
+  message?: never | undefined
+  description?: string | undefined
   action?: { label: string; onClick: () => void }
-  className?: string
+  className?: string | undefined
 }
 
 type SimpleEmptyStateProps = {
   message: string
-  title?: never
-  icon?: never
-  description?: never
-  action?: never
-  className?: string
+  title?: never | undefined
+  icon?: never | undefined
+  description?: never | undefined
+  action?: never | undefined
+  className?: string | undefined
 }
 
 type EmptyStateProps = RichEmptyStateProps | SimpleEmptyStateProps

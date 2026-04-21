@@ -63,11 +63,15 @@ describe('cancelTask', () => {
     const updateTask = vi.fn().mockReturnValue(null)
     const onStatusTerminal = vi.fn()
 
-    const result = await cancelTask('missing', {}, {
-      onStatusTerminal,
-      logger: fakeLogger,
-      updateTask
-    })
+    const result = await cancelTask(
+      'missing',
+      {},
+      {
+        onStatusTerminal,
+        logger: fakeLogger,
+        updateTask
+      }
+    )
 
     expect(result).toBeNull()
     expect(onStatusTerminal).not.toHaveBeenCalled()
@@ -77,11 +81,15 @@ describe('cancelTask', () => {
     const updateTask = vi.fn().mockReturnValue({ id: 't1', status: 'cancelled' })
     const onStatusTerminal = vi.fn().mockRejectedValue(new Error('dep-index offline'))
 
-    const result = await cancelTask('t1', {}, {
-      onStatusTerminal,
-      logger: fakeLogger,
-      updateTask
-    })
+    const result = await cancelTask(
+      't1',
+      {},
+      {
+        onStatusTerminal,
+        logger: fakeLogger,
+        updateTask
+      }
+    )
 
     expect(result).toEqual({ id: 't1', status: 'cancelled' })
     expect(fakeLogger.error).toHaveBeenCalledWith(

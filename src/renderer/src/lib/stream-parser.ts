@@ -96,10 +96,11 @@ export function parseStreamJson(
         } else if (delta?.type === 'input_json_delta' && typeof delta.partial_json === 'string') {
           // Accumulate partial JSON into the last tool_use block
           for (let i = items.length - 1; i >= 0; i--) {
-            if (items[i].kind === 'tool_use') {
+            const item = items[i]
+            if (item && item.kind === 'tool_use') {
               items[i] = {
-                ...items[i],
-                input: (items[i] as ChatItemToolUse).input + delta.partial_json
+                ...item,
+                input: (item as ChatItemToolUse).input + delta.partial_json
               } as ChatItemToolUse
               break
             }
@@ -171,10 +172,9 @@ export function parseStreamJson(
         // Complete assistant turn from --verbose output.
         // Authoritative — discard streaming delta text for this turn to avoid duplication.
         currentText = ''
-        while (
-          items.length > 0 &&
-          (items[items.length - 1].kind === 'text' || items[items.length - 1].kind === 'tool_use')
-        ) {
+        while (items.length > 0) {
+          const last = items[items.length - 1]
+          if (!last || (last.kind !== 'text' && last.kind !== 'tool_use')) break
           items.pop()
         }
         const msg = parsed.message as Record<string, unknown> | undefined

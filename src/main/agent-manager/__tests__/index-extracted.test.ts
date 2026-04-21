@@ -116,7 +116,9 @@ describe('handleWatchdogVerdict', () => {
         'Agent hit API rate limits 10+ times and was re-queued with lower concurrency. This usually resolves automatically. If it persists, reduce maxConcurrent in Settings or wait for rate limit cooldown.'
     })
     expect(result.shouldNotifyTerminal).toBe(false)
-    expect(result.concurrency.capacityAfterBackpressure).toBeLessThan(concurrency.capacityAfterBackpressure)
+    expect(result.concurrency.capacityAfterBackpressure).toBeLessThan(
+      concurrency.capacityAfterBackpressure
+    )
   })
 
   it('reaches floor when backpressure applied at capacityAfterBackpressure=2', () => {

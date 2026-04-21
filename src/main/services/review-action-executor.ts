@@ -50,10 +50,10 @@ export interface ReviewActionDeps {
  * Used to pass information between git operations (e.g., branch name from getBranch).
  */
 interface ExecutorState {
-  branch?: string
-  baseSha?: string
-  conflicts?: string[]
-  cssWarnings?: string[]
+  branch?: string | undefined
+  baseSha?: string | undefined
+  conflicts?: string[] | undefined
+  cssWarnings?: string[] | undefined
 }
 
 // ============================================================================
@@ -185,7 +185,7 @@ async function executeGitOp(
         })
         if (!result.success) {
           const error = new Error(result.error ?? 'Unknown merge error') as Error & {
-            conflicts?: string[]
+            conflicts?: string[] | undefined
           }
           error.conflicts = result.conflicts
           throw error
@@ -202,7 +202,7 @@ async function executeGitOp(
         )
         if (!result.success) {
           const error = new Error(result.error ?? 'Unknown merge error') as Error & {
-            conflicts?: string[]
+            conflicts?: string[] | undefined
           }
           error.conflicts = result.conflicts
           throw error

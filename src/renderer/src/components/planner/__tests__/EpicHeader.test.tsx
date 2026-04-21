@@ -14,7 +14,7 @@ const mockEpic = {
   task_ids: [],
   depends_on: [],
   created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
 }
 
 describe('EpicHeader', () => {

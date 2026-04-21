@@ -3,7 +3,7 @@ import { type NeonAccent, neonVar } from './types'
 interface NeonProgressProps {
   value: number
   accent: NeonAccent
-  label?: string
+  label?: string | undefined
 }
 
 export function NeonProgress({ value, accent, label }: NeonProgressProps): React.JSX.Element {

@@ -51,7 +51,11 @@ export function getCompletionsPerHour(
     GROUP BY hour
     ORDER BY hour ASC
   `
-  return database.prepare(sql).all() as { hour: string; successCount: number; failedCount: number }[]
+  return database.prepare(sql).all() as {
+    hour: string
+    successCount: number
+    failedCount: number
+  }[]
 }
 
 /**

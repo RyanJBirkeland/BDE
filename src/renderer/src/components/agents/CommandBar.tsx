@@ -9,8 +9,8 @@ import type { Attachment } from '../../../../shared/types'
 interface CommandBarProps {
   onSend: (message: string, attachment?: Attachment) => void
   onCommand: (cmd: string, args?: string) => void
-  disabled?: boolean
-  disabledReason?: string
+  disabled?: boolean | undefined
+  disabledReason?: string | undefined
 }
 
 const COMMANDS = AGENT_COMMANDS
@@ -59,7 +59,7 @@ export function CommandBar({
     // Check if it's a command
     if (trimmed.startsWith('/')) {
       const parts = trimmed.split(/\s+/)
-      const command = parts[0]
+      const command = parts[0] ?? ''
       const args = parts.slice(1).join(' ')
       onCommand(command, args || undefined)
     } else {
@@ -113,8 +113,9 @@ export function CommandBar({
 
       // Try the web clipboard API first (works for images dragged from browser, etc.)
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type.startsWith('image/')) {
-          imageBlob = items[i].getAsFile()
+        const item = items[i]
+        if (item && item.type.startsWith('image/')) {
+          imageBlob = item.getAsFile()
           break
         }
       }
@@ -136,7 +137,7 @@ export function CommandBar({
             name: `paste-${Date.now()}.png`,
             type: 'image',
             mimeType: imageBlob!.type || 'image/png',
-            data: dataUrl.split(',')[1],
+            data: dataUrl.split(',')[1] ?? '',
             preview: dataUrl
           })
         }
@@ -222,9 +223,7 @@ export function CommandBar({
               objectFit: 'contain'
             }}
           />
-          <span className="command-bar__attachment-name">
-            {attachment.name}
-          </span>
+          <span className="command-bar__attachment-name">{attachment.name}</span>
           <button
             onClick={() => setAttachment(null)}
             title="Remove attachment"

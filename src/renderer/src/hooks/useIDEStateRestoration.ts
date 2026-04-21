@@ -8,16 +8,16 @@ export function useIDEStateRestoration(): void {
         const saved = await window.api.settings.getJson('ide.state')
         if (!saved || typeof saved !== 'object') return
         const state = saved as {
-          rootPath?: string
-          openTabs?: { filePath: string }[]
-          activeFilePath?: string
-          sidebarCollapsed?: boolean
-          terminalCollapsed?: boolean
-          recentFolders?: string[]
-          expandedDirs?: Record<string, boolean>
-          minimapEnabled?: boolean
-          wordWrapEnabled?: boolean
-          fontSize?: number
+          rootPath?: string | undefined
+          openTabs?: { filePath: string }[] | undefined
+          activeFilePath?: string | undefined
+          sidebarCollapsed?: boolean | undefined
+          terminalCollapsed?: boolean | undefined
+          recentFolders?: string[] | undefined
+          expandedDirs?: Record<string, boolean> | undefined
+          minimapEnabled?: boolean | undefined
+          wordWrapEnabled?: boolean | undefined
+          fontSize?: number | undefined
         }
 
         // Skip rootPath if it no longer exists on this machine (e.g., migrated from another machine).

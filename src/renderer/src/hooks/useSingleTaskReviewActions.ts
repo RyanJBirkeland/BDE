@@ -17,7 +17,7 @@ function getNextReviewTaskId(
     .filter((t) => t.status === 'review' && t.id !== currentTaskId)
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
-  return reviewTasks.length > 0 ? reviewTasks[0].id : null
+  return reviewTasks.length > 0 && reviewTasks[0] ? reviewTasks[0].id : null
 }
 
 export interface UseSingleTaskReviewActionsResult {
@@ -26,7 +26,7 @@ export interface UseSingleTaskReviewActionsResult {
   setMergeStrategy: (strategy: 'squash' | 'merge' | 'rebase') => void
   freshness: {
     status: 'fresh' | 'stale' | 'conflict' | 'unknown' | 'loading'
-    commitsBehind?: number
+    commitsBehind?: number | undefined
   }
   ghConfigured: boolean
   shipIt: () => Promise<void>

@@ -141,10 +141,10 @@ function isRetryableServerError(status: number): boolean {
 // ---------------------------------------------------------------------------
 
 export interface GithubFetchOptions {
-  method?: string
-  headers?: Record<string, string>
-  body?: string | null
-  timeoutMs?: number
+  method?: string | undefined
+  headers?: Record<string, string> | undefined
+  body?: string | null | undefined
+  timeoutMs?: number | undefined
 }
 
 /**
@@ -161,12 +161,13 @@ export async function githubFetch(url: string, options?: GithubFetchOptions): Pr
   let lastResponse!: Response
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    lastResponse = await fetch(url, {
-      method,
-      headers,
-      body,
-      signal: AbortSignal.timeout(timeoutMs)
-    })
+    const init: RequestInit = {
+      signal: AbortSignal.timeout(timeoutMs),
+      ...(method !== undefined ? { method } : {}),
+      ...(headers !== undefined ? { headers } : {}),
+      ...(body !== undefined ? { body } : {})
+    }
+    lastResponse = await fetch(url, init)
 
     const rl = parseRateLimitHeaders(lastResponse.headers)
     updateRateLimitState(rl)
@@ -248,13 +249,13 @@ export function _resetRateLimitState(): void {
 export function parseNextLink(linkHeader: string | null): string | null {
   if (!linkHeader) return null
   const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
-  return match ? match[1] : null
+  return match?.[1] ?? null
 }
 
 interface FetchAllPagesOptions {
   token: string
-  timeoutMs?: number
-  headers?: Record<string, string>
+  timeoutMs?: number | undefined
+  headers?: Record<string, string> | undefined
 }
 
 /**
@@ -276,7 +277,7 @@ export async function fetchAllGitHubPages<T>(
         Accept: 'application/vnd.github+json',
         ...opts.headers
       },
-      timeoutMs: opts.timeoutMs
+      ...(opts.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {})
     })
 
     if (!res.ok) return items
@@ -378,7 +379,11 @@ function broadcastGitHubError(error: GitHubError): void {
   const last = lastBroadcastAt.get(error.kind) ?? 0
   if (now - last < BROADCAST_DEBOUNCE_MS) return
   lastBroadcastAt.set(error.kind, now)
-  broadcast('github:error', { kind: error.kind, message: error.message, status: error.status })
+  broadcast('github:error', {
+    kind: error.kind,
+    message: error.message,
+    ...(error.status !== undefined ? { status: error.status } : {})
+  })
 }
 
 /** Reset broadcast debounce state — tests only. */

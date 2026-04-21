@@ -86,7 +86,12 @@ export interface RunAgentEventDeps {
 export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventDeps
 
 // Re-export functions consumed by external callers and tests
-export { validateTaskForRun, assembleRunContext, fetchUpstreamContext, readPriorScratchpad } from './prompt-assembly'
+export {
+  validateTaskForRun,
+  assembleRunContext,
+  fetchUpstreamContext,
+  readPriorScratchpad
+} from './prompt-assembly'
 export { consumeMessages } from './message-consumer'
 
 const CLEANUP_RETRY_DELAYS_MS = [100, 500, 2000]
@@ -156,7 +161,7 @@ export async function cleanupWorktreeWithRetry(
       await cleanupWorktree(args)
       return
     } catch (err) {
-      const delayMs = CLEANUP_RETRY_DELAYS_MS[attempt]
+      const delayMs = CLEANUP_RETRY_DELAYS_MS[attempt] ?? 1000
       logger.warn(
         `[agent-manager] Worktree cleanup attempt ${attempt + 1} failed for task ${taskId} — retrying in ${delayMs}ms: ${err}`
       )
@@ -172,13 +177,14 @@ export async function cleanupWorktreeWithRetry(
       `[agent-manager] Stale worktree for task ${taskId} at ${worktree.worktreePath} — manual cleanup needed: ${detail}`
     )
     const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktree.worktreePath}`
-    const truncated = note.length > NOTES_MAX_LENGTH
-      ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...'
-      : note
+    const truncated =
+      note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
     try {
       repo.updateTask(taskId, { notes: truncated })
     } catch (updateErr) {
-      logger.error(`[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`)
+      logger.error(
+        `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
+      )
     }
   }
 }
@@ -260,7 +266,12 @@ async function resolveAgentExit(
       // Pass lastAgentOutput so the retry agent knows what failed and doesn't blindly repeat
       const failureNotes = [lastAgentOutput, String(err)].filter(Boolean).join('\n---\n')
       const isTerminal = resolveFailure(
-        { taskId: task.id, retryCount: task.retry_count ?? 0, notes: failureNotes || undefined, repo },
+        {
+          taskId: task.id,
+          retryCount: task.retry_count ?? 0,
+          notes: failureNotes || undefined,
+          repo
+        },
         logger
       )
       if (isTerminal) {
@@ -330,7 +341,9 @@ async function finalizeAgentRun(
   // Check if watchdog already cleaned up, or if a retry has already overwritten this entry.
   // Keying by taskId means a retry's set() overwrites the previous run's entry — guard by agentRunId.
   if (activeAgents.get(task.id)?.agentRunId !== agent.agentRunId) {
-    logger.info(`[agent-manager] Agent ${task.id} (run ${agent.agentRunId}) already cleaned up or superseded by retry`)
+    logger.info(
+      `[agent-manager] Agent ${task.id} (run ${agent.agentRunId}) already cleaned up or superseded by retry`
+    )
     // Flush any pending agent events to SQLite before cleanup.
     // The batcher uses a 100ms timer — without this flush, the last
     // batch of events is broadcast to the UI but never persisted.
@@ -341,7 +354,18 @@ async function finalizeAgentRun(
   }
 
   persistAgentRunTelemetry(agentRunId, agent, exitCode, turnTracker, exitedAt, durationMs, logger)
-  await resolveAgentExit(task, exitCode, lastAgentOutput, agent, exitedAt, worktree, repoPath, repo, onTaskTerminal, logger)
+  await resolveAgentExit(
+    task,
+    exitCode,
+    lastAgentOutput,
+    agent,
+    exitedAt,
+    worktree,
+    repoPath,
+    repo,
+    onTaskTerminal,
+    logger
+  )
 
   // Remove from active map — guarded: a retry may have already overwritten this entry
   if (activeAgents.get(task.id)?.agentRunId === agent.agentRunId) {
@@ -354,7 +378,9 @@ async function finalizeAgentRun(
 
   await cleanupOrPreserveWorktree(task, worktree, repoPath, repo, logger)
 
-  logger.info(`[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'})`)
+  logger.info(
+    `[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'})`
+  )
 }
 
 export async function runAgent(
@@ -391,18 +417,29 @@ export async function runAgent(
         claimed_by: null
       })
     } catch (updateErr) {
-      logger.error(`[run-agent] Failed to persist pre-spawn failure for task ${task.id}: ${updateErr}`)
+      logger.error(
+        `[run-agent] Failed to persist pre-spawn failure for task ${task.id}: ${updateErr}`
+      )
     }
-    await deps.onTaskTerminal(task.id, 'error').catch((terminalErr) =>
-      logger.warn(`[run-agent] onTaskTerminal failed for ${task.id}: ${terminalErr}`)
-    )
+    await deps
+      .onTaskTerminal(task.id, 'error')
+      .catch((terminalErr) =>
+        logger.warn(`[run-agent] onTaskTerminal failed for ${task.id}: ${terminalErr}`)
+      )
     return
   }
 
   // Phase 2: Spawn and wire agent
   let agent: ActiveAgent, agentRunId: string, turnTracker: TurnTracker
   try {
-    const spawnResult = await spawnAndWireAgent(task, prompt, worktree, repoPath, effectiveModel, deps)
+    const spawnResult = await spawnAndWireAgent(
+      task,
+      prompt,
+      worktree,
+      repoPath,
+      effectiveModel,
+      deps
+    )
     agent = spawnResult.agent
     agentRunId = spawnResult.agentRunId
     turnTracker = spawnResult.turnTracker
@@ -432,7 +469,7 @@ export async function runAgent(
       playgroundWrite.contentType
     ).catch((err) => {
       logger.warn(
-        `[run-agent] playground emit failed for task ${task.id}: ${err instanceof Error ? err.stack ?? err.message : String(err)}`
+        `[run-agent] playground emit failed for task ${task.id}: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`
       )
     })
   }

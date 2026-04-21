@@ -9,7 +9,7 @@ export interface EpicTaskStub {
   title: string
   spec: string
   spec_type: SpecType
-  priority?: number
+  priority?: number | undefined
 }
 
 export interface EpicTemplate {

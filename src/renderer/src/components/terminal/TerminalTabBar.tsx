@@ -12,11 +12,11 @@ interface TerminalTabBarProps {
   onCloseTab: (id: string) => void
   onAddTab: (shell?: string) => void
   onCreateAgentTab: (agentId: string, label: string, sessionKey: string) => void
-  onRenameTab?: (id: string, title: string) => void
-  onReorderTab?: (fromIdx: number, toIdx: number) => void
-  onDuplicateTab?: (id: string) => void
-  onCloseOthers?: (id: string) => void
-  onCloseAll?: () => void
+  onRenameTab?: ((id: string, title: string) => void) | undefined
+  onReorderTab?: ((fromIdx: number, toIdx: number) => void) | undefined
+  onDuplicateTab?: ((id: string) => void) | undefined
+  onCloseOthers?: ((id: string) => void) | undefined
+  onCloseAll?: (() => void) | undefined
 }
 
 export function TerminalTabBar({
@@ -198,7 +198,10 @@ export function TerminalTabBar({
   const { getTabProps } = useRovingTabIndex({
     count: tabs.length,
     activeIndex: activeTabIdx,
-    onSelect: (index) => onSelectTab(tabs[index].id)
+    onSelect: (index) => {
+      const tab = tabs[index]
+      if (tab) onSelectTab(tab.id)
+    }
   })
 
   return (

@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  createEpicGroupService,
-  EpicCycleError,
-  EpicNotFoundError
-} from './epic-group-service'
+import { createEpicGroupService, EpicCycleError, EpicNotFoundError } from './epic-group-service'
 import type { TaskGroup, EpicDependency } from '../../shared/types'
 
 const fakeGroup = (overrides: Partial<TaskGroup> = {}): TaskGroup => ({
@@ -118,7 +114,9 @@ describe('createEpicGroupService', () => {
   it('throws on updateDependencyCondition when queries return null', () => {
     queries.updateGroupDependencyCondition.mockReturnValue(null)
     const svc = createEpicGroupService(queries)
-    expect(() => svc.updateDependencyCondition('g1', 'upstream', 'on_success')).toThrow(/Failed to update dependency condition/)
+    expect(() => svc.updateDependencyCondition('g1', 'upstream', 'on_success')).toThrow(
+      /Failed to update dependency condition/
+    )
   })
 
   it('exposes an EpicDepsReader — getDependentEpics reflects the live graph', () => {
@@ -149,7 +147,7 @@ describe('createEpicGroupService', () => {
   describe('setDependencies (atomic)', () => {
     // Trivial transaction wrapper — just runs the fn. Real impl wraps in SQLite
     // transaction; we only care about call sequence + rollback semantics here.
-    const runInTx = <T,>(fn: () => T): T => fn()
+    const runInTx = <T>(fn: () => T): T => fn()
 
     it('applies the full diff: adds, removes, and updates conditions in one call', () => {
       queries.getGroup.mockReturnValue(

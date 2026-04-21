@@ -83,7 +83,8 @@ export const BDE_DIR = process.env.BDE_DATA_DIR ?? join(homedir(), '.bde')
 // Allow tests to redirect the DB to an isolated path (prevents test artifact pollution).
 // Validate the path to prevent pointing the database at arbitrary system files.
 validateTestDbPath(process.env.BDE_TEST_DB)
-export const BDE_DB_PATH = process.env.BDE_TEST_DB ?? process.env.BDE_DB_PATH ?? join(BDE_DIR, 'bde.db')
+export const BDE_DB_PATH =
+  process.env.BDE_TEST_DB ?? process.env.BDE_DB_PATH ?? join(BDE_DIR, 'bde.db')
 export const BDE_AGENTS_INDEX = join(BDE_DIR, 'agents.json')
 export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
 export const BDE_AGENT_TMP_DIR = join(tmpdir(), 'bde-agents')

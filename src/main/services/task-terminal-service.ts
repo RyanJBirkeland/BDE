@@ -102,9 +102,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
             )
           } catch (err) {
             failedTaskIds.push(id)
-            deps.logger.error(
-              `[task-terminal-service] resolveDependents failed for ${id}: ${err}`
-            )
+            deps.logger.error(`[task-terminal-service] resolveDependents failed for ${id}: ${err}`)
           }
         }
         if (failedTaskIds.length > 0) {

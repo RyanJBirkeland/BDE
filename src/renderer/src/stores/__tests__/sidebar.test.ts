@@ -18,15 +18,7 @@ describe('sidebar store', () => {
     vi.clearAllMocks()
     const { useSidebarStore } = await import('../sidebar')
     useSidebarStore.setState({
-      pinnedViews: [
-        'dashboard',
-        'agents',
-        'ide',
-        'sprint',
-        'code-review',
-        'settings',
-        'planner'
-      ]
+      pinnedViews: ['dashboard', 'agents', 'ide', 'sprint', 'code-review', 'settings', 'planner']
     })
   })
 

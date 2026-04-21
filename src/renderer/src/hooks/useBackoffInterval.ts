@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react'
 
 interface BackoffOptions {
   /** Maximum interval after repeated errors (default: 5x baseMs) */
-  maxMs?: number
+  maxMs?: number | undefined
   /** Random jitter added to each interval (default: 10% of baseMs) */
-  jitterMs?: number
+  jitterMs?: number | undefined
   /** Multiplier on error (default: 2) */
-  backoffFactor?: number
+  backoffFactor?: number | undefined
 }
 
 /**

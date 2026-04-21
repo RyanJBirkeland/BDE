@@ -97,9 +97,7 @@ export function resolveDependents(
       try {
         onTaskTerminal?.(depId, 'cancelled')
       } catch (err) {
-        ;(logger ?? console).warn(
-          `[resolve-dependents] onTaskTerminal threw for ${depId}: ${err}`
-        )
+        ;(logger ?? console).warn(`[resolve-dependents] onTaskTerminal threw for ${depId}: ${err}`)
         throw err
       }
       updateTask(depId, { status: 'cancelled', notes: cancelNote })
@@ -122,10 +120,8 @@ export function resolveDependents(
       return
     }
 
-    const { satisfied, blockedBy } = index.areDependenciesSatisfied(
-      depId,
-      task.depends_on,
-      (id) => statusCache.get(id)
+    const { satisfied, blockedBy } = index.areDependenciesSatisfied(depId, task.depends_on, (id) =>
+      statusCache.get(id)
     )
 
     if (satisfied) {

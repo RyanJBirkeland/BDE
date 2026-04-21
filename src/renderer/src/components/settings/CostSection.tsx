@@ -307,7 +307,9 @@ export function CostSection(): React.JSX.Element {
         {error && (
           <div className="cost-view__error" role="alert">
             <span>Failed to load cost data: {error}</span>
-            <button type="button" onClick={fetchData}>Retry</button>
+            <button type="button" onClick={fetchData}>
+              Retry
+            </button>
           </div>
         )}
         {summary && (

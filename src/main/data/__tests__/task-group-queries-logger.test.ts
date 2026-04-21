@@ -8,7 +8,10 @@ describe('task-group-queries logger injection', () => {
 
   it('accepts a Logger object without throwing', () => {
     const mockLogger = {
-      info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn()
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn()
     }
     expect(() => setTaskGroupQueriesLogger(mockLogger)).not.toThrow()
   })

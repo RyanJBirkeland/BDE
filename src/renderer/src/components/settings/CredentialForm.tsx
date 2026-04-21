@@ -12,9 +12,9 @@ export interface CredentialField {
   key: string
   label: string
   type: 'url' | 'token'
-  placeholder?: string
+  placeholder?: string | undefined
   /** Placeholder shown when a saved value already exists */
-  savedPlaceholder?: string
+  savedPlaceholder?: string | undefined
 }
 
 export interface CredentialFormProps {
@@ -24,15 +24,15 @@ export interface CredentialFormProps {
   hasExisting: Record<string, boolean>
   onChange: (key: string, value: string) => void
   onSave: () => Promise<void>
-  onTest?: () => Promise<void>
+  onTest?: (() => Promise<void>) | undefined
   dirty: boolean
-  saveDisabled?: boolean
-  testDisabled?: boolean
-  saving?: boolean
-  testing?: boolean
-  testResult?: 'success' | 'error' | null
+  saveDisabled?: boolean | undefined
+  testDisabled?: boolean | undefined
+  saving?: boolean | undefined
+  testing?: boolean | undefined
+  testResult?: 'success' | 'error' | null | undefined
   /** Extra content rendered between the title and first field */
-  statusBadge?: React.ReactNode
+  statusBadge?: React.ReactNode | undefined
 }
 
 export function CredentialForm({

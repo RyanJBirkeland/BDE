@@ -32,21 +32,21 @@ export function getTaskGroupQueriesLogger(): Logger {
 
 export interface CreateGroupInput {
   name: string
-  icon?: string
-  accent_color?: string
+  icon?: string | undefined
+  accent_color?: string | undefined
   /** `null` stores SQL NULL; `undefined` (or field absent) omits the column from the INSERT. */
-  goal?: string | null
-  depends_on?: EpicDependency[] | null
+  goal?: string | null | undefined
+  depends_on?: EpicDependency[] | null | undefined
 }
 
 export interface UpdateGroupInput {
-  name?: string
-  icon?: string
-  accent_color?: string
+  name?: string | undefined
+  icon?: string | undefined
+  accent_color?: string | undefined
   /** `null` clears the column to SQL NULL; `undefined` (or field absent) leaves it untouched. */
-  goal?: string | null
-  status?: 'draft' | 'ready' | 'in-pipeline' | 'completed'
-  depends_on?: EpicDependency[] | null
+  goal?: string | null | undefined
+  status?: 'draft' | 'ready' | 'in-pipeline' | 'completed' | undefined
+  depends_on?: EpicDependency[] | null | undefined
 }
 
 /**
@@ -394,7 +394,9 @@ export function updateGroupDependencyCondition(
     }
 
     const newDeps = [...currentDeps]
-    newDeps[depIndex] = { ...newDeps[depIndex], condition }
+    const existing = newDeps[depIndex]
+    if (!existing) throw new Error(`Dependency not found: ${upstreamId}`)
+    newDeps[depIndex] = { ...existing, condition }
 
     return updateGroup(groupId, { depends_on: newDeps }, conn)
   } catch (err) {

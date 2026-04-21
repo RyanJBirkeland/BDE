@@ -8,12 +8,14 @@ interface PlaygroundCardProps {
   sizeBytes: number
   timestamp: number
   searchClass: string
-  onPlaygroundClick?: (block: {
-    filename: string
-    html: string
-    contentType: PlaygroundContentType
-    sizeBytes: number
-  }) => void
+  onPlaygroundClick?:
+    | ((block: {
+        filename: string
+        html: string
+        contentType: PlaygroundContentType
+        sizeBytes: number
+      }) => void)
+    | undefined
   html: string
   contentType: PlaygroundContentType
 }

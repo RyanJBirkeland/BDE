@@ -16,20 +16,20 @@ export function registerClaudeConfigHandlers(): void {
     }
   })
 
-  safeHandle('claude:setPermissions', async (_e, permissions: { allow: string[]; deny: string[] }) => {
-      if (!existsSync(CLAUDE_DIR)) mkdirSync(CLAUDE_DIR, { recursive: true })
+  type PermissionsInput = { allow: string[]; deny: string[] }
+  safeHandle('claude:setPermissions', async (_e, permissions: PermissionsInput) => {
+    if (!existsSync(CLAUDE_DIR)) mkdirSync(CLAUDE_DIR, { recursive: true })
 
-      let settings: Record<string, unknown> = {}
-      if (existsSync(SETTINGS_PATH)) {
-        try {
-          settings = JSON.parse(readFileSync(SETTINGS_PATH, 'utf-8'))
-        } catch {
-          /* start fresh */
-        }
+    let settings: Record<string, unknown> = {}
+    if (existsSync(SETTINGS_PATH)) {
+      try {
+        settings = JSON.parse(readFileSync(SETTINGS_PATH, 'utf-8'))
+      } catch {
+        /* start fresh */
       }
-
-      settings.permissions = { allow: permissions.allow, deny: permissions.deny }
-      writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n')
     }
-  )
+
+    settings.permissions = { allow: permissions.allow, deny: permissions.deny }
+    writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n')
+  })
 }

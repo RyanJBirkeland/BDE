@@ -11,7 +11,7 @@ interface OnboardingWizardProps {
   onComplete: () => void
 }
 
-export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.JSX.Element {
+export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.JSX.Element | null {
   const [currentStep, setCurrentStep] = useState(0)
 
   const steps = [
@@ -39,10 +39,17 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.J
     onComplete()
   }
 
-  const StepComponent = steps[currentStep].component
+  const currentStepData = steps[currentStep]
+  if (!currentStepData) return null
+  const StepComponent = currentStepData.component
 
   return (
-    <div className="onboarding-wizard-backdrop" role="dialog" aria-modal="true" aria-label="BDE setup wizard">
+    <div
+      className="onboarding-wizard-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label="BDE setup wizard"
+    >
       <div className="onboarding-wizard">
         <ol
           className="onboarding-wizard__progress"
@@ -50,7 +57,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.J
           aria-valuemin={1}
           aria-valuemax={steps.length}
           aria-valuenow={currentStep + 1}
-          aria-valuetext={`Step ${currentStep + 1} of ${steps.length}: ${steps[currentStep].title}`}
+          aria-valuetext={`Step ${currentStep + 1} of ${steps.length}: ${currentStepData.title}`}
         >
           {steps.map((step, index) => (
             <li

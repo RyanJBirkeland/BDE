@@ -21,14 +21,14 @@ export interface Notification {
   message: string
   timestamp: string
   read: boolean
-  viewLink?: string
+  viewLink?: string | undefined
 }
 
 interface AddNotificationInput {
   type: NotificationType
   title: string
   message: string
-  viewLink?: string
+  viewLink?: string | undefined
 }
 
 const MAX_NOTIFICATIONS = 50

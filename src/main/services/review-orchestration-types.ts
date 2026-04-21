@@ -11,14 +11,14 @@
 
 export interface MergeLocallyResult {
   success: boolean
-  error?: string
-  conflicts?: string[]
+  error?: string | undefined
+  conflicts?: string[] | undefined
 }
 
 export interface CreatePrResult {
   success: boolean
-  prUrl?: string
-  error?: string
+  prUrl?: string | undefined
+  error?: string | undefined
 }
 
 export interface RequestRevisionResult {
@@ -31,7 +31,7 @@ export interface DiscardResult {
 
 export type ShipItResult =
   | { success: true; pushed: true }
-  | { success: false; error: string; conflicts?: string[] }
+  | { success: false; error: string; conflicts?: string[] | undefined }
 
 export type ShipBatchResult =
   | { success: true; pushed: true; shippedTaskIds: string[] }
@@ -40,14 +40,14 @@ export type ShipBatchResult =
       error: string
       failedTaskId: string | null
       shippedTaskIds: string[]
-      conflicts?: string[]
+      conflicts?: string[] | undefined
     }
 
 export interface RebaseResult {
   success: boolean
-  baseSha?: string
-  error?: string
-  conflicts?: string[]
+  baseSha?: string | undefined
+  error?: string | undefined
+  conflicts?: string[] | undefined
 }
 
 // ============================================================================

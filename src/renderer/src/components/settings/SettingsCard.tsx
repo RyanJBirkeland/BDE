@@ -7,13 +7,13 @@ import type { StatusVariant } from './StatusPill'
 import { StatusPill } from './StatusPill'
 
 interface SettingsCardProps {
-  icon?: ReactNode
+  icon?: ReactNode | undefined
   title: string
-  subtitle?: string
-  status?: { label: string; variant: StatusVariant }
+  subtitle?: string | undefined
+  status?: { label: string; variant: StatusVariant } | undefined
   children: ReactNode
-  footer?: ReactNode
-  noPadding?: boolean
+  footer?: ReactNode | undefined
+  noPadding?: boolean | undefined
 }
 
 export function SettingsCard({

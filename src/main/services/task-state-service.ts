@@ -91,5 +91,10 @@ export async function prepareUnblockTransition(taskId: string): Promise<void> {
   if (task.status !== 'blocked')
     throw new Error(`Task ${taskId} is not blocked (status: ${task.status})`)
 
-  await validateTaskSpec({ title: task.title, repo: task.repo, spec: task.spec ?? null, context: 'unblock' })
+  await validateTaskSpec({
+    title: task.title,
+    repo: task.repo,
+    spec: task.spec ?? null,
+    context: 'unblock'
+  })
 }

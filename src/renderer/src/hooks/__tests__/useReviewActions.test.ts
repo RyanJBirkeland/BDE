@@ -49,9 +49,7 @@ describe('useReviewActions', () => {
       review: {
         checkFreshness: vi.fn().mockResolvedValue({ status: 'fresh' }),
         shipIt: vi.fn().mockResolvedValue({ success: true, pushed: true }),
-        shipBatch: vi
-          .fn()
-          .mockResolvedValue({ success: true, pushed: true, shippedTaskIds: [] }),
+        shipBatch: vi.fn().mockResolvedValue({ success: true, pushed: true, shippedTaskIds: [] }),
         mergeLocally: vi.fn().mockResolvedValue({ success: true }),
         createPr: vi.fn().mockResolvedValue({ prUrl: 'https://github.com/pr/123' }),
         requestRevision: vi.fn().mockResolvedValue(undefined),

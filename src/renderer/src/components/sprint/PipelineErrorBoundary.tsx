@@ -2,7 +2,7 @@ import { Component, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
-  fallbackLabel?: string
+  fallbackLabel?: string | undefined
 }
 interface State {
   hasError: boolean
@@ -10,7 +10,7 @@ interface State {
 }
 
 export class PipelineErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, error: null }
+  override state: State = { hasError: false, error: null }
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error }
@@ -18,7 +18,7 @@ export class PipelineErrorBoundary extends Component<Props, State> {
 
   handleRetry = (): void => this.setState({ hasError: false, error: null })
 
-  render(): React.ReactNode {
+  override render(): React.ReactNode {
     if (this.state.hasError) {
       return (
         <div className="pipeline-error-boundary">

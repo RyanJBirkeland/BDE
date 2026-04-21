@@ -31,12 +31,12 @@ export type GitOpType =
 
 export interface GitOpDescriptor {
   type: GitOpType
-  worktreePath?: string
-  repoPath?: string
-  branch?: string
-  strategy?: 'merge' | 'squash' | 'rebase'
-  taskId?: string
-  taskTitle?: string
+  worktreePath?: string | undefined
+  repoPath?: string | undefined
+  branch?: string | undefined
+  strategy?: 'merge' | 'squash' | 'rebase' | undefined
+  taskId?: string | undefined
+  taskTitle?: string | undefined
 }
 
 // ============================================================================
@@ -44,7 +44,14 @@ export interface GitOpDescriptor {
 // ============================================================================
 
 export interface ReviewActionInput {
-  action: 'mergeLocally' | 'createPr' | 'requestRevision' | 'discard' | 'shipIt' | 'rebase' | 'markFailed'
+  action:
+    | 'mergeLocally'
+    | 'createPr'
+    | 'requestRevision'
+    | 'discard'
+    | 'shipIt'
+    | 'rebase'
+    | 'markFailed'
   taskId: string
   task: Pick<
     SprintTask,

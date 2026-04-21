@@ -7,7 +7,7 @@ import {
   unstageFiles,
   commit,
   push,
-  getBranches,
+  getBranches
 } from '../git'
 
 describe('git service', () => {

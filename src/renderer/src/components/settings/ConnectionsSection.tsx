@@ -15,7 +15,7 @@ import { LocalMcpServerSection } from './LocalMcpServerSection'
 // --- Encryption Status types ---
 interface EncryptionStatus {
   available: boolean
-  reason?: string
+  reason?: string | undefined
 }
 
 // --- Auth Status types ---
@@ -23,7 +23,7 @@ interface AuthStatus {
   cliFound: boolean
   tokenFound: boolean
   tokenExpired: boolean
-  expiresAt?: string
+  expiresAt?: string | undefined
 }
 
 const GITHUB_FIELDS: CredentialField[] = [
@@ -49,9 +49,12 @@ export function ConnectionsSection(): React.JSX.Element {
   const [encryptionStatus, setEncryptionStatus] = useState<EncryptionStatus | null>(null)
 
   useEffect(() => {
-    window.api.settings.getEncryptionStatus().then(setEncryptionStatus).catch(() => {
-      // Non-fatal — omit the banner on error
-    })
+    window.api.settings
+      .getEncryptionStatus()
+      .then(setEncryptionStatus)
+      .catch(() => {
+        // Non-fatal — omit the banner on error
+      })
   }, [])
 
   // --- Auth status state ---
@@ -263,8 +266,8 @@ export function ConnectionsSection(): React.JSX.Element {
           <div className="settings-readonly-toggle__body">
             <div className="settings-readonly-toggle__title">Read-only mode (skip GitHub)</div>
             <div id="github-opt-out-description" className="settings-readonly-toggle__desc">
-              When enabled, BDE will not invoke <code>gh</code> for PR creation or status checks.
-              A banner appears in Task Workbench and Code Review reminding you PR actions are
+              When enabled, BDE will not invoke <code>gh</code> for PR creation or status checks. A
+              banner appears in Task Workbench and Code Review reminding you PR actions are
               disabled. Pipeline agents attempting PR actions will fail loudly with guidance.
             </div>
           </div>

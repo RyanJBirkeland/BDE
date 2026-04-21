@@ -77,13 +77,7 @@ describe('attachRendererLoadRetry', () => {
   })
 
   it('ignores ERR_ABORTED (-3)', () => {
-    didFailLoadCallback!(
-      {},
-      ERR_ABORTED,
-      'ERR_ABORTED',
-      'http://localhost:5173',
-      true
-    )
+    didFailLoadCallback!({}, ERR_ABORTED, 'ERR_ABORTED', 'http://localhost:5173', true)
 
     vi.runAllTimers()
 
@@ -91,13 +85,7 @@ describe('attachRendererLoadRetry', () => {
   })
 
   it('schedules loadURL after base delay on first failure', () => {
-    didFailLoadCallback!(
-      {},
-      -2,
-      'ERR_FAILED',
-      'http://localhost:5173',
-      true
-    )
+    didFailLoadCallback!({}, -2, 'ERR_FAILED', 'http://localhost:5173', true)
 
     expect(loadURLSpy).not.toHaveBeenCalled()
 
@@ -109,25 +97,13 @@ describe('attachRendererLoadRetry', () => {
 
   it('scales backoff delay with attempt number', () => {
     // First failure: 500ms delay
-    didFailLoadCallback!(
-      {},
-      -2,
-      'ERR_FAILED',
-      'http://localhost:5173',
-      true
-    )
+    didFailLoadCallback!({}, -2, 'ERR_FAILED', 'http://localhost:5173', true)
 
     vi.advanceTimersByTime(RENDERER_RETRY_BASE_DELAY_MS)
     expect(loadURLSpy).toHaveBeenCalledTimes(1)
 
     // Second failure: 1000ms delay (500 * 2)
-    didFailLoadCallback!(
-      {},
-      -2,
-      'ERR_FAILED',
-      'http://localhost:5173',
-      true
-    )
+    didFailLoadCallback!({}, -2, 'ERR_FAILED', 'http://localhost:5173', true)
 
     vi.advanceTimersByTime(RENDERER_RETRY_BASE_DELAY_MS)
     expect(loadURLSpy).toHaveBeenCalledTimes(1) // Still 1, not enough time
@@ -136,13 +112,7 @@ describe('attachRendererLoadRetry', () => {
     expect(loadURLSpy).toHaveBeenCalledTimes(2) // Now 2
 
     // Third failure: 1500ms delay (500 * 3)
-    didFailLoadCallback!(
-      {},
-      -2,
-      'ERR_FAILED',
-      'http://localhost:5173',
-      true
-    )
+    didFailLoadCallback!({}, -2, 'ERR_FAILED', 'http://localhost:5173', true)
 
     vi.advanceTimersByTime(RENDERER_RETRY_BASE_DELAY_MS * 2)
     expect(loadURLSpy).toHaveBeenCalledTimes(2) // Still 2
@@ -156,43 +126,23 @@ describe('attachRendererLoadRetry', () => {
 
     // Trigger MAX_RENDERER_LOAD_RETRIES failures (3)
     for (let i = 0; i < MAX_RENDERER_LOAD_RETRIES; i++) {
-      didFailLoadCallback!(
-        {},
-        -2,
-        'ERR_FAILED',
-        'http://localhost:5173',
-        true
-      )
+      didFailLoadCallback!({}, -2, 'ERR_FAILED', 'http://localhost:5173', true)
     }
 
     vi.runAllTimers()
     expect(loadURLSpy).toHaveBeenCalledTimes(MAX_RENDERER_LOAD_RETRIES)
 
     // Fourth failure should log budget exhaustion
-    didFailLoadCallback!(
-      {},
-      -2,
-      'ERR_FAILED',
-      'http://localhost:5173',
-      true
-    )
+    didFailLoadCallback!({}, -2, 'ERR_FAILED', 'http://localhost:5173', true)
 
     vi.runAllTimers()
 
     expect(loadURLSpy).toHaveBeenCalledTimes(MAX_RENDERER_LOAD_RETRIES) // Still 3, no new retry
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('retry budget exhausted')
-    )
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('retry budget exhausted'))
   })
 
   it('short-circuits when window is destroyed before retry fires', () => {
-    didFailLoadCallback!(
-      {},
-      -2,
-      'ERR_FAILED',
-      'http://localhost:5173',
-      true
-    )
+    didFailLoadCallback!({}, -2, 'ERR_FAILED', 'http://localhost:5173', true)
 
     // Mark window as destroyed before timer fires
     isDestroyedValue = true

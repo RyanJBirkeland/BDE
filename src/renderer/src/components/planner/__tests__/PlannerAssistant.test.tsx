@@ -5,7 +5,7 @@ import { PlannerAssistant, parseActionMarkers } from '../PlannerAssistant'
 
 // Mock useRepoOptions to return a single repo by default
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => [{ label: 'bde', owner: '', color: '' }],
+  useRepoOptions: () => [{ label: 'bde', owner: '', color: '' }]
 }))
 
 // Mock useTaskWorkbenchStore — only needs getState for ActionCard's handleEditFirst
@@ -13,9 +13,9 @@ vi.mock('../../../stores/taskWorkbench', () => ({
   useTaskWorkbenchStore: {
     getState: () => ({
       resetForm: vi.fn(),
-      setField: vi.fn(),
-    }),
-  },
+      setField: vi.fn()
+    })
+  }
 }))
 
 // Extend the global window.api mock with workbench-specific methods
@@ -25,8 +25,8 @@ beforeEach(() => {
     workbench: {
       ...existing,
       chatStream: vi.fn().mockResolvedValue(undefined),
-      onChatChunk: vi.fn().mockReturnValue(() => {}),
-    },
+      onChatChunk: vi.fn().mockReturnValue(() => {})
+    }
   })
 })
 
@@ -39,7 +39,7 @@ const mockEpic = {
   accent_color: '#4a9eff',
   depends_on: null,
   created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
 }
 
 describe('parseActionMarkers', () => {
@@ -62,7 +62,8 @@ describe('parseActionMarkers', () => {
   })
 
   it('extracts multiple actions', () => {
-    const input = '[ACTION:create-task]{"title":"T1"}[/ACTION][ACTION:create-epic]{"name":"E1"}[/ACTION]'
+    const input =
+      '[ACTION:create-task]{"title":"T1"}[/ACTION][ACTION:create-epic]{"name":"E1"}[/ACTION]'
     const result = parseActionMarkers(input)
     expect(result.actions).toHaveLength(2)
   })
@@ -142,6 +143,8 @@ describe('PlannerAssistant', () => {
     )
     const textarea = screen.getByPlaceholderText(/ask the assistant/i)
     await userEvent.type(textarea, 'Hello{Enter}')
-    expect((window.api as Record<string, Record<string, unknown>>).workbench.chatStream).toHaveBeenCalled()
+    expect(
+      (window.api as Record<string, Record<string, unknown>>).workbench.chatStream
+    ).toHaveBeenCalled()
   })
 })

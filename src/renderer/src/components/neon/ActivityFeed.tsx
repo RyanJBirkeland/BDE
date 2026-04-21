@@ -5,8 +5,8 @@ export type { FeedEvent }
 
 interface ActivityFeedProps {
   events: FeedEvent[]
-  maxItems?: number
-  onEventClick?: (event: FeedEvent) => void
+  maxItems?: number | undefined
+  onEventClick?: ((event: FeedEvent) => void) | undefined
 }
 
 function formatRelativeTime(timestamp: number): string {

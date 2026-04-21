@@ -93,11 +93,7 @@ describe('ModelsSection — backend toggle + model picker', () => {
     const select = pipelineRow.querySelector('select') as HTMLSelectElement
     expect(select).toBeInTheDocument()
     const options = Array.from(select.options).map((o) => o.value)
-    expect(options).toEqual([
-      'claude-haiku-4-5-20251001',
-      'claude-sonnet-4-6',
-      'claude-opus-4-6'
-    ])
+    expect(options).toEqual(['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6'])
   })
 
   it('switches to a free-text input when Local is selected and resets model to empty', async () => {

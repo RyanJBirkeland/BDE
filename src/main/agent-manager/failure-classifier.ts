@@ -58,7 +58,14 @@ registerFailurePattern({
 })
 registerFailurePattern({
   type: 'compilation',
-  keywords: ['compilation error', 'compilation failed', 'tsc failed', 'typescript error', 'type error', 'build failed']
+  keywords: [
+    'compilation error',
+    'compilation failed',
+    'tsc failed',
+    'typescript error',
+    'type error',
+    'build failed'
+  ]
 })
 registerFailurePattern({
   type: 'spawn',
@@ -69,5 +76,7 @@ export function classifyFailureReason(notes: string | undefined): FailureReason 
   if (!notes) return 'unknown'
 
   const lower = notes.toLowerCase()
-  return failurePatternRegistry.find(p => p.keywords.some(k => lower.includes(k)))?.type ?? 'unknown'
+  return (
+    failurePatternRegistry.find((p) => p.keywords.some((k) => lower.includes(k)))?.type ?? 'unknown'
+  )
 }

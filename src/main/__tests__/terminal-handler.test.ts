@@ -50,7 +50,10 @@ function makeRepo(overrides: Partial<IAgentTaskRepository> = {}): IAgentTaskRepo
 function makeDeps(repo: IAgentTaskRepository): TerminalHandlerDeps {
   return {
     metrics: { increment: vi.fn(), setLastDrainDuration: vi.fn() } as unknown as MetricsCollector,
-    depIndex: { rebuild: vi.fn(), getBlockedBy: vi.fn().mockReturnValue([]) } as unknown as DependencyIndex,
+    depIndex: {
+      rebuild: vi.fn(),
+      getBlockedBy: vi.fn().mockReturnValue([])
+    } as unknown as DependencyIndex,
     epicIndex: {} as unknown as EpicDependencyIndex,
     repo,
     config: {} as AgentManagerConfig,
@@ -82,7 +85,9 @@ describe('handleTaskTerminal — dep resolution failure', () => {
 
   it('does not throw when repo.updateTask also fails', async () => {
     const repo = makeRepo({
-      updateTask: vi.fn().mockImplementation(() => { throw new Error('write failed') })
+      updateTask: vi.fn().mockImplementation(() => {
+        throw new Error('write failed')
+      })
     })
     vi.mocked(resolveDependents).mockImplementation(() => {
       throw new Error('dep error')

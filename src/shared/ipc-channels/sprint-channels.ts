@@ -28,14 +28,14 @@ export interface SprintChannels {
       task: {
         title: string
         repo: string
-        prompt?: string
-        notes?: string
-        spec?: string
-        priority?: number
-        status?: string
-        template_name?: string
-        playground_enabled?: boolean
-        group_id?: string | null
+        prompt?: string | undefined
+        notes?: string | undefined
+        spec?: string | undefined
+        priority?: number | undefined
+        status?: string | undefined
+        template_name?: string | undefined
+        playground_enabled?: boolean | undefined
+        group_id?: string | undefined | null
       }
     ]
     result: SprintTask
@@ -78,7 +78,7 @@ export interface SprintChannels {
   }
   'sprint:validateDependencies': {
     args: [taskId: string, deps: Array<{ id: string; type: 'hard' | 'soft' }>]
-    result: { valid: boolean; error?: string; cycle?: string[] }
+    result: { valid: boolean; error?: string | undefined; cycle?: string[] | undefined }
   }
   'sprint:unblockTask': {
     args: [taskId: string]
@@ -105,16 +105,16 @@ export interface SprintChannels {
       tasks: Array<{
         title: string
         repo: string
-        prompt?: string
-        spec?: string
-        status?: string
+        prompt?: string | undefined
+        spec?: string | undefined
+        status?: string | undefined
         dependsOnIndices?: number[]
         depType?: 'hard' | 'soft'
-        playgroundEnabled?: boolean
-        model?: string
-        tags?: string[]
-        priority?: number
-        templateName?: string
+        playgroundEnabled?: boolean | undefined
+        model?: string | undefined
+        tags?: string[] | undefined
+        priority?: number | undefined
+        templateName?: string | undefined
       }>
     ]
     result: {
@@ -132,7 +132,7 @@ export interface SprintChannels {
   }
   'sprint:exportTaskHistory': {
     args: [taskId: string]
-    result: { success: boolean; path?: string }
+    result: { success: boolean; path?: string | undefined }
   }
   'sprint:failureBreakdown': {
     args: []
@@ -143,11 +143,11 @@ export interface SprintChannels {
     result: SpecTypeSuccessRate[]
   }
   'sprint:forceFailTask': {
-    args: [payload: { taskId: string; reason?: string; force?: boolean }]
+    args: [payload: { taskId: string; reason?: string | undefined; force?: boolean | undefined }]
     result: { ok: true }
   }
   'sprint:forceDoneTask': {
-    args: [payload: { taskId: string; reason?: string; force?: boolean }]
+    args: [payload: { taskId: string; reason?: string | undefined; force?: boolean | undefined }]
     result: { ok: true }
   }
 }
@@ -177,7 +177,7 @@ export interface ReviewChannels {
   }
   'review:mergeLocally': {
     args: [payload: { taskId: string; strategy: 'squash' | 'merge' | 'rebase' }]
-    result: { success: boolean; conflicts?: string[]; error?: string }
+    result: { success: boolean; conflicts?: string[] | undefined; error?: string | undefined }
   }
   'review:createPr': {
     args: [payload: { taskId: string; title: string; body: string }]
@@ -198,7 +198,7 @@ export interface ReviewChannels {
     // the worktree, and `status='review'` all remain.
     result:
       | { success: true; pushed: true }
-      | { success: false; error: string; conflicts?: string[] }
+      | { success: false; error: string; conflicts?: string[] | undefined }
   }
   'review:shipBatch': {
     // Batch Ship It: merges each task's agent branch onto local main in the
@@ -213,7 +213,7 @@ export interface ReviewChannels {
           error: string
           failedTaskId: string | null
           shippedTaskIds: string[]
-          conflicts?: string[]
+          conflicts?: string[] | undefined
         }
   }
   'review:generateSummary': {
@@ -226,11 +226,19 @@ export interface ReviewChannels {
   }
   'review:rebase': {
     args: [payload: { taskId: string }]
-    result: { success: boolean; baseSha?: string; error?: string; conflicts?: string[] }
+    result: {
+      success: boolean
+      baseSha?: string | undefined
+      error?: string | undefined
+      conflicts?: string[] | undefined
+    }
   }
   'review:checkFreshness': {
     args: [payload: { taskId: string }]
-    result: { status: 'fresh' | 'stale' | 'conflict' | 'unknown'; commitsBehind?: number }
+    result: {
+      status: 'fresh' | 'stale' | 'conflict' | 'unknown'
+      commitsBehind?: number | undefined
+    }
   }
 }
 
@@ -273,7 +281,14 @@ export interface SynthesizerChannels {
 /** Task group operations */
 export interface GroupChannels {
   'groups:create': {
-    args: [input: { name: string; icon?: string; accent_color?: string; goal?: string }]
+    args: [
+      input: {
+        name: string
+        icon?: string | undefined
+        accent_color?: string | undefined
+        goal?: string | undefined
+      }
+    ]
     result: TaskGroup
   }
   'groups:list': {
@@ -288,11 +303,11 @@ export interface GroupChannels {
     args: [
       id: string,
       patch: {
-        name?: string
-        icon?: string
-        accent_color?: string
-        goal?: string
-        status?: 'draft' | 'ready' | 'in-pipeline' | 'completed'
+        name?: string | undefined
+        icon?: string | undefined
+        accent_color?: string | undefined
+        goal?: string | undefined
+        status?: 'draft' | 'ready' | 'in-pipeline' | 'completed' | undefined
       }
     ]
     result: TaskGroup

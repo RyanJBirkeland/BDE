@@ -16,17 +16,19 @@ export function instantiateWorkflow(
 
   for (let i = 0; i < template.steps.length; i++) {
     const step = template.steps[i]
+    if (!step) continue
 
     // Resolve dependency IDs from step indices
     const dependsOn: TaskDependency[] = []
     if (step.dependsOnSteps) {
       for (const depIdx of step.dependsOnSteps) {
-        if (depIdx < 0 || depIdx >= created.length) {
+        const upstream = created[depIdx]
+        if (depIdx < 0 || depIdx >= created.length || !upstream) {
           errors.push(`Step ${i}: dependsOnSteps[${depIdx}] out of range`)
           continue
         }
         dependsOn.push({
-          id: created[depIdx].id,
+          id: upstream.id,
           type: step.depType ?? 'hard'
         })
       }
@@ -35,12 +37,14 @@ export function instantiateWorkflow(
     const input: CreateTaskInput = {
       title: `[${template.name}] ${step.title}`,
       repo: step.repo,
-      prompt: step.prompt,
-      spec: step.spec,
       status: dependsOn.length > 0 ? 'blocked' : 'backlog',
-      depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-      playground_enabled: step.playgroundEnabled,
-      model: step.model
+      ...(step.prompt !== undefined ? { prompt: step.prompt } : {}),
+      ...(step.spec !== undefined ? { spec: step.spec } : {}),
+      ...(dependsOn.length > 0 ? { depends_on: dependsOn } : {}),
+      ...(step.playgroundEnabled !== undefined
+        ? { playground_enabled: step.playgroundEnabled }
+        : {}),
+      ...(step.model !== undefined ? { model: step.model } : {})
     }
 
     const task = repo.createTask(input)

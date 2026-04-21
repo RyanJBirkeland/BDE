@@ -91,7 +91,8 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
           >
             Start in repository
           </label>
-          <select className="bde-select"
+          <select
+            className="bde-select"
             id="onboarding-done-repo-select"
             value={selectedRepoLabel}
             onChange={(e) => setRepoOverride(e.target.value)}

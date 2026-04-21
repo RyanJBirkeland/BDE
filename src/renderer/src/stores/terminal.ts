@@ -6,11 +6,11 @@ export interface TerminalTab {
   id: string
   title: string
   kind: TabKind
-  shell?: string
-  cwd?: string
-  ptyId?: number | null
-  agentId?: string
-  agentSessionKey?: string
+  shell?: string | undefined
+  cwd?: string | undefined
+  ptyId?: number | null | undefined
+  agentId?: string | undefined
+  agentSessionKey?: string | undefined
   isLabelCustom: boolean // user renamed this tab
   status: 'running' | 'exited'
   hasUnread: boolean // new output while tab not focused
@@ -90,7 +90,8 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     if (tabs.length <= 1) return
     const idx = tabs.findIndex((t) => t.id === id)
     const next = tabs.filter((t) => t.id !== id)
-    const newActive = activeTabId === id ? next[Math.min(idx, next.length - 1)].id : activeTabId
+    const newActiveTab = next[Math.min(idx, next.length - 1)]
+    const newActive = activeTabId === id ? (newActiveTab?.id ?? activeTabId) : activeTabId
     // If closing the split tab, disable split
     const newSplitState = splitTabId === id ? { splitEnabled: false, splitTabId: null } : {}
     set({ tabs: next, activeTabId: newActive, ...newSplitState })
@@ -132,6 +133,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     const { tabs } = get()
     const reordered = [...tabs]
     const [moved] = reordered.splice(fromIdx, 1)
+    if (!moved) return
     reordered.splice(toIdx, 0, moved)
     set({ tabs: reordered })
   },

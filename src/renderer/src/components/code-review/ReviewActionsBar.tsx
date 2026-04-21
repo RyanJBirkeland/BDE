@@ -18,7 +18,7 @@ export interface ReviewActionCallbacks {
   setMergeStrategy: (strategy: 'squash' | 'merge' | 'rebase') => void
   freshness: {
     status: 'fresh' | 'stale' | 'conflict' | 'unknown' | 'loading'
-    commitsBehind?: number
+    commitsBehind?: number | undefined
   }
   ghConfigured: boolean
   shipIt: () => Promise<void>
@@ -33,7 +33,7 @@ export interface ReviewActionCallbacks {
 
 interface ReviewActionsBarProps {
   variant: 'full' | 'compact'
-  children?: (actions: ReviewActionCallbacks) => React.ReactNode
+  children?: ((actions: ReviewActionCallbacks) => React.ReactNode) | undefined
 }
 
 export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): React.JSX.Element {
@@ -122,7 +122,9 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
                 onClick={shipIt}
                 disabled={!!actionInFlight || !ghConfigured}
                 aria-busy={actionInFlight === 'shipIt'}
-                aria-label={actionInFlight === 'shipIt' ? 'Shipping changes, please wait…' : 'Ship It'}
+                aria-label={
+                  actionInFlight === 'shipIt' ? 'Shipping changes, please wait…' : 'Ship It'
+                }
                 title={!ghConfigured ? 'Configure GitHub in Settings → Connections' : undefined}
               >
                 {actionInFlight === 'shipIt' ? (

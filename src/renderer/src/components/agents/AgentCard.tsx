@@ -17,7 +17,7 @@ interface AgentCardProps {
   agent: AgentMeta
   selected: boolean
   onClick: () => void
-  onKill?: () => void
+  onKill?: (() => void) | undefined
 }
 
 const STATUS_ACCENTS: Record<string, NeonAccent> = {

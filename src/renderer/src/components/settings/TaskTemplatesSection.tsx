@@ -37,7 +37,8 @@ export function TaskTemplatesSection(): React.JSX.Element {
   const handleNameChange = useCallback(
     (index: number, name: string) => {
       const t = templates[index]
-      const updated = { ...t, name }
+      if (!t) return
+      const updated: TaskTemplate = { ...t, name }
       // Update local state immediately
       setTemplates((prev) => prev.map((item, i) => (i === index ? updated : item)))
       // Mark as pending for debounced save
@@ -49,7 +50,8 @@ export function TaskTemplatesSection(): React.JSX.Element {
   const handlePrefixChange = useCallback(
     (index: number, promptPrefix: string) => {
       const t = templates[index]
-      const updated = { ...t, promptPrefix }
+      if (!t) return
+      const updated: TaskTemplate = { ...t, promptPrefix }
       // Update local state immediately
       setTemplates((prev) => prev.map((item, i) => (i === index ? updated : item)))
       // Mark as pending for debounced save
@@ -67,6 +69,7 @@ export function TaskTemplatesSection(): React.JSX.Element {
   const handleRemove = useCallback(
     async (index: number) => {
       const t = templates[index]
+      if (!t) return
       if (t.isBuiltIn) {
         await window.api.templates.reset(t.name)
         toast.success('Template reset to default')

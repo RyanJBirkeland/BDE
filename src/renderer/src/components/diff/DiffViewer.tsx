@@ -12,7 +12,12 @@ import { PlainDiffContent } from './PlainDiffContent'
 import { VirtualizedDiffContent } from './VirtualizedDiffContent'
 import { VirtualizedDiffBanner } from './VirtualizedDiffBanner'
 import type { FlatRow, HunkAddress } from './virtualized-diff-utils'
-import { rowHeight, ROW_HEIGHT, FILE_HEADER_HEIGHT, HUNK_HEADER_HEIGHT } from './virtualized-diff-utils'
+import {
+  rowHeight,
+  ROW_HEIGHT,
+  FILE_HEADER_HEIGHT,
+  HUNK_HEADER_HEIGHT
+} from './virtualized-diff-utils'
 
 export interface LineRange {
   file: string
@@ -23,12 +28,12 @@ export interface LineRange {
 
 interface DiffViewerProps {
   files: DiffFile[]
-  comments?: PrComment[]
-  pendingComments?: PendingComment[]
-  selectedRange?: LineRange | null
-  onSelectRange?: (range: LineRange | null) => void
-  onAddComment?: (range: LineRange, body: string) => void
-  onRemovePendingComment?: (commentId: string) => void
+  comments?: PrComment[] | undefined
+  pendingComments?: PendingComment[] | undefined
+  selectedRange?: LineRange | null | undefined
+  onSelectRange?: ((range: LineRange | null) => void) | undefined
+  onAddComment?: ((range: LineRange, body: string) => void) | undefined
+  onRemovePendingComment?: ((commentId: string) => void) | undefined
 }
 
 function DiffViewer({
@@ -101,22 +106,28 @@ function DiffViewer({
     let height = 0
 
     for (let fi = 0; fi < files.length; fi++) {
+      const file = files[fi]
+      if (!file) continue
       fiToRow.set(fi, rows.length)
-      rows.push({ kind: 'file-header', file: files[fi], fileIndex: fi })
+      rows.push({ kind: 'file-header', file, fileIndex: fi })
       height += FILE_HEADER_HEIGHT
 
-      for (let hi = 0; hi < files[fi].hunks.length; hi++) {
+      for (let hi = 0; hi < file.hunks.length; hi++) {
+        const hunk = file.hunks[hi]
+        if (!hunk) continue
         haToRow.set(`${fi}-${hi}`, rows.length)
         rows.push({
           kind: 'hunk-header',
-          header: files[fi].hunks[hi].header,
+          header: hunk.header,
           fileIndex: fi,
           hunkIndex: hi
         })
         height += HUNK_HEADER_HEIGHT
 
-        for (let li = 0; li < files[fi].hunks[hi].lines.length; li++) {
-          rows.push({ kind: 'line', line: files[fi].hunks[hi].lines[li], lineIndex: li })
+        for (let li = 0; li < hunk.lines.length; li++) {
+          const line = hunk.lines[li]
+          if (!line) continue
+          rows.push({ kind: 'line', line, lineIndex: li })
           height += ROW_HEIGHT
         }
       }
@@ -148,7 +159,8 @@ function DiffViewer({
     let cumulative = 0
     for (let i = 0; i < flatRows.length; i++) {
       arr[i] = cumulative
-      cumulative += rowHeight(flatRows[i])
+      const row = flatRows[i]
+      if (row) cumulative += rowHeight(row)
     }
     return arr
   }, [flatRows, useVirtualization])
@@ -160,11 +172,13 @@ function DiffViewer({
 
       if (useVirtualization) {
         const rowIdx = fileIndexToRow.get(index)
-        if (rowIdx !== undefined && containerRef.current) {
-          containerRef.current.scrollTop = flatOffsets[rowIdx]
+        const offset = rowIdx !== undefined ? flatOffsets[rowIdx] : undefined
+        if (offset !== undefined && containerRef.current) {
+          containerRef.current.scrollTop = offset
         }
       } else {
-        const el = fileRefs.current.get(files[index].path)
+        const target = files[index]
+        const el = target ? fileRefs.current.get(target.path) : undefined
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     },
@@ -178,8 +192,9 @@ function DiffViewer({
 
       if (useVirtualization) {
         const rowIdx = hunkAddressToRow.get(`${addr.fileIndex}-${addr.hunkIndex}`)
-        if (rowIdx !== undefined && containerRef.current) {
-          containerRef.current.scrollTop = flatOffsets[rowIdx]
+        const offset = rowIdx !== undefined ? flatOffsets[rowIdx] : undefined
+        if (offset !== undefined && containerRef.current) {
+          containerRef.current.scrollTop = offset
         }
       } else {
         const key = `${addr.fileIndex}-${addr.hunkIndex}`
@@ -234,7 +249,8 @@ function DiffViewer({
         } else {
           nextIdx = currentIdx > 0 ? currentIdx - 1 : allHunks.length - 1
         }
-        scrollToHunk(allHunks[nextIdx])
+        const nextHunk = allHunks[nextIdx]
+        if (nextHunk) scrollToHunk(nextHunk)
       }
     }
 

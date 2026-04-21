@@ -8,21 +8,19 @@ import {
 
 describe('extractTaskIdFromBranch', () => {
   it('extracts the task id slug from a standard agent branch name', () => {
-    expect(
-      extractTaskIdFromBranch('agent/t-11-pass-encoding-utf8-to-execfile-in-a-064f79ef')
-    ).toBe('11')
+    expect(extractTaskIdFromBranch('agent/t-11-pass-encoding-utf8-to-execfile-in-a-064f79ef')).toBe(
+      '11'
+    )
   })
 
   it('handles alphanumeric task ids', () => {
-    expect(
-      extractTaskIdFromBranch('agent/t-abc123-some-slugified-title-12345678')
-    ).toBe('abc123')
+    expect(extractTaskIdFromBranch('agent/t-abc123-some-slugified-title-12345678')).toBe('abc123')
   })
 
   it('handles longer numeric task ids', () => {
-    expect(
-      extractTaskIdFromBranch('agent/t-20260420-audit-worktree-base-064f79ef')
-    ).toBe('20260420')
+    expect(extractTaskIdFromBranch('agent/t-20260420-audit-worktree-base-064f79ef')).toBe(
+      '20260420'
+    )
   })
 
   it('returns null for a malformed branch name', () => {
@@ -39,7 +37,10 @@ describe('extractTaskIdFromBranch', () => {
 describe('branchMatchesTask', () => {
   it('matches when branch id suffix matches the task id tail', () => {
     expect(
-      branchMatchesTask('agent/t-11-pass-encoding-utf8-to-execfile-in-a-064f79ef', 'audit-20260420-t-11')
+      branchMatchesTask(
+        'agent/t-11-pass-encoding-utf8-to-execfile-in-a-064f79ef',
+        'audit-20260420-t-11'
+      )
     ).toBe(true)
   })
 
@@ -51,7 +52,10 @@ describe('branchMatchesTask', () => {
 
   it('does not match when the ids differ', () => {
     expect(
-      branchMatchesTask('agent/t-11-pass-encoding-utf8-to-execfile-in-a-064f79ef', 'audit-20260420-t-22')
+      branchMatchesTask(
+        'agent/t-11-pass-encoding-utf8-to-execfile-in-a-064f79ef',
+        'audit-20260420-t-22'
+      )
     ).toBe(false)
   })
 
@@ -60,9 +64,9 @@ describe('branchMatchesTask', () => {
   })
 
   it('is case-insensitive on the id comparison', () => {
-    expect(
-      branchMatchesTask('agent/t-abc123-something-12345678', 'AUDIT-20260420-T-abc123')
-    ).toBe(true)
+    expect(branchMatchesTask('agent/t-abc123-something-12345678', 'AUDIT-20260420-T-abc123')).toBe(
+      true
+    )
   })
 })
 

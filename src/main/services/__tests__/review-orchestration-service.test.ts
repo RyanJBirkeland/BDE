@@ -196,12 +196,16 @@ describe('review-orchestration-service', () => {
         const callOrder: string[] = []
 
         vi.mocked(sprintService.getTask).mockReturnValue({
-          id: 'task-1', repo: 'bde', worktree_path: '/wt/task-1',
-          status: 'review', title: 'Test'
+          id: 'task-1',
+          repo: 'bde',
+          worktree_path: '/wt/task-1',
+          status: 'review',
+          title: 'Test'
         } as any)
 
         vi.mocked(sprintService.updateTask).mockReturnValue({
-          id: 'task-1', status: 'done'
+          id: 'task-1',
+          status: 'done'
         } as any)
 
         vi.mocked(sprintService.notifySprintMutation).mockImplementation(() => {

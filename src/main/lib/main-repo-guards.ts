@@ -113,9 +113,7 @@ export async function assertRepoCleanOrAbort(
 
   const porcelain = await getMainRepoPorcelainStatus(repoPath, env)
   if (porcelain && isRepoDirtyForGuard(porcelain)) {
-    logger.error(
-      `[main-repo-guard] Main repo dirty in ${repoPath} (${phase}):\n${porcelain}`
-    )
+    logger.error(`[main-repo-guard] Main repo dirty in ${repoPath} (${phase}):\n${porcelain}`)
     await bestEffortMergeAbort(repoPath, env)
     await bestEffortCheckoutHead(repoPath, env)
     throw new Error(

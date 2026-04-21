@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getCompletionsPerHour, getRecentEvents, getPrList, getDailySuccessRate, getLoadAverage } from '../dashboard'
+import {
+  getCompletionsPerHour,
+  getRecentEvents,
+  getPrList,
+  getDailySuccessRate,
+  getLoadAverage
+} from '../dashboard'
 
 describe('dashboard service', () => {
   beforeEach(() => {

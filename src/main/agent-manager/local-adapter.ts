@@ -19,11 +19,11 @@ export interface LocalSpawnOptions {
   readonly cwd: string
   readonly model: string
   readonly endpoint: string
-  readonly logger?: Logger
+  readonly logger?: Logger | undefined
 }
 
 export async function spawnLocalAgent(opts: LocalSpawnOptions): Promise<AgentHandle> {
-  let spawnBdeAgent: typeof import('rbt-coding-agent/adapters/bde')['spawnBdeAgent']
+  let spawnBdeAgent: (typeof import('rbt-coding-agent/adapters/bde'))['spawnBdeAgent']
   try {
     ;({ spawnBdeAgent } = await import('rbt-coding-agent/adapters/bde'))
   } catch (err) {

@@ -18,27 +18,27 @@ export interface ToolUseEvent {
  */
 export interface SdkStreamingOptions {
   /** Working directory for the SDK session — used as the root for tool calls. */
-  cwd?: string
+  cwd?: string | undefined
   /**
    * Restrict the base set of tools available to the model. Pass `[]` to
    * disable all tools, or e.g. `['Read', 'Grep', 'Glob']` for read-only.
    * If omitted, the SDK uses its default Claude Code preset.
    */
-  tools?: string[]
+  tools?: string[] | undefined
   /**
    * Defense-in-depth list of tools that must NEVER run, even if otherwise
    * allowed. Combined with `tools` for read-only enforcement.
    */
-  disallowedTools?: string[]
+  disallowedTools?: string[] | undefined
   /** Maximum number of agent turns. Defaults to 1 (single-shot). */
-  maxTurns?: number
+  maxTurns?: number | undefined
   /**
    * Maximum spend in USD for this query. The SDK aborts if exceeded. Use this
    * as a hard ceiling on prompt-injected loops or runaway tool chains.
    */
-  maxBudgetUsd?: number
+  maxBudgetUsd?: number | undefined
   /** Optional callback fired whenever the agent invokes a tool. */
-  onToolUse?: (event: ToolUseEvent) => void
+  onToolUse?: ((event: ToolUseEvent) => void) | undefined
   /**
    * Claude Code settings sources to load. Pass `[]` for spec-drafting agents
    * (copilot/synthesizer) to skip CLAUDE.md — they receive conventions via
@@ -46,7 +46,7 @@ export interface SdkStreamingOptions {
    * and can mislead them with implementation-focused guidelines.
    * Defaults to `['user', 'project', 'local']`.
    */
-  settingSources?: Array<'user' | 'project' | 'local'>
+  settingSources?: Array<'user' | 'project' | 'local'> | undefined
   /**
    * Model ID to use for this query. Required — every call site must resolve
    * from `agents.backendConfig` via `resolveAgentRuntime(type).model` rather

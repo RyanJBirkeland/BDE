@@ -11,12 +11,12 @@ import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface TextareaPromptModalProps {
   open: boolean
-  title?: string
+  title?: string | undefined
   message: string
-  placeholder?: string
-  defaultValue?: string
-  confirmLabel?: string
-  cancelLabel?: string
+  placeholder?: string | undefined
+  defaultValue?: string | undefined
+  confirmLabel?: string | undefined
+  cancelLabel?: string | undefined
   onConfirm: (value: string) => void
   onCancel: () => void
 }
@@ -135,10 +135,10 @@ export function TextareaPromptModal({
 export function useTextareaPrompt(): {
   prompt: (opts: {
     message: string
-    title?: string
-    placeholder?: string
-    defaultValue?: string
-    confirmLabel?: string
+    title?: string | undefined
+    placeholder?: string | undefined
+    defaultValue?: string | undefined
+    confirmLabel?: string | undefined
   }) => Promise<string | null>
   promptProps: TextareaPromptModalProps
 } {
@@ -148,10 +148,10 @@ export function useTextareaPrompt(): {
   const prompt = useCallback(
     (opts: {
       message: string
-      title?: string
-      placeholder?: string
-      defaultValue?: string
-      confirmLabel?: string
+      title?: string | undefined
+      placeholder?: string | undefined
+      defaultValue?: string | undefined
+      confirmLabel?: string | undefined
     }) => {
       return new Promise<string | null>((resolve) => {
         resolveRef.current = resolve
@@ -204,10 +204,10 @@ import { useState as useStateInternal } from 'react'
 interface PromptState {
   open: boolean
   message: string
-  title?: string
-  placeholder?: string
-  defaultValue?: string
-  confirmLabel?: string
+  title?: string | undefined
+  placeholder?: string | undefined
+  defaultValue?: string | undefined
+  confirmLabel?: string | undefined
 }
 
 function usePromptState(): [PromptState, React.Dispatch<React.SetStateAction<PromptState>>] {

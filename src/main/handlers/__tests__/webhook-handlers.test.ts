@@ -113,26 +113,30 @@ describe('webhook-handlers', () => {
       ['https://169.254.0.1/hook', false, 'link-local range'],
       ['ftp://example.com/hook', false, 'non-http scheme'],
       ['not-a-url', false, 'invalid URL'],
-      ['', false, 'empty string'],
+      ['', false, 'empty string']
     ])('webhook:create url="%s" (%s) → valid=%s', async (url, shouldPass, _desc) => {
       const handler = handlers.get('webhook:create')!
       if (shouldPass) {
         await expect(handler(mockEvent, { url, events: [] })).resolves.toBeDefined()
       } else {
-        await expect(handler(mockEvent, { url, events: [] })).rejects.toThrow(/invalid webhook url/i)
+        await expect(handler(mockEvent, { url, events: [] })).rejects.toThrow(
+          /invalid webhook url/i
+        )
       }
     })
 
     it.each([
       ['https://example.com/hook', true],
       ['https://localhost/hook', false],
-      ['https://10.0.0.1/hook', false],
+      ['https://10.0.0.1/hook', false]
     ])('webhook:update url="%s" → valid=%s', async (url, shouldPass) => {
       const handler = handlers.get('webhook:update')!
       if (shouldPass) {
         await expect(handler(mockEvent, { id: 'wh-123', url })).resolves.toBeDefined()
       } else {
-        await expect(handler(mockEvent, { id: 'wh-123', url })).rejects.toThrow(/invalid webhook url/i)
+        await expect(handler(mockEvent, { id: 'wh-123', url })).rejects.toThrow(
+          /invalid webhook url/i
+        )
       }
     })
   })

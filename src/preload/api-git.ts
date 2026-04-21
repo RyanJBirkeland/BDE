@@ -10,10 +10,8 @@ export const getRepoPaths = (): Promise<IpcChannelMap['git:getRepoPaths']['resul
 export const gitStatus = (cwd: string): Promise<IpcChannelMap['git:status']['result']> =>
   typedInvoke('git:status', cwd)
 
-export const gitDiff = (
-  cwd: string,
-  file?: string
-): Promise<IpcChannelMap['git:diff']['result']> => typedInvoke('git:diff', cwd, file)
+export const gitDiff = (cwd: string, file?: string): Promise<IpcChannelMap['git:diff']['result']> =>
+  typedInvoke('git:diff', cwd, file)
 
 export const gitStage = (
   cwd: string,
@@ -43,8 +41,7 @@ export const gitCheckout = (
 
 export const gitDetectRemote = (
   cwd: string
-): Promise<IpcChannelMap['git:detectRemote']['result']> =>
-  typedInvoke('git:detectRemote', cwd)
+): Promise<IpcChannelMap['git:detectRemote']['result']> => typedInvoke('git:detectRemote', cwd)
 
 export const gitFetch = (cwd: string): Promise<IpcChannelMap['git:fetch']['result']> =>
   typedInvoke('git:fetch', cwd)

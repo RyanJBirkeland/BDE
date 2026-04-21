@@ -3,7 +3,7 @@ import './ConsoleCard.css'
 interface UserMessageCardProps {
   text: string
   timestamp: number
-  pending?: boolean
+  pending?: boolean | undefined
   searchClass: string
 }
 

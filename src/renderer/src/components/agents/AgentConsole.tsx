@@ -162,14 +162,16 @@ export function AgentConsole({
     if (matchingIndices.length === 0) return
     const nextIndex = (activeMatchIndex + 1) % matchingIndices.length
     setActiveMatchIndex(nextIndex)
-    virtualizer.scrollToIndex(matchingIndices[nextIndex], { align: 'center' })
+    const target = matchingIndices[nextIndex]
+    if (target !== undefined) virtualizer.scrollToIndex(target, { align: 'center' })
   }
 
   const handleSearchPrev = (): void => {
     if (matchingIndices.length === 0) return
     const prevIndex = activeMatchIndex === 0 ? matchingIndices.length - 1 : activeMatchIndex - 1
     setActiveMatchIndex(prevIndex)
-    virtualizer.scrollToIndex(matchingIndices[prevIndex], { align: 'center' })
+    const target = matchingIndices[prevIndex]
+    if (target !== undefined) virtualizer.scrollToIndex(target, { align: 'center' })
   }
 
   const handleSearchClose = (): void => {
@@ -247,6 +249,8 @@ export function AgentConsole({
                 const isMatch = matchingIndices.includes(blockIndex)
                 const isActiveMatch = isMatch && matchingIndices[activeMatchIndex] === blockIndex
                 const searchHighlight = isActiveMatch ? 'active' : isMatch ? 'match' : undefined
+                const block = blocks[blockIndex]
+                if (!block) return null
 
                 return (
                   <div
@@ -262,7 +266,7 @@ export function AgentConsole({
                     }}
                   >
                     <ConsoleCard
-                      block={blocks[blockIndex]}
+                      block={block}
                       onPlaygroundClick={setPlaygroundBlock}
                       searchHighlight={searchHighlight}
                     />

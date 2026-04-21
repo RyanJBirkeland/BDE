@@ -62,12 +62,14 @@ describe('wrapServerWithSafeToolHandlers', () => {
     wrapServerWithSafeToolHandlers(server, logger)
 
     const boom = new Error('boom')
-    ;(server.tool as unknown as (
-      name: string,
-      desc: string,
-      shape: Record<string, unknown>,
-      cb: () => Promise<never>
-    ) => void)('tasks.list', 'List', {}, async () => {
+    ;(
+      server.tool as unknown as (
+        name: string,
+        desc: string,
+        shape: Record<string, unknown>,
+        cb: () => Promise<never>
+      ) => void
+    )('tasks.list', 'List', {}, async () => {
       throw boom
     })
 
@@ -81,7 +83,11 @@ describe('wrapServerWithSafeToolHandlers', () => {
     const server = { tool: originalTool } as unknown as McpServer
     wrapServerWithSafeToolHandlers(server, silentLogger)
 
-    const passthroughArgs = [123, 'desc', {}] as unknown as [string, string, Record<string, unknown>]
+    const passthroughArgs = [123, 'desc', {}] as unknown as [
+      string,
+      string,
+      Record<string, unknown>
+    ]
     ;(server.tool as unknown as (...args: unknown[]) => void)(...passthroughArgs)
     expect(originalTool).toHaveBeenCalledWith(...passthroughArgs)
   })

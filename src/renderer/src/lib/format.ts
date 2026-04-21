@@ -120,7 +120,7 @@ export function repoBadgeVariant(
   const VARIANTS = ['info', 'warning', 'success'] as const
   const idx = repos.findIndex((r) => r.label.toLowerCase() === repoName.toLowerCase())
   if (idx === -1) return 'default'
-  return VARIANTS[idx % VARIANTS.length]
+  return VARIANTS[idx % VARIANTS.length] ?? 'default'
 }
 
 /**

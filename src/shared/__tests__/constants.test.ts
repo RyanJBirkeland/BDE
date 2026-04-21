@@ -8,12 +8,7 @@ describe('DEFAULT_TASK_TEMPLATES', () => {
 
   it('has the expected template names', () => {
     const names = DEFAULT_TASK_TEMPLATES.map((t) => t.name)
-    expect(names).toEqual([
-      'Bug Fix',
-      'Feature',
-      'Refactor',
-      'Test Coverage'
-    ])
+    expect(names).toEqual(['Bug Fix', 'Feature', 'Refactor', 'Test Coverage'])
   })
 
   it('every template has a non-empty promptPrefix', () => {

@@ -1,7 +1,7 @@
 export interface DiffLine {
   type: 'add' | 'del' | 'ctx'
   content: string
-  lineNo: { old?: number; new?: number }
+  lineNo: { old?: number | undefined; new?: number | undefined }
 }
 
 export interface DiffHunk {
@@ -40,7 +40,7 @@ export function parseDiff(raw: string): DiffFile[] {
     for (const line of lines) {
       if (line.startsWith('@@ ')) {
         const match = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)/)
-        if (match) {
+        if (match && match[1] && match[2]) {
           oldLine = parseInt(match[1], 10)
           newLine = parseInt(match[2], 10)
           currentHunk = { header: line, lines: [] }
@@ -101,7 +101,7 @@ function parsePart(part: string): DiffFile | null {
   for (const line of lines) {
     if (line.startsWith('@@ ')) {
       const match = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)/)
-      if (match) {
+      if (match && match[1] && match[2]) {
         oldLine = parseInt(match[1], 10)
         newLine = parseInt(match[2], 10)
         currentHunk = { header: line, lines: [] }
@@ -138,7 +138,7 @@ function parsePart(part: string): DiffFile | null {
 export function parseDiffChunked(
   raw: string,
   onProgress: (files: DiffFile[]) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal | undefined
 ): Promise<DiffFile[]> {
   return new Promise((resolve, reject) => {
     if (!raw.trim()) {
@@ -159,7 +159,8 @@ export function parseDiffChunked(
 
       const batchEnd = Math.min(index + 10, parts.length)
       while (index < batchEnd) {
-        const file = parsePart(parts[index])
+        const part = parts[index]
+        const file = part ? parsePart(part) : null
         if (file) files.push(file)
         index++
       }

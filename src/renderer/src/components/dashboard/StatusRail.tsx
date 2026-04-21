@@ -31,9 +31,9 @@ interface Tile {
   key: string
   label: string
   value: string
-  subtext?: string
+  subtext?: string | undefined
   filter: RailFilter | null
-  accent?: 'active' | 'default'
+  accent?: 'active' | 'default' | undefined
 }
 
 export function StatusRail({

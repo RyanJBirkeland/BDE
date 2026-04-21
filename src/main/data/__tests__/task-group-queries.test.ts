@@ -240,9 +240,9 @@ describe('addGroupDependency — transaction safety', () => {
 
     addGroupDependency(group.id, dep, db)
 
-    const updated = db
-      .prepare('SELECT depends_on FROM task_groups WHERE id = ?')
-      .get(group.id) as { depends_on: string }
+    const updated = db.prepare('SELECT depends_on FROM task_groups WHERE id = ?').get(group.id) as {
+      depends_on: string
+    }
     const deps = JSON.parse(updated.depends_on)
     expect(deps).toEqual([dep])
   })
@@ -263,9 +263,9 @@ describe('removeGroupDependency — transaction safety', () => {
 
     removeGroupDependency(group.id, 'epic-upstream', db)
 
-    const updated = db
-      .prepare('SELECT depends_on FROM task_groups WHERE id = ?')
-      .get(group.id) as { depends_on: string | null }
+    const updated = db.prepare('SELECT depends_on FROM task_groups WHERE id = ?').get(group.id) as {
+      depends_on: string | null
+    }
     expect(updated.depends_on).toBeNull()
   })
 })

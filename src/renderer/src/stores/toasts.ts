@@ -11,10 +11,10 @@ export interface Toast {
   id: string
   message: string
   type: ToastType
-  durationMs?: number
-  onUndo?: () => void
-  action?: string
-  onAction?: () => void
+  durationMs?: number | undefined
+  onUndo?: (() => void) | undefined
+  action?: string | undefined
+  onAction?: (() => void) | undefined
 }
 
 const DEFAULT_DURATION = 3000
@@ -25,7 +25,7 @@ interface ToastStore {
   addToast: (
     message: string,
     type: ToastType,
-    durationMs?: number,
+    durationMs?: number | undefined,
     extra?: { onUndo?: () => void; action?: string; onAction?: () => void }
   ) => string
   removeToast: (id: string) => void
@@ -80,8 +80,8 @@ export const toast = {
     options?: { action?: string; onAction?: () => void; durationMs?: number }
   ): void => {
     useToastStore.getState().addToast(msg, 'info', options?.durationMs, {
-      action: options?.action,
-      onAction: options?.onAction
+      ...(options?.action !== undefined ? { action: options.action } : {}),
+      ...(options?.onAction !== undefined ? { onAction: options.onAction } : {})
     })
   },
   undoable: (msg: string, onUndo: () => void, durationMs = 5000): string => {

@@ -7,8 +7,8 @@ import type { ChatItem } from './stream-parser'
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system' | 'tool'
   content: string
-  timestamp?: number | string
-  toolName?: string
+  timestamp?: number | string | undefined
+  toolName?: string | undefined
   toolArgs?: Record<string, unknown>
 }
 

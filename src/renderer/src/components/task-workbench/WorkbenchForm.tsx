@@ -126,7 +126,9 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
           return
         }
         if (result.outcome === 'confirm') {
-          setQueueConfirmMessage(result.confirmMessage ?? 'Some checks have warnings. Queue anyway?')
+          setQueueConfirmMessage(
+            result.confirmMessage ?? 'Some checks have warnings. Queue anyway?'
+          )
           setShowQueueConfirm(true)
           return
         }
@@ -229,7 +231,9 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
             onChange={(e) => setField('repo', e.target.value)}
             className="wb-form__select bde-select"
           >
-            <option value="" disabled>Select a repository...</option>
+            <option value="" disabled>
+              Select a repository...
+            </option>
             {repoOptions.map((r) => (
               <option key={r.label} value={r.label}>
                 {r.label}

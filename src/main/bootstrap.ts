@@ -13,7 +13,11 @@ import { pruneOldChanges } from './data/task-changes'
 import { getEventRetentionDays } from './config'
 import { createLogger } from './logger'
 import { getErrorMessage } from '../shared/errors'
-import { pruneOldDiffSnapshots, DIFF_SNAPSHOT_RETENTION_DAYS, cleanTestArtifacts } from './data/sprint-maintenance-facade'
+import {
+  pruneOldDiffSnapshots,
+  DIFF_SNAPSHOT_RETENTION_DAYS,
+  cleanTestArtifacts
+} from './data/sprint-maintenance-facade'
 import { loadPlugins } from './services/plugin-loader'
 import { startLoadSampler, stopLoadSampler } from './services/load-sampler'
 import type { TaskTerminalService } from './services/task-terminal-service'
@@ -21,7 +25,12 @@ import type { DialogService } from './dialog-service'
 import { BACKUP_INTERVAL_MS, PRUNE_CHANGES_DAYS } from './constants'
 import { getSetting as _getRawSetting, setSetting as _setSetting } from './data/settings-queries'
 import { getConfiguredRepos } from './paths'
-import { SENSITIVE_SETTING_KEYS, ENCRYPTED_PREFIX, encryptSetting, isEncryptionAvailable } from './secure-storage'
+import {
+  SENSITIVE_SETTING_KEYS,
+  ENCRYPTED_PREFIX,
+  encryptSetting,
+  isEncryptionAvailable
+} from './secure-storage'
 import { broadcast } from './broadcast'
 
 const logger = createLogger('bootstrap')
@@ -47,7 +56,7 @@ function isNonTrivialError(message: string): boolean {
     'not configured',
     'already has',
     'skipping',
-    'no rows',
+    'no rows'
   ]
   const lowered = message.toLowerCase()
   return !trivialPatterns.some((pattern) => lowered.includes(pattern))
@@ -110,7 +119,9 @@ export function buildConnectSrc(): string {
  */
 export function warnPlaintextSensitiveSettings(): void {
   if (!isEncryptionAvailable()) {
-    logger.warn('safeStorage unavailable — plaintext sensitive settings will not be re-encrypted at startup')
+    logger.warn(
+      'safeStorage unavailable — plaintext sensitive settings will not be re-encrypted at startup'
+    )
     return
   }
 

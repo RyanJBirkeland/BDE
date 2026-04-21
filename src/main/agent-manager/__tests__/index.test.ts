@@ -376,7 +376,11 @@ describe('createAgentManager', () => {
           model: 'claude-sonnet-4-5'
         })
       )
-      expect(vi.mocked(claimTask)).toHaveBeenCalledWith('task-1', 'bde-embedded', expect.any(Number))
+      expect(vi.mocked(claimTask)).toHaveBeenCalledWith(
+        'task-1',
+        'bde-embedded',
+        expect.any(Number)
+      )
 
       mgr.stop(0).catch(() => {})
       vi.useRealTimers()
@@ -1120,7 +1124,7 @@ describe('createAgentManager', () => {
         expect.anything(), // getGroup
         expect.anything(), // listGroupTasks
         expect.anything(), // runInTransaction
-        expect.anything()  // onTaskTerminal
+        expect.anything() // onTaskTerminal
       )
     })
 
@@ -1144,7 +1148,9 @@ describe('createAgentManager', () => {
       // Make resolveDependents block so the first call stays in-flight
       let resolveFirst!: () => void
       vi.mocked(resolveDependents).mockImplementationOnce(() => {
-        return new Promise<void>((r) => { resolveFirst = r }) as unknown as void
+        return new Promise<void>((r) => {
+          resolveFirst = r
+        }) as unknown as void
       })
 
       const logger = makeLogger()
@@ -1170,7 +1176,9 @@ describe('createAgentManager', () => {
 
       let resolveFirst!: () => void
       vi.mocked(resolveDependents).mockImplementationOnce(() => {
-        return new Promise<void>((r) => { resolveFirst = r }) as unknown as void
+        return new Promise<void>((r) => {
+          resolveFirst = r
+        }) as unknown as void
       })
 
       const logger = makeLogger()
@@ -1195,11 +1203,18 @@ describe('createAgentManager', () => {
       // Block resolveDependents so we can observe the dirty flag mid-flight
       let resolveResolveDependents!: () => void
       vi.mocked(resolveDependents).mockImplementationOnce(
-        () => new Promise<void>((r) => { resolveResolveDependents = r }) as unknown as void
+        () =>
+          new Promise<void>((r) => {
+            resolveResolveDependents = r
+          }) as unknown as void
       )
 
       const logger = makeLogger()
-      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+      const mgr = createAgentManager(
+        baseConfig,
+        mockRepo,
+        logger
+      ) as import('../index').AgentManagerImpl
       expect(mgr._depIndexDirty).toBe(false)
 
       // Start terminal without awaiting — dirty flag should be set before async work finishes
@@ -1224,14 +1239,24 @@ describe('createAgentManager', () => {
       let resolveB!: () => void
       vi.mocked(resolveDependents)
         .mockImplementationOnce(
-          () => new Promise<void>((r) => { resolveA = r }) as unknown as void
+          () =>
+            new Promise<void>((r) => {
+              resolveA = r
+            }) as unknown as void
         )
         .mockImplementationOnce(
-          () => new Promise<void>((r) => { resolveB = r }) as unknown as void
+          () =>
+            new Promise<void>((r) => {
+              resolveB = r
+            }) as unknown as void
         )
 
       const logger = makeLogger()
-      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+      const mgr = createAgentManager(
+        baseConfig,
+        mockRepo,
+        logger
+      ) as import('../index').AgentManagerImpl
       expect(mgr._depIndexDirty).toBe(false)
 
       // Fire two concurrent terminal events for different tasks
@@ -1254,7 +1279,11 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       setupDefaultMocks()
       vi.mocked(getTasksWithDependencies).mockReturnValue([])
-      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+      const mgr = createAgentManager(
+        baseConfig,
+        mockRepo,
+        logger
+      ) as import('../index').AgentManagerImpl
 
       // _depIndex is the DependencyIndex created in the constructor — grab its rebuild spy
       const rebuildSpy = vi.mocked(mgr._depIndex.rebuild)

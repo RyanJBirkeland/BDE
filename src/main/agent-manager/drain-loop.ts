@@ -49,10 +49,7 @@ export interface DrainLoopDeps {
   isDepIndexDirty: () => boolean
   setDepIndexDirty: (dirty: boolean) => void
   setConcurrency: (state: ConcurrencyState) => void
-  processQueuedTask: (
-    rawTask: SprintTask,
-    taskStatusMap: Map<string, string>
-  ) => Promise<void>
+  processQueuedTask: (rawTask: SprintTask, taskStatusMap: Map<string, string>) => Promise<void>
   /** Counts consecutive drain-loop failures per task. Lives on AgentManagerImpl, passed in to persist across ticks. */
   drainFailureCounts: Map<string, number>
   /** Called when a task is quarantined after repeated failures so dependency resolution runs. */
@@ -125,7 +122,9 @@ export function buildTaskStatusMap(deps: DrainLoopDeps): Map<string, string> {
       deps.setDepIndexDirty(false)
       return new Map(allTasks.map((task) => [task.id, task.status]))
     } catch (err) {
-      deps.logger.error(`[agent-manager] Dep-index full rebuild failed — falling back to incremental refresh: ${err}`)
+      deps.logger.error(
+        `[agent-manager] Dep-index full rebuild failed — falling back to incremental refresh: ${err}`
+      )
       // Clear dirty flag so we don't retry the full rebuild on every tick while the
       // repo is unavailable. The incremental refresher below will re-set it dirty
       // when tasks change again.
@@ -154,7 +153,9 @@ export async function drainQueuedTasks(
   deps.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
   for (const rawTask of queued) {
     if (deps.isShuttingDown()) break
-    if (availableSlots(deps.getConcurrency(), deps.activeAgents.size + deps.getPendingSpawns()) <= 0) {
+    if (
+      availableSlots(deps.getConcurrency(), deps.activeAgents.size + deps.getPendingSpawns()) <= 0
+    ) {
       deps.logger.info('[agent-manager] No slots available — stopping drain iteration')
       break
     }
@@ -180,15 +181,11 @@ export async function drainQueuedTasks(
  *
  * Returns `true` when the failure was environmental (caller should `return`).
  */
-function handleEnvironmentalFailure(
-  taskId: string,
-  err: unknown,
-  deps: DrainLoopDeps
-): boolean {
+function handleEnvironmentalFailure(taskId: string, err: unknown, deps: DrainLoopDeps): boolean {
   const message = err instanceof Error ? (err.stack ?? err.message) : String(err)
   if (classifyFailureReason(message) !== 'environmental') return false
 
-  const reason = message.split('\n')[0].slice(0, 200)
+  const reason = (message.split('\n')[0] ?? '').slice(0, 200)
   try {
     deps.repo.updateTask(taskId, {
       status: 'queued',
@@ -246,11 +243,13 @@ function handleSpecLevelFailure(taskId: string, err: unknown, deps: DrainLoopDep
       claimed_by: null
     })
     deps.drainFailureCounts.delete(taskId)
-    deps.onTaskTerminal(taskId, quarantineStatus).catch((termErr) =>
-      deps.logger.warn(
-        `[agent-manager] onTerminal failed for quarantined task ${taskId}: ${termErr}`
+    deps
+      .onTaskTerminal(taskId, quarantineStatus)
+      .catch((termErr) =>
+        deps.logger.warn(
+          `[agent-manager] onTerminal failed for quarantined task ${taskId}: ${termErr}`
+        )
       )
-    )
   } catch (quarantineErr) {
     deps.logger.error(`[agent-manager] Failed to quarantine task ${taskId}: ${quarantineErr}`)
   }

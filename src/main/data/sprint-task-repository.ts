@@ -8,7 +8,13 @@
  * delegates to this repository. The agent manager uses this interface directly
  * for dependency injection in tests.
  */
-import type { SprintTask, SprintTaskPR, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
+import type {
+  SprintTask,
+  SprintTaskPR,
+  TaskDependency,
+  TaskGroup,
+  EpicDependency
+} from '../../shared/types'
 import * as queries from './sprint-queries'
 import * as reportingQueries from './reporting-queries'
 import * as groupQueries from './task-group-queries'
@@ -30,7 +36,6 @@ export type {
   UpdateTaskOptions
 }
 
-
 /**
  * Methods used by the agent manager for pipeline execution.
  */
@@ -41,7 +46,11 @@ export interface IAgentTaskRepository {
    * attribution in the `task_changes` audit trail (defaults to
    * `'unknown'` when omitted, which historical call sites rely on).
    */
-  updateTask(id: string, patch: Record<string, unknown>, options?: UpdateTaskOptions): SprintTask | null
+  updateTask(
+    id: string,
+    patch: Record<string, unknown>,
+    options?: UpdateTaskOptions
+  ): SprintTask | null
   getQueuedTasks(limit: number): SprintTask[]
   getTasksWithDependencies(): Array<{
     id: string

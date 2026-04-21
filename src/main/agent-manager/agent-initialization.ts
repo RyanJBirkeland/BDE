@@ -90,7 +90,7 @@ export function initializeAgentTracking(
     // recovery path. Instead we log at error level so operators can investigate (e.g. DB
     // corruption, schema mismatch) while the agent still runs and its task status is preserved.
     logger.error(
-      `[agent-manager] Failed to create agent record for ${agentRunId} — run is untracked: ${err instanceof Error ? err.stack ?? err.message : String(err)}`
+      `[agent-manager] Failed to create agent record for ${agentRunId} — run is untracked: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`
     )
   })
 

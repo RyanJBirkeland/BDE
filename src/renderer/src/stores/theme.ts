@@ -80,7 +80,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
     set((s) => {
       const order: Theme[] = ['system', 'dark', 'light']
       const idx = order.indexOf(s.theme)
-      const next = order[(idx + 1) % order.length]
+      const next = order[(idx + 1) % order.length] ?? 'system'
       try {
         localStorage.setItem('bde-theme', next)
       } catch {

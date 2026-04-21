@@ -69,7 +69,9 @@ function getConfiguredRepos(): Set<string> {
 function extractRepoFromPath(path: string): { owner: string; repo: string } | null {
   const match = path.match(/^\/repos\/([^/]+)\/([^/]+)/)
   if (!match) return null
-  return { owner: match[1], repo: match[2] }
+  const [, owner, repo] = match
+  if (!owner || !repo) return null
+  return { owner, repo }
 }
 
 /**

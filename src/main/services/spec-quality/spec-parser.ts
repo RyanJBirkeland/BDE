@@ -26,7 +26,7 @@ export class SpecParser implements ISpecParser {
 
     for (const line of lines) {
       const match = HEADING_PATTERN.exec(line)
-      if (match !== null) {
+      if (match !== null && match[1] && match[2] !== undefined) {
         const hashes = match[1]
         const headingText = match[2]
         const level = hashes.length

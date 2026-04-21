@@ -123,7 +123,9 @@ function parsePriorityPredicate(value: string): TaskPredicate | null {
   if (!match) return null
 
   const op = (match[1] || '=') as ComparisonOp
-  const num = parseInt(match[2], 10)
+  const numStr = match[2]
+  if (!numStr) return null
+  const num = parseInt(numStr, 10)
 
   if (isNaN(num)) return null
 
@@ -140,7 +142,9 @@ function parseCreatedPredicate(value: string): TaskPredicate | null {
   if (!match) return null
 
   const op = (match[1] || '=') as ComparisonOp
-  const days = parseInt(match[2], 10)
+  const daysStr = match[2]
+  if (!daysStr) return null
+  const days = parseInt(daysStr, 10)
 
   if (isNaN(days)) return null
 

@@ -19,7 +19,7 @@ export interface CheckResult {
    * or warning check renders as a button that focuses + scrolls the field into
    * view, so users can act on failures without hunting.
    */
-  fieldId?: string
+  fieldId?: string | undefined
 }
 
 interface TaskWorkbenchState {
@@ -291,13 +291,15 @@ export const useTaskWorkbenchStore = create<TaskWorkbenchState>((set) => ({
   toggleChecksExpanded: () => set((s) => ({ checksExpanded: !s.checksExpanded })),
 
   // Thin wrappers — delegate to the focused validation store
-  setStructuralChecks: (checks) => useTaskWorkbenchValidation.getState().setStructuralChecks(checks),
+  setStructuralChecks: (checks) =>
+    useTaskWorkbenchValidation.getState().setStructuralChecks(checks),
   setSemanticChecks: (checks) => useTaskWorkbenchValidation.getState().setSemanticChecks(checks),
-  setOperationalChecks: (checks) => useTaskWorkbenchValidation.getState().setOperationalChecks(checks),
+  setOperationalChecks: (checks) =>
+    useTaskWorkbenchValidation.getState().setOperationalChecks(checks),
 
-  isDirty: () => {
-    const state = useTaskWorkbenchStore.getState()
-    const { originalSnapshot } = state
+  isDirty: (): boolean => {
+    const state: TaskWorkbenchState = useTaskWorkbenchStore.getState()
+    const originalSnapshot: PersistedDraft | null = state.originalSnapshot
 
     // No original snapshot = pristine create mode
     if (!originalSnapshot) return false

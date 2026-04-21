@@ -8,7 +8,7 @@ export interface WorktreeIsolationDeps {
   /** Absolute paths to primary repo checkouts that must not be touched. */
   mainRepoPaths: readonly string[]
   /** Optional logger for denied operations. */
-  logger?: Pick<Logger, 'warn' | 'info' | 'error' | 'debug'>
+  logger?: Pick<Logger, 'warn' | 'info' | 'error' | 'debug'> | undefined
 }
 
 export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUseTool {
@@ -27,7 +27,11 @@ export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUse
     )
   }
 
-  function deny(message: string, toolName: string, path: string): { behavior: 'deny'; message: string } {
+  function deny(
+    message: string,
+    toolName: string,
+    path: string
+  ): { behavior: 'deny'; message: string } {
     deps.logger?.warn(`[worktree-isolation] denied ${toolName} path=${path} — ${message}`)
     return { behavior: 'deny' as const, message }
   }

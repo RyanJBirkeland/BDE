@@ -24,9 +24,7 @@ type PipelinePromptProfile = 'bde' | 'minimal'
 function getRepoPromptProfile(repoName: string | null | undefined): PipelinePromptProfile {
   if (!repoName) return 'bde'
   try {
-    const repo = getConfiguredRepos().find(
-      (r) => r.name.toLowerCase() === repoName.toLowerCase()
-    )
+    const repo = getConfiguredRepos().find((r) => r.name.toLowerCase() === repoName.toLowerCase())
     return repo?.promptProfile ?? 'bde'
   } catch {
     return 'bde'
@@ -221,7 +219,8 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
     // Task specification
     prompt += '\n\n## Task Specification\n\n'
     prompt += 'Address every section — especially **Files to Change**, **How to Test**, '
-    prompt += 'and **Out of Scope**. If the spec lists test files, writing those tests is REQUIRED.\n\n'
+    prompt +=
+      'and **Out of Scope**. If the spec lists test files, writing those tests is REQUIRED.\n\n'
     const truncatedContent = truncateSpec(taskContent, PROMPT_TRUNCATION.TASK_SPEC_CHARS)
     const wasTruncated = taskContent.length > PROMPT_TRUNCATION.TASK_SPEC_CHARS
     prompt += `<user_spec>\n${truncatedContent}`

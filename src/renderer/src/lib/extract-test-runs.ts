@@ -64,6 +64,7 @@ export function extractTestRuns(events: readonly AgentEvent[] | undefined): Test
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i]
+    if (!ev) continue
     if (ev.type !== 'agent:tool_call' || ev.tool !== 'Bash') continue
     const cmd = bashCommand(ev.input)
     if (!TEST_COMMAND_PATTERN.test(cmd)) continue
@@ -73,6 +74,7 @@ export function extractTestRuns(events: readonly AgentEvent[] | undefined): Test
     let success = true
     for (let j = i + 1; j < events.length; j++) {
       const next = events[j]
+      if (!next) continue
       if (next.type === 'agent:tool_result' && next.tool === 'Bash') {
         output = stringifyOutput(next.output) || next.summary || ''
         success = next.success
@@ -99,5 +101,5 @@ export function extractTestRuns(events: readonly AgentEvent[] | undefined): Test
  */
 export function extractLatestTestRun(events: readonly AgentEvent[] | undefined): TestRun | null {
   const runs = extractTestRuns(events)
-  return runs.length > 0 ? runs[runs.length - 1] : null
+  return runs.length > 0 ? (runs[runs.length - 1] ?? null) : null
 }

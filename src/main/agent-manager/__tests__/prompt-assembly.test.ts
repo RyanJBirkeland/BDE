@@ -23,7 +23,12 @@ vi.mock('../../paths', () => ({
   BDE_TASK_MEMORY_DIR: '/home/.bde/memory/tasks'
 }))
 
-import { validateTaskForRun, assembleRunContext, fetchUpstreamContext, readPriorScratchpad } from '../prompt-assembly'
+import {
+  validateTaskForRun,
+  assembleRunContext,
+  fetchUpstreamContext,
+  readPriorScratchpad
+} from '../prompt-assembly'
 import type { RunAgentDeps, AgentRunClaim } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { mkdirSync, readFileSync } from 'node:fs'
@@ -78,22 +83,43 @@ describe('validateTaskForRun', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('does not throw when task has prompt', async () => {
-    await expect(validateTaskForRun(makeTask({ prompt: 'Do it' }), worktree, repoPath, makeDeps())).resolves.toBeUndefined()
+    await expect(
+      validateTaskForRun(makeTask({ prompt: 'Do it' }), worktree, repoPath, makeDeps())
+    ).resolves.toBeUndefined()
   })
 
   it('does not throw when task has spec', async () => {
-    await expect(validateTaskForRun(makeTask({ prompt: null, spec: '## Spec\nDo it' }), worktree, repoPath, makeDeps())).resolves.toBeUndefined()
+    await expect(
+      validateTaskForRun(
+        makeTask({ prompt: null, spec: '## Spec\nDo it' }),
+        worktree,
+        repoPath,
+        makeDeps()
+      )
+    ).resolves.toBeUndefined()
   })
 
   it('does not throw when task has only title', async () => {
-    await expect(validateTaskForRun(makeTask({ prompt: null, spec: null, title: 'Title only' }), worktree, repoPath, makeDeps())).resolves.toBeUndefined()
+    await expect(
+      validateTaskForRun(
+        makeTask({ prompt: null, spec: null, title: 'Title only' }),
+        worktree,
+        repoPath,
+        makeDeps()
+      )
+    ).resolves.toBeUndefined()
   })
 
   it('throws and marks error when task has no content', async () => {
     const deps = makeDeps()
     const task = makeTask({ prompt: null, spec: null, title: '' })
-    await expect(validateTaskForRun(task, worktree, repoPath, deps)).rejects.toThrow('Task has no content')
-    expect(mockRepo.updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'error' }))
+    await expect(validateTaskForRun(task, worktree, repoPath, deps)).rejects.toThrow(
+      'Task has no content'
+    )
+    expect(mockRepo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'error' })
+    )
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 
@@ -101,7 +127,9 @@ describe('validateTaskForRun', () => {
     const deps = makeDeps()
     const task = makeTask({ prompt: '  ', spec: '  ', title: '  ' })
     await expect(validateTaskForRun(task, worktree, repoPath, deps)).rejects.toThrow()
-    expect(deps.logger.error).toHaveBeenCalledWith(expect.stringContaining('has no prompt/spec/title'))
+    expect(deps.logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('has no prompt/spec/title')
+    )
   })
 })
 
@@ -127,7 +155,9 @@ describe('fetchUpstreamContext', () => {
       prompt: null,
       title: 'Upstream',
       partial_diff: null
-    } as Parameters<typeof mockRepo.getTask>[0] extends string ? ReturnType<typeof mockRepo.getTask> : never)
+    } as Parameters<typeof mockRepo.getTask>[0] extends string
+      ? ReturnType<typeof mockRepo.getTask>
+      : never)
     const result = fetchUpstreamContext([{ id: 'upstream-1', type: 'hard' }], mockRepo, logger)
     expect(result).toHaveLength(1)
     expect(result[0].spec).toBe('## Spec\nDetails')
@@ -141,17 +171,23 @@ describe('fetchUpstreamContext', () => {
       spec: '## Spec',
       prompt: null,
       title: 'Upstream'
-    } as Parameters<typeof mockRepo.getTask>[0] extends string ? ReturnType<typeof mockRepo.getTask> : never)
+    } as Parameters<typeof mockRepo.getTask>[0] extends string
+      ? ReturnType<typeof mockRepo.getTask>
+      : never)
     const result = fetchUpstreamContext([{ id: 'upstream-1', type: 'hard' }], mockRepo, logger)
     expect(result).toHaveLength(0)
   })
 
   it('logs warning on error fetching upstream task', () => {
     const logger = makeLogger()
-    vi.mocked(mockRepo.getTask).mockImplementation(() => { throw new Error('DB error') })
+    vi.mocked(mockRepo.getTask).mockImplementation(() => {
+      throw new Error('DB error')
+    })
     const result = fetchUpstreamContext([{ id: 'upstream-1', type: 'hard' }], mockRepo, logger)
     expect(result).toHaveLength(0)
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to fetch upstream task'))
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to fetch upstream task')
+    )
   })
 })
 
@@ -159,7 +195,9 @@ describe('readPriorScratchpad', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('returns empty string when progress.md does not exist', () => {
-    vi.mocked(readFileSync).mockImplementation(() => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }) })
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' })
+    })
     expect(readPriorScratchpad('task-1')).toBe('')
   })
 
@@ -178,21 +216,29 @@ describe('assembleRunContext', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('calls buildAgentPrompt with pipeline type', async () => {
-    vi.mocked(readFileSync).mockImplementation(() => { throw new Error('ENOENT') })
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT')
+    })
     const deps = makeDeps()
     await assembleRunContext(makeTask(), worktree, deps)
-    expect(buildAgentPrompt).toHaveBeenCalledWith(expect.objectContaining({ agentType: 'pipeline' }))
+    expect(buildAgentPrompt).toHaveBeenCalledWith(
+      expect.objectContaining({ agentType: 'pipeline' })
+    )
   })
 
   it('includes branch in prompt', async () => {
-    vi.mocked(readFileSync).mockImplementation(() => { throw new Error('ENOENT') })
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT')
+    })
     const deps = makeDeps()
     const result = await assembleRunContext(makeTask(), worktree, deps)
     expect(result).toContain('agent/test-1')
   })
 
   it('uses task prompt as taskContent', async () => {
-    vi.mocked(readFileSync).mockImplementation(() => { throw new Error('ENOENT') })
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT')
+    })
     const deps = makeDeps()
     const result = await assembleRunContext(makeTask({ prompt: 'My task prompt' }), worktree, deps)
     expect(result).toContain('My task prompt')

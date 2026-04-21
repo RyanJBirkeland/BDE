@@ -26,7 +26,10 @@ export interface FsChannels {
   }
   'fs:readFile': { args: [filePath: string]; result: string }
   'fs:writeFile': { args: [filePath: string, content: string]; result: void }
-  'fs:watchDir': { args: [dirPath: string]; result: { success: boolean; error?: string } }
+  'fs:watchDir': {
+    args: [dirPath: string]
+    result: { success: boolean; error?: string | undefined }
+  }
   'fs:unwatchDir': { args: []; result: void }
   'fs:createFile': { args: [filePath: string]; result: void }
   'fs:createDir': { args: [dirPath: string]; result: void }

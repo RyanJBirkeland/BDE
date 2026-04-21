@@ -2,7 +2,7 @@ import type { DailySuccessRate } from '../../../../shared/ipc-channels'
 
 interface SuccessRateChartProps {
   data: DailySuccessRate[]
-  height?: number
+  height?: number | undefined
 }
 
 const SVG_W = 520
@@ -67,6 +67,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
   let inSegment = false
   for (let i = 0; i < data.length; i++) {
     const d = data[i]
+    if (!d) continue
     const cx = data.length > 1 ? PAD.left + (i / (data.length - 1)) * plotW : PAD.left
     if (d.successRate != null) {
       const cy = y(d.successRate)
@@ -87,6 +88,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
   let segmentStartX = 0
   for (let i = 0; i < data.length; i++) {
     const d = data[i]
+    if (!d) continue
     const cx = data.length > 1 ? PAD.left + (i / (data.length - 1)) * plotW : PAD.left
     if (d.successRate != null) {
       const cy = y(d.successRate)
@@ -97,7 +99,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
       } else {
         fillPath += `L ${cx} ${cy} `
         // If next point is null or end, close the segment
-        if (i === data.length - 1 || data[i + 1].successRate == null) {
+        if (i === data.length - 1 || data[i + 1]?.successRate == null) {
           fillPath += `L ${cx} ${PAD.top + plotH} L ${segmentStartX} ${PAD.top + plotH} Z `
           fillInSegment = false
         }
@@ -110,13 +112,16 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
   // X-axis labels: first, mid, last
   const xLabels: Array<{ i: number; label: string }> = []
   if (data.length > 0) {
-    xLabels.push({ i: 0, label: formatDateLabel(data[0].date) })
+    const first = data[0]
+    if (first) xLabels.push({ i: 0, label: formatDateLabel(first.date) })
     if (data.length > 2) {
       const mid = Math.floor((data.length - 1) / 2)
-      xLabels.push({ i: mid, label: formatDateLabel(data[mid].date) })
+      const midData = data[mid]
+      if (midData) xLabels.push({ i: mid, label: formatDateLabel(midData.date) })
     }
     if (data.length > 1) {
-      xLabels.push({ i: data.length - 1, label: formatDateLabel(data[data.length - 1].date) })
+      const last = data[data.length - 1]
+      if (last) xLabels.push({ i: data.length - 1, label: formatDateLabel(last.date) })
     }
   }
 
@@ -127,7 +132,9 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
   } else if (Math.abs(delta) < 0.5) {
     deltaEl = <span style={{ color: 'var(--bde-text-dim)' }}>— steady</span>
   } else if (delta > 0) {
-    deltaEl = <span style={{ color: 'var(--bde-success)' }}>▲ +{delta.toFixed(1)}% vs prior wk</span>
+    deltaEl = (
+      <span style={{ color: 'var(--bde-success)' }}>▲ +{delta.toFixed(1)}% vs prior wk</span>
+    )
   } else {
     deltaEl = <span style={{ color: 'var(--bde-danger)' }}>▼ {delta.toFixed(1)}% vs prior wk</span>
   }
@@ -174,7 +181,13 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
         </defs>
 
         {/* Axes */}
-        <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={height - PAD.bottom} stroke="var(--bde-border)" />
+        <line
+          x1={PAD.left}
+          y1={PAD.top}
+          x2={PAD.left}
+          y2={height - PAD.bottom}
+          stroke="var(--bde-border)"
+        />
         <line
           x1={PAD.left}
           y1={height - PAD.bottom}
@@ -202,10 +215,22 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
         />
 
         {/* Y-axis tick labels */}
-        <text x={PAD.left - 6} y={y(100) + 3} textAnchor="end" fontSize="9" fill="var(--bde-text-dim)">
+        <text
+          x={PAD.left - 6}
+          y={y(100) + 3}
+          textAnchor="end"
+          fontSize="9"
+          fill="var(--bde-text-dim)"
+        >
           100%
         </text>
-        <text x={PAD.left - 6} y={y(75) + 3} textAnchor="end" fontSize="9" fill="var(--bde-text-dim)">
+        <text
+          x={PAD.left - 6}
+          y={y(75) + 3}
+          textAnchor="end"
+          fontSize="9"
+          fill="var(--bde-text-dim)"
+        >
           75%
         </text>
         <text

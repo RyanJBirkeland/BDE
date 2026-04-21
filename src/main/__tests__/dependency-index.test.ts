@@ -151,14 +151,8 @@ describe('areDependenciesSatisfied — deprecation warning for condition-less de
   it('emits a deprecation warning when a dep lacks condition field', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const idx = createDependencyIndex()
-    idx.areDependenciesSatisfied(
-      'task-a',
-      [{ id: 'dep-1', type: 'hard' }],
-      () => 'done'
-    )
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[deprecation]')
-    )
+    idx.areDependenciesSatisfied('task-a', [{ id: 'dep-1', type: 'hard' }], () => 'done')
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[deprecation]'))
     warnSpy.mockRestore()
   })
 })

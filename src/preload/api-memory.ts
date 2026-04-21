@@ -16,9 +16,8 @@ export const writeMemoryFile = (
 export const searchMemory = (query: string): Promise<IpcChannelMap['memory:search']['result']> =>
   typedInvoke('memory:search', query)
 
-export const getActiveMemoryFiles =
-  (): Promise<IpcChannelMap['memory:getActiveFiles']['result']> =>
-    typedInvoke('memory:getActiveFiles')
+export const getActiveMemoryFiles = (): Promise<IpcChannelMap['memory:getActiveFiles']['result']> =>
+  typedInvoke('memory:getActiveFiles')
 
 export const setMemoryFileActive = (
   path: string,

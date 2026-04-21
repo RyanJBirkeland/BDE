@@ -89,9 +89,9 @@ export function recordTaskChangesBulk(
 
 export interface GetTaskChangesOptions {
   /** Maximum rows to return (default 50). */
-  limit?: number
+  limit?: number | undefined
   /** Rows to skip before the returned page (default 0). */
-  offset?: number
+  offset?: number | undefined
 }
 
 const DEFAULT_HISTORY_LIMIT = 50
@@ -120,9 +120,10 @@ export function getTaskChanges(
     .all(taskId, limit, offset) as TaskChange[]
 }
 
-function normalizeHistoryOptions(
-  limitOrOptions: number | GetTaskChangesOptions | undefined
-): { limit: number; offset: number } {
+function normalizeHistoryOptions(limitOrOptions: number | GetTaskChangesOptions | undefined): {
+  limit: number
+  offset: number
+} {
   if (typeof limitOrOptions === 'number') {
     return { limit: limitOrOptions, offset: 0 }
   }

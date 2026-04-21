@@ -122,16 +122,20 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
       })
     } else {
       // Restore multiple views as tabs in a single leaf
-      const leaf = createLeaf(initialViews[0])
+      const firstView = initialViews[0]
+      if (!firstView) return
+      const leaf = createLeaf(firstView)
       let current: PanelNode = leaf
       for (let i = 1; i < initialViews.length; i++) {
-        const updated = addTab(current, leaf.panelId, initialViews[i])
+        const nextView = initialViews[i]
+        if (!nextView) continue
+        const updated = addTab(current, leaf.panelId, nextView)
         if (updated) current = updated
       }
       usePanelLayoutStore.setState({
         root: current,
         focusedPanelId: leaf.panelId,
-        activeView: initialViews[0]
+        activeView: firstView
       })
     }
   }, []) // only on mount — view is static from query params

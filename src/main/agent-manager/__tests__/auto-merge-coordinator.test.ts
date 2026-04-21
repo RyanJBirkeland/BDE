@@ -192,9 +192,7 @@ describe('evaluateAutoMerge', () => {
 
       expect(ctx.repo.updateTask).not.toHaveBeenCalled()
       expect(ctx.onTaskTerminal).not.toHaveBeenCalled()
-      expect(ctx.logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('uncommitted changes')
-      )
+      expect(ctx.logger.warn).toHaveBeenCalledWith(expect.stringContaining('uncommitted changes'))
     })
 
     it('logs error and leaves task in review when merge fails', async () => {
@@ -205,9 +203,7 @@ describe('evaluateAutoMerge', () => {
 
       expect(ctx.repo.updateTask).not.toHaveBeenCalled()
       expect(ctx.onTaskTerminal).not.toHaveBeenCalled()
-      expect(ctx.logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('auto-merge failed')
-      )
+      expect(ctx.logger.error).toHaveBeenCalledWith(expect.stringContaining('auto-merge failed'))
     })
 
     it('does not re-throw when evaluateAutoMergePolicy throws — task stays in review', async () => {

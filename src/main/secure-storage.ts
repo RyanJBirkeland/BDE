@@ -5,9 +5,7 @@ const logger = createLogger('secure-storage')
 
 export const ENCRYPTED_PREFIX = 'ENC:'
 
-export const SENSITIVE_SETTING_KEYS: ReadonlySet<string> = new Set([
-  'github.token'
-])
+export const SENSITIVE_SETTING_KEYS: ReadonlySet<string> = new Set(['github.token'])
 
 export function isEncryptionAvailable(): boolean {
   return safeStorage.isEncryptionAvailable()

@@ -19,8 +19,7 @@ export const sprint = {
   createWorkflow: (template: WorkflowTemplate) => typedInvoke('sprint:createWorkflow', template),
   claimTask: (taskId: string) => typedInvoke('sprint:claimTask', taskId),
   update: (id: string, patch: Record<string, unknown>) => typedInvoke('sprint:update', id, patch),
-  readLog: (agentId: string, fromByte?: number) =>
-    typedInvoke('sprint:readLog', agentId, fromByte),
+  readLog: (agentId: string, fromByte?: number) => typedInvoke('sprint:readLog', agentId, fromByte),
   readSpecFile: (filePath: string) => typedInvoke('sprint:readSpecFile', filePath),
   generatePrompt: (args: { taskId: string; title: string; repo: string; templateHint: string }) =>
     typedInvoke('sprint:generatePrompt', args),

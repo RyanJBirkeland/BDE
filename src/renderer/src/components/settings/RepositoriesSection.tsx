@@ -14,9 +14,9 @@ import { REPO_COLOR_PALETTE } from '../../lib/repo-colors'
 interface RepoConfig {
   name: string
   localPath: string
-  githubOwner?: string
-  githubRepo?: string
-  color?: string
+  githubOwner?: string | undefined
+  githubRepo?: string | undefined
+  color?: string | undefined
 }
 
 export function RepositoriesSection(): React.JSX.Element {

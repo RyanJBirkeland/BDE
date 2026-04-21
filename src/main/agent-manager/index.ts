@@ -14,10 +14,7 @@ import {
 import { makeConcurrencyState, availableSlots, type ConcurrencyState } from './concurrency'
 import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex } from '../services/dependency-service'
-import {
-  createEpicDependencyIndex,
-  type EpicDepsReader
-} from '../services/epic-dependency-service'
+import { createEpicDependencyIndex, type EpicDepsReader } from '../services/epic-dependency-service'
 import { runAgent as _runAgent, type RunAgentDeps, type AgentRunClaim } from './run-agent'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
@@ -28,11 +25,7 @@ import type { MappedTask } from './task-mapper'
 // Extracted module imports
 import { runDrain, type DrainLoopDeps } from './drain-loop'
 import { runWatchdog, killActiveAgent, type WatchdogLoopDeps } from './watchdog-loop'
-import {
-  validateAndClaimTask,
-  prepareWorktreeForTask,
-  processQueuedTask
-} from './task-claimer'
+import { validateAndClaimTask, prepareWorktreeForTask, processQueuedTask } from './task-claimer'
 import { checkIsReviewTask, runPruneLoop } from './worktree-manager'
 import { pruneStaleWorktrees, cleanupWorktree } from './worktree'
 import { resolveRepoPath } from './task-claimer'
@@ -336,10 +329,7 @@ export class AgentManagerImpl implements AgentManager {
    * Full pipeline for one queued task row. Delegates to task-claimer.ts.
    * Exposed via _ prefix for testability.
    */
-  async _processQueuedTask(
-    rawTask: SprintTask,
-    taskStatusMap: Map<string, string>
-  ): Promise<void> {
+  async _processQueuedTask(rawTask: SprintTask, taskStatusMap: Map<string, string>): Promise<void> {
     return processQueuedTask(rawTask, taskStatusMap, {
       config: this.config,
       repo: this.repo,
@@ -369,10 +359,7 @@ export class AgentManagerImpl implements AgentManager {
    * Fetch queued tasks and process each one. Delegates to drain-loop.ts.
    * Exposed via _ prefix for testability.
    */
-  async _drainQueuedTasks(
-    available: number,
-    taskStatusMap: Map<string, string>
-  ): Promise<void> {
+  async _drainQueuedTasks(available: number, taskStatusMap: Map<string, string>): Promise<void> {
     const queued = this.repo.getQueuedTasks(available)
     this.logger.info(`[agent-manager] Fetching queued tasks (limit=${available})...`)
     this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
@@ -385,9 +372,7 @@ export class AgentManagerImpl implements AgentManager {
       try {
         await this._processQueuedTask(rawTask, taskStatusMap)
       } catch (err) {
-        this.logger.error(
-          `[agent-manager] Failed to process task ${rawTask.id}: ${err}`
-        )
+        this.logger.error(`[agent-manager] Failed to process task ${rawTask.id}: ${err}`)
       }
     }
   }
@@ -415,8 +400,12 @@ export class AgentManagerImpl implements AgentManager {
       getPendingSpawns: () => this._pendingSpawns,
       lastTaskDeps: this._lastTaskDeps,
       isDepIndexDirty: () => this._depIndexDirty,
-      setDepIndexDirty: (dirty) => { this._depIndexDirty = dirty },
-      setConcurrency: (state) => { this._concurrency = state },
+      setDepIndexDirty: (dirty) => {
+        this._depIndexDirty = dirty
+      },
+      setConcurrency: (state) => {
+        this._concurrency = state
+      },
       processQueuedTask: (raw, map) => this._processQueuedTask(raw, map),
       drainFailureCounts: this._drainFailureCounts,
       onTaskTerminal: this.onTaskTerminal.bind(this),
@@ -444,7 +433,9 @@ export class AgentManagerImpl implements AgentManager {
       activeAgents: this._activeAgents,
       processingTasks: this._processingTasks,
       getConcurrency: () => this._concurrency,
-      setConcurrency: (state) => { this._concurrency = state },
+      setConcurrency: (state) => {
+        this._concurrency = state
+      },
       onTaskTerminal: this.onTaskTerminal.bind(this),
       cleanupAgentWorktree: async (agent) => {
         const task = this.repo.getTask(agent.taskId)

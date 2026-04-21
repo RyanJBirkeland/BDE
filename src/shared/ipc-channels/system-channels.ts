@@ -24,7 +24,9 @@ export interface TerminalDataPayload {
 /** Terminal PTY management */
 export interface TerminalChannels {
   'terminal:create': {
-    args: [opts: { cols: number; rows: number; shell?: string; cwd?: string }]
+    args: [
+      opts: { cols: number; rows: number; shell?: string | undefined; cwd?: string | undefined }
+    ]
     result: number
   }
   'terminal:write': {
@@ -48,18 +50,24 @@ export interface WorkbenchChannels {
     result: { spec: string }
   }
   'workbench:checkSpec': {
-    args: [input: { title: string; repo: string; spec: string; specType?: string | null }]
+    args: [
+      input: { title: string; repo: string; spec: string; specType?: string | undefined | null }
+    ]
     result: {
       clarity: { status: 'pass' | 'warn' | 'fail'; message: string }
       scope: { status: 'pass' | 'warn' | 'fail'; message: string }
-      filesExist: { status: 'pass' | 'warn' | 'fail'; message: string; missingFiles?: string[] }
+      filesExist: {
+        status: 'pass' | 'warn' | 'fail'
+        message: string
+        missingFiles?: string[] | undefined
+      }
     }
   }
   'workbench:checkOperational': {
     args: [input: { repo: string }]
     result: {
       auth: { status: 'pass' | 'warn' | 'fail'; message: string }
-      repoPath: { status: 'pass' | 'fail'; message: string; path?: string }
+      repoPath: { status: 'pass' | 'fail'; message: string; path?: string | undefined }
       gitClean: { status: 'pass' | 'warn'; message: string }
       noConflict: { status: 'pass' | 'warn' | 'fail'; message: string }
       slotsAvailable: { status: 'pass' | 'warn'; message: string; available: number; max: number }
@@ -117,17 +125,17 @@ export interface WebhookChannels {
     result: Webhook[]
   }
   'webhook:create': {
-    args: [payload: { url: string; events: string[]; secret?: string }]
+    args: [payload: { url: string; events: string[]; secret?: string | undefined }]
     result: Webhook
   }
   'webhook:update': {
     args: [
       payload: {
         id: string
-        url?: string
-        events?: string[]
-        secret?: string | null
-        enabled?: boolean
+        url?: string | undefined
+        events?: string[] | undefined
+        secret?: string | undefined | null
+        enabled?: boolean | undefined
       }
     ]
     result: Webhook
@@ -138,7 +146,7 @@ export interface WebhookChannels {
   }
   'webhook:test': {
     args: [payload: { id: string }]
-    result: { success: boolean; status?: number }
+    result: { success: boolean; status?: number | undefined }
   }
 }
 
@@ -170,14 +178,14 @@ export interface SystemChannels {
 export interface LocalRepoInfo {
   name: string
   localPath: string
-  owner?: string
-  repo?: string
+  owner?: string | undefined
+  repo?: string | undefined
 }
 
 export interface GithubRepoInfo {
   name: string
   owner: string
-  description?: string
+  description?: string | undefined
   isPrivate: boolean
   url: string
 }
@@ -187,8 +195,8 @@ export interface CloneProgressEvent {
   repo: string
   line: string
   done: boolean
-  error?: string
-  localPath?: string // expanded absolute path, set on successful clone completion
+  error?: string | undefined
+  localPath?: string | undefined // expanded absolute path, set on successful clone completion
 }
 
 export interface RepoDiscoveryChannels {

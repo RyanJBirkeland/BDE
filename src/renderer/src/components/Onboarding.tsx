@@ -11,7 +11,7 @@ interface AuthStatus {
   cliFound: boolean
   tokenFound: boolean
   tokenExpired: boolean
-  expiresAt?: string
+  expiresAt?: string | undefined
 }
 
 type CheckState = 'loading' | 'pass' | 'fail' | 'warn'
@@ -64,8 +64,8 @@ function CheckRow({
 }: {
   state: CheckState
   label: string
-  helpText?: string
-  optional?: boolean
+  helpText?: string | undefined
+  optional?: boolean | undefined
 }): React.JSX.Element {
   return (
     <div className="onboarding-check" style={{ gap: 'var(--bde-space-1)' }}>
@@ -115,14 +115,14 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
   const [checking, setChecking] = useState(true)
   const [extended, setExtended] = useState<ExtendedCheckState>({
     gitAvailable: 'loading',
-    reposConfigured: 'loading',
+    reposConfigured: 'loading'
   })
 
   const runCheck = useCallback(async () => {
     setChecking(true)
     setExtended({
       gitAvailable: 'loading',
-      reposConfigured: 'loading',
+      reposConfigured: 'loading'
     })
 
     // Run auth check and extended checks concurrently
@@ -134,9 +134,9 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
     ])
 
     // Git check — verify git CLI is installed by running git --version
-    const gitCheck = window.api.git.checkInstalled().then(
-      (ok) => (ok ? 'pass' : 'fail') as CheckState
-    )
+    const gitCheck = window.api.git
+      .checkInstalled()
+      .then((ok) => (ok ? 'pass' : 'fail') as CheckState)
 
     // Repos configured check — look for 'repos' setting
     const reposCheck = window.api.settings.get('repos').then(

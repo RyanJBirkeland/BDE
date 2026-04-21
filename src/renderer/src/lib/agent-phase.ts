@@ -45,6 +45,7 @@ export function derivePhaseLabel(
   // timestamp first — we exit on the first event outside RECENT_WINDOW_MS.
   for (let i = events.length - 1; i >= 0; i--) {
     const ev = events[i]
+    if (!ev) continue
     if (now - ev.timestamp > RECENT_WINDOW_MS) return 'Idle'
 
     if (ev.type === 'agent:tool_call') {

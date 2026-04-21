@@ -9,10 +9,10 @@ import { GitCommitHorizontal, Upload, Loader2 } from 'lucide-react'
 export interface CommitBoxProps {
   commitMessage: string
   stagedCount: number
-  commitLoading?: boolean
-  pushLoading?: boolean
-  pushDisabled?: boolean
-  pushDisabledTitle?: string
+  commitLoading?: boolean | undefined
+  pushLoading?: boolean | undefined
+  pushDisabled?: boolean | undefined
+  pushDisabledTitle?: string | undefined
   onMessageChange: (msg: string) => void
   onCommit: () => void
   onPush: () => void
@@ -42,7 +42,7 @@ export function CommitBox({
     }
   }
 
-  const firstLine = commitMessage.split('\n')[0]
+  const firstLine = commitMessage.split('\n')[0] ?? ''
   const charCount = firstLine.length
   const isOverLimit = charCount > 72
 

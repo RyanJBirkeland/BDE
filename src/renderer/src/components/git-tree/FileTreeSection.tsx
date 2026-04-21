@@ -12,9 +12,9 @@ export interface FileTreeSectionProps {
   title: string
   files: GitFileEntry[]
   isStaged: boolean
-  selectedPath?: string | null
-  onStageAll?: () => void
-  onUnstageAll?: () => void
+  selectedPath?: string | null | undefined
+  onStageAll?: (() => void) | undefined
+  onUnstageAll?: (() => void) | undefined
   onStageFile: (path: string) => void
   onUnstageFile: (path: string) => void
   onSelectFile: (path: string) => void

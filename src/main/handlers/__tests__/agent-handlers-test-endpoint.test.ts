@@ -60,9 +60,11 @@ describe('testLocalEndpoint', () => {
   })
 
   it('returns an error string on connection refusal', async () => {
-    globalThis.fetch = vi.fn().mockRejectedValue(
-      Object.assign(new Error('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
-    ) as unknown as typeof fetch
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(
+        Object.assign(new Error('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
+      ) as unknown as typeof fetch
 
     const result = await testLocalEndpoint('http://localhost:1234/v1')
 

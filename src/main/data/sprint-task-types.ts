@@ -66,18 +66,25 @@ export interface QueueStats {
 export interface CreateTaskInput {
   title: string
   repo: string
-  prompt?: string
-  notes?: string
-  spec?: string
-  spec_type?: 'feature' | 'bug-fix' | 'refactor' | 'test-coverage' | 'freeform' | 'prompt'
-  priority?: number
-  status?: string
-  template_name?: string
-  depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null
-  playground_enabled?: boolean
-  max_runtime_ms?: number
-  model?: string
-  tags?: string[] | null
-  group_id?: string | null
-  cross_repo_contract?: string | null
+  prompt?: string | undefined
+  notes?: string | undefined
+  spec?: string | undefined
+  spec_type?:
+    | 'feature'
+    | 'bug-fix'
+    | 'refactor'
+    | 'test-coverage'
+    | 'freeform'
+    | 'prompt'
+    | undefined
+  priority?: number | undefined
+  status?: string | undefined
+  template_name?: string | undefined
+  depends_on?: Array<{ id: string; type: 'hard' | 'soft' }> | null | undefined
+  playground_enabled?: boolean | undefined
+  max_runtime_ms?: number | undefined
+  model?: string | undefined
+  tags?: string[] | null | undefined
+  group_id?: string | null | undefined
+  cross_repo_contract?: string | null | undefined
 }

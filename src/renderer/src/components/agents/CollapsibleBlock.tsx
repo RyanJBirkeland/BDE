@@ -5,8 +5,8 @@ import './CollapsibleBlock.css'
 interface CollapsibleBlockProps {
   header: React.ReactNode
   expandedContent: React.ReactNode
-  searchClass?: string
-  testId?: string
+  searchClass?: string | undefined
+  testId?: string | undefined
 }
 
 export function CollapsibleBlock({

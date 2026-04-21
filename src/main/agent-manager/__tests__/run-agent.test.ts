@@ -11,7 +11,11 @@ import {
   readPriorScratchpad,
   consumeMessages
 } from '../run-agent'
-import { detectHtmlWrite, detectPlaygroundWrite, tryEmitPlaygroundEvent } from '../playground-handler'
+import {
+  detectHtmlWrite,
+  detectPlaygroundWrite,
+  tryEmitPlaygroundEvent
+} from '../playground-handler'
 import type {
   AgentRunClaim,
   RunAgentDeps,

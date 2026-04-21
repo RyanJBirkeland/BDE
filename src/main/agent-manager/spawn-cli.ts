@@ -33,7 +33,7 @@ export function withMaxOldSpaceOption(existing: string | undefined, maxOldSpaceM
 }
 
 export function spawnViaCli(
-  opts: { prompt: string; cwd: string; model: string; maxBudgetUsd?: number },
+  opts: { prompt: string; cwd: string; model: string; maxBudgetUsd?: number | undefined },
   env: NodeJS.ProcessEnv,
   token: string | null,
   _logger?: unknown

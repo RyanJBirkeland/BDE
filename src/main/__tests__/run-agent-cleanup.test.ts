@@ -65,7 +65,9 @@ vi.mock('../paths', () => ({
 }))
 
 vi.mock('../agent-manager/spawn-sdk', async () => {
-  const actual = await vi.importActual<typeof import('../agent-manager/spawn-sdk')>('../agent-manager/spawn-sdk')
+  const actual = await vi.importActual<typeof import('../agent-manager/spawn-sdk')>(
+    '../agent-manager/spawn-sdk'
+  )
   return {
     MAX_TURNS: actual.MAX_TURNS
   }
@@ -144,7 +146,9 @@ describe('cleanupWorktreeWithRetry', () => {
   it('does not throw even when repo.updateTask fails', async () => {
     vi.mocked(cleanupWorktree).mockRejectedValue(new Error('fail'))
     const repo = makeRepo({
-      updateTask: vi.fn().mockImplementation(() => { throw new Error('write failed') })
+      updateTask: vi.fn().mockImplementation(() => {
+        throw new Error('write failed')
+      })
     })
 
     await expect(

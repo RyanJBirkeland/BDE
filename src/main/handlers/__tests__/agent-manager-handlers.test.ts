@@ -276,19 +276,32 @@ describe('Agent manager handlers', () => {
       })
 
       it('accepts a valid ULID-style task ID', async () => {
-        vi.mocked(getTask).mockReturnValue({ id: '01HXXXXXXXXXXXXXXXXXXXXXXX', worktree_path: '/tmp/wt' } as never)
-        queueExec({ stdout: '' })        // git add
-        queueExec({ stdout: '' })        // git diff --cached (nothing staged)
+        vi.mocked(getTask).mockReturnValue({
+          id: '01HXXXXXXXXXXXXXXXXXXXXXXX',
+          worktree_path: '/tmp/wt'
+        } as never)
+        queueExec({ stdout: '' }) // git add
+        queueExec({ stdout: '' }) // git diff --cached (nothing staged)
         const handlers = captureHandlers()
-        const result = await handlers['agent-manager:checkpoint'](mockEvent, '01HXXXXXXXXXXXXXXXXXXXXXXX')
+        const result = await handlers['agent-manager:checkpoint'](
+          mockEvent,
+          '01HXXXXXXXXXXXXXXXXXXXXXXX'
+        )
         expect(result.ok).toBe(true)
       })
 
       function queueExec(result: { stdout: string; stderr?: string } | { error: Error }): void {
-        mockExecFile.mockImplementationOnce((_cmd: string, _args: string[], _opts: unknown, cb: (err: Error | null, result?: { stdout: string; stderr: string }) => void) => {
-          if ('error' in result) cb(result.error)
-          else cb(null, { stdout: result.stdout, stderr: result.stderr ?? '' })
-        })
+        mockExecFile.mockImplementationOnce(
+          (
+            _cmd: string,
+            _args: string[],
+            _opts: unknown,
+            cb: (err: Error | null, result?: { stdout: string; stderr: string }) => void
+          ) => {
+            if ('error' in result) cb(result.error)
+            else cb(null, { stdout: result.stdout, stderr: result.stderr ?? '' })
+          }
+        )
       }
     })
 

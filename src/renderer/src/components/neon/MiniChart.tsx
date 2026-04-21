@@ -3,13 +3,13 @@ import { type NeonAccent, neonVar } from './types'
 
 export interface ChartBar {
   value: number
-  accent?: NeonAccent
-  label?: string
+  accent?: NeonAccent | undefined
+  label?: string | undefined
 }
 
 interface MiniChartProps {
   data: ChartBar[]
-  height?: number
+  height?: number | undefined
 }
 
 /** Padding inside the SVG so dots at edges aren't clipped. */
@@ -19,10 +19,15 @@ const SVG_WIDTH = 400
 /** Build a smooth cubic bezier path through points. */
 function smoothPath(points: [number, number][]): string {
   if (points.length < 2) return ''
-  const d: string[] = [`M ${points[0][0]},${points[0][1]}`]
+  const first = points[0]
+  if (!first) return ''
+  const d: string[] = [`M ${first[0]},${first[1]}`]
   for (let i = 0; i < points.length - 1; i++) {
-    const [x0, y0] = points[i]
-    const [x1, y1] = points[i + 1]
+    const curr = points[i]
+    const next = points[i + 1]
+    if (!curr || !next) continue
+    const [x0, y0] = curr
+    const [x1, y1] = next
     const cpx = (x1 - x0) * 0.4
     d.push(`C ${x0 + cpx},${y0} ${x1 - cpx},${y1} ${x1},${y1}`)
   }
@@ -56,8 +61,12 @@ export function MiniChart({ data, height = 80 }: MiniChartProps): React.JSX.Elem
   const linePath = smoothPath(points)
 
   // Closed path for gradient fill (line + bottom edge)
+  const firstPoint = points[0]
+  const lastPoint = points[points.length - 1]
   const fillPath =
-    linePath + ` L ${points[points.length - 1][0]},${height} L ${points[0][0]},${height} Z`
+    firstPoint && lastPoint
+      ? linePath + ` L ${lastPoint[0]},${height} L ${firstPoint[0]},${height} Z`
+      : linePath
 
   return (
     <div style={{ height, position: 'relative' }}>
@@ -116,18 +125,18 @@ export function MiniChart({ data, height = 80 }: MiniChartProps): React.JSX.Elem
       </svg>
 
       {/* Tooltip */}
-      {hover !== null && (
+      {hover !== null && points[hover] && data[hover] && (
         <div
           className="mini-chart-tooltip"
           style={{
-            left: `${(points[hover][0] / SVG_WIDTH) * 100}%`,
+            left: `${((points[hover]?.[0] ?? 0) / SVG_WIDTH) * 100}%`,
             borderColor: neonVar(accent, 'color'),
             color: neonVar(accent, 'color')
           }}
         >
-          <strong>{formatValue(data[hover].value)}</strong>
-          {data[hover].label && (
-            <span style={{ opacity: 0.7, marginLeft: 6 }}>{formatLabel(data[hover].label!)}</span>
+          <strong>{formatValue(data[hover]?.value ?? 0)}</strong>
+          {data[hover]?.label && (
+            <span style={{ opacity: 0.7, marginLeft: 6 }}>{formatLabel(data[hover]!.label!)}</span>
           )}
         </div>
       )}

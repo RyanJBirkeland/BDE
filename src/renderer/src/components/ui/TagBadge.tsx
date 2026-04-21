@@ -2,8 +2,8 @@ import { type NeonAccent, neonVar, NEON_ACCENTS } from '../neon/types'
 
 interface TagBadgeProps {
   tag: string
-  size?: 'sm' | 'md'
-  onRemove?: () => void
+  size?: 'sm' | 'md' | undefined
+  onRemove?: (() => void) | undefined
 }
 
 /**
@@ -16,7 +16,7 @@ function tagToAccent(tag: string): NeonAccent {
     hash = (hash << 5) - hash + tag.charCodeAt(i)
     hash = hash & hash // Convert to 32-bit integer
   }
-  return NEON_ACCENTS[Math.abs(hash) % NEON_ACCENTS.length]
+  return NEON_ACCENTS[Math.abs(hash) % NEON_ACCENTS.length] ?? 'cyan'
 }
 
 export function TagBadge({ tag, size = 'sm', onRemove }: TagBadgeProps): React.JSX.Element {

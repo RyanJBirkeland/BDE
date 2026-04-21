@@ -54,7 +54,7 @@ export interface SetupWorktreeOpts {
   worktreeBase: string
   taskId: string
   title: string
-  groupId?: string
+  groupId?: string | undefined
 }
 
 export interface SetupWorktreeResult {
@@ -151,7 +151,7 @@ async function cleanupStaleWorktrees(
 }
 
 export async function setupWorktree(
-  opts: SetupWorktreeOpts & { logger?: Logger }
+  opts: SetupWorktreeOpts & { logger?: Logger | undefined }
 ): Promise<SetupWorktreeResult> {
   const { repoPath, worktreeBase, taskId, title, groupId, logger } = opts
   const branch = branchNameForTask(title, taskId, groupId)
@@ -231,7 +231,9 @@ export async function setupWorktree(
           symlinkSync(repoNodeModules, worktreeNodeModules)
           log.info(`[worktree] Symlinked node_modules for task ${taskId}`)
         } catch (symlinkErr) {
-          log.warn(`[worktree] Failed to symlink node_modules (agents will npm install): ${symlinkErr}`)
+          log.warn(
+            `[worktree] Failed to symlink node_modules (agents will npm install): ${symlinkErr}`
+          )
         }
       }
     } catch (err) {

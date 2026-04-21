@@ -122,10 +122,12 @@ export function computeDagLayout(tasks: SprintTask[]): DagLayout {
 
   for (let layerIndex = 0; layerIndex < layers.length; layerIndex++) {
     const layer = layers[layerIndex]
+    if (!layer) continue
     maxNodesInLayer = Math.max(maxNodesInLayer, layer.length)
 
     for (let nodeIndex = 0; nodeIndex < layer.length; nodeIndex++) {
       const taskId = layer[nodeIndex]
+      if (taskId === undefined) continue
       const task = taskMap.get(taskId)
       if (!task) continue
 

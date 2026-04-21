@@ -8,14 +8,14 @@ import { X } from 'lucide-react'
 interface HeaderTabProps {
   label: string
   isActive: boolean
-  showDot?: boolean
-  showClose?: boolean
+  showDot?: boolean | undefined
+  showClose?: boolean | undefined
   onClick: () => void
   onClose: () => void
-  draggable?: boolean
-  onDragStart?: (e: React.DragEvent) => void
-  tabIndex?: number
-  onKeyDown?: (e: React.KeyboardEvent) => void
+  draggable?: boolean | undefined
+  onDragStart?: ((e: React.DragEvent) => void) | undefined
+  tabIndex?: number | undefined
+  onKeyDown?: ((e: React.KeyboardEvent) => void) | undefined
 }
 
 export function HeaderTab({

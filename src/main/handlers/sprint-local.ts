@@ -8,7 +8,11 @@ import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import type { WorkflowTemplate } from '../../shared/workflow-types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
-import { TASK_STATUSES, TERMINAL_STATUSES, isValidTransition } from '../../shared/task-state-machine'
+import {
+  TASK_STATUSES,
+  TERMINAL_STATUSES,
+  isValidTransition
+} from '../../shared/task-state-machine'
 import { nowIso } from '../../shared/time'
 import { detectCycle } from '../services/dependency-service'
 import {
@@ -48,7 +52,10 @@ export interface SprintLocalDeps {
 
 // --- Handler registration ---
 
-export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprintTaskRepository): void {
+export function registerSprintLocalHandlers(
+  deps: SprintLocalDeps,
+  repo?: ISprintTaskRepository
+): void {
   const effectiveRepo = repo ?? createSprintTaskRepository()
   safeHandle('sprint:list', () => {
     return listTasksRecent()
@@ -85,7 +92,10 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
 
     // Validate status string at the handler boundary — defense-in-depth before DB round-trips.
     if (patch.status !== undefined) {
-      if (typeof patch.status !== 'string' || !(TASK_STATUSES as readonly string[]).includes(patch.status)) {
+      if (
+        typeof patch.status !== 'string' ||
+        !(TASK_STATUSES as readonly string[]).includes(patch.status)
+      ) {
         throw new Error(
           `Invalid status "${patch.status}". Valid statuses: ${TASK_STATUSES.join(', ')}`
         )
@@ -140,7 +150,11 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
     return readFile(safePath, 'utf-8')
   })
 
-  safeHandle('sprint:generatePrompt', (_e, args: GeneratePromptRequest): GeneratePromptResponse => generatePrompt(args))
+  const generatePromptHandler = (
+    _e: Electron.IpcMainInvokeEvent,
+    args: GeneratePromptRequest
+  ): GeneratePromptResponse => generatePrompt(args)
+  safeHandle('sprint:generatePrompt', generatePromptHandler)
 
   safeHandle('sprint:claimTask', async (_e, taskId: string): Promise<ClaimedTask | null> => {
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
@@ -179,23 +193,32 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
     return { content: result.content, status: info.status, nextByte: result.nextByte }
   })
 
-  safeHandle('sprint:validateDependencies', async (_e, taskId: string, proposedDeps: Array<{ id: string; type: 'hard' | 'soft' }>) => {
-      if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-      // Validate all dep targets exist
-      for (const dep of proposedDeps) {
-        const target = getTask(dep.id)
-        if (!target) return { valid: false, error: `Task ${dep.id} not found` }
-      }
-
-      // Check for cycles
-      const allTasks = listTasks()
-      const depsMap = new Map(allTasks.map((t) => [t.id, t.depends_on]))
-      const cycle = detectCycle(taskId, proposedDeps, (id) => depsMap.get(id) ?? null)
-      if (cycle) return { valid: false, cycle }
-
-      return { valid: true }
+  type ProposedDeps = Array<{ id: string; type: 'hard' | 'soft' }>
+  type ValidateDepsResult =
+    | { valid: true }
+    | { valid: false; error: string }
+    | { valid: false; cycle: string[] }
+  const validateDeps = async (
+    _e: Electron.IpcMainInvokeEvent,
+    taskId: string,
+    proposedDeps: ProposedDeps
+  ): Promise<ValidateDepsResult> => {
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
+    // Validate all dep targets exist
+    for (const dep of proposedDeps) {
+      const target = getTask(dep.id)
+      if (!target) return { valid: false, error: `Task ${dep.id} not found` }
     }
-  )
+
+    // Check for cycles
+    const allTasks = listTasks()
+    const depsMap = new Map(allTasks.map((t) => [t.id, t.depends_on]))
+    const cycle = detectCycle(taskId, proposedDeps, (id) => depsMap.get(id) ?? null)
+    if (cycle) return { valid: false, cycle }
+
+    return { valid: true }
+  }
+  safeHandle('sprint:validateDependencies', validateDeps)
 
   safeHandle('sprint:unblockTask', async (_e, taskId: string) => {
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
@@ -230,14 +253,14 @@ export function registerSprintLocalHandlers(deps: SprintLocalDeps, repo?: ISprin
 
 interface ForceOverrideArgs {
   taskId: string
-  reason?: string
-  force?: boolean
+  reason?: string | undefined
+  force?: boolean | undefined
 }
 
 interface OverrideTaskStatusArgs {
   taskId: string
-  reason?: string
-  force?: boolean
+  reason?: string | undefined
+  force?: boolean | undefined
   targetStatus: 'failed' | 'done'
   deps: SprintLocalDeps
 }

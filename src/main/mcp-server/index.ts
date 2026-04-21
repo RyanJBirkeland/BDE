@@ -88,7 +88,10 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
     try {
       return await cancelTask(
         id,
-        { reason, caller: options?.caller },
+        {
+          ...(reason !== undefined ? { reason } : {}),
+          ...(options?.caller !== undefined ? { caller: options.caller } : {})
+        },
         { onStatusTerminal: deps.onStatusTerminal, logger }
       )
     } catch (err) {

@@ -51,7 +51,7 @@ export interface AgentMeta {
 export interface SpawnLocalAgentArgs {
   task: string
   repoPath: string
-  assistant?: boolean
+  assistant?: boolean | undefined
 }
 
 export interface SpawnLocalAgentResult {
@@ -148,15 +148,15 @@ export interface LocalAgent extends UnifiedAgentBase {
   pid: number
   canSteer: boolean
   canKill: boolean
-  isBlocked?: boolean
-  task?: string
+  isBlocked?: boolean | undefined
+  task?: string | undefined
 }
 
 /** An agent from CLI history (past or remote). */
 export interface HistoryAgent extends UnifiedAgentBase {
   source: 'history'
   historyId: string
-  sessionKey?: string
+  sessionKey?: string | undefined
 }
 
 /** Discriminated union — narrow via `agent.source`. */

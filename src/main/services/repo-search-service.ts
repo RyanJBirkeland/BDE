@@ -29,6 +29,7 @@ export function parseGrepOutput(stdout: string, query: string): RepoSearchResult
     const match = line.match(/^(.+?):(\d+):(.*)$/)
     if (!match) continue
     const [, file, lineNum, lineContent] = match
+    if (!file || !lineNum || lineContent === undefined) continue
     if (!fileMap.has(file)) {
       fileMap.set(file, [])
     }

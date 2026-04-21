@@ -58,35 +58,35 @@ export function registerSprintExportHandlers(deps: ExportHandlersDeps): void {
     return { success: true, path: result.filePath }
   })
 
-  safeHandle('sprint:exportTasks', async (_e, format: 'json' | 'csv'): Promise<{ filePath: string | null; canceled: boolean }> => {
-      const tasks = listTasks()
+  type ExportResult = { filePath: string | null; canceled: boolean }
+  safeHandle('sprint:exportTasks', async (_e, format: 'json' | 'csv'): Promise<ExportResult> => {
+    const tasks = listTasks()
 
-      // Show save dialog
-      const result = await deps.dialog.showSaveDialog({
-        title: 'Export Sprint Tasks',
-        defaultPath: `sprint-tasks-${nowIso().split('T')[0]}.${format}`,
-        filters: [
-          format === 'json'
-            ? { name: 'JSON Files', extensions: ['json'] }
-            : { name: 'CSV Files', extensions: ['csv'] }
-        ]
-      })
-
-      if (result.canceled || !result.filePath) {
-        return { filePath: null, canceled: true }
-      }
-
-      // Generate export content
-      const content =
+    // Show save dialog
+    const result = await deps.dialog.showSaveDialog({
+      title: 'Export Sprint Tasks',
+      defaultPath: `sprint-tasks-${nowIso().split('T')[0]}.${format}`,
+      filters: [
         format === 'json'
-          ? JSON.stringify(tasks, null, 2)
-          : formatTasksAsCsv(tasks as unknown as Array<Record<string, unknown>>)
+          ? { name: 'JSON Files', extensions: ['json'] }
+          : { name: 'CSV Files', extensions: ['csv'] }
+      ]
+    })
 
-      // Write to file
-      await writeFile(result.filePath, content, 'utf-8')
-      logger.info(`[sprint:exportTasks] Exported ${tasks.length} tasks to ${result.filePath}`)
-
-      return { filePath: result.filePath, canceled: false }
+    if (result.canceled || !result.filePath) {
+      return { filePath: null, canceled: true }
     }
-  )
+
+    // Generate export content
+    const content =
+      format === 'json'
+        ? JSON.stringify(tasks, null, 2)
+        : formatTasksAsCsv(tasks as unknown as Array<Record<string, unknown>>)
+
+    // Write to file
+    await writeFile(result.filePath, content, 'utf-8')
+    logger.info(`[sprint:exportTasks] Exported ${tasks.length} tasks to ${result.filePath}`)
+
+    return { filePath: result.filePath, canceled: false }
+  })
 }

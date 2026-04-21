@@ -3,14 +3,14 @@ import { useCallback, useRef, useEffect, useImperativeHandle, forwardRef } from 
 type TextareaProps = {
   value: string
   onChange: (v: string) => void
-  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
-  placeholder?: string
-  disabled?: boolean
-  className?: string
+  onKeyDown?: ((e: React.KeyboardEvent<HTMLTextAreaElement>) => void) | undefined
+  placeholder?: string | undefined
+  disabled?: boolean | undefined
+  className?: string | undefined
   'aria-label'?: string
-  maxHeight?: number
-  resize?: 'none' | 'vertical'
-  variant?: 'default' | 'code'
+  maxHeight?: number | undefined
+  resize?: 'none' | 'vertical' | undefined
+  variant?: 'default' | 'code' | undefined
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
@@ -44,11 +44,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
     autoResize()
   }, [value, autoResize])
 
-  const classes = [
-    'bde-textarea',
-    variant === 'code' && 'bde-textarea--code',
-    className
-  ]
+  const classes = ['bde-textarea', variant === 'code' && 'bde-textarea--code', className]
     .filter(Boolean)
     .join(' ')
 

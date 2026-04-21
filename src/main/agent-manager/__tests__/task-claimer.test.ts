@@ -48,11 +48,15 @@ function makeTask(overrides: Partial<MappedTask> = {}): MappedTask {
   }
 }
 
-function makeRepo(opts: { status?: string; claimResult?: string | null } = {}): IAgentTaskRepository {
+function makeRepo(
+  opts: { status?: string; claimResult?: string | null } = {}
+): IAgentTaskRepository {
   return {
     updateTask: vi.fn(),
     getTask: vi.fn().mockReturnValue({ id: 'task-1', status: opts.status ?? 'queued' }),
-    claimTask: vi.fn().mockReturnValue(opts.claimResult !== undefined ? opts.claimResult : 'task-1'),
+    claimTask: vi
+      .fn()
+      .mockReturnValue(opts.claimResult !== undefined ? opts.claimResult : 'task-1'),
     getQueuedTasks: vi.fn().mockReturnValue([]),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
     releaseTask: vi.fn(),
@@ -61,7 +65,11 @@ function makeRepo(opts: { status?: string; claimResult?: string | null } = {}): 
 }
 
 function makeDepIndex(): DependencyIndex {
-  return { rebuild: vi.fn(), getBlockedBy: vi.fn(), addEdges: vi.fn() } as unknown as DependencyIndex
+  return {
+    rebuild: vi.fn(),
+    getBlockedBy: vi.fn(),
+    addEdges: vi.fn()
+  } as unknown as DependencyIndex
 }
 
 function makeLogger() {
@@ -127,7 +135,9 @@ describe('validateAndClaimTask', () => {
     const deps = makeClaimerDeps({ repo })
     const result = await validateAndClaimTask({}, new Map(), deps)
     expect(result).toBeNull()
-    expect(deps.logger.info).toHaveBeenCalledWith(expect.stringContaining('status changed since fetch'))
+    expect(deps.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('status changed since fetch')
+    )
   })
 
   it('returns null when task is not found', async () => {
@@ -151,7 +161,10 @@ describe('validateAndClaimTask', () => {
     const deps = makeClaimerDeps()
     const result = await validateAndClaimTask({}, new Map(), deps)
     expect(result).toBeNull()
-    expect(deps.repo.updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'error' }))
+    expect(deps.repo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'error' })
+    )
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 
@@ -189,7 +202,10 @@ describe('prepareWorktreeForTask', () => {
     const deps = makeClaimerDeps()
     const result = await prepareWorktreeForTask(makeTask(), '/repo', deps)
     expect(result).toBeNull()
-    expect(deps.repo.updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'error' }))
+    expect(deps.repo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'error' })
+    )
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 })

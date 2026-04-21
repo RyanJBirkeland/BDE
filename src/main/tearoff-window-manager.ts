@@ -246,7 +246,9 @@ function askRendererForAction(windowId: string, win: BrowserWindow): Promise<'re
     ipcMain.once(responseChannel, (_event, payload: { action: 'return' | 'close' }) => {
       clearTimeout(timeout)
       if (!payload?.action) {
-        logger.warn(`[tearoff] close-dialog response for ${windowId} had no action — defaulting to 'close'`)
+        logger.warn(
+          `[tearoff] close-dialog response for ${windowId} had no action — defaulting to 'close'`
+        )
       }
       resolve(payload?.action ?? 'close')
     })
@@ -266,6 +268,8 @@ export function restoreTearoffWindows(onPersistBounds: (windowId: string) => voi
 
   for (const entry of saved) {
     if (!entry.views || entry.views.length === 0) continue
+    const firstView = entry.views[0]
+    if (!firstView) continue
 
     const bounds = entry.bounds && isOnScreen(entry.bounds) ? entry.bounds : getDefaultBounds()
     const windowId = randomUUID()
@@ -286,14 +290,14 @@ export function restoreTearoffWindows(onPersistBounds: (windowId: string) => voi
 
     tearoffWindows.set(windowId, {
       win,
-      view: entry.views[0],
+      view: firstView,
       views: [...entry.views],
       windowId
     })
 
     // Load with restore param so renderer knows to restore multi-tab state
     const restoreParam = encodeURIComponent(JSON.stringify(entry.views))
-    const query = `?view=${encodeURIComponent(entry.views[0])}&windowId=${encodeURIComponent(windowId)}&restore=${restoreParam}`
+    const query = `?view=${encodeURIComponent(firstView)}&windowId=${encodeURIComponent(windowId)}&restore=${restoreParam}`
 
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
       win.loadURL(process.env['ELECTRON_RENDERER_URL'] + query)

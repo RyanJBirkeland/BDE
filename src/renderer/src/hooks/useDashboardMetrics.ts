@@ -200,7 +200,7 @@ export function useDashboardMetrics(): DashboardMetrics {
   const loadSaturated = useMemo(() => {
     if (!loadData || loadData.samples.length === 0) return null
     const latest = loadData.samples[loadData.samples.length - 1]
-    if (latest.load1 < 2 * loadData.cpuCount) return null
+    if (!latest || latest.load1 < 2 * loadData.cpuCount) return null
     return { load1: latest.load1, cpuCount: loadData.cpuCount }
   }, [loadData])
 

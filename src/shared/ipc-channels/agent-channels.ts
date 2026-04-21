@@ -31,25 +31,25 @@ export interface AgentChannels {
     }[]
   }
   'local:tailAgentLog': {
-    args: [args: { logPath: string; fromByte?: number }]
+    args: [args: { logPath: string; fromByte?: number | undefined }]
     result: { content: string; nextByte: number }
   }
   'agent:steer': {
     args: [
       args: { agentId: string; message: string; images?: Array<{ data: string; mimeType: string }> }
     ]
-    result: { ok: boolean; error?: string }
+    result: { ok: boolean; error?: string | undefined }
   }
   'agent:kill': {
     args: [agentId: string]
-    result: { ok: boolean; error?: string }
+    result: { ok: boolean; error?: string | undefined }
   }
   'agents:list': {
-    args: [args: { limit?: number; status?: string }]
+    args: [args: { limit?: number | undefined; status?: string | undefined }]
     result: AgentMeta[]
   }
   'agents:readLog': {
-    args: [args: { id: string; fromByte?: number }]
+    args: [args: { id: string; fromByte?: number | undefined }]
     result: { content: string; nextByte: number }
   }
   'agents:import': {
@@ -58,13 +58,11 @@ export interface AgentChannels {
   }
   'agents:promoteToReview': {
     args: [agentId: string]
-    result: { ok: boolean; taskId?: string; error?: string }
+    result: { ok: boolean; taskId?: string | undefined; error?: string | undefined }
   }
   'agents:testLocalEndpoint': {
     args: [args: { endpoint: string }]
-    result:
-      | { ok: true; latencyMs: number; modelCount: number }
-      | { ok: false; error: string }
+    result: { ok: true; latencyMs: number; modelCount: number } | { ok: false; error: string }
   }
   'agent:latestCacheTokens': {
     args: [runId: string]
@@ -104,7 +102,7 @@ export interface AgentManagerChannels {
   }
   'agent-manager:checkpoint': {
     args: [taskId: string, message?: string]
-    result: { ok: boolean; committed: boolean; error?: string }
+    result: { ok: boolean; committed: boolean; error?: string | undefined }
   }
 }
 
@@ -115,11 +113,11 @@ export interface CostChannels {
     result: import('../types').CostSummary
   }
   'cost:agentRuns': {
-    args: [args: { limit?: number }]
+    args: [args: { limit?: number | undefined }]
     result: AgentRunSummary[]
   }
   'cost:getAgentHistory': {
-    args: [args?: { limit?: number; offset?: number }]
+    args: [args?: { limit?: number | undefined; offset?: number | undefined }]
     result: import('../types').AgentCostRecord[]
   }
 }

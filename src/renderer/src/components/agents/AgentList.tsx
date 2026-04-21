@@ -15,14 +15,14 @@ interface AgentListProps {
   agents: AgentMeta[]
   selectedId: string | null
   onSelect: (id: string) => void
-  onKill?: () => void
-  filter?: string
-  loading?: boolean
-  fetchError?: string | null
-  onRetry?: () => void
-  displayedCount?: number
-  hasMore?: boolean
-  onLoadMore?: () => void
+  onKill?: (() => void) | undefined
+  filter?: string | undefined
+  loading?: boolean | undefined
+  fetchError?: string | null | undefined
+  onRetry?: (() => void) | undefined
+  displayedCount?: number | undefined
+  hasMore?: boolean | undefined
+  onLoadMore?: (() => void) | undefined
 }
 
 export interface AgentGroups {
@@ -68,8 +68,8 @@ function GroupHeader({
   count: number
   open: boolean
   onToggle: () => void
-  showPulse?: boolean
-  collapsible?: boolean
+  showPulse?: boolean | undefined
+  collapsible?: boolean | undefined
 }): React.JSX.Element {
   const Tag = collapsible ? 'button' : 'div'
   return (
@@ -185,7 +185,8 @@ export function AgentList({
       nextIndex = Math.max(currentIndex - 1, 0)
     }
 
-    onSelect(visibleAgents[nextIndex].id)
+    const nextAgent = visibleAgents[nextIndex]
+    if (nextAgent) onSelect(nextAgent.id)
   }
 
   return (

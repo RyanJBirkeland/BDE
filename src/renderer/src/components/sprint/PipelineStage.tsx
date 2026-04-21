@@ -13,9 +13,9 @@ interface PipelineStageProps {
   tasks: SprintTask[]
   count: string
   selectedTaskId: string | null
-  selectedTaskIds?: Set<string>
+  selectedTaskIds?: Set<string> | undefined
   onTaskClick: (id: string) => void
-  doneFooter?: React.ReactNode
+  doneFooter?: React.ReactNode | undefined
 }
 
 const STAGE_VISIBLE_LIMIT = 20

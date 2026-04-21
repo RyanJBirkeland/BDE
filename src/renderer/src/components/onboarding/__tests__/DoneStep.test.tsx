@@ -34,7 +34,10 @@ describe('DoneStep', () => {
   it('pre-fills repo from first configured repo when creating first task', async () => {
     const user = userEvent.setup()
     const api = (globalThis as unknown as { api: Record<string, unknown> }).api
-    const settings = api.settings as { getJson: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+    const settings = api.settings as {
+      getJson: ReturnType<typeof vi.fn>
+      set: ReturnType<typeof vi.fn>
+    }
 
     settings.getJson.mockResolvedValue([
       { name: 'my-project', localPath: '/tmp/my-project', githubOwner: 'me' }
@@ -52,7 +55,10 @@ describe('DoneStep', () => {
 
   it('shows Add a repository affordance when no repos are configured', async () => {
     const api = (globalThis as unknown as { api: Record<string, unknown> }).api
-    const settings = api.settings as { getJson: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+    const settings = api.settings as {
+      getJson: ReturnType<typeof vi.fn>
+      set: ReturnType<typeof vi.fn>
+    }
 
     settings.getJson.mockResolvedValue([])
 
@@ -66,7 +72,10 @@ describe('DoneStep', () => {
 
   it('renders a repo picker when multiple repos are configured', async () => {
     const api = (globalThis as unknown as { api: Record<string, unknown> }).api
-    const settings = api.settings as { getJson: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+    const settings = api.settings as {
+      getJson: ReturnType<typeof vi.fn>
+      set: ReturnType<typeof vi.fn>
+    }
 
     settings.getJson.mockResolvedValue([
       { name: 'project-a', localPath: '/tmp/a', githubOwner: 'me' },
@@ -81,7 +90,10 @@ describe('DoneStep', () => {
 
   it('calls onComplete when Get Started is clicked', async () => {
     const api = (globalThis as unknown as { api: Record<string, unknown> }).api
-    const settings = api.settings as { getJson: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+    const settings = api.settings as {
+      getJson: ReturnType<typeof vi.fn>
+      set: ReturnType<typeof vi.fn>
+    }
     settings.getJson.mockResolvedValue([
       { name: 'my-project', localPath: '/tmp/my-project', githubOwner: 'me' }
     ])

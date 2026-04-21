@@ -3,10 +3,11 @@ import { getCostSummary, getRecentAgentRunsWithCost, getAgentHistory } from '../
 
 export function registerCostHandlers(): void {
   safeHandle('cost:summary', () => getCostSummary())
-  safeHandle('cost:agentRuns', (_e, args: { limit?: number }) =>
+  safeHandle('cost:agentRuns', (_e, args: { limit?: number | undefined }) =>
     getRecentAgentRunsWithCost(args.limit ?? 20)
   )
-  safeHandle('cost:getAgentHistory', (_e, args?: { limit?: number; offset?: number }) => {
+  type HistoryArgs = { limit?: number | undefined; offset?: number | undefined }
+  safeHandle('cost:getAgentHistory', (_e, args?: HistoryArgs) => {
     return getAgentHistory(args?.limit ?? 100, args?.offset ?? 0)
   })
 }

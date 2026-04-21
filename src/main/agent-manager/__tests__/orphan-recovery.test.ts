@@ -63,7 +63,8 @@ describe('recoverOrphans', () => {
     expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
       status: 'queued',
       claimed_by: null,
-      notes: 'Task was re-queued by orphan recovery. Agent process terminated without completing the task.'
+      notes:
+        'Task was re-queued by orphan recovery. Agent process terminated without completing the task.'
     })
     expect(recovered).toBe(1)
   })

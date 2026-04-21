@@ -16,7 +16,7 @@ const REQUIRED_SECTIONS: Array<{ match: string; code: SpecIssue['code'] }> = [
   { match: 'overview', code: 'MISSING_SECTION_OVERVIEW' },
   { match: 'files to change', code: 'MISSING_SECTION_FILES_TO_CHANGE' },
   { match: 'implementation steps', code: 'MISSING_SECTION_IMPLEMENTATION_STEPS' },
-  { match: 'how to test', code: 'MISSING_SECTION_HOW_TO_TEST' },
+  { match: 'how to test', code: 'MISSING_SECTION_HOW_TO_TEST' }
 ]
 
 export class RequiredSectionsValidator implements ISpecValidator {
@@ -30,7 +30,7 @@ export class RequiredSectionsValidator implements ISpecValidator {
         issues.push({
           code,
           severity: 'error',
-          message: `Missing required section: "## ${match.replace(/\b\w/g, (c) => c.toUpperCase())}"`,
+          message: `Missing required section: "## ${match.replace(/\b\w/g, (c) => c.toUpperCase())}"`
         })
       }
     }
@@ -71,8 +71,8 @@ export class FilePathsValidator implements ISpecValidator {
           code: 'FILES_SECTION_NO_PATHS',
           severity: 'error',
           message:
-            'The "Files to Change" section exists but contains no file paths (expected tokens with src/, .ts, .tsx, .css, or .json)',
-        },
+            'The "Files to Change" section exists but contains no file paths (expected tokens with src/, .ts, .tsx, .css, or .json)'
+        }
       ]
     }
     return []
@@ -101,8 +101,8 @@ export class NumberedStepsValidator implements ISpecValidator {
           code: 'STEPS_NOT_NUMBERED',
           severity: 'error',
           message:
-            'The "Implementation Steps" section exists but contains no numbered list items (expected lines starting with "1.", "2.", etc.)',
-        },
+            'The "Implementation Steps" section exists but contains no numbered list items (expected lines starting with "1.", "2.", etc.)'
+        }
       ]
     }
     return []
@@ -125,7 +125,7 @@ const BANNED_PHRASES = [
   'think about',
   'evaluate',
   'analyze',
-  'assess',
+  'assess'
 ]
 
 export class BannedPhrasesValidator implements ISpecValidator {
@@ -146,7 +146,7 @@ export class BannedPhrasesValidator implements ISpecValidator {
             code: 'STEPS_BANNED_PHRASE',
             severity: 'warning',
             message: `Step contains vague/exploratory language: "${phrase}" — use explicit instructions instead`,
-            location: line.trim(),
+            location: line.trim()
           })
           break // one warning per line
         }
@@ -189,7 +189,7 @@ export class SizeWarningsValidator implements ISpecValidator {
         severity: isHardBlock ? 'error' : 'warning',
         message: isHardBlock
           ? `Spec is ~${spec.wordCount} words — must be under 1000 (agents reliably time out above this limit)`
-          : `Spec is ~${spec.wordCount} words; target under ${WORD_LIMIT} for best results`,
+          : `Spec is ~${spec.wordCount} words; target under ${WORD_LIMIT} for best results`
       })
     }
 
@@ -202,7 +202,7 @@ export class SizeWarningsValidator implements ISpecValidator {
         issues.push({
           code: 'TOO_MANY_FILES',
           severity: 'warning',
-          message: `"Files to Change" lists ${fileCount} files; consider splitting into multiple tasks (limit: ${MAX_FILES})`,
+          message: `"Files to Change" lists ${fileCount} files; consider splitting into multiple tasks (limit: ${MAX_FILES})`
         })
       }
     }
@@ -216,7 +216,7 @@ export class SizeWarningsValidator implements ISpecValidator {
         issues.push({
           code: 'TOO_MANY_STEPS',
           severity: 'warning',
-          message: `"Implementation Steps" has ${stepCount} numbered steps; consider splitting into multiple tasks (limit: ${MAX_STEPS})`,
+          message: `"Implementation Steps" has ${stepCount} numbered steps; consider splitting into multiple tasks (limit: ${MAX_STEPS})`
         })
       }
     }

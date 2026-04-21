@@ -11,11 +11,11 @@ import './PlannerAssistant.css'
 type ActionType = 'create-task' | 'create-epic' | 'update-spec'
 
 interface ActionPayload {
-  title?: string
-  spec?: string
-  name?: string
-  goal?: string
-  taskId?: string
+  title?: string | undefined
+  spec?: string | undefined
+  name?: string | undefined
+  goal?: string | undefined
+  taskId?: string | undefined
 }
 
 interface ParsedAction {
@@ -32,7 +32,7 @@ interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  actions?: ParsedAction[]
+  actions?: ParsedAction[] | undefined
 }
 
 interface ActionCardState {
@@ -59,7 +59,7 @@ const VALID_ACTION_TYPES = new Set<string>(['create-task', 'create-epic', 'updat
 const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   'create-task': 'New Task',
   'create-epic': 'New Epic',
-  'update-spec': 'Update Spec',
+  'update-spec': 'Update Spec'
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -108,7 +108,7 @@ function ActionCard({
   onOpenWorkbench,
   onClose,
   epic,
-  firstRepo,
+  firstRepo
 }: ActionCardProps): React.JSX.Element | null {
   const key = `${messageId}-${index}`
   const state = cardStates[key] ?? { dismissed: false, confirmed: null }
@@ -124,12 +124,12 @@ function ActionCard({
           repo: firstRepo,
           priority: 0,
           playground_enabled: false,
-          group_id: epicId,
+          group_id: epicId
         })
       } else if (action.type === 'create-epic') {
         await window.api.groups.create({
           name: action.payload.name ?? 'New Epic',
-          goal: action.payload.goal ?? '',
+          goal: action.payload.goal ?? ''
         })
       } else if (action.type === 'update-spec') {
         if (action.payload.taskId) {
@@ -210,7 +210,7 @@ function PlannerAssistantInner({
   epic,
   tasks,
   onClose,
-  onOpenWorkbench,
+  onOpenWorkbench
 }: PlannerAssistantInnerProps): React.JSX.Element {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
@@ -233,8 +233,8 @@ function PlannerAssistantInner({
           id: t.id,
           title: t.title,
           status: t.status,
-          hasSpec: (t.spec ?? '').trim().length > 0,
-        })),
+          hasSpec: (t.spec ?? '').trim().length > 0
+        }))
       },
       null,
       2
@@ -265,7 +265,7 @@ function PlannerAssistantInner({
     setMessages((prev) => [
       ...prev,
       userMsg,
-      { id: assistantMsgId, role: 'assistant', content: '' },
+      { id: assistantMsgId, role: 'assistant', content: '' }
     ])
     setInput('')
     setIsStreaming(true)
@@ -274,11 +274,12 @@ function PlannerAssistantInner({
 
     const apiMessages = [
       ...messages.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      { role: 'user' as const, content: text },
+      { role: 'user' as const, content: text }
     ]
     // Prepend system context to first user message
-    if (apiMessages.length > 0 && apiMessages[0].role === 'user') {
-      apiMessages[0] = { role: 'user', content: `${systemPrefix}\n\n${apiMessages[0].content}` }
+    const firstMessage = apiMessages[0]
+    if (firstMessage && firstMessage.role === 'user') {
+      apiMessages[0] = { role: 'user', content: `${systemPrefix}\n\n${firstMessage.content}` }
     }
 
     let buffer = ''
@@ -288,9 +289,7 @@ function PlannerAssistantInner({
       if (data.done) {
         const { cleanText, actions } = parseActionMarkers(buffer)
         setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId ? { ...m, content: cleanText, actions } : m
-          )
+          prev.map((m) => (m.id === assistantMsgId ? { ...m, content: cleanText, actions } : m))
         )
         setIsStreaming(false)
         unsubRef.current = null
@@ -309,15 +308,13 @@ function PlannerAssistantInner({
     try {
       await window.api.workbench.chatStream({
         messages: apiMessages,
-        formContext: { title: epic.name, repo: firstRepo, spec: epicContext },
+        formContext: { title: epic.name, repo: firstRepo, spec: epicContext }
       })
     } catch (err) {
       console.error('PlannerAssistant: chat stream failed', err)
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === assistantMsgId
-            ? { ...m, content: 'Error: failed to connect to assistant.' }
-            : m
+          m.id === assistantMsgId ? { ...m, content: 'Error: failed to connect to assistant.' } : m
         )
       )
       setIsStreaming(false)
@@ -331,11 +328,7 @@ function PlannerAssistantInner({
       <div className="planner-assistant">
         <header className="planner-assistant__header">
           <span className="planner-assistant__header-title">Planning Assistant</span>
-          <button
-            className="planner-assistant__close"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button className="planner-assistant__close" onClick={onClose} aria-label="Close">
             ×
           </button>
         </header>
@@ -364,9 +357,7 @@ function PlannerAssistantInner({
       <div className="planner-assistant__messages">
         {messages.map((msg) => (
           <React.Fragment key={msg.id}>
-            <div
-              className={`planner-assistant__message planner-assistant__message--${msg.role}`}
-            >
+            <div className={`planner-assistant__message planner-assistant__message--${msg.role}`}>
               {msg.content}
             </div>
             {msg.actions?.map((action, i) => (
@@ -425,7 +416,7 @@ export function PlannerAssistant({
   onClose,
   epic,
   tasks,
-  onOpenWorkbench,
+  onOpenWorkbench
 }: PlannerAssistantProps): React.JSX.Element | null {
   if (!open || !epic) return null
   return (

@@ -25,7 +25,7 @@ interface ConsoleCardProps {
     contentType: PlaygroundContentType
     sizeBytes: number
   }) => void
-  searchHighlight?: 'match' | 'active'
+  searchHighlight?: 'match' | 'active' | undefined
 }
 
 export function ConsoleCard({

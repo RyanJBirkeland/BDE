@@ -59,7 +59,9 @@ describe('CredentialService — Claude', () => {
 
   it('returns cli-missing when CLI is not found', async () => {
     const store = makeClaudeStore({
-      describeAuth: vi.fn().mockResolvedValue({ cliFound: false, tokenFound: false, tokenExpired: false })
+      describeAuth: vi
+        .fn()
+        .mockResolvedValue({ cliFound: false, tokenFound: false, tokenExpired: false })
     })
     const service = createCredentialService({ logger, claudeStore: store })
     const result = await service.getCredential('claude')
@@ -74,7 +76,9 @@ describe('CredentialService — Claude', () => {
     const store = makeClaudeStore({
       readCachedToken: vi.fn().mockReturnValue(null),
       refreshFromKeychain: vi.fn().mockResolvedValue(false),
-      describeAuth: vi.fn().mockResolvedValue({ cliFound: true, tokenFound: false, tokenExpired: false })
+      describeAuth: vi
+        .fn()
+        .mockResolvedValue({ cliFound: true, tokenFound: false, tokenExpired: false })
     })
     const service = createCredentialService({ logger, claudeStore: store })
     const result = await service.getCredential('claude')

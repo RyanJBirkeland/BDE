@@ -23,7 +23,13 @@ import { emitAgentEvent } from '../../agent-event-mapper'
 function _makeTurnTrackerStub(): TurnTracker {
   return {
     processMessage: vi.fn(),
-    totals: vi.fn().mockReturnValue({ tokensIn: 0, tokensOut: 0, turnCount: 0, cacheTokensRead: 0, cacheTokensCreated: 0 })
+    totals: vi.fn().mockReturnValue({
+      tokensIn: 0,
+      tokensOut: 0,
+      turnCount: 0,
+      cacheTokensRead: 0,
+      cacheTokensCreated: 0
+    })
   } as unknown as TurnTracker
 }
 
@@ -81,7 +87,14 @@ describe('initializeAgentTracking', () => {
   it('returns agent, agentRunId, and turnTracker', () => {
     const activeAgents = new Map()
     const result = initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     expect(result).toHaveProperty('agent')
     expect(result).toHaveProperty('agentRunId')
@@ -91,7 +104,14 @@ describe('initializeAgentTracking', () => {
   it('registers agent in activeAgents map', () => {
     const activeAgents = new Map()
     initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     expect(activeAgents.has('task-1')).toBe(true)
   })
@@ -99,7 +119,14 @@ describe('initializeAgentTracking', () => {
   it('agent has expected shape', () => {
     const activeAgents = new Map()
     const { agent } = initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     expect(agent.taskId).toBe('task-1')
     expect(agent.model).toBe('claude-sonnet-4-5')
@@ -110,7 +137,14 @@ describe('initializeAgentTracking', () => {
   it('agent agentRunId matches returned agentRunId', () => {
     const activeAgents = new Map()
     const { agent, agentRunId } = initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     expect(agent.agentRunId).toBe(agentRunId)
   })
@@ -118,7 +152,14 @@ describe('initializeAgentTracking', () => {
   it('persists agent_run_id on the task via repo.updateTask', () => {
     const activeAgents = new Map()
     const { agentRunId } = initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     expect(mockRepo.updateTask).toHaveBeenCalledWith('task-1', { agent_run_id: agentRunId })
   })
@@ -126,53 +167,100 @@ describe('initializeAgentTracking', () => {
   it('calls createAgentRecord', async () => {
     const activeAgents = new Map()
     initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     // Allow microtask
     await new Promise((r) => setTimeout(r, 10))
-    expect(createAgentRecord).toHaveBeenCalledWith(expect.objectContaining({
-      bin: 'claude',
-      status: 'running',
-      source: 'bde',
-      sprintTaskId: 'task-1'
-    }))
+    expect(createAgentRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bin: 'claude',
+        status: 'running',
+        source: 'bde',
+        sprintTaskId: 'task-1'
+      })
+    )
   })
 
   it('emits agent:started event', () => {
     const activeAgents = new Map()
     const { agentRunId } = initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
-    expect(emitAgentEvent).toHaveBeenCalledWith(agentRunId, expect.objectContaining({ type: 'agent:started' }))
+    expect(emitAgentEvent).toHaveBeenCalledWith(
+      agentRunId,
+      expect.objectContaining({ type: 'agent:started' })
+    )
   })
 
   it('wires handle.onStderr to emit agent:stderr events', () => {
     const activeAgents = new Map()
     const handle = makeHandle()
     const { agentRunId } = initializeAgentTracking(
-      makeTask(), handle, 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      handle,
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     handle.onStderr?.('some error line')
-    expect(emitAgentEvent).toHaveBeenCalledWith(agentRunId, expect.objectContaining({
-      type: 'agent:stderr',
-      text: 'some error line'
-    }))
+    expect(emitAgentEvent).toHaveBeenCalledWith(
+      agentRunId,
+      expect.objectContaining({
+        type: 'agent:stderr',
+        text: 'some error line'
+      })
+    )
   })
 
   it('logs warning when updateTask fails', () => {
     const activeAgents = new Map()
-    vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => { throw new Error('DB error') })
+    vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
+      throw new Error('DB error')
+    })
     const logger = makeLogger()
     initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, logger
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      logger
     )
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to persist agent_run_id'))
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to persist agent_run_id')
+    )
   })
 
   it('applies max_runtime_ms from task', () => {
     const activeAgents = new Map()
     const { agent } = initializeAgentTracking(
-      makeTask({ max_runtime_ms: 120000 }), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask({ max_runtime_ms: 120000 }),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     expect(agent.maxRuntimeMs).toBe(120000)
   })
@@ -180,7 +268,14 @@ describe('initializeAgentTracking', () => {
   it('applies max_cost_usd from task', () => {
     const activeAgents = new Map()
     const { agent } = initializeAgentTracking(
-      makeTask({ max_cost_usd: 3.0 }), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask({ max_cost_usd: 3.0 }),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     expect(agent.maxCostUsd).toBe(3.0)
   })
@@ -188,7 +283,14 @@ describe('initializeAgentTracking', () => {
   it('turnTracker is a TurnTracker instance', () => {
     const activeAgents = new Map()
     const { turnTracker } = initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     // TurnTracker has processMessage and totals methods
     expect(typeof turnTracker.processMessage).toBe('function')
@@ -199,11 +301,17 @@ describe('initializeAgentTracking', () => {
   it('returned turnTracker has the agentRunId bound', () => {
     const activeAgents = new Map()
     const { agentRunId } = initializeAgentTracking(
-      makeTask(), makeHandle(), 'claude-sonnet-4-5', worktree, 'prompt text', activeAgents, mockRepo, makeLogger()
+      makeTask(),
+      makeHandle(),
+      'claude-sonnet-4-5',
+      worktree,
+      'prompt text',
+      activeAgents,
+      mockRepo,
+      makeLogger()
     )
     // agentRunId is a UUID — just verify it's a string
     expect(typeof agentRunId).toBe('string')
     expect(agentRunId.length).toBeGreaterThan(0)
   })
 })
-

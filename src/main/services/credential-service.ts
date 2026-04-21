@@ -26,12 +26,7 @@ const execFileAsync = promisify(execFile)
 
 export type CredentialKind = 'claude' | 'github'
 
-export type CredentialStatus =
-  | 'ok'
-  | 'missing'
-  | 'expired'
-  | 'keychain-locked'
-  | 'cli-missing'
+export type CredentialStatus = 'ok' | 'missing' | 'expired' | 'keychain-locked' | 'cli-missing'
 
 export type CredentialResult =
   | {
@@ -71,7 +66,12 @@ export const CREDENTIAL_GUIDANCE: Record<
 export interface ClaudeCredentialStore {
   readCachedToken(): string | null
   refreshFromKeychain(): Promise<boolean>
-  describeAuth(): Promise<{ cliFound: boolean; tokenFound: boolean; tokenExpired: boolean; expiresAt?: Date }>
+  describeAuth(): Promise<{
+    cliFound: boolean
+    tokenFound: boolean
+    tokenExpired: boolean
+    expiresAt?: Date
+  }>
 }
 
 export interface GithubCredentialStore {
@@ -111,9 +111,7 @@ function failResult(
   customMessage?: string | null
 ): CredentialResult {
   const actionable =
-    customMessage === null
-      ? null
-      : customMessage ?? CREDENTIAL_GUIDANCE[kind][status] ?? null
+    customMessage === null ? null : (customMessage ?? CREDENTIAL_GUIDANCE[kind][status] ?? null)
   return {
     kind,
     status,
@@ -141,7 +139,12 @@ class DefaultClaudeStore implements ClaudeCredentialStore {
     return refreshOAuthTokenFromKeychain()
   }
 
-  async describeAuth(): Promise<{ cliFound: boolean; tokenFound: boolean; tokenExpired: boolean; expiresAt?: Date }> {
+  async describeAuth(): Promise<{
+    cliFound: boolean
+    tokenFound: boolean
+    tokenExpired: boolean
+    expiresAt?: Date
+  }> {
     return checkAuthStatus(this.keychainStore)
   }
 }

@@ -101,9 +101,9 @@ describe('settings.ts', () => {
   describe('sensitive key encryption', () => {
     it('setSetting encrypts github.token before storage', () => {
       setSetting('github.token', 'ghp_abc123')
-      const raw = db
-        .prepare('SELECT value FROM settings WHERE key = ?')
-        .get('github.token') as { value: string } | undefined
+      const raw = db.prepare('SELECT value FROM settings WHERE key = ?').get('github.token') as
+        | { value: string }
+        | undefined
       expect(raw?.value.startsWith('ENC:')).toBe(true)
     })
 
@@ -135,11 +135,10 @@ describe('settings.ts', () => {
       expect(result).toBe('ghp_legacy_plaintext')
 
       // Value should now be encrypted in DB
-      const raw = db
-        .prepare('SELECT value FROM settings WHERE key = ?')
-        .get('github.token') as { value: string } | undefined
+      const raw = db.prepare('SELECT value FROM settings WHERE key = ?').get('github.token') as
+        | { value: string }
+        | undefined
       expect(raw?.value.startsWith('ENC:')).toBe(true)
     })
-
   })
 })

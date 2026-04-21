@@ -105,7 +105,10 @@ export interface TaskHistoryPort {
    * Mirrors the data-layer signature after T-3 — pagination is pushed
    * into SQL (`LIMIT ? OFFSET ?`) instead of slicing in memory.
    */
-  getTaskChanges: (id: string, options?: { limit?: number; offset?: number }) => TaskChange[]
+  getTaskChanges: (
+    id: string,
+    options?: { limit?: number | undefined; offset?: number | undefined }
+  ) => TaskChange[]
 }
 
 /**

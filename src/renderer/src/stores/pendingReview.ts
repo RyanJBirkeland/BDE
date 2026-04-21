@@ -6,8 +6,8 @@ export interface PendingComment {
   path: string
   line: number
   side: 'LEFT' | 'RIGHT'
-  startLine?: number
-  startSide?: 'LEFT' | 'RIGHT'
+  startLine?: number | undefined
+  startSide?: 'LEFT' | 'RIGHT' | undefined
   body: string
 }
 

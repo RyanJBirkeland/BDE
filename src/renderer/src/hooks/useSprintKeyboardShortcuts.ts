@@ -12,8 +12,8 @@ import type { SprintTask } from '../../../shared/types'
 interface UseSprintKeyboardShortcutsArgs {
   openWorkbench: () => void
   setConflictDrawerOpen: Dispatch<SetStateAction<boolean>>
-  onRetry?: (task: SprintTask) => void
-  onDelete?: (task: SprintTask) => void
+  onRetry?: ((task: SprintTask) => void) | undefined
+  onDelete?: ((task: SprintTask) => void) | undefined
 }
 
 function isTextInput(): boolean {

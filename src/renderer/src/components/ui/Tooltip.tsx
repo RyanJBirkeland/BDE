@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 type TooltipProps = {
   content: string
   children: ReactNode
-  side?: 'top' | 'bottom' | 'left' | 'right'
+  side?: 'top' | 'bottom' | 'left' | 'right' | undefined
 }
 
 export function Tooltip({ content, children, side = 'top' }: TooltipProps): React.JSX.Element {

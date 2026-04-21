@@ -3,9 +3,18 @@ import type { TaskGroup, SprintTask, EpicDependency } from '../../../shared/type
 import { toast } from './toasts'
 import { createTask, updateTask } from '../services/sprint'
 import {
-  listGroups, getGroupTasks, createGroup, updateGroup, deleteGroup,
-  addTask, removeTask, queueAll, reorderTasks,
-  addDependency, removeDependency, updateDependencyCondition
+  listGroups,
+  getGroupTasks,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  addTask,
+  removeTask,
+  queueAll,
+  reorderTasks,
+  addDependency,
+  removeDependency,
+  updateDependencyCondition
 } from '../services/groups'
 
 interface TaskGroupsState {
@@ -19,18 +28,18 @@ interface TaskGroupsState {
   loadGroupTasks: (groupId: string) => Promise<void>
   createGroup: (input: {
     name: string
-    icon?: string
-    accent_color?: string
-    goal?: string
+    icon?: string | undefined
+    accent_color?: string | undefined
+    goal?: string | undefined
   }) => Promise<TaskGroup | null>
   updateGroup: (
     id: string,
     patch: {
-      name?: string
-      icon?: string
-      accent_color?: string
-      goal?: string
-      status?: 'draft' | 'ready' | 'in-pipeline' | 'completed'
+      name?: string | undefined
+      icon?: string | undefined
+      accent_color?: string | undefined
+      goal?: string | undefined
+      status?: 'draft' | 'ready' | 'in-pipeline' | 'completed' | undefined
     }
   ) => Promise<void>
   deleteGroup: (id: string) => Promise<void>
@@ -49,13 +58,13 @@ interface TaskGroupsState {
     template: {
       name: string
       icon: string
-      accent_color?: string
+      accent_color?: string | undefined
       goal: string
       tasks: Array<{
         title: string
         spec: string
         spec_type: string
-        priority?: number
+        priority?: number | undefined
       }>
     },
     repo: string
@@ -116,9 +125,12 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
   },
 
   updateGroup: async (id, patch): Promise<void> => {
-    // Optimistic update
+    // Optimistic update — filter out undefined values so they don't overwrite required fields.
+    const definedPatch = Object.fromEntries(
+      Object.entries(patch).filter(([, v]) => v !== undefined)
+    ) as Partial<TaskGroup>
     set((s) => ({
-      groups: s.groups.map((g) => (g.id === id ? { ...g, ...patch } : g))
+      groups: s.groups.map((g) => (g.id === id ? { ...g, ...definedPatch } : g))
     }))
     try {
       const updated = await updateGroup(id, patch)

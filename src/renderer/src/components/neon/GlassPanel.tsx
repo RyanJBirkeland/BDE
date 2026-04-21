@@ -2,11 +2,11 @@ import { type ReactNode } from 'react'
 import { type NeonAccent, neonVar } from './types'
 
 interface GlassPanelProps {
-  accent?: NeonAccent
-  blur?: 'sm' | 'md' | 'lg'
+  accent?: NeonAccent | undefined
+  blur?: 'sm' | 'md' | 'lg' | undefined
   children: ReactNode
-  className?: string
-  style?: React.CSSProperties
+  className?: string | undefined
+  style?: React.CSSProperties | undefined
 }
 
 export function GlassPanel({

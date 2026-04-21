@@ -4,9 +4,8 @@ import type { AgentMeta, SpawnLocalAgentArgs } from '../shared/types'
 import type { IpcChannelMap } from '../shared/ipc-channels'
 import type { BroadcastChannels } from '../shared/ipc-channels/broadcast-channels'
 
-export const getAgentProcesses =
-  (): Promise<IpcChannelMap['local:getAgentProcesses']['result']> =>
-    typedInvoke('local:getAgentProcesses')
+export const getAgentProcesses = (): Promise<IpcChannelMap['local:getAgentProcesses']['result']> =>
+  typedInvoke('local:getAgentProcesses')
 
 export const spawnLocalAgent = (
   args: SpawnLocalAgentArgs
@@ -18,7 +17,11 @@ export const steerAgent = (
   message: string,
   images?: Array<{ data: string; mimeType: string }>
 ): Promise<IpcChannelMap['agent:steer']['result']> =>
-  typedInvoke('agent:steer', { agentId, message, images })
+  typedInvoke('agent:steer', {
+    agentId,
+    message,
+    ...(images !== undefined ? { images } : {})
+  })
 
 export const killAgent = (agentId: string): Promise<IpcChannelMap['agent:kill']['result']> =>
   typedInvoke('agent:kill', agentId)
@@ -35,10 +38,14 @@ export const tailAgentLog = (args: {
   typedInvoke('local:tailAgentLog', args)
 
 export const agents = {
-  list: (args: { limit?: number; status?: string }): Promise<IpcChannelMap['agents:list']['result']> =>
-    typedInvoke('agents:list', args),
-  readLog: (args: { id: string; fromByte?: number }): Promise<IpcChannelMap['agents:readLog']['result']> =>
-    typedInvoke('agents:readLog', args),
+  list: (args: {
+    limit?: number
+    status?: string
+  }): Promise<IpcChannelMap['agents:list']['result']> => typedInvoke('agents:list', args),
+  readLog: (args: {
+    id: string
+    fromByte?: number
+  }): Promise<IpcChannelMap['agents:readLog']['result']> => typedInvoke('agents:readLog', args),
   import: (args: {
     meta: Partial<AgentMeta>
     content: string

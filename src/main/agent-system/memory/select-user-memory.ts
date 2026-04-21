@@ -67,7 +67,7 @@ export function selectUserMemory(taskSpec: string): UserMemoryResult {
   for (const section of sections) {
     // Extract relative path from '### relativePath' header
     const headerMatch = section.match(/^### (.+)/)
-    if (!headerMatch) continue
+    if (!headerMatch || !headerMatch[1]) continue
     const relativePath = headerMatch[1].trim()
 
     // Count only the raw file content bytes (consistent with getUserMemory's accounting).

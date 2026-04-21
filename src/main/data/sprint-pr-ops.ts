@@ -161,7 +161,11 @@ export function listTasksWithOpenPrs(db?: Database.Database): SprintTask[] {
   )
 }
 
-export function updateTaskMergeableState(prNumber: number, mergeableState: string | null, db?: Database.Database): void {
+export function updateTaskMergeableState(
+  prNumber: number,
+  mergeableState: string | null,
+  db?: Database.Database
+): void {
   if (!mergeableState) return
   const conn = db ?? getDb()
   withDataLayerError(
@@ -182,10 +186,9 @@ export function updateTaskMergeableState(prNumber: number, mergeableState: strin
           conn
         )
 
-        conn.prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?').run(
-          mergeableState,
-          prNumber
-        )
+        conn
+          .prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?')
+          .run(mergeableState, prNumber)
       })()
     },
     `updateTaskMergeableState(pr=${prNumber})`,

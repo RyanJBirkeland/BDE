@@ -8,8 +8,11 @@
     "src/shared/**/*"
   ],
   "exclude": [
-    "src/shared/**/*.test.ts",
-    "src/renderer/src/views/__tests__/SettingsView.test.tsx"
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/**/__tests__/**"
   ],
   "compilerOptions": {
     "composite": true,
@@ -19,6 +22,10 @@
       "@renderer/*": [
         "src/renderer/src/*"
       ]
-    }
+    },
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true
   }
 }

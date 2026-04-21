@@ -9,7 +9,7 @@ const RESET_STATE = {
   streamingMessageId: null,
   isSending: false,
   estimatedTokens: 0,
-  lastActivityAt: null,
+  lastActivityAt: null
 }
 
 beforeEach(() => {
@@ -25,7 +25,7 @@ describe('open', () => {
   it('preserves session if activity was recent', () => {
     useFloatingAgentStore.setState({
       sessionId: 'ses-1',
-      lastActivityAt: Date.now() - 1000,
+      lastActivityAt: Date.now() - 1000
     })
     useFloatingAgentStore.getState().open()
     expect(useFloatingAgentStore.getState().sessionId).toBe('ses-1')
@@ -35,7 +35,7 @@ describe('open', () => {
     useFloatingAgentStore.setState({
       sessionId: 'ses-old',
       messages: [{ id: 'msg-1', role: 'user', content: 'hello', timestamp: 0 }],
-      lastActivityAt: Date.now() - 25 * 60 * 60 * 1000,
+      lastActivityAt: Date.now() - 25 * 60 * 60 * 1000
     })
     useFloatingAgentStore.getState().open()
     expect(useFloatingAgentStore.getState().sessionId).toBeNull()
@@ -88,7 +88,7 @@ describe('resetSession', () => {
       messages: [{ id: 'm1', role: 'user', content: 'hi', timestamp: 0 }],
       estimatedTokens: 100,
       lastActivityAt: 12345,
-      isSending: true,
+      isSending: true
     })
     useFloatingAgentStore.getState().resetSession()
     const state = useFloatingAgentStore.getState()
@@ -108,9 +108,9 @@ describe('trimIfNeeded', () => {
       messages: [
         { id: 'old', role: 'user', content: longContent, timestamp: 0 },
         { id: 'mid', role: 'assistant', content: 'middle', timestamp: 1 },
-        { id: 'keep', role: 'user', content: 'short', timestamp: 2 },
+        { id: 'keep', role: 'user', content: 'short', timestamp: 2 }
       ],
-      estimatedTokens: Math.ceil(longContent.length / 4) + 4,
+      estimatedTokens: Math.ceil(longContent.length / 4) + 4
     })
     useFloatingAgentStore.getState().trimIfNeeded()
     const { messages } = useFloatingAgentStore.getState()
@@ -121,7 +121,7 @@ describe('trimIfNeeded', () => {
   it('does nothing when under token limit', () => {
     useFloatingAgentStore.setState({
       messages: [{ id: 'm1', role: 'user', content: 'short', timestamp: 0 }],
-      estimatedTokens: 2,
+      estimatedTokens: 2
     })
     useFloatingAgentStore.getState().trimIfNeeded()
     expect(useFloatingAgentStore.getState().messages).toHaveLength(1)
@@ -149,7 +149,7 @@ describe('appendAssistantChunk', () => {
   it('starts a new message when streamingMessageId does not match last message', () => {
     useFloatingAgentStore.setState({
       messages: [{ id: 'other', role: 'assistant', content: 'old', timestamp: 0 }],
-      streamingMessageId: 'different-id',
+      streamingMessageId: 'different-id'
     })
     useFloatingAgentStore.getState().appendAssistantChunk('new chunk')
     const { messages } = useFloatingAgentStore.getState()

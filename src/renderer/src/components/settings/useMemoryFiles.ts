@@ -92,6 +92,6 @@ export function useMemoryFiles(): {
     loadActiveFiles,
     saveFile,
     createFile,
-    toggleActive,
+    toggleActive
   }
 }

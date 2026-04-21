@@ -246,7 +246,7 @@ describe('Config handlers', () => {
         '../etc',
         'name with spaces',
         'name!@#',
-        'name\0null',
+        'name\0null'
       ]
       const validNames = ['dev-mode', 'my_profile', 'Profile123', 'a', 'z-9_Z']
 
@@ -254,9 +254,9 @@ describe('Config handlers', () => {
         for (const name of invalidNames) {
           it(`rejects invalid name: "${name.slice(0, 20)}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:saveProfile'](mockEvent, name)
-            ).toThrow(/invalid profile name/i)
+            expect(() => handlers['settings:saveProfile'](mockEvent, name)).toThrow(
+              /invalid profile name/i
+            )
             expect(saveProfile).not.toHaveBeenCalled()
           })
         }
@@ -264,9 +264,7 @@ describe('Config handlers', () => {
         for (const name of validNames) {
           it(`accepts valid name: "${name}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:saveProfile'](mockEvent, name)
-            ).not.toThrow()
+            expect(() => handlers['settings:saveProfile'](mockEvent, name)).not.toThrow()
           })
         }
       })
@@ -275,9 +273,9 @@ describe('Config handlers', () => {
         for (const name of invalidNames) {
           it(`rejects invalid name: "${name.slice(0, 20)}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:loadProfile'](mockEvent, name)
-            ).toThrow(/invalid profile name/i)
+            expect(() => handlers['settings:loadProfile'](mockEvent, name)).toThrow(
+              /invalid profile name/i
+            )
             expect(loadProfile).not.toHaveBeenCalled()
           })
         }
@@ -285,9 +283,7 @@ describe('Config handlers', () => {
         for (const name of validNames) {
           it(`accepts valid name: "${name}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:loadProfile'](mockEvent, name)
-            ).not.toThrow()
+            expect(() => handlers['settings:loadProfile'](mockEvent, name)).not.toThrow()
           })
         }
       })
@@ -296,9 +292,9 @@ describe('Config handlers', () => {
         for (const name of invalidNames) {
           it(`rejects invalid name: "${name.slice(0, 20)}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:applyProfile'](mockEvent, name)
-            ).toThrow(/invalid profile name/i)
+            expect(() => handlers['settings:applyProfile'](mockEvent, name)).toThrow(
+              /invalid profile name/i
+            )
             expect(applyProfile).not.toHaveBeenCalled()
           })
         }
@@ -306,9 +302,7 @@ describe('Config handlers', () => {
         for (const name of validNames) {
           it(`accepts valid name: "${name}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:applyProfile'](mockEvent, name)
-            ).not.toThrow()
+            expect(() => handlers['settings:applyProfile'](mockEvent, name)).not.toThrow()
           })
         }
       })
@@ -317,9 +311,9 @@ describe('Config handlers', () => {
         for (const name of invalidNames) {
           it(`rejects invalid name: "${name.slice(0, 20)}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:deleteProfile'](mockEvent, name)
-            ).toThrow(/invalid profile name/i)
+            expect(() => handlers['settings:deleteProfile'](mockEvent, name)).toThrow(
+              /invalid profile name/i
+            )
             expect(deleteProfile).not.toHaveBeenCalled()
           })
         }
@@ -327,9 +321,7 @@ describe('Config handlers', () => {
         for (const name of validNames) {
           it(`accepts valid name: "${name}"`, () => {
             const handlers = captureHandlers()
-            expect(() =>
-              handlers['settings:deleteProfile'](mockEvent, name)
-            ).not.toThrow()
+            expect(() => handlers['settings:deleteProfile'](mockEvent, name)).not.toThrow()
           })
         }
       })

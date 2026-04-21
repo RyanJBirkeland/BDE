@@ -49,7 +49,12 @@ describe('spawnViaSdk', () => {
   })
 
   it('returns an AgentHandle with expected shape', () => {
-    const handle = spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken
+    )
     expect(handle).toHaveProperty('messages')
     expect(handle).toHaveProperty('sessionId')
     expect(typeof handle.sessionId).toBe('string')
@@ -58,14 +63,26 @@ describe('spawnViaSdk', () => {
   })
 
   it('starts with a fallback UUID session ID', () => {
-    const handle = spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
-    expect(handle.sessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken
+    )
+    expect(handle.sessionId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    )
   })
 
   it('updates sessionId from message stream', async () => {
     mockMessages = [{ type: 'system', session_id: 'extracted-session-id' }]
 
-    const handle = spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken
+    )
     const initialId = handle.sessionId
 
     for await (const _msg of handle.messages) {
@@ -79,12 +96,19 @@ describe('spawnViaSdk', () => {
   it('keeps fallback UUID when no session_id in messages', async () => {
     mockMessages = [{ type: 'assistant', text: 'hello' }]
 
-    const handle = spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken
+    )
     for await (const _msg of handle.messages) {
       /* consume */
     }
 
-    expect(handle.sessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+    expect(handle.sessionId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    )
   })
 
   it('passes maxTurns: 20 to SDK', () => {
@@ -112,7 +136,12 @@ describe('spawnViaSdk', () => {
   })
 
   it('uses caller-supplied maxBudgetUsd', () => {
-    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet', maxBudgetUsd: 5.0 }, mockEnv, mockToken)
+    spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet', maxBudgetUsd: 5.0 },
+      mockEnv,
+      mockToken
+    )
     const callArgs = mockQuery.mock.calls[0]?.[0]
     expect(callArgs?.options?.maxBudgetUsd).toBe(5.0)
   })
@@ -124,16 +153,29 @@ describe('spawnViaSdk', () => {
   })
 
   it('steer() returns delivered: false in SDK mode', async () => {
-    const handle = spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken
+    )
     const result = await handle.steer('do something')
     expect(result).toEqual({ delivered: false, error: 'SDK mode does not support steering' })
   })
 
   it('steer() logs warning when logger provided', async () => {
     const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
-    const handle = spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken, logger)
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken,
+      logger
+    )
     await handle.steer('steer message')
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Steer not supported in SDK mode'))
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Steer not supported in SDK mode')
+    )
   })
 })
 
@@ -158,7 +200,11 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
     )
     const callArgs = mockQuery.mock.calls[0]?.[0]
     const canUseTool = callArgs?.options?.canUseTool as
-      | ((toolName: string, input: Record<string, unknown>, ctx: { signal: AbortSignal }) => Promise<{
+      | ((
+          toolName: string,
+          input: Record<string, unknown>,
+          ctx: { signal: AbortSignal }
+        ) => Promise<{
           behavior: 'deny' | 'allow'
           message?: string
         }>)
@@ -177,7 +223,11 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
     spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
     const callArgs = mockQuery.mock.calls[0]?.[0]
     const canUseTool = callArgs?.options?.canUseTool as
-      | ((toolName: string, input: Record<string, unknown>, ctx: { signal: AbortSignal }) => Promise<{
+      | ((
+          toolName: string,
+          input: Record<string, unknown>,
+          ctx: { signal: AbortSignal }
+        ) => Promise<{
           behavior: 'deny' | 'allow'
         }>)
       | undefined

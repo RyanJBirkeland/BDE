@@ -15,7 +15,9 @@ vi.mock('../../lib/review-paths', () => ({
   validateGitRef: vi.fn((ref: string) => {
     const SAFE_REF_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9/_.-]{0,198}$/
     if (!ref || !SAFE_REF_PATTERN.test(ref)) {
-      throw new Error(`Invalid git ref: "${ref}". Must match pattern [a-zA-Z0-9/_.-], max 200 chars.`)
+      throw new Error(
+        `Invalid git ref: "${ref}". Must match pattern [a-zA-Z0-9/_.-], max 200 chars.`
+      )
     }
   })
 }))
@@ -28,45 +30,39 @@ describe('generatePrBody', () => {
   })
 
   it('should reject invalid branch name with leading dash', async () => {
-    await expect(
-      generatePrBody('/tmp/worktree', '--malicious', {})
-    ).rejects.toThrow(/Invalid git ref/)
+    await expect(generatePrBody('/tmp/worktree', '--malicious', {})).rejects.toThrow(
+      /Invalid git ref/
+    )
   })
 
   it('should reject invalid branch name with shell metacharacters', async () => {
-    await expect(
-      generatePrBody('/tmp/worktree', 'branch;rm -rf /', {})
-    ).rejects.toThrow(/Invalid git ref/)
+    await expect(generatePrBody('/tmp/worktree', 'branch;rm -rf /', {})).rejects.toThrow(
+      /Invalid git ref/
+    )
   })
 
   it('should reject invalid branch name with command substitution', async () => {
-    await expect(
-      generatePrBody('/tmp/worktree', 'branch$(whoami)', {})
-    ).rejects.toThrow(/Invalid git ref/)
+    await expect(generatePrBody('/tmp/worktree', 'branch$(whoami)', {})).rejects.toThrow(
+      /Invalid git ref/
+    )
   })
 
   it('should reject invalid branch name with path traversal', async () => {
-    await expect(
-      generatePrBody('/tmp/worktree', '../../../etc/passwd', {})
-    ).rejects.toThrow(/Invalid git ref/)
+    await expect(generatePrBody('/tmp/worktree', '../../../etc/passwd', {})).rejects.toThrow(
+      /Invalid git ref/
+    )
   })
 
   it('should reject invalid branch name with tilde', async () => {
-    await expect(
-      generatePrBody('/tmp/worktree', 'HEAD~2', {})
-    ).rejects.toThrow(/Invalid git ref/)
+    await expect(generatePrBody('/tmp/worktree', 'HEAD~2', {})).rejects.toThrow(/Invalid git ref/)
   })
 
   it('should reject invalid branch name with caret', async () => {
-    await expect(
-      generatePrBody('/tmp/worktree', 'HEAD^', {})
-    ).rejects.toThrow(/Invalid git ref/)
+    await expect(generatePrBody('/tmp/worktree', 'HEAD^', {})).rejects.toThrow(/Invalid git ref/)
   })
 
   it('should reject empty branch name', async () => {
-    await expect(
-      generatePrBody('/tmp/worktree', '', {})
-    ).rejects.toThrow(/Invalid git ref/)
+    await expect(generatePrBody('/tmp/worktree', '', {})).rejects.toThrow(/Invalid git ref/)
   })
 
   it('should accept valid branch name', async () => {

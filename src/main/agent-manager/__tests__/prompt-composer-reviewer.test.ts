@@ -127,8 +127,18 @@ describe('direct builder exports', () => {
   })
 
   it('buildReviewerPrompt delegates to correct builder by mode', () => {
-    const reviewPrompt = buildReviewerPrompt({ agentType: 'reviewer', reviewerMode: 'review', diff: '', taskContent: '' })
-    const chatPrompt = buildReviewerPrompt({ agentType: 'reviewer', reviewerMode: 'chat', diff: '', taskContent: '' })
+    const reviewPrompt = buildReviewerPrompt({
+      agentType: 'reviewer',
+      reviewerMode: 'review',
+      diff: '',
+      taskContent: ''
+    })
+    const chatPrompt = buildReviewerPrompt({
+      agentType: 'reviewer',
+      reviewerMode: 'chat',
+      diff: '',
+      taskContent: ''
+    })
     expect(reviewPrompt).toContain('qualityScore')
     expect(chatPrompt).not.toContain('qualityScore')
   })

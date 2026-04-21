@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react'
 
 interface ThinkingCardProps {
   tokenCount: number
-  text?: string
+  text?: string | undefined
   timestamp: number
   searchClass: string
 }

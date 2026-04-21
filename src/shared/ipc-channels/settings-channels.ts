@@ -50,7 +50,7 @@ export interface SettingsChannels {
   }
   'settings:getEncryptionStatus': {
     args: []
-    result: { available: boolean; reason?: string }
+    result: { available: boolean; reason?: string | undefined }
   }
 }
 
@@ -58,7 +58,10 @@ export interface SettingsChannels {
 export interface ClaudeConfigChannels {
   'claude:getConfig': {
     args: []
-    result: { permissions?: { allow?: string[]; deny?: string[] }; [key: string]: unknown }
+    result: {
+      permissions?: { allow?: string[] | undefined; deny?: string[] | undefined }
+      [key: string]: unknown
+    }
   }
   'claude:setPermissions': {
     args: [{ allow: string[]; deny: string[] }]
@@ -70,7 +73,12 @@ export interface ClaudeConfigChannels {
 export interface AuthChannels {
   'auth:status': {
     args: []
-    result: { cliFound: boolean; tokenFound: boolean; tokenExpired: boolean; expiresAt?: string }
+    result: {
+      cliFound: boolean
+      tokenFound: boolean
+      tokenExpired: boolean
+      expiresAt?: string | undefined
+    }
   }
 }
 
@@ -78,7 +86,7 @@ export interface AuthChannels {
 export interface OnboardingChannels {
   'onboarding:checkGhCli': {
     args: []
-    result: { available: boolean; authenticated: boolean; version?: string }
+    result: { available: boolean; authenticated: boolean; version?: string | undefined }
   }
 }
 

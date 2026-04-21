@@ -491,7 +491,11 @@ describe('resolveDependents', () => {
       const index = makeIndex({ A: ['B'] })
       const tasks: Record<string, MockTask> = {
         A: { id: 'A', status: 'failed', title: 'Task A', depends_on: null },
-        B: { id: 'B', status: 'blocked', depends_on: [{ id: 'A', type: 'hard', condition: 'always' }] }
+        B: {
+          id: 'B',
+          status: 'blocked',
+          depends_on: [{ id: 'A', type: 'hard', condition: 'always' }]
+        }
       }
       const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
       const getSetting = vi.fn().mockReturnValue('cancel')
@@ -499,7 +503,10 @@ describe('resolveDependents', () => {
       resolveDependents('A', 'failed', index, getTask, updateTask, undefined, getSetting)
 
       // Should NOT cascade-cancel — condition 'always' unblocks on failure too
-      expect(updateTask).not.toHaveBeenCalledWith('B', expect.objectContaining({ status: 'cancelled' }))
+      expect(updateTask).not.toHaveBeenCalledWith(
+        'B',
+        expect.objectContaining({ status: 'cancelled' })
+      )
     })
 
     it('cascade cancels when dep has condition "on_success" and upstream fails', () => {
@@ -507,7 +514,11 @@ describe('resolveDependents', () => {
       const index = makeIndex({ A: ['B'] })
       const tasks: Record<string, MockTask> = {
         A: { id: 'A', status: 'failed', title: 'Task A', depends_on: null },
-        B: { id: 'B', status: 'blocked', depends_on: [{ id: 'A', type: 'soft', condition: 'on_success' }] }
+        B: {
+          id: 'B',
+          status: 'blocked',
+          depends_on: [{ id: 'A', type: 'soft', condition: 'on_success' }]
+        }
       }
       const getTask = vi.fn().mockImplementation((id: string) => tasks[id] ?? null)
       const getSetting = vi.fn().mockReturnValue('cancel')
@@ -546,25 +557,39 @@ describe('resolveDependents', () => {
         C: { id: 'C', status: 'blocked', title: 'C', notes: null, depends_on: [hardDep('B')] }
       }
       const getTask = vi.fn((id: string) => tasks[id] ?? null)
-      const updateTask2 = vi.fn().mockImplementation(
-        (id: string, patch: Record<string, unknown>) => {
+      const updateTask2 = vi
+        .fn()
+        .mockImplementation((id: string, patch: Record<string, unknown>) => {
           if (patch.status) tasks[id] = { ...tasks[id], status: patch.status as string }
           return tasks[id]
-        }
-      )
+        })
       const onTaskTerminal = vi.fn()
       const getSetting = vi.fn().mockReturnValue('cancel') // cascade enabled
 
       resolveDependents(
-        'A', 'failed', index, getTask, updateTask2,
-        undefined, getSetting, undefined, undefined, undefined,
+        'A',
+        'failed',
+        index,
+        getTask,
+        updateTask2,
+        undefined,
+        getSetting,
+        undefined,
+        undefined,
+        undefined,
         undefined,
         onTaskTerminal
       )
 
       // B and C should both be cancelled and notified
-      expect(updateTask2).toHaveBeenCalledWith('B', expect.objectContaining({ status: 'cancelled' }))
-      expect(updateTask2).toHaveBeenCalledWith('C', expect.objectContaining({ status: 'cancelled' }))
+      expect(updateTask2).toHaveBeenCalledWith(
+        'B',
+        expect.objectContaining({ status: 'cancelled' })
+      )
+      expect(updateTask2).toHaveBeenCalledWith(
+        'C',
+        expect.objectContaining({ status: 'cancelled' })
+      )
       expect(onTaskTerminal).toHaveBeenCalledWith('B', 'cancelled')
       expect(onTaskTerminal).toHaveBeenCalledWith('C', 'cancelled')
     })

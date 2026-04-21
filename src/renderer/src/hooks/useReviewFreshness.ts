@@ -4,7 +4,7 @@ export type FreshnessStatus = 'fresh' | 'stale' | 'conflict' | 'unknown' | 'load
 
 export interface Freshness {
   status: FreshnessStatus
-  commitsBehind?: number
+  commitsBehind?: number | undefined
 }
 
 export interface UseReviewFreshnessResult {
@@ -28,9 +28,15 @@ export function useReviewFreshness(
     let cancelled = false
     window.api.review
       .checkFreshness({ taskId })
-      .then(result => { if (!cancelled) setFreshness(result) })
-      .catch(() => { if (!cancelled) setFreshness({ status: 'unknown' }) })
-    return () => { cancelled = true }
+      .then((result) => {
+        if (!cancelled) setFreshness(result)
+      })
+      .catch(() => {
+        if (!cancelled) setFreshness({ status: 'unknown' })
+      })
+    return () => {
+      cancelled = true
+    }
   }, [taskId, rebasedAt, taskStatus])
 
   return { freshness, setFreshness }

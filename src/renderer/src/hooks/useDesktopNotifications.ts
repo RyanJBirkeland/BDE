@@ -42,7 +42,7 @@ function shouldNotify(): boolean {
 function fireDesktopNotification(
   title: string,
   body: string,
-  onClick?: () => void
+  onClick?: (() => void) | undefined
 ): Notification | null {
   if (!('Notification' in window)) return null
   if (Notification.permission !== 'granted') return null
@@ -63,7 +63,7 @@ function shouldDeliverNotification(
     return { desktop: false, inApp: false }
   }
 
-  const mode = prefs[eventType]
+  const mode = prefs[eventType as keyof NotificationPreferences] as DeliveryMode | undefined
   return {
     desktop: mode === 'desktop',
     inApp: mode === 'desktop' || mode === 'in-app'

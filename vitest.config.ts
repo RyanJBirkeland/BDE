@@ -10,6 +10,9 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify('0.0.0-test')
   },
+  esbuild: {
+    jsx: 'automatic'
+  },
   test: {
     env: {
       BDE_TEST_DB: ':memory:'

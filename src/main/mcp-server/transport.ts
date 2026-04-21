@@ -183,12 +183,16 @@ async function readBoundedBody(
  */
 function buildRequestScope(buildMcpServer: () => McpServer, port: number): RequestScope {
   const server = buildMcpServer()
-  const transport = new StreamableHTTPServerTransport({
+  // SDK type lies about `sessionIdGenerator` — it marks it as `() => string` in
+  // the input type but the stateless path requires explicit `undefined` at
+  // runtime. See @modelcontextprotocol/sdk: StreamableHTTPServerTransport.
+  const transportOptions = {
     sessionIdGenerator: undefined,
     enableDnsRebindingProtection: true,
     allowedHosts: ['127.0.0.1', 'localhost', `127.0.0.1:${port}`, `localhost:${port}`],
     allowedOrigins: allowedOriginsFor(port)
-  })
+  } as unknown as ConstructorParameters<typeof StreamableHTTPServerTransport>[0]
+  const transport = new StreamableHTTPServerTransport(transportOptions)
   return { server, transport }
 }
 
@@ -205,7 +209,10 @@ async function dispatch(
   logger: Logger
 ): Promise<void> {
   try {
-    await scope.server.connect(scope.transport)
+    // SDK's Transport interface types `onclose` as `() => void` but the concrete
+    // `StreamableHTTPServerTransport` exposes it as `(() => void) | undefined`.
+    // The assignment is safe — the SDK itself handles the undefined case.
+    await scope.server.connect(scope.transport as Parameters<typeof scope.server.connect>[0])
     await scope.transport.handleRequest(req, res, parsedBody)
     scheduleCleanup(res, scope, logger)
   } catch (err) {

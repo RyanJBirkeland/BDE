@@ -46,7 +46,9 @@ export function persistAgentRunTelemetry(
     tokensIn: agent.tokensIn,
     tokensOut: agent.tokensOut
   }).catch((err) =>
-    logger.warn(`[agent-manager] Failed to update agent record for ${agentRunId}: ${err instanceof Error ? err.stack ?? err.message : String(err)}`)
+    logger.warn(
+      `[agent-manager] Failed to update agent record for ${agentRunId}: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`
+    )
   )
 
   try {

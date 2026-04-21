@@ -4,13 +4,13 @@ interface StatCounterProps {
   label: string
   value: number | string
   accent: NeonAccent
-  suffix?: string
+  suffix?: string | undefined
   trend?: {
     direction: 'up' | 'down'
     label: string
   }
-  icon?: React.ReactNode
-  onClick?: () => void
+  icon?: React.ReactNode | undefined
+  onClick?: (() => void) | undefined
 }
 
 export function StatCounter({

@@ -252,15 +252,15 @@ describe('classifyFailureReason', () => {
     })
 
     it('classifies missing repo configuration as environmental', () => {
-      expect(
-        classifyFailureReason('Repo "bde" is not configured in BDE settings')
-      ).toBe('environmental')
+      expect(classifyFailureReason('Repo "bde" is not configured in BDE settings')).toBe(
+        'environmental'
+      )
     })
 
     it('classifies credential-unavailable as environmental', () => {
-      expect(
-        classifyFailureReason('Claude credential unavailable (needs-login)')
-      ).toBe('environmental')
+      expect(classifyFailureReason('Claude credential unavailable (needs-login)')).toBe(
+        'environmental'
+      )
     })
 
     it('classifies git network errors as environmental', () => {

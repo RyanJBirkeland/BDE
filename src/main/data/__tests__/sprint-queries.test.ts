@@ -210,9 +210,7 @@ describe('listTasks', () => {
 
 describe('listTasks — SQL push-down (T-2)', () => {
   function insertGroup(id: string, name: string): void {
-    db.prepare(
-      `INSERT INTO task_groups (id, name) VALUES (?, ?)`
-    ).run(id, name)
+    db.prepare(`INSERT INTO task_groups (id, name) VALUES (?, ?)`).run(id, name)
   }
 
   function seedFixture(): void {

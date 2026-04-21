@@ -21,7 +21,7 @@ export function MemorySection(): React.JSX.Element {
     loadFiles,
     saveFile: saveFileToService,
     createFile: createFileWithService,
-    toggleActive,
+    toggleActive
   } = useMemoryFiles()
 
   const [loadingContent, setLoadingContent] = useState(false)
@@ -63,7 +63,7 @@ export function MemorySection(): React.JSX.Element {
           title: 'Unsaved changes',
           message: 'You have unsaved changes. Switch files and discard them?',
           confirmLabel: 'Discard & switch',
-          variant: 'danger',
+          variant: 'danger'
         })
         if (!ok) return
       }

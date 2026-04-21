@@ -5,7 +5,7 @@ interface AgentActivityEvent {
 
 interface AgentActivityPreviewProps {
   events: AgentActivityEvent[]
-  maxLines?: number
+  maxLines?: number | undefined
 }
 
 const MAX_LINE_LENGTH = 120

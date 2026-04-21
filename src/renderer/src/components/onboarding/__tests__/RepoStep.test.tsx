@@ -47,9 +47,7 @@ describe('RepoStep', () => {
 
   it('enables Next when repos are already configured', async () => {
     const api = getApi()
-    api.settings.getJson = vi.fn().mockResolvedValue([
-      { name: 'bde', localPath: '/path/to/bde' }
-    ])
+    api.settings.getJson = vi.fn().mockResolvedValue([{ name: 'bde', localPath: '/path/to/bde' }])
     render(<RepoStep {...baseProps} />)
 
     await waitFor(() => {
@@ -61,9 +59,7 @@ describe('RepoStep', () => {
   it('populates path and name when Browse picks a directory', async () => {
     const api = getApi()
     api.fs.openDirDialog = vi.fn().mockResolvedValue('/home/user/my-project')
-    api.git.detectRemote = vi
-      .fn()
-      .mockResolvedValue({ isGitRepo: false, owner: null, repo: null })
+    api.git.detectRemote = vi.fn().mockResolvedValue({ isGitRepo: false, owner: null, repo: null })
 
     const user = userEvent.setup()
     render(<RepoStep {...baseProps} />)
@@ -125,9 +121,7 @@ describe('RepoStep', () => {
     await waitFor(() => {
       expect(api.settings.setJson).toHaveBeenCalledWith(
         'repos',
-        expect.arrayContaining([
-          expect.objectContaining({ name: 'proj', localPath: '/some/path' })
-        ])
+        expect.arrayContaining([expect.objectContaining({ name: 'proj', localPath: '/some/path' })])
       )
     })
   })

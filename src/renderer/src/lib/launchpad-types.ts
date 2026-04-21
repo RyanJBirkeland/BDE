@@ -16,11 +16,11 @@ export interface TemplateQuestion {
   /** Input type: single choice, free text, or multi-select */
   type: 'choice' | 'text' | 'multi-choice'
   /** Available options for choice/multi-choice types */
-  choices?: string[]
+  choices?: string[] | undefined
   /** Pre-selected default answer */
-  default?: string
+  default?: string | undefined
   /** Whether an answer is required before advancing. Defaults to true. */
-  required?: boolean
+  required?: boolean | undefined
 }
 
 /** A reusable prompt template that powers a quick-action tile */
@@ -45,13 +45,13 @@ export interface PromptTemplate {
   promptTemplate: string
   /** Optional default overrides for model and repo */
   defaults?: {
-    model?: ClaudeModelId
-    repo?: string
+    model?: ClaudeModelId | undefined
+    repo?: string | undefined
   }
   /** true = shipped with the app, cannot be deleted (only hidden) */
-  builtIn?: boolean
+  builtIn?: boolean | undefined
   /** User has hidden this template from the grid */
-  hidden?: boolean
+  hidden?: boolean | undefined
   /** Display sort position (lower = first) */
   order: number
 }

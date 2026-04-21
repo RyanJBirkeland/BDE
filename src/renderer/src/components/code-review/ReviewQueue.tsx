@@ -65,7 +65,8 @@ export function ReviewQueue(): React.JSX.Element {
         nextIndex = currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0)
       }
 
-      selectTaskRef.current(tasks[nextIndex].id)
+      const nextTask = tasks[nextIndex]
+      if (nextTask) selectTaskRef.current(nextTask.id)
     }
 
     document.addEventListener('keydown', handler)
@@ -90,11 +91,7 @@ export function ReviewQueue(): React.JSX.Element {
         <span className="cr-queue__title text-gradient-aurora">Review Queue</span>
         <span className="cr-queue__count">{reviewTasks.length}</span>
         {/* Screen reader announcement for batch selection changes */}
-        <span
-          aria-live="polite"
-          aria-atomic="true"
-          className="sr-only"
-        >
+        <span aria-live="polite" aria-atomic="true" className="sr-only">
           {selectedBatchIds.size > 0 ? `${selectedBatchIds.size} tasks selected` : ''}
         </span>
       </div>

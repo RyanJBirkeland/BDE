@@ -20,7 +20,7 @@ export interface TicketDraft {
 
 interface TicketWithId extends TicketDraft {
   _id: string
-  created?: boolean // Track if ticket was successfully created
+  created?: boolean // Track if ticket was successfully created | undefined
 }
 
 interface TicketEditorProps {
@@ -70,9 +70,11 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
     if (target < 0 || target >= tickets.length) return
     setTickets((prev) => {
       const next = [...prev]
-      const temp = next[idx]
-      next[idx] = next[target]
-      next[target] = temp
+      const a = next[idx]
+      const b = next[target]
+      if (!a || !b) return prev
+      next[idx] = b
+      next[target] = a
       return next
     })
   }

@@ -44,7 +44,7 @@ export function createWebhook(
   payload: {
     url: string
     events: string[]
-    secret?: string
+    secret?: string | undefined
   },
   db?: Database.Database
 ): Webhook {
@@ -71,10 +71,10 @@ export function createWebhook(
 export function updateWebhook(
   payload: {
     id: string
-    url?: string
-    events?: string[]
-    secret?: string | null
-    enabled?: boolean
+    url?: string | undefined
+    events?: string[] | undefined
+    secret?: string | null | undefined
+    enabled?: boolean | undefined
   },
   db?: Database.Database
 ): Webhook {

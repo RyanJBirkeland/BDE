@@ -210,11 +210,7 @@ describe('deny logging', () => {
       mainRepoPaths: ['/Users/test/Projects/git-repos/BDE'],
       logger: { warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() }
     })
-    await hook(
-      'Bash',
-      { command: 'npm test' },
-      { signal: new AbortController().signal }
-    )
+    await hook('Bash', { command: 'npm test' }, { signal: new AbortController().signal })
     expect(warn).not.toHaveBeenCalled()
   })
 })

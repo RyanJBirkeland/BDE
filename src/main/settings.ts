@@ -7,7 +7,12 @@ import {
   getSettingJson as _getSettingJson,
   setSettingJson as _setSettingJson
 } from './data/settings-queries'
-import { SENSITIVE_SETTING_KEYS, ENCRYPTED_PREFIX, encryptSetting, decryptSetting } from './secure-storage'
+import {
+  SENSITIVE_SETTING_KEYS,
+  ENCRYPTED_PREFIX,
+  encryptSetting,
+  decryptSetting
+} from './secure-storage'
 import { createLogger } from './logger'
 
 const logger = createLogger('settings')
@@ -23,7 +28,9 @@ export function getSetting(key: string, db?: Database.Database): string | null {
       try {
         _setSetting(db ?? getDb(), key, encryptSetting(plaintext))
       } catch (err) {
-        logger.warn(`Skipping lazy re-encryption of "${key}": ${err instanceof Error ? err.message : String(err)}`)
+        logger.warn(
+          `Skipping lazy re-encryption of "${key}": ${err instanceof Error ? err.message : String(err)}`
+        )
       }
     }
     return plaintext

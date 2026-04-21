@@ -66,7 +66,9 @@ export function getDoneTodayCount(db?: Database.Database): number {
       today.setHours(0, 0, 0, 0)
 
       const result = conn
-        .prepare('SELECT COUNT(*) as count FROM sprint_tasks WHERE status = ? AND completed_at >= ?')
+        .prepare(
+          'SELECT COUNT(*) as count FROM sprint_tasks WHERE status = ? AND completed_at >= ?'
+        )
         .get('done', today.toISOString()) as { count: number }
 
       return result.count

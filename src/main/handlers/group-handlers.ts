@@ -1,10 +1,7 @@
 import { safeHandle } from '../ipc-utils'
 import type { EpicGroupService } from '../services/epic-group-service'
-import type {
-  CreateGroupInput,
-  UpdateGroupInput
-} from '../data/task-group-queries'
-import type { EpicDependency } from '../../shared/types'
+import type { CreateGroupInput, UpdateGroupInput } from '../data/task-group-queries'
+import type { EpicDependency, TaskGroup } from '../../shared/types'
 
 /**
  * Register the IPC handlers that expose EpicGroupService over the preload
@@ -40,7 +37,12 @@ export function registerGroupHandlers(service: EpicGroupService): void {
   safeHandle('groups:removeDependency', (_e, groupId: string, upstreamId: string) =>
     service.removeDependency(groupId, upstreamId)
   )
-  safeHandle('groups:updateDependencyCondition', (_e, groupId: string, upstreamId: string, condition: EpicDependency['condition']) =>
-    service.updateDependencyCondition(groupId, upstreamId, condition)
-  )
+  type DepCondition = EpicDependency['condition']
+  const updateDepCondition = (
+    _e: Electron.IpcMainInvokeEvent,
+    groupId: string,
+    upstreamId: string,
+    condition: DepCondition
+  ): TaskGroup => service.updateDependencyCondition(groupId, upstreamId, condition)
+  safeHandle('groups:updateDependencyCondition', updateDepCondition)
 }

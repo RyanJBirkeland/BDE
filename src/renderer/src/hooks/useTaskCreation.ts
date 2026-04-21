@@ -29,7 +29,7 @@ interface UseTaskCreationProps {
 export interface SaveResult {
   /** 'ok' = task was created/updated; 'blocked' = op check failed; 'confirm' = warnings need confirmation */
   outcome: 'ok' | 'blocked' | 'confirm'
-  confirmMessage?: string
+  confirmMessage?: string | undefined
 }
 
 export interface UseTaskCreationResult {
@@ -123,12 +123,12 @@ export function useTaskCreation({
         priority,
         spec,
         depends_on: dependsOn.length > 0 ? dependsOn : null,
-        playground_enabled: playgroundEnabled || undefined,
-        max_cost_usd: maxCostUsd ?? undefined,
-        model: model || undefined,
         status: targetStatus,
-        spec_type: specType ?? undefined,
-        cross_repo_contract: crossRepoContract || undefined
+        ...(playgroundEnabled ? { playground_enabled: playgroundEnabled } : {}),
+        ...(maxCostUsd !== null && maxCostUsd !== undefined ? { max_cost_usd: maxCostUsd } : {}),
+        ...(model ? { model } : {}),
+        ...(specType ? { spec_type: specType } : {}),
+        ...(crossRepoContract ? { cross_repo_contract: crossRepoContract } : {})
       })
     } else {
       const input: CreateTicketInput = {
@@ -153,80 +153,83 @@ export function useTaskCreation({
     }
   }, [])
 
-  const save = useCallback(async (targetStatus: 'backlog' | 'queued'): Promise<SaveResult> => {
-    if (targetStatus === 'queued') {
-      useTaskWorkbenchValidation.setState({ operationalLoading: true })
-      const { repo } = formDataRef.current
-      const opResult = await window.api.workbench.checkOperational({ repo })
-      const opChecks = [
-        {
-          id: 'auth',
-          label: 'Auth',
-          tier: 3 as const,
-          status: opResult.auth.status,
-          message: opResult.auth.message
-        },
-        {
-          id: 'repo-path',
-          label: 'Repo Path',
-          tier: 3 as const,
-          status: opResult.repoPath.status,
-          message: opResult.repoPath.message,
-          fieldId: 'wb-form-repo'
-        },
-        {
-          id: 'git-clean',
-          label: 'Git Clean',
-          tier: 3 as const,
-          status: opResult.gitClean.status,
-          message: opResult.gitClean.message,
-          fieldId: 'wb-form-repo'
-        },
-        {
-          id: 'no-conflict',
-          label: 'No Conflict',
-          tier: 3 as const,
-          status: opResult.noConflict.status,
-          message: opResult.noConflict.message,
-          fieldId: 'wb-form-repo'
-        },
-        {
-          id: 'slots',
-          label: 'Agent Slots',
-          tier: 3 as const,
-          status: opResult.slotsAvailable.status,
-          message: opResult.slotsAvailable.message
-        }
-      ]
-      setOperationalChecksRef.current(opChecks)
+  const save = useCallback(
+    async (targetStatus: 'backlog' | 'queued'): Promise<SaveResult> => {
+      if (targetStatus === 'queued') {
+        useTaskWorkbenchValidation.setState({ operationalLoading: true })
+        const { repo } = formDataRef.current
+        const opResult = await window.api.workbench.checkOperational({ repo })
+        const opChecks = [
+          {
+            id: 'auth',
+            label: 'Auth',
+            tier: 3 as const,
+            status: opResult.auth.status,
+            message: opResult.auth.message
+          },
+          {
+            id: 'repo-path',
+            label: 'Repo Path',
+            tier: 3 as const,
+            status: opResult.repoPath.status,
+            message: opResult.repoPath.message,
+            fieldId: 'wb-form-repo'
+          },
+          {
+            id: 'git-clean',
+            label: 'Git Clean',
+            tier: 3 as const,
+            status: opResult.gitClean.status,
+            message: opResult.gitClean.message,
+            fieldId: 'wb-form-repo'
+          },
+          {
+            id: 'no-conflict',
+            label: 'No Conflict',
+            tier: 3 as const,
+            status: opResult.noConflict.status,
+            message: opResult.noConflict.message,
+            fieldId: 'wb-form-repo'
+          },
+          {
+            id: 'slots',
+            label: 'Agent Slots',
+            tier: 3 as const,
+            status: opResult.slotsAvailable.status,
+            message: opResult.slotsAvailable.message
+          }
+        ]
+        setOperationalChecksRef.current(opChecks)
 
-      // Block if any operational check fails
-      if (opChecks.some((c) => c.status === 'fail')) {
-        useTaskWorkbenchStore.setState({ checksExpanded: true })
-        return { outcome: 'blocked' }
+        // Block if any operational check fails
+        if (opChecks.some((c) => c.status === 'fail')) {
+          useTaskWorkbenchStore.setState({ checksExpanded: true })
+          return { outcome: 'blocked' }
+        }
+
+        // Collect ALL warnings: operational + advisory structural/semantic
+        const allStructural = checksRef.current.structural
+        const allSemantic = checksRef.current.semantic
+        const advisoryWarnings = [...allStructural, ...allSemantic].filter(
+          (c) => c.status === 'warn'
+        )
+        const opWarnings = opChecks.filter((c) => c.status === 'warn')
+        const allWarnings = [...advisoryWarnings, ...opWarnings]
+        if (allWarnings.length > 0) {
+          const lines = allWarnings.map((c) => `• ${c.label}: ${c.message}`)
+          useTaskWorkbenchStore.setState({ checksExpanded: true })
+          return {
+            outcome: 'confirm',
+            confirmMessage: `The following checks have warnings:\n\n${lines.join('\n')}\n\nQueue anyway?`
+          }
+        }
       }
 
-      // Collect ALL warnings: operational + advisory structural/semantic
-      const allStructural = checksRef.current.structural
-      const allSemantic = checksRef.current.semantic
-      const advisoryWarnings = [...allStructural, ...allSemantic].filter(
-        (c) => c.status === 'warn'
-      )
-      const opWarnings = opChecks.filter((c) => c.status === 'warn')
-      const allWarnings = [...advisoryWarnings, ...opWarnings]
-      if (allWarnings.length > 0) {
-        const lines = allWarnings.map((c) => `• ${c.label}: ${c.message}`)
-        useTaskWorkbenchStore.setState({ checksExpanded: true })
-        return {
-          outcome: 'confirm',
-          confirmMessage: `The following checks have warnings:\n\n${lines.join('\n')}\n\nQueue anyway?`
-        }
-      }
-    }
-
-    await applyTask(targetStatus)
-    return { outcome: 'ok' }
-  }, [applyTask])
+      await applyTask(targetStatus)
+      return { outcome: 'ok' }
+    },
+    [applyTask]
+  )
 
   const saveConfirmed = useCallback(
     async (targetStatus: 'backlog' | 'queued'): Promise<void> => {

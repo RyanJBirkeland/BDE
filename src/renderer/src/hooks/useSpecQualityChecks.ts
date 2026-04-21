@@ -16,7 +16,12 @@ const MIN_SPEC_LENGTH_FOR_CHECK = 50
  * Updates the store's semanticChecks and semanticLoading fields as a side effect.
  * Debounce delay: 2 seconds after spec/title/repo/specType stops changing.
  */
-export function useSpecQualityChecks({ spec, title, repo, specType }: SpecQualityChecksProps): void {
+export function useSpecQualityChecks({
+  spec,
+  title,
+  repo,
+  specType
+}: SpecQualityChecksProps): void {
   const setSemanticChecks = useTaskWorkbenchValidation((s) => s.setSemanticChecks)
 
   useDebouncedAsync(

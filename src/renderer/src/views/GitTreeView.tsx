@@ -83,8 +83,8 @@ export default function GitTreeView(): React.ReactElement {
 
   function handleCheckout(branchName: string): void {
     if (!activeRepo) return
-    window.api
-      .git.checkout(activeRepo, branchName)
+    window.api.git
+      .checkout(activeRepo, branchName)
       .then(() => {
         fetchStatus(activeRepo)
         fetchBranches(activeRepo)
@@ -126,8 +126,8 @@ export default function GitTreeView(): React.ReactElement {
 
   function handleFetch(): void {
     if (!activeRepo) return
-    window.api
-      .git.fetch(activeRepo)
+    window.api.git
+      .fetch(activeRepo)
       .then((result) => {
         if (result.success) {
           toast.success('Fetched from origin')
@@ -143,8 +143,8 @@ export default function GitTreeView(): React.ReactElement {
 
   function handlePull(): void {
     if (!activeRepo || !branch) return
-    window.api
-      .git.pull(activeRepo, branch)
+    window.api.git
+      .pull(activeRepo, branch)
       .then((result) => {
         if (result.success) {
           toast.success('Pulled from origin')
@@ -160,8 +160,8 @@ export default function GitTreeView(): React.ReactElement {
 
   function handleStageSection(paths: string[]): void {
     if (!activeRepo) return
-    window.api
-      .git.stage(activeRepo, paths)
+    window.api.git
+      .stage(activeRepo, paths)
       .then(() => fetchStatus(activeRepo))
       .catch((e) => {
         setLastError(`Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`)

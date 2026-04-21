@@ -184,7 +184,7 @@ export async function mergePR(
   repo: string,
   number: number,
   method: MergeMethod = 'squash',
-  commitTitle?: string
+  commitTitle?: string | undefined
 ): Promise<void> {
   const body: Record<string, string> = { merge_method: method }
   if (commitTitle) body.commit_title = commitTitle
@@ -222,14 +222,14 @@ export async function getIssueComments(
 }
 
 export interface CreateReviewBody {
-  body?: string
+  body?: string | undefined
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
   comments?: Array<{
     path: string
     line: number
     side: 'RIGHT' | 'LEFT'
-    start_line?: number
-    start_side?: 'RIGHT' | 'LEFT'
+    start_line?: number | undefined
+    start_side?: 'RIGHT' | 'LEFT' | undefined
     body: string
   }>
 }

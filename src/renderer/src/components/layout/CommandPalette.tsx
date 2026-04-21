@@ -90,7 +90,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
           onClose()
           try {
             const paths = await window.api.git.getRepoPaths()
-            const repoPath = paths[Object.keys(paths)[0]]
+            const firstKey = Object.keys(paths)[0]
+            const repoPath = firstKey ? paths[firstKey] : undefined
             if (!repoPath) {
               toast.error('No repo path found')
               return

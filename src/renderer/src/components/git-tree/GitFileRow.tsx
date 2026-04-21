@@ -10,7 +10,7 @@ export interface GitFileRowProps {
   path: string
   status: string
   isStaged: boolean
-  selected?: boolean
+  selected?: boolean | undefined
   onStage: (path: string) => void
   onUnstage: (path: string) => void
   onClick: (path: string) => void

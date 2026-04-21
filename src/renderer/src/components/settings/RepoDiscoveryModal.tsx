@@ -7,22 +7,22 @@ import { REPO_COLOR_PALETTE } from '../../lib/repo-colors'
 interface RepoConfig {
   name: string
   localPath: string
-  githubOwner?: string
-  githubRepo?: string
-  color?: string
+  githubOwner?: string | undefined
+  githubRepo?: string | undefined
+  color?: string | undefined
 }
 
 interface LocalRepoInfo {
   name: string
   localPath: string
-  owner?: string
-  repo?: string
+  owner?: string | undefined
+  repo?: string | undefined
 }
 
 interface GithubRepoInfo {
   name: string
   owner: string
-  description?: string
+  description?: string | undefined
   isPrivate: boolean
   url: string
 }
@@ -31,8 +31,8 @@ interface CloneState {
   key: string
   lines: string[]
   done: boolean
-  error?: string
-  localPath?: string
+  error?: string | undefined
+  localPath?: string | undefined
 }
 
 interface Props {
@@ -46,7 +46,7 @@ type Tab = 'local' | 'github'
 
 function nextColor(repos: RepoConfig[]): string {
   const used = new Set(repos.map((r) => r.color))
-  return REPO_COLOR_PALETTE.find((c) => !used.has(c)) ?? REPO_COLOR_PALETTE[0]
+  return REPO_COLOR_PALETTE.find((c) => !used.has(c)) ?? REPO_COLOR_PALETTE[0] ?? '#ffffff'
 }
 
 export function RepoDiscoveryModal({

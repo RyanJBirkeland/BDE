@@ -19,7 +19,9 @@ describe('withMaxOldSpaceOption', () => {
   })
 
   it('does not add duplicate flag when already present', () => {
-    expect(withMaxOldSpaceOption('--max-old-space-size=2048', 1024)).toBe('--max-old-space-size=2048')
+    expect(withMaxOldSpaceOption('--max-old-space-size=2048', 1024)).toBe(
+      '--max-old-space-size=2048'
+    )
   })
 
   it('honors existing value even if different from cap', () => {

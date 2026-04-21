@@ -71,10 +71,14 @@ describe('executeShutdown', () => {
     let resolveDrain!: () => void
     const drainInFlight = new Promise<void>((r) => {
       resolveDrain = r
-    }).then(() => { order.push('drain') })
+    }).then(() => {
+      order.push('drain')
+    })
 
     const agent = makeAgent('task-1')
-    vi.mocked(agent.handle.abort).mockImplementation(() => { order.push('abort') })
+    vi.mocked(agent.handle.abort).mockImplementation(() => {
+      order.push('abort')
+    })
 
     const deps = makeDeps({
       activeAgents: new Map([['task-1', agent]]),
@@ -93,7 +97,10 @@ describe('executeShutdown', () => {
     const agent1 = makeAgent('task-1')
     const agent2 = makeAgent('task-2')
     const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent1], ['task-2', agent2]])
+      activeAgents: new Map([
+        ['task-1', agent1],
+        ['task-2', agent2]
+      ])
     })
 
     await executeShutdown(deps, 100)
@@ -112,9 +119,7 @@ describe('executeShutdown', () => {
     })
 
     await expect(executeShutdown(deps, 100)).resolves.toBeUndefined()
-    expect(deps.logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to abort agent')
-    )
+    expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to abort agent'))
   })
 
   it('re-queues active tasks after shutdown', async () => {
@@ -125,14 +130,15 @@ describe('executeShutdown', () => {
 
     await executeShutdown(deps, 100)
 
-    expect(deps.repo.updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({
-      status: 'queued',
-      claimed_by: null,
-      notes: expect.stringContaining('re-queued due to BDE shutdown')
-    }))
-    expect(deps.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('Re-queued task task-1')
+    expect(deps.repo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({
+        status: 'queued',
+        claimed_by: null,
+        notes: expect.stringContaining('re-queued due to BDE shutdown')
+      })
     )
+    expect(deps.logger.info).toHaveBeenCalledWith(expect.stringContaining('Re-queued task task-1'))
   })
 
   it('clears activeAgents after re-queuing', async () => {

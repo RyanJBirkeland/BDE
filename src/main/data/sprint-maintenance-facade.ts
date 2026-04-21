@@ -6,5 +6,9 @@
  * are operational/maintenance concerns, not domain query methods.
  */
 export { UPDATE_ALLOWLIST } from './sprint-task-types'
-export { pruneOldDiffSnapshots, DIFF_SNAPSHOT_RETENTION_DAYS, cleanTestArtifacts } from './sprint-maintenance'
+export {
+  pruneOldDiffSnapshots,
+  DIFF_SNAPSHOT_RETENTION_DAYS,
+  cleanTestArtifacts
+} from './sprint-maintenance'
 export { clearSprintTaskFk } from './sprint-agent-queries'

@@ -6,7 +6,7 @@ import type { GitHubErrorKind } from '../../../shared/types/github-errors'
 interface GitHubErrorPayload {
   kind: GitHubErrorKind
   message: string
-  status?: number
+  status?: number | undefined
 }
 
 const BILLING_SETTINGS_URL = 'https://github.com/settings/billing'

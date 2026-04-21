@@ -10,9 +10,9 @@ interface ActionButtonsProps {
   onDelete: (t: SprintTask) => void
   onViewLogs: (t: SprintTask) => void
   onEdit: (t: SprintTask) => void
-  onUnblock?: (t: SprintTask) => void
-  onRetry?: (t: SprintTask) => void
-  onExport?: (t: SprintTask) => void
+  onUnblock?: ((t: SprintTask) => void) | undefined
+  onRetry?: ((t: SprintTask) => void) | undefined
+  onExport?: ((t: SprintTask) => void) | undefined
 }
 
 export function TaskDetailActionButtons({

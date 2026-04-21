@@ -79,7 +79,7 @@ export function getAdhocHandle(agentId: string): AdhocSession | undefined {
 export async function spawnAdhocAgent(args: {
   task: string
   repoPath: string
-  assistant?: boolean
+  assistant?: boolean | undefined
   repo: IDashboardRepository
 }): Promise<SpawnLocalAgentResult> {
   // Route through agents.backendConfig — the Settings UI is the single source

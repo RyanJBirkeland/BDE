@@ -7,7 +7,7 @@ import { EditDiffCard } from './EditDiffCard'
 interface ToolCallCardProps {
   tool: string
   summary: string
-  input?: unknown
+  input?: unknown | undefined
   timestamp: number
   searchClass: string
 }

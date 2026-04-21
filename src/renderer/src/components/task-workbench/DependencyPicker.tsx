@@ -96,7 +96,12 @@ export function DependencyPicker({
 
   const handleChangeCondition = useCallback(
     (id: string, condition: 'on_success' | 'on_failure' | 'always' | undefined) => {
-      onChange(dependencies.map((d) => (d.id === id ? { ...d, condition } : d)))
+      onChange(
+        dependencies.map((d) => {
+          if (d.id !== id) return d
+          return condition === undefined ? { ...d, condition: undefined } : { ...d, condition }
+        })
+      )
     },
     [dependencies, onChange]
   )

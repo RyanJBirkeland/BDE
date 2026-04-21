@@ -74,7 +74,15 @@ describe('auth-guard', () => {
     vi.clearAllMocks()
     savedEnv = { ...process.env }
     // Default: spawnSync which-probe succeeds (CLI found), existsSync fallback also succeeds
-    vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: '/usr/local/bin/claude\n', stderr: '', pid: 1, output: [], signal: null, error: undefined })
+    vi.mocked(spawnSync).mockReturnValue({
+      status: 0,
+      stdout: '/usr/local/bin/claude\n',
+      stderr: '',
+      pid: 1,
+      output: [],
+      signal: null,
+      error: undefined
+    })
     vi.mocked(existsSync).mockReturnValue(true)
   })
 
@@ -240,21 +248,45 @@ describe('auth-guard', () => {
     })
 
     it('detects CLI via which probe', () => {
-      vi.mocked(spawnSync).mockReturnValue({ status: 0, stdout: '/usr/local/bin/claude\n', stderr: '', pid: 1, output: [], signal: null, error: undefined })
+      vi.mocked(spawnSync).mockReturnValue({
+        status: 0,
+        stdout: '/usr/local/bin/claude\n',
+        stderr: '',
+        pid: 1,
+        output: [],
+        signal: null,
+        error: undefined
+      })
       const store = new MacOSCredentialStore()
       expect(store.detectCli()).toBe(true)
     })
 
     it('falls back to existsSync when which is unavailable', () => {
       // which probe fails (e.g., /usr/bin/which not present)
-      vi.mocked(spawnSync).mockReturnValue({ status: 1, stdout: '', stderr: '', pid: 1, output: [], signal: null, error: undefined })
+      vi.mocked(spawnSync).mockReturnValue({
+        status: 1,
+        stdout: '',
+        stderr: '',
+        pid: 1,
+        output: [],
+        signal: null,
+        error: undefined
+      })
       vi.mocked(existsSync).mockReturnValue(true)
       const store = new MacOSCredentialStore()
       expect(store.detectCli()).toBe(true)
     })
 
     it('returns false when CLI not found via which or existsSync', () => {
-      vi.mocked(spawnSync).mockReturnValue({ status: 1, stdout: '', stderr: '', pid: 1, output: [], signal: null, error: undefined })
+      vi.mocked(spawnSync).mockReturnValue({
+        status: 1,
+        stdout: '',
+        stderr: '',
+        pid: 1,
+        output: [],
+        signal: null,
+        error: undefined
+      })
       vi.mocked(existsSync).mockReturnValue(false)
       const store = new MacOSCredentialStore()
       expect(store.detectCli()).toBe(false)

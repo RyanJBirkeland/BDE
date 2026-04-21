@@ -4,8 +4,8 @@ import { type NeonAccent, neonVar } from './types'
 interface StatusBarProps {
   title: string
   status: 'ok' | 'error' | 'warning'
-  accent?: NeonAccent
-  children?: ReactNode
+  accent?: NeonAccent | undefined
+  children?: ReactNode | undefined
 }
 
 export function StatusBar({

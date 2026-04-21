@@ -12,7 +12,11 @@
  * the shared default model — zero behaviour change for existing users).
  */
 import type { AgentType } from '../agent-system/personality/types'
-import type { BackendKind, AgentBackendConfig, BackendSettings } from '../../shared/types/backend-settings'
+import type {
+  BackendKind,
+  AgentBackendConfig,
+  BackendSettings
+} from '../../shared/types/backend-settings'
 import { DEFAULT_CONFIG } from './types'
 import { getSettingJson, setSettingJson } from '../settings'
 

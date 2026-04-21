@@ -145,7 +145,10 @@ export class TaskTransitionError extends Error {
   readonly fromStatus: string | null
   readonly toStatus: string
 
-  constructor(message: string, ctx: { taskId: string; fromStatus: string | null; toStatus: string }) {
+  constructor(
+    message: string,
+    ctx: { taskId: string; fromStatus: string | null; toStatus: string }
+  ) {
     super(message)
     this.name = 'TaskTransitionError'
     this.taskId = ctx.taskId
@@ -213,10 +216,7 @@ export interface ResetTaskForRetryDeps {
  * - retry_count and fast_fail_count (reset to 0, not null)
  * - next_eligible_at
  */
-export function resetTaskForRetry(
-  id: string,
-  deps: ResetTaskForRetryDeps = {}
-): SprintTask | null {
+export function resetTaskForRetry(id: string, deps: ResetTaskForRetryDeps = {}): SprintTask | null {
   const doUpdate = deps.updateTask ?? updateTask
   return doUpdate(id, {
     completed_at: null,
@@ -229,10 +229,7 @@ export function resetTaskForRetry(
   })
 }
 
-export type TaskValidationCode =
-  | 'spec-structural'
-  | 'spec-readiness'
-  | 'repo-not-configured'
+export type TaskValidationCode = 'spec-structural' | 'spec-readiness' | 'repo-not-configured'
 
 /**
  * Machine-readable validation failure raised by `createTaskWithValidation`.
@@ -268,9 +265,7 @@ export function createTaskWithValidation(
   deps: CreateTaskWithValidationDeps,
   opts: CreateTaskWithValidationOpts = {}
 ): SprintTask {
-  const validationInput = opts.skipReadinessCheck
-    ? { ...input, status: 'backlog' as const }
-    : input
+  const validationInput = opts.skipReadinessCheck ? { ...input, status: 'backlog' as const } : input
   const validation = validateTaskCreation(validationInput, {
     logger: { warn: (msg) => deps.logger.warn(msg as string) },
     listTasks: mutations.listTasks,
@@ -288,16 +283,12 @@ export function createTaskWithValidation(
     ? { ...validation.task, status: input.status ?? validation.task.status }
     : validation.task
 
-  if (
-    !opts.skipReadinessCheck &&
-    validatedTask.status === 'queued' &&
-    validatedTask.spec
-  ) {
+  if (!opts.skipReadinessCheck && validatedTask.status === 'queued' && validatedTask.spec) {
     const parsed = new SpecParser().parse(validatedTask.spec)
     const sectionErrors = new RequiredSectionsValidator()
       .validate(parsed)
       .filter((issue) => issue.severity === 'error')
-    if (sectionErrors.length > 0) {
+    if (sectionErrors.length > 0 && sectionErrors[0]) {
       throw new TaskValidationError(
         'spec-readiness',
         `Spec quality checks failed: ${sectionErrors[0].message}`

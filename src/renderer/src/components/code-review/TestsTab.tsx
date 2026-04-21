@@ -56,7 +56,17 @@ export function TestsTab(): React.JSX.Element {
   }
 
   const last = runs[runs.length - 1]
-  const statusClass = last.success ? 'cr-tests__status' : 'cr-tests__status cr-tests__status--failed'
+  if (!last) {
+    return (
+      <EmptyState
+        title="No test runs found"
+        description="No test runs found in this agent session."
+      />
+    )
+  }
+  const statusClass = last.success
+    ? 'cr-tests__status'
+    : 'cr-tests__status cr-tests__status--failed'
 
   return (
     <div className="cr-tests" data-testid="cr-tests-tab">

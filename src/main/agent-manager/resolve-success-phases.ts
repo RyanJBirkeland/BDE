@@ -73,7 +73,10 @@ function buildExpectedTipTokens(task: {
   if (numberToken) tokens.push(numberToken)
   // Task title substring — first meaningful phrase, trimmed to keep the
   // match permissive without matching noise.
-  const titleHead = task.title.replace(/\(T-\d+\)/gi, '').trim().slice(0, 40)
+  const titleHead = task.title
+    .replace(/\(T-\d+\)/gi, '')
+    .trim()
+    .slice(0, 40)
   if (titleHead) tokens.push(titleHead)
   tokens.push(task.id)
   return tokens
@@ -93,7 +96,7 @@ function buildExpectedTipTokens(task: {
  */
 export function extractTaskIdFromBranch(branch: string): string | null {
   const match = /^agent\/t-([a-zA-Z0-9]+)-.+-[a-f0-9]{8}$/.exec(branch)
-  return match ? match[1] : null
+  return match?.[1] ?? null
 }
 
 /**
@@ -120,11 +123,10 @@ export type ReadTipCommit = (branch: string, repoPath: string) => Promise<string
 
 const defaultReadTipCommit: ReadTipCommit = async (branch, repoPath) => {
   const env = buildAgentEnv()
-  const { stdout } = await execFileAsync(
-    'git',
-    ['log', '-1', '--format=%B', branch],
-    { cwd: repoPath, env }
-  )
+  const { stdout } = await execFileAsync('git', ['log', '-1', '--format=%B', branch], {
+    cwd: repoPath,
+    env
+  })
   return stdout.trim()
 }
 
@@ -313,7 +315,15 @@ interface CommitCheckContext {
   repo: IAgentTaskRepository
   logger: Logger
   onTaskTerminal: (taskId: string, status: string) => Promise<void>
-  resolveFailure: (opts: { taskId: string; retryCount: number; notes?: string; repo: IAgentTaskRepository }, logger?: Logger) => boolean
+  resolveFailure: (
+    opts: {
+      taskId: string
+      retryCount: number
+      notes?: string | undefined
+      repo: IAgentTaskRepository
+    },
+    logger?: Logger
+  ) => boolean
 }
 
 /**
@@ -321,8 +331,17 @@ interface CommitCheckContext {
  * Returns true if commits exist, false if none (triggers retry/failure).
  */
 export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<boolean> {
-  const { taskId, branch, worktreePath, agentSummary, retryCount, repo, logger, onTaskTerminal, resolveFailure } =
-    opts
+  const {
+    taskId,
+    branch,
+    worktreePath,
+    agentSummary,
+    retryCount,
+    repo,
+    logger,
+    onTaskTerminal,
+    resolveFailure
+  } = opts
   const env = buildAgentEnv()
   try {
     const { stdout: diffOut } = await execFileAsync(
@@ -356,7 +375,9 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
   } catch (err) {
     // rev-list can fail if the remote ref doesn't exist yet (fresh worktree, no fetch).
     // Assume commits exist so the agent's work proceeds to review rather than silently failing.
-    logger.warn(`[completion] git rev-list check failed for task ${taskId} — assuming commits exist: ${err}`)
+    logger.warn(
+      `[completion] git rev-list check failed for task ${taskId} — assuming commits exist: ${err}`
+    )
   }
   return true
 }
@@ -399,9 +420,7 @@ async function failTaskExhaustedNoCommits(
       ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
     })
   } catch (err) {
-    logger.error(
-      `[completion] Failed to mark task ${taskId} no-commits-exhausted: ${err}`
-    )
+    logger.error(`[completion] Failed to mark task ${taskId} no-commits-exhausted: ${err}`)
   }
 
   await onTaskTerminal(taskId, 'failed')
@@ -416,7 +435,15 @@ export async function transitionTaskToReview(
   repo: IAgentTaskRepository,
   logger: Logger,
   onTaskTerminal: (taskId: string, status: string) => Promise<void>,
-  attemptAutoMerge: (opts: { taskId: string; title: string; branch: string; worktreePath: string; repo: IAgentTaskRepository; logger: Logger; onTaskTerminal: (taskId: string, status: string) => Promise<void> }) => Promise<void>
+  attemptAutoMerge: (opts: {
+    taskId: string
+    title: string
+    branch: string
+    worktreePath: string
+    repo: IAgentTaskRepository
+    logger: Logger
+    onTaskTerminal: (taskId: string, status: string) => Promise<void>
+  }) => Promise<void>
 ): Promise<void> {
   logger.info(
     `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`

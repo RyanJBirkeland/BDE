@@ -5,16 +5,16 @@ import { TASK_STATUSES } from '../../shared/task-state-machine'
 export interface BatchTaskInput {
   title: string
   repo: string
-  prompt?: string
-  spec?: string
-  status?: string
-  dependsOnIndices?: number[]
-  depType?: 'hard' | 'soft'
-  playgroundEnabled?: boolean
-  model?: string
-  tags?: string[]
-  priority?: number
-  templateName?: string
+  prompt?: string | undefined
+  spec?: string | undefined
+  status?: string | undefined
+  dependsOnIndices?: number[] | undefined
+  depType?: 'hard' | 'soft' | undefined
+  playgroundEnabled?: boolean | undefined
+  model?: string | undefined
+  tags?: string[] | undefined
+  priority?: number | undefined
+  templateName?: string | undefined
 }
 
 export interface BatchImportResult {
@@ -40,6 +40,7 @@ export function batchImportTasks(
 
   for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i]
+    if (!t) continue
 
     // Validate required fields
     if (!t.title || !t.repo) {
@@ -75,12 +76,13 @@ export function batchImportTasks(
     const dependsOn: TaskDependency[] = []
     if (t.dependsOnIndices && t.dependsOnIndices.length > 0) {
       for (const idx of t.dependsOnIndices) {
-        if (idx < 0 || idx >= created.length) {
+        const upstream = created[idx]
+        if (idx < 0 || idx >= created.length || !upstream) {
           errors.push(`Task[${i}]: dependsOnIndices[${idx}] out of range`)
           continue
         }
         dependsOn.push({
-          id: created[idx].id,
+          id: upstream.id,
           type: t.depType ?? 'hard'
         })
       }
@@ -90,19 +92,19 @@ export function batchImportTasks(
       }
     }
 
-    // Build CreateTaskInput
+    // Build CreateTaskInput — omit undefined fields so exactOptionalPropertyTypes is satisfied.
     const input: CreateTaskInput = {
       title: t.title,
       repo: t.repo,
-      prompt: t.prompt,
-      spec: t.spec,
-      status: t.status,
-      depends_on: dependsOn.length > 0 ? dependsOn : undefined,
-      playground_enabled: t.playgroundEnabled,
-      model: t.model,
-      tags: t.tags,
-      priority: t.priority,
-      template_name: t.templateName
+      ...(t.prompt !== undefined ? { prompt: t.prompt } : {}),
+      ...(t.spec !== undefined ? { spec: t.spec } : {}),
+      ...(t.status !== undefined ? { status: t.status } : {}),
+      ...(dependsOn.length > 0 ? { depends_on: dependsOn } : {}),
+      ...(t.playgroundEnabled !== undefined ? { playground_enabled: t.playgroundEnabled } : {}),
+      ...(t.model !== undefined ? { model: t.model } : {}),
+      ...(t.tags !== undefined ? { tags: t.tags } : {}),
+      ...(t.priority !== undefined ? { priority: t.priority } : {}),
+      ...(t.templateName !== undefined ? { template_name: t.templateName } : {})
     }
 
     // Create task via repository

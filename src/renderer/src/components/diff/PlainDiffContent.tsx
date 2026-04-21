@@ -27,9 +27,9 @@ interface PlainDiffContentProps {
   setSelectionStart: (v: { file: string; line: number; side: 'LEFT' | 'RIGHT' } | null) => void
   setIsSelecting: (v: boolean) => void
   setComposerRange: (v: LineRange | null) => void
-  onSelectRange?: (range: LineRange | null) => void
-  onAddComment?: (range: LineRange, body: string) => void
-  onRemovePendingComment?: (commentId: string) => void
+  onSelectRange?: ((range: LineRange | null) => void) | undefined
+  onAddComment?: ((range: LineRange, body: string) => void) | undefined
+  onRemovePendingComment?: ((commentId: string) => void) | undefined
   isLineSelected: (
     filePath: string,
     lineNo: number | undefined,

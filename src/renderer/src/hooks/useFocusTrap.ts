@@ -36,7 +36,7 @@ export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active
     // Focus the first focusable element
     const focusables = getFocusableElements(container)
     if (focusables.length > 0) {
-      focusables[0].focus()
+      focusables[0]?.focus()
     }
 
     function handleKeyDown(e: KeyboardEvent): void {
@@ -50,6 +50,7 @@ export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active
 
       const first = elements[0]
       const last = elements[elements.length - 1]
+      if (!first || !last) return
 
       if (e.shiftKey) {
         // Shift+Tab: if focus is on first element, wrap to last

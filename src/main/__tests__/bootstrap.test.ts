@@ -261,6 +261,5 @@ describe('bootstrap', () => {
 
       expect(broadcastModule.broadcast).not.toHaveBeenCalled()
     })
-
   })
 })

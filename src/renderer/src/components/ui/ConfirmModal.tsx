@@ -11,11 +11,11 @@ import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 interface ConfirmModalProps {
   open: boolean
-  title?: string
+  title?: string | undefined
   message: string
-  confirmLabel?: string
-  cancelLabel?: string
-  variant?: 'danger' | 'default'
+  confirmLabel?: string | undefined
+  cancelLabel?: string | undefined
+  variant?: 'danger' | 'default' | undefined
   onConfirm: () => void
   onCancel: () => void
 }
@@ -110,9 +110,9 @@ export function ConfirmModal({
 export function useConfirm(): {
   confirm: (opts: {
     message: string
-    title?: string
-    confirmLabel?: string
-    variant?: 'danger' | 'default'
+    title?: string | undefined
+    confirmLabel?: string | undefined
+    variant?: 'danger' | 'default' | undefined
   }) => Promise<boolean>
   confirmProps: ConfirmModalProps
 } {
@@ -122,9 +122,9 @@ export function useConfirm(): {
   const confirm = useCallback(
     (opts: {
       message: string
-      title?: string
-      confirmLabel?: string
-      variant?: 'danger' | 'default'
+      title?: string | undefined
+      confirmLabel?: string | undefined
+      variant?: 'danger' | 'default' | undefined
     }) => {
       return new Promise<boolean>((resolve) => {
         resolveRef.current = resolve
@@ -172,9 +172,9 @@ import { useState } from 'react'
 interface ConfirmState {
   open: boolean
   message: string
-  title?: string
-  confirmLabel?: string
-  variant?: 'danger' | 'default'
+  title?: string | undefined
+  confirmLabel?: string | undefined
+  variant?: 'danger' | 'default' | undefined
 }
 
 function useConfirmState(): [ConfirmState, React.Dispatch<React.SetStateAction<ConfirmState>>] {

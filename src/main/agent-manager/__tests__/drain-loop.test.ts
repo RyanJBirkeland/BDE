@@ -75,7 +75,11 @@ function makeMetrics() {
 }
 
 function makeDepIndex(): DependencyIndex {
-  return { rebuild: vi.fn(), getBlockedBy: vi.fn(), addEdges: vi.fn() } as unknown as DependencyIndex
+  return {
+    rebuild: vi.fn(),
+    getBlockedBy: vi.fn(),
+    addEdges: vi.fn()
+  } as unknown as DependencyIndex
 }
 
 function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
@@ -128,7 +132,9 @@ describe('validateDrainPreconditions', () => {
     vi.mocked(getConfiguredRepos).mockReturnValue([])
     const deps = makeDeps()
     expect(await validateDrainPreconditions(deps)).toBe(false)
-    expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('No repositories configured'))
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('No repositories configured')
+    )
     vi.mocked(getConfiguredRepos).mockReturnValue([{ name: 'bde', localPath: '/tmp/bde' }])
   })
 
@@ -181,9 +187,7 @@ describe('drainQueuedTasks', () => {
 
   it('processes each queued task', async () => {
     const repo = makeRepo()
-    vi.mocked(repo.getQueuedTasks).mockReturnValue([
-      { id: 'task-1' }, { id: 'task-2' }
-    ] as any)
+    vi.mocked(repo.getQueuedTasks).mockReturnValue([{ id: 'task-1' }, { id: 'task-2' }] as any)
     const processQueuedTask = vi.fn().mockResolvedValue(undefined)
     const deps = makeDeps({ repo, processQueuedTask })
     const taskStatusMap = new Map<string, string>()
@@ -195,12 +199,12 @@ describe('drainQueuedTasks', () => {
 
   it('stops early when shutting down mid-loop', async () => {
     const repo = makeRepo()
-    vi.mocked(repo.getQueuedTasks).mockReturnValue([
-      { id: 'task-1' }, { id: 'task-2' }
-    ] as any)
+    vi.mocked(repo.getQueuedTasks).mockReturnValue([{ id: 'task-1' }, { id: 'task-2' }] as any)
     let called = 0
     const isShuttingDown = vi.fn().mockImplementation(() => called >= 1)
-    const processQueuedTask = vi.fn().mockImplementation(async () => { called++ })
+    const processQueuedTask = vi.fn().mockImplementation(async () => {
+      called++
+    })
     const deps = makeDeps({ repo, isShuttingDown, processQueuedTask })
 
     await drainQueuedTasks(2, new Map(), deps)
@@ -210,17 +214,18 @@ describe('drainQueuedTasks', () => {
 
   it('logs errors from individual tasks without aborting the loop', async () => {
     const repo = makeRepo()
-    vi.mocked(repo.getQueuedTasks).mockReturnValue([
-      { id: 'task-1' }, { id: 'task-2' }
-    ] as any)
-    const processQueuedTask = vi.fn()
+    vi.mocked(repo.getQueuedTasks).mockReturnValue([{ id: 'task-1' }, { id: 'task-2' }] as any)
+    const processQueuedTask = vi
+      .fn()
       .mockRejectedValueOnce(new Error('task error'))
       .mockResolvedValueOnce(undefined)
     const deps = makeDeps({ repo, processQueuedTask })
 
     await drainQueuedTasks(2, new Map(), deps)
 
-    expect(deps.logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to process task'))
+    expect(deps.logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to process task')
+    )
     expect(processQueuedTask).toHaveBeenCalledTimes(2)
   })
 })
@@ -336,7 +341,9 @@ describe('drain-loop: environmental failure pauses drain', () => {
     vi.mocked(repo.getQueuedTasks).mockReturnValue([{ id: 'task-spec' }] as any)
     vi.mocked(repo.getTask).mockReturnValue({ id: 'task-spec', status: 'active' } as any)
     const emitDrainPaused = vi.fn()
-    const processQueuedTask = vi.fn().mockRejectedValue(new Error('TypeError: foo is not a function'))
+    const processQueuedTask = vi
+      .fn()
+      .mockRejectedValue(new Error('TypeError: foo is not a function'))
     // Pre-set failure count so the third failure trips the quarantine threshold in a single drain.
     const drainFailureCounts = new Map<string, number>([['task-spec', 2]])
     const deps = makeDeps({ repo, processQueuedTask, emitDrainPaused, drainFailureCounts })

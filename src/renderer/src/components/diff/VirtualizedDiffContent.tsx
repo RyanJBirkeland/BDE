@@ -53,7 +53,9 @@ export function VirtualizedDiffContent({
     let hi = offsets.length - 1
     while (lo < hi) {
       const mid = (lo + hi) >>> 1
-      if (offsets[mid] + rowHeight(rows[mid]) <= scrollTop) {
+      const midOffset = offsets[mid] ?? 0
+      const midRow = rows[mid]
+      if (midRow && midOffset + rowHeight(midRow) <= scrollTop) {
         lo = mid + 1
       } else {
         hi = mid
@@ -65,12 +67,12 @@ export function VirtualizedDiffContent({
   const endIdx = useMemo(() => {
     const bottom = scrollTop + viewportHeight + OVERSCAN * ROW_HEIGHT
     let i = startIdx
-    while (i < rows.length && offsets[i] < bottom) i++
+    while (i < rows.length && (offsets[i] ?? 0) < bottom) i++
     return Math.min(i, rows.length)
   }, [offsets, rows, scrollTop, viewportHeight, startIdx])
 
   const visibleRows = rows.slice(startIdx, endIdx)
-  const offsetTop = startIdx < offsets.length ? offsets[startIdx] : 0
+  const offsetTop = startIdx < offsets.length ? (offsets[startIdx] ?? 0) : 0
 
   return (
     <div style={{ height: totalHeight, position: 'relative' }}>

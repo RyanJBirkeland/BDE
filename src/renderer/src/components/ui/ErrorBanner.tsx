@@ -1,6 +1,6 @@
 type ErrorBannerProps = {
   message: string | null
-  className?: string
+  className?: string | undefined
 }
 
 export function ErrorBanner({ message, className }: ErrorBannerProps): React.JSX.Element | null {

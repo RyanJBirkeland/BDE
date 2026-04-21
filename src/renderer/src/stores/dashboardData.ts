@@ -1,7 +1,13 @@
 import { create } from 'zustand'
 import type { CompletionBucket, LoadSnapshot } from '../../../shared/ipc-channels'
 import type { FeedEvent } from '../lib/dashboard-types'
-import { getCompletionsPerHour, getRecentEvents, getPrList, getDailySuccessRate, getLoadAverage } from '../services/dashboard'
+import {
+  getCompletionsPerHour,
+  getRecentEvents,
+  getPrList,
+  getDailySuccessRate,
+  getLoadAverage
+} from '../services/dashboard'
 
 interface DailySuccessRate {
   date: string

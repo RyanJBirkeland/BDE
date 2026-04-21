@@ -52,7 +52,8 @@ async function getRepoConfig(
 export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
   const { taskId, title, branch, worktreePath, repo, logger, onTaskTerminal } = opts
   const { getSettingJson } = await import('../settings')
-  const rules = getSettingJson<import('../../shared/types/task-types').AutoReviewRule[]>('autoReview.rules')
+  const rules =
+    getSettingJson<import('../../shared/types/task-types').AutoReviewRule[]>('autoReview.rules')
 
   if (!rules || rules.length === 0) {
     return
@@ -92,9 +93,7 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
         `[completion] Task ${taskId} auto-merge skipped: main repo has uncommitted changes — task remains in review`
       )
     } else {
-      logger.error(
-        `[completion] Task ${taskId} auto-merge failed — task remains in review`
-      )
+      logger.error(`[completion] Task ${taskId} auto-merge failed — task remains in review`)
     }
   } catch (err) {
     // Auto-merge is best-effort: a failure here leaves the task in 'review' for human action,
@@ -120,11 +119,7 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
  * loud banner so the on-call operator knows exactly which task needs manual
  * status reconciliation.
  */
-function finalizeAutoMergeStatus(
-  taskId: string,
-  repo: IAgentTaskRepository,
-  logger: Logger
-): void {
+function finalizeAutoMergeStatus(taskId: string, repo: IAgentTaskRepository, logger: Logger): void {
   const db = getDb()
   const reviewTask = repo.getTask(taskId)
   const statusPatch: Record<string, unknown> = {

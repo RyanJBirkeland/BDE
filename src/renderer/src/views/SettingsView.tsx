@@ -80,6 +80,18 @@ export default function SettingsView(): React.JSX.Element {
     setActiveSection(id as typeof activeId)
   }
 
+  if (!ActiveSection || !meta) {
+    return (
+      <ErrorBoundary name="SettingsView">
+        <div className="stg-layout">
+          <div className="view-layout">
+            <SettingsSidebar sections={SECTIONS} activeId={activeId} onSelect={handleSelect} />
+          </div>
+        </div>
+      </ErrorBoundary>
+    )
+  }
+
   return (
     <ErrorBoundary name="SettingsView">
       <div className="stg-layout">

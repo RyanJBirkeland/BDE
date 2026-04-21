@@ -7,7 +7,7 @@ import { EditDiffCard } from './EditDiffCard'
 interface ToolPairCardProps {
   tool: string
   summary: string
-  input?: unknown
+  input?: unknown | undefined
   result: { success: boolean; summary: string; output?: unknown }
   timestamp: number
   searchClass: string

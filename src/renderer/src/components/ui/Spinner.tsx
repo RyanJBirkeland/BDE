@@ -1,6 +1,6 @@
 type SpinnerProps = {
-  size?: 'sm' | 'md' | 'lg'
-  color?: string
+  size?: 'sm' | 'md' | 'lg' | undefined
+  color?: string | undefined
 }
 
 export function Spinner({ size = 'md', color }: SpinnerProps): React.JSX.Element {

@@ -3,9 +3,9 @@ import { useState, type JSX, type KeyboardEvent } from 'react'
 
 interface Props {
   onSend: (content: string) => void
-  onAbort?: () => void
-  streaming?: boolean
-  disabled?: boolean
+  onAbort?: (() => void) | undefined
+  streaming?: boolean | undefined
+  disabled?: boolean | undefined
 }
 
 export function ReviewChatInput({

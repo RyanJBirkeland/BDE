@@ -65,7 +65,10 @@ export function abortAgent(agent: ActiveAgent, logger: Logger): void {
  * Remove an agent from the active-agents map if it is still current.
  * Guards against removing a newer retry that has overwritten the same task slot.
  */
-export function removeAgentFromMap(agent: ActiveAgent, activeAgents: Map<string, ActiveAgent>): void {
+export function removeAgentFromMap(
+  agent: ActiveAgent,
+  activeAgents: Map<string, ActiveAgent>
+): void {
   // Guard: only remove if this run's entry is still current — a retry may have overwritten it
   if (activeAgents.get(agent.taskId)?.agentRunId === agent.agentRunId) {
     activeAgents.delete(agent.taskId)
@@ -76,7 +79,11 @@ export function removeAgentFromMap(agent: ActiveAgent, activeAgents: Map<string,
  * Abort an active agent's handle and remove it from the active agents map.
  * Kept for backward compatibility with callers that need the combined operation.
  */
-export function killActiveAgent(agent: ActiveAgent, activeAgents: Map<string, ActiveAgent>, logger: Logger): void {
+export function killActiveAgent(
+  agent: ActiveAgent,
+  activeAgents: Map<string, ActiveAgent>,
+  logger: Logger
+): void {
   abortAgent(agent, logger)
   removeAgentFromMap(agent, activeAgents)
 }
@@ -144,11 +151,13 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
     // (dep resolution, metrics) sees a consistent state.
     if (result.shouldNotifyTerminal && result.terminalStatus) {
       flushAgentEventBatcher()
-      deps.onTaskTerminal(agent.taskId, result.terminalStatus).catch((err) =>
-        deps.logger.warn(
-          `[agent-manager] Failed onTerminal for task ${agent.taskId} after ${verdict}: ${err}`
+      deps
+        .onTaskTerminal(agent.taskId, result.terminalStatus)
+        .catch((err) =>
+          deps.logger.warn(
+            `[agent-manager] Failed onTerminal for task ${agent.taskId} after ${verdict}: ${err}`
+          )
         )
-      )
     }
   }
 }

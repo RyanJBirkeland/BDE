@@ -40,8 +40,8 @@ export function spawnViaSdk(
     prompt: string
     cwd: string
     model: string
-    maxBudgetUsd?: number
-    pipelineTuning?: PipelineSpawnTuning
+    maxBudgetUsd?: number | undefined
+    pipelineTuning?: PipelineSpawnTuning | undefined
   },
   env: NodeJS.ProcessEnv,
   token: string | null,

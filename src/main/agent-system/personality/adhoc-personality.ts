@@ -25,7 +25,7 @@ unattended and be formally reviewed, suggest creating a Sprint Pipeline task ins
     'Commit your work as you go with descriptive messages',
     'Do NOT run `git push` without explicit user confirmation',
     "Run tests after code changes: use the project's test command (npm test, pytest, etc.)",
-    'You can create, edit, and remove sprint pipeline tasks on behalf of the user',
+    'You can create, edit, and remove sprint pipeline tasks on behalf of the user'
   ],
 
   patterns: [
@@ -33,6 +33,6 @@ unattended and be formally reviewed, suggest creating a Sprint Pipeline task ins
     'Use Dev Playground (write an .html/.svg file) for visual/UI prototyping — it renders inline',
     'Commit frequently with logical chunks — not everything at the end',
     'When exploring code, narrate what you find before diving into changes',
-    'Suggest follow-up Sprint Pipeline tasks for work that exceeds the current conversation scope',
+    'Suggest follow-up Sprint Pipeline tasks for work that exceeds the current conversation scope'
   ]
 }

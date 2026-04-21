@@ -147,11 +147,7 @@ export function AgentsView(): React.JSX.Element {
                   )}
                 </div>
               </div>
-              <button
-                onClick={openLaunchpad}
-                title="New Agent"
-                className="agents-view__spawn-btn"
-              >
+              <button onClick={openLaunchpad} title="New Agent" className="agents-view__spawn-btn">
                 <Plus size={12} />
               </button>
             </div>

@@ -46,8 +46,11 @@ ensureExtraPathsOnProcessEnv()
 // corporate proxy settings. Node.js 22's built-in fetch (undici) does NOT read
 // HTTP_PROXY/HTTPS_PROXY automatically — this global dispatcher bridges the gap.
 // subprocess spawns inherit proxy vars via ENV_ALLOWLIST in env-utils.ts.
-const proxyUrl = process.env.HTTPS_PROXY ?? process.env.https_proxy ??
-  process.env.HTTP_PROXY ?? process.env.http_proxy
+const proxyUrl =
+  process.env.HTTPS_PROXY ??
+  process.env.https_proxy ??
+  process.env.HTTP_PROXY ??
+  process.env.http_proxy
 if (proxyUrl) {
   setGlobalDispatcher(new ProxyAgent(proxyUrl))
 }
@@ -74,7 +77,7 @@ import {
 } from './tearoff-manager'
 
 // Enforce minimum Node.js version before any app logic
-const [nodeMajor] = process.versions.node.split('.').map(Number)
+const [nodeMajor = 0] = process.versions.node.split('.').map(Number)
 if (nodeMajor < 22) {
   process.stderr.write(
     `[BDE] Node.js v22+ required (found ${process.versions.node}). Please upgrade.\n`
@@ -144,7 +147,11 @@ function createMainWindow(): BrowserWindow | null {
       webPreferences: SHARED_WEB_PREFERENCES
     })
   } catch (err) {
-    logError(logger, 'Failed to create main BrowserWindow', err instanceof Error ? err : new Error(String(err)))
+    logError(
+      logger,
+      'Failed to create main BrowserWindow',
+      err instanceof Error ? err : new Error(String(err))
+    )
     // Headless systems (no display server) cause `new BrowserWindow()` to
     // throw. Without this guard the process hangs silently. Surface the
     // failure and quit so the launcher's exit code is diagnostic.
@@ -334,7 +341,9 @@ function initCoreServices(): CoreStartupServices {
  * Returns the AgentManager handle for downstream registerAllHandlers
  * consumption, or undefined when autoStart is disabled.
  */
-function wireAgentManagerAndMcp(core: CoreStartupServices): ReturnType<typeof createAgentManager> | undefined {
+function wireAgentManagerAndMcp(
+  core: CoreStartupServices
+): ReturnType<typeof createAgentManager> | undefined {
   const amConfig = {
     maxConcurrent: getSettingJson<number>('agentManager.maxConcurrent') ?? 2,
     worktreeBase: getSetting('agentManager.worktreeBase') ?? join(homedir(), 'worktrees', 'bde'),
@@ -375,7 +384,10 @@ function wireAgentManagerAndMcp(core: CoreStartupServices): ReturnType<typeof cr
     if (mcp) return
     const port = getMcpPort()
     const handle = createMcpServer(
-      { epicService: core.epicGroupService, onStatusTerminal: core.terminalService.onStatusTerminal },
+      {
+        epicService: core.epicGroupService,
+        onStatusTerminal: core.terminalService.onStatusTerminal
+      },
       { port }
     )
     try {
@@ -422,9 +434,10 @@ function wireAgentManagerAndMcp(core: CoreStartupServices): ReturnType<typeof cr
  * getDiff), the ReviewService, and the chat-stream deps the IPC
  * handlers need.
  */
-function buildReviewWiring(
-  repo: ReturnType<typeof createSprintTaskRepository>
-): { reviewService: ReturnType<typeof createReviewService>; reviewChatStreamDeps: ReturnType<typeof buildChatStreamDeps> } {
+function buildReviewWiring(repo: ReturnType<typeof createSprintTaskRepository>): {
+  reviewService: ReturnType<typeof createReviewService>
+  reviewChatStreamDeps: ReturnType<typeof buildChatStreamDeps>
+} {
   const reviewDb = getDb()
   const reviewRepo = createReviewRepository(reviewDb)
   const reviewServiceLogger = createLogger('review-service')

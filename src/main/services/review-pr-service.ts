@@ -19,9 +19,9 @@ export interface CreatePROptions {
 
 export interface CreatePRResult {
   success: boolean
-  prUrl?: string
-  prNumber?: number
-  error?: string
+  prUrl?: string | undefined
+  prNumber?: number | undefined
+  error?: string | undefined
 }
 
 /**
@@ -64,7 +64,7 @@ export async function createPullRequest(options: CreatePROptions): Promise<Creat
 
     // Extract PR number from URL (e.g., https://github.com/owner/repo/pull/123)
     const prNumberMatch = trimmedPrUrl.match(/\/pull\/(\d+)$/)
-    const prNumber = prNumberMatch ? parseInt(prNumberMatch[1], 10) : undefined
+    const prNumber = prNumberMatch?.[1] ? parseInt(prNumberMatch[1], 10) : undefined
 
     logger.info(`[createPullRequest] Created PR #${prNumber}: ${trimmedPrUrl}`)
 

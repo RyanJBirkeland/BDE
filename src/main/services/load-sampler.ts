@@ -15,7 +15,7 @@ let timer: NodeJS.Timeout | null = null
 let cpuCount = os.cpus().length
 
 function sample(): void {
-  const [load1, load5, load15] = os.loadavg()
+  const [load1 = 0, load5 = 0, load15 = 0] = os.loadavg()
   ring.push({ t: Date.now(), load1, load5, load15 })
   if (ring.length > BUFFER_SIZE) ring.shift()
 }

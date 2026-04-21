@@ -73,30 +73,22 @@ describe('validateWorktreeBase', () => {
   })
 
   it('rejects /etc — system directory outside home', () => {
-    expect(() => validateWorktreeBase('/etc/malicious')).toThrow(
-      /home directory/i
-    )
+    expect(() => validateWorktreeBase('/etc/malicious')).toThrow(/home directory/i)
   })
 
   it('rejects /tmp — not in home directory', () => {
-    expect(() => validateWorktreeBase('/tmp/bad')).toThrow(
-      /home directory/i
-    )
+    expect(() => validateWorktreeBase('/tmp/bad')).toThrow(/home directory/i)
   })
 
   it('rejects /var/root path traversal attempt', () => {
-    expect(() => validateWorktreeBase('/var/root/worktrees')).toThrow(
-      /home directory/i
-    )
+    expect(() => validateWorktreeBase('/var/root/worktrees')).toThrow(/home directory/i)
   })
 
   it('rejects a path that starts with homedir string but escapes via traversal', () => {
     // e.g. homedir() is /Users/ryan, this tries /Users/ryanevil
     const tricky = homedir() + 'evil/worktrees'
     // Only valid if it starts with homedir() + '/'
-    expect(() => validateWorktreeBase(tricky)).toThrow(
-      /home directory/i
-    )
+    expect(() => validateWorktreeBase(tricky)).toThrow(/home directory/i)
   })
 
   it('rejects empty string', () => {
@@ -117,29 +109,26 @@ describe('validateTestDbPath', () => {
     expect(() => validateTestDbPath('/tmp/test.db')).not.toThrow()
   })
 
-  it.skipIf(process.platform !== 'darwin')('accepts a path in /private/tmp (macOS real tmpdir)', () => {
-    expect(() => validateTestDbPath('/private/tmp/test.db')).not.toThrow()
-  })
+  it.skipIf(process.platform !== 'darwin')(
+    'accepts a path in /private/tmp (macOS real tmpdir)',
+    () => {
+      expect(() => validateTestDbPath('/private/tmp/test.db')).not.toThrow()
+    }
+  )
 
   it('accepts undefined (BDE_TEST_DB not set)', () => {
     expect(() => validateTestDbPath(undefined)).not.toThrow()
   })
 
   it('rejects /etc/passwd', () => {
-    expect(() => validateTestDbPath('/etc/passwd')).toThrow(
-      /tmp/i
-    )
+    expect(() => validateTestDbPath('/etc/passwd')).toThrow(/tmp/i)
   })
 
   it('rejects a home directory path', () => {
-    expect(() => validateTestDbPath(join(homedir(), 'sneaky.db'))).toThrow(
-      /tmp/i
-    )
+    expect(() => validateTestDbPath(join(homedir(), 'sneaky.db'))).toThrow(/tmp/i)
   })
 
   it('rejects a root-level path', () => {
-    expect(() => validateTestDbPath('/bde.db')).toThrow(
-      /tmp/i
-    )
+    expect(() => validateTestDbPath('/bde.db')).toThrow(/tmp/i)
   })
 })

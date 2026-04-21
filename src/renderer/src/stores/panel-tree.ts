@@ -195,6 +195,7 @@ export function moveTab(
   if (sourceTabIndex < 0 || sourceTabIndex >= sourceLeaf.tabs.length) return null
 
   const movedTab = sourceLeaf.tabs[sourceTabIndex]
+  if (!movedTab) return null
 
   // Remove tab from source; if last tab, the leaf will be removed from the tree
   const afterClose = closeTab(root, sourcePanelId, sourceTabIndex)

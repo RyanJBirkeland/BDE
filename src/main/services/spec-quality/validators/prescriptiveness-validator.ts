@@ -34,8 +34,8 @@ async function runSdkQuery(prompt: string): Promise<string> {
       permissionMode: 'bypassPermissions' as const,
       allowDangerouslySkipPermissions: true,
       // Validation check only — implementation context from CLAUDE.md is irrelevant.
-      settingSources: [],
-    },
+      settingSources: []
+    }
   })
 
   let fullText = ''
@@ -66,7 +66,7 @@ async function runSdkQuery(prompt: string): Promise<string> {
 export class PrescriptivenessValidator implements IAsyncSpecValidator {
   async validate(spec: ParsedSpec): Promise<SpecIssue[]> {
     const section = spec.sections.find(
-      s => s.heading.replace(/^#{2,3}\s+/, '').toLowerCase() === 'implementation steps'
+      (s) => s.heading.replace(/^#{2,3}\s+/, '').toLowerCase() === 'implementation steps'
     )
 
     // If no Implementation Steps section, skip — RequiredSectionsValidator handles this
@@ -87,8 +87,8 @@ export class PrescriptivenessValidator implements IAsyncSpecValidator {
           {
             code: 'STEP_REQUIRES_DESIGN_DECISION',
             severity: 'error',
-            message: `Spec requires design decisions that will cause agent thrash: ${response.reason}. Rewrite Implementation Steps as concrete directives, not open-ended investigations.`,
-          },
+            message: `Spec requires design decisions that will cause agent thrash: ${response.reason}. Rewrite Implementation Steps as concrete directives, not open-ended investigations.`
+          }
         ]
       }
       return []
@@ -100,8 +100,8 @@ export class PrescriptivenessValidator implements IAsyncSpecValidator {
         {
           code: 'PRESCRIPTIVENESS_CHECK_FAILED',
           severity: 'warning',
-          message: 'Could not validate implementation step clarity — review manually before queuing',
-        },
+          message: 'Could not validate implementation step clarity — review manually before queuing'
+        }
       ]
     }
   }

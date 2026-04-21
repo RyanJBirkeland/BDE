@@ -9,12 +9,12 @@ interface SidebarItemProps {
   shortcut: string
   isActive: boolean
   isOpen: boolean
-  badge?: number
-  badgeAccent?: 'red' | 'blue' | 'orange'
+  badge?: number | undefined
+  badgeAccent?: 'red' | 'blue' | 'orange' | undefined
   onActivate: (view: View) => void
   onContextAction: (action: string, view: View) => void
   /** Called on mouseenter — used by Sidebar to preload lazy view chunks */
-  onHover?: () => void
+  onHover?: (() => void) | undefined
 }
 
 interface ContextMenuState {
@@ -115,7 +115,10 @@ export function SidebarItem({
         case 'Enter':
         case ' ':
           e.preventDefault()
-          if (currentIndex >= 0) handleMenuAction(MENU_ITEMS[currentIndex].action)
+          if (currentIndex >= 0) {
+            const menuItem = MENU_ITEMS[currentIndex]
+            if (menuItem) handleMenuAction(menuItem.action)
+          }
           break
         case 'Escape':
           e.preventDefault()

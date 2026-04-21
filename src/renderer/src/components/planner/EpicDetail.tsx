@@ -19,15 +19,15 @@ export interface EpicDetailProps {
     upstreamId: string,
     condition: EpicDependency['condition']
   ) => Promise<void>
-  loading?: boolean
+  loading?: boolean | undefined
   onQueueAll: () => void
   onAddTask: () => void
   onEditTask: (taskId: string) => void
-  onEditGroup?: (name: string, goal: string) => void
-  onDeleteGroup?: () => void
-  onToggleReady?: () => void
-  onReorderTasks?: (orderedTaskIds: string[]) => void
-  onMarkCompleted?: () => void
+  onEditGroup?: ((name: string, goal: string) => void) | undefined
+  onDeleteGroup?: (() => void) | undefined
+  onToggleReady?: (() => void) | undefined
+  onReorderTasks?: ((orderedTaskIds: string[]) => void) | undefined
+  onMarkCompleted?: (() => void) | undefined
   onOpenAssistant: () => void
 }
 

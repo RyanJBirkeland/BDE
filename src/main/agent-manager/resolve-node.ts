@@ -78,7 +78,9 @@ function compareSemverDescending(a: string, b: string): number {
   const partsA = parseSemver(a)
   const partsB = parseSemver(b)
   for (let i = 0; i < 3; i++) {
-    if (partsA[i] !== partsB[i]) return partsB[i] - partsA[i]
+    const valueA = partsA[i] ?? 0
+    const valueB = partsB[i] ?? 0
+    if (valueA !== valueB) return valueB - valueA
   }
   return 0
 }

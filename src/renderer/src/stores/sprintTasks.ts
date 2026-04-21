@@ -13,24 +13,31 @@ import {
   type PendingUpdates
 } from '../lib/optimisticUpdateManager'
 import { getRepoPaths } from '../services/git'
-import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt } from '../services/sprint'
+import {
+  listTasks,
+  updateTask,
+  deleteTask,
+  createTask,
+  batchUpdate,
+  generatePrompt
+} from '../services/sprint'
 import { spawnLocal } from '../services/agents'
 
 export interface CreateTicketInput {
   title: string
   repo: string
-  prompt?: string
-  notes?: string
-  spec?: string | null
+  prompt?: string | undefined
+  notes?: string | undefined
+  spec?: string | null | undefined
   priority: number
-  template_name?: string
-  depends_on?: TaskDependency[]
-  playground_enabled?: boolean
-  max_cost_usd?: number | null
-  model?: string
-  spec_type?: string | null
-  group_id?: string | null
-  cross_repo_contract?: string | null
+  template_name?: string | undefined
+  depends_on?: TaskDependency[] | undefined
+  playground_enabled?: boolean | undefined
+  max_cost_usd?: number | null | undefined
+  model?: string | undefined
+  spec_type?: string | null | undefined
+  group_id?: string | null | undefined
+  cross_repo_contract?: string | null | undefined
 }
 
 /** How long (ms) to protect an optimistic update from being overwritten by poll data. */
@@ -119,7 +126,13 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         for (const task of incoming) {
           mergedById.set(
             task.id,
-            mergePendingFields(task, currentTaskMap.get(task.id), nextPending[task.id], now, PENDING_UPDATE_TTL)
+            mergePendingFields(
+              task,
+              currentTaskMap.get(task.id),
+              nextPending[task.id],
+              now,
+              PENDING_UPDATE_TTL
+            )
           )
         }
 
@@ -149,8 +162,15 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
     // Record pending update before optimistic patch, merging fields from prior pending updates
     set((state) => ({
-      pendingUpdates: trackPendingOperation(state.pendingUpdates, taskId, Object.keys(patch), updateId),
-      tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t))
+      pendingUpdates: trackPendingOperation(
+        state.pendingUpdates,
+        taskId,
+        Object.keys(patch),
+        updateId
+      ),
+      tasks: state.tasks.map((t) =>
+        t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t
+      )
     }))
     try {
       const serverTask = await updateTask(taskId, patch)

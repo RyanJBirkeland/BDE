@@ -3,16 +3,16 @@ import type { HTMLInputTypeAttribute, ReactNode } from 'react'
 type InputProps = {
   value: string
   onChange: (v: string) => void
-  placeholder?: string
-  prefix?: ReactNode
-  suffix?: ReactNode
-  disabled?: boolean
-  className?: string
+  placeholder?: string | undefined
+  prefix?: ReactNode | undefined
+  suffix?: ReactNode | undefined
+  disabled?: boolean | undefined
+  className?: string | undefined
   'aria-label'?: string
-  type?: HTMLInputTypeAttribute
-  invalid?: boolean
-  error?: string
-  required?: boolean
+  type?: HTMLInputTypeAttribute | undefined
+  invalid?: boolean | undefined
+  error?: string | undefined
+  required?: boolean | undefined
   'aria-describedby'?: string
 }
 

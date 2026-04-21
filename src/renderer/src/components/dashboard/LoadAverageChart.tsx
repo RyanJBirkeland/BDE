@@ -5,7 +5,7 @@ import './LoadAverageChart.css'
 interface LoadAverageChartProps {
   samples: LoadSample[]
   cpuCount: number
-  height?: number
+  height?: number | undefined
 }
 
 const SVG_W = 520
@@ -135,7 +135,13 @@ export function LoadAverageChart({
         style={{ display: 'block' }}
       >
         {/* axes */}
-        <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={height - PAD.bottom} stroke="var(--bde-border)" />
+        <line
+          x1={PAD.left}
+          y1={PAD.top}
+          x2={PAD.left}
+          y2={height - PAD.bottom}
+          stroke="var(--bde-border)"
+        />
         <line
           x1={PAD.left}
           y1={height - PAD.bottom}
@@ -171,7 +177,13 @@ export function LoadAverageChart({
         >
           {yMax}
         </text>
-        <text x={PAD.left - 6} y={yOf(yMax / 2) + 3} textAnchor="end" fontSize="9" fill="var(--bde-text-dim)">
+        <text
+          x={PAD.left - 6}
+          y={yOf(yMax / 2) + 3}
+          textAnchor="end"
+          fontSize="9"
+          fill="var(--bde-text-dim)"
+        >
           {yMax / 2}
         </text>
         <text
@@ -228,7 +240,13 @@ export function LoadAverageChart({
           fill="none"
         />
         {/* X-axis labels: -10m, -5m, now */}
-        <text x={PAD.left} y={height - 4} textAnchor="start" fontSize="9" fill="var(--bde-text-dim)">
+        <text
+          x={PAD.left}
+          y={height - 4}
+          textAnchor="start"
+          fontSize="9"
+          fill="var(--bde-text-dim)"
+        >
           -10m
         </text>
         <text
@@ -240,7 +258,13 @@ export function LoadAverageChart({
         >
           -5m
         </text>
-        <text x={SVG_W - PAD.right} y={height - 4} textAnchor="end" fontSize="9" fill="var(--bde-text-dim)">
+        <text
+          x={SVG_W - PAD.right}
+          y={height - 4}
+          textAnchor="end"
+          fontSize="9"
+          fill="var(--bde-text-dim)"
+        >
           now
         </text>
       </svg>

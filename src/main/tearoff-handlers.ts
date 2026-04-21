@@ -60,101 +60,95 @@ export { onPersistBounds, SHARED_WEB_PREFERENCES }
 
 export function registerTearoffHandlers(): void {
   // tearoff:create — renderer requests a new tear-off window
-  safeHandle('tearoff:create',
-    (
-      _event,
-      payload: {
-        view: string
-        screenX: number
-        screenY: number
-        sourcePanelId: string
-        sourceTabIndex: number
-      }
-    ): { windowId: string } => {
-      const { view, screenX, screenY, sourcePanelId, sourceTabIndex } = payload
-      const windowId = randomUUID()
+  type TearoffCreatePayload = {
+    view: string
+    screenX: number
+    screenY: number
+    sourcePanelId: string
+    sourceTabIndex: number
+  }
+  safeHandle('tearoff:create', (_event, payload: TearoffCreatePayload): { windowId: string } => {
+    const { view, screenX, screenY, sourcePanelId, sourceTabIndex } = payload
+    const windowId = randomUUID()
 
-      const savedSize = getSettingJson<{ width: number; height: number }>('tearoff.lastSize')
-      const width = savedSize?.width ?? 800
-      const height = savedSize?.height ?? 600
+    const savedSize = getSettingJson<{ width: number; height: number }>('tearoff.lastSize')
+    const width = savedSize?.width ?? 800
+    const height = savedSize?.height ?? 600
 
-      // Center the new window under the cursor
-      const x = Math.round(screenX - width / 2)
-      const y = Math.round(screenY - height / 2)
+    // Center the new window under the cursor
+    const x = Math.round(screenX - width / 2)
+    const y = Math.round(screenY - height / 2)
 
-      const win = new BrowserWindow({
-        width,
-        height,
-        x,
-        y,
-        show: false,
-        backgroundColor: '#0A0A0A',
-        titleBarStyle: 'hiddenInset',
-        autoHideMenuBar: true,
-        webPreferences: SHARED_WEB_PREFERENCES
+    const win = new BrowserWindow({
+      width,
+      height,
+      x,
+      y,
+      show: false,
+      backgroundColor: '#0A0A0A',
+      titleBarStyle: 'hiddenInset',
+      autoHideMenuBar: true,
+      webPreferences: SHARED_WEB_PREFERENCES
+    })
+
+    win.on('ready-to-show', () => {
+      win.show()
+    })
+
+    setupTearoffWindow(win, windowId, onPersistBounds)
+
+    setEntry(windowId, { win, view, views: [view], windowId })
+
+    loadTearoffUrl(win, view, windowId)
+
+    persistTearoffStateNow()
+
+    // Notify main window that a tab was removed from the panel
+    const mainWin = getMainWindow()
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('tearoff:tabRemoved', {
+        windowId,
+        sourcePanelId,
+        sourceTabIndex
       })
-
-      win.on('ready-to-show', () => {
-        win.show()
-      })
-
-      setupTearoffWindow(win, windowId, onPersistBounds)
-
-      setEntry(windowId, { win, view, views: [view], windowId })
-
-      loadTearoffUrl(win, view, windowId)
-
-      persistTearoffStateNow()
-
-      // Notify main window that a tab was removed from the panel
-      const mainWin = getMainWindow()
-      if (mainWin && !mainWin.isDestroyed()) {
-        mainWin.webContents.send('tearoff:tabRemoved', {
-          windowId,
-          sourcePanelId,
-          sourceTabIndex
-        })
-      }
-
-      logger.info(`[tearoff] created window ${windowId} for view "${view}"`)
-
-      return { windowId }
     }
-  )
+
+    logger.info(`[tearoff] created window ${windowId} for view "${view}"`)
+
+    return { windowId }
+  })
 
   // tearoff:closeConfirmed — tear-off window sends its close-dialog action back to the
   // main process. Routes to the per-window dynamic response channel that handleCloseRequest
   // is listening on via ipcMain.once.
-  safeHandle('tearoff:closeConfirmed',
-    (event, payload: { action: 'return' | 'close'; remember: boolean }) => {
-      // Identify which tear-off window sent this response
-      const senderWin = BrowserWindow.fromWebContents(event.sender)
-      const entry = senderWin
-        ? Array.from(getEntries()).find((e) => e.win.id === senderWin.id)
-        : undefined
+  type CloseConfirmedPayload = { action: 'return' | 'close'; remember: boolean }
+  safeHandle('tearoff:closeConfirmed', (event, payload: CloseConfirmedPayload) => {
+    // Identify which tear-off window sent this response
+    const senderWin = BrowserWindow.fromWebContents(event.sender)
+    const entry = senderWin
+      ? Array.from(getEntries()).find((e) => e.win.id === senderWin.id)
+      : undefined
 
-      if (!entry) {
-        logger.warn('[tearoff] closeConfirmed: could not identify sender window')
-        return
-      }
-
-      if (payload?.remember) {
-        setSettingJson('tearoff.closeAction', payload.action)
-      }
-
-      // Emit on the per-window dynamic channel that askRendererForAction is waiting on
-      ipcMain.emit(`tearoff:closeResponse:${entry.windowId}`, event, {
-        action: payload?.action ?? 'close'
-      })
+    if (!entry) {
+      logger.warn('[tearoff] closeConfirmed: could not identify sender window')
+      return
     }
-  )
+
+    if (payload?.remember) {
+      setSettingJson('tearoff.closeAction', payload.action)
+    }
+
+    // Emit on the per-window dynamic channel that askRendererForAction is waiting on
+    ipcMain.emit(`tearoff:closeResponse:${entry.windowId}`, event, {
+      action: payload?.action ?? 'close'
+    })
+  })
 
   // tearoff:startCrossWindowDrag — renderer initiates a cross-window drag
-  safeHandle('tearoff:startCrossWindowDrag',
-    (_event, payload: { windowId: string; viewKey: string }) => {
-      return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
-    }
-  )
+  type CrossWindowDragPayload = { windowId: string; viewKey: string }
+  safeHandle('tearoff:startCrossWindowDrag', (_event, payload: CrossWindowDragPayload) => {
+    return handleStartCrossWindowDrag(payload.windowId, payload.viewKey)
+  })
 
   // tearoff:dropComplete — target window signals a drop was accepted
   safeOn('tearoff:dropComplete', (_event, payload) => {
@@ -242,10 +236,4 @@ export function registerTearoffHandlers(): void {
 }
 
 // Re-export additional utilities needed by the shim
-export {
-  getMainWindow,
-  getTearoffState,
-  getSetting,
-  getSettingJson,
-  setSettingJson
-}
+export { getMainWindow, getTearoffState, getSetting, getSettingJson, setSettingJson }

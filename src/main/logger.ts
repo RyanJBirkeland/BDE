@@ -1,4 +1,12 @@
-import { appendFileSync, statSync, mkdirSync, chmodSync, existsSync, renameSync, rmSync } from 'node:fs'
+import {
+  appendFileSync,
+  statSync,
+  mkdirSync,
+  chmodSync,
+  existsSync,
+  renameSync,
+  rmSync
+} from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { nowIso } from '../shared/time'

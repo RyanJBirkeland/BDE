@@ -54,11 +54,11 @@ export function renderAgentMarkdown(text: string): React.ReactNode {
   const elements: React.ReactNode[] = []
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
+    const line = lines[i] ?? ''
 
     // ## heading (line-start only, supports ## and ###)
     const headingMatch = line.match(/^#{2,3}\s+(.+)$/)
-    if (headingMatch) {
+    if (headingMatch?.[1]) {
       elements.push(
         <span key={`h-${i}`} className="console-md-heading">
           {renderInlineMarkdown(headingMatch[1])}

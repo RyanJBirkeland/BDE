@@ -117,7 +117,7 @@ export function escapeXmlContent(content: string): string {
  * Used by pipeline, assistant, copilot, and synthesizer agents.
  */
 export function buildUpstreamContextSection(
-  upstreamContext?: Array<{ title: string; spec: string; partial_diff?: string }>
+  upstreamContext?: Array<{ title: string; spec: string; partial_diff?: string | undefined }>
 ): string {
   if (!upstreamContext || upstreamContext.length === 0) {
     return ''
@@ -127,14 +127,17 @@ export function buildUpstreamContextSection(
   section += 'This task depends on the following completed tasks:\n\n'
 
   for (const upstream of upstreamContext) {
-    const cappedSpec = escapeXmlContent(truncateSpec(upstream.spec, PROMPT_TRUNCATION.UPSTREAM_SPEC_CHARS))
+    const cappedSpec = escapeXmlContent(
+      truncateSpec(upstream.spec, PROMPT_TRUNCATION.UPSTREAM_SPEC_CHARS)
+    )
     section += `### ${upstream.title}\n\n<upstream_spec>\n${cappedSpec}\n</upstream_spec>\n\n`
 
     if (upstream.partial_diff) {
       const truncated = upstream.partial_diff.length > PROMPT_TRUNCATION.UPSTREAM_DIFF_CHARS
       const cappedDiff = escapeXmlContent(
         truncated
-          ? upstream.partial_diff.slice(0, PROMPT_TRUNCATION.UPSTREAM_DIFF_CHARS) + '\n\n[... diff truncated]'
+          ? upstream.partial_diff.slice(0, PROMPT_TRUNCATION.UPSTREAM_DIFF_CHARS) +
+              '\n\n[... diff truncated]'
           : upstream.partial_diff
       )
       section += `<details>\n<summary>Partial changes from upstream task</summary>\n\n<upstream_diff>\n\`\`\`diff\n${cappedDiff}\n\`\`\`\n</upstream_diff>\n</details>\n\n`
@@ -188,11 +191,13 @@ export function buildRetryContext(
   if (hasRevision) {
     const entries = revisionFeedback ?? []
     const latest = entries[entries.length - 1]
-    section += `## Human Revision Request\n`
-    section += `Attempt ${latest.attempt} — ${latest.timestamp}\n\n`
-    section += `The human reviewed your previous work and requested changes:\n`
-    section += `<revision_feedback>\n${escapeXmlContent(truncateSpec(latest.feedback, PROMPT_TRUNCATION.REVISION_FEEDBACK_CHARS))}\n</revision_feedback>\n\n`
-    section += `Address this feedback directly. Do not repeat work the human has already accepted.\n`
+    if (latest) {
+      section += `## Human Revision Request\n`
+      section += `Attempt ${latest.attempt} — ${latest.timestamp}\n\n`
+      section += `The human reviewed your previous work and requested changes:\n`
+      section += `<revision_feedback>\n${escapeXmlContent(truncateSpec(latest.feedback, PROMPT_TRUNCATION.REVISION_FEEDBACK_CHARS))}\n</revision_feedback>\n\n`
+      section += `Address this feedback directly. Do not repeat work the human has already accepted.\n`
+    }
   }
 
   if (hasAutoRetry) {

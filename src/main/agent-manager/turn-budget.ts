@@ -88,5 +88,5 @@ export const PIPELINE_DISALLOWED_TOOLS: readonly string[] = [
   'Bash(git ls-remote:*)',
   'Bash(git diff:*)',
   'Bash(git reflog:*)',
-  'Bash(git log --grep:*)',
+  'Bash(git log --grep:*)'
 ]

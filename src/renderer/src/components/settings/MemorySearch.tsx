@@ -9,7 +9,7 @@ interface MemorySearchProps {
 export function MemorySearch({
   searchQuery,
   onSearch,
-  onClearSearch,
+  onClearSearch
 }: MemorySearchProps): React.JSX.Element {
   return (
     <div className="memory-sidebar__search">

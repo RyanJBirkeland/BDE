@@ -1,4 +1,8 @@
-import type { ISpecParser, ISpecValidator, IAsyncSpecValidator } from '../../../shared/spec-quality/interfaces'
+import type {
+  ISpecParser,
+  ISpecValidator,
+  IAsyncSpecValidator
+} from '../../../shared/spec-quality/interfaces'
 import type { SpecIssue, SpecQualityResult } from '../../../shared/spec-quality/types'
 
 export class SpecQualityService {
@@ -11,7 +15,7 @@ export class SpecQualityService {
   /** Sync-only validation — fast, no I/O. Used in real-time UI feedback. */
   validateStructural(raw: string): SpecQualityResult {
     const spec = this.parser.parse(raw)
-    const issues = this.syncValidators.flatMap(v => v.validate(spec))
+    const issues = this.syncValidators.flatMap((v) => v.validate(spec))
     return buildResult(issues, false)
   }
 
@@ -23,7 +27,7 @@ export class SpecQualityService {
 
     const spec = this.parser.parse(raw)
     const asyncIssues = (
-      await Promise.all(this.asyncValidators.map(v => v.validate(spec)))
+      await Promise.all(this.asyncValidators.map((v) => v.validate(spec)))
     ).flat()
 
     const allIssues = [...structural.issues, ...asyncIssues]
@@ -32,7 +36,7 @@ export class SpecQualityService {
 }
 
 function buildResult(issues: SpecIssue[], prescriptivenessChecked: boolean): SpecQualityResult {
-  const errors = issues.filter(i => i.severity === 'error')
-  const warnings = issues.filter(i => i.severity === 'warning')
+  const errors = issues.filter((i) => i.severity === 'error')
+  const warnings = issues.filter((i) => i.severity === 'warning')
   return { valid: errors.length === 0, issues, errors, warnings, prescriptivenessChecked }
 }

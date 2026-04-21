@@ -8,7 +8,7 @@ import {
   unstageFiles,
   commit,
   push,
-  getBranches,
+  getBranches
 } from '../services/git'
 
 // ---------------------------------------------------------------------------
@@ -224,8 +224,9 @@ export const useGitTreeStore = create<GitTreeState>((set, get) => ({
       const repoMap = await getRepoPaths()
       const repoPaths = repoMap ? Object.values(repoMap) : []
       set({ repoPaths })
-      if (repoPaths.length > 0 && !get().activeRepo) {
-        set({ activeRepo: repoPaths[0] })
+      const firstRepo = repoPaths[0]
+      if (firstRepo && !get().activeRepo) {
+        set({ activeRepo: firstRepo })
       }
     } catch {
       set({ repoPaths: [] })

@@ -4,8 +4,8 @@ import { TagBadge } from './TagBadge'
 interface TagInputProps {
   tags: string[]
   onChange: (tags: string[]) => void
-  placeholder?: string
-  maxTags?: number
+  placeholder?: string | undefined
+  maxTags?: number | undefined
 }
 
 export function TagInput({

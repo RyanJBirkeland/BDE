@@ -1,12 +1,22 @@
 import { describe, it, expect } from 'vitest'
 import Database from 'better-sqlite3'
-import { up, version, description } from '../v038-normalize-sprint-tasks-repo-to-lowercase-for-case-'
+import {
+  up,
+  version,
+  description
+} from '../v038-normalize-sprint-tasks-repo-to-lowercase-for-case-'
 
 function makeTasksTable(db: Database.Database): void {
   db.exec(`CREATE TABLE sprint_tasks (id TEXT PRIMARY KEY, title TEXT, repo TEXT, notes TEXT)`)
 }
 
-function insertTask(db: Database.Database, id: string, repo: string, title = 't', notes = 'n'): void {
+function insertTask(
+  db: Database.Database,
+  id: string,
+  repo: string,
+  title = 't',
+  notes = 'n'
+): void {
   db.prepare('INSERT INTO sprint_tasks (id, title, repo, notes) VALUES (?, ?, ?, ?)').run(
     id,
     title,
@@ -78,9 +88,10 @@ describe('migration v038', () => {
 
     up(db)
 
-    const row = db
-      .prepare('SELECT title, notes FROM sprint_tasks WHERE id = ?')
-      .get('a') as { title: string; notes: string }
+    const row = db.prepare('SELECT title, notes FROM sprint_tasks WHERE id = ?').get('a') as {
+      title: string
+      notes: string
+    }
     expect(row.title).toBe('MyTitle-MixedCase')
     expect(row.notes).toBe('Notes-With-Case')
     db.close()

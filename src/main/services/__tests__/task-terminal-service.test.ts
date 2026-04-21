@@ -293,8 +293,8 @@ describe('createTaskTerminalService', () => {
     expect(hasPerTaskError).toBe(true)
 
     // Should have logged a consolidated summary error mentioning "N of M ... failed"
-    const hasConsolidatedError = errorCalls.some((args: unknown[]) =>
-      String(args[0]).includes('of') && String(args[0]).includes('failed')
+    const hasConsolidatedError = errorCalls.some(
+      (args: unknown[]) => String(args[0]).includes('of') && String(args[0]).includes('failed')
     )
     expect(hasConsolidatedError).toBe(true)
   })

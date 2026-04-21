@@ -23,18 +23,17 @@ export function LocalMcpServerSection(): React.JSX.Element {
     window.api.mcp.getToken().then(setToken)
   }, [])
 
-  const handleToggleEnabled = useCallback(
-    async (next: boolean): Promise<void> => {
-      setEnabled(next)
-      try {
-        await window.api.settings.set('mcp.enabled', next ? 'true' : 'false')
-      } catch (e) {
-        setEnabled(!next)
-        toast.error(`Failed to update MCP enabled: ${e instanceof Error ? e.message : 'Unknown error'}`)
-      }
-    },
-    []
-  )
+  const handleToggleEnabled = useCallback(async (next: boolean): Promise<void> => {
+    setEnabled(next)
+    try {
+      await window.api.settings.set('mcp.enabled', next ? 'true' : 'false')
+    } catch (e) {
+      setEnabled(!next)
+      toast.error(
+        `Failed to update MCP enabled: ${e instanceof Error ? e.message : 'Unknown error'}`
+      )
+    }
+  }, [])
 
   const handlePortChange = useCallback(async (next: number): Promise<void> => {
     setPort(next)
@@ -46,11 +45,7 @@ export function LocalMcpServerSection(): React.JSX.Element {
   }, [])
 
   const handleRegenerate = useCallback(async (): Promise<void> => {
-    if (
-      !confirm(
-        'Regenerate the MCP token? Any agent using the old token will be rejected.'
-      )
-    ) {
+    if (!confirm('Regenerate the MCP token? Any agent using the old token will be rejected.')) {
       return
     }
     setBusy(true)
@@ -132,7 +127,9 @@ export function LocalMcpServerSection(): React.JSX.Element {
       <div className="settings-field">
         <span className="settings-field__label">Bearer token</span>
         <div className="mcp-token-row">
-          <code className="mcp-token">{token !== null ? (revealed ? token : maskedToken) : 'loading…'}</code>
+          <code className="mcp-token">
+            {token !== null ? (revealed ? token : maskedToken) : 'loading…'}
+          </code>
           <button type="button" onClick={() => setRevealed((r) => !r)}>
             {revealed ? 'Hide' : 'Reveal'}
           </button>

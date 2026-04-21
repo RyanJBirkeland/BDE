@@ -9,11 +9,29 @@ import type { AgentManager } from '../agent-manager'
 
 type CheckStatus = 'pass' | 'warn' | 'fail'
 
-interface AuthCheckStatus { status: CheckStatus; message: string }
-interface RepoPathCheckStatus { status: 'pass' | 'fail'; message: string; path?: string }
-interface GitCleanStatus { status: 'pass' | 'warn'; message: string }
-interface ConflictCheckStatus { status: CheckStatus; message: string }
-interface AgentSlotCapacity { status: 'pass' | 'warn'; message: string; available: number; max: number }
+interface AuthCheckStatus {
+  status: CheckStatus
+  message: string
+}
+interface RepoPathCheckStatus {
+  status: 'pass' | 'fail'
+  message: string
+  path?: string
+}
+interface GitCleanStatus {
+  status: 'pass' | 'warn'
+  message: string
+}
+interface ConflictCheckStatus {
+  status: CheckStatus
+  message: string
+}
+interface AgentSlotCapacity {
+  status: 'pass' | 'warn'
+  message: string
+  available: number
+  max: number
+}
 
 export interface OperationalCheckResults {
   auth: AuthCheckStatus
@@ -51,7 +69,9 @@ export function validateRepoPath(repo: string): RepoPathCheckStatus {
   return { status: 'pass', message: 'Repo path configured', path: repoPath }
 }
 
-export async function validateGitCleanStatus(repoPath: string | undefined): Promise<GitCleanStatus> {
+export async function validateGitCleanStatus(
+  repoPath: string | undefined
+): Promise<GitCleanStatus> {
   if (!repoPath) {
     return { status: 'warn', message: 'Cannot check git status (repo path not configured)' }
   }
@@ -94,7 +114,9 @@ export function assessAgentSlotCapacity(am: AgentManager | undefined): AgentSlot
     return { status: 'warn', message: 'Agent manager not available', available: 0, max: 0 }
   }
   const status = am.getStatus()
-  const available = status.concurrency ? status.concurrency.maxSlots - status.concurrency.activeCount : 0
+  const available = status.concurrency
+    ? status.concurrency.maxSlots - status.concurrency.activeCount
+    : 0
   const max = status.concurrency?.maxSlots ?? 0
   if (available > 0) {
     return { status: 'pass', message: `${available} of ${max} slots available`, available, max }

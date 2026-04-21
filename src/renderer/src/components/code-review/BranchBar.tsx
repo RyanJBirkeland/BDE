@@ -3,7 +3,7 @@ import type { JSX } from 'react'
 
 interface Props {
   branch: string
-  targetBranch?: string
+  targetBranch?: string | undefined
 }
 
 export function BranchBar({ branch, targetBranch = 'main' }: Props): JSX.Element {

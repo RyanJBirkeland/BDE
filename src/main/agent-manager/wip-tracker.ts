@@ -31,10 +31,7 @@ export function createConcurrencyState(maxSlots: number): ConcurrencyState {
  * Returns 0 when fully occupied or over-capacity (e.g. after a settings
  * hot-reload that lowered maxConcurrent below activeCount).
  */
-export function getAvailableSlots(
-  concurrency: ConcurrencyState,
-  deps: WipTrackerDeps
-): number {
+export function getAvailableSlots(concurrency: ConcurrencyState, deps: WipTrackerDeps): number {
   return availableSlots(concurrency, deps.activeAgentCount())
 }
 

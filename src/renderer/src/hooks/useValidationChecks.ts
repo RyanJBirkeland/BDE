@@ -18,7 +18,7 @@ interface FormSnapshot {
 
 export function computeStructuralChecks(
   form: FormSnapshot,
-  specType?: SpecType | null
+  specType?: SpecType | null | undefined
 ): CheckResult[] {
   // When specType is explicitly provided (including null), use the validation profile.
   // When specType is undefined (legacy call with no second arg), use legacy permissive behavior.

@@ -7,9 +7,9 @@ interface Props {
   onCreatePR: () => void
   onRequestRevision: () => void
   onDiscard: () => void
-  disabled?: boolean
+  disabled?: boolean | undefined
   /** True while any review action IPC call is in flight. Shows a spinner and blocks re-click. */
-  loading?: boolean
+  loading?: boolean | undefined
 }
 
 export function ApproveDropdown({

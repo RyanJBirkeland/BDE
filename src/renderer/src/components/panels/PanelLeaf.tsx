@@ -27,8 +27,8 @@ interface PanelLeafProps {
 
 interface DragPayload {
   viewKey: string
-  sourcePanelId?: string
-  sourceTabIndex?: number
+  sourcePanelId?: string | undefined
+  sourceTabIndex?: number | undefined
 }
 
 export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
@@ -82,11 +82,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
       onDragLeave={handleDragLeave}
     >
       {isFocused ? null : (
-        <button
-          type="button"
-          className="panel-label-slim"
-          onClick={() => focusPanel(node.panelId)}
-        >
+        <button type="button" className="panel-label-slim" onClick={() => focusPanel(node.panelId)}>
           {node.tabs[node.activeTab]?.label ?? 'Untitled'}
           {showDirtyIndicator && <span className="panel-label-dirty-dot"> •</span>}
         </button>

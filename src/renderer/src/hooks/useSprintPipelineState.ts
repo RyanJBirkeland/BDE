@@ -86,16 +86,21 @@ export function useSprintPipelineState(): SprintPipelineState {
         logDrawerTaskId: s.logDrawerTaskId
       }))
     )
-  const { setSelectedTaskId, setDrawerOpen, setSpecPanelOpen, setLogDrawerTaskId, clearMultiSelection } =
-    useSprintSelection(
-      useShallow((s) => ({
-        setSelectedTaskId: s.setSelectedTaskId,
-        setDrawerOpen: s.setDrawerOpen,
-        setSpecPanelOpen: s.setSpecPanelOpen,
-        setLogDrawerTaskId: s.setLogDrawerTaskId,
-        clearMultiSelection: s.clearMultiSelection
-      }))
-    )
+  const {
+    setSelectedTaskId,
+    setDrawerOpen,
+    setSpecPanelOpen,
+    setLogDrawerTaskId,
+    clearMultiSelection
+  } = useSprintSelection(
+    useShallow((s) => ({
+      setSelectedTaskId: s.setSelectedTaskId,
+      setDrawerOpen: s.setDrawerOpen,
+      setSpecPanelOpen: s.setSpecPanelOpen,
+      setLogDrawerTaskId: s.setLogDrawerTaskId,
+      clearMultiSelection: s.clearMultiSelection
+    }))
+  )
 
   const { doneViewOpen, conflictDrawerOpen, healthCheckDrawerOpen } = useSprintUI(
     useShallow((s) => ({

@@ -5,7 +5,7 @@ import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 import './EditorTabBar.css'
 
 export interface EditorTabBarProps {
-  onCloseTab?: (tabId: string, isDirty: boolean) => void
+  onCloseTab?: ((tabId: string, isDirty: boolean) => void) | undefined
 }
 
 export function EditorTabBar({ onCloseTab }: EditorTabBarProps): React.JSX.Element {

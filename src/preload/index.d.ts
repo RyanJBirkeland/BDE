@@ -35,7 +35,9 @@ declare global {
         getJson: (...args: IpcArgs<'settings:getJson'>) => Promise<IpcResult<'settings:getJson'>>
         setJson: (...args: IpcArgs<'settings:setJson'>) => Promise<IpcResult<'settings:setJson'>>
         delete: (...args: IpcArgs<'settings:delete'>) => Promise<IpcResult<'settings:delete'>>
-        hasSecret: (...args: IpcArgs<'settings:hasSecret'>) => Promise<IpcResult<'settings:hasSecret'>>
+        hasSecret: (
+          ...args: IpcArgs<'settings:hasSecret'>
+        ) => Promise<IpcResult<'settings:hasSecret'>>
         saveProfile: (
           ...args: IpcArgs<'settings:saveProfile'>
         ) => Promise<IpcResult<'settings:saveProfile'>>
@@ -145,9 +147,7 @@ declare global {
 
       // PR lifecycle
       pr: {
-        pollStatuses: (
-          ...args: IpcArgs<'pr:pollStatuses'>
-        ) => Promise<IpcResult<'pr:pollStatuses'>>
+        pollStatuses: (...args: IpcArgs<'pr:pollStatuses'>) => Promise<IpcResult<'pr:pollStatuses'>>
         checkConflictFiles: (
           ...args: IpcArgs<'pr:checkConflictFiles'>
         ) => Promise<IpcResult<'pr:checkConflictFiles'>>
@@ -203,12 +203,8 @@ declare global {
         generate: (
           ...args: IpcArgs<'synthesizer:generate'>
         ) => Promise<IpcResult<'synthesizer:generate'>>
-        revise: (
-          ...args: IpcArgs<'synthesizer:revise'>
-        ) => Promise<IpcResult<'synthesizer:revise'>>
-        cancel: (
-          ...args: IpcArgs<'synthesizer:cancel'>
-        ) => Promise<IpcResult<'synthesizer:cancel'>>
+        revise: (...args: IpcArgs<'synthesizer:revise'>) => Promise<IpcResult<'synthesizer:revise'>>
+        cancel: (...args: IpcArgs<'synthesizer:cancel'>) => Promise<IpcResult<'synthesizer:cancel'>>
         onChunk: (
           cb: (data: {
             streamId: string

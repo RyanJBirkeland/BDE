@@ -4,7 +4,7 @@ import type { PartnerMessage } from '../../../../shared/types'
 
 interface Props {
   messages: PartnerMessage[]
-  emptyMessage?: string
+  emptyMessage?: string | undefined
 }
 
 export function ReviewMessageList({

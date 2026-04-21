@@ -118,6 +118,7 @@ export function AgentPermissionsSection(): React.JSX.Element {
 
   const applyPreset = useCallback((presetName: keyof typeof PRESETS): void => {
     const preset = PRESETS[presetName]
+    if (!preset) return
     setAllow([...preset.allow])
     setDeny([...preset.deny])
     setDirty(true)

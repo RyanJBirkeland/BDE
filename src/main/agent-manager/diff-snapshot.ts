@@ -20,11 +20,15 @@ export async function captureDiffSnapshot(
 ): Promise<ReviewDiffSnapshot | null> {
   const env = buildAgentEnv()
   try {
-    const { stdout: numstatOut } = await execFileAsync('git', ['diff', '--numstat', `${base}...HEAD`], {
-      cwd: worktreePath,
-      env,
-      maxBuffer: 10 * 1024 * 1024
-    })
+    const { stdout: numstatOut } = await execFileAsync(
+      'git',
+      ['diff', '--numstat', `${base}...HEAD`],
+      {
+        cwd: worktreePath,
+        env,
+        maxBuffer: 10 * 1024 * 1024
+      }
+    )
 
     const { stdout: statusOut } = await execFileAsync(
       'git',
@@ -35,7 +39,7 @@ export async function captureDiffSnapshot(
     const statusMap = new Map<string, string>()
     for (const line of statusOut.split('\n').filter(Boolean)) {
       const parts = line.split('\t')
-      if (parts.length >= 2) {
+      if (parts.length >= 2 && parts[0]) {
         const statusCode = parts[0].trim()
         const filePath = parts.slice(1).join('\t').trim()
         statusMap.set(filePath, statusCode)
@@ -47,8 +51,10 @@ export async function captureDiffSnapshot(
       .filter(Boolean)
       .map((line) => {
         const parts = line.split('\t')
-        const additions = parts[0] === '-' ? 0 : parseInt(parts[0], 10) || 0
-        const deletions = parts[1] === '-' ? 0 : parseInt(parts[1], 10) || 0
+        const additionsText = parts[0] ?? ''
+        const deletionsText = parts[1] ?? ''
+        const additions = additionsText === '-' ? 0 : parseInt(additionsText, 10) || 0
+        const deletions = deletionsText === '-' ? 0 : parseInt(deletionsText, 10) || 0
         const path = parts.slice(2).join('\t')
         return {
           path,

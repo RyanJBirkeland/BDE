@@ -639,7 +639,12 @@ describe('sprint:create spec validation', () => {
     const handler = captureHandler('sprint:create')
 
     await expect(
-      handler(mockEvent, { title: 'Task', repo: 'bde', status: 'queued', spec: specMissingRequired })
+      handler(mockEvent, {
+        title: 'Task',
+        repo: 'bde',
+        status: 'queued',
+        spec: specMissingRequired
+      })
     ).rejects.toThrow(/Missing required section/)
   })
 
@@ -791,7 +796,7 @@ describe('task ID format validation', () => {
     'id;rm -rf /',
     'id\x00null',
     '',
-    'a'.repeat(65),
+    'a'.repeat(65)
   ]
   const VALID_ID = '01HXXXXXXXXXXXXXXXXXXXXXXX'
 
@@ -801,12 +806,23 @@ describe('task ID format validation', () => {
 
   it.each(INVALID_IDS)('sprint:update rejects invalid task ID "%s"', async (badId) => {
     const handler = captureHandler('sprint:update')
-    await expect(handler(mockEvent, badId, { title: 'x' })).rejects.toThrow('Invalid task ID format')
+    await expect(handler(mockEvent, badId, { title: 'x' })).rejects.toThrow(
+      'Invalid task ID format'
+    )
   })
 
   it('sprint:update accepts a valid task ID', async () => {
-    vi.mocked(_getTask).mockReturnValue({ id: VALID_ID, title: 'T', status: 'backlog', depends_on: null } as any)
-    vi.mocked(_updateTask).mockReturnValue({ id: VALID_ID, title: 'Updated', status: 'backlog' } as any)
+    vi.mocked(_getTask).mockReturnValue({
+      id: VALID_ID,
+      title: 'T',
+      status: 'backlog',
+      depends_on: null
+    } as any)
+    vi.mocked(_updateTask).mockReturnValue({
+      id: VALID_ID,
+      title: 'Updated',
+      status: 'backlog'
+    } as any)
     const handler = captureHandler('sprint:update')
     await expect(handler(mockEvent, VALID_ID, { title: 'Updated' })).resolves.not.toThrow()
   })
@@ -817,7 +833,12 @@ describe('task ID format validation', () => {
   })
 
   it('sprint:delete accepts a valid task ID', async () => {
-    vi.mocked(_getTask).mockReturnValue({ id: VALID_ID, title: 'T', status: 'backlog', depends_on: null } as any)
+    vi.mocked(_getTask).mockReturnValue({
+      id: VALID_ID,
+      title: 'T',
+      status: 'backlog',
+      depends_on: null
+    } as any)
     vi.mocked(_deleteTask).mockReturnValue(undefined as any)
     const handler = captureHandler('sprint:delete')
     await expect(handler(mockEvent, VALID_ID)).resolves.not.toThrow()
@@ -829,7 +850,12 @@ describe('task ID format validation', () => {
   })
 
   it('sprint:claimTask accepts a valid task ID', async () => {
-    vi.mocked(_getTask).mockReturnValue({ id: VALID_ID, title: 'T', status: 'queued', depends_on: null } as any)
+    vi.mocked(_getTask).mockReturnValue({
+      id: VALID_ID,
+      title: 'T',
+      status: 'queued',
+      depends_on: null
+    } as any)
     const handler = captureHandler('sprint:claimTask')
     await expect(handler(mockEvent, VALID_ID)).resolves.not.toThrow()
   })

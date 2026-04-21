@@ -40,10 +40,10 @@ export interface TerminalDeps {
 }
 
 export interface AppHandlerDeps {
-  agentManager?: AgentManager
+  agentManager?: AgentManager | undefined
   terminalDeps: TerminalDeps
-  reviewService?: ReviewService
-  reviewChatStreamDeps?: ChatStreamDeps
+  reviewService?: ReviewService | undefined
+  reviewChatStreamDeps?: ChatStreamDeps | undefined
   repo: ISprintTaskRepository
   epicGroupService: EpicGroupService
 }
@@ -53,7 +53,14 @@ export interface AppHandlerDeps {
  * Consolidates handler registration to reduce coupling in index.ts.
  */
 export function registerAllHandlers(deps: AppHandlerDeps): void {
-  const { agentManager, terminalDeps, reviewService, reviewChatStreamDeps, repo, epicGroupService } = deps
+  const {
+    agentManager,
+    terminalDeps,
+    reviewService,
+    reviewChatStreamDeps,
+    repo,
+    epicGroupService
+  } = deps
 
   // Agent-related handlers (conditional on agentManager presence)
   if (agentManager) {

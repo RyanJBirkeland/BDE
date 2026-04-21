@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  subscribeToAgentEvents, getAgentEventHistory,
-  listAgents, spawnLocal
-} from '../agents'
+import { subscribeToAgentEvents, getAgentEventHistory, listAgents, spawnLocal } from '../agents'
 
 describe('agents service', () => {
   beforeEach(() => {
@@ -31,7 +28,10 @@ describe('agents service', () => {
   })
 
   it('spawnLocal passes args', async () => {
-    const args: Parameters<typeof window.api.agents.spawnLocal>[0] = { task: 'do thing', repoPath: '/repo' }
+    const args: Parameters<typeof window.api.agents.spawnLocal>[0] = {
+      task: 'do thing',
+      repoPath: '/repo'
+    }
     await spawnLocal(args)
     expect(window.api.agents.spawnLocal).toHaveBeenCalledWith(args)
   })

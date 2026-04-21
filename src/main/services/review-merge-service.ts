@@ -211,8 +211,10 @@ export function parseNumstat(
     .filter(Boolean)
     .map((line) => {
       const parts = line.split('\t')
-      const additions = parts[0] === '-' ? 0 : parseInt(parts[0], 10)
-      const deletions = parts[1] === '-' ? 0 : parseInt(parts[1], 10)
+      const additionsText = parts[0] ?? ''
+      const deletionsText = parts[1] ?? ''
+      const additions = additionsText === '-' ? 0 : parseInt(additionsText, 10)
+      const deletions = deletionsText === '-' ? 0 : parseInt(deletionsText, 10)
       const filePath = parts.slice(2).join('\t')
       const status =
         additions > 0 && deletions > 0 ? 'modified' : additions > 0 ? 'added' : 'deleted'

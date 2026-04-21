@@ -6,7 +6,12 @@ export interface UseBatchReviewActionsResult {
   batchMergeLocally: (tasks: Array<{ id: string; title: string }>) => Promise<void>
   batchShipIt: (tasks: Array<{ id: string; title: string }>) => Promise<void>
   batchCreatePr: (
-    tasks: Array<{ id: string; title: string; spec?: string; prompt?: string }>
+    tasks: Array<{
+      id: string
+      title: string
+      spec?: string | undefined
+      prompt?: string | undefined
+    }>
   ) => Promise<void>
   batchDiscard: (tasks: Array<{ id: string; title: string }>) => Promise<void>
 }
@@ -85,7 +90,12 @@ export function useBatchReviewActions(): UseBatchReviewActionsResult {
   }
 
   const batchCreatePr = (
-    batchTasks: Array<{ id: string; title: string; spec?: string; prompt?: string }>
+    batchTasks: Array<{
+      id: string
+      title: string
+      spec?: string | undefined
+      prompt?: string | undefined
+    }>
   ): Promise<void> =>
     executeBatchAction(
       batchTasks,

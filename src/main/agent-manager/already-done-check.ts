@@ -63,7 +63,10 @@ export async function taskHasMatchingCommitOnMain(
     if (commit.subject.includes(taskIdMarker) || commit.body.includes(taskIdMarker)) {
       return { sha: commit.sha, matchedOn: 'task-id' }
     }
-    if (runIdMarker && (commit.subject.includes(runIdMarker) || commit.body.includes(runIdMarker))) {
+    if (
+      runIdMarker &&
+      (commit.subject.includes(runIdMarker) || commit.body.includes(runIdMarker))
+    ) {
       return { sha: commit.sha, matchedOn: 'agent-run-id' }
     }
   }

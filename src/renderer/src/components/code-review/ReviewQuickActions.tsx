@@ -3,7 +3,7 @@ import type { JSX } from 'react'
 
 interface Props {
   onAction: (prompt: string) => void
-  disabled?: boolean
+  disabled?: boolean | undefined
 }
 
 const ACTIONS = [

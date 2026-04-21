@@ -66,9 +66,10 @@ export function loadMigrations(): Migration[] {
   // Validate version sequence: must be contiguous 1..N
   for (let i = 0; i < migrations.length; i++) {
     const expected = i + 1
-    if (migrations[i].version !== expected) {
+    const migration = migrations[i]
+    if (!migration || migration.version !== expected) {
       throw new Error(
-        `Migration version mismatch: expected v${expected}, found v${migrations[i].version}`
+        `Migration version mismatch: expected v${expected}, found v${migration?.version ?? 'none'}`
       )
     }
   }
@@ -95,20 +96,20 @@ export function loadMigrations(): Migration[] {
  * while skipping v42 would pass the full-sequence check if v42 was never committed,
  * but this guard catches the gap before any pending migration runs.
  */
-export function getPendingMigrations(
-  migrations: Migration[],
-  currentVersion: number
-): Migration[] {
+export function getPendingMigrations(migrations: Migration[], currentVersion: number): Migration[] {
   const pending = migrations
     .filter((m) => m.version > currentVersion)
     .sort((a, b) => a.version - b.version)
 
   if (pending.length > 1) {
     for (let i = 1; i < pending.length; i++) {
-      if (pending[i].version !== pending[i - 1].version + 1) {
+      const current = pending[i]
+      const previous = pending[i - 1]
+      if (!current || !previous) continue
+      if (current.version !== previous.version + 1) {
         throw new Error(
-          `Migration version gap detected: v${pending[i - 1].version} → v${pending[i].version}. ` +
-            `Missing v${pending[i - 1].version + 1}`
+          `Migration version gap detected: v${previous.version} → v${current.version}. ` +
+            `Missing v${previous.version + 1}`
         )
       }
     }

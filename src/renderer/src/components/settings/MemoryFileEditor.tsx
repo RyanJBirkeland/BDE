@@ -27,7 +27,7 @@ export function MemoryFileEditor({
   onContentChange,
   onSaveFile,
   onDiscardChanges,
-  onToggleActive,
+  onToggleActive
 }: MemoryFileEditorProps): React.JSX.Element {
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const isDirty = content !== savedContent

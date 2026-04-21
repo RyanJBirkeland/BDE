@@ -67,8 +67,11 @@ export function useReviewChanges(taskId: string | null): ReviewChangesResult {
                 patch: f.patch ?? ''
               }))
             )
-            setSelectedDiffFile(snapshot.files[0].path)
-            setFileDiff(snapshot.files[0].patch ?? '')
+            const firstSnapshotFile = snapshot.files[0]
+            if (firstSnapshotFile) {
+              setSelectedDiffFile(firstSnapshotFile.path)
+              setFileDiff(firstSnapshotFile.patch ?? '')
+            }
           } else {
             setDiffFiles([])
           }
@@ -83,7 +86,7 @@ export function useReviewChanges(taskId: string | null): ReviewChangesResult {
         })
         if (cancelled) return
         setDiffFiles(result.files)
-        if (result.files.length > 0) setSelectedDiffFile(result.files[0].path)
+        if (result.files.length > 0 && result.files[0]) setSelectedDiffFile(result.files[0].path)
       } catch (err) {
         if (cancelled) return
         if (snapshot && snapshot.files.length > 0) {
@@ -98,8 +101,11 @@ export function useReviewChanges(taskId: string | null): ReviewChangesResult {
               patch: f.patch ?? ''
             }))
           )
-          setSelectedDiffFile(snapshot.files[0].path)
-          setFileDiff(snapshot.files[0].patch ?? '')
+          const firstSnapshotFile = snapshot.files[0]
+          if (firstSnapshotFile) {
+            setSelectedDiffFile(firstSnapshotFile.path)
+            setFileDiff(firstSnapshotFile.patch ?? '')
+          }
         } else {
           setDiffFiles([])
           setError(err instanceof Error ? err.message : 'Failed to load diff')

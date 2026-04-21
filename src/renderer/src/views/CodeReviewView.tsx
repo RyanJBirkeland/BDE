@@ -47,7 +47,8 @@ export default function CodeReviewView(): React.JSX.Element {
           const currentIndex = reviewTasks.findIndex((t) => t.id === selectedTaskId)
           const nextIndex =
             currentIndex === -1 ? 0 : Math.min(currentIndex + 1, reviewTasks.length - 1)
-          selectTask(reviewTasks[nextIndex].id)
+          const nextTask = reviewTasks[nextIndex]
+          if (nextTask) selectTask(nextTask.id)
         }
       },
       {
@@ -66,7 +67,8 @@ export default function CodeReviewView(): React.JSX.Element {
           }
           const currentIndex = reviewTasks.findIndex((t) => t.id === selectedTaskId)
           const nextIndex = currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0)
-          selectTask(reviewTasks[nextIndex].id)
+          const nextTask = reviewTasks[nextIndex]
+          if (nextTask) selectTask(nextTask.id)
         }
       },
       {

@@ -54,23 +54,26 @@ export function registerAgentManagerHandlers(am: AgentManager | undefined): void
 
   // /checkpoint — snapshot current worktree state without stopping the agent.
   // Runs `git add -A && git commit -m "<message>"` in the agent's worktree.
-  safeHandle('agent-manager:checkpoint', async (
-      _e,
-      taskId: string,
-      message?: string
-    ): Promise<{ ok: boolean; committed: boolean; error?: string }> => {
-      if (!isValidTaskId(taskId)) return { ok: false, committed: false, error: 'Invalid task ID format' }
-      const task = getTask(taskId)
-      if (!task) return { ok: false, committed: false, error: `Task ${taskId} not found` }
-      const worktreePath = task.worktree_path
-      if (!worktreePath) {
-        return {
-          ok: false,
-          committed: false,
-          error: 'No worktree path for this task (not a pipeline agent?)'
-        }
+  type CheckpointResult = { ok: boolean; committed: boolean; error?: string | undefined }
+  type CheckpointHandler = (
+    _e: Electron.IpcMainInvokeEvent,
+    taskId: string,
+    message?: string
+  ) => Promise<CheckpointResult>
+  const checkpoint: CheckpointHandler = async (_e, taskId, message) => {
+    if (!isValidTaskId(taskId))
+      return { ok: false, committed: false, error: 'Invalid task ID format' }
+    const task = getTask(taskId)
+    if (!task) return { ok: false, committed: false, error: `Task ${taskId} not found` }
+    const worktreePath = task.worktree_path
+    if (!worktreePath) {
+      return {
+        ok: false,
+        committed: false,
+        error: 'No worktree path for this task (not a pipeline agent?)'
       }
-      return createCheckpoint(taskId, worktreePath, message)
     }
-  )
+    return createCheckpoint(taskId, worktreePath, message)
+  }
+  safeHandle('agent-manager:checkpoint', checkpoint)
 }

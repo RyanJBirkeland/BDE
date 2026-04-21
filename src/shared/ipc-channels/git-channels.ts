@@ -6,9 +6,9 @@ import type { PrListPayload } from '../types'
 
 /** Serialisable subset of RequestInit for the github:fetch IPC proxy. */
 export interface GitHubFetchInit {
-  method?: string
+  method?: string | undefined
   headers?: Record<string, string>
-  body?: string
+  body?: string | undefined
 }
 
 /** Shape returned by the github:fetch IPC handler. */
@@ -69,11 +69,11 @@ export interface GitChannels {
   }
   'git:fetch': {
     args: [cwd: string]
-    result: { success: boolean; error?: string; stdout?: string }
+    result: { success: boolean; error?: string | undefined; stdout?: string | undefined }
   }
   'git:pull': {
     args: [cwd: string, currentBranch: string]
-    result: { success: boolean; error?: string; stdout?: string }
+    result: { success: boolean; error?: string | undefined; stdout?: string | undefined }
   }
   'git:checkInstalled': {
     args: []

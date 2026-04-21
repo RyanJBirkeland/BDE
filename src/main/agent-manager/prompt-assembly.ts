@@ -78,8 +78,12 @@ export function fetchUpstreamContext(
   deps: TaskDependency[] | null | undefined,
   repo: IAgentTaskRepository,
   logger: Logger
-): Array<{ title: string; spec: string; partial_diff?: string }> {
-  const upstreamContext: Array<{ title: string; spec: string; partial_diff?: string }> = []
+): Array<{ title: string; spec: string; partial_diff?: string | undefined }> {
+  const upstreamContext: Array<{
+    title: string
+    spec: string
+    partial_diff?: string | undefined
+  }> = []
   if (!deps || deps.length === 0) return upstreamContext
   for (const dep of deps) {
     try {
@@ -87,10 +91,11 @@ export function fetchUpstreamContext(
       if (upstreamTask && upstreamTask.status === 'done') {
         const spec = upstreamTask.spec || upstreamTask.prompt || ''
         if (spec.trim()) {
+          const partialDiff = upstreamTask.partial_diff || undefined
           upstreamContext.push({
             title: upstreamTask.title,
             spec: spec.trim(),
-            partial_diff: upstreamTask.partial_diff || undefined
+            ...(partialDiff ? { partial_diff: partialDiff } : {})
           })
         }
       }
@@ -146,4 +151,3 @@ export async function assembleRunContext(
     revisionFeedback: task.revision_feedback ?? undefined
   })
 }
-

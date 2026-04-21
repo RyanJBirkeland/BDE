@@ -161,6 +161,6 @@ function topLevelFieldDescription(
 
 function logUnknownError(err: unknown, logger: Pick<Logger, 'error'> | undefined): void {
   if (!logger) return
-  const detail = err instanceof Error ? err.stack ?? err.message : String(err)
+  const detail = err instanceof Error ? (err.stack ?? err.message) : String(err)
   logger.error(`toJsonRpcError received unknown throw: ${detail}`)
 }

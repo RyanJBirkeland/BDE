@@ -314,7 +314,11 @@ describe('AgentManager pipeline integration', () => {
     await vi.advanceTimersByTimeAsync(6_000)
     for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
 
-    expect(vi.mocked(claimTask)).toHaveBeenCalledWith('task-pipeline-1', 'bde-embedded', expect.any(Number))
+    expect(vi.mocked(claimTask)).toHaveBeenCalledWith(
+      'task-pipeline-1',
+      'bde-embedded',
+      expect.any(Number)
+    )
     expect(vi.mocked(spawnAgent)).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: expect.stringContaining('Build the feature'),

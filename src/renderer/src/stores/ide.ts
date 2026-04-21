@@ -57,7 +57,7 @@ const EXTENSION_MAP: Record<string, string> = {
 function detectLanguage(filePath: string): string {
   const parts = filePath.split('.')
   if (parts.length < 2) return 'plaintext'
-  const ext = parts[parts.length - 1].toLowerCase()
+  const ext = parts[parts.length - 1]?.toLowerCase() ?? ''
   return EXTENSION_MAP[ext] ?? 'plaintext'
 }
 
@@ -197,7 +197,9 @@ export const useIDEStore = create<IDEState>((set) => ({
       if (idx === -1) return s
 
       // Capture the closed tab's path before filtering
-      const closedPath = s.openTabs[idx].filePath
+      const closedTab = s.openTabs[idx]
+      if (!closedTab) return s
+      const closedPath = closedTab.filePath
 
       const newTabs = s.openTabs.filter((t) => t.id !== tabId)
 
@@ -214,7 +216,7 @@ export const useIDEStore = create<IDEState>((set) => ({
         } else {
           // Activate adjacent tab: prefer the one at same position, else previous
           const nextIdx = Math.min(idx, updatedTabs.length - 1)
-          newActiveTabId = updatedTabs[nextIdx].id
+          newActiveTabId = updatedTabs[nextIdx]?.id ?? null
         }
       }
 

@@ -28,7 +28,8 @@ export function parseGitHubRemote(url: string | null | undefined): ParsedGitHubR
   // SSH form: git@github.com:owner/repo(.git)?
   const sshMatch = trimmed.match(/^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?\/?$/i)
   if (sshMatch) {
-    return { owner: sshMatch[1], repo: sshMatch[2] }
+    const [, owner, repo] = sshMatch
+    if (owner && repo) return { owner, repo }
   }
 
   // HTTPS / HTTP / SSH-URL forms
@@ -36,7 +37,8 @@ export function parseGitHubRemote(url: string | null | undefined): ParsedGitHubR
     /^(?:https?|ssh|git):\/\/(?:[^@/]+@)?github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/i
   )
   if (httpMatch) {
-    return { owner: httpMatch[1], repo: httpMatch[2] }
+    const [, owner, repo] = httpMatch
+    if (owner && repo) return { owner, repo }
   }
 
   return null

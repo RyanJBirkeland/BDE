@@ -22,7 +22,10 @@ const log = createLogger('workbench')
 const specQualityService = createSpecQualityService()
 
 type CheckStatus = 'pass' | 'warn' | 'fail'
-interface CheckField { status: CheckStatus; message: string }
+interface CheckField {
+  status: CheckStatus
+  message: string
+}
 
 /** Maps a SpecQualityResult to the { clarity, scope, filesExist } shape the renderer expects. */
 function mapQualityResult(result: SpecQualityResult): {
@@ -34,43 +37,47 @@ function mapQualityResult(result: SpecQualityResult): {
   const SCOPE_CODES = new Set(['TOO_MANY_FILES', 'TOO_MANY_STEPS', 'SPEC_TOO_LONG'] as const)
   const FILES_CODES = new Set(['FILES_SECTION_NO_PATHS'] as const)
 
-  const scopeIssues = result.issues.filter(i => SCOPE_CODES.has(i.code as 'TOO_MANY_FILES'))
-  const filesIssues = result.issues.filter(i => FILES_CODES.has(i.code as 'FILES_SECTION_NO_PATHS'))
+  const scopeIssues = result.issues.filter((i) => SCOPE_CODES.has(i.code as 'TOO_MANY_FILES'))
+  const filesIssues = result.issues.filter((i) =>
+    FILES_CODES.has(i.code as 'FILES_SECTION_NO_PATHS')
+  )
   const clarityIssues = result.issues.filter(
-    i => !SCOPE_CODES.has(i.code as 'TOO_MANY_FILES') && !FILES_CODES.has(i.code as 'FILES_SECTION_NO_PATHS')
+    (i) =>
+      !SCOPE_CODES.has(i.code as 'TOO_MANY_FILES') &&
+      !FILES_CODES.has(i.code as 'FILES_SECTION_NO_PATHS')
   )
 
-  const clarityErrors = clarityIssues.filter(i => i.severity === 'error')
-  const clarityWarnings = clarityIssues.filter(i => i.severity === 'warning')
+  const clarityErrors = clarityIssues.filter((i) => i.severity === 'error')
+  const clarityWarnings = clarityIssues.filter((i) => i.severity === 'warning')
 
   let clarity: CheckField
   if (clarityErrors.length > 0) {
-    const messages = clarityErrors.map(i => i.message).join('; ')
+    const messages = clarityErrors.map((i) => i.message).join('; ')
     clarity = { status: 'fail', message: messages }
   } else if (clarityWarnings.length > 0) {
-    clarity = { status: 'warn', message: clarityWarnings[0].message }
+    clarity = { status: 'warn', message: clarityWarnings[0]?.message ?? '' }
   } else {
     clarity = { status: 'pass', message: 'Spec is clear and actionable' }
   }
 
-  const scopeErrors = scopeIssues.filter(i => i.severity === 'error')
-  const scopeWarnings = scopeIssues.filter(i => i.severity === 'warning')
+  const scopeErrors = scopeIssues.filter((i) => i.severity === 'error')
+  const scopeWarnings = scopeIssues.filter((i) => i.severity === 'warning')
   let scope: CheckField
   if (scopeErrors.length > 0) {
-    scope = { status: 'fail', message: scopeErrors.map(i => i.message).join('; ') }
+    scope = { status: 'fail', message: scopeErrors.map((i) => i.message).join('; ') }
   } else if (scopeWarnings.length > 0) {
-    scope = { status: 'warn', message: scopeWarnings[0].message }
+    scope = { status: 'warn', message: scopeWarnings[0]?.message ?? '' }
   } else {
     scope = { status: 'pass', message: 'Scope looks achievable in one session' }
   }
 
-  const filesErrors = filesIssues.filter(i => i.severity === 'error')
-  const filesWarnings = filesIssues.filter(i => i.severity === 'warning')
+  const filesErrors = filesIssues.filter((i) => i.severity === 'error')
+  const filesWarnings = filesIssues.filter((i) => i.severity === 'warning')
   let filesExist: CheckField
   if (filesErrors.length > 0) {
-    filesExist = { status: 'fail', message: filesErrors.map(i => i.message).join('; ') }
+    filesExist = { status: 'fail', message: filesErrors.map((i) => i.message).join('; ') }
   } else if (filesWarnings.length > 0) {
-    filesExist = { status: 'warn', message: filesWarnings[0].message }
+    filesExist = { status: 'warn', message: filesWarnings[0]?.message ?? '' }
   } else {
     filesExist = { status: 'pass', message: 'File paths look specific and plausible' }
   }
@@ -92,7 +99,11 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     const { query, repo } = input
     const repoPath = getRepoPath(repo)
     if (!repoPath) {
-      return { content: `Error: No path configured for repo "${repo}"`, filesSearched: [], totalMatches: 0 }
+      return {
+        content: `Error: No path configured for repo "${repo}"`,
+        filesSearched: [],
+        totalMatches: 0
+      }
     }
     return searchRepo(repoPath, query)
   })
@@ -199,18 +210,23 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
   })
 
   // --- AI-powered spec generation ---
-  safeHandle('workbench:generateSpec', async (_e, input: { title: string; repo: string; templateHint: string }) => {
-      const spec = await generateSpec(input)
-      return { spec }
-    }
-  )
+  type GenerateSpecInput = { title: string; repo: string; templateHint: string }
+  safeHandle('workbench:generateSpec', async (_e, input: GenerateSpecInput) => {
+    const spec = await generateSpec(input)
+    return { spec }
+  })
 
   // --- AI-powered spec checks ---
-  safeHandle('workbench:checkSpec', async (_e, input: { title: string; repo: string; spec: string; specType?: string | null }) => {
-      const result = await specQualityService.validateFull(input.spec)
-      return mapQualityResult(result)
-    }
-  )
+  type CheckSpecInput = {
+    title: string
+    repo: string
+    spec: string
+    specType?: string | undefined | null
+  }
+  safeHandle('workbench:checkSpec', async (_e, input: CheckSpecInput) => {
+    const result = await specQualityService.validateFull(input.spec)
+    return mapQualityResult(result)
+  })
 
   // --- Plan extraction ---
   safeHandle('workbench:extractPlan', async (_e, markdown: string) => {

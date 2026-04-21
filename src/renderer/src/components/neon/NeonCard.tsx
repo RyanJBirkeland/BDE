@@ -2,13 +2,13 @@ import { type ReactNode } from 'react'
 import { type NeonAccent, neonVar } from './types'
 
 interface NeonCardProps {
-  accent?: NeonAccent
-  title?: string
-  icon?: ReactNode
-  action?: ReactNode
+  accent?: NeonAccent | undefined
+  title?: string | undefined
+  icon?: ReactNode | undefined
+  action?: ReactNode | undefined
   children: ReactNode
-  className?: string
-  style?: React.CSSProperties
+  className?: string | undefined
+  style?: React.CSSProperties | undefined
 }
 
 export function NeonCard({

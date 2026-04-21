@@ -32,10 +32,10 @@ export interface TaskDetailDrawerProps {
   onOpenSpec: () => void
   onEdit: (task: SprintTask) => void
   onViewAgents: (agentId: string) => void
-  onUnblock?: (task: SprintTask) => void
-  onRetry?: (task: SprintTask) => void
-  onReviewChanges?: (task: SprintTask) => void
-  onExport?: (task: SprintTask) => void
+  onUnblock?: ((task: SprintTask) => void) | undefined
+  onRetry?: ((task: SprintTask) => void) | undefined
+  onReviewChanges?: ((task: SprintTask) => void) | undefined
+  onExport?: ((task: SprintTask) => void) | undefined
 }
 
 function formatTimestamp(iso: string): string {
@@ -379,6 +379,7 @@ export function TaskDetailDrawer({
                 const match = task.notes.match(/Branch\s+(\S+)\s+pushed\s+to\s+(\S+)/)
                 if (!match) return null
                 const [, branch, ghRepo] = match
+                if (!branch || !ghRepo) return null
                 // Validate ghRepo format (owner/repo) to prevent XSS
                 if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(ghRepo)) return null
                 // Validate branch name doesn't contain dangerous characters

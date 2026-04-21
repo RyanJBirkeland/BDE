@@ -47,8 +47,8 @@ export async function gitStatus(
         continue
       }
 
-      const index = line[0]
-      const worktree = line[1]
+      const index = line[0] ?? ' '
+      const worktree = line[1] ?? ' '
       const filePath = line.slice(3)
       if (index !== ' ' && index !== '?') {
         files.push({ path: filePath, status: index, staged: true })

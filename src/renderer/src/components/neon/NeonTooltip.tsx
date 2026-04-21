@@ -4,8 +4,8 @@ import { createPortal } from 'react-dom'
 
 interface NeonTooltipProps {
   label: string
-  shortcut?: string
-  delay?: number
+  shortcut?: string | undefined
+  delay?: number | undefined
   children: ReactNode
 }
 

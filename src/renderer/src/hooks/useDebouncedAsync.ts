@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react'
 
 interface DebouncedAsyncOptions {
   /** Delay in milliseconds before executing callback (default: 1000) */
-  delayMs?: number
+  delayMs?: number | undefined
   /** Called immediately when dependencies change, before debounce delay */
-  onStart?: () => void
+  onStart?: (() => void) | undefined
   /** Called after callback completes (success or error) */
-  onEnd?: () => void
+  onEnd?: (() => void) | undefined
 }
 
 /**

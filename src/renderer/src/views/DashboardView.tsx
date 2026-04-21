@@ -225,9 +225,7 @@ export default function DashboardView(): React.JSX.Element {
     <ErrorBoundary name="DashboardView">
       <motion.div
         className="dashboard-root"
-        variants={reduced ? undefined : VARIANTS.fadeIn}
-        initial={reduced ? undefined : 'initial'}
-        animate={reduced ? undefined : 'animate'}
+        {...(reduced ? {} : { variants: VARIANTS.fadeIn, initial: 'initial', animate: 'animate' })}
         transition={transition}
       >
         <div className="dashboard-bg-gradient" />
@@ -283,10 +281,7 @@ export default function DashboardView(): React.JSX.Element {
                   <p className="dashboard-onboarding__text">
                     Create your first sprint task to see the pipeline in action.
                   </p>
-                  <button
-                    className="dashboard-onboarding__cta"
-                    onClick={() => setView('planner')}
-                  >
+                  <button className="dashboard-onboarding__cta" onClick={() => setView('planner')}>
                     <Plus size={14} /> Create First Task
                   </button>
                 </div>

@@ -8,7 +8,7 @@ import {
   PLAYGROUND_INSTRUCTIONS,
   buildPersonalitySection,
   buildUpstreamContextSection,
-  truncateSpec,
+  truncateSpec
 } from './prompt-sections'
 import { PROMPT_TRUNCATION } from './prompt-constants'
 import type { BuildPromptInput } from '../lib/prompt-composer'
@@ -58,7 +58,9 @@ action, not a thinking/analysis step. Replace any vague step with an explicit in
 
 export function buildSynthesizerPrompt(input: BuildPromptInput): string {
   if (input.messages && input.messages.length > 0) {
-    throw new Error('[prompt-synthesizer] Synthesizer is single-turn and does not support message history. Received messages array — check call site.')
+    throw new Error(
+      '[prompt-synthesizer] Synthesizer is single-turn and does not support message history. Received messages array — check call site.'
+    )
   }
 
   const { codebaseContext, taskContent, playgroundEnabled, upstreamContext } = input
@@ -78,13 +80,20 @@ export function buildSynthesizerPrompt(input: BuildPromptInput): string {
 
   // Codebase context
   if (codebaseContext) {
-    const cappedContext = truncateSpec(codebaseContext, PROMPT_TRUNCATION.SYNTHESIZER_CODEBASE_CONTEXT_CHARS)
-    prompt += '\n\n## Codebase Context\n\n<codebase_context>\n' + cappedContext + '\n</codebase_context>'
+    const cappedContext = truncateSpec(
+      codebaseContext,
+      PROMPT_TRUNCATION.SYNTHESIZER_CODEBASE_CONTEXT_CHARS
+    )
+    prompt +=
+      '\n\n## Codebase Context\n\n<codebase_context>\n' + cappedContext + '\n</codebase_context>'
   }
 
   // Generation instructions
   if (taskContent) {
-    prompt += '\n\n## Generation Instructions\n\n<generation_instructions>\n' + taskContent + '\n</generation_instructions>'
+    prompt +=
+      '\n\n## Generation Instructions\n\n<generation_instructions>\n' +
+      taskContent +
+      '\n</generation_instructions>'
   }
 
   // Upstream task context

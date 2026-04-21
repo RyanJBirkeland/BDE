@@ -5,7 +5,13 @@ interface ShellPickerProps {
   onClose: () => void
 }
 
-const SHELL_GROUPS = [
+interface ShellItem {
+  label: string
+  value: string
+  shortcut?: string | undefined
+}
+
+const SHELL_GROUPS: Array<{ items: ShellItem[] }> = [
   { items: [{ label: 'Default Shell', shortcut: '⌘T', value: '' }] },
   {
     items: [

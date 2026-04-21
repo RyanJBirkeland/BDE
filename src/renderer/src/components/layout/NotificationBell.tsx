@@ -143,7 +143,7 @@ export function NotificationBell(): React.JSX.Element {
         const taskId = segments[1]
 
         // Validate viewName against known views before casting to View type
-        if (viewName in VIEW_LABELS) {
+        if (viewName && viewName in VIEW_LABELS) {
           setView(viewName as View)
 
           // Select task in appropriate store based on view type

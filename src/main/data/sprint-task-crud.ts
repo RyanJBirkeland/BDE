@@ -38,19 +38,19 @@ export function getTask(id: string, db?: Database.Database): SprintTask | null {
  */
 export interface ListTasksOptions {
   /** Exact-match on `status`. */
-  status?: string
+  status?: string | undefined
   /** Exact-match on `repo`. */
-  repo?: string
+  repo?: string | undefined
   /** Exact-match on `group_id` (epic/group id). */
-  epicId?: string
+  epicId?: string | undefined
   /** Must appear in the JSON `tags` array; exact string match. */
-  tag?: string
+  tag?: string | undefined
   /** Case-insensitive substring on `title` OR `spec`. */
-  search?: string
+  search?: string | undefined
   /** Maximum rows to return. No upper bound — MCP schema caps at 500. */
-  limit?: number
+  limit?: number | undefined
   /** Rows to skip before the returned page. */
-  offset?: number
+  offset?: number | undefined
 }
 
 /**
@@ -342,11 +342,7 @@ function writeTaskUpdate(
         if (!oldTask) return null
 
         // Enforce status transition state machine (skipped for manual overrides)
-        if (
-          options.enforceTransitionCheck &&
-          patch.status &&
-          typeof patch.status === 'string'
-        ) {
+        if (options.enforceTransitionCheck && patch.status && typeof patch.status === 'string') {
           const currentStatus = oldTask.status as string
           const validationResult = validateTransition(currentStatus, patch.status)
           if (!validationResult.ok) {
@@ -438,7 +434,11 @@ function writeTaskUpdate(
   }
 }
 
-export function deleteTask(id: string, deletedBy: string = 'unknown', db?: Database.Database): void {
+export function deleteTask(
+  id: string,
+  deletedBy: string = 'unknown',
+  db?: Database.Database
+): void {
   const conn = db ?? getDb()
   withDataLayerError(
     () => {
@@ -447,9 +447,11 @@ export function deleteTask(id: string, deletedBy: string = 'unknown', db?: Datab
         const task = getTask(id, conn)
         if (task) {
           // Record deletion event with task snapshot
-          conn.prepare(
-            'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)'
-          ).run(id, '_deleted', JSON.stringify(task), null, deletedBy)
+          conn
+            .prepare(
+              'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by) VALUES (?, ?, ?, ?, ?)'
+            )
+            .run(id, '_deleted', JSON.stringify(task), null, deletedBy)
         }
         // Delete task and orphaned audit records
         conn.prepare('DELETE FROM sprint_tasks WHERE id = ?').run(id)

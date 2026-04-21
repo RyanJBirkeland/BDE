@@ -75,13 +75,13 @@ describe('Skills System', () => {
   describe('selectSkills', () => {
     it('always includes code-patterns skill', () => {
       const result = selectSkills('write a button component')
-      const codePatterns = getSkillList().find(s => s.id === 'code-patterns')!
+      const codePatterns = getSkillList().find((s) => s.id === 'code-patterns')!
       expect(result).toContain(codePatterns.guidance.slice(0, 50))
     })
 
     it('includes pr-review skill when task mentions PR', () => {
       const result = selectSkills('review this PR and check for merge conflicts')
-      const prSkill = getSkillList().find(s => s.id === 'pr-review')!
+      const prSkill = getSkillList().find((s) => s.id === 'pr-review')!
       expect(result).toContain(prSkill.guidance.slice(0, 50))
     })
 
@@ -93,7 +93,7 @@ describe('Skills System', () => {
 
     it('includes debugging skill when task mentions failed task', () => {
       const result = selectSkills('debug why this pipeline task keeps failing with agent errors')
-      const debugSkill = getSkillList().find(s => s.id === 'debugging')!
+      const debugSkill = getSkillList().find((s) => s.id === 'debugging')!
       expect(result).toContain(debugSkill.guidance.slice(0, 50))
     })
 

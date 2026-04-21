@@ -1,8 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import {
-  TASK_STATUSES,
-  VALID_TRANSITIONS
-} from '../../../shared/task-state-machine'
+import { TASK_STATUSES, VALID_TRANSITIONS } from '../../../shared/task-state-machine'
 import type { RepoConfig } from '../../paths'
 import { jsonContent } from './response'
 
@@ -34,11 +31,8 @@ const DEPENDENCY_CONDITIONS_PAYLOAD = Object.freeze({
 })
 
 export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void {
-  server.tool(
-    'meta.repos',
-    'List repositories configured in BDE Settings.',
-    {},
-    async () => jsonContent(deps.getRepos())
+  server.tool('meta.repos', 'List repositories configured in BDE Settings.', {}, async () =>
+    jsonContent(deps.getRepos())
   )
 
   server.tool(

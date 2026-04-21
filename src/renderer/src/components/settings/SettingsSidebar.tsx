@@ -32,10 +32,10 @@ function groupByCategory(
       seen.push(section.category)
       map[section.category] = []
     }
-    map[section.category].push(section)
+    map[section.category]!.push(section)
   }
 
-  return seen.map((category) => ({ category, items: map[category] }))
+  return seen.map((category) => ({ category, items: map[category] ?? [] }))
 }
 
 export function SettingsSidebar({
@@ -61,7 +61,7 @@ export function SettingsSidebar({
   useEffect(() => {
     if (searchQuery.trim() && filteredSections.length === 1) {
       const singleMatch = filteredSections[0]
-      if (singleMatch.id !== activeId) {
+      if (singleMatch && singleMatch.id !== activeId) {
         onSelect(singleMatch.id)
       }
     }
@@ -104,6 +104,7 @@ export function SettingsSidebar({
 
     if (nextIndex !== null) {
       const nextItem = items[nextIndex]
+      if (!nextItem) return
       const nextId = nextItem.dataset.id
       if (nextId) {
         onSelect(nextId)

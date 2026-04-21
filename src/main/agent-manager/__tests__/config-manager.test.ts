@@ -119,9 +119,7 @@ describe('reloadConfiguration', () => {
       key === 'agentManager.worktreeBase' ? '/new/worktrees' : undefined
     )
     reloadConfiguration(deps)
-    expect(deps.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('require restart')
-    )
+    expect(deps.logger.info).toHaveBeenCalledWith(expect.stringContaining('require restart'))
   })
 
   it('does not log when nothing changed', () => {

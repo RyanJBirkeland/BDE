@@ -20,7 +20,14 @@ import {
 import type { SprintTask, SprintTaskPR } from '../../shared/types'
 import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
-export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate, ListTasksOptions, UpdateTaskOptions }
+export type {
+  CreateTaskInput,
+  QueueStats,
+  SpecTypeSuccessRate,
+  DailySuccessRate,
+  ListTasksOptions,
+  UpdateTaskOptions
+}
 
 const repo: ISprintTaskRepository = createSprintTaskRepository()
 

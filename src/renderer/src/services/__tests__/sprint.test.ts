@@ -1,15 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt } from '../sprint'
+import {
+  listTasks,
+  updateTask,
+  deleteTask,
+  createTask,
+  batchUpdate,
+  generatePrompt
+} from '../sprint'
 
 describe('sprint service', () => {
   beforeEach(() => {
     vi.mocked(window.api.sprint.list).mockResolvedValue([])
     vi.mocked(window.api.sprint.update).mockResolvedValue(null)
     vi.mocked(window.api.sprint.delete).mockResolvedValue({ ok: true })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     vi.mocked(window.api.sprint.create).mockResolvedValue({} as any)
     vi.mocked(window.api.sprint.batchUpdate).mockResolvedValue({ results: [] })
-    vi.mocked(window.api.sprint.generatePrompt).mockResolvedValue({ taskId: '', spec: '', prompt: '' })
+    vi.mocked(window.api.sprint.generatePrompt).mockResolvedValue({
+      taskId: '',
+      spec: '',
+      prompt: ''
+    })
   })
 
   it('listTasks delegates to window.api.sprint.list', async () => {

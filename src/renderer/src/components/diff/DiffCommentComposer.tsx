@@ -5,7 +5,7 @@ import { Button } from '../ui/Button'
 interface DiffCommentComposerProps {
   onSubmit: (body: string) => void
   onCancel: () => void
-  initialBody?: string
+  initialBody?: string | undefined
 }
 
 export function DiffCommentComposer({

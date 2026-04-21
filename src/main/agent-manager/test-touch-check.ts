@@ -50,9 +50,7 @@ export function detectUntouchedTests(
   for (const changed of changedFiles) {
     if (!isSourceFile(changed)) continue
     const candidates = candidateTestPaths(changed)
-    const existingCandidate = candidates.find((candidate) =>
-      fileExists(join(repoPath, candidate))
-    )
+    const existingCandidate = candidates.find((candidate) => fileExists(join(repoPath, candidate)))
     if (existingCandidate && !changedSet.has(existingCandidate)) {
       untouched.push(changed)
     }
@@ -73,11 +71,10 @@ export async function listChangedFiles(
 ): Promise<string[]> {
   const exec = deps.execFile ?? execFileAsync
   try {
-    const { stdout } = await exec(
-      'git',
-      ['diff', '--name-only', `${agentBranch}..origin/main`],
-      { cwd: worktreePath, env }
-    )
+    const { stdout } = await exec('git', ['diff', '--name-only', `${agentBranch}..origin/main`], {
+      cwd: worktreePath,
+      env
+    })
     return stdout
       .split('\n')
       .map((line) => line.trim())
@@ -116,10 +113,7 @@ function candidateTestPaths(sourcePath: string): string[] {
   const testFileName = `${stem}.test${ext}`
 
   const sibling = dir === '.' ? testFileName : `${dir}/${testFileName}`
-  const dunderTests =
-    dir === '.'
-      ? `__tests__/${testFileName}`
-      : `${dir}/__tests__/${testFileName}`
+  const dunderTests = dir === '.' ? `__tests__/${testFileName}` : `${dir}/__tests__/${testFileName}`
 
   return [sibling, dunderTests]
 }

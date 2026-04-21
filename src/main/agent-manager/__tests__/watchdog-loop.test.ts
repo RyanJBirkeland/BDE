@@ -149,7 +149,13 @@ describe('runWatchdog', () => {
     })
     vi.mocked(checkAgent).mockReturnValue('idle')
     vi.mocked(handleWatchdogVerdict).mockReturnValue({
-      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
       concurrency,
       shouldNotifyTerminal: true,
       terminalStatus: 'error'
@@ -158,7 +164,10 @@ describe('runWatchdog', () => {
     await runWatchdog(deps)
 
     expect(agent.handle.abort).toHaveBeenCalled()
-    expect(deps.repo.updateTask).toHaveBeenCalledWith('task-1', expect.objectContaining({ status: 'error' }))
+    expect(deps.repo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'error' })
+    )
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 
@@ -209,7 +218,10 @@ describe('runWatchdog', () => {
     const repo = makeRepo()
     const callOrder: string[] = []
     vi.mocked(flushAgentEventBatcher).mockImplementation(() => callOrder.push('flush'))
-    vi.mocked(repo.updateTask).mockImplementation(() => { callOrder.push('updateTask'); return undefined as any })
+    vi.mocked(repo.updateTask).mockImplementation(() => {
+      callOrder.push('updateTask')
+      return undefined as any
+    })
     const deps = makeDeps({
       activeAgents: new Map([['task-1', agent]]),
       repo,
@@ -217,7 +229,13 @@ describe('runWatchdog', () => {
     })
     vi.mocked(checkAgent).mockReturnValue('idle')
     vi.mocked(handleWatchdogVerdict).mockReturnValue({
-      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
       concurrency,
       shouldNotifyTerminal: true,
       terminalStatus: 'error'
@@ -233,7 +251,10 @@ describe('runWatchdog', () => {
     const concurrency = makeConcurrencyState(2)
     const callOrder: string[] = []
     vi.mocked(flushAgentEventBatcher).mockImplementation(() => callOrder.push('flush'))
-    const onTaskTerminal = vi.fn().mockImplementation(() => { callOrder.push('onTaskTerminal'); return Promise.resolve() })
+    const onTaskTerminal = vi.fn().mockImplementation(() => {
+      callOrder.push('onTaskTerminal')
+      return Promise.resolve()
+    })
     const deps = makeDeps({
       activeAgents: new Map([['task-1', agent]]),
       getConcurrency: () => concurrency,
@@ -241,7 +262,13 @@ describe('runWatchdog', () => {
     })
     vi.mocked(checkAgent).mockReturnValue('idle')
     vi.mocked(handleWatchdogVerdict).mockReturnValue({
-      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
       concurrency,
       shouldNotifyTerminal: true,
       terminalStatus: 'error'
@@ -268,7 +295,13 @@ describe('runWatchdog', () => {
     })
     vi.mocked(checkAgent).mockReturnValue('idle')
     vi.mocked(handleWatchdogVerdict).mockReturnValue({
-      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
       concurrency,
       shouldNotifyTerminal: false,
       terminalStatus: undefined

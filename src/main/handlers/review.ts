@@ -80,7 +80,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       if (!section.trim()) continue
       // Extract file path from "a/path b/path" line
       const match = section.match(/^a\/(.+?) b\//)
-      if (match) {
+      if (match?.[1]) {
         patchMap.set(match[1], 'diff --git ' + section)
       }
     }
@@ -107,7 +107,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       .split('\n')
       .filter(Boolean)
       .map((line) => {
-        const [hash, message, author, date] = line.split('\x00')
+        const [hash = '', message = '', author = '', date = ''] = line.split('\x00')
         return { hash, message, author, date }
       })
 
