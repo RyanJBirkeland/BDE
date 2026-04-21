@@ -13,8 +13,8 @@ const activeStreams = new Map<string, { close: () => void }>()
  */
 async function runSdkPrint(
   prompt: string,
-  timeoutMs = 120_000,
-  options?: SdkStreamingOptions
+  timeoutMs: number,
+  options: SdkStreamingOptions
 ): Promise<string> {
   return runSdkStreaming(prompt, () => {}, activeStreams, `print-${Date.now()}`, timeoutMs, options)
 }

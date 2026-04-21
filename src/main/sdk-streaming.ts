@@ -14,7 +14,7 @@ export interface ToolUseEvent {
 }
 
 /**
- * Options for `runSdkStreaming`. Backwards-compatible — all optional.
+ * Options for `runSdkStreaming`.
  */
 export interface SdkStreamingOptions {
   /** Working directory for the SDK session — used as the root for tool calls. */
@@ -48,10 +48,11 @@ export interface SdkStreamingOptions {
    */
   settingSources?: Array<'user' | 'project' | 'local'>
   /**
-   * Override the default SDK model. If omitted, defaults to Sonnet 4.5.
-   * Example: 'claude-opus-4-6' for the review partner chat.
+   * Model ID to use for this query. Required — every call site must resolve
+   * from `agents.backendConfig` via `resolveAgentRuntime(type).model` rather
+   * than rely on a silent default.
    */
-  model?: string
+  model: string
 }
 
 /**
@@ -72,7 +73,7 @@ export async function runSdkStreaming(
   activeStreams: Map<string, { close: () => void }>,
   streamId: string,
   timeoutMs = 180_000,
-  options: SdkStreamingOptions = {}
+  options: SdkStreamingOptions
 ): Promise<string> {
   const sdk = await import('@anthropic-ai/claude-agent-sdk')
   const env = buildAgentEnvWithAuth()
@@ -80,7 +81,7 @@ export async function runSdkStreaming(
   const queryHandle = sdk.query({
     prompt,
     options: {
-      model: options.model ?? 'claude-sonnet-4-5',
+      model: options.model,
       maxTurns: options.maxTurns ?? 1,
       env: env as Record<string, string>,
       pathToClaudeCodeExecutable: getClaudeCliPath(),
@@ -154,7 +155,7 @@ export async function runSdkStreaming(
  */
 export async function runSdkOnce(
   prompt: string,
-  options: SdkStreamingOptions = {},
+  options: SdkStreamingOptions,
   timeoutMs = 120_000
 ): Promise<string> {
   // Reuse runSdkStreaming by supplying a no-op onChunk. Tracking map is local.

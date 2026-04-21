@@ -1,10 +1,11 @@
 # Lib — Main
 
 Utility functions and shared helpers for the main process.
-Source: `src/main/lib/`
+Source: `src/main/lib/` (and the shared SDK streaming helper at `src/main/sdk-streaming.ts`).
 
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
+| `../sdk-streaming.ts` | Shared Claude Agent SDK streaming helpers. `SdkStreamingOptions.model` is **required** — every call site must resolve it from `agents.backendConfig` via `resolveAgentRuntime(type).model`. No silent default. | `runSdkStreaming`, `runSdkOnce`, `SdkStreamingOptions`, `ToolUseEvent` |
 | `env-utils.ts` | Environment setup — PATH augmentation (with optional `BDE_EXTRA_PATHS` prefix), OAuth token management with symlink/size guards, agent environment building. `refreshOAuthTokenFromKeychain` tracks consecutive Keychain failures and broadcasts `manager:warning` after 3 consecutive failures. | `ensureExtraPathsOnProcessEnv`, `buildAgentEnv`, `getOAuthToken`, `invalidateOAuthToken`, `buildAgentEnvWithAuth`, `refreshOAuthTokenFromKeychain` |
 | `paths.ts` | BDE data-directory constants — `BDE_DIR` (overridable via `BDE_DATA_DIR`), `BDE_DB_PATH` (overridable via `BDE_DB_PATH` or `BDE_TEST_DB`), and derived paths. Also exports repo config helpers and `ADHOC_WORKTREE_BASE` (`~/worktrees/bde-adhoc`) — shared between `adhoc-agent.ts` (writes worktrees there) and `lib/review-paths.ts` (accepts the base when validating renderer-supplied paths). | `BDE_DIR`, `BDE_DB_PATH`, `BDE_AGENTS_INDEX`, `BDE_MEMORY_DIR`, `ADHOC_WORKTREE_BASE`, `validateWorktreeBase`, `validateTestDbPath`, `getConfiguredRepos`, `getRepoPath` |
 | `async-utils.ts` | Promisified `execFile` and `sleep` | `execFileAsync`, `sleep` |

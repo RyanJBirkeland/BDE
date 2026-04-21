@@ -29,7 +29,16 @@ describe('sdk-streaming', () => {
   })
 
   it('should stream text chunks to callback', async () => {
-    const result = await runSdkStreaming('Test prompt', onChunkMock, activeStreams, 'stream-1')
+    const result = await runSdkStreaming(
+      'Test prompt',
+      onChunkMock,
+      activeStreams,
+      'stream-1',
+      180_000,
+      {
+        model: 'claude-sonnet-4-5'
+      }
+    )
 
     expect(onChunkMock).toHaveBeenCalledWith('Hello world')
     expect(result).toBe('Hello world')
@@ -37,6 +46,7 @@ describe('sdk-streaming', () => {
 
   it('should use provided cwd option', async () => {
     await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5',
       cwd: '/custom/path'
     })
 
@@ -49,6 +59,7 @@ describe('sdk-streaming', () => {
 
   it('should restrict tools when specified', async () => {
     await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5',
       tools: ['Read', 'Grep']
     })
 
@@ -74,6 +85,7 @@ describe('sdk-streaming', () => {
     )
 
     await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5',
       onToolUse: onToolUseMock
     })
 
@@ -84,7 +96,10 @@ describe('sdk-streaming', () => {
   })
 
   it('should respect maxTurns option', async () => {
-    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, { maxTurns: 5 })
+    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5',
+      maxTurns: 5
+    })
 
     expect(sdk.query).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -94,7 +109,9 @@ describe('sdk-streaming', () => {
   })
 
   it('should default maxTurns to 1', async () => {
-    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1')
+    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5'
+    })
 
     expect(sdk.query).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -105,6 +122,7 @@ describe('sdk-streaming', () => {
 
   it('should pass settingSources option', async () => {
     await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5',
       settingSources: []
     })
 
@@ -116,11 +134,25 @@ describe('sdk-streaming', () => {
   })
 
   it('should default settingSources to all sources', async () => {
-    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1')
+    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5'
+    })
 
     expect(sdk.query).toHaveBeenCalledWith(
       expect.objectContaining({
         options: expect.objectContaining({ settingSources: ['user', 'project', 'local'] })
+      })
+    )
+  })
+
+  it('should pass the provided model to the SDK', async () => {
+    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-opus-4-6'
+    })
+
+    expect(sdk.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({ model: 'claude-opus-4-6' })
       })
     )
   })
