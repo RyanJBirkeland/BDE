@@ -154,7 +154,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
         <div className="onboarding-step__help" role="alert">
           <p>
             Authentication check timed out. The Claude CLI may be slow to respond or blocked by a
-            firewall. Try &quot;Check Again&quot;, or continue anyway and resolve in Settings.
+            firewall. Resolve the issue, then click &quot;Check Again&quot; to continue.
           </p>
         </div>
       )}
