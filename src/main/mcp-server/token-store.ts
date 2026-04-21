@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto'
 const TOKEN_BYTES = 32
 const FILE_MODE = 0o600
 const DIR_MODE = 0o700
+const TOKEN_HEX_PATTERN = new RegExp(`^[0-9a-f]{${TOKEN_BYTES * 2}}$`)
 
 export interface TokenStoreLogger {
   warn(msg: string): void
@@ -18,6 +19,10 @@ export interface TokenStoreOptions {
 
 export function tokenFilePath(): string {
   return join(homedir(), '.bde', 'mcp-token')
+}
+
+function isWellFormedToken(value: string): boolean {
+  return TOKEN_HEX_PATTERN.test(value)
 }
 
 async function lockParentDirectoryPermissions(filePath: string): Promise<void> {
@@ -55,6 +60,24 @@ async function generateAndWrite(filePath: string): Promise<string> {
   return token
 }
 
+async function warnIfModeDrifted(
+  filePath: string,
+  logger: TokenStoreLogger | undefined
+): Promise<void> {
+  if (!logger) return
+  try {
+    const stat = await fs.stat(filePath)
+    const mode = stat.mode & 0o777
+    if (mode !== FILE_MODE) {
+      logger.warn(
+        `token-store: token file mode drifted to ${mode.toString(8)} at ${filePath} — expected ${FILE_MODE.toString(8)}`
+      )
+    }
+  } catch {
+    // Non-fatal: a stat failure shouldn't lock the user out of their server.
+  }
+}
+
 export async function readOrCreateToken(
   filePath: string = tokenFilePath(),
   options: TokenStoreOptions = {}
@@ -63,7 +86,10 @@ export async function readOrCreateToken(
   try {
     const contents = await fs.readFile(filePath, 'utf8')
     const token = contents.trim()
-    if (/^[0-9a-f]{64}$/.test(token)) return token
+    if (isWellFormedToken(token)) {
+      await warnIfModeDrifted(filePath, logger)
+      return token
+    }
     logger?.warn(`token-store: corrupt token at ${filePath} — regenerating`)
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code

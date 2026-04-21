@@ -137,8 +137,42 @@ describe('token-store', () => {
     expect(message).toContain(filePath)
   })
 
+  it('warns when a valid token on disk has drifted from mode 0o600', async () => {
+    const logger = makeTestLogger()
+    const validToken = 'a'.repeat(64)
+    await fs.writeFile(filePath, validToken + '\n')
+    await fs.chmod(filePath, 0o644)
+
+    const token = await readOrCreateToken(filePath, { logger })
+
+    expect(token).toBe(validToken)
+    expect(logger.warn).toHaveBeenCalledTimes(1)
+    const message = logger.warn.mock.calls[0][0] as string
+    expect(message).toContain('drifted')
+    expect(message).toContain(filePath)
+  })
+
+  it('does not warn when a valid token is at mode 0o600', async () => {
+    const logger = makeTestLogger()
+    await readOrCreateToken(filePath, { logger })
+
+    await readOrCreateToken(filePath, { logger })
+
+    expect(logger.warn).not.toHaveBeenCalled()
+  })
+
   it('writes the token file with mode 0o600 after generation', async () => {
     await regenerateToken(filePath)
+    const stat = await fs.stat(filePath)
+    expect(stat.mode & 0o777).toBe(0o600)
+  })
+
+  it('regeneration after corrupt content keeps mode 0o600', async () => {
+    await fs.writeFile(filePath, 'garbage\n', { mode: 0o644 })
+    await fs.chmod(filePath, 0o644)
+
+    await readOrCreateToken(filePath)
+
     const stat = await fs.stat(filePath)
     expect(stat.mode & 0o777).toBe(0o600)
   })
