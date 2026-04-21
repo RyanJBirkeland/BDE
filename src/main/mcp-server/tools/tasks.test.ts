@@ -265,6 +265,60 @@ describe('tasks.* write tools', () => {
     expect(patch).toMatchObject({ priority: 9 })
   })
 
+  it('tasks.update terminal→queued revival applies all seven reset fields; non-revival adds none (RC6)', async () => {
+    const revivingDeps = fakeDeps({
+      getTask: vi.fn(() =>
+        fakeTask({
+          id: 't1',
+          status: 'failed',
+          failure_reason: 'build failed',
+          retry_count: 2,
+          fast_fail_count: 1,
+          claimed_by: 'agent-x',
+          started_at: '2026-04-17T00:00:00.000Z',
+          completed_at: '2026-04-17T00:30:00.000Z',
+          next_eligible_at: '2026-04-17T01:00:00.000Z'
+        })
+      ),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'queued' }))
+    })
+    const { server: srv1, call: call1 } = mockServer()
+    registerTaskTools(srv1, revivingDeps)
+    await call1('tasks.update', { id: 't1', patch: { status: 'queued' } })
+    const revivalPatch = (revivingDeps.updateTask as any).mock.calls[0][1]
+    expect(revivalPatch).toEqual({
+      status: 'queued',
+      completed_at: null,
+      failure_reason: null,
+      claimed_by: null,
+      started_at: null,
+      retry_count: 0,
+      fast_fail_count: 0,
+      next_eligible_at: null
+    })
+
+    const queuedToActiveDeps = fakeDeps({
+      getTask: vi.fn(() => fakeTask({ id: 't1', status: 'queued' })),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'active' }))
+    })
+    const { server: srv2, call: call2 } = mockServer()
+    registerTaskTools(srv2, queuedToActiveDeps)
+    await call2('tasks.update', { id: 't1', patch: { status: 'active' } })
+    const nonRevivalPatch = (queuedToActiveDeps.updateTask as any).mock.calls[0][1]
+    for (const field of [
+      'completed_at',
+      'failure_reason',
+      'claimed_by',
+      'started_at',
+      'retry_count',
+      'fast_fail_count',
+      'next_eligible_at'
+    ]) {
+      expect(nonRevivalPatch).not.toHaveProperty(field)
+    }
+    expect(nonRevivalPatch).toEqual({ status: 'active' })
+  })
+
   it('tasks.cancel routes through cancelTask (which triggers onStatusTerminal)', async () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
