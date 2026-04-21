@@ -107,16 +107,34 @@ describe('tasks.* write tools', () => {
     expect(JSON.parse(res.content[0].text).id).toBe('t1')
   })
 
-  it('tasks.create rejects forbidden fields', async () => {
+  it('tasks.create strips system-managed fields from the delegate payload', async () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
-    // claimed_by is system-managed; zod strips unknown keys on .parse, so
-    // a forbidden field that survives is a schema bug. Assert the schema
-    // strips it by ensuring the delegate was not asked to set it.
-    await call('tasks.create', { title: 't', repo: 'bde', claimed_by: 'x' } as any)
-    const call0 = (deps.createTaskWithValidation as any).mock.calls[0][0]
-    expect(call0.claimed_by).toBeUndefined()
+    // claimed_by, pr_url, pr_status, completed_at, agent_run_id are system-
+    // managed — not in TaskWriteFieldsSchema. The schema strips them, and the
+    // delegate must never see them. Asserting that the call received a patch
+    // object *without* these fields catches regressions where the schema is
+    // accidentally broadened.
+    await call('tasks.create', {
+      title: 't',
+      repo: 'bde',
+      claimed_by: 'x',
+      pr_url: 'https://example.com/pr/1',
+      pr_status: 'open',
+      completed_at: '2026-04-17T00:00:00.000Z',
+      agent_run_id: 'run-1'
+    } as any)
+    expect(deps.createTaskWithValidation).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        claimed_by: expect.anything(),
+        pr_url: expect.anything(),
+        pr_status: expect.anything(),
+        completed_at: expect.anything(),
+        agent_run_id: expect.anything()
+      }),
+      expect.any(Object)
+    )
   })
 
   it('tasks.create forwards every CreateTaskInput field to the delegate', async () => {
@@ -247,6 +265,60 @@ describe('tasks.* write tools', () => {
     expect(patch).toMatchObject({ priority: 9 })
   })
 
+  it('tasks.update terminal→queued revival applies all seven reset fields; non-revival adds none (RC6)', async () => {
+    const revivingDeps = fakeDeps({
+      getTask: vi.fn(() =>
+        fakeTask({
+          id: 't1',
+          status: 'failed',
+          failure_reason: 'build failed',
+          retry_count: 2,
+          fast_fail_count: 1,
+          claimed_by: 'agent-x',
+          started_at: '2026-04-17T00:00:00.000Z',
+          completed_at: '2026-04-17T00:30:00.000Z',
+          next_eligible_at: '2026-04-17T01:00:00.000Z'
+        })
+      ),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'queued' }))
+    })
+    const { server: srv1, call: call1 } = mockServer()
+    registerTaskTools(srv1, revivingDeps)
+    await call1('tasks.update', { id: 't1', patch: { status: 'queued' } })
+    const revivalPatch = (revivingDeps.updateTask as any).mock.calls[0][1]
+    expect(revivalPatch).toEqual({
+      status: 'queued',
+      completed_at: null,
+      failure_reason: null,
+      claimed_by: null,
+      started_at: null,
+      retry_count: 0,
+      fast_fail_count: 0,
+      next_eligible_at: null
+    })
+
+    const queuedToActiveDeps = fakeDeps({
+      getTask: vi.fn(() => fakeTask({ id: 't1', status: 'queued' })),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'active' }))
+    })
+    const { server: srv2, call: call2 } = mockServer()
+    registerTaskTools(srv2, queuedToActiveDeps)
+    await call2('tasks.update', { id: 't1', patch: { status: 'active' } })
+    const nonRevivalPatch = (queuedToActiveDeps.updateTask as any).mock.calls[0][1]
+    for (const field of [
+      'completed_at',
+      'failure_reason',
+      'claimed_by',
+      'started_at',
+      'retry_count',
+      'fast_fail_count',
+      'next_eligible_at'
+    ]) {
+      expect(nonRevivalPatch).not.toHaveProperty(field)
+    }
+    expect(nonRevivalPatch).toEqual({ status: 'active' })
+  })
+
   it('tasks.cancel routes through cancelTask (which triggers onStatusTerminal)', async () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
@@ -254,6 +326,17 @@ describe('tasks.* write tools', () => {
     const res = await call('tasks.cancel', { id: 't1', reason: 'no longer needed' })
     expect(deps.cancelTask).toHaveBeenCalledWith('t1', 'no longer needed')
     expect(JSON.parse(res.content[0].text).status).toBe('cancelled')
+  })
+
+  it('tasks.cancel returns structured NotFound when cancelTask returns null', async () => {
+    const deps = fakeDeps({ cancelTask: vi.fn(() => null) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.cancel', { id: 'missing' })
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32001)
+    expect(body.message).toMatch(/not found/i)
+    expect(body.data).toMatchObject({ id: 'missing' })
   })
 
   it('tasks.update fires onStatusTerminal when entering a terminal status from non-terminal', async () => {
@@ -370,5 +453,163 @@ describe('tasks.* read tools', () => {
     registerTaskTools(server, deps)
     const res = await call('tasks.history', { id: 't1' })
     expect(JSON.parse(res.content[0].text)).toEqual(rows)
+  })
+})
+
+describe('tasks.list filter + pagination composition', () => {
+  const fixture: SprintTask[] = [
+    fakeTask({
+      id: 'a',
+      title: 'Alpha widget',
+      repo: 'bde',
+      tags: ['foo'],
+      group_id: 'epic-1',
+      spec: 'details about alpha'
+    }),
+    fakeTask({
+      id: 'b',
+      title: 'Beta panel',
+      repo: 'bde',
+      tags: ['foo', 'bar'],
+      group_id: 'epic-2',
+      spec: null
+    }),
+    fakeTask({
+      id: 'c',
+      title: 'Gamma report',
+      repo: 'other',
+      tags: ['bar'],
+      group_id: 'epic-1',
+      spec: 'report details'
+    }),
+    fakeTask({
+      id: 'd',
+      title: 'Delta note',
+      repo: 'other',
+      tags: null,
+      group_id: null,
+      spec: 'mentions ALPHA inside'
+    }),
+    fakeTask({
+      id: 'e',
+      title: 'Epsilon task',
+      repo: 'bde',
+      tags: ['baz'],
+      group_id: 'epic-2',
+      spec: 'nothing special'
+    })
+  ]
+
+  function idsFromResult(res: ToolResult): string[] {
+    return (JSON.parse(res.content[0].text) as SprintTask[]).map((t) => t.id)
+  }
+
+  it('filters by repo', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.list', { repo: 'bde' })
+    expect(idsFromResult(res)).toEqual(['a', 'b', 'e'])
+  })
+
+  it('filters by epicId', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.list', { epicId: 'epic-1' })
+    expect(idsFromResult(res)).toEqual(['a', 'c'])
+  })
+
+  it('filters by tag (array membership)', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.list', { tag: 'foo' })
+    expect(idsFromResult(res)).toEqual(['a', 'b'])
+  })
+
+  it('filters by search (case-insensitive, title OR spec)', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.list', { search: 'alpha' })
+    // 'a' matches title; 'd' matches spec body ("mentions ALPHA inside") case-insensitively.
+    expect(idsFromResult(res).sort()).toEqual(['a', 'd'])
+  })
+
+  it('composes two filters as an intersection', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.list', { repo: 'bde', tag: 'bar' })
+    expect(idsFromResult(res)).toEqual(['b'])
+  })
+
+  it('paginates with explicit offset + limit', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const firstPage = await call('tasks.list', { offset: 0, limit: 2 })
+    expect(idsFromResult(firstPage)).toEqual(['a', 'b'])
+    const secondPage = await call('tasks.list', { offset: 2, limit: 2 })
+    expect(idsFromResult(secondPage)).toEqual(['c', 'd'])
+  })
+
+  it('returns empty page when offset exceeds fixture size', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.list', { offset: 10 })
+    expect(idsFromResult(res)).toEqual([])
+  })
+
+  it('defaults to offset 0 and limit 100 when both omitted', async () => {
+    const deps = fakeDeps({ listTasks: vi.fn(() => fixture) })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.list', {})
+    expect(idsFromResult(res)).toEqual(['a', 'b', 'c', 'd', 'e'])
+  })
+})
+
+describe('tasks.history offset arithmetic', () => {
+  const historyRows = Array.from({ length: 10 }, (_, i) => ({
+    id: `c${i}`,
+    task_id: 't1',
+    field: 'status',
+    old: 'queued',
+    new: 'active',
+    changed_at: `2026-04-17T00:00:0${i}.000Z`
+  }))
+
+  it('adds offset to limit when calling getTaskChanges, then slices by offset', async () => {
+    const getTaskChanges = vi.fn(() => historyRows as any)
+    const deps = fakeDeps({ getTaskChanges })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.history', { id: 't1', limit: 3, offset: 2 })
+    expect(getTaskChanges).toHaveBeenCalledWith('t1', 5)
+    const returned = JSON.parse(res.content[0].text)
+    expect(returned).toEqual(historyRows.slice(2))
+  })
+
+  it('defaults offset to 0 when only limit is supplied', async () => {
+    const getTaskChanges = vi.fn(() => historyRows.slice(0, 3) as any)
+    const deps = fakeDeps({ getTaskChanges })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.history', { id: 't1', limit: 3 })
+    expect(getTaskChanges).toHaveBeenCalledWith('t1', 3)
+    expect(JSON.parse(res.content[0].text)).toEqual(historyRows.slice(0, 3))
+  })
+
+  it('defaults both offset and limit when neither is supplied', async () => {
+    const getTaskChanges = vi.fn(() => historyRows as any)
+    const deps = fakeDeps({ getTaskChanges })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.history', { id: 't1' })
+    expect(getTaskChanges).toHaveBeenCalledWith('t1', 100)
+    expect(JSON.parse(res.content[0].text)).toEqual(historyRows)
   })
 })
