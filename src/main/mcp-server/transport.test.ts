@@ -64,6 +64,9 @@ interface MockResponse {
 function createMockResponse(): MockResponse {
   const written = { status: 0, headers: {} as Record<string, string>, body: '' }
   const res = {
+    setHeader: vi.fn((name: string, value: string) => {
+      written.headers[name] = value
+    }),
     writeHead: vi.fn((status: number, headers?: Record<string, string>) => {
       written.status = status
       if (headers) Object.assign(written.headers, headers)
@@ -216,6 +219,47 @@ describe('transport handler delegation to the SDK', () => {
     expect(written.status).toBe(404)
     expect(written.body).toContain('Not found')
     expect(transportInstances).toHaveLength(0)
+  })
+})
+
+describe('transport handler HTTP method allow-list (T-44)', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  const forbiddenMethods = ['GET', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'] as const
+
+  forbiddenMethods.forEach((method) => {
+    it(`rejects ${method} with 405, Allow: POST, and JSON-RPC envelope`, async () => {
+      const mockServer = createMockMcpServer()
+      const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+      const req = createMockRequest({
+        method,
+        headers: {
+          host: '127.0.0.1:18792',
+          authorization: `Bearer ${validToken}`
+        }
+      })
+      const { res, written } = createMockResponse()
+
+      await handler.handle(req, res)
+
+      expect(written.status).toBe(405)
+      expect(written.headers['Allow']).toBe('POST')
+      const parsed = JSON.parse(written.body)
+      expect(parsed.jsonrpc).toBe('2.0')
+      expect(parsed.id).toBe(null)
+      expect(parsed.error).toMatchObject({
+        code: expect.any(Number),
+        message: expect.stringMatching(/POST/)
+      })
+      expect(transportInstances).toHaveLength(0)
+    })
   })
 })
 

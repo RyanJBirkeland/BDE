@@ -1,7 +1,7 @@
 /**
  * Thin HTTP wrapper around the MCP SDK's Streamable HTTP transport.
- * Adds bearer-token auth and structured error logging before delegating
- * to the SDK's own request handler.
+ * Adds bearer-token auth, defense-in-depth request gating, and structured
+ * error logging before delegating to the SDK's own request handler.
  *
  * The MCP SDK's stateless transport cannot be reused across requests — each
  * HTTP request requires a fresh transport + server instance. We accept a
@@ -19,6 +19,9 @@ export interface TransportHandler {
   close: () => Promise<void>
 }
 
+const ALLOWED_METHOD = 'POST'
+const JSON_RPC_INVALID_REQUEST = -32600 // JSON-RPC 2.0 spec: "The JSON sent is not a valid Request."
+
 export function createTransportHandler(
   buildMcpServer: () => McpServer,
   token: string,
@@ -30,6 +33,10 @@ export function createTransportHandler(
       if (req.url !== '/mcp') {
         res.writeHead(404, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: 'Not found' }))
+        return
+      }
+      if (req.method !== ALLOWED_METHOD) {
+        writeMethodNotAllowed(res, logger)
         return
       }
       const auth = checkBearerAuth(req, token)
@@ -72,6 +79,19 @@ export function createTransportHandler(
       // Nothing to close — stateless mode creates no persistent resources.
     }
   }
+}
+
+function writeMethodNotAllowed(res: ServerResponse, logger: Logger): void {
+  const message = `Only ${ALLOWED_METHOD} is allowed on /mcp`
+  logger.warn(`mcp transport method not allowed: ${message}`)
+  res.setHeader('Allow', ALLOWED_METHOD)
+  res.writeHead(405, { 'Content-Type': 'application/json' })
+  const body = {
+    jsonrpc: '2.0' as const,
+    id: null,
+    error: { code: JSON_RPC_INVALID_REQUEST, message }
+  }
+  res.end(JSON.stringify(body))
 }
 
 function formatTransportError(err: unknown): string {
