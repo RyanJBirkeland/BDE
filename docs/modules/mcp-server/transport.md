@@ -10,6 +10,18 @@ Wraps the MCP SDK's `StreamableHTTPServerTransport` with bearer-token authentica
 - `createTransportHandler(buildMcpServer, token, port, logger)` — creates the handler; accepts a factory that produces a fresh `McpServer` per request (required by the SDK's stateless transport, which cannot be reused across requests)
 - `TransportHandler` — interface with `handle(req, res)` and `close()` methods
 
+## `handle()` in outline
+```
+handle(req, res):
+  enforceRoute          → 404 / 405 and bail
+  checkAuthorization    → 401 and bail via rejectUnauthorized
+  readBoundedBody       → 413 / 400 and bail, or returns parsedBody
+  buildRequestScope     → fresh per-request McpServer + transport pair
+  dispatch              → server.connect / transport.handleRequest
+    → scheduleCleanup registers a bounded res.on('close')
+```
+Each helper is a top-level function sitting at the abstraction level below `handle()`, so the file reads top-to-bottom as prose.
+
 ## Request gates (applied in order before the SDK sees the request)
 1. **URL allow-list** — only `/mcp` is accepted; anything else returns `404`.
 2. **HTTP method allow-list (T-44)** — only `POST` is accepted; any other method returns `405` with an `Allow: POST` header and a JSON-RPC error envelope (`code: -32600`).
