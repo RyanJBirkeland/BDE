@@ -8,6 +8,7 @@ Bearer-token authentication middleware for HTTP requests. Uses constant-time com
 
 ## Public API
 - `checkBearerAuth(req, expected)` — validates `Authorization: Bearer <token>` header against expected token; returns `{ ok: true }` or `{ ok: false, status: 401, message }`
+- `parseBearerToken(headerValue)` — returns the token string when the value starts with the `Bearer ` scheme and carries a non-empty token; surrounding whitespace on the token is trimmed (documented tolerance); returns `null` otherwise
 - `AuthResult` — union type for auth result
 
 ## Key Dependencies

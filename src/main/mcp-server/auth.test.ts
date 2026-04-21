@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { checkBearerAuth } from './auth'
+import { checkBearerAuth, parseBearerToken } from './auth'
 import type { IncomingMessage } from 'node:http'
 
 function fakeReq(headers: Record<string, string | string[]>): IncomingMessage {
@@ -87,5 +87,37 @@ describe('checkBearerAuth', () => {
       expect(result.status).toBe(401)
       expect(result.message).toBe('invalid bearer token')
     }
+  })
+})
+
+describe('parseBearerToken', () => {
+  const token = 'a'.repeat(64)
+
+  it('returns the token when header carries a well-formed Bearer scheme', () => {
+    expect(parseBearerToken(`Bearer ${token}`)).toBe(token)
+  })
+
+  it('returns null when header does not start with the Bearer scheme', () => {
+    expect(parseBearerToken(`Basic ${token}`)).toBeNull()
+  })
+
+  it('returns null for a lowercase "bearer" scheme (case-sensitive)', () => {
+    expect(parseBearerToken(`bearer ${token}`)).toBeNull()
+  })
+
+  it('returns null when the scheme prefix is present but the token is empty', () => {
+    expect(parseBearerToken('Bearer ')).toBeNull()
+  })
+
+  it('returns null when the scheme prefix is present but the remainder is only whitespace', () => {
+    expect(parseBearerToken('Bearer    ')).toBeNull()
+  })
+
+  it('trims surrounding whitespace from the token (documented tolerance)', () => {
+    expect(parseBearerToken(`Bearer   ${token}   `)).toBe(token)
+  })
+
+  it('returns null for the empty string', () => {
+    expect(parseBearerToken('')).toBeNull()
   })
 })
