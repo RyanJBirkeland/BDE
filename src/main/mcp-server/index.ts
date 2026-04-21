@@ -3,6 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { broadcast } from '../broadcast'
 import { createLogger } from '../logger'
 import {
+  TaskTransitionError,
   cancelTask,
   createTaskWithValidation,
   getTask,
@@ -18,7 +19,8 @@ import { createTransportHandler } from './transport'
 import { registerTaskTools } from './tools/tasks'
 import { registerEpicTools } from './tools/epics'
 import { registerMetaTools } from './tools/meta'
-import { toJsonRpcError } from './errors'
+import { McpDomainError, McpErrorCode, writeJsonRpcError } from './errors'
+import { wrapServerWithSafeToolHandlers } from './safe-tool-handler'
 
 const logger = createLogger('mcp-server')
 
@@ -41,7 +43,10 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
   let transportHandler: ReturnType<typeof createTransportHandler> | null = null
 
   function buildMcp(): McpServer {
-    const mcp = new McpServer({ name: 'bde', version: '1.0.0' })
+    const mcp = wrapServerWithSafeToolHandlers(
+      new McpServer({ name: 'bde', version: '1.0.0' }),
+      logger
+    )
 
     registerMetaTools(mcp, {
       getRepos: () => getSettingJson<RepoConfig[]>('repos') ?? []
@@ -52,8 +57,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       getTask,
       createTaskWithValidation,
       updateTask,
-      cancelTask: (id, reason) =>
-        cancelTask(id, { reason }, { onStatusTerminal: deps.onStatusTerminal, logger }),
+      cancelTask: cancelTaskForMcp,
       getTaskChanges: (id, limit) => getTaskChanges(id, limit),
       logger
     })
@@ -63,6 +67,17 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
     return mcp
   }
 
+  async function cancelTaskForMcp(
+    id: string,
+    reason?: string
+  ): ReturnType<typeof cancelTask> {
+    try {
+      return await cancelTask(id, { reason }, { onStatusTerminal: deps.onStatusTerminal, logger })
+    } catch (err) {
+      throw translateCancelError(err)
+    }
+  }
+
   return {
     async start(): Promise<number> {
       const token = await readOrCreateToken()
@@ -70,11 +85,10 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       return new Promise<number>((resolve, reject) => {
         httpServer = http.createServer((req, res) => {
           transportHandler!.handle(req, res).catch((err) => {
-            const body = JSON.stringify({ jsonrpc: '2.0', error: toJsonRpcError(err) })
-            if (!res.headersSent) {
-              res.writeHead(500, { 'Content-Type': 'application/json' })
-            }
-            res.end(body)
+            logger.error(
+              `mcp transport unhandled: ${req.method ?? '?'} ${req.url ?? '?'} — ${formatRequestError(err)}`
+            )
+            writeJsonRpcError(res, 500, err, { logger })
           })
         })
         httpServer.on('error', (err) => {
@@ -109,4 +123,25 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       }
     }
   }
+}
+
+function formatRequestError(err: unknown): string {
+  if (err instanceof Error) return err.stack ?? err.message
+  return String(err)
+}
+
+/**
+ * Translate service-layer throws from `cancelTask` into the MCP error
+ * vocabulary. Exported for unit tests — the production call site lives
+ * inside `createMcpServer`'s `cancelTaskForMcp` closure.
+ */
+export function translateCancelError(err: unknown): unknown {
+  if (err instanceof TaskTransitionError) {
+    return new McpDomainError(err.message, McpErrorCode.InvalidTransition, {
+      taskId: err.taskId,
+      fromStatus: err.fromStatus,
+      toStatus: err.toStatus
+    })
+  }
+  return err
 }
