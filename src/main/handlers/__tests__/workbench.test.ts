@@ -91,7 +91,7 @@ vi.mock('../../env-utils', () => ({
 // into runSdkStreaming / DEFAULT_CONFIG / DEFAULT_SETTINGS. Haiku is the
 // only agreed-upon non-default sentinel across the routing test suite.
 vi.mock('../../agent-manager/backend-selector', () => ({
-  resolveAgentRuntime: (type: string) => ({
+  resolveAgentRuntime: (type: import('../../agent-system/personality/types').AgentType) => ({
     backend: 'claude',
     model: type === 'copilot' ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-5'
   })
