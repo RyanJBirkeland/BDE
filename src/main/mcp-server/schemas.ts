@@ -97,10 +97,26 @@ export const TaskCancelSchema = z.object({
   reason: z.string().max(500).optional().describe('Cancellation reason (max 500 chars)')
 })
 
+/**
+ * Default page size when `limit` is omitted. Kept in sync with the
+ * `limit + offset ≤ TASK_HISTORY_MAX_WINDOW` cap applied in
+ * `tools/tasks.ts`; beyond that window the DB cost is dominated by the
+ * skipped rows and dwarfs the returned page.
+ */
+export const TASK_HISTORY_DEFAULT_LIMIT = 100
+export const TASK_HISTORY_MAX_WINDOW = 500
+
 export const TaskHistorySchema = z.object({
   id: z.string().min(1).describe('Task id'),
   limit: z.number().int().min(1).max(500).optional().describe('Page size (1-500)'),
-  offset: z.number().int().min(0).optional().describe('Pagination offset (>=0)')
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe(
+      `Pagination offset (>=0); (limit ?? ${TASK_HISTORY_DEFAULT_LIMIT}) + offset must be <= ${TASK_HISTORY_MAX_WINDOW}`
+    )
 })
 
 // --- Epic schemas -----------------------------------------------------------

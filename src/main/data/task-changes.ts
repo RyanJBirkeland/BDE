@@ -87,21 +87,49 @@ export function recordTaskChangesBulk(
   }
 }
 
+export interface GetTaskChangesOptions {
+  /** Maximum rows to return (default 50). */
+  limit?: number
+  /** Rows to skip before the returned page (default 0). */
+  offset?: number
+}
+
+const DEFAULT_HISTORY_LIMIT = 50
+
 /**
  * Get change history for a task, most recent first.
+ *
+ * Accepts either a bare numeric limit (legacy signature) or an options
+ * object so the pagination is pushed into SQL (`LIMIT ? OFFSET ?`)
+ * instead of being implemented as `fetch(limit+offset).slice(offset)`
+ * at the call site. Unbounded offsets are rejected upstream by the
+ * MCP schema cap.
  */
 export function getTaskChanges(
   taskId: string,
-  limit: number = 50,
+  limitOrOptions?: number | GetTaskChangesOptions,
   db?: Database.Database
 ): TaskChange[] {
+  const { limit, offset } = normalizeHistoryOptions(limitOrOptions)
   const conn = db ?? getDb()
   return conn
     .prepare(
       `SELECT id, task_id, field, old_value, new_value, changed_by, changed_at
-       FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC LIMIT ?`
+       FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC LIMIT ? OFFSET ?`
     )
-    .all(taskId, limit) as TaskChange[]
+    .all(taskId, limit, offset) as TaskChange[]
+}
+
+function normalizeHistoryOptions(
+  limitOrOptions: number | GetTaskChangesOptions | undefined
+): { limit: number; offset: number } {
+  if (typeof limitOrOptions === 'number') {
+    return { limit: limitOrOptions, offset: 0 }
+  }
+  return {
+    limit: limitOrOptions?.limit ?? DEFAULT_HISTORY_LIMIT,
+    offset: limitOrOptions?.offset ?? 0
+  }
 }
 
 /**

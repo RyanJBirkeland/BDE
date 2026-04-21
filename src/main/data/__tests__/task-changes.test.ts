@@ -118,6 +118,54 @@ describe('getTaskChanges', () => {
   })
 })
 
+describe('getTaskChanges — offset pagination (T-3)', () => {
+  function seedRows(taskId: string, count: number): void {
+    const stmt = db.prepare(
+      'INSERT INTO task_changes (task_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    for (let i = 0; i < count; i++) {
+      const ts = new Date(2026, 0, 1, 0, 0, i).toISOString()
+      stmt.run(taskId, 'status', `"${i}"`, `"${i + 1}"`, 'user', ts)
+    }
+  }
+
+  it('accepts options object with limit + offset and pushes pagination into SQL', () => {
+    seedRows('task-offset-1', 10)
+    const page = getTaskChanges('task-offset-1', { limit: 3, offset: 2 }, db)
+    expect(page).toHaveLength(3)
+    // Rows are returned most-recent-first, so the first 3 (offsets 0,1,2) are
+    // the three newest. Skipping offset=2 gives us rows i=7,6,5 serialized as
+    // "8","7","6".
+    expect(page.map((row) => row.new_value)).toEqual(['"8"', '"7"', '"6"'])
+  })
+
+  it('defaults offset to 0 when only limit is provided', () => {
+    seedRows('task-offset-2', 5)
+    const page = getTaskChanges('task-offset-2', { limit: 2 }, db)
+    expect(page).toHaveLength(2)
+    expect(page.map((row) => row.new_value)).toEqual(['"5"', '"4"'])
+  })
+
+  it('defaults limit to 50 when only offset is provided', () => {
+    seedRows('task-offset-3', 60)
+    const page = getTaskChanges('task-offset-3', { offset: 5 }, db)
+    // Remaining 55 rows — the default limit caps at 50.
+    expect(page).toHaveLength(50)
+  })
+
+  it('preserves legacy number signature for existing callers', () => {
+    seedRows('task-offset-4', 3)
+    const page = getTaskChanges('task-offset-4', 2, db)
+    expect(page).toHaveLength(2)
+  })
+
+  it('returns an empty page when offset exceeds the number of rows', () => {
+    seedRows('task-offset-5', 3)
+    const page = getTaskChanges('task-offset-5', { limit: 10, offset: 10 }, db)
+    expect(page).toEqual([])
+  })
+})
+
 describe('pruneOldChanges', () => {
   it('removes records older than threshold', () => {
     const stmt = db.prepare(

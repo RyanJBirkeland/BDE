@@ -572,7 +572,7 @@ describe('tasks.list filter + pagination composition', () => {
   })
 })
 
-describe('tasks.history offset arithmetic', () => {
+describe('tasks.history — pagination pushed into the data layer (T-3)', () => {
   const historyRows = Array.from({ length: 10 }, (_, i) => ({
     id: `c${i}`,
     task_id: 't1',
@@ -582,34 +582,69 @@ describe('tasks.history offset arithmetic', () => {
     changed_at: `2026-04-17T00:00:0${i}.000Z`
   }))
 
-  it('adds offset to limit when calling getTaskChanges, then slices by offset', async () => {
-    const getTaskChanges = vi.fn(() => historyRows as any)
+  it('forwards both limit and offset to getTaskChanges verbatim', async () => {
+    const getTaskChanges = vi.fn(() => historyRows.slice(2, 5) as any)
     const deps = fakeDeps({ getTaskChanges })
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
     const res = await call('tasks.history', { id: 't1', limit: 3, offset: 2 })
-    expect(getTaskChanges).toHaveBeenCalledWith('t1', 5)
+    expect(getTaskChanges).toHaveBeenCalledWith('t1', { limit: 3, offset: 2 })
     const returned = JSON.parse(res.content[0].text)
-    expect(returned).toEqual(historyRows.slice(2))
+    // The data layer has already paginated; the tool no longer slices.
+    expect(returned).toEqual(historyRows.slice(2, 5))
   })
 
-  it('defaults offset to 0 when only limit is supplied', async () => {
+  it('omits offset when only limit is supplied', async () => {
     const getTaskChanges = vi.fn(() => historyRows.slice(0, 3) as any)
     const deps = fakeDeps({ getTaskChanges })
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
     const res = await call('tasks.history', { id: 't1', limit: 3 })
-    expect(getTaskChanges).toHaveBeenCalledWith('t1', 3)
+    expect(getTaskChanges).toHaveBeenCalledWith('t1', { limit: 3, offset: undefined })
     expect(JSON.parse(res.content[0].text)).toEqual(historyRows.slice(0, 3))
   })
 
-  it('defaults both offset and limit when neither is supplied', async () => {
+  it('forwards empty options when neither limit nor offset is supplied', async () => {
     const getTaskChanges = vi.fn(() => historyRows as any)
     const deps = fakeDeps({ getTaskChanges })
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
     const res = await call('tasks.history', { id: 't1' })
-    expect(getTaskChanges).toHaveBeenCalledWith('t1', 100)
+    expect(getTaskChanges).toHaveBeenCalledWith('t1', { limit: undefined, offset: undefined })
     expect(JSON.parse(res.content[0].text)).toEqual(historyRows)
+  })
+
+  it('rejects windows exceeding limit + offset <= 500 with ValidationFailed', async () => {
+    const getTaskChanges = vi.fn(() => [] as any)
+    const deps = fakeDeps({ getTaskChanges })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.history', { id: 't1', limit: 100, offset: 401 })
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32005)
+    expect(body.message).toMatch(/exceeds 500/)
+    expect(body.data).toMatchObject({ limit: 100, offset: 401, cap: 500 })
+    expect(getTaskChanges).not.toHaveBeenCalled()
+  })
+
+  it('allows exactly limit + offset === 500', async () => {
+    const getTaskChanges = vi.fn(() => [] as any)
+    const deps = fakeDeps({ getTaskChanges })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.history', { id: 't1', limit: 100, offset: 400 })
+    expect(res.isError).toBeUndefined()
+    expect(getTaskChanges).toHaveBeenCalledWith('t1', { limit: 100, offset: 400 })
+  })
+
+  it('rejects when default limit (100) + large offset crosses the cap', async () => {
+    const getTaskChanges = vi.fn(() => [] as any)
+    const deps = fakeDeps({ getTaskChanges })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.history', { id: 't1', offset: 401 })
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32005)
+    expect(body.data).toMatchObject({ limit: 100, offset: 401, cap: 500 })
   })
 })

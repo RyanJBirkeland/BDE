@@ -15,7 +15,9 @@ import {
   TaskHistorySchema,
   TaskIdSchema,
   TaskListSchema,
-  TaskUpdateSchema
+  TaskUpdateSchema,
+  TASK_HISTORY_DEFAULT_LIMIT,
+  TASK_HISTORY_MAX_WINDOW
 } from '../schemas'
 import { TERMINAL_STATUSES } from '../../../shared/task-state-machine'
 import { jsonContent, safeToolResponse } from './response'
@@ -83,8 +85,11 @@ export interface TaskQueryPort {
  * Audit-log queries used by `tasks.history`.
  */
 export interface TaskHistoryPort {
-  /** Mirrors the data-layer signature: (taskId, limit?). Offset is applied in the tool handler via slice. */
-  getTaskChanges: (id: string, limit?: number) => TaskChange[]
+  /**
+   * Mirrors the data-layer signature after T-3 — pagination is pushed
+   * into SQL (`LIMIT ? OFFSET ?`) instead of slicing in memory.
+   */
+  getTaskChanges: (id: string, options?: { limit?: number; offset?: number }) => TaskChange[]
 }
 
 /**
@@ -156,11 +161,11 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
       safeToolResponse(
         async () => {
           const { id, limit, offset } = parseToolArgs(TaskHistorySchema, rawArgs)
+          assertHistoryWindowWithinCap(limit, offset)
           const task = deps.getTask(id)
           if (!task) throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
-          const effectiveLimit = (limit ?? 100) + (offset ?? 0)
-          const rows = deps.getTaskChanges(id, effectiveLimit)
-          return jsonContent(rows.slice(offset ?? 0))
+          const rows = deps.getTaskChanges(id, { limit, offset })
+          return jsonContent(rows)
         },
         { schema: TaskHistorySchema, logger: deps.logger }
       )
@@ -277,4 +282,24 @@ async function fireTerminalHookIfNeeded(
   if (!TERMINAL_STATUSES.has(post.status)) return
   if (TERMINAL_STATUSES.has(pre.status)) return
   await deps.onStatusTerminal(post.id, post.status)
+}
+
+/**
+ * Reject `tasks.history` requests whose reach into the table exceeds
+ * `TASK_HISTORY_MAX_WINDOW`. Beyond this window SQLite pays the full
+ * scan cost for the skipped rows — effectively an unbounded query.
+ */
+function assertHistoryWindowWithinCap(
+  limit: number | undefined,
+  offset: number | undefined
+): void {
+  const effectiveLimit = limit ?? TASK_HISTORY_DEFAULT_LIMIT
+  const effectiveOffset = offset ?? 0
+  if (effectiveLimit + effectiveOffset > TASK_HISTORY_MAX_WINDOW) {
+    throw new McpDomainError(
+      `tasks.history window too large: limit (${effectiveLimit}) + offset (${effectiveOffset}) exceeds ${TASK_HISTORY_MAX_WINDOW}`,
+      McpErrorCode.ValidationFailed,
+      { limit: effectiveLimit, offset: effectiveOffset, cap: TASK_HISTORY_MAX_WINDOW }
+    )
+  }
 }
