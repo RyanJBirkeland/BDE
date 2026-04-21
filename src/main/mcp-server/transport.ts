@@ -59,7 +59,7 @@ export function createTransportHandler(
         sessionIdGenerator: undefined,
         enableDnsRebindingProtection: true,
         allowedHosts: ['127.0.0.1', 'localhost', `127.0.0.1:${port}`, `localhost:${port}`],
-        allowedOrigins: []
+        allowedOrigins: allowedOriginsFor(port)
       })
       try {
         await server.connect(transport)
@@ -79,6 +79,20 @@ export function createTransportHandler(
       // Nothing to close — stateless mode creates no persistent resources.
     }
   }
+}
+
+/**
+ * Explicit Origin allow-list — replaces the SDK's "disabled when empty"
+ * behavior so a future CORS change can't silently accept foreign origins.
+ * MCP clients typically send no Origin header; the SDK only enforces when
+ * the header is present.
+ */
+function allowedOriginsFor(port: number): string[] {
+  return [
+    'null', // file:// and sandboxed contexts emit "Origin: null"
+    `http://127.0.0.1:${port}`,
+    `http://localhost:${port}`
+  ]
 }
 
 function writeMethodNotAllowed(res: ServerResponse, logger: Logger): void {

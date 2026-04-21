@@ -15,7 +15,10 @@ Wraps the MCP SDK's `StreamableHTTPServerTransport` with bearer-token authentica
 2. **HTTP method allow-list (T-44)** — only `POST` is accepted; any other method returns `405` with an `Allow: POST` header and a JSON-RPC error envelope (`code: -32600`).
 3. **Bearer token auth** — `Authorization: Bearer <token>` required; failures return `401` with a `WWW-Authenticate` header and JSON-RPC envelope (`code: -32000`).
 
-The SDK then applies DNS-rebinding (Host) validation.
+The SDK then applies DNS-rebinding (Host) validation and the explicit Origin allow-list (T-45) configured at transport construction.
+
+## Origin allow-list (T-45)
+The handler passes an explicit `allowedOrigins` list to every transport instance — `['null', 'http://127.0.0.1:<port>', 'http://localhost:<port>']` — instead of relying on the SDK's disabled-when-empty default. MCP clients typically send no Origin header and the SDK only enforces when one is present, so absent-Origin requests are still accepted.
 
 ## Key Dependencies
 - `auth.ts` — `checkBearerAuth` validates the `Authorization: Bearer` header

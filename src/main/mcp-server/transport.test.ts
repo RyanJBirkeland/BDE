@@ -25,14 +25,20 @@ import type { Logger } from '../logger'
 interface MockTransport {
   handleRequest: ReturnType<typeof vi.fn>
   close: ReturnType<typeof vi.fn>
-  constructorOptions: unknown
+  constructorOptions: { allowedOrigins?: string[]; allowedHosts?: string[] } & Record<
+    string,
+    unknown
+  >
 }
 
 const transportInstances: MockTransport[] = []
 
 vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => {
   return {
-    StreamableHTTPServerTransport: vi.fn(function (this: MockTransport, options: unknown) {
+    StreamableHTTPServerTransport: vi.fn(function (
+      this: MockTransport,
+      options: MockTransport['constructorOptions']
+    ) {
       this.handleRequest = vi.fn().mockResolvedValue(undefined)
       this.close = vi.fn().mockResolvedValue(undefined)
       this.constructorOptions = options
@@ -260,6 +266,38 @@ describe('transport handler HTTP method allow-list (T-44)', () => {
       })
       expect(transportInstances).toHaveLength(0)
     })
+  })
+})
+
+describe('transport handler Origin allow-list (T-45)', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  it('constructs the SDK transport with an explicit loopback Origin allow-list', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const req = createMockRequest({
+      headers: {
+        host: '127.0.0.1:18792',
+        authorization: `Bearer ${validToken}`
+      }
+    })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const transport = latestMockTransport()
+    expect(transport.constructorOptions.allowedOrigins).toEqual([
+      'null',
+      `http://127.0.0.1:${port}`,
+      `http://localhost:${port}`
+    ])
   })
 })
 
