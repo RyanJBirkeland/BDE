@@ -8,13 +8,14 @@ Read-only meta tools that expose BDE enums and configuration to MCP clients with
 
 ## Public API
 - `registerMetaTools(server, deps)` — Registers three MCP tools: `meta.repos`, `meta.taskStatuses`, `meta.dependencyConditions`
-- `MetaToolsDeps` — Dependency injection interface for providing repos list
+- `MetaToolsDeps` — Dependency injection interface; callers provide `getRepos: () => RepoConfig[]`
 
 ## Tools
-- `meta.repos` — Returns array of `RepoConfig` objects from BDE settings
-- `meta.taskStatuses` — Returns object with `statuses` array and `transitions` adjacency object (Set→Array converted)
-- `meta.dependencyConditions` — Returns object with `task` (hard/soft) and `epic` (on_success/always/manual) condition enums
+- `meta.repos` — Returns the `RepoConfig[]` value from `deps.getRepos()`. The production wiring in `index.ts` points this at a memoized `createReposCache()` reader so repeated calls don't re-parse the setting.
+- `meta.taskStatuses` — Returns a frozen `{ statuses, transitions }` payload precomputed at module load from `TASK_STATUSES` and `VALID_TRANSITIONS`. Transitions are a plain adjacency object (`Set` values flattened to arrays) so it serializes cleanly over JSON-RPC.
+- `meta.dependencyConditions` — Returns a frozen payload `{ task: ['hard','soft'], epic: ['on_success','always','manual'] }` precomputed at module load.
 
 ## Key Dependencies
-- `task-state-machine.ts` — Exports `TASK_STATUSES` and `VALID_TRANSITIONS`
+- `task-state-machine.ts` — Source of truth for `TASK_STATUSES` and `VALID_TRANSITIONS`
 - `paths.ts` — `RepoConfig` type definition
+- `response.ts` — `jsonContent()` envelope builder

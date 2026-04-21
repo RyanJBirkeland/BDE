@@ -10,6 +10,29 @@ export interface MetaToolsDeps {
   getRepos: () => RepoConfig[]
 }
 
+/**
+ * `meta.taskStatuses` serves the same static shape on every call — the
+ * state machine is compiled into the binary, not read from config. Freezing
+ * the precomputed payload at module load avoids rebuilding the transitions
+ * adjacency map (and spreading every Set to an array) on each request.
+ */
+const TASK_STATUS_PAYLOAD = Object.freeze({
+  statuses: TASK_STATUSES,
+  transitions: Object.fromEntries(
+    Object.entries(VALID_TRANSITIONS).map(([from, targets]) => [from, [...targets]])
+  )
+})
+
+/**
+ * `meta.dependencyConditions` likewise returns a fixed vocabulary. Freezing
+ * the payload here keeps the handler a one-liner and guarantees no caller
+ * can mutate the shared response object.
+ */
+const DEPENDENCY_CONDITIONS_PAYLOAD = Object.freeze({
+  task: ['hard', 'soft'],
+  epic: ['on_success', 'always', 'manual']
+})
+
 export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void {
   server.tool(
     'meta.repos',
@@ -22,23 +45,13 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
     'meta.taskStatuses',
     'List valid task statuses and allowed transitions.',
     {},
-    async () => {
-      const transitions: Record<string, string[]> = {}
-      for (const [from, targets] of Object.entries(VALID_TRANSITIONS)) {
-        transitions[from] = [...targets]
-      }
-      return jsonContent({ statuses: TASK_STATUSES, transitions })
-    }
+    async () => jsonContent(TASK_STATUS_PAYLOAD)
   )
 
   server.tool(
     'meta.dependencyConditions',
     'List valid dependency condition values for tasks and epics.',
     {},
-    async () =>
-      jsonContent({
-        task: ['hard', 'soft'],
-        epic: ['on_success', 'always', 'manual']
-      })
+    async () => jsonContent(DEPENDENCY_CONDITIONS_PAYLOAD)
   )
 }
