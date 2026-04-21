@@ -51,7 +51,7 @@ const initialState = {
   loading: true,
   loadError: null,
   prMergedMap: {},
-  pendingUpdates: {} as Record<string, { ts: number; fields: string[] }>,
+  pendingUpdates: {} as Record<string, { ts: number; fields: readonly (keyof SprintTask)[] }>,
   pendingCreates: [] as string[]
 }
 
@@ -506,7 +506,7 @@ describe('sprintTasks store', () => {
   describe('loadData — advanced cases', () => {
     it('preserves only pending fields from optimistic version during poll', async () => {
       const optimistic = makeTask('t1', { status: 'active', notes: 'local notes' })
-      const pendingUpdates: Record<string, { ts: number; fields: string[] }> = {
+      const pendingUpdates: Record<string, { ts: number; fields: readonly (keyof SprintTask)[] }> = {
         t1: { ts: Date.now(), fields: ['status'] }
       }
       useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: [] })
@@ -527,7 +527,7 @@ describe('sprintTasks store', () => {
       const optimistic = makeTask('t1', { status: 'active' })
       // Timestamp older than PENDING_UPDATE_TTL (5000ms)
       const oldTs = Date.now() - 6000
-      const pendingUpdates: Record<string, { ts: number; fields: string[] }> = {
+      const pendingUpdates: Record<string, { ts: number; fields: readonly (keyof SprintTask)[] }> = {
         t1: { ts: oldTs, fields: ['status'] }
       }
       useSprintTasks.setState({ tasks: [optimistic], pendingUpdates, pendingCreates: [] })
@@ -548,7 +548,7 @@ describe('sprintTasks store', () => {
         notes: 'old local notes',
         claimed_by: 'agent-1'
       })
-      const pendingUpdates: Record<string, { ts: number; fields: string[] }> = {
+      const pendingUpdates: Record<string, { ts: number; fields: readonly (keyof SprintTask)[] }> = {
         t1: { ts: Date.now(), fields: ['status', 'claimed_by'] }
       }
       useSprintTasks.setState({ tasks: [local], pendingUpdates, pendingCreates: [] })

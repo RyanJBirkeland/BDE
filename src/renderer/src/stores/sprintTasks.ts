@@ -10,7 +10,8 @@ import {
   mergePendingFields,
   expirePendingUpdates,
   trackPendingOperation,
-  type PendingUpdates
+  type PendingUpdates,
+  type SprintTaskField
 } from '../lib/optimisticUpdateManager'
 import { getRepoPaths } from '../services/git'
 import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt } from '../services/sprint'
@@ -35,6 +36,19 @@ export interface CreateTicketInput {
 
 /** How long (ms) to protect an optimistic update from being overwritten by poll data. */
 const PENDING_UPDATE_TTL = 5000
+
+/**
+ * Copy one typed field from the local (optimistic) task onto a server-merged task.
+ * Generic K keeps the assignment type-safe: `target[field] = source[field]` only
+ * compiles when both sides agree on the field's type.
+ */
+function preserveField<K extends SprintTaskField>(
+  target: SprintTask,
+  source: SprintTask,
+  field: K
+): void {
+  target[field] = source[field]
+}
 
 interface SprintTasksState {
   // --- Data ---
@@ -147,9 +161,13 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   updateTask: async (taskId, patch): Promise<void> => {
     const updateId = Date.now() // Unique ID for this update operation
 
-    // Record pending update before optimistic patch, merging fields from prior pending updates
+    // Record pending update before optimistic patch, merging fields from prior pending updates.
+    // `Object.keys(patch)` is typed as `string[]`; narrow it to the SprintTask field union so
+    // `trackPendingOperation` type-checks. `patch: Partial<SprintTask>` guarantees every key is
+    // a valid SprintTaskField at runtime.
+    const patchedFields = Object.keys(patch) as SprintTaskField[]
     set((state) => ({
-      pendingUpdates: trackPendingOperation(state.pendingUpdates, taskId, Object.keys(patch), updateId),
+      pendingUpdates: trackPendingOperation(state.pendingUpdates, taskId, patchedFields, updateId),
       tasks: state.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updated_at: nowIso() } : t))
     }))
     try {
@@ -354,9 +372,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         const pending = state.pendingUpdates[t.id]
         if (pending && Date.now() - pending.ts <= PENDING_UPDATE_TTL) {
           for (const field of pending.fields) {
-            ;(merged as unknown as Record<string, unknown>)[field] = (
-              t as unknown as Record<string, unknown>
-            )[field]
+            preserveField(merged, t, field)
           }
         }
         return merged
