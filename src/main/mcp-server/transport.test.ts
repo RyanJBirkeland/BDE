@@ -120,7 +120,37 @@ describe('transport handler with DNS rebinding protection', () => {
 
     expect(written.status).toBe(401)
     expect(written.headers['WWW-Authenticate']).toBe('Bearer realm="bde-mcp"')
-    expect(written.body).toContain('error')
+    const parsed = JSON.parse(written.body)
+    expect(parsed.jsonrpc).toBe('2.0')
+    expect(parsed.id).toBe(null)
+    expect(parsed.error.code).toBe(-32000)
+    expect(typeof parsed.error.message).toBe('string')
+  })
+
+  it('emits a JSON-RPC 2.0 envelope with nested error.code on unhandled failure', async () => {
+    const failingServer = {
+      connect: vi.fn().mockRejectedValue(new Error('sdk exploded')),
+      close: vi.fn().mockResolvedValue(undefined)
+    } as unknown as McpServer
+    const logger = createMockLogger()
+    const handler = createTransportHandler(() => failingServer, validToken, port, logger)
+
+    const req = createMockRequest({
+      headers: {
+        host: '127.0.0.1:18792',
+        authorization: `Bearer ${validToken}`
+      }
+    })
+    const { res, written } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    expect(written.status).toBe(500)
+    const parsed = JSON.parse(written.body)
+    expect(parsed.jsonrpc).toBe('2.0')
+    expect(parsed.id).toBe(null)
+    expect(parsed.error).toMatchObject({ code: expect.any(Number), message: expect.any(String) })
+    expect(logger.error).toHaveBeenCalled()
   })
 
   it('rejects wrong URL path with 404', async () => {

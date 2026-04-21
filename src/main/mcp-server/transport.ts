@@ -11,6 +11,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { checkBearerAuth } from './auth'
+import { JSON_RPC_UNAUTHORIZED, writeJsonRpcError } from './errors'
 import type { Logger } from '../logger'
 
 export interface TransportHandler {
@@ -37,7 +38,12 @@ export function createTransportHandler(
           'Content-Type': 'application/json',
           'WWW-Authenticate': 'Bearer realm="bde-mcp"'
         })
-        res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: auth.message } }))
+        const body = {
+          jsonrpc: '2.0' as const,
+          id: null,
+          error: { code: JSON_RPC_UNAUTHORIZED, message: auth.message }
+        }
+        res.end(JSON.stringify(body))
         return
       }
 
@@ -56,15 +62,19 @@ export function createTransportHandler(
           server.close().catch((err) => logger.warn(`server close: ${err}`))
         })
       } catch (err) {
-        logger.error(`mcp transport: ${err}`)
-        if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Internal error' }))
-        }
+        logger.error(
+          `mcp transport failure: ${req.method ?? '?'} ${req.url ?? '?'} — ${formatTransportError(err)}`
+        )
+        writeJsonRpcError(res, 500, err, { logger })
       }
     },
     async close() {
       // Nothing to close — stateless mode creates no persistent resources.
     }
   }
+}
+
+function formatTransportError(err: unknown): string {
+  if (err instanceof Error) return err.stack ?? err.message
+  return String(err)
 }
