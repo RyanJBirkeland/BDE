@@ -53,13 +53,67 @@ function latestMockTransport(): MockTransport {
   return last
 }
 
-function createMockRequest(overrides: Partial<IncomingMessage> = {}): IncomingMessage {
-  return {
+interface MockRequestOverrides {
+  url?: string
+  method?: string
+  headers?: Record<string, string>
+}
+
+interface MockRequestHandle {
+  req: IncomingMessage
+  emitData: (chunk: Buffer) => void
+  emitEnd: () => void
+  emitError: (err: Error) => void
+  destroy: ReturnType<typeof vi.fn>
+}
+
+/**
+ * Builds a mock IncomingMessage whose stream events (`data`, `end`,
+ * `error`) can be driven by the test. With `autoEnd: true` (the default)
+ * the mock schedules an empty-body `end` on the next microtask so handlers
+ * that read the body can progress without each test wiring stream
+ * lifecycle. Tests that want to simulate overflow or partial bodies pass
+ * `autoEnd: false` and drive the stream themselves.
+ */
+function createMockRequest(
+  overrides: MockRequestOverrides = {},
+  options: { autoEnd?: boolean; autoEndBody?: string } = { autoEnd: true }
+): MockRequestHandle {
+  const listeners: Record<string, Array<(...args: unknown[]) => void>> = {}
+  const destroy = vi.fn()
+  const req = {
     url: '/mcp',
     headers: {},
     method: 'POST',
+    on: vi.fn((event: string, listener: (...args: unknown[]) => void) => {
+      ;(listeners[event] ||= []).push(listener)
+      return req
+    }),
+    destroy,
     ...overrides
-  } as IncomingMessage
+  } as unknown as IncomingMessage
+  const handle: MockRequestHandle = {
+    req,
+    emitData: (chunk: Buffer) => {
+      for (const listener of listeners['data'] ?? []) listener(chunk)
+    },
+    emitEnd: () => {
+      for (const listener of listeners['end'] ?? []) listener()
+    },
+    emitError: (err: Error) => {
+      for (const listener of listeners['error'] ?? []) listener(err)
+    },
+    destroy
+  }
+  if (options.autoEnd) {
+    queueMicrotask(() => {
+      if (options.autoEndBody) {
+        handle.emitData(Buffer.from(options.autoEndBody, 'utf8'))
+      }
+      handle.emitEnd()
+    })
+  }
+  return handle
 }
 
 interface MockResponse {
@@ -122,7 +176,7 @@ describe('transport handler delegation to the SDK', () => {
     const mockServer = createMockMcpServer()
     const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
 
-    const req = createMockRequest({
+    const { req } = createMockRequest({
       headers: {
         host: '127.0.0.1:18792',
         authorization: `Bearer ${validToken}`
@@ -134,7 +188,7 @@ describe('transport handler delegation to the SDK', () => {
 
     const transport = latestMockTransport()
     expect(transport.handleRequest).toHaveBeenCalledTimes(1)
-    expect(transport.handleRequest).toHaveBeenCalledWith(req, res)
+    expect(transport.handleRequest).toHaveBeenCalledWith(req, res, undefined)
     expect(mockServer.connect).toHaveBeenCalledTimes(1)
     expect(mockServer.connect).toHaveBeenCalledWith(transport)
   })
@@ -143,7 +197,7 @@ describe('transport handler delegation to the SDK', () => {
     const mockServer = createMockMcpServer()
     const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
 
-    const req = createMockRequest({
+    const { req } = createMockRequest({
       headers: {
         host: '127.0.0.1:18792',
         authorization: `Bearer ${validToken}`
@@ -164,7 +218,7 @@ describe('transport handler delegation to the SDK', () => {
     const mockServer = createMockMcpServer()
     const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
 
-    const req = createMockRequest({
+    const { req } = createMockRequest({
       headers: { host: '127.0.0.1:18792' }
     })
     const { res, written } = createMockResponse()
@@ -189,7 +243,7 @@ describe('transport handler delegation to the SDK', () => {
     const logger = createMockLogger()
     const handler = createTransportHandler(() => failingServer, validToken, port, logger)
 
-    const req = createMockRequest({
+    const { req } = createMockRequest({
       headers: {
         host: '127.0.0.1:18792',
         authorization: `Bearer ${validToken}`
@@ -211,7 +265,7 @@ describe('transport handler delegation to the SDK', () => {
     const mockServer = createMockMcpServer()
     const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
 
-    const req = createMockRequest({
+    const { req } = createMockRequest({
       url: '/api',
       headers: {
         host: '127.0.0.1:18792',
@@ -244,7 +298,7 @@ describe('transport handler HTTP method allow-list (T-44)', () => {
       const mockServer = createMockMcpServer()
       const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
 
-      const req = createMockRequest({
+      const { req } = createMockRequest({
         method,
         headers: {
           host: '127.0.0.1:18792',
@@ -282,7 +336,7 @@ describe('transport handler Origin allow-list (T-45)', () => {
     const mockServer = createMockMcpServer()
     const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
 
-    const req = createMockRequest({
+    const { req } = createMockRequest({
       headers: {
         host: '127.0.0.1:18792',
         authorization: `Bearer ${validToken}`
@@ -298,6 +352,132 @@ describe('transport handler Origin allow-list (T-45)', () => {
       `http://127.0.0.1:${port}`,
       `http://localhost:${port}`
     ])
+  })
+})
+
+describe('transport handler body size cap (T-46)', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+  const authHeaders = {
+    host: '127.0.0.1:18792',
+    authorization: `Bearer ${validToken}`
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  it('forwards the parsed JSON body to the SDK as parsedBody', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const payload = { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }
+    const { req } = createMockRequest(
+      { headers: authHeaders },
+      { autoEnd: true, autoEndBody: JSON.stringify(payload) }
+    )
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const transport = latestMockTransport()
+    expect(transport.handleRequest).toHaveBeenCalledWith(req, res, payload)
+  })
+
+  it('accepts a request whose Content-Length is under the cap', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const { req } = createMockRequest(
+      { headers: { ...authHeaders, 'content-length': '1024' } },
+      { autoEnd: true, autoEndBody: '{"jsonrpc":"2.0","id":1,"method":"ping"}' }
+    )
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const transport = latestMockTransport()
+    expect(transport.handleRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects a request whose Content-Length exceeds the cap with 413', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const oversized = String(10 * 1024 * 1024)
+    const { req } = createMockRequest({
+      headers: { ...authHeaders, 'content-length': oversized }
+    })
+    const { res, written } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    expect(written.status).toBe(413)
+    const parsed = JSON.parse(written.body)
+    expect(parsed.jsonrpc).toBe('2.0')
+    expect(parsed.error).toMatchObject({ code: expect.any(Number), message: expect.any(String) })
+    expect(transportInstances).toHaveLength(0)
+  })
+
+  it('rejects a streamed body that overflows the cap when Content-Length is absent', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const { req, emitData, destroy } = createMockRequest(
+      { headers: authHeaders },
+      { autoEnd: false }
+    )
+    const { res, written } = createMockResponse()
+
+    const handlePromise = handler.handle(req, res)
+    await Promise.resolve()
+    emitData(Buffer.alloc(3 * 1024 * 1024))
+    await handlePromise
+
+    expect(destroy).toHaveBeenCalledTimes(1)
+    expect(written.status).toBe(413)
+    expect(transportInstances).toHaveLength(0)
+  })
+
+  it('allows a streamed body whose cumulative bytes stay under the cap', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const { req, emitData, emitEnd, destroy } = createMockRequest(
+      { headers: authHeaders },
+      { autoEnd: false }
+    )
+    const { res, written } = createMockResponse()
+
+    const handlePromise = handler.handle(req, res)
+    await Promise.resolve()
+    emitData(Buffer.from('{"jsonrpc":"2.0","id":1,"method":"ping"}', 'utf8'))
+    emitEnd()
+    await handlePromise
+
+    expect(destroy).not.toHaveBeenCalled()
+    expect(written.status).toBe(0)
+    const transport = latestMockTransport()
+    expect(transport.handleRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects malformed JSON with 400 and a parse-error envelope', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const { req } = createMockRequest(
+      { headers: authHeaders },
+      { autoEnd: true, autoEndBody: '{not valid json' }
+    )
+    const { res, written } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    expect(written.status).toBe(400)
+    const parsed = JSON.parse(written.body)
+    expect(parsed.error.code).toBe(-32700)
+    expect(transportInstances).toHaveLength(0)
   })
 })
 

@@ -6,6 +6,15 @@
  * The MCP SDK's stateless transport cannot be reused across requests — each
  * HTTP request requires a fresh transport + server instance. We accept a
  * factory so that each inbound request gets its own isolated pair.
+ *
+ * Defense-in-depth gates (applied before the SDK sees the request):
+ *   1. URL allow-list (only `/mcp`).
+ *   2. HTTP method allow-list (POST only).
+ *   3. Bearer token auth.
+ *   4. Request body size cap — enforced by buffering the body ourselves
+ *      (capped by `MAX_BODY_BYTES`) and handing it to the SDK as
+ *      `parsedBody`, so the SDK never re-reads the stream.
+ * The SDK then applies DNS-rebinding (Host) and Origin validation.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
@@ -20,7 +29,13 @@ export interface TransportHandler {
 }
 
 const ALLOWED_METHOD = 'POST'
+const MAX_BODY_BYTES = 2 * 1024 * 1024 // 2 MB ceiling for MCP payloads (T-46)
 const JSON_RPC_INVALID_REQUEST = -32600 // JSON-RPC 2.0 spec: "The JSON sent is not a valid Request."
+const JSON_RPC_PARSE_ERROR = -32700 // JSON-RPC 2.0 spec: "Invalid JSON was received by the server."
+
+type BodyReadResult =
+  | { ok: true; parsed: unknown }
+  | { ok: false; status: 413 | 400; code: number; message: string }
 
 export function createTransportHandler(
   buildMcpServer: () => McpServer,
@@ -53,6 +68,16 @@ export function createTransportHandler(
         res.end(JSON.stringify(body))
         return
       }
+      if (exceedsDeclaredBodyCap(req)) {
+        writePayloadTooLarge(res, logger)
+        return
+      }
+      const bodyResult = await readJsonBodyWithCap(req)
+      if (!bodyResult.ok) {
+        logger.warn(`mcp transport rejected body: ${bodyResult.message}`)
+        writeJsonRpcEnvelope(res, bodyResult.status, bodyResult.code, bodyResult.message)
+        return
+      }
 
       const server = buildMcpServer()
       const transport = new StreamableHTTPServerTransport({
@@ -63,7 +88,7 @@ export function createTransportHandler(
       })
       try {
         await server.connect(transport)
-        await transport.handleRequest(req, res)
+        await transport.handleRequest(req, res, bodyResult.parsed)
         res.on('close', () => {
           transport.close().catch((err) => logger.warn(`transport close: ${err}`))
           server.close().catch((err) => logger.warn(`server close: ${err}`))
@@ -99,13 +124,104 @@ function writeMethodNotAllowed(res: ServerResponse, logger: Logger): void {
   const message = `Only ${ALLOWED_METHOD} is allowed on /mcp`
   logger.warn(`mcp transport method not allowed: ${message}`)
   res.setHeader('Allow', ALLOWED_METHOD)
-  res.writeHead(405, { 'Content-Type': 'application/json' })
+  writeJsonRpcEnvelope(res, 405, JSON_RPC_INVALID_REQUEST, message)
+}
+
+function writePayloadTooLarge(res: ServerResponse, logger: Logger): void {
+  const message = `Request body exceeds ${MAX_BODY_BYTES}-byte limit`
+  logger.warn(`mcp transport payload too large: ${message}`)
+  writeJsonRpcEnvelope(res, 413, JSON_RPC_INVALID_REQUEST, message)
+}
+
+function writeJsonRpcEnvelope(
+  res: ServerResponse,
+  status: number,
+  code: number,
+  message: string
+): void {
+  if (!res.headersSent) {
+    res.writeHead(status, { 'Content-Type': 'application/json' })
+  }
   const body = {
     jsonrpc: '2.0' as const,
     id: null,
-    error: { code: JSON_RPC_INVALID_REQUEST, message }
+    error: { code, message }
   }
   res.end(JSON.stringify(body))
+}
+
+/**
+ * Returns true when the declared Content-Length already exceeds the cap,
+ * letting us reject oversized requests without reading any body bytes.
+ * Missing or malformed headers fall through to streamed enforcement.
+ */
+function exceedsDeclaredBodyCap(req: IncomingMessage): boolean {
+  const header = req.headers['content-length']
+  if (typeof header !== 'string') return false
+  const declared = Number.parseInt(header, 10)
+  if (!Number.isFinite(declared)) return false
+  return declared > MAX_BODY_BYTES
+}
+
+/**
+ * Buffers the request body in memory up to `MAX_BODY_BYTES`, returning 413
+ * when cumulative bytes exceed the cap (defends against spoofed or absent
+ * Content-Length) or 400 when the buffered bytes are not valid JSON.
+ * The parsed value is forwarded to the SDK as `parsedBody` so the SDK does
+ * not re-consume the stream.
+ */
+function readJsonBodyWithCap(req: IncomingMessage): Promise<BodyReadResult> {
+  return new Promise<BodyReadResult>((resolve) => {
+    const chunks: Buffer[] = []
+    let bytesSeen = 0
+    let settled = false
+
+    const settle = (result: BodyReadResult): void => {
+      if (settled) return
+      settled = true
+      resolve(result)
+    }
+
+    req.on('data', (chunk: Buffer) => {
+      bytesSeen += chunk.length
+      if (bytesSeen > MAX_BODY_BYTES) {
+        req.destroy()
+        settle({
+          ok: false,
+          status: 413,
+          code: JSON_RPC_INVALID_REQUEST,
+          message: `Request body exceeds ${MAX_BODY_BYTES}-byte limit`
+        })
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8')
+      if (raw.length === 0) {
+        settle({ ok: true, parsed: undefined })
+        return
+      }
+      try {
+        settle({ ok: true, parsed: JSON.parse(raw) })
+      } catch (err) {
+        settle({
+          ok: false,
+          status: 400,
+          code: JSON_RPC_PARSE_ERROR,
+          message: `Parse error: ${err instanceof Error ? err.message : String(err)}`
+        })
+      }
+    })
+    req.on('error', (err) => {
+      settle({
+        ok: false,
+        status: 400,
+        code: JSON_RPC_PARSE_ERROR,
+        message: `Request stream error: ${err.message}`
+      })
+    })
+  })
 }
 
 function formatTransportError(err: unknown): string {
