@@ -45,6 +45,40 @@ import { prepareQueueTransition, prepareUnblockTransition } from '../services/ta
 
 const logger = createLogger('sprint-local')
 
+/**
+ * Runtime shape guard for `sprint:update` IPC arguments.
+ * Static types narrow the channel; this catches malformed payloads at the wire
+ * boundary before any allow-list filtering or DB lookups run.
+ */
+function parseSprintUpdateArgs(args: unknown[]): [string, Record<string, unknown>] {
+  if (args.length !== 2) {
+    throw new Error(`expected [id, patch]; got ${args.length} args`)
+  }
+  const [id, patch] = args
+  if (typeof id !== 'string') {
+    throw new Error(`id must be a string; got ${typeof id}`)
+  }
+  if (!isPlainObject(patch)) {
+    throw new Error(`patch must be a plain object; got ${describeValue(patch)}`)
+  }
+  return [id, patch]
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  )
+}
+
+function describeValue(value: unknown): string {
+  if (value === null) return 'null'
+  if (Array.isArray(value)) return 'array'
+  return typeof value
+}
+
 export interface SprintLocalDeps {
   onStatusTerminal: (taskId: string, status: string) => void | Promise<void>
   dialog: DialogService
@@ -81,7 +115,11 @@ export function registerSprintLocalHandlers(
     }
   })
 
-  safeHandle('sprint:update', async (_e, id: string, patch: Record<string, unknown>) => {
+  const sprintUpdateHandler = async (
+    _e: Electron.IpcMainInvokeEvent,
+    id: string,
+    patch: Record<string, unknown>
+  ): Promise<ReturnType<typeof updateTask>> => {
     if (!isValidTaskId(id)) throw new Error('Invalid task ID format')
     // SP-6: Filter patch fields through UPDATE_ALLOWLIST
     const filteredPatch = validateAndFilterPatch(patch, UPDATE_ALLOWLIST)
@@ -128,7 +166,8 @@ export function registerSprintLocalHandlers(
       deps.onStatusTerminal(id, patch.status as string)
     }
     return result
-  })
+  }
+  safeHandle('sprint:update', sprintUpdateHandler, parseSprintUpdateArgs)
 
   safeHandle('sprint:delete', async (_e, id: string) => {
     if (!isValidTaskId(id)) throw new Error('Invalid task ID format')
