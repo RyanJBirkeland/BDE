@@ -345,7 +345,8 @@ describe('Sprint IPC handlers — integration', () => {
       expect(result).toEqual(updated)
       expect(mockUpdateTask).toHaveBeenCalledWith(
         'task-001',
-        expect.objectContaining({ title: 'Updated title', notes: 'New notes' })
+        expect.objectContaining({ title: 'Updated title', notes: 'New notes' }),
+        undefined
       )
     })
   })
@@ -524,7 +525,7 @@ describe('Sprint IPC handlers — integration', () => {
       const result = await invoke('sprint:unblockTask', 'task-blk')
 
       expect(result).toEqual(unblocked)
-      expect(mockUpdateTask).toHaveBeenCalledWith('task-blk', { status: 'queued' })
+      expect(mockUpdateTask).toHaveBeenCalledWith('task-blk', { status: 'queued' }, undefined)
     })
 
     it('throws if task is not blocked', async () => {

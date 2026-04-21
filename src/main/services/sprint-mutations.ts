@@ -13,12 +13,14 @@ import {
   type CreateTaskInput,
   type QueueStats,
   type SpecTypeSuccessRate,
-  type DailySuccessRate
+  type DailySuccessRate,
+  type ListTasksOptions,
+  type UpdateTaskOptions
 } from '../data/sprint-task-repository'
 import type { SprintTask, SprintTaskPR } from '../../shared/types'
 import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
-export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate }
+export type { CreateTaskInput, QueueStats, SpecTypeSuccessRate, DailySuccessRate, ListTasksOptions, UpdateTaskOptions }
 
 const repo: ISprintTaskRepository = createSprintTaskRepository()
 
@@ -28,8 +30,8 @@ export function getTask(id: string): SprintTask | null {
   return repo.getTask(id)
 }
 
-export function listTasks(status?: string): SprintTask[] {
-  return repo.listTasks(status)
+export function listTasks(options?: string | ListTasksOptions): SprintTask[] {
+  return repo.listTasks(options)
 }
 
 export function listTasksRecent(): SprintTask[] {
@@ -70,8 +72,12 @@ export function claimTask(id: string, claimedBy: string): SprintTask | null {
   return repo.claimTask(id, claimedBy)
 }
 
-export function updateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
-  return repo.updateTask(id, patch)
+export function updateTask(
+  id: string,
+  patch: Record<string, unknown>,
+  options?: UpdateTaskOptions
+): SprintTask | null {
+  return repo.updateTask(id, patch, options)
 }
 
 export function forceUpdateTask(id: string, patch: Record<string, unknown>): SprintTask | null {

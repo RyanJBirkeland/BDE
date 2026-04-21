@@ -1,8 +1,9 @@
 import http from 'node:http'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { broadcast } from '../broadcast'
-import { createLogger } from '../logger'
+import { createLogger, logError } from '../logger'
 import {
+  TaskTransitionError,
   cancelTask,
   createTaskWithValidation,
   getTask,
@@ -18,7 +19,8 @@ import { createTransportHandler } from './transport'
 import { registerTaskTools } from './tools/tasks'
 import { registerEpicTools } from './tools/epics'
 import { registerMetaTools } from './tools/meta'
-import { toJsonRpcError } from './errors'
+import { McpDomainError, McpErrorCode, writeJsonRpcError } from './errors'
+import { wrapServerWithSafeToolHandlers } from './safe-tool-handler'
 
 const logger = createLogger('mcp-server')
 
@@ -41,7 +43,10 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
   let transportHandler: ReturnType<typeof createTransportHandler> | null = null
 
   function buildMcp(): McpServer {
-    const mcp = new McpServer({ name: 'bde', version: '1.0.0' })
+    const mcp = wrapServerWithSafeToolHandlers(
+      new McpServer({ name: 'bde', version: '1.0.0' }),
+      logger
+    )
 
     registerMetaTools(mcp, {
       getRepos: () => getSettingJson<RepoConfig[]>('repos') ?? []
@@ -52,9 +57,9 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       getTask,
       createTaskWithValidation,
       updateTask,
-      cancelTask: (id, reason) =>
-        cancelTask(id, { reason }, { onStatusTerminal: deps.onStatusTerminal, logger }),
-      getTaskChanges: (id, limit) => getTaskChanges(id, limit),
+      cancelTask: cancelTaskForMcp,
+      getTaskChanges: (id, options) => getTaskChanges(id, options),
+      onStatusTerminal: deps.onStatusTerminal,
       logger
     })
 
@@ -63,28 +68,38 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
     return mcp
   }
 
+  async function cancelTaskForMcp(
+    id: string,
+    reason?: string,
+    options?: { caller?: string }
+  ): ReturnType<typeof cancelTask> {
+    try {
+      return await cancelTask(
+        id,
+        { reason, caller: options?.caller },
+        { onStatusTerminal: deps.onStatusTerminal, logger }
+      )
+    } catch (err) {
+      throw translateCancelError(err)
+    }
+  }
+
   return {
     async start(): Promise<number> {
-      const token = await readOrCreateToken()
+      const { token, created, path: tokenPath } = await readOrCreateToken(undefined, { logger })
 
       return new Promise<number>((resolve, reject) => {
         httpServer = http.createServer((req, res) => {
           transportHandler!.handle(req, res).catch((err) => {
-            const body = JSON.stringify({ jsonrpc: '2.0', error: toJsonRpcError(err) })
-            if (!res.headersSent) {
-              res.writeHead(500, { 'Content-Type': 'application/json' })
-            }
-            res.end(body)
+            logger.error(
+              `mcp transport unhandled: ${req.method ?? '?'} ${req.url ?? '?'} — ${formatRequestError(err)}`
+            )
+            writeJsonRpcError(res, 500, err, { logger })
           })
         })
         httpServer.on('error', (err) => {
-          const errno = (err as NodeJS.ErrnoException).code
-          const msg =
-            errno === 'EADDRINUSE'
-              ? `MCP server could not bind to port ${config.port} — already in use.`
-              : `MCP server failed to start: ${err}`
-          logger.error(msg)
-          broadcast('manager:warning', { message: msg })
+          logError(logger, `MCP server listen(${config.port})`, err)
+          broadcast('manager:warning', { message: summarizeListenError(err, config.port) })
           reject(err)
         })
         httpServer.listen(config.port, '127.0.0.1', () => {
@@ -92,6 +107,12 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
           const actualPort = typeof addr === 'object' && addr ? addr.port : config.port
           transportHandler = createTransportHandler(buildMcp, token, actualPort, logger)
           logger.info(`Listening on http://127.0.0.1:${actualPort}/mcp`)
+          logger.info(`MCP bearer token at ${tokenPath}${created ? ' (newly minted)' : ''}`)
+          if (created) {
+            broadcast('manager:warning', {
+              message: `BDE MCP: fresh token minted at ${tokenPath}. Re-copy into your MCP client config.`
+            })
+          }
           resolve(actualPort)
         })
       })
@@ -109,4 +130,41 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       }
     }
   }
+}
+
+function formatRequestError(err: unknown): string {
+  if (err instanceof Error) return err.stack ?? err.message
+  return String(err)
+}
+
+/**
+ * Build a user-safe summary of an HTTP listener error for the renderer
+ * `manager:warning` broadcast. Full detail (including stack) is written
+ * to `~/.bde/bde.log` via `logError`; the broadcast body gets the minimum
+ * needed for an operator to act. Raw error messages and stack frames are
+ * withheld to avoid leaking filesystem paths or internal error shapes
+ * through a renderer surface.
+ */
+export function summarizeListenError(err: unknown, configuredPort: number): string {
+  const code = (err as NodeJS.ErrnoException | null)?.code
+  if (code === 'EADDRINUSE') {
+    return `MCP server could not bind to port ${configuredPort} — already in use.`
+  }
+  return 'MCP server failed to start. See ~/.bde/bde.log for details.'
+}
+
+/**
+ * Translate service-layer throws from `cancelTask` into the MCP error
+ * vocabulary. Exported for unit tests — the production call site lives
+ * inside `createMcpServer`'s `cancelTaskForMcp` closure.
+ */
+export function translateCancelError(err: unknown): unknown {
+  if (err instanceof TaskTransitionError) {
+    return new McpDomainError(err.message, McpErrorCode.InvalidTransition, {
+      taskId: err.taskId,
+      fromStatus: err.fromStatus,
+      toStatus: err.toStatus
+    })
+  }
+  return err
 }

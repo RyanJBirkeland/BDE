@@ -89,12 +89,13 @@ export function registerConfigHandlers(): void {
 
   safeHandle('mcp:getToken', async () => {
     const { readOrCreateToken } = await import('../mcp-server/token-store')
-    return readOrCreateToken()
+    const { token } = await readOrCreateToken()
+    return token
   })
 
   safeHandle('mcp:regenerateToken', async () => {
     const { regenerateToken } = await import('../mcp-server/token-store')
-    const token = await regenerateToken()
+    const { token } = await regenerateToken()
     const enabled = getSetting('mcp.enabled') === 'true'
     if (enabled) {
       setSetting('mcp.enabled', 'false')

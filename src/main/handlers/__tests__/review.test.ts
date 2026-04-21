@@ -369,7 +369,8 @@ describe('Review handlers', () => {
         expect.objectContaining({
           agent_run_id: null,
           status: 'queued'
-        })
+        }),
+        undefined
       )
     })
 
@@ -410,7 +411,7 @@ describe('Review handlers', () => {
       })
 
       // Verify agent_run_id is NOT in the patch (keeps existing value)
-      expect(updateTask).toHaveBeenCalledWith('task-1', expect.any(Object))
+      expect(updateTask).toHaveBeenCalledWith('task-1', expect.any(Object), undefined)
       const patchArg = vi.mocked(updateTask).mock.calls[0][1]
       expect(patchArg).not.toHaveProperty('agent_run_id')
     })
@@ -455,7 +456,8 @@ describe('Review handlers', () => {
         'task-1',
         expect.objectContaining({
           spec: '## Original Spec\n\nSome content\n\n## Revision Feedback\n\nPlease add more tests'
-        })
+        }),
+        undefined
       )
     })
 
@@ -511,7 +513,8 @@ describe('Review handlers', () => {
           status: 'done',
           completed_at: expect.any(String),
           worktree_path: null
-        })
+        }),
+        undefined
       )
 
       // Verify onStatusTerminal callback fired for dependency resolution

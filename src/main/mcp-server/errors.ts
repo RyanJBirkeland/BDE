@@ -1,10 +1,29 @@
+import type { ServerResponse } from 'node:http'
 import { z, ZodError } from 'zod'
+import type { Logger } from '../logger'
+
+/**
+ * Named JSON-RPC error codes used by the MCP server. The MCP spec reserves
+ * -32000..-32099 for server-defined errors; these constants name each slot
+ * we use so call sites read as vocabulary rather than magic numbers.
+ */
+export const JSON_RPC_UNAUTHORIZED = -32000
+export const JSON_RPC_NOT_FOUND = -32001
+export const JSON_RPC_INVALID_TRANSITION = -32002
+export const JSON_RPC_CYCLE = -32003
+export const JSON_RPC_FORBIDDEN_FIELD = -32004
+export const JSON_RPC_VALIDATION_FAILED = -32005
+export const JSON_RPC_CONFLICT = -32006
+export const JSON_RPC_REPO_UNCONFIGURED = -32007
 
 export enum McpErrorCode {
   NotFound = 'NOT_FOUND',
   InvalidTransition = 'INVALID_TRANSITION',
   Cycle = 'CYCLE',
-  ForbiddenField = 'FORBIDDEN_FIELD'
+  ForbiddenField = 'FORBIDDEN_FIELD',
+  ValidationFailed = 'VALIDATION_FAILED',
+  Conflict = 'CONFLICT',
+  RepoUnconfigured = 'REPO_UNCONFIGURED'
 }
 
 export class McpDomainError extends Error {
@@ -39,13 +58,20 @@ export interface JsonRpcErrorBody {
 }
 
 const CODE_MAP: Record<McpErrorCode, number> = {
-  [McpErrorCode.NotFound]: -32001,
-  [McpErrorCode.InvalidTransition]: -32002,
-  [McpErrorCode.Cycle]: -32003,
-  [McpErrorCode.ForbiddenField]: -32004
+  [McpErrorCode.NotFound]: JSON_RPC_NOT_FOUND,
+  [McpErrorCode.InvalidTransition]: JSON_RPC_INVALID_TRANSITION,
+  [McpErrorCode.Cycle]: JSON_RPC_CYCLE,
+  [McpErrorCode.ForbiddenField]: JSON_RPC_FORBIDDEN_FIELD,
+  [McpErrorCode.ValidationFailed]: JSON_RPC_VALIDATION_FAILED,
+  [McpErrorCode.Conflict]: JSON_RPC_CONFLICT,
+  [McpErrorCode.RepoUnconfigured]: JSON_RPC_REPO_UNCONFIGURED
 }
 
-export function toJsonRpcError(err: unknown, schema?: z.ZodTypeAny): JsonRpcErrorBody {
+export function toJsonRpcError(
+  err: unknown,
+  schema?: z.ZodTypeAny,
+  logger?: Pick<Logger, 'error'>
+): JsonRpcErrorBody {
   if (err instanceof McpZodError) {
     return formatZodError(err.zodError, err.schema)
   }
@@ -55,7 +81,35 @@ export function toJsonRpcError(err: unknown, schema?: z.ZodTypeAny): JsonRpcErro
   if (err instanceof McpDomainError) {
     return { code: CODE_MAP[err.kind], message: err.message, data: err.data }
   }
+  logUnknownError(err, logger)
   return { code: -32603, message: 'Internal error' }
+}
+
+/**
+ * Writes a JSON-RPC 2.0 error envelope to an HTTP response. Centralizes the
+ * header + body shape so transport layers never hand-roll the envelope.
+ * Skips `writeHead` if headers are already sent — the caller is mid-stream
+ * and only the body matters.
+ */
+export function writeJsonRpcError(
+  res: ServerResponse,
+  status: number,
+  err: unknown,
+  opts?: {
+    id?: string | number | null
+    schema?: z.ZodTypeAny
+    logger?: Pick<Logger, 'error'>
+  }
+): void {
+  if (!res.headersSent) {
+    res.writeHead(status, { 'Content-Type': 'application/json' })
+  }
+  const body = {
+    jsonrpc: '2.0' as const,
+    id: opts?.id ?? null,
+    error: toJsonRpcError(err, opts?.schema, opts?.logger)
+  }
+  res.end(JSON.stringify(body))
 }
 
 /**
@@ -103,4 +157,10 @@ function topLevelFieldDescription(
   const shape = schema.shape as Record<string, z.ZodTypeAny>
   const fieldSchema = shape[fieldName]
   return fieldSchema?.description
+}
+
+function logUnknownError(err: unknown, logger: Pick<Logger, 'error'> | undefined): void {
+  if (!logger) return
+  const detail = err instanceof Error ? err.stack ?? err.message : String(err)
+  logger.error(`toJsonRpcError received unknown throw: ${detail}`)
 }

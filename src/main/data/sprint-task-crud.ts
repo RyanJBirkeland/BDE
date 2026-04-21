@@ -30,29 +30,130 @@ export function getTask(id: string, db?: Database.Database): SprintTask | null {
   )
 }
 
-export function listTasks(status?: string, db?: Database.Database): SprintTask[] {
+/**
+ * Options for `listTasks`. All filters are pushed into SQL so callers
+ * never pay the cost of loading every sprint task row only to filter
+ * in memory. When omitted, the result falls back to the legacy
+ * "everything, sorted by priority then created_at" behaviour.
+ */
+export interface ListTasksOptions {
+  /** Exact-match on `status`. */
+  status?: string
+  /** Exact-match on `repo`. */
+  repo?: string
+  /** Exact-match on `group_id` (epic/group id). */
+  epicId?: string
+  /** Must appear in the JSON `tags` array; exact string match. */
+  tag?: string
+  /** Case-insensitive substring on `title` OR `spec`. */
+  search?: string
+  /** Maximum rows to return. No upper bound — MCP schema caps at 500. */
+  limit?: number
+  /** Rows to skip before the returned page. */
+  offset?: number
+}
+
+/**
+ * List sprint tasks, optionally filtered and paginated.
+ *
+ * Accepts either a bare status string (legacy signature preserved for
+ * existing callers) or a `ListTasksOptions` object. The options path
+ * pushes every filter into SQL; the legacy path stays a single
+ * index-hitting `WHERE status = ?`.
+ */
+export function listTasks(
+  statusOrOptions?: string | ListTasksOptions,
+  db?: Database.Database
+): SprintTask[] {
+  const options = normalizeListTasksArg(statusOrOptions)
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {
-      if (status) {
-        const rows = conn
-          .prepare(
-            `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE status = ? ORDER BY priority ASC, created_at ASC`
-          )
-          .all(status) as Record<string, unknown>[]
-        return mapRowsToTasks(rows)
-      }
-      const rows = conn
-        .prepare(
-          `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks ORDER BY priority ASC, created_at ASC`
-        )
-        .all() as Record<string, unknown>[]
+      const { sql, params } = buildListTasksQuery(options)
+      const rows = conn.prepare(sql).all(...params) as Record<string, unknown>[]
       return mapRowsToTasks(rows)
     },
     'listTasks',
     [],
     getSprintQueriesLogger()
   )
+}
+
+function normalizeListTasksArg(
+  statusOrOptions: string | ListTasksOptions | undefined
+): ListTasksOptions {
+  if (statusOrOptions === undefined) return {}
+  if (typeof statusOrOptions === 'string') return { status: statusOrOptions }
+  return statusOrOptions
+}
+
+function buildListTasksQuery(options: ListTasksOptions): { sql: string; params: unknown[] } {
+  const clauses: string[] = []
+  const params: unknown[] = []
+
+  appendEqualityClauses(clauses, params, options)
+  appendTagClause(clauses, params, options.tag)
+  appendSearchClause(clauses, params, options.search)
+
+  const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : ''
+  const paginationSql = buildPaginationSql(params, options)
+
+  const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks
+    ${where}
+    ORDER BY priority ASC, created_at ASC
+    ${paginationSql}`
+  return { sql, params }
+}
+
+function appendEqualityClauses(
+  clauses: string[],
+  params: unknown[],
+  options: ListTasksOptions
+): void {
+  if (options.status) {
+    clauses.push('status = ?')
+    params.push(options.status)
+  }
+  if (options.repo) {
+    clauses.push('repo = ?')
+    params.push(options.repo)
+  }
+  if (options.epicId) {
+    clauses.push('group_id = ?')
+    params.push(options.epicId)
+  }
+}
+
+function appendTagClause(clauses: string[], params: unknown[], tag: string | undefined): void {
+  if (!tag) return
+  // JSON1 `json_each` expands the tags array into a virtual table so we
+  // compare by value instead of substring-matching the stored JSON text.
+  clauses.push('EXISTS (SELECT 1 FROM json_each(sprint_tasks.tags) WHERE value = ?)')
+  params.push(tag)
+}
+
+function appendSearchClause(
+  clauses: string[],
+  params: unknown[],
+  search: string | undefined
+): void {
+  if (!search) return
+  // SQLite `LIKE` is case-insensitive on ASCII by default; being explicit
+  // with LOWER() matches filterInMemory's prior behavior across non-ASCII.
+  // `LIKE` on NULL returns NULL (falsy) — NULL specs naturally drop out.
+  const pattern = `%${search.toLowerCase()}%`
+  clauses.push('(LOWER(title) LIKE ? OR LOWER(spec) LIKE ?)')
+  params.push(pattern, pattern)
+}
+
+function buildPaginationSql(params: unknown[], options: ListTasksOptions): string {
+  const hasPagination = options.limit !== undefined || options.offset !== undefined
+  if (!hasPagination) return ''
+  // Default limit matches the old in-memory slice (100); default offset is 0.
+  const limit = options.limit ?? 100
+  const offset = options.offset ?? 0
+  params.push(limit, offset)
+  return 'LIMIT ? OFFSET ?'
 }
 
 export function listTasksRecent(db?: Database.Database): SprintTask[] {
@@ -168,8 +269,32 @@ export function createReviewTaskFromAdhoc(input: {
   return updated
 }
 
-export function updateTask(id: string, patch: Record<string, unknown>, db?: Database.Database): SprintTask | null {
-  return writeTaskUpdate(id, patch, { enforceTransitionCheck: true, changedBy: 'unknown' }, db)
+/**
+ * Options for `updateTask`.
+ *
+ * `caller` identifies *who* initiated the write, and is recorded in the
+ * `task_changes` audit trail as the `changed_by` value. It lets operators
+ * tell MCP-originated writes (`'mcp'` or `'mcp:<client-name>'`) apart from
+ * IPC-originated ones (`'ipc'`, `'ui'`, etc.) without reverse-engineering
+ * the change log. When omitted, the attribution falls back to `'unknown'`
+ * for backward compatibility with historical call sites.
+ */
+export interface UpdateTaskOptions {
+  caller?: string
+}
+
+export function updateTask(
+  id: string,
+  patch: Record<string, unknown>,
+  options?: UpdateTaskOptions,
+  db?: Database.Database
+): SprintTask | null {
+  return writeTaskUpdate(
+    id,
+    patch,
+    { enforceTransitionCheck: true, changedBy: options?.caller ?? 'unknown' },
+    db
+  )
 }
 
 /**

@@ -208,6 +208,129 @@ describe('listTasks', () => {
   })
 })
 
+describe('listTasks — SQL push-down (T-2)', () => {
+  function insertGroup(id: string, name: string): void {
+    db.prepare(
+      `INSERT INTO task_groups (id, name) VALUES (?, ?)`
+    ).run(id, name)
+  }
+
+  function seedFixture(): void {
+    insertGroup('epic-1', 'Epic 1')
+    insertGroup('epic-2', 'Epic 2')
+    insertTask({
+      id: 'a',
+      title: 'Alpha widget',
+      repo: 'bde',
+      tags: JSON.stringify(['foo']),
+      group_id: 'epic-1',
+      spec: 'details about alpha'
+    })
+    insertTask({
+      id: 'b',
+      title: 'Beta panel',
+      repo: 'bde',
+      tags: JSON.stringify(['foo', 'bar']),
+      group_id: 'epic-2',
+      spec: null
+    })
+    insertTask({
+      id: 'c',
+      title: 'Gamma report',
+      repo: 'other',
+      tags: JSON.stringify(['bar']),
+      group_id: 'epic-1',
+      spec: 'report details'
+    })
+    insertTask({
+      id: 'd',
+      title: 'Delta note',
+      repo: 'other',
+      tags: null,
+      group_id: null,
+      spec: 'mentions ALPHA inside'
+    })
+    insertTask({
+      id: 'e',
+      title: 'Epsilon task',
+      repo: 'bde',
+      tags: JSON.stringify(['baz']),
+      group_id: 'epic-2',
+      spec: 'nothing special'
+    })
+  }
+
+  it('filters by repo', () => {
+    seedFixture()
+    const tasks = listTasks({ repo: 'bde' })
+    expect(tasks.map((t) => t.id).sort()).toEqual(['a', 'b', 'e'])
+  })
+
+  it('filters by epicId (maps to group_id in SQL)', () => {
+    seedFixture()
+    const tasks = listTasks({ epicId: 'epic-1' })
+    expect(tasks.map((t) => t.id).sort()).toEqual(['a', 'c'])
+  })
+
+  it('filters by tag via json_each array membership', () => {
+    seedFixture()
+    const tasks = listTasks({ tag: 'foo' })
+    expect(tasks.map((t) => t.id).sort()).toEqual(['a', 'b'])
+  })
+
+  it('does not match a tag against a partial substring of another tag', () => {
+    // Regression: a substring-LIKE implementation would incorrectly match
+    // `bar` against `barista`. json_each keeps matches exact.
+    insertTask({ id: 'x', tags: JSON.stringify(['barista']) })
+    insertTask({ id: 'y', tags: JSON.stringify(['bar']) })
+    const tasks = listTasks({ tag: 'bar' })
+    expect(tasks.map((t) => t.id)).toEqual(['y'])
+  })
+
+  it('filters by search (case-insensitive, title OR spec)', () => {
+    seedFixture()
+    const tasks = listTasks({ search: 'alpha' })
+    // 'a' matches title; 'd' matches spec text ("mentions ALPHA inside")
+    expect(tasks.map((t) => t.id).sort()).toEqual(['a', 'd'])
+  })
+
+  it('search on NULL spec does not throw and falls through silently', () => {
+    // Row 'b' has a NULL spec; LIKE on NULL returns NULL (falsy) so it
+    // drops out naturally without needing a defensive filter.
+    seedFixture()
+    const tasks = listTasks({ search: 'beta' })
+    expect(tasks.map((t) => t.id)).toEqual(['b'])
+  })
+
+  it('intersects multiple filters with AND', () => {
+    seedFixture()
+    const tasks = listTasks({ repo: 'bde', tag: 'bar' })
+    expect(tasks.map((t) => t.id)).toEqual(['b'])
+  })
+
+  it('applies LIMIT and OFFSET in SQL', () => {
+    seedFixture()
+    const firstPage = listTasks({ limit: 2, offset: 0 })
+    expect(firstPage.map((t) => t.id)).toEqual(['a', 'b'])
+    const secondPage = listTasks({ limit: 2, offset: 2 })
+    expect(secondPage.map((t) => t.id)).toEqual(['c', 'd'])
+  })
+
+  it('returns empty page when offset exceeds row count', () => {
+    seedFixture()
+    const tasks = listTasks({ offset: 100 })
+    expect(tasks).toEqual([])
+  })
+
+  it('bare-status string signature still works', () => {
+    insertTask({ id: 'q1', status: 'queued' })
+    insertTask({ id: 'q2', status: 'queued' })
+    insertTask({ id: 'b1', status: 'backlog' })
+    const queued = listTasks('queued')
+    expect(queued.map((t) => t.id).sort()).toEqual(['q1', 'q2'])
+  })
+})
+
 describe('listTasksRecent', () => {
   it('includes all non-terminal tasks', () => {
     insertTask({ id: 'a', status: 'backlog' })
@@ -310,6 +433,28 @@ describe('updateTask', () => {
       'unknown',
       expect.anything()
     )
+  })
+
+  it('records the supplied caller attribution in the audit trail', () => {
+    const created = createTask({ title: 'Attr', repo: 'bde' })!
+    mockRecordTaskChanges.mockClear()
+
+    updateTask(created.id, { title: 'Attributed' }, { caller: 'mcp' })
+
+    expect(mockRecordTaskChanges).toHaveBeenCalledTimes(1)
+    const callArgs = mockRecordTaskChanges.mock.calls[0]
+    expect(callArgs[3]).toBe('mcp')
+  })
+
+  it('falls back to "unknown" when no caller attribution is supplied', () => {
+    const created = createTask({ title: 'NoAttr', repo: 'bde' })!
+    mockRecordTaskChanges.mockClear()
+
+    updateTask(created.id, { title: 'Still no caller' })
+
+    expect(mockRecordTaskChanges).toHaveBeenCalledTimes(1)
+    const callArgs = mockRecordTaskChanges.mock.calls[0]
+    expect(callArgs[3]).toBe('unknown')
   })
 
   // no-op updates short-circuit to avoid write amplification

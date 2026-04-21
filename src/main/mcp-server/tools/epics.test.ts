@@ -1,8 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
 import { registerEpicTools, type EpicToolsDeps } from './epics'
+import { EpicCycleError, EpicNotFoundError } from '../../services/epic-group-service'
 import type { TaskGroup } from '../../../shared/types'
 
-type ToolHandler = (args: unknown) => Promise<{ content: Array<{ type: 'text'; text: string }> }>
+type ToolResult = {
+  isError?: boolean
+  content: Array<{ type: 'text'; text: string }>
+}
+type ToolHandler = (args: unknown) => Promise<ToolResult>
 
 function mockServer() {
   const handlers = new Map<string, ToolHandler>()
@@ -12,8 +17,13 @@ function mockServer() {
         handlers.set(name, h)
       }
     } as any,
-    call: (name: string, args: unknown) => handlers.get(name)!(args)
+    call: (name: string, args: unknown): Promise<ToolResult> => handlers.get(name)!(args)
   }
+}
+
+function parseErrorBody(res: ToolResult): { code: number; message: string; data?: unknown } {
+  expect(res.isError).toBe(true)
+  return JSON.parse(res.content[0].text)
 }
 
 const fakeGroup = (overrides: Partial<TaskGroup> = {}): TaskGroup => ({
@@ -29,6 +39,10 @@ const fakeGroup = (overrides: Partial<TaskGroup> = {}): TaskGroup => ({
   ...overrides
 })
 
+// Only includes methods the epic tool handlers actually call. `registerEpicTools`
+// never invokes reorderTasks, queueAllTasks, addDependency, removeDependency,
+// or updateDependencyCondition — setDependencies replaces them atomically — so
+// leaving them on the fake misleads readers about the handler's surface.
 function fakeDeps(over: Partial<EpicToolsDeps> = {}): EpicToolsDeps {
   const svc = {
     listEpics: vi.fn(() => [fakeGroup()]),
@@ -39,11 +53,6 @@ function fakeDeps(over: Partial<EpicToolsDeps> = {}): EpicToolsDeps {
     deleteEpic: vi.fn(),
     addTask: vi.fn(),
     removeTask: vi.fn(),
-    reorderTasks: vi.fn(),
-    queueAllTasks: vi.fn(() => 0),
-    addDependency: vi.fn((id, dep) => fakeGroup({ id, depends_on: [dep] })),
-    removeDependency: vi.fn((id) => fakeGroup({ id })),
-    updateDependencyCondition: vi.fn((id) => fakeGroup({ id })),
     setDependencies: vi.fn((id, deps) => fakeGroup({ id, depends_on: [...deps] }))
   }
   return { epicService: svc as any, ...over }
@@ -57,12 +66,16 @@ describe('epics.* tools', () => {
     expect(Array.isArray(JSON.parse(res.content[0].text))).toBe(true)
   })
 
-  it('epics.get returns -32001 when missing', async () => {
+  it('epics.get returns structured NotFound payload when missing', async () => {
     const deps = fakeDeps()
     ;(deps.epicService.getEpic as any).mockReturnValue(null)
     const { server, call } = mockServer()
     registerEpicTools(server, deps)
-    await expect(call('epics.get', { id: 'missing' })).rejects.toThrow(/not found/)
+    const res = await call('epics.get', { id: 'missing' })
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32001)
+    expect(body.message).toMatch(/not found/)
+    expect(body.data).toMatchObject({ id: 'missing' })
   })
 
   it('epics.get includes tasks when includeTasks is true', async () => {
@@ -97,21 +110,127 @@ describe('epics.* tools', () => {
     expect(deps.epicService.setDependencies).toHaveBeenCalledWith('g1', [
       { id: 'new', condition: 'always' }
     ])
-    // Handler must delegate atomically — it must NOT re-implement the diff
-    // loop against addDependency/removeDependency itself.
-    expect(deps.epicService.removeDependency).not.toHaveBeenCalled()
-    expect(deps.epicService.addDependency).not.toHaveBeenCalled()
+    // Handler delegates atomically to setDependencies. Omitting addDependency
+    // and removeDependency from the fake is the structural guarantee that the
+    // handler cannot re-implement the diff loop against them — if someone
+    // regresses this, the handler will crash with "undefined is not a function".
   })
 
-  it('epics.setDependencies translates "not found" into McpDomainError NotFound', async () => {
+  it('epics.setDependencies returns structured NotFound payload when EpicNotFoundError is thrown', async () => {
     const deps = fakeDeps()
     ;(deps.epicService.setDependencies as any).mockImplementation(() => {
-      throw new Error('Task group not found: missing')
+      throw new EpicNotFoundError('missing')
     })
     const { server, call } = mockServer()
     registerEpicTools(server, deps)
-    await expect(
-      call('epics.setDependencies', { id: 'missing', dependencies: [] })
-    ).rejects.toThrow(/not found/i)
+    const res = await call('epics.setDependencies', { id: 'missing', dependencies: [] })
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32001)
+    expect(body.message).toMatch(/not found/i)
+    expect(body.data).toMatchObject({ id: 'missing' })
+  })
+
+  it('epics.setDependencies returns structured Cycle payload when EpicCycleError is thrown', async () => {
+    const deps = fakeDeps()
+    ;(deps.epicService.setDependencies as any).mockImplementation(() => {
+      throw new EpicCycleError('g1', 'g1 -> g2 -> g1')
+    })
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    const res = await call('epics.setDependencies', { id: 'g1', dependencies: [] })
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32003)
+    expect(body.message).toMatch(/cycle/i)
+    expect(body.data).toMatchObject({ id: 'g1' })
+  })
+
+  it('epics.setDependencies propagates unknown throws unchanged', async () => {
+    const deps = fakeDeps()
+    ;(deps.epicService.setDependencies as any).mockImplementation(() => {
+      throw new Error('something broke')
+    })
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    await expect(call('epics.setDependencies', { id: 'g1', dependencies: [] })).rejects.toThrow(
+      /something broke/
+    )
+  })
+
+  it('epics.update forwards the patch to updateEpic unchanged', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    const res = await call('epics.update', {
+      id: 'g1',
+      patch: { name: 'renamed', status: 'ready' }
+    })
+    // The handler no longer injects `goal: undefined` — a patch with no
+    // `goal` field reaches the service without one, so the service's
+    // "undefined = leave untouched" semantic is expressed structurally.
+    expect(deps.epicService.updateEpic).toHaveBeenCalledWith('g1', {
+      name: 'renamed',
+      status: 'ready'
+    })
+    const body = JSON.parse(res.content[0].text)
+    expect(body).toMatchObject({ id: 'g1', name: 'renamed', status: 'ready' })
+  })
+
+  it('epics.update forwards goal: null through to updateEpic (clear-goal signal)', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    await call('epics.update', { id: 'g1', patch: { goal: null } })
+    // `null` means "clear the goal column to SQL NULL" — collapsing it to
+    // `undefined` here would silently strip that intent (see T-17).
+    expect(deps.epicService.updateEpic).toHaveBeenCalledWith('g1', { goal: null })
+  })
+
+  it('epics.create forwards goal: null through to createEpic (explicit-null-goal)', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    await call('epics.create', { name: 'new', goal: null })
+    expect(deps.epicService.createEpic).toHaveBeenCalledWith({ name: 'new', goal: null })
+  })
+
+  it('epics.update returns structured NotFound when EpicNotFoundError is thrown', async () => {
+    const deps = fakeDeps()
+    ;(deps.epicService.updateEpic as any).mockImplementation(() => {
+      throw new EpicNotFoundError('missing')
+    })
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    const res = await call('epics.update', { id: 'missing', patch: { name: 'x' } })
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32001)
+    expect(body.message).toMatch(/not found/i)
+    expect(body.data).toMatchObject({ id: 'missing' })
+  })
+
+  it('epics.delete delegates to deleteEpic and returns an acknowledgement payload', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    const res = await call('epics.delete', { id: 'g1' })
+    expect(deps.epicService.deleteEpic).toHaveBeenCalledWith('g1')
+    expect(JSON.parse(res.content[0].text)).toEqual({ deleted: true, id: 'g1' })
+  })
+
+  it('epics.addTask delegates to addTask and returns an acknowledgement payload', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    const res = await call('epics.addTask', { epicId: 'g1', taskId: 't1' })
+    expect(deps.epicService.addTask).toHaveBeenCalledWith('g1', 't1')
+    expect(JSON.parse(res.content[0].text)).toEqual({ ok: true, epicId: 'g1', taskId: 't1' })
+  })
+
+  it('epics.removeTask delegates to removeTask and returns an acknowledgement payload', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    const res = await call('epics.removeTask', { taskId: 't1' })
+    expect(deps.epicService.removeTask).toHaveBeenCalledWith('t1')
+    expect(JSON.parse(res.content[0].text)).toEqual({ ok: true, taskId: 't1' })
   })
 })

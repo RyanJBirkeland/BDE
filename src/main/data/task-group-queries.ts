@@ -34,7 +34,8 @@ export interface CreateGroupInput {
   name: string
   icon?: string
   accent_color?: string
-  goal?: string
+  /** `null` stores SQL NULL; `undefined` (or field absent) omits the column from the INSERT. */
+  goal?: string | null
   depends_on?: EpicDependency[] | null
 }
 
@@ -42,7 +43,8 @@ export interface UpdateGroupInput {
   name?: string
   icon?: string
   accent_color?: string
-  goal?: string
+  /** `null` clears the column to SQL NULL; `undefined` (or field absent) leaves it untouched. */
+  goal?: string | null
   status?: 'draft' | 'ready' | 'in-pipeline' | 'completed'
   depends_on?: EpicDependency[] | null
 }
@@ -155,7 +157,11 @@ export function updateGroup(
     () => {
       const conn = db ?? getDb()
       const allowed = new Set(['name', 'icon', 'accent_color', 'goal', 'status', 'depends_on'])
-      const fields = Object.keys(patch).filter((k) => allowed.has(k))
+      // Treat `undefined` as "leave this column alone" so callers can omit
+      // fields; `null` is a deliberate clear-to-SQL-NULL signal.
+      const fields = Object.keys(patch).filter(
+        (k) => allowed.has(k) && patch[k as keyof UpdateGroupInput] !== undefined
+      )
       if (fields.length === 0) return getGroup(id, db)
 
       const setClauses = fields.map((f) => `${f} = ?`)

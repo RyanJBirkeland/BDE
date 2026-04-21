@@ -1,6 +1,17 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { z } from 'zod'
-import { toJsonRpcError, McpDomainError, McpErrorCode, parseToolArgs } from './errors'
+import type { ServerResponse } from 'node:http'
+import {
+  toJsonRpcError,
+  writeJsonRpcError,
+  McpDomainError,
+  McpErrorCode,
+  parseToolArgs,
+  JSON_RPC_NOT_FOUND,
+  JSON_RPC_VALIDATION_FAILED,
+  JSON_RPC_CONFLICT,
+  JSON_RPC_REPO_UNCONFIGURED
+} from './errors'
 
 describe('toJsonRpcError', () => {
   it('maps zod ZodError to -32602 Invalid params', () => {
@@ -79,9 +90,91 @@ describe('toJsonRpcError', () => {
     expect(toJsonRpcError(err).code).toBe(-32004)
   })
 
+  it('maps McpDomainError with code VALIDATION_FAILED to -32005', () => {
+    const err = new McpDomainError('invalid input', McpErrorCode.ValidationFailed)
+    expect(toJsonRpcError(err).code).toBe(JSON_RPC_VALIDATION_FAILED)
+  })
+
+  it('maps McpDomainError with code CONFLICT to -32006', () => {
+    const err = new McpDomainError('conflict', McpErrorCode.Conflict)
+    expect(toJsonRpcError(err).code).toBe(JSON_RPC_CONFLICT)
+  })
+
+  it('maps McpDomainError with code REPO_UNCONFIGURED to -32007', () => {
+    const err = new McpDomainError('repo missing', McpErrorCode.RepoUnconfigured)
+    expect(toJsonRpcError(err).code).toBe(JSON_RPC_REPO_UNCONFIGURED)
+  })
+
   it('maps any other thrown value to -32603 Internal error without leaking stack', () => {
     const mapped = toJsonRpcError(new Error('oops stack trace details'))
     expect(mapped.code).toBe(-32603)
     expect(mapped.message).toBe('Internal error')
+  })
+
+  it('logs unknown throws via the optional logger before returning Internal error', () => {
+    const logger = { error: vi.fn() }
+    const err = new Error('kaboom')
+    toJsonRpcError(err, undefined, logger)
+    expect(logger.error).toHaveBeenCalledTimes(1)
+    const msg = logger.error.mock.calls[0][0] as string
+    expect(msg).toContain('kaboom')
+  })
+
+  it('does not throw when unknown error is received without a logger', () => {
+    expect(() => toJsonRpcError(new Error('boom'))).not.toThrow()
+  })
+})
+
+describe('writeJsonRpcError', () => {
+  function fakeResponse(): {
+    res: ServerResponse
+    writeHead: ReturnType<typeof vi.fn>
+    end: ReturnType<typeof vi.fn>
+    setHeadersSent: (sent: boolean) => void
+  } {
+    const writeHead = vi.fn()
+    const end = vi.fn()
+    let headersSent = false
+    const res = {
+      get headersSent() {
+        return headersSent
+      },
+      writeHead,
+      end
+    } as unknown as ServerResponse
+    return {
+      res,
+      writeHead,
+      end,
+      setHeadersSent: (sent: boolean) => {
+        headersSent = sent
+      }
+    }
+  }
+
+  it('writes a valid JSON-RPC 2.0 envelope with id: null by default', () => {
+    const { res, writeHead, end } = fakeResponse()
+    writeJsonRpcError(res, 500, new McpDomainError('gone', McpErrorCode.NotFound))
+    expect(writeHead).toHaveBeenCalledWith(500, { 'Content-Type': 'application/json' })
+    const body = JSON.parse(end.mock.calls[0][0])
+    expect(body.jsonrpc).toBe('2.0')
+    expect(body.id).toBeNull()
+    expect(body.error.code).toBe(JSON_RPC_NOT_FOUND)
+    expect(body.error.message).toBe('gone')
+  })
+
+  it('uses the explicit id from opts when provided', () => {
+    const { res, end } = fakeResponse()
+    writeJsonRpcError(res, 404, new McpDomainError('missing', McpErrorCode.NotFound), { id: 7 })
+    const body = JSON.parse(end.mock.calls[0][0])
+    expect(body.id).toBe(7)
+  })
+
+  it('skips writeHead when headers are already sent', () => {
+    const { res, writeHead, end, setHeadersSent } = fakeResponse()
+    setHeadersSent(true)
+    writeJsonRpcError(res, 500, new Error('late'))
+    expect(writeHead).not.toHaveBeenCalled()
+    expect(end).toHaveBeenCalledOnce()
   })
 })

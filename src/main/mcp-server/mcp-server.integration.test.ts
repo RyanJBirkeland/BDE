@@ -23,7 +23,7 @@ beforeAll(async () => {
     { port: 0 }
   )
   port = await handle.start()
-  token = await readOrCreateToken()
+  token = (await readOrCreateToken()).token
 
   client = new Client({ name: 'test', version: '0.0.0' }, { capabilities: {} })
   const transport = new StreamableHTTPClientTransport(

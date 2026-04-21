@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createEpicGroupService } from './epic-group-service'
+import {
+  createEpicGroupService,
+  EpicCycleError,
+  EpicNotFoundError
+} from './epic-group-service'
 import type { TaskGroup, EpicDependency } from '../../shared/types'
 
 const fakeGroup = (overrides: Partial<TaskGroup> = {}): TaskGroup => ({
@@ -75,14 +79,34 @@ describe('createEpicGroupService', () => {
 
     const svc = createEpicGroupService(queries)
     // Attempting g2 → g1 closes the cycle.
-    expect(() => svc.addDependency('g2', { id: 'g1', condition: 'on_success' })).toThrow(/cycle/i)
+    expect(() => svc.addDependency('g2', { id: 'g1', condition: 'on_success' })).toThrow(
+      EpicCycleError
+    )
     expect(queries.addGroupDependency).not.toHaveBeenCalled()
   })
 
   it('throws on update when group does not exist', () => {
     queries.updateGroup.mockReturnValue(null)
     const svc = createEpicGroupService(queries)
-    expect(() => svc.updateEpic('missing', { name: 'y' })).toThrow(/not found/)
+    expect(() => svc.updateEpic('missing', { name: 'y' })).toThrow(EpicNotFoundError)
+  })
+
+  it('forwards goal: null through createEpic (clear-on-create semantic)', () => {
+    const svc = createEpicGroupService(queries)
+    svc.createEpic({ name: 'new', goal: null })
+    expect(queries.createGroup).toHaveBeenCalledWith({ name: 'new', goal: null })
+  })
+
+  it('forwards goal: null through updateEpic (clear-goal signal)', () => {
+    const svc = createEpicGroupService(queries)
+    svc.updateEpic('g1', { goal: null })
+    expect(queries.updateGroup).toHaveBeenCalledWith('g1', { goal: null })
+  })
+
+  it('forwards goal: undefined through updateEpic (leave-untouched signal)', () => {
+    const svc = createEpicGroupService(queries)
+    svc.updateEpic('g1', { name: 'renamed' })
+    expect(queries.updateGroup).toHaveBeenCalledWith('g1', { name: 'renamed' })
   })
 
   it('throws on removeDependency when queries return null', () => {
@@ -169,7 +193,7 @@ describe('createEpicGroupService', () => {
 
       expect(() =>
         svc.setDependencies('child', [{ id: 'parent', condition: 'on_success' }])
-      ).toThrow(/cycle/i)
+      ).toThrow(EpicCycleError)
 
       expect(queries.addGroupDependency).not.toHaveBeenCalled()
       expect(queries.removeGroupDependency).not.toHaveBeenCalled()
@@ -206,7 +230,7 @@ describe('createEpicGroupService', () => {
       queries.getGroup.mockReturnValue(null)
       const svc = createEpicGroupService(queries, runInTx)
 
-      expect(() => svc.setDependencies('missing', [])).toThrow(/not found/i)
+      expect(() => svc.setDependencies('missing', [])).toThrow(EpicNotFoundError)
       expect(queries.addGroupDependency).not.toHaveBeenCalled()
     })
   })

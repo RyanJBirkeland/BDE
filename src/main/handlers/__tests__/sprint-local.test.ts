@@ -314,7 +314,7 @@ describe('sprint:update handler', () => {
     const result = await handler(mockEvent, '1', { title: 'Updated' })
     vi.runAllTimers()
 
-    expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' })
+    expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' }, undefined)
     expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
     expect(result).toEqual(updated)
   })
@@ -344,7 +344,11 @@ describe('sprint:update handler', () => {
     await handler(mockEvent, '1', { status: 'queued' })
 
     // Since deps are satisfied, patch should not be changed to blocked
-    expect(_updateTask).toHaveBeenCalledWith('1', { status: 'queued', needs_review: false })
+    expect(_updateTask).toHaveBeenCalledWith(
+      '1',
+      { status: 'queued', needs_review: false },
+      undefined
+    )
   })
 
   it('transitions status to blocked when dependencies are unsatisfied', async () => {
@@ -371,7 +375,11 @@ describe('sprint:update handler', () => {
     const handler = captureHandler('sprint:update')
     await handler(mockEvent, '1', { status: 'queued' })
 
-    expect(_updateTask).toHaveBeenCalledWith('1', expect.objectContaining({ status: 'blocked' }))
+    expect(_updateTask).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({ status: 'blocked' }),
+      undefined
+    )
   })
 
   it('rejects an unrecognized status string before touching the DB', async () => {

@@ -13,6 +13,7 @@ import * as queries from './sprint-queries'
 import * as reportingQueries from './reporting-queries'
 import * as groupQueries from './task-group-queries'
 import type { CreateTaskInput, QueueStats } from './sprint-queries'
+import type { ListTasksOptions, UpdateTaskOptions } from './sprint-task-crud'
 import type {
   SpecTypeSuccessRate,
   DailySuccessRate,
@@ -24,7 +25,9 @@ export type {
   QueueStats,
   SpecTypeSuccessRate,
   DailySuccessRate,
-  FailureReasonBreakdown
+  FailureReasonBreakdown,
+  ListTasksOptions,
+  UpdateTaskOptions
 }
 
 
@@ -33,7 +36,12 @@ export type {
  */
 export interface IAgentTaskRepository {
   getTask(id: string): SprintTask | null
-  updateTask(id: string, patch: Record<string, unknown>): SprintTask | null
+  /**
+   * Mutate a task. `options.caller` is recorded as the `changed_by`
+   * attribution in the `task_changes` audit trail (defaults to
+   * `'unknown'` when omitted, which historical call sites rely on).
+   */
+  updateTask(id: string, patch: Record<string, unknown>, options?: UpdateTaskOptions): SprintTask | null
   getQueuedTasks(limit: number): SprintTask[]
   getTasksWithDependencies(): Array<{
     id: string
@@ -65,7 +73,13 @@ export interface ISprintPollerRepository {
  * Methods used by IPC handlers, dashboard, and status server.
  */
 export interface IDashboardRepository {
-  listTasks(status?: string): SprintTask[]
+  /**
+   * List sprint tasks, optionally filtered and paginated. Accepts the legacy
+   * bare-status string for backward compatibility with existing callers, or
+   * a `ListTasksOptions` object when a caller needs repo/epic/tag/search
+   * filters or pagination pushed into SQL.
+   */
+  listTasks(options?: string | ListTasksOptions): SprintTask[]
   listTasksRecent(): SprintTask[]
   createTask(input: CreateTaskInput): SprintTask | null
   deleteTask(id: string, deletedBy?: string): void
@@ -105,7 +119,7 @@ export interface ISprintTaskRepository
 export function createSprintTaskRepository(): ISprintTaskRepository {
   return {
     getTask: queries.getTask,
-    updateTask: queries.updateTask,
+    updateTask: (id, patch, options) => queries.updateTask(id, patch, options),
     getQueuedTasks: queries.getQueuedTasks,
     getTasksWithDependencies: queries.getTasksWithDependencies,
     getOrphanedTasks: queries.getOrphanedTasks,
@@ -115,7 +129,7 @@ export function createSprintTaskRepository(): ISprintTaskRepository {
     getGroup: groupQueries.getGroup,
     getGroupTasks: groupQueries.getGroupTasks,
     getGroupsWithDependencies: groupQueries.getGroupsWithDependencies,
-    listTasks: queries.listTasks,
+    listTasks: (options) => queries.listTasks(options),
     listTasksRecent: queries.listTasksRecent,
     createTask: queries.createTask,
     deleteTask: queries.deleteTask,

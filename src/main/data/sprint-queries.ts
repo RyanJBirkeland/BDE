@@ -40,6 +40,7 @@ export {
   forceUpdateTask,
   deleteTask
 } from './sprint-task-crud'
+export type { ListTasksOptions } from './sprint-task-crud'
 
 // Queue and concurrency operations
 export { claimTask, releaseTask, getQueuedTasks, getActiveTaskCount } from './sprint-queue-ops'

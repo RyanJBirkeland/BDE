@@ -63,8 +63,19 @@ describe('createSprintTaskRepository', () => {
 
       const result = repo.updateTask('1', patch)
 
-      expect(queries.updateTask).toHaveBeenCalledWith('1', patch)
+      expect(queries.updateTask).toHaveBeenCalledWith('1', patch, undefined)
       expect(result).toBe(mockTask)
+    })
+
+    it('should forward the optional caller attribution to queries.updateTask', () => {
+      const repo = createSprintTaskRepository()
+      const mockTask = { id: '1' }
+      const patch = { status: 'done' }
+      vi.mocked(queries.updateTask).mockReturnValue(mockTask as any)
+
+      repo.updateTask('1', patch, { caller: 'mcp' })
+
+      expect(queries.updateTask).toHaveBeenCalledWith('1', patch, { caller: 'mcp' })
     })
 
     it('should delegate forceUpdateTask to queries.forceUpdateTask', () => {
@@ -189,7 +200,7 @@ describe('createSprintTaskRepository', () => {
   })
 
   describe('IDashboardRepository methods', () => {
-    it('should delegate listTasks to queries.listTasks', () => {
+    it('should delegate listTasks to queries.listTasks with a bare status', () => {
       const repo = createSprintTaskRepository()
       const mockTasks = [{ id: '1' }]
       vi.mocked(queries.listTasks).mockReturnValue(mockTasks as any)
@@ -197,6 +208,22 @@ describe('createSprintTaskRepository', () => {
       const result = repo.listTasks('queued')
 
       expect(queries.listTasks).toHaveBeenCalledWith('queued')
+      expect(result).toBe(mockTasks)
+    })
+
+    it('should delegate listTasks to queries.listTasks with a ListTasksOptions object', () => {
+      const repo = createSprintTaskRepository()
+      const mockTasks = [{ id: '1' }]
+      vi.mocked(queries.listTasks).mockReturnValue(mockTasks as any)
+
+      const result = repo.listTasks({ repo: 'bde', tag: 'foo', limit: 10, offset: 5 })
+
+      expect(queries.listTasks).toHaveBeenCalledWith({
+        repo: 'bde',
+        tag: 'foo',
+        limit: 10,
+        offset: 5
+      })
       expect(result).toBe(mockTasks)
     })
 

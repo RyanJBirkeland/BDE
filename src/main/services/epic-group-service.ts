@@ -4,10 +4,7 @@
  * MCP) sees identical behavior.
  */
 import type { TaskGroup, EpicDependency, SprintTask } from '../../shared/types'
-import type {
-  CreateGroupInput,
-  UpdateGroupInput
-} from '../data/task-group-queries'
+import type { CreateGroupInput, UpdateGroupInput } from '../data/task-group-queries'
 import type { EpicDepsReader } from './epic-dependency-service'
 import {
   createGroup as defaultCreateGroup,
@@ -26,6 +23,36 @@ import {
 } from '../data/task-group-queries'
 import { createEpicDependencyIndex, detectEpicCycle } from './epic-dependency-service'
 import { getDb } from '../db'
+
+/**
+ * Thrown when an epic lookup fails. Typed so MCP tool adapters can map to
+ * `McpErrorCode.NotFound` without regex-matching the message.
+ */
+export class EpicNotFoundError extends Error {
+  constructor(public readonly epicId: string) {
+    super(`Epic not found: ${epicId}`)
+    this.name = 'EpicNotFoundError'
+  }
+}
+
+/**
+ * Thrown when a proposed dependency change would introduce a cycle. Typed
+ * so MCP tool adapters can map to `McpErrorCode.Cycle` without regex-matching.
+ * `details` carries the human-readable cycle path for surfacing to callers.
+ */
+export class EpicCycleError extends Error {
+  constructor(
+    public readonly epicId: string,
+    public readonly details?: string
+  ) {
+    super(
+      details
+        ? `Epic cycle detected for ${epicId}: ${details}`
+        : `Epic cycle detected for ${epicId}`
+    )
+    this.name = 'EpicCycleError'
+  }
+}
 
 /**
  * Run a function inside a single SQLite transaction — rolls back on throw.
@@ -116,7 +143,7 @@ export function createEpicGroupService(
       const g = queries.getGroup(id)
       return g?.depends_on ?? null
     })
-    if (cycle) throw new Error(`Epic cycle detected: ${cycle.join(' -> ')}`)
+    if (cycle) throw new EpicCycleError(epicId, cycle.join(' -> '))
   }
 
   return {
@@ -137,7 +164,7 @@ export function createEpicGroupService(
 
     updateEpic(id, patch) {
       const updated = queries.updateGroup(id, patch)
-      if (!updated) throw new Error(`Task group not found: ${id}`)
+      if (!updated) throw new EpicNotFoundError(id)
       rebuildIndex()
       return updated
     },
@@ -167,7 +194,7 @@ export function createEpicGroupService(
 
     addDependency(epicId, dep) {
       const group = queries.getGroup(epicId)
-      if (!group) throw new Error(`Task group not found: ${epicId}`)
+      if (!group) throw new EpicNotFoundError(epicId)
       const currentDeps = group.depends_on ?? []
       const proposedDeps = [...currentDeps, dep]
       assertNoCycle(epicId, proposedDeps)
@@ -193,7 +220,7 @@ export function createEpicGroupService(
 
     setDependencies(epicId, nextDeps) {
       const group = queries.getGroup(epicId)
-      if (!group) throw new Error(`Task group not found: ${epicId}`)
+      if (!group) throw new EpicNotFoundError(epicId)
 
       // Cycle detection runs against the proposed target state, not the
       // current DB — otherwise a diff-then-apply sequence could pass the

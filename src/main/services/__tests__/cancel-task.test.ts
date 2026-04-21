@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { cancelTask } from '../sprint-service'
+import { TaskTransitionError, cancelTask } from '../sprint-service'
 
 const fakeLogger = {
   info: vi.fn(),
@@ -24,10 +24,11 @@ describe('cancelTask', () => {
       { onStatusTerminal, logger: fakeLogger, updateTask }
     )
 
-    expect(updateTask).toHaveBeenCalledWith('t1', {
-      status: 'cancelled',
-      notes: 'no longer needed'
-    })
+    expect(updateTask).toHaveBeenCalledWith(
+      't1',
+      { status: 'cancelled', notes: 'no longer needed' },
+      undefined
+    )
     expect(onStatusTerminal).toHaveBeenCalledWith('t1', 'cancelled')
     expect(result).toBe(row)
   })
@@ -38,7 +39,24 @@ describe('cancelTask', () => {
 
     await cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
 
-    expect(updateTask).toHaveBeenCalledWith('t1', { status: 'cancelled' })
+    expect(updateTask).toHaveBeenCalledWith('t1', { status: 'cancelled' }, undefined)
+  })
+
+  it('forwards the caller attribution through updateTask', async () => {
+    const updateTask = vi.fn().mockReturnValue({ id: 't1', status: 'cancelled' })
+    const onStatusTerminal = vi.fn().mockResolvedValue(undefined)
+
+    await cancelTask(
+      't1',
+      { reason: 'no longer needed', caller: 'mcp' },
+      { onStatusTerminal, logger: fakeLogger, updateTask }
+    )
+
+    expect(updateTask).toHaveBeenCalledWith(
+      't1',
+      { status: 'cancelled', notes: 'no longer needed' },
+      { caller: 'mcp' }
+    )
   })
 
   it('returns null and skips onStatusTerminal when updateTask misses', async () => {
@@ -69,5 +87,32 @@ describe('cancelTask', () => {
     expect(fakeLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('onStatusTerminal after cancel t1')
     )
+  })
+
+  it('translates data-layer invalid-transition throws into TaskTransitionError', async () => {
+    const updateTask = vi.fn(() => {
+      throw new Error(
+        '[sprint-queries] Invalid transition for task t1: Invalid transition: done → cancelled. Allowed: cancelled'
+      )
+    })
+    const onStatusTerminal = vi.fn()
+
+    await expect(
+      cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
+    ).rejects.toBeInstanceOf(TaskTransitionError)
+
+    expect(onStatusTerminal).not.toHaveBeenCalled()
+  })
+
+  it('leaves unknown update errors unchanged', async () => {
+    const boom = new Error('disk full')
+    const updateTask = vi.fn(() => {
+      throw boom
+    })
+    const onStatusTerminal = vi.fn()
+
+    await expect(
+      cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
+    ).rejects.toBe(boom)
   })
 })

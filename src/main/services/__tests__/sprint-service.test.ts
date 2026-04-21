@@ -182,9 +182,17 @@ describe('sprint-service', () => {
 
       const result = updateTask('1', { title: 'Updated' })
       expect(result).toEqual(updated)
-      expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' })
+      expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' }, undefined)
       vi.runAllTimers()
       expect(broadcast).toHaveBeenCalledWith('sprint:externalChange') // updated)
+    })
+
+    it('forwards the optional caller attribution to the data layer', () => {
+      const updated: Partial<SprintTask> = { id: '1', title: 'Updated' }
+      vi.mocked(_updateTask).mockReturnValue(updated as SprintTask)
+
+      updateTask('1', { title: 'Updated' }, { caller: 'mcp' })
+      expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' }, { caller: 'mcp' })
     })
 
     it('does not notify when updateTask returns null', () => {
