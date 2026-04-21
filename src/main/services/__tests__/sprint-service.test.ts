@@ -91,7 +91,8 @@ import {
   markTaskCancelledByPrNumber,
   listTasksWithOpenPrs,
   updateTaskMergeableState,
-  getHealthCheckTasks
+  getHealthCheckTasks,
+  resetTaskForRetry
 } from '../sprint-service'
 
 import {
@@ -292,6 +293,40 @@ describe('sprint-service', () => {
       const tasks: Partial<SprintTask>[] = [{ id: '1' }]
       vi.mocked(_getHealthCheckTasks).mockReturnValue(tasks as SprintTask[])
       expect(getHealthCheckTasks()).toEqual([{ id: '1' }])
+    })
+  })
+
+  describe('resetTaskForRetry', () => {
+    it('clears all stale terminal-state fields', () => {
+      const updateTask = vi.fn().mockReturnValue({ id: 't1' } as any)
+      resetTaskForRetry('t1', { updateTask })
+      expect(updateTask).toHaveBeenCalledWith('t1', {
+        completed_at: null,
+        failure_reason: null,
+        claimed_by: null,
+        started_at: null,
+        retry_count: 0,
+        fast_fail_count: 0,
+        next_eligible_at: null
+      })
+    })
+
+    it('does not set status — caller decides queued vs backlog', () => {
+      const updateTask = vi.fn().mockReturnValue({ id: 't1' } as any)
+      resetTaskForRetry('t1', { updateTask })
+      const patch = updateTask.mock.calls[0][1]
+      expect(patch).not.toHaveProperty('status')
+    })
+
+    it('returns the updated row', () => {
+      const row = { id: 't1', status: 'queued' } as any
+      const updateTask = vi.fn().mockReturnValue(row)
+      expect(resetTaskForRetry('t1', { updateTask })).toBe(row)
+    })
+
+    it('returns null when updateTask returns null', () => {
+      const updateTask = vi.fn().mockReturnValue(null)
+      expect(resetTaskForRetry('missing', { updateTask })).toBeNull()
     })
   })
 })

@@ -173,6 +173,69 @@ describe('tasks.* write tools', () => {
     ).rejects.toThrow(/not found/)
   })
 
+  it('tasks.update resets terminal-state fields when transitioning from terminal to queued', async () => {
+    const deps = fakeDeps({
+      getTask: vi.fn(() => fakeTask({ id: 't1', status: 'failed' })),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'queued' }))
+    })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    await call('tasks.update', { id: 't1', patch: { status: 'queued' } })
+    const patch = (deps.updateTask as any).mock.calls[0][1]
+    expect(patch).toMatchObject({
+      status: 'queued',
+      completed_at: null,
+      failure_reason: null,
+      claimed_by: null,
+      started_at: null,
+      retry_count: 0,
+      fast_fail_count: 0,
+      next_eligible_at: null
+    })
+  })
+
+  it('tasks.update resets terminal-state fields on terminal → backlog transitions too', async () => {
+    const deps = fakeDeps({
+      getTask: vi.fn(() => fakeTask({ id: 't1', status: 'cancelled' })),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'backlog' }))
+    })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    await call('tasks.update', { id: 't1', patch: { status: 'backlog' } })
+    const patch = (deps.updateTask as any).mock.calls[0][1]
+    expect(patch).toMatchObject({
+      status: 'backlog',
+      completed_at: null,
+      failure_reason: null
+    })
+  })
+
+  it('tasks.update for non-terminal status changes does NOT clear terminal fields', async () => {
+    const deps = fakeDeps({
+      getTask: vi.fn(() => fakeTask({ id: 't1', status: 'active' })),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'review' }))
+    })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    await call('tasks.update', { id: 't1', patch: { status: 'review' } })
+    const patch = (deps.updateTask as any).mock.calls[0][1]
+    expect(patch).not.toHaveProperty('completed_at')
+    expect(patch).not.toHaveProperty('failure_reason')
+  })
+
+  it('tasks.update for non-status patches does NOT clear terminal fields', async () => {
+    const deps = fakeDeps({
+      getTask: vi.fn(() => fakeTask({ id: 't1', status: 'failed' })),
+      updateTask: vi.fn(() => fakeTask({ id: 't1', status: 'failed' }))
+    })
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    await call('tasks.update', { id: 't1', patch: { priority: 9 } })
+    const patch = (deps.updateTask as any).mock.calls[0][1]
+    expect(patch).not.toHaveProperty('completed_at')
+    expect(patch).toMatchObject({ priority: 9 })
+  })
+
   it('tasks.cancel routes through cancelTask (which triggers onStatusTerminal)', async () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()

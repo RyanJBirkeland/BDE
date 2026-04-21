@@ -6,7 +6,7 @@
 import { execFileAsync } from '../lib/async-utils'
 import { safeHandle } from '../ipc-utils'
 import { isValidTaskId } from '../lib/validation'
-import { getTask, updateTask } from '../services/sprint-service'
+import { getTask, resetTaskForRetry, updateTask } from '../services/sprint-service'
 import { getSettingJson } from '../settings'
 import { getErrorMessage } from '../../shared/errors'
 import { createLogger } from '../logger'
@@ -53,14 +53,17 @@ export function registerSprintRetryHandler(): void {
       }
     }
 
-    // Reset task fields — updateTask (service) handles notifySprintMutation internally
+    // Clear stale terminal-state fields (completed_at, failure_reason,
+    // retry_count, fast_fail_count, next_eligible_at, claimed_by, started_at)
+    // before the status transition so the re-queued row looks fresh.
+    resetTaskForRetry(taskId)
+
+    // Separately clear operator notes and agent_run_id, then transition to
+    // queued. Keeping the status change as the final update makes the audit
+    // trail read "task moved to queued" rather than "task reset + moved".
     const updated = updateTask(taskId, {
       status: 'queued',
-      claimed_by: null,
       notes: null,
-      started_at: null,
-      completed_at: null,
-      fast_fail_count: 0,
       agent_run_id: null
     })
     if (!updated) throw new Error(`Failed to update task ${taskId}`)

@@ -287,6 +287,7 @@ npm run package      # Alias for build:mac
 - Pipeline agent prompts include retry context, time limits, idle warnings, and scope enforcement — see `prompt-composer.ts`
 - Spec templates with required sections in `src/shared/constants.ts` — Bug Fix, Feature, Refactor, Test Coverage
 - Data-mutating migrations (any `UPDATE`/`DELETE` or CHECK-constraint change) require a dedicated test in `src/main/migrations/__tests__/vNNN.test.ts` modeled on `v049.test.ts` / `v038.test.ts`. The aggregate `runMigrations` smoke test proves the chain completes but not that each individual migration handles a partially-applied prior state.
+- When re-queueing a task, use `resetTaskForRetry(id)` (or the `sprint:retry` IPC / `tasks.update` MCP tool). Raw `UPDATE sprint_tasks SET status='queued'` leaves stale `completed_at`, `failure_reason`, `retry_count`, etc. from the prior run — the UI shows half-terminal rows and the retry counter can immediately re-trip fast-fail.
 
 ## Pipeline Agent Spec Guidelines
 

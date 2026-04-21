@@ -15,6 +15,31 @@ import {
   TaskListSchema,
   TaskUpdateSchema
 } from '../schemas'
+import { TERMINAL_STATUSES } from '../../../shared/task-state-machine'
+
+/**
+ * Patch fragment that clears stale terminal-state fields. Applied when an
+ * MCP `tasks.update` call transitions a task from a terminal status back
+ * into the active lifecycle (`queued` or `backlog`). Mirrors the in-app
+ * `sprint:retry` hygiene so the re-queued row looks freshly created.
+ */
+const TERMINAL_STATE_RESET_PATCH = {
+  completed_at: null,
+  failure_reason: null,
+  claimed_by: null,
+  started_at: null,
+  retry_count: 0,
+  fast_fail_count: 0,
+  next_eligible_at: null
+} as const
+
+function isRevivingTerminalTask(
+  currentStatus: string,
+  targetStatus: unknown
+): boolean {
+  if (targetStatus !== 'queued' && targetStatus !== 'backlog') return false
+  return TERMINAL_STATUSES.has(currentStatus)
+}
 
 export interface TaskToolsDeps {
   listTasks: (status?: string) => SprintTask[]
@@ -116,7 +141,14 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
     TaskUpdateSchema.shape,
     async (rawArgs) => {
       const { id, patch } = parseToolArgs(TaskUpdateSchema, rawArgs)
-      const row = deps.updateTask(id, patch)
+      const effectivePatch: Record<string, unknown> = { ...patch }
+      if ('status' in effectivePatch) {
+        const current = deps.getTask(id)
+        if (current && isRevivingTerminalTask(current.status, effectivePatch.status)) {
+          Object.assign(effectivePatch, TERMINAL_STATE_RESET_PATCH)
+        }
+      }
+      const row = deps.updateTask(id, effectivePatch)
       if (!row) throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
       return json(row)
     }

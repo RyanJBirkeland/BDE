@@ -136,6 +136,34 @@ export async function cancelTask(
   return row
 }
 
+export interface ResetTaskForRetryDeps {
+  updateTask?: (id: string, patch: Record<string, unknown>) => SprintTask | null
+}
+
+/**
+ * Clear stale terminal-state fields on a task so it looks fresh after
+ * re-queueing. Does NOT set `status` — the caller owns that decision
+ * (usually 'queued', sometimes 'backlog'). Fields cleared:
+ * - completed_at, failure_reason, claimed_by, started_at
+ * - retry_count and fast_fail_count (reset to 0, not null)
+ * - next_eligible_at
+ */
+export function resetTaskForRetry(
+  id: string,
+  deps: ResetTaskForRetryDeps = {}
+): SprintTask | null {
+  const doUpdate = deps.updateTask ?? updateTask
+  return doUpdate(id, {
+    completed_at: null,
+    failure_reason: null,
+    claimed_by: null,
+    started_at: null,
+    retry_count: 0,
+    fast_fail_count: 0,
+    next_eligible_at: null
+  })
+}
+
 export type TaskValidationCode =
   | 'spec-structural'
   | 'spec-readiness'
