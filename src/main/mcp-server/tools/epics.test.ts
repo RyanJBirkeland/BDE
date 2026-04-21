@@ -156,7 +156,7 @@ describe('epics.* tools', () => {
     )
   })
 
-  it('epics.update delegates to updateEpic with the patch', async () => {
+  it('epics.update forwards the patch to updateEpic unchanged', async () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerEpicTools(server, deps)
@@ -164,24 +164,33 @@ describe('epics.* tools', () => {
       id: 'g1',
       patch: { name: 'renamed', status: 'ready' }
     })
+    // The handler no longer injects `goal: undefined` — a patch with no
+    // `goal` field reaches the service without one, so the service's
+    // "undefined = leave untouched" semantic is expressed structurally.
     expect(deps.epicService.updateEpic).toHaveBeenCalledWith('g1', {
       name: 'renamed',
-      status: 'ready',
-      goal: undefined
+      status: 'ready'
     })
     const body = JSON.parse(res.content[0].text)
     expect(body).toMatchObject({ id: 'g1', name: 'renamed', status: 'ready' })
   })
 
-  it('epics.update coerces null goal to undefined before delegating', async () => {
+  it('epics.update forwards goal: null through to updateEpic (clear-goal signal)', async () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerEpicTools(server, deps)
     await call('epics.update', { id: 'g1', patch: { goal: null } })
-    // Nullable goal in the schema is currently coerced to `undefined` by the
-    // handler (pending T-17). Lock in the current behavior so the follow-up
-    // refactor has a visible baseline.
-    expect(deps.epicService.updateEpic).toHaveBeenCalledWith('g1', { goal: undefined })
+    // `null` means "clear the goal column to SQL NULL" — collapsing it to
+    // `undefined` here would silently strip that intent (see T-17).
+    expect(deps.epicService.updateEpic).toHaveBeenCalledWith('g1', { goal: null })
+  })
+
+  it('epics.create forwards goal: null through to createEpic (explicit-null-goal)', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerEpicTools(server, deps)
+    await call('epics.create', { name: 'new', goal: null })
+    expect(deps.epicService.createEpic).toHaveBeenCalledWith({ name: 'new', goal: null })
   })
 
   it('epics.update returns structured NotFound when EpicNotFoundError is thrown', async () => {

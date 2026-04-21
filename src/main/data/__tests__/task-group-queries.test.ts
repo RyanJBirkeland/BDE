@@ -114,6 +114,55 @@ describe('listGroups with depends_on', () => {
   })
 })
 
+describe('createGroup + updateGroup — goal null/undefined semantics (T-17)', () => {
+  it('stores goal = null when createGroup receives goal: null', () => {
+    const created = createGroup({ name: 'Nullable Epic', goal: null }, db)
+    expect(created?.goal).toBeNull()
+    const fetched = getGroup(created!.id, db)
+    expect(fetched?.goal).toBeNull()
+  })
+
+  it('stores the goal string when createGroup receives goal: "x"', () => {
+    const created = createGroup({ name: 'With Goal', goal: 'ship it' }, db)
+    expect(created?.goal).toBe('ship it')
+  })
+
+  it('clears an existing goal when updateGroup receives goal: null', () => {
+    const created = createGroup({ name: 'Had Goal', goal: 'original' }, db)
+    expect(created?.goal).toBe('original')
+
+    const updated = updateGroup(created!.id, { goal: null }, db)
+    expect(updated?.goal).toBeNull()
+
+    const fetched = getGroup(created!.id, db)
+    expect(fetched?.goal).toBeNull()
+  })
+
+  it('leaves the goal untouched when updateGroup omits the goal field', () => {
+    const created = createGroup({ name: 'Untouched', goal: 'keep me' }, db)
+    expect(created?.goal).toBe('keep me')
+
+    const updated = updateGroup(created!.id, { name: 'renamed' }, db)
+    expect(updated?.goal).toBe('keep me')
+    expect(updated?.name).toBe('renamed')
+  })
+
+  it('leaves the goal untouched when updateGroup receives goal: undefined explicitly', () => {
+    const created = createGroup({ name: 'Also Untouched', goal: 'still here' }, db)
+    expect(created?.goal).toBe('still here')
+
+    const updated = updateGroup(
+      created!.id,
+      // Simulate a caller that spreads an object with an explicit undefined —
+      // this must behave like "leave it alone," not "clear it."
+      { name: 'renamed', goal: undefined },
+      db
+    )
+    expect(updated?.goal).toBe('still here')
+    expect(updated?.name).toBe('renamed')
+  })
+})
+
 describe('sanitizeGroup malformed JSON fallback', () => {
   it('returns null for malformed depends_on JSON', () => {
     const created = createGroup({ name: 'Test Epic' }, db)

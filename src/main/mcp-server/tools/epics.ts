@@ -69,8 +69,10 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
     async (rawArgs) =>
       safeToolResponse(
         async () => {
-          const { goal, ...rest } = parseToolArgs(EpicWriteFieldsSchema, rawArgs)
-          return jsonContent(svc.createEpic({ ...rest, goal: goal ?? undefined }))
+          const input = parseToolArgs(EpicWriteFieldsSchema, rawArgs)
+          // Pass `goal` through as-is: `null` clears, `undefined` omits.
+          // The service + data layer honor that distinction.
+          return jsonContent(svc.createEpic(input))
         },
         { schema: EpicWriteFieldsSchema }
       )
@@ -84,9 +86,12 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       safeToolResponse(
         async () => {
           const { id, patch } = parseToolArgs(EpicUpdateSchema, rawArgs)
-          const { goal, ...rest } = patch
           try {
-            return jsonContent(svc.updateEpic(id, { ...rest, goal: goal ?? undefined }))
+            // Pass `patch` through unchanged so `goal: null` reaches the
+            // service as "clear the goal" and `goal: undefined` / absent
+            // means "leave it alone". Collapsing null→undefined here would
+            // silently strip the clear-goal intent.
+            return jsonContent(svc.updateEpic(id, patch))
           } catch (err) {
             throw rewrapEpicServiceError(err)
           }
