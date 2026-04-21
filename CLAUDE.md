@@ -299,6 +299,7 @@ When creating sprint tasks for pipeline agents:
 - **Avoid exploration language.** "Explore," "investigate," "find issues" cause agents to thrash. Use explicit instructions.
 - **One feature per task.** Agents given multi-feature specs attempt everything and timeout.
 - **Agents create test task artifacts.** Running `npm test` in worktrees creates "Test task" records in `~/.bde/bde.db`. These are cleaned on app startup.
+- **Task linkage is derived from the branch name, not the commit subject.** BDE generates each pipeline agent's branch as `agent/t-<id>-<slug>-<hash>` — the completion guard (`assertBranchTipMatches` in `resolve-success-phases.ts`) extracts the task id from the branch name via `extractTaskIdFromBranch`. Agents follow the standard commit-message convention (`{type}({scope}): {what} — {why}`) and do not need to mention the task id in the subject. The guard retains a commit-message fallback for non-standard branch names.
 
 ### Direct SQL queue pattern (bypass IPC)
 

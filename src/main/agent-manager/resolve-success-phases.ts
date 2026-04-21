@@ -80,26 +80,77 @@ function buildExpectedTipTokens(task: {
 }
 
 /**
- * Reads the branch tip commit message (subject + body) and verifies it
- * references the task's expected identifiers. Throws BranchTipMismatchError
- * if no identifier is present — defense against a stale branch tip or a
- * cross-task leak that survived worktree setup.
+ * Extract the task-id slug from a BDE agent branch name.
+ *
+ * BDE generates branches as `agent/t-<idSlug>-<titleSlug>-<groupHash>` where
+ * `<groupHash>` is always 8 lowercase hex chars. Returns the `<idSlug>` part
+ * (e.g. '11', 'abc123', '20260420') so callers can match it against the
+ * task's full id by suffix.
+ *
+ * Returns null when the branch name does not match the expected shape —
+ * callers should fall back to commit-subject matching or treat as
+ * "no task linkage" per their policy.
+ */
+export function extractTaskIdFromBranch(branch: string): string | null {
+  const match = /^agent\/t-([a-zA-Z0-9]+)-.+-[a-f0-9]{8}$/.exec(branch)
+  return match ? match[1] : null
+}
+
+/**
+ * Check whether a branch name identifies a given task.
+ *
+ * Uses extractTaskIdFromBranch to pull the `<idSlug>` from the branch, then
+ * checks that the task id ends with `t-<idSlug>` (case-insensitive). Accepts
+ * both short ids ('t-11') and long ones ('audit-20260420-t-11').
+ */
+export function branchMatchesTask(branch: string, taskId: string): boolean {
+  const slug = extractTaskIdFromBranch(branch)
+  if (!slug) return false
+  return taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)
+}
+
+/**
+ * Reads the tip commit message (subject + body) for a branch.
+ *
+ * Reads FROM the main repo — the branch ref lives there even when the
+ * worktree is elsewhere. Using the same cwd keeps the check consistent
+ * with how branches are actually created by git worktree add.
+ */
+export type ReadTipCommit = (branch: string, repoPath: string) => Promise<string>
+
+const defaultReadTipCommit: ReadTipCommit = async (branch, repoPath) => {
+  const env = buildAgentEnv()
+  const { stdout } = await execFileAsync(
+    'git',
+    ['log', '-1', '--format=%B', branch],
+    { cwd: repoPath, env }
+  )
+  return stdout.trim()
+}
+
+/**
+ * Verifies that the agent's branch tip legitimately belongs to this task.
+ *
+ * Primary signal: the branch name itself (e.g. `agent/t-11-...-<hash>`) —
+ * BDE generates branches deterministically from the task id, so a name match
+ * is strong evidence of linkage and short-circuits before any subprocess.
+ *
+ * Fallback signal: the commit message references a task identifier
+ * (agent_run_id, (T-N), title head, or task id). This covers non-standard
+ * branch names and preserves forward compatibility with other tools.
+ *
+ * Throws BranchTipMismatchError when neither signal matches — defense against
+ * a stale branch tip or a cross-task leak that survived worktree setup.
  */
 export async function assertBranchTipMatches(
   task: { id: string; title: string; agent_run_id?: string | null },
   agentBranch: string,
-  repoPath: string
+  repoPath: string,
+  readTipCommit: ReadTipCommit = defaultReadTipCommit
 ): Promise<void> {
-  const env = buildAgentEnv()
-  // Reads FROM the main repo — the branch ref lives there even when the
-  // worktree is elsewhere. Using the same cwd keeps the check consistent
-  // with how branches are actually created by git worktree add.
-  const { stdout: subjectOut } = await execFileAsync(
-    'git',
-    ['log', '-1', '--format=%B', agentBranch],
-    { cwd: repoPath, env }
-  )
-  const commitMessage = subjectOut.trim()
+  if (branchMatchesTask(agentBranch, task.id)) return
+
+  const commitMessage = await readTipCommit(agentBranch, repoPath)
   const expectedTokens = buildExpectedTipTokens(task)
   const hasMatch = expectedTokens.some((token) =>
     commitMessage.toLowerCase().includes(token.toLowerCase())
