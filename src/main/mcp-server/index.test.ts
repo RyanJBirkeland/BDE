@@ -163,14 +163,11 @@ vi.mock('../services/sprint-service', async () => {
     cancelTask: vi.fn(),
     createTaskWithValidation: vi.fn(),
     getTask: vi.fn(),
+    getTaskChanges: vi.fn(() => []),
     listTasks: vi.fn(),
     updateTask: vi.fn()
   }
 })
-
-vi.mock('../data/task-changes', () => ({
-  getTaskChanges: vi.fn(() => [])
-}))
 
 vi.mock('../settings', () => ({
   getSettingJson: vi.fn(() => [])

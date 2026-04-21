@@ -36,6 +36,10 @@ export const notifySprintMutation = broadcaster.notifySprintMutation
 // Re-export read-only operations
 export const getTask = mutations.getTask
 export const listTasks = mutations.listTasks
+// Audit trail read — exposed through the service layer so adapters (MCP,
+// handlers) never reach past it into the data layer directly.
+export { getTaskChanges } from '../data/task-changes'
+export type { TaskChange, GetTaskChangesOptions } from '../data/task-changes'
 export const listTasksRecent = mutations.listTasksRecent
 export const getQueueStats = mutations.getQueueStats
 export const getDoneTodayCount = mutations.getDoneTodayCount

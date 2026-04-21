@@ -7,10 +7,10 @@ import {
   cancelTask,
   createTaskWithValidation,
   getTask,
+  getTaskChanges,
   listTasks,
   updateTask
 } from '../services/sprint-service'
-import { getTaskChanges } from '../data/task-changes'
 import type { EpicGroupService } from '../services/epic-group-service'
 import { getSettingJson } from '../settings'
 import type { RepoConfig } from '../paths'
