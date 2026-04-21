@@ -19,6 +19,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import http, { IncomingMessage, ServerResponse } from 'node:http'
 import { AddressInfo } from 'node:net'
 import { createTransportHandler } from './transport'
+import type { AuthRateLimit } from './auth-rate-limit'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { Logger } from '../logger'
 
@@ -536,6 +537,234 @@ describe('transport handler close timeout (T-47)', () => {
     await Promise.resolve()
 
     expect(logger.warn).not.toHaveBeenCalled()
+  })
+})
+
+describe('transport handler auth-failure logging (T-42)', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  it('logs a structured warning with the auth.ts message and remote address on 401', async () => {
+    const logger = createMockLogger()
+    const handler = createTransportHandler(() => createMockMcpServer(), validToken, port, logger)
+
+    const { req } = createMockRequest({
+      headers: { host: '127.0.0.1:18792' } // no Authorization header → "missing bearer token"
+    })
+    Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.42' } })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const warnCalls = (logger.warn as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    const hasAuthFailureLog = warnCalls.some(
+      ([msg]) =>
+        typeof msg === 'string' &&
+        msg.includes('mcp.auth.failure') &&
+        msg.includes('missing bearer token') &&
+        msg.includes('10.0.0.42')
+    )
+    expect(hasAuthFailureLog).toBe(true)
+  })
+
+  it('distinguishes invalid-token from missing-token in the log message', async () => {
+    const logger = createMockLogger()
+    const handler = createTransportHandler(() => createMockMcpServer(), validToken, port, logger)
+
+    const { req } = createMockRequest({
+      headers: { host: '127.0.0.1:18792', authorization: 'Bearer wrong-token' }
+    })
+    Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.42' } })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const warnCalls = (logger.warn as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    const hasInvalidTokenLog = warnCalls.some(
+      ([msg]) =>
+        typeof msg === 'string' &&
+        msg.includes('mcp.auth.failure') &&
+        msg.includes('invalid bearer token')
+    )
+    expect(hasInvalidTokenLog).toBe(true)
+  })
+
+  it('falls back to "unknown" remote when socket.remoteAddress is absent', async () => {
+    const logger = createMockLogger()
+    const handler = createTransportHandler(() => createMockMcpServer(), validToken, port, logger)
+
+    const { req } = createMockRequest({ headers: { host: '127.0.0.1:18792' } })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const warnCalls = (logger.warn as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    const hasUnknownRemote = warnCalls.some(
+      ([msg]) => typeof msg === 'string' && msg.includes('from unknown')
+    )
+    expect(hasUnknownRemote).toBe(true)
+  })
+})
+
+function createStubRateLimit(
+  delayOnFailure: (callIndex: number) => number = () => 0
+): AuthRateLimit & {
+  recordAuthFailure: ReturnType<typeof vi.fn>
+  recordAuthSuccess: ReturnType<typeof vi.fn>
+} {
+  let calls = 0
+  return {
+    recordAuthFailure: vi.fn(() => delayOnFailure(calls++)),
+    recordAuthSuccess: vi.fn(),
+    size: () => 0
+  }
+}
+
+describe('transport handler auth-rate-limit wire-through', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  it('records a success on the rate limit when auth passes', async () => {
+    const rateLimit = createStubRateLimit()
+    const handler = createTransportHandler(
+      () => createMockMcpServer(),
+      validToken,
+      port,
+      createMockLogger(),
+      rateLimit
+    )
+
+    const { req } = createMockRequest({
+      headers: { host: '127.0.0.1:18792', authorization: `Bearer ${validToken}` }
+    })
+    Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.1' } })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    expect(rateLimit.recordAuthSuccess).toHaveBeenCalledWith('10.0.0.1')
+    expect(rateLimit.recordAuthFailure).not.toHaveBeenCalled()
+  })
+
+  it('records a failure on the rate limit when auth fails', async () => {
+    const rateLimit = createStubRateLimit()
+    const handler = createTransportHandler(
+      () => createMockMcpServer(),
+      validToken,
+      port,
+      createMockLogger(),
+      rateLimit
+    )
+
+    const { req } = createMockRequest({ headers: { host: '127.0.0.1:18792' } })
+    Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.2' } })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    expect(rateLimit.recordAuthFailure).toHaveBeenCalledWith('10.0.0.2')
+    expect(rateLimit.recordAuthSuccess).not.toHaveBeenCalled()
+  })
+
+  it('does not delay when recordAuthFailure returns 0', async () => {
+    vi.useFakeTimers()
+    try {
+      const rateLimit = createStubRateLimit(() => 0)
+      const handler = createTransportHandler(
+        () => createMockMcpServer(),
+        validToken,
+        port,
+        createMockLogger(),
+        rateLimit
+      )
+
+      const { req } = createMockRequest({ headers: { host: '127.0.0.1:18792' } })
+      Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.3' } })
+      const { res, written } = createMockResponse()
+
+      await handler.handle(req, res)
+      expect(written.status).toBe(401)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('awaits the progressive delay before writing the 401 when recordAuthFailure returns >0', async () => {
+    vi.useFakeTimers()
+    try {
+      const delayMs = 1_000
+      const rateLimit = createStubRateLimit(() => delayMs)
+      const handler = createTransportHandler(
+        () => createMockMcpServer(),
+        validToken,
+        port,
+        createMockLogger(),
+        rateLimit
+      )
+
+      const { req } = createMockRequest({ headers: { host: '127.0.0.1:18792' } })
+      Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.4' } })
+      const { res, written } = createMockResponse()
+
+      const handlePromise = handler.handle(req, res)
+      // Give the handler a chance to register the setTimeout.
+      await Promise.resolve()
+      expect(written.status).toBe(0) // not written yet — delay is pending
+      await vi.advanceTimersByTimeAsync(delayMs)
+      await handlePromise
+      expect(written.status).toBe(401)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('transport handler 500-path structured log (T-48)', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  it('logs method, url, remote, and a stack fragment on unhandled failure', async () => {
+    const explosion = new Error('sdk exploded')
+    const failingServer = {
+      connect: vi.fn().mockRejectedValue(explosion),
+      close: vi.fn().mockResolvedValue(undefined)
+    } as unknown as McpServer
+    const logger = createMockLogger()
+    const handler = createTransportHandler(() => failingServer, validToken, port, logger)
+
+    const { req } = createMockRequest({
+      headers: { host: '127.0.0.1:18792', authorization: `Bearer ${validToken}` }
+    })
+    Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.5' } })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const errorCalls = (logger.error as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    expect(errorCalls.length).toBeGreaterThan(0)
+    const [firstMessage] = errorCalls[0]
+    expect(firstMessage).toMatch(/mcp\.transport\.500/)
+    expect(firstMessage).toMatch(/method=POST/)
+    expect(firstMessage).toMatch(/url=\/mcp/)
+    expect(firstMessage).toMatch(/remote=10\.0\.0\.5/)
+    // Stack fragment — the error message is always present; on Node it
+    // prefixes the stack trace when `.stack` is available.
+    expect(firstMessage).toMatch(/sdk exploded/)
   })
 })
 

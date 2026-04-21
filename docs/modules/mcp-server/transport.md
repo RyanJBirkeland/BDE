@@ -7,16 +7,43 @@
 Wraps the MCP SDK's `StreamableHTTPServerTransport` with bearer-token authentication, defense-in-depth request gating, and structured error logging. Returns a `TransportHandler` that guards every request before delegating to the SDK.
 
 ## Public API
-- `createTransportHandler(buildMcpServer, token, port, logger)` — creates the handler; accepts a factory that produces a fresh `McpServer` per request (required by the SDK's stateless transport, which cannot be reused across requests)
-- `TransportHandler` — interface with `handle(req, res)` and `close()` methods
+- `createTransportHandler(buildMcpServer, token, port, logger, rateLimit?)` — creates the handler; accepts a factory that produces a fresh `McpServer` per request (required by the SDK's stateless transport, which cannot be reused across requests). The optional `rateLimit: AuthRateLimit` controls brute-force auth-failure throttling — when omitted, the handler lazily instantiates its own `createAuthRateLimit({ logger })` so the composition root can opt in or swap in a shared instance later without a signature change.
+- `TransportHandler` — interface with `handle(req, res)` and `close()` methods.
+
+## `handle()` in outline
+```
+handle(req, res):
+  enforceRoute          → 404 / 405 and bail
+  checkAuthorization    → log failure, record rate-limit, build AuthDenial
+    → rejectUnauthorized applies progressive delay then writes 401
+  readBoundedBody       → 413 / 400 and bail, or returns parsedBody
+  buildRequestScope     → fresh per-request McpServer + transport pair
+  dispatch              → server.connect / transport.handleRequest
+    → scheduleCleanup registers a bounded res.on('close')
+```
+Each helper is a top-level function sitting at the abstraction level below `handle()`, so the file reads top-to-bottom as prose.
 
 ## Request gates (applied in order before the SDK sees the request)
 1. **URL allow-list** — only `/mcp` is accepted; anything else returns `404`.
 2. **HTTP method allow-list (T-44)** — only `POST` is accepted; any other method returns `405` with an `Allow: POST` header and a JSON-RPC error envelope (`code: -32600`).
-3. **Bearer token auth** — `Authorization: Bearer <token>` required; failures return `401` with a `WWW-Authenticate` header and JSON-RPC envelope (`code: -32000`).
+3. **Bearer token auth + rate-limit (T-42)** — `Authorization: Bearer <token>` required; failures return `401` with a `WWW-Authenticate` header and JSON-RPC envelope (`code: -32000`). Every failure is logged with an `mcp.auth.failure:` prefix that carries the distinguishing message (`"missing bearer token"` vs `"invalid bearer token"`) and the remote address. Failures and successes are reported to the `AuthRateLimit`; after `BRUTE_FORCE_THRESHOLD` consecutive failures from the same remote, a progressive delay is applied before the 401 is written (capped at `MAX_DELAY_MS`).
 4. **Request body size cap (T-46)** — `MAX_BODY_BYTES = 2 MB`. If `Content-Length` exceeds the cap, returns `413` immediately. Otherwise the body is buffered into memory up to the cap; overflow returns `413` and destroys the connection; malformed JSON returns `400` with `code: -32700`. The parsed body is forwarded to the SDK as `handleRequest(req, res, parsedBody)` so the SDK does not re-read the stream.
 
 The SDK then applies DNS-rebinding (Host) validation and the explicit Origin allow-list (T-45) configured at transport construction.
+
+## Observability (T-42 / T-48)
+Every non-2xx path writes a structured, greppable warn/error line. Messages carry consistent prefixes so they can be filtered from `~/.bde/bde.log`:
+
+| Prefix | Level | Emitted by |
+|---|---|---|
+| `mcp.auth.failure:` | warn | `checkAuthorization` on every 401 |
+| `mcp.transport.method-not-allowed:` | warn | `writeMethodNotAllowed` |
+| `mcp.transport.payload-too-large:` | warn | `writePayloadTooLarge` |
+| `mcp.transport.body-rejected:` | warn | `readBoundedBody` (413/400 cases) |
+| `mcp.transport.cleanup:` | warn | `closeWithTimeout` on stuck close |
+| `mcp.transport.500:` | error | `dispatch` catch branch |
+
+The 500 log line includes `method=<m> url=<u> remote=<addr>` plus the full stack (or `String(err)` for non-`Error` throws). Auth failures distinguish `"missing bearer token"` from `"invalid bearer token"` so log review can spot misconfigured clients vs. probing attackers.
 
 ## Origin allow-list (T-45)
 The handler passes an explicit `allowedOrigins` list to every transport instance — `['null', 'http://127.0.0.1:<port>', 'http://localhost:<port>']` — instead of relying on the SDK's disabled-when-empty default. MCP clients typically send no Origin header and the SDK only enforces when one is present, so absent-Origin requests are still accepted.
@@ -26,5 +53,6 @@ On `res.on('close')`, both `transport.close()` and `server.close()` are invoked 
 
 ## Key Dependencies
 - `auth.ts` — `checkBearerAuth` validates the `Authorization: Bearer` header
+- `auth-rate-limit.ts` — `createAuthRateLimit` + `AuthRateLimit` interface supply the per-remote brute-force bookkeeping
 - `errors.ts` — `writeJsonRpcError()` is used by the catch-all 500 path; `JSON_RPC_UNAUTHORIZED` names the 401 error code. Other non-2xx paths (405, 413, 400) build the JSON-RPC 2.0 envelope inline with explicit codes (`-32600`, `-32700`) so the shape stays readable at the call site.
 - `@modelcontextprotocol/sdk/server/streamableHttp.js` — underlying stateless transport
