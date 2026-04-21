@@ -11,13 +11,70 @@ import { getDb } from '../db'
 import type { AgentMeta } from '../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { createLogger, logError } from '../logger'
-import type { SpawnLocalAgentArgs } from '../../shared/types'
+import type { AgentEvent, SpawnLocalAgentArgs } from '../../shared/types'
 import type { AgentManager } from '../agent-manager'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { IDashboardRepository } from '../data/sprint-task-repository'
 import { promoteAdhocToTask } from '../services/adhoc-promotion-service'
 
 const log = createLogger('agent-handlers')
+
+/**
+ * Every AgentEvent type. Kept as a runtime Set so `isAgentEvent` can verify a
+ * parsed payload against the union in `AgentEvent` without duplicating the
+ * discriminator elsewhere. If `AgentEvent` gains a new member, add it here.
+ */
+const AGENT_EVENT_TYPES: ReadonlySet<AgentEvent['type']> = new Set([
+  'agent:started',
+  'agent:text',
+  'agent:user_message',
+  'agent:thinking',
+  'agent:tool_call',
+  'agent:tool_result',
+  'agent:rate_limited',
+  'agent:error',
+  'agent:stderr',
+  'agent:completed',
+  'agent:playground'
+])
+
+/**
+ * Shape guard for values parsed out of `agent_events.payload` before they
+ * cross the IPC boundary to the renderer. Agent events are persisted as JSON
+ * strings, so a corrupted row, schema drift, or hand-edited DB row can smuggle
+ * arbitrary shapes through the typed channel. We only require the two fields
+ * that every member of the `AgentEvent` union shares — a known `type` and a
+ * numeric `timestamp`. Variant-specific fields are trusted once the
+ * discriminator matches, matching how consumers already treat the union.
+ */
+function isAgentEvent(value: unknown): value is AgentEvent {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as { type?: unknown; timestamp?: unknown }
+  if (typeof candidate.timestamp !== 'number') return false
+  if (typeof candidate.type !== 'string') return false
+  return AGENT_EVENT_TYPES.has(candidate.type as AgentEvent['type'])
+}
+
+/**
+ * Parse a SQLite `agent_events.payload` row. Returns the parsed event only
+ * when it passes the shape guard; otherwise logs a warn and returns null so
+ * the caller can drop it without failing the whole history read.
+ */
+function parseHistoryRow(payload: string, agentId: string): AgentEvent | null {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(payload)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    log.warn(`agent:history: dropping malformed event (agent=${agentId}): ${message}`)
+    return null
+  }
+  if (!isAgentEvent(parsed)) {
+    log.warn(`agent:history: dropping malformed event (agent=${agentId})`)
+    return null
+  }
+  return parsed
+}
 
 export interface PromoteToReviewResult {
   ok: boolean
@@ -128,11 +185,18 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
     return { ok: false, error: 'Agent not found' }
   })
   safeHandle('agent:history', async (_e, agentId: string) => {
-    // Event history from local SQLite — kept for viewing historical runs
+    // Event history from local SQLite — kept for viewing historical runs.
+    // Rows are parsed and shape-guarded before crossing the IPC boundary so
+    // corrupted / drifted payloads can't pose as typed AgentEvents downstream.
     const { getEventHistory } = await import('../data/event-queries')
     const { getDb } = await import('../db')
     const rows = getEventHistory(getDb(), agentId)
-    return rows.map((r) => JSON.parse(r.payload))
+    const events: AgentEvent[] = []
+    for (const row of rows) {
+      const event = parseHistoryRow(row.payload, agentId)
+      if (event) events.push(event)
+    }
+    return events
   })
   cleanupOldLogs()
 

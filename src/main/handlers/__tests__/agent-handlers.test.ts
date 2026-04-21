@@ -35,14 +35,20 @@ vi.mock('../../data/webhook-queries', () => ({
   getWebhooks: vi.fn(() => [])
 }))
 
-// Mock logger
-vi.mock('../../logger', () => ({
-  createLogger: vi.fn(() => ({
+// Mock logger — createLogger returns a single stable instance so tests can
+// assert against warn/error calls made from module-scope `log` variables.
+// Hoisted so vi.mock (which also hoists) can reference it safely.
+const { loggerInstance } = vi.hoisted(() => ({
+  loggerInstance: {
     error: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     debug: vi.fn()
-  }))
+  }
+}))
+vi.mock('../../logger', () => ({
+  createLogger: vi.fn(() => loggerInstance),
+  logError: vi.fn()
 }))
 
 // Mock agent-log-manager
@@ -309,9 +315,19 @@ describe('agent:history handler', () => {
   })
 
   it('returns parsed event history from SQLite', async () => {
+    const textEvent = { type: 'agent:text', text: 'Hello', timestamp: 1 }
+    const completedEvent = {
+      type: 'agent:completed',
+      exitCode: 0,
+      costUsd: 0,
+      tokensIn: 0,
+      tokensOut: 0,
+      durationMs: 0,
+      timestamp: 2
+    }
     const rows = [
-      { payload: JSON.stringify({ type: 'message', text: 'Hello' }) },
-      { payload: JSON.stringify({ type: 'result', exitCode: 0 }) }
+      { payload: JSON.stringify(textEvent) },
+      { payload: JSON.stringify(completedEvent) }
     ]
     vi.mocked(getEventHistory).mockReturnValue(rows as any)
 
@@ -319,10 +335,7 @@ describe('agent:history handler', () => {
     const result = await handler(mockEvent, 'agent-42')
 
     expect(getEventHistory).toHaveBeenCalledWith({}, 'agent-42')
-    expect(result).toEqual([
-      { type: 'message', text: 'Hello' },
-      { type: 'result', exitCode: 0 }
-    ])
+    expect(result).toEqual([textEvent, completedEvent])
   })
 
   it('returns empty array when no events exist', async () => {
@@ -332,6 +345,40 @@ describe('agent:history handler', () => {
     const result = await handler(mockEvent, 'agent-empty')
 
     expect(result).toEqual([])
+  })
+
+  it('drops rows whose payload is not valid JSON and warns', async () => {
+    const validEvent = { type: 'agent:text', text: 'Hi', timestamp: 1 }
+    vi.mocked(getEventHistory).mockReturnValue([
+      { payload: '{not-json' },
+      { payload: JSON.stringify(validEvent) }
+    ] as any)
+
+    const handler = captureHandler('agent:history')
+    const result = await handler(mockEvent, 'agent-42')
+
+    expect(result).toEqual([validEvent])
+    expect(loggerInstance.warn).toHaveBeenCalledWith(expect.stringContaining('agent=agent-42'))
+  })
+
+  it('drops rows whose parsed payload has the wrong shape and warns', async () => {
+    const validEvent = { type: 'agent:text', text: 'Ok', timestamp: 99 }
+    vi.mocked(getEventHistory).mockReturnValue([
+      // Unknown discriminator
+      { payload: JSON.stringify({ type: 'bogus:event', timestamp: 1 }) },
+      // Known type but missing numeric timestamp
+      { payload: JSON.stringify({ type: 'agent:text', text: 'No ts' }) },
+      { payload: JSON.stringify(validEvent) }
+    ] as any)
+
+    const handler = captureHandler('agent:history')
+    const result = await handler(mockEvent, 'agent-77')
+
+    expect(result).toEqual([validEvent])
+    expect(loggerInstance.warn).toHaveBeenCalledWith(
+      expect.stringContaining('agent=agent-77')
+    )
+    expect(loggerInstance.warn.mock.calls.length).toBeGreaterThanOrEqual(2)
   })
 })
 
