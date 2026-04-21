@@ -12,6 +12,7 @@ Factory that assembles the full MCP server: registers all tool groups, creates t
 - `McpServerDeps` — `epicService: EpicGroupService`, `onStatusTerminal: (taskId, status) => void | Promise<void>`
 - `McpServerConfig` — `port: number`
 - `translateCancelError(err)` — maps `TaskTransitionError` throws from `cancelTask` into `McpDomainError(McpErrorCode.InvalidTransition)` with `{ taskId, fromStatus, toStatus }` data; passes unknown errors through unchanged. Exported for unit testing of the cancel-tool error-translation contract.
+- `summarizeListenError(err, configuredPort)` — builds the safe-to-broadcast summary used for the `manager:warning` renderer event when `httpServer.on('error', ...)` fires. Returns a targeted port-in-use message for `EADDRINUSE`; for every other listener failure it returns a generic "see the log" message so raw error codes, `err.message`, stack frames, and filesystem paths never reach the renderer. Full detail is written to `~/.bde/bde.log` separately via `logError` so operators still have a diagnosable log line.
 
 ## Key Dependencies
 - `transport.ts` — HTTP layer with bearer-token auth

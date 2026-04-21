@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { EventEmitter } from 'node:events'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { translateCancelError, createMcpServer } from './index'
+import { translateCancelError, createMcpServer, summarizeListenError } from './index'
 import { TaskTransitionError } from '../services/sprint-service'
 import { McpDomainError, McpErrorCode } from './errors'
 
@@ -105,7 +105,17 @@ vi.mock('../broadcast', () => ({
 }))
 
 vi.mock('../logger', () => ({
-  createLogger: () => hoisted.mockLogger
+  createLogger: () => hoisted.mockLogger,
+  logError: (logger: typeof hoisted.mockLogger, context: string, err: unknown) => {
+    if (err instanceof Error) {
+      logger.error(`${context}: ${err.message}`)
+      if (err.stack) {
+        logger.debug(`Stack: ${err.stack.split('\n').slice(1, 4).join(' | ')}`)
+      }
+    } else {
+      logger.error(`${context}: ${String(err)}`)
+    }
+  }
 }))
 
 vi.mock('./token-store', () => ({
@@ -161,6 +171,29 @@ vi.mock('../data/task-changes', () => ({
 vi.mock('../settings', () => ({
   getSettingJson: vi.fn(() => [])
 }))
+
+describe('summarizeListenError', () => {
+  it('produces the friendly port-in-use message for EADDRINUSE', () => {
+    const err = Object.assign(new Error('listen EADDRINUSE'), { code: 'EADDRINUSE' })
+    expect(summarizeListenError(err, 18792)).toBe(
+      'MCP server could not bind to port 18792 — already in use.'
+    )
+  })
+
+  it('produces a generic message for non-EADDRINUSE errors (no raw error leaked)', () => {
+    const err = Object.assign(new Error('permission denied /etc/secret'), { code: 'EACCES' })
+    const summary = summarizeListenError(err, 80)
+    expect(summary).not.toMatch(/EACCES/)
+    expect(summary).not.toMatch(/permission/)
+    expect(summary).not.toMatch(/secret/)
+    expect(summary).toMatch(/See .*\.bde\/bde\.log/)
+  })
+
+  it('produces the generic message when err is not an Error instance', () => {
+    expect(summarizeListenError('raw string with /sensitive/path', 80)).toMatch(/See/)
+    expect(summarizeListenError(null, 80)).toMatch(/See/)
+  })
+})
 
 describe('translateCancelError', () => {
   it('maps TaskTransitionError to McpDomainError with InvalidTransition kind', () => {
@@ -230,11 +263,12 @@ describe('createMcpServer lifecycle', () => {
 
     await expect(handle.start()).rejects.toMatchObject({ code: 'EADDRINUSE' })
 
+    // Full detail in the log (via logError), sanitized summary in the broadcast.
     const errorLog = mockLogger.error.mock.calls[0]?.[0] as string
-    expect(errorLog).toMatch(/already in use/)
+    expect(errorLog).toMatch(/MCP server listen\(18792\)/)
     expect(mockBroadcast).toHaveBeenCalledWith(
       'manager:warning',
-      expect.objectContaining({ message: expect.any(String) })
+      expect.objectContaining({ message: expect.stringMatching(/already in use/) })
     )
   })
 
@@ -246,12 +280,47 @@ describe('createMcpServer lifecycle', () => {
     await expect(handle.start()).rejects.toMatchObject({ code: 'EACCES' })
 
     const errorLog = mockLogger.error.mock.calls[0]?.[0] as string
-    expect(errorLog).toMatch(/failed to start/)
-    expect(errorLog).not.toMatch(/already in use/)
+    expect(errorLog).toMatch(/MCP server listen\(80\)/)
     expect(mockBroadcast).toHaveBeenCalledWith(
       'manager:warning',
       expect.objectContaining({ message: expect.any(String) })
     )
+  })
+
+  it('start() does NOT leak raw error code / message / stack into the broadcast body (T-37)', async () => {
+    fakeServer = new FakeHttpServer()
+    fakeServerRef.current = fakeServer
+    fakeServer.listenBehavior = 'emit-error'
+    // Custom emit-error path with a crafted stack containing a sensitive path.
+    fakeServer.listen = function listen(port, host, _cb) {
+      this.listenCalls.push({ port, host })
+      const err = new Error('listen EACCES 0.0.0.0:80 /private/var/secret/socket') as NodeJS.ErrnoException
+      err.code = 'EACCES'
+      err.stack =
+        'Error: listen EACCES\n' +
+        '    at /Users/me/sensitive/path/boot.ts:12:7\n' +
+        '    at Server.listen (node:net:0:0)'
+      setImmediate(() => this.emit('error', err))
+      return this
+    } as typeof fakeServer.listen
+
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 80 })
+    await expect(handle.start()).rejects.toMatchObject({ code: 'EACCES' })
+
+    // Broadcast body is the sanitized summary — no raw error code, path, or stack.
+    const broadcastCall = mockBroadcast.mock.calls[0]
+    expect(broadcastCall?.[0]).toBe('manager:warning')
+    const broadcastMessage = (broadcastCall?.[1] as { message: string }).message
+    expect(broadcastMessage).not.toMatch(/EACCES/)
+    expect(broadcastMessage).not.toMatch(/sensitive/)
+    expect(broadcastMessage).not.toMatch(/boot\.ts/)
+    expect(broadcastMessage).not.toMatch(/private\/var/)
+
+    // But the error log DID capture context. logError writes the stack at
+    // `debug` level, so we assert the debug sink saw the sensitive detail.
+    const debugMessages = mockLogger.debug.mock.calls.map((call) => call[0] as string)
+    const loggedStack = debugMessages.some((msg) => msg.includes('sensitive'))
+    expect(loggedStack).toBe(true)
   })
 
   it('stop() is a no-op before start() — does not close a server that never opened', async () => {
