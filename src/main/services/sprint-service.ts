@@ -111,11 +111,37 @@ export interface CancelTaskDeps {
 }
 
 /**
+ * Raised when a caller attempts a status change the state machine forbids
+ * (e.g. cancelling an already-`done` task). Lets MCP/IPC adapters branch on
+ * the error kind without regex-matching the underlying data-layer message.
+ */
+export class TaskTransitionError extends Error {
+  readonly taskId: string
+  readonly fromStatus: string | null
+  readonly toStatus: string
+
+  constructor(message: string, ctx: { taskId: string; fromStatus: string | null; toStatus: string }) {
+    super(message)
+    this.name = 'TaskTransitionError'
+    this.taskId = ctx.taskId
+    this.fromStatus = ctx.fromStatus
+    this.toStatus = ctx.toStatus
+  }
+}
+
+function isInvalidTransitionError(err: unknown): err is Error {
+  return err instanceof Error && err.message.includes('Invalid transition')
+}
+
+/**
  * Cancel a task — sets status to 'cancelled' with an optional reason in
  * notes, then awaits the terminal-status handler so dependents unblock.
  *
  * Consolidates the update-then-terminal two-step so the MCP server and
  * future IPC paths don't re-implement it in drift-prone closures.
+ *
+ * Throws `TaskTransitionError` when the current status forbids cancellation
+ * (e.g. already `done`). Unknown errors propagate unchanged.
  */
 export async function cancelTask(
   id: string,
@@ -125,7 +151,20 @@ export async function cancelTask(
   const patch: Record<string, unknown> = { status: 'cancelled' }
   if (opts.reason) patch.notes = opts.reason
   const doUpdate = deps.updateTask ?? updateTask
-  const row = doUpdate(id, patch)
+  let row: SprintTask | null
+  try {
+    row = doUpdate(id, patch)
+  } catch (err) {
+    if (isInvalidTransitionError(err)) {
+      const current = mutations.getTask(id)
+      throw new TaskTransitionError(err.message, {
+        taskId: id,
+        fromStatus: current?.status ?? null,
+        toStatus: 'cancelled'
+      })
+    }
+    throw err
+  }
   if (row) {
     try {
       await deps.onStatusTerminal(id, 'cancelled')

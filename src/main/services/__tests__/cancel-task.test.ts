@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { cancelTask } from '../sprint-service'
+import { TaskTransitionError, cancelTask } from '../sprint-service'
 
 const fakeLogger = {
   info: vi.fn(),
@@ -69,5 +69,32 @@ describe('cancelTask', () => {
     expect(fakeLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('onStatusTerminal after cancel t1')
     )
+  })
+
+  it('translates data-layer invalid-transition throws into TaskTransitionError', async () => {
+    const updateTask = vi.fn(() => {
+      throw new Error(
+        '[sprint-queries] Invalid transition for task t1: Invalid transition: done → cancelled. Allowed: cancelled'
+      )
+    })
+    const onStatusTerminal = vi.fn()
+
+    await expect(
+      cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
+    ).rejects.toBeInstanceOf(TaskTransitionError)
+
+    expect(onStatusTerminal).not.toHaveBeenCalled()
+  })
+
+  it('leaves unknown update errors unchanged', async () => {
+    const boom = new Error('disk full')
+    const updateTask = vi.fn(() => {
+      throw boom
+    })
+    const onStatusTerminal = vi.fn()
+
+    await expect(
+      cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
+    ).rejects.toBe(boom)
   })
 })
