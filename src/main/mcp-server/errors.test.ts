@@ -106,9 +106,20 @@ describe('toJsonRpcError', () => {
   })
 
   it('maps any other thrown value to -32603 Internal error without leaking stack', () => {
-    const mapped = toJsonRpcError(new Error('oops stack trace details'))
+    const sensitiveError = new Error('oops database=postgres://secret@host/db failed')
+    sensitiveError.stack =
+      'Error: oops\n    at /Users/secret/private/path/module.ts:42:17\n    at async handler'
+    const mapped = toJsonRpcError(sensitiveError)
+
     expect(mapped.code).toBe(-32603)
     expect(mapped.message).toBe('Internal error')
+    expect(mapped.data).toBeUndefined()
+
+    const serialized = JSON.stringify(mapped)
+    expect(serialized).not.toContain('postgres://')
+    expect(serialized).not.toContain('/Users/secret')
+    expect(serialized).not.toContain('secret@host')
+    expect(serialized).not.toMatch(/module\.ts:\d+/)
   })
 
   it('logs unknown throws via the optional logger before returning Internal error', () => {
