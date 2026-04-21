@@ -90,4 +90,13 @@ describe('LaunchpadGrid', () => {
     render(<LaunchpadGrid {...defaultProps} />)
     expect(screen.queryByText(/Recent/i)).not.toBeInTheDocument()
   })
+
+  it('disables the model pills (routing is controlled via Settings → Models)', () => {
+    render(<LaunchpadGrid {...defaultProps} />)
+    for (const label of ['Haiku', 'Sonnet', 'Opus']) {
+      const pill = screen.getByRole('button', { name: label })
+      expect(pill).toBeDisabled()
+      expect(pill).toHaveAttribute('title', expect.stringMatching(/Settings.*Models/i))
+    }
+  })
 })

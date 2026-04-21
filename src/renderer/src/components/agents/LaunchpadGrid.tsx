@@ -13,6 +13,9 @@ interface LaunchpadGridProps {
   spawning: boolean
 }
 
+const MODEL_PICKER_DISABLED_TOOLTIP = 'Change the adhoc/assistant model in Settings → Models.'
+const DISPLAY_MODEL_HINT = 'sonnet'
+
 const ACCENT_VARS: Record<
   NeonAccent,
   { bg: string; border: string; color: string; glow: string; hover: string }
@@ -70,9 +73,13 @@ export function LaunchpadGrid({
   const repos = useRepoOptions()
   const [prompt, setPrompt] = useState('')
   const [repo, setRepo] = useState('')
-  const [model, setModel] = useState('sonnet')
   const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false)
   const repoDropdownRef = useRef<HTMLDivElement>(null)
+
+  // The model is routed from Settings → Models, not from this picker. The
+  // display hint lets the spawned agent record which pill was visually
+  // "active" at launch time without influencing runtime routing.
+  const model = DISPLAY_MODEL_HINT
 
   // Derive effective repo: use selected repo if set, otherwise first available
   const effectiveRepo = repo || (repos.length > 0 ? repos[0].label : '')
@@ -232,13 +239,18 @@ export function LaunchpadGrid({
             </>
           )}
         </div>
-        <div className="launchpad__model-pills">
+        <div
+          className="launchpad__model-pills"
+          title={MODEL_PICKER_DISABLED_TOOLTIP}
+          aria-label="Active model (display only)"
+        >
           {CLAUDE_MODELS.map((m) => (
             <button
               key={m.id}
               type="button"
+              disabled
+              title={MODEL_PICKER_DISABLED_TOOLTIP}
               className={`launchpad__model-pill ${model === m.id ? 'launchpad__model-pill--active' : ''}`}
-              onClick={() => setModel(m.id)}
             >
               {m.label}
             </button>

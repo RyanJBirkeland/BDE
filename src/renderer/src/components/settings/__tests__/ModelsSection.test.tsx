@@ -59,22 +59,21 @@ describe('ModelsSection — agent type rows', () => {
     expect(screen.getByText('Reviewer')).toBeInTheDocument()
   })
 
-  it('marks the Pipeline row as active and the others as not-yet-routed', () => {
+  it('renders all six agent-type rows in the Active routing card', () => {
     render(<ModelsSection />)
-    const pipelineRow = screen.getByTestId('models-row-pipeline')
-    expect(pipelineRow).not.toHaveAttribute('aria-disabled', 'true')
-
-    const synthRow = screen.getByTestId('models-row-synthesizer')
-    expect(synthRow).toHaveAttribute('aria-disabled', 'true')
-
-    const notRoutedNotes = screen.getAllByText(/Not yet routed/i)
-    expect(notRoutedNotes.length).toBeGreaterThanOrEqual(5)
+    for (const label of ['Pipeline', 'Synthesizer', 'Copilot', 'Assistant', 'Adhoc', 'Reviewer']) {
+      expect(screen.getByText(label)).toBeInTheDocument()
+    }
+    for (const id of ['pipeline', 'synthesizer', 'copilot', 'assistant', 'adhoc', 'reviewer']) {
+      const row = screen.getByTestId(`models-row-${id}`)
+      expect(row).not.toHaveAttribute('aria-disabled', 'true')
+    }
   })
 
-  it('renders card headings for Active routing and Not yet routed', () => {
+  it('renders one Active routing card and no Not yet routed card', () => {
     render(<ModelsSection />)
     expect(screen.getByText('Active routing')).toBeInTheDocument()
-    expect(screen.getByText('Not yet routed')).toBeInTheDocument()
+    expect(screen.queryByText('Not yet routed')).not.toBeInTheDocument()
   })
 })
 
@@ -140,13 +139,27 @@ describe('ModelsSection — backend toggle + model picker', () => {
     })
   })
 
-  it('disables all controls on a Not-yet-routed row', () => {
+  it('enables the model picker for every row', () => {
     render(<ModelsSection />)
-    const synthRow = screen.getByTestId('models-row-synthesizer')
-    const buttons = synthRow.querySelectorAll('button[role="radio"]')
-    buttons.forEach((btn) => expect(btn).toBeDisabled())
-    const select = synthRow.querySelector('select') as HTMLSelectElement | null
-    if (select) expect(select).toBeDisabled()
+    for (const id of ['pipeline', 'synthesizer', 'copilot', 'assistant', 'adhoc', 'reviewer']) {
+      const row = screen.getByTestId(`models-row-${id}`)
+      const select = row.querySelector('select') as HTMLSelectElement | null
+      expect(select).not.toBeNull()
+      expect(select!).not.toBeDisabled()
+    }
+  })
+
+  it('disables only the Local radio on non-pipeline rows, and leaves Claude enabled', () => {
+    render(<ModelsSection />)
+    for (const id of ['synthesizer', 'copilot', 'assistant', 'adhoc', 'reviewer']) {
+      const row = screen.getByTestId(`models-row-${id}`)
+      const claudeBtn = row.querySelector('button[data-value="claude"]') as HTMLButtonElement
+      const localBtn = row.querySelector('button[data-value="local"]') as HTMLButtonElement
+      expect(claudeBtn).not.toBeDisabled()
+      expect(localBtn).toBeDisabled()
+    }
+    const pipelineRow = screen.getByTestId('models-row-pipeline')
+    expect(pipelineRow.querySelector('button[data-value="local"]')).not.toBeDisabled()
   })
 })
 

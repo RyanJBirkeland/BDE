@@ -3,8 +3,9 @@
  *
  * Loads the composite `agents.backendConfig` setting on mount, renders:
  *   1. a shared Local backend card (endpoint URL + test connection),
- *   2. an Active routing card (Pipeline row — the only type wired today),
- *   3. a Not yet routed card (five disabled rows for future types).
+ *   2. an Active routing card with one row per agent type. The model
+ *      picker is always interactive; the Local backend radio is disabled
+ *      on agent types whose spawn path does not yet support local models.
  *
  * Saves the entire BackendSettings object in one atomic setJson call.
  */
@@ -13,7 +14,11 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { SettingsCard } from './SettingsCard'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
-import type { BackendKind, AgentBackendConfig, BackendSettings } from '../../../../shared/types/backend-settings'
+import type {
+  BackendKind,
+  AgentBackendConfig,
+  BackendSettings
+} from '../../../../shared/types/backend-settings'
 import { CLAUDE_MODELS, DEFAULT_MODEL } from '../../../../shared/models'
 
 type TestConnState =
@@ -27,30 +32,52 @@ const DEFAULT_CLAUDE_MODEL = DEFAULT_MODEL.modelId
 const DEFAULT_LOCAL_MODEL = ''
 const LOCAL_MODEL_PLACEHOLDER = 'openai/qwen/qwen3.6-35b-a3b'
 
-type AgentTypeId =
-  | 'pipeline'
-  | 'synthesizer'
-  | 'copilot'
-  | 'assistant'
-  | 'adhoc'
-  | 'reviewer'
+type AgentTypeId = 'pipeline' | 'synthesizer' | 'copilot' | 'assistant' | 'adhoc' | 'reviewer'
 
 interface AgentTypeMeta {
   id: AgentTypeId
   label: string
   description: string
+  supportsLocal: boolean
 }
 
-const ACTIVE_TYPES: AgentTypeMeta[] = [
-  { id: 'pipeline', label: 'Pipeline', description: 'Executes sprint tasks end-to-end.' }
-]
-
-const NOT_YET_ROUTED_TYPES: AgentTypeMeta[] = [
-  { id: 'synthesizer', label: 'Synthesizer', description: 'Drafts spec documents from task titles.' },
-  { id: 'copilot', label: 'Copilot', description: 'Interactive pair-programming agent.' },
-  { id: 'assistant', label: 'Assistant', description: 'One-shot Q&A over the repo.' },
-  { id: 'adhoc', label: 'Adhoc', description: 'Freeform agent runs outside the sprint pipeline.' },
-  { id: 'reviewer', label: 'Reviewer', description: 'Reviews PRs before merge.' }
+const AGENT_TYPES: AgentTypeMeta[] = [
+  {
+    id: 'pipeline',
+    label: 'Pipeline',
+    description: 'Executes sprint tasks end-to-end.',
+    supportsLocal: true
+  },
+  {
+    id: 'synthesizer',
+    label: 'Synthesizer',
+    description: 'Drafts spec documents from task titles.',
+    supportsLocal: false
+  },
+  {
+    id: 'copilot',
+    label: 'Copilot',
+    description: 'Interactive pair-programming agent.',
+    supportsLocal: false
+  },
+  {
+    id: 'assistant',
+    label: 'Assistant',
+    description: 'One-shot Q&A over the repo.',
+    supportsLocal: false
+  },
+  {
+    id: 'adhoc',
+    label: 'Adhoc',
+    description: 'Freeform agent runs outside the sprint pipeline.',
+    supportsLocal: false
+  },
+  {
+    id: 'reviewer',
+    label: 'Reviewer',
+    description: 'Reviews PRs before merge.',
+    supportsLocal: false
+  }
 ]
 
 const DEFAULT_ROW: AgentBackendConfig = { backend: 'claude', model: DEFAULT_CLAUDE_MODEL }
@@ -152,29 +179,17 @@ export function ModelsSection(): React.JSX.Element {
         </div>
       </SettingsCard>
 
-      <SettingsCard title="Active routing" subtitle="Types wired through spawnAgent today.">
-        {ACTIVE_TYPES.map((type) => (
-          <AgentTypeRow
-            key={type.id}
-            type={type}
-            value={settings[type.id]}
-            onChange={(next) => updateRow(type.id, next)}
-            disabled={false}
-          />
-        ))}
-      </SettingsCard>
-
       <SettingsCard
-        title="Not yet routed"
-        subtitle="Configuration preserved for when each type is wired through spawnAgent."
+        title="Active routing"
+        subtitle="Route each agent type to Claude or a local model. Local backend is available for Pipeline today."
       >
-        {NOT_YET_ROUTED_TYPES.map((type) => (
+        {AGENT_TYPES.map((type) => (
           <AgentTypeRow
             key={type.id}
             type={type}
             value={settings[type.id]}
             onChange={(next) => updateRow(type.id, next)}
-            disabled={true}
+            canUseLocal={type.supportsLocal}
           />
         ))}
       </SettingsCard>
@@ -222,10 +237,15 @@ interface AgentTypeRowProps {
   type: AgentTypeMeta
   value: AgentBackendConfig
   onChange: (next: AgentBackendConfig) => void
-  disabled: boolean
+  canUseLocal: boolean
 }
 
-function AgentTypeRow({ type, value, onChange, disabled }: AgentTypeRowProps): React.JSX.Element {
+function AgentTypeRow({
+  type,
+  value,
+  onChange,
+  canUseLocal
+}: AgentTypeRowProps): React.JSX.Element {
   function toggleBackend(next: BackendKind): void {
     if (next === value.backend) return
     onChange({
@@ -235,26 +255,20 @@ function AgentTypeRow({ type, value, onChange, disabled }: AgentTypeRowProps): R
   }
 
   return (
-    <div
-      className="models-row"
-      data-testid={`models-row-${type.id}`}
-      aria-disabled={disabled || undefined}
-    >
+    <div className="models-row" data-testid={`models-row-${type.id}`}>
       <div className="models-row__label">{type.label}</div>
       <div className="models-row__desc">{type.description}</div>
-      {disabled && <div className="models-row__desc">Not yet routed.</div>}
       <div className="models-row__controls">
         <BackendToggle
           value={value.backend}
           onChange={toggleBackend}
-          disabled={disabled}
+          canUseLocal={canUseLocal}
           rowId={type.id}
         />
         <ModelPicker
           backend={value.backend}
           model={value.model}
           onChange={(model) => onChange({ ...value, model })}
-          disabled={disabled}
         />
       </div>
     </div>
@@ -264,11 +278,18 @@ function AgentTypeRow({ type, value, onChange, disabled }: AgentTypeRowProps): R
 interface BackendToggleProps {
   value: BackendKind
   onChange: (next: BackendKind) => void
-  disabled: boolean
+  canUseLocal: boolean
   rowId: string
 }
 
-function BackendToggle({ value, onChange, disabled, rowId }: BackendToggleProps): React.JSX.Element {
+const LOCAL_UNSUPPORTED_TOOLTIP = 'Local backend is not yet supported for this agent type'
+
+function BackendToggle({
+  value,
+  onChange,
+  canUseLocal,
+  rowId
+}: BackendToggleProps): React.JSX.Element {
   return (
     <div role="radiogroup" aria-label={`${rowId} backend`} className="models-seg">
       <button
@@ -276,7 +297,6 @@ function BackendToggle({ value, onChange, disabled, rowId }: BackendToggleProps)
         role="radio"
         aria-checked={value === 'claude'}
         data-value="claude"
-        disabled={disabled}
         onClick={() => onChange('claude')}
         className="models-seg__btn"
       >
@@ -287,7 +307,8 @@ function BackendToggle({ value, onChange, disabled, rowId }: BackendToggleProps)
         role="radio"
         aria-checked={value === 'local'}
         data-value="local"
-        disabled={disabled}
+        disabled={!canUseLocal}
+        title={canUseLocal ? undefined : LOCAL_UNSUPPORTED_TOOLTIP}
         onClick={() => onChange('local')}
         className="models-seg__btn"
       >
@@ -301,17 +322,15 @@ interface ModelPickerProps {
   backend: BackendKind
   model: string
   onChange: (next: string) => void
-  disabled: boolean
 }
 
-function ModelPicker({ backend, model, onChange, disabled }: ModelPickerProps): React.JSX.Element {
+function ModelPicker({ backend, model, onChange }: ModelPickerProps): React.JSX.Element {
   if (backend === 'claude') {
     return (
       <select
         className="settings-field__input"
         value={model || DEFAULT_CLAUDE_MODEL}
         onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
         aria-label="Claude model"
       >
         {CLAUDE_MODELS.map((m) => (
@@ -328,7 +347,6 @@ function ModelPicker({ backend, model, onChange, disabled }: ModelPickerProps): 
       type="text"
       value={model}
       onChange={(e) => onChange(e.target.value)}
-      disabled={disabled}
       placeholder={LOCAL_MODEL_PLACEHOLDER}
       aria-label="Local model"
     />
