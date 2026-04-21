@@ -22,9 +22,5 @@ failed auth attempts per remote address and returns a delay (0 ≤ N ≤
 ## Key Dependencies
 - `../logger` — `Logger` type for the optional warn hook.
 
-## Wire-up note
-As of Phase 4, the module + tests are landed. The call sites in
-`transport.ts` (invoke on every 401, invoke `recordAuthSuccess` on 200)
-are pending — the transport file is owned by a different agent this phase
-and the call-site glue is scheduled for Phase 5 alongside T-42 (auth
-failure structured logging).
+## Wire-up
+Wired in Phase 5 alongside T-42. `createTransportHandler(buildMcpServer, token, port, logger, rateLimit?)` accepts an optional `AuthRateLimit` and defaults to a per-handler `createAuthRateLimit({ logger })` when no instance is passed. `transport.ts` calls `recordAuthSuccess(remoteAddress)` on every successful auth and `recordAuthFailure(remoteAddress)` on every 401; the returned delay (if any) is awaited before the 401 envelope is written. The composition root (`index.ts`) may later inject a shared instance if cross-handler visibility is wanted — no signature change required.

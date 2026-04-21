@@ -10,7 +10,7 @@
  * Defense-in-depth gates (applied before the SDK sees the request):
  *   1. URL allow-list (only `/mcp`).
  *   2. HTTP method allow-list (POST only).
- *   3. Bearer token auth.
+ *   3. Bearer token auth (with brute-force throttling on repeated failures).
  *   4. Request body size cap — enforced by buffering the body ourselves
  *      (capped by `MAX_BODY_BYTES`) and handing it to the SDK as
  *      `parsedBody`, so the SDK never re-reads the stream.
@@ -20,6 +20,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { checkBearerAuth, type AuthResult } from './auth'
+import { createAuthRateLimit, type AuthRateLimit } from './auth-rate-limit'
 import { JSON_RPC_UNAUTHORIZED, writeJsonRpcError } from './errors'
 import type { Logger } from '../logger'
 
@@ -33,6 +34,7 @@ const MAX_BODY_BYTES = 2 * 1024 * 1024 // 2 MB ceiling for MCP payloads (T-46)
 const CLOSE_TIMEOUT_MS = 5_000 // Bound transport/server teardown so stuck closes don't leak (T-47)
 const JSON_RPC_INVALID_REQUEST = -32600 // JSON-RPC 2.0 spec: "The JSON sent is not a valid Request."
 const JSON_RPC_PARSE_ERROR = -32700 // JSON-RPC 2.0 spec: "Invalid JSON was received by the server."
+const UNKNOWN_REMOTE = 'unknown'
 
 interface Closable {
   close: () => Promise<void>
@@ -47,17 +49,25 @@ interface RequestScope {
   transport: StreamableHTTPServerTransport
 }
 
+/**
+ * `rateLimit` is optional so tests and alternate composition roots can opt
+ * out. When omitted, the handler instantiates its own per-handler rate
+ * limit so production callers get throttling without having to wire it up
+ * explicitly — the composition root can still inject a shared instance if
+ * it wants cross-handler visibility.
+ */
 export function createTransportHandler(
   buildMcpServer: () => McpServer,
   token: string,
   port: number,
-  logger: Logger
+  logger: Logger,
+  rateLimit: AuthRateLimit = createAuthRateLimit({ logger })
 ): TransportHandler {
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (!enforceRoute(req, res, logger)) return
-    const denial = checkAuthorization(req, token)
+    const denial = checkAuthorization(req, token, rateLimit, logger)
     if (denial) {
-      rejectUnauthorized(res, denial)
+      await rejectUnauthorized(res, denial)
       return
     }
     const body = await readBoundedBody(req, res, logger)
@@ -91,29 +101,53 @@ function enforceRoute(req: IncomingMessage, res: ServerResponse, logger: Logger)
   return true
 }
 
-type AuthDenial = Extract<AuthResult, { ok: false }>
-
-/**
- * Bearer-token check. Returns `null` when authorized so the caller can
- * proceed without awaiting anything (important — awaiting a synchronously-
- * resolved promise yields a microtask, during which the request body
- * stream can fire 'end' before listeners are attached). On failure returns
- * the `AuthDenial` the caller hands to `rejectUnauthorized`.
- */
-function checkAuthorization(req: IncomingMessage, token: string): AuthDenial | null {
-  const auth = checkBearerAuth(req, token)
-  return auth.ok ? null : auth
+interface AuthDenial {
+  auth: Extract<AuthResult, { ok: false }>
+  delayMs: number
 }
 
-function rejectUnauthorized(res: ServerResponse, denial: AuthDenial): void {
-  res.writeHead(denial.status, {
+/**
+ * Synchronous bearer-token check with brute-force bookkeeping. On success,
+ * clears any prior failure count for this remote and returns `null` so
+ * the caller can proceed without awaiting anything (important — awaiting a
+ * synchronously-resolved promise yields a microtask, during which the
+ * request body stream can fire 'end' before listeners are attached).
+ * On failure, logs structured context and returns an `AuthDenial` the
+ * caller passes to `rejectUnauthorized` to apply the delay and write the
+ * 401 response.
+ */
+function checkAuthorization(
+  req: IncomingMessage,
+  token: string,
+  rateLimit: AuthRateLimit,
+  logger: Logger
+): AuthDenial | null {
+  const remoteAddress = remoteAddressOf(req)
+  const auth = checkBearerAuth(req, token)
+  if (auth.ok) {
+    rateLimit.recordAuthSuccess(remoteAddress)
+    return null
+  }
+  logger.warn(`mcp.auth.failure: ${auth.message} from ${remoteAddress}`)
+  const delayMs = rateLimit.recordAuthFailure(remoteAddress)
+  return { auth, delayMs }
+}
+
+/**
+ * Applies the brute-force back-off delay (if any) and then writes the 401
+ * envelope. Delay-before-response intentionally happens here so clients
+ * under throttling feel the slowdown before they can retry.
+ */
+async function rejectUnauthorized(res: ServerResponse, denial: AuthDenial): Promise<void> {
+  if (denial.delayMs > 0) await sleep(denial.delayMs)
+  res.writeHead(denial.auth.status, {
     'Content-Type': 'application/json',
     'WWW-Authenticate': 'Bearer realm="bde-mcp"'
   })
   const body = {
     jsonrpc: '2.0' as const,
     id: null,
-    error: { code: JSON_RPC_UNAUTHORIZED, message: denial.message }
+    error: { code: JSON_RPC_UNAUTHORIZED, message: denial.auth.message }
   }
   res.end(JSON.stringify(body))
 }
@@ -335,4 +369,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 function formatError(err: unknown): string {
   if (err instanceof Error) return err.stack ?? err.message
   return String(err)
+}
+
+function remoteAddressOf(req: IncomingMessage): string {
+  return req.socket?.remoteAddress ?? UNKNOWN_REMOTE
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms))
 }
