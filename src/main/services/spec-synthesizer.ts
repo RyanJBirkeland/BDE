@@ -5,6 +5,7 @@ import { promises as fs } from 'fs'
 import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
 import { runSdkStreaming } from '../sdk-streaming'
+import { resolveAgentRuntime } from '../agent-manager/backend-selector'
 import type { SynthesizeRequest, ReviseRequest } from '../../shared/types'
 
 const log = createLogger('spec-synthesizer')
@@ -222,6 +223,8 @@ export async function synthesizeSpec(
 ): Promise<SynthesizeResult> {
   log.info(`Synthesizing spec: ${request.templateName} for ${request.repo}`)
 
+  const { model } = resolveAgentRuntime('synthesizer')
+
   // Gather codebase context
   const context = await gatherCodebaseContext(request.repoPath, request.answers)
 
@@ -231,6 +234,7 @@ export async function synthesizeSpec(
   // Stream generation — settingSources:[] skips CLAUDE.md; synthesizer
   // receives BDE conventions via its prompt and doesn't need the project file.
   const spec = await runSdkStreaming(prompt, onChunk, activeStreams, streamId, 180_000, {
+    model,
     settingSources: []
   })
 
@@ -250,11 +254,14 @@ export async function reviseSpec(
 ): Promise<SynthesizeResult> {
   log.info(`Revising spec for ${request.repo}`)
 
+  const { model } = resolveAgentRuntime('synthesizer')
+
   // Build prompt
   const prompt = buildRevisionPrompt(request)
 
   // Stream revision — settingSources:[] skips CLAUDE.md (same rationale as synthesize).
   const spec = await runSdkStreaming(prompt, onChunk, activeStreams, streamId, 180_000, {
+    model,
     settingSources: []
   })
 
