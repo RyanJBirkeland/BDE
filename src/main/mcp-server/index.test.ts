@@ -9,15 +9,28 @@ import { McpDomainError, McpErrorCode } from './errors'
  * Fake `http.Server` — captures the request handler, lets the test emit
  * `listen` success, `error`, and deliver synthetic requests. Keeps the
  * `index.ts` lifecycle code exercised without a real network bind.
+ *
+ * Exposes `headersTimeout`/`requestTimeout`/`keepAliveTimeout` so the
+ * timeouts applied by `applyServerTimeouts` can be asserted (T-26), and
+ * `closeAllConnections` so the shutdown-deadline path (T-27) can assert
+ * force-close was reached.
  */
 class FakeHttpServer extends EventEmitter {
   public requestHandler: ((req: IncomingMessage, res: ServerResponse) => void) | null = null
   public listenCalls: Array<{ port: number; host?: string }> = []
   public closeCalls = 0
+  public closeAllConnectionsCalls = 0
+  public headersTimeout = 0
+  public requestTimeout = 0
+  public keepAliveTimeout = 0
   private addressObj: { port: number } | null = null
-  public listenBehavior: 'success' | 'emit-error' = 'success'
+  public listenBehavior: 'success' | 'emit-error' | 'defer-callback' = 'success'
   public listenErrorCode: string | null = null
   public actualPortOnListen = 54321
+  /** Captured listen callback for `listenBehavior === 'defer-callback'`. */
+  public pendingListenCallback: (() => void) | null = null
+  /** When true, `close(cb)` will NOT fire its callback — simulates a stuck socket. */
+  public closeNeverResolves = false
 
   listen(port: number, host: string, cb: () => void): this {
     this.listenCalls.push({ port, host })
@@ -28,6 +41,12 @@ class FakeHttpServer extends EventEmitter {
       return this
     }
     this.addressObj = { port: this.actualPortOnListen }
+    if (this.listenBehavior === 'defer-callback') {
+      // Do not fire cb automatically — the test will fire it explicitly to
+      // prove the request-before-ready path returns 503 (T-25).
+      this.pendingListenCallback = cb
+      return this
+    }
     setImmediate(() => cb())
     return this
   }
@@ -36,10 +55,15 @@ class FakeHttpServer extends EventEmitter {
     return this.addressObj
   }
 
-  close(cb: () => void): this {
+  close(cb?: () => void): this {
     this.closeCalls += 1
-    setImmediate(() => cb())
+    if (this.closeNeverResolves) return this
+    if (cb) setImmediate(() => cb())
     return this
+  }
+
+  closeAllConnections(): void {
+    this.closeAllConnectionsCalls += 1
   }
 
   deliverRequest(req: IncomingMessage, res: ServerResponse): void {
@@ -414,6 +438,83 @@ describe('createMcpServer lifecycle', () => {
 
     const loggedMessages = mockLogger.error.mock.calls.map((call) => call[0] as string)
     expect(loggedMessages.some((msg) => msg.includes('mcp transport unhandled'))).toBe(true)
+  })
+
+  it('responds 503 JSON-RPC when a request arrives before listen() completes (T-25)', async () => {
+    // `defer-callback` stages the listen cb so the test can deliver a
+    // request while the transport handler is still null — the exact race
+    // window the `!` non-null assertion used to crash on.
+    fakeServer.listenBehavior = 'defer-callback'
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
+    const startPromise = handle.start()
+    // Let readOrCreateToken resolve so bindHttpServer actually runs and
+    // the requestHandler + pending listen cb get wired up.
+    await flushMicrotasks()
+    expect(fakeServer.pendingListenCallback).not.toBeNull()
+
+    // Deliver a request BEFORE firing the listen callback. transportHandler
+    // is still null, so routeRequest must answer 503 rather than crash.
+    const req = { method: 'POST', url: '/mcp' } as IncomingMessage
+    const { res, body } = captureResponse()
+    fakeServer.deliverRequest(req, res)
+
+    const parsed = JSON.parse(body.value)
+    expect(parsed).toMatchObject({
+      jsonrpc: '2.0',
+      id: null,
+      error: expect.objectContaining({
+        code: expect.any(Number),
+        message: expect.any(String)
+      })
+    })
+    expect(res.writeHead).toHaveBeenCalledWith(503, expect.any(Object))
+
+    // Clean up — fire the deferred listen cb so start() resolves.
+    fakeServer.pendingListenCallback?.()
+    await startPromise
+  })
+
+  it('applies headers/request/keep-alive timeouts before listen so slow clients cannot stall the loop (T-26)', async () => {
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
+    await handle.start()
+
+    expect(fakeServer.headersTimeout).toBeGreaterThan(0)
+    expect(fakeServer.requestTimeout).toBeGreaterThan(0)
+    expect(fakeServer.keepAliveTimeout).toBeGreaterThan(0)
+    // `requestTimeout` should allow the full body to arrive within the SDK SLA.
+    expect(fakeServer.requestTimeout).toBeGreaterThanOrEqual(fakeServer.headersTimeout)
+  })
+
+  it('closes the httpServer on listener error so no dangling bind leaks (T-26)', async () => {
+    fakeServer.listenBehavior = 'emit-error'
+    fakeServer.listenErrorCode = 'EADDRINUSE'
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 18792 })
+
+    await expect(handle.start()).rejects.toMatchObject({ code: 'EADDRINUSE' })
+
+    expect(fakeServer.closeCalls).toBeGreaterThanOrEqual(1)
+  })
+
+  it('stop() resolves within the hard deadline even when close() never fires its callback (T-27)', async () => {
+    const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
+    await handle.start()
+
+    // Simulate a stuck socket: close() registers but never fires its cb.
+    fakeServer.closeNeverResolves = true
+    vi.useFakeTimers()
+    try {
+      const stopPromise = handle.stop()
+      // Grace timer fires at 3s — force-close should happen then.
+      await vi.advanceTimersByTimeAsync(3_100)
+      expect(fakeServer.closeAllConnectionsCalls).toBe(1)
+      // Hard deadline fires at 5s total — stop() resolves regardless.
+      await vi.advanceTimersByTimeAsync(2_000)
+      await expect(stopPromise).resolves.toBeUndefined()
+      // And a warn landed so operators see the stuck close.
+      expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringMatching(/force-closing/))
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

@@ -1,7 +1,7 @@
 import http from 'node:http'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { broadcast } from '../broadcast'
-import { createLogger, logError } from '../logger'
+import { createLogger, logError, type Logger } from '../logger'
 import {
   TaskTransitionError,
   cancelTask,
@@ -21,8 +21,20 @@ import { registerEpicTools } from './tools/epics'
 import { registerMetaTools } from './tools/meta'
 import { McpDomainError, McpErrorCode, writeJsonRpcError } from './errors'
 import { wrapServerWithSafeToolHandlers } from './safe-tool-handler'
+import { closeQuietly } from './close-quietly'
 
 const logger = createLogger('mcp-server')
+
+/** Upper bound on how long request headers may trickle in (T-26). */
+const HEADERS_TIMEOUT_MS = 30_000
+/** Upper bound on a full request body read (T-26). */
+const REQUEST_TIMEOUT_MS = 60_000
+/** Keep-alive idle window — short so sockets don't linger (T-26). */
+const KEEP_ALIVE_TIMEOUT_MS = 5_000
+/** How long `stop()` waits for graceful close before force-closing sockets (T-27). */
+const CLOSE_GRACE_MS = 3_000
+/** Hard ceiling on the whole shutdown — `stop()` resolves regardless after this (T-27). */
+const CLOSE_HARD_DEADLINE_MS = 5_000
 
 export interface McpServerConfig {
   port: number
@@ -89,46 +101,145 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       const { token, created, path: tokenPath } = await readOrCreateToken(undefined, { logger })
 
       return new Promise<number>((resolve, reject) => {
-        httpServer = http.createServer((req, res) => {
-          transportHandler!.handle(req, res).catch((err) => {
-            logger.error(
-              `mcp transport unhandled: ${req.method ?? '?'} ${req.url ?? '?'} — ${formatRequestError(err)}`
-            )
-            writeJsonRpcError(res, 500, err, { logger })
-          })
-        })
-        httpServer.on('error', (err) => {
-          logError(logger, `MCP server listen(${config.port})`, err)
-          broadcast('manager:warning', { message: summarizeListenError(err, config.port) })
-          reject(err)
-        })
-        httpServer.listen(config.port, '127.0.0.1', () => {
-          const addr = httpServer!.address()
-          const actualPort = typeof addr === 'object' && addr ? addr.port : config.port
-          transportHandler = createTransportHandler(buildMcp, token, actualPort, logger)
-          logger.info(`Listening on http://127.0.0.1:${actualPort}/mcp`)
-          logger.info(`MCP bearer token at ${tokenPath}${created ? ' (newly minted)' : ''}`)
-          if (created) {
-            broadcast('manager:warning', {
-              message: `BDE MCP: fresh token minted at ${tokenPath}. Re-copy into your MCP client config.`
-            })
+        httpServer = bindHttpServer({
+          configuredPort: config.port,
+          onRequest: (req, res) => routeRequest(req, res, transportHandler),
+          onListenError: (err) => {
+            logError(logger, `MCP server listen(${config.port})`, err)
+            broadcast('manager:warning', { message: summarizeListenError(err, config.port) })
+            reject(err)
+          },
+          onListening: (actualPort) => {
+            transportHandler = createTransportHandler(buildMcp, token, actualPort, logger)
+            announceReady(actualPort, tokenPath, created)
+            resolve(actualPort)
           }
-          resolve(actualPort)
         })
       })
     },
 
     async stop(): Promise<void> {
       if (transportHandler) {
-        await transportHandler.close().catch((err) => logger.warn(`transport close: ${err}`))
+        await closeQuietly(transportHandler, 'transport', logger)
         transportHandler = null
       }
       if (httpServer) {
-        await new Promise<void>((r) => httpServer!.close(() => r()))
+        await closeHttpServerWithDeadline(httpServer, logger, {
+          graceMs: CLOSE_GRACE_MS,
+          hardDeadlineMs: CLOSE_HARD_DEADLINE_MS
+        })
         httpServer = null
         logger.info('Stopped')
       }
     }
+  }
+}
+
+/**
+ * Build, wire, and start the HTTP server. Timeouts are applied before
+ * `listen()` so a pathological client that connects in the bind window
+ * cannot hold the Electron main event loop. On a late listener `'error'`
+ * the server is closed before the caller's `onListenError` fires so we
+ * never leak a half-bound socket.
+ */
+function bindHttpServer(opts: {
+  configuredPort: number
+  onRequest: http.RequestListener
+  onListenError: (err: Error) => void
+  onListening: (actualPort: number) => void
+}): http.Server {
+  const server = http.createServer(opts.onRequest)
+  applyServerTimeouts(server)
+  server.on('error', (err) => {
+    server.close(() => {})
+    opts.onListenError(err)
+  })
+  server.listen(opts.configuredPort, '127.0.0.1', () => {
+    opts.onListening(resolveActualPort(server, opts.configuredPort))
+  })
+  return server
+}
+
+function applyServerTimeouts(server: http.Server): void {
+  server.headersTimeout = HEADERS_TIMEOUT_MS
+  server.requestTimeout = REQUEST_TIMEOUT_MS
+  server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS
+}
+
+function resolveActualPort(server: http.Server, fallback: number): number {
+  const addr = server.address()
+  return typeof addr === 'object' && addr ? addr.port : fallback
+}
+
+/**
+ * Forward one incoming request to the transport handler. When a request
+ * arrives before `listen()` has resolved — the transport handler cannot
+ * yet be built because it needs the bound port — answer with a 503 so
+ * the client sees a structured JSON-RPC error instead of a crash from
+ * dereferencing a `null` handler.
+ */
+function routeRequest(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  handler: ReturnType<typeof createTransportHandler> | null
+): void {
+  if (!handler) {
+    writeJsonRpcError(res, 503, new Error('MCP server not ready'), { logger })
+    return
+  }
+  handler.handle(req, res).catch((err) => {
+    logger.error(
+      `mcp transport unhandled: ${req.method ?? '?'} ${req.url ?? '?'} — ${formatRequestError(err)}`
+    )
+    writeJsonRpcError(res, 500, err, { logger })
+  })
+}
+
+function announceReady(actualPort: number, tokenPath: string, freshlyMinted: boolean): void {
+  logger.info(`Listening on http://127.0.0.1:${actualPort}/mcp`)
+  logger.info(`MCP bearer token at ${tokenPath}${freshlyMinted ? ' (newly minted)' : ''}`)
+  if (freshlyMinted) {
+    broadcast('manager:warning', {
+      message: `BDE MCP: fresh token minted at ${tokenPath}. Re-copy into your MCP client config.`
+    })
+  }
+}
+
+/**
+ * Shut the HTTP server down within a bounded deadline. `close()` waits
+ * for every open socket to drain, which a slow or stuck client can stall
+ * indefinitely — the grace timer calls `closeAllConnections()` to force
+ * remaining sockets shut, and the hard deadline guarantees the caller's
+ * promise always resolves so Electron's `before-quit` handler never
+ * hangs.
+ */
+async function closeHttpServerWithDeadline(
+  server: http.Server,
+  log: Logger,
+  deadlines: { graceMs: number; hardDeadlineMs: number }
+): Promise<void> {
+  let forceTimer: NodeJS.Timeout | null = null
+  const gracefulClose = new Promise<void>((resolve) => {
+    server.close(() => resolve())
+    forceTimer = setTimeout(() => {
+      log.warn(
+        `MCP server still had open sockets after ${deadlines.graceMs}ms — force-closing remaining connections.`
+      )
+      server.closeAllConnections()
+    }, deadlines.graceMs)
+  })
+  const hardDeadline = new Promise<void>((resolve) =>
+    setTimeout(() => {
+      log.warn(
+        `MCP server close exceeded ${deadlines.hardDeadlineMs}ms hard deadline — resolving anyway.`
+      )
+      resolve()
+    }, deadlines.hardDeadlineMs)
+  )
+  try {
+    await Promise.race([gracefulClose, hardDeadline])
+  } finally {
+    if (forceTimer) clearTimeout(forceTimer)
   }
 }
 
