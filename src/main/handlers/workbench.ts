@@ -14,6 +14,7 @@ import { generateSpec } from '../services/spec-generation-service'
 import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 import { runOperationalChecks } from '../services/operational-checks-service'
+import { resolveAgentRuntime } from '../agent-manager/backend-selector'
 
 const log = createLogger('workbench')
 
@@ -130,6 +131,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
     }
 
     const prompt = buildChatPrompt(input.messages, input.formContext, repoPath)
+    const { model: copilotModel } = resolveAgentRuntime('copilot')
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer
     runSdkStreaming(
@@ -144,7 +146,7 @@ export function registerWorkbenchHandlers(am?: AgentManager): void {
       activeStreams,
       streamId,
       undefined,
-      getCopilotSdkOptions(repoPath, {
+      getCopilotSdkOptions(repoPath, copilotModel, {
         onToolUse: (event) => {
           try {
             e.sender.send('workbench:chatChunk', {

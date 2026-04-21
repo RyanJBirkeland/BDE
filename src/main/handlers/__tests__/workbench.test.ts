@@ -86,6 +86,17 @@ vi.mock('../../env-utils', () => ({
   getClaudeCliPath: () => 'claude'
 }))
 
+// Route the copilot's model through a deterministic test value so we can
+// assert on it without colliding with the Sonnet fallback defaults baked
+// into runSdkStreaming / DEFAULT_CONFIG / DEFAULT_SETTINGS. Haiku is the
+// only agreed-upon non-default sentinel across the routing test suite.
+vi.mock('../../agent-manager/backend-selector', () => ({
+  resolveAgentRuntime: (type: string) => ({
+    backend: 'claude',
+    model: type === 'copilot' ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-5'
+  })
+}))
+
 /** Helper: create a fake spawn child that writes `output` to stdout and exits 0. */
 function _createFakeSpawnChild(output: string) {
   const child = new EventEmitter() as any
@@ -311,6 +322,25 @@ describe('Workbench handlers', () => {
       expect(opts.maxTurns).toBe(COPILOT_MAX_TURNS)
     })
 
+    it('passes the copilot model from settings to runSdkStreaming', async () => {
+      const handler = getChatStreamHandler()
+      const mockEvent = makeMockEvent()
+      mockSdkResponse = 'ok'
+
+      await handler(mockEvent, {
+        messages: [{ role: 'user', content: 'hi' }],
+        formContext: { title: 't', repo: 'bde', spec: '' }
+      })
+
+      await new Promise((r) => setTimeout(r, 0))
+
+      expect(runSdkStreamingCalls.length).toBeGreaterThanOrEqual(1)
+      const opts = runSdkStreamingCalls[0].options as Record<string, unknown>
+      // Sentinel chosen to be distinct from the Sonnet fallback defaults in
+      // runSdkStreaming, DEFAULT_CONFIG.defaultModel, and DEFAULT_SETTINGS.
+      expect(opts.model).toBe('claude-haiku-4-5-20251001')
+    })
+
     it('returns an error chunk when the repo is not configured (N1)', async () => {
       const handler = getChatStreamHandler()
       const mockEvent = makeMockEvent()
@@ -334,17 +364,20 @@ describe('Workbench handlers', () => {
 
   describe('getCopilotSdkOptions helper', () => {
     it('produces the expected restricted option set', () => {
-      const opts = getCopilotSdkOptions('/some/repo')
+      const opts = getCopilotSdkOptions('/some/repo', 'claude-haiku-4-5-20251001')
       expect(opts.cwd).toBe('/some/repo')
       expect(opts.tools).toEqual([...COPILOT_ALLOWED_TOOLS])
       expect(opts.disallowedTools).toEqual([...COPILOT_DISALLOWED_TOOLS])
       expect(opts.maxTurns).toBe(COPILOT_MAX_TURNS)
       expect(opts.maxBudgetUsd).toBe(COPILOT_MAX_BUDGET_USD)
+      expect(opts.model).toBe('claude-haiku-4-5-20251001')
     })
 
     it('forwards the optional onToolUse callback', () => {
       const cb = vi.fn()
-      const opts = getCopilotSdkOptions('/some/repo', { onToolUse: cb })
+      const opts = getCopilotSdkOptions('/some/repo', 'claude-haiku-4-5-20251001', {
+        onToolUse: cb
+      })
       expect(opts.onToolUse).toBe(cb)
     })
   })

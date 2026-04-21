@@ -62,10 +62,13 @@ export function buildChatPrompt(
 /**
  * Build the SDK options used for every copilot invocation. Centralized so
  * that all IPC paths (streaming and non-streaming) get the same restricted
- * tool list, dollar ceiling, and turn limit. NEVER bypass this helper.
+ * tool list, dollar ceiling, turn limit, and routed model. NEVER bypass
+ * this helper — in particular, never call `runSdkStreaming` for the
+ * copilot without a `model` resolved through `resolveAgentRuntime`.
  */
 export function getCopilotSdkOptions(
   repoPath: string | undefined,
+  model: string,
   extras?: Pick<SdkStreamingOptions, 'onToolUse'>
 ): SdkStreamingOptions {
   return {
@@ -74,6 +77,7 @@ export function getCopilotSdkOptions(
     disallowedTools: [...COPILOT_DISALLOWED_TOOLS],
     maxTurns: COPILOT_MAX_TURNS,
     maxBudgetUsd: COPILOT_MAX_BUDGET_USD,
+    model,
     // Spec-drafting agents skip CLAUDE.md — they receive BDE conventions via
     // their prompt (SPEC_DRAFTING_PREAMBLE) and loading the project settings
     // file costs tokens without adding value.
