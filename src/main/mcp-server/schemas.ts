@@ -34,7 +34,14 @@ export const TaskWriteFieldsSchema = z.object({
   template_name: z.string().min(1).max(200).optional(),
   model: z.string().min(1).max(100).optional(),
   cross_repo_contract: z.string().max(10_000).optional(),
-  group_id: z.string().min(1).nullable().optional()
+  group_id: z.string().min(1).nullable().optional(),
+  /**
+   * Escape hatch for batch/admin flows with hand-validated specs. When true,
+   * bypasses the spec-structure readiness check (min length, required
+   * headings) while still enforcing title, repo, and repo configuration.
+   * The service logs a warning when this flag is set.
+   */
+  skipReadinessCheck: z.boolean().optional()
 })
 
 export const TaskCreateSchema = TaskWriteFieldsSchema

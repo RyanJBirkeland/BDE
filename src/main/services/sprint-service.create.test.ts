@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createTaskWithValidation } from './sprint-service'
+import { createTaskWithValidation, TaskValidationError } from './sprint-service'
 import type { CreateTaskInput } from './sprint-service'
 import type { SprintTask, TaskGroup } from '../../shared/types'
 
@@ -39,6 +39,7 @@ vi.mock('../git', () => ({
 }))
 
 import * as mutations from './sprint-mutations'
+import * as git from '../git'
 
 describe('createTaskWithValidation', () => {
   const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
@@ -75,6 +76,101 @@ describe('createTaskWithValidation', () => {
     expect(mutations.createTask).toHaveBeenCalledWith(
       expect.objectContaining({ title: 't', repo: 'bde' })
     )
+  })
+
+  describe('skipReadinessCheck', () => {
+    it('rejects a queued task with insufficient headings by default', () => {
+      const input: CreateTaskInput = {
+        title: 'no sections',
+        repo: 'bde',
+        status: 'queued',
+        spec: '## Only one\nbody'
+      }
+      expect(() => createTaskWithValidation(input, { logger })).toThrow(/spec|section/i)
+    })
+
+    it('accepts the same task when skipReadinessCheck is true', () => {
+      const fakeRow = { id: 'bypass', title: 'no sections', repo: 'bde' } as SprintTask
+      ;(mutations.createTask as ReturnType<typeof vi.fn>).mockReturnValue(fakeRow)
+
+      const warn = vi.fn()
+      const input: CreateTaskInput = {
+        title: 'no sections',
+        repo: 'bde',
+        status: 'queued',
+        spec: '## Only one\nbody'
+      }
+      const row = createTaskWithValidation(
+        input,
+        { logger: { ...logger, warn } },
+        { skipReadinessCheck: true }
+      )
+      expect(row).toBe(fakeRow)
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/skipReadinessCheck/))
+    })
+
+    it('still enforces required fields even with skipReadinessCheck', () => {
+      const input = { title: '', repo: 'bde' } as CreateTaskInput
+      expect(() =>
+        createTaskWithValidation(input, { logger }, { skipReadinessCheck: true })
+      ).toThrow(/title/i)
+    })
+
+    it('still enforces repo configuration even with skipReadinessCheck', () => {
+      const input: CreateTaskInput = { title: 't', repo: 'unknown' }
+      expect(() =>
+        createTaskWithValidation(input, { logger }, { skipReadinessCheck: true })
+      ).toThrow(/not configured/)
+    })
+  })
+
+  describe('error codes', () => {
+    it('structural validation failures throw TaskValidationError with code spec-structural', () => {
+      const input = { title: '', repo: 'bde' } as CreateTaskInput
+      try {
+        createTaskWithValidation(input, { logger })
+        expect.fail('should have thrown')
+      } catch (err) {
+        expect(err).toBeInstanceOf(TaskValidationError)
+        expect(err).toMatchObject({ code: 'spec-structural', message: expect.any(String) })
+      }
+    })
+
+    it('required-sections failures throw TaskValidationError with code spec-readiness', () => {
+      // Passes Tier-1 (≥2 headings, ≥50 chars) but fails Tier-2 because none
+      // of the required sections (Overview, Files to Change, Implementation
+      // Steps, How to Test) are present.
+      const input: CreateTaskInput = {
+        title: 't',
+        repo: 'bde',
+        status: 'queued',
+        spec: [
+          '## Background',
+          'This spec is intentionally padded so it clears the minimum spec length floor.',
+          '## Context',
+          'It has two markdown headings but none match the required-sections allowlist.'
+        ].join('\n')
+      }
+      try {
+        createTaskWithValidation(input, { logger })
+        expect.fail('should have thrown')
+      } catch (err) {
+        expect(err).toBeInstanceOf(TaskValidationError)
+        expect(err).toMatchObject({ code: 'spec-readiness' })
+      }
+    })
+
+    it('missing-repo failures throw TaskValidationError with code repo-not-configured', () => {
+      ;(git.getRepoPaths as ReturnType<typeof vi.fn>).mockReturnValueOnce({})
+      const input: CreateTaskInput = { title: 't', repo: 'bde' }
+      try {
+        createTaskWithValidation(input, { logger })
+        expect.fail('should have thrown')
+      } catch (err) {
+        expect(err).toBeInstanceOf(TaskValidationError)
+        expect(err).toMatchObject({ code: 'repo-not-configured' })
+      }
+    })
   })
 
   it('applies auto-blocking to queued tasks with unsatisfied hard dependencies', () => {

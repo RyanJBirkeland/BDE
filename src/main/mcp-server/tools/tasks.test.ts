@@ -139,6 +139,29 @@ describe('tasks.* write tools', () => {
     }
   })
 
+  it('tasks.create forwards skipReadinessCheck to the delegate', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    await call('tasks.create', { title: 't', repo: 'bde', skipReadinessCheck: true })
+    const invocation = (deps.createTaskWithValidation as any).mock.calls[0]
+    const opts = invocation[2]
+    expect(opts).toEqual(expect.objectContaining({ skipReadinessCheck: true }))
+    // And the option must not leak into the CreateTaskInput forwarded to the delegate.
+    const input = invocation[0]
+    expect(input.skipReadinessCheck).toBeUndefined()
+  })
+
+  it('tasks.create omits skipReadinessCheck opt when absent', async () => {
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    await call('tasks.create', { title: 't', repo: 'bde' })
+    const invocation = (deps.createTaskWithValidation as any).mock.calls[0]
+    const opts = invocation[2]
+    expect(opts?.skipReadinessCheck).toBeUndefined()
+  })
+
   it('tasks.update throws when updateTask returns null', async () => {
     const deps = fakeDeps({
       updateTask: vi.fn(() => null)

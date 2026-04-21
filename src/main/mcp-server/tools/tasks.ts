@@ -1,7 +1,10 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { SprintTask } from '../../../shared/types'
 import type { TaskChange } from '../../data/task-changes'
-import type { CreateTaskWithValidationDeps } from '../../services/sprint-service'
+import type {
+  CreateTaskWithValidationDeps,
+  CreateTaskWithValidationOpts
+} from '../../services/sprint-service'
 import type { CreateTaskInput } from '../../data/sprint-task-repository'
 import { McpDomainError, McpErrorCode } from '../errors'
 import {
@@ -17,7 +20,11 @@ import {
 export interface TaskToolsDeps {
   listTasks: (status?: string) => SprintTask[]
   getTask: (id: string) => SprintTask | null
-  createTaskWithValidation: (input: CreateTaskInput, deps: CreateTaskWithValidationDeps) => SprintTask
+  createTaskWithValidation: (
+    input: CreateTaskInput,
+    deps: CreateTaskWithValidationDeps,
+    opts?: CreateTaskWithValidationOpts
+  ) => SprintTask
   updateTask: (id: string, patch: Record<string, unknown>) => SprintTask | null
   cancelTask: (id: string, reason?: string) => Promise<SprintTask | null> | SprintTask | null
   /** Mirrors the data-layer signature: (taskId, limit?). Offset is applied in the tool handler via slice. */
@@ -92,8 +99,15 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
     'Create a new sprint task. Runs the same validation as the in-app Task Workbench.',
     TaskCreateSchema.shape,
     async (rawArgs) => {
-      const input: CreateTaskInput = TaskCreateSchema.parse(rawArgs)
-      const row = deps.createTaskWithValidation(input, { logger: deps.logger })
+      const parsed = TaskCreateSchema.parse(rawArgs)
+      const { skipReadinessCheck, ...createInput } = parsed
+      const delegateDeps = { logger: deps.logger }
+      const row =
+        skipReadinessCheck === undefined
+          ? deps.createTaskWithValidation(createInput as CreateTaskInput, delegateDeps)
+          : deps.createTaskWithValidation(createInput as CreateTaskInput, delegateDeps, {
+              skipReadinessCheck
+            })
       return json(row)
     }
   )

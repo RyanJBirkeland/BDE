@@ -136,42 +136,95 @@ export async function cancelTask(
   return row
 }
 
+export type TaskValidationCode =
+  | 'spec-structural'
+  | 'spec-readiness'
+  | 'repo-not-configured'
+
+/**
+ * Machine-readable validation failure raised by `createTaskWithValidation`.
+ * `code` lets MCP clients and IPC handlers branch on failure kind without
+ * parsing the human-readable message.
+ */
+export class TaskValidationError extends Error {
+  readonly code: TaskValidationCode
+  constructor(code: TaskValidationCode, message: string) {
+    super(message)
+    this.code = code
+    this.name = 'TaskValidationError'
+  }
+}
+
 export interface CreateTaskWithValidationDeps {
   logger: Logger
+}
+
+export interface CreateTaskWithValidationOpts {
+  /**
+   * Skip the spec-structure check (required headings, min length) that
+   * runs for queued tasks. Structural validation (required fields,
+   * configured repo) always runs. Intended for batch/admin flows with
+   * hand-validated specs; logged at warn level when true.
+   */
+  skipReadinessCheck?: boolean
 }
 
 /** Shared task-creation entry point for the sprint:create IPC handler and the MCP server. */
 export function createTaskWithValidation(
   input: mutations.CreateTaskInput,
-  deps: CreateTaskWithValidationDeps
+  deps: CreateTaskWithValidationDeps,
+  opts: CreateTaskWithValidationOpts = {}
 ): SprintTask {
-  const validation = validateTaskCreation(input, {
+  const validationInput = opts.skipReadinessCheck
+    ? { ...input, status: 'backlog' as const }
+    : input
+  const validation = validateTaskCreation(validationInput, {
     logger: { warn: (msg) => deps.logger.warn(msg as string) },
     listTasks: mutations.listTasks,
     listGroups
   })
   if (!validation.valid) {
-    throw new Error(`Spec quality checks failed: ${validation.errors.join('; ')}`)
+    throw new TaskValidationError(
+      'spec-structural',
+      `Spec quality checks failed: ${validation.errors.join('; ')}`
+    )
   }
 
-  if (validation.task.status === 'queued' && validation.task.spec) {
-    const parsed = new SpecParser().parse(validation.task.spec)
+  // Restore caller's intended status (validateStructural only controls spec-length gating).
+  const validatedTask = opts.skipReadinessCheck
+    ? { ...validation.task, status: input.status ?? validation.task.status }
+    : validation.task
+
+  if (
+    !opts.skipReadinessCheck &&
+    validatedTask.status === 'queued' &&
+    validatedTask.spec
+  ) {
+    const parsed = new SpecParser().parse(validatedTask.spec)
     const sectionErrors = new RequiredSectionsValidator()
       .validate(parsed)
       .filter((issue) => issue.severity === 'error')
     if (sectionErrors.length > 0) {
-      throw new Error(`Spec quality checks failed: ${sectionErrors[0].message}`)
+      throw new TaskValidationError(
+        'spec-readiness',
+        `Spec quality checks failed: ${sectionErrors[0].message}`
+      )
     }
   }
 
+  if (opts.skipReadinessCheck) {
+    deps.logger.warn('createTaskWithValidation: skipReadinessCheck=true (batch/admin path)')
+  }
+
   const repoPaths = getRepoPaths()
-  if (!repoPaths[validation.task.repo]) {
-    throw new Error(
-      `Repo "${validation.task.repo}" is not configured. Add it in Settings > Repositories, then try again.`
+  if (!repoPaths[validatedTask.repo]) {
+    throw new TaskValidationError(
+      'repo-not-configured',
+      `Repo "${validatedTask.repo}" is not configured. Add it in Settings > Repositories, then try again.`
     )
   }
 
-  const row = createTask(validation.task)
+  const row = createTask(validatedTask)
   if (!row) throw new Error('Failed to create task')
   return row
 }
