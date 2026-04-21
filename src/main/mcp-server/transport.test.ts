@@ -729,6 +729,45 @@ describe('transport handler auth-rate-limit wire-through', () => {
   })
 })
 
+describe('transport handler 500-path structured log (T-48)', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  it('logs method, url, remote, and a stack fragment on unhandled failure', async () => {
+    const explosion = new Error('sdk exploded')
+    const failingServer = {
+      connect: vi.fn().mockRejectedValue(explosion),
+      close: vi.fn().mockResolvedValue(undefined)
+    } as unknown as McpServer
+    const logger = createMockLogger()
+    const handler = createTransportHandler(() => failingServer, validToken, port, logger)
+
+    const { req } = createMockRequest({
+      headers: { host: '127.0.0.1:18792', authorization: `Bearer ${validToken}` }
+    })
+    Object.defineProperty(req, 'socket', { value: { remoteAddress: '10.0.0.5' } })
+    const { res } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    const errorCalls = (logger.error as unknown as { mock: { calls: unknown[][] } }).mock.calls
+    expect(errorCalls.length).toBeGreaterThan(0)
+    const [firstMessage] = errorCalls[0]
+    expect(firstMessage).toMatch(/mcp\.transport\.500/)
+    expect(firstMessage).toMatch(/method=POST/)
+    expect(firstMessage).toMatch(/url=\/mcp/)
+    expect(firstMessage).toMatch(/remote=10\.0\.0\.5/)
+    // Stack fragment — the error message is always present; on Node it
+    // prefixes the stack trace when `.stack` is available.
+    expect(firstMessage).toMatch(/sdk exploded/)
+  })
+})
+
 describe('transport handler DNS-rebinding protection (real SDK over loopback)', () => {
   const validToken = 'test-bearer-token-12345'
 

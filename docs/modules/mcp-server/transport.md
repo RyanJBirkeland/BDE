@@ -31,6 +31,20 @@ Each helper is a top-level function sitting at the abstraction level below `hand
 
 The SDK then applies DNS-rebinding (Host) validation and the explicit Origin allow-list (T-45) configured at transport construction.
 
+## Observability (T-42 / T-48)
+Every non-2xx path writes a structured, greppable warn/error line. Messages carry consistent prefixes so they can be filtered from `~/.bde/bde.log`:
+
+| Prefix | Level | Emitted by |
+|---|---|---|
+| `mcp.auth.failure:` | warn | `checkAuthorization` on every 401 |
+| `mcp.transport.method-not-allowed:` | warn | `writeMethodNotAllowed` |
+| `mcp.transport.payload-too-large:` | warn | `writePayloadTooLarge` |
+| `mcp.transport.body-rejected:` | warn | `readBoundedBody` (413/400 cases) |
+| `mcp.transport.cleanup:` | warn | `closeWithTimeout` on stuck close |
+| `mcp.transport.500:` | error | `dispatch` catch branch |
+
+The 500 log line includes `method=<m> url=<u> remote=<addr>` plus the full stack (or `String(err)` for non-`Error` throws). Auth failures distinguish `"missing bearer token"` from `"invalid bearer token"` so log review can spot misconfigured clients vs. probing attackers.
+
 ## Origin allow-list (T-45)
 The handler passes an explicit `allowedOrigins` list to every transport instance — `['null', 'http://127.0.0.1:<port>', 'http://localhost:<port>']` — instead of relying on the SDK's disabled-when-empty default. MCP clients typically send no Origin header and the SDK only enforces when one is present, so absent-Origin requests are still accepted.
 

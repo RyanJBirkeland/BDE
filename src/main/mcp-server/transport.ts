@@ -169,7 +169,7 @@ async function readBoundedBody(
   }
   const bodyResult = await readJsonBodyWithCap(req)
   if (!bodyResult.ok) {
-    logger.warn(`mcp transport rejected body: ${bodyResult.message}`)
+    logger.warn(`mcp.transport.body-rejected: ${bodyResult.message}`)
     writeJsonRpcEnvelope(res, bodyResult.status, bodyResult.code, bodyResult.message)
     return { ok: false }
   }
@@ -209,9 +209,7 @@ async function dispatch(
     await scope.transport.handleRequest(req, res, parsedBody)
     scheduleCleanup(res, scope, logger)
   } catch (err) {
-    logger.error(
-      `mcp transport failure: ${req.method ?? '?'} ${req.url ?? '?'} — ${formatError(err)}`
-    )
+    logger.error(formatRequestErrorLine('mcp.transport.500', req, err))
     writeJsonRpcError(res, 500, err, { logger })
   }
 }
@@ -243,14 +241,14 @@ function allowedOriginsFor(port: number): string[] {
 
 function writeMethodNotAllowed(res: ServerResponse, logger: Logger): void {
   const message = `Only ${ALLOWED_METHOD} is allowed on /mcp`
-  logger.warn(`mcp transport method not allowed: ${message}`)
+  logger.warn(`mcp.transport.method-not-allowed: ${message}`)
   res.setHeader('Allow', ALLOWED_METHOD)
   writeJsonRpcEnvelope(res, 405, JSON_RPC_INVALID_REQUEST, message)
 }
 
 function writePayloadTooLarge(res: ServerResponse, logger: Logger): void {
   const message = `Request body exceeds ${MAX_BODY_BYTES}-byte limit`
-  logger.warn(`mcp transport payload too large: ${message}`)
+  logger.warn(`mcp.transport.payload-too-large: ${message}`)
   writeJsonRpcEnvelope(res, 413, JSON_RPC_INVALID_REQUEST, message)
 }
 
@@ -353,7 +351,7 @@ function readJsonBodyWithCap(req: IncomingMessage): Promise<BodyReadResult> {
  */
 function closeWithTimeout(label: string, closable: Closable, logger: Logger): void {
   withTimeout(closable.close(), CLOSE_TIMEOUT_MS, label).catch((err) => {
-    logger.warn(`${label} close timeout or failure: ${formatError(err)}`)
+    logger.warn(`mcp.transport.cleanup: ${label} close timeout or failure — ${formatError(err)}`)
   })
 }
 
@@ -369,6 +367,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 function formatError(err: unknown): string {
   if (err instanceof Error) return err.stack ?? err.message
   return String(err)
+}
+
+function formatRequestErrorLine(prefix: string, req: IncomingMessage, err: unknown): string {
+  const method = req.method ?? '?'
+  const url = req.url ?? '?'
+  const remote = remoteAddressOf(req)
+  return `${prefix}: method=${method} url=${url} remote=${remote} — ${formatError(err)}`
 }
 
 function remoteAddressOf(req: IncomingMessage): string {
