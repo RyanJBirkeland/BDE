@@ -235,7 +235,7 @@ describe('handleChatStream', () => {
     let capturedOptions: SdkStreamingOptions | null = null
     const resolveAgentRuntime = vi
       .fn()
-      .mockReturnValue({ backend: 'claude', model: 'claude-sonnet-4-5' })
+      .mockReturnValue({ backend: 'claude', model: 'claude-haiku-4-5-20251001' })
     const deps: ChatStreamDeps = {
       taskRepo: { getTask: () => fakeTask() } as unknown as IAgentTaskRepository,
       reviewRepo: {
@@ -258,6 +258,6 @@ describe('handleChatStream', () => {
     await handleChatStream(deps, { taskId: 'task-1', messages: [] }, sender as any)
     await new Promise((r) => setImmediate(r))
     expect(resolveAgentRuntime).toHaveBeenCalled()
-    expect(capturedOptions?.model).toBe('claude-sonnet-4-5')
+    expect(capturedOptions?.model).toBe('claude-haiku-4-5-20251001')
   })
 })
