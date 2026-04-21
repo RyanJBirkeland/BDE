@@ -17,6 +17,7 @@ import { registerAllHandlers, type AppHandlerDeps } from './handlers/registry'
 import { buildChatStreamDeps } from './handlers/review-assistant'
 import { createReviewRepository } from './data/review-repository'
 import { createReviewService } from './services/review-service'
+import { resolveAgentRuntime } from './agent-manager/backend-selector'
 import { runSdkOnce } from './sdk-streaming'
 import { getDb, closeDb } from './db'
 import { flushAgentEventBatcher } from './agent-event-mapper'
@@ -468,6 +469,7 @@ function buildReviewWiring(
     getHeadCommitSha,
     getDiff,
     getBranch,
+    resolveAgentRuntime: () => resolveAgentRuntime('reviewer'),
     runSdkOnce
   })
 

@@ -56,6 +56,7 @@ describe('parseReviewResponse', () => {
 import { createReviewService, WorktreeMissingError } from './review-service'
 import type { IReviewRepository } from '../data/review-repository'
 import type { ReviewResult } from '../../shared/types'
+import type { SdkStreamingOptions } from '../sdk-streaming'
 
 function makeFakeRepo(): IReviewRepository & { _set: Record<string, ReviewResult> } {
   const _set: Record<string, ReviewResult> = {}
@@ -99,6 +100,7 @@ function baseDeps(overrides: Partial<any> = {}) {
     getHeadCommitSha: async () => 'sha-abc',
     getDiff: async () => 'diff --git a/x b/x\n+ change',
     getBranch: async () => 'feat/auth',
+    resolveAgentRuntime: () => ({ backend: 'claude' as const, model: 'claude-sonnet-4-5' }),
     runSdkOnce: async () =>
       JSON.stringify({
         qualityScore: 88,
@@ -222,5 +224,25 @@ describe('reviewService.reviewChanges', () => {
       })
     )
     await expect(svc.reviewChanges('task-1')).rejects.toThrow(WorktreeMissingError)
+  })
+
+  it('uses the reviewer model resolved from settings', async () => {
+    let sdkOptions: SdkStreamingOptions | null = null
+    const svc = createReviewService(
+      baseDeps({
+        runSdkOnce: async (_prompt, options) => {
+          sdkOptions = options
+          return JSON.stringify({
+            qualityScore: 95,
+            openingMessage: 'ok',
+            perFile: []
+          })
+        },
+        resolveAgentRuntime: () => ({ backend: 'claude', model: 'claude-haiku-4-5-20251001' })
+      })
+    )
+    const result = await svc.reviewChanges('task-1')
+    expect(sdkOptions?.model).toBe('claude-haiku-4-5-20251001')
+    expect(result.model).toBe('claude-haiku-4-5-20251001')
   })
 })

@@ -3,6 +3,7 @@ import type { IReviewRepository } from '../data/review-repository'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { Logger } from '../logger'
 import type { SdkStreamingOptions } from '../sdk-streaming'
+import type { AgentBackendConfig } from '../agent-manager/backend-selector'
 import { buildAgentPrompt } from '../lib/prompt-composer'
 import { parseReviewResponse, MalformedReviewError } from './review-response-parser'
 import type { ParsedReview } from './review-response-parser'
@@ -26,14 +27,13 @@ export interface ReviewServiceDeps {
   getHeadCommitSha: (worktreePath: string) => Promise<string>
   getDiff: (worktreePath: string) => Promise<string>
   getBranch: (worktreePath: string) => Promise<string>
+  resolveAgentRuntime: () => AgentBackendConfig
   runSdkOnce: (prompt: string, options: SdkStreamingOptions) => Promise<string>
 }
 
 export interface ReviewService {
   reviewChanges(taskId: string, opts?: { force?: boolean }): Promise<ReviewResult>
 }
-
-const REVIEWER_MODEL = 'claude-opus-4-6'
 
 export function createReviewService(deps: ReviewServiceDeps): ReviewService {
   const {
@@ -44,6 +44,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
     getHeadCommitSha,
     getDiff,
     getBranch,
+    resolveAgentRuntime,
     runSdkOnce
   } = deps
 
@@ -94,10 +95,11 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
       })
 
       logger.info(`Firing auto-review for task=${taskId} sha=${headSha}`)
+      const { model: reviewerModel } = resolveAgentRuntime()
       let raw: string
       try {
         raw = await runSdkOnce(prompt, {
-          model: REVIEWER_MODEL,
+          model: reviewerModel,
           maxTurns: 1,
           tools: [],
           // Reviewer generates opinions, not code. CLAUDE.md implementation
@@ -124,7 +126,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
         filesCount: aggregates.filesCount,
         openingMessage: parsed.openingMessage,
         findings: { perFile: parsed.perFile, branch },
-        model: REVIEWER_MODEL,
+        model: reviewerModel,
         createdAt: Date.now()
       }
 
