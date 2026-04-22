@@ -126,14 +126,8 @@ describe('turn-tracker', () => {
         }
       })
 
-      expect(insertTurnSpy).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ toolCalls: 1 })
-      )
-      expect(insertTurnSpy).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ toolCalls: 2 })
-      )
+      expect(insertTurnSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({ toolCalls: 1 }))
+      expect(insertTurnSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({ toolCalls: 2 }))
     })
 
     it('should handle missing usage gracefully', () => {
