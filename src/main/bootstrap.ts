@@ -225,10 +225,11 @@ export function startPrPollers(terminalDeps: {
   dialog: DialogService
 }): void {
   startPrPoller()
-  app.on('will-quit', stopPrPoller)
-
   startSprintPrPoller(terminalDeps)
-  app.on('will-quit', stopSprintPrPoller)
+  app.on('will-quit', () => {
+    stopPrPoller()
+    stopSprintPrPoller()
+  })
 }
 
 /**
@@ -249,7 +250,6 @@ export function setupCleanupTasks(): void {
     },
     24 * 60 * 60 * 1000
   )
-  app.on('will-quit', () => clearInterval(pruneEventsInterval))
 
   // Prune old audit trail records (non-fatal)
   try {
@@ -292,7 +292,6 @@ export function setupCleanupTasks(): void {
     },
     24 * 60 * 60 * 1000
   )
-  app.on('will-quit', () => clearInterval(pruneTaskChangesInterval))
 
   // Prune review_diff_snapshot periodically (every 24 hours)
   const pruneDiffSnapshotsInterval = setInterval(
@@ -306,7 +305,12 @@ export function setupCleanupTasks(): void {
     },
     24 * 60 * 60 * 1000
   )
-  app.on('will-quit', () => clearInterval(pruneDiffSnapshotsInterval))
+
+  app.on('will-quit', () => {
+    clearInterval(pruneEventsInterval)
+    clearInterval(pruneTaskChangesInterval)
+    clearInterval(pruneDiffSnapshotsInterval)
+  })
 }
 
 /**

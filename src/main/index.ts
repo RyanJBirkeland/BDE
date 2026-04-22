@@ -370,13 +370,11 @@ function wireAgentManagerAndMcp(
     core.epicGroupService
   )
   agentManager.start()
-  app.on('will-quit', () => agentManager.stop(10_000))
 
   const statusServer = createStatusServer(agentManager, core.repo)
   statusServer.start().catch((err) => {
     createLogger('startup').error(`Failed to start status server: ${err}`)
   })
-  app.on('will-quit', () => statusServer.stop())
 
   let mcp: McpServerHandle | null = null
 
@@ -422,6 +420,8 @@ function wireAgentManagerAndMcp(
   })
 
   app.on('will-quit', () => {
+    agentManager.stop(10_000)
+    statusServer.stop()
     stopMcpServer().catch(() => {})
   })
 
