@@ -127,6 +127,14 @@ vi.mock('../../db', () => ({
   getDb: vi.fn().mockReturnValue({})
 }))
 
+// Mock agent-event-mapper so `agent:history` can flush the pending batch
+// before reading. Tests assert the order (flush before read).
+vi.mock('../../agent-event-mapper', () => ({
+  flushAgentEventBatcher: vi.fn(),
+  emitAgentEvent: vi.fn(),
+  mapRawMessage: vi.fn(() => [])
+}))
+
 import { existsSync } from 'node:fs'
 import { registerAgentHandlers } from '../agent-handlers'
 import { safeHandle } from '../../ipc-utils'
@@ -134,6 +142,7 @@ import { cleanupOldLogs } from '../../agent-log-manager'
 import { listAgents, readLog, pruneOldAgents, getAgentMeta } from '../../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../../adhoc-agent'
 import { getEventHistory } from '../../data/event-queries'
+import { flushAgentEventBatcher } from '../../agent-event-mapper'
 import { createReviewTaskFromAdhoc } from '../../data/sprint-queries'
 import { nowIso } from '../../../shared/time'
 
@@ -312,6 +321,22 @@ describe('agent:steer handler', () => {
 describe('agent:history handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('flushes the pending event batch before reading SQLite', async () => {
+    const callOrder: string[] = []
+    vi.mocked(flushAgentEventBatcher).mockImplementation(() => {
+      callOrder.push('flush')
+    })
+    vi.mocked(getEventHistory).mockImplementation(() => {
+      callOrder.push('read')
+      return []
+    })
+
+    const handler = captureHandler('agent:history')
+    await handler(mockEvent, 'agent-race')
+
+    expect(callOrder).toEqual(['flush', 'read'])
   })
 
   it('returns parsed event history from SQLite', async () => {

@@ -13,72 +13,144 @@ import { TOOL_RESULT_SUMMARY_MAX_CHARS, TOOL_RESULT_OUTPUT_MAX_CHARS } from './c
 const logger = createLogger('agent-event-mapper')
 
 /**
+ * The SDK identifies a tool invocation with `tool_use_id`; only the preceding
+ * assistant message carries the human-readable tool name. We remember the
+ * mapping long enough to label the paired `tool_result` block when it comes
+ * back in the next `user` message. Capped to avoid unbounded growth when a
+ * session is long-lived or a tool_result is never returned.
+ */
+const MAX_TRACKED_TOOL_USE_IDS = 1000
+const toolNameByToolUseId = new Map<string, string>()
+
+function rememberToolName(toolUseId: string, toolName: string): void {
+  if (toolNameByToolUseId.size >= MAX_TRACKED_TOOL_USE_IDS) {
+    const oldest = toolNameByToolUseId.keys().next().value
+    if (oldest !== undefined) toolNameByToolUseId.delete(oldest)
+  }
+  toolNameByToolUseId.set(toolUseId, toolName)
+}
+
+function consumeToolName(toolUseId: string): string {
+  const name = toolNameByToolUseId.get(toolUseId) ?? 'unknown'
+  toolNameByToolUseId.delete(toolUseId)
+  return name
+}
+
+function capToolResultOutput(content: unknown): unknown {
+  if (typeof content !== 'string') return content
+  if (content.length <= TOOL_RESULT_OUTPUT_MAX_CHARS) return content
+  return content.slice(0, TOOL_RESULT_OUTPUT_MAX_CHARS) + ' [truncated]'
+}
+
+function summarizeToolResultOutput(content: unknown): string {
+  if (typeof content !== 'string') return ''
+  return content.slice(0, TOOL_RESULT_SUMMARY_MAX_CHARS)
+}
+
+function buildToolResultEvent(
+  tool: string,
+  isError: boolean,
+  content: unknown,
+  timestamp: number
+): AgentEvent {
+  return {
+    type: 'agent:tool_result',
+    tool,
+    success: isError !== true,
+    summary: summarizeToolResultOutput(content),
+    output: capToolResultOutput(content),
+    timestamp
+  }
+}
+
+function mapAssistantMessage(message: Record<string, unknown>, now: number): AgentEvent[] {
+  const events: AgentEvent[] = []
+  const content = message?.content
+  if (!Array.isArray(content)) return events
+  for (const block of content) {
+    if (typeof block !== 'object' || block === null) continue
+    const contentBlock = block as Record<string, unknown>
+    if (contentBlock.type === 'text' && typeof contentBlock.text === 'string') {
+      events.push({ type: 'agent:text', text: contentBlock.text, timestamp: now })
+      continue
+    }
+    if (contentBlock.type === 'tool_use') {
+      const toolName =
+        (typeof contentBlock.name === 'string' && contentBlock.name) ||
+        (typeof contentBlock.tool_name === 'string' && contentBlock.tool_name) ||
+        'unknown'
+      if (typeof contentBlock.id === 'string') rememberToolName(contentBlock.id, toolName)
+      events.push({
+        type: 'agent:tool_call',
+        tool: toolName,
+        summary: toolName,
+        input: contentBlock.input,
+        timestamp: now
+      })
+    }
+  }
+  return events
+}
+
+function mapUserMessage(message: Record<string, unknown>, now: number): AgentEvent[] {
+  const events: AgentEvent[] = []
+  const content = message?.content
+  if (!Array.isArray(content)) return events
+  for (const block of content) {
+    if (typeof block !== 'object' || block === null) continue
+    const contentBlock = block as Record<string, unknown>
+    if (contentBlock.type !== 'tool_result') continue
+    const toolUseId = typeof contentBlock.tool_use_id === 'string' ? contentBlock.tool_use_id : ''
+    const toolName = toolUseId ? consumeToolName(toolUseId) : 'unknown'
+    events.push(
+      buildToolResultEvent(
+        toolName,
+        contentBlock.is_error === true,
+        contentBlock.content ?? contentBlock.output,
+        now
+      )
+    )
+  }
+  return events
+}
+
+function mapTopLevelToolResult(msg: Record<string, unknown>, now: number): AgentEvent[] {
+  const content = msg.content ?? msg.output
+  const toolName =
+    (typeof msg.tool_name === 'string' && msg.tool_name) ||
+    (typeof msg.name === 'string' && msg.name) ||
+    'unknown'
+  return [buildToolResultEvent(toolName, msg.is_error === true, content, now)]
+}
+
+/**
  * Maps a raw SDK wire-protocol message to zero or more typed AgentEvents.
- * Handles assistant messages (text + tool_use blocks) and tool_result messages.
+ * Handles assistant messages (text + tool_use blocks), user messages carrying
+ * `tool_result` content blocks (current SDK format), and legacy top-level
+ * `tool_result` messages (pre-SDK format, kept for back-compat).
  */
 export function mapRawMessage(raw: unknown): AgentEvent[] {
   if (typeof raw !== 'object' || raw === null) return []
   const msg = raw as Record<string, unknown>
-  const now = Date.now()
-  const events: AgentEvent[] = []
-
   const msgType = msg.type as string | undefined
+  const now = Date.now()
 
   if (msgType === 'assistant') {
-    const message = msg.message as Record<string, unknown> | undefined
-    const content = message?.content
-    if (Array.isArray(content)) {
-      for (const block of content) {
-        if (typeof block === 'object' && block !== null) {
-          const contentBlock = block as Record<string, unknown>
-          if (contentBlock.type === 'text' && typeof contentBlock.text === 'string') {
-            events.push({ type: 'agent:text', text: contentBlock.text, timestamp: now })
-          } else if (contentBlock.type === 'tool_use') {
-            const toolName =
-              (typeof contentBlock.name === 'string' && contentBlock.name) ||
-              (typeof contentBlock.tool_name === 'string' && contentBlock.tool_name) ||
-              'unknown'
-            events.push({
-              type: 'agent:tool_call',
-              tool: toolName,
-              summary: toolName,
-              input: contentBlock.input,
-              timestamp: now
-            })
-          }
-        }
-      }
-    }
-  } else if (msgType === 'result') {
-    // SDK end-of-turn signal — not a tool result. Skip it.
-  } else if (msgType === 'tool_result') {
-    const content = msg.content ?? msg.output
-    const cappedOutput =
-      typeof content === 'string' && content.length > TOOL_RESULT_OUTPUT_MAX_CHARS
-        ? content.slice(0, TOOL_RESULT_OUTPUT_MAX_CHARS) + ' [truncated]'
-        : content
-    events.push({
-      type: 'agent:tool_result',
-      tool:
-        (typeof msg.tool_name === 'string' && msg.tool_name) ||
-        (typeof msg.name === 'string' && msg.name) ||
-        'unknown',
-      success: msg.is_error !== true,
-      summary: typeof content === 'string' ? content.slice(0, TOOL_RESULT_SUMMARY_MAX_CHARS) : '',
-      output: cappedOutput,
-      timestamp: now
-    })
-  } else if (
-    msgType &&
-    msgType !== 'assistant' &&
-    msgType !== 'tool_result' &&
-    msgType !== 'result'
-  ) {
-    // Log unrecognized message types for debugging
+    return mapAssistantMessage((msg.message ?? {}) as Record<string, unknown>, now)
+  }
+  if (msgType === 'user') {
+    return mapUserMessage((msg.message ?? {}) as Record<string, unknown>, now)
+  }
+  if (msgType === 'tool_result') {
+    return mapTopLevelToolResult(msg, now)
+  }
+  if (msgType === 'result') {
+    return []
+  }
+  if (msgType) {
     logger.info(`Unrecognized message type: ${msgType}`)
   }
-
-  return events
+  return []
 }
 
 const BATCH_SIZE = 50

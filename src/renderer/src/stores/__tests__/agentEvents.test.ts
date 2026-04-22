@@ -12,11 +12,11 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-function makeEvent(text = 'hello'): AgentEvent {
+function makeEvent(text = 'hello', timestamp = Date.now()): AgentEvent {
   return {
     type: 'agent:text',
     text,
-    timestamp: Date.now()
+    timestamp
   }
 }
 
@@ -94,17 +94,37 @@ describe('loadHistory', () => {
     ).toBe('h1')
   })
 
-  it('overwrites any previously cached events for that agent', async () => {
+  it('preserves live events that arrived before history returned', async () => {
+    // Scenario: the renderer's live-broadcast subscriber appended `live-a` at
+    // t=100 before loadHistory resolved. History returned up to t=50. Both
+    // must end up in the store.
     useAgentEventsStore.setState({
-      events: { 'agent-z': [makeEvent('old-1'), makeEvent('old-2')] }
+      events: { 'agent-z': [makeEvent('live-a', 100)] }
     })
-    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([makeEvent('new-1')])
+    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([makeEvent('hist-1', 50)])
 
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
     const stored = useAgentEventsStore.getState().events['agent-z']
-    expect(stored).toHaveLength(1)
-    expect((stored[0] as { type: string; text: string }).text).toBe('new-1')
+    const texts = stored.map((e) => (e as { text: string }).text)
+    expect(texts).toEqual(['hist-1', 'live-a'])
+  })
+
+  it('deduplicates events that appear in both history and live stream', async () => {
+    const shared = makeEvent('shared', 100)
+    useAgentEventsStore.setState({
+      events: { 'agent-z': [shared, makeEvent('live-only', 150)] }
+    })
+    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([
+      makeEvent('hist-only', 50),
+      shared
+    ])
+
+    await useAgentEventsStore.getState().loadHistory('agent-z')
+
+    const stored = useAgentEventsStore.getState().events['agent-z']
+    const texts = stored.map((e) => (e as { text: string }).text)
+    expect(texts).toEqual(['hist-only', 'shared', 'live-only'])
   })
 
   it('does not affect events for other agents', async () => {

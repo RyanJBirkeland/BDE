@@ -31,7 +31,6 @@ export function AgentsView(): React.JSX.Element {
   const displayedCount = useAgentHistoryStore((s) => s.displayedCount)
   const hasMore = useAgentHistoryStore((s) => s.hasMore)
   const loadMore = useAgentHistoryStore((s) => s.loadMore)
-  const initEvents = useAgentEventsStore((s) => s.init)
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -51,7 +50,6 @@ export function AgentsView(): React.JSX.Element {
   useAgentViewLifecycle({
     activeView,
     activeId,
-    initEvents,
     fetchAgents,
     loadHistory,
     setShowLaunchpad: openLaunchpad,

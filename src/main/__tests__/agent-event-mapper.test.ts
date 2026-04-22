@@ -258,3 +258,117 @@ describe('emitAgentEvent batching', () => {
     expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('mapRawMessage tool_result from user content blocks', () => {
+  it('emits agent:tool_result for user-message tool_result blocks, using the tool name seen in the prior assistant tool_use', async () => {
+    const { mapRawMessage } = await import('../agent-event-mapper')
+
+    const assistantEvents = mapRawMessage({
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'text', text: 'reading' },
+          {
+            type: 'tool_use',
+            id: 'toolu_abc',
+            name: 'Read',
+            input: { file_path: 'README.md' }
+          }
+        ]
+      }
+    })
+    expect(assistantEvents.map((e) => e.type)).toEqual(['agent:text', 'agent:tool_call'])
+
+    const userEvents = mapRawMessage({
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [
+          {
+            type: 'tool_result',
+            tool_use_id: 'toolu_abc',
+            content: 'file contents here',
+            is_error: false
+          }
+        ]
+      }
+    })
+    expect(userEvents).toHaveLength(1)
+    const resultEvent = userEvents[0] as Extract<
+      ReturnType<typeof mapRawMessage>[number],
+      { type: 'agent:tool_result' }
+    >
+    expect(resultEvent.type).toBe('agent:tool_result')
+    expect(resultEvent.tool).toBe('Read')
+    expect(resultEvent.success).toBe(true)
+    expect(resultEvent.output).toBe('file contents here')
+  })
+
+  it('marks tool_result success=false when is_error is true', async () => {
+    const { mapRawMessage } = await import('../agent-event-mapper')
+
+    mapRawMessage({
+      type: 'assistant',
+      message: {
+        role: 'assistant',
+        content: [{ type: 'tool_use', id: 'toolu_err', name: 'Bash', input: { command: 'x' } }]
+      }
+    })
+
+    const events = mapRawMessage({
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [
+          { type: 'tool_result', tool_use_id: 'toolu_err', content: 'boom', is_error: true }
+        ]
+      }
+    })
+    expect(events).toHaveLength(1)
+    const result = events[0] as Extract<
+      ReturnType<typeof mapRawMessage>[number],
+      { type: 'agent:tool_result' }
+    >
+    expect(result.success).toBe(false)
+    expect(result.tool).toBe('Bash')
+  })
+
+  it('emits tool_result with tool="unknown" when no matching tool_use was seen', async () => {
+    const { mapRawMessage } = await import('../agent-event-mapper')
+
+    const events = mapRawMessage({
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [
+          {
+            type: 'tool_result',
+            tool_use_id: 'toolu_orphan',
+            content: 'whatever',
+            is_error: false
+          }
+        ]
+      }
+    })
+    expect(events).toHaveLength(1)
+    const result = events[0] as Extract<
+      ReturnType<typeof mapRawMessage>[number],
+      { type: 'agent:tool_result' }
+    >
+    expect(result.tool).toBe('unknown')
+  })
+
+  it('ignores non-tool_result content blocks inside user messages', async () => {
+    const { mapRawMessage } = await import('../agent-event-mapper')
+
+    const events = mapRawMessage({
+      type: 'user',
+      message: {
+        role: 'user',
+        content: [{ type: 'text', text: 'just a message' }]
+      }
+    })
+    expect(events).toEqual([])
+  })
+})

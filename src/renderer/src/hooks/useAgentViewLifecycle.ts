@@ -1,53 +1,45 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 interface UseAgentViewLifecycleParams {
   activeView: string
   activeId: string | null
-  initEvents: () => () => void
   fetchAgents: () => void
   loadHistory: (agentId: string) => void
   setShowLaunchpad: (show: boolean) => void
   setShowScratchpadBanner: (show: boolean) => void
 }
 
+/**
+ * Drives the Agents view's non-subscription lifecycle: polling the agent list
+ * when the view is active, loading event history on selection change, and
+ * wiring the launchpad shortcut. The live agent-events subscription is owned
+ * by `useAppInitialization` so it survives panel-tab switches.
+ */
 export function useAgentViewLifecycle({
   activeView,
   activeId,
-  initEvents,
   fetchAgents,
   loadHistory,
   setShowLaunchpad,
   setShowScratchpadBanner
 }: UseAgentViewLifecycleParams): void {
-  const cleanupRef = useRef<(() => void) | null>(null)
-
-  // Initialize agent event listener once
-  useEffect(() => {
-    cleanupRef.current = initEvents()
-    return () => cleanupRef.current?.()
-  }, [initEvents])
-
-  // Fetch agent history when view becomes active
   useEffect(() => {
     if (activeView !== 'agents') return
     fetchAgents()
   }, [fetchAgents, activeView])
 
-  // Load event history when selection changes
   useEffect(() => {
     if (activeId) {
       loadHistory(activeId)
     }
   }, [activeId, loadHistory])
 
-  // Listen for spawn modal trigger from CommandPalette
   useEffect(() => {
     const handler = (): void => setShowLaunchpad(true)
     window.addEventListener('bde:open-spawn-modal', handler)
     return () => window.removeEventListener('bde:open-spawn-modal', handler)
   }, [setShowLaunchpad])
 
-  // Check if scratchpad banner has been dismissed
   useEffect(() => {
     window.api.settings.get('scratchpad.noticeDismissed').then((val) => {
       if (!val) {

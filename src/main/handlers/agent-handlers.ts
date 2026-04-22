@@ -16,6 +16,7 @@ import type { AgentManager } from '../agent-manager'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { IDashboardRepository } from '../data/sprint-task-repository'
 import { promoteAdhocToTask } from '../services/adhoc-promotion-service'
+import { flushAgentEventBatcher } from '../agent-event-mapper'
 
 const log = createLogger('agent-handlers')
 
@@ -182,6 +183,10 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
     // Event history from local SQLite — kept for viewing historical runs.
     // Rows are parsed and shape-guarded before crossing the IPC boundary so
     // corrupted / drifted payloads can't pose as typed AgentEvents downstream.
+    // Flush the pending event batch first so a history read initiated right
+    // after spawn doesn't race the 100 ms SQLite-batch timer and return an
+    // empty slice.
+    flushAgentEventBatcher()
     const { getEventHistory } = await import('../data/event-queries')
     const { getDb } = await import('../db')
     const rows = getEventHistory(getDb(), agentId)

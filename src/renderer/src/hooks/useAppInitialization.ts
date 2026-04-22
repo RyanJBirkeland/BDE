@@ -4,11 +4,14 @@ import { usePanelLayoutStore } from '../stores/panelLayout'
 import { usePendingReviewStore } from '../stores/pendingReview'
 import { useFilterPresets } from '../stores/filterPresets'
 import { useKeybindingsStore } from '../stores/keybindings'
+import { useAgentEventsStore } from '../stores/agentEvents'
 
 /**
  * Handles app initialization — panel layout restoration, cost data loading,
- * pending review state, filter presets, and keybindings.
- * Extracted from App.tsx to reduce file size and group initialization logic.
+ * pending review state, filter presets, keybindings, and the live
+ * agent-events subscription. The agent-events subscription is established
+ * here (rather than in AgentsView) so switching between panel tabs does not
+ * drop events for running agents.
  */
 export function useAppInitialization(): void {
   const fetchLocalAgents = useCostDataStore((s) => s.fetchLocalAgents)
@@ -16,6 +19,7 @@ export function useAppInitialization(): void {
   const restorePendingReview = usePendingReviewStore((s) => s.restoreFromStorage)
   const restoreFilterPresets = useFilterPresets((s) => s.restoreFromStorage)
   const initKeybindings = useKeybindingsStore((s) => s.init)
+  const initAgentEvents = useAgentEventsStore((s) => s.init)
 
   useEffect(() => {
     fetchLocalAgents()
@@ -36,4 +40,8 @@ export function useAppInitialization(): void {
   useEffect(() => {
     restoreFilterPresets()
   }, [restoreFilterPresets])
+
+  useEffect(() => {
+    initAgentEvents()
+  }, [initAgentEvents])
 }
