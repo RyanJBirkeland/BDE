@@ -30,6 +30,8 @@
 
 **Why first:** If the installed `@anthropic-ai/claude-agent-sdk` version doesn't support in-process MCP servers at the `query()` call used by `adhoc-agent.ts`, Trigger 3 (the `promote_to_review` agent tool) is descoped per §Dependencies of the spec. Tasks 2–16 ship without it. We need to know up front.
 
+**Preliminary finding** (from the plan reviewer): `@anthropic-ai/claude-agent-sdk@^0.2.81` appears to expose `mcpServers` and `createSdkMcpServer` in its type definitions, so Task 17 is likely to proceed. Still run the steps below to confirm the specific call site in `adhoc-agent.ts` accepts it — the preliminary finding is not a substitute for inspection.
+
 **Files:**
 - Read: `package.json` (root)
 - Read: the SDK's type definitions (likely `node_modules/@anthropic-ai/claude-agent-sdk/dist/*.d.ts`)
@@ -79,12 +81,12 @@ git commit -m "chore: add migration v053 for sprint_tasks.promoted_to_review_at"
 
 **Files:**
 - Modify: `src/main/agent-manager/review-transition.ts` (pipeline path — `transitionToReview()`)
-- Modify: the function `createReviewTaskFromAdhoc()` (adhoc path — **verify path via grep**; likely `src/main/services/sprint-service.ts`)
+- Modify: `src/main/data/sprint-task-crud.ts` (adhoc path — `createReviewTaskFromAdhoc()` is defined here, around line 239, despite the re-export wrapper in `sprint-service.ts`)
 - Modify: `src/shared/types/task-types.ts` — add `promoted_to_review_at?: string` to `SprintTask`
 - Modify: `src/main/data/sprint-task-mapper.ts` — hydrate the field on read
 - Test: extend the corresponding existing tests
 
-- [ ] **Step 1:** Grep `createReviewTaskFromAdhoc` under `src/main/services/` to locate the file.
+- [ ] **Step 1:** Confirm `createReviewTaskFromAdhoc` is in `src/main/data/sprint-task-crud.ts` (grep to be sure — the file may have been renamed since this plan was written). `nowIso` is already imported there — don't add a duplicate import.
 
 - [ ] **Step 2: Write failing tests** asserting both paths write `promoted_to_review_at` to a valid ISO8601 string on transition to `review`. Follow the existing test style in those files.
 
@@ -235,6 +237,8 @@ git commit -m "feat(adhoc-promotion): bind agent to promoted task via sprintTask
 
 - [ ] **Step 3: Add the discriminant to the union.** TypeScript will flag exhaustive-switch sites elsewhere; follow the errors to update: the renderer's agent events store, the transcript renderer, any other consumers. For now, handle `agent:promoted` with a no-op `default`-adjacent branch or a placeholder — proper rendering comes in Task 14.
 
+  **Also (not flagged by TS — data, not a switch):** add `'agent:promoted'` to the `AGENT_EVENT_TYPES` runtime Set in `src/main/handlers/agent-handlers.ts` (~line 29). `parseHistoryRow` uses this Set to filter events on history reload; if the new type isn't in the Set, promoted-events will replay as missing on reload and the transcript system line (Task 14) will silently disappear.
+
 - [ ] **Step 4: Add the helper** to `agent-event-mapper.ts`. It's a thin wrapper — the actual broadcast + persist lives in `emitAgentEvent`.
 
 - [ ] **Step 5: Wire it into the service.** Only emit on the fresh-promotion path (not the idempotency short-circuit). Pass `options.trigger ?? 'button'`.
@@ -379,7 +383,7 @@ git commit -m "feat(ipc): agents:stopAndPromote channel"
 
 **Files:**
 - Modify: `src/shared/ipc-channels/` — declare the broadcast channel with payload `{ taskId: string }`
-- Modify: `src/preload/index.ts` — use the `onBroadcast<T>()` factory per CLAUDE.md convention
+- Modify: `src/preload/ipc-helpers.ts` — where the `onBroadcast<T>()` factory lives (consumed by `api-utilities.ts` / `api-agents.ts`); wire the new broadcast through the same pattern
 - Create or modify: a shared main-process helper `broadcastReviewQueueChanged(taskId)` (check `src/main/` for an existing broadcast utility; create one if not)
 - Modify: `src/main/services/adhoc-promotion-service.ts` — call the helper on fresh-promotion success
 - Modify: `src/main/agent-manager/review-transition.ts` — call it on pipeline success too (nav badge benefits pipeline consistently)
