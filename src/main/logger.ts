@@ -45,6 +45,15 @@ function ensureLogDir(): void {
     // Non-fatal: log but continue — app can still function
     console.warn('[logger] Failed to enforce .bde directory permissions:', err)
   }
+  // Tighten the log file permissions too. bde.log contains agent prompts,
+  // task specs, and SDK errors that may echo tokens; under the default
+  // umask it is world-readable (0644). Apply 0600 every startup and ignore
+  // "file not found" — the first appendFileSync will create it with 0600.
+  try {
+    chmodSync(LOG_PATH, 0o600)
+  } catch {
+    /* file may not exist yet — that's fine */
+  }
 }
 
 function rotateIfNeeded(): void {
@@ -82,7 +91,10 @@ const ROTATION_CHECK_INTERVAL = 1000 // check every 1000 writes
 function fileLog(level: string, name: string, msg: string): void {
   try {
     const ts = nowIso()
-    appendFileSync(LOG_PATH, `${ts} [${level}] [${name}] ${msg}\n`)
+    // The `mode` option only applies when the file is newly created — existing
+    // installs are covered by the chmod in ensureLogDir. Keeping this here
+    // means a fresh install (or post-rotation recreate) lands at 0600 directly.
+    appendFileSync(LOG_PATH, `${ts} [${level}] [${name}] ${msg}\n`, { mode: 0o600 })
     if (++writeCount >= ROTATION_CHECK_INTERVAL) {
       writeCount = 0
       rotateIfNeeded()

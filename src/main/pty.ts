@@ -1,4 +1,5 @@
 import type { IPty } from 'node-pty'
+import { buildAgentEnv } from './env-utils'
 
 // node-pty loaded lazily to avoid crashing main process if native module fails
 let pty: typeof import('node-pty') | null = null
@@ -58,12 +59,18 @@ export function createPty(opts: {
 }): PtyHandle {
   if (!pty) throw new Error('Terminal unavailable: node-pty failed to load')
   if (!validateShell(opts.shell)) throw new Error(`Shell not allowed: "${opts.shell}"`)
+  // Use the allowlisted agent env — not process.env — so that arbitrary
+  // secrets the user exported in their shell (AWS_SECRET_ACCESS_KEY,
+  // NPM_TOKEN, ANTHROPIC_API_KEY, etc.) are not exposed to commands run in
+  // the integrated terminal. Legitimate values (PATH, HOME, GH_TOKEN,
+  // SSH_AUTH_SOCK, proxies, CA certs) are already on the allowlist.
+  const scrubbedEnv = { ...buildAgentEnv(), TERM: 'xterm-256color' } as Record<string, string>
   const proc = pty.spawn(opts.shell, [], {
     name: 'xterm-256color',
     cols: opts.cols,
     rows: opts.rows,
     cwd: opts.cwd ?? process.env.HOME ?? '/',
-    env: { ...process.env, TERM: 'xterm-256color' } as Record<string, string>
+    env: scrubbedEnv
   })
   return {
     process: proc,

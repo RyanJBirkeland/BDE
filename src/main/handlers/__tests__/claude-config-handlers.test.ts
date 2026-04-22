@@ -148,4 +148,77 @@ describe('claude-config-handlers', () => {
       expect(parsed).toEqual({ permissions: { allow: ['Bash'], deny: ['Write'] } })
     })
   })
+
+  describe('claude:setPermissions payload validation', () => {
+    it('rejects a non-object payload', async () => {
+      vi.mocked(existsSync).mockReturnValue(true)
+      const handlers = captureHandlers()
+
+      await expect(handlers['claude:setPermissions'](mockEvent, null)).rejects.toThrow(
+        /invalid.*permissions/i
+      )
+      expect(writeFileSync).not.toHaveBeenCalled()
+    })
+
+    it('rejects when `allow` is missing', async () => {
+      vi.mocked(existsSync).mockReturnValue(true)
+      const handlers = captureHandlers()
+
+      await expect(
+        handlers['claude:setPermissions'](mockEvent, { deny: ['Write'] })
+      ).rejects.toThrow(/invalid.*permissions/i)
+    })
+
+    it('rejects when `allow` contains a non-string', async () => {
+      vi.mocked(existsSync).mockReturnValue(true)
+      const handlers = captureHandlers()
+
+      await expect(
+        handlers['claude:setPermissions'](mockEvent, { allow: ['Bash', 42], deny: [] })
+      ).rejects.toThrow(/invalid.*permissions/i)
+    })
+
+    it('rejects when a rule does not match a known permission prefix', async () => {
+      vi.mocked(existsSync).mockReturnValue(true)
+      const handlers = captureHandlers()
+
+      await expect(
+        handlers['claude:setPermissions'](mockEvent, {
+          allow: ['deleteAllFiles(*)'],
+          deny: []
+        })
+      ).rejects.toThrow(/invalid.*permission/i)
+    })
+
+    it('accepts bare tool names and `Tool(...)` rules', async () => {
+      vi.mocked(existsSync).mockReturnValue(true)
+      vi.mocked(readFileSync).mockReturnValue('{}')
+      const handlers = captureHandlers()
+
+      await handlers['claude:setPermissions'](mockEvent, {
+        allow: ['Bash', 'Bash(npm test:*)', 'Read(src/**/*.ts)', 'WebFetch'],
+        deny: ['Write', 'Bash(rm:*)']
+      })
+
+      const written = vi.mocked(writeFileSync).mock.calls[0][1] as string
+      const parsed = JSON.parse(written.trim())
+      expect(parsed.permissions.allow).toEqual([
+        'Bash',
+        'Bash(npm test:*)',
+        'Read(src/**/*.ts)',
+        'WebFetch'
+      ])
+      expect(parsed.permissions.deny).toEqual(['Write', 'Bash(rm:*)'])
+    })
+
+    it('rejects rules exceeding a sensible length cap (DoS guard)', async () => {
+      vi.mocked(existsSync).mockReturnValue(true)
+      const handlers = captureHandlers()
+      const huge = 'Bash(' + 'a'.repeat(2000) + ':*)'
+
+      await expect(
+        handlers['claude:setPermissions'](mockEvent, { allow: [huge], deny: [] })
+      ).rejects.toThrow(/invalid.*permission/i)
+    })
+  })
 })

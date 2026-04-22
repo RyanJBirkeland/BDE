@@ -89,6 +89,10 @@ export function backupDatabase(): void {
   if (!existsSync(backupPath)) {
     throw new Error('Backup file was not created')
   }
+  // The backup is a full snapshot of bde.db and contains the same secrets
+  // (tokens, webhook HMAC keys, settings). Match the primary DB's 0600 mode
+  // so endpoint-scanning and backup software cannot read it under umask 022.
+  chmodSync(backupPath, 0o600)
   const backupSize = statSync(backupPath).size
   const originalSize = statSync(DB_PATH).size
   // Backup should be at least 50% of original size — a smaller result indicates

@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest'
-import { getIdeRootPath, validateIdePath } from '../ide-fs-handlers'
-import { homedir } from 'os'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import {
+  getIdeRootPath,
+  validateIdePath,
+  validateIdeRoot,
+  rememberApprovedIdeRoot,
+  _resetApprovedIdeRoots
+} from '../ide-fs-handlers'
+import { homedir, tmpdir } from 'os'
 import { resolve } from 'path'
+import { mkdirSync, rmSync } from 'fs'
 
 describe('ide-fs-handlers', () => {
   describe('getIdeRootPath', () => {
@@ -43,6 +50,52 @@ describe('ide-fs-handlers', () => {
     it('should handle root path itself', () => {
       const result = validateIdePath(allowedRoot, allowedRoot)
       expect(result).toBeTruthy()
+    })
+  })
+
+  describe('validateIdeRoot — approved-path confinement', () => {
+    const TEST_BASE = resolve(tmpdir(), 'bde-ide-root-test')
+    const DIALOG_DIR = resolve(TEST_BASE, 'dialog-pick')
+    const REPO_DIR = resolve(TEST_BASE, 'configured-repo')
+    const ARBITRARY_DIR = resolve(TEST_BASE, 'arbitrary')
+
+    beforeEach(() => {
+      _resetApprovedIdeRoots()
+      mkdirSync(DIALOG_DIR, { recursive: true })
+      mkdirSync(REPO_DIR, { recursive: true })
+      mkdirSync(ARBITRARY_DIR, { recursive: true })
+      vi.resetModules()
+    })
+
+    it('rejects an arbitrary path that is neither dialog-approved nor a configured repo', async () => {
+      await expect(validateIdeRoot(ARBITRARY_DIR)).rejects.toThrow(/approved|configured|dialog/i)
+    })
+
+    it('accepts a path after it is registered via the dialog approval hook', async () => {
+      rememberApprovedIdeRoot(DIALOG_DIR)
+      const result = await validateIdeRoot(DIALOG_DIR)
+      expect(result).toBe(DIALOG_DIR)
+    })
+
+    it('accepts a configured repo localPath', async () => {
+      rememberApprovedIdeRoot(REPO_DIR)
+      const result = await validateIdeRoot(REPO_DIR)
+      expect(result).toBe(REPO_DIR)
+    })
+
+    it('still rejects when the path exists but is not on the allowlist', async () => {
+      rememberApprovedIdeRoot(DIALOG_DIR)
+      await expect(validateIdeRoot(ARBITRARY_DIR)).rejects.toThrow(/approved|configured|dialog/i)
+    })
+
+    it('rejects ~/.ssh even though it is inside the home directory', async () => {
+      const ssh = resolve(homedir(), '.ssh')
+      await expect(validateIdeRoot(ssh)).rejects.toThrow()
+    })
+
+    // Cleanup
+    it.skip('cleanup placeholder — do not remove', () => {
+      rmSync(TEST_BASE, { recursive: true, force: true })
     })
   })
 })

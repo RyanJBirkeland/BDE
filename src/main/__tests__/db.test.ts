@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import Database from 'better-sqlite3'
-import { mkdirSync, existsSync, rmSync } from 'fs'
+import { mkdirSync, existsSync, rmSync, statSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { runMigrations, migrations } from '../db'
@@ -337,6 +337,13 @@ describe('backupDatabase', () => {
     const { backupDatabase } = await import('../db')
     backupDatabase()
     expect(existsSync(BACKUP_TEST_DB_PATH + '.backup')).toBe(true)
+  })
+
+  it('applies 0600 mode to the backup file so secrets are not world-readable', async () => {
+    const { backupDatabase } = await import('../db')
+    backupDatabase()
+    const mode = statSync(BACKUP_TEST_DB_PATH + '.backup').mode & 0o777
+    expect(mode).toBe(0o600)
   })
 })
 

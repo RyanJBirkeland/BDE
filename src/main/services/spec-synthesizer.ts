@@ -235,7 +235,12 @@ export async function synthesizeSpec(
   // receives BDE conventions via its prompt and doesn't need the project file.
   const spec = await runSdkStreaming(prompt, onChunk, activeStreams, streamId, 180_000, {
     model,
-    settingSources: []
+    settingSources: [],
+    // Synthesizer works from the pre-fetched context in the prompt — it does
+    // not need tools to explore the codebase. tools:[] + bypass is safe.
+    tools: [],
+    permissionMode: 'bypassPermissions',
+    allowDangerouslySkipPermissions: true
   })
 
   log.info(`Spec generated: ${spec.length} chars`)
@@ -262,7 +267,12 @@ export async function reviseSpec(
   // Stream revision — settingSources:[] skips CLAUDE.md (same rationale as synthesize).
   const spec = await runSdkStreaming(prompt, onChunk, activeStreams, streamId, 180_000, {
     model,
-    settingSources: []
+    settingSources: [],
+    // Synthesizer works from the pre-fetched context in the prompt — it does
+    // not need tools to explore the codebase. tools:[] + bypass is safe.
+    tools: [],
+    permissionMode: 'bypassPermissions',
+    allowDangerouslySkipPermissions: true
   })
 
   log.info(`Spec revised: ${spec.length} chars`)

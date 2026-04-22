@@ -104,7 +104,12 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
           tools: [],
           // Reviewer generates opinions, not code. CLAUDE.md implementation
           // guidelines are irrelevant and waste ~5-10KB per review call.
-          settingSources: []
+          settingSources: [],
+          // tools:[] removes every tool, but the SDK still prompts for
+          // permission on system messages if permissionMode is unset.
+          // Bypass is safe because the session cannot invoke any tool.
+          permissionMode: 'bypassPermissions',
+          allowDangerouslySkipPermissions: true
         })
       } catch (err) {
         logger.error(`Review SDK call failed for task=${taskId}: ${(err as Error).message}`)

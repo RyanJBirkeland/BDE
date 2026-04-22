@@ -8,7 +8,7 @@ import type { AgentHandle, SteerResult } from './types'
 import type { Logger } from '../logger'
 import { randomUUID } from 'node:crypto'
 import { getClaudeCliPath } from '../env-utils'
-import { getRepoPaths } from '../paths'
+import { getRepoPaths, BDE_MEMORY_DIR } from '../paths'
 import { getSessionId } from './sdk-message-protocol'
 import { createWorktreeIsolationHook } from './worktree-isolation-hook'
 
@@ -73,6 +73,7 @@ export function spawnViaSdk(
         ? createWorktreeIsolationHook({
             worktreePath: opts.cwd,
             mainRepoPaths: Object.values(getRepoPaths()),
+            extraAllowedPaths: [BDE_MEMORY_DIR],
             logger
           })
         : async () => ({ behavior: 'allow' as const }),

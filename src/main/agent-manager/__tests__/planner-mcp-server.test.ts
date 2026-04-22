@@ -123,6 +123,39 @@ describe('tasks.create', () => {
     })
     expect(isError).toBe(true)
   })
+
+  it('downgrades a queued request to backlog so auto-exec requires human approval', async () => {
+    const { isError, body } = await callTool(tools, 'tasks.create', {
+      title: 'queued from agent should become backlog',
+      repo: 'bde',
+      spec: '# Spec\n\n## What\nNo-op.\n\n## How\nStill no-op.',
+      status: 'queued'
+    })
+    expect(isError).toBe(false)
+    const task = body as { id: string; status: string }
+    createdTaskIds.push(task.id)
+    expect(task.status).toBe('backlog')
+  })
+})
+
+describe('tasks.update', () => {
+  it('does not allow agents to transition a task to queued', async () => {
+    const created = await callTool(tools, 'tasks.create', {
+      title: 'agent tries to queue this later',
+      repo: 'bde',
+      spec: '# Spec\n\n## What\nNo-op.\n\n## How\nStill no-op.',
+      status: 'backlog'
+    })
+    const createdTask = created.body as { id: string }
+    createdTaskIds.push(createdTask.id)
+
+    const { isError, body } = await callTool(tools, 'tasks.update', {
+      id: createdTask.id,
+      patch: { status: 'queued' }
+    })
+    expect(isError).toBe(true)
+    expect(String(body)).toMatch(/queue|approval/i)
+  })
 })
 
 describe('tasks.update', () => {

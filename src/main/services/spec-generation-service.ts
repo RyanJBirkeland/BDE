@@ -42,7 +42,13 @@ export async function generateSpec(input: {
   const prompt = buildSpecGenerationPrompt(input)
   const { model } = resolveAgentRuntime('synthesizer')
   try {
-    const result = await runSdkPrint(prompt, 120_000, { model })
+    const result = await runSdkPrint(prompt, 120_000, {
+      model,
+      // Text-only single-turn generation — no tools needed; bypass is safe.
+      tools: [],
+      permissionMode: 'bypassPermissions',
+      allowDangerouslySkipPermissions: true
+    })
     return result || `# ${input.title}\n\n(No spec generated)`
   } catch (err) {
     return `# ${input.title}\n\nError generating spec: ${(err as Error).message}`

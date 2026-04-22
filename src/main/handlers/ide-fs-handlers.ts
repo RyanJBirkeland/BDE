@@ -1,9 +1,9 @@
 import fs from 'fs'
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { dirname, join, resolve, relative } from 'path'
-import { homedir } from 'os'
 import { shell, BrowserWindow } from 'electron'
 import { safeHandle } from '../ipc-utils'
+import { getConfiguredRepos } from '../paths'
 
 const MAX_READ_BYTES = 5 * 1024 * 1024 // 5 MB
 const BINARY_DETECT_BYTES = 8 * 1024 // 8 KB
@@ -13,19 +13,54 @@ let watcher: fs.FSWatcher | null = null
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
+ * Paths the user has explicitly approved as IDE roots in this session —
+ * either by picking them in the Open Folder dialog or by adding them as a
+ * configured repo. A renderer cannot repoint the IDE root at an arbitrary
+ * directory like `~/.ssh/` without going through one of those gestures.
+ */
+const approvedIdeRoots = new Set<string>()
+
+/** Register a directory the user explicitly picked via dialog or added as a repo. */
+export function rememberApprovedIdeRoot(absPath: string): void {
+  approvedIdeRoots.add(resolve(absPath))
+}
+
+function isApprovedIdeRoot(resolvedPath: string): boolean {
+  if (approvedIdeRoots.has(resolvedPath)) return true
+  try {
+    for (const repo of getConfiguredRepos()) {
+      if (!repo.localPath) continue
+      if (resolve(repo.localPath) === resolvedPath) return true
+    }
+  } catch {
+    /* settings may not be initialised in tests */
+  }
+  return false
+}
+
+/** @internal — test-only reset of the in-session approval allowlist. */
+export function _resetApprovedIdeRoots(): void {
+  approvedIdeRoots.clear()
+}
+
+/**
  * Validates that a directory path is safe to use as an IDE root.
  * The path must:
- * 1. Exist and be a directory
- * 2. Be within the user's home directory
+ *   1. Exist and be a directory
+ *   2. Be on the in-session approval allowlist — either a configured repo's
+ *      `localPath` or a directory the user picked via the Open Folder
+ *      dialog in this session (registered via `rememberApprovedIdeRoot`).
+ *
+ * Exported so tests — and callers wanting to scope follow-up reads — can
+ * invoke the same guard the IPC handler uses.
  */
-async function validateIdeRoot(dirPath: string): Promise<string> {
+export async function validateIdeRoot(dirPath: string): Promise<string> {
   const resolved = resolve(dirPath)
-  const homeDir = resolve(homedir())
 
-  // Ensure path is within user's home directory
-  if (!resolved.startsWith(homeDir + '/') && resolved !== homeDir) {
+  if (!isApprovedIdeRoot(resolved)) {
     throw new Error(
-      `IDE root path rejected: "${dirPath}" is outside user home directory "${homeDir}"`
+      `IDE root path rejected: "${dirPath}" is not a configured repo or a dialog-approved folder. ` +
+        `Use the Open Folder dialog or add the path under Settings → Repositories.`
     )
   }
 

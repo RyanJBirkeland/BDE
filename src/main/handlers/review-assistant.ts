@@ -103,6 +103,10 @@ export async function handleChatStream(
           cwd: task.worktree_path!,
           tools: ['Read', 'Grep', 'Glob'],
           model: reviewerModel,
+          // Reviewer chat is read-only (Read/Grep/Glob) — bypass is safe and
+          // keeps the chat streaming headless without human-in-the-loop prompts.
+          permissionMode: 'bypassPermissions',
+          allowDangerouslySkipPermissions: true,
           onToolUse: (event) => {
             const payload: ChatChunk = { streamId, toolUse: event }
             sender?.send('review:chatChunk', payload)

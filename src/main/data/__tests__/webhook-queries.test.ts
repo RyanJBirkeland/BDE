@@ -15,6 +15,26 @@ vi.mock('../../logger', () => ({
   createLogger: () => logs
 }))
 
+// In tests, Electron's safeStorage is not available. Stub it to a
+// deterministic XOR-based cipher so the queries under test can still
+// encrypt/decrypt. The shape of the stub matches the Electron API that
+// `secure-storage.ts` uses.
+vi.mock('electron', () => {
+  const key = Buffer.from('bde-test-stub-key')
+  function xor(buf: Buffer): Buffer {
+    const out = Buffer.alloc(buf.length)
+    for (let i = 0; i < buf.length; i++) out[i] = buf[i] ^ key[i % key.length]
+    return out
+  }
+  return {
+    safeStorage: {
+      isEncryptionAvailable: () => true,
+      encryptString: (value: string) => xor(Buffer.from(value, 'utf8')),
+      decryptString: (buf: Buffer) => xor(buf).toString('utf8')
+    }
+  }
+})
+
 import { runMigrations } from '../../db'
 import {
   parseWebhookEvents,
@@ -122,5 +142,49 @@ describe('webhook-queries integration', () => {
     const configs = getWebhooks(db)
     const mixed = configs.find((c) => c.id === 'mixed-1')
     expect(mixed?.events).toEqual(['ok'])
+  })
+
+  describe('secret encryption at rest', () => {
+    it('does not store the cleartext secret in the secret column', () => {
+      const plaintext = 'super-secret-hmac-key-abcdef12345'
+      const created = createWebhook(
+        { url: 'https://example.com/hook', events: ['task.done'], secret: plaintext },
+        db
+      )
+      const raw = db.prepare('SELECT secret FROM webhooks WHERE id = ?').get(created.id) as {
+        secret: string
+      }
+      expect(raw.secret).not.toBe(plaintext)
+      expect(raw.secret).toContain('ENC:')
+    })
+
+    it('getWebhookById returns the decrypted cleartext secret', () => {
+      const plaintext = 'another-key-xyz'
+      const created = createWebhook(
+        { url: 'https://example.com/b', events: ['task.done'], secret: plaintext },
+        db
+      )
+      const fetched = getWebhookById(created.id, db)
+      expect(fetched?.secret).toBe(plaintext)
+    })
+
+    it('getWebhooks returns the decrypted cleartext secret for service consumers', () => {
+      const plaintext = 'service-consumer-key'
+      createWebhook(
+        { url: 'https://example.com/c', events: ['task.done'], secret: plaintext },
+        db
+      )
+      const all = getWebhooks(db)
+      const match = all.find((w) => w.url === 'https://example.com/c')
+      expect(match?.secret).toBe(plaintext)
+    })
+
+    it('decrypts legacy cleartext rows transparently', () => {
+      db.prepare(
+        "INSERT INTO webhooks (id, url, events, secret, enabled) VALUES ('legacy-1', 'https://x', '[]', 'plain-legacy', 1)"
+      ).run()
+      const fetched = getWebhookById('legacy-1', db)
+      expect(fetched?.secret).toBe('plain-legacy')
+    })
   })
 })

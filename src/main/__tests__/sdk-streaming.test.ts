@@ -70,6 +70,32 @@ describe('sdk-streaming', () => {
     )
   })
 
+  it('does NOT pass bypassPermissions when permissionMode is omitted', async () => {
+    vi.mocked(sdk.query).mockClear()
+    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5'
+    })
+
+    const calls = vi.mocked(sdk.query).mock.calls
+    const call = calls[calls.length - 1][0] as { options: Record<string, unknown> }
+    expect(call.options.permissionMode).toBeUndefined()
+    expect(call.options.allowDangerouslySkipPermissions).toBeUndefined()
+  })
+
+  it('passes bypassPermissions when the caller explicitly opts in', async () => {
+    vi.mocked(sdk.query).mockClear()
+    await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
+      model: 'claude-sonnet-4-5',
+      permissionMode: 'bypassPermissions',
+      allowDangerouslySkipPermissions: true
+    })
+
+    const calls = vi.mocked(sdk.query).mock.calls
+    const call = calls[calls.length - 1][0] as { options: Record<string, unknown> }
+    expect(call.options.permissionMode).toBe('bypassPermissions')
+    expect(call.options.allowDangerouslySkipPermissions).toBe(true)
+  })
+
   it('should call onToolUse callback when agent uses tools', async () => {
     const onToolUseMock = vi.fn()
 

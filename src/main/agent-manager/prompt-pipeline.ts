@@ -9,6 +9,7 @@ import {
   PLAYGROUND_INSTRUCTIONS,
   buildPersonalitySection,
   truncateSpec,
+  escapeXmlContent,
   buildUpstreamContextSection,
   buildBranchAppendix,
   buildRetryContext,
@@ -145,7 +146,7 @@ function buildMinimalPipelinePrompt(input: BuildPromptInput): string {
 
   if (taskContent) {
     prompt += '\n\n## Task Specification\n\n'
-    const truncated = truncateSpec(taskContent, PROMPT_TRUNCATION.TASK_SPEC_CHARS)
+    const truncated = escapeXmlContent(truncateSpec(taskContent, PROMPT_TRUNCATION.TASK_SPEC_CHARS))
     prompt += `<user_spec>\n${truncated}\n</user_spec>`
   }
 
@@ -221,7 +222,9 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
     prompt += 'Address every section — especially **Files to Change**, **How to Test**, '
     prompt +=
       'and **Out of Scope**. If the spec lists test files, writing those tests is REQUIRED.\n\n'
-    const truncatedContent = truncateSpec(taskContent, PROMPT_TRUNCATION.TASK_SPEC_CHARS)
+    const truncatedContent = escapeXmlContent(
+      truncateSpec(taskContent, PROMPT_TRUNCATION.TASK_SPEC_CHARS)
+    )
     const wasTruncated = taskContent.length > PROMPT_TRUNCATION.TASK_SPEC_CHARS
     prompt += `<user_spec>\n${truncatedContent}`
     if (wasTruncated) {

@@ -53,6 +53,22 @@ export interface SdkStreamingOptions {
    * than rely on a silent default.
    */
   model: string
+  /**
+   * Permission-prompt behavior. Omitted = SDK default (prompts on tool use,
+   * which is appropriate for tools-free or human-in-the-loop calls). Set to
+   * `'bypassPermissions'` for headless agents whose tool list is already
+   * narrowed to a vetted set (e.g. read-only `['Read', 'Grep', 'Glob']`).
+   * Callers opt in explicitly rather than inheriting bypass by default —
+   * this stops a future code path that forgets to restrict `tools` from
+   * silently inheriting a permission-bypassed session with full tool access.
+   */
+  permissionMode?: 'default' | 'bypassPermissions' | undefined
+  /**
+   * Companion flag to `permissionMode: 'bypassPermissions'`. Required by the
+   * SDK to actually skip prompts. Opt-in for the same reason as
+   * `permissionMode`.
+   */
+  allowDangerouslySkipPermissions?: boolean | undefined
 }
 
 /**
@@ -85,8 +101,12 @@ export async function runSdkStreaming(
       maxTurns: options.maxTurns ?? 1,
       env: env as Record<string, string>,
       pathToClaudeCodeExecutable: getClaudeCliPath(),
-      permissionMode: 'bypassPermissions' as const,
-      allowDangerouslySkipPermissions: true,
+      ...(options.permissionMode !== undefined
+        ? { permissionMode: options.permissionMode }
+        : {}),
+      ...(options.allowDangerouslySkipPermissions !== undefined
+        ? { allowDangerouslySkipPermissions: options.allowDangerouslySkipPermissions }
+        : {}),
       settingSources: options.settingSources ?? ['user', 'project', 'local'],
       ...(options.cwd ? { cwd: options.cwd } : {}),
       ...(options.tools !== undefined ? { tools: options.tools } : {}),

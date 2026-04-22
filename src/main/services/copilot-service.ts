@@ -82,6 +82,10 @@ export function getCopilotSdkOptions(
     // their prompt (SPEC_DRAFTING_PREAMBLE) and loading the project settings
     // file costs tokens without adding value.
     settingSources: [],
+    // Copilot's allowed tools are already vetted to read-only (COPILOT_ALLOWED_TOOLS
+    // is Read/Grep/Glob); bypass is safe and keeps the chat streaming headless.
+    permissionMode: 'bypassPermissions',
+    allowDangerouslySkipPermissions: true,
     ...(extras?.onToolUse ? { onToolUse: extras.onToolUse } : {})
   }
 }

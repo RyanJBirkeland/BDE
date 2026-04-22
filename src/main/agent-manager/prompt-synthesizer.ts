@@ -8,7 +8,8 @@ import {
   PLAYGROUND_INSTRUCTIONS,
   buildPersonalitySection,
   buildUpstreamContextSection,
-  truncateSpec
+  truncateSpec,
+  escapeXmlContent
 } from './prompt-sections'
 import { PROMPT_TRUNCATION } from './prompt-constants'
 import type { BuildPromptInput } from '../lib/prompt-composer'
@@ -92,7 +93,7 @@ export function buildSynthesizerPrompt(input: BuildPromptInput): string {
   if (taskContent) {
     prompt +=
       '\n\n## Generation Instructions\n\n<generation_instructions>\n' +
-      taskContent +
+      escapeXmlContent(taskContent) +
       '\n</generation_instructions>'
   }
 

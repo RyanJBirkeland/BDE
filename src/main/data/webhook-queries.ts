@@ -5,9 +5,38 @@
 import type Database from 'better-sqlite3'
 import { getDb } from '../db'
 import { createLogger } from '../logger'
+import { encryptSetting, decryptSetting, isEncryptionAvailable } from '../secure-storage'
 import type { WebhookConfig } from '../services/webhook-service'
 
 const log = createLogger('webhook-queries')
+
+/**
+ * Encrypts the HMAC secret at rest when platform encryption is available.
+ * Falls through to plaintext if safeStorage is unavailable (keychain locked,
+ * or a rare dev environment) — an explicit warning fires so an operator can
+ * tell the difference. Reads use `decryptSetting`, which transparently
+ * handles both ENC: and plaintext forms so legacy rows keep working.
+ */
+function encryptWebhookSecret(secret: string | null | undefined): string | null {
+  if (secret == null) return null
+  try {
+    if (!isEncryptionAvailable()) {
+      log.warn('Storing webhook secret in cleartext: safeStorage is unavailable on this host')
+      return secret
+    }
+    return encryptSetting(secret)
+  } catch (err) {
+    log.warn(
+      `safeStorage.encrypt failed; falling back to cleartext: ${err instanceof Error ? err.message : String(err)}`
+    )
+    return secret
+  }
+}
+
+function decryptWebhookSecret(stored: string | null): string | null {
+  if (stored == null) return null
+  return decryptSetting(stored)
+}
 
 /**
  * Parse and validate the `events` column from a webhook row. The column is
@@ -70,6 +99,7 @@ function rowToWebhook(row: WebhookRow): Webhook {
   return {
     ...row,
     events: parseWebhookEvents(row.events),
+    secret: decryptWebhookSecret(row.secret),
     enabled: row.enabled === 1
   }
 }
@@ -102,7 +132,7 @@ export function createWebhook(
   const row = stmt.get(
     payload.url,
     JSON.stringify(payload.events || []),
-    payload.secret || null
+    encryptWebhookSecret(payload.secret || null)
   ) as WebhookRow
 
   return rowToWebhook(row)
@@ -138,7 +168,7 @@ export function updateWebhook(
 
   if (payload.secret !== undefined) {
     updates.push('secret = ?')
-    params.push(payload.secret)
+    params.push(encryptWebhookSecret(payload.secret))
   }
 
   if (payload.enabled !== undefined) {
@@ -209,7 +239,7 @@ export function getWebhooks(db?: Database.Database): WebhookConfig[] {
     id: row.id,
     url: row.url,
     events: parseWebhookEvents(row.events),
-    secret: row.secret,
+    secret: decryptWebhookSecret(row.secret),
     enabled: row.enabled === 1
   }))
 }

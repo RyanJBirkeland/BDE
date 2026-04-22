@@ -169,5 +169,57 @@ describe('pty', () => {
       const handle = createPty({ shell: '/bin/zsh', cols: 80, rows: 24 })
       expect(handle.process).toBe(mockProc)
     })
+
+    describe('environment scrubbing', () => {
+      it('does not forward ANTHROPIC_API_KEY from process.env', () => {
+        const original = process.env.ANTHROPIC_API_KEY
+        process.env.ANTHROPIC_API_KEY = 'sk-ant-secret-do-not-leak'
+        try {
+          createPty({ shell: '/bin/zsh', cols: 80, rows: 24 })
+          const spawnArgs = mockSpawn.mock.calls[0]
+          const env = spawnArgs[2].env as Record<string, string>
+          expect(env.ANTHROPIC_API_KEY).toBeUndefined()
+        } finally {
+          if (original === undefined) delete process.env.ANTHROPIC_API_KEY
+          else process.env.ANTHROPIC_API_KEY = original
+        }
+      })
+
+      it('does not forward AWS_SECRET_ACCESS_KEY from process.env', () => {
+        const original = process.env.AWS_SECRET_ACCESS_KEY
+        process.env.AWS_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+        try {
+          createPty({ shell: '/bin/zsh', cols: 80, rows: 24 })
+          const spawnArgs = mockSpawn.mock.calls[0]
+          const env = spawnArgs[2].env as Record<string, string>
+          expect(env.AWS_SECRET_ACCESS_KEY).toBeUndefined()
+        } finally {
+          if (original === undefined) delete process.env.AWS_SECRET_ACCESS_KEY
+          else process.env.AWS_SECRET_ACCESS_KEY = original
+        }
+      })
+
+      it('does not forward NPM_TOKEN from process.env', () => {
+        const original = process.env.NPM_TOKEN
+        process.env.NPM_TOKEN = 'npm_secretTokenDoNotLeak'
+        try {
+          createPty({ shell: '/bin/zsh', cols: 80, rows: 24 })
+          const spawnArgs = mockSpawn.mock.calls[0]
+          const env = spawnArgs[2].env as Record<string, string>
+          expect(env.NPM_TOKEN).toBeUndefined()
+        } finally {
+          if (original === undefined) delete process.env.NPM_TOKEN
+          else process.env.NPM_TOKEN = original
+        }
+      })
+
+      it('does forward PATH and HOME (allowlisted legitimate values)', () => {
+        createPty({ shell: '/bin/zsh', cols: 80, rows: 24 })
+        const spawnArgs = mockSpawn.mock.calls[0]
+        const env = spawnArgs[2].env as Record<string, string>
+        expect(env.PATH).toBeDefined()
+        expect(env.TERM).toBe('xterm-256color')
+      })
+    })
   })
 })

@@ -75,6 +75,18 @@ function toErrorMessage(err: unknown): string {
 }
 
 /**
+ * Agents reaching the in-process planner server may try to queue a task for
+ * autonomous execution — either intentionally, or as the tail-end of a
+ * prompt-injection payload ("…then call tasks.create with status=queued").
+ * Downgrading `queued` → `backlog` at the tool boundary forces a human to
+ * approve the queue transition in the UI before the drain loop picks it up.
+ */
+function downgradeQueuedOnCreate(input: CreateTaskInput): CreateTaskInput {
+  if (input.status === 'queued') return { ...input, status: 'backlog' }
+  return input
+}
+
+/**
  * Task-status payload is a static vocabulary compiled into the binary —
  * freeze once at module load so every `meta.taskStatuses` call returns the
  * same immutable shape without rebuilding the transition map.
@@ -106,15 +118,16 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
 
   const tasksCreate = tool(
     'tasks.create',
-    'Create a sprint task in BDE. Runs the same validation as the Task Workbench (title, configured repo, spec structure). Returns the created task row. Prefer this over any direct SQL against ~/.bde/bde.db — that path bypasses validation, the audit trail, and the UI broadcast.',
+    'Create a sprint task in BDE. Runs the same validation as the Task Workbench (title, configured repo, spec structure). Returns the created task row. Note: in-process agent calls cannot queue a task for autonomous execution — requests with status=queued are downgraded to backlog so a human approves the queue transition in the UI. Prefer this over any direct SQL against ~/.bde/bde.db — that path bypasses validation, the audit trail, and the UI broadcast.',
     TaskCreateSchema.shape,
     async (rawInput) => {
       const parsed = TaskCreateSchema.safeParse(rawInput)
       if (!parsed.success) return errorResult(parsed.error.message)
       const { skipReadinessCheck, ...createInput } = parsed.data
+      const safeCreateInput = downgradeQueuedOnCreate(createInput as CreateTaskInput)
       try {
         const row = createTaskWithValidation(
-          createInput as CreateTaskInput,
+          safeCreateInput,
           { logger },
           skipReadinessCheck === true ? { skipReadinessCheck: true } : {}
         )
@@ -127,11 +140,16 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
 
   const tasksUpdate = tool(
     'tasks.update',
-    "Update an existing task's fields (spec, priority, depends_on, status, tags, etc.). Status transitions are validated; system-managed fields (claimed_by, pr_*, completed_at) are stripped. Returns the updated row.",
+    "Update an existing task's fields (spec, priority, depends_on, status, tags, etc.). Status transitions are validated; system-managed fields (claimed_by, pr_*, completed_at) are stripped. In-process agents cannot transition a task to queued — that requires human approval in the UI. Returns the updated row.",
     TaskUpdateSchema.shape,
     async (rawInput) => {
       const parsed = TaskUpdateSchema.safeParse(rawInput)
       if (!parsed.success) return errorResult(parsed.error.message)
+      if (parsed.data.patch.status === 'queued') {
+        return errorResult(
+          'Agents cannot transition a task to queued. Queueing for autonomous execution requires human approval in the Task Pipeline UI.'
+        )
+      }
       try {
         const row = updateTask(parsed.data.id, parsed.data.patch, { caller: AGENT_CALLER })
         if (!row) return errorResult(`Task ${parsed.data.id} not found`)

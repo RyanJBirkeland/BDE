@@ -204,7 +204,16 @@ async function openDirectoryDialog(): Promise<string | null> {
   const result = await dialog.showOpenDialog({
     properties: ['openDirectory']
   })
-  return result.canceled ? null : (result.filePaths[0] ?? null)
+  if (result.canceled) return null
+  const picked = result.filePaths[0] ?? null
+  if (picked) {
+    // Register the user-approved folder so the IDE handlers will accept it as
+    // a valid IDE root. Without this hook the IDE root allowlist silently
+    // rejects folders the user just chose.
+    const { rememberApprovedIdeRoot } = await import('./handlers/ide-fs-handlers')
+    rememberApprovedIdeRoot(picked)
+  }
+  return picked
 }
 
 const ACTIVE_FILES_SETTING = 'memory.activeFiles'

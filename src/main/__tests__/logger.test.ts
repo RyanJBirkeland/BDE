@@ -7,11 +7,12 @@ vi.mock('node:fs', () => ({
   existsSync: vi.fn(() => true),
   mkdirSync: vi.fn(),
   renameSync: vi.fn(),
-  rmSync: vi.fn()
+  rmSync: vi.fn(),
+  chmodSync: vi.fn()
 }))
 
 import { createLogger } from '../logger'
-import { appendFileSync, statSync, renameSync, rmSync } from 'node:fs'
+import { appendFileSync, statSync, renameSync, rmSync, chmodSync } from 'node:fs'
 
 describe('createLogger', () => {
   beforeEach(() => {
@@ -25,12 +26,28 @@ describe('createLogger', () => {
     expect(logger.error).toBeDefined()
   })
 
+  it('applies 0600 mode to the log file on createLogger so tokens are not world-readable', () => {
+    createLogger('test')
+    expect(chmodSync).toHaveBeenCalledWith(expect.stringContaining('bde.log'), 0o600)
+  })
+
+  it('writes new log lines with mode:0o600 so any rotation-created file is tightened', () => {
+    const logger = createLogger('test')
+    logger.info('hello')
+    expect(appendFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('bde.log'),
+      expect.any(String),
+      expect.objectContaining({ mode: 0o600 })
+    )
+  })
+
   it('writes to log file with correct format', () => {
     const logger = createLogger('my-module')
     logger.info('hello world')
     expect(appendFileSync).toHaveBeenCalledWith(
       expect.stringContaining('bde.log'),
-      expect.stringMatching(/\[INFO\] \[my-module\] hello world/)
+      expect.stringMatching(/\[INFO\] \[my-module\] hello world/),
+      expect.any(Object)
     )
   })
 

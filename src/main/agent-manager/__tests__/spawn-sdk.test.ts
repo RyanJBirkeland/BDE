@@ -7,7 +7,8 @@ vi.mock('../../env-utils', () => ({
 }))
 
 vi.mock('../../paths', () => ({
-  getRepoPaths: vi.fn(() => ({ bde: '/Users/test/projects/BDE' }))
+  getRepoPaths: vi.fn(() => ({ bde: '/Users/test/projects/BDE' })),
+  BDE_MEMORY_DIR: '/Users/test/.bde/memory'
 }))
 
 let mockMessages: unknown[] = []

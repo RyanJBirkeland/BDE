@@ -7,24 +7,37 @@ export interface WorktreeIsolationDeps {
   worktreePath: string
   /** Absolute paths to primary repo checkouts that must not be touched. */
   mainRepoPaths: readonly string[]
+  /**
+   * Absolute paths outside the worktree that the agent is still permitted
+   * to read/write (e.g. `~/.bde/memory/`). Everything not in the worktree
+   * and not on this allowlist is denied by default.
+   */
+  extraAllowedPaths?: readonly string[]
   /** Optional logger for denied operations. */
   logger?: Pick<Logger, 'warn' | 'info' | 'error' | 'debug'> | undefined
 }
 
 export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUseTool {
   const worktreeAbs = resolvePath(deps.worktreePath)
-  const blockedPrefixes = deps.mainRepoPaths.map((p) => resolvePath(p) + '/')
+  const mainRepoPrefixes = deps.mainRepoPaths.map((p) => resolvePath(p))
+  const extraAllowedPrefixes = (deps.extraAllowedPaths ?? []).map((p) => resolvePath(p))
+
+  function isInsidePrefix(absPath: string, prefix: string): boolean {
+    return absPath === prefix || absPath.startsWith(prefix + '/')
+  }
 
   function isInsideWorktree(absPath: string): boolean {
-    const resolved = resolvePath(absPath)
-    return resolved === worktreeAbs || resolved.startsWith(worktreeAbs + '/')
+    return isInsidePrefix(resolvePath(absPath), worktreeAbs)
   }
 
   function pointsAtMainRepo(absPath: string): boolean {
     const resolved = resolvePath(absPath)
-    return blockedPrefixes.some(
-      (prefix) => resolved === prefix.slice(0, -1) || resolved.startsWith(prefix)
-    )
+    return mainRepoPrefixes.some((prefix) => isInsidePrefix(resolved, prefix))
+  }
+
+  function isExplicitlyAllowed(absPath: string): boolean {
+    const resolved = resolvePath(absPath)
+    return extraAllowedPrefixes.some((prefix) => isInsidePrefix(resolved, prefix))
   }
 
   function deny(
@@ -38,30 +51,38 @@ export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUse
 
   const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit'])
 
-  function bashCommandHitsMainRepo(command: string): string | null {
-    // Tokenize loosely on whitespace + shell separators. Conservative:
-    // we only need to find absolute paths that start with /.
+  function findDisallowedAbsolutePath(command: string): string | null {
     const tokens = command.split(/[\s;|&<>()]+/).filter(Boolean)
-    for (const tok of tokens) {
-      // Strip common shell quoting.
-      const unquoted = tok.replace(/^['"]|['"]$/g, '')
+    for (const rawToken of tokens) {
+      const unquoted = rawToken.replace(/^['"]|['"]$/g, '')
       if (!unquoted.startsWith('/')) continue
-      if (pointsAtMainRepo(unquoted)) return unquoted
+      if (isInsideWorktree(unquoted)) continue
+      if (isExplicitlyAllowed(unquoted)) continue
+      return unquoted
     }
     return null
+  }
+
+  function denyReasonFor(path: string, toolName: string): string {
+    if (pointsAtMainRepo(path)) {
+      return (
+        `Blocked by worktree-isolation: ${toolName} references main checkout path ${path}. ` +
+        `Use relative paths or paths under the worktree (${worktreeAbs}).`
+      )
+    }
+    return (
+      `Blocked by worktree-isolation: ${toolName} targets ${path}, which is outside your ` +
+      `worktree (${worktreeAbs}) and not on the allowlist. Use a relative path or an absolute ` +
+      `path under the worktree.`
+    )
   }
 
   return async (toolName, input) => {
     if (toolName === 'Bash') {
       const command = typeof input.command === 'string' ? input.command : ''
-      const offending = bashCommandHitsMainRepo(command)
+      const offending = findDisallowedAbsolutePath(command)
       if (offending) {
-        return deny(
-          `Blocked by worktree-isolation: Bash command references main checkout path ${offending}. ` +
-            `Use relative paths or paths under the worktree (${worktreeAbs}).`,
-          'Bash',
-          offending
-        )
+        return deny(denyReasonFor(offending, 'Bash'), 'Bash', offending)
       }
     }
 
@@ -72,15 +93,9 @@ export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUse
           : typeof input.notebook_path === 'string'
             ? input.notebook_path
             : null
-      if (filePath && filePath.startsWith('/') && !isInsideWorktree(filePath)) {
-        if (pointsAtMainRepo(filePath)) {
-          return deny(
-            `Blocked by worktree-isolation: ${toolName} targeting ${filePath} ` +
-              `is outside your worktree (${worktreeAbs}). Use a relative path ` +
-              `or an absolute path under the worktree.`,
-            toolName,
-            filePath
-          )
+      if (filePath && filePath.startsWith('/')) {
+        if (!isInsideWorktree(filePath) && !isExplicitlyAllowed(filePath)) {
+          return deny(denyReasonFor(filePath, toolName), toolName, filePath)
         }
       }
     }
