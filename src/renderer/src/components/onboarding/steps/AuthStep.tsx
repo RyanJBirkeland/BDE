@@ -19,7 +19,9 @@ interface AuthStatus {
 
 const AUTH_CHECK_TIMEOUT_MS = 10_000
 const CLAUDE_INSTALL_DOCS_URL = 'https://docs.claude.com/en/docs/claude-code'
-const CLAUDE_INSTALL_COMMAND = 'curl -fsSL https://claude.ai/install.sh | bash'
+const CLAUDE_INSTALL_COMMAND_CURL = 'curl -fsSL https://claude.ai/install.sh | bash'
+const CLAUDE_INSTALL_COMMAND_NPM = 'npm i -g @anthropic-ai/claude-code'
+const CLAUDE_INSTALL_COMMAND_BREW = 'brew install anthropic/claude/claude-code'
 const CLAUDE_LOGIN_COMMAND = 'claude login'
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -161,31 +163,90 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
 
       {!checking && !isReady && !status?.cliFound && (
         <div className="onboarding-step__help">
-          <p>Install Claude Code CLI:</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-2)' }}>
-            <code
-              style={{
-                padding: '4px 10px',
-                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
-                borderRadius: '4px',
-                fontFamily: 'monospace',
-                fontSize: 'var(--bde-size-sm)'
-              }}
-            >
-              {CLAUDE_INSTALL_COMMAND}
-            </code>
-            <Button
-              variant="ghost"
-              onClick={() => copyToClipboard(CLAUDE_INSTALL_COMMAND)}
-              aria-label="Copy install command"
-            >
-              <Copy size={14} />
-            </Button>
+          <p>Install Claude Code CLI (choose one):</p>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--bde-space-2)',
+              marginTop: 'var(--bde-space-2)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-2)' }}>
+              <code
+                style={{
+                  flex: 1,
+                  padding: '4px 10px',
+                  background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                  borderRadius: '4px',
+                  fontFamily: 'monospace',
+                  fontSize: 'var(--bde-size-sm)',
+                  overflow: 'auto'
+                }}
+              >
+                {CLAUDE_INSTALL_COMMAND_CURL}
+              </code>
+              <Button
+                variant="ghost"
+                onClick={() => copyToClipboard(CLAUDE_INSTALL_COMMAND_CURL)}
+                aria-label="Copy curl install command"
+              >
+                <Copy size={14} />
+              </Button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-2)' }}>
+              <code
+                style={{
+                  flex: 1,
+                  padding: '4px 10px',
+                  background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                  borderRadius: '4px',
+                  fontFamily: 'monospace',
+                  fontSize: 'var(--bde-size-sm)',
+                  overflow: 'auto'
+                }}
+              >
+                {CLAUDE_INSTALL_COMMAND_NPM}
+              </code>
+              <Button
+                variant="ghost"
+                onClick={() => copyToClipboard(CLAUDE_INSTALL_COMMAND_NPM)}
+                aria-label="Copy npm install command"
+              >
+                <Copy size={14} />
+              </Button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-2)' }}>
+              <code
+                style={{
+                  flex: 1,
+                  padding: '4px 10px',
+                  background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                  borderRadius: '4px',
+                  fontFamily: 'monospace',
+                  fontSize: 'var(--bde-size-sm)',
+                  overflow: 'auto'
+                }}
+              >
+                {CLAUDE_INSTALL_COMMAND_BREW}
+              </code>
+              <Button
+                variant="ghost"
+                onClick={() => copyToClipboard(CLAUDE_INSTALL_COMMAND_BREW)}
+                aria-label="Copy brew install command"
+              >
+                <Copy size={14} />
+              </Button>
+            </div>
           </div>
           <p style={{ marginTop: 'var(--bde-space-2)' }}>
-            <a href={CLAUDE_INSTALL_DOCS_URL} target="_blank" rel="noreferrer">
+            <Button
+              variant="ghost"
+              onClick={() => window.api.window.openExternal(CLAUDE_INSTALL_DOCS_URL)}
+              style={{ padding: 0, height: 'auto', minHeight: 'auto' }}
+            >
               Full install docs <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
-            </a>
+            </Button>
           </p>
         </div>
       )}
