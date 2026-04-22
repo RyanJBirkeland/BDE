@@ -200,6 +200,20 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [])
 
+  // Restore onboarding.nextView after reload (single-use)
+  useEffect(() => {
+    const restoreNextView = async (): Promise<void> => {
+      const nextView = await window.api.settings.get('onboarding.nextView')
+      if (nextView) {
+        usePanelLayoutStore.getState().setView(nextView as View)
+        await window.api.settings.delete('onboarding.nextView')
+      }
+    }
+    restoreNextView().catch((err) => {
+      console.error('Failed to restore onboarding.nextView:', err)
+    })
+  }, [])
+
   if (showOnboarding) {
     return (
       <OnboardingWizard
