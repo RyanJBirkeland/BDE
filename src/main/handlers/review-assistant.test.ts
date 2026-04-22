@@ -260,4 +260,37 @@ describe('handleChatStream', () => {
     expect(resolveAgentRuntime).toHaveBeenCalled()
     expect(capturedOptions?.model).toBe('claude-haiku-4-5-20251001')
   })
+
+  it('skips CLAUDE.md loading and enforces a budget cap', async () => {
+    // Reviewer chat must not inherit the SDK's default settingSources
+    // (['user','project','local']) — the Option-A debranding policy is that
+    // BDE agents receive conventions via the composed prompt, not by
+    // reading CLAUDE.md at spawn. An unbounded user-triggered chat session
+    // also needs a hard spend ceiling so a prompt-injected tool-use loop
+    // cannot accumulate cost indefinitely.
+    let capturedOptions: SdkStreamingOptions | null = null
+    const deps: ChatStreamDeps = {
+      taskRepo: { getTask: () => fakeTask() } as unknown as IAgentTaskRepository,
+      reviewRepo: {
+        getCached: () => null,
+        setCached: () => {},
+        invalidate: () => {}
+      } as IReviewRepository,
+      getHeadCommitSha: async () => 'sha-abc',
+      getBranch: async () => 'feat/auth',
+      getDiff: async () => 'diff --git a/x b/x\n+ change',
+      buildChatPrompt: () => 'prompt',
+      runSdkStreaming: async (_prompt, _onChunk, _streams, _id, _timeout, options) => {
+        capturedOptions = options ?? null
+        return 'reply'
+      },
+      activeStreams: new Map<string, { close: () => void }>(),
+      resolveAgentRuntime: () => ({ backend: 'claude', model: 'claude-opus-4-6' })
+    }
+    const sender = { send: () => {} }
+    await handleChatStream(deps, { taskId: 'task-1', messages: [] }, sender as any)
+    await new Promise((r) => setImmediate(r))
+    expect(capturedOptions?.settingSources).toEqual([])
+    expect(capturedOptions?.maxBudgetUsd).toBe(2.0)
+  })
 })

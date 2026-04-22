@@ -47,7 +47,7 @@ Reviewer prompt builders live next door in `src/main/agent-manager/prompt-compos
 | ----------- | ---------------------- | ---------------- | ----------- | --------------------- | ------------------------- |
 | Pipeline    | Agent Manager (auto)   | No               | Full        | Yes (isolated)        | Concise, action-oriented  |
 | Adhoc       | User (Agents view)     | Yes (multi-turn) | Full        | Yes (adhoc worktree)  | Same as pipeline          |
-| Assistant   | User (Agents view)     | Yes              | Full        | No (repo dir)         | Conversational, proactive |
+| Assistant   | User (Agents view)     | Yes              | Full        | Yes (adhoc worktree)  | Conversational, proactive |
 | Reviewer    | Code Review Station    | Configurable     | Read + comment | Yes (review worktree) | Focused on diff critique |
 | Copilot     | Task Workbench         | Yes (chat)       | None        | No                    | Minimal (text-only)       |
 | Synthesizer | Task Workbench         | No (single-turn) | None        | No                    | Minimal (spec generation) |

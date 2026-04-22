@@ -71,14 +71,14 @@ BDE spawns six types of AI agents, each with different capabilities and contexts
 | ----------- | ---------------------- | ---------------- | ---------------- | --------------------- | ---------- |
 | Pipeline    | Agent Manager (auto)   | No               | Full             | Yes (isolated)        | If enabled |
 | Adhoc       | User (Agents view)     | Yes (multi-turn) | Full             | Yes (adhoc worktree)  | Always     |
-| Assistant   | User (Agents view)     | Yes (multi-turn) | Full             | No (repo dir)         | Always     |
+| Assistant   | User (Agents view)     | Yes (multi-turn) | Full             | Yes (adhoc worktree)  | Always     |
 | Reviewer    | Code Review Station    | Configurable     | Read + comment   | Yes (review worktree) | No         |
 | Copilot     | Task Workbench         | Yes (chat)       | None (text-only) | No                    | No         |
 | Synthesizer | Task Workbench         | No (single-turn) | None             | No                    | No         |
 
 - **Pipeline**: Executes sprint tasks autonomously. Works in isolated git worktree. Commits changes and transitions to `review` status, preserving worktree for human inspection. Prompt includes task spec/prompt and branch name
 - **Adhoc**: User-spawned one-off tasks from the Agents view. Multi-turn sessions via SDK `query()` with session resumption (`resume: sessionId`). Runs in a dedicated worktree under `~/.bde/worktrees-adhoc/` so user sessions don't mutate the main repo tree
-- **Assistant**: Same as adhoc but with assistant role framing — answers questions, suggests approaches, recommends Dev Playground for visual/UI work. Runs in the repo directory
+- **Assistant**: Same as adhoc but with assistant role framing — answers questions, suggests approaches, recommends Dev Playground for visual/UI work. Runs in a dedicated worktree under `~/.bde/worktrees-adhoc/` (same setup as Adhoc) so user sessions never mutate the main repo tree
 - **Reviewer**: Spawned from Code Review Station against a completed agent's worktree. Produces either a structured JSON review (via `buildStructuredReviewPrompt`) or an interactive conversation (via `buildInteractiveReviewPrompt`). Does not commit code
 - **Copilot**: Text-only spec drafting helper in Task Workbench. ~500 word limit. Cannot use tools, open URLs, or explore code. Helps users refine task specs through conversation
 - **Synthesizer**: Generates structured specs from codebase context + user answers. Receives file tree and relevant code snippets. Outputs markdown with `## heading` sections. Single-turn (`maxTurns: 1`)

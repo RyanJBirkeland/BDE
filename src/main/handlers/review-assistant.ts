@@ -14,6 +14,13 @@ import { getErrorMessage } from '../../shared/errors'
 
 const log = createLogger('review-assistant')
 
+// Hard ceiling on spend for a single reviewer-chat session. The chat is
+// user-triggered and open-ended; a runaway tool-use loop or prompt-injected
+// conversation would otherwise accumulate cost without bound. Matches the
+// pipeline default (src/main/agent-manager/spawn-sdk.ts). Exported so the
+// SDK-options policy guardrail test can assert the invariant in one place.
+export const REVIEWER_CHAT_MAX_BUDGET_USD = 2.0
+
 // ---------- Pure logic functions (testable without ipcMain) ----------
 
 /** autoReview handler body — extracted for unit testing. */
@@ -107,6 +114,12 @@ export async function handleChatStream(
           // keeps the chat streaming headless without human-in-the-loop prompts.
           permissionMode: 'bypassPermissions',
           allowDangerouslySkipPermissions: true,
+          // Skip CLAUDE.md at spawn — reviewer conventions come from the
+          // composed prompt (Option-A debranding policy). Without this, the
+          // SDK defaults to ['user','project','local'] and silently loads
+          // the project's CLAUDE.md into every chat session.
+          settingSources: [],
+          maxBudgetUsd: REVIEWER_CHAT_MAX_BUDGET_USD,
           onToolUse: (event) => {
             const payload: ChatChunk = { streamId, toolUse: event }
             sender?.send('review:chatChunk', payload)
