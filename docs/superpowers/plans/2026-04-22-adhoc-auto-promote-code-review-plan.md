@@ -30,7 +30,7 @@
 
 **Why first:** If the installed `@anthropic-ai/claude-agent-sdk` version doesn't support in-process MCP servers at the `query()` call used by `adhoc-agent.ts`, Trigger 3 (the `promote_to_review` agent tool) is descoped per §Dependencies of the spec. Tasks 2–16 ship without it. We need to know up front.
 
-**Preliminary finding** (from the plan reviewer): `@anthropic-ai/claude-agent-sdk@^0.2.81` appears to expose `mcpServers` and `createSdkMcpServer` in its type definitions, so Task 17 is likely to proceed. Still run the steps below to confirm the specific call site in `adhoc-agent.ts` accepts it — the preliminary finding is not a substitute for inspection.
+**Task 1 outcome (2026-04-22):** SDK SUPPORTS: proceed with Task 17. Version: 0.2.81. `mcpServers` is declared on the `Options` type at `node_modules/@anthropic-ai/claude-agent-sdk/sdk.d.ts:1020` as `mcpServers?: Record<string, McpServerConfig>`, and `McpServerConfig` (sdk.d.ts:607) includes the in-process variant `McpSdkServerConfigWithInstance` (sdk.d.ts:600) — i.e. in-process (not just HTTP/stdio) servers are first-class. In-process server factory: `createSdkMcpServer` (exported at `sdk.d.ts:324`). The call site in `src/main/adhoc-agent.ts` is `sdk.query({ prompt, options })` at `src/main/adhoc-agent.ts:293`, where `options` is built from `baseOptions` (defined at `src/main/adhoc-agent.ts:155`) which already passes `mcpServers: { bde: plannerServer }` (line 164) — confirming both that the `Options` object accepts `mcpServers` and that the adhoc path is already wired for in-process MCP servers. Task 17 can register the `promote_to_review` tool under the same `mcpServers` field, either by adding a second server or by extending `plannerServer`.
 
 **Files:**
 - Read: `package.json` (root)
