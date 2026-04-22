@@ -84,6 +84,14 @@ export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUse
         }
       }
     }
-    return { behavior: 'allow' as const, updatedInput: {} }
+    // Echo the original input back as `updatedInput`. The SDK's native
+    // permission bridge follows the same convention: `{ behavior: 'allow',
+    // updatedInput: <original> }` — signalling "allow this call with its
+    // arguments unchanged". An earlier version returned `updatedInput: {}`,
+    // which silently replaced every tool call's arguments with an empty
+    // object and broke MCP tools with required fields
+    // ("expected string, received undefined"). Omitting the field entirely
+    // fails the SDK's runtime schema for the allow branch. Echo the input.
+    return { behavior: 'allow' as const, updatedInput: input }
   }
 }
