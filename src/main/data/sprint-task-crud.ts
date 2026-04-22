@@ -254,10 +254,13 @@ export function createReviewTaskFromAdhoc(input: {
 
   if (!task) return null
 
-  // Set fields not in the create allowlist (worktree_path, started_at)
+  // Set fields not in the create allowlist (worktree_path, started_at,
+  // promoted_to_review_at). The adhoc path bypasses `transitionToReview`, so
+  // the review-entry watermark has to be stamped here.
   const updated = updateTask(task.id, {
     worktree_path: input.worktreePath,
-    started_at: nowIso()
+    started_at: nowIso(),
+    promoted_to_review_at: nowIso()
   })
 
   if (updated) {

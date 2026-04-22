@@ -184,13 +184,17 @@ describe('Agent completion pipeline integration', () => {
       expect(prCreateCall).toBeUndefined()
 
       // Verify task updated to review status with worktree_path and rebase fields
-      expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
-        status: 'review',
-        worktree_path: '/tmp/wt/task-1',
-        claimed_by: null,
-        rebase_base_sha: 'abc123',
-        rebased_at: expect.any(String)
-      })
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          status: 'review',
+          worktree_path: '/tmp/wt/task-1',
+          claimed_by: null,
+          rebase_base_sha: 'abc123',
+          rebased_at: expect.any(String),
+          promoted_to_review_at: expect.any(String)
+        })
+      )
 
       // onTaskTerminal should NOT be called (review is not terminal)
       expect(onTaskTerminal).not.toHaveBeenCalled()
@@ -240,13 +244,17 @@ describe('Agent completion pipeline integration', () => {
       expect(commitCall).toBeDefined()
 
       // Should update task to review status with rebase fields
-      expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
-        status: 'review',
-        worktree_path: '/tmp/wt/task-1',
-        claimed_by: null,
-        rebase_base_sha: 'abc123',
-        rebased_at: expect.any(String)
-      })
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-1',
+        expect.objectContaining({
+          status: 'review',
+          worktree_path: '/tmp/wt/task-1',
+          claimed_by: null,
+          rebase_base_sha: 'abc123',
+          rebased_at: expect.any(String),
+          promoted_to_review_at: expect.any(String)
+        })
+      )
     })
   })
 

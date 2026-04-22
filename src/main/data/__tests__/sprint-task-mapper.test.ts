@@ -77,6 +77,16 @@ describe('mapRowToTask — happy path', () => {
     expect(task.revision_feedback).toEqual([{ at: '2026-01-01', note: 'redo' }])
   })
 
+  it('hydrates promoted_to_review_at as a plain string (TEXT column)', () => {
+    const task = mapRowToTask(row({ promoted_to_review_at: '2026-04-22T12:34:56.789Z' }))
+    expect(task.promoted_to_review_at).toBe('2026-04-22T12:34:56.789Z')
+  })
+
+  it('passes through null promoted_to_review_at', () => {
+    const task = mapRowToTask(row({ promoted_to_review_at: null }))
+    expect(task.promoted_to_review_at).toBeNull()
+  })
+
   it('coerces numeric-string priority to a finite number', () => {
     const task = mapRowToTask(row({ priority: '5' }))
     expect(task.priority).toBe(5)

@@ -14,4 +14,4 @@ export const SPRINT_TASK_COLUMNS = `id, title, prompt, repo, status, priority, d
   spec_type, created_at, updated_at, worktree_path, session_id,
   next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
   partial_diff, assigned_reviewer, tags, sprint_id, group_id,
-  revision_feedback, review_diff_snapshot`
+  revision_feedback, review_diff_snapshot, promoted_to_review_at`

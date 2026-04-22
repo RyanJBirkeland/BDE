@@ -48,6 +48,7 @@ export async function transitionToReview(opts: TransitionToReviewOpts): Promise<
       status: 'review',
       worktree_path: worktreePath,
       claimed_by: null,
+      promoted_to_review_at: nowIso(),
       ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
       ...(rebaseNote ? { notes: rebaseNote } : {}),
       ...(diffSnapshotJson ? { review_diff_snapshot: diffSnapshotJson } : {}),

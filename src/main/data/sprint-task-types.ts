@@ -37,7 +37,8 @@ export const UPDATE_ALLOWLIST = new Set([
   'duration_ms',
   'cross_repo_contract',
   'revision_feedback',
-  'review_diff_snapshot'
+  'review_diff_snapshot',
+  'promoted_to_review_at'
 ])
 
 // Whitelist Map for defense-in-depth column validation

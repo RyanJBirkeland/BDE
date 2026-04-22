@@ -40,6 +40,7 @@ vi.mock('../../db', () => {
             max_cost_usd REAL, partial_diff TEXT, assigned_reviewer TEXT,
             tags TEXT, sprint_id TEXT, group_id TEXT,
             revision_feedback TEXT, review_diff_snapshot TEXT,
+            promoted_to_review_at TEXT,
             created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
             updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
           )

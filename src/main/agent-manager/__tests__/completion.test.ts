@@ -135,13 +135,17 @@ describe('resolveSuccess', () => {
     expect(prCall).toBeUndefined()
 
     // Verify updateTask sets review status with worktree_path and rebase fields
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
-      status: 'review',
-      worktree_path: opts.worktreePath,
-      claimed_by: null,
-      rebase_base_sha: 'abc123',
-      rebased_at: expect.any(String)
-    })
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'review',
+        worktree_path: opts.worktreePath,
+        claimed_by: null,
+        rebase_base_sha: 'abc123',
+        rebased_at: expect.any(String),
+        promoted_to_review_at: expect.any(String)
+      })
+    )
 
     // onTaskTerminal should NOT be called — review is not terminal
     expect(mockOnTaskTerminal).not.toHaveBeenCalled()
@@ -167,13 +171,17 @@ describe('resolveSuccess', () => {
     await resolveSuccess(opts, noopLogger)
 
     // Verify updateTask sets review status with rebase fields
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
-      status: 'review',
-      worktree_path: opts.worktreePath,
-      claimed_by: null,
-      rebase_base_sha: 'abc123',
-      rebased_at: expect.any(String)
-    })
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'review',
+        worktree_path: opts.worktreePath,
+        claimed_by: null,
+        rebase_base_sha: 'abc123',
+        rebased_at: expect.any(String),
+        promoted_to_review_at: expect.any(String)
+      })
+    )
 
     // onTaskTerminal should NOT be called
     expect(mockOnTaskTerminal).not.toHaveBeenCalled()
@@ -343,13 +351,17 @@ describe('resolveSuccess', () => {
     expect(rebaseCall![1]).toEqual(['rebase', 'origin/main'])
 
     // Task should transition to review with rebase fields
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
-      status: 'review',
-      worktree_path: opts.worktreePath,
-      claimed_by: null,
-      rebase_base_sha: 'abc123',
-      rebased_at: expect.any(String)
-    })
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'review',
+        worktree_path: opts.worktreePath,
+        claimed_by: null,
+        rebase_base_sha: 'abc123',
+        rebased_at: expect.any(String),
+        promoted_to_review_at: expect.any(String)
+      })
+    )
   })
 
   it('includes rebase conflict note when rebase fails', async () => {
@@ -374,14 +386,18 @@ describe('resolveSuccess', () => {
     expect(abortCall).toBeDefined()
 
     // Task should transition to review WITH rebase note and null rebase fields
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
-      status: 'review',
-      worktree_path: opts.worktreePath,
-      claimed_by: null,
-      notes: 'Rebase onto main failed — manual conflict resolution needed.',
-      rebase_base_sha: null,
-      rebased_at: null
-    })
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'review',
+        worktree_path: opts.worktreePath,
+        claimed_by: null,
+        notes: 'Rebase onto main failed — manual conflict resolution needed.',
+        rebase_base_sha: null,
+        rebased_at: null,
+        promoted_to_review_at: expect.any(String)
+      })
+    )
   })
 
   it('unstages test artifacts after git add -A', async () => {
@@ -487,13 +503,17 @@ describe('resolveSuccess', () => {
     expect(commitCall).toBeUndefined()
 
     // Task should still transition to review
-    expect(updateTaskMock).toHaveBeenCalledWith(opts.taskId, {
-      status: 'review',
-      worktree_path: opts.worktreePath,
-      claimed_by: null,
-      rebase_base_sha: 'abc123',
-      rebased_at: expect.any(String)
-    })
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      opts.taskId,
+      expect.objectContaining({
+        status: 'review',
+        worktree_path: opts.worktreePath,
+        claimed_by: null,
+        rebase_base_sha: 'abc123',
+        rebased_at: expect.any(String),
+        promoted_to_review_at: expect.any(String)
+      })
+    )
   })
 
   it('sets task to error and calls onTaskTerminal when branch name is empty', async () => {
@@ -565,13 +585,17 @@ describe('resolveSuccess — catch handler coverage', () => {
       { stdout: '1\n' }
     ])
     await resolveSuccess(catchOpts, noopLogger)
-    expect(updateTaskMock).toHaveBeenCalledWith(catchOpts.taskId, {
-      status: 'review',
-      worktree_path: catchOpts.worktreePath,
-      claimed_by: null,
-      rebase_base_sha: 'abc123',
-      rebased_at: expect.any(String)
-    })
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      catchOpts.taskId,
+      expect.objectContaining({
+        status: 'review',
+        worktree_path: catchOpts.worktreePath,
+        claimed_by: null,
+        rebase_base_sha: 'abc123',
+        rebased_at: expect.any(String),
+        promoted_to_review_at: expect.any(String)
+      })
+    )
   })
 
   it('logs error when updateTask fails after worktree eviction', async () => {

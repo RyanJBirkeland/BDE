@@ -118,6 +118,12 @@ export interface SprintTask {
    *          truncated?: boolean }
    */
   review_diff_snapshot?: string | null
+  /**
+   * ISO8601 timestamp when the task entered `review` status. Written by both
+   * review-transition paths (pipeline agent completion and adhoc promotion)
+   * so the Code Review nav badge can watermark "new since you last looked."
+   */
+  promoted_to_review_at?: string | null
   updated_at: string
   created_at: string
 }
@@ -191,6 +197,7 @@ export type SprintTaskPR = SprintTaskCore &
     | 'pr_mergeable_state'
     | 'revision_feedback'
     | 'review_diff_snapshot'
+    | 'promoted_to_review_at'
   >
 
 /** Shape of the `review_diff_snapshot` JSON blob. */
