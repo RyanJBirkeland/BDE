@@ -113,7 +113,7 @@ All failures are non-destructive; the worktree is never deleted on a failure pat
 | `createReviewTaskFromAdhoc()` returns null after successful commit | Warning toast with reason. Worktree preserved. Unmarked so retry is possible. |
 | Tool call with clean worktree and no commits | Tool returns an error string (*"No work to promote — nothing committed or modified since branch creation"*). Agent relays it. No task created. |
 | Assistant agent with no worktree | Tool / button returns a clear error. No attempt to promote. |
-| Double-close race / concurrent tool + close | Idempotency guard on `promotedTaskId` — second caller sees existing task id, returns `{ok: true, taskId}` without side effects. |
+| Double-close race / concurrent tool + close | Idempotency guard on `agent_runs.sprintTaskId` — second caller sees existing task id, returns `{ok: true, taskId}` without side effects. |
 
 ## Implementation
 
