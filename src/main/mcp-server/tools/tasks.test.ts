@@ -13,7 +13,7 @@ function mockServer() {
   const handlers = new Map<string, ToolHandler>()
   return {
     server: {
-      tool: (name: string, _desc: string, _schema: unknown, handler: ToolHandler) => {
+      registerTool: (name: string, _config: unknown, handler: ToolHandler) => {
         handlers.set(name, handler)
       }
     } as any,
@@ -107,16 +107,16 @@ describe('tasks.* write tools', () => {
     expect(JSON.parse(res.content[0].text).id).toBe('t1')
   })
 
-  it('tasks.create strips system-managed fields from the delegate payload', async () => {
+  it('tasks.create rejects system-managed fields with a validation error', async () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
     // claimed_by, pr_url, pr_status, completed_at, agent_run_id are system-
-    // managed — not in TaskWriteFieldsSchema. The schema strips them, and the
-    // delegate must never see them. Asserting that the call received a patch
-    // object *without* these fields catches regressions where the schema is
-    // accidentally broadened.
-    await call('tasks.create', {
+    // managed — not in TaskWriteFieldsSchema. Under `.strict()` the schema
+    // rejects them outright instead of silently dropping them, so the
+    // caller learns their field name is wrong rather than watching a
+    // successful response that quietly discarded the input.
+    const res = await call('tasks.create', {
       title: 't',
       repo: 'bde',
       claimed_by: 'x',
@@ -125,16 +125,10 @@ describe('tasks.* write tools', () => {
       completed_at: '2026-04-17T00:00:00.000Z',
       agent_run_id: 'run-1'
     } as any)
-    expect(deps.createTaskWithValidation).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        claimed_by: expect.anything(),
-        pr_url: expect.anything(),
-        pr_status: expect.anything(),
-        completed_at: expect.anything(),
-        agent_run_id: expect.anything()
-      }),
-      expect.any(Object)
-    )
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32602)
+    expect(body.message).toMatch(/claimed_by|pr_url|pr_status|completed_at|agent_run_id/)
+    expect(deps.createTaskWithValidation).not.toHaveBeenCalled()
   })
 
   it('tasks.create forwards every CreateTaskInput field to the delegate', async () => {
@@ -186,6 +180,42 @@ describe('tasks.* write tools', () => {
     const invocation = (deps.createTaskWithValidation as any).mock.calls[0]
     const opts = invocation[2]
     expect(opts?.skipReadinessCheck).toBeUndefined()
+  })
+
+  it('tasks.update rejects a flat depends_on (forgotten patch wrapper) with a validation error', async () => {
+    // The bug this guards against: caller sends `{id, depends_on: [...]}`
+    // without the `patch` wrapper, expecting an update. Previously the
+    // server returned a success response with the input silently dropped —
+    // the worst kind of data-loss bug to diagnose. Strict schemas now
+    // surface the caller's mistake as an `Invalid params` error.
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.update', {
+      id: 't1',
+      depends_on: [{ id: 'dep-1', type: 'hard' }]
+    } as any)
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32602)
+    expect(body.message).toContain('depends_on')
+    expect(deps.updateTask).not.toHaveBeenCalled()
+  })
+
+  it('tasks.update rejects an unknown field inside patch with a validation error', async () => {
+    // Mirrors the flat-depends_on case at one layer deeper: a caller who
+    // mistypes a field inside `patch` gets a structured error naming the
+    // unknown field instead of a successful no-op.
+    const deps = fakeDeps()
+    const { server, call } = mockServer()
+    registerTaskTools(server, deps)
+    const res = await call('tasks.update', {
+      id: 't1',
+      patch: { priority: 5, bogus_field: 1 }
+    } as any)
+    const body = parseErrorBody(res)
+    expect(body.code).toBe(-32602)
+    expect(body.message).toContain('bogus_field')
+    expect(deps.updateTask).not.toHaveBeenCalled()
   })
 
   it('tasks.update returns structured NotFound when updateTask returns null', async () => {

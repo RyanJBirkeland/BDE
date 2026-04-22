@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { z } from 'zod'
 import { TASK_STATUSES, VALID_TRANSITIONS } from '../../../shared/task-state-machine'
 import type { RepoConfig } from '../../paths'
 import { jsonContent } from './response'
@@ -30,22 +31,38 @@ const DEPENDENCY_CONDITIONS_PAYLOAD = Object.freeze({
   epic: ['on_success', 'always', 'manual']
 })
 
+/**
+ * Meta tools take no arguments. A strict empty object rejects any caller
+ * who smuggles extra fields — parity with the task/epic tools, which
+ * surface a validation error instead of silently dropping the field.
+ */
+const NoArgsSchema = z.object({}).strict()
+
 export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void {
-  server.tool('meta.repos', 'List repositories configured in BDE Settings.', {}, async () =>
-    jsonContent(deps.getRepos())
+  server.registerTool(
+    'meta.repos',
+    {
+      description: 'List repositories configured in BDE Settings.',
+      inputSchema: NoArgsSchema
+    },
+    async () => jsonContent(deps.getRepos())
   )
 
-  server.tool(
+  server.registerTool(
     'meta.taskStatuses',
-    'List valid task statuses and allowed transitions.',
-    {},
+    {
+      description: 'List valid task statuses and allowed transitions.',
+      inputSchema: NoArgsSchema
+    },
     async () => jsonContent(TASK_STATUS_PAYLOAD)
   )
 
-  server.tool(
+  server.registerTool(
     'meta.dependencyConditions',
-    'List valid dependency condition values for tasks and epics.',
-    {},
+    {
+      description: 'List valid dependency condition values for tasks and epics.',
+      inputSchema: NoArgsSchema
+    },
     async () => jsonContent(DEPENDENCY_CONDITIONS_PAYLOAD)
   )
 }

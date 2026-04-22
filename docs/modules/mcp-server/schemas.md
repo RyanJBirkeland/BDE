@@ -7,6 +7,8 @@
 
 Zod schemas for every MCP tool argument shape — tasks and epics. Each length-capped or constrained field carries a `.describe()` string so MCP clients (Claude Code, Claude Desktop, Cursor) discover the constraints from tool metadata, and so `toJsonRpcError` can surface the constraint text in validation failures.
 
+Every tool-facing object schema (and every nested `patch`/dependency object) calls `.strict()`. Unknown top-level fields — and unknown fields inside `patch` — are rejected with a validation error naming the offending key, rather than silently dropped. Without that, a caller who flattens a nested patch (e.g. `tasks.update({id, depends_on: [...]})` forgetting the `patch` wrapper) or mistypes a field name sees a success response with their input quietly discarded.
+
 ## Public API
 
 - `TaskStatusSchema`, `TaskDependencySchema`, `TaskWriteFieldsSchema`, `TaskCreateSchema`, `TaskUpdateSchema`, `TaskListSchema`, `TaskIdSchema`, `TaskCancelSchema`, `TaskHistorySchema`

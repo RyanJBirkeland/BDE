@@ -132,10 +132,12 @@ export interface TaskToolsDeps extends TaskCommandPort, TaskQueryPort, TaskHisto
 export const MCP_CALLER = 'mcp'
 
 export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void {
-  server.tool(
+  server.registerTool(
     'tasks.list',
-    'List sprint tasks with optional filters (status, repo, epicId, tag, search).',
-    TaskListSchema.shape,
+    {
+      description: 'List sprint tasks with optional filters (status, repo, epicId, tag, search).',
+      inputSchema: TaskListSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -147,25 +149,30 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
       )
   )
 
-  server.tool('tasks.get', 'Fetch one task by id.', TaskIdSchema.shape, async (rawArgs) =>
-    safeToolResponse(
-      async () => {
-        const { id } = parseToolArgs(TaskIdSchema, rawArgs)
-        const row = deps.getTask(id)
-        if (!row) {
-          deps.logger.debug(`mcp.tasks.get: task ${id} not found`)
-          throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
-        }
-        return jsonContent(row)
-      },
-      { schema: TaskIdSchema, logger: deps.logger }
-    )
+  server.registerTool(
+    'tasks.get',
+    { description: 'Fetch one task by id.', inputSchema: TaskIdSchema },
+    async (rawArgs) =>
+      safeToolResponse(
+        async () => {
+          const { id } = parseToolArgs(TaskIdSchema, rawArgs)
+          const row = deps.getTask(id)
+          if (!row) {
+            deps.logger.debug(`mcp.tasks.get: task ${id} not found`)
+            throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
+          }
+          return jsonContent(row)
+        },
+        { schema: TaskIdSchema, logger: deps.logger }
+      )
   )
 
-  server.tool(
+  server.registerTool(
     'tasks.history',
-    'Fetch the audit trail (field-level change log) for a task.',
-    TaskHistorySchema.shape,
+    {
+      description: 'Fetch the audit trail (field-level change log) for a task.',
+      inputSchema: TaskHistorySchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -187,10 +194,13 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
 }
 
 function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
-  server.tool(
+  server.registerTool(
     'tasks.create',
-    'Create a new sprint task. Runs the same validation as the in-app Task Workbench.',
-    TaskCreateSchema.shape,
+    {
+      description:
+        'Create a new sprint task. Runs the same validation as the in-app Task Workbench.',
+      inputSchema: TaskCreateSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -211,10 +221,13 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
       )
   )
 
-  server.tool(
+  server.registerTool(
     'tasks.update',
-    'Update an existing task. Status transitions are validated; forbidden fields are stripped.',
-    TaskUpdateSchema.shape,
+    {
+      description:
+        'Update an existing task. Status transitions are validated; forbidden fields are stripped.',
+      inputSchema: TaskUpdateSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -233,10 +246,13 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
       )
   )
 
-  server.tool(
+  server.registerTool(
     'tasks.cancel',
-    'Cancel a task. Runs through the terminal-status path so dependents are re-evaluated.',
-    TaskCancelSchema.shape,
+    {
+      description:
+        'Cancel a task. Runs through the terminal-status path so dependents are re-evaluated.',
+      inputSchema: TaskCancelSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {

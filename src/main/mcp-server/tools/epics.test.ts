@@ -13,7 +13,7 @@ function mockServer() {
   const handlers = new Map<string, ToolHandler>()
   return {
     server: {
-      tool: (name: string, _d: string, _s: unknown, h: ToolHandler) => {
+      registerTool: (name: string, _config: unknown, h: ToolHandler) => {
         handlers.set(name, h)
       }
     } as any,
