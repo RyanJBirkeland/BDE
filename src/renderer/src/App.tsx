@@ -203,8 +203,8 @@ function App(): React.JSX.Element {
   if (showOnboarding) {
     return (
       <OnboardingWizard
-        onComplete={() => {
-          window.api.settings.set('onboarding.completed', 'true')
+        onComplete={async () => {
+          await window.api.settings.set('onboarding.completed', 'true')
           window.location.reload()
         }}
       />
