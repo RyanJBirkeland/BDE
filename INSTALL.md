@@ -118,7 +118,7 @@ This is a native-module rebuild problem — usually only hit by developers runni
 
 ## What BDE does on first launch
 
-- Creates `~/.bde/` (SQLite DB, logs, OAuth token cache).
+- Creates `~/.bde/` (SQLite DB, logs, OAuth token cache, agent worktrees under `~/.bde/worktrees/`, MCP token at `~/.bde/mcp-token` when MCP server is enabled).
 - Runs readiness checks for Claude CLI, `git`, `gh`, and configured repositories.
 - Shows the onboarding wizard once; subsequent launches skip to the main UI.
 
@@ -130,7 +130,7 @@ All state is local. BDE does not send telemetry or phone home.
 
 ```bash
 rm -rf /Applications/BDE.app
-rm -rf ~/.bde         # deletes database, logs, and OAuth token cache
+rm -rf ~/.bde         # deletes database, logs, OAuth token cache, and agent worktrees
 ```
 
-That fully removes the app. If you had active git worktrees under `~/worktrees/bde/`, delete them separately.
+That fully removes the app. Agent worktrees live under `~/.bde/worktrees/` and are removed by the second command above.

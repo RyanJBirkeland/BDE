@@ -12,7 +12,7 @@ This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.m
 4. **Review** — Agents complete work and transition tasks to `review` status, preserving the worktree. Code Review Station provides diff inspection, commit history, and action buttons (merge locally, create PR, request revision, discard). Users review changes before integration
 5. **Complete** — Merged PRs or local merges mark tasks `done`. Dependency resolution automatically unblocks downstream tasks with satisfied dependencies
 
-**Supporting views:** Dashboard (aggregated metrics), IDE (Monaco editor + terminal), Source Control (git staging/commits/push), Settings (7 configuration tabs)
+**Supporting views:** Dashboard (aggregated metrics), IDE (Monaco editor + terminal), Source Control (git staging/commits/push), Settings (8 configuration tabs)
 
 ## Task System
 
@@ -65,19 +65,21 @@ Multi-task workflow planning view (Cmd+8). Organizes tasks into epics (task grou
 
 ### Agent Types
 
-BDE spawns five types of AI agents, each with different capabilities and contexts:
+BDE spawns six types of AI agents, each with different capabilities and contexts:
 
-| Type        | Spawned by           | Interactive      | Tool access      | Worktree       | Playground |
-| ----------- | -------------------- | ---------------- | ---------------- | -------------- | ---------- |
-| Pipeline    | Agent Manager (auto) | No               | Full             | Yes (isolated) | If enabled |
-| Adhoc       | User (Agents view)   | Yes (multi-turn) | Full             | No (repo dir)  | Always     |
-| Assistant   | User (Agents view)   | Yes (multi-turn) | Full             | No (repo dir)  | Always     |
-| Copilot     | Task Workbench       | Yes (chat)       | None (text-only) | No             | No         |
-| Synthesizer | Task Workbench       | No (single-turn) | None             | No             | No         |
+| Type        | Spawned by             | Interactive      | Tool access      | Worktree              | Playground |
+| ----------- | ---------------------- | ---------------- | ---------------- | --------------------- | ---------- |
+| Pipeline    | Agent Manager (auto)   | No               | Full             | Yes (isolated)        | If enabled |
+| Adhoc       | User (Agents view)     | Yes (multi-turn) | Full             | Yes (adhoc worktree)  | Always     |
+| Assistant   | User (Agents view)     | Yes (multi-turn) | Full             | No (repo dir)         | Always     |
+| Reviewer    | Code Review Station    | Configurable     | Read + comment   | Yes (review worktree) | No         |
+| Copilot     | Task Workbench         | Yes (chat)       | None (text-only) | No                    | No         |
+| Synthesizer | Task Workbench         | No (single-turn) | None             | No                    | No         |
 
 - **Pipeline**: Executes sprint tasks autonomously. Works in isolated git worktree. Commits changes and transitions to `review` status, preserving worktree for human inspection. Prompt includes task spec/prompt and branch name
-- **Adhoc**: User-spawned one-off tasks from the Agents view. Multi-turn sessions via SDK `query()` with session resumption (`resume: sessionId`). Works in repo directory directly
-- **Assistant**: Same as adhoc but with assistant role framing — answers questions, suggests approaches, recommends Dev Playground for visual/UI work
+- **Adhoc**: User-spawned one-off tasks from the Agents view. Multi-turn sessions via SDK `query()` with session resumption (`resume: sessionId`). Runs in a dedicated worktree under `~/.bde/worktrees-adhoc/` so user sessions don't mutate the main repo tree
+- **Assistant**: Same as adhoc but with assistant role framing — answers questions, suggests approaches, recommends Dev Playground for visual/UI work. Runs in the repo directory
+- **Reviewer**: Spawned from Code Review Station against a completed agent's worktree. Produces either a structured JSON review (via `buildStructuredReviewPrompt`) or an interactive conversation (via `buildInteractiveReviewPrompt`). Does not commit code
 - **Copilot**: Text-only spec drafting helper in Task Workbench. ~500 word limit. Cannot use tools, open URLs, or explore code. Helps users refine task specs through conversation
 - **Synthesizer**: Generates structured specs from codebase context + user answers. Receives file tree and relevant code snippets. Outputs markdown with `## heading` sections. Single-turn (`maxTurns: 1`)
 
@@ -86,13 +88,14 @@ Each agent type uses a specific `settingSources` value when spawning via the SDK
 | Agent type | `settingSources` | Rationale |
 |---|---|---|
 | Pipeline | `['user', 'local']` | `'project'` excluded — BDE conventions are injected via the composed prompt to avoid double-injecting CLAUDE.md |
-| Adhoc / Assistant | `[]` | Conventions injected via explicit prompt context |
+| Adhoc / Assistant / Reviewer | `[]` | Conventions injected via explicit prompt context |
 | Copilot / Synthesizer | `[]` | Conventions injected via explicit prompt context |
 
-Prompts are composed by `buildAgentPrompt()` in `src/main/agent-manager/prompt-composer.ts`.
+Prompts are composed by `buildAgentPrompt()` in `src/main/lib/prompt-composer.ts`. Reviewer prompts have dedicated builders in `src/main/agent-manager/prompt-composer-reviewer.ts`.
 
-- **Bundled conventions**: Core conventions (IPC patterns, testing rules, architecture) are bundled in source code (`src/main/agent-system/memory/`) — they do NOT require CLAUDE.md to exist at spawn time.
+- **Universal preamble**: Cross-cutting rules (commit format, pre-commit checks, branch hygiene) are injected via the universal preamble in the prompt composer. No CLAUDE.md is required at spawn time.
 - **User memory portability**: User memory (`~/.bde/memory/`) is per-machine and is not synced across machines. On a new machine, agents will not have access to memory files created on the original machine.
+- **Codebase conventions**: As of the Option A debranding decision, BDE-specific codebase conventions (IPC patterns, Zustand rules, testing standards) are no longer injected as memory modules. Agents pick them up from `CLAUDE.md` when it is present in the repo.
 
 ### Agent Manager
 
@@ -227,19 +230,18 @@ Flexible split-pane layout system for arranging views side-by-side with drag-and
 
 ### Settings
 
-Application configuration organized into 7 tabs. Most settings persisted to SQLite `settings` table.
+Application configuration organized into 8 tabs. Most settings persisted to SQLite `settings` table.
 
-- **Connections**: GitHub token configuration, Claude API auth status, token refresh
+- **Connections**: GitHub token, Claude auth status, Local MCP Server toggle + token reveal
 - **Repositories**: Add/remove repos with `name`, `localPath`, `githubOwner`, `githubRepo`
 - **Templates**: Task templates for common patterns
-- **Agent**: SDK model selection, API key display
-- **Agent Manager**: Max concurrent agents, worktree base path, max runtime per task. Changes require app restart
-- **Cost**: Anthropic API billing information and cost tracking
-- **Memory**: Local caching statistics
-- **Appearance**: Theme toggle (dark/light), motion preferences
-- **About**: Version info, log file locations, GitHub link
+- **Agents**: Agent Manager config (max concurrent agents, worktree base path, max runtime per task — changes require app restart)
+- **Models**: Per-agent-type model selection (pipeline, synthesizer, copilot, assistant, adhoc, reviewer). Resolved at spawn via `resolveAgentRuntime()` in `src/main/agent-manager/backend-selector.ts`
+- **Memory**: Local memory stats and configuration
+- **Appearance & Shortcuts**: Theme toggle (dark/light), motion preferences, keyboard shortcut customization
+- **About & Usage**: Version info, log file locations, API usage summary, GitHub link
 - **Keyboard navigation**: Arrow Left/Right, Home/End to cycle tabs
-- Related: Agent Manager
+- Related: Agent Manager, Local MCP Server
 
 ## Packaging
 

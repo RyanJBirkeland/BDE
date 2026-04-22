@@ -1,5 +1,7 @@
 # Epic: Testing & QA (TQ)
 
+> **Status: COMPLETE (verified 2026-04-21).** All 8 TQ stories landed: vitest config fixed, config/fs/IPC/terminal/sprint/renderer coverage gaps closed, e2e infrastructure stood up (`e2e/` now holds 13 Playwright specs). Coverage thresholds in `vitest.config.ts` (72/65/73.5/73) exceed the original 60% target by a wide margin. Retained for historical reference.
+
 **Date:** 2026-03-16
 **Owner:** QA Engineering
 **Goal:** Raise test coverage from ~47% file coverage (32 of 103 source files) to >80%, fix broken test infrastructure, and establish E2E testing for the 5 most critical user flows.
@@ -8,7 +10,7 @@
 
 ## Context
 
-The engineering audit (`docs/audit-engineering-report.md` §5) and testing audit (`docs/audit-testing.md`) identified severe coverage gaps:
+The engineering audit (`docs/audits/2026-03-16-engineering-report.md` §5) and testing audit (`docs/audits/2026-03-16-testing.md`) identified severe coverage gaps:
 
 - **Main process: 3 of 9 files tested** (git.ts, agent-history.ts, db.ts). Zero handler files tested. `local-agents.ts` (316 LOC, process spawning + lifecycle) and `config.ts` (90 LOC, auth config) are completely uncovered.
 - **IPC handlers: 0 of 8 handler files tested.** All IPC wiring — agent spawn, git operations, terminal PTY, gateway proxy, filesystem — ships without a single assertion.

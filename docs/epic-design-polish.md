@@ -1,5 +1,7 @@
 # Epic: Design Polish (DP)
 
+> **Status: MOSTLY COMPLETE (verified 2026-04-21).** DP-S1 (token unification), DP-S2–S4 (glass morphism, aurora headers, terminal CSS migration), and DP-S5 (hardcoded color purge) have shipped. DP-S6/S7/S8 (loading/empty states, motion system, interactive state audit) are unclear — several referenced views no longer exist. Retained for historical reference; treat the epic as substantively done and close out remaining stories case-by-case.
+
 **Date:** 2026-03-16
 **Owner:** UI/UX Engineering
 **Goal:** Eliminate every visual inconsistency, missing glass treatment, broken empty state, and orphaned token reference so BDE looks like a single designer built every pixel in the same weekend.
@@ -8,7 +10,7 @@
 
 ## Context
 
-The audit report (`docs/audit-design-report.md`) identified two parallel CSS variable systems, uneven glass morphism adoption, an entirely inline-styled Terminal view, hardcoded hex colors scattered through TSX, inconsistent view headers, missing loading states, and an unused motion system. This epic addresses the visual debt across 8 focused stories.
+The audit report (`docs/audits/2026-03-16-design-report.md`) identified two parallel CSS variable systems, uneven glass morphism adoption, an entirely inline-styled Terminal view, hardcoded hex colors scattered through TSX, inconsistent view headers, missing loading states, and an unused motion system. This epic addresses the visual debt across 8 focused stories.
 
 ## Audit Summary
 

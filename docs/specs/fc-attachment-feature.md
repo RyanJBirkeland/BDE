@@ -1,5 +1,7 @@
 # Feature Spec: File & Image Attachments in Chat
 
+> **Status: PARTIAL (verified 2026-04-21). Attachment handlers (`fs:readFileAsBase64`, `fs:readFileAsText`) exist in `src/main/fs.ts`. The MessageInput component is gone — attachments are now wired through AgentConsole. Re-verify UX flow before treating as fully shipped.**
+
 **Date:** 2026-03-16
 **Requested by:** Ryan
 **Area:** SessionsView → ChatPane / MessageInput

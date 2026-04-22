@@ -1,6 +1,8 @@
 # BDE Architecture
 
-**Last updated:** 2026-03-19
+**Last updated:** 2026-04-21
+
+This doc is a **bird's-eye overview**. It describes how BDE's pieces fit together and links into the authoritative per-module reference under [`docs/modules/`](modules/README.md). Per the pre-commit rule in `CLAUDE.md`, each source file has a matching row in its layer's `index.md` — treat those as ground truth for specifics (types, exports, conventions). If the overview here ever disagrees with `docs/modules/`, the module doc wins.
 
 ---
 
@@ -9,313 +11,180 @@
 BDE is an Electron desktop app with three process layers:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          ELECTRON APP                               │
-│                                                                     │
-│  ┌───────────────────────────────────────────────────────────┐     │
-│  │  MAIN PROCESS (Node.js)                                   │     │
-│  │                                                           │     │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐│     │
-│  │  │ db.ts    │  │ git.ts   │  │ local-   │  │ handlers/││     │
-│  │  │ SQLite   │  │ Git CLI  │  │ agents.ts│  │ 10 mods  ││     │
-│  │  │ WAL mode │  │ ops      │  │ spawn +  │  │ IPC      ││     │
-│  │  └──────────┘  └──────────┘  │ detect   │  └──────────┘│     │
-│  │                               └──────────┘               │     │
-│  │  fs.watch(bde.db) ──push──▶ 'sprint:externalChange'     │     │
-│  └────────────────────────────┬──────────────────────────────┘     │
-│                               │ IPC (invoke/handle)                 │
-│  ┌────────────────────────────┼──────────────────────────────┐     │
-│  │  PRELOAD BRIDGE            │                               │     │
-│  │  window.api.*              ▼   contextBridge               │     │
-│  └────────────────────────────┬──────────────────────────────┘     │
-│                               │                                     │
-│  ┌────────────────────────────┼──────────────────────────────┐     │
-│  │  RENDERER (React + Zustand)│                               │     │
-│  │                            ▼                               │     │
-│  │  ┌────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐│     │
-│  │  │ Views  │ │ Stores   │ │ gateway  │ │ design-system  ││     │
-│  │  │ (7)    │ │ (Zustand)│ │ WebSocket│ │ tokens + CSS   ││     │
-│  │  └────────┘ └──────────┘ └──────────┘ └────────────────┘│     │
-│  └───────────────────────────────────────────────────────────┘     │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-        │                                                 │
-        │ WebSocket (port 18789)                          │ GitHub REST API
-        ▼                                                 ▼
-   OpenClaw Gateway                                 api.github.com
-   (optional)
+┌──────────────────────────────────────────────────────────────────────┐
+│                             ELECTRON APP                             │
+│                                                                      │
+│  MAIN PROCESS (Node.js)                                              │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │ agent-manager/  data/  handlers/  services/  mcp-server/  lib/ │  │
+│  │    db.ts (SQLite WAL)    migrations/    logger.ts              │  │
+│  │    auth-guard.ts    fs.watch(bde.db) → sprint:externalChange   │  │
+│  │    status-server :18791 (always)    mcp-server :18792 (opt-in) │  │
+│  └──────────────────────────┬─────────────────────────────────────┘  │
+│                             │ IPC (safeHandle + typed channel map)   │
+│  PRELOAD BRIDGE             │                                        │
+│  ┌──────────────────────────▼─────────────────────────────────────┐  │
+│  │ src/preload/index.ts  — contextBridge → window.api             │  │
+│  └──────────────────────────┬─────────────────────────────────────┘  │
+│                             │                                        │
+│  RENDERER (React + Zustand) │                                        │
+│  ┌──────────────────────────▼─────────────────────────────────────┐  │
+│  │ views/  stores/  components/  hooks/  lib/                     │  │
+│  │ Panel system (split + dockable + tear-off windows)             │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────┘
+        │                                                  │
+        │ Anthropic API (Claude Agent SDK)                 │ GitHub API (PRs, pushes)
+        ▼                                                  ▼
+   api.anthropic.com                                  api.github.com
 ```
+
+Every user-facing feature lives in one of the three processes and crosses boundaries only through the typed IPC channel map (`src/shared/ipc-channels/`). The main process owns all persistent state and all outbound network access. The renderer is pure UI.
 
 ---
 
-## Electron IPC Layer
+## Where to look for detail
 
-### Handler Modules (Main Process)
-
-All handlers use the `safeHandle()` wrapper (`src/main/ipc-utils.ts`) for centralized error logging.
-
-| Module           | File                                 | Channels                                                                                                                                                                                                                                                |
-| ---------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Config           | `handlers/config-handlers.ts`        | `settings:get`, `settings:set`, `settings:getJson`, `settings:setJson`, `settings:delete`                                                                                                                                                               |
-| Agent            | `handlers/agent-handlers.ts`         | `local:getAgentProcesses`, `local:spawnClaudeAgent`, `local:tailAgentLog`, `local:sendToAgent`, `local:isInteractive`, `agent:steer`, `agent:kill`, `config:getAgentConfig`, `config:saveAgentConfig`, `agents:list`, `agents:readLog`, `agents:import` |
-| Agent Manager    | `handlers/agent-manager-handlers.ts` | `agent-manager:status`, `agent-manager:kill`                                                                                                                                                                                                            |
-| Auth             | `handlers/auth-handlers.ts`          | `auth:checkStatus`                                                                                                                                                                                                                                      |
-| Git              | `handlers/git-handlers.ts`           | `github:fetch`, `git:getRepoPaths`, `git:status`, `git:diff`, `git:stage`, `git:unstage`, `git:commit`, `git:push`, `git:branches`, `git:checkout`, `pr:pollStatuses`, `pr:checkConflictFiles`, `pr:getList`, `pr:refreshList`                          |
-| Sprint           | `handlers/sprint-local.ts`           | `sprint:list`, `sprint:create`, `sprint:update`, `sprint:delete`, `sprint:claimTask`, `sprint:healthCheck`, `sprint:readLog`                                                                                                                            |
-| Sprint Listeners | `handlers/sprint-listeners.ts`       | DB file watcher, mutation observer                                                                                                                                                                                                                      |
-| Sprint Spec      | `handlers/sprint-spec.ts`            | `sprint:readSpecFile`, `sprint:generatePrompt`                                                                                                                                                                                                          |
-| Templates        | `handlers/template-handlers.ts`      | `templates:list`, `templates:save`, `templates:delete`, `templates:reset`                                                                                                                                                                               |
-| Terminal         | `handlers/terminal-handlers.ts`      | `terminal:create`, `terminal:resize`, `terminal:kill`, `terminal:write` (fire-and-forget)                                                                                                                                                               |
-| Window           | `handlers/window-handlers.ts`        | `window:openExternal`, `agent:killLocal`, `window:setTitle` (fire-and-forget)                                                                                                                                                                           |
-| Cost             | `handlers/cost-handlers.ts`          | `cost:summary`, `cost:agentRuns`, `cost:getAgentHistory`                                                                                                                                                                                                |
-| Workbench        | `handlers/workbench.ts`              | `workbench:researchRepo`, `workbench:generateSpec`, `workbench:checkSpec`, `workbench:checkOperational`, `workbench:chat`                                                                                                                               |
-| Filesystem       | `fs.ts`                              | `memory:listFiles`, `memory:readFile`, `memory:writeFile`, `fs:openFileDialog`, `fs:readFileAsBase64`, `fs:readFileAsText`, `fs:openDirectoryDialog`                                                                                                    |
-
-### Preload Bridge
-
-`src/preload/index.ts` exposes `window.api` via `contextBridge`. The typed IPC channel map at `src/shared/ipc-channels.ts` provides compile-time type safety for a subset of channels (expansion tracked as AX-S1).
-
-### Push Events (Main → Renderer)
-
-| Event                   | Trigger                                                | Purpose                               |
-| ----------------------- | ------------------------------------------------------ | ------------------------------------- |
-| `sprint:externalChange` | `fs.watch()` on `~/.bde/bde.db` + WAL (500ms debounce) | Notify renderer of external DB writes |
-| `terminal:data:{id}`    | PTY stdout                                             | Stream terminal output to renderer    |
-| `terminal:exit:{id}`    | PTY process exit                                       | Notify terminal tab of process end    |
-| `pr:listUpdated`        | PR poller (60s interval)                               | Push updated PR list to renderer      |
-
----
-
-## SQLite Database
-
-**Path:** `~/.bde/bde.db`
-**Engine:** better-sqlite3 (synchronous, WAL mode)
-**Module:** `src/main/db.ts`
-
-### Schema
-
-```sql
-PRAGMA journal_mode = WAL;
-PRAGMA foreign_keys = ON;
-
-CREATE TABLE sprint_tasks (
-  id                TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-  title             TEXT NOT NULL,
-  prompt            TEXT NOT NULL DEFAULT '',
-  repo              TEXT NOT NULL DEFAULT 'bde',
-  status            TEXT NOT NULL DEFAULT 'backlog'
-                      CHECK(status IN ('backlog','queued','active','done','cancelled','failed')),
-  priority          INTEGER NOT NULL DEFAULT 1,
-  spec              TEXT,
-  notes             TEXT,
-  pr_url            TEXT,
-  pr_number         INTEGER,
-  pr_status         TEXT CHECK(pr_status IS NULL OR pr_status IN ('open','merged','closed','draft')),
-  pr_mergeable_state TEXT,
-  agent_run_id      TEXT REFERENCES agent_runs(id),
-  claimed_by        TEXT,
-  template_name     TEXT,
-  started_at        TEXT,
-  completed_at      TEXT,
-  created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
-  updated_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-);
-
-CREATE TABLE agent_runs (
-  id           TEXT PRIMARY KEY,
-  pid          INTEGER,
-  bin          TEXT NOT NULL DEFAULT 'claude',
-  task         TEXT,
-  repo         TEXT,
-  repo_path    TEXT,
-  model        TEXT,
-  status       TEXT NOT NULL DEFAULT 'running'
-                 CHECK(status IN ('running','done','failed','unknown')),
-  log_path     TEXT,
-  started_at   TEXT NOT NULL,
-  finished_at  TEXT,
-  exit_code    INTEGER,
-  cost_usd     REAL,
-  tokens_in    INTEGER,
-  tokens_out   INTEGER,
-  cache_read   INTEGER,
-  cache_create INTEGER,
-  duration_ms  INTEGER,
-  num_turns    INTEGER,
-  source       TEXT NOT NULL DEFAULT 'bde'
-);
-
-CREATE TABLE cost_events (
-  id            TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-  source        TEXT NOT NULL,
-  session_key   TEXT,
-  model         TEXT NOT NULL,
-  total_tokens  INTEGER NOT NULL DEFAULT 0,
-  cost_usd      REAL,
-  recorded_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-);
-
-CREATE TABLE settings (
-  key          TEXT PRIMARY KEY,
-  value        TEXT NOT NULL,
-  updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-);
-```
-
-### Indexes
-
-- `idx_sprint_tasks_status` on `sprint_tasks(status)` — status filtering
-- `idx_agent_runs_pid` on `agent_runs(pid)` — process lookup
-- `idx_agent_runs_status` on `agent_runs(status)` — status filtering
-- `idx_agent_runs_finished` on `agent_runs(finished_at, started_at DESC)` — history queries
-
-### Triggers
-
-- `sprint_tasks_updated_at` — auto-updates `updated_at` on every `sprint_tasks` row change
-
----
-
-## Agent Spawning Flow
-
-```
-User clicks "Launch" on a queued task
-  │
-  ├─ SprintCenter sets task status → 'active'
-  │
-  ├─ Calls window.api.spawnLocalAgent({ repoPath, task, model })
-  │     │
-  │     └─ IPC → main process → local-agents.ts:spawnClaudeAgent()
-  │           │
-  │           ├─ Creates agent_runs record in SQLite (status: 'running')
-  │           │
-  │           ├─ spawn('claude', [
-  │           │    '--output-format', 'stream-json',
-  │           │    '--input-format', 'stream-json',
-  │           │    '--model', modelFlag,
-  │           │    '--permission-mode', 'bypassPermissions'
-  │           │  ], { cwd: repoPath, detached: true })
-  │           │
-  │           ├─ Writes initial task as user message via stdin
-  │           │
-  │           ├─ Streams stdout/stderr → appendAgentLog() → disk
-  │           │
-  │           └─ On exit:
-  │                 ├─ exit 0 → agent_runs.status = 'done'
-  │                 └─ exit N → agent_runs.status = 'failed'
-  │
-  └─ Renderer polls log via tailAgentLog(logPath, fromByte)
-       └─ Incremental byte-offset reads (1s interval)
-```
-
-Agent logs stored at: `/tmp/bde-agents/{agentId}/output.log` (7-day auto-cleanup)
-
-### Agent Steering
-
-Running agents accept follow-up messages via stdin (stream-json protocol):
-
-- `sendToAgent(pid, message)` — by PID (for process-list agents)
-- `steerAgent(agentId, message)` — by UUID (for sprint LogDrawer)
-
-### Agent Process Detection
-
-`getAgentProcesses()` scans for known AI CLI binaries (`claude`, `codex`, `opencode`, `pi`, `aider`, `cursor`) via `ps -eo` and resolves CWDs via `lsof`. Polled every 5s from the renderer.
-
-Stale agent reconciliation runs every 30s: if a `running` agent_run has no matching live PID, it's marked `unknown`.
-
----
-
-## PR Status Polling (pollPrStatuses)
-
-**Module:** `src/main/git.ts`
-**Interval:** 60s (`POLL_PR_STATUS_MS`)
-**Protocol:** GitHub REST API (`GET /repos/{owner}/{repo}/pulls/{number}`)
-**Auth:** Bearer token from settings (`github.token`)
-
-### Flow
-
-```
-PR Station (renderer)
-  │
-  ├─ Every 60s: collect tasks with pr_url where not yet merged
-  │
-  ├─ IPC → pr:pollStatuses → git.ts:pollPrStatuses()
-  │     │
-  │     ├─ For each PR: fetch GitHub REST API
-  │     │
-  │     ├─ If merged → markTaskDoneByPrNumber(prNumber)
-  │     │     └─ UPDATE sprint_tasks SET status='done' WHERE pr_number=? AND status='active'
-  │     │
-  │     └─ If closed (not merged) → markTaskCancelledByPrNumber(prNumber)
-  │           └─ UPDATE sprint_tasks SET status='cancelled' WHERE pr_number=? AND status='active'
-  │
-  └─ Returns results to renderer for UI update
-```
+| You want to know about…          | Go to                                                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| Agent orchestration + lifecycle  | [`docs/modules/agent-manager/index.md`](modules/agent-manager/index.md)            |
+| Native agent personalities/skills | [`docs/agent-system-guide.md`](agent-system-guide.md)                              |
+| IPC handlers + channels          | [`docs/modules/handlers/index.md`](modules/handlers/index.md)                      |
+| Repository pattern + queries     | [`docs/modules/data/index.md`](modules/data/index.md)                              |
+| Business services                | [`docs/modules/services/index.md`](modules/services/index.md)                      |
+| Shared types, validators, IPC    | [`docs/modules/shared/index.md`](modules/shared/index.md)                          |
+| Main-process utilities           | [`docs/modules/lib/main/index.md`](modules/lib/main/index.md)                      |
+| Renderer views                   | [`docs/modules/views/index.md`](modules/views/index.md)                            |
+| Zustand stores                   | [`docs/modules/stores/index.md`](modules/stores/index.md)                          |
+| React hooks                      | [`docs/modules/hooks/index.md`](modules/hooks/index.md)                            |
+| UI components                    | [`docs/modules/components/index.md`](modules/components/index.md)                  |
+| Renderer utilities               | [`docs/modules/lib/renderer/index.md`](modules/lib/renderer/index.md)              |
+| Local MCP server                 | [`docs/modules/mcp-server/`](modules/mcp-server/)                                  |
+| Feature reference (user-facing)  | [`docs/BDE_FEATURES.md`](BDE_FEATURES.md)                                          |
+| Security posture + loopback surface | [`docs/security-posture.md`](security-posture.md)                               |
+| Architecture decisions           | [`docs/architecture-decisions/`](architecture-decisions/)                          |
 
 ---
 
 ## Task Lifecycle
 
+Every piece of work in BDE flows through the same state machine (`src/shared/task-state-machine.ts`):
+
 ```
-backlog ──→ queued ──→ active ──→ done
-                           ├──→ cancelled
-                           └──→ failed
+                 ┌───────────┐
+                 │  backlog  │  draft spec in Task Workbench
+                 └─────┬─────┘
+                       │ user queues
+                       ▼
+        ┌────────►┌───────────┐
+        │         │  queued   │  waiting for Agent Manager
+        │         └─────┬─────┘
+        │               │ drain loop claims
+        │               ▼
+ hard-dep        ┌───────────┐
+ satisfied       │  active   │  Claude Code session running in worktree
+        ▲         └─────┬─────┘
+        │               │ completion
+        │               ▼
+ ┌───────────┐    ┌───────────┐
+ │  blocked  │    │  review   │  worktree preserved; human decides
+ └───────────┘    └─────┬─────┘
+        ▲               │
+        │               ├─ merge locally → ┐
+        │               ├─ create PR ──────┤
+        │               ├─ request revise ─┤ (→ back to queued)
+        │               └─ discard ────────┤
+        │                                   ▼
+        │                          ┌────────────────┐
+        │                          │ done│cancelled│
+        │                          │  failed │ error │
+        │                          └────────────────┘
+        └─ auto-blocked at creation when unsatisfied hard deps present
 ```
 
-| State       | Meaning                      | Entered By                                               |
-| ----------- | ---------------------------- | -------------------------------------------------------- |
-| `backlog`   | Draft idea, spec in progress | User creates ticket via New Ticket modal                 |
-| `queued`    | Ready for agent pickup       | User drags to Sprint column or clicks "Push to Sprint"   |
-| `active`    | Agent working on task        | Agent Manager claims queued task and spawns Claude agent |
-| `done`      | PR merged                    | `pollPrStatuses` detects merge via GitHub API            |
-| `cancelled` | PR closed without merge      | `pollPrStatuses` detects close via GitHub API            |
-| `failed`    | Agent exited with error      | Agent process exits non-zero                             |
+The `TaskStatus` union has 9 members: `backlog`, `queued`, `blocked`, `active`, `review`, `done`, `cancelled`, `failed`, `error`. Transitions are enforced by `isValidTransition()` at the data layer inside `updateTask()`. The review gate between `active` and `done` is Code Review Station — no agent pushes directly to main. For dependency semantics (hard vs. soft, cycle detection, auto-resolution on completion) see the agent-manager and services indexes.
 
 ---
 
-## Real-time Updates
+## Persistence
 
-BDE uses multiple mechanisms for real-time data flow:
-
-1. **File watcher** — `fs.watch()` on `~/.bde/bde.db` and WAL file, debounced at 500ms, pushes `sprint:externalChange` IPC event for external DB writes.
-2. **Adaptive polling** — sprint data refreshes every 120s (idle) or 30s (active tasks).
-
----
-
-## Polling Intervals
-
-All intervals defined in `src/renderer/src/lib/constants.ts`:
-
-| Constant                   | Interval | Purpose                               |
-| -------------------------- | -------- | ------------------------------------- |
-| `POLL_LOG_INTERVAL`        | 1s       | Agent log tailing                     |
-| `POLL_PROCESSES_INTERVAL`  | 5s       | Agent process scan (ps + lsof)        |
-| `POLL_AGENTS_INTERVAL`     | 10s      | Agent history list refresh            |
-| `POLL_SESSIONS_INTERVAL`   | 10s      | Gateway session list                  |
-| `POLL_GIT_STATUS_INTERVAL` | 30s      | Git status in PR Station              |
-| `POLL_SPRINT_INTERVAL`     | 120s     | Sprint task list (idle)               |
-| `POLL_SPRINT_ACTIVE_MS`    | 30s      | Sprint task list (active tasks)       |
-| `POLL_PR_STATUS_MS`        | 60s      | PR merge/close status via GitHub REST |
-| `POLL_COST_INTERVAL`       | 30s      | Cost view data refresh                |
-| `POLL_HEALTH_CHECK_MS`     | 600s     | Sprint health check                   |
-| `POLL_CHAT_STREAMING_MS`   | 1s       | Chat history (streaming)              |
-| `POLL_CHAT_IDLE_MS`        | 5s       | Chat history (idle)                   |
-
-PR list polling runs at 60s from `src/main/pr-poller.ts` (main-process poller, not renderer-driven).
+- **Database:** `~/.bde/bde.db` — better-sqlite3, WAL mode, `foreign_keys = ON`. Schema is defined in `src/main/db.ts`; migrations are individual files under `src/main/migrations/v001-*.ts` through `vNNN-*.ts` (52+ so far), loaded by `migrations/loader.ts` in order. `PRAGMA user_version` is the authoritative migration pointer — don't trust any version number in docs.
+- **Backup:** `VACUUM INTO bde.db.backup` runs on startup and every 24 hours.
+- **File watcher:** `fs.watch()` on `bde.db` and the WAL file debounces external writes and pushes `sprint:externalChange` to the renderer (500 ms). This lets external mutators (the MCP server, direct SQL, other BDE windows) stay in sync with UI state.
+- **Audit trail:** every field-level mutation on `sprint_tasks` via `updateTask()` writes a row to `task_changes` with `changed_by` attribution (IPC caller, MCP caller, etc.). `ISprintTaskRepository` is the single write path for agent-manager code.
+- **Boundary validators:** raw JSON columns (`depends_on`, webhook events, agent history, task-group depends_on) all have matching sanitizers/validators that run on row-read. See [`docs/modules/shared/index.md`](modules/shared/index.md) and the T-series entries in [`docs/modules/data/index.md`](modules/data/index.md).
+- **User state files:** `~/.bde/oauth-token` (Claude), `~/.bde/mcp-token` (MCP, when enabled), `~/.bde/bde.log` (authoritative log; rotated at 10 MB), `~/.bde/worktrees/<repo-slug>/<task-id>/` (pipeline agents), `~/.bde/worktrees-adhoc/` (user-spawned adhoc agents), `~/.bde/agent-logs/` (per-agent output), `~/.bde/memory/` (user memory).
 
 ---
 
-## External Dependencies
+## Main-process background services
 
-| Dependency                  | Purpose                                 | Where Used                                              |
-| --------------------------- | --------------------------------------- | ------------------------------------------------------- |
-| OpenClaw Gateway (optional) | AI agent sessions, tool invocation, RPC | WebSocket on port 18789                                 |
-| GitHub REST API             | PR status polling, PR list              | `git.ts`, `pr-poller.ts`, `git-handlers.ts`             |
-| Claude CLI                  | Agent execution                         | `local-agents.ts:spawnClaudeAgent()`                    |
-| better-sqlite3              | Local database                          | `db.ts`, `agent-history.ts`, `handlers/sprint-local.ts` |
-| node-pty                    | Terminal PTY management                 | `handlers/terminal-handlers.ts`                         |
+These run without any renderer interaction:
+
+| Service                | File                                        | Purpose                                                             |
+| ---------------------- | ------------------------------------------- | ------------------------------------------------------------------- |
+| Agent Manager drain loop | `src/main/agent-manager/index.ts`         | Claims queued tasks, spawns pipeline agents, enforces WIP + watchdog |
+| Sprint PR poller       | `src/main/sprint-pr-poller.ts`              | Every 60 s: marks tasks `done`/`cancelled` when PRs merge/close     |
+| PR poller              | `src/main/pr-poller.ts`                     | Every 60 s: fetches check runs across all configured repos; pushes `pr:listUpdated` |
+| Status HTTP server     | `src/main/services/status-server.ts`        | Loopback `:18791` read-only `/status` endpoint                      |
+| Local MCP server (opt-in) | `src/main/mcp-server/`                    | Loopback `:18792` MCP Streamable HTTP with bearer-token auth        |
+| DB backup + watcher    | `src/main/db.ts`, watcher wired in `index.ts` | WAL-mode backup on start + every 24h; fs.watch pushes `sprint:externalChange` |
+| Auth guard             | `src/main/auth-guard.ts`                    | Validates Claude token (falls back to `~/.bde/oauth-token` if Keychain is empty) |
+
+Every service uses `createLogger(name)` from `src/main/logger.ts` — no raw `console.*` in new main-process code.
 
 ---
 
-## Repository Map
+## Cross-process communication
 
-Repos are configured via the `repos` JSON setting in SQLite (`settings` table), not hardcoded. Each entry has `name`, `localPath`, `githubOwner`, `githubRepo`. Configure in Settings UI or via `settings:setJson`.
+- **IPC handlers** live in `src/main/handlers/`. All handlers use `safeHandle()` for error logging; channels that accept user-controlled JSON pass an optional `parseArgs` validator so payloads are type-checked at runtime. The full handler catalogue is [`docs/modules/handlers/index.md`](modules/handlers/index.md).
+- **Typed channel map** is split across domain modules in `src/shared/ipc-channels/` (agents, sprint, workbench, review, git, settings, etc.) and re-exported via an `ipc-channels.ts` compatibility shim. The preload bridge (`src/preload/index.ts`) exposes this surface as `window.api.*`.
+- **Push events** (main → renderer, all via `webContents.send`):
+  - `sprint:externalChange` — SQLite file watcher (500 ms debounce).
+  - `pr:listUpdated` — PR poller (60 s).
+  - `agent:event` — streamed SDK events (tool use, output, errors); batched via `agent-event-mapper.ts` and persisted to `agent_events`.
+  - `agent:playground` — when an agent writes an HTML file in a playground-enabled task.
+  - `terminal:data:{id}` / `terminal:exit:{id}` — PTY streams for terminal tabs.
+  - Use `onBroadcast<T>()` in `preload/index.ts` when adding new event channels — don't roll your own subscription wiring.
+
+---
+
+## Agent runtime
+
+Pipeline and adhoc agents are Claude Code sessions spawned via `@anthropic-ai/claude-agent-sdk`. The spawn path is `src/main/agent-manager/sdk-adapter.ts` (with a CLI fallback). Per-agent-type model selection lives in `src/main/agent-manager/backend-selector.ts` (`resolveAgentRuntime()`) and is configured via Settings → Models.
+
+Prompt composition is centralised in `src/main/lib/prompt-composer.ts` — all spawn paths must call `buildAgentPrompt()` rather than assemble prompts inline. Per-agent builders and the universal preamble live alongside under `src/main/agent-manager/prompt-*.ts`. User-controlled content is wrapped in XML boundary tags (`<user_spec>`, `<upstream_spec>`, `<failure_notes>`, …) to prevent prompt injection — follow the same pattern when adding new interpolation sites.
+
+Agent types and their behaviours (pipeline, adhoc, assistant, reviewer, copilot, synthesizer) are catalogued in [`docs/BDE_FEATURES.md`](BDE_FEATURES.md) and the agent-system architecture is in [`docs/agent-system-guide.md`](agent-system-guide.md).
+
+---
+
+## Renderer architecture
+
+- **Panel system**: `src/renderer/src/stores/panelLayout.ts` holds a recursive `PanelNode` tree (leaf/split). Views render inside panels; drag-and-drop uses 5-zone docking. Tear-off windows have independent layouts (`persistable: false`).
+- **View registry**: `src/renderer/src/lib/view-registry.ts` is the single source of truth for view metadata (label, icon, shortcut). `VIEW_LABELS`, `VIEW_ICONS`, `VIEW_SHORTCUTS`, and `VIEW_SHORTCUT_MAP` are derived re-exports — add new views in the registry, not in `panelLayout.ts` or `App.tsx`.
+- **State**: Zustand, one store per domain concern. Sprint UI state is split across focused stores (`sprintUI`, `sprintSelection`, `sprintFilters`) rather than one god-store. Optimistic updates track fields (not just task IDs) with a 2 s TTL and full reload on failure.
+- **Polling**: use `useBackoffInterval` in `src/renderer/src/hooks/` — jitter + exponential backoff on errors. All raw intervals live in `src/renderer/src/lib/constants.ts`; never scatter magic numbers.
+- **Design tokens**: `src/renderer/src/assets/tokens.css` (unified v2 set) + neon layer (`neon.css`, `neon-shell.css`, `agents-neon.css`). No hardcoded hex; no duplicate tokens.
+
+---
+
+## External dependencies
+
+| Dependency                           | Purpose                                 | Touch point                                                              |
+| ------------------------------------ | --------------------------------------- | ------------------------------------------------------------------------ |
+| `@anthropic-ai/claude-agent-sdk`     | Agent execution (Claude Code sessions)  | `agent-manager/sdk-adapter.ts`, `sdk-streaming.ts`                       |
+| `better-sqlite3`                     | Local database                          | `db.ts`, `data/**`, `handlers/sprint-local.ts`                           |
+| `node-pty`                           | Terminal PTY management                 | `handlers/terminal-handlers.ts`                                          |
+| `electron`                           | Desktop app framework                   | Main/preload/renderer entry points                                       |
+| `electron-vite`                      | Build pipeline                          | `electron.vite.config.ts`                                                |
+| GitHub REST API (`fetch` + `gh` CLI) | PR polling, PR list, push + open-PR ops | `git.ts`, `pr-poller.ts`, `sprint-pr-poller.ts`, `git-handlers.ts`       |
+| Anthropic API                        | Agent SDK backbone                      | Agent SDK internals (not called directly)                                |
+
+See [`docs/network-requirements.md`](network-requirements.md) for the minimum egress hosts needed in restricted network environments.
+
+---
+
+## Historical reference
+
+The previous long-form architecture doc (2026-03-19) has been superseded by the per-module references above. Historical snapshots of this doc live in git history — use `git log docs/architecture.md` if you need to recover an older version.

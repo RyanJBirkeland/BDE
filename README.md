@@ -123,7 +123,7 @@ sequenceDiagram
     participant CR as Code Review
 
     AM->>AM: Drain loop detects queued task
-    AM->>WT: Create isolated worktree<br/>~/worktrees/bde/agent/<task-slug>
+    AM->>WT: Create isolated worktree<br/>~/.bde/worktrees/<repo-slug>/<task-id>
     AM->>CC: Spawn Claude Code with task spec +<br/>CLAUDE.md project context
 
     loop Claude Code works autonomously
@@ -196,6 +196,10 @@ Monaco editor with file explorer, multi-tab interface, and integrated terminal. 
 
 Git staging, committing, and pushing across multiple repos. Inline diff previews, branch selection, and error handling with retry.
 
+### Local MCP Server (opt-in)
+
+Expose BDE's task and epic CRUD to external MCP-speaking agents (Claude Code, Claude Desktop, Cursor). Runs inside the Electron main process on `127.0.0.1:18792` with a bearer token at `~/.bde/mcp-token`. Enable via Settings → Connections → Local MCP Server. All mutations route through the same services the UI uses — validation, auto-blocking, status transitions, audit trail, and broadcasts are preserved.
+
 ### Cost Tracking — Know What Your Agents Cost
 
 Every Claude Code session's token usage and cost are logged to `cost_events`. The Dashboard surfaces per-run, hourly, and daily spend trends so you can spot expensive tasks, compare models, and catch runaway loops before the bill does. No external billing integration needed — the data comes straight from SDK usage events.
@@ -228,13 +232,13 @@ graph TB
         subgraph Main["Main Process"]
             AM[Agent Manager]
             DB[(SQLite<br/>WAL mode)]
-            IPC[IPC Handlers<br/>144 typed channels]
+            IPC[IPC Handlers<br/>~138 typed channels]
             PRP[PR Poller]
             TTS[Task Terminal<br/>Service]
         end
 
         subgraph Renderer["Renderer Process (React)"]
-            Views["9 Views<br/>Dashboard · Agents · IDE<br/>Pipeline · Code Review<br/>Source Control · Settings<br/>Task Workbench · Task Planner"]
+            Views["7 Views<br/>Dashboard · Agents · IDE<br/>Pipeline · Code Review<br/>Settings · Task Planner"]
             Stores[Zustand Stores]
             Panels[Panel System<br/>Split panes · Drag-and-drop<br/>Tear-off windows]
         end
@@ -248,7 +252,7 @@ graph TB
         SDK["Claude Code
         (via Agent SDK)"]
         GH[GitHub API]
-        WT[Git Worktrees<br/>~/worktrees/bde/]
+        WT[Git Worktrees<br/>~/.bde/worktrees/]
     end
 
     Main <-->|IPC| Bridge
@@ -301,7 +305,7 @@ All state lives in a local SQLite database at `~/.bde/bde.db`. No cloud dependen
 
 ### Prerequisites
 
-- **Node.js** v22+
+- **Node.js** v22.12+ (native-module rebuild requires it; `^20.19.0 || >=22.12.0` in `package.json`)
 - **Claude Code CLI** — installed and authenticated (`claude login`)
 - **Git** and **GitHub CLI** (`gh`)
 - macOS (Apple Silicon recommended; Intel supported)
@@ -310,7 +314,7 @@ All state lives in a local SQLite database at `~/.bde/bde.db`. No cloud dependen
 
 ```bash
 git clone https://github.com/RyanJBirkeland/BDE.git
-cd bde
+cd BDE
 npm install
 npm run dev
 ```
@@ -353,19 +357,17 @@ npm run lint         # ESLint
 
 ## Views at a Glance
 
-| View           | Shortcut | What it does                                                 |
-| -------------- | -------- | ------------------------------------------------------------ |
-| Dashboard      | `Cmd+1`  | Pipeline health, metrics, activity feed                      |
-| Agents         | `Cmd+2`  | Spawn and interact with AI agents                            |
-| IDE            | `Cmd+3`  | Monaco editor + file explorer + terminal                     |
-| Task Pipeline  | `Cmd+4`  | Real-time task execution monitoring                          |
-| Code Review    | `Cmd+5`  | Review agent diffs before merging                            |
-| Source Control | `Cmd+6`  | Git staging, commits, push                                   |
-| Settings       | `Cmd+7`  | 9 config tabs (connections, repos, agents, appearance, etc.) |
-| Task Planner   | `Cmd+8`  | Multi-task workflow planning                                 |
-| Task Workbench | `Cmd+0`  | Spec drafting with AI copilot + readiness checks             |
+| View          | Shortcut | What it does                                                 |
+| ------------- | -------- | ------------------------------------------------------------ |
+| Dashboard     | `Cmd+1`  | Pipeline health, metrics, activity feed                      |
+| Agents        | `Cmd+2`  | Spawn and interact with AI agents                            |
+| IDE           | `Cmd+3`  | Monaco editor + file explorer + terminal                     |
+| Task Pipeline | `Cmd+4`  | Real-time task execution monitoring                          |
+| Code Review   | `Cmd+5`  | Review agent diffs before merging                            |
+| Settings      | `Cmd+6`  | 8 config tabs (connections, repos, templates, agents, models, memory, appearance, about) |
+| Task Planner  | `Cmd+7`  | Multi-task workflow planning, epics, Task Workbench          |
 
-The panel system supports split panes, drag-and-drop docking, and tear-off windows for multi-monitor setups.
+Source Control is available as a dockable panel (no keyboard shortcut). The panel system supports split panes, drag-and-drop docking, and tear-off windows for multi-monitor setups.
 
 ---
 
@@ -431,12 +433,13 @@ src/
     agent-manager/       #   Task orchestration, worktree management, retry logic
     agent-system/        #   Native agent personalities and skills
     data/                #   Repository pattern, audit trail
-    handlers/            #   23 IPC handler modules
+    handlers/            #   IPC handler modules (~29, ~138 typed channels)
+    mcp-server/          #   Opt-in local MCP server for external agents
     services/            #   Task terminal service, dependency resolution
     db.ts                #   SQLite schema + migrations
   preload/               # Type-safe IPC bridge
   renderer/src/
-    views/               # 9 top-level views
+    views/               # Top-level views (Dashboard, Agents, IDE, Pipeline, Code Review, Settings, Planner)
     stores/              # Zustand state management
     components/          # UI components (neon design system)
     hooks/               # Shared React hooks
@@ -445,6 +448,7 @@ src/
 docs/
   architecture.md        # Full architecture documentation
   BDE_FEATURES.md        # Detailed feature reference
+  modules/               # Per-module reference docs (updated on every commit)
 ```
 
 ---

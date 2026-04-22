@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, React (function components + hooks), Electron IPC (`safeHandle` / `typedInvoke`), Zustand (settings nav store), Vitest + React Testing Library, lucide-react icons, existing `SettingsCard` / `Button` UI primitives.
 
-**Spec:** `docs/specs/models-settings-tab-spec.md` (committed as `b316ae71`, approved 2026-04-17).
+**Spec:** `docs/archive/specs/models-settings-tab-spec.md` (committed as `b316ae71`, approved 2026-04-17).
 
 ---
 

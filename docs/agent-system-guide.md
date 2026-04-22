@@ -1,57 +1,66 @@
 # BDE Native Agent System
 
-BDE's native agent system replaces generic third-party plugin scripts with custom, BDE-specific infrastructure. This system provides agents with deep knowledge of BDE's architecture, conventions, and workflows.
+BDE's native agent system provides BDE-specific prompt infrastructure — personalities, skills, and a universal prompt composer. Shared codebase conventions are no longer injected by this subsystem (see [Memory Module](#memory-module) for the history).
 
 ## Overview
 
-The agent system consists of four core modules:
+The agent system consists of four modules:
 
 1. **Personality** — Voice, role framing, constraints, and behavioral patterns per agent type
-2. **Memory** — Shared conventions (IPC patterns, testing standards, architecture rules) all agents should know
-3. **Skills** — Actionable guidance for interactive agents (system introspection, task orchestration, code generation)
-4. **Prompt Composer** — Universal prompt builder that injects native system content conditionally
+2. **Memory** — User-authored memory selection. Does NOT inject BDE codebase conventions — those live in `CLAUDE.md` when present
+3. **Skills** — Actionable guidance for interactive agents (debugging, PR review, system introspection, task orchestration, code generation)
+4. **Prompt Composer** — Universal prompt builder dispatched from `src/main/lib/prompt-composer.ts`
 
 ## Architecture
 
 ```
 src/main/agent-system/
 ├── personality/
-│   ├── types.ts                    # AgentPersonality interface
-│   ├── pipeline-personality.ts     # Pipeline agent personality
-│   ├── adhoc-personality.ts        # Adhoc (user-spawned executor)
-│   ├── assistant-personality.ts    # Interactive assistant
-│   ├── copilot-personality.ts     # Workbench spec-drafting copilot
-│   └── synthesizer-personality.ts # Single-turn spec generator
+│   ├── types.ts                      # AgentPersonality interface + AgentType union
+│   ├── pipeline-personality.ts       # Pipeline agent personality
+│   ├── adhoc-personality.ts          # Adhoc (user-spawned executor)
+│   ├── assistant-personality.ts      # Interactive assistant
+│   ├── bde-advisor-personality.ts    # Floating BDE Advisor
+│   ├── copilot-personality.ts        # Workbench spec-drafting copilot
+│   └── synthesizer-personality.ts    # Single-turn spec generator
 ├── memory/
-│   ├── ipc-conventions.ts          # IPC handler patterns, safeHandle() usage
-│   ├── testing-patterns.ts         # Coverage workflow, test organization
-│   ├── architecture-rules.ts       # Process boundaries, Zustand conventions
-│   └── index.ts                    # getAllMemory() aggregator (repo-aware)
+│   ├── index.ts                      # getAllMemory() — returns '' (see below)
+│   ├── select-user-memory.ts         # Scans ~/.bde/memory/ for user-authored notes
+│   └── user-memory.ts                # User memory types + selection helpers
 └── skills/
-    ├── types.ts                    # BDESkill interface
-    ├── system-introspection.ts     # Skill for querying SQLite, reading logs
-    ├── task-orchestration.ts       # Skill for creating tasks, setting dependencies
-    ├── code-patterns.ts            # Skill for generating BDE-idiomatic code
-    └── index.ts                    # getAllSkills() and getSkillList() exports
+    ├── types.ts                      # BDESkill interface
+    ├── debugging.ts                  # Skill for diagnosing failures
+    ├── pr-review.ts                  # Skill for reviewer agents
+    ├── system-introspection.ts       # Skill for querying SQLite, reading logs
+    ├── task-orchestration.ts         # Skill for creating tasks, setting dependencies
+    ├── code-patterns.ts              # Skill for generating BDE-idiomatic code
+    └── index.ts                      # getAllSkills() and getSkillList() exports
 ```
+
+Reviewer prompt builders live next door in `src/main/agent-manager/prompt-composer-reviewer.ts` (`buildStructuredReviewPrompt`, `buildInteractiveReviewPrompt`).
 
 ## Agent Types
 
-BDE spawns five types of agents, each with tailored personalities:
+`AgentType` is a union of six values (see `personality/types.ts`):
 
-| Type        | Spawned by           | Interactive | Tool access | Worktree       | Personality               |
-| ----------- | -------------------- | ----------- | ----------- | -------------- | ------------------------- |
-| Pipeline    | Agent Manager (auto) | No          | Full        | Yes (isolated) | Concise, action-oriented  |
-| Adhoc       | User (Agents view)   | Yes         | Full        | No (repo dir)  | Same as pipeline          |
-| Assistant   | User (Agents view)   | Yes         | Full        | No (repo dir)  | Conversational, proactive |
-| Copilot     | Task Workbench       | Yes         | None        | No             | Minimal (text-only)       |
-| Synthesizer | Task Workbench       | No          | None        | No             | Minimal (spec generation) |
+| Type        | Spawned by             | Interactive      | Tool access | Worktree              | Personality               |
+| ----------- | ---------------------- | ---------------- | ----------- | --------------------- | ------------------------- |
+| Pipeline    | Agent Manager (auto)   | No               | Full        | Yes (isolated)        | Concise, action-oriented  |
+| Adhoc       | User (Agents view)     | Yes (multi-turn) | Full        | Yes (adhoc worktree)  | Same as pipeline          |
+| Assistant   | User (Agents view)     | Yes              | Full        | No (repo dir)         | Conversational, proactive |
+| Reviewer    | Code Review Station    | Configurable     | Read + comment | Yes (review worktree) | Focused on diff critique |
+| Copilot     | Task Workbench         | Yes (chat)       | None        | No                    | Minimal (text-only)       |
+| Synthesizer | Task Workbench         | No (single-turn) | None        | No                    | Minimal (spec generation) |
 
-**Pipeline agents** execute sprint tasks autonomously. They work in isolated git worktrees, commit changes, push branches, and open PRs. Their personality is concise and execution-focused.
+(The floating **BDE Advisor** uses the `bde-advisor-personality` profile on top of the `assistant` agent type — it is not a separate `AgentType`.)
+
+**Pipeline agents** execute sprint tasks autonomously. They work in isolated git worktrees, commit changes, and stop at `review` status.
 
 **Assistant agents** are interactive helpers. They're more conversational, proactively suggest BDE tools (Dev Playground, sprint tasks), and help users understand the codebase.
 
-**Skills** are only injected for assistant and adhoc agents. Pipeline agents execute specs, not open-ended exploration, so they don't receive interactive skills.
+**Reviewer agents** are dispatched from Code Review Station against a completed agent's worktree to produce either a structured JSON review or a conversational review.
+
+**Skills** are only injected for assistant and adhoc agents. Pipeline, reviewer, copilot, and synthesizer agents don't receive open-ended interactive skills.
 
 ## Personality Module
 
@@ -92,25 +101,25 @@ Your work will be reviewed via PR before merging to main.`,
 
 ## Memory Module
 
-Memory modules document BDE conventions that all agents should internalize:
+> **History:** Earlier versions of this subsystem injected BDE codebase conventions (IPC patterns, testing rules, architecture rules) as memory modules. These were removed in the **Option A debranding decision** — they were tightly coupled to BDE internals and actively misled agents working on non-BDE repos. See commit history around `src/main/agent-system/memory/` for the removal.
 
-- **IPC Conventions** — `safeHandle()` wrapper usage, handler registration patterns, testing IPC handlers
-- **Testing Patterns** — Coverage workflow (`npm run test:coverage` runs the same checks CI enforces; thresholds live in `vitest.config.ts`, never hardcoded in prompts), test organization
-- **Architecture Rules** — Process boundaries (main/preload/renderer), Zustand store patterns, IPC surface minimalism
-
-Call `getAllMemory({ repoName })` to get the concatenated convention text for
-the agent's target repo. Pass `repoName: 'bde'` (or omit it) to receive all
-modules; pass any other repo name to receive an empty string:
+`getAllMemory()` is kept as a call-site stub and **always returns an empty string**:
 
 ```typescript
 import { getAllMemory } from './agent-system/memory'
 
-const bdeConventions = getAllMemory({ repoName: 'bde' })
-// "IPC Conventions\n...\n\n---\n\nTesting Patterns\n...\n\n---\n\nArchitecture Rules\n..."
-
-const nonBdeConventions = getAllMemory({ repoName: 'life-os' })
-// ""
+getAllMemory()                          // ''
+getAllMemory({ repoName: 'bde' })       // ''
+getAllMemory({ repoName: 'life-os' })   // ''
 ```
+
+Where codebase conventions come from now:
+
+- **Cross-cutting rules** (commit format, pre-commit verification, branch naming, npm install) are in the universal preamble emitted by the prompt composer.
+- **Per-repo conventions** live in `CLAUDE.md` at the repo root. The SDK loads it automatically for pipeline agents (which use `settingSources: ['user', 'local']`) via Claude Code's own CLAUDE.md resolution.
+- **User-authored memory** still exists: `selectUserMemory()` scans `~/.bde/memory/` for user notes, and relevant entries are appended to agent prompts. Memory files are per-machine and do not sync.
+
+Do not add a new memory module expecting it to be injected. New conventions belong in `CLAUDE.md`, in a per-agent prompt builder, or in the universal preamble.
 
 ## Skills Module
 
@@ -121,6 +130,8 @@ Skills provide actionable guidance for interactive agents:
 | System Introspection | Agent needs to query system state               | sqlite-query, file-read-logs |
 | Task Orchestration   | Agent needs to create tasks or set dependencies | ipc-sprint-create            |
 | Code Patterns        | Agent needs to generate BDE-idiomatic code      | code-generation              |
+| Debugging            | Agent needs to diagnose a failure               | log-inspection, failure-classification |
+| PR Review            | Reviewer agent inspecting a worktree            | diff-analysis, commit-critique |
 
 Each skill defines:
 
@@ -145,7 +156,7 @@ const skillObjects = getSkillList() // For programmatic access
 
 ## Prompt Composer
 
-`buildAgentPrompt()` is the universal prompt builder. All agent spawning paths (pipeline, adhoc, assistant, copilot, synthesizer) use this function.
+`buildAgentPrompt()` is the universal prompt builder. All agent spawning paths (pipeline, adhoc, assistant, copilot, synthesizer) use this function. Reviewer agents use dedicated builders in `prompt-composer-reviewer.ts`. The dispatcher lives at `src/main/lib/prompt-composer.ts`; per-agent section builders remain under `src/main/agent-manager/`.
 
 **Signature:**
 
@@ -175,19 +186,15 @@ export interface BuildPromptInput {
 
 **Behavior:**
 
-The native agent system is always active. Every prompt produced by
-`buildAgentPrompt()` includes:
+Every prompt produced by `buildAgentPrompt()` includes:
 
 - The universal preamble (hard rules, npm install, pre-commit verification)
 - The agent-type personality (voice, role frame, constraints, behavioral patterns)
-- Memory modules — but only when targeting the BDE repo (`repoName === 'bde'` or
-  unset for legacy callers). Non-BDE repos skip BDE-specific guidance to avoid
-  misleading agents working elsewhere.
-- Skills — ONLY for assistant/adhoc agents. Pipeline agents execute specs and
-  don't need open-ended exploration guidance.
-- Conditional sections: branch info, playground instructions, retry context,
-  upstream task context, cross-repo contract docs, time budget, idle timeout
-  warning, and a definition-of-done checklist (pipeline only).
+- Skills — ONLY for assistant/adhoc agents. Pipeline, reviewer, copilot, and synthesizer agents don't need open-ended exploration guidance.
+- User memory — entries matched from `~/.bde/memory/` when relevant.
+- Conditional sections: branch info, playground instructions, retry context, upstream task context, cross-repo contract docs, time budget, idle timeout warning, and a definition-of-done checklist (pipeline only).
+
+BDE-specific codebase conventions (IPC patterns, testing rules, architecture rules) are **no longer** injected by this subsystem — they are loaded by the SDK from `CLAUDE.md` at the repo root for agent types that use `settingSources: ['user', 'local']`.
 
 **Example usage (pipeline agent):**
 
@@ -216,11 +223,11 @@ const prompt = buildAgentPrompt({
 ## Testing
 
 Integration tests live in `src/main/agent-manager/__tests__/integration.test.ts`
-and `src/main/agent-system/memory/__tests__/memory.test.ts`:
+and `src/main/agent-system/memory/__tests__/`:
 
-- Verify personality module exports for all agent types
-- Verify memory aggregation returns all conventions for BDE and an empty
-  string for non-BDE repos
+- Verify personality module exports for all agent types (including reviewer and bde-advisor)
+- Verify `getAllMemory()` returns `''` regardless of `repoName`
+- Verify user memory selection via `selectUserMemory()`
 - Verify skills system exports formatted guidance and skill objects
 - Verify prompt composer wraps pipeline task content in `## Task Specification`
 
@@ -236,15 +243,17 @@ npm run test:main -- src/main/agent-manager/__tests__/integration.test.ts
 
 1. Create `src/main/agent-system/personality/new-agent-personality.ts`
 2. Export `AgentPersonality` object with voice, roleFrame, constraints, patterns
-3. Import in `prompt-composer.ts` and add case to `getPersonality()` switch
-4. Add test coverage in `integration.test.ts`
+3. If it's a new top-level `AgentType`, add it to the union in `types.ts`
+4. Import in the prompt composer and add a case to `getPersonality()`
+5. Add test coverage in `integration.test.ts`
 
-### Adding a New Memory Module
+### Adding a New Convention
 
-1. Create `src/main/agent-system/memory/new-convention.ts`
-2. Export string constant with convention documentation
-3. Import in `memory/index.ts` and add to `getAllMemory()` return array
-4. Verify it appears in prompts via test
+Do NOT add a memory module — convention injection has been removed (see [Memory Module](#memory-module)).
+
+- **Repo-specific conventions:** add to `CLAUDE.md` at the repo root.
+- **Cross-cutting rules:** extend the universal preamble in the prompt composer.
+- **Agent-specific guidance:** extend the relevant `prompt-<agent>.ts` builder in `src/main/agent-manager/`.
 
 ### Adding a New Skill
 
@@ -256,21 +265,21 @@ npm run test:main -- src/main/agent-manager/__tests__/integration.test.ts
 
 ## FAQ
 
-**Q: Why not just improve CLAUDE.md?**
+**Q: Why not just rely on CLAUDE.md?**
 
-A: CLAUDE.md is loaded by the SDK for all sessions. The native agent system allows us to inject different contexts per agent type (pipeline vs assistant), control skill availability, and target memory modules to specific repos.
+A: The native agent system layers per-agent-type context on top of CLAUDE.md — personality (pipeline vs. assistant), conditional sections (retry context, time budget, playground hints), and skill injection for interactive agents. CLAUDE.md sets the baseline; the composer tailors it per agent type and per spawn.
 
 **Q: Do pipeline agents get skills?**
 
 A: No. Skills are only for assistant and adhoc agents. Pipeline agents execute specs, so they don't need open-ended exploration guidance.
 
-**Q: Why doesn't a non-BDE agent see BDE Conventions?**
+**Q: Why don't I see `## BDE Conventions` in agent prompts anymore?**
 
-A: The IPC, testing, and architecture memory modules are tightly coupled to the BDE codebase. Injecting them into agents working on other repos wastes tokens and produces irrelevant guidance. The composer checks `repoName` via `isBdeRepo()` and skips those modules outside BDE.
+A: It was removed in the Option A debranding decision. The old memory modules (IPC conventions, testing patterns, architecture rules) were tightly coupled to BDE internals and misled agents working on other repos. Those same rules live in `CLAUDE.md` at the repo root — pipeline agents pick them up via the SDK's CLAUDE.md resolution.
 
 **Q: How do I know an agent is using the native system?**
 
-A: All agent prompts use it — there is no opt-out. Check the agent's initial prompt in the Agents view console. You should see `## Voice`, `## Your Role`, `## Constraints`, and (for BDE tasks) `## BDE Conventions` sections.
+A: All agent prompts use it — there is no opt-out. Check the agent's initial prompt in the Agents view console. You should see `## Voice`, `## Your Role`, and `## Constraints` sections emitted by the personality module.
 
 ---
 

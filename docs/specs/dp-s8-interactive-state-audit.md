@@ -1,5 +1,7 @@
 # DP-S8: Interactive State Audit
 
+> **Status: UNCLEAR (verified 2026-04-21). Broad polish story with no single concrete deliverable; treat as a design-language reference rather than a live backlog item.**
+
 **Epic:** Design Polish
 **Priority:** P2
 **Depends on:** DP-S1, DP-S4

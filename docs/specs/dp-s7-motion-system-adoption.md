@@ -1,5 +1,7 @@
 # DP-S7: Motion System Adoption
 
+> **Status: UNCLEAR / LIKELY STALE (verified 2026-04-21). No distinctive `motion.ts` adoption evidence found in current code. Likely superseded by the neon theme's motion guidelines — revisit or close.**
+
 **Epic:** Design Polish
 **Priority:** P2
 **Depends on:** DP-S1

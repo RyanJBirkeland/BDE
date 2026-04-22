@@ -1,3 +1,7 @@
+# Sidebar Reorder
+
+> **Status: UNCLEAR (verified 2026-04-21).** `NeonSidebar` exists and `sidebar.ts` has `reorderViews`/`pinnedViews` persistence, but the specific intra-sidebar drop-zone behavior described here has not been spot-checked. Re-verify before acting on this spec.
+
 ## Goal
 
 Make the main sidebar navigation icons drag-reorderable. Users should be able to drag icons up/down within the sidebar to customize their order. The order persists across sessions via the existing `sidebar.pinnedViews` setting.

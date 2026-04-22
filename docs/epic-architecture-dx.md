@@ -1,9 +1,11 @@
 # Epic: Architecture & Developer Experience (AX)
 
+> **Status: COMPLETE (verified 2026-04-21).** All 7 AX stories (AX-S1 typed IPC map, AX-S2 dead channel cleanup, AX-S3 IPC boundary validation, AX-S4 shell execution consistency, AX-S5 `getAgentProcesses` decomposition [superseded by broader `local-agents.ts` rearchitecture], AX-S6 store type hygiene, AX-S7 unbounded log memory cap) have landed. See individual specs in `docs/archive/specs/ax-s*.md`.
+
 **Date:** 2026-03-16
 **Author:** Senior Systems Audit (Claude Opus 4.6)
 **Scope:** IPC layer, main process, stores, type safety, dead code
-**Depends on:** audit-engineering-report.md findings
+**Depends on:** `docs/audits/2026-03-16-engineering-report.md` findings
 
 ---
 
