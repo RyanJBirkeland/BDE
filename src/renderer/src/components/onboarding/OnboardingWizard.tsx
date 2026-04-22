@@ -7,15 +7,6 @@ import { RepoStep } from './steps/RepoStep'
 import { DoneStep } from './steps/DoneStep'
 import '../../assets/onboarding.css'
 
-const ONBOARDING_STEPS = [
-  { component: WelcomeStep, title: 'Welcome' },
-  { component: AuthStep, title: 'Authentication' },
-  { component: GitStep, title: 'Git Setup' },
-  { component: GhStep, title: 'GitHub CLI' },
-  { component: RepoStep, title: 'Repositories' },
-  { component: DoneStep, title: 'Ready' }
-]
-
 interface OnboardingWizardProps {
   onComplete: () => void
 }
@@ -23,8 +14,17 @@ interface OnboardingWizardProps {
 export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.JSX.Element | null {
   const [currentStep, setCurrentStep] = useState(0)
 
+  const steps = [
+    { component: WelcomeStep, title: 'Welcome' },
+    { component: AuthStep, title: 'Authentication' },
+    { component: GitStep, title: 'Git Setup' },
+    { component: GhStep, title: 'GitHub CLI' },
+    { component: RepoStep, title: 'Repositories' },
+    { component: DoneStep, title: 'Ready' }
+  ]
+
   const handleNext = (): void => {
-    if (currentStep < ONBOARDING_STEPS.length - 1) {
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
     }
   }
@@ -39,7 +39,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.J
     onComplete()
   }
 
-  const currentStepData = ONBOARDING_STEPS[currentStep]
+  const currentStepData = steps[currentStep]
   if (!currentStepData) return null
   const StepComponent = currentStepData.component
 
