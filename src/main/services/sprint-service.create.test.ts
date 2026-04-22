@@ -37,9 +37,20 @@ vi.mock('../data/task-group-queries', () => ({
 vi.mock('../git', () => ({
   getRepoPaths: vi.fn(() => ({ bde: '/fake/path' }))
 }))
+// Phase-5 audit: createTaskWithValidation now imports getRepoPaths from ../paths
+// (the canonical owner). The legacy ../git mock stays for any consumer that
+// has not migrated yet.
+vi.mock('../paths', async () => {
+  const actual = await vi.importActual<typeof import('../paths')>('../paths')
+  return {
+    ...actual,
+    getRepoPaths: vi.fn(() => ({ bde: '/fake/path' }))
+  }
+})
 
 import * as mutations from './sprint-mutations'
 import * as git from '../git'
+import * as paths from '../paths'
 
 describe('createTaskWithValidation', () => {
   const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
@@ -162,6 +173,7 @@ describe('createTaskWithValidation', () => {
 
     it('missing-repo failures throw TaskValidationError with code repo-not-configured', () => {
       ;(git.getRepoPaths as ReturnType<typeof vi.fn>).mockReturnValueOnce({})
+      ;(paths.getRepoPaths as ReturnType<typeof vi.fn>).mockReturnValueOnce({})
       const input: CreateTaskInput = { title: 't', repo: 'bde' }
       try {
         createTaskWithValidation(input, { logger })

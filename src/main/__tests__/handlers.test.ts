@@ -67,6 +67,18 @@ vi.mock('../git', () => ({
   gitCheckout: vi.fn().mockResolvedValue(undefined)
 }))
 
+// Phase-5 audit: getRepoPaths/getRepoPath now live in ./paths (re-exported via
+// ./git for backward compat). validation.ts imports them from ./paths, so the
+// mock has to cover both module ids.
+vi.mock('../paths', async () => {
+  const actual = await vi.importActual<typeof import('../paths')>('../paths')
+  return {
+    ...actual,
+    getRepoPaths: vi.fn().mockReturnValue({ bde: '/tmp/bde' }),
+    getRepoPath: vi.fn((name: string) => (name.toLowerCase() === 'bde' ? '/tmp/bde' : undefined))
+  }
+})
+
 vi.mock('../github-pr-status', () => ({
   pollPrStatuses: vi.fn().mockResolvedValue([])
 }))

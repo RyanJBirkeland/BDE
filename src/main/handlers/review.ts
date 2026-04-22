@@ -14,17 +14,15 @@ import { createLogger } from '../logger'
 import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
 import { execFileAsync } from '../lib/async-utils'
-import {
-  validateGitRef,
-  validateWorktreePath,
-  validateFilePath,
-  assertWorktreeExists
-} from '../lib/review-paths'
 import { checkAutoReview } from '../services/auto-review-service'
 import { getTask } from '../services/sprint-service'
 import type { AutoReviewRule } from '../../shared/types'
 import * as reviewOrchestration from '../services/review-orchestration-service'
-import { parseNumstat } from '../services/review-orchestration-service'
+import {
+  getReviewDiff,
+  getReviewCommits,
+  getReviewFileDiff
+} from '../services/review-query-service'
 import { shipBatch } from '../services/review-ship-batch'
 import type { TaskStatus } from '../../shared/task-state-machine'
 
@@ -51,86 +49,19 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   const env = buildAgentEnv()
 
   // ============================================================================
-  // Query Handlers (stay here — no orchestration needed)
+  // Query Handlers (delegate to review-query-service)
   // ============================================================================
 
-  // review:getDiff — get file list with additions/deletions for a worktree branch
   safeHandle('review:getDiff', async (_e, payload) => {
-    const { worktreePath, base } = payload
-    validateGitRef(base)
-    validateWorktreePath(worktreePath)
-    assertWorktreeExists(worktreePath)
-
-    // Get numstat for structured data
-    const { stdout: numstatOut } = await execFileAsync(
-      'git',
-      ['diff', '--numstat', `${base}...HEAD`],
-      { cwd: worktreePath, env }
-    )
-
-    // Get full patch for file-level diffs
-    const { stdout: patchOut } = await execFileAsync('git', ['diff', `${base}...HEAD`], {
-      cwd: worktreePath,
-      env,
-      maxBuffer: 10 * 1024 * 1024 // 10MB for large diffs
-    })
-
-    // Build a map of filepath -> patch section
-    const patchMap = new Map<string, string>()
-    const patchSections = patchOut.split(/^diff --git /m)
-    for (const section of patchSections) {
-      if (!section.trim()) continue
-      // Extract file path from "a/path b/path" line
-      const match = section.match(/^a\/(.+?) b\//)
-      if (match?.[1]) {
-        patchMap.set(match[1], 'diff --git ' + section)
-      }
-    }
-
-    const files = numstatOut.trim() ? parseNumstat(numstatOut, patchMap) : []
-    return { files }
+    return getReviewDiff(payload.worktreePath, payload.base, { env })
   })
 
-  // review:getCommits — list commits between base and HEAD
   safeHandle('review:getCommits', async (_e, payload) => {
-    const { worktreePath, base } = payload
-    validateGitRef(base)
-    validateWorktreePath(worktreePath)
-    assertWorktreeExists(worktreePath)
-
-    const { stdout } = await execFileAsync(
-      'git',
-      ['log', `${base}..HEAD`, '--format=%H%x00%s%x00%an%x00%aI', '--reverse'],
-      { cwd: worktreePath, env }
-    )
-
-    const commits = stdout
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        const [hash = '', message = '', author = '', date = ''] = line.split('\x00')
-        return { hash, message, author, date }
-      })
-
-    return { commits }
+    return getReviewCommits(payload.worktreePath, payload.base, { env })
   })
 
-  // review:getFileDiff — get diff for a single file
   safeHandle('review:getFileDiff', async (_e, payload) => {
-    const { worktreePath, filePath, base } = payload
-    validateGitRef(base)
-    validateWorktreePath(worktreePath)
-    assertWorktreeExists(worktreePath)
-    validateFilePath(filePath)
-
-    const { stdout } = await execFileAsync('git', ['diff', `${base}...HEAD`, '--', filePath], {
-      cwd: worktreePath,
-      env,
-      maxBuffer: 10 * 1024 * 1024
-    })
-
-    return { diff: stdout }
+    return getReviewFileDiff(payload.worktreePath, payload.filePath, payload.base, { env })
   })
 
   // review:checkFreshness — check if task's rebase is current with origin/main

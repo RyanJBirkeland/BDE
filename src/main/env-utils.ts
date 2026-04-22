@@ -302,7 +302,25 @@ async function writeKeychainCreds(account: string, creds: ClaudeCreds): Promise<
  * read failures.
  */
 export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
-  let creds: ClaudeCreds
+  const creds = await readKeychainCredentials()
+  if (!creds) return false
+
+  const oauth = creds.claudeAiOauth
+  if (!oauth?.accessToken || typeof oauth.accessToken !== 'string') return false
+
+  const tokenToWrite = await refreshIfDue(creds, oauth)
+  return persistToken(tokenToWrite)
+}
+
+/**
+ * Read Claude's OAuth credentials from the macOS Keychain. Validates the JSON
+ * envelope shape before returning so downstream code can trust the structure.
+ *
+ * Returns `null` (and records the failure against the consecutive-failure
+ * counter / broadcasts a warning when the threshold trips) on either a
+ * Keychain read error or a malformed payload.
+ */
+async function readKeychainCredentials(): Promise<ClaudeCreds | null> {
   try {
     const { stdout: credJson } = await execFilePromise(
       '/usr/bin/security',
@@ -310,23 +328,12 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
       { timeout: 10_000, env: buildAgentEnv() }
     )
     const parsed = JSON.parse(credJson.trim()) as unknown
-    // Validate Keychain JSON schema before using — guard against corrupted or manually edited entries
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !('claudeAiOauth' in parsed) ||
-      typeof (parsed as Record<string, unknown>).claudeAiOauth !== 'object'
-    ) {
+    if (!isValidKeychainPayload(parsed)) {
       logger.error('[env-utils] Keychain JSON has unexpected format — run claude login to reset')
-      return false
+      return null
     }
-    const oauth = (parsed as Record<string, unknown>).claudeAiOauth as Record<string, unknown>
-    if (!oauth.accessToken || typeof oauth.accessToken !== 'string') {
-      logger.error('[env-utils] Keychain JSON has unexpected format — run claude login to reset')
-      return false
-    }
-    creds = parsed as ClaudeCreds
     keychainConsecutiveFailures = 0
+    return parsed
   } catch (err) {
     keychainConsecutiveFailures++
     logger.error(
@@ -335,56 +342,78 @@ export async function refreshOAuthTokenFromKeychain(): Promise<boolean> {
     if (keychainConsecutiveFailures >= KEYCHAIN_FAILURE_WARNING_THRESHOLD) {
       broadcast('manager:warning', { message: KEYCHAIN_WARNING_MESSAGE })
     }
-    return false
+    return null
   }
+}
 
-  const oauth = creds?.claudeAiOauth
-  if (!oauth?.accessToken || typeof oauth.accessToken !== 'string') return false
+function isValidKeychainPayload(parsed: unknown): parsed is ClaudeCreds {
+  if (!parsed || typeof parsed !== 'object') return false
+  if (!('claudeAiOauth' in parsed)) return false
+  const oauth = (parsed as Record<string, unknown>).claudeAiOauth
+  if (!oauth || typeof oauth !== 'object') return false
+  const accessToken = (oauth as Record<string, unknown>).accessToken
+  return typeof accessToken === 'string' && accessToken.length > 0
+}
 
-  let tokenToWrite = oauth.accessToken
+/**
+ * If the current `oauth.expiresAt` says the access token is due for refresh
+ * (and we have a refresh token), run the OAuth refresh flow and persist the
+ * rotated credentials back into the Keychain. Returns the token that should
+ * be written to `~/.bde/oauth-token`: the refreshed one on success, the
+ * existing (possibly expired) one on a refresh failure.
+ */
+async function refreshIfDue(
+  creds: ClaudeCreds,
+  oauth: NonNullable<ClaudeCreds['claudeAiOauth']>
+): Promise<string> {
   const expiresAtMs = parseExpiresAt(oauth.expiresAt)
-
-  if (shouldRefresh(expiresAtMs) && oauth.refreshToken) {
-    try {
-      const refreshed = await postOAuthRefresh(oauth.refreshToken)
-      const newExpiresAtMs = Date.now() + refreshed.expires_in * 1000
-      const updatedCreds: ClaudeCreds = {
-        ...creds,
-        claudeAiOauth: {
-          ...oauth,
-          accessToken: refreshed.access_token,
-          refreshToken: refreshed.refresh_token,
-          expiresAt: String(newExpiresAtMs)
-        }
-      }
-      // Persist rotated credentials so the next refresh doesn't reuse the
-      // (now-invalidated) old refresh token. If this fails we still write
-      // the fresh accessToken to the file — the user just ends up with a
-      // stale keychain that they can fix via `claude login`.
-      try {
-        const account = userInfo().username
-        await writeKeychainCreds(account, updatedCreds)
-      } catch {
-        console.warn(
-          '[env-utils] OAuth refresh succeeded but writing rotated credentials back to Keychain failed — run `claude login` if subsequent refreshes start failing'
-        )
-      }
-      tokenToWrite = refreshed.access_token
-    } catch (err) {
-      // Refresh failed (network error, 4xx from OAuth endpoint, malformed
-      // response). Fall through to writing the existing — possibly expired —
-      // accessToken so the agent fails with a visible 401 instead of this
-      // function silently doing nothing.
-      const msg = getErrorMessage(err)
-      console.warn(`[env-utils] OAuth token refresh failed: ${msg}`)
-    }
-  }
+  if (!shouldRefresh(expiresAtMs) || !oauth.refreshToken) return oauth.accessToken
 
   try {
+    const refreshed = await postOAuthRefresh(oauth.refreshToken)
+    const newExpiresAtMs = Date.now() + refreshed.expires_in * 1000
+    const updatedCreds: ClaudeCreds = {
+      ...creds,
+      claudeAiOauth: {
+        ...oauth,
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        expiresAt: String(newExpiresAtMs)
+      }
+    }
+    await persistRotatedKeychainCreds(updatedCreds)
+    return refreshed.access_token
+  } catch (err) {
+    // Refresh failed (network error, 4xx from OAuth endpoint, malformed
+    // response). Fall through to writing the existing — possibly expired —
+    // accessToken so the agent fails with a visible 401 instead of silently
+    // doing nothing.
+    logger.warn(`[env-utils] OAuth token refresh failed: ${getErrorMessage(err)}`)
+    return oauth.accessToken
+  }
+}
+
+async function persistRotatedKeychainCreds(updatedCreds: ClaudeCreds): Promise<void> {
+  try {
+    const account = userInfo().username
+    await writeKeychainCreds(account, updatedCreds)
+  } catch {
+    // Persist rotated credentials so the next refresh doesn't reuse the
+    // (now-invalidated) old refresh token. If this fails we still return
+    // the fresh accessToken — the user just ends up with a stale keychain
+    // that they can fix via `claude login`.
+    logger.warn(
+      '[env-utils] OAuth refresh succeeded but writing rotated credentials back to Keychain failed — run `claude login` if subsequent refreshes start failing'
+    )
+  }
+}
+
+function persistToken(tokenToWrite: string): boolean {
+  try {
     const tokenPath = join(homedir(), '.bde', 'oauth-token')
-    // DL-7: Enforce restrictive permissions (user-only read/write)
+    // DL-7: Enforce restrictive permissions (user-only read/write).
     writeFileSync(tokenPath, tokenToWrite, { encoding: 'utf8', mode: 0o600 })
-    invalidateOAuthToken() // Force re-read on next call
+    invalidateOAuthToken() // Force re-read on next call.
     return true
   } catch {
     return false

@@ -163,6 +163,19 @@ vi.mock('../../git', () => ({
   getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' }))
 }))
 
+// Phase-5 audit: getRepoPaths canonical owner is paths.ts now; sprint-service
+// routes its repo-configured check through there.
+vi.mock('../../paths', async () => {
+  const actual = await vi.importActual<typeof import('../../paths')>('../../paths')
+  return {
+    ...actual,
+    getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' })),
+    getRepoPath: vi.fn((name: string) =>
+      name.toLowerCase() === 'bde' ? '/Users/ryan/projects/BDE' : undefined
+    )
+  }
+})
+
 // Mock agent-queries and agent-history (used by sprint:readLog)
 vi.mock('../../data/agent-queries', () => ({
   getAgentLogInfo: vi.fn(() => null)

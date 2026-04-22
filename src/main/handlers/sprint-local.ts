@@ -9,15 +9,8 @@ import type { TaskTemplate, ClaimedTask } from '../../shared/types'
 import type { WorkflowTemplate } from '../../shared/workflow-types'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import { getSettingJson } from '../settings'
-import {
-  TASK_STATUSES,
-  TERMINAL_STATUSES,
-  isValidTransition,
-  isTaskStatus
-} from '../../shared/task-state-machine'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { nowIso } from '../../shared/time'
-import { detectCycle } from '../services/dependency-service'
+import { validateDependencyGraph } from '../services/dependency-service'
 import {
   generatePrompt,
   validateSpecPath,
@@ -27,7 +20,6 @@ import {
 import {
   getTask,
   updateTask,
-  forceUpdateTask,
   deleteTask,
   getHealthCheckTasks,
   flagStuckTasks,
@@ -35,16 +27,15 @@ import {
   listTasksRecent,
   getSuccessRateBySpecType,
   createTaskWithValidation,
+  updateTaskFromUi,
   type CreateTaskInput
 } from '../services/sprint-service'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
-import { UPDATE_ALLOWLIST } from '../data/sprint-maintenance-facade'
-import { validateAndFilterPatch } from '../lib/patch-validation'
 import { getAgentLogInfo } from '../data/agent-queries'
 import { readLog } from '../agent-history'
 import { instantiateWorkflow } from '../services/workflow-engine'
-import { prepareQueueTransition, prepareUnblockTransition } from '../services/task-state-service'
+import { prepareUnblockTransition, forceTerminalOverride } from '../services/task-state-service'
 
 const logger = createLogger('sprint-local')
 
@@ -122,54 +113,8 @@ export function registerSprintLocalHandlers(
     _e: Electron.IpcMainInvokeEvent,
     id: string,
     patch: Record<string, unknown>
-  ): Promise<ReturnType<typeof updateTask>> => {
-    if (!isValidTaskId(id)) throw new Error('Invalid task ID format')
-    // SP-6: Filter patch fields through UPDATE_ALLOWLIST
-    const filteredPatch = validateAndFilterPatch(patch, UPDATE_ALLOWLIST)
-    if (filteredPatch === null) {
-      throw new Error('No valid fields to update')
-    }
-    patch = filteredPatch
-
-    // Validate status string at the handler boundary — defense-in-depth before DB round-trips.
-    // `validatedStatus` narrows `patch.status` to `TaskStatus` for downstream use.
-    let validatedStatus: TaskStatus | undefined
-    if (patch.status !== undefined) {
-      if (typeof patch.status !== 'string' || !isTaskStatus(patch.status)) {
-        throw new Error(
-          `Invalid status "${patch.status}". Valid statuses: ${TASK_STATUSES.join(', ')}`
-        )
-      }
-      validatedStatus = patch.status
-    }
-
-    // Validate status transition at the handler boundary before touching the DB.
-    // The data layer also validates, but catching it early produces a clearer error
-    // and prevents unnecessary DB round-trips for invalid input.
-    if (validatedStatus) {
-      const current = getTask(id)
-      if (current && !isValidTransition(current.status, validatedStatus)) {
-        throw new Error(
-          `Invalid status transition: ${current.status} → ${validatedStatus} for task ${id}`
-        )
-      }
-    }
-
-    // SP-1: Queuing business rules delegated to TaskStateService
-    if (validatedStatus === 'queued') {
-      const { patch: finalPatch } = await prepareQueueTransition(id, patch, { logger })
-      patch = finalPatch
-    }
-
-    // updateTask (service) handles notifySprintMutation internally
-    // Fire terminal callback regardless of updateTask's return value so that
-    // dependents are unblocked even when the update is a no-op (e.g. task not found).
-    const result = updateTask(id, patch)
-    if (validatedStatus && TERMINAL_STATUSES.has(validatedStatus)) {
-      deps.onStatusTerminal(id, validatedStatus)
-    }
-    return result
-  }
+  ): Promise<ReturnType<typeof updateTask>> =>
+    updateTaskFromUi(id, patch, { logger, onStatusTerminal: deps.onStatusTerminal })
   safeHandle('sprint:update', sprintUpdateHandler, parseSprintUpdateArgs)
 
   safeHandle('sprint:delete', async (_e, id: string) => {
@@ -246,19 +191,7 @@ export function registerSprintLocalHandlers(
     proposedDeps: ProposedDeps
   ): Promise<ValidateDepsResult> => {
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-    // Validate all dep targets exist
-    for (const dep of proposedDeps) {
-      const target = getTask(dep.id)
-      if (!target) return { valid: false, error: `Task ${dep.id} not found` }
-    }
-
-    // Check for cycles
-    const allTasks = listTasks()
-    const depsMap = new Map(allTasks.map((t) => [t.id, t.depends_on]))
-    const cycle = detectCycle(taskId, proposedDeps, (id) => depsMap.get(id) ?? null)
-    if (cycle) return { valid: false, cycle }
-
-    return { valid: true }
+    return validateDependencyGraph(taskId, proposedDeps, { getTask, listTasks })
   }
   safeHandle('sprint:validateDependencies', validateDeps)
 
@@ -282,67 +215,18 @@ export function registerSprintLocalHandlers(
   })
 
   safeHandle('sprint:forceFailTask', async (_e, args: ForceOverrideArgs) => {
-    return overrideTaskStatus({ ...args, targetStatus: 'failed', deps })
+    if (!isValidTaskId(args.taskId)) throw new Error('Invalid task ID format')
+    return forceTerminalOverride({ ...args, targetStatus: 'failed' }, deps)
   })
 
   safeHandle('sprint:forceDoneTask', async (_e, args: ForceOverrideArgs) => {
-    return overrideTaskStatus({ ...args, targetStatus: 'done', deps })
+    if (!isValidTaskId(args.taskId)) throw new Error('Invalid task ID format')
+    return forceTerminalOverride({ ...args, targetStatus: 'done' }, deps)
   })
 }
-
-// --- Operator escape-hatches ---
 
 interface ForceOverrideArgs {
   taskId: string
   reason?: string | undefined
   force?: boolean | undefined
-}
-
-interface OverrideTaskStatusArgs {
-  taskId: string
-  reason?: string | undefined
-  force?: boolean | undefined
-  targetStatus: 'failed' | 'done'
-  deps: SprintLocalDeps
-}
-
-function overrideTaskStatus(args: OverrideTaskStatusArgs): { ok: true } {
-  if (!isValidTaskId(args.taskId)) throw new Error('Invalid task ID format')
-
-  const task = getTask(args.taskId)
-  if (!task) throw new Error(`Task ${args.taskId} not found`)
-
-  if (TERMINAL_STATUSES.has(task.status) && !args.force) {
-    throw new Error(
-      `Task ${args.taskId} is already terminal (${task.status}). Pass force: true to override.`
-    )
-  }
-
-  const patch = buildOverridePatch(args.targetStatus, args.reason)
-  const updated = forceUpdateTask(args.taskId, patch)
-  if (!updated) throw new Error(`Failed to force ${args.targetStatus} on task ${args.taskId}`)
-
-  args.deps.onStatusTerminal(args.taskId, args.targetStatus)
-  return { ok: true }
-}
-
-function buildOverridePatch(
-  targetStatus: 'failed' | 'done',
-  reason: string | undefined
-): Record<string, unknown> {
-  const timestamp = nowIso()
-  if (targetStatus === 'failed') {
-    const trimmedReason = reason?.trim() || 'manual-override'
-    return {
-      status: 'failed',
-      failure_reason: 'unknown',
-      notes: `Marked failed manually by user at ${timestamp}. reason: ${trimmedReason}`
-    }
-  }
-  return {
-    status: 'done',
-    completed_at: timestamp,
-    failure_reason: null,
-    notes: `Marked done manually by user at ${timestamp}.`
-  }
 }

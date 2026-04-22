@@ -14,7 +14,7 @@ import type { SprintTask } from '../../shared/types'
 import { validateTaskCreation } from './task-validation'
 import { SpecParser } from './spec-quality/spec-parser'
 import { RequiredSectionsValidator } from './spec-quality/validators/sync-validators'
-import { getRepoPaths } from '../git'
+import { getRepoPaths } from '../paths'
 import { listGroups } from '../data/task-group-queries'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
@@ -312,4 +312,76 @@ export function createTaskWithValidation(
   const row = createTask(validatedTask)
   if (!row) throw new Error('Failed to create task')
   return row
+}
+
+import {
+  TASK_STATUSES,
+  TERMINAL_STATUSES,
+  isValidTransition,
+  isTaskStatus
+} from '../../shared/task-state-machine'
+import { isValidTaskId } from '../lib/validation'
+import { UPDATE_ALLOWLIST } from '../data/sprint-maintenance-facade'
+import { validateAndFilterPatch } from '../lib/patch-validation'
+import { prepareQueueTransition } from './task-state-service'
+
+export interface UpdateTaskFromUiDeps {
+  logger: Logger
+  onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
+}
+
+/**
+ * Apply an IPC-originated task patch with the full UI safety pipeline:
+ * id check, allowlist filtering, status narrowing, transition validation,
+ * `queued`-transition policy (spec quality + dependency auto-block), and
+ * the post-update terminal callback.
+ *
+ * Replaces the inline business logic that used to live in
+ * `sprint-local.ts:sprintUpdateHandler`. Handlers now delegate here.
+ */
+export async function updateTaskFromUi(
+  id: string,
+  patch: Record<string, unknown>,
+  deps: UpdateTaskFromUiDeps
+): Promise<SprintTask | null> {
+  if (!isValidTaskId(id)) throw new Error('Invalid task ID format')
+
+  const filtered = validateAndFilterPatch(patch, UPDATE_ALLOWLIST)
+  if (filtered === null) throw new Error('No valid fields to update')
+  let workingPatch = filtered
+
+  const validatedStatus = narrowStatus(workingPatch.status)
+  if (validatedStatus) {
+    rejectInvalidTransition(id, validatedStatus)
+  }
+
+  if (validatedStatus === 'queued') {
+    const { patch: finalPatch } = await prepareQueueTransition(id, workingPatch, {
+      logger: deps.logger
+    })
+    workingPatch = finalPatch
+  }
+
+  const result = updateTask(id, workingPatch)
+  if (validatedStatus && TERMINAL_STATUSES.has(validatedStatus)) {
+    deps.onStatusTerminal(id, validatedStatus)
+  }
+  return result
+}
+
+function narrowStatus(value: unknown): TaskStatus | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== 'string' || !isTaskStatus(value)) {
+    throw new Error(
+      `Invalid status "${String(value)}". Valid statuses: ${TASK_STATUSES.join(', ')}`
+    )
+  }
+  return value
+}
+
+function rejectInvalidTransition(taskId: string, target: TaskStatus): void {
+  const current = mutations.getTask(taskId)
+  if (current && !isValidTransition(current.status, target)) {
+    throw new Error(`Invalid status transition: ${current.status} → ${target} for task ${taskId}`)
+  }
 }

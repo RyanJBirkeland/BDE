@@ -2,10 +2,10 @@
 // all must pass before task launch. This is not a domain service — it has no
 // shared state or invariants between checks.
 import { checkAuthStatus } from '../credential-store'
-import { getRepoPath } from '../git'
+import { getRepoPath } from '../paths'
 import { execFileAsync } from '../lib/async-utils'
 import { listTasks } from './sprint-service'
-import type { AgentManager } from '../agent-manager'
+import type { AgentManagerStatusReader } from './ports/agent-manager-status'
 
 type CheckStatus = 'pass' | 'warn' | 'fail'
 
@@ -109,7 +109,9 @@ export function validateNoTaskConflicts(repo: string): ConflictCheckStatus {
   }
 }
 
-export function assessAgentSlotCapacity(am: AgentManager | undefined): AgentSlotCapacity {
+export function assessAgentSlotCapacity(
+  am: AgentManagerStatusReader | undefined
+): AgentSlotCapacity {
   if (!am) {
     return { status: 'warn', message: 'Agent manager not available', available: 0, max: 0 }
   }
@@ -131,7 +133,7 @@ export function assessAgentSlotCapacity(am: AgentManager | undefined): AgentSlot
 
 export async function runOperationalChecks(
   repo: string,
-  am: AgentManager | undefined
+  am: AgentManagerStatusReader | undefined
 ): Promise<OperationalCheckResults> {
   const repoPathResult = validateRepoPath(repo)
   const [auth, gitClean] = await Promise.all([

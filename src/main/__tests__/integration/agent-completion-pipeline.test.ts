@@ -159,6 +159,7 @@ describe('Agent completion pipeline integration', () => {
       await resolveSuccess(
         {
           repo: mockRepo,
+          unitOfWork: { runInTransaction: (fn: () => void) => fn() },
           taskId: 'task-1',
           worktreePath: '/tmp/wt/task-1',
           title: 'Add login page',
@@ -215,6 +216,7 @@ describe('Agent completion pipeline integration', () => {
       await resolveSuccess(
         {
           repo: mockRepo,
+          unitOfWork: { runInTransaction: (fn: () => void) => fn() },
           taskId: 'task-1',
           worktreePath: '/tmp/wt/task-1',
           title: 'Add login page',
@@ -265,6 +267,7 @@ describe('Agent completion pipeline integration', () => {
       await resolveSuccess(
         {
           repo: mockRepo,
+          unitOfWork: { runInTransaction: (fn: () => void) => fn() },
           taskId: 'task-2',
           worktreePath: '/tmp/wt/task-2',
           title: 'Empty task',
@@ -314,6 +317,7 @@ describe('Agent completion pipeline integration', () => {
       await resolveSuccess(
         {
           repo: mockRepo,
+          unitOfWork: { runInTransaction: (fn: () => void) => fn() },
           taskId: 'task-2',
           worktreePath: '/tmp/wt/task-2',
           title: 'Empty task',
@@ -350,6 +354,7 @@ describe('Agent completion pipeline integration', () => {
       await resolveSuccess(
         {
           repo: mockRepo,
+          unitOfWork: { runInTransaction: (fn: () => void) => fn() },
           taskId: 'task-2',
           worktreePath: '/tmp/wt/task-2',
           title: 'Empty task',
@@ -624,6 +629,7 @@ describe('Agent completion pipeline integration', () => {
       await resolveSuccess(
         {
           repo: mockRepo,
+          unitOfWork: { runInTransaction: (fn: () => void) => fn() },
           taskId: 'task-parent',
           worktreePath: '/tmp/wt/task-parent',
           title: 'Parent task',

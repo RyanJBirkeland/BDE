@@ -1,5 +1,5 @@
 import http from 'node:http'
-import type { AgentManager } from '../agent-manager'
+import type { AgentManagerStatusReader } from './ports/agent-manager-status'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { createLogger } from '../logger'
 import { nowIso } from '../../shared/time'
@@ -21,7 +21,7 @@ export interface StatusServer {
  * @param port - Port to listen on (default 18791, use 0 for random port in tests)
  */
 export function createStatusServer(
-  agentManager: Pick<AgentManager, 'getStatus' | 'getMetrics'>,
+  agentManager: AgentManagerStatusReader,
   repo: Pick<ISprintTaskRepository, 'getQueueStats'>,
   port = 18791
 ): StatusServer {

@@ -5,18 +5,13 @@
 import { createHmac } from 'crypto'
 import type { Logger } from '../logger'
 import type { SprintTask } from '../../shared/types'
+import type { WebhookConfig } from '../../shared/types/webhook'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
 import { WEBHOOK_TIMEOUT_MS } from '../constants'
 import type { TaskStatus } from '../../shared/task-state-machine'
 
-export interface WebhookConfig {
-  id: string
-  url: string
-  events: string[] // e.g., ['task.created', 'task.completed', 'task.failed']
-  secret: string | null
-  enabled: boolean
-}
+export type { WebhookConfig } from '../../shared/types/webhook'
 
 export interface WebhookPayload {
   event: string

@@ -168,7 +168,8 @@ describe('runAgent — playground prompt injection', () => {
       debug: vi.fn()
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
-    repo: mockRepo
+    repo: mockRepo,
+    unitOfWork: { runInTransaction: (fn) => fn() }
   })
 
   beforeEach(async () => {
@@ -384,7 +385,8 @@ describe('runAgent — playground-before-cleanup ordering', () => {
       debug: vi.fn()
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
-    repo: mockRepo
+    repo: mockRepo,
+    unitOfWork: { runInTransaction: (fn) => fn() }
   })
 
   beforeEach(async () => {

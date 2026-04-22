@@ -87,45 +87,59 @@ export function getIdeRootPath(): string | null {
 /** Validates that targetPath is within allowedRoot. Returns the resolved absolute path. */
 export function validateIdePath(targetPath: string, allowedRoot: string): string {
   const root = resolve(allowedRoot)
-
-  // Resolve root symlinks first to get the canonical root path
-  let rootReal: string
-  try {
-    rootReal = fs.realpathSync(root)
-  } catch {
-    rootReal = root
-  }
-
+  const rootReal = canonicalizeRootPath(root)
   const resolved = resolve(targetPath)
+  const targetReal = canonicalizeTargetPath(resolved, root, rootReal)
 
-  // Resolve symlinks to prevent path traversal via symlink escape
-  let real: string
-  try {
-    real = fs.realpathSync(resolved)
-  } catch {
-    // IDE-3: If realpath fails (e.g., path doesn't exist yet), resolve parent symlinks
-    const parent = dirname(resolved)
-    try {
-      const parentReal = fs.realpathSync(parent)
-      const basename = resolved.split('/').pop() ?? ''
-      real = `${parentReal}/${basename}`
-    } catch {
-      // If parent also doesn't exist, normalize using real root
-      if (resolved.startsWith(root + '/')) {
-        real = resolved.replace(root, rootReal)
-      } else if (resolved === root) {
-        real = rootReal
-      } else {
-        real = resolved
-      }
-    }
-  }
-
-  if (!real.startsWith(rootReal + '/') && real !== rootReal) {
+  if (!targetReal.startsWith(rootReal + '/') && targetReal !== rootReal) {
     throw new Error(`Path traversal blocked: "${targetPath}" is outside root "${allowedRoot}"`)
   }
   // IDE-2: Return the real (canonical) path to avoid TOCTOU issues
-  return real
+  return targetReal
+}
+
+function canonicalizeRootPath(root: string): string {
+  try {
+    return fs.realpathSync(root)
+  } catch {
+    return root
+  }
+}
+
+/**
+ * Resolve a target path to its canonical filesystem path, resolving symlinks
+ * even when the target itself does not yet exist (e.g. about to be written).
+ *
+ * Falls back through three increasingly defensive paths:
+ *   1. realpath the target directly (existing files)
+ *   2. realpath its parent and reattach the basename (parent exists, target
+ *      will be created soon)
+ *   3. rebase the prefix from the input root to the canonical root, when both
+ *      the target and its parent are missing (e.g. nested mkdir)
+ */
+function canonicalizeTargetPath(resolved: string, root: string, rootReal: string): string {
+  try {
+    return fs.realpathSync(resolved)
+  } catch {
+    return canonicalizeMissingTargetPath(resolved, root, rootReal)
+  }
+}
+
+function canonicalizeMissingTargetPath(resolved: string, root: string, rootReal: string): string {
+  const parent = dirname(resolved)
+  try {
+    const parentReal = fs.realpathSync(parent)
+    const basename = resolved.split('/').pop() ?? ''
+    return `${parentReal}/${basename}`
+  } catch {
+    return rebaseUnderRoot(resolved, root, rootReal)
+  }
+}
+
+function rebaseUnderRoot(resolved: string, root: string, rootReal: string): string {
+  if (resolved.startsWith(root + '/')) return resolved.replace(root, rootReal)
+  if (resolved === root) return rootReal
+  return resolved
 }
 
 export async function readDir(

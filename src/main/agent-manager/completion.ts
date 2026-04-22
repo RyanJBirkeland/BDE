@@ -9,6 +9,7 @@
  * All existing imports from other files pointing to completion.ts remain valid.
  */
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { IUnitOfWork } from '../data/unit-of-work'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { buildAgentEnv } from '../env-utils'
@@ -29,6 +30,7 @@ import { evaluateAutoMerge } from './auto-merge-coordinator'
 import { nowIso } from '../../shared/time'
 import { detectUntouchedTests, listChangedFiles, formatAdvisory } from './test-touch-check'
 import { detectNoOpRun } from './noop-detection'
+import { NOOP_RUN_NOTE } from './failure-messages'
 
 export type { ResolveFailureContext } from './resolve-failure-phases'
 
@@ -41,6 +43,7 @@ export interface ResolveSuccessContext {
   agentSummary?: string | null
   retryCount: number
   repo: IAgentTaskRepository
+  unitOfWork: IUnitOfWork
   /**
    * Absolute path to the MAIN repo checkout (not the worktree). Required for
    * branch-tip verification — the tip check reads the branch ref via git log
@@ -88,8 +91,17 @@ export async function deleteAgentBranchBeforeRetry(
 }
 
 export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger): Promise<void> {
-  const { taskId, worktreePath, title, onTaskTerminal, agentSummary, retryCount, repo, repoPath } =
-    opts
+  const {
+    taskId,
+    worktreePath,
+    title,
+    onTaskTerminal,
+    agentSummary,
+    retryCount,
+    repo,
+    unitOfWork,
+    repoPath
+  } = opts
 
   const worktreeExists = await verifyWorktreeExists(
     taskId,
@@ -150,6 +162,7 @@ export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger
     title,
     rebaseOutcome,
     repo,
+    unitOfWork,
     logger,
     onTaskTerminal,
     evaluateAutoMerge
@@ -179,14 +192,10 @@ async function detectNoOpAndFailIfSo(
   const changedFiles = await listChangedFiles(branch, worktreePath, env, { logger })
   if (!detectNoOpRun(changedFiles, worktreePath)) return false
 
-  const notes =
-    'Agent exited cleanly but produced only scratch files (e.g. .aider* or Aider auto-gitignore). ' +
-    'This is typically a token-limit or prompt-mismatch failure — the backend process ran but the ' +
-    'model made no edits to source files.'
   logger.warn(
     `[completion] task ${taskId}: detected no-op run on branch ${branch} — failing instead of transitioning to review`
   )
-  const isTerminal = resolveFailurePhase({ taskId, retryCount, notes, repo }, logger)
+  const isTerminal = resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo }, logger)
   await onTaskTerminal(taskId, isTerminal ? 'failed' : 'queued')
   return true
 }

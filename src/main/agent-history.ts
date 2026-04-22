@@ -250,61 +250,72 @@ export async function importAgent(meta: Partial<AgentMeta>, content: string): Pr
 export async function pruneOldAgents(maxCount = 500, db?: Database.Database): Promise<void> {
   initAgentHistory()
   const conn = db ?? getDb()
-
-  const total = countAgents(conn)
-  if (total <= maxCount) return
-
-  const toRemove = getAgentsToRemove(conn, maxCount)
+  const toRemove = selectAgentsToPrune(conn, maxCount)
   if (toRemove.length === 0) return
 
-  // Clear sprint task FK references first
-  for (const row of toRemove) {
-    clearSprintTaskFk(row.id)
-  }
+  deletePrunedAgentsFromDb(conn, toRemove)
+  await removePrunedAgentLogDirs(toRemove)
+  await removeEmptyDateDirs()
+}
 
-  // Prune associated events before removing agent records
+function selectAgentsToPrune(
+  conn: Database.Database,
+  maxCount: number
+): Array<{ id: string; started_at: string }> {
+  const total = countAgents(conn)
+  if (total <= maxCount) return []
+  return getAgentsToRemove(conn, maxCount)
+}
+
+function deletePrunedAgentsFromDb(conn: Database.Database, toRemove: Array<{ id: string }>): void {
+  // Clear sprint task FK references first so the DELETE below doesn't trip the
+  // foreign-key constraint on `sprint_tasks.agent_run_id`.
+  for (const row of toRemove) clearSprintTaskFk(row.id)
+
   pruneEventsByAgentIds(
     conn,
     toRemove.map((r) => r.id)
   )
 
-  // Then delete agents from local SQLite in a transaction
   const tx = conn.transaction(() => {
-    for (const row of toRemove) {
-      deleteAgent(conn, row.id)
-    }
+    for (const row of toRemove) deleteAgent(conn, row.id)
   })
   tx()
+}
 
-  // Clean up log directories for pruned agents
+async function removePrunedAgentLogDirs(
+  toRemove: Array<{ id: string; started_at: string }>
+): Promise<void> {
   for (const row of toRemove) {
-    const date = datePrefix(row.started_at)
-    const logDir = join(LOGS_DIR, date, row.id)
+    const logDir = join(LOGS_DIR, datePrefix(row.started_at), row.id)
     try {
       await rm(logDir, { recursive: true, force: true })
     } catch {
-      // Already gone
+      // Already gone — nothing to clean up.
     }
   }
+}
 
-  // Clean up empty date directories
+async function removeEmptyDateDirs(): Promise<void> {
+  let dateDirs: string[]
   try {
-    const dateDirs = await readdir(LOGS_DIR)
-    for (const d of dateDirs) {
-      const dirPath = join(LOGS_DIR, d)
-      try {
-        const s = await stat(dirPath)
-        if (!s.isDirectory()) continue
-        const entries = await readdir(dirPath)
-        if (entries.length === 0) {
-          await rm(dirPath, { recursive: true, force: true })
-        }
-      } catch {
-        // Skip
-      }
-    }
+    dateDirs = await readdir(LOGS_DIR)
   } catch {
-    // Logs dir may not exist
+    // Logs dir may not exist — nothing to sweep.
+    return
+  }
+  for (const d of dateDirs) {
+    const dirPath = join(LOGS_DIR, d)
+    try {
+      const s = await stat(dirPath)
+      if (!s.isDirectory()) continue
+      const entries = await readdir(dirPath)
+      if (entries.length === 0) {
+        await rm(dirPath, { recursive: true, force: true })
+      }
+    } catch {
+      // Skip — the entry vanished or permission flipped mid-sweep.
+    }
   }
 }
 

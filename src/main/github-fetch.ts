@@ -294,64 +294,76 @@ export async function fetchAllGitHubPages<T>(
 // Structured error classification + typed JSON fetch
 // ---------------------------------------------------------------------------
 
+type HttpErrorFactory = (response: Response, body: string) => GitHubError
+
 /**
- * Classify an HTTP error Response into a structured `GitHubError`.
- * Uses header/body signals to distinguish rate-limit, billing (Actions
- * disabled), permission (missing scope), not-found, and server errors.
+ * Status → factory lookup for the deterministic branches. 403 is a mini
+ * dispatcher of its own because the response-body and rate-limit header
+ * disambiguate three distinct cases (rate-limit, billing, permission).
+ */
+const HTTP_ERROR_FACTORIES: Record<number, HttpErrorFactory> = {
+  401: (_r, _body) => ({
+    kind: 'token-expired',
+    status: 401,
+    message: 'GitHub token is invalid or expired',
+    retryable: false
+  }),
+  403: classify403,
+  404: (_r, _body) => ({
+    kind: 'not-found',
+    status: 404,
+    message: 'Resource not found',
+    retryable: false
+  }),
+  422: (_r, body) => ({
+    kind: 'validation',
+    status: 422,
+    message: `Validation failed: ${body.slice(0, 200) || 'no details'}`,
+    retryable: false
+  })
+}
+
+/**
+ * Classify an HTTP error Response into a structured `GitHubError`. Uses
+ * header/body signals to distinguish rate-limit, billing (Actions disabled),
+ * permission (missing scope), not-found, and server errors.
  */
 export function classifyHttpError(response: Response, body: string): GitHubError {
   const status = response.status
-  if (status === 401) {
-    return {
-      kind: 'token-expired',
-      status,
-      message: 'GitHub token is invalid or expired',
-      retryable: false
-    }
-  }
-  if (status === 403) {
-    const remaining = response.headers.get('x-ratelimit-remaining')
-    if (remaining === '0') {
-      return {
-        kind: 'rate-limit',
-        status,
-        message: 'GitHub API rate limit exceeded',
-        retryable: true
-      }
-    }
-    // Body-text heuristic for Actions-disabled / billing-blocked responses.
-    // GitHub returns this when workflow jobs fail to start due to account
-    // payment issues or spending-limit cap.
-    if (/not started|spending limit|billing|payment has failed|payment/i.test(body)) {
-      return {
-        kind: 'billing',
-        status,
-        message: 'GitHub Actions disabled — billing issue or spending limit reached',
-        retryable: false
-      }
-    }
-    return {
-      kind: 'permission',
-      status,
-      message: `GitHub API forbidden: ${body.slice(0, 200) || 'no details'}`,
-      retryable: false
-    }
-  }
-  if (status === 404) {
-    return { kind: 'not-found', status, message: 'Resource not found', retryable: false }
-  }
-  if (status === 422) {
-    return {
-      kind: 'validation',
-      status,
-      message: `Validation failed: ${body.slice(0, 200) || 'no details'}`,
-      retryable: false
-    }
-  }
+  const factory = HTTP_ERROR_FACTORIES[status]
+  if (factory) return factory(response, body)
   if (status >= 500 && status < 600) {
     return { kind: 'server', status, message: `GitHub server error (${status})`, retryable: true }
   }
   return { kind: 'unknown', status, message: `HTTP ${status}`, retryable: false }
+}
+
+function classify403(response: Response, body: string): GitHubError {
+  if (response.headers.get('x-ratelimit-remaining') === '0') {
+    return {
+      kind: 'rate-limit',
+      status: 403,
+      message: 'GitHub API rate limit exceeded',
+      retryable: true
+    }
+  }
+  // Body-text heuristic for Actions-disabled / billing-blocked responses.
+  // GitHub returns this when workflow jobs fail to start due to account
+  // payment issues or spending-limit cap.
+  if (/not started|spending limit|billing|payment has failed|payment/i.test(body)) {
+    return {
+      kind: 'billing',
+      status: 403,
+      message: 'GitHub Actions disabled — billing issue or spending limit reached',
+      retryable: false
+    }
+  }
+  return {
+    kind: 'permission',
+    status: 403,
+    message: `GitHub API forbidden: ${body.slice(0, 200) || 'no details'}`,
+    retryable: false
+  }
 }
 
 /**

@@ -7,12 +7,12 @@
  * Failures are non-fatal: the task stays in 'review' for human action.
  */
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { IUnitOfWork } from '../data/unit-of-work'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { nowIso } from '../../shared/time'
 import { evaluateAutoMergePolicy } from './auto-merge-policy'
 import { executeSquashMerge } from '../lib/git-operations'
-import { getDb } from '../db'
 import { getSettingJson } from '../settings'
 
 export interface AutoMergeContext {
@@ -21,6 +21,7 @@ export interface AutoMergeContext {
   branch: string
   worktreePath: string
   repo: IAgentTaskRepository
+  unitOfWork: IUnitOfWork
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
 }
@@ -51,7 +52,7 @@ function getRepoConfig(
 }
 
 export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
-  const { taskId, title, branch, worktreePath, repo, logger, onTaskTerminal } = opts
+  const { taskId, title, branch, worktreePath, repo, unitOfWork, logger, onTaskTerminal } = opts
   const rules =
     getSettingJson<import('../../shared/types/task-types').AutoReviewRule[]>('autoReview.rules')
 
@@ -85,7 +86,7 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
     })
 
     if (mergeResult === 'merged') {
-      finalizeAutoMergeStatus(taskId, repo, logger)
+      finalizeAutoMergeStatus(taskId, repo, unitOfWork, logger)
       logger.info(`[completion] Task ${taskId} auto-merged successfully`)
       await onTaskTerminal(taskId, 'done')
     } else if (mergeResult === 'dirty-main') {
@@ -119,8 +120,12 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
  * loud banner so the on-call operator knows exactly which task needs manual
  * status reconciliation.
  */
-function finalizeAutoMergeStatus(taskId: string, repo: IAgentTaskRepository, logger: Logger): void {
-  const db = getDb()
+function finalizeAutoMergeStatus(
+  taskId: string,
+  repo: IAgentTaskRepository,
+  unitOfWork: IUnitOfWork,
+  logger: Logger
+): void {
   const reviewTask = repo.getTask(taskId)
   const statusPatch: Record<string, unknown> = {
     status: 'done',
@@ -129,12 +134,10 @@ function finalizeAutoMergeStatus(taskId: string, repo: IAgentTaskRepository, log
     ...(reviewTask?.duration_ms !== undefined ? { duration_ms: reviewTask.duration_ms } : {})
   }
 
-  const persistStatus = db.transaction(() => {
-    repo.updateTask(taskId, statusPatch)
-  })
-
   try {
-    persistStatus()
+    unitOfWork.runInTransaction(() => {
+      repo.updateTask(taskId, statusPatch)
+    })
   } catch (err) {
     logger.error(
       `[auto-merge] COMMIT LANDED ON MAIN but status update failed — task ${taskId} may need manual status reconciliation: ${err}`

@@ -23,9 +23,9 @@ import {
   updateTask,
   listTasks,
   TaskValidationError
-} from '../services/sprint-service'
+} from './sprint-service'
 import type { CreateTaskInput } from '../data/sprint-task-repository'
-import type { EpicGroupService } from '../services/epic-group-service'
+import type { EpicGroupService } from './epic-group-service'
 import type { Logger } from '../logger'
 import type { RepoConfig } from '../paths'
 import { getConfiguredRepos } from '../paths'

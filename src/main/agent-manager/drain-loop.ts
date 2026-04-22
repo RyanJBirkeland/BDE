@@ -218,34 +218,51 @@ function readQueueDepth(deps: DrainLoopDeps): number {
 }
 
 /**
- * Original spec-level failure path — counts consecutive failures and quarantines
- * the task after `DRAIN_QUARANTINE_THRESHOLD` churns. Unchanged from pre-pause
- * behavior; only lifted out so the catch block can branch on classification.
+ * Spec-level failure path — counts consecutive failures and quarantines the
+ * task after `DRAIN_QUARANTINE_THRESHOLD` churns.
+ *
+ * Pure dispatch: increment the counter, check the threshold, build a note,
+ * delegate to `applyQuarantine`. Each step has a single responsibility.
  */
 function handleSpecLevelFailure(taskId: string, err: unknown, deps: DrainLoopDeps): void {
   const count = (deps.drainFailureCounts.get(taskId) ?? 0) + 1
   deps.drainFailureCounts.set(taskId, count)
-  if (count < DRAIN_QUARANTINE_THRESHOLD) return
+  if (!shouldQuarantine(count)) return
 
   deps.logger.error(
     `[agent-manager] Task ${taskId} failed ${count} consecutive times — quarantining to prevent drain churn`
   )
+  const note = formatQuarantineNote(count, err)
+  applyQuarantine(taskId, note, deps)
+}
+
+function shouldQuarantine(consecutiveFailures: number): boolean {
+  return consecutiveFailures >= DRAIN_QUARANTINE_THRESHOLD
+}
+
+function formatQuarantineNote(count: number, err: unknown): string {
   const errMsg = err instanceof Error ? err.message : String(err)
   const note = `Task processing failed ${count} consecutive times in the drain loop: ${errMsg}. Check ~/.bde/bde.log for details.`
-  const truncated =
-    note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+  return note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+}
+
+/**
+ * Choose `cancelled` for a task that never moved past `queued` (the agent
+ * never started — the queue itself is the failure surface) and `error` for
+ * everything else (the agent started, then failed).
+ */
+function quarantineStatusFor(currentStatus: string | undefined): 'cancelled' | 'error' {
+  return currentStatus === 'queued' ? 'cancelled' : 'error'
+}
+
+function applyQuarantine(taskId: string, note: string, deps: DrainLoopDeps): void {
   try {
     const currentTask = deps.repo.getTask(taskId)
-    const quarantineStatus: 'cancelled' | 'error' =
-      currentTask?.status === 'queued' ? 'cancelled' : 'error'
-    deps.repo.updateTask(taskId, {
-      status: quarantineStatus,
-      notes: truncated,
-      claimed_by: null
-    })
+    const status = quarantineStatusFor(currentTask?.status)
+    deps.repo.updateTask(taskId, { status, notes: note, claimed_by: null })
     deps.drainFailureCounts.delete(taskId)
     deps
-      .onTaskTerminal(taskId, quarantineStatus)
+      .onTaskTerminal(taskId, status)
       .catch((termErr) =>
         deps.logger.warn(
           `[agent-manager] onTerminal failed for quarantined task ${taskId}: ${termErr}`

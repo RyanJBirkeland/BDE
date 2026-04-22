@@ -16,7 +16,7 @@ import {
   buildScratchpadSection,
   buildCrossRepoContractSection
 } from './prompt-sections'
-import type { BuildPromptInput } from '../lib/prompt-composer'
+import type { BuildPromptInput } from '../../shared/types'
 import { PROMPT_TRUNCATION } from './prompt-constants'
 import { getConfiguredRepos } from '../paths'
 

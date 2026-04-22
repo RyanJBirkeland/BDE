@@ -83,3 +83,6 @@ export type {
   PartnerMessage,
   ChatChunk
 } from './review-types'
+
+// Agent prompt input
+export type { BuildPromptInput } from './agent-prompt'

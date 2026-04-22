@@ -2,31 +2,25 @@ import type { MetricsCollector } from './metrics'
 import type { DependencyIndex } from '../services/dependency-service'
 import type { EpicDepsReader } from '../services/epic-dependency-service'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { IUnitOfWork } from '../data/unit-of-work'
 import { NOTES_MAX_LENGTH } from './types'
 import type { AgentManagerConfig } from './types'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { createLogger } from '../logger'
 import { resolveDependents } from '../lib/resolve-dependents'
 import { getSetting } from '../settings'
-import { getDb } from '../db'
 
-const logger = createLogger('terminal-handler')
-
-/**
- * Wraps a synchronous function in a better-sqlite3 transaction so cascade
- * cancellations are atomic — partial failures roll back the whole batch.
- */
-function runInTransactionSafe(fn: () => void): void {
-  const db = getDb()
-  const tx = db.transaction(fn)
-  try {
-    tx()
-  } catch (err) {
-    // Log with module context before propagating — the outer caller's catch
-    // has the taskId but not the transaction scope.
-    logger.error(`SQLite transaction failed: ${err}`)
-    throw err
+function wrapTransactionWithLogging(
+  unitOfWork: IUnitOfWork,
+  logger: Logger
+): (fn: () => void) => void {
+  return (fn) => {
+    try {
+      unitOfWork.runInTransaction(fn)
+    } catch (err) {
+      logger.error(`SQLite transaction failed: ${err}`)
+      throw err
+    }
   }
 }
 
@@ -44,6 +38,7 @@ async function resolveTerminalDependents(
   depIndex: DependencyIndex,
   epicIndex: EpicDepsReader,
   repo: IAgentTaskRepository,
+  unitOfWork: IUnitOfWork,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   logger: Logger
 ): Promise<void> {
@@ -58,6 +53,7 @@ async function resolveTerminalDependents(
   // at most one poll interval stale, any missed edges are caught on the next
   // drain tick. The caller sets _depIndexDirty=true so the next tick performs
   // a full rebuild before processing queued tasks.
+  const runInTransactionSafe = wrapTransactionWithLogging(unitOfWork, logger)
   try {
     resolveDependents(
       taskId,
@@ -94,6 +90,7 @@ export interface TerminalHandlerDeps {
   depIndex: DependencyIndex
   epicIndex: EpicDepsReader
   repo: IAgentTaskRepository
+  unitOfWork: IUnitOfWork
   config: AgentManagerConfig
   terminalCalled: Map<string, Promise<void>>
   logger: Logger
@@ -105,7 +102,7 @@ async function executeTerminal(
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   deps: TerminalHandlerDeps
 ): Promise<void> {
-  const { metrics, depIndex, epicIndex, repo, config, logger } = deps
+  const { metrics, depIndex, epicIndex, repo, unitOfWork, config, logger } = deps
   recordTerminalMetrics(status, metrics)
   if (config.onStatusTerminal) {
     config.onStatusTerminal(taskId, status)
@@ -116,6 +113,7 @@ async function executeTerminal(
       depIndex,
       epicIndex,
       repo,
+      unitOfWork,
       onTaskTerminal,
       logger
     )

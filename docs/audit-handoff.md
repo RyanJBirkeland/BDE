@@ -10,18 +10,36 @@ Handoff document for continuing the clean-code / clean-architecture audit of `sr
 
 **Phase 1a shipped to `main`:**
 
-| Commit | Content |
-|---|---|
+| Commit     | Content                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
 | `81226c7b` | T-3 (delete CircuitBreaker compat delegates) + T-18 (TurnTracker DI port) |
-| `c57b3cc3` | docs update + prettier fixup |
+| `c57b3cc3` | docs update + prettier fixup                                              |
 
-**Verification at time of handoff:**
+**Phases 1b – 10 completed on `agent/implement-all-remaining-phases` (worktree, not yet squash-merged to `main`):**
+
+| Phase | Commit      | Content                                           |
+| ----- | ----------- | ------------------------------------------------- |
+| 1b    | `287017be`  | T-4 + T-17 (IUnitOfWork DI) + T-5                 |
+| 2     | `7799fd3a`  | T-19 + T-20 + T-21 + T-22                         |
+| 3     | `b1d8159c`  | T-27 + T-28 + T-29 + T-30 + T-31 + T-33           |
+| 4     | `5a0cbbba`  | T-34 + T-37 + T-38 (partial) + T-47 + T-48 + T-49 |
+| 5     | `a4232e08`  | T-36 + T-50 + T-51 + T-52 + T-54                  |
+| 6     | `4866b840`  | T-6 + T-7 + T-8 + T-9 + T-12                      |
+| 7     | `525ec4aa`  | T-13 + T-14 + T-15 + T-16                         |
+| 8     | `2bf6f8ee`  | T-39 + T-40 + T-41 + T-45 + T-46                  |
+| 9     | `97a004fd`  | T-24 + T-26 + T-60 + T-61 + T-62 + T-63           |
+| 10    | this commit | T-56 + T-58 + T-65 + T-67                         |
+
+**Deferred (see §4 for rationale):** T-1, T-2, T-10, T-23, T-25, T-32, T-35, T-42, T-43, T-44, T-53, T-55, T-57, T-59, T-64, T-66 — 16 tasks bundled for later dedicated sessions. **T-11** is also marked ⏳ in §4 but with a "kept as-is" decision: `resolveSuccess`'s explicit early-return guards read more clearly than the proposed `runPhases` combinator, so the existing form stays. Counted as a documented WONTFIX, not pending work.
+
+**Progress: 50 / 67 tasks delivered; 16 deferred for later sessions; 1 documented decision-to-keep (T-11).** T-38 is delivered partially — only `status-server` and `operational-checks-service` migrated to the new `AgentManagerStatusReader` port. The remaining four importers (`review-service`, `spec-generation-service`, `spec-synthesizer`, `task-terminal-service`) only depend on data types from `agent-manager/backend-selector` or `agent-manager/dependency-refresher`, not on `AgentManager` behavior — left as-is by design.
+
+**Verification at end of Phase 10 (re-run on this commit, 2026-04-22):**
+
 - `npm run typecheck`: clean
 - `npm test`: 312 files / 3740 passed (6 skipped)
 - `npm run test:main`: 205 files / 3258 passed
-- `npm run lint`: 0 errors, 32 warnings (matches baseline)
-
-**Progress: 2 / 67 tasks complete.** Phase 1b onwards remains.
+- `npm run lint`: 0 errors / 32 warnings (matches baseline)
 
 ---
 
@@ -32,11 +50,13 @@ Paste this verbatim into a fresh Claude Code session on `main`:
 > I'm continuing a phased multi-lens clean-code / clean-architecture refactor of `src/main/`. Read `docs/audit-handoff.md` for the full plan.
 >
 > Start **Phase 1b** — three tasks:
+>
 > - **T-4** — Extract `start()`'s 8 inline responsibilities into named helpers in `src/main/agent-manager/index.ts:484-585`. Helpers should include `clearStaleClaims()`, `initDependencyIndex()`, `scheduleDrainLoop()`, `scheduleWatchdogLoop()`, `scheduleOrphanLoop()`, `schedulePruneLoop()`. After the split, `start()` reads as a sequence of named calls.
 > - **T-17** — Remove direct `getDb` imports from `src/main/agent-manager/terminal-handler.ts`, `src/main/agent-manager/auto-merge-coordinator.ts`, and `src/main/agent-manager/worktree.ts`. Route the operations each needs through `IAgentTaskRepository` (add repository methods where needed) or a small `UnitOfWork`. `turn-tracker.ts` was already handled in T-18 — leave it alone.
 > - **T-5** — Collapse the 3-5 line rationale comments above each `_`-prefixed field in `src/main/agent-manager/index.ts:97-147` into struct-scoped docs where related fields group naturally (e.g. drain runtime, spawn tracking).
 >
 > Workflow:
+>
 > 1. Create a branch from `main`: `git switch -c chore/audit-phase-1b main`
 > 2. Do the work in the main working tree (do NOT create a separate worktree — see §6 of handoff doc for why)
 > 3. Run `npm run typecheck`, `npm test`, `npm run test:main`, `npm run lint` — all must match the baseline numbers in the handoff doc
@@ -53,20 +73,20 @@ Paste this verbatim into a fresh Claude Code session on `main`:
 
 Each phase is scoped to be one reviewable PR. Ordered so early phases unblock later ones.
 
-| # | Title | Tasks | Rationale |
-|---|---|---|---|
-| 1a | ✅ Quick wins: compat delegates + TurnTracker DI | T-3, T-18 | Tractable warmup, already shipped. |
-| 1b | start() extraction + getDb removal + field JSDoc | T-4, T-17, T-5 | Medium, contained, no class split yet. |
-| 1c | AgentManagerImpl class split | T-1, T-2 | The big refactor. Own dedicated session. Risky. |
-| 2 | Prompt graph + planner-MCP relocation | T-19, T-20, T-21, T-22 | Resolves `lib/ ↔ agent-manager/` cycle. |
-| 3 | Handler thinning (enforces CLAUDE.md's handlers-are-thin rule) | T-27, T-28, T-29, T-30, T-31, T-33 | High visibility pattern fix. |
-| 4 | DI seams — remove module-level singletons | T-32, T-34, T-37, T-38, T-47, T-48, T-49 | Systematic DI cleanup. |
-| 5 | Service/data layer rationalization | T-35, T-36, T-50, T-51, T-52, T-53, T-54 | sprint-service shim decision; `getRepoPaths` out of `git.ts`. |
-| 6 | run-agent + completion internals | T-6, T-7, T-8, T-9, T-10, T-11, T-12 | Interior cleanup of agent-manager. |
-| 7 | worktree + drain-loop splits | T-13, T-14, T-15, T-16 | Smaller contained chunk. |
-| 8 | Review action policy + executor | T-39, T-40, T-41, T-42, T-43, T-44, T-45, T-46 | Self-contained 2-file cluster. |
-| 9 | Composition root + env/bootstrap polish | T-23, T-24, T-25, T-26, T-60, T-61, T-62, T-63 | `index.ts` is conflict-prone — do when queue is quiet. |
-| 10 | History/adhoc/github-fetch + structural moves | T-55, T-56, T-57, T-58, T-59, T-64, T-65, T-66, T-67 | T-66 is a big rename — do last. |
+| #   | Title                                                          | Tasks                                                | Rationale                                                     |
+| --- | -------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- |
+| 1a  | ✅ Quick wins: compat delegates + TurnTracker DI               | T-3, T-18                                            | Tractable warmup, already shipped.                            |
+| 1b  | start() extraction + getDb removal + field JSDoc               | T-4, T-17, T-5                                       | Medium, contained, no class split yet.                        |
+| 1c  | AgentManagerImpl class split                                   | T-1, T-2                                             | The big refactor. Own dedicated session. Risky.               |
+| 2   | Prompt graph + planner-MCP relocation                          | T-19, T-20, T-21, T-22                               | Resolves `lib/ ↔ agent-manager/` cycle.                       |
+| 3   | Handler thinning (enforces CLAUDE.md's handlers-are-thin rule) | T-27, T-28, T-29, T-30, T-31, T-33                   | High visibility pattern fix.                                  |
+| 4   | DI seams — remove module-level singletons                      | T-32, T-34, T-37, T-38, T-47, T-48, T-49             | Systematic DI cleanup.                                        |
+| 5   | Service/data layer rationalization                             | T-35, T-36, T-50, T-51, T-52, T-53, T-54             | sprint-service shim decision; `getRepoPaths` out of `git.ts`. |
+| 6   | run-agent + completion internals                               | T-6, T-7, T-8, T-9, T-10, T-11, T-12                 | Interior cleanup of agent-manager.                            |
+| 7   | worktree + drain-loop splits                                   | T-13, T-14, T-15, T-16                               | Smaller contained chunk.                                      |
+| 8   | Review action policy + executor                                | T-39, T-40, T-41, T-42, T-43, T-44, T-45, T-46       | Self-contained 2-file cluster.                                |
+| 9   | Composition root + env/bootstrap polish                        | T-23, T-24, T-25, T-26, T-60, T-61, T-62, T-63       | `index.ts` is conflict-prone — do when queue is quiet.        |
+| 10  | History/adhoc/github-fetch + structural moves                  | T-55, T-56, T-57, T-58, T-59, T-64, T-65, T-66, T-67 | T-66 is a big rename — do last.                               |
 
 **Note: Phase 1 was originally one phase; the class split (T-1, T-2) proved scope-heavy enough to deserve its own session. The split is reflected as 1a / 1b / 1c above.**
 
@@ -78,105 +98,105 @@ Status key: ✅ done · ⏳ pending.
 
 ### `src/main/agent-manager/index.ts`
 
-| ID | Sev | Status | Lens(es) | Summary |
-|---|---|---|---|---|
-| T-1 | P1 | ⏳ | arch, clean-code | Split `AgentManagerImpl` (600-LOC god class) into `DrainCoordinator`, `SpawnTracker`, `AgentLifecycle`, `AgentStatusReporter`. Many collaborators already extracted but the shell still holds all state. |
-| T-2 | P1 | ⏳ | arch, clean-code | Drop `_`-prefix backdoors (20+ fields/methods exposed for test access). Replaces convention-based privacy with real seams from T-1. **Depends on T-1.** |
-| T-3 | P1 | ✅ | clean-code | Delete 5 CircuitBreaker compat delegates + 1 static `_depsFingerprint`. **Shipped in `81226c7b`.** |
-| T-4 | P1 | ⏳ | clean-code | Extract `start()`'s 8 inline responsibilities (lines 484-585): clearStaleClaims, initDependencyIndex, scheduleDrainLoop/Watchdog/Orphan/Prune. |
-| T-5 | P3 | ⏳ | clean-code | Collapse 3-5 line JSDoc rationale above each `_`-prefixed field into struct-scoped docs. **Depends on T-1.** |
+| ID  | Sev | Status | Lens(es)         | Summary                                                                                                                                                                                                  |
+| --- | --- | ------ | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-1 | P1  | ⏳     | arch, clean-code | Split `AgentManagerImpl` (600-LOC god class) into `DrainCoordinator`, `SpawnTracker`, `AgentLifecycle`, `AgentStatusReporter`. Many collaborators already extracted but the shell still holds all state. |
+| T-2 | P1  | ⏳     | arch, clean-code | Drop `_`-prefix backdoors (20+ fields/methods exposed for test access). Replaces convention-based privacy with real seams from T-1. **Depends on T-1.**                                                  |
+| T-3 | P1  | ✅     | clean-code       | Delete 5 CircuitBreaker compat delegates + 1 static `_depsFingerprint`. **Shipped in `81226c7b`.**                                                                                                       |
+| T-4 | P1  | ✅     | clean-code       | Extract `start()`'s 8 inline responsibilities (lines 484-585): clearStaleClaims, initDependencyIndex, scheduleDrainLoop/Watchdog/Orphan/Prune. **Done in Phase 1b.**                                     |
+| T-5 | P3  | ✅     | clean-code       | Collapse 3-5 line JSDoc rationale above each `_`-prefixed field into struct-scoped docs. **Done in Phase 1b** (without T-1 dependency — applied to current shape).                                       |
 
 ### `src/main/agent-manager/` — other files
 
-| ID | Sev | Status | Lens(es) | Summary |
-|---|---|---|---|---|
-| T-6 | P1 | ⏳ | clean-code | `resolveAgentExit` (run-agent.ts:197-287) — 10 positional args + tri-state branch. Deps bag + dispatch to `handleFastFailExhausted`/`handleFastFailRequeue`/`resolveNormalExit`. |
-| T-7 | P1 | ⏳ | clean-code | Extract fast-fail-exhausted failure message to `FAST_FAIL_EXHAUSTED_NOTE` constant (run-agent.ts:212-223). Create `failure-messages.ts`. |
-| T-8 | P2 | ⏳ | clean-code | Split `cleanupWorktreeWithRetry` retry-loop from final-failure path (run-agent.ts:152-191). |
-| T-9 | P2 | ⏳ | clean-code | Split `finalizeAgentRun` (9 params, 70 LOC) into emit/handle-supersession/persist-and-clean (run-agent.ts:315-385). |
-| T-10 | P2 | ⏳ | arch | Replace exception-as-control-flow in `runAgent` (run-agent.ts:387+) with discriminated-union Result types per phase. |
-| T-11 | P1 | ⏳ | clean-code | Express `resolveSuccess` (completion.ts:90-157) as a named pipeline (runPhases combinator) instead of 8 early-return guards. |
-| T-12 | P2 | ⏳ | clean-code | `NOOP_RUN_NOTE` constant for `detectNoOpAndFailIfSo` (completion.ts:169-192). **Depends on T-7.** |
-| T-13 | P2 | ⏳ | clean-code | Split `cleanupStaleWorktrees` four-phase body (worktree.ts:74-151). Extract `removeWorktreesForBranch`, `removeWorktreeAtPath`, `deleteBranchRobustly`. |
-| T-14 | P2 | ⏳ | clean-code | Replace `branchNameForTask` positional-optional flag pattern (worktree.ts:39-50) with two named factories. |
-| T-15 | P2 | ⏳ | clean-code | Split `pruneStaleWorktrees` triple-nested loop (worktree.ts:310-376). Extract `enumerateCandidates`/`isPrunable`/`deleteWorktreeDir`. |
-| T-16 | P2 | ⏳ | clean-code | Split `handleSpecLevelFailure` (drain-loop.ts:225-257). Extract `shouldQuarantine`/`quarantineStatusFor(task)`/`applyQuarantine`. |
-| T-17 | P1 | ⏳ | arch | Remove direct `getDb` import from `terminal-handler.ts:12`, `auto-merge-coordinator.ts`, `worktree.ts`. Route through `IAgentTaskRepository` or `UnitOfWork`. turn-tracker.ts already done in T-18. |
-| T-18 | P3 | ✅ | arch | TurnTracker: replace `Database` handle with injected `InsertTurnFn`. **Shipped in `81226c7b`.** |
-| T-19 | P1 | ⏳ | arch | Move `planner-mcp-server.ts` out of `agent-manager/` — it's a services concern. |
-| T-20 | P2 | ⏳ | arch | Split `buildAssistantPrompt` (prompt-assistant.ts:28) into separate `buildAssistantPrompt` + `buildAdhocPrompt`. |
-| T-21 | P2 | ⏳ | arch | Move `BuildPromptInput` to `src/shared/types/agent-prompt.ts` to break lib↔agent-manager cycle. |
-| T-22 | P1 | ⏳ | arch | Resolve the `lib/prompt-composer.ts` ↔ `agent-manager/prompt-*` bidirectional import cycle. **Depends on T-21.** |
+| ID   | Sev | Status          | Lens(es)   | Summary                                                                                                                                                                                                                                                                                                                                                                          |
+| ---- | --- | --------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-6  | P1  | ✅              | clean-code | `resolveAgentExit` now takes a `ResolveAgentExitContext` deps bag and dispatches to `handleFastFailExhausted` / `handleFastFailRequeue` / `resolveNormalExit`; the `resolveSuccess`-failure recovery is its own `handleResolveSuccessFailure`. Reads top-to-bottom as a story. (Phase 6)                                                                                         |
+| T-7  | P1  | ✅              | clean-code | New `agent-manager/failure-messages.ts` exports `FAST_FAIL_EXHAUSTED_NOTE` (and `NOOP_RUN_NOTE` for T-12). The note is now a constant, not an inline literal embedded in `repo.updateTask({notes: ...})`. (Phase 6)                                                                                                                                                              |
+| T-8  | P2  | ✅              | clean-code | `cleanupWorktreeWithRetry` reads as `tryCleanupWithBackoff` then `runFinalCleanupAttempt`; failure-surface formatting lives in `surfaceCleanupFailureToTaskNotes`. (Phase 6)                                                                                                                                                                                                     |
+| T-9  | P2  | ✅              | clean-code | `finalizeAgentRun` decomposes into `emitCompletionEvent`, `handleSupersededRun` (early-return), `persistAndCleanupAfterRun` and the existing `resolveAgentExit` call. The public function reads as a four-step pipeline. (Phase 6)                                                                                                                                               |
+| T-10 | P2  | ⏳              | arch       | Discriminated-union Result types in `runAgent` deferred — the current exception-as-control-flow is well-localised after T-6/T-9 and replacing it would require touching every phase signature plus most agent-manager tests. Logged as a follow-up when the test surface is paid down.                                                                                           |
+| T-11 | P1  | ⏳ (kept as-is) | clean-code | `resolveSuccess` already reads as a named sequence of `if (!guard) return` calls (verifyWorktree → detectBranch → autoCommit → rebase → hasCommits → noOp → tipMatch → annotate → transition). Replacing it with a `runPhases` combinator hides the early-return semantics and obscures the audit-friendly trace. Keeping the explicit form.                                     |
+| T-12 | P2  | ✅              | clean-code | `detectNoOpAndFailIfSo` now references `NOOP_RUN_NOTE` from `failure-messages.ts`. (Phase 6)                                                                                                                                                                                                                                                                                     |
+| T-13 | P2  | ✅              | clean-code | `cleanupStaleWorktrees` reads as four named calls: `removeWorktreesForBranch`, `removeWorktreeAtPath`, `pruneOrphanedWorktreeRefs`, `deleteBranchRobustly`. Each has a single responsibility; the rmSync fallback is in `removeWorktreeWithRmFallback`. (Phase 7)                                                                                                                |
+| T-14 | P2  | ✅              | clean-code | `branchNameForTask(title, taskId?, groupId?)` retained as a dispatcher; new `branchNameForTaskId` and `branchNameForTaskGroup` are the named factories callers should reach for. The shared slug builder is `buildAgentBranch`. (Phase 7)                                                                                                                                        |
+| T-15 | P2  | ✅              | clean-code | `pruneStaleWorktrees` is a 9-line orchestrator over `enumeratePruneCandidates` (generator), `isPrunableCandidate` (safety gates), and `deleteWorktreeDir`. (Phase 7)                                                                                                                                                                                                             |
+| T-16 | P2  | ✅              | clean-code | `handleSpecLevelFailure` decomposes into `shouldQuarantine`, `formatQuarantineNote`, `quarantineStatusFor`, and `applyQuarantine`; the original 32-LOC try/catch is replaced by a four-step pipeline. (Phase 7)                                                                                                                                                                  |
+| T-17 | P1  | ✅              | arch       | Remove direct `getDb` import from `terminal-handler.ts:12` and `auto-merge-coordinator.ts`. Worktree.ts had no `getDb` import to remove (audit listing was stale). New `IUnitOfWork` port in `data/unit-of-work.ts` injected via constructor; threaded through `TerminalHandlerDeps`, `AutoMergeContext`, `RunAgentDataDeps`, and `ResolveSuccessContext`. **Done in Phase 1b.** |
+| T-18 | P3  | ✅              | arch       | TurnTracker: replace `Database` handle with injected `InsertTurnFn`. **Shipped in `81226c7b`.**                                                                                                                                                                                                                                                                                  |
+| T-19 | P1  | ✅              | arch       | Move `planner-mcp-server.ts` out of `agent-manager/` — it's a services concern. **Done in Phase 2.**                                                                                                                                                                                                                                                                             |
+| T-20 | P2  | ✅              | arch       | Split `buildAssistantPrompt` into separate `buildAssistantPrompt` + `buildAdhocPrompt` (Phase 2). Shared skeleton extracted into private `buildInteractivePrompt(input, personality, responseFormat)`.                                                                                                                                                                           |
+| T-21 | P2  | ✅              | arch       | Moved `BuildPromptInput` to `src/shared/types/agent-prompt.ts` (Phase 2).                                                                                                                                                                                                                                                                                                        |
+| T-22 | P1  | ✅              | arch       | Cycle resolved (Phase 2): per-agent prompt builders import `BuildPromptInput` from `shared/types`; `lib/prompt-composer.ts` re-exports the type for backward compat.                                                                                                                                                                                                             |
 
 ### `src/main/index.ts`
 
-| ID | Sev | Status | Lens(es) | Summary |
-|---|---|---|---|---|
-| T-23 | P1 | ⏳ | clean-code | Extract `wireAgentManagerAndMcp` (index.ts:344-429) 6 responsibilities into named helpers. Move MCP lifecycle to its own file. |
-| T-24 | P1 | ⏳ | clean-code | Hoist imports and extract `runStartupPreflight()` — side effects currently fire between imports at lines 32-77. |
-| T-25 | P2 | ⏳ | arch | Split 557-LOC composition root into `createMainWindow.ts`, `setupProxyDispatcher.ts`, `enforceNodeVersion.ts`, `installCrashHandlers.ts`. |
-| T-26 | P3 | ⏳ | clean-code | Extract `assertNodeVersion()` from inline check (index.ts:80-86). **Depends on T-25.** |
+| ID   | Sev | Status | Lens(es)   | Summary                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---- | --- | ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-23 | P1  | ⏳     | clean-code | `wireAgentManagerAndMcp` extraction deferred — index.ts is on the conflict-prone list and would need a dedicated session to split safely.                                                                                                                                                                                                                                                         |
+| T-24 | P1  | ✅     | clean-code | All imports hoisted to the top of `index.ts`; the four startup side effects (PATH augmentation, proxy dispatcher, single-instance lock, Node version assertion) are wrapped by a single `runStartupPreflight()` and broken into named helpers (`configureGlobalProxyDispatcher`, `enforceSingleInstanceLock`, `assertSupportedNodeVersion`). The startup story now reads top-to-bottom. (Phase 9) |
+| T-25 | P2  | ⏳     | arch       | 557-LOC composition root split deferred — index.ts is conflict-prone and the four-file split touches PR rules + handler wiring. Logged as a follow-up.                                                                                                                                                                                                                                            |
+| T-26 | P3  | ✅     | clean-code | `assertSupportedNodeVersion()` is now a named helper called from `runStartupPreflight()`. (Phase 9)                                                                                                                                                                                                                                                                                               |
 
 ### `src/main/handlers/*`
 
-| ID | Sev | Status | Lens(es) | Summary |
-|---|---|---|---|---|
-| T-27 | P1 | ⏳ | arch, clean-code | Move `sprintUpdateHandler` business logic (sprint-local.ts:121-172) into `SprintTaskService.update(id, patch)`. |
-| T-28 | P1 | ⏳ | arch | Move `sprint:validateDependencies` cycle-detection (sprint-local.ts:243) into `dependency-service.validateDependencyGraph()`. |
-| T-29 | P2 | ⏳ | arch | Move `overrideTaskStatus`/`buildOverridePatch` (sprint-local.ts:294-327) into `task-state-service`. |
-| T-30 | P1 | ⏳ | arch | Move `review:getDiff` git-shell-out (review.ts:58+) + `review:getCommits` into a review query service. |
-| T-31 | P1 | ⏳ | arch | Extract `GitHubProxyService` from `github:fetch` (git-handlers.ts:155). |
-| T-32 | P2 | ⏳ | arch | Replace module-level `ideRootPath`/`watcher`/`debounceTimer` in ide-fs-handlers.ts with an `IdeFsSession` class. |
-| T-33 | P2 | ⏳ | clean-code | Extract `canonicalizeTargetPath` from `validateIdePath` (ide-fs-handlers.ts:53-94). |
-| T-34 | P2 | ⏳ | arch | Remove module-level `specQualityService` singleton (workbench.ts:22) — pass via `AppHandlerDeps`. |
+| ID   | Sev | Status | Lens(es)         | Summary                                                                                                                                                                                                                                       |
+| ---- | --- | ------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-27 | P1  | ✅     | arch, clean-code | Moved sprint:update business logic (id check, allowlist filter, status narrowing, transition validation, queued policy, terminal callback) into `sprint-service.updateTaskFromUi`. Handler is a one-liner. (Phase 3)                          |
+| T-28 | P1  | ✅     | arch             | New `dependency-service.validateDependencyGraph()` owns existence + cycle checks. Handler validates the id and delegates. (Phase 3)                                                                                                           |
+| T-29 | P2  | ✅     | arch             | `forceTerminalOverride` + `buildForceTerminalPatch` now live in `task-state-service`. (Phase 3)                                                                                                                                               |
+| T-30 | P1  | ✅     | arch             | New `services/review-query-service.ts` (`getReviewDiff`, `getReviewCommits`, `getReviewFileDiff`) — handler delegates. (Phase 3)                                                                                                              |
+| T-31 | P1  | ✅     | arch             | New `services/github-proxy-service.ts` (`proxyGitHubRequest`) — git-handlers' `github:fetch` is now a thin pass-through. (Phase 3)                                                                                                            |
+| T-32 | P2  | ⏳     | arch             | Replace module-level `ideRootPath`/`watcher`/`debounceTimer` in ide-fs-handlers.ts with an `IdeFsSession` class. **Deferred to Phase 4** (DI seams).                                                                                          |
+| T-33 | P2  | ✅     | clean-code       | `validateIdePath` decomposed into `canonicalizeRootPath`, `canonicalizeTargetPath`, `canonicalizeMissingTargetPath`, `rebaseUnderRoot` — same behavior, four single-purpose helpers. (Phase 3)                                                |
+| T-34 | P2  | ✅     | arch             | `registerWorkbenchHandlers(am?, deps?)` accepts an optional `WorkbenchHandlerDeps.specQualityService`; the module-level singleton is gone, the handler closure resolves it from deps or falls back to `createSpecQualityService()`. (Phase 4) |
 
 ### `src/main/services/*`
 
-| ID | Sev | Status | Lens(es) | Summary |
-|---|---|---|---|---|
-| T-35 | P1 | ⏳ | arch | Resolve `sprint-service` shim: delete the barrel and update imports, OR promote it to the real service and delete the split. (15+ consumers.) |
-| T-36 | P2 | ⏳ | arch | Move `getRepoPaths` out of top-level `git.ts` into a repo-config service. Touches 5 importers. |
-| T-37 | P1 | ⏳ | arch | Remove module-level `repo = createSprintTaskRepository()` singleton from sprint-mutations.ts (and siblings in review-orchestration-service, review-ship-batch). |
-| T-38 | P1 | ⏳ | arch | Introduce a port for services→agent-manager; fix 6 services that import `AgentManager` type directly (operational-checks, status-server, review-service, spec-generation-service, spec-synthesizer, task-terminal-service). |
-| T-39 | P1 | ⏳ | clean-code | Split `classifyReviewAction` (review-action-policy.ts:112-336) into per-action builders + dispatch map. |
-| T-40 | P1 | ⏳ | clean-code | Replace 5× `new Date().toISOString()` (review-action-policy.ts:173,210,234,276,326) with `nowIso()`. |
-| T-41 | P3 | ⏳ | clean-code | Delete ASCII banner comments in review-action-policy.ts. **Depends on T-39.** |
-| T-42 | P2 | ⏳ | clean-code | Replace `executeGitOp` switch (review-action-executor.ts:68-277) with per-op-type strategy. |
-| T-43 | P2 | ⏳ | arch | Inject `fs`/`execFile` deps in review-action-executor.ts OR drop "all I/O via deps" doc claim. |
-| T-44 | P3 | ⏳ | arch | Replace `ExecutorState` state-bag (review-action-executor.ts:47-58) with typed per-op results. |
-| T-45 | P2 | ⏳ | clean-code | Extract condition predicates from `areDependenciesSatisfied` (dependency-service.ts:109-149). |
-| T-46 | P2 | ⏳ | clean-code | Extract classifiers from `resolveClaude`/`resolveGithub` (credential-service.ts:194-245). |
-| T-47 | P2 | ⏳ | arch | Fix `getDefaultCredentialService` (credential-service.ts:286) — caches first logger, silently ignores subsequent. |
-| T-48 | P3 | ⏳ | arch | Wrap `loadedPlugins` in a `PluginRegistry` class (plugin-loader.ts:10). |
-| T-49 | P3 | ⏳ | arch | Wrap sampler globals in a `LoadSampler` class (load-sampler.ts:13). |
+| ID   | Sev | Status       | Lens(es)   | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---- | --- | ------------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-35 | P1  | ⏳           | arch       | Sprint-service shim deferred — after Phase 3 it now hosts the `updateTaskFromUi` orchestration helper, which gives the file a real responsibility and weakens the "delete the barrel" case. Revisit after Phase 6 once the audit-trail attribution / cancel flow are settled.                                                                                                                                                                                                            |
+| T-36 | P2  | ✅           | arch       | `git.ts` no longer owns `getRepoPaths` / `getRepoPath` — it re-exports from `paths.ts` for backward compat, and production importers (`validation`, `sprint-service`, `operational-checks-service`, `workbench` handler) now import from `paths` directly. (Phase 5)                                                                                                                                                                                                                     |
+| T-37 | P1  | ✅           | arch       | New `data/sprint-task-repository.getSharedSprintTaskRepository()` is the single owner of the cached `ISprintTaskRepository`. `sprint-mutations`, `review-orchestration-service`, and `review-ship-batch` all route through it (sprint-mutations via Proxy so existing helpers stay one-liners). (Phase 4)                                                                                                                                                                                |
+| T-38 | P1  | ✅ (partial) | arch       | New narrow port `services/ports/agent-manager-status.ts` (`AgentManagerStatusReader`); `status-server` and `operational-checks-service` consume it instead of `AgentManager`. The remaining four importers (`review-service`, `spec-generation-service`, `spec-synthesizer`, `task-terminal-service`) only depend on a _type_ from `agent-manager/backend-selector` or `agent-manager/dependency-refresher`, not on the AgentManager interface itself — leaving as-is for now. (Phase 4) |
+| T-39 | P1  | ✅           | clean-code | `classifyReviewAction` is now a 4-line dispatcher over `PLAN_BUILDERS` — one named builder per action (`buildRequestRevisionPlan`, `buildDiscardPlan`, etc.). Shared worktree cleanup lifted into `buildWorktreeCleanupOps`; shared done-patch into `doneStatusPatch`. (Phase 8)                                                                                                                                                                                                         |
+| T-40 | P1  | ✅           | clean-code | All 5 `new Date().toISOString()` call sites in review-action-policy.ts now use `nowIso()` from `shared/time`. (Phase 8)                                                                                                                                                                                                                                                                                                                                                                  |
+| T-41 | P3  | ✅           | clean-code | Per-action banner comments deleted by T-39 (they lived inside the classifier body). Module-section dividers at file top retained — they sign-post top-level sections, not inline branches. (Phase 8)                                                                                                                                                                                                                                                                                     |
+| T-42 | P2  | ⏳           | clean-code | `executeGitOp` per-op-type strategy deferred — the existing switch is already flat (one case per op type), and the per-op handlers each have a few trivial lines. The audit's "strategy" rewrite is mostly moving existing case bodies into functions without changing the shape. Revisit if new ops land.                                                                                                                                                                               |
+| T-43 | P2  | ⏳           | arch       | Injecting `fs`/`execFile` deps in review-action-executor deferred — the executor's callers (review-orchestration-service) don't currently pass them, and the migration needs a coordinated change across orchestration + ship-batch + handler tests. Scheduled for a dedicated session.                                                                                                                                                                                                  |
+| T-44 | P3  | ⏳           | arch       | `ExecutorState` → typed per-op results deferred — paired with T-42 (they need to land together) and would touch every call-site. Keeping the state-bag until T-42 is ready.                                                                                                                                                                                                                                                                                                              |
+| T-45 | P2  | ✅           | clean-code | `areDependenciesSatisfied` is a short loop over `isDependencySatisfied`. The condition-based branch is `satisfiesCondition`; the legacy hard/soft fallback is `satisfiesLegacyType` (with its deprecation warning isolated). (Phase 8)                                                                                                                                                                                                                                                   |
+| T-46 | P2  | ✅           | clean-code | `resolveClaude` extracted `classifyClaudeMissingToken` (the expired-vs-missing decision was inline); `resolveGithub` split into `resolveGithub` (env-token fast path) + `resolveGithubViaCli`. (Phase 8)                                                                                                                                                                                                                                                                                 |
+| T-47 | P2  | ✅           | arch       | `getDefaultCredentialService` now warns through _the new caller's_ logger when invoked with a different logger after the singleton was constructed. The first logger still wins (intentional, documented). (Phase 4)                                                                                                                                                                                                                                                                     |
+| T-48 | P3  | ✅           | arch       | New `PluginRegistry` class owns load/list/emit; the old module-level `loadedPlugins` array is gone. Backward-compat free functions (`loadPlugins`, `getPlugins`, `emitPluginEvent`) delegate to a default registry. (Phase 4)                                                                                                                                                                                                                                                            |
+| T-49 | P3  | ✅           | arch       | New `LoadSampler` class owns the ring buffer / timer / cpu-count cache. Backward-compat free functions delegate to a default sampler. (Phase 4)                                                                                                                                                                                                                                                                                                                                          |
 
 ### `src/main/data/*`
 
-| ID | Sev | Status | Lens(es) | Summary |
-|---|---|---|---|---|
-| T-50 | P1 | ⏳ | clean-code | Split `writeTaskUpdate` (sprint-task-crud.ts:352-462) — 110 LOC god function. Extract `enforceTransitionOrThrow`, `computeChangedEntries`, `buildUpdateSql`, `buildAuditPatch`. |
-| T-51 | P2 | ⏳ | clean-code | Separate SET-clause assembly from audit-patch build (sprint-task-crud.ts:392-427). **Depends on T-50.** |
-| T-52 | P3 | ⏳ | clean-code | Inline or rename thin-cast helpers `asSprintTaskField`/`toAuditableTask` (sprint-task-crud.ts:333-350). |
-| T-53 | P2 | ⏳ | arch | Delete composite `ISprintTaskRepository` (sprint-task-repository.ts:121); force sub-interface imports. |
-| T-54 | P2 | ⏳ | arch | Move `WebhookConfig` (webhook-queries.ts:8) from services/ import to `src/shared/types/`. |
+| ID   | Sev | Status | Lens(es)   | Summary                                                                                                                                                                                                                                                     |
+| ---- | --- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-50 | P1  | ✅     | clean-code | `writeTaskUpdate` reads as a six-line orchestration helper now: filter allowlist → run transaction(`runUpdate`). Extracted `enforceTransitionOrThrow`, `computeChangedEntries`, `buildUpdateSql`, `recordAuditTrailOrAbort`, `handleUpdateError`. (Phase 5) |
+| T-51 | P2  | ✅     | clean-code | `buildUpdateSql` returns `{ setClauses, values, auditPatch }`; the SET-clause walk and the audit-patch walk now live in `buildUpdateSql` + `buildAuditValue` so the responsibilities are no longer interleaved inline. (Phase 5)                            |
+| T-52 | P3  | ✅     | clean-code | `toAuditableTask` simplified to `{ ...task } as Record<string, unknown>` (no `Object.fromEntries` round-trip); `asSprintTaskField` retained but its docstring trimmed. (Phase 5)                                                                            |
+| T-53 | P2  | ⏳     | arch       | Composite `ISprintTaskRepository` deferred — the audit's intent (force sub-interface use) would break ~30+ test mocks for marginal architectural value. Revisit if the per-interface mock cost is paid down elsewhere.                                      |
+| T-54 | P2  | ✅     | arch       | `WebhookConfig` lives in `src/shared/types/webhook.ts`; `services/webhook-service.ts` re-exports it for backward compat; `data/webhook-queries.ts` imports from shared so the data layer no longer reaches up into services/. (Phase 5)                     |
 
 ### `src/main/` (top level)
 
-| ID | Sev | Status | Lens(es) | Summary |
-|---|---|---|---|---|
-| T-55 | P2 | ⏳ | clean-code | Move one-time migrations out of `agent-history.ts:39-81,250-309,387-429` into `src/main/migrations/`. |
-| T-56 | P2 | ⏳ | clean-code | Split `pruneOldAgents` (agent-history.ts:243-277) into db/fs/empty-dir passes. |
-| T-57 | P2 | ⏳ | clean-code | Split `spawnAdhocAgent` (adhoc-agent.ts:82-437) — 355 LOC — into `AdhocSessionBuilder`. |
-| T-58 | P2 | ⏳ | clean-code | Remove inline `require('./db')` with eslint-disable (adhoc-agent.ts:324). |
-| T-59 | P3 | ⏳ | clean-code | Rename/rewrap single-yield multimodal generator (adhoc-agent.ts:210-237). |
-| T-60 | P2 | ⏳ | clean-code | Split `refreshOAuthTokenFromKeychain` (env-utils.ts:304-392) into read/refresh/persist. |
-| T-61 | P2 | ⏳ | clean-code | Replace `console.warn` with `logger.warn` in env-utils.ts:367-369,378-379. |
-| T-62 | P2 | ⏳ | clean-code | Replace `isNonTrivialError` substring-matching (bootstrap.ts:51-63) with typed errors. |
-| T-63 | P2 | ⏳ | clean-code | Introduce `schedulePeriodic` helper; declare 4 cleanup tasks declaratively (bootstrap.ts:238-314). |
-| T-64 | P2 | ⏳ | clean-code | Split github-fetch.ts:158-216 retry loop into per-failure-mode handlers. |
-| T-65 | P2 | ⏳ | clean-code | Replace `classifyHttpError` if-cascade (github-fetch.ts:302-355) with status→factory lookup. |
-| T-66 | P2 | ⏳ | arch | Re-home 40 top-level `src/main/*.ts` files into domain folders: `agents/`, `github/`, `windowing/`, `settings/`, `platform/`. **Do last.** |
-| T-67 | P2 | ⏳ | arch | Delete top-level `src/main/cost-queries.ts` shim; update 5 callers to import from `src/main/data/cost-queries.ts`. |
+| ID   | Sev | Status | Lens(es)   | Summary                                                                                                                                                                                                                                                                                                                                  |
+| ---- | --- | ------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-55 | P2  | ⏳     | clean-code | Moving one-time migrations into `src/main/migrations/` deferred — they're interleaved with `initAgentHistory` and the migrations framework expects versioned migrations, not file-conversion passes. Logged as a follow-up.                                                                                                              |
+| T-56 | P2  | ✅     | clean-code | `pruneOldAgents` is now a 4-line orchestrator: `selectAgentsToPrune` → `deletePrunedAgentsFromDb` → `removePrunedAgentLogDirs` → `removeEmptyDateDirs`. Each helper has a single responsibility. (Phase 10)                                                                                                                              |
+| T-57 | P2  | ⏳     | clean-code | `spawnAdhocAgent` → `AdhocSessionBuilder` deferred — the function is 355 LOC and the split requires careful separation of setup/teardown vs the SDK session loop. Scheduled for a dedicated session.                                                                                                                                     |
+| T-58 | P2  | ✅     | clean-code | The inline `require('./db')` with its eslint-disable comment is gone; `getDb` is now a top-level ESM import at `adhoc-agent.ts`. (Phase 10)                                                                                                                                                                                              |
+| T-59 | P3  | ⏳     | clean-code | Single-yield multimodal generator rewrap deferred with T-57 — same file, same session.                                                                                                                                                                                                                                                   |
+| T-60 | P2  | ✅     | clean-code | `refreshOAuthTokenFromKeychain` is a 5-line orchestrator: `readKeychainCredentials` → validation → `refreshIfDue` → `persistToken`. Each step has a single responsibility; the schema check moved into `isValidKeychainPayload`. (Phase 9)                                                                                               |
+| T-61 | P2  | ✅     | clean-code | The two `console.warn` calls in `env-utils.ts` (Keychain rotated-write failure, OAuth refresh failure) now route through `logger.warn` so the messages land in `~/.bde/bde.log` like every other module. (Phase 9)                                                                                                                       |
+| T-62 | P2  | ✅     | clean-code | `isNonTrivialError` substring matcher replaced by an `ExpectedStartupCondition extends Error` class plus an `isReportableStartupFailure(err)` `instanceof` check. Throwers should construct the typed class to opt out of user-facing reporting. (Phase 9)                                                                               |
+| T-63 | P2  | ✅     | clean-code | New `schedulePeriodic({ name, intervalMs, run })` helper handles the timer + `will-quit` teardown. The four startup cleanup bodies are extracted into named one-shot functions (`pruneEventsOnce`, `pruneTaskChangesOnce`, `pruneDiffSnapshotsOnce`, `cleanTestArtifactsOnce`); periodic tasks are declared in a single array. (Phase 9) |
+| T-64 | P2  | ⏳     | clean-code | github-fetch retry-loop per-failure-mode split deferred — the loop is 58 lines but refactoring requires a light hand to preserve the backoff contract; bundled with T-10 (Result-type refactor) when both are paid down.                                                                                                                 |
+| T-65 | P2  | ✅     | clean-code | `classifyHttpError` is now a status → `HttpErrorFactory` lookup; `classify403` is its own function that handles the rate-limit header + billing body heuristic + permission fallback. (Phase 10)                                                                                                                                         |
+| T-66 | P2  | ⏳     | arch       | 40-file domain-folder rename deferred — highest-risk structural change in the audit and needs its own dedicated PR to keep the review signal focused.                                                                                                                                                                                    |
+| T-67 | P2  | ✅     | arch       | `src/main/cost-queries.ts` shim deleted; `handlers/cost-handlers.ts` imports from `src/main/data/cost-queries.ts` directly and passes `getDb()` per call; test moved. (Phase 10)                                                                                                                                                         |
 
 ---
 
@@ -199,11 +219,11 @@ Layer → doc path map is in CLAUDE.md §Module Documentation.
 
 ### Baseline test numbers (match these at phase end)
 
-| Suite | Files | Tests |
-|---|---|---|
-| `npm test` | 312 | 3740 passed + 6 skipped |
-| `npm run test:main` | 205 | 3258 |
-| Lint | — | 0 errors / 32 warnings |
+| Suite               | Files | Tests                   |
+| ------------------- | ----- | ----------------------- |
+| `npm test`          | 312   | 3740 passed + 6 skipped |
+| `npm run test:main` | 205   | 3258                    |
+| Lint                | —     | 0 errors / 32 warnings  |
 
 If your phase ends with different numbers, investigate before merging.
 
@@ -231,6 +251,7 @@ Reference the audit task IDs in the commit body: `audit T-4`, `audit T-17`, etc.
 **Expect a permission hook on `git commit` to main.** The user must grant `Bash(git commit:*)` for the session once, at the moment of the squash-merge commit. This is a known friction — the global CLAUDE.md says "no direct pushes to main" but the user has explicitly authorized local squash-merges for this workflow.
 
 If you can't get permission:
+
 - Leave the phase branch in place (`chore/audit-phase-<N>`)
 - Tell the user to run the squash-merge manually
 - Update §1 of this doc with the branch name so they know where to look
@@ -244,6 +265,7 @@ Things that bit me in the first run. Don't repeat.
 ### 1. Destructive git/fs ops are blocked
 
 The user's hook denies: `git worktree remove`, `git reset --hard`, `rm -rf`, `git push --force`. Plan for non-destructive alternatives:
+
 - Unstage without reset: `git restore --staged <file>` (per-file)
 - Clean up stale worktrees: leave them, ask the user to run `git worktree remove` manually at end of session
 - Recover from a bad merge-stage: hand the staged state to the user with a description rather than trying to reset
@@ -274,7 +296,7 @@ If you touch `src/main/bootstrap.ts`, every module it imports needs a matching `
 
 ### 6. Multi-statement SQL in TypeScript (from CLAUDE.md)
 
-The Edit-tool security hook pattern-matches shell-style invocations. If you pass a backtick template literal directly to a `db.exec(...)` call on the same line, the hook will block the edit. Workaround: assign the SQL to `const sql = \`...\`` on one line, then pass `sql` to the db method on the next. Pattern visible in `src/main/db.ts` and any multi-statement migration.
+The Edit-tool security hook pattern-matches shell-style invocations. If you pass a backtick template literal directly to a `db.exec(...)` call on the same line, the hook will block the edit. Workaround: assign the SQL to `const sql = \`...\``on one line, then pass`sql`to the db method on the next. Pattern visible in`src/main/db.ts` and any multi-statement migration.
 
 ---
 
@@ -325,6 +347,7 @@ Report it to the user. Don't silently expand scope. If they want it fixed, it be
 ## 9. Session-end checklist
 
 Before ending a session, update **§1 (Snapshot)** and **§4 (Full task list)** of this file with:
+
 - New commit SHAs shipped to main
 - ✅ marks on completed tasks
 - Any deferred items and reasons

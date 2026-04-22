@@ -30,6 +30,56 @@ export interface DependencyIndex {
   ): { satisfied: boolean; blockedBy: string[] }
 }
 
+/**
+ * True when `dep` is currently satisfied for `taskId`.
+ *
+ * Branches by whichever of the four cases applies, in order:
+ *   - upstream task deleted (rawStatus === undefined) → satisfied
+ *   - unknown status string (stale/corrupt row) → unsatisfied
+ *   - explicit `condition` field set → predicate based on condition
+ *   - legacy implicit type (`hard` / `soft`) → predicate based on type, with a
+ *     deprecation warning routed through the supplied logger
+ */
+function isDependencySatisfied(
+  dep: TaskDependency,
+  taskId: string,
+  getTaskStatus: (id: string) => string | undefined,
+  logger?: { warn: (msg: string) => void }
+): boolean {
+  const rawStatus = getTaskStatus(dep.id)
+  if (rawStatus === undefined) return true
+  if (!isTaskStatus(rawStatus)) return false
+  return dep.condition
+    ? satisfiesCondition(dep.condition, rawStatus)
+    : satisfiesLegacyType(dep, taskId, rawStatus, logger)
+}
+
+function satisfiesCondition(
+  condition: 'on_success' | 'on_failure' | 'always',
+  status: import('../../shared/task-state-machine').TaskStatus
+): boolean {
+  if (condition === 'on_success') return HARD_SATISFIED_STATUSES.has(status)
+  if (condition === 'on_failure') return FAILURE_STATUSES.has(status)
+  return TERMINAL_STATUSES.has(status)
+}
+
+function satisfiesLegacyType(
+  dep: TaskDependency,
+  taskId: string,
+  status: import('../../shared/task-state-machine').TaskStatus,
+  logger?: { warn: (msg: string) => void }
+): boolean {
+  // DEPRECATED: `condition` will be required in a future version. This branch
+  // will be removed once all existing deps are migrated.
+  ;(logger ?? console).warn(
+    `[deprecation] Dependency ${dep.id} on task ${taskId} has no "condition" field — ` +
+      `falling back to type="${dep.type ?? 'hard'}" behavior. ` +
+      `Set an explicit condition ("on_success", "on_failure", or "always") to silence this warning.`
+  )
+  if (dep.type === 'hard') return HARD_SATISFIED_STATUSES.has(status)
+  return TERMINAL_STATUSES.has(status)
+}
+
 export function createDependencyIndex(): DependencyIndex {
   const reverseMap = new Map<string, Set<string>>()
   const forwardMap = new Map<string, Set<string>>()
@@ -106,47 +156,51 @@ export function createDependencyIndex(): DependencyIndex {
      * Deleted upstream tasks (status `undefined`) are treated as satisfied to avoid
      * permanently blocking downstream tasks when an upstream task is removed.
      */
-    areDependenciesSatisfied(_taskId, deps, getTaskStatus, logger) {
+    areDependenciesSatisfied(taskId, deps, getTaskStatus, logger) {
       if (deps.length === 0) return { satisfied: true, blockedBy: [] }
       const blockedBy: string[] = []
       for (const dep of deps) {
-        const rawStatus = getTaskStatus(dep.id)
-        if (rawStatus === undefined) continue // deleted dep = satisfied
-        // Unknown status string from stale/corrupt data — treat as unsatisfied.
-        if (!isTaskStatus(rawStatus)) {
+        if (!isDependencySatisfied(dep, taskId, getTaskStatus, logger)) {
           blockedBy.push(dep.id)
-          continue
-        }
-        const status = rawStatus
-
-        // If condition is specified, use condition-based logic
-        if (dep.condition) {
-          if (dep.condition === 'on_success') {
-            if (!HARD_SATISFIED_STATUSES.has(status)) blockedBy.push(dep.id)
-          } else if (dep.condition === 'on_failure') {
-            if (!FAILURE_STATUSES.has(status)) blockedBy.push(dep.id)
-          } else if (dep.condition === 'always') {
-            if (!TERMINAL_STATUSES.has(status)) blockedBy.push(dep.id)
-          }
-        } else {
-          // No condition = fallback to hard/soft behavior (backward compatibility)
-          // DEPRECATED: `condition` will be required in a future version.
-          // This branch will be removed once all existing deps are migrated.
-          ;(logger ?? console).warn(
-            `[deprecation] Dependency ${dep.id} on task ${_taskId} has no "condition" field — ` +
-              `falling back to type="${dep.type ?? 'hard'}" behavior. ` +
-              `Set an explicit condition ("on_success", "on_failure", or "always") to silence this warning.`
-          )
-          if (dep.type === 'hard') {
-            if (!HARD_SATISFIED_STATUSES.has(status)) blockedBy.push(dep.id)
-          } else {
-            if (!TERMINAL_STATUSES.has(status)) blockedBy.push(dep.id)
-          }
         }
       }
       return { satisfied: blockedBy.length === 0, blockedBy }
     }
   }
+}
+
+export type DependencyGraphValidation =
+  | { valid: true }
+  | { valid: false; error: string }
+  | { valid: false; cycle: string[] }
+
+export interface ValidateDependencyGraphDeps {
+  getTask: (id: string) => { id: string; depends_on: TaskDependency[] | null } | null
+  listTasks: () => Array<{ id: string; depends_on: TaskDependency[] | null }>
+}
+
+/**
+ * Pure validation for a proposed dependency edit. Returns a discriminated union
+ * so callers can branch on missing-target vs cycle without parsing strings.
+ *
+ * Two checks, in order:
+ *   1. Every proposed dep id must resolve to an existing task.
+ *   2. Adding the proposed deps must not form a cycle.
+ */
+export function validateDependencyGraph(
+  taskId: string,
+  proposedDeps: TaskDependency[],
+  deps: ValidateDependencyGraphDeps
+): DependencyGraphValidation {
+  for (const dep of proposedDeps) {
+    if (!deps.getTask(dep.id)) {
+      return { valid: false, error: `Task ${dep.id} not found` }
+    }
+  }
+  const taskDeps = new Map(deps.listTasks().map((t) => [t.id, t.depends_on]))
+  const cycle = detectCycle(taskId, proposedDeps, (id) => taskDeps.get(id) ?? null)
+  if (cycle) return { valid: false, cycle }
+  return { valid: true }
 }
 
 export function detectCycle(

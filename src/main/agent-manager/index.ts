@@ -18,6 +18,7 @@ import { createDependencyIndex } from '../services/dependency-service'
 import { createEpicDependencyIndex, type EpicDepsReader } from '../services/epic-dependency-service'
 import { runAgent as _runAgent, type RunAgentDeps, type AgentRunClaim } from './run-agent'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import { createUnitOfWork, type IUnitOfWork } from '../data/unit-of-work'
 import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
 import { CircuitBreaker } from './circuit-breaker'
 
@@ -94,70 +95,74 @@ export interface AgentManager {
 import type { DependencyIndex } from '../services/dependency-service'
 
 export class AgentManagerImpl implements AgentManager {
-  // Exposed state (testable via _ prefix)
-  _concurrency: ConcurrencyState
-  readonly _activeAgents = new Map<string, ActiveAgent>()
-  readonly _processingTasks = new Set<string>()
+  // ---- Lifecycle flags ----
+  // Fields prefixed with `_` are exposed for tests (private by convention,
+  // not keyword). Real privacy will land in T-2 once the class split removes
+  // the test-access need.
   _running = false
   _shuttingDown = false
+
+  // ---- Drain runtime ----
+  _concurrency: ConcurrencyState
   _drainInFlight: Promise<void> | null = null
-  readonly _agentPromises = new Set<Promise<void>>()
-  readonly _depIndex: DependencyIndex
-  /** Injected epic dependency graph, owned by EpicGroupService. */
-  readonly _epicIndex: EpicDepsReader
-  readonly _metrics: MetricsCollector
-  // F-t1-sysprof-1/-4: Cache a stable fingerprint alongside the deps array so
-  // subsequent drain ticks can short-circuit the deep compare via hash equality.
-  // Exposed via _ prefix for testability (private by convention, not keyword).
+  // F-t1-sysprof-1/-4: cache deps fingerprint so subsequent drain ticks can
+  // short-circuit the deep compare via hash equality.
   _lastTaskDeps = new Map<string, { deps: TaskDependency[] | null; hash: string }>()
-
-  // Idempotency guard — maps taskId to the in-flight terminal promise.
-  // Duplicate callers receive the same promise; the entry is deleted in finally.
-  private readonly _terminalCalled = new Map<string, Promise<void>>()
-
-  // Set to true when a terminal event fires so the next drain tick performs
-  // a full dep index rebuild (instead of the incremental refresh).
+  // Set when a terminal event fires; next drain tick rebuilds the dep index
+  // fully instead of doing an incremental refresh.
   _depIndexDirty = false
-
-  // Circuit breaker — pauses drain loop after consecutive spawn failures.
-  readonly _circuitBreaker: CircuitBreaker
-
-  // Counts agents that have been fired via _spawnAgent but have not yet called
-  // initializeAgentTracking (i.e. not yet in _activeAgents). Used by the drain
-  // loop to prevent over-claiming slots during the async spawn window.
-  _pendingSpawns = 0
-
-  // Tracks consecutive drain-loop processing failures per task. Passed to DrainLoopDeps
-  // each tick so counts persist across ticks. Cleared on success or quarantine.
-  readonly _drainFailureCounts = new Map<string, number>()
-
-  // Unix-ms until which the drain loop should skip its tick. Set when the
-  // drain catches an environmental failure (main-repo dirty, auth missing,
-  // network). Task 5 broadcasts the pause to the renderer.
+  // Suspends drain ticks until this Unix-ms timestamp; broadcasts the pause
+  // to the renderer when the drain catches an environmental failure.
   _drainPausedUntil: number | undefined
-
-  // Tracks consecutive drain-tick-level errors (the drain loop itself threw).
-  // Reset on any successful tick. Emits manager:warning after 3 consecutive failures.
+  // Per-task processing-failure counts that persist across drain ticks; cleared
+  // on success or quarantine.
+  readonly _drainFailureCounts = new Map<string, number>()
+  // Drain-tick-level error counter. Reset on any successful tick. Emits
+  // `manager:warning` after 3 consecutive failures.
   _consecutiveDrainErrors = 0
 
-  // Private timers
+  // ---- Spawn tracking ----
+  readonly _activeAgents = new Map<string, ActiveAgent>()
+  readonly _processingTasks = new Set<string>()
+  readonly _agentPromises = new Set<Promise<void>>()
+  // Counts agents fired via _spawnAgent but not yet present in _activeAgents.
+  // Drain loop reads this to avoid over-claiming slots during the async spawn
+  // window.
+  _pendingSpawns = 0
+
+  // ---- Dependency tracking ----
+  readonly _depIndex: DependencyIndex
+  // Injected epic dependency graph, owned by EpicGroupService.
+  readonly _epicIndex: EpicDepsReader
+
+  // ---- Cross-cutting collaborators ----
+  readonly _metrics: MetricsCollector
+  readonly _circuitBreaker: CircuitBreaker
+  // Idempotency guard for handleTaskTerminal — maps taskId to the in-flight
+  // terminal promise. Duplicate callers receive the same promise; the entry is
+  // deleted in finally.
+  private readonly _terminalCalled = new Map<string, Promise<void>>()
+
+  // ---- Timers ----
   private pollTimer: ReturnType<typeof setInterval> | null = null
   private watchdogTimer: ReturnType<typeof setInterval> | null = null
   private orphanTimer: ReturnType<typeof setInterval> | null = null
   private pruneTimer: ReturnType<typeof setInterval> | null = null
 
-  // Injected deps
+  // ---- Injected deps ----
   private readonly runAgentDeps: RunAgentDeps
+  private readonly unitOfWork: IUnitOfWork
 
-  // `config` is mutable so `reloadConfig()` can hot-update fields that are
-  // safe to change at runtime. `worktreeBase` is not mutated after construction.
+  // `config` is mutable so `reloadConfig()` can hot-update runtime-safe fields.
+  // `worktreeBase` is never mutated after construction.
   config: AgentManagerConfig
 
   constructor(
     config: AgentManagerConfig,
     readonly repo: IAgentTaskRepository,
     readonly logger: Logger = defaultLogger,
-    epicDepsReader: EpicDepsReader = createEpicDependencyIndex()
+    epicDepsReader: EpicDepsReader = createEpicDependencyIndex(),
+    unitOfWork: IUnitOfWork = createUnitOfWork()
   ) {
     this.config = config
     this._concurrency = makeConcurrencyState(config.maxConcurrent)
@@ -165,6 +170,7 @@ export class AgentManagerImpl implements AgentManager {
     this._epicIndex = epicDepsReader
     this._metrics = createMetricsCollector()
     this._circuitBreaker = new CircuitBreaker(logger)
+    this.unitOfWork = unitOfWork
 
     // Build runAgentDeps with bound onTaskTerminal
     this.runAgentDeps = {
@@ -173,6 +179,7 @@ export class AgentManagerImpl implements AgentManager {
       logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
       repo,
+      unitOfWork,
       worktreeBase: config.worktreeBase,
       onSpawnSuccess: () => {
         this._circuitBreaker.recordSuccess()
@@ -209,6 +216,7 @@ export class AgentManagerImpl implements AgentManager {
       depIndex: this._depIndex,
       epicIndex: this._epicIndex,
       repo: this.repo,
+      unitOfWork: this.unitOfWork,
       config: this.config,
       terminalCalled: this._terminalCalled,
       logger: this.logger
@@ -444,11 +452,23 @@ export class AgentManagerImpl implements AgentManager {
     this._shuttingDown = false
     this._concurrency = makeConcurrencyState(this.config.maxConcurrent)
 
-    // Startup sweep: clear any stale claimed_by from the previous process session.
-    // This covers tasks in any status (e.g. 'review', 'queued') that were left with
-    // a non-null claimed_by when the previous process exited. Orphan recovery only
-    // re-queues active tasks — this sweep handles all other statuses so no task is
-    // claimed-forever after a restart.
+    this.clearStaleClaims()
+    this.kickOffOrphanRecovery()
+    this.initDependencyIndex()
+    this.kickOffInitialWorktreePrune()
+    this.scheduleDrainLoop()
+    this.scheduleWatchdogLoop()
+    this.scheduleOrphanLoop()
+    this.schedulePruneLoop()
+    this._scheduleInitialDrain()
+
+    this.logger.info('[agent-manager] Started')
+  }
+
+  // Startup sweep: clear stale claimed_by from the previous process session.
+  // Orphan recovery only re-queues active tasks — this sweep handles all other
+  // statuses so no task is claimed-forever after a restart.
+  private clearStaleClaims(): void {
     try {
       const cleared = this.repo.clearStaleClaimedBy(EXECUTOR_ID)
       if (cleared > 0) {
@@ -459,20 +479,21 @@ export class AgentManagerImpl implements AgentManager {
     } catch (err) {
       this.logger.error(`[agent-manager] Startup claimed_by sweep failed: ${err}`)
     }
+  }
 
-    // Initial orphan recovery (fire-and-forget)
+  private kickOffOrphanRecovery(): void {
     recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger).catch(
       (err) => {
         this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
       }
     )
+  }
 
-    // Build dependency index and initialize dependency tracking.
-    // The epic graph is owned by EpicGroupService — this.repo does not rebuild it.
+  // The epic graph is owned by EpicGroupService — this.repo does not rebuild it.
+  private initDependencyIndex(): void {
     try {
       const tasks = this.repo.getTasksWithDependencies()
       this._depIndex.rebuild(tasks)
-      // Initialize _lastTaskDeps to avoid false positives on first drain
       this._lastTaskDeps.clear()
       for (const task of tasks) {
         const deps = task.depends_on ?? null
@@ -485,10 +506,12 @@ export class AgentManagerImpl implements AgentManager {
     } catch (err) {
       this.logger.error(`[agent-manager] Failed to build dependency index: ${err}`)
     }
+  }
 
-    // Initial worktree prune (fire-and-forget) — called directly so the caller
-    // can attach the "Initial worktree prune error" message; the periodic
-    // _pruneLoop() uses a separate message.
+  // Initial worktree prune (fire-and-forget) — called directly so the caller
+  // can attach the "Initial worktree prune error" message; the periodic
+  // _pruneLoop() uses a separate message.
+  private kickOffInitialWorktreePrune(): void {
     pruneStaleWorktrees(
       this.config.worktreeBase,
       (id: string) => this._activeAgents.has(id),
@@ -497,48 +520,56 @@ export class AgentManagerImpl implements AgentManager {
     ).catch((err) => {
       this.logger.error(`[agent-manager] Initial worktree prune error: ${err}`)
     })
+  }
 
-    // Start periodic loops
-    this.pollTimer = setInterval(() => {
-      if (this._drainInFlight) return // skip if previous drain still running
-      this._drainInFlight = this._drainLoop()
-        .then(() => {
-          this._consecutiveDrainErrors = 0
-        })
-        .catch((err) => {
-          this._consecutiveDrainErrors++
-          this.logger.warn(
-            `[agent-manager] Drain loop error (${this._consecutiveDrainErrors}): ${err}`
-          )
-          if (this._consecutiveDrainErrors >= 3) {
-            broadcast('manager:warning', {
-              message:
-                'Agent queue is not processing — check logs for details. Drain errors: ' +
-                this._consecutiveDrainErrors
-            })
-          }
-        })
-        .finally(() => {
-          this._drainInFlight = null
-        })
-    }, this.config.pollIntervalMs)
+  private scheduleDrainLoop(): void {
+    this.pollTimer = setInterval(() => this.tickDrain(), this.config.pollIntervalMs)
+  }
+
+  private tickDrain(): void {
+    if (this._drainInFlight) return
+    this._drainInFlight = this._drainLoop()
+      .then(() => {
+        this._consecutiveDrainErrors = 0
+      })
+      .catch((err) => this.recordDrainTickError(err))
+      .finally(() => {
+        this._drainInFlight = null
+      })
+  }
+
+  private recordDrainTickError(err: unknown): void {
+    this._consecutiveDrainErrors++
+    this.logger.warn(`[agent-manager] Drain loop error (${this._consecutiveDrainErrors}): ${err}`)
+    if (this._consecutiveDrainErrors >= 3) {
+      broadcast('manager:warning', {
+        message:
+          'Agent queue is not processing — check logs for details. Drain errors: ' +
+          this._consecutiveDrainErrors
+      })
+    }
+  }
+
+  private scheduleWatchdogLoop(): void {
     this.watchdogTimer = setInterval(() => {
       this._watchdogLoop().catch((err) =>
         this.logger.warn(`[agent-manager] Watchdog loop error: ${err}`)
       )
     }, WATCHDOG_INTERVAL_MS)
+  }
+
+  private scheduleOrphanLoop(): void {
     this.orphanTimer = setInterval(() => {
       this._orphanLoop().catch((err) =>
         this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
       )
     }, ORPHAN_CHECK_INTERVAL_MS)
+  }
+
+  private schedulePruneLoop(): void {
     this.pruneTimer = setInterval(() => {
       this._pruneLoop().catch((err) => this.logger.warn(`[agent-manager] Prune loop error: ${err}`))
     }, WORKTREE_PRUNE_INTERVAL_MS)
-
-    this._scheduleInitialDrain()
-
-    this.logger.info('[agent-manager] Started')
   }
 
   // Defer the first drain so the event loop settles and orphan recovery can complete
@@ -662,9 +693,10 @@ export function createAgentManager(
   config: AgentManagerConfig,
   repo: IAgentTaskRepository,
   logger: Logger = defaultLogger,
-  epicDepsReader?: EpicDepsReader
+  epicDepsReader?: EpicDepsReader,
+  unitOfWork?: IUnitOfWork
 ): AgentManager {
-  return new AgentManagerImpl(config, repo, logger, epicDepsReader)
+  return new AgentManagerImpl(config, repo, logger, epicDepsReader, unitOfWork)
 }
 
 // Re-export killActiveAgent for callers that need to kill agents directly

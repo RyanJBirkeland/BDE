@@ -2,10 +2,11 @@
  * Task Workbench IPC handlers — AI-assisted task creation.
  */
 import { safeHandle } from '../ipc-utils'
-import { getRepoPath } from '../git'
+import { getRepoPath } from '../paths'
 import { searchRepo } from '../services/repo-search-service'
 import type { AgentManager } from '../agent-manager'
 import { createSpecQualityService } from '../services/spec-quality/factory'
+import type { SpecQualityService } from '../services/spec-quality/spec-quality-service'
 import type { SpecQualityResult } from '../../shared/spec-quality/types'
 import { runSdkStreaming } from '../sdk-streaming'
 import { extractTasksFromPlan } from '../services/plan-extractor'
@@ -18,8 +19,10 @@ import { resolveAgentRuntime } from '../agent-manager/backend-selector'
 
 const log = createLogger('workbench')
 
-/** Module-level singleton — created once, reused across all checkSpec calls. */
-const specQualityService = createSpecQualityService()
+export interface WorkbenchHandlerDeps {
+  /** Optional override — composition root may pass a wired-up service for telemetry/logging. */
+  specQualityService?: SpecQualityService
+}
 
 type CheckStatus = 'pass' | 'warn' | 'fail'
 interface CheckField {
@@ -88,7 +91,11 @@ function mapQualityResult(result: SpecQualityResult): {
 /** Active streaming handles, keyed by streamId. */
 const activeStreams = new Map<string, { close: () => void }>()
 
-export function registerWorkbenchHandlers(am?: AgentManager): void {
+export function registerWorkbenchHandlers(
+  am?: AgentManager,
+  deps: WorkbenchHandlerDeps = {}
+): void {
+  const specQualityService = deps.specQualityService ?? createSpecQualityService()
   // --- Fully implemented: Operational validation checks ---
   safeHandle('workbench:checkOperational', async (_e, input: { repo: string }) => {
     return runOperationalChecks(input.repo, am)

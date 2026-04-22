@@ -11,6 +11,7 @@
  */
 
 import type { SprintTask } from '../../shared/types/task-types'
+import { nowIso } from '../../shared/time'
 
 // ============================================================================
 // Git Operation Descriptors
@@ -101,236 +102,202 @@ export interface ReviewActionPlan {
 // Policy Function
 // ============================================================================
 
+type ReviewActionBuilder = (input: ReviewActionInput) => ReviewActionPlan
+
+const PLAN_BUILDERS: Record<ReviewActionInput['action'], ReviewActionBuilder> = {
+  requestRevision: buildRequestRevisionPlan,
+  discard: buildDiscardPlan,
+  mergeLocally: buildMergeLocallyPlan,
+  createPr: buildCreatePrPlan,
+  shipIt: buildShipItPlan,
+  rebase: buildRebasePlan,
+  markFailed: buildMarkFailedPlan
+}
+
 /**
  * Classify a review action into an execution plan.
  *
- * This is a pure function — no I/O, no side effects. Takes inputs describing
- * the action and task state, returns a plan describing what to do.
- *
- * The executor (review-action-executor.ts) is responsible for running the plan.
+ * Pure function — no I/O, no side effects. Each action has a dedicated builder
+ * that contains only the logic for that action; this dispatcher selects the
+ * builder by `input.action`.
  */
 export function classifyReviewAction(input: ReviewActionInput): ReviewActionPlan {
-  const { action, task, taskId, repoConfig, strategy, prTitle, prBody, feedback, revisionMode } =
-    input
+  const builder = PLAN_BUILDERS[input.action]
+  if (!builder) throw new Error(`Unknown action: ${input.action}`)
+  return builder(input)
+}
 
-  // ============================================================================
-  // requestRevision
-  // ============================================================================
-  if (action === 'requestRevision') {
-    if (!feedback) throw new Error('feedback required for requestRevision')
+function buildRequestRevisionPlan(input: ReviewActionInput): ReviewActionPlan {
+  const { task, feedback, revisionMode } = input
+  if (!feedback) throw new Error('feedback required for requestRevision')
 
-    const revisionNotes = `[Revision requested]: ${feedback}`
-    const patch: Record<string, unknown> = {
-      status: 'queued',
-      claimed_by: null,
-      notes: revisionNotes,
-      started_at: null,
-      completed_at: null,
-      fast_fail_count: 0,
-      needs_review: false,
-      spec: task.spec ? `${task.spec}\n\n## Revision Feedback\n\n${feedback}` : feedback
-    }
-
-    // Fresh mode: clear agent_run_id to start a new session
-    if (revisionMode === 'fresh') {
-      patch.agent_run_id = null
-    }
-
-    return {
-      gitOps: [],
-      taskPatch: patch,
-      terminalStatus: null,
-      errorOnMissingWorktree: false,
-      dedup: false
-    }
+  const patch: Record<string, unknown> = {
+    status: 'queued',
+    claimed_by: null,
+    notes: `[Revision requested]: ${feedback}`,
+    started_at: null,
+    completed_at: null,
+    fast_fail_count: 0,
+    needs_review: false,
+    spec: task.spec ? `${task.spec}\n\n## Revision Feedback\n\n${feedback}` : feedback
   }
+  // Fresh mode: clear agent_run_id to start a new session.
+  if (revisionMode === 'fresh') patch.agent_run_id = null
 
-  // ============================================================================
-  // discard
-  // ============================================================================
-  if (action === 'discard') {
-    const gitOps: GitOpDescriptor[] = []
+  return {
+    gitOps: [],
+    taskPatch: patch,
+    terminalStatus: null,
+    errorOnMissingWorktree: false,
+    dedup: false
+  }
+}
 
-    // If worktree exists, clean it up
-    if (task.worktree_path) {
-      gitOps.push(
-        { type: 'getBranch', worktreePath: task.worktree_path },
-        {
-          type: 'cleanup',
-          worktreePath: task.worktree_path,
-          repoPath: repoConfig?.localPath
-        }
-      )
-    }
+function buildDiscardPlan(input: ReviewActionInput): ReviewActionPlan {
+  return {
+    gitOps: buildWorktreeCleanupOps(input),
+    taskPatch: {
+      status: 'cancelled',
+      completed_at: nowIso(),
+      worktree_path: null
+    },
+    terminalStatus: 'cancelled',
+    errorOnMissingWorktree: false,
+    dedup: false
+  }
+}
 
-    // Always clean scratchpad
-    gitOps.push({ type: 'scratchpadCleanup', taskId })
+function buildMergeLocallyPlan(input: ReviewActionInput): ReviewActionPlan {
+  const { task, taskId, repoConfig, strategy } = input
+  if (!strategy) throw new Error('strategy required for mergeLocally')
+  if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
+  if (!repoConfig) throw new Error(`Repo "${task.repo}" not found in settings`)
 
-    return {
-      gitOps,
-      taskPatch: {
-        status: 'cancelled',
-        completed_at: new Date().toISOString(),
-        worktree_path: null
+  return {
+    gitOps: [
+      { type: 'getBranch', worktreePath: task.worktree_path },
+      {
+        type: 'merge',
+        worktreePath: task.worktree_path,
+        repoPath: repoConfig.localPath,
+        strategy,
+        taskId,
+        taskTitle: task.title
       },
-      terminalStatus: 'cancelled',
-      errorOnMissingWorktree: false,
-      dedup: false
-    }
+      { type: 'cssDedup', repoPath: repoConfig.localPath, taskId },
+      {
+        type: 'cleanup',
+        worktreePath: task.worktree_path,
+        repoPath: repoConfig.localPath
+      }
+    ],
+    taskPatch: doneStatusPatch(),
+    terminalStatus: 'done',
+    errorOnMissingWorktree: true,
+    dedup: true
   }
+}
 
-  // ============================================================================
-  // mergeLocally
-  // ============================================================================
-  if (action === 'mergeLocally') {
-    if (!strategy) throw new Error('strategy required for mergeLocally')
-    if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
-    if (!repoConfig) throw new Error(`Repo "${task.repo}" not found in settings`)
+function buildCreatePrPlan(input: ReviewActionInput): ReviewActionPlan {
+  const { task, taskId, prTitle, prBody } = input
+  if (!prTitle) throw new Error('prTitle required for createPr')
+  if (!prBody) throw new Error('prBody required for createPr')
+  if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
 
-    return {
-      gitOps: [
-        { type: 'getBranch', worktreePath: task.worktree_path },
-        {
-          type: 'merge',
-          worktreePath: task.worktree_path,
-          repoPath: repoConfig.localPath,
-          strategy,
-          taskId,
-          taskTitle: task.title
-        },
-        { type: 'cssDedup', repoPath: repoConfig.localPath, taskId },
-        {
-          type: 'cleanup',
-          worktreePath: task.worktree_path,
-          repoPath: repoConfig.localPath
-        }
-      ],
-      taskPatch: {
-        status: 'done',
-        completed_at: new Date().toISOString(),
-        worktree_path: null
+  return {
+    // Push and PR creation handled by review-pr-service (already extracted).
+    gitOps: [{ type: 'getBranch', worktreePath: task.worktree_path }],
+    taskPatch: doneStatusPatch(),
+    terminalStatus: 'done',
+    errorOnMissingWorktree: true,
+    dedup: false
+  }
+}
+
+function buildShipItPlan(input: ReviewActionInput): ReviewActionPlan {
+  const { task, taskId, repoConfig, strategy } = input
+  if (!strategy) throw new Error('strategy required for shipIt')
+  if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
+  if (!repoConfig) throw new Error(`Repo "${task.repo}" not found in settings`)
+
+  return {
+    gitOps: [
+      { type: 'getBranch', worktreePath: task.worktree_path },
+      { type: 'checkStatus', repoPath: repoConfig.localPath },
+      { type: 'checkBranch', repoPath: repoConfig.localPath },
+      { type: 'fetch', repoPath: repoConfig.localPath },
+      { type: 'fastForward', repoPath: repoConfig.localPath },
+      { type: 'rebase', worktreePath: task.worktree_path },
+      {
+        type: 'merge',
+        repoPath: repoConfig.localPath,
+        strategy,
+        taskId,
+        taskTitle: task.title
       },
-      terminalStatus: 'done',
-      errorOnMissingWorktree: true,
-      dedup: true
-    }
+      { type: 'cssDedup', repoPath: repoConfig.localPath, taskId },
+      { type: 'push', repoPath: repoConfig.localPath },
+      {
+        type: 'cleanup',
+        worktreePath: task.worktree_path,
+        repoPath: repoConfig.localPath
+      }
+    ],
+    taskPatch: doneStatusPatch(),
+    terminalStatus: 'done',
+    errorOnMissingWorktree: true,
+    dedup: true
   }
+}
 
-  // ============================================================================
-  // createPr
-  // ============================================================================
-  if (action === 'createPr') {
-    if (!prTitle) throw new Error('prTitle required for createPr')
-    if (!prBody) throw new Error('prBody required for createPr')
-    if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
-
-    return {
-      gitOps: [
-        { type: 'getBranch', worktreePath: task.worktree_path }
-        // Push and PR creation handled by review-pr-service (already extracted)
-      ],
-      taskPatch: {
-        status: 'done',
-        completed_at: new Date().toISOString(),
-        worktree_path: null
-      },
-      terminalStatus: 'done',
-      errorOnMissingWorktree: true,
-      dedup: false
-    }
+function buildRebasePlan(input: ReviewActionInput): ReviewActionPlan {
+  if (!input.task.worktree_path) throw new Error(`Task ${input.taskId} has no worktree path`)
+  return {
+    gitOps: [{ type: 'rebase', worktreePath: input.task.worktree_path }],
+    // baseSha is set by the executor after rebase succeeds.
+    taskPatch: null,
+    terminalStatus: null,
+    errorOnMissingWorktree: true,
+    dedup: false
   }
+}
 
-  // ============================================================================
-  // shipIt
-  // ============================================================================
-  if (action === 'shipIt') {
-    if (!strategy) throw new Error('strategy required for shipIt')
-    if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
-    if (!repoConfig) throw new Error(`Repo "${task.repo}" not found in settings`)
-
-    return {
-      gitOps: [
-        { type: 'getBranch', worktreePath: task.worktree_path },
-        { type: 'checkStatus', repoPath: repoConfig.localPath },
-        { type: 'checkBranch', repoPath: repoConfig.localPath },
-        { type: 'fetch', repoPath: repoConfig.localPath },
-        { type: 'fastForward', repoPath: repoConfig.localPath },
-        { type: 'rebase', worktreePath: task.worktree_path },
-        {
-          type: 'merge',
-          repoPath: repoConfig.localPath,
-          strategy,
-          taskId,
-          taskTitle: task.title
-        },
-        { type: 'cssDedup', repoPath: repoConfig.localPath, taskId },
-        { type: 'push', repoPath: repoConfig.localPath },
-        {
-          type: 'cleanup',
-          worktreePath: task.worktree_path,
-          repoPath: repoConfig.localPath
-        }
-      ],
-      taskPatch: {
-        status: 'done',
-        completed_at: new Date().toISOString(),
-        worktree_path: null
-      },
-      terminalStatus: 'done',
-      errorOnMissingWorktree: true,
-      dedup: true
-    }
+function buildMarkFailedPlan(input: ReviewActionInput): ReviewActionPlan {
+  return {
+    gitOps: buildWorktreeCleanupOps(input),
+    taskPatch: {
+      status: 'failed',
+      failure_reason: input.feedback ?? 'Marked as permanently failed during review',
+      completed_at: nowIso(),
+      worktree_path: null
+    },
+    terminalStatus: 'failed',
+    errorOnMissingWorktree: false,
+    dedup: false
   }
+}
 
-  // ============================================================================
-  // rebase
-  // ============================================================================
-  if (action === 'rebase') {
-    if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
-
-    return {
-      gitOps: [{ type: 'rebase', worktreePath: task.worktree_path }],
-      taskPatch: null, // baseSha is set by executor after rebase succeeds
-      terminalStatus: null,
-      errorOnMissingWorktree: true,
-      dedup: false
-    }
+/** Cleanup ops shared by `discard` and `markFailed`. */
+function buildWorktreeCleanupOps(input: ReviewActionInput): GitOpDescriptor[] {
+  const ops: GitOpDescriptor[] = []
+  if (input.task.worktree_path) {
+    ops.push(
+      { type: 'getBranch', worktreePath: input.task.worktree_path },
+      {
+        type: 'cleanup',
+        worktreePath: input.task.worktree_path,
+        repoPath: input.repoConfig?.localPath
+      }
+    )
   }
+  ops.push({ type: 'scratchpadCleanup', taskId: input.taskId })
+  return ops
+}
 
-  // ============================================================================
-  // markFailed
-  // ============================================================================
-  if (action === 'markFailed') {
-    const gitOps: GitOpDescriptor[] = []
-
-    // If worktree exists, clean it up
-    if (task.worktree_path) {
-      gitOps.push(
-        { type: 'getBranch', worktreePath: task.worktree_path },
-        {
-          type: 'cleanup',
-          worktreePath: task.worktree_path,
-          repoPath: repoConfig?.localPath
-        }
-      )
-    }
-
-    // Always clean scratchpad
-    gitOps.push({ type: 'scratchpadCleanup', taskId })
-
-    return {
-      gitOps,
-      taskPatch: {
-        status: 'failed',
-        failure_reason: feedback ?? 'Marked as permanently failed during review',
-        completed_at: new Date().toISOString(),
-        worktree_path: null
-      },
-      terminalStatus: 'failed',
-      errorOnMissingWorktree: false,
-      dedup: false
-    }
+function doneStatusPatch(): Record<string, unknown> {
+  return {
+    status: 'done',
+    completed_at: nowIso(),
+    worktree_path: null
   }
-
-  throw new Error(`Unknown action: ${action}`)
 }

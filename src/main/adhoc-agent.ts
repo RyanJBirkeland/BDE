@@ -33,7 +33,7 @@ import { buildAgentPrompt } from './lib/prompt-composer'
 import { resolveAgentRuntime } from './agent-manager/backend-selector'
 import { setupWorktree } from './agent-manager/worktree'
 import { TurnTracker } from './agent-manager/turn-tracker'
-import { createPlannerMcpServer } from './agent-manager/planner-mcp-server'
+import { createPlannerMcpServer } from './services/planner-mcp-server'
 import { createWorktreeIsolationHook } from './agent-manager/worktree-isolation-hook'
 import {
   createPlaygroundDetector,
@@ -44,6 +44,7 @@ import type { IDashboardRepository } from './data/sprint-task-repository'
 import { getErrorMessage } from '../shared/errors'
 import { nowIso } from '../shared/time'
 import { createLogger } from './logger'
+import { getDb } from './db'
 
 const log = createLogger('adhoc-agent')
 
@@ -145,7 +146,7 @@ export async function spawnAdhocAgent(args: {
   // Without it the agent has no first-class way to create tasks or epics
   // and falls back to shelling out with sqlite3 against ~/.bde/bde.db —
   // which bypasses validation, audit, dependency auto-blocking, and the
-  // renderer broadcast. See src/main/agent-manager/planner-mcp-server.ts.
+  // renderer broadcast. See src/main/services/planner-mcp-server.ts.
   const plannerServer = createPlannerMcpServer({
     epicService: createEpicGroupService(),
     logger: log
@@ -358,8 +359,6 @@ export async function spawnAdhocAgent(args: {
 
     try {
       const totals = turnTracker.totals()
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { getDb } = require('./db')
       updateAgentRunCost(getDb(), meta.id, {
         costUsd,
         tokensIn: totals.tokensIn,

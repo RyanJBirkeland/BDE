@@ -19,12 +19,6 @@ vi.mock('../logger', () => ({
   })
 }))
 
-vi.mock('../db', () => ({
-  getDb: vi.fn().mockReturnValue({
-    transaction: (fn: () => void) => fn
-  })
-}))
-
 import { handleTaskTerminal } from '../agent-manager/terminal-handler'
 import { resolveDependents } from '../lib/resolve-dependents'
 import type { TerminalHandlerDeps } from '../agent-manager/terminal-handler'
@@ -56,6 +50,7 @@ function makeDeps(repo: IAgentTaskRepository): TerminalHandlerDeps {
     } as unknown as DependencyIndex,
     epicIndex: {} as unknown as EpicDependencyIndex,
     repo,
+    unitOfWork: { runInTransaction: (fn) => fn() },
     config: {} as AgentManagerConfig,
     terminalCalled: new Map(),
     logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() } as any

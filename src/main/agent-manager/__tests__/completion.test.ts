@@ -88,7 +88,8 @@ describe('resolveSuccess', () => {
     ghRepo: 'owner/repo',
     onTaskTerminal: mockOnTaskTerminal,
     retryCount: 0,
-    repo: mockRepo
+    repo: mockRepo,
+    unitOfWork: { runInTransaction: (fn: () => void) => fn() }
   }
 
   beforeEach(() => {
@@ -523,7 +524,9 @@ describe('resolveSuccess — catch handler coverage', () => {
     title: 'Catch test',
     ghRepo: 'owner/repo',
     onTaskTerminal: mockOnTaskTerminal2,
-    repo: mockRepo
+    repo: mockRepo,
+    retryCount: 0,
+    unitOfWork: { runInTransaction: (fn: () => void) => fn() }
   }
 
   beforeEach(() => {

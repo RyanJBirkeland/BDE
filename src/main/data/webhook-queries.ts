@@ -6,7 +6,7 @@ import type Database from 'better-sqlite3'
 import { getDb } from '../db'
 import { createLogger } from '../logger'
 import { encryptSetting, decryptSetting, isEncryptionAvailable } from '../secure-storage'
-import type { WebhookConfig } from '../services/webhook-service'
+import type { WebhookConfig } from '../../shared/types/webhook'
 
 const log = createLogger('webhook-queries')
 

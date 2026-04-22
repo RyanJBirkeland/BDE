@@ -72,6 +72,7 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
     logger: makeLogger(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
+    unitOfWork: { runInTransaction: (fn) => fn() },
     ...overrides
   }
 }

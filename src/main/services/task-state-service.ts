@@ -98,3 +98,72 @@ export async function prepareUnblockTransition(taskId: string): Promise<void> {
     context: 'unblock'
   })
 }
+
+// ---- Operator escape-hatches ---------------------------------------------
+
+import { TERMINAL_STATUSES } from '../../shared/task-state-machine'
+import { nowIso } from '../../shared/time'
+import type { TaskStatus } from '../../shared/task-state-machine'
+import { forceUpdateTask } from './sprint-mutations'
+
+export type ForceTerminalStatus = 'failed' | 'done'
+
+export interface ForceTerminalOverrideArgs {
+  taskId: string
+  reason?: string | undefined
+  force?: boolean | undefined
+  targetStatus: ForceTerminalStatus
+}
+
+export interface ForceTerminalOverrideDeps {
+  onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
+}
+
+/**
+ * Force a task into a terminal status (`failed` or `done`) without running the
+ * state-machine transition check. The handler-layer wrapper validates the task
+ * id; this function owns the policy: refuse already-terminal tasks unless the
+ * caller passes `force: true`, build the patch, persist via `forceUpdateTask`,
+ * and notify dependents.
+ */
+export function forceTerminalOverride(
+  args: ForceTerminalOverrideArgs,
+  deps: ForceTerminalOverrideDeps
+): { ok: true } {
+  const task = getTask(args.taskId)
+  if (!task) throw new Error(`Task ${args.taskId} not found`)
+
+  if (TERMINAL_STATUSES.has(task.status) && !args.force) {
+    throw new Error(
+      `Task ${args.taskId} is already terminal (${task.status}). Pass force: true to override.`
+    )
+  }
+
+  const patch = buildForceTerminalPatch(args.targetStatus, args.reason)
+  const updated = forceUpdateTask(args.taskId, patch)
+  if (!updated) throw new Error(`Failed to force ${args.targetStatus} on task ${args.taskId}`)
+
+  deps.onStatusTerminal(args.taskId, args.targetStatus)
+  return { ok: true }
+}
+
+function buildForceTerminalPatch(
+  targetStatus: ForceTerminalStatus,
+  reason: string | undefined
+): Record<string, unknown> {
+  const timestamp = nowIso()
+  if (targetStatus === 'failed') {
+    const trimmedReason = reason?.trim() || 'manual-override'
+    return {
+      status: 'failed',
+      failure_reason: 'unknown',
+      notes: `Marked failed manually by user at ${timestamp}. reason: ${trimmedReason}`
+    }
+  }
+  return {
+    status: 'done',
+    completed_at: timestamp,
+    failure_reason: null,
+    notes: `Marked done manually by user at ${timestamp}.`
+  }
+}

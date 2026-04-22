@@ -12,6 +12,7 @@
  */
 import { existsSync } from 'node:fs'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { IUnitOfWork } from '../data/unit-of-work'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
@@ -434,6 +435,7 @@ export async function transitionTaskToReview(
   title: string,
   rebaseOutcome: RebaseOutcome,
   repo: IAgentTaskRepository,
+  unitOfWork: IUnitOfWork,
   logger: Logger,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   attemptAutoMerge: (opts: {
@@ -442,6 +444,7 @@ export async function transitionTaskToReview(
     branch: string
     worktreePath: string
     repo: IAgentTaskRepository
+    unitOfWork: IUnitOfWork
     logger: Logger
     onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   }) => Promise<void>
@@ -460,7 +463,16 @@ export async function transitionTaskToReview(
     logger
   })
 
-  await attemptAutoMerge({ taskId, title, branch, worktreePath, repo, logger, onTaskTerminal })
+  await attemptAutoMerge({
+    taskId,
+    title,
+    branch,
+    worktreePath,
+    repo,
+    unitOfWork,
+    logger,
+    onTaskTerminal
+  })
 
   // The task enters 'review' status to await human inspection — this is NOT a terminal state.
   // The worktree must stay alive so the Code Review Station can show diffs and allow merge/discard.

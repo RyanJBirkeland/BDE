@@ -36,31 +36,6 @@ import {
   ERR_ABORTED,
   READY_TO_SHOW_FALLBACK_MS
 } from './renderer-load-retry'
-
-// Augment process.env.PATH so child_process.spawn() can find user-installed
-// CLIs (claude, gh, git, node) when launched from Finder/Spotlight. Must run
-// before any whenReady-time spawn (agent-manager, status-server, adhoc agents).
-ensureExtraPathsOnProcessEnv()
-
-// Configure global undici ProxyAgent so all main-process fetch() calls respect
-// corporate proxy settings. Node.js 22's built-in fetch (undici) does NOT read
-// HTTP_PROXY/HTTPS_PROXY automatically — this global dispatcher bridges the gap.
-// subprocess spawns inherit proxy vars via ENV_ALLOWLIST in env-utils.ts.
-const proxyUrl =
-  process.env.HTTPS_PROXY ??
-  process.env.https_proxy ??
-  process.env.HTTP_PROXY ??
-  process.env.http_proxy
-if (proxyUrl) {
-  setGlobalDispatcher(new ProxyAgent(proxyUrl))
-}
-
-// Prevent two BDE instances from running simultaneously. A second launch focuses
-// the existing window instead of opening a new one, avoiding concurrent DB writes.
-if (!app.requestSingleInstanceLock()) {
-  app.quit()
-  process.exit(0)
-}
 import { getSetting, getSettingJson, getMcpEnabled, getMcpPort } from './settings'
 import { createMcpServer, type McpServerHandle } from './mcp-server'
 import { onSettingChanged } from './events/settings-events'
@@ -76,9 +51,47 @@ import {
   restoreTearoffWindows
 } from './tearoff-manager'
 
-// Enforce minimum Node.js version before any app logic
-const [nodeMajor = 0] = process.versions.node.split('.').map(Number)
-if (nodeMajor < 22) {
+// Side-effecting startup steps run before any whenReady-time work touches
+// process.env, the network, or the singleton lock. Order matters: PATH first,
+// then the proxy dispatcher, then the singleton check, finally the Node
+// version assertion.
+runStartupPreflight()
+
+function runStartupPreflight(): void {
+  // Augment process.env.PATH so child_process.spawn() can find user-installed
+  // CLIs (claude, gh, git, node) when launched from Finder/Spotlight. Must run
+  // before any whenReady-time spawn (agent-manager, status-server, adhoc agents).
+  ensureExtraPathsOnProcessEnv()
+  configureGlobalProxyDispatcher()
+  enforceSingleInstanceLock()
+  assertSupportedNodeVersion()
+}
+
+function configureGlobalProxyDispatcher(): void {
+  // Node.js 22's built-in fetch (undici) does NOT read HTTP_PROXY/HTTPS_PROXY
+  // automatically — this global dispatcher bridges the gap so all main-process
+  // fetch() calls respect corporate proxy settings. Subprocess spawns inherit
+  // proxy vars via ENV_ALLOWLIST in env-utils.ts.
+  const proxyUrl =
+    process.env.HTTPS_PROXY ??
+    process.env.https_proxy ??
+    process.env.HTTP_PROXY ??
+    process.env.http_proxy
+  if (proxyUrl) setGlobalDispatcher(new ProxyAgent(proxyUrl))
+}
+
+function enforceSingleInstanceLock(): void {
+  // A second launch focuses the existing window instead of opening another,
+  // avoiding concurrent DB writes.
+  if (!app.requestSingleInstanceLock()) {
+    app.quit()
+    process.exit(0)
+  }
+}
+
+function assertSupportedNodeVersion(): void {
+  const [nodeMajor = 0] = process.versions.node.split('.').map(Number)
+  if (nodeMajor >= 22) return
   process.stderr.write(
     `[BDE] Node.js v22+ required (found ${process.versions.node}). Please upgrade.\n`
   )

@@ -325,8 +325,7 @@ interface WriteTaskUpdateOptions {
 /**
  * Narrow an allowlisted string key to `keyof SprintTask`. Every entry in
  * `UPDATE_ALLOWLIST` is, by construction, a valid `SprintTask` field — the
- * module-load invariant in `sprint-task-types.ts` guarantees it. Centralising
- * the assertion here keeps the call sites free of inline casts.
+ * module-load invariant in `sprint-task-types.ts` guarantees it.
  */
 type SprintTaskFieldKey = keyof SprintTask
 
@@ -334,19 +333,13 @@ function asSprintTaskField(key: string): SprintTaskFieldKey {
   return key as SprintTaskFieldKey
 }
 
-/** Read an allowlisted field off `SprintTask` without widening the task type. */
 function readTaskField(task: SprintTask, key: SprintTaskFieldKey): SprintTask[SprintTaskFieldKey] {
   return task[key]
 }
 
-/**
- * Adapt a `SprintTask` to the `Record<string, unknown>` shape required by
- * `recordTaskChanges`. The audit writer treats the task as a field bag; this
- * helper copies the properties into an indexable record so we never rely on
- * structural casts that would let typoed field names slip through silently.
- */
+/** Convert a typed task into an indexable record for the audit writer. */
 function toAuditableTask(task: SprintTask): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(task))
+  return { ...task } as Record<string, unknown>
 }
 
 function writeTaskUpdate(
@@ -355,110 +348,147 @@ function writeTaskUpdate(
   options: WriteTaskUpdateOptions,
   db?: Database.Database
 ): SprintTask | null {
-  const entries: Array<[SprintTaskFieldKey, unknown]> = Object.entries(patch)
-    .filter(([k]) => UPDATE_ALLOWLIST.has(k))
-    .map(([k, v]) => [asSprintTaskField(k), v])
-  if (entries.length === 0) return null
+  const allowlistedEntries = filterAllowlistedEntries(patch)
+  if (allowlistedEntries.length === 0) return null
 
   try {
     const conn = db ?? getDb()
-
-    // Wrap read, update, and audit in a single transaction with retry on SQLITE_BUSY
     return withRetry(() =>
-      conn.transaction(() => {
-        // Fetch current state for change tracking
-        const oldTask = getTask(id, conn)
-        if (!oldTask) return null
-
-        // Enforce status transition state machine (skipped for manual overrides)
-        if (
-          options.enforceTransitionCheck &&
-          patch.status &&
-          typeof patch.status === 'string' &&
-          isTaskStatus(patch.status)
-        ) {
-          const validationResult = validateTransition(oldTask.status, patch.status)
-          if (!validationResult.ok) {
-            throw new Error(
-              `[sprint-queries] Invalid transition for task ${id}: ${validationResult.reason}`
-            )
-          }
-        }
-
-        // Filter unchanged fields at the caller level. Reduces
-        // write amplification on both sprint_tasks (no UPDATE) and task_changes
-        // (no audit row). Defense-in-depth — recordTaskChanges also skips
-        // unchanged values, but filtering here also avoids the SQL UPDATE.
-        const changedEntries = entries.filter(([key, value]) => {
-          const serializedNew = serializeFieldForStorage(key, value)
-          const oldRaw = readTaskField(oldTask, key)
-          const serializedOld = serializeFieldForStorage(key, oldRaw)
-          return serializedNew !== serializedOld
-        })
-
-        // No-op: nothing actually changed. Return the existing task without
-        // touching sprint_tasks or task_changes.
-        if (changedEntries.length === 0) {
-          return oldTask
-        }
-
-        // Build SET clause with serialized values
-        const setClauses: string[] = []
-        const values: unknown[] = []
-        const auditPatch: Record<string, unknown> = {}
-
-        for (const [fieldName, newValue] of changedEntries) {
-          // Whitelist Map replaces regex for defense-in-depth
-          const colName = COLUMN_MAP.get(fieldName)
-          if (!colName) {
-            throw new Error(`Invalid column name: ${fieldName}`)
-          }
-          setClauses.push(`${colName} = ?`)
-          const serialized = serializeFieldForStorage(fieldName, newValue)
-          values.push(serialized)
-          // For audit, store the sanitized form for depends_on/tags but original for others
-          if (fieldName === 'depends_on') {
-            auditPatch[fieldName] = sanitizeDependsOn(newValue)
-          } else if (fieldName === 'tags') {
-            auditPatch[fieldName] = sanitizeTags(newValue)
-          } else {
-            auditPatch[fieldName] = newValue
-          }
-        }
-
-        values.push(id)
-
-        const result = conn
-          .prepare(
-            `UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ?
-             RETURNING ${SPRINT_TASK_COLUMNS}`
-          )
-          .get(...values) as Record<string, unknown> | undefined
-
-        if (!result) return null
-
-        // Record changes for audit trail (within transaction)
-        try {
-          recordTaskChanges(id, toAuditableTask(oldTask), auditPatch, options.changedBy, conn)
-        } catch (err) {
-          getSprintQueriesLogger().warn(`[sprint-queries] Failed to record task changes: ${err}`)
-          // Re-throw to abort transaction
-          throw err
-        }
-
-        return mapRowToTask(result)
-      })()
+      conn.transaction(() => runUpdate(id, patch, allowlistedEntries, options, conn))()
     )
   } catch (err) {
-    // Re-throw invalid transition errors so callers can surface them to the UI
-    if (err instanceof Error && err.message.includes('Invalid transition')) {
-      throw err
-    }
-    // DL-17: Standardize error message format
-    const msg = getErrorMessage(err)
-    getSprintQueriesLogger().warn(`[sprint-queries] updateTask failed for id=${id}: ${msg}`)
-    return null
+    return handleUpdateError(id, err)
   }
+}
+
+function runUpdate(
+  id: string,
+  patch: Record<string, unknown>,
+  entries: Array<[SprintTaskFieldKey, unknown]>,
+  options: WriteTaskUpdateOptions,
+  conn: Database.Database
+): SprintTask | null {
+  const oldTask = getTask(id, conn)
+  if (!oldTask) return null
+
+  if (options.enforceTransitionCheck) {
+    enforceTransitionOrThrow(id, oldTask.status, patch.status)
+  }
+
+  const changedEntries = computeChangedEntries(entries, oldTask)
+  if (changedEntries.length === 0) return oldTask
+
+  const { setClauses, values, auditPatch } = buildUpdateSql(changedEntries)
+  values.push(id)
+
+  const updated = conn
+    .prepare(
+      `UPDATE sprint_tasks SET ${setClauses.join(', ')} WHERE id = ?
+       RETURNING ${SPRINT_TASK_COLUMNS}`
+    )
+    .get(...values) as Record<string, unknown> | undefined
+  if (!updated) return null
+
+  recordAuditTrailOrAbort(id, oldTask, auditPatch, options.changedBy, conn)
+  return mapRowToTask(updated)
+}
+
+function filterAllowlistedEntries(
+  patch: Record<string, unknown>
+): Array<[SprintTaskFieldKey, unknown]> {
+  return Object.entries(patch)
+    .filter(([k]) => UPDATE_ALLOWLIST.has(k))
+    .map(([k, v]) => [asSprintTaskField(k), v])
+}
+
+/**
+ * Throws a user-visible "Invalid transition" error when the requested status
+ * change is not permitted by the state machine. Manual-override callers skip
+ * this guard via `options.enforceTransitionCheck === false`.
+ */
+function enforceTransitionOrThrow(
+  taskId: string,
+  currentStatus: string,
+  nextStatus: unknown
+): void {
+  if (typeof nextStatus !== 'string' || !isTaskStatus(nextStatus)) return
+  if (!isTaskStatus(currentStatus)) return
+  const validation = validateTransition(currentStatus, nextStatus)
+  if (!validation.ok) {
+    throw new Error(`[sprint-queries] Invalid transition for task ${taskId}: ${validation.reason}`)
+  }
+}
+
+/**
+ * Strip entries whose serialized value equals the existing column value.
+ * Avoids redundant SQL UPDATEs and audit-trail rows when the patch is a no-op.
+ */
+function computeChangedEntries(
+  entries: Array<[SprintTaskFieldKey, unknown]>,
+  oldTask: SprintTask
+): Array<[SprintTaskFieldKey, unknown]> {
+  return entries.filter(([key, value]) => {
+    const serializedNew = serializeFieldForStorage(key, value)
+    const serializedOld = serializeFieldForStorage(key, readTaskField(oldTask, key))
+    return serializedNew !== serializedOld
+  })
+}
+
+interface UpdateSql {
+  setClauses: string[]
+  values: unknown[]
+  auditPatch: Record<string, unknown>
+}
+
+/**
+ * Build the SET clause + bound values for the UPDATE statement and assemble
+ * the parallel audit-patch (with sanitized JSON for `depends_on` / `tags`).
+ * Splits responsibilities: this function knows column names and serialization,
+ * the caller wires the result into a prepared statement.
+ */
+function buildUpdateSql(changedEntries: Array<[SprintTaskFieldKey, unknown]>): UpdateSql {
+  const setClauses: string[] = []
+  const values: unknown[] = []
+  const auditPatch: Record<string, unknown> = {}
+
+  for (const [fieldName, newValue] of changedEntries) {
+    const colName = COLUMN_MAP.get(fieldName)
+    if (!colName) throw new Error(`Invalid column name: ${fieldName}`)
+    setClauses.push(`${colName} = ?`)
+    values.push(serializeFieldForStorage(fieldName, newValue))
+    auditPatch[fieldName] = buildAuditValue(fieldName, newValue)
+  }
+  return { setClauses, values, auditPatch }
+}
+
+function buildAuditValue(fieldName: SprintTaskFieldKey, newValue: unknown): unknown {
+  if (fieldName === 'depends_on') return sanitizeDependsOn(newValue)
+  if (fieldName === 'tags') return sanitizeTags(newValue)
+  return newValue
+}
+
+function recordAuditTrailOrAbort(
+  taskId: string,
+  oldTask: SprintTask,
+  auditPatch: Record<string, unknown>,
+  changedBy: string,
+  conn: Database.Database
+): void {
+  try {
+    recordTaskChanges(taskId, toAuditableTask(oldTask), auditPatch, changedBy, conn)
+  } catch (err) {
+    getSprintQueriesLogger().warn(`[sprint-queries] Failed to record task changes: ${err}`)
+    throw err
+  }
+}
+
+function handleUpdateError(taskId: string, err: unknown): null {
+  if (err instanceof Error && err.message.includes('Invalid transition')) {
+    throw err
+  }
+  const msg = getErrorMessage(err)
+  getSprintQueriesLogger().warn(`[sprint-queries] updateTask failed for id=${taskId}: ${msg}`)
+  return null
 }
 
 export function deleteTask(

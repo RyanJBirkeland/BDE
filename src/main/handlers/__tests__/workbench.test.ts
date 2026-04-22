@@ -58,6 +58,16 @@ vi.mock('../../git', () => ({
   getRepoPath: vi.fn((name: string) => (name ? mockRepoMap[name.toLowerCase()] : undefined))
 }))
 
+// Phase-5 audit: workbench.ts now imports getRepoPath from ../paths (canonical).
+vi.mock('../../paths', async () => {
+  const actual = await vi.importActual<typeof import('../../paths')>('../../paths')
+  return {
+    ...actual,
+    getRepoPaths: vi.fn(() => mockRepoMap),
+    getRepoPath: vi.fn((name: string) => (name ? mockRepoMap[name.toLowerCase()] : undefined))
+  }
+})
+
 // Spy on runSdkStreaming so we can assert the options it receives.
 vi.mock('../../sdk-streaming', async () => {
   const actual = await vi.importActual<typeof import('../../sdk-streaming')>('../../sdk-streaming')

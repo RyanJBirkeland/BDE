@@ -45,21 +45,20 @@ export const DEBOUNCE_MS = 500
 const startupErrors: string[] = []
 
 /**
- * Returns true for errors that indicate a genuine problem (filesystem, permissions, etc.)
- * rather than expected conditions like missing credentials on a fresh install.
+ * Marks errors that callers should drop on the floor when reporting startup
+ * problems to the user (e.g. expected "credentials missing on a fresh install"
+ * conditions). Throwers should construct this rather than relying on substring
+ * matching downstream.
  */
-function isNonTrivialError(message: string): boolean {
-  const trivialPatterns = [
-    'credentials not configured',
-    'credentials missing',
-    'no credentials',
-    'not configured',
-    'already has',
-    'skipping',
-    'no rows'
-  ]
-  const lowered = message.toLowerCase()
-  return !trivialPatterns.some((pattern) => lowered.includes(pattern))
+export class ExpectedStartupCondition extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ExpectedStartupCondition'
+  }
+}
+
+function isReportableStartupFailure(err: unknown): boolean {
+  return !(err instanceof ExpectedStartupCondition)
 }
 
 /**
@@ -183,9 +182,7 @@ export function initializeDatabase(): void {
     .catch((err) => {
       const message = `Failed to ensure Claude settings: ${getErrorMessage(err)}`
       logger.warn(message)
-      if (isNonTrivialError(message)) {
-        startupErrors.push(message)
-      }
+      if (isReportableStartupFailure(err)) startupErrors.push(message)
     })
 
   // Run backup on startup and every 24 hours.
@@ -232,85 +229,80 @@ export function startPrPollers(terminalDeps: {
   })
 }
 
+const DAILY_MS = 24 * 60 * 60 * 1000
+
+interface PeriodicCleanupTask {
+  name: string
+  intervalMs: number
+  run: () => void
+}
+
 /**
- * Run initial cleanup tasks and schedule periodic cleanup.
+ * Schedule a periodic task plus its "will-quit" teardown in one step. The task
+ * body is wrapped in try/catch so a transient failure doesn't abort the timer.
+ */
+function schedulePeriodic(task: PeriodicCleanupTask): void {
+  const timer = setInterval(() => {
+    try {
+      task.run()
+    } catch {
+      /* non-fatal */
+    }
+  }, task.intervalMs)
+  app.on('will-quit', () => clearInterval(timer))
+}
+
+function pruneEventsOnce(): void {
+  pruneOldEvents(getDb(), getEventRetentionDays())
+}
+
+function pruneTaskChangesOnce(): void {
+  const pruned = pruneOldChanges(PRUNE_CHANGES_DAYS)
+  if (pruned > 0) logger.info(`Pruned ${pruned} old task change records`)
+}
+
+function pruneDiffSnapshotsOnce(): void {
+  const pruned = pruneOldDiffSnapshots(DIFF_SNAPSHOT_RETENTION_DAYS)
+  if (pruned > 0) {
+    logger.info(
+      `Cleared review_diff_snapshot on ${pruned} terminal tasks older than ${DIFF_SNAPSHOT_RETENTION_DAYS} days`
+    )
+  }
+}
+
+function cleanTestArtifactsOnce(): void {
+  const cleaned = cleanTestArtifacts()
+  if (cleaned > 0) logger.info(`Cleaned ${cleaned} test task artifacts`)
+}
+
+function runNonFatal(label: string, action: () => void): void {
+  try {
+    action()
+  } catch (err) {
+    logger.warn(`${label}: ${err}`)
+  }
+}
+
+/**
+ * Run initial cleanup tasks and schedule their periodic counterparts.
+ *
+ * Declarative: each cleanup task names its interval and body once; the
+ * startup one-shot and the periodic timer both reuse the same body via
+ * `schedulePeriodic`.
  */
 export function setupCleanupTasks(): void {
-  // Prune old agent events on startup
-  pruneOldEvents(getDb(), getEventRetentionDays())
+  // One-shot sweeps at startup.
+  pruneEventsOnce()
+  runNonFatal('Failed to prune task changes', pruneTaskChangesOnce)
+  runNonFatal('Failed to prune diff snapshots', pruneDiffSnapshotsOnce)
+  runNonFatal('Failed to clean test artifacts', cleanTestArtifactsOnce)
 
-  // Prune agent_events periodically (every 24 hours)
-  const pruneEventsInterval = setInterval(
-    () => {
-      try {
-        pruneOldEvents(getDb(), getEventRetentionDays())
-      } catch {
-        /* non-fatal */
-      }
-    },
-    24 * 60 * 60 * 1000
-  )
-
-  // Prune old audit trail records (non-fatal)
-  try {
-    const pruned = pruneOldChanges(PRUNE_CHANGES_DAYS)
-    if (pruned > 0) logger.info(`Pruned ${pruned} old task change records`)
-  } catch (err) {
-    logger.warn(`Failed to prune task changes: ${err}`)
-  }
-
-  // Null out review_diff_snapshot blobs on long-completed tasks (non-fatal).
-  // Snapshots can be ~500KB each — without this, the DB grows unbounded.
-  try {
-    const pruned = pruneOldDiffSnapshots(DIFF_SNAPSHOT_RETENTION_DAYS)
-    if (pruned > 0)
-      logger.info(
-        `Cleared review_diff_snapshot on ${pruned} terminal tasks older than ${DIFF_SNAPSHOT_RETENTION_DAYS} days`
-      )
-  } catch (err) {
-    logger.warn(`Failed to prune diff snapshots: ${err}`)
-  }
-
-  // Clean up test task artifacts (agents running tests create "Test task" records)
-  try {
-    const cleaned = cleanTestArtifacts()
-    if (cleaned > 0) {
-      logger.info(`Cleaned ${cleaned} test task artifacts`)
-    }
-  } catch {
-    /* non-fatal */
-  }
-
-  // Prune task_changes periodically (every 24 hours)
-  const pruneTaskChangesInterval = setInterval(
-    () => {
-      try {
-        pruneOldChanges(30)
-      } catch {
-        /* non-fatal */
-      }
-    },
-    24 * 60 * 60 * 1000
-  )
-
-  // Prune review_diff_snapshot periodically (every 24 hours)
-  const pruneDiffSnapshotsInterval = setInterval(
-    () => {
-      try {
-        const cleared = pruneOldDiffSnapshots(DIFF_SNAPSHOT_RETENTION_DAYS)
-        if (cleared > 0) logger.info(`Cleared review_diff_snapshot on ${cleared} terminal tasks`)
-      } catch {
-        /* non-fatal */
-      }
-    },
-    24 * 60 * 60 * 1000
-  )
-
-  app.on('will-quit', () => {
-    clearInterval(pruneEventsInterval)
-    clearInterval(pruneTaskChangesInterval)
-    clearInterval(pruneDiffSnapshotsInterval)
-  })
+  const periodicTasks: PeriodicCleanupTask[] = [
+    { name: 'pruneEvents', intervalMs: DAILY_MS, run: pruneEventsOnce },
+    { name: 'pruneTaskChanges', intervalMs: DAILY_MS, run: () => pruneOldChanges(30) },
+    { name: 'pruneDiffSnapshots', intervalMs: DAILY_MS, run: pruneDiffSnapshotsOnce }
+  ]
+  for (const task of periodicTasks) schedulePeriodic(task)
 }
 
 /**

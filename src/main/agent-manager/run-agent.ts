@@ -13,6 +13,8 @@ import { getMainRepoPorcelainStatus } from '../lib/main-repo-guards'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { IUnitOfWork } from '../data/unit-of-work'
+import { FAST_FAIL_EXHAUSTED_NOTE } from './failure-messages'
 import { getGhRepo } from '../paths'
 import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
 import type { TaskDependency } from '../../shared/types'
@@ -71,6 +73,7 @@ export interface RunAgentSpawnDeps {
 /** Sprint task data access. */
 export interface RunAgentDataDeps {
   repo: IAgentTaskRepository
+  unitOfWork: IUnitOfWork
   logger: Logger
 }
 
@@ -157,10 +160,19 @@ export async function cleanupWorktreeWithRetry(
   logger: Logger
 ): Promise<void> {
   const args = { repoPath, worktreePath: worktree.worktreePath, branch: worktree.branch }
+  if (await tryCleanupWithBackoff(taskId, args, logger)) return
+  await runFinalCleanupAttempt(taskId, args, worktree.worktreePath, repo, logger)
+}
+
+async function tryCleanupWithBackoff(
+  taskId: string,
+  args: { repoPath: string; worktreePath: string; branch: string },
+  logger: Logger
+): Promise<boolean> {
   for (let attempt = 0; attempt < CLEANUP_RETRY_DELAYS_MS.length; attempt++) {
     try {
       await cleanupWorktree(args)
-      return
+      return true
     } catch (err) {
       const delayMs = CLEANUP_RETRY_DELAYS_MS[attempt] ?? 1000
       logger.warn(
@@ -169,24 +181,43 @@ export async function cleanupWorktreeWithRetry(
       await sleep(delayMs)
     }
   }
-  // Final attempt — no more retries
+  return false
+}
+
+async function runFinalCleanupAttempt(
+  taskId: string,
+  args: { repoPath: string; worktreePath: string; branch: string },
+  worktreePath: string,
+  repo: IAgentTaskRepository,
+  logger: Logger
+): Promise<void> {
   try {
     await cleanupWorktree(args)
   } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err)
-    logger.warn(
-      `[agent-manager] Stale worktree for task ${taskId} at ${worktree.worktreePath} — manual cleanup needed: ${detail}`
+    surfaceCleanupFailureToTaskNotes(taskId, worktreePath, err, repo, logger)
+  }
+}
+
+function surfaceCleanupFailureToTaskNotes(
+  taskId: string,
+  worktreePath: string,
+  err: unknown,
+  repo: IAgentTaskRepository,
+  logger: Logger
+): void {
+  const detail = err instanceof Error ? err.message : String(err)
+  logger.warn(
+    `[agent-manager] Stale worktree for task ${taskId} at ${worktreePath} — manual cleanup needed: ${detail}`
+  )
+  const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktreePath}`
+  const truncated =
+    note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+  try {
+    repo.updateTask(taskId, { notes: truncated })
+  } catch (updateErr) {
+    logger.error(
+      `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
     )
-    const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktree.worktreePath}`
-    const truncated =
-      note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
-    try {
-      repo.updateTask(taskId, { notes: truncated })
-    } catch (updateErr) {
-      logger.error(
-        `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
-      )
-    }
   }
 }
 
@@ -194,96 +225,115 @@ export async function cleanupWorktreeWithRetry(
  * Classifies the agent exit (fast-fail vs normal) and drives the appropriate
  * task status transition and terminal notification.
  */
-async function resolveAgentExit(
-  task: AgentRunClaim,
-  exitCode: number | undefined,
-  lastAgentOutput: string,
-  agent: ActiveAgent,
-  exitedAt: number,
-  worktree: { worktreePath: string; branch: string },
-  repoPath: string,
-  repo: IAgentTaskRepository,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+interface ResolveAgentExitContext {
+  task: AgentRunClaim
+  exitCode: number | undefined
+  lastAgentOutput: string
+  agent: ActiveAgent
+  exitedAt: number
+  worktree: { worktreePath: string; branch: string }
+  repoPath: string
+  repo: IAgentTaskRepository
+  unitOfWork: IUnitOfWork
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   logger: Logger
-): Promise<void> {
-  const ffResult = classifyExit(agent.startedAt, exitedAt, exitCode ?? 1, task.fast_fail_count ?? 0)
-  const now = nowIso()
+}
 
-  if (ffResult === 'fast-fail-exhausted') {
-    flushAgentEventBatcher()
-    try {
-      repo.updateTask(task.id, {
-        status: 'error',
-        failure_reason: 'spawn',
-        completed_at: now,
-        notes:
-          "Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/agent-manager.log for details. To retry: reset task status to 'queued' and clear claimed_by.",
-        claimed_by: null,
-        needs_review: true
-      })
-    } catch (err) {
-      logger.error(
-        `[agent-manager] Failed to update task ${task.id} after fast-fail exhausted: ${err}`
-      )
-    }
-    await onTaskTerminal(task.id, 'error')
-  } else if (ffResult === 'fast-fail-requeue') {
-    try {
-      repo.updateTask(task.id, {
-        status: 'queued',
-        fast_fail_count: (task.fast_fail_count ?? 0) + 1,
-        claimed_by: null
-      })
-    } catch (err) {
-      logger.error(`[agent-manager] Failed to requeue fast-fail task ${task.id}: ${err}`)
-    }
-    // Fast-fail-requeue means the next drain tick will recreate the worktree.
-    // Proactively delete the agent branch so the new worktree starts from a
-    // clean ref rather than inheriting a stale tip from the failed attempt.
-    await deleteAgentBranchBeforeRetry(repoPath, worktree.branch, logger)
-    // Notify terminal listeners even on requeue so blocked dependents are unblocked.
-    // A fast-fail-requeue ends the current agent run — dependents should not remain
-    // blocked indefinitely waiting for a run that already ended.
-    await onTaskTerminal(task.id, 'queued')
-  } else {
-    try {
-      const ghRepo = getGhRepo(task.repo) ?? task.repo
-      await resolveSuccess(
-        {
-          taskId: task.id,
-          worktreePath: worktree.worktreePath,
-          title: task.title,
-          ghRepo,
-          onTaskTerminal,
-          agentSummary: lastAgentOutput || null,
-          retryCount: task.retry_count ?? 0,
-          repo,
-          repoPath
-        },
-        logger
-      )
-    } catch (err) {
-      logger.warn(`[agent-manager] resolveSuccess failed for task ${task.id}: ${err}`)
-      // Pass lastAgentOutput so the retry agent knows what failed and doesn't blindly repeat
-      const failureNotes = [lastAgentOutput, String(err)].filter(Boolean).join('\n---\n')
-      const isTerminal = resolveFailure(
-        {
-          taskId: task.id,
-          retryCount: task.retry_count ?? 0,
-          notes: failureNotes || undefined,
-          repo
-        },
-        logger
-      )
-      if (isTerminal) {
-        await onTaskTerminal(task.id, 'failed')
-      } else {
-        // Non-terminal: task was requeued. Delete the branch so the next drain
-        // tick's worktree setup starts from a clean slate.
-        await deleteAgentBranchBeforeRetry(repoPath, worktree.branch, logger)
-      }
-    }
+async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
+  const ffResult = classifyExit(
+    ctx.agent.startedAt,
+    ctx.exitedAt,
+    ctx.exitCode ?? 1,
+    ctx.task.fast_fail_count ?? 0
+  )
+  if (ffResult === 'fast-fail-exhausted') return handleFastFailExhausted(ctx)
+  if (ffResult === 'fast-fail-requeue') return handleFastFailRequeue(ctx)
+  return resolveNormalExit(ctx)
+}
+
+async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<void> {
+  flushAgentEventBatcher()
+  try {
+    ctx.repo.updateTask(ctx.task.id, {
+      status: 'error',
+      failure_reason: 'spawn',
+      completed_at: nowIso(),
+      notes: FAST_FAIL_EXHAUSTED_NOTE,
+      claimed_by: null,
+      needs_review: true
+    })
+  } catch (err) {
+    ctx.logger.error(
+      `[agent-manager] Failed to update task ${ctx.task.id} after fast-fail exhausted: ${err}`
+    )
   }
+  await ctx.onTaskTerminal(ctx.task.id, 'error')
+}
+
+async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void> {
+  try {
+    ctx.repo.updateTask(ctx.task.id, {
+      status: 'queued',
+      fast_fail_count: (ctx.task.fast_fail_count ?? 0) + 1,
+      claimed_by: null
+    })
+  } catch (err) {
+    ctx.logger.error(`[agent-manager] Failed to requeue fast-fail task ${ctx.task.id}: ${err}`)
+  }
+  // Fast-fail-requeue means the next drain tick will recreate the worktree.
+  // Delete the agent branch so the new worktree starts from a clean ref.
+  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, ctx.logger)
+  // Notify terminal listeners even on requeue so blocked dependents unblock —
+  // this run ended, even if a retry will follow.
+  await ctx.onTaskTerminal(ctx.task.id, 'queued')
+}
+
+async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
+  try {
+    const ghRepo = getGhRepo(ctx.task.repo) ?? ctx.task.repo
+    await resolveSuccess(
+      {
+        taskId: ctx.task.id,
+        worktreePath: ctx.worktree.worktreePath,
+        title: ctx.task.title,
+        ghRepo,
+        onTaskTerminal: ctx.onTaskTerminal,
+        agentSummary: ctx.lastAgentOutput || null,
+        retryCount: ctx.task.retry_count ?? 0,
+        repo: ctx.repo,
+        unitOfWork: ctx.unitOfWork,
+        repoPath: ctx.repoPath
+      },
+      ctx.logger
+    )
+  } catch (err) {
+    await handleResolveSuccessFailure(ctx, err)
+  }
+}
+
+async function handleResolveSuccessFailure(
+  ctx: ResolveAgentExitContext,
+  err: unknown
+): Promise<void> {
+  ctx.logger.warn(`[agent-manager] resolveSuccess failed for task ${ctx.task.id}: ${err}`)
+  // Pass lastAgentOutput so the retry agent knows what failed and doesn't repeat blindly.
+  const failureNotes = [ctx.lastAgentOutput, String(err)].filter(Boolean).join('\n---\n')
+  const isTerminal = resolveFailure(
+    {
+      taskId: ctx.task.id,
+      retryCount: ctx.task.retry_count ?? 0,
+      notes: failureNotes || undefined,
+      repo: ctx.repo
+    },
+    ctx.logger
+  )
+  if (isTerminal) {
+    await ctx.onTaskTerminal(ctx.task.id, 'failed')
+    return
+  }
+  // Non-terminal: task was requeued. Delete the branch so the next drain
+  // tick's worktree setup starts from a clean slate.
+  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, ctx.logger)
 }
 
 /**
@@ -323,12 +373,49 @@ async function finalizeAgentRun(
   lastAgentOutput: string,
   deps: RunAgentDeps
 ): Promise<void> {
-  const { activeAgents, logger, repo, onTaskTerminal } = deps
-
   const exitedAt = Date.now()
   const durationMs = exitedAt - agent.startedAt
 
-  // Emit completion event
+  emitCompletionEvent(agentRunId, agent, exitCode, exitedAt, durationMs)
+
+  if (await handleSupersededRun(task, worktree, repoPath, agent, deps)) return
+
+  persistAgentRunTelemetry(
+    agentRunId,
+    agent,
+    exitCode,
+    turnTracker,
+    exitedAt,
+    durationMs,
+    deps.logger
+  )
+  await resolveAgentExit({
+    task,
+    exitCode,
+    lastAgentOutput,
+    agent,
+    exitedAt,
+    worktree,
+    repoPath,
+    repo: deps.repo,
+    unitOfWork: deps.unitOfWork,
+    onTaskTerminal: deps.onTaskTerminal,
+    logger: deps.logger
+  })
+
+  await persistAndCleanupAfterRun(task, worktree, repoPath, agent, deps)
+  deps.logger.info(
+    `[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'})`
+  )
+}
+
+function emitCompletionEvent(
+  agentRunId: string,
+  agent: ActiveAgent,
+  exitCode: number | undefined,
+  exitedAt: number,
+  durationMs: number
+): void {
   emitAgentEvent(agentRunId, {
     type: 'agent:completed',
     exitCode: exitCode ?? 0,
@@ -338,50 +425,48 @@ async function finalizeAgentRun(
     durationMs,
     timestamp: exitedAt
   })
+}
 
-  // Check if watchdog already cleaned up, or if a retry has already overwritten this entry.
-  // Keying by taskId means a retry's set() overwrites the previous run's entry — guard by agentRunId.
-  if (activeAgents.get(task.id)?.agentRunId !== agent.agentRunId) {
-    logger.info(
-      `[agent-manager] Agent ${task.id} (run ${agent.agentRunId}) already cleaned up or superseded by retry`
-    )
-    // Flush any pending agent events to SQLite before cleanup.
-    // The batcher uses a 100ms timer — without this flush, the last
-    // batch of events is broadcast to the UI but never persisted.
-    flushAgentEventBatcher()
-    await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
-    await cleanupWorktreeWithRetry(task.id, worktree, repoPath, repo, logger)
-    return
-  }
-
-  persistAgentRunTelemetry(agentRunId, agent, exitCode, turnTracker, exitedAt, durationMs, logger)
-  await resolveAgentExit(
-    task,
-    exitCode,
-    lastAgentOutput,
-    agent,
-    exitedAt,
-    worktree,
-    repoPath,
-    repo,
-    onTaskTerminal,
-    logger
+/**
+ * Detect whether the watchdog already removed this agent or a retry has
+ * overwritten the active-agents entry. When superseded, performs the
+ * minimal-but-correct cleanup (flush events, capture partial diff, remove
+ * worktree) and returns true so the caller short-circuits.
+ */
+async function handleSupersededRun(
+  task: AgentRunClaim,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  agent: ActiveAgent,
+  deps: RunAgentDeps
+): Promise<boolean> {
+  if (deps.activeAgents.get(task.id)?.agentRunId === agent.agentRunId) return false
+  deps.logger.info(
+    `[agent-manager] Agent ${task.id} (run ${agent.agentRunId}) already cleaned up or superseded by retry`
   )
+  // The batcher uses a 100ms timer — without this flush, the last batch of
+  // events would be broadcast to the UI but never persisted to SQLite.
+  flushAgentEventBatcher()
+  await capturePartialDiff(task.id, worktree.worktreePath, deps.repo, deps.logger)
+  await cleanupWorktreeWithRetry(task.id, worktree, repoPath, deps.repo, deps.logger)
+  return true
+}
 
-  // Remove from active map — guarded: a retry may have already overwritten this entry
-  if (activeAgents.get(task.id)?.agentRunId === agent.agentRunId) {
-    activeAgents.delete(task.id)
+async function persistAndCleanupAfterRun(
+  task: AgentRunClaim,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  agent: ActiveAgent,
+  deps: RunAgentDeps
+): Promise<void> {
+  // Remove from active map — guarded: a retry may have already overwritten this entry.
+  if (deps.activeAgents.get(task.id)?.agentRunId === agent.agentRunId) {
+    deps.activeAgents.delete(task.id)
   }
-
   // Flush events before the next drain tick or cleanup — the 100ms batcher
   // timer is not guaranteed to fire before a new task starts or shutdown.
   flushAgentEventBatcher()
-
-  await cleanupOrPreserveWorktree(task, worktree, repoPath, repo, logger)
-
-  logger.info(
-    `[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'})`
-  )
+  await cleanupOrPreserveWorktree(task, worktree, repoPath, deps.repo, deps.logger)
 }
 
 export async function runAgent(

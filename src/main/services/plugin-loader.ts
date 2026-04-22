@@ -2,57 +2,95 @@ import { readdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { createLogger } from '../logger'
+import type { Logger } from '../logger'
 import type { BdePlugin } from '../../shared/plugin-types'
 
-const logger = createLogger('plugin-loader')
-const PLUGINS_DIR = join(homedir(), '.bde', 'plugins')
+const defaultLogger = createLogger('plugin-loader')
+const DEFAULT_PLUGINS_DIR = join(homedir(), '.bde', 'plugins')
 
-let loadedPlugins: BdePlugin[] = []
+/**
+ * Encapsulates the in-process plugin registry. Replaces the previous
+ * module-level `loadedPlugins` array so the lifetime is owned by the caller
+ * (composition root constructs one; tests construct their own).
+ */
+export class PluginRegistry {
+  private readonly logger: Logger
+  private readonly pluginsDir: string
+  private plugins: BdePlugin[] = []
 
-export function loadPlugins(): BdePlugin[] {
-  if (!existsSync(PLUGINS_DIR)) {
-    logger.info(`[plugin-loader] No plugins directory at ${PLUGINS_DIR}`)
-    return []
+  constructor(opts: { logger?: Logger; pluginsDir?: string } = {}) {
+    this.logger = opts.logger ?? defaultLogger
+    this.pluginsDir = opts.pluginsDir ?? DEFAULT_PLUGINS_DIR
   }
 
-  const files = readdirSync(PLUGINS_DIR).filter((f) => f.endsWith('.js') || f.endsWith('.cjs'))
-  loadedPlugins = []
+  load(): BdePlugin[] {
+    if (!existsSync(this.pluginsDir)) {
+      this.logger.info(`[plugin-loader] No plugins directory at ${this.pluginsDir}`)
+      this.plugins = []
+      return this.plugins
+    }
+    const files = readdirSync(this.pluginsDir).filter(
+      (f) => f.endsWith('.js') || f.endsWith('.cjs')
+    )
+    this.plugins = []
+    for (const file of files) {
+      const plugin = this.tryLoadPluginFile(file)
+      if (plugin) this.plugins.push(plugin)
+    }
+    return this.plugins
+  }
 
-  for (const file of files) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const mod = require(join(PLUGINS_DIR, file))
-      const plugin: BdePlugin = mod.default ?? mod
-      if (!plugin.name) {
-        logger.warn(`[plugin-loader] Skipping ${file} — missing 'name' export`)
-        continue
+  list(): BdePlugin[] {
+    return this.plugins
+  }
+
+  async emit<K extends keyof BdePlugin>(
+    event: K,
+    data: BdePlugin[K] extends (arg: infer A) => unknown ? A : never
+  ): Promise<void> {
+    for (const plugin of this.plugins) {
+      const handler = plugin[event]
+      if (typeof handler !== 'function') continue
+      try {
+        await (handler as (arg: unknown) => unknown)(data)
+      } catch (err) {
+        this.logger.error(`[plugin-loader] Plugin ${plugin.name}.${String(event)} error: ${err}`)
       }
-      loadedPlugins.push(plugin)
-      logger.info(`[plugin-loader] Loaded plugin: ${plugin.name}`)
-    } catch (err) {
-      logger.error(`[plugin-loader] Failed to load ${file}: ${err}`)
     }
   }
 
-  return loadedPlugins
+  private tryLoadPluginFile(file: string): BdePlugin | null {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const mod = require(join(this.pluginsDir, file))
+      const plugin: BdePlugin = mod.default ?? mod
+      if (!plugin.name) {
+        this.logger.warn(`[plugin-loader] Skipping ${file} — missing 'name' export`)
+        return null
+      }
+      this.logger.info(`[plugin-loader] Loaded plugin: ${plugin.name}`)
+      return plugin
+    } catch (err) {
+      this.logger.error(`[plugin-loader] Failed to load ${file}: ${err}`)
+      return null
+    }
+  }
+}
+
+// Default registry preserved for callers that have not migrated to DI yet.
+const defaultRegistry = new PluginRegistry()
+
+export function loadPlugins(): BdePlugin[] {
+  return defaultRegistry.load()
 }
 
 export function getPlugins(): BdePlugin[] {
-  return loadedPlugins
+  return defaultRegistry.list()
 }
 
 export async function emitPluginEvent<K extends keyof BdePlugin>(
   event: K,
   data: BdePlugin[K] extends (arg: infer A) => unknown ? A : never
 ): Promise<void> {
-  for (const plugin of loadedPlugins) {
-    const handler = plugin[event]
-    if (typeof handler === 'function') {
-      try {
-        await (handler as (arg: unknown) => unknown)(data)
-      } catch (err) {
-        logger.error(`[plugin-loader] Plugin ${plugin.name}.${String(event)} error: ${err}`)
-      }
-    }
-  }
+  return defaultRegistry.emit(event, data)
 }

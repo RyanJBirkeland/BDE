@@ -36,17 +36,32 @@ export {
   ensureFreeDiskSpace
 }
 
-export function branchNameForTask(title: string, taskId?: string, groupId?: string): string {
+function buildAgentBranch(title: string, suffix: string): string {
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, BRANCH_SLUG_MAX_LENGTH)
-  // Fallback to 'unnamed-task' if slug is empty (all special chars)
+  // Fallback to 'unnamed-task' if slug is empty (all special chars).
   const finalSlug = slug || 'unnamed-task'
-  // When groupId is present, append group short-id instead of taskId
-  const suffix = groupId ? `-${groupId.slice(0, 8)}` : taskId ? `-${taskId.slice(0, 8)}` : ''
   return `agent/${finalSlug}${suffix}`
+}
+
+/** Branch name for a task, scoped by either the task id or its parent group id. */
+export function branchNameForTask(title: string, taskId?: string, groupId?: string): string {
+  // When groupId is present, the group short-id wins so all tasks in an epic
+  // share a single branch name root for grouped review/cleanup.
+  if (groupId) return branchNameForTaskGroup(title, groupId)
+  if (taskId) return branchNameForTaskId(title, taskId)
+  return buildAgentBranch(title, '')
+}
+
+export function branchNameForTaskId(title: string, taskId: string): string {
+  return buildAgentBranch(title, `-${taskId.slice(0, 8)}`)
+}
+
+export function branchNameForTaskGroup(title: string, groupId: string): string {
+  return buildAgentBranch(title, `-${groupId.slice(0, 8)}`)
 }
 
 export interface SetupWorktreeOpts {
@@ -67,9 +82,9 @@ function repoSlug(repoPath: string): string {
 }
 
 /**
- * Unconditionally removes any stale worktree path and branch.
- * Idempotent — safe to call even if nothing stale exists.
- * Agent branches are throwaway — never tries to push before deleting.
+ * Unconditionally removes any stale worktree path and branch. Idempotent —
+ * safe to call even if nothing stale exists. Agent branches are throwaway,
+ * so the cleanup never tries to push before deleting.
  */
 async function cleanupStaleWorktrees(
   repoPath: string,
@@ -78,76 +93,128 @@ async function cleanupStaleWorktrees(
   env: Record<string, string | undefined>,
   log: Logger | Console
 ): Promise<void> {
-  // Remove any worktree that references this branch (may be at a different path)
+  await removeWorktreesForBranch(repoPath, branch, env, log)
+  await removeWorktreeAtPath(repoPath, worktreePath, branch, env, log)
+  await pruneOrphanedWorktreeRefs(repoPath, env, log)
+  await deleteBranchRobustly(repoPath, branch, env, log)
+}
+
+/**
+ * Walk `git worktree list --porcelain`, find any worktree pointing at
+ * `branch`, and remove it. A removeForce failure falls back to `rmSync`
+ * because git refuses to drop a worktree whose dir already vanished.
+ */
+async function removeWorktreesForBranch(
+  repoPath: string,
+  branch: string,
+  env: Record<string, string | undefined>,
+  log: Logger | Console
+): Promise<void> {
+  let stalePaths: string[]
   try {
-    const wtList = await listWorktrees(repoPath, env)
-    for (const block of wtList.split('\n\n')) {
-      if (block.includes(`branch refs/heads/${branch}`)) {
-        const pathLine = block.split('\n').find((l) => l.startsWith('worktree '))
-        if (pathLine) {
-          const stalePath = pathLine.replace('worktree ', '')
-          log.warn(`[worktree] Removing stale worktree at ${stalePath} for branch ${branch}`)
-          try {
-            await removeWorktreeForce(repoPath, stalePath, env)
-          } catch (removeErr) {
-            log.warn(
-              `[worktree] removeWorktreeForce failed for ${stalePath} (branch ${branch}): ${removeErr instanceof Error ? removeErr.message : String(removeErr)} — falling back to rmSync`
-            )
-            try {
-              rmSync(stalePath, { recursive: true, force: true })
-            } catch (rmErr) {
-              log.warn(
-                `[worktree] rmSync fallback also failed for ${stalePath}: ${rmErr instanceof Error ? rmErr.message : String(rmErr)}`
-              )
-            }
-          }
-        }
-      }
-    }
+    const listing = await listWorktrees(repoPath, env)
+    stalePaths = parseWorktreePathsForBranch(listing, branch)
   } catch (listErr) {
     log.warn(
-      `[worktree] listWorktrees failed for ${repoPath} (branch ${branch}): ${listErr instanceof Error ? listErr.message : String(listErr)} — skipping stale worktree removal`
+      `[worktree] listWorktrees failed for ${repoPath} (branch ${branch}): ${asMessage(listErr)} — skipping stale worktree removal`
     )
+    return
   }
+  for (const stalePath of stalePaths) {
+    log.warn(`[worktree] Removing stale worktree at ${stalePath} for branch ${branch}`)
+    await removeWorktreeWithRmFallback(repoPath, stalePath, branch, env, log)
+  }
+}
 
-  // Remove the target worktree path if it exists (from a previous run at this exact path)
-  if (existsSync(worktreePath)) {
+function parseWorktreePathsForBranch(listing: string | undefined | null, branch: string): string[] {
+  if (!listing) return []
+  const paths: string[] = []
+  for (const block of listing.split('\n\n')) {
+    const stalePath = extractWorktreePathForBranch(block, branch)
+    if (stalePath) paths.push(stalePath)
+  }
+  return paths
+}
+
+function extractWorktreePathForBranch(block: string, branch: string): string | null {
+  if (!block.includes(`branch refs/heads/${branch}`)) return null
+  const pathLine = block.split('\n').find((l) => l.startsWith('worktree '))
+  return pathLine ? pathLine.replace('worktree ', '') : null
+}
+
+async function removeWorktreeAtPath(
+  repoPath: string,
+  worktreePath: string,
+  branch: string,
+  env: Record<string, string | undefined>,
+  log: Logger | Console
+): Promise<void> {
+  if (!existsSync(worktreePath)) return
+  await removeWorktreeWithRmFallback(repoPath, worktreePath, branch, env, log)
+}
+
+async function removeWorktreeWithRmFallback(
+  repoPath: string,
+  targetPath: string,
+  branch: string,
+  env: Record<string, string | undefined>,
+  log: Logger | Console
+): Promise<void> {
+  try {
+    await removeWorktreeForce(repoPath, targetPath, env)
+  } catch (removeErr) {
+    log.warn(
+      `[worktree] removeWorktreeForce failed for ${targetPath} (branch ${branch}): ${asMessage(removeErr)} — falling back to rmSync`
+    )
     try {
-      await removeWorktreeForce(repoPath, worktreePath, env)
-    } catch (removeErr) {
-      log.warn(
-        `[worktree] removeWorktreeForce failed for ${worktreePath} (branch ${branch}): ${removeErr instanceof Error ? removeErr.message : String(removeErr)} — falling back to rmSync`
-      )
-      rmSync(worktreePath, { recursive: true, force: true })
+      rmSync(targetPath, { recursive: true, force: true })
+    } catch (rmErr) {
+      log.warn(`[worktree] rmSync fallback also failed for ${targetPath}: ${asMessage(rmErr)}`)
     }
   }
+}
 
-  // Prune stale worktree references from git's tracking
+async function pruneOrphanedWorktreeRefs(
+  repoPath: string,
+  env: Record<string, string | undefined>,
+  log: Logger | Console
+): Promise<void> {
   try {
     await pruneWorktrees(repoPath, env)
   } catch (pruneErr) {
-    log.warn(
-      `[worktree] pruneWorktrees failed for ${repoPath}: ${pruneErr instanceof Error ? pruneErr.message : String(pruneErr)}`
-    )
+    log.warn(`[worktree] pruneWorktrees failed for ${repoPath}: ${asMessage(pruneErr)}`)
   }
+}
 
-  // Delete the branch if it exists (no push — agent branches are throwaway).
-  // `git branch -D` can fail if git still considers the branch "in use" by a
-  // worktree whose directory was already removed (rmSync above) but whose
-  // .git/worktrees/<hash> entry hasn't been pruned yet.  Fall back to the
-  // lower-level `git update-ref -d` which bypasses the worktree-in-use check
-  // and deletes the ref directly.
+/**
+ * `git branch -D` can fail when git still considers the branch in use by a
+ * worktree whose directory was already removed (via rmSync) but whose
+ * `.git/worktrees/<hash>` entry has not been pruned yet. Falls back to the
+ * lower-level `git update-ref -d` which bypasses the in-use check.
+ */
+async function deleteBranchRobustly(
+  repoPath: string,
+  branch: string,
+  env: Record<string, string | undefined>,
+  log: Logger | Console
+): Promise<void> {
   try {
     await deleteBranch(repoPath, branch, env)
+    return
   } catch {
-    try {
-      await forceDeleteBranchRef(repoPath, branch, env)
-    } catch (forceDeleteErr) {
-      log.warn(
-        `[worktree] forceDeleteBranchRef also failed for branch ${branch} in ${repoPath}: ${forceDeleteErr instanceof Error ? forceDeleteErr.message : String(forceDeleteErr)}`
-      )
-    }
+    /* fall through to forceDeleteBranchRef */
   }
+  try {
+    await forceDeleteBranchRef(repoPath, branch, env)
+  } catch (forceDeleteErr) {
+    log.warn(
+      `[worktree] forceDeleteBranchRef also failed for branch ${branch} in ${repoPath}: ${asMessage(forceDeleteErr)}`
+    )
+  }
+}
+
+function asMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
 }
 
 export async function setupWorktree(
@@ -313,64 +380,93 @@ export async function pruneStaleWorktrees(
   logger?: Logger,
   isReview?: (taskId: string) => boolean
 ): Promise<number> {
+  if (!existsSync(worktreeBase)) return 0
+  const log = logger ?? console
   let pruned = 0
+  for (const candidate of enumeratePruneCandidates(worktreeBase, log)) {
+    if (!isPrunableCandidate(candidate, isActive, isReview, log)) continue
+    if (await deleteWorktreeDir(candidate.worktreePath, log)) pruned++
+  }
+  return pruned
+}
 
-  if (!existsSync(worktreeBase)) return pruned
+interface PruneCandidate {
+  taskId: string
+  worktreePath: string
+}
 
+function* enumeratePruneCandidates(
+  worktreeBase: string,
+  log: Logger | Console
+): Generator<PruneCandidate> {
   const repoDirs = readdirSync(worktreeBase, { withFileTypes: true })
     .filter((d) => d.isDirectory() && d.name !== '.locks')
     .map((d) => path.join(worktreeBase, d.name))
-
-  const log = logger ?? console
   for (const repoDir of repoDirs) {
-    let taskDirs: string[]
-    try {
-      taskDirs = readdirSync(repoDir, { withFileTypes: true })
-        .filter((d) => d.isDirectory())
-        .map((d) => d.name)
-    } catch (err) {
-      log.warn(`[worktree] Failed to read repo directory during prune: ${err}`)
-      continue
-    }
-
-    for (const taskId of taskDirs) {
-      // Safety: only consider directories whose name matches BDE's task-ID
-      // UUID format. Users may point `worktreeBase` at a path they share with
-      // human-created git worktrees (e.g. `~/worktrees/<project>/<branch>`),
-      // so we MUST NOT delete anything that doesn't look like a BDE-managed
-      // task directory. Without this guard the pruner would `rm -rf` `src/`,
-      // `docs/`, etc. inside human worktree branches.
-      if (!TASK_ID_UUID_PATTERN.test(taskId)) continue
-
-      const worktreePath = path.join(repoDir, taskId)
-
-      // Defense-in-depth: a UUID-named directory that has no `.git` is not
-      // a worktree we created — refuse to delete it.
-      if (!looksLikeWorktree(worktreePath)) {
-        log.warn(
-          `[worktree] Skipping prune of ${worktreePath}: UUID-named but not a git worktree (no .git entry)`
-        )
-        continue
-      }
-
-      if (isActive(taskId)) continue
-      // Skip worktrees belonging to tasks in review status
-      if (isReview?.(taskId)) {
-        log.info(`[worktree] Skipping prune of review worktree for task ${taskId}`)
-        continue
-      }
-      try {
-        // Use shell rm -rf instead of rmSync to avoid Electron's ASAR
-        // interception, which treats .asar files as directories and
-        // fails with ENOTDIR when trying to rmdir them.
-        const env = buildAgentEnv()
-        await execFileAsync('rm', ['-rf', worktreePath], { env })
-        pruned++
-      } catch (err) {
-        log.warn(`[worktree] Failed to remove stale worktree directory: ${err}`)
-      }
-    }
+    yield* enumerateRepoCandidates(repoDir, log)
   }
+}
 
-  return pruned
+function* enumerateRepoCandidates(
+  repoDir: string,
+  log: Logger | Console
+): Generator<PruneCandidate> {
+  let taskDirs: string[]
+  try {
+    taskDirs = readdirSync(repoDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name)
+  } catch (err) {
+    log.warn(`[worktree] Failed to read repo directory during prune: ${err}`)
+    return
+  }
+  for (const taskId of taskDirs) {
+    yield { taskId, worktreePath: path.join(repoDir, taskId) }
+  }
+}
+
+/**
+ * Returns true only when it is safe to delete `candidate.worktreePath`.
+ *
+ * Safety gates, in order:
+ *  1. Directory name must look like a BDE task id (UUID-shaped). Users may
+ *     point `worktreeBase` at a directory they share with human worktrees,
+ *     so we must not delete anything that doesn't look like our own.
+ *  2. The directory must contain a `.git` entry — defense-in-depth in case a
+ *     UUID-named directory exists that we did not create.
+ *  3. The task must not be currently active or in review.
+ */
+function isPrunableCandidate(
+  candidate: PruneCandidate,
+  isActive: (taskId: string) => boolean,
+  isReview: ((taskId: string) => boolean) | undefined,
+  log: Logger | Console
+): boolean {
+  if (!TASK_ID_UUID_PATTERN.test(candidate.taskId)) return false
+  if (!looksLikeWorktree(candidate.worktreePath)) {
+    log.warn(
+      `[worktree] Skipping prune of ${candidate.worktreePath}: UUID-named but not a git worktree (no .git entry)`
+    )
+    return false
+  }
+  if (isActive(candidate.taskId)) return false
+  if (isReview?.(candidate.taskId)) {
+    log.info(`[worktree] Skipping prune of review worktree for task ${candidate.taskId}`)
+    return false
+  }
+  return true
+}
+
+async function deleteWorktreeDir(worktreePath: string, log: Logger | Console): Promise<boolean> {
+  try {
+    // Use shell `rm -rf` instead of rmSync to avoid Electron's ASAR
+    // interception, which treats .asar files as directories and fails with
+    // ENOTDIR when trying to rmdir them.
+    const env = buildAgentEnv()
+    await execFileAsync('rm', ['-rf', worktreePath], { env })
+    return true
+  } catch (err) {
+    log.warn(`[worktree] Failed to remove stale worktree directory: ${err}`)
+    return false
+  }
 }

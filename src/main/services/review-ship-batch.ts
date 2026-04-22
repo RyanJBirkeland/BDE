@@ -20,12 +20,12 @@ import { executeReviewAction } from './review-action-executor'
 import { getTask, notifySprintMutation } from './sprint-service'
 import { getErrorMessage } from '../../shared/errors'
 import { getSettingJson } from '../settings'
-import { createSprintTaskRepository } from '../data/sprint-task-repository'
+import { getSharedSprintTaskRepository } from '../data/sprint-task-repository'
 import type { ShipBatchInput, ShipBatchResult } from './review-orchestration-types'
 import type { SprintTask } from '../../shared/types/task-types'
 
 const logger = createLogger('review-ship-batch')
-const repo = createSprintTaskRepository()
+const repo = getSharedSprintTaskRepository()
 
 interface RepoConfig {
   name: string

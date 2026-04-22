@@ -63,6 +63,7 @@ function makeContext(overrides: Partial<AutoMergeContext> = {}): AutoMergeContex
     branch: 'agent/test-task',
     worktreePath: '/tmp/worktrees/task-1',
     repo: makeRepo() as unknown as AutoMergeContext['repo'],
+    unitOfWork: { runInTransaction: (fn) => fn() },
     logger: makeLogger() as unknown as AutoMergeContext['logger'],
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     ...overrides

@@ -100,7 +100,13 @@ vi.mock('../../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue('/tmp/specs'),
   BDE_DIR: '/tmp/bde',
   BDE_AGENTS_INDEX: '/tmp/agents-index.json',
-  BDE_AGENT_LOGS_DIR: '/tmp/agent-logs'
+  BDE_AGENT_LOGS_DIR: '/tmp/agent-logs',
+  // Phase-5 audit: getRepoPaths/getRepoPath canonical owner is paths.ts now;
+  // sprint-service routes its repo-configured check through here.
+  getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' })),
+  getRepoPath: vi.fn((name: string) =>
+    name.toLowerCase() === 'bde' ? '/Users/ryan/projects/BDE' : undefined
+  )
 }))
 
 // Mock agent-queries
@@ -175,6 +181,7 @@ import { getSettingJson } from '../../settings'
 import { getAgentLogInfo } from '../../data/agent-queries'
 import { readLog } from '../../agent-history'
 import { getRepoPaths as _getRepoPaths } from '../../git'
+import { getRepoPaths as _getRepoPathsFromPaths } from '../../paths'
 
 const mockEvent = {} as IpcMainInvokeEvent
 
@@ -671,6 +678,7 @@ describe('sprint:create spec validation', () => {
 
   it('rejects task creation when repo is not configured in Settings', async () => {
     vi.mocked(_getRepoPaths).mockReturnValue({})
+    vi.mocked(_getRepoPathsFromPaths).mockReturnValueOnce({})
 
     const handler = captureHandler('sprint:create')
     await expect(
@@ -682,6 +690,7 @@ describe('sprint:create spec validation', () => {
 
   it('allows task creation when repo is configured', async () => {
     vi.mocked(_getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
+    vi.mocked(_getRepoPathsFromPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
     vi.mocked(_createTask).mockReturnValue({
       id: 'new-2',
       title: 'Fix bug',

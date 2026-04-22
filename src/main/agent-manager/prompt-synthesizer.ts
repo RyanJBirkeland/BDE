@@ -12,7 +12,7 @@ import {
   escapeXmlContent
 } from './prompt-sections'
 import { PROMPT_TRUNCATION } from './prompt-constants'
-import type { BuildPromptInput } from '../lib/prompt-composer'
+import type { BuildPromptInput } from '../../shared/types'
 
 const SYNTHESIZER_SPEC_REQUIREMENTS = `
 

@@ -2,23 +2,15 @@ import { stat } from 'node:fs/promises'
 import { execFileAsync } from './lib/async-utils'
 
 import type { Result } from '../shared/types'
-import {
-  getRepoPaths as getRepoPathsFromSettings,
-  getRepoPath as getRepoPathFromSettings
-} from './paths'
 import { getErrorMessage } from '../shared/errors'
 import { parseGitHubRemote } from '../shared/git-remote'
 
+// `getRepoPaths` / `getRepoPath` belong to repo configuration, not to git
+// operations — re-exported here for backward compatibility while callers
+// migrate to `./paths` directly. New code should import from `./paths`.
+export { getRepoPaths, getRepoPath } from './paths'
+
 const MAX_BUFFER = 10 * 1024 * 1024
-
-export function getRepoPaths(): Record<string, string> {
-  return getRepoPathsFromSettings()
-}
-
-/** Case-insensitive single-repo lookup. See `paths.ts:getRepoPath`. */
-export function getRepoPath(name: string): string | undefined {
-  return getRepoPathFromSettings(name)
-}
 
 export interface GitFileStatus {
   path: string

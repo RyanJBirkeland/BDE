@@ -4,10 +4,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { IpcMainInvokeEvent } from 'electron'
 
-vi.mock('../../cost-queries', () => ({
+vi.mock('../../data/cost-queries', () => ({
   getCostSummary: vi.fn(),
   getRecentAgentRunsWithCost: vi.fn(),
   getAgentHistory: vi.fn()
+}))
+
+vi.mock('../../db', () => ({
+  getDb: vi.fn().mockReturnValue({})
 }))
 
 vi.mock('../../ipc-utils', () => ({
@@ -16,7 +20,11 @@ vi.mock('../../ipc-utils', () => ({
 
 import { registerCostHandlers } from '../cost-handlers'
 import { safeHandle } from '../../ipc-utils'
-import { getCostSummary, getRecentAgentRunsWithCost, getAgentHistory } from '../../cost-queries'
+import {
+  getCostSummary,
+  getRecentAgentRunsWithCost,
+  getAgentHistory
+} from '../../data/cost-queries'
 
 describe('Cost handlers', () => {
   beforeEach(() => {
@@ -62,7 +70,7 @@ describe('Cost handlers', () => {
 
       const result = handlers['cost:agentRuns'](mockEvent, { limit: 10 })
 
-      expect(getRecentAgentRunsWithCost).toHaveBeenCalledWith(10)
+      expect(getRecentAgentRunsWithCost).toHaveBeenCalledWith(expect.anything(), 10)
       expect(result).toBe(runs)
     })
 
@@ -72,7 +80,7 @@ describe('Cost handlers', () => {
 
       handlers['cost:agentRuns'](mockEvent, {})
 
-      expect(getRecentAgentRunsWithCost).toHaveBeenCalledWith(20)
+      expect(getRecentAgentRunsWithCost).toHaveBeenCalledWith(expect.anything(), 20)
     })
 
     it('cost:getAgentHistory calls getAgentHistory with provided limit and offset', () => {
@@ -82,7 +90,7 @@ describe('Cost handlers', () => {
 
       const result = handlers['cost:getAgentHistory'](mockEvent, { limit: 50, offset: 10 })
 
-      expect(getAgentHistory).toHaveBeenCalledWith(50, 10)
+      expect(getAgentHistory).toHaveBeenCalledWith(expect.anything(), 50, 10)
       expect(result).toBe(history)
     })
 
@@ -92,7 +100,7 @@ describe('Cost handlers', () => {
 
       handlers['cost:getAgentHistory'](mockEvent, undefined)
 
-      expect(getAgentHistory).toHaveBeenCalledWith(100, 0)
+      expect(getAgentHistory).toHaveBeenCalledWith(expect.anything(), 100, 0)
     })
 
     it('cost:getAgentHistory uses defaults when args is empty object', () => {
@@ -101,7 +109,7 @@ describe('Cost handlers', () => {
 
       handlers['cost:getAgentHistory'](mockEvent, {})
 
-      expect(getAgentHistory).toHaveBeenCalledWith(100, 0)
+      expect(getAgentHistory).toHaveBeenCalledWith(expect.anything(), 100, 0)
     })
   })
 })

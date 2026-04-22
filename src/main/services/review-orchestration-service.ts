@@ -13,7 +13,7 @@ import { getTask, updateTask, notifySprintMutation } from './sprint-service'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
 import { getSettingJson } from '../settings'
-import { createSprintTaskRepository } from '../data/sprint-task-repository'
+import { getSharedSprintTaskRepository } from '../data/sprint-task-repository'
 import type {
   MergeLocallyInput,
   MergeLocallyResult,
@@ -47,7 +47,7 @@ export type {
 }
 
 const logger = createLogger('review-orchestration')
-const repo = createSprintTaskRepository()
+const repo = getSharedSprintTaskRepository()
 
 function getRepoConfig(name: string): { name: string; localPath: string } | null {
   const repos = getSettingJson<Array<{ name: string; localPath: string }>>('repos')

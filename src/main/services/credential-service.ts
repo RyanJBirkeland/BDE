@@ -193,50 +193,40 @@ export function createCredentialService(deps: {
 
   async function resolveClaude(): Promise<CredentialResult> {
     const auth = await claude.describeAuth()
-    if (!auth.cliFound) {
-      return failResult('claude', 'cli-missing', false)
-    }
+    if (!auth.cliFound) return failResult('claude', 'cli-missing', false)
 
-    // Refresh proactively before reading the token file — matches the
-    // existing oauth-checker.ts and adhoc-agent.ts pattern.
+    // Refresh proactively before reading the token file — matches the existing
+    // oauth-checker.ts and adhoc-agent.ts pattern.
     const refreshed = await claude.refreshFromKeychain()
-    if (!refreshed && !auth.tokenFound) {
-      return failResult('claude', 'missing', auth.cliFound)
-    }
+    if (!refreshed && !auth.tokenFound) return failResult('claude', 'missing', auth.cliFound)
 
     const token = claude.readCachedToken()
-    if (!token) {
-      const status = auth.tokenFound && auth.tokenExpired ? 'expired' : 'missing'
-      return failResult('claude', status, auth.cliFound)
-    }
-
-    if (auth.tokenExpired) {
-      return failResult('claude', 'expired', auth.cliFound)
-    }
-
+    if (!token) return failResult('claude', classifyClaudeMissingToken(auth), auth.cliFound)
+    if (auth.tokenExpired) return failResult('claude', 'expired', auth.cliFound)
     return okResult('claude', token, auth.expiresAt ?? null, auth.cliFound)
   }
 
+  function classifyClaudeMissingToken(auth: {
+    tokenFound: boolean
+    tokenExpired: boolean
+  }): 'expired' | 'missing' {
+    return auth.tokenFound && auth.tokenExpired ? 'expired' : 'missing'
+  }
+
   async function resolveGithub(): Promise<CredentialResult> {
-    if (github.isOptedOut()) {
-      return failResult('github', 'missing', github.detectCli(), null)
-    }
+    if (github.isOptedOut()) return failResult('github', 'missing', github.detectCli(), null)
 
     const envToken = github.getEnvToken()
-    if (envToken) {
-      return okResult('github', envToken, null, github.detectCli())
-    }
+    if (envToken) return okResult('github', envToken, null, github.detectCli())
 
+    return resolveGithubViaCli()
+  }
+
+  async function resolveGithubViaCli(): Promise<CredentialResult> {
     const cliFound = github.detectCli()
-    if (!cliFound) {
-      return failResult('github', 'cli-missing', false)
-    }
-
+    if (!cliFound) return failResult('github', 'cli-missing', false)
     const authed = await github.isAuthenticated()
-    if (!authed) {
-      return failResult('github', 'missing', cliFound)
-    }
-
+    if (!authed) return failResult('github', 'missing', cliFound)
     // gh stores the token inside its own config — we don't need to read it
     // ourselves, we only need to know the caller's `gh` subprocesses will
     // succeed. Report ok with a placeholder token so callers can check
@@ -282,12 +272,28 @@ export function createCredentialService(deps: {
 }
 
 // ── Module-level singleton for non-DI call sites ──
+//
+// The first caller's logger wins on construction. Subsequent callers that pass
+// a different logger get a one-time warning routed through *their* logger so
+// the divergence is visible — without that, a wired-up debug logger would be
+// silently shadowed by an earlier no-op logger and missing log lines look like
+// a bug elsewhere.
 
 let _defaultService: CredentialService | null = null
+let _defaultServiceLogger: Logger | null = null
 
 export function getDefaultCredentialService(logger: Logger): CredentialService {
   if (!_defaultService) {
     _defaultService = createCredentialService({ logger })
+    _defaultServiceLogger = logger
+    return _defaultService
+  }
+  if (_defaultServiceLogger !== logger) {
+    logger.warn(
+      '[credential-service] getDefaultCredentialService called with a different logger; ' +
+        'the first logger remains bound. Construct your own service via createCredentialService(deps) ' +
+        'if you need a distinct logger sink.'
+    )
   }
   return _defaultService
 }
@@ -295,4 +301,5 @@ export function getDefaultCredentialService(logger: Logger): CredentialService {
 /** Reset the singleton — for tests only. */
 export function _resetDefaultCredentialService(): void {
   _defaultService = null
+  _defaultServiceLogger = null
 }

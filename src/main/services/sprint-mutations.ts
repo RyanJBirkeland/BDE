@@ -8,7 +8,8 @@
  * For the legacy unified interface, see sprint-service.ts.
  */
 import {
-  createSprintTaskRepository,
+  getSharedSprintTaskRepository,
+  setSharedSprintTaskRepository,
   type ISprintTaskRepository,
   type CreateTaskInput,
   type QueueStats,
@@ -29,7 +30,24 @@ export type {
   UpdateTaskOptions
 }
 
-const repo: ISprintTaskRepository = createSprintTaskRepository()
+// Routes every read/write through the singleton owned by
+// `sprint-task-repository.getSharedSprintTaskRepository()` so handlers, the
+// MCP server, the agent manager, and the review services all see the same
+// `ISprintTaskRepository` identity.
+const repo = new Proxy<ISprintTaskRepository>({} as ISprintTaskRepository, {
+  get(_target, prop, receiver) {
+    return Reflect.get(getSharedSprintTaskRepository() as object, prop, receiver)
+  }
+})
+
+/**
+ * Composition-root entry point — installs the shared repository instance.
+ * Re-exported here so existing callers that imported from sprint-mutations
+ * keep working without an extra import path.
+ */
+export function setSprintMutationsRepo(repo: ISprintTaskRepository): void {
+  setSharedSprintTaskRepository(repo)
+}
 
 // --- Read operations ---
 

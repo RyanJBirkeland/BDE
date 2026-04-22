@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { getRepoPaths } from './git'
+import { getRepoPaths } from './paths'
 
 /**
  * Validates that a path is under a known configured repository root.
