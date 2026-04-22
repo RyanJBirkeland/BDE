@@ -64,13 +64,11 @@ export interface AgentChannels {
     args: [args: { endpoint: string }]
     result: { ok: true; latencyMs: number; modelCount: number } | { ok: false; error: string }
   }
-  'agent:latestCacheTokens': {
+  'agent:contextTokens': {
     args: [runId: string]
     result: {
-      cacheTokensRead: number
-      cacheTokensCreated: number
-      tokensIn: number
-      tokensOut: number
+      contextWindowTokens: number
+      peakContextTokens: number
     } | null
   }
 }

@@ -29,7 +29,7 @@ import {
   spawnLocalAgent,
   steerAgent,
   killAgent,
-  getLatestCacheTokens,
+  getContextTokens,
   tailAgentLog,
   agents,
   agentManager,
@@ -201,7 +201,7 @@ const api = {
     spawnLocal: spawnLocalAgent,
     steer: steerAgent,
     kill: killAgent,
-    getLatestCacheTokens,
+    getContextTokens,
     tailLog: tailAgentLog,
     events: agentEvents
   },

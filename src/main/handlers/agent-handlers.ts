@@ -6,7 +6,7 @@ import { safeHandle } from '../ipc-utils'
 import { tailAgentLog, cleanupOldLogs } from '../agent-log-manager'
 import type { TailLogArgs } from '../agent-log-manager'
 import { listAgents, readLog, importAgent, pruneOldAgents, getAgentMeta } from '../agent-history'
-import { getLatestAgentRunTurn } from '../data/agent-queries'
+import { getAgentRunContextTokens } from '../data/agent-queries'
 import { getDb } from '../db'
 import type { AgentMeta } from '../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
@@ -237,8 +237,8 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
     testLocalEndpoint(args.endpoint)
   )
 
-  safeHandle('agent:latestCacheTokens', async (_e, runId: string) => {
-    return getLatestAgentRunTurn(getDb(), runId)
+  safeHandle('agent:contextTokens', async (_e, runId: string) => {
+    return getAgentRunContextTokens(getDb(), runId)
   })
 
   pruneOldAgents()

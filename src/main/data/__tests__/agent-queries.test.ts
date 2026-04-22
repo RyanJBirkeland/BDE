@@ -13,7 +13,9 @@ import {
   getAgentLogPath,
   getAgentsToRemove,
   updateAgentRunCost,
-  listAgentRunsByTaskId
+  listAgentRunsByTaskId,
+  insertAgentRunTurn,
+  getAgentRunContextTokens
 } from '../agent-queries'
 
 let db: Database.Database
@@ -300,5 +302,68 @@ describe('listAgentRunsByTaskId', () => {
   it('returns empty array when no matching runs', () => {
     const runs = listAgentRunsByTaskId(db, 'nonexistent')
     expect(runs).toEqual([])
+  })
+})
+
+describe('getAgentRunContextTokens', () => {
+  function recordCumulativeTurn(
+    runId: string,
+    turn: number,
+    cumulative: { tokensIn: number; cacheRead: number; cacheCreated: number }
+  ): void {
+    insertAgentRunTurn(db, {
+      runId,
+      turn,
+      tokensIn: cumulative.tokensIn,
+      tokensOut: 0,
+      toolCalls: 0,
+      cacheTokensCreated: cumulative.cacheCreated,
+      cacheTokensRead: cumulative.cacheRead
+    })
+  }
+
+  beforeEach(() => {
+    insertAgentRecord(db, makeAgent({ id: 'run-1' }))
+  })
+
+  it('returns null when the run has no turns', () => {
+    expect(getAgentRunContextTokens(db, 'run-1')).toBeNull()
+  })
+
+  it('returns the per-turn context size for a single turn', () => {
+    recordCumulativeTurn('run-1', 1, { tokensIn: 100, cacheRead: 9000, cacheCreated: 500 })
+
+    expect(getAgentRunContextTokens(db, 'run-1')).toEqual({
+      contextWindowTokens: 9600,
+      peakContextTokens: 9600
+    })
+  })
+
+  it('derives the latest turn context from cumulative columns via LAG', () => {
+    recordCumulativeTurn('run-1', 1, { tokensIn: 50, cacheRead: 900_000, cacheCreated: 1_000 })
+    recordCumulativeTurn('run-1', 2, { tokensIn: 100, cacheRead: 1_800_000, cacheCreated: 2_500 })
+    recordCumulativeTurn('run-1', 3, { tokensIn: 150, cacheRead: 2_700_000, cacheCreated: 4_200 })
+
+    const result = getAgentRunContextTokens(db, 'run-1')
+    expect(result?.contextWindowTokens).toBe(50 + 900_000 + 1_700)
+  })
+
+  it('reports the peak across all turns, not just the latest', () => {
+    recordCumulativeTurn('run-1', 1, { tokensIn: 10, cacheRead: 500_000, cacheCreated: 0 })
+    recordCumulativeTurn('run-1', 2, { tokensIn: 20, cacheRead: 1_400_000, cacheCreated: 0 })
+    recordCumulativeTurn('run-1', 3, { tokensIn: 30, cacheRead: 1_500_000, cacheCreated: 0 })
+
+    const result = getAgentRunContextTokens(db, 'run-1')
+    expect(result?.contextWindowTokens).toBe(10 + 100_000)
+    expect(result?.peakContextTokens).toBe(10 + 900_000)
+  })
+
+  it('scopes results to the requested run', () => {
+    insertAgentRecord(db, makeAgent({ id: 'run-b' }))
+    recordCumulativeTurn('run-1', 1, { tokensIn: 10, cacheRead: 200, cacheCreated: 5 })
+    recordCumulativeTurn('run-b', 1, { tokensIn: 20, cacheRead: 400, cacheCreated: 10 })
+
+    expect(getAgentRunContextTokens(db, 'run-1')?.contextWindowTokens).toBe(215)
+    expect(getAgentRunContextTokens(db, 'run-b')?.contextWindowTokens).toBe(430)
   })
 })

@@ -1,7 +1,7 @@
 /**
  * ConsoleHeader — 56px glass header for AgentConsole with status, model, duration, cost, and actions.
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Terminal, StopCircle, Copy, GitPullRequest } from 'lucide-react'
 import './ConsoleHeader.css'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
@@ -39,16 +39,39 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
   }
   const [duration, setDuration] = useState(() => getDuration())
 
-  // Live ctx token counter for running agents — polls latest agent_run_turns row
-  const [liveCtxTokens, setLiveCtxTokens] = useState<number | null>(null)
-  const fetchCtx = useCallback(async () => {
-    if (!isRunning) return
-    const result = await window.api.agents.getLatestCacheTokens(agent.id)
+  // Context-window token counter — per-turn size (latest turn while running,
+  // peak turn once finished). Computed from agent_run_turns by the main process.
+  const [contextTokens, setContextTokens] = useState<{
+    current: number
+    peak: number
+  } | null>(null)
+  const fetchContextTokens = useCallback(async () => {
+    const result = await window.api.agents.getContextTokens(agent.id)
     if (result != null) {
-      setLiveCtxTokens(result.cacheTokensRead)
+      setContextTokens({
+        current: result.contextWindowTokens,
+        peak: result.peakContextTokens
+      })
     }
-  }, [isRunning, agent.id])
-  useBackoffInterval(fetchCtx, 3000, { maxMs: 10_000 })
+  }, [agent.id])
+  useBackoffInterval(fetchContextTokens, isRunning ? 3000 : null, { maxMs: 10_000 })
+  useEffect(() => {
+    if (isRunning) return
+    let cancelled = false
+    window.api.agents
+      .getContextTokens(agent.id)
+      .then((result) => {
+        if (cancelled || result == null) return
+        setContextTokens({
+          current: result.contextWindowTokens,
+          peak: result.peakContextTokens
+        })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [agent.id, isRunning])
 
   // Live duration ticker for running agents
   useBackoffInterval(
@@ -186,18 +209,19 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
           )}
           {costUsd != null && <span>${costUsd.toFixed(4)}</span>}
           {(() => {
-            const ctxTokens = isRunning ? liveCtxTokens : agent.cacheRead
-            if (ctxTokens == null || ctxTokens === 0) return null
+            if (contextTokens == null) return null
+            const tokens = isRunning ? contextTokens.current : contextTokens.peak
+            if (tokens <= 0) return null
             const label =
-              ctxTokens >= 1_000_000
-                ? `${(ctxTokens / 1_000_000).toFixed(1)}M`
-                : `${Math.round(ctxTokens / 1_000)}k`
+              tokens >= 1_000_000
+                ? `${(tokens / 1_000_000).toFixed(1)}M`
+                : `${Math.round(tokens / 1_000)}k`
             return (
               <span
                 title={
                   isRunning
-                    ? 'Current context window size (live)'
-                    : 'Peak context window size (cache reads)'
+                    ? 'Context window size on the latest turn'
+                    : 'Peak context window size across the run'
                 }
               >
                 ctx {label}

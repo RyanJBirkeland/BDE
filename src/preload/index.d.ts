@@ -320,7 +320,7 @@ declare global {
           images?: Array<{ data: string; mimeType: string }>
         ) => Promise<IpcResult<'agent:steer'>>
         kill: (...args: IpcArgs<'agent:kill'>) => Promise<IpcResult<'agent:kill'>>
-        getLatestCacheTokens: (runId: string) => Promise<IpcResult<'agent:latestCacheTokens'>>
+        getContextTokens: (runId: string) => Promise<IpcResult<'agent:contextTokens'>>
         tailLog: (
           ...args: IpcArgs<'local:tailAgentLog'>
         ) => Promise<IpcResult<'local:tailAgentLog'>>

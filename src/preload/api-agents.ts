@@ -26,10 +26,10 @@ export const steerAgent = (
 export const killAgent = (agentId: string): Promise<IpcChannelMap['agent:kill']['result']> =>
   typedInvoke('agent:kill', agentId)
 
-export const getLatestCacheTokens = (
+export const getContextTokens = (
   runId: string
-): Promise<IpcChannelMap['agent:latestCacheTokens']['result']> =>
-  typedInvoke('agent:latestCacheTokens', runId)
+): Promise<IpcChannelMap['agent:contextTokens']['result']> =>
+  typedInvoke('agent:contextTokens', runId)
 
 export const tailAgentLog = (args: {
   logPath: string

@@ -185,7 +185,7 @@ vi.stubGlobal('api', {
     testLocalEndpoint: vi.fn().mockResolvedValue({ ok: true, latencyMs: 1, modelCount: 0 }),
     steer: vi.fn().mockResolvedValue({ ok: true }),
     kill: vi.fn().mockResolvedValue({ ok: true }),
-    getLatestCacheTokens: vi.fn().mockResolvedValue(null),
+    getContextTokens: vi.fn().mockResolvedValue(null),
     tailLog: vi.fn().mockResolvedValue({ content: '', nextByte: 0 }),
     events: {
       onEvent: vi.fn().mockReturnValue(() => {}),

@@ -315,37 +315,38 @@ export function insertAgentRunTurn(db: Database.Database, record: TurnRecord): v
 }
 
 /**
- * Returns the cumulative cache token totals from the most recent turn for a
- * given run. Used to power the live ctx counter in the agent console header
- * while the agent is still running.
+ * Current and peak context window size for an agent run.
+ *
+ * The turn-tracker writes cumulative token totals into every `agent_run_turns`
+ * row (intentional — cost reporting needs the running sum). Context window
+ * size is a per-turn quantity, so we subtract each row from its predecessor
+ * with LAG() and sum the three context-bearing components: non-cached input
+ * tokens + cache reads + cache creations for that one turn.
  */
-export function getLatestAgentRunTurn(
+export function getAgentRunContextTokens(
   db: Database.Database,
   runId: string
-): {
-  cacheTokensRead: number
-  cacheTokensCreated: number
-  tokensIn: number
-  tokensOut: number
-} | null {
-  const row = db
-    .prepare(
-      'SELECT cache_tokens_read, cache_tokens_created, tokens_in, tokens_out FROM agent_run_turns WHERE run_id = ? ORDER BY turn DESC LIMIT 1'
+): { contextWindowTokens: number; peakContextTokens: number } | null {
+  const sql = `WITH per_turn AS (
+      SELECT
+        turn,
+        (COALESCE(tokens_in, 0) - COALESCE(LAG(tokens_in) OVER (ORDER BY turn), 0))
+          + (COALESCE(cache_tokens_read, 0) - COALESCE(LAG(cache_tokens_read) OVER (ORDER BY turn), 0))
+          + (COALESCE(cache_tokens_created, 0) - COALESCE(LAG(cache_tokens_created) OVER (ORDER BY turn), 0))
+          AS ctx
+      FROM agent_run_turns
+      WHERE run_id = ?
     )
-    .get(runId) as
-    | {
-        cache_tokens_read: number | null
-        cache_tokens_created: number | null
-        tokens_in: number | null
-        tokens_out: number | null
-      }
+    SELECT
+      (SELECT ctx FROM per_turn ORDER BY turn DESC LIMIT 1) AS latest_ctx,
+      (SELECT MAX(ctx) FROM per_turn) AS peak_ctx`
+  const row = db.prepare(sql).get(runId) as
+    | { latest_ctx: number | null; peak_ctx: number | null }
     | undefined
-  if (!row) return null
+  if (!row || row.latest_ctx == null) return null
   return {
-    cacheTokensRead: row.cache_tokens_read ?? 0,
-    cacheTokensCreated: row.cache_tokens_created ?? 0,
-    tokensIn: row.tokens_in ?? 0,
-    tokensOut: row.tokens_out ?? 0
+    contextWindowTokens: row.latest_ctx,
+    peakContextTokens: row.peak_ctx ?? row.latest_ctx
   }
 }
 

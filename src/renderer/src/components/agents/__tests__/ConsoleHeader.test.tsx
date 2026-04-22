@@ -35,7 +35,8 @@ Object.defineProperty(window, 'api', {
   value: {
     agents: {
       kill: vi.fn().mockResolvedValue(undefined),
-      tailLog: vi.fn().mockResolvedValue({ content: 'log content', fromByte: 0 })
+      tailLog: vi.fn().mockResolvedValue({ content: 'log content', fromByte: 0 }),
+      getContextTokens: vi.fn().mockResolvedValue(null)
     },
     git: {
       status: vi.fn().mockResolvedValue({ files: [], branch: 'main' })
