@@ -90,7 +90,8 @@ function defaultBackendSettings(): BackendSettings {
     assistant: { ...DEFAULT_ROW },
     adhoc: { ...DEFAULT_ROW },
     reviewer: { ...DEFAULT_ROW },
-    localEndpoint: DEFAULT_LOCAL_ENDPOINT
+    localEndpoint: DEFAULT_LOCAL_ENDPOINT,
+    opencodeExecutable: 'opencode'
   }
 }
 

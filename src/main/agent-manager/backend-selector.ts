@@ -33,7 +33,8 @@ export const DEFAULT_SETTINGS: BackendSettings = {
   assistant: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
   adhoc: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
   reviewer: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
-  localEndpoint: DEFAULT_LOCAL_ENDPOINT
+  localEndpoint: DEFAULT_LOCAL_ENDPOINT,
+  opencodeExecutable: 'opencode'
 }
 
 export function loadBackendSettings(): BackendSettings {
@@ -61,6 +62,7 @@ function mergeWithDefaults(stored: Partial<BackendSettings>): BackendSettings {
     assistant: stored.assistant ?? DEFAULT_SETTINGS.assistant,
     adhoc: stored.adhoc ?? DEFAULT_SETTINGS.adhoc,
     reviewer: stored.reviewer ?? DEFAULT_SETTINGS.reviewer,
-    localEndpoint: stored.localEndpoint ?? DEFAULT_SETTINGS.localEndpoint
+    localEndpoint: stored.localEndpoint ?? DEFAULT_SETTINGS.localEndpoint,
+    opencodeExecutable: stored.opencodeExecutable ?? DEFAULT_SETTINGS.opencodeExecutable
   }
 }
