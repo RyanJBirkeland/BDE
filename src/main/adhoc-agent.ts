@@ -271,10 +271,13 @@ export async function spawnAdhocAgent(args: {
     emitAgentEvent(meta.id, { type: 'agent:started', model, timestamp: Date.now() })
     log.info(`[adhoc] ${meta.id} starting opencode session in ${worktreePath}`)
 
-    // Kick off the first turn with the composed prompt
+    // Kick off the first turn. For opencode, pass the raw user task — the
+    // Claude-optimized assembled prompt (XML tags, BDE architecture docs) causes
+    // local models to echo the context rather than respond. opencode injects its
+    // own context via --dir; the user's task is all the model needs.
     adhocSessions
       .get(meta.id)!
-      .send(prompt)
+      .send(args.task)
       .catch((err) => {
         log.error(`[adhoc] ${meta.id} opencode initial turn failed: ${err}`)
         if (closed) return
