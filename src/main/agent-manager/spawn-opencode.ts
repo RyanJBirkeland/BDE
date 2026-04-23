@@ -29,7 +29,8 @@ export async function spawnOpencode(opts: OpencodeSpawnOptions): Promise<AgentHa
 
   child.stderr.setMaxListeners(5)
 
-  let capturedSessionId = ''
+  // Pre-seed so handle.sessionId is correct before the first event arrives on resume turns.
+  let capturedSessionId = opts.sessionId ?? ''
 
   wireStderr(child, opts.logger, () => handle)
 
