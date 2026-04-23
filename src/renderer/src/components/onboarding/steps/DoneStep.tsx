@@ -22,24 +22,24 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
   const [repoOverride, setRepoOverride] = useState<string | null>(null)
   const selectedRepoLabel = repoOverride ?? repoOptions[repoOptions.length - 1]?.label ?? ''
 
-  const handleCreateFirstTask = async (): Promise<void> => {
+  const handleCreateFirstTask = (): void => {
     setField('title', SAMPLE_FIRST_TASK.title)
     setField('spec', SAMPLE_FIRST_TASK.spec)
     setField('repo', selectedRepoLabel)
     setSpecType(SAMPLE_FIRST_TASK.specType)
-    await window.api.settings.set('onboarding.nextView', 'planner')
     window.api.settings.set('onboarding.completed', 'true').catch((err) => {
       console.error('Failed to mark onboarding as completed:', err)
     })
     onComplete()
+    setTimeout(() => setView('planner'), 0)
   }
 
-  const handleOpenRepoSettings = async (): Promise<void> => {
-    await window.api.settings.set('onboarding.nextView', 'settings')
+  const handleOpenRepoSettings = (): void => {
     window.api.settings.set('onboarding.completed', 'true').catch((err) => {
       console.error('Failed to mark onboarding as completed:', err)
     })
     onComplete()
+    setTimeout(() => setView('settings'), 0)
   }
 
   const hasRepos = repoOptions.length > 0
