@@ -30,7 +30,6 @@ type TestConnState =
 
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1'
 const DEFAULT_CLAUDE_MODEL = DEFAULT_MODEL.modelId
-const DEFAULT_LOCAL_MODEL = ''
 const LOCAL_MODEL_PLACEHOLDER = 'openai/qwen/qwen3.6-35b-a3b'
 
 type AgentTypeId = 'pipeline' | 'synthesizer' | 'copilot' | 'assistant' | 'adhoc' | 'reviewer'
@@ -44,12 +43,48 @@ interface AgentTypeMeta {
 }
 
 const AGENT_TYPES: AgentTypeMeta[] = [
-  { id: 'pipeline',    label: 'Pipeline',    description: 'Executes sprint tasks end-to-end.',                supportsLocal: true,  supportsOpencode: true  },
-  { id: 'synthesizer', label: 'Synthesizer', description: 'Drafts spec documents from task titles.',          supportsLocal: false, supportsOpencode: false },
-  { id: 'copilot',     label: 'Copilot',     description: 'Interactive pair-programming agent.',              supportsLocal: false, supportsOpencode: false },
-  { id: 'assistant',   label: 'Assistant',   description: 'One-shot Q&A over the repo.',                     supportsLocal: false, supportsOpencode: true  },
-  { id: 'adhoc',       label: 'Adhoc',       description: 'Freeform agent runs outside the sprint pipeline.', supportsLocal: false, supportsOpencode: true  },
-  { id: 'reviewer',    label: 'Reviewer',    description: 'Reviews PRs before merge.',                       supportsLocal: false, supportsOpencode: true  }
+  {
+    id: 'pipeline',
+    label: 'Pipeline',
+    description: 'Executes sprint tasks end-to-end.',
+    supportsLocal: true,
+    supportsOpencode: true
+  },
+  {
+    id: 'synthesizer',
+    label: 'Synthesizer',
+    description: 'Drafts spec documents from task titles.',
+    supportsLocal: false,
+    supportsOpencode: false
+  },
+  {
+    id: 'copilot',
+    label: 'Copilot',
+    description: 'Interactive pair-programming agent.',
+    supportsLocal: false,
+    supportsOpencode: false
+  },
+  {
+    id: 'assistant',
+    label: 'Assistant',
+    description: 'One-shot Q&A over the repo.',
+    supportsLocal: false,
+    supportsOpencode: true
+  },
+  {
+    id: 'adhoc',
+    label: 'Adhoc',
+    description: 'Freeform agent runs outside the sprint pipeline.',
+    supportsLocal: false,
+    supportsOpencode: true
+  },
+  {
+    id: 'reviewer',
+    label: 'Reviewer',
+    description: 'Reviews PRs before merge.',
+    supportsLocal: false,
+    supportsOpencode: true
+  }
 ]
 
 const DEFAULT_ROW: AgentBackendConfig = { backend: 'claude', model: DEFAULT_CLAUDE_MODEL }
@@ -162,9 +197,7 @@ export function ModelsSection(): React.JSX.Element {
             className="settings-field__input"
             type="text"
             value={settings.opencodeExecutable ?? 'opencode'}
-            onChange={(e) =>
-              updateSettings({ ...settings, opencodeExecutable: e.target.value })
-            }
+            onChange={(e) => updateSettings({ ...settings, opencodeExecutable: e.target.value })}
             placeholder="opencode"
           />
         </label>
@@ -277,7 +310,8 @@ interface BackendToggleProps {
 }
 
 const LOCAL_UNSUPPORTED_TOOLTIP = 'Local backend is not yet supported for this agent type'
-const OPENCODE_UNSUPPORTED_TOOLTIP = 'Opencode support for this agent type is coming in a future update'
+const OPENCODE_UNSUPPORTED_TOOLTIP =
+  'Opencode support for this agent type is coming in a future update'
 
 function BackendToggle({
   value,
