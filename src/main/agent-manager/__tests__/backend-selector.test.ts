@@ -130,9 +130,11 @@ describe('opencode backend kind', () => {
   })
 
   it('mergeWithDefaults fills opencodeExecutable from defaults when stored value is absent', () => {
-    const merged = loadBackendSettings()
-    vi.mocked(settings.getSettingJson).mockReturnValue({})
-    expect(DEFAULT_SETTINGS.opencodeExecutable).toBe('opencode')
+    vi.mocked(settings.getSettingJson).mockReturnValue({
+      pipeline: { backend: 'opencode', model: 'opencode/gpt-5-nano' }
+    })
+    const result = loadBackendSettings()
+    expect(result.opencodeExecutable).toBe('opencode')
   })
 
   it('mergeWithDefaults honours a stored opencodeExecutable override', () => {
