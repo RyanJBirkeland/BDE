@@ -43,13 +43,17 @@ describe('DoneStep', () => {
       { name: 'my-project', localPath: '/tmp/my-project', githubOwner: 'me' }
     ])
 
+    localStorage.removeItem('bde:pending-first-task')
     render(<DoneStep {...stepProps} />)
 
     const btn = await screen.findByRole('button', { name: /create your first task/i })
     await user.click(btn)
 
     await waitFor(() => {
-      expect(mockSetField).toHaveBeenCalledWith('repo', 'my-project')
+      const raw = localStorage.getItem('bde:pending-first-task')
+      expect(raw).not.toBeNull()
+      const pending = JSON.parse(raw!) as { repo: string }
+      expect(pending.repo).toBe('my-project')
     })
   })
 

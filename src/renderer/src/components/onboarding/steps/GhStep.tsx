@@ -1,6 +1,7 @@
-import { ArrowRight, ArrowLeft, Github, Check, X, Copy } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Github, Check, X, Copy, ExternalLink } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../../ui/Button'
+import { Spinner } from '../../ui/Spinner'
 import { copyToClipboard } from '../../../lib/copy-to-clipboard'
 
 const GH_AUTH_LOGIN_COMMAND = 'gh auth login'
@@ -55,7 +56,9 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
       <div className="onboarding-step__checks">
         <div className="onboarding-step__check">
           {checking ? (
-            <div className="onboarding-step__check-icon">⏳</div>
+            <div className="onboarding-step__check-icon">
+              <Spinner size="sm" />
+            </div>
           ) : ghAvailable ? (
             <Check size={20} className="onboarding-step__check-icon--success" />
           ) : (
@@ -71,7 +74,9 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
         {ghAvailable && (
           <div className="onboarding-step__check">
             {checking ? (
-              <div className="onboarding-step__check-icon">⏳</div>
+              <div className="onboarding-step__check-icon">
+                <Spinner size="sm" />
+              </div>
             ) : ghAuthenticated ? (
               <Check size={20} className="onboarding-step__check-icon--success" />
             ) : (
@@ -84,10 +89,44 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
 
       {!checking && !ghAvailable && (
         <div className="onboarding-step__help">
-          <p>
-            gh CLI is required for creating pull requests.{' '}
+          <p>Install the GitHub CLI using one of these methods:</p>
+          <p style={{ marginTop: 'var(--bde-space-2)', fontWeight: 600 }}>
+            Option 1 — Homebrew (recommended):
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--bde-space-2)',
+              marginTop: 'var(--bde-space-1)'
+            }}
+          >
+            <code
+              style={{
+                padding: '4px 10px',
+                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+                fontSize: 'var(--bde-size-sm)'
+              }}
+            >
+              brew install gh
+            </code>
+            <Button
+              variant="ghost"
+              onClick={() => copyToClipboard('brew install gh')}
+              aria-label="Copy brew install gh command"
+            >
+              <Copy size={14} />
+            </Button>
+          </div>
+          <p style={{ marginTop: 'var(--bde-space-2)', fontWeight: 600 }}>
+            Option 2 — Manual download:
+          </p>
+          <p style={{ marginTop: 'var(--bde-space-1)' }}>
             <a href="https://cli.github.com" target="_blank" rel="noreferrer">
-              Install from cli.github.com
+              Download from cli.github.com{' '}
+              <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
             </a>
           </p>
         </div>
@@ -131,6 +170,20 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
         <Button variant="ghost" onClick={checkGh}>
           Check Again
         </Button>
+      )}
+
+      {!ready && !checking && (
+        <p
+          style={{
+            fontSize: 'var(--bde-size-sm)',
+            color: 'var(--bde-text-muted)',
+            marginTop: 'var(--bde-space-2)',
+            textAlign: 'center'
+          }}
+        >
+          Skipping disables PR creation and GitHub integration. You can set up GitHub CLI later in
+          Settings → Connections.
+        </p>
       )}
 
       <div className="onboarding-step__actions">

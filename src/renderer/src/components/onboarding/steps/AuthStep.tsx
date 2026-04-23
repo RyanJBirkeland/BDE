@@ -1,6 +1,7 @@
 import { ArrowRight, ArrowLeft, Terminal, Check, X, Copy, ExternalLink } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { Button } from '../../ui/Button'
+import { Spinner } from '../../ui/Spinner'
 import { copyToClipboard } from '../../../lib/copy-to-clipboard'
 
 interface StepProps {
@@ -105,7 +106,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               role="status"
               aria-label="Checking Claude Code CLI"
             >
-              ⏳
+              <Spinner size="sm" />
             </div>
           ) : status?.cliFound ? (
             <Check
@@ -126,7 +127,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
         <div className="onboarding-step__check">
           {checking ? (
             <div className="onboarding-step__check-icon" role="status" aria-label="Checking token">
-              ⏳
+              <Spinner size="sm" />
             </div>
           ) : status?.tokenFound ? (
             <Check
@@ -151,7 +152,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               role="status"
               aria-label="Checking token validity"
             >
-              ⏳
+              <Spinner size="sm" />
             </div>
           ) : status?.tokenFound && !status?.tokenExpired ? (
             <Check
@@ -238,6 +239,10 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
                 </Button>
               </div>
             </li>
+            <li style={{ marginBottom: 'var(--bde-space-2)' }}>
+              On macOS, this can mean the system Keychain is locked. Try locking and unlocking your
+              screen, then click &quot;Check Again&quot;.
+            </li>
           </ol>
           <p style={{ marginTop: 'var(--bde-space-2)' }}>
             <a href={TROUBLESHOOTING_DOCS_URL} target="_blank" rel="noreferrer">
@@ -302,6 +307,16 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               <Copy size={14} />
             </Button>
           </div>
+          <p
+            style={{
+              marginTop: 'var(--bde-space-2)',
+              fontSize: 'var(--bde-size-sm)',
+              color: 'var(--bde-text-muted)'
+            }}
+          >
+            If you&apos;ve previously logged in and this is unexpected, your macOS Keychain may be
+            locked — lock and unlock your screen, then click &quot;Check Again&quot;.
+          </p>
         </div>
       )}
 
@@ -316,6 +331,11 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
           <Button variant="ghost" onClick={onBack}>
             <ArrowLeft size={16} />
             Back
+          </Button>
+        )}
+        {!checking && !isReady && (
+          <Button variant="ghost" onClick={onNext}>
+            Continue Anyway
           </Button>
         )}
         <Button variant="primary" onClick={onNext} disabled={checking || !isReady}>
