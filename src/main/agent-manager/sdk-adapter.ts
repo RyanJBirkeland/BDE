@@ -15,6 +15,7 @@ import { spawnViaSdk, type PipelineSpawnTuning } from './spawn-sdk'
 import { spawnViaCli } from './spawn-cli'
 import { loadBackendSettings, resolveAgentRuntime } from './backend-selector'
 import { spawnLocalAgent } from './local-adapter'
+import { spawnOpencode } from './spawn-opencode'
 
 /**
  * Pipeline agents must only spawn with a `cwd` inside a BDE-managed worktree
@@ -78,6 +79,7 @@ export async function spawnAgent(opts: {
    * call sites that don't have access to live config (smoke tests, etc.).
    */
   worktreeBase?: string | undefined
+  sessionId?: string | undefined
 }): Promise<AgentHandle> {
   // Worktree-base cwd assertion applies only to pipeline agents — adhoc,
   // assistant, copilot, and synthesizer agents run in the user's repo or
@@ -110,6 +112,18 @@ export async function spawnAgent(opts: {
     }
   }
 
+  if (resolved.backend === 'opencode') {
+    const handle = await spawnOpencode({
+      prompt: opts.prompt,
+      cwd: opts.cwd,
+      model: resolved.model,
+      ...(opts.sessionId && { sessionId: opts.sessionId }),
+      executable: settings.opencodeExecutable,
+      ...(opts.logger && { logger: opts.logger })
+    })
+    return annotateHandle(handle, 'opencode', resolved.model)
+  }
+
   const modelForClaude = resolved.backend === 'claude' ? resolved.model : opts.model
   const claudeHandle = await spawnClaudeAgent({ ...opts, model: modelForClaude })
   return annotateHandle(claudeHandle, 'claude', modelForClaude)
@@ -117,7 +131,7 @@ export async function spawnAgent(opts: {
 
 function annotateHandle(
   handle: AgentHandle,
-  backend: 'claude' | 'local',
+  backend: 'claude' | 'local' | 'opencode',
   resolvedModel: string
 ): AgentHandle {
   return Object.assign(handle, { backend, resolvedModel })
