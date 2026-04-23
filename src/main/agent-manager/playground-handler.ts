@@ -110,16 +110,49 @@ function rememberAssistantWrites(
   if (!Array.isArray(content)) return
   for (const block of content) {
     if (!isToolUseBlock(block)) continue
-    const toolName = (block.name ?? block.tool_name ?? '').toLowerCase()
-    if (toolName !== 'write') continue
-    const filePath = block.input?.file_path
-    if (typeof filePath !== 'string') continue
-    const hit = buildWriteResult(filePath)
-    if (!hit) continue
     const id = (block as { id?: unknown }).id
     if (typeof id !== 'string') continue
+    const toolName = (block.name ?? block.tool_name ?? '').toLowerCase()
+    const hit = resolvePlaygroundWriteForTool(toolName, block.input ?? {})
+    if (!hit) continue
     pendingWrites.set(id, hit)
   }
+}
+
+/**
+ * Extracts a playground write result from a tool_use input block.
+ * Handles three naming conventions in use across agent backends:
+ *  - Claude SDK: `Write` tool with `file_path` (snake_case)
+ *  - opencode `edit` tool: modifies a file, uses `filePath` (camelCase)
+ *  - opencode `apply_patch` tool: creates/updates files via patch text;
+ *    new files appear as `*** Add File: <path>` lines in `patchText`
+ */
+function resolvePlaygroundWriteForTool(
+  toolName: string,
+  input: Record<string, unknown>
+): PlaygroundWriteResult | null {
+  if (toolName === 'write') {
+    return buildWriteResult(input.file_path as string | undefined)
+  }
+  if (toolName === 'edit') {
+    const filePath = (input.filePath ?? input.file_path) as string | undefined
+    return buildWriteResult(filePath)
+  }
+  if (toolName === 'apply_patch') {
+    return extractNewFileFromPatch(input.patchText as string | undefined)
+  }
+  return null
+}
+
+function extractNewFileFromPatch(patchText: string | undefined): PlaygroundWriteResult | null {
+  if (typeof patchText !== 'string') return null
+  for (const line of patchText.split('\n')) {
+    const match = /^\*\*\* Add File: (.+)$/.exec(line)
+    if (!match) continue
+    const hit = buildWriteResult(match[1]?.trim())
+    if (hit) return hit
+  }
+  return null
 }
 
 function flushMatchingToolResult(
