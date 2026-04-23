@@ -451,9 +451,8 @@ export class AgentManagerImpl implements AgentManager {
     this._running = true
     this._shuttingDown = false
     this._concurrency = makeConcurrencyState(this.config.maxConcurrent)
-
-    this.clearStaleClaims()
     this.kickOffOrphanRecovery()
+    this.clearStaleClaims()
     this.initDependencyIndex()
     this.kickOffInitialWorktreePrune()
     this.scheduleDrainLoop()
