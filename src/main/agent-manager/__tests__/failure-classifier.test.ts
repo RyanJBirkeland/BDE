@@ -277,5 +277,21 @@ describe('classifyFailureReason', () => {
     it('falls through to unknown for unmatched strings', () => {
       expect(classifyFailureReason('some unrelated message')).toBe('unknown')
     })
+
+    it('classifies ollama model-not-found as environmental', () => {
+      expect(classifyFailureReason('model not found: ollama/devstral')).toBe('environmental')
+    })
+
+    it('classifies failed to connect to ollama as environmental', () => {
+      expect(classifyFailureReason('failed to connect to ollama')).toBe('environmental')
+    })
+
+    it('classifies cannot connect to ollama as environmental', () => {
+      expect(classifyFailureReason('cannot connect to ollama server')).toBe('environmental')
+    })
+
+    it('classifies failed to pull model as environmental', () => {
+      expect(classifyFailureReason('failed to pull model devstral:latest')).toBe('environmental')
+    })
   })
 })

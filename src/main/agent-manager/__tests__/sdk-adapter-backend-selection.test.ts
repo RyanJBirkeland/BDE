@@ -299,4 +299,20 @@ describe('spawnAgent — opencode backend', () => {
     expect(mockSpawnViaSdk).not.toHaveBeenCalled()
     expect(mockSpawnLocalAgent).not.toHaveBeenCalled()
   })
+
+  it('closes the MCP server when spawnOpencode throws before returning a handle', async () => {
+    const sessionMcpClose = vi.fn().mockResolvedValue(undefined)
+    mockStartOpencodeSessionMcp.mockResolvedValue({
+      url: 'http://127.0.0.1:12345/mcp',
+      token: 'test-session-token',
+      close: sessionMcpClose
+    })
+    mockSpawnOpencode.mockRejectedValue(new Error('opencode: command not found'))
+
+    await expect(
+      spawnAgent({ prompt: 'task', cwd: '/tmp/wt/task-1', model: 'devstral:latest' })
+    ).rejects.toThrow('opencode: command not found')
+
+    expect(sessionMcpClose).toHaveBeenCalledTimes(1)
+  })
 })

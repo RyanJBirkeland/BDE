@@ -21,7 +21,12 @@ registerFailurePattern({
     'could not resolve host',
     'getaddrinfo enotfound',
     'enetunreach',
-    'econnrefused'
+    'econnrefused',
+    'model not found',
+    'failed to connect to ollama',
+    'cannot connect to ollama',
+    'ollama server',
+    'failed to pull model'
   ]
 })
 registerFailurePattern({

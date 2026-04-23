@@ -151,14 +151,22 @@ async function spawnOpencodeWithMcp(
       ? buildOpencodeFirstTurnPrompt(opts.prompt, opts.branch)
       : opts.prompt
 
-  const handle = await spawnOpencode({
-    prompt,
-    cwd: opts.cwd,
-    model: resolvedModel,
-    ...(opts.sessionId && { sessionId: opts.sessionId }),
-    ...(executable && { executable }),
-    ...(opts.logger && { logger: opts.logger })
-  })
+  let handle: AgentHandle
+  try {
+    handle = await spawnOpencode({
+      prompt,
+      cwd: opts.cwd,
+      model: resolvedModel,
+      ...(opts.sessionId && { sessionId: opts.sessionId }),
+      ...(executable && { executable }),
+      ...(opts.logger && { logger: opts.logger })
+    })
+  } catch (err) {
+    sessionMcp.close().catch((closeErr: unknown) => {
+      logger.warn(`[agent-manager] Failed to close opencode session MCP server after spawn error: ${closeErr}`)
+    })
+    throw err
+  }
 
   return {
     ...handle,
