@@ -168,24 +168,20 @@ describe('ModelsSection — backend toggle + model picker', () => {
     expect(opencodeBtn).not.toBeDisabled()
   })
 
-  it('disables the Opencode radio on Synthesizer and Copilot rows', () => {
+  it('disables the Opencode radio on Synthesizer, Copilot, and Reviewer rows', () => {
     render(<ModelsSection />)
-    for (const id of ['synthesizer', 'copilot']) {
+    for (const id of ['synthesizer', 'copilot', 'reviewer']) {
       const row = screen.getByTestId(`models-row-${id}`)
-      const opencodeBtn = row.querySelector(
-        'button[data-value="opencode"]'
-      ) as HTMLButtonElement
+      const opencodeBtn = row.querySelector('button[data-value="opencode"]') as HTMLButtonElement
       expect(opencodeBtn).toBeDisabled()
     }
   })
 
-  it('enables the Opencode radio on assistant, adhoc, and reviewer rows', () => {
+  it('enables the Opencode radio on assistant and adhoc rows', () => {
     render(<ModelsSection />)
-    for (const id of ['assistant', 'adhoc', 'reviewer']) {
+    for (const id of ['assistant', 'adhoc']) {
       const row = screen.getByTestId(`models-row-${id}`)
-      const opencodeBtn = row.querySelector(
-        'button[data-value="opencode"]'
-      ) as HTMLButtonElement
+      const opencodeBtn = row.querySelector('button[data-value="opencode"]') as HTMLButtonElement
       expect(opencodeBtn).not.toBeDisabled()
     }
   })

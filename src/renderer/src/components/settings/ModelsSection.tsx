@@ -83,7 +83,7 @@ const AGENT_TYPES: AgentTypeMeta[] = [
     label: 'Reviewer',
     description: 'Reviews PRs before merge.',
     supportsLocal: false,
-    supportsOpencode: true
+    supportsOpencode: false
   }
 ]
 

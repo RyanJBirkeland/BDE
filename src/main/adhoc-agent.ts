@@ -203,6 +203,7 @@ export async function spawnAdhocAgent(args: {
   // Shared mutable state — declared before both the opencode and SDK paths
   // so both can reference `closed` without a temporal dependency.
   let closed = false
+  const startedAt = Date.now()
 
   // --- Opencode path ---
   // When the configured backend is opencode, each conversational turn spawns
@@ -242,8 +243,26 @@ export async function spawnAdhocAgent(args: {
         }
       },
       close() {
+        if (closed) return
         closed = true
+        const durationMs = Date.now() - startedAt
+        emitAgentEvent(meta.id, {
+          type: 'agent:completed',
+          exitCode: 0,
+          costUsd: 0,
+          tokensIn: 0,
+          tokensOut: 0,
+          durationMs,
+          timestamp: Date.now()
+        })
+        updateAgentMeta(meta.id, { status: 'done', finishedAt: nowIso(), exitCode: 0 }).catch(
+          (err) => log.warn(`[adhoc] ${meta.id} failed to update meta: ${getErrorMessage(err)}`)
+        )
         adhocSessions.delete(meta.id)
+        log.info(`[adhoc] ${meta.id} opencode session completed after ${Math.round(durationMs / 1000)}s`)
+        autoPromoteToReview().catch(
+          (err) => log.warn(`[adhoc] ${meta.id} auto-promote failed: ${getErrorMessage(err)}`)
+        )
       }
     })
 
@@ -251,11 +270,28 @@ export async function spawnAdhocAgent(args: {
     log.info(`[adhoc] ${meta.id} starting opencode session in ${worktreePath}`)
 
     // Kick off the first turn with the composed prompt
-    adhocSessions.get(meta.id)!.send(prompt).catch((err) => {
-      log.error(`[adhoc] ${meta.id} opencode initial turn failed: ${err}`)
-      closed = true
-      adhocSessions.delete(meta.id)
-    })
+    adhocSessions
+      .get(meta.id)!
+      .send(prompt)
+      .catch((err) => {
+        log.error(`[adhoc] ${meta.id} opencode initial turn failed: ${err}`)
+        if (closed) return
+        closed = true
+        const durationMs = Date.now() - startedAt
+        emitAgentEvent(meta.id, {
+          type: 'agent:completed',
+          exitCode: 1,
+          costUsd: 0,
+          tokensIn: 0,
+          tokensOut: 0,
+          durationMs,
+          timestamp: Date.now()
+        })
+        updateAgentMeta(meta.id, { status: 'done', finishedAt: nowIso(), exitCode: 1 }).catch(
+          (updateErr) => log.warn(`[adhoc] ${meta.id} failed to update meta: ${getErrorMessage(updateErr)}`)
+        )
+        adhocSessions.delete(meta.id)
+      })
 
     return {
       id: meta.id,
@@ -268,7 +304,6 @@ export async function spawnAdhocAgent(args: {
 
   // State shared across SDK turns
   let sessionId: string | null = null
-  const startedAt = Date.now()
   let costUsd = 0
   let tokensIn = 0
   let tokensOut = 0
