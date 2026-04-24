@@ -82,6 +82,17 @@ export const selectReviewTaskCount = (state: SprintTasksState): number =>
 export const selectFailedTaskCount = (state: SprintTasksState): number =>
   state.tasks.reduce((n, t) => (t.status === 'failed' || t.status === 'error' ? n + 1 : n), 0)
 
+export const selectTasks = (state: SprintTasksState): SprintTask[] => state.tasks
+
+/**
+ * Returns `existing` when it is structurally identical to `incoming`, preserving the
+ * object reference so downstream selectors and React components skip unnecessary re-renders.
+ */
+function stableTaskRef(incoming: SprintTask, existing: SprintTask | undefined): SprintTask {
+  if (existing === undefined) return incoming
+  return JSON.stringify(incoming) === JSON.stringify(existing) ? existing : incoming
+}
+
 export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   tasks: [],
   loading: true,
@@ -131,10 +142,14 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         // Merge incoming data, preserving only pending FIELDS from local version
         const mergedById = new Map<string, SprintTask>()
         for (const task of incoming) {
-          mergedById.set(
-            task.id,
-            mergePendingFields(task, currentTaskMap.get(task.id), nextPending[task.id], now, PENDING_UPDATE_TTL)
+          const merged = mergePendingFields(
+            task,
+            currentTaskMap.get(task.id),
+            nextPending[task.id],
+            now,
+            PENDING_UPDATE_TTL
           )
+          mergedById.set(task.id, stableTaskRef(merged, currentTaskMap.get(task.id)))
         }
 
         // Preserve pending-create temp tasks that aren't in the DB yet
@@ -145,9 +160,12 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
           }
         }
 
-        const nextTasks = Array.from(mergedById.values())
+        const nextTasksArr = Array.from(mergedById.values())
+        const unchanged =
+          nextTasksArr.length === state.tasks.length &&
+          nextTasksArr.every((t, i) => t === state.tasks[i])
         return {
-          tasks: nextTasks,
+          tasks: unchanged ? state.tasks : nextTasksArr,
           pendingUpdates: nextPending
         }
       })

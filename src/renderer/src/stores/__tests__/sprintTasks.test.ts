@@ -100,6 +100,20 @@ describe('sprintTasks store', () => {
 
       expect(useSprintTasks.getState().tasks).toEqual([])
     })
+
+    it('returns same array reference when server data is unchanged', async () => {
+      const tasks = [makeTask('t1'), makeTask('t2')]
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue(tasks)
+
+      await useSprintTasks.getState().loadData()
+      const firstRef = useSprintTasks.getState().tasks
+
+      // Second poll with identical data
+      await useSprintTasks.getState().loadData()
+      const secondRef = useSprintTasks.getState().tasks
+
+      expect(secondRef).toBe(firstRef)
+    })
   })
 
   describe('updateTask', () => {
