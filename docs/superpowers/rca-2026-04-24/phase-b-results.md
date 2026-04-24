@@ -101,7 +101,7 @@ So we got 5 Arm A data points and 1 Arm B data point — enough to call the **30
 - ✅ **Painpoint #1 — turn budget starvation** — `DEFAULT_MAX_TURNS` 30→75 in commit `a9b5b09b`. Removes the cap-binding pain for the common case.
 - ✅ **Painpoint #2 — multi-file cap too tight** — `MULTI_FILE_MAX_TURNS` 75→100 in commit `f39d3799`. Gives explicit-header refactors real headroom.
 - ✅ **Painpoint #3 — `cancelled` is a state-machine sink** — added `cancelled→done`, `failed→done`, `error→done` manual recovery escape hatches in commit `40ea321b`. Audit trail preserved via `task_changes`.
-- ✅ **Painpoint #4 — brittle handler test assertions** — added `assertHandlersRegistered` helper that's tolerant to extra positional args (`parseArgs` validators) in commit `e2c8d1ab`. Workbench test refactored as canonical example; other handler tests can migrate as touched.
+- ✅ **Painpoint #4 — brittle handler test assertions** — added `assertHandlersRegistered` helper that's tolerant to extra positional args (`parseArgs` validators) in commit `dee23608`. Workbench test refactored as canonical example; other handler tests can migrate as touched.
 - ✅ **Painpoint #5 — `_-prefixed` fields as test API** — introduced typed `__testInternals` view on `AgentManagerImpl` in commit `7778d332`. All 17 underscore-prefixed members tests reach into now route through one stable mapping; renames touch the seam, not 35+ test sites.
 - ✅ **Painpoint #6 — `BatchImportTask` four-way drift** — unified into a single shared type in commit `b296fbce`. IPC channel, handler, preload, and service all import from `src/shared/types`.
 - ✅ **B-arm cleanup done** — see §5.
