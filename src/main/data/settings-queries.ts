@@ -35,6 +35,12 @@ export function deleteSetting(db: Database.Database, key: string): void {
   db.prepare('DELETE FROM settings WHERE key = ?').run(key)
 }
 
+/**
+ * Retrieve and JSON-parse a setting. When `validator` is supplied it acts as a
+ * runtime type guard — returning `null` (and logging a warning) if the parsed
+ * value does not satisfy the expected shape. Callers that omit the validator
+ * accept the value as-is; all high-risk structured settings should provide one.
+ */
 export function getSettingJson<T>(
   db: Database.Database,
   key: string,

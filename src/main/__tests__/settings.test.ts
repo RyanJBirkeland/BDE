@@ -96,6 +96,31 @@ describe('settings.ts', () => {
       setSettingJson('repos', repos)
       expect(getSettingJson('repos')).toEqual(repos)
     })
+
+    describe('validator', () => {
+      function isNumberArray(u: unknown): u is number[] {
+        return Array.isArray(u) && u.every((x) => typeof x === 'number')
+      }
+
+      it('returns value when validator passes', () => {
+        setSettingJson('nums', [1, 2, 3])
+        expect(getSettingJson('nums', isNumberArray)).toEqual([1, 2, 3])
+      })
+
+      it('returns null and does not throw when validator rejects the parsed value', () => {
+        setSettingJson('nums', ['a', 'b'])
+        expect(getSettingJson('nums', isNumberArray)).toBeNull()
+      })
+
+      it('still returns null for non-existent key even with a validator', () => {
+        expect(getSettingJson('nonexistent', isNumberArray)).toBeNull()
+      })
+
+      it('still returns null for invalid JSON even with a validator', () => {
+        setSetting('bad.json', '{not valid json')
+        expect(getSettingJson('bad.json', isNumberArray)).toBeNull()
+      })
+    })
   })
 
   describe('sensitive key encryption', () => {
