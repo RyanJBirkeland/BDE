@@ -291,13 +291,13 @@ describe('Sprint IPC handlers — integration', () => {
 
     it('rejects creation when title is missing', async () => {
       await expect(invoke('sprint:create', { title: '', repo: 'bde' })).rejects.toThrow(
-        'Spec quality checks failed'
+        'task.title must be a non-empty string'
       )
     })
 
     it('rejects creation when repo is missing', async () => {
       await expect(invoke('sprint:create', { title: 'Some task', repo: '' })).rejects.toThrow(
-        'Spec quality checks failed'
+        'task.repo must be a non-empty string'
       )
     })
 

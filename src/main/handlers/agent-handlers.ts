@@ -142,6 +142,32 @@ export async function testLocalEndpoint(
   }
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  )
+}
+
+function parseAgentsImportArgs(args: unknown[]): [{ meta: Partial<AgentMeta>; content: string }] {
+  if (args.length !== 1) {
+    throw new Error(`expected [args]; got ${args.length} args`)
+  }
+  const [arg] = args
+  if (!isPlainObject(arg)) {
+    throw new Error(`args must be a plain object; got ${typeof arg}`)
+  }
+  if (!isPlainObject(arg.meta)) {
+    throw new Error('args.meta must be a plain object')
+  }
+  if (typeof arg.content !== 'string') {
+    throw new Error(`args.content must be a string; got ${typeof arg.content}`)
+  }
+  return [arg as unknown as { meta: Partial<AgentMeta>; content: string }]
+}
+
 export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardRepository): void {
   const effectiveRepo = repo ?? createSprintTaskRepository()
 
@@ -224,8 +250,11 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
   safeHandle('agents:list', (_e, args: ListAgentsArgs) => listAgents(args.limit, args.status))
   type ReadLogArgs = { id: string; fromByte?: number | undefined }
   safeHandle('agents:readLog', (_e, args: ReadLogArgs) => readLog(args.id, args.fromByte))
-  safeHandle('agents:import', (_e, args: { meta: Partial<AgentMeta>; content: string }) =>
-    importAgent(args.meta, args.content)
+  safeHandle(
+    'agents:import',
+    (_e, args: { meta: Partial<AgentMeta>; content: string }) =>
+      importAgent(args.meta, args.content),
+    parseAgentsImportArgs
   )
 
   /**

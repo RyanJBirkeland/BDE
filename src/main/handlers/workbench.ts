@@ -89,6 +89,42 @@ function mapQualityResult(result: SpecQualityResult): {
   return { clarity, scope, filesExist }
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  )
+}
+
+type CheckSpecInput = {
+  title: string
+  repo: string
+  spec: string
+  specType?: string | undefined | null
+}
+
+function parseCheckSpecArgs(args: unknown[]): [CheckSpecInput] {
+  if (args.length !== 1) {
+    throw new Error(`expected [input]; got ${args.length} args`)
+  }
+  const [input] = args
+  if (!isPlainObject(input)) {
+    throw new Error(`input must be a plain object; got ${typeof input}`)
+  }
+  if (typeof input.title !== 'string') {
+    throw new Error('input.title must be a string')
+  }
+  if (typeof input.repo !== 'string') {
+    throw new Error('input.repo must be a string')
+  }
+  if (typeof input.spec !== 'string') {
+    throw new Error('input.spec must be a string')
+  }
+  return [input as unknown as CheckSpecInput]
+}
+
 /** Active streaming handles, keyed by streamId. */
 const activeStreams = new Map<string, { close: () => void }>()
 
@@ -225,16 +261,14 @@ export function registerWorkbenchHandlers(
   })
 
   // --- AI-powered spec checks ---
-  type CheckSpecInput = {
-    title: string
-    repo: string
-    spec: string
-    specType?: string | undefined | null
-  }
-  safeHandle('workbench:checkSpec', async (_e, input: CheckSpecInput) => {
-    const result = await specQualityService.validateFull(input.spec)
-    return mapQualityResult(result)
-  })
+  safeHandle(
+    'workbench:checkSpec',
+    async (_e, input: CheckSpecInput) => {
+      const result = await specQualityService.validateFull(input.spec)
+      return mapQualityResult(result)
+    },
+    parseCheckSpecArgs
+  )
 
   // --- Plan extraction ---
   safeHandle('workbench:extractPlan', async (_e, markdown: string) => {

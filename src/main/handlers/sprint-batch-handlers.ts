@@ -18,6 +18,52 @@ export interface BatchHandlersDeps {
   repo?: ISprintTaskRepository
 }
 
+type BatchImportTask = {
+  title: string
+  repo: string
+  prompt?: string | undefined
+  spec?: string | undefined
+  status?: string | undefined
+  dependsOnIndices?: number[]
+  depType?: 'hard' | 'soft'
+  playgroundEnabled?: boolean | undefined
+  model?: string | undefined
+  tags?: string[] | undefined
+  priority?: number | undefined
+  templateName?: string | undefined
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  )
+}
+
+function parseBatchImportArgs(args: unknown[]): [BatchImportTask[]] {
+  if (args.length !== 1) {
+    throw new Error(`expected [tasks]; got ${args.length} args`)
+  }
+  const [tasks] = args
+  if (!Array.isArray(tasks)) {
+    throw new Error(`tasks must be an array; got ${typeof tasks}`)
+  }
+  tasks.forEach((item, i) => {
+    if (!isPlainObject(item)) {
+      throw new Error(`tasks[${i}] must be a plain object`)
+    }
+    if (typeof item.title !== 'string' || (item.title as string).trim() === '') {
+      throw new Error(`tasks[${i}].title must be a non-empty string`)
+    }
+    if (typeof item.repo !== 'string' || (item.repo as string).trim() === '') {
+      throw new Error(`tasks[${i}].repo must be a non-empty string`)
+    }
+  })
+  return [tasks as unknown as BatchImportTask[]]
+}
+
 export function registerSprintBatchHandlers(deps: BatchHandlersDeps): void {
   const effectiveRepo = deps.repo ?? createSprintTaskRepository()
 
@@ -118,24 +164,14 @@ export function registerSprintBatchHandlers(deps: BatchHandlersDeps): void {
     return { results }
   })
 
-  type BatchImportTask = {
-    title: string
-    repo: string
-    prompt?: string | undefined
-    spec?: string | undefined
-    status?: string | undefined
-    dependsOnIndices?: number[] | undefined
-    depType?: 'hard' | 'soft'
-    playgroundEnabled?: boolean | undefined
-    model?: string | undefined
-    tags?: string[] | undefined
-    priority?: number | undefined
-    templateName?: string | undefined
-  }
-  safeHandle('sprint:batchImport', async (_e, tasks: BatchImportTask[]) => {
-    const { batchImportTasks } = await import('../services/batch-import')
-    const reposConfig = getSettingJson<Array<{ name: string; localPath: string }>>('repos') ?? []
-    const configuredRepos = reposConfig.map((r) => r.name.toLowerCase())
-    return batchImportTasks(tasks, effectiveRepo, configuredRepos)
-  })
+  safeHandle(
+    'sprint:batchImport',
+    async (_e, tasks: BatchImportTask[]) => {
+      const { batchImportTasks } = await import('../services/batch-import')
+      const reposConfig = getSettingJson<Array<{ name: string; localPath: string }>>('repos') ?? []
+      const configuredRepos = reposConfig.map((r) => r.name.toLowerCase())
+      return batchImportTasks(tasks, effectiveRepo, configuredRepos)
+    },
+    parseBatchImportArgs
+  )
 }

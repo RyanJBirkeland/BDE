@@ -223,7 +223,11 @@ describe('Workbench handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('workbench:chatStream', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:cancelStream', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('workbench:generateSpec', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:checkSpec', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith(
+      'workbench:checkSpec',
+      expect.any(Function),
+      expect.any(Function)
+    )
     expect(safeHandle).toHaveBeenCalledWith('workbench:extractPlan', expect.any(Function))
   })
 

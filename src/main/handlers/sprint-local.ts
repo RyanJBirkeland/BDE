@@ -58,6 +58,23 @@ function parseSprintUpdateArgs(args: unknown[]): [string, Record<string, unknown
   return [id, patch]
 }
 
+function parseSprintCreateArgs(args: unknown[]): [CreateTaskInput] {
+  if (args.length !== 1) {
+    throw new Error(`expected [task]; got ${args.length} args`)
+  }
+  const [task] = args
+  if (!isPlainObject(task)) {
+    throw new Error(`task must be a plain object; got ${describeValue(task)}`)
+  }
+  if (typeof task.title !== 'string' || task.title.trim() === '') {
+    throw new Error('task.title must be a non-empty string')
+  }
+  if (typeof task.repo !== 'string' || task.repo.trim() === '') {
+    throw new Error('task.repo must be a non-empty string')
+  }
+  return [task as unknown as CreateTaskInput]
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (
     typeof value === 'object' &&
@@ -89,9 +106,11 @@ export function registerSprintLocalHandlers(
     return listTasksRecent()
   })
 
-  safeHandle('sprint:create', async (_e, task: CreateTaskInput) => {
-    return createTaskWithValidation(task, { logger })
-  })
+  safeHandle(
+    'sprint:create',
+    async (_e, task: CreateTaskInput) => createTaskWithValidation(task, { logger }),
+    parseSprintCreateArgs
+  )
 
   safeHandle('sprint:createWorkflow', async (_e, template: WorkflowTemplate) => {
     const result = instantiateWorkflow(template, effectiveRepo)
