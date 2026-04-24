@@ -5,13 +5,7 @@ import type { SprintTask } from '../../shared/types/task-types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { computeDepsFingerprint, refreshDependencyIndex } from './dependency-refresher'
 import { handleTaskTerminal } from './terminal-handler'
-import {
-  EXECUTOR_ID,
-  WATCHDOG_INTERVAL_MS,
-  ORPHAN_CHECK_INTERVAL_MS,
-  WORKTREE_PRUNE_INTERVAL_MS,
-  INITIAL_DRAIN_DEFER_MS
-} from './types'
+import { EXECUTOR_ID, INITIAL_DRAIN_DEFER_MS } from './types'
 import { makeConcurrencyState, availableSlots, type ConcurrencyState } from './concurrency'
 import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex } from '../services/dependency-service'
@@ -33,6 +27,7 @@ import { pruneStaleWorktrees, cleanupWorktree } from './worktree'
 import { resolveRepoPath } from './task-claimer'
 import { executeShutdown } from './shutdown-coordinator'
 import { reloadConfiguration } from './config-manager'
+import { LifecycleController } from './lifecycle-controller'
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to createLogger
@@ -144,10 +139,7 @@ export class AgentManagerImpl implements AgentManager {
   private readonly _terminalCalled = new Map<string, Promise<void>>()
 
   // ---- Timers ----
-  private pollTimer: ReturnType<typeof setInterval> | null = null
-  private watchdogTimer: ReturnType<typeof setInterval> | null = null
-  private orphanTimer: ReturnType<typeof setInterval> | null = null
-  private pruneTimer: ReturnType<typeof setInterval> | null = null
+  private readonly lifecycle = new LifecycleController()
 
   // ---- Injected deps ----
   private readonly runAgentDeps: RunAgentDeps
@@ -466,10 +458,24 @@ export class AgentManagerImpl implements AgentManager {
     this.clearStaleClaims()
     this.initDependencyIndex()
     this.kickOffInitialWorktreePrune()
-    this.scheduleDrainLoop()
-    this.scheduleWatchdogLoop()
-    this.scheduleOrphanLoop()
-    this.schedulePruneLoop()
+    this.lifecycle.startTimers(this.config.pollIntervalMs, {
+      onDrainTick: () => this.tickDrain(),
+      onWatchdogTick: () => {
+        this._watchdogLoop().catch((err) =>
+          this.logger.warn(`[agent-manager] Watchdog loop error: ${err}`)
+        )
+      },
+      onOrphanTick: () => {
+        this._orphanLoop().catch((err) =>
+          this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
+        )
+      },
+      onPruneTick: () => {
+        this._pruneLoop().catch((err) =>
+          this.logger.warn(`[agent-manager] Prune loop error: ${err}`)
+        )
+      }
+    })
     this._scheduleInitialDrain()
 
     this.logger.info('[agent-manager] Started')
@@ -532,10 +538,6 @@ export class AgentManagerImpl implements AgentManager {
     })
   }
 
-  private scheduleDrainLoop(): void {
-    this.pollTimer = setInterval(() => this.tickDrain(), this.config.pollIntervalMs)
-  }
-
   private tickDrain(): void {
     if (this._drainInFlight) return
     this._drainInFlight = this._drainLoop()
@@ -560,28 +562,6 @@ export class AgentManagerImpl implements AgentManager {
     }
   }
 
-  private scheduleWatchdogLoop(): void {
-    this.watchdogTimer = setInterval(() => {
-      this._watchdogLoop().catch((err) =>
-        this.logger.warn(`[agent-manager] Watchdog loop error: ${err}`)
-      )
-    }, WATCHDOG_INTERVAL_MS)
-  }
-
-  private scheduleOrphanLoop(): void {
-    this.orphanTimer = setInterval(() => {
-      this._orphanLoop().catch((err) =>
-        this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
-      )
-    }, ORPHAN_CHECK_INTERVAL_MS)
-  }
-
-  private schedulePruneLoop(): void {
-    this.pruneTimer = setInterval(() => {
-      this._pruneLoop().catch((err) => this.logger.warn(`[agent-manager] Prune loop error: ${err}`))
-    }, WORKTREE_PRUNE_INTERVAL_MS)
-  }
-
   // Defer the first drain so the event loop settles and orphan recovery can complete
   // before any queued task is claimed.
   private _scheduleInitialDrain(): void {
@@ -604,23 +584,7 @@ export class AgentManagerImpl implements AgentManager {
   // finalizeAgentRun includes git rebase + PR creation which can take 30+ seconds
   async stop(timeoutMs = 60_000): Promise<void> {
     this._shuttingDown = true
-
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer)
-      this.pollTimer = null
-    }
-    if (this.watchdogTimer) {
-      clearInterval(this.watchdogTimer)
-      this.watchdogTimer = null
-    }
-    if (this.orphanTimer) {
-      clearInterval(this.orphanTimer)
-      this.orphanTimer = null
-    }
-    if (this.pruneTimer) {
-      clearInterval(this.pruneTimer)
-      this.pruneTimer = null
-    }
+    this.lifecycle.stopTimers()
 
     await executeShutdown(
       {
