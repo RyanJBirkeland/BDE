@@ -14,6 +14,7 @@ import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
+import type { MetricsCollector } from './metrics'
 import { FAST_FAIL_EXHAUSTED_NOTE } from './failure-messages'
 import { getGhRepo } from '../paths'
 import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
@@ -83,6 +84,7 @@ export interface RunAgentDataDeps {
   repo: IAgentTaskRepository
   unitOfWork: IUnitOfWork
   logger: Logger
+  metrics: MetricsCollector
 }
 
 /** Terminal status notification. */
@@ -467,6 +469,7 @@ async function finalizeAgentRun(
   const durationMs = exitedAt - agent.startedAt
 
   emitCompletionEvent(agentRunId, agent, exitCode, exitedAt, durationMs)
+  deps.metrics.recordAgentDuration(durationMs)
 
   if (await handleSupersededRun(task, worktree, repoPath, agent, deps)) return
 

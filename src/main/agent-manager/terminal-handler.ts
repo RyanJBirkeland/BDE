@@ -24,12 +24,23 @@ function wrapTransactionWithLogging(
   }
 }
 
-function recordTerminalMetrics(status: TaskStatus, metrics: MetricsCollector): void {
+function recordTerminalMetrics(
+  taskId: string,
+  status: TaskStatus,
+  metrics: MetricsCollector,
+  logger: Logger
+): void {
   if (status === 'done' || status === 'review') {
     metrics.increment('agentsCompleted')
   } else if (status === 'failed' || status === 'error') {
     metrics.increment('agentsFailed')
   }
+  logger.info(JSON.stringify({
+    event: 'agent.completed',
+    taskId,
+    status,
+    timestamp: new Date().toISOString()
+  }))
 }
 
 async function resolveTerminalDependents(
@@ -103,7 +114,7 @@ async function executeTerminal(
   deps: TerminalHandlerDeps
 ): Promise<void> {
   const { metrics, depIndex, epicIndex, repo, unitOfWork, config, logger } = deps
-  recordTerminalMetrics(status, metrics)
+  recordTerminalMetrics(taskId, status, metrics, logger)
   if (config.onStatusTerminal) {
     config.onStatusTerminal(taskId, status)
   } else {

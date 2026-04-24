@@ -169,7 +169,15 @@ describe('runAgent — playground prompt injection', () => {
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
-    unitOfWork: { runInTransaction: (fn) => fn() }
+    unitOfWork: { runInTransaction: (fn) => fn() },
+    metrics: {
+      increment: vi.fn(),
+      recordWatchdogVerdict: vi.fn(),
+      setLastDrainDuration: vi.fn(),
+      recordAgentDuration: vi.fn(),
+      snapshot: vi.fn().mockReturnValue({}),
+      reset: vi.fn()
+    }
   })
 
   beforeEach(async () => {
@@ -386,7 +394,15 @@ describe('runAgent — playground-before-cleanup ordering', () => {
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
-    unitOfWork: { runInTransaction: (fn) => fn() }
+    unitOfWork: { runInTransaction: (fn) => fn() },
+    metrics: {
+      increment: vi.fn(),
+      recordWatchdogVerdict: vi.fn(),
+      setLastDrainDuration: vi.fn(),
+      recordAgentDuration: vi.fn(),
+      snapshot: vi.fn().mockReturnValue({}),
+      reset: vi.fn()
+    }
   })
 
   beforeEach(async () => {

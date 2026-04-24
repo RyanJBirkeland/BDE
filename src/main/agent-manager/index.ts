@@ -180,6 +180,7 @@ export class AgentManagerImpl implements AgentManager {
       onTaskTerminal: this.onTaskTerminal.bind(this),
       repo,
       unitOfWork,
+      metrics: this._metrics,
       worktreeBase: config.worktreeBase,
       onSpawnSuccess: () => {
         this._circuitBreaker.recordSuccess()

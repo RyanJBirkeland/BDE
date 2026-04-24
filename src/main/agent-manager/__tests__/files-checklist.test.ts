@@ -187,6 +187,7 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
     unitOfWork: { runInTransaction: (fn) => fn() },
+    metrics: { increment: vi.fn(), recordWatchdogVerdict: vi.fn(), setLastDrainDuration: vi.fn(), recordAgentDuration: vi.fn(), snapshot: vi.fn().mockReturnValue({}), reset: vi.fn() },
     worktreeBase: '/tmp/worktrees',
     ...overrides
   }

@@ -15,6 +15,7 @@ export interface MetricsCollector {
   increment(key: CounterKey): void
   recordWatchdogVerdict(verdict: string): void
   setLastDrainDuration(ms: number): void
+  recordAgentDuration(durationMs: number): void
   snapshot(): MetricsSnapshot
   reset(): void
 }
@@ -46,6 +47,14 @@ export function createMetricsCollector(): MetricsCollector {
         lastDrainDurationMs,
         uptimeMs: Date.now() - startTime
       }
+    },
+    recordAgentDuration(durationMs: number) {
+      const bucket =
+        durationMs < 30_000 ? '<30s' :
+        durationMs < 120_000 ? '<2m' :
+        durationMs < 600_000 ? '<10m' :
+        durationMs < 1_800_000 ? '<30m' : '>30m'
+      counters[`duration_${bucket}`] = (counters[`duration_${bucket}`] ?? 0) + 1
     },
     reset() {
       counters = {}
