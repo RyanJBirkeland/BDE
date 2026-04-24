@@ -138,6 +138,11 @@ export function getConfiguredRepos(): RepoConfig[] {
   return getSettingJson<RepoConfig[]>('repos') ?? []
 }
 
+export function getRepoConfig(name: string): RepoConfig | null {
+  const target = name.toLowerCase()
+  return getConfiguredRepos().find((r) => r.name.toLowerCase() === target) ?? null
+}
+
 /**
  * Look up the prompt profile for a configured repo. Returns `'bde'` (the
  * backward-compatible default) when the repo isn't configured or has no

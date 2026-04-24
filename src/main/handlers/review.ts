@@ -17,6 +17,7 @@ import { execFileAsync } from '../lib/async-utils'
 import { checkAutoReview } from '../services/auto-review-service'
 import { getTask } from '../services/sprint-service'
 import type { AutoReviewRule } from '../../shared/types'
+import { getRepoConfig } from '../paths'
 import * as reviewOrchestration from '../services/review-orchestration-service'
 import {
   getReviewDiff,
@@ -28,21 +29,8 @@ import type { TaskStatus } from '../../shared/task-state-machine'
 
 const logger = createLogger('review-handlers')
 
-interface RepoConfig {
-  name: string
-  localPath: string
-  githubOwner?: string
-  githubRepo?: string
-}
-
 export interface ReviewHandlersDeps {
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
-}
-
-function getRepoConfig(repoName: string): RepoConfig | null {
-  const repos = getSettingJson<RepoConfig[]>('repos')
-  const target = repoName.toLowerCase()
-  return repos?.find((r) => r.name.toLowerCase() === target) ?? null
 }
 
 export function registerReviewHandlers(deps: ReviewHandlersDeps): void {

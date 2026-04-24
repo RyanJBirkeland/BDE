@@ -19,23 +19,13 @@ import type { GitOpDescriptor } from './review-action-policy'
 import { executeReviewAction } from './review-action-executor'
 import { getTask, notifySprintMutation } from './sprint-service'
 import { getErrorMessage } from '../../shared/errors'
-import { getSettingJson } from '../settings'
 import { getSharedSprintTaskRepository } from '../data/sprint-task-repository'
+import { type RepoConfig, getRepoConfig } from '../paths'
 import type { ShipBatchInput, ShipBatchResult } from './review-orchestration-types'
 import type { SprintTask } from '../../shared/types/task-types'
 
 const logger = createLogger('review-ship-batch')
 const repo = getSharedSprintTaskRepository()
-
-interface RepoConfig {
-  name: string
-  localPath: string
-}
-
-function getRepoConfig(repoName: string): RepoConfig | null {
-  const repos = getSettingJson<RepoConfig[]>('repos')
-  return repos?.find((r) => r.name.toLowerCase() === repoName.toLowerCase()) ?? null
-}
 
 /**
  * Builds a shipIt plan with the `push` operation stripped so the caller can

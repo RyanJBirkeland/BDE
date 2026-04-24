@@ -14,6 +14,7 @@ import { nowIso } from '../../shared/time'
 import { evaluateAutoMergePolicy } from './auto-merge-policy'
 import { executeSquashMerge } from '../lib/git-operations'
 import { getSettingJson } from '../settings'
+import { getRepoConfig } from '../paths'
 
 export interface AutoMergeContext {
   taskId: string
@@ -24,31 +25,6 @@ export interface AutoMergeContext {
   unitOfWork: IUnitOfWork
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
-}
-
-/**
- * Get repository config for a task from settings.
- * Returns null if task or repo config not found.
- */
-function getRepoConfig(
-  taskId: string,
-  repo: IAgentTaskRepository,
-  logger: Logger
-): { name: string; localPath: string } | null {
-  const task = repo.getTask(taskId)
-  if (!task) {
-    logger.error(`[completion] Task ${taskId} not found`)
-    return null
-  }
-
-  const repos = getSettingJson<Array<{ name: string; localPath: string }>>('repos')
-  const repoConfig = repos?.find((r) => r.name === task.repo)
-  if (!repoConfig) {
-    logger.error(`[completion] Repo "${task.repo}" not found in settings`)
-    return null
-  }
-
-  return repoConfig
 }
 
 export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
@@ -71,8 +47,14 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
       `[completion] Task ${taskId} qualifies for auto-merge (rule: ${decision.ruleName}) — merging`
     )
 
-    const repoConfig = getRepoConfig(taskId, repo, logger)
+    const task = repo.getTask(taskId)
+    if (!task) {
+      logger.error(`[completion] Task ${taskId} not found`)
+      return
+    }
+    const repoConfig = getRepoConfig(task.repo)
     if (!repoConfig) {
+      logger.error(`[completion] Repo "${task.repo}" not found in settings`)
       return
     }
 

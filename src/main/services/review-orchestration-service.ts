@@ -12,8 +12,8 @@ export { parseNumstat }
 import { getTask, updateTask, notifySprintMutation } from './sprint-service'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
-import { getSettingJson } from '../settings'
 import { getSharedSprintTaskRepository } from '../data/sprint-task-repository'
+import { getRepoConfig } from '../paths'
 import type {
   MergeLocallyInput,
   MergeLocallyResult,
@@ -48,11 +48,6 @@ export type {
 
 const logger = createLogger('review-orchestration')
 const repo = getSharedSprintTaskRepository()
-
-function getRepoConfig(name: string): { name: string; localPath: string } | null {
-  const repos = getSettingJson<Array<{ name: string; localPath: string }>>('repos')
-  return repos?.find((r) => r.name.toLowerCase() === name.toLowerCase()) ?? null
-}
 
 async function runPlan(
   taskId: string,
