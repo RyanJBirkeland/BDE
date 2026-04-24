@@ -68,6 +68,24 @@ describe('branchMatchesTask', () => {
       true
     )
   })
+
+  it('matches UUID task ids via the 8-char hash suffix', () => {
+    expect(
+      branchMatchesTask(
+        'agent/t-13-stabilize-sprinttasks-loaddata-to-a-9f04f0d0',
+        '9f04f0d089a0f3e3a45ff13ab2887a02'
+      )
+    ).toBe(true)
+  })
+
+  it('does not match a UUID whose prefix differs from the branch hash', () => {
+    expect(
+      branchMatchesTask(
+        'agent/t-13-stabilize-sprinttasks-loaddata-to-a-9f04f0d0',
+        'deadbeef89a0f3e3a45ff13ab2887a02'
+      )
+    ).toBe(false)
+  })
 })
 
 describe('assertBranchTipMatches — branch-name path (primary)', () => {

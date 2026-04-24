@@ -107,14 +107,21 @@ export function extractTaskIdFromBranch(branch: string): string | null {
 /**
  * Check whether a branch name identifies a given task.
  *
- * Uses extractTaskIdFromBranch to pull the `<idSlug>` from the branch, then
- * checks that the task id ends with `t-<idSlug>` (case-insensitive). Accepts
- * both short ids ('t-11') and long ones ('audit-20260420-t-11').
+ * Two signals checked in order:
+ * 1. The `<idSlug>` segment (e.g. '13') matches the task id tail via
+ *    `endsWith('t-13')` — covers legacy-style ids like 'audit-20260420-t-13'.
+ * 2. The 8-char hex hash at the end of the branch (BDE appends the first 8
+ *    chars of the task UUID) matches the task id prefix — covers UUID task ids
+ *    like '9f04f0d089a0f3e3a45ff13ab2887a02'.
  */
 export function branchMatchesTask(branch: string, taskId: string): boolean {
   const slug = extractTaskIdFromBranch(branch)
   if (!slug) return false
-  return taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)
+  if (taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)) return true
+  // UUID task IDs: the trailing 8 hex chars of the branch name are the first
+  // 8 chars of the task UUID (BDE's branch generation convention).
+  const hashMatch = /-([a-f0-9]{8})$/.exec(branch)
+  return !!hashMatch?.[1] && taskId.toLowerCase().startsWith(hashMatch[1])
 }
 
 /**
