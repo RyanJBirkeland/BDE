@@ -1,0 +1,827 @@
+{
+  "task_count": 31,
+  "quality_x_status": {
+    "good": {
+      "done": 13,
+      "cancelled": 16
+    },
+    "mediocre": {
+      "done": 1
+    },
+    "poor": {
+      "cancelled": 1
+    }
+  },
+  "failure_mode_x_quality": {
+    "success": {
+      "good": 19,
+      "mediocre": 1
+    },
+    "failed_no_event": {
+      "good": 3
+    },
+    "user_cancelled_no_run": {
+      "poor": 1,
+      "good": 7
+    }
+  },
+  "turn_budget_eligibility": {
+    "explicit_75_turn_header": 7,
+    "auto_50_turn_via_density_or_mixed_stack": 0,
+    "default_30_turn_budget": 24
+  },
+  "out_of_turns_without_header": [
+    {
+      "id": "376e24c4c16934b17e97630f63cdeabf",
+      "short_id": "376e24c4",
+      "status": "done",
+      "title": "T-12: Add parseArgs validators to highest-risk IPC handler channels",
+      "retry_count": 0,
+      "spec_quality": {
+        "word_count": 629,
+        "section_count": 6,
+        "distinct_file_paths": 6,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "runs": [
+        {
+          "run_id": "5e8e4030-3776-466b-ab5a-932f81cacdc0",
+          "status": "done",
+          "exit_code": 0,
+          "num_turns": 21,
+          "cost_usd": 0.53151405,
+          "duration_ms": 29488,
+          "tokens_in": 31,
+          "tokens_out": 501,
+          "started_at": "2026-04-24T04:59:10.053Z",
+          "finished_at": "2026-04-24T04:59:39.541Z",
+          "failure_mode": "success"
+        },
+        {
+          "run_id": "3d2e0b3e-f752-47a2-bbb6-96a238f1f0bf",
+          "status": "failed",
+          "exit_code": null,
+          "num_turns": null,
+          "cost_usd": null,
+          "duration_ms": null,
+          "tokens_in": null,
+          "tokens_out": null,
+          "started_at": "2026-04-24T05:22:10.302Z",
+          "finished_at": "2026-04-24T06:10:55.754Z",
+          "failure_mode": "failed_no_event"
+        },
+        {
+          "run_id": "19fb5eca-3fca-4c38-b5d6-934a1f821cea",
+          "status": "done",
+          "exit_code": 0,
+          "num_turns": 76,
+          "cost_usd": 0.4590145000000001,
+          "duration_ms": 102823,
+          "tokens_in": 614,
+          "tokens_out": 121,
+          "started_at": "2026-04-24T06:25:01.078Z",
+          "finished_at": "2026-04-24T06:26:43.901Z",
+          "failure_mode": "success"
+        },
+        {
+          "run_id": "703c19bd-732a-49eb-be1d-f065dbe157a3",
+          "status": "failed",
+          "exit_code": null,
+          "num_turns": null,
+          "cost_usd": null,
+          "duration_ms": null,
+          "tokens_in": null,
+          "tokens_out": null,
+          "started_at": "2026-04-24T07:38:30.889Z",
+          "finished_at": "2026-04-24T17:56:24.321Z",
+          "failure_mode": "failed_no_event"
+        },
+        {
+          "run_id": "d2a68fec-f6bf-494f-8160-7920cc6968bb",
+          "status": "failed",
+          "exit_code": null,
+          "num_turns": 76,
+          "cost_usd": 1.5239403,
+          "duration_ms": 274636,
+          "tokens_in": 88,
+          "tokens_out": 980,
+          "started_at": "2026-04-24T18:22:43.564Z",
+          "finished_at": "2026-04-24T18:27:18.200Z",
+          "failure_mode": "out_of_turns"
+        },
+        {
+          "run_id": "9f82f039-77c0-43ab-813b-1023a6e1036b",
+          "status": "done",
+          "exit_code": 0,
+          "num_turns": 76,
+          "cost_usd": 1.8259525499999998,
+          "duration_ms": 460437,
+          "tokens_in": 84,
+          "tokens_out": 1715,
+          "started_at": "2026-04-24T18:28:05.972Z",
+          "finished_at": "2026-04-24T18:35:46.409Z",
+          "failure_mode": "success"
+        },
+        {
+          "run_id": "b370bc83-7ee6-481c-8f00-bce1cb566481",
+          "status": "done",
+          "exit_code": 0,
+          "num_turns": 76,
+          "cost_usd": 1.8502194,
+          "duration_ms": 337896,
+          "tokens_in": 86,
+          "tokens_out": 1766,
+          "started_at": "2026-04-24T18:37:05.971Z",
+          "finished_at": "2026-04-24T18:42:43.867Z",
+          "failure_mode": "success"
+        },
+        {
+          "run_id": "29875cfb-900d-48ec-8768-3d9d62687d46",
+          "status": "done",
+          "exit_code": 0,
+          "num_turns": 76,
+          "cost_usd": 1.3511982,
+          "duration_ms": 193636,
+          "tokens_in": 84,
+          "tokens_out": 1520,
+          "started_at": "2026-04-24T18:44:36.096Z",
+          "finished_at": "2026-04-24T18:47:49.732Z",
+          "failure_mode": "success"
+        }
+      ]
+    }
+  ],
+  "cost_summary": {
+    "total_usd": 73.83,
+    "runs_observed": 136,
+    "by_task_status": {
+      "done": 73.83,
+      "cancelled": 0.0
+    },
+    "by_failure_mode": {
+      "success": 70.91,
+      "failed_no_event": 0.0,
+      "out_of_turns": 2.91,
+      "env_cli_not_found": 0.0
+    }
+  },
+  "tasks": [
+    {
+      "id": "65c2eb83c54a41d4ec96d4b5ed31aa4c",
+      "short_id": "65c2eb83",
+      "status": "done",
+      "title": "T-11: Forward validator param through getSettingJson facade",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 286,
+        "section_count": 6,
+        "distinct_file_paths": 4,
+        "src_path_density": 1,
+        "has_multi_file_header": true,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 8,
+      "retries": 1
+    },
+    {
+      "id": "5633f1fe60e1068e05076e5bf659e8a0",
+      "short_id": "5633f1fe",
+      "status": "done",
+      "title": "T-14: Keep diff viewer virtualized when inline comments are present",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 232,
+        "section_count": 5,
+        "distinct_file_paths": 3,
+        "src_path_density": 1,
+        "has_multi_file_header": true,
+        "has_files_to_change": false,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 13,
+      "retries": 0
+    },
+    {
+      "id": "8ebe22e3b376dc1187188031bc4e3891",
+      "short_id": "8ebe22e3",
+      "status": "done",
+      "title": "T-7: Extract IDE filesystem logic into ide-fs-service.ts",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 190,
+        "section_count": 5,
+        "distinct_file_paths": 4,
+        "src_path_density": 0,
+        "has_multi_file_header": true,
+        "has_files_to_change": false,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 15,
+      "retries": 0
+    },
+    {
+      "id": "4d24f9683e8ca63d9a84a79ed2fa5394",
+      "short_id": "4d24f968",
+      "status": "done",
+      "title": "T-6: Consolidate duplicate getRepoConfig into a single shared function",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 180,
+        "section_count": 5,
+        "distinct_file_paths": 3,
+        "src_path_density": 0,
+        "has_multi_file_header": true,
+        "has_files_to_change": false,
+        "has_how_to_test": true,
+        "has_explore_verb": true,
+        "spec_type_set": true,
+        "overall_quality": "mediocre"
+      },
+      "run_count": 19,
+      "retries": 1
+    },
+    {
+      "id": "9f04f0d089a0f3e3a45ff13ab2887a02",
+      "short_id": "9f04f0d0",
+      "status": "done",
+      "title": "T-13: Stabilize sprintTasks.loadData to avoid rebuilding array on every poll",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 246,
+        "section_count": 5,
+        "distinct_file_paths": 2,
+        "src_path_density": 1,
+        "has_multi_file_header": true,
+        "has_files_to_change": false,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 15,
+      "retries": 0
+    },
+    {
+      "id": "408924f413fe6886e65092ad78825bf6",
+      "short_id": "408924f4",
+      "status": "done",
+      "title": "T-5: Paginate agent:history IPC and dedupe events by id",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 191,
+        "section_count": 5,
+        "distinct_file_paths": 5,
+        "src_path_density": 0,
+        "has_multi_file_header": true,
+        "has_files_to_change": false,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 18,
+      "retries": 1
+    },
+    {
+      "id": "1d92d9ff02ef521cc2ac095bd4f7dfed",
+      "short_id": "1d92d9ff",
+      "status": "cancelled",
+      "title": "T-10: Split spawnAdhocAgent into focused per-backend functions",
+      "failure_mode": "failed_no_event",
+      "spec_quality": {
+        "word_count": 249,
+        "section_count": 5,
+        "distinct_file_paths": 5,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 3,
+      "retries": 0
+    },
+    {
+      "id": "f30b73c6938c3dbadccf05b6da371320",
+      "short_id": "f30b73c6",
+      "status": "cancelled",
+      "title": "T-8: Move dependency-refresher from agent-manager to services layer",
+      "failure_mode": "failed_no_event",
+      "spec_quality": {
+        "word_count": 197,
+        "section_count": 5,
+        "distinct_file_paths": 7,
+        "src_path_density": 2,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 3,
+      "retries": 0
+    },
+    {
+      "id": "a5511a1fe3827bfaf01fb37836b4fc3b",
+      "short_id": "a5511a1f",
+      "status": "done",
+      "title": "T-9: Break AgentManagerImpl god class into focused collaborators",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 956,
+        "section_count": 10,
+        "distinct_file_paths": 10,
+        "src_path_density": 0,
+        "has_multi_file_header": true,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 7,
+      "retries": 0
+    },
+    {
+      "id": "376e24c4c16934b17e97630f63cdeabf",
+      "short_id": "376e24c4",
+      "status": "done",
+      "title": "T-12: Add parseArgs validators to highest-risk IPC handler channels",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 629,
+        "section_count": 6,
+        "distinct_file_paths": 6,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 8,
+      "retries": 0
+    },
+    {
+      "id": "45c01837f09fc1029d0dd08fa2c36837",
+      "short_id": "45c01837",
+      "status": "done",
+      "title": "T-15: Add structured agent lifecycle logs and SLA metrics histograms",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 440,
+        "section_count": 4,
+        "distinct_file_paths": 10,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": true,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 12,
+      "retries": 0
+    },
+    {
+      "id": "21eecc7b79e21f4a74988a6b6d0e57ed",
+      "short_id": "21eecc7b",
+      "status": "cancelled",
+      "title": "mcp integration demo",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 3,
+        "section_count": 0,
+        "distinct_file_paths": 0,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": false,
+        "has_how_to_test": false,
+        "has_explore_verb": false,
+        "spec_type_set": false,
+        "overall_quality": "poor"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "90a9c27abd66828b1e40112d8c127b85",
+      "short_id": "90a9c27a",
+      "status": "cancelled",
+      "title": "PR-5 [P2] Investigate num_turns=21 hit on every pipeline task",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 249,
+        "section_count": 4,
+        "distinct_file_paths": 4,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": true,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 1,
+      "retries": 0
+    },
+    {
+      "id": "3479cfbbe83d471f772ff519de55c5b8",
+      "short_id": "3479cfbb",
+      "status": "cancelled",
+      "title": "PR-8 [P1] Structured revision feedback instead of natural-language notes",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 383,
+        "section_count": 5,
+        "distinct_file_paths": 3,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "a75073368f4d8630a85046ceba2b0952",
+      "short_id": "a7507336",
+      "status": "cancelled",
+      "title": "PR-7 [P2] Flag commits that introduce unverified external references",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 291,
+        "section_count": 5,
+        "distinct_file_paths": 4,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "c20622576e8f912d9244875a11c73a3f",
+      "short_id": "c2062257",
+      "status": "cancelled",
+      "title": "PR-6 [P2] Fix cost_usd=0.000 in agent_runs (cost pipeline broken)",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 191,
+        "section_count": 4,
+        "distinct_file_paths": 2,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "ac535ed9e51ec55659df2f83cfe1c415",
+      "short_id": "ac535ed9",
+      "status": "cancelled",
+      "title": "PR-4 [P1] Replace generic auto-commit message with BDE convention",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 234,
+        "section_count": 4,
+        "distinct_file_paths": 4,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "bf31a232f6747e409a6c3c58536495f8",
+      "short_id": "bf31a232",
+      "status": "cancelled",
+      "title": "PR-3 [P1] Enforce ## Files to Change as a hard checklist at completion",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 308,
+        "section_count": 5,
+        "distinct_file_paths": 3,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "d0e1ed37612777ede04d4885ea310426",
+      "short_id": "d0e1ed37",
+      "status": "cancelled",
+      "title": "PR-2 [P0] Enforce must-commit-before-exit in pipeline agents",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 331,
+        "section_count": 5,
+        "distinct_file_paths": 4,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "7670c60ddcffbf6433cd4729d89e7967",
+      "short_id": "7670c60d",
+      "status": "done",
+      "title": "PR-1 [P0] Gate agent commit on local verification (typecheck + test)",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 423,
+        "section_count": 5,
+        "distinct_file_paths": 5,
+        "src_path_density": 0,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    },
+    {
+      "id": "a72ac94cd3e20bf269266eb162142b0e",
+      "short_id": "a72ac94c",
+      "status": "cancelled",
+      "title": "T-4 [P1] List both CLI install methods and link to docs",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 162,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 2,
+      "retries": 0
+    },
+    {
+      "id": "8d5169ce726412f55375c530804a7194",
+      "short_id": "8d5169ce",
+      "status": "cancelled",
+      "title": "T-15 [P2] Use node:path basename for repo-name derivation",
+      "failure_mode": "failed_no_event",
+      "spec_quality": {
+        "word_count": 153,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 2,
+      "retries": 0
+    },
+    {
+      "id": "68f897e9e33f702c3462d9a7379d69cf",
+      "short_id": "68f897e9",
+      "status": "cancelled",
+      "title": "T-16 [P3] Hoist OnboardingWizard steps array to module scope",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 80,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 2,
+      "retries": 0
+    },
+    {
+      "id": "4f46fbeead119388cb816df284af2163",
+      "short_id": "4f46fbee",
+      "status": "done",
+      "title": "T-1 [P0] Await settings.set before reloading on wizard completion",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 153,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 1,
+      "retries": 0
+    },
+    {
+      "id": "cb9dfa9b6acb5644e7df37cd9083cc74",
+      "short_id": "cb9dfa9b",
+      "status": "cancelled",
+      "title": "T-14 [P1] Show existing repos and fail loudly on settings read error",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 151,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 1,
+      "retries": 0
+    },
+    {
+      "id": "56734930f12ff156f544fefbf1fb03a1",
+      "short_id": "56734930",
+      "status": "cancelled",
+      "title": "T-10 [P1] Make \"Create first task\" survive the wizard reload",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 157,
+        "section_count": 4,
+        "distinct_file_paths": 3,
+        "src_path_density": 2,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 1,
+      "retries": 0
+    },
+    {
+      "id": "a57848738e1fd15aa7dffcd2c790b04a",
+      "short_id": "a5784873",
+      "status": "cancelled",
+      "title": "T-8 [P1] Add timeout on short-form readiness check",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 138,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 2,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 1,
+      "retries": 0
+    },
+    {
+      "id": "0d09b46c3c1ee52bfe29ada3869de23d",
+      "short_id": "0d09b46c",
+      "status": "done",
+      "title": "T-11 [P2] Default repo selector to most-recently-added repo",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 96,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 2,
+      "retries": 1
+    },
+    {
+      "id": "967028f5689be245556b159bc3372c8b",
+      "short_id": "967028f5",
+      "status": "done",
+      "title": "T-6 [P2] Re-run auth check when window regains focus",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 136,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 1,
+      "retries": 0
+    },
+    {
+      "id": "80f79f009b77b81fe63cd9664f25de3a",
+      "short_id": "80f79f00",
+      "status": "done",
+      "title": "T-5 [P2] Improve timeout error copy with concrete diagnostics",
+      "failure_mode": "success",
+      "spec_quality": {
+        "word_count": 115,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 1,
+      "retries": 0
+    },
+    {
+      "id": "6a30bb647dbb7ed434598773763c7703",
+      "short_id": "6a30bb64",
+      "status": "cancelled",
+      "title": "T-13 [P3] Show macOS-specific git install command",
+      "failure_mode": "user_cancelled_no_run",
+      "spec_quality": {
+        "word_count": 81,
+        "section_count": 4,
+        "distinct_file_paths": 1,
+        "src_path_density": 1,
+        "has_multi_file_header": false,
+        "has_files_to_change": true,
+        "has_how_to_test": true,
+        "has_explore_verb": false,
+        "spec_type_set": true,
+        "overall_quality": "good"
+      },
+      "run_count": 0,
+      "retries": 0
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+
+Wrote JSON to docs/superpowers/rca-2026-04-24/audit.json
+=== RCA Audit: 31 terminal-state tasks ===
+
+== Quality × Final Status ==
+  good     : {'done': 13, 'cancelled': 16}
+  mediocre : {'done': 1}
+  poor     : {'cancelled': 1}
+
+== Failure Mode × Spec Quality ==
+  success                             (n=20): {'good': 19, 'mediocre': 1}
+  user_cancelled_no_run               (n=8): {'poor': 1, 'good': 7}
+  failed_no_event                     (n=3): {'good': 3}
+
+== Turn-Budget Eligibility ==
+  explicit_75_turn_header: 7
+  auto_50_turn_via_density_or_mixed_stack: 0
+  default_30_turn_budget: 24
+
+== Out-of-Turns Failures Without Multi-File Header ==
+  Count: 1
+  - 376e24c4 (done, retries=0) turns=[21, 76, 76, 76, 76, 76] src/density=0 q=good
+      title: T-12: Add parseArgs validators to highest-risk IPC handler channels
+
+== Turn Distribution of Successful Runs ==
+  <=20    : 5
+  21-30   : 56
+  31-50   : 3
+  51-70   : 3
+  71-76   : 37
+  unknown : 0
+
+== Runs Lost to Env (CLI not found) ==
+  Total runs killed by env: 22 across 8 tasks
+  - 5633f1fe: 3 runs
+  - 8ebe22e3: 3 runs
+  - 4d24f968: 3 runs
+  - 9f04f0d0: 3 runs
+  - 408924f4: 3 runs
+  - 45c01837: 3 runs
+  - 1d92d9ff: 2 runs
+  - f30b73c6: 2 runs
+
+== Header Gap Analysis ==
+  Tasks with `## Multi-File: true`:                         7
+  Tasks WITHOUT header but >=3 files (likely multi-file):  23
+  Tasks WITHOUT header AND truly small:                    1
+
+  Candidates that should have had the header:
+    - 1d92d9ff (cancelled, retries=True) files=5 src/=1 turns=[]: T-10: Split spawnAdhocAgent into focused per-backend functions
+    - f30b73c6 (cancelled, retries=True) files=7 src/=2 turns=[]: T-8: Move dependency-refresher from agent-manager to services layer
+    - 376e24c4 (done, retries=True) files=6 src/=0 turns=[21, 76, 76, 76, 76, 76]: T-12: Add parseArgs validators to highest-risk IPC handler channels
+    - 45c01837 (done, retries=True) files=10 src/=0 turns=[21, 21, 21, 21, 76, 76, 76, 76, 76]: T-15: Add structured agent lifecycle logs and SLA metrics histograms
+    - 90a9c27a (cancelled, retries=False) files=4 src/=0 turns=[21]: PR-5 [P2] Investigate num_turns=21 hit on every pipeline task
+    - 3479cfbb (cancelled, retries=False) files=3 src/=0 turns=[]: PR-8 [P1] Structured revision feedback instead of natural-language notes
+    - a7507336 (cancelled, retries=False) files=4 src/=0 turns=[]: PR-7 [P2] Flag commits that introduce unverified external references
+    - c2062257 (cancelled, retries=False) files=2 src/=1 turns=[]: PR-6 [P2] Fix cost_usd=0.000 in agent_runs (cost pipeline broken)
+    - ac535ed9 (cancelled, retries=False) files=4 src/=0 turns=[]: PR-4 [P1] Replace generic auto-commit message with BDE convention
+    - bf31a232 (cancelled, retries=False) files=3 src/=0 turns=[]: PR-3 [P1] Enforce ## Files to Change as a hard checklist at completion
+    - d0e1ed37 (cancelled, retries=False) files=4 src/=0 turns=[]: PR-2 [P0] Enforce must-commit-before-exit in pipeline agents
+    - 7670c60d (done, retries=False) files=5 src/=0 turns=[]: PR-1 [P0] Gate agent commit on local verification (typecheck + test)
+    - a72ac94c (cancelled, retries=True) files=1 src/=1 turns=[21, 14]: T-4 [P1] List both CLI install methods and link to docs
+    - 8d5169ce (cancelled, retries=True) files=1 src/=1 turns=[21]: T-15 [P2] Use node:path basename for repo-name derivation
+    - 68f897e9 (cancelled, retries=True) files=1 src/=1 turns=[21, 21]: T-16 [P3] Hoist OnboardingWizard steps array to module scope
+    - 4f46fbee (done, retries=False) files=1 src/=1 turns=[21]: T-1 [P0] Await settings.set before reloading on wizard completion
+    - cb9dfa9b (cancelled, retries=False) files=1 src/=1 turns=[21]: T-14 [P1] Show existing repos and fail loudly on settings read error
+    - 56734930 (cancelled, retries=False) files=3 src/=2 turns=[21]: T-10 [P1] Make "Create first task" survive the wizard reload
+    - a5784873 (cancelled, retries=False) files=1 src/=2 turns=[21]: T-8 [P1] Add timeout on short-form readiness check
+    - 0d09b46c (done, retries=True) files=1 src/=1 turns=[21, 21]: T-11 [P2] Default repo selector to most-recently-added repo
+    - 967028f5 (done, retries=False) files=1 src/=1 turns=[21]: T-6 [P2] Re-run auth check when window regains focus
+    - 80f79f00 (done, retries=False) files=1 src/=1 turns=[21]: T-5 [P2] Improve timeout error copy with concrete diagnostics
+    - 6a30bb64 (cancelled, retries=False) files=1 src/=1 turns=[]: T-13 [P3] Show macOS-specific git install command
+
+== Cost Summary ==
+  Total observed spend: $73.83  (136 runs)
+  By task status: {'done': 73.83, 'cancelled': 0.0}
+  Top failure-mode burns:
+    success                              $70.91
+    out_of_turns                         $2.91
+    failed_no_event                      $0.00
+    env_cli_not_found                    $0.00
+
+== Per-Task Detail ==
+short_id   status     qual      words sects paths hdr files test expl retries mode                           title
+65c2eb83   done       good        286     6     4 Y   Y     Y    n          1 success                        T-11: Forward validator param through getSettingJs
+5633f1fe   done       good        232     5     3 Y   n     Y    n          0 success                        T-14: Keep diff viewer virtualized when inline com
+8ebe22e3   done       good        190     5     4 Y   n     Y    n          0 success                        T-7: Extract IDE filesystem logic into ide-fs-serv
+4d24f968   done       mediocre    180     5     3 Y   n     Y    Y          1 success                        T-6: Consolidate duplicate getRepoConfig into a si
+9f04f0d0   done       good        246     5     2 Y   n     Y    n          0 success                        T-13: Stabilize sprintTasks.loadData to avoid rebu
+408924f4   done       good        191     5     5 Y   n     Y    n          1 success                        T-5: Paginate agent:history IPC and dedupe events 
+1d92d9ff   cancelled  good        249     5     5 n   Y     Y    n          0 failed_no_event                T-10: Split spawnAdhocAgent into focused per-backe
+f30b73c6   cancelled  good        197     5     7 n   Y     Y    n          0 failed_no_event                T-8: Move dependency-refresher from agent-manager 
+a5511a1f   done       good        956    10    10 Y   Y     Y    n          0 success                        T-9: Break AgentManagerImpl god class into focused
+376e24c4   done       good        629     6     6 n   Y     Y    n          0 success                        T-12: Add parseArgs validators to highest-risk IPC
+45c01837   done       good        440     4    10 n   Y     Y    Y          0 success                        T-15: Add structured agent lifecycle logs and SLA 
+21eecc7b   cancelled  poor          3     0     0 n   n     n    n          0 user_cancelled_no_run          mcp integration demo
+90a9c27a   cancelled  good        249     4     4 n   Y     Y    Y          0 success                        PR-5 [P2] Investigate num_turns=21 hit on every pi
+3479cfbb   cancelled  good        383     5     3 n   Y     Y    n          0 user_cancelled_no_run          PR-8 [P1] Structured revision feedback instead of 
+a7507336   cancelled  good        291     5     4 n   Y     Y    n          0 user_cancelled_no_run          PR-7 [P2] Flag commits that introduce unverified e
+c2062257   cancelled  good        191     4     2 n   Y     Y    n          0 user_cancelled_no_run          PR-6 [P2] Fix cost_usd=0.000 in agent_runs (cost p
+ac535ed9   cancelled  good        234     4     4 n   Y     Y    n          0 user_cancelled_no_run          PR-4 [P1] Replace generic auto-commit message with
+bf31a232   cancelled  good        308     5     3 n   Y     Y    n          0 user_cancelled_no_run          PR-3 [P1] Enforce ## Files to Change as a hard che
+d0e1ed37   cancelled  good        331     5     4 n   Y     Y    n          0 user_cancelled_no_run          PR-2 [P0] Enforce must-commit-before-exit in pipel
+7670c60d   done       good        423     5     5 n   Y     Y    n          0 success                        PR-1 [P0] Gate agent commit on local verification 
+a72ac94c   cancelled  good        162     4     1 n   Y     Y    n          0 success                        T-4 [P1] List both CLI install methods and link to
+8d5169ce   cancelled  good        153     4     1 n   Y     Y    n          0 failed_no_event                T-15 [P2] Use node:path basename for repo-name der
+68f897e9   cancelled  good         80     4     1 n   Y     Y    n          0 success                        T-16 [P3] Hoist OnboardingWizard steps array to mo
+4f46fbee   done       good        153     4     1 n   Y     Y    n          0 success                        T-1 [P0] Await settings.set before reloading on wi
+cb9dfa9b   cancelled  good        151     4     1 n   Y     Y    n          0 success                        T-14 [P1] Show existing repos and fail loudly on s
+56734930   cancelled  good        157     4     3 n   Y     Y    n          0 success                        T-10 [P1] Make "Create first task" survive the wiz
+a5784873   cancelled  good        138     4     1 n   Y     Y    n          0 success                        T-8 [P1] Add timeout on short-form readiness check
+0d09b46c   done       good         96     4     1 n   Y     Y    n          1 success                        T-11 [P2] Default repo selector to most-recently-a
+967028f5   done       good        136     4     1 n   Y     Y    n          0 success                        T-6 [P2] Re-run auth check when window regains foc
+80f79f00   done       good        115     4     1 n   Y     Y    n          0 success                        T-5 [P2] Improve timeout error copy with concrete 
+6a30bb64   cancelled  good         81     4     1 n   Y     Y    n          0 user_cancelled_no_run          T-13 [P3] Show macOS-specific git install command
