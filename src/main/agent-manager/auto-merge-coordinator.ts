@@ -10,11 +10,31 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import type { AutoReviewRule } from '../../shared/types/task-types'
 import { nowIso } from '../../shared/time'
 import { evaluateAutoMergePolicy } from './auto-merge-policy'
 import { executeSquashMerge } from '../lib/git-operations'
 import { getSettingJson } from '../settings'
 import { getRepoConfig } from '../paths'
+
+type RepoConfigEntry = { name: string; localPath: string }
+
+function isRepoConfigEntry(u: unknown): u is RepoConfigEntry {
+  return (
+    typeof u === 'object' &&
+    u !== null &&
+    typeof (u as Record<string, unknown>).name === 'string' &&
+    typeof (u as Record<string, unknown>).localPath === 'string'
+  )
+}
+
+function isRepoConfigArray(u: unknown): u is RepoConfigEntry[] {
+  return Array.isArray(u) && u.every(isRepoConfigEntry)
+}
+
+function isAutoReviewRulesArray(u: unknown): u is AutoReviewRule[] {
+  return Array.isArray(u)
+}
 
 export interface AutoMergeContext {
   taskId: string
@@ -29,8 +49,7 @@ export interface AutoMergeContext {
 
 export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
   const { taskId, title, branch, worktreePath, repo, unitOfWork, logger, onTaskTerminal } = opts
-  const rules =
-    getSettingJson<import('../../shared/types/task-types').AutoReviewRule[]>('autoReview.rules')
+  const rules = getSettingJson<AutoReviewRule[]>('autoReview.rules', isAutoReviewRulesArray)
 
   if (!rules || rules.length === 0) {
     return

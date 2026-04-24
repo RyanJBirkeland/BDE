@@ -16,6 +16,10 @@ import type { Logger } from '../logger'
 import { getSetting, getSettingJson } from '../settings'
 import { setMaxSlots } from './concurrency'
 
+function isValidMaxConcurrent(u: unknown): u is number {
+  return typeof u === 'number' && u > 0 && u <= 10
+}
+
 // ---------------------------------------------------------------------------
 // Deps interface
 // ---------------------------------------------------------------------------
@@ -44,7 +48,7 @@ export function reloadConfiguration(deps: ConfigManagerDeps): {
   const updated: string[] = []
   const requiresRestart: string[] = []
 
-  const newMaxConcurrent = getSettingJson<number>('agentManager.maxConcurrent')
+  const newMaxConcurrent = getSettingJson<number>('agentManager.maxConcurrent', isValidMaxConcurrent)
   if (typeof newMaxConcurrent === 'number' && newMaxConcurrent !== deps.config.maxConcurrent) {
     deps.config.maxConcurrent = newMaxConcurrent
     // Update the cap in-place — preserving activeCount so in-flight agents are
