@@ -25,8 +25,10 @@ build/config.gypi
 # IDE
 .idea/
 
-# Claude Code internal
-.claude/
+# Claude Code internal (local state), but share slash commands and skills
+.claude/*
+!.claude/commands/
+!.claude/skills/
 .superpowers/
 
 # Supabase local
