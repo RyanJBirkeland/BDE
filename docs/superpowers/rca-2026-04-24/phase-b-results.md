@@ -98,12 +98,17 @@ So we got 5 Arm A data points and 1 Arm B data point — enough to call the **30
 
 ## 6. Status of follow-ups
 
-- ✅ **Tier-1 default-bump shipped** — commit `a9b5b09b` on this branch raises `DEFAULT_MAX_TURNS` to 75 and removes the now-buggy mixed-stack tier. Tests updated; full unit + main suites green.
+- ✅ **Painpoint #1 — turn budget starvation** — `DEFAULT_MAX_TURNS` 30→75 in commit `a9b5b09b`. Removes the cap-binding pain for the common case.
+- ✅ **Painpoint #2 — multi-file cap too tight** — `MULTI_FILE_MAX_TURNS` 75→100 in commit `f39d3799`. Gives explicit-header refactors real headroom.
+- ✅ **Painpoint #3 — `cancelled` is a state-machine sink** — added `cancelled→done`, `failed→done`, `error→done` manual recovery escape hatches in commit `40ea321b`. Audit trail preserved via `task_changes`.
+- ✅ **Painpoint #4 — brittle handler test assertions** — added `assertHandlersRegistered` helper that's tolerant to extra positional args (`parseArgs` validators) in commit `e2c8d1ab`. Workbench test refactored as canonical example; other handler tests can migrate as touched.
+- ✅ **Painpoint #5 — `_-prefixed` fields as test API** — introduced typed `__testInternals` view on `AgentManagerImpl` in commit `7778d332`. All 17 underscore-prefixed members tests reach into now route through one stable mapping; renames touch the seam, not 35+ test sites.
+- ✅ **Painpoint #6 — `BatchImportTask` four-way drift** — unified into a single shared type in commit `b296fbce`. IPC channel, handler, preload, and service all import from `src/shared/types`.
 - ✅ **B-arm cleanup done** — see §5.
 - ✅ **Main repo cleaned** — see §5.
-- ⏳ **Spec linter** — not yet built. Smaller-scope follow-up; would make `## Files to Change` and `## How to Test` enforceable at queue time.
-- ⏳ **Tool-layer worktree guard** — needs its own design pass. The path-traversal finding (§2.3) is a safety issue that warrants a proper spec; contained for now because the agent manager's `assertRepoCleanOrAbort` guard at least surfaces the contamination loudly.
-- ⏳ **Phase C (cap-raise A/B)** — defer until you've shipped the default-bump and re-queued the 5 originals. If they all complete cleanly at 75, no cap-raise needed. If T-47 (or similar) still hits 76, that's the signal to bump `MULTI_FILE_MAX_TURNS` to 100 — which is now a one-line change since the structure is in place.
+- ⏳ **Spec linter** — not yet built. Now a much lower-priority follow-up; the default-bump made the gap mostly cosmetic.
+- ⏳ **Tool-layer worktree guard** — the path-traversal finding (§2.3) is a safety issue that warrants its own scoped spec; contained for now because the agent manager's `assertRepoCleanOrAbort` guard at least surfaces the contamination loudly.
+- ⏳ **Phase C (cap-raise A/B)** — moot now that the multi-file cap is 100. Skip unless real-world runs show T-47-class tasks still hitting it.
 
 What I want your decision on (when you're back):
 
