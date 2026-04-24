@@ -7,9 +7,9 @@ describe('computeMaxTurns', () => {
     expect(computeMaxTurns(spec)).toBe(75)
   })
 
-  it('returns 75 when the explicit Multi-File header is present', () => {
+  it('returns 100 when the explicit Multi-File header is present', () => {
     const spec = '## Multi-File: true\n## Refactor\nBroad refactor across services.'
-    expect(computeMaxTurns(spec)).toBe(75)
+    expect(computeMaxTurns(spec)).toBe(100)
   })
 
   it('returns 75 for a spec with mixed .tsx and .css mentions (no longer downgraded)', () => {

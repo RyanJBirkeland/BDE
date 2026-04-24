@@ -7,17 +7,18 @@
  * task tested — including a 2-line change with one regression test — because
  * test-writing alone consumes 15-25 turns. A higher floor is the simpler fix.
  *
- * The explicit `## Multi-File: true` header is preserved as a user signal even
- * though it currently maps to the same budget as the default. Future tuning
- * may diverge them (e.g. raise the multi-file ceiling to 100+ once we've
- * confirmed 75 is sufficient for the common case).
+ * Multi-file refactors and god-class breakups need more headroom: Phase-B's
+ * single Arm B run (T-47, with the header) hit max_turns at 76, and the audit
+ * showed many recent successes clustered at exactly 71-76 turns — meaning 75
+ * is the binding operating point, not a margin. The header now resolves to
+ * 100 turns to give those tasks real headroom.
  *
  * The pipeline tool policy lives here too so it stays co-located with the rest
  * of the spec-aware spawn tuning.
  */
 
 const DEFAULT_MAX_TURNS = 75
-const MULTI_FILE_MAX_TURNS = 75
+const MULTI_FILE_MAX_TURNS = 100
 
 /**
  * Explicit opt-in header that authors can add to a spec to request a higher
@@ -30,9 +31,10 @@ const MULTI_FILE_HEADER = '## Multi-File: true'
 /**
  * Returns the pipeline agent `maxTurns` budget for a given spec.
  *
- * Today the header and default both resolve to 75 turns. The header path is
- * retained so a future change can raise the multi-file ceiling without
- * touching call sites.
+ * 75 by default; 100 when the spec opts in via the explicit header. The
+ * header is the only signal — substring heuristics (file-path density,
+ * mixed-stack detection) were removed in the Phase-B 2026-04-24 cleanup
+ * because they downgraded specs below the new default.
  */
 export function computeMaxTurns(spec: string): number {
   if (spec.includes(MULTI_FILE_HEADER)) {
