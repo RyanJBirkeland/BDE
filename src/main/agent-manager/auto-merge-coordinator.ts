@@ -17,21 +17,6 @@ import { executeSquashMerge } from '../lib/git-operations'
 import { getSettingJson } from '../settings'
 import { getRepoConfig } from '../paths'
 
-type RepoConfigEntry = { name: string; localPath: string }
-
-function isRepoConfigEntry(u: unknown): u is RepoConfigEntry {
-  return (
-    typeof u === 'object' &&
-    u !== null &&
-    typeof (u as Record<string, unknown>).name === 'string' &&
-    typeof (u as Record<string, unknown>).localPath === 'string'
-  )
-}
-
-function isRepoConfigArray(u: unknown): u is RepoConfigEntry[] {
-  return Array.isArray(u) && u.every(isRepoConfigEntry)
-}
-
 function isAutoReviewRulesArray(u: unknown): u is AutoReviewRule[] {
   return Array.isArray(u)
 }
