@@ -5,6 +5,7 @@ Source: `src/main/services/`
 
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
+| `ide-fs-service.ts` | IDE filesystem service — path-approval allowlist, containment validation, binary detection, atomic writes, directory watching with debounced broadcast, and all file CRUD operations extracted from `ide-fs-handlers.ts` | `validateIdeRoot`, `validateIdePath`, `getIdeRootPath`, `rememberApprovedIdeRoot`, `_resetApprovedIdeRoots`, `readDir`, `readFileContent`, `writeFileContent`, `createFile`, `createDir`, `renameFile`, `deleteFile`, `statFile`, `listAllFiles`, `watchDir`, `unwatchDir` |
 | `repo-search-service.ts` | Grep-based codebase search for workbench research — literal fixed-string search to prevent ReDoS | `searchRepo`, `parseGrepOutput`, `RepoSearchResult`, `RepoSearchMatch` |
 | `adhoc-promotion-service.ts` | Validates and promotes a completed adhoc agent worktree into the Code Review queue as a sprint task | `promoteAdhocToTask`, `PromoteAdhocParams`, `PromoteAdhocResult` |
 | `webhook-delivery-service.ts` | Constructs and delivers test webhook events including HMAC-SHA256 signing and HTTP POST delivery | `deliverWebhookTestEvent`, `WebhookTestResult` |
