@@ -7,14 +7,19 @@ import { parsePrUrl } from '../shared/github'
 import type { SprintTaskPR } from '../shared/types'
 import type { PrStatusInput, PrStatusResult } from './github-pr-status'
 import type { TaskStatus } from '../shared/task-state-machine'
+import { sleep } from './lib/async-utils'
+import { broadcast } from './broadcast'
 
 const POLL_INTERVAL_MS = 60_000
+const POLL_TIMEOUT_MS = 30_000
 
 // Stagger start by half the interval so the sprint PR poller
 // doesn't fire in lockstep with the GitHub PR poller (also 60s) and the drain
 // loop tick. Reduces SQLite + GitHub API contention by spreading work across
 // the 60s window.
 const POLL_INITIAL_DELAY_MS = 30_000
+
+const MAX_TERMINAL_RETRY_ATTEMPTS = 5
 
 export interface SprintPrPollerDeps {
   listTasksWithOpenPrs: () => SprintTaskPR[]
@@ -24,7 +29,13 @@ export interface SprintPrPollerDeps {
   updateTaskMergeableState: (prNumber: number, state: string | null) => void
   /** Required: called after PR merge/close to trigger dependency resolution. */
   onTaskTerminal: (taskId: string, status: TaskStatus) => void
-  logger?: { info: (msg: string) => void; warn: (msg: string) => void }
+  logger?: {
+    info: (msg: string) => void
+    warn: (msg: string) => void
+    error: (msg: string) => void
+    debug: (msg: string) => void
+    event: (name: string, fields: Record<string, unknown>) => void
+  }
   /**
    * F-t1-concur-5: Optional override for the startup delay. Production passes
    * undefined to use the staggered default (30s). Tests can pass 0 to fire
@@ -41,6 +52,18 @@ export interface SprintPrPollerInstance {
 
 type Logger = NonNullable<SprintPrPollerDeps['logger']>
 
+interface PendingTerminalRetry {
+  status: TaskStatus
+  attempts: number
+}
+
+class PollTimeoutError extends Error {
+  constructor() {
+    super('poll timed out after 30s')
+    this.name = 'PollTimeoutError'
+  }
+}
+
 /**
  * Formats the merge log line. Includes `mergedAt` when available so audits
  * can correlate "task marked done" events with the GitHub merge timestamp
@@ -53,23 +76,36 @@ function formatMergedLogLine(prNumber: number, taskIds: string[], mergedAt: stri
   return `[sprint-pr-poller] PR #${prNumber} merged${mergedAtSuffix} — marked ${taskIds.length} task(s) done: ${idsLabel}`
 }
 
-async function notifyTaskTerminalBatch(
+function isAuthOrRateLimitError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err)
+  const lowered = message.toLowerCase()
+  return (
+    lowered.includes('401') ||
+    lowered.includes('403') ||
+    lowered.includes('rate limit') ||
+    lowered.includes('rate-limit') ||
+    lowered.includes('ratelimit') ||
+    ('status' in (err as object) &&
+      ((err as { status: number }).status === 401 || (err as { status: number }).status === 403))
+  )
+}
+
+/**
+ * Attempts to notify terminal status for each task id. Returns the ids that
+ * failed so callers can enqueue them for retry.
+ */
+async function attemptTerminalNotifications(
   ids: string[],
   status: TaskStatus,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => void,
-  log: Logger
-): Promise<void> {
-  if (ids.length === 0) return
-  const promises = ids.map((id) => Promise.resolve(onTaskTerminal(id, status)))
-  const results = await Promise.allSettled(promises)
-  const failed = results
-    .map((r, i) => (r.status === 'rejected' ? { id: ids[i], reason: String(r.reason) } : null))
-    .filter(Boolean)
-  if (failed.length > 0) {
-    log.warn(
-      `[sprint-pr-poller] onTaskTerminal failed; will retry next cycle: ${JSON.stringify(failed)}`
-    )
-  }
+  onTaskTerminal: (taskId: string, status: TaskStatus) => void
+): Promise<string[]> {
+  if (ids.length === 0) return []
+  const results = await Promise.allSettled(
+    ids.map((id) => Promise.resolve(onTaskTerminal(id, status)))
+  )
+  return results
+    .map((result, index) => (result.status === 'rejected' ? ids[index] : null))
+    .filter((id): id is string => id !== null)
 }
 
 export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerInstance {
@@ -79,11 +115,65 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
     )
   }
 
+  const log: Logger = deps.logger ?? {
+    info: (m) => console.log(m),
+    warn: (m) => console.warn(m),
+    error: (m) => console.error(m),
+    debug: (m) => console.debug(m),
+    event: () => undefined
+  }
+
   let timer: ReturnType<typeof setInterval> | null = null
+  let pollInProgress = false
+  const pendingTerminalRetries = new Map<string, PendingTerminalRetry>()
+
+  async function flushPendingRetries(): Promise<void> {
+    if (pendingTerminalRetries.size === 0) return
+
+    for (const [taskId, pending] of Array.from(pendingTerminalRetries.entries())) {
+      try {
+        await Promise.resolve(deps.onTaskTerminal(taskId, pending.status))
+        pendingTerminalRetries.delete(taskId)
+        log.info(`[sprint-pr-poller] retry succeeded for task ${taskId}`)
+      } catch {
+        const nextAttempts = pending.attempts + 1
+        if (nextAttempts >= MAX_TERMINAL_RETRY_ATTEMPTS) {
+          log.error(
+            `[sprint-pr-poller] terminal notify for task ${taskId} failed after ${nextAttempts} attempts — dropping`
+          )
+          pendingTerminalRetries.delete(taskId)
+        } else {
+          pendingTerminalRetries.set(taskId, { status: pending.status, attempts: nextAttempts })
+          log.warn(
+            `[sprint-pr-poller] terminal notify retry ${nextAttempts}/${MAX_TERMINAL_RETRY_ATTEMPTS} failed for task ${taskId}`
+          )
+        }
+      }
+    }
+  }
+
+  async function notifyTaskTerminalBatch(ids: string[], status: TaskStatus): Promise<void> {
+    if (ids.length === 0) return
+    const failedIds = await attemptTerminalNotifications(ids, status, deps.onTaskTerminal)
+    for (const id of failedIds) {
+      const prior = pendingTerminalRetries.get(id)
+      pendingTerminalRetries.set(id, { status, attempts: (prior?.attempts ?? 0) + 1 })
+    }
+    if (failedIds.length > 0) {
+      log.warn(
+        `[sprint-pr-poller] onTaskTerminal failed; will retry next cycle: ${JSON.stringify(failedIds.map((id) => ({ id })))}`
+      )
+    }
+  }
 
   async function poll(): Promise<void> {
+    await flushPendingRetries()
+
     const tasks = deps.listTasksWithOpenPrs()
-    if (tasks.length === 0) return
+    if (tasks.length === 0) {
+      log.event('pr-poller.tick.idle', { taskCount: 0 })
+      return
+    }
 
     const inputs: PrStatusInput[] = tasks
       .map((t) => ({ taskId: t.id, prUrl: t.pr_url! }))
@@ -97,7 +187,6 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
     // instead of O(N) per result (was O(N²) over the open-PR set).
     const inputByTaskId = new Map(inputs.map((input) => [input.taskId, input]))
 
-    const log = deps.logger ?? console
     for (const result of results) {
       const input = inputByTaskId.get(result.taskId)
       const prNumber = input ? parsePrUrl(input.prUrl)?.number : undefined
@@ -107,22 +196,48 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
         const ids = deps.markTaskDoneByPrNumber(prNumber)
         log.info(formatMergedLogLine(prNumber, ids, result.mergedAt))
         ids.forEach((id) => log.info(`[sprint-pr-poller] Calling onTaskTerminal(${id}, 'done')`))
-        await notifyTaskTerminalBatch(ids, 'done', deps.onTaskTerminal, log)
+        await notifyTaskTerminalBatch(ids, 'done')
       } else if (result.state === 'CLOSED') {
         const ids = deps.markTaskCancelledByPrNumber(prNumber)
         if (ids.length > 0) {
           log.info(
             `[sprint-pr-poller] PR #${prNumber} closed — cancelled ${ids.length} task(s): ${ids.join(', ')}`
           )
-          await notifyTaskTerminalBatch(ids, 'cancelled', deps.onTaskTerminal, log)
+          await notifyTaskTerminalBatch(ids, 'cancelled')
         }
       }
       deps.updateTaskMergeableState(prNumber, result.mergeableState)
     }
   }
 
-  function safePoll(): void {
-    poll().catch((err) => (deps.logger ?? console).warn(`[sprint-pr-poller] poll error: ${err}`))
+  async function safePoll(): Promise<void> {
+    if (pollInProgress) {
+      log.debug('[sprint-pr-poller] poll already in progress, skipping')
+      return
+    }
+    pollInProgress = true
+    try {
+      await Promise.race([
+        poll(),
+        sleep(POLL_TIMEOUT_MS).then(() => {
+          throw new PollTimeoutError()
+        })
+      ])
+    } catch (err) {
+      if (err instanceof PollTimeoutError) {
+        log.warn('[sprint-pr-poller] poll timed out after 30s — will retry next cycle')
+      } else if (isAuthOrRateLimitError(err)) {
+        const message = err instanceof Error ? err.message : String(err)
+        log.warn(`[sprint-pr-poller] auth/rate-limit error: ${message}`)
+        broadcast('manager:warning', {
+          message: `GitHub PR poll failed: ${message}. Check your GitHub token in Settings.`
+        })
+      } else {
+        log.warn(`[sprint-pr-poller] poll error: ${err}`)
+      }
+    } finally {
+      pollInProgress = false
+    }
   }
 
   let initialDelayTimer: ReturnType<typeof setTimeout> | null = null
@@ -155,40 +270,4 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
       }
     }
   }
-}
-
-// --- Legacy API (backwards compat) ---
-
-import { pollPrStatuses } from './github-pr-status'
-import {
-  listTasksWithOpenPrs,
-  markTaskDoneByPrNumber,
-  markTaskCancelledByPrNumber,
-  updateTaskMergeableState
-} from './services/sprint-service'
-import { createLogger } from './logger'
-
-let _instance: SprintPrPollerInstance | null = null
-
-export interface SprintPrPollerLegacyDeps {
-  onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
-}
-
-export function startSprintPrPoller(deps: SprintPrPollerLegacyDeps): void {
-  const pollerLogger = createLogger('sprint-pr-poller')
-  _instance = createSprintPrPoller({
-    listTasksWithOpenPrs,
-    pollPrStatuses,
-    markTaskDoneByPrNumber,
-    markTaskCancelledByPrNumber,
-    updateTaskMergeableState,
-    onTaskTerminal: deps.onStatusTerminal,
-    logger: pollerLogger
-  })
-  _instance.start()
-}
-
-export function stopSprintPrPoller(): void {
-  _instance?.stop()
-  _instance = null
 }

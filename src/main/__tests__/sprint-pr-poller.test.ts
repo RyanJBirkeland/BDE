@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createSprintPrPoller } from '../sprint-pr-poller'
 import type { SprintPrPollerDeps } from '../sprint-pr-poller'
 
+vi.mock('../broadcast', () => ({ broadcast: vi.fn(), broadcastCoalesced: vi.fn() }))
+
+import { broadcast } from '../broadcast'
+
 function makeDeps(overrides: Partial<SprintPrPollerDeps> = {}): SprintPrPollerDeps {
   return {
     listTasksWithOpenPrs: vi.fn().mockReturnValue([]),
@@ -146,7 +150,7 @@ describe('createSprintPrPoller', () => {
         }
       ]),
       markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
-      logger: { info: logInfo, warn: vi.fn() }
+      logger: { info: logInfo, warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
     })
 
     const poller = createSprintPrPoller(deps)
@@ -174,7 +178,7 @@ describe('createSprintPrPoller', () => {
         }
       ]),
       markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
-      logger: { info: logInfo, warn: vi.fn() }
+      logger: { info: logInfo, warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
     })
 
     const poller = createSprintPrPoller(deps)
@@ -330,7 +334,7 @@ describe('createSprintPrPoller', () => {
       ]),
       markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
       onTaskTerminal: vi.fn().mockRejectedValue(new Error('dependency resolution failed')),
-      logger: { info: vi.fn(), warn: logWarn }
+      logger: { info: vi.fn(), warn: logWarn, error: vi.fn(), debug: vi.fn(), event: vi.fn() }
     })
 
     const poller = createSprintPrPoller(deps)
@@ -362,7 +366,7 @@ describe('createSprintPrPoller', () => {
       ]),
       markTaskCancelledByPrNumber: vi.fn().mockReturnValue(['task-1']),
       onTaskTerminal: vi.fn().mockRejectedValue(new Error('dependency resolution failed')),
-      logger: { info: vi.fn(), warn: logWarn }
+      logger: { info: vi.fn(), warn: logWarn, error: vi.fn(), debug: vi.fn(), event: vi.fn() }
     })
 
     const poller = createSprintPrPoller(deps)
@@ -376,6 +380,204 @@ describe('createSprintPrPoller', () => {
       expect.stringContaining('onTaskTerminal failed; will retry next cycle')
     )
     expect(logWarn).toHaveBeenCalledWith(expect.stringMatching(/task-1/))
+  })
+  // ── EP-8: Timeout + single-flight ──────────────────────────────────────────
+
+  it('logs WARN and continues when poll times out after 30s', async () => {
+    const task = makeTask()
+    const logWarn = vi.fn()
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi.fn().mockImplementation(
+        () => new Promise(() => { /* never resolves — simulates slow GitHub */ })
+      ),
+      logger: { info: vi.fn(), warn: logWarn, error: vi.fn(), debug: vi.fn(), event: vi.fn() }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+
+    // Advance past the 30s timeout
+    await vi.advanceTimersByTimeAsync(30_001)
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    poller.stop()
+
+    expect(logWarn).toHaveBeenCalledWith(
+      expect.stringContaining('poll timed out after 30s')
+    )
+  })
+
+  it('skips a tick and logs DEBUG when a poll is already in progress', async () => {
+    const task = makeTask()
+    const logDebug = vi.fn()
+
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      // Never resolves — keeps poll() in-flight so pollInProgress stays true
+      pollPrStatuses: vi.fn().mockImplementation(() => new Promise(() => { /* blocked */ })),
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: logDebug, event: vi.fn() }
+    })
+
+    // Intercept the setInterval call to use a 1s period so the second tick
+    // fires before the 30s poll timeout resets pollInProgress.
+    const realSetInterval = globalThis.setInterval
+    const intervalSpy = vi.spyOn(globalThis, 'setInterval').mockImplementationOnce(
+      (fn: TimerHandler, _delay?: number, ...args: unknown[]) =>
+        realSetInterval(fn as () => void, 1_000, ...args)
+    )
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    intervalSpy.mockRestore()
+
+    // Let the initial safePoll() run and set pollInProgress=true
+    for (let i = 0; i < 5; i++) await vi.advanceTimersByTimeAsync(1)
+
+    // Advance 1s to fire the shortened interval tick while poll is in-flight
+    await vi.advanceTimersByTimeAsync(1_000)
+    for (let i = 0; i < 5; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(logDebug).toHaveBeenCalledWith(
+      expect.stringContaining('poll already in progress, skipping')
+    )
+
+    // Advance past 30s so the in-flight poll times out and the poller resets
+    await vi.advanceTimersByTimeAsync(30_001)
+    poller.stop()
+  })
+
+  // ── EP-8: Terminal notify retry queue ──────────────────────────────────────
+
+  it('retries failed terminal notify on the next poll cycle and removes on success', async () => {
+    const task = makeTask()
+    let terminalCallCount = 0
+    const onTaskTerminal = vi.fn().mockImplementation(() => {
+      terminalCallCount++
+      if (terminalCallCount === 1) throw new Error('transient failure')
+      // succeeds on subsequent calls
+    })
+
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        { taskId: 'task-1', merged: true, state: 'MERGED', mergedAt: null, mergeableState: null }
+      ]),
+      markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
+      onTaskTerminal
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+
+    // First poll: terminal notify fails, queues for retry
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+    expect(onTaskTerminal).toHaveBeenCalledTimes(1)
+
+    // Second poll cycle: flushPendingRetries fires the retry
+    await vi.advanceTimersByTimeAsync(60_000)
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(onTaskTerminal).toHaveBeenCalledTimes(2)
+    expect(onTaskTerminal).toHaveBeenCalledWith('task-1', 'done')
+
+    poller.stop()
+  })
+
+  it('logs ERROR and drops the entry after 5 failed attempts', async () => {
+    const task = makeTask()
+    const logError = vi.fn()
+    const onTaskTerminal = vi.fn().mockRejectedValue(new Error('always fails'))
+
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        { taskId: 'task-1', merged: true, state: 'MERGED', mergedAt: null, mergeableState: null }
+      ]),
+      markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
+      onTaskTerminal,
+      logger: { info: vi.fn(), warn: vi.fn(), error: logError, debug: vi.fn(), event: vi.fn() }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+
+    // Run 5 full poll cycles to exhaust retry attempts
+    for (let cycle = 0; cycle < 5; cycle++) {
+      for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+      await vi.advanceTimersByTimeAsync(60_000)
+    }
+
+    expect(logError).toHaveBeenCalledWith(
+      expect.stringContaining('failed after')
+    )
+    expect(logError).toHaveBeenCalledWith(
+      expect.stringContaining('task-1')
+    )
+
+    poller.stop()
+  })
+
+  // ── EP-8: Auth/rate-limit toast ─────────────────────────────────────────────
+
+  it('broadcasts manager:warning when poll fails with a 401 error', async () => {
+    const task = makeTask()
+    const authError = Object.assign(new Error('Request failed with status 401'), { status: 401 })
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi.fn().mockRejectedValue(authError)
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    await vi.advanceTimersByTimeAsync(30_001)
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(vi.mocked(broadcast)).toHaveBeenCalledWith(
+      'manager:warning',
+      expect.objectContaining({ message: expect.stringContaining('GitHub PR poll failed') })
+    )
+  })
+
+  it('broadcasts manager:warning when poll fails with a rate limit error', async () => {
+    const task = makeTask()
+    const rateLimitError = new Error('GitHub rate limit exceeded')
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi.fn().mockRejectedValue(rateLimitError)
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    await vi.advanceTimersByTimeAsync(30_001)
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(vi.mocked(broadcast)).toHaveBeenCalledWith(
+      'manager:warning',
+      expect.objectContaining({ message: expect.stringContaining('GitHub PR poll failed') })
+    )
+  })
+
+  // ── EP-8: Idle heartbeat ─────────────────────────────────────────────────────
+
+  it('emits pr-poller.tick.idle event when no tasks have open PRs', async () => {
+    const logEvent = vi.fn()
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([]),
+      logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: logEvent }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(logEvent).toHaveBeenCalledWith('pr-poller.tick.idle', { taskCount: 0 })
   })
 })
 
