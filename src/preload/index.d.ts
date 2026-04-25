@@ -260,6 +260,9 @@ declare global {
         forceDoneTask: (
           ...args: IpcArgs<'sprint:forceDoneTask'>
         ) => Promise<IpcResult<'sprint:forceDoneTask'>>
+        forceReleaseClaim: (
+          ...args: IpcArgs<'sprint:forceReleaseClaim'>
+        ) => Promise<IpcResult<'sprint:forceReleaseClaim'>>
         onExternalChange: (cb: () => void) => () => void
         onMutation: (
           cb: (payload: { type: 'created' | 'updated' | 'deleted'; task: SprintTask }) => void

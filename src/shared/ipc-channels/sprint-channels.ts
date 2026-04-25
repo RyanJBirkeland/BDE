@@ -136,6 +136,10 @@ export interface SprintChannels {
     args: [payload: { taskId: string; reason?: string | undefined; force?: boolean | undefined }]
     result: { ok: true }
   }
+  'sprint:forceReleaseClaim': {
+    args: [taskId: string]
+    result: SprintTask
+  }
 }
 
 export interface ReviewChannels {

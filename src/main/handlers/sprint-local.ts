@@ -28,6 +28,8 @@ import {
   getSuccessRateBySpecType,
   createTaskWithValidation,
   updateTaskFromUi,
+  resetTaskForRetry,
+  notifySprintMutation,
   type CreateTaskInput
 } from '../services/sprint-service'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
@@ -246,6 +248,20 @@ export function registerSprintLocalHandlers(
   safeHandle('sprint:forceDoneTask', async (_e, args: ForceOverrideArgs) => {
     if (!isValidTaskId(args.taskId)) throw new Error('Invalid task ID format')
     return forceTerminalOverride({ ...args, targetStatus: 'done' }, deps)
+  })
+
+  safeHandle('sprint:forceReleaseClaim', async (_e, taskId: string) => {
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
+    const task = getTask(taskId)
+    if (!task) throw new Error(`Task ${taskId} not found`)
+    if (task.status !== 'active') {
+      throw new Error(`Cannot force-release a task with status ${task.status} — only active tasks can be released`)
+    }
+    resetTaskForRetry(taskId)
+    const released = updateTask(taskId, { status: 'queued', notes: null, agent_run_id: null })
+    if (!released) throw new Error(`Failed to release task ${taskId}`)
+    notifySprintMutation('updated', released)
+    return released
   })
 }
 
