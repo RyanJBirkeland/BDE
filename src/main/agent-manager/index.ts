@@ -39,6 +39,7 @@ import { ErrorRegistry } from './error-registry'
 
 import { createLogger } from '../logger'
 import { broadcast } from '../broadcast'
+import { sleep } from '../lib/async-utils'
 
 const defaultLogger: Logger = createLogger('agent-manager')
 
@@ -638,6 +639,20 @@ export class AgentManagerImpl implements AgentManager {
           this._drainInFlight = null
         })
     }, INITIAL_DRAIN_DEFER_MS)
+  }
+
+  /**
+   * Polls until all active agents have reached a terminal or review state, or
+   * `gracePeriodMs` elapses — whichever comes first.
+   *
+   * Intentionally separate from `stop()` so callers can choose how long to
+   * wait before forcing a re-queue of remaining active tasks.
+   */
+  async waitForAgentsToSettle(gracePeriodMs: number): Promise<void> {
+    const deadline = Date.now() + gracePeriodMs
+    while (this._activeAgents.size > 0 && Date.now() < deadline) {
+      await sleep(100)
+    }
   }
 
   // finalizeAgentRun includes git rebase + PR creation which can take 30+ seconds

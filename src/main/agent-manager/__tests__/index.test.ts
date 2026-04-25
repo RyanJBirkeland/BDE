@@ -982,6 +982,52 @@ describe('createAgentManager', () => {
     // NOTE: rate-limit requeue error test removed — same timing constraint as above.
   })
 
+  describe('waitForAgentsToSettle', () => {
+    it('resolves immediately when no active agents', async () => {
+      const mgr = createAgentManager(baseConfig, mockRepo, makeLogger())
+      await expect(mgr.waitForAgentsToSettle(500)).resolves.toBeUndefined()
+    })
+
+    it('resolves within grace period when activeAgents clears during polling', async () => {
+      // Use real timers — waitForAgentsToSettle polls with sleep(100)
+      const logger = makeLogger()
+      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+
+      // Manually put an agent into the active map to simulate an in-flight agent
+      const fakeAgent = { taskId: 'task-settle', agentRunId: 'r1' } as import('../types').ActiveAgent
+      mgr._activeAgents.set('task-settle', fakeAgent)
+
+      // Remove the agent after 150ms (within the 1000ms grace period)
+      setTimeout(() => mgr._activeAgents.delete('task-settle'), 150)
+
+      const start = Date.now()
+      await mgr.waitForAgentsToSettle(1_000)
+      const elapsed = Date.now() - start
+
+      // Should have settled in well under the full grace period
+      expect(elapsed).toBeLessThan(800)
+      expect(mgr._activeAgents.size).toBe(0)
+    })
+
+    it('returns after grace period even when agents remain active', async () => {
+      const logger = makeLogger()
+      const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
+
+      // Put an agent in the active map that never leaves
+      const fakeAgent = { taskId: 'task-stuck', agentRunId: 'r1' } as import('../types').ActiveAgent
+      mgr._activeAgents.set('task-stuck', fakeAgent)
+
+      const start = Date.now()
+      await mgr.waitForAgentsToSettle(200) // short grace period
+      const elapsed = Date.now() - start
+
+      // Returned after grace period even though agent remains
+      expect(elapsed).toBeGreaterThanOrEqual(200)
+      // Clean up
+      mgr._activeAgents.delete('task-stuck')
+    })
+  })
+
   describe('steerAgent', () => {
     it('returns { delivered: false } when no active agent', async () => {
       const mgr = createAgentManager(baseConfig, mockRepo, makeLogger())

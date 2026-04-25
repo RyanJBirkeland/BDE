@@ -191,4 +191,46 @@ describe('executeShutdown', () => {
 
     await expect(executeShutdown(deps, 100)).resolves.toBeUndefined()
   })
+
+  it('skips re-queue for tasks already in review status', async () => {
+    const agent = makeAgent('task-review')
+    const repo = makeRepo()
+    vi.mocked(repo.getTask).mockReturnValue({ id: 'task-review', status: 'review' } as any)
+    const deps = makeDeps({
+      activeAgents: new Map([['task-review', agent]]),
+      repo
+    })
+
+    await executeShutdown(deps, 100)
+
+    expect(repo.updateTask).not.toHaveBeenCalledWith('task-review', expect.anything())
+    expect(deps.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('Skipping re-queue for review task task-review')
+    )
+  })
+
+  it('re-queues active tasks but not review tasks in a mixed shutdown', async () => {
+    const activeAgent = makeAgent('task-active')
+    const reviewAgent = makeAgent('task-review')
+    const repo = makeRepo()
+    vi.mocked(repo.getTask).mockImplementation((id) => {
+      if (id === 'task-review') return { id: 'task-review', status: 'review' } as any
+      return { id: 'task-active', status: 'active' } as any
+    })
+    const deps = makeDeps({
+      activeAgents: new Map([
+        ['task-active', activeAgent],
+        ['task-review', reviewAgent]
+      ]),
+      repo
+    })
+
+    await executeShutdown(deps, 100)
+
+    expect(repo.updateTask).toHaveBeenCalledWith(
+      'task-active',
+      expect.objectContaining({ status: 'queued' })
+    )
+    expect(repo.updateTask).not.toHaveBeenCalledWith('task-review', expect.anything())
+  })
 })

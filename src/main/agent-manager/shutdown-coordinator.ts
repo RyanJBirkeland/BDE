@@ -72,9 +72,18 @@ export async function executeShutdown(
     await Promise.race([allSettled, timeout])
   }
 
-  // Re-queue any tasks that are still active after agent shutdown
+  // Re-queue tasks that are still in an active (non-review) state after shutdown.
+  // Tasks already in 'review' status represent completed agent work waiting for
+  // human review — they must not be disrupted by a shutdown-triggered re-queue.
   for (const agent of deps.activeAgents.values()) {
     try {
+      const currentTask = deps.repo.getTask(agent.taskId)
+      if (currentTask?.status === 'review') {
+        deps.logger.info(
+          `[agent-manager] Skipping re-queue for review task ${agent.taskId} during shutdown`
+        )
+        continue
+      }
       deps.repo.updateTask(agent.taskId, {
         status: 'queued',
         claimed_by: null,
