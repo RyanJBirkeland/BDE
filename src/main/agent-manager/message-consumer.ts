@@ -132,7 +132,7 @@ function processSDKMessage(
   trackAgentCosts(msg, agent, turnTracker)
   exitCode = getNumericField(msg, 'exit_code') ?? exitCode
 
-  const mappedEvents = mapRawMessage(msg)
+  const mappedEvents = mapRawMessage(msg, agentRunId)
   for (const event of mappedEvents) {
     emitAgentEvent(agentRunId, event)
   }

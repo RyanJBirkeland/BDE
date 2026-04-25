@@ -254,7 +254,7 @@ export async function spawnAdhocAgent(args: {
           if (!opencodeSessionId && handle.sessionId) {
             opencodeSessionId = handle.sessionId
           }
-          const events = mapRawMessage(rawMsg)
+          const events = mapRawMessage(rawMsg, meta.id)
           for (const event of events) {
             emitAgentEvent(meta.id, event)
           }
@@ -420,7 +420,7 @@ export async function spawnAdhocAgent(args: {
 
     try {
       for await (const raw of queryHandle) {
-        const events = mapRawMessage(raw)
+        const events = mapRawMessage(raw, meta.id)
         for (const event of events) {
           emitAgentEvent(meta.id, event)
         }
