@@ -45,6 +45,7 @@ import { createTaskStateService } from './services/task-state-service'
 import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
 import { getTask, updateTask } from './services/sprint-service'
+import { setSprintMutationsRepo } from './services/sprint-mutations'
 import {
   closeTearoffWindows,
   setQuitting,
@@ -324,6 +325,9 @@ function initCoreServices(): CoreStartupServices {
   startBackgroundServices()
 
   const repo = createSprintTaskRepository()
+  // Install the repo into sprint-mutations so all mutation functions route
+  // through the composition-root instance instead of the lazy singleton.
+  setSprintMutationsRepo(repo)
 
   // The epic dependency graph has one owner — EpicGroupService, constructed
   // at the composition root and injected to every consumer (task-terminal-

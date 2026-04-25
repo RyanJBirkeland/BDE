@@ -25,7 +25,6 @@ import type { ShipBatchInput, ShipBatchResult } from './review-orchestration-typ
 import type { SprintTask } from '../../shared/types/task-types'
 
 const logger = createLogger('review-ship-batch')
-const repo = getSharedSprintTaskRepository()
 
 /**
  * Builds a shipIt plan with the `push` operation stripped so the caller can
@@ -119,7 +118,7 @@ export async function shipBatch(input: ShipBatchInput): Promise<ShipBatchResult>
     try {
       const plan = buildShipPlanWithoutPush(task, repoConfig, strategy)
       await executeReviewAction(plan, task.id, {
-        repo,
+        repo: getSharedSprintTaskRepository(),
         broadcast: broadcastMutation,
         onStatusTerminal,
         env,

@@ -47,7 +47,6 @@ export type {
 }
 
 const logger = createLogger('review-orchestration')
-const repo = getSharedSprintTaskRepository()
 
 async function runPlan(
   taskId: string,
@@ -56,7 +55,7 @@ async function runPlan(
   onTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
 ): Promise<ReturnType<typeof executeReviewAction>> {
   return executeReviewAction(classifyReviewAction(input), taskId, {
-    repo,
+    repo: getSharedSprintTaskRepository(),
     broadcast: (event: string, payload: unknown) => {
       if (event === 'sprint:mutation' && typeof payload === 'object' && payload !== null) {
         const { type, task } = payload as {
@@ -191,7 +190,7 @@ export async function rebase(i: RebaseInput): Promise<RebaseResult> {
       classifyReviewAction({ action: 'rebase', taskId: i.taskId, task, repoConfig: null }),
       i.taskId,
       {
-        repo,
+        repo: getSharedSprintTaskRepository(),
         broadcast: (event: string, payload: unknown) => {
           if (event === 'sprint:mutation' && typeof payload === 'object' && payload !== null) {
             const { type, task } = payload as {
