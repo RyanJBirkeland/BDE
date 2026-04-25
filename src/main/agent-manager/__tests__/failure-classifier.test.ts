@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { classifyFailureReason, registerFailurePattern } from '../failure-classifier'
 
 describe('classifyFailureReason', () => {
@@ -227,18 +227,16 @@ describe('classifyFailureReason', () => {
   })
 
   describe('pattern precedence', () => {
-    it('matches first pattern found in order', () => {
-      // Both 'timeout' and 'test failed' could match but it should find one consistently
+    it('matches first pattern found in order — timeout beats test_failure (timeout registered before test_failure)', () => {
+      // 'timeout' pattern is registered before 'test_failure' in the registry
       const msg = 'timeout during test execution'
-      const result = classifyFailureReason(msg)
-      expect(['timeout', 'test_failure']).toContain(result)
+      expect(classifyFailureReason(msg)).toBe('timeout')
     })
 
-    it('handles messages with multiple keywords', () => {
-      // Message contains both 'timeout' and 'invalid token'
+    it('matches first pattern found in order — auth beats timeout (auth registered before timeout)', () => {
+      // 'auth' is registered before 'timeout'; message contains both 'timeout' and 'invalid token'
       const msg = 'timeout: invalid token'
-      const result = classifyFailureReason(msg)
-      expect(['timeout', 'auth']).toContain(result)
+      expect(classifyFailureReason(msg)).toBe('auth')
     })
   })
 
@@ -292,6 +290,30 @@ describe('classifyFailureReason', () => {
 
     it('classifies failed to pull model as environmental', () => {
       expect(classifyFailureReason('failed to pull model devstral:latest')).toBe('environmental')
+    })
+  })
+
+  describe('debug logging (EP-5 T-58)', () => {
+    it('logs matched pattern type at DEBUG when a logger is provided', () => {
+      const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
+      classifyFailureReason('spawn failed for process', logger, 'task-42')
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('spawn')
+      )
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('task-42')
+      )
+    })
+
+    it('does not log when no logger is supplied', () => {
+      // Should not throw — logger is optional
+      expect(() => classifyFailureReason('spawn failed for process')).not.toThrow()
+    })
+
+    it('does not log when the message does not match any pattern', () => {
+      const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
+      classifyFailureReason('some unknown message', logger, 'task-1')
+      expect(logger.debug).not.toHaveBeenCalled()
     })
   })
 })

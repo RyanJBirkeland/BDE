@@ -1,6 +1,13 @@
 import type { FailureReason } from '../../shared/types'
+import type { Logger } from '../logger'
 
-export type FailurePattern = { type: FailureReason; keywords: string[] }
+export type FailurePattern = {
+  /** Machine type used for task failure_reason field. */
+  type: FailureReason
+  /** Human-readable label logged when this pattern matches. Defaults to `type`. */
+  name?: string
+  keywords: string[]
+}
 
 const failurePatternRegistry: FailurePattern[] = []
 
@@ -81,11 +88,19 @@ registerFailurePattern({
   keywords: ['missing:', 'incomplete files', 'files to change checklist']
 })
 
-export function classifyFailureReason(notes: string | undefined): FailureReason {
+export function classifyFailureReason(
+  notes: string | undefined,
+  logger?: Logger,
+  taskId?: string
+): FailureReason {
   if (!notes) return 'unknown'
 
   const lower = notes.toLowerCase()
-  return (
-    failurePatternRegistry.find((p) => p.keywords.some((k) => lower.includes(k)))?.type ?? 'unknown'
+  const matched = failurePatternRegistry.find((p) => p.keywords.some((k) => lower.includes(k)))
+  if (!matched) return 'unknown'
+
+  logger?.debug(
+    `[failure-classifier] matched pattern "${matched.name ?? matched.type}" verdict=${matched.type}${taskId ? ` taskId=${taskId}` : ''}`
   )
+  return matched.type
 }
