@@ -47,6 +47,17 @@ export interface UpdateGroupInput {
   depends_on?: EpicDependency[] | null | undefined
 }
 
+const VALID_GROUP_STATUSES: ReadonlySet<string> = new Set([
+  'draft',
+  'ready',
+  'in-pipeline',
+  'completed'
+])
+
+function isTaskGroupStatus(value: unknown): value is TaskGroup['status'] {
+  return typeof value === 'string' && VALID_GROUP_STATUSES.has(value)
+}
+
 /**
  * Sanitize a single group row from SQLite.
  */
@@ -54,13 +65,22 @@ function sanitizeGroup(row: Record<string, unknown>): TaskGroup {
   const sanitized = sanitizeEpicDependsOn(row.depends_on)
   const depends_on: EpicDependency[] | null = sanitized.length > 0 ? sanitized : null
 
+  let status: TaskGroup['status'] = 'draft'
+  if (isTaskGroupStatus(row.status)) {
+    status = row.status
+  } else if (row.status != null) {
+    _logger.warn(
+      `[task-group-queries] Unknown TaskGroup status "${String(row.status)}" for id="${String(row.id)}"; defaulting to "draft"`
+    )
+  }
+
   return {
     id: String(row.id),
     name: String(row.name),
     icon: String(row.icon ?? 'G'),
     accent_color: String(row.accent_color ?? '#00ffcc'),
     goal: row.goal ? String(row.goal) : null,
-    status: String(row.status ?? 'draft') as TaskGroup['status'],
+    status,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
     depends_on

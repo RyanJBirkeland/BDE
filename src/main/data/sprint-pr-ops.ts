@@ -1,7 +1,13 @@
 import type Database from 'better-sqlite3'
 import type { SprintTask } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { validateTransition } from '../../shared/task-state-machine'
+import { validateTransition, TASK_STATUSES } from '../../shared/task-state-machine'
+
+const VALID_TASK_STATUSES: ReadonlySet<string> = new Set(TASK_STATUSES)
+
+function isTaskStatus(value: unknown): value is TaskStatus {
+  return typeof value === 'string' && VALID_TASK_STATUSES.has(value)
+}
 import { getDb } from '../db'
 import { recordTaskChangesBulk } from './task-changes'
 import { nowIso } from '../../shared/time'
@@ -34,13 +40,20 @@ function transitionTasksByPrNumber(
     .all(prNumber, 'active') as Array<Record<string, unknown>>
 
   // Filter to only tasks whose transition is valid per the state machine.
-  // Skipped tasks are logged as warnings rather than silently dropped.
+  // Rows with an unrecognised status are logged and skipped rather than
+  // passed to validateTransition, which expects a narrowed TaskStatus.
   const eligible = affected.filter((row) => {
-    const currentStatus = row.status as TaskStatus
+    if (!isTaskStatus(row.status)) {
+      getSprintQueriesLogger().warn(
+        `[sprint-pr-ops] transitionTasksByPrNumber: skipping task ${String(row.id)}: unrecognised status "${String(row.status)}"`
+      )
+      return false
+    }
+    const currentStatus = row.status
     const validation = validateTransition(currentStatus, targetStatus)
     if (!validation.ok) {
       getSprintQueriesLogger().warn(
-        `[sprint-pr-ops] transitionTasksByPrNumber: skipping task ${row.id as string}: ${validation.reason}`
+        `[sprint-pr-ops] transitionTasksByPrNumber: skipping task ${String(row.id)}: ${validation.reason}`
       )
     }
     return validation.ok

@@ -252,20 +252,24 @@ export function parseNextLink(linkHeader: string | null): string | null {
   return match?.[1] ?? null
 }
 
-interface FetchAllPagesOptions {
+interface FetchAllPagesOptions<T> {
   token: string
   timeoutMs?: number | undefined
   headers?: Record<string, string> | undefined
+  validate?: (item: unknown) => item is T
 }
 
 /**
  * Fetch every page of a GitHub REST API list endpoint.
  * Follows `rel="next"` Link headers until exhausted.
  * Returns [] (not throw) on any HTTP error so callers degrade gracefully.
+ * When `validate` is supplied, items that fail the guard are skipped instead
+ * of being cast blindly, preventing malformed API responses from corrupting
+ * in-memory state.
  */
 export async function fetchAllGitHubPages<T>(
   url: string,
-  opts: FetchAllPagesOptions
+  opts: FetchAllPagesOptions<T>
 ): Promise<T[]> {
   const items: T[] = []
   let nextUrl: string | null = url
@@ -282,8 +286,25 @@ export async function fetchAllGitHubPages<T>(
 
     if (!res.ok) return items
 
-    const data = (await res.json()) as T[]
-    items.push(...data)
+    const data: unknown = await res.json()
+    if (!Array.isArray(data)) {
+      logger.warn(`fetchAllGitHubPages: non-array response from ${nextUrl}`)
+      return items
+    }
+    if (opts.validate) {
+      const { validate } = opts
+      for (let i = 0; i < data.length; i++) {
+        if (validate(data[i])) {
+          items.push(data[i] as T)
+        } else {
+          logger.warn(
+            `fetchAllGitHubPages: item at index ${i} from ${nextUrl} failed validation; skipping`
+          )
+        }
+      }
+    } else {
+      items.push(...(data as T[]))
+    }
     nextUrl = parseNextLink(res.headers.get('Link'))
   }
 

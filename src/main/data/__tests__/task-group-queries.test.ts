@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { runMigrations } from '../../db'
 import {
   createGroup,
@@ -8,7 +8,8 @@ import {
   listGroups,
   deleteGroup,
   addGroupDependency,
-  removeGroupDependency
+  removeGroupDependency,
+  setTaskGroupQueriesLogger
 } from '../task-group-queries'
 import type { EpicDependency } from '../../../shared/types'
 import { up as v047Up } from '../../migrations/v047-add-depends-on-to-task-groups'
@@ -267,5 +268,39 @@ describe('removeGroupDependency — transaction safety', () => {
       depends_on: string | null
     }
     expect(updated.depends_on).toBeNull()
+  })
+})
+
+describe('sanitizeGroup — isTaskGroupStatus guard', () => {
+  it('preserves a valid status', () => {
+    const group = createGroup({ name: 'Status Group' }, db)!
+    updateGroup(group.id, { status: 'ready' }, db)
+
+    const fetched = getGroup(group.id, db)
+    expect(fetched?.status).toBe('ready')
+  })
+
+  it('defaults to "draft" when status is unknown and logs a warning', () => {
+    const warnSpy = vi.fn()
+    setTaskGroupQueriesLogger({
+      info: vi.fn(),
+      warn: warnSpy,
+      error: vi.fn(),
+      debug: vi.fn()
+    })
+
+    const group = createGroup({ name: 'Corrupt Group' }, db)!
+
+    // Inject an invalid status directly, bypassing the ORM
+    db.prepare('UPDATE task_groups SET status = ? WHERE id = ?').run('invalid-status', group.id)
+
+    const fetched = getGroup(group.id, db)
+    expect(fetched?.status).toBe('draft')
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Unknown TaskGroup status "invalid-status"')
+    )
+
+    // Restore default logger
+    setTaskGroupQueriesLogger({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })
   })
 })

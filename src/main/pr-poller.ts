@@ -24,11 +24,17 @@ let errorCount = 0
 // setInterval rather than clearInterval+setInterval on every tick.
 let nextPollAt = 0
 
+function isOpenPr(item: unknown): item is OpenPr {
+  if (typeof item !== 'object' || item === null) return false
+  const pr = item as Record<string, unknown>
+  return typeof pr.number === 'number' && typeof pr.html_url === 'string'
+}
+
 async function fetchOpenPrs(owner: string, repo: string, token: string): Promise<OpenPr[]> {
   try {
     const data = await fetchAllGitHubPages<OpenPr>(
       `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
-      { token, timeoutMs: REQUEST_TIMEOUT_MS }
+      { token, timeoutMs: REQUEST_TIMEOUT_MS, validate: isOpenPr }
     )
     return data.map((pr) => ({ ...pr, repo }))
   } catch (err) {

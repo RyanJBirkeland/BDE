@@ -21,6 +21,10 @@ const EMPTY_QUEUE_STATS: QueueStats = {
   blocked: 0
 }
 
+function isQueueStatsKey(status: string): status is keyof QueueStats {
+  return status in EMPTY_QUEUE_STATS
+}
+
 export function getQueueStats(db?: Database.Database): QueueStats {
   const conn = db ?? getDb()
   return withDataLayerError(
@@ -31,9 +35,10 @@ export function getQueueStats(db?: Database.Database): QueueStats {
         .all() as Array<{ status: string; count: number }>
 
       for (const row of rows) {
-        if (row.status in stats) {
-          stats[row.status as keyof QueueStats] = row.count
+        if (isQueueStatsKey(row.status)) {
+          stats[row.status] = row.count
         }
+        // Unknown status — skip to avoid corrupting dashboard metrics
       }
       return stats
     },

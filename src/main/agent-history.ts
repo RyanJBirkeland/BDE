@@ -36,6 +36,17 @@ export type { AgentMeta }
 
 // --- One-time migration from agents.json ---
 
+function isAgentMetaEntry(entry: unknown): entry is AgentMeta {
+  if (typeof entry !== 'object' || entry === null) return false
+  const e = entry as Record<string, unknown>
+  return (
+    typeof e.id === 'string' &&
+    e.id.trim() !== '' &&
+    typeof e.bin === 'string' &&
+    typeof e.startedAt === 'string'
+  )
+}
+
 export async function migrateFromJson(db?: Database.Database): Promise<void> {
   try {
     if (!existsSync(AGENTS_INDEX)) return
@@ -44,8 +55,19 @@ export async function migrateFromJson(db?: Database.Database): Promise<void> {
     if (count.cnt > 0) return
 
     const raw = readFileSync(AGENTS_INDEX, 'utf-8')
-    const agents: AgentMeta[] = JSON.parse(raw)
-    if (!Array.isArray(agents) || agents.length === 0) return
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) {
+      logger.error(`agents.json is not an array — skipping migration`)
+      return
+    }
+    if (parsed.length === 0) return
+
+    const validEntries = parsed.filter((entry): entry is AgentMeta => isAgentMetaEntry(entry))
+    const skipped = parsed.length - validEntries.length
+    if (skipped > 0) {
+      logger.warn(`agents.json: skipping ${skipped} invalid entries during migration`)
+    }
+    if (validEntries.length === 0) return
 
     const insert = conn.prepare(`
       INSERT OR IGNORE INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
@@ -53,7 +75,7 @@ export async function migrateFromJson(db?: Database.Database): Promise<void> {
     `)
 
     const tx = conn.transaction(() => {
-      for (const a of agents) {
+      for (const a of validEntries) {
         insert.run(
           a.id,
           a.pid,
@@ -74,7 +96,7 @@ export async function migrateFromJson(db?: Database.Database): Promise<void> {
     tx()
 
     await rename(AGENTS_INDEX, AGENTS_INDEX + '.bak')
-    logger.info(`Migrated ${agents.length} agents from agents.json to SQLite`)
+    logger.info(`Migrated ${validEntries.length} agents from agents.json to SQLite`)
   } catch (err) {
     logger.error(`Migration from agents.json failed: ${err}`)
   }
