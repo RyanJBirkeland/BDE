@@ -213,6 +213,12 @@ export class AgentManagerImpl implements AgentManager {
       onSpawnFailure: (taskId: string, reason: string) => {
         this._circuitBreaker.recordFailure(taskId, reason)
         this._errorRegistry.recordSpawnFailure(taskId, reason)
+      },
+      onFastFailRecorded: (taskId: string, reason: string) => {
+        this._errorRegistry.fastFailTracker.record(taskId, reason)
+      },
+      isFastFailExhausted: (taskId: string) => {
+        return this._errorRegistry.fastFailTracker.isExhausted(taskId)
       }
     }
   }

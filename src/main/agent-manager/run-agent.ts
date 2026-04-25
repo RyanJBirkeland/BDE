@@ -102,10 +102,33 @@ export interface RunAgentEventDeps {
 }
 
 /**
+ * Fast-fail sliding-window callbacks threaded into runAgent so the in-memory
+ * tracker in ErrorRegistry can be updated without coupling run-agent.ts
+ * directly to AgentManagerImpl.
+ *
+ * Both are optional so callers that don't need the sliding window (e.g. tests)
+ * don't have to supply them — the fallback is the legacy DB-count behaviour.
+ */
+export interface RunAgentFastFailDeps {
+  /**
+   * Record a fast-fail event in the sliding window for the given task.
+   * Called when a run qualifies as a fast-fail (exit within 30s, non-zero
+   * exit code) before the exhaustion check.
+   */
+  onFastFailRecorded?: (taskId: string, reason: string) => void
+  /**
+   * Returns true if the task has exhausted its fast-fail budget within the
+   * 30-second sliding window. When supplied, this supersedes the DB-backed
+   * `fast_fail_count` exhaustion check.
+   */
+  isFastFailExhausted?: (taskId: string) => boolean
+}
+
+/**
  * Full dependency bag for runAgent(). Composed via intersection so callers
  * that only consume a sub-set can depend on the narrower interface.
  */
-export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventDeps
+export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventDeps & RunAgentFastFailDeps
 
 // Re-export functions consumed by external callers and tests
 export {
@@ -256,18 +279,35 @@ interface ResolveAgentExitContext {
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   taskStateService: TaskStateService
   logger: Logger
+  onFastFailRecorded?: (taskId: string, reason: string) => void
+  isFastFailExhausted?: (taskId: string) => boolean
 }
 
 async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
+  const legacyFastFailCount = ctx.task.fast_fail_count ?? 0
   const ffResult = classifyExit(
     ctx.agent.startedAt,
     ctx.exitedAt,
     ctx.exitCode ?? 1,
-    ctx.task.fast_fail_count ?? 0
+    legacyFastFailCount
   )
-  if (ffResult === 'fast-fail-exhausted') return handleFastFailExhausted(ctx)
-  if (ffResult === 'fast-fail-requeue') return handleFastFailRequeue(ctx)
-  return resolveNormalExit(ctx)
+  // classifyExit returns 'normal-exit' for exit code 0 or long-running runs.
+  // Only proceed with fast-fail logic when the run itself qualified as fast.
+  if (ffResult === 'normal-exit') return resolveNormalExit(ctx)
+
+  // Fast-fail candidate: record the event in the sliding window, then check
+  // whether the task has exceeded the budget within the 30-second window.
+  // Falls back to the DB-backed count when no sliding-window callbacks are
+  // injected (e.g. tests or callers that don't wire ErrorRegistry).
+  const reason = ctx.lastAgentOutput || `exit code ${ctx.exitCode ?? 1}`
+  ctx.onFastFailRecorded?.(ctx.task.id, reason)
+
+  const exhausted = ctx.isFastFailExhausted
+    ? ctx.isFastFailExhausted(ctx.task.id)
+    : ffResult === 'fast-fail-exhausted'
+
+  if (exhausted) return handleFastFailExhausted(ctx)
+  return handleFastFailRequeue(ctx)
 }
 
 async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<void> {
@@ -507,7 +547,9 @@ async function finalizeAgentRun(
     unitOfWork: deps.unitOfWork,
     onTaskTerminal: deps.onTaskTerminal,
     taskStateService: deps.taskStateService,
-    logger: deps.logger
+    logger: deps.logger,
+    ...(deps.onFastFailRecorded && { onFastFailRecorded: deps.onFastFailRecorded }),
+    ...(deps.isFastFailExhausted && { isFastFailExhausted: deps.isFastFailExhausted })
   })
 
   await persistAndCleanupAfterRun(task, worktree, repoPath, agent, deps)
