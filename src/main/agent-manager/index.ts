@@ -346,8 +346,6 @@ export class AgentManagerImpl implements AgentManager {
    */
   async _drainQueuedTasks(available: number, taskStatusMap: Map<string, string>): Promise<void> {
     const queued = this.repo.getQueuedTasks(available)
-    this.logger.info(`[agent-manager] Fetching queued tasks (limit=${available})...`)
-    this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
     for (const rawTask of queued) {
       if (this._shuttingDown) break
       if (availableSlots(this._concurrency, this._activeAgents.size + this._pendingSpawns) <= 0) {

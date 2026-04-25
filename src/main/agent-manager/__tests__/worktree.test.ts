@@ -517,13 +517,15 @@ describe('ensureFreeDiskSpace', () => {
     await expect(ensureFreeDiskSpace(os.tmpdir(), 1)).resolves.toBeUndefined()
   })
 
-  it('does not throw when statfs fails on a non-existent path', async () => {
-    const { ensureFreeDiskSpace } = await import('../worktree')
+  it('throws DiskSpaceProbeError and logs WARN when statfs fails on a non-existent path', async () => {
+    const { ensureFreeDiskSpace, DiskSpaceProbeError } = await import('../disk-space')
     const log = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
     await expect(
       ensureFreeDiskSpace('/definitely/not/a/real/path', 1, log)
-    ).resolves.toBeUndefined()
-    expect(log.warn).toHaveBeenCalled()
+    ).rejects.toBeInstanceOf(DiskSpaceProbeError)
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.stringContaining('[disk-space] Probe failed at /definitely/not/a/real/path')
+    )
   })
 })
 

@@ -24,13 +24,15 @@ import {
   releaseDisk,
   getPendingReservation,
   ensureFreeDiskSpace,
-  InsufficientDiskSpaceError
+  InsufficientDiskSpaceError,
+  DiskSpaceProbeError
 } from './disk-space'
 import { acquireLock, releaseLock } from './file-lock'
 
 // Re-export for backward compatibility
 export {
   InsufficientDiskSpaceError,
+  DiskSpaceProbeError,
   DISK_RESERVATION_BYTES,
   reserveDisk,
   releaseDisk,

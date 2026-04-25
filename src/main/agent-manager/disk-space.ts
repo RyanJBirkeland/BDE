@@ -73,10 +73,28 @@ export class InsufficientDiskSpaceError extends Error {
 }
 
 /**
+ * Tagged error thrown when the disk-space probe itself fails (statfs ENOENT,
+ * EACCES, ENOSYS, etc.) — distinct from `InsufficientDiskSpaceError`. We
+ * surface probe failures rather than silently succeeding so callers can decide
+ * whether to refuse the spawn instead of risking an over-commit on an unknown
+ * filesystem state.
+ */
+export class DiskSpaceProbeError extends Error {
+  constructor(
+    public readonly path: string,
+    public override readonly cause: unknown
+  ) {
+    super(`disk-space probe failed at ${path}: ${cause}`)
+    this.name = 'DiskSpaceProbeError'
+  }
+}
+
+/**
  * Check available disk space at the given path. Throws
- * `InsufficientDiskSpaceError` if free space is below `minFreeBytes`.
- * Best-effort — silently succeeds if statfs is unsupported on the platform
- * (e.g. ENOSYS) or other platform errors occur during the check.
+ * `InsufficientDiskSpaceError` if free space is below `minFreeBytes`, or
+ * `DiskSpaceProbeError` if the underlying `statfs` call itself fails. A
+ * probe failure is logged at WARN with the underlying error so operators can
+ * distinguish a real "out of disk" event from a platform-level probe failure.
  */
 export async function ensureFreeDiskSpace(
   checkPath: string,
@@ -90,11 +108,10 @@ export async function ensureFreeDiskSpace(
       throw new InsufficientDiskSpaceError(checkPath, free, minFreeBytes)
     }
   } catch (err) {
-    // Re-throw our own tagged error; swallow platform errors (statfs not
-    // supported, permission denied, etc.) so the check stays best-effort.
     if (err instanceof InsufficientDiskSpaceError) {
       throw err
     }
-    ;(log ?? console).warn(`[disk-space] Check failed (continuing): ${err}`)
+    ;(log ?? console).warn(`[disk-space] Probe failed at ${checkPath}: ${err}`)
+    throw new DiskSpaceProbeError(checkPath, err)
   }
 }
