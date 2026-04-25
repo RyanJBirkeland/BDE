@@ -576,6 +576,70 @@ async function persistAndCleanupAfterRun(
   await cleanupOrPreserveWorktree(task, worktree, repoPath, deps.repo, deps.logger)
 }
 
+/** Result produced by the streaming phase — passed to the completion phase. */
+interface StreamResult {
+  exitCode: number | undefined
+  lastAgentOutput: string
+  streamError: Error | undefined
+}
+
+/** Context for the streaming phase — all data produced by setup and spawn. */
+interface StreamingContext {
+  task: AgentRunClaim
+  agent: ActiveAgent
+  agentRunId: string
+  turnTracker: TurnTracker
+  worktree: { worktreePath: string; branch: string }
+  deps: RunAgentDeps
+}
+
+/**
+ * Phase 3: Consume the SDK message stream, await playground file events,
+ * and log any stream error.
+ *
+ * Returns a `StreamResult` containing the exit code and the last agent output
+ * so the completion phase can classify and finalize the run.
+ */
+async function runStreamingPhase(ctx: StreamingContext): Promise<StreamResult> {
+  const { task, agent, agentRunId, turnTracker, worktree, deps } = ctx
+  const { logger } = deps
+
+  const { exitCode, lastAgentOutput, streamError, pendingPlaygroundPaths } = await consumeMessages(
+    agent.handle,
+    agent,
+    task,
+    agentRunId,
+    turnTracker,
+    logger,
+    computeMaxTurns(task.spec ?? task.prompt ?? task.title ?? '')
+  )
+
+  // Await playground events before worktree cleanup so the worktree isn't
+  // removed before file I/O from playground writes completes.
+  for (const playgroundWrite of pendingPlaygroundPaths) {
+    await tryEmitPlaygroundEvent({
+      taskId: task.id,
+      filePath: playgroundWrite.path,
+      worktreePath: worktree.worktreePath,
+      logger,
+      contentType: playgroundWrite.contentType
+    }).catch((err) => {
+      logger.warn(
+        `[run-agent] playground emit failed for task ${task.id}: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`
+      )
+    })
+  }
+
+  if (streamError) {
+    logger.warn(`[agent-manager] Message stream failed for task ${task.id}: ${streamError.message}`)
+    // agent:error was already emitted in consumeMessages' catch block with "Stream interrupted:" prefix.
+    // Don't emit a second event here — UI would show the error twice.
+    // exitCode will be undefined; finalizeAgentRun's classifyExit treats undefined as exit code 1
+  }
+
+  return { exitCode, lastAgentOutput, streamError }
+}
+
 export async function runAgent(
   task: AgentRunClaim,
   worktree: { worktreePath: string; branch: string },
@@ -631,41 +695,12 @@ export async function runAgent(
     return // Early exit — spawn failed and cleaned up
   }
 
-  // Phase 3: Consume messages
-  const { exitCode, lastAgentOutput, streamError, pendingPlaygroundPaths } = await consumeMessages(
-    agent.handle,
-    agent,
-    task,
-    agentRunId,
-    turnTracker,
-    logger,
-    computeMaxTurns(task.spec ?? task.prompt ?? task.title ?? '')
-  )
+  const streamingCtx: StreamingContext = { task, agent, agentRunId, turnTracker, worktree, deps }
 
-  // Await playground events before worktree cleanup.
-  // Previously fire-and-forget — worktree could be deleted before file I/O completed.
-  for (const playgroundWrite of pendingPlaygroundPaths) {
-    await tryEmitPlaygroundEvent({
-      taskId: task.id,
-      filePath: playgroundWrite.path,
-      worktreePath: worktree.worktreePath,
-      logger,
-      contentType: playgroundWrite.contentType
-    }).catch((err) => {
-      logger.warn(
-        `[run-agent] playground emit failed for task ${task.id}: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`
-      )
-    })
-  }
+  // Phase 3: Consume the SDK message stream and await playground events
+  const streamResult = await runStreamingPhase(streamingCtx)
 
-  if (streamError) {
-    logger.warn(`[agent-manager] Message stream failed for task ${task.id}: ${streamError.message}`)
-    // agent:error was already emitted in consumeMessages' catch block with "Stream interrupted:" prefix.
-    // Don't emit a second event here — UI would show the error twice.
-    // exitCode will be undefined; finalizeAgentRun's classifyExit treats undefined as exit code 1
-  }
-
-  // Phase 4: Finalize — classify exit, resolve, cleanup
+  // Phase 4: Classify exit, resolve status, clean up
   await finalizeAgentRun(
     task,
     worktree,
@@ -673,8 +708,8 @@ export async function runAgent(
     agent,
     agentRunId,
     turnTracker,
-    exitCode,
-    lastAgentOutput,
+    streamResult.exitCode,
+    streamResult.lastAgentOutput,
     deps
   )
 }
