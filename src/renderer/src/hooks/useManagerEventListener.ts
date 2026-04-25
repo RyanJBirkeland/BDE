@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { toast } from '../stores/toasts'
+import { useSprintUI } from '../stores/sprintUI'
 
 function formatOpenUntil(openUntil: number): string {
   const remainingMs = openUntil - Date.now()
@@ -20,6 +21,8 @@ function formatOpenUntil(openUntil: number): string {
  * unblocking did not happen, so blocked tasks may stay blocked silently.
  */
 export function useManagerEventListener(): void {
+  const setOrphanRecoveryBanner = useSprintUI((s) => s.setOrphanRecoveryBanner)
+
   useEffect(() => {
     const unsubCircuit = window.api.agentManager.onCircuitBreakerOpen((payload) => {
       toast.error(
@@ -39,10 +42,15 @@ export function useManagerEventListener(): void {
       toast.info(payload.message, { durationMs: 10_000 })
     })
 
+    const unsubOrphan = window.api.agentManager.onOrphanRecovered((payload) => {
+      setOrphanRecoveryBanner(payload)
+    })
+
     return () => {
       unsubCircuit()
       unsubTerminal()
       unsubWarning()
+      unsubOrphan()
     }
-  }, [])
+  }, [setOrphanRecoveryBanner])
 }

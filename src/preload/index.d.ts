@@ -347,6 +347,7 @@ declare global {
           cb: (payload: { consecutiveFailures: number; openUntil: number }) => void
         ) => () => void
         onDrainPaused: (cb: (event: AgentManagerDrainPausedEvent) => void) => () => void
+        onOrphanRecovered: (cb: (payload: { recovered: string[]; exhausted: string[] }) => void) => () => void
       }
 
       // Cost analytics

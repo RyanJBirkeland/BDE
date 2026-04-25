@@ -89,6 +89,9 @@ export interface BroadcastChannels {
     error?: string | undefined
   }
 
+  // Orphan recovery
+  'orphan:recovered': { recovered: string[]; exhausted: string[] }
+
   // Task terminal
   'task-terminal:resolution-error': { error: string }
 

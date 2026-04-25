@@ -77,6 +77,23 @@
   overflow-y: auto;
 }
 
+/* Orphan recovery banner */
+.pipeline-orphan-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bde-space-3);
+  padding: var(--bde-space-2) var(--bde-space-4);
+  background: color-mix(in srgb, var(--bde-warning) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--bde-warning) 30%, transparent);
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-dim);
+}
+
+.pipeline-orphan-banner__message {
+  flex: 1;
+}
+
 /* Connector line */
 .pipeline-center::before {
   content: '';

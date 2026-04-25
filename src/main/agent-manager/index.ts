@@ -508,7 +508,12 @@ export class AgentManagerImpl implements AgentManager {
 
   private async _orphanLoop(): Promise<void> {
     try {
-      await recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger)
+      const result = await recoverOrphans(
+        (id: string) => this._activeAgents.has(id),
+        this.repo,
+        this.logger
+      )
+      this._broadcastOrphanResultIfNonEmpty(result)
     } catch (err) {
       this.logger.error(`[agent-manager] Orphan recovery error: ${err}`)
     }
@@ -527,6 +532,17 @@ export class AgentManagerImpl implements AgentManager {
       })
     } catch (err) {
       this.logger.error(`[agent-manager] Worktree prune error: ${err}`)
+    }
+  }
+
+  // ---- Orphan broadcast helper ----
+
+  private _broadcastOrphanResultIfNonEmpty(result: {
+    recovered: string[]
+    exhausted: string[]
+  }): void {
+    if (result.recovered.length > 0 || result.exhausted.length > 0) {
+      broadcast('orphan:recovered', result)
     }
   }
 
@@ -596,11 +612,11 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   private kickOffOrphanRecovery(): void {
-    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger).catch(
-      (err) => {
+    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger)
+      .then((result) => this._broadcastOrphanResultIfNonEmpty(result))
+      .catch((err) => {
         this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
-      }
-    )
+      })
   }
 
   // The epic graph is owned by EpicGroupService — this.repo does not rebuild it.
@@ -666,7 +682,12 @@ export class AgentManagerImpl implements AgentManager {
     setTimeout(() => {
       this._drainInFlight = (async () => {
         try {
-          await recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger)
+          const result = await recoverOrphans(
+            (id: string) => this._activeAgents.has(id),
+            this.repo,
+            this.logger
+          )
+          this._broadcastOrphanResultIfNonEmpty(result)
         } catch (err) {
           this.logger.error(`[agent-manager] Orphan recovery before initial drain error: ${err}`)
         }

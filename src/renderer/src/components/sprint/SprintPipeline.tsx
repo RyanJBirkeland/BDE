@@ -8,6 +8,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../l
 import { useSprintFilters } from '../../stores/sprintFilters'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
+import { useSprintUI, selectOrphanRecoveryBanner } from '../../stores/sprintUI'
 import { useTaskWorkbenchModalStore } from '../../stores/taskWorkbenchModal'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
@@ -69,6 +70,9 @@ export function SprintPipeline(): React.JSX.Element {
 
   const pollError = useSprintTasks((s) => s.pollError)
   const clearPollError = useSprintTasks((s) => s.clearPollError)
+
+  const orphanBanner = useSprintUI(selectOrphanRecoveryBanner)
+  const dismissOrphanBanner = useSprintUI((s) => s.setOrphanRecoveryBanner)
 
   const setStatusFilter = useSprintFilters((s) => s.setStatusFilter)
   const setView = usePanelLayoutStore((s) => s.setView)
@@ -278,6 +282,26 @@ export function SprintPipeline(): React.JSX.Element {
               Dismiss
             </Button>
           </div>
+        </div>
+      )}
+
+      {orphanBanner && (
+        <div className="pipeline-orphan-banner">
+          <div className="pipeline-orphan-banner__message">
+            {orphanBanner.recovered.length > 0 && (
+              <span>
+                {orphanBanner.recovered.length} task{orphanBanner.recovered.length !== 1 ? 's' : ''} recovered from crash and re-queued.
+              </span>
+            )}
+            {orphanBanner.exhausted.length > 0 && (
+              <span>
+                {' '}{orphanBanner.exhausted.length} task{orphanBanner.exhausted.length !== 1 ? 's' : ''} exceeded the crash recovery limit and were marked as error.
+              </span>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => dismissOrphanBanner(null)}>
+            Dismiss
+          </Button>
         </div>
       )}
 

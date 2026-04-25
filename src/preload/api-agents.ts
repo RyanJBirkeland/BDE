@@ -78,7 +78,8 @@ export const agentManager = {
   ),
   onDrainPaused: onBroadcast<BroadcastChannels['agentManager:drainPaused']>(
     'agentManager:drainPaused'
-  )
+  ),
+  onOrphanRecovered: onBroadcast<BroadcastChannels['orphan:recovered']>('orphan:recovered')
 }
 
 export const agentEvents = {
