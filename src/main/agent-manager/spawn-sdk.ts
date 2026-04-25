@@ -120,8 +120,9 @@ export function spawnViaSdk(
     },
     async steer(message: string): Promise<SteerResult> {
       // SDK mode does not support mid-session steering — returns delivered: false. CLI mode writes to stdin. Callers must handle delivered === false.
+      // Log only the message length, never the body — steer messages are user-supplied content and project policy keeps them out of `~/.bde/bde.log`.
       ;(logger ?? console).warn(
-        `[agent-manager] Steer not supported in SDK mode: "${message.slice(0, 100)}"`
+        `[agent-manager] Steer not supported in SDK mode (message length: ${message.length})`
       )
       return { delivered: false, error: 'SDK mode does not support steering' }
     }

@@ -8,6 +8,7 @@ import type { AgentHandle } from './types'
 import type { Logger } from '../logger'
 import type { AgentType } from '../agent-system/personality/types'
 import { dirname, resolve as resolvePath } from 'node:path'
+import { realpathSync } from 'node:fs'
 import { DEFAULT_CONFIG, SPAWN_TIMEOUT_MS } from './types'
 import { buildAgentEnv, getOAuthToken } from '../env-utils'
 import { resolveNodeExecutable } from './resolve-node'
@@ -17,7 +18,10 @@ import { loadBackendSettings, resolveAgentRuntime } from './backend-selector'
 import { spawnLocalAgent } from './local-adapter'
 import { spawnOpencode } from './spawn-opencode'
 import { startOpencodeSessionMcp, type OpencodeSessionMcpHandle } from './opencode-session-mcp'
-import { writeOpencodeWorktreeConfig, buildOpencodeFirstTurnPrompt } from './opencode-worktree-config'
+import {
+  writeOpencodeWorktreeConfig,
+  buildOpencodeFirstTurnPrompt
+} from './opencode-worktree-config'
 import { createEpicGroupService } from '../services/epic-group-service'
 
 /**
@@ -30,14 +34,40 @@ import { createEpicGroupService } from '../services/epic-group-service'
  * The allowlist is derived from the caller's `AgentManagerConfig.worktreeBase`
  * (threaded through spawnAgent's options) so users who override the worktree
  * base in Settings are not rejected by a module-scope default snapshot.
+ *
+ * Defense-in-depth: both sides of the prefix compare are normalized via
+ * `realpathSync` so a symlink anywhere along either path cannot smuggle a
+ * physical location outside the base into a string that textually starts with
+ * the base. A `realpathSync` failure (e.g. ENOENT for a not-yet-existent cwd)
+ * fails closed — the spawn is refused.
  */
-function isInsideAllowedWorktreeBase(cwd: string, worktreeBase: string): boolean {
-  const resolved = resolvePath(cwd)
-  return resolved.startsWith(resolvePath(worktreeBase) + '/')
+function isInsideAllowedWorktreeBase(cwd: string, worktreeBase: string, logger?: Logger): boolean {
+  const physicalCwd = resolvePhysicalPath(cwd, logger)
+  if (physicalCwd === null) return false
+  const physicalBase = resolvePhysicalPath(worktreeBase, logger)
+  if (physicalBase === null) return false
+  return physicalCwd.startsWith(physicalBase + '/')
 }
 
-function assertCwdIsInsideWorktreeBase(cwd: string, worktreeBase: string): void {
-  if (!isInsideAllowedWorktreeBase(cwd, worktreeBase)) {
+/**
+ * Returns the canonical filesystem path for `path` (symlinks resolved), or
+ * `null` if the path cannot be resolved. Logs the failure context so a
+ * misconfigured worktree base is diagnosable.
+ */
+function resolvePhysicalPath(path: string, logger?: Logger): string | null {
+  const lexicalPath = resolvePath(path)
+  try {
+    return realpathSync(lexicalPath)
+  } catch (err) {
+    ;(logger ?? console).warn(
+      `[agent-manager] realpath failed for "${lexicalPath}": ${(err as Error).message}`
+    )
+    return null
+  }
+}
+
+function assertCwdIsInsideWorktreeBase(cwd: string, worktreeBase: string, logger?: Logger): void {
+  if (!isInsideAllowedWorktreeBase(cwd, worktreeBase, logger)) {
     throw new Error(
       `Refusing to spawn agent: cwd "${cwd}" is not inside the configured worktree base (${worktreeBase}). ` +
         `Pipeline agents must only run inside isolated worktrees.`
@@ -96,7 +126,7 @@ export async function spawnAgent(opts: {
   // ones that can leak edits into the main repo if misrouted.
   if (opts.pipelineTuning) {
     const base = opts.worktreeBase ?? DEFAULT_CONFIG.worktreeBase
-    assertCwdIsInsideWorktreeBase(opts.cwd, base)
+    assertCwdIsInsideWorktreeBase(opts.cwd, base, opts.logger)
   }
 
   const agentType: AgentType = opts.agentType ?? 'pipeline'
@@ -147,9 +177,7 @@ async function spawnOpencodeWithMcp(
   await writeOpencodeWorktreeConfig(opts.cwd, sessionMcp.url, sessionMcp.token)
 
   const prompt =
-    opts.branch != null
-      ? buildOpencodeFirstTurnPrompt(opts.prompt, opts.branch)
-      : opts.prompt
+    opts.branch != null ? buildOpencodeFirstTurnPrompt(opts.prompt, opts.branch) : opts.prompt
 
   let handle: AgentHandle
   try {
@@ -163,7 +191,9 @@ async function spawnOpencodeWithMcp(
     })
   } catch (err) {
     sessionMcp.close().catch((closeErr: unknown) => {
-      logger.warn(`[agent-manager] Failed to close opencode session MCP server after spawn error: ${closeErr}`)
+      logger.warn(
+        `[agent-manager] Failed to close opencode session MCP server after spawn error: ${closeErr}`
+      )
     })
     throw err
   }

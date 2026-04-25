@@ -178,6 +178,23 @@ describe('spawnViaSdk', () => {
       expect.stringContaining('Steer not supported in SDK mode')
     )
   })
+
+  it('steer() warn log does NOT contain the message body', async () => {
+    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken,
+      logger
+    )
+    const sensitiveMessage = 'TOP-SECRET-PROMPT-CONTENT-DO-NOT-LOG'
+    await handle.steer(sensitiveMessage)
+    const loggedLine = logger.warn.mock.calls.map((c) => c[0]).join('\n')
+    expect(loggedLine).not.toContain(sensitiveMessage)
+    // Length should be reported instead.
+    expect(loggedLine).toContain(`message length: ${sensitiveMessage.length}`)
+  })
 })
 
 describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => {

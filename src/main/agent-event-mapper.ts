@@ -124,6 +124,28 @@ function mapTopLevelToolResult(msg: Record<string, unknown>, now: number): Agent
 }
 
 /**
+ * Each unrecognized SDK message type is logged exactly once per process lifetime.
+ * Without this, a new SDK message type or control frame would log on every event
+ * (potentially hundreds per task) and drown real signal in `~/.bde/bde.log`.
+ */
+const loggedUnknownMessageTypes = new Set<string>()
+
+function logUnknownMessageTypeOnce(msgType: string): void {
+  if (loggedUnknownMessageTypes.has(msgType)) return
+  loggedUnknownMessageTypes.add(msgType)
+  logger.info(`Unrecognized message type (logged once per process): ${msgType}`)
+}
+
+/**
+ * Test-only helper. Clears the per-process sentinel so a fresh test fixture
+ * can observe the first-occurrence log path again. Production code never
+ * needs to call this — the sentinel is intentionally process-lifetime scoped.
+ */
+export function __resetUnknownMessageTypeSentinel(): void {
+  loggedUnknownMessageTypes.clear()
+}
+
+/**
  * Maps a raw SDK wire-protocol message to zero or more typed AgentEvents.
  * Handles assistant messages (text + tool_use blocks), user messages carrying
  * `tool_result` content blocks (current SDK format), and legacy top-level
@@ -148,7 +170,7 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
     return []
   }
   if (msgType) {
-    logger.info(`Unrecognized message type: ${msgType}`)
+    logUnknownMessageTypeOnce(msgType)
   }
   return []
 }

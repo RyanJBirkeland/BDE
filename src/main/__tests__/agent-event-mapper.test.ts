@@ -10,6 +10,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 const broadcastCoalescedMock = vi.fn()
 const insertEventBatchMock = vi.fn()
 const getDbMock = vi.fn(() => ({}) as unknown)
+const loggerInfoMock = vi.fn()
+const loggerWarnMock = vi.fn()
+const loggerErrorMock = vi.fn()
+const loggerDebugMock = vi.fn()
 
 vi.mock('../broadcast', () => ({
   broadcastCoalesced: (...args: unknown[]) => broadcastCoalescedMock(...args)
@@ -23,11 +27,24 @@ vi.mock('../db', () => ({
   getDb: () => getDbMock()
 }))
 
+vi.mock('../logger', () => ({
+  createLogger: () => ({
+    info: loggerInfoMock,
+    warn: loggerWarnMock,
+    error: loggerErrorMock,
+    debug: loggerDebugMock
+  })
+}))
+
 beforeEach(() => {
   vi.useFakeTimers()
   vi.resetModules() // Reset module state between tests
   broadcastCoalescedMock.mockReset()
   insertEventBatchMock.mockReset()
+  loggerInfoMock.mockReset()
+  loggerWarnMock.mockReset()
+  loggerErrorMock.mockReset()
+  loggerDebugMock.mockReset()
 })
 
 afterEach(() => {
@@ -370,5 +387,50 @@ describe('mapRawMessage tool_result from user content blocks', () => {
       }
     })
     expect(events).toEqual([])
+  })
+})
+
+describe('mapRawMessage rate-limits unrecognized message-type logs', () => {
+  it('logs an unknown message type at most once across 100 calls', async () => {
+    const { mapRawMessage, __resetUnknownMessageTypeSentinel } =
+      await import('../agent-event-mapper')
+    __resetUnknownMessageTypeSentinel()
+
+    for (let i = 0; i < 100; i++) {
+      mapRawMessage({ type: 'mystery_control_frame' })
+    }
+
+    expect(loggerInfoMock).toHaveBeenCalledTimes(1)
+    expect(loggerInfoMock).toHaveBeenCalledWith(expect.stringContaining('mystery_control_frame'))
+  })
+
+  it('logs distinct unknown types separately, but each at most once', async () => {
+    const { mapRawMessage, __resetUnknownMessageTypeSentinel } =
+      await import('../agent-event-mapper')
+    __resetUnknownMessageTypeSentinel()
+
+    for (let i = 0; i < 50; i++) {
+      mapRawMessage({ type: 'frame_a' })
+      mapRawMessage({ type: 'frame_b' })
+    }
+
+    expect(loggerInfoMock).toHaveBeenCalledTimes(2)
+    const loggedTypes = loggerInfoMock.mock.calls.map((c) => c[0]).join('\n')
+    expect(loggedTypes).toContain('frame_a')
+    expect(loggedTypes).toContain('frame_b')
+  })
+
+  it('__resetUnknownMessageTypeSentinel allows the first-occurrence log path again', async () => {
+    const { mapRawMessage, __resetUnknownMessageTypeSentinel } =
+      await import('../agent-event-mapper')
+    __resetUnknownMessageTypeSentinel()
+
+    mapRawMessage({ type: 'frame_x' })
+    mapRawMessage({ type: 'frame_x' })
+    expect(loggerInfoMock).toHaveBeenCalledTimes(1)
+
+    __resetUnknownMessageTypeSentinel()
+    mapRawMessage({ type: 'frame_x' })
+    expect(loggerInfoMock).toHaveBeenCalledTimes(2)
   })
 })
