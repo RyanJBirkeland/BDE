@@ -392,6 +392,31 @@ describe('listTasksRecent', () => {
     const result = listTasksRecent()
     expect(result).toEqual([])
   })
+
+  // T-124: listTasksRecent runs on every renderer poll (~30s). The
+  // `review_diff_snapshot` JSON blob can be hundreds of KB per task; pulling
+  // it on every poll dominated the IPC payload. The list path now projects
+  // SPRINT_TASK_LIST_COLUMNS, which excludes the snapshot — Code Review
+  // Station fetches the snapshot on demand from the worktree.
+  it('does not include review_diff_snapshot in returned rows', () => {
+    insertTask({
+      id: 'with-snapshot',
+      status: 'review',
+      review_diff_snapshot: '{"capturedAt":"2026-04-24T00:00:00Z"}'
+    })
+    insertTask({
+      id: 'recent-done',
+      status: 'done',
+      completed_at: nowIso(),
+      review_diff_snapshot: '{"capturedAt":"2026-04-24T00:00:00Z"}'
+    })
+
+    const tasks = listTasksRecent()
+    expect(tasks.length).toBe(2)
+    for (const task of tasks) {
+      expect(Object.keys(task)).not.toContain('review_diff_snapshot')
+    }
+  })
 })
 
 describe('updateTask', () => {
@@ -1127,5 +1152,20 @@ describe('updateTaskMergeableState — audit atomicity (F-t3-audit-trail-2)', ()
     // pr_mergeable_state must still be null — the UPDATE was rolled back with the audit failure
     const task = getTask('merge-atomic-1')!
     expect(task.pr_mergeable_state).toBeNull()
+  })
+})
+
+// T-129: PR-ops queries must project named columns rather than `SELECT *`
+// to avoid pulling the multi-hundred-KB `review_diff_snapshot` blob through
+// the PR poller's 60s loop. This static check guards against regressions
+// during future refactors of sprint-pr-ops.ts.
+describe('sprint-pr-ops SQL projections', () => {
+  it('contains no `SELECT *` against sprint_tasks', async () => {
+    const { readFile } = await import('node:fs/promises')
+    const { resolve } = await import('node:path')
+    const sourcePath = resolve(__dirname, '..', 'sprint-pr-ops.ts')
+    const source = await readFile(sourcePath, 'utf-8')
+
+    expect(source).not.toMatch(/SELECT\s+\*/i)
   })
 })

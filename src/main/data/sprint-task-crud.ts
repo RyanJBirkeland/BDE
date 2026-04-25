@@ -7,7 +7,7 @@ import { recordTaskChanges } from './task-changes'
 import { withRetry } from './sqlite-retry'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
-import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
+import { SPRINT_TASK_COLUMNS, SPRINT_TASK_LIST_COLUMNS } from './sprint-query-constants'
 import { validateTransition, isTaskStatus } from '../../shared/task-state-machine'
 import { getSprintQueriesLogger } from './sprint-query-logger'
 import { mapRowToTask, mapRowsToTasks, serializeFieldForStorage } from './sprint-task-mapper'
@@ -166,16 +166,18 @@ export function listTasksRecent(db?: Database.Database): SprintTask[] {
       // UNION ALL form lets each branch use idx_sprint_tasks_status:
       //   1) active set: status IN (5 active statuses)
       //   2) recent terminal set: status IN (4 terminal) AND completed_at recent
+      //
+      // Both branches project SPRINT_TASK_LIST_COLUMNS — the heavy
+      // `review_diff_snapshot` blob is excluded so the renderer's 30s poll
+      // doesn't transfer hundreds of KB per task on every cycle.
       const rows = conn
         .prepare(
-          `SELECT * FROM (
-             SELECT * FROM sprint_tasks
-               WHERE status IN ('backlog','queued','blocked','active','review')
-             UNION ALL
-             SELECT * FROM sprint_tasks
-               WHERE status IN ('done','cancelled','failed','error')
-                 AND completed_at >= datetime('now', '-7 days')
-           )
+          `SELECT ${SPRINT_TASK_LIST_COLUMNS} FROM sprint_tasks
+             WHERE status IN ('backlog','queued','blocked','active','review')
+           UNION ALL
+           SELECT ${SPRINT_TASK_LIST_COLUMNS} FROM sprint_tasks
+             WHERE status IN ('done','cancelled','failed','error')
+               AND completed_at >= datetime('now', '-7 days')
            ORDER BY priority ASC, created_at ASC`
         )
         .all() as Record<string, unknown>[]
