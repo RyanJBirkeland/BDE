@@ -400,4 +400,35 @@ describe('runWatchdog', () => {
     await expect(runWatchdog(deps)).resolves.not.toThrow()
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task'))
   })
+
+  it('skips terminal notify and logs debug when orphan recovery wins the race (EP-5 T-29)', async () => {
+    const agent = makeAgent('task-orphan')
+    const concurrency = makeConcurrencyState(2)
+    const activeAgents = new Map<string, ActiveAgent>([['task-orphan', agent]])
+    const deps = makeDeps({ activeAgents, getConcurrency: () => concurrency })
+
+    // Simulate orphan recovery replacing the agent between the collection loop
+    // and the kill loop: checkAgent fires during collection (agent is still
+    // present with agentRunId 'run-task-orphan'), then during the kill loop
+    // the map entry has been replaced with a newer run.
+    vi.mocked(checkAgent).mockImplementation(() => {
+      // Replace the map entry with a newer run, as orphan recovery would do
+      activeAgents.set('task-orphan', { ...agent, agentRunId: 'run-newer' })
+      return 'idle'
+    })
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      concurrency,
+      shouldNotifyTerminal: true,
+      terminalStatus: 'error'
+    })
+
+    await runWatchdog(deps)
+
+    // Terminal notify must NOT be called — orphan recovery already owns this slot
+    expect(deps.onTaskTerminal).not.toHaveBeenCalled()
+    expect(deps.logger.debug).toHaveBeenCalledWith(
+      expect.stringContaining('already removed — skipping terminal notify')
+    )
+  })
 })

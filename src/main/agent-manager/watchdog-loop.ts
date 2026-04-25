@@ -183,6 +183,17 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
   }
 
   for (const { agent, verdict } of agentsToKill) {
+    // Idempotency guard: orphan recovery may have already removed this agent
+    // from the active map and triggered terminal notification between the time
+    // we collected agentsToKill and now. If the entry is gone (or has been
+    // replaced by a newer retry), skip the kill path to prevent double-notify.
+    if (deps.activeAgents.get(agent.taskId)?.agentRunId !== agent.agentRunId) {
+      deps.logger.debug(
+        `[watchdog] agent ${agent.taskId} (run ${agent.agentRunId}) already removed — skipping terminal notify`
+      )
+      continue
+    }
+
     const runtimeMs = Date.now() - agent.startedAt
     const limitMs = agent.maxRuntimeMs ?? deps.config.maxRuntimeMs
     deps.logger.event('agent.watchdog.kill', {
