@@ -97,8 +97,8 @@ async function cleanupStaleWorktrees(
 ): Promise<void> {
   await removeWorktreesForBranch(repoPath, branch, env, log)
   await removeWorktreeAtPath(repoPath, worktreePath, branch, env, log)
-  await pruneOrphanedWorktreeRefs(repoPath, env, log)
-  await deleteBranchRobustly(repoPath, branch, env, log)
+  await pruneOrphanedWorktreeRefs(repoPath, worktreePath, env, log)
+  await deleteBranchRobustly(repoPath, worktreePath, branch, env, log)
 }
 
 /**
@@ -178,13 +178,16 @@ async function removeWorktreeWithRmFallback(
 
 async function pruneOrphanedWorktreeRefs(
   repoPath: string,
+  worktreePath: string,
   env: Record<string, string | undefined>,
   log: Logger
 ): Promise<void> {
   try {
     await pruneWorktrees(repoPath, env)
   } catch (pruneErr) {
-    log.warn(`[worktree] pruneWorktrees failed for ${repoPath}: ${asMessage(pruneErr)}`)
+    log.warn(
+      `[worktree] pruneWorktrees failed for ${repoPath} (worktreePath=${worktreePath}): ${asMessage(pruneErr)}`
+    )
   }
 }
 
@@ -196,6 +199,7 @@ async function pruneOrphanedWorktreeRefs(
  */
 async function deleteBranchRobustly(
   repoPath: string,
+  worktreePath: string,
   branch: string,
   env: Record<string, string | undefined>,
   log: Logger
@@ -210,7 +214,7 @@ async function deleteBranchRobustly(
     await forceDeleteBranchRef(repoPath, branch, env)
   } catch (forceDeleteErr) {
     log.warn(
-      `[worktree] forceDeleteBranchRef also failed for branch ${branch} in ${repoPath}: ${asMessage(forceDeleteErr)}`
+      `[worktree] forceDeleteBranchRef also failed for branch ${branch} in ${repoPath} (worktreePath=${worktreePath}): ${asMessage(forceDeleteErr)}`
     )
   }
 }
@@ -351,19 +355,25 @@ export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> 
   try {
     await removeWorktreeForce(repoPath, worktreePath, env)
   } catch (err) {
-    log.warn(`[worktree] Failed to remove worktree ${worktreePath}: ${err}`)
+    log.warn(
+      `[worktree] Failed to remove worktree (worktreePath=${worktreePath}): ${err}`
+    )
   }
 
   try {
     await pruneWorktrees(repoPath, env)
   } catch (err) {
-    log.warn(`[worktree] Failed to prune worktrees: ${err}`)
+    log.warn(
+      `[worktree] Failed to prune worktrees (worktreePath=${worktreePath}): ${err}`
+    )
   }
 
   try {
     await deleteBranch(repoPath, branch, env)
   } catch (err) {
-    log.warn(`[worktree] Failed to delete branch ${branch}: ${err}`)
+    log.warn(
+      `[worktree] Failed to delete branch ${branch} (worktreePath=${worktreePath}): ${err}`
+    )
   }
 }
 
@@ -480,7 +490,9 @@ async function deleteWorktreeDir(worktreePath: string, log: Logger): Promise<boo
     await execFileAsync('rm', ['-rf', worktreePath], { env })
     return true
   } catch (err) {
-    log.warn(`[worktree] Failed to remove stale worktree directory: ${err}`)
+    log.warn(
+      `[worktree] Failed to remove stale worktree directory (worktreePath=${worktreePath}): ${err}`
+    )
     return false
   }
 }

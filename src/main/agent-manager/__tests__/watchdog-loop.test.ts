@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { ActiveAgent } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
@@ -15,7 +15,14 @@ vi.mock('../../agent-event-mapper', () => ({
   flushAgentEventBatcher: vi.fn()
 }))
 
-import { killActiveAgent, runWatchdog, type WatchdogLoopDeps } from '../watchdog-loop'
+import {
+  killActiveAgent,
+  runWatchdog,
+  killAgentWithEscalation,
+  forceKillAgent,
+  FORCE_KILL_DELAY_MS,
+  type WatchdogLoopDeps
+} from '../watchdog-loop'
 import { checkAgent } from '../watchdog'
 import { handleWatchdogVerdict } from '../watchdog-handler'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
@@ -89,6 +96,89 @@ function makeDeps(overrides: Partial<WatchdogLoopDeps> = {}): WatchdogLoopDeps {
     ...overrides
   }
 }
+
+describe('forceKillAgent', () => {
+  it('logs the soft-kill-timeout escalation line and prefers handle.forceKill when available', () => {
+    const agent = makeAgent('task-fk')
+    const forceKill = vi.fn()
+    agent.handle.forceKill = forceKill
+    const logger = makeLogger()
+
+    forceKillAgent(agent, logger)
+
+    expect(forceKill).toHaveBeenCalledTimes(1)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('forceKill applied after soft kill timeout')
+    )
+  })
+
+  it('falls back to subprocess SIGKILL when handle.forceKill is not implemented', () => {
+    const agent = makeAgent('task-fk2')
+    const procKill = vi.fn()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(agent.handle as any).process = { kill: procKill }
+    const logger = makeLogger()
+
+    forceKillAgent(agent, logger)
+
+    expect(procKill).toHaveBeenCalledWith('SIGKILL')
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('forceKill applied after soft kill timeout')
+    )
+  })
+
+  it('falls back to abort() when neither forceKill nor a subprocess is exposed', () => {
+    const agent = makeAgent('task-fk3')
+    const logger = makeLogger()
+
+    forceKillAgent(agent, logger)
+
+    expect(agent.handle.abort).toHaveBeenCalled()
+  })
+})
+
+describe('killAgentWithEscalation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('soft-kills immediately and escalates to forceKill after the grace window', () => {
+    const agent = makeAgent('task-esc')
+    const forceKill = vi.fn()
+    agent.handle.forceKill = forceKill
+    const activeAgents = new Map([[agent.taskId, agent]])
+    const logger = makeLogger()
+
+    killAgentWithEscalation(agent, activeAgents, logger)
+
+    expect(agent.handle.abort).toHaveBeenCalledTimes(1)
+    expect(forceKill).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(FORCE_KILL_DELAY_MS)
+
+    expect(forceKill).toHaveBeenCalledTimes(1)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('forceKill applied after soft kill timeout')
+    )
+  })
+
+  it('skips the forced kill if the agent has already been removed from the active map', () => {
+    const agent = makeAgent('task-esc-gone')
+    const forceKill = vi.fn()
+    agent.handle.forceKill = forceKill
+    const activeAgents = new Map<string, ActiveAgent>()
+    const logger = makeLogger()
+
+    killAgentWithEscalation(agent, activeAgents, logger)
+
+    vi.advanceTimersByTime(FORCE_KILL_DELAY_MS)
+
+    expect(forceKill).not.toHaveBeenCalled()
+  })
+})
 
 describe('killActiveAgent', () => {
   it('aborts the agent handle and removes it from the map', () => {

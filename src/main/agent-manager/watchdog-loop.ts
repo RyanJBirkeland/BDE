@@ -40,25 +40,97 @@ export interface WatchdogLoopDeps {
 }
 
 // ---------------------------------------------------------------------------
-// Kill helper
+// Kill helpers — soft / force / escalation
 // ---------------------------------------------------------------------------
 
 /**
- * Abort an active agent's OS handle and send SIGKILL to its subprocess if available.
- * Does NOT remove the agent from the active-agents map — callers are responsible for
- * map removal after the DB write succeeds (or after deciding to remove on DB failure).
- * SDK may not expose process — revisit when SDK exposes subprocess handle.
+ * Grace window between the soft `abort()` signal and the SIGKILL escalation.
+ * Five seconds is long enough for the SDK / CLI to flush in-flight output and
+ * exit cleanly, but short enough that an unresponsive agent does not pin the
+ * watchdog slot indefinitely.
  */
-export function abortAgent(agent: ActiveAgent, logger: Logger): void {
+export const FORCE_KILL_DELAY_MS = 5_000
+
+/**
+ * Send the soft-abort signal to an agent. SDK and CLI handles both treat
+ * `abort()` as a graceful-exit request — the agent gets a chance to flush
+ * stdout/stderr and tear down child processes before the OS-level kill.
+ */
+export function softKillAgent(agent: ActiveAgent, logger: Logger): void {
   try {
     agent.handle.abort()
+  } catch (err) {
+    logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId}: ${err}`)
+  }
+}
+
+/**
+ * Force-terminate an agent that did not exit within the soft-kill grace
+ * window. Prefers the handle's own `forceKill()` when implemented; falls back
+ * to SIGKILL on any exposed subprocess; finally re-issues `abort()` so SDK
+ * paths still receive the cancellation signal even when no process handle
+ * exists. Always emits an explicit "forceKill applied after soft kill
+ * timeout" log line so operators can correlate with stuck-agent reports.
+ */
+export function forceKillAgent(agent: ActiveAgent, logger: Logger): void {
+  logger.warn(
+    `[agent-manager] forceKill applied after soft kill timeout for task ${agent.taskId}`
+  )
+  try {
+    if (typeof agent.handle.forceKill === 'function') {
+      agent.handle.forceKill()
+      return
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const proc = (agent.handle as any).process
     if (proc && typeof proc.kill === 'function') {
       proc.kill('SIGKILL')
+      return
     }
+    // SDK paths without a subprocess: re-issue abort so the cancellation
+    // token fires even if the soft-kill abort threw earlier.
+    agent.handle.abort()
   } catch (err) {
-    logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId}: ${err}`)
+    logger.warn(`[agent-manager] Failed to forceKill agent ${agent.taskId}: ${err}`)
+  }
+}
+
+/**
+ * Soft-kill the agent now and schedule a forced kill after the grace window
+ * if the agent is still in `activeAgents`. The returned timer handle is
+ * `unref()`'d so it never blocks process shutdown — pipeline tests that exit
+ * during the grace window do not hang on a pending timeout.
+ */
+export function killAgentWithEscalation(
+  agent: ActiveAgent,
+  activeAgents: Map<string, ActiveAgent>,
+  logger: Logger,
+  delayMs: number = FORCE_KILL_DELAY_MS
+): NodeJS.Timeout {
+  softKillAgent(agent, logger)
+  const timer = setTimeout(() => {
+    if (activeAgents.get(agent.taskId)?.agentRunId !== agent.agentRunId) return
+    forceKillAgent(agent, logger)
+  }, delayMs)
+  if (typeof timer.unref === 'function') timer.unref()
+  return timer
+}
+
+/**
+ * Backward-compatible wrapper. Callers that don't track the active-agents
+ * map (e.g. tests, manual cleanup paths) still get the soft + force behavior
+ * without the escalation timer — they invoke both signals immediately.
+ */
+export function abortAgent(agent: ActiveAgent, logger: Logger): void {
+  softKillAgent(agent, logger)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const proc = (agent.handle as any).process
+  if (proc && typeof proc.kill === 'function') {
+    try {
+      proc.kill('SIGKILL')
+    } catch (err) {
+      logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId}: ${err}`)
+    }
   }
 }
 
@@ -117,8 +189,12 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
       deps.metrics.increment('retriesQueued')
     }
 
-    // Step 1: Kill the OS process — does NOT yet remove from map.
-    abortAgent(agent, deps.logger)
+    // Step 1: Soft-kill the agent and arm the forceKill escalation.
+    // The watchdog hands control to the cleanup/DB-write steps immediately;
+    // if the agent has not exited by FORCE_KILL_DELAY_MS the timer fires a
+    // SIGKILL (or the SDK abort fallback) so a stuck process never pins the
+    // active-agents slot indefinitely.
+    killAgentWithEscalation(agent, deps.activeAgents, deps.logger)
     cleanupWorktreeIfNotInReview(agent, deps)
 
     const now = nowIso()

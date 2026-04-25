@@ -387,20 +387,34 @@ describe('AgentManagerImpl — class internals', () => {
       expect(agentB.handle.abort).toHaveBeenCalledOnce()
     })
 
-    it('Fix 2: calls process.kill(SIGKILL) on the underlying subprocess when available', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      const killFn = vi.fn()
-      const agent = makeActiveAgent('task-sigkill')
-      // Attach a mock process with kill() to the handle, simulating the SDK subprocess
-      ;(agent.handle as any).process = { kill: killFn }
-      manager.__testInternals.activeAgents.set('task-sigkill', agent)
+    it('Fix 2: escalates to process.kill(SIGKILL) on the underlying subprocess after the soft-kill grace window', async () => {
+      vi.useFakeTimers()
+      try {
+        const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+        const killFn = vi.fn()
+        const agent = makeActiveAgent('task-sigkill')
+        // Attach a mock process with kill() to the handle, simulating the SDK subprocess
+        ;(agent.handle as any).process = { kill: killFn }
+        manager.__testInternals.activeAgents.set('task-sigkill', agent)
 
-      vi.mocked(checkAgent).mockReturnValue('max-runtime')
+        vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
-      manager.__testInternals.watchdogLoop()
+        await manager.__testInternals.watchdogLoop()
 
-      expect(agent.handle.abort).toHaveBeenCalledOnce()
-      expect(killFn).toHaveBeenCalledWith('SIGKILL')
+        // Soft-kill fires immediately
+        expect(agent.handle.abort).toHaveBeenCalledOnce()
+        expect(killFn).not.toHaveBeenCalled()
+
+        // SIGKILL escalation fires after FORCE_KILL_DELAY_MS only if the agent
+        // is still in the active map. The watchdog removed it on the same tick,
+        // so re-insert to simulate a stuck agent that did not exit.
+        manager.__testInternals.activeAgents.set('task-sigkill', agent)
+        vi.advanceTimersByTime(5_000)
+
+        expect(killFn).toHaveBeenCalledWith('SIGKILL')
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('Fix 2: does not throw when process.kill is not available on the handle', () => {
