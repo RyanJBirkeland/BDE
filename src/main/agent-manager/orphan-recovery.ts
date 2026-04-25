@@ -2,44 +2,84 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { EXECUTOR_ID } from './types'
 import { reconcileRunningAgentRuns } from '../agent-history'
 
+/** Maximum times a task can be recovered before we declare it permanently broken. */
+export const MAX_ORPHAN_RECOVERY_COUNT = 3
+
+/**
+ * Summarises the outcome of a single orphan recovery run.
+ * `recovered` = task IDs successfully re-queued.
+ * `exhausted` = task IDs that reached the cap and were moved to `error`.
+ */
+export interface OrphanRecoveryResult {
+  recovered: string[]
+  exhausted: string[]
+}
+
+/**
+ * True once per process lifetime: suppresses the repetitive "has PR, clearing
+ * claimed_by" log after the first occurrence so it does not drown other signals.
+ */
+let prClearingAlreadyLogged = false
+
 export async function recoverOrphans(
   isAgentActive: (taskId: string) => boolean,
   repo: IAgentTaskRepository,
   logger: { info: (msg: string) => void; warn: (msg: string) => void }
-): Promise<number> {
+): Promise<OrphanRecoveryResult> {
   const orphans = repo.getOrphanedTasks(EXECUTOR_ID)
-  let recovered = 0
+  const recovered: string[] = []
+  const exhausted: string[] = []
 
   for (const task of orphans) {
-    if (isAgentActive(task.id)) continue // still running
+    if (isAgentActive(task.id)) continue
 
-    // Skip tasks that already have a PR — they completed successfully and are
-    // waiting for SprintPrPoller to mark them done on merge.
     if (task.pr_url || task.pr_status === 'branch_only') {
-      logger.info(
-        `[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`
-      )
+      if (!prClearingAlreadyLogged) {
+        logger.info(
+          `[agent-manager] Task ${task.id} "${task.title}" has PR ${task.pr_url} — not orphaned, clearing claimed_by`
+        )
+        prClearingAlreadyLogged = true
+      }
       repo.updateTask(task.id, { claimed_by: null })
       continue
     }
 
-    logger.warn(`[agent-manager] Orphaned task ${task.id} "${task.title}" — re-queuing`)
+    const recoveryCount = task.orphan_recovery_count ?? 0
 
-    // Re-queue: clear claimed_by so drain loop or external runner can pick it up.
-    // Do NOT increment retry_count — orphaning is a process crash, not a task failure.
-    // retry_count is only incremented by agent failure paths in completion.ts.
-    // EP-1 note: startup recovery runs before AgentManager is constructed, so
-    // TaskStateService is not available here. Deferred to EP-2.
+    if (recoveryCount >= MAX_ORPHAN_RECOVERY_COUNT) {
+      logger.warn(
+        `[agent-manager] Task ${task.id} "${task.title}" exhausted orphan recovery cap ` +
+          `(count=${recoveryCount}, priorStatus=${task.status}, retryCount=${task.retry_count ?? 0}, startedAt=${task.started_at ?? 'null'}) — marking error`
+      )
+      repo.updateTask(task.id, {
+        status: 'error',
+        claimed_by: null,
+        failure_reason: 'exhausted: orphan recovery cap reached'
+      })
+      exhausted.push(task.id)
+      continue
+    }
+
+    logger.warn(
+      `[agent-manager] Orphaned task ${task.id} "${task.title}" — re-queuing ` +
+        `(count=${recoveryCount + 1}/${MAX_ORPHAN_RECOVERY_COUNT}, priorStatus=${task.status}, retryCount=${task.retry_count ?? 0}, startedAt=${task.started_at ?? 'null'})`
+    )
+
     repo.updateTask(task.id, {
       status: 'queued',
       claimed_by: null,
-      notes: `Task was re-queued by orphan recovery. Agent process terminated without completing the task.`
+      orphan_recovery_count: recoveryCount + 1,
+      completed_at: null,
+      failure_reason: null,
+      started_at: null,
+      retry_count: 0,
+      fast_fail_count: 0,
+      next_eligible_at: null,
+      notes: `Task was re-queued by orphan recovery (attempt ${recoveryCount + 1}/${MAX_ORPHAN_RECOVERY_COUNT}). Agent process terminated without completing the task.`
     })
-    recovered++
+    recovered.push(task.id)
   }
 
-  // Reconcile agent_runs: finalize any DB records marked 'running' whose
-  // agent is no longer in the in-memory active set (crashed without cleanup).
   try {
     const cleaned = reconcileRunningAgentRuns(isAgentActive)
     if (cleaned > 0) logger.info(`[agent-manager] Reconciled ${cleaned} stale agent_runs records`)
@@ -47,5 +87,5 @@ export async function recoverOrphans(
     /* best-effort */
   }
 
-  return recovered
+  return { recovered, exhausted }
 }

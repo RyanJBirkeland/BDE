@@ -11,7 +11,7 @@ vi.mock('../../agent-history', () => ({
 }))
 
 import { getOrphanedTasks, updateTask } from '../../data/sprint-queries'
-import { recoverOrphans } from '../orphan-recovery'
+import { recoverOrphans, MAX_ORPHAN_RECOVERY_COUNT } from '../orphan-recovery'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { SprintTask } from '../../../shared/types'
 
@@ -38,7 +38,8 @@ function makeTask(id: string, title = `Task ${id}`): SprintTask {
     title,
     status: 'active',
     claimed_by: 'bde-embedded',
-    depends_on: null
+    depends_on: null,
+    orphan_recovery_count: 0
   } as SprintTask
 }
 
@@ -53,62 +54,65 @@ beforeEach(() => {
 })
 
 describe('recoverOrphans', () => {
-  it('re-queues tasks not in the active agent map', async () => {
+  it('re-queues tasks not in the active agent map and returns them in recovered', async () => {
     const task = makeTask('task-1')
     getOrphanedTasksMock.mockReturnValue([task])
 
-    const recovered = await recoverOrphans(() => false, mockRepo, logger)
+    const result = await recoverOrphans(() => false, mockRepo, logger)
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
-    expect(updateTaskMock).toHaveBeenCalledWith('task-1', {
-      status: 'queued',
-      claimed_by: null,
-      notes:
-        'Task was re-queued by orphan recovery. Agent process terminated without completing the task.'
-    })
-    expect(recovered).toBe(1)
+    expect(updateTaskMock).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ status: 'queued', claimed_by: null, orphan_recovery_count: 1 })
+    )
+    expect(result.recovered).toEqual(['task-1'])
+    expect(result.exhausted).toEqual([])
   })
 
   it('skips tasks still active in the agent map', async () => {
     const task = makeTask('task-2')
     getOrphanedTasksMock.mockReturnValue([task])
 
-    const recovered = await recoverOrphans((taskId) => taskId === 'task-2', mockRepo, logger)
+    const result = await recoverOrphans((taskId) => taskId === 'task-2', mockRepo, logger)
 
     expect(updateTaskMock).not.toHaveBeenCalled()
-    expect(recovered).toBe(0)
+    expect(result.recovered).toEqual([])
+    expect(result.exhausted).toEqual([])
   })
 
-  it('returns correct count of recovered tasks when mix of active and orphaned', async () => {
+  it('returns correct lists when mix of active and orphaned tasks', async () => {
     const activeTask = makeTask('task-active')
     const orphan1 = makeTask('task-orphan-1')
     const orphan2 = makeTask('task-orphan-2')
     getOrphanedTasksMock.mockReturnValue([activeTask, orphan1, orphan2])
 
-    const recovered = await recoverOrphans((taskId) => taskId === 'task-active', mockRepo, logger)
+    const result = await recoverOrphans((taskId) => taskId === 'task-active', mockRepo, logger)
 
     expect(updateTaskMock).toHaveBeenCalledTimes(2)
-    expect(recovered).toBe(2)
+    expect(result.recovered).toEqual(['task-orphan-1', 'task-orphan-2'])
+    expect(result.exhausted).toEqual([])
   })
 
-  it('returns 0 and does nothing when orphan list is empty', async () => {
+  it('returns empty lists when orphan list is empty', async () => {
     getOrphanedTasksMock.mockReturnValue([])
 
-    const recovered = await recoverOrphans(() => false, mockRepo, logger)
+    const result = await recoverOrphans(() => false, mockRepo, logger)
 
     expect(updateTaskMock).not.toHaveBeenCalled()
-    expect(recovered).toBe(0)
+    expect(result.recovered).toEqual([])
+    expect(result.exhausted).toEqual([])
   })
 
   it('clears claimed_by but does not re-queue a task with pr_url', async () => {
     const task = { ...makeTask('task-pr'), pr_url: 'https://github.com/org/repo/pull/42' }
     getOrphanedTasksMock.mockReturnValue([task])
 
-    const recovered = await recoverOrphans(() => false, mockRepo, logger)
+    const result = await recoverOrphans(() => false, mockRepo, logger)
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
     expect(updateTaskMock).toHaveBeenCalledWith('task-pr', { claimed_by: null })
-    expect(recovered).toBe(0)
+    expect(result.recovered).toEqual([])
+    expect(result.exhausted).toEqual([])
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('has PR'))
   })
 
@@ -118,9 +122,9 @@ describe('recoverOrphans', () => {
     branchOnlyTask.pr_url = null
     getOrphanedTasksMock.mockReturnValue([branchOnlyTask])
 
-    const count = await recoverOrphans(() => false, mockRepo, logger)
+    const result = await recoverOrphans(() => false, mockRepo, logger)
 
-    expect(count).toBe(0)
+    expect(result.recovered).toEqual([])
     expect(updateTaskMock).toHaveBeenCalledWith('task-branch-only', { claimed_by: null })
   })
 
@@ -133,5 +137,70 @@ describe('recoverOrphans', () => {
     const { reconcileRunningAgentRuns } = await import('../../agent-history')
     expect(reconcileRunningAgentRuns).toHaveBeenCalledWith(isActive)
     expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Reconciled 2 stale'))
+  })
+
+  describe('recovery cap', () => {
+    it('increments orphan_recovery_count and re-queues a task under the cap', async () => {
+      const task = { ...makeTask('task-under-cap'), orphan_recovery_count: 1 }
+      getOrphanedTasksMock.mockReturnValue([task])
+
+      const result = await recoverOrphans(() => false, mockRepo, logger)
+
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-under-cap',
+        expect.objectContaining({ status: 'queued', orphan_recovery_count: 2 })
+      )
+      expect(result.recovered).toEqual(['task-under-cap'])
+      expect(result.exhausted).toEqual([])
+    })
+
+    it('marks a task error when orphan_recovery_count equals MAX_ORPHAN_RECOVERY_COUNT', async () => {
+      const task = {
+        ...makeTask('task-at-cap'),
+        orphan_recovery_count: MAX_ORPHAN_RECOVERY_COUNT
+      }
+      getOrphanedTasksMock.mockReturnValue([task])
+
+      const result = await recoverOrphans(() => false, mockRepo, logger)
+
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-at-cap',
+        expect.objectContaining({
+          status: 'error',
+          failure_reason: 'exhausted: orphan recovery cap reached'
+        })
+      )
+      expect(result.exhausted).toEqual(['task-at-cap'])
+      expect(result.recovered).toEqual([])
+    })
+
+    it('does not re-queue an exhausted task', async () => {
+      const task = {
+        ...makeTask('task-exhausted'),
+        orphan_recovery_count: MAX_ORPHAN_RECOVERY_COUNT
+      }
+      getOrphanedTasksMock.mockReturnValue([task])
+
+      await recoverOrphans(() => false, mockRepo, logger)
+
+      const calls = updateTaskMock.mock.calls
+      expect(calls.length).toBe(1)
+      // Must not set status=queued
+      expect(calls[0][1]).not.toMatchObject({ status: 'queued' })
+    })
+
+    it('handles undefined orphan_recovery_count as 0', async () => {
+      const task = { ...makeTask('task-undefined-count') }
+      delete (task as any).orphan_recovery_count
+      getOrphanedTasksMock.mockReturnValue([task])
+
+      const result = await recoverOrphans(() => false, mockRepo, logger)
+
+      expect(updateTaskMock).toHaveBeenCalledWith(
+        'task-undefined-count',
+        expect.objectContaining({ orphan_recovery_count: 1 })
+      )
+      expect(result.recovered).toEqual(['task-undefined-count'])
+    })
   })
 })

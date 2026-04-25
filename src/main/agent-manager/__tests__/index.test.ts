@@ -209,7 +209,7 @@ function setupDefaultMocks(): void {
   vi.mocked(claimTask).mockReturnValue(null)
   vi.mocked(updateTask).mockReturnValue(null)
   vi.mocked(getTask).mockReturnValue(makeTask())
-  vi.mocked(recoverOrphans).mockResolvedValue(0)
+  vi.mocked(recoverOrphans).mockResolvedValue({ recovered: [], exhausted: [] })
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
   vi.mocked(setupWorktree).mockResolvedValue({
     worktreePath: '/tmp/wt/myrepo/task-1',

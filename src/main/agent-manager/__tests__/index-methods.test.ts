@@ -208,7 +208,7 @@ function setupDefaultMocks() {
   vi.mocked(claimTask).mockReturnValue({ id: 'task-1' } as ReturnType<typeof vi.fn>)
   vi.mocked(updateTask).mockReturnValue(null)
   vi.mocked(getTask).mockReturnValue({ id: 'task-1', status: 'queued', repo: 'myrepo' } as any)
-  vi.mocked(recoverOrphans).mockResolvedValue(0)
+  vi.mocked(recoverOrphans).mockResolvedValue({ recovered: [], exhausted: [] })
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
   vi.mocked(setupWorktree).mockResolvedValue({
     worktreePath: '/tmp/wt/myrepo/task-1',
