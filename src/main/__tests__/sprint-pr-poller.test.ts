@@ -65,11 +65,15 @@ describe('createSprintPrPoller', () => {
     const task = makeTask()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
-      pollPrStatuses: vi
-        .fn()
-        .mockResolvedValue([
-          { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null }
-        ]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        {
+          taskId: 'task-1',
+          merged: true,
+          state: 'MERGED',
+          mergedAt: '2026-04-24T10:00:00Z',
+          mergeableState: null
+        }
+      ]),
       markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1'])
     })
 
@@ -86,15 +90,119 @@ describe('createSprintPrPoller', () => {
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'done')
   })
 
+  it('joins many results to inputs in O(1) per result and notifies each terminal', async () => {
+    const taskCount = 12
+    const tasks = Array.from({ length: taskCount }, (_, i) =>
+      makeTask({
+        id: `task-${i}`,
+        pr_number: 100 + i,
+        pr_url: `https://github.com/owner/myrepo/pull/${100 + i}`
+      })
+    )
+    const results = tasks.map((t) => ({
+      taskId: t.id,
+      merged: true,
+      state: 'MERGED',
+      mergedAt: '2026-04-24T10:00:00Z',
+      mergeableState: null
+    }))
+    // Reverse the results so the lookup order doesn't trivially match input order.
+    results.reverse()
+
+    const markDone = vi.fn((prNumber: number) => [`task-${prNumber - 100}`])
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue(tasks),
+      pollPrStatuses: vi.fn().mockResolvedValue(results),
+      markTaskDoneByPrNumber: markDone
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    // Every PR number should have been routed to markTaskDoneByPrNumber, and
+    // each task should have its terminal notification fired exactly once.
+    expect(markDone).toHaveBeenCalledTimes(taskCount)
+    for (let i = 0; i < taskCount; i++) {
+      expect(markDone).toHaveBeenCalledWith(100 + i)
+      expect(deps.onTaskTerminal).toHaveBeenCalledWith(`task-${i}`, 'done')
+    }
+  })
+
+  it('logs the merged_at timestamp when present on the merge result', async () => {
+    const task = makeTask()
+    const logInfo = vi.fn()
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        {
+          taskId: 'task-1',
+          merged: true,
+          state: 'MERGED',
+          mergedAt: '2026-04-24T10:00:00Z',
+          mergeableState: null
+        }
+      ]),
+      markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
+      logger: { info: logInfo, warn: vi.fn() }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(logInfo).toHaveBeenCalledWith(expect.stringContaining('mergedAt=2026-04-24T10:00:00Z'))
+    expect(logInfo).toHaveBeenCalledWith(expect.stringContaining('PR #42 merged'))
+  })
+
+  it('omits mergedAt suffix when the merge result has no timestamp', async () => {
+    const task = makeTask()
+    const logInfo = vi.fn()
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        {
+          taskId: 'task-1',
+          merged: true,
+          state: 'MERGED',
+          mergedAt: null,
+          mergeableState: null
+        }
+      ]),
+      markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
+      logger: { info: logInfo, warn: vi.fn() }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+    poller.stop()
+
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    const mergeLogCall = logInfo.mock.calls.find((args) =>
+      String(args[0]).startsWith('[sprint-pr-poller] PR #42 merged')
+    )
+    expect(mergeLogCall).toBeDefined()
+    expect(String(mergeLogCall?.[0])).not.toContain('mergedAt=')
+  })
+
   it('marks closed PRs as cancelled', async () => {
     const task = makeTask()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
-      pollPrStatuses: vi
-        .fn()
-        .mockResolvedValue([
-          { taskId: 'task-1', merged: false, state: 'CLOSED', mergeableState: null }
-        ]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        {
+          taskId: 'task-1',
+          merged: false,
+          state: 'CLOSED',
+          mergedAt: null,
+          mergeableState: null
+        }
+      ]),
       markTaskCancelledByPrNumber: vi.fn().mockReturnValue(['task-1'])
     })
 
@@ -113,11 +221,15 @@ describe('createSprintPrPoller', () => {
     const task = makeTask()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
-      pollPrStatuses: vi
-        .fn()
-        .mockResolvedValue([
-          { taskId: 'task-1', merged: false, state: 'OPEN', mergeableState: 'MERGEABLE' }
-        ])
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        {
+          taskId: 'task-1',
+          merged: false,
+          state: 'OPEN',
+          mergedAt: null,
+          mergeableState: 'MERGEABLE'
+        }
+      ])
     })
 
     const poller = createSprintPrPoller(deps)
@@ -207,11 +319,15 @@ describe('createSprintPrPoller', () => {
     const logWarn = vi.fn()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
-      pollPrStatuses: vi
-        .fn()
-        .mockResolvedValue([
-          { taskId: 'task-1', merged: true, state: 'MERGED', mergeableState: null }
-        ]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        {
+          taskId: 'task-1',
+          merged: true,
+          state: 'MERGED',
+          mergedAt: null,
+          mergeableState: null
+        }
+      ]),
       markTaskDoneByPrNumber: vi.fn().mockReturnValue(['task-1']),
       onTaskTerminal: vi.fn().mockRejectedValue(new Error('dependency resolution failed')),
       logger: { info: vi.fn(), warn: logWarn }
@@ -235,11 +351,15 @@ describe('createSprintPrPoller', () => {
     const logWarn = vi.fn()
     const deps = makeDeps({
       listTasksWithOpenPrs: vi.fn().mockReturnValue([task]),
-      pollPrStatuses: vi
-        .fn()
-        .mockResolvedValue([
-          { taskId: 'task-1', merged: false, state: 'CLOSED', mergeableState: null }
-        ]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        {
+          taskId: 'task-1',
+          merged: false,
+          state: 'CLOSED',
+          mergedAt: null,
+          mergeableState: null
+        }
+      ]),
       markTaskCancelledByPrNumber: vi.fn().mockReturnValue(['task-1']),
       onTaskTerminal: vi.fn().mockRejectedValue(new Error('dependency resolution failed')),
       logger: { info: vi.fn(), warn: logWarn }

@@ -41,6 +41,18 @@ export interface SprintPrPollerInstance {
 
 type Logger = NonNullable<SprintPrPollerDeps['logger']>
 
+/**
+ * Formats the merge log line. Includes `mergedAt` when available so audits
+ * can correlate "task marked done" events with the GitHub merge timestamp
+ * without a separate API call. SHA + PR title are not yet on PrStatusResult;
+ * surfacing those requires extending github-pr-status.ts (out of scope here).
+ */
+function formatMergedLogLine(prNumber: number, taskIds: string[], mergedAt: string | null): string {
+  const idsLabel = taskIds.join(', ') || '(none)'
+  const mergedAtSuffix = mergedAt ? ` mergedAt=${mergedAt}` : ''
+  return `[sprint-pr-poller] PR #${prNumber} merged${mergedAtSuffix} — marked ${taskIds.length} task(s) done: ${idsLabel}`
+}
+
 async function notifyTaskTerminalBatch(
   ids: string[],
   status: TaskStatus,
@@ -81,17 +93,19 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
 
     const results = await deps.pollPrStatuses(inputs)
 
+    // Pre-build a taskId → input map so the join below is O(1) per result
+    // instead of O(N) per result (was O(N²) over the open-PR set).
+    const inputByTaskId = new Map(inputs.map((input) => [input.taskId, input]))
+
     const log = deps.logger ?? console
     for (const result of results) {
-      const input = inputs.find((i) => i.taskId === result.taskId)
+      const input = inputByTaskId.get(result.taskId)
       const prNumber = input ? parsePrUrl(input.prUrl)?.number : undefined
       if (!prNumber) continue
 
       if (result.merged) {
         const ids = deps.markTaskDoneByPrNumber(prNumber)
-        log.info(
-          `[sprint-pr-poller] PR #${prNumber} merged — marked ${ids.length} task(s) done: ${ids.join(', ') || '(none)'}`
-        )
+        log.info(formatMergedLogLine(prNumber, ids, result.mergedAt))
         ids.forEach((id) => log.info(`[sprint-pr-poller] Calling onTaskTerminal(${id}, 'done')`))
         await notifyTaskTerminalBatch(ids, 'done', deps.onTaskTerminal, log)
       } else if (result.state === 'CLOSED') {
