@@ -11,8 +11,20 @@ export type FailurePattern = {
 
 const failurePatternRegistry: FailurePattern[] = []
 
+/** The index past the last built-in pattern, recorded after all builtin registrations complete. */
+let builtinRegistryLength = 0
+
 export function registerFailurePattern(entry: FailurePattern): void {
   failurePatternRegistry.push(entry)
+}
+
+/**
+ * Truncates any test-registered patterns, leaving only the built-in patterns.
+ * Call in `afterEach` when tests add custom patterns via `registerFailurePattern`
+ * to prevent cross-test pollution.
+ */
+export function resetRegistryToBuiltins(): void {
+  failurePatternRegistry.splice(builtinRegistryLength)
 }
 
 registerFailurePattern({
@@ -87,6 +99,10 @@ registerFailurePattern({
   type: 'incomplete_files',
   keywords: ['missing:', 'incomplete files', 'files to change checklist']
 })
+
+// Record the length after all built-in registrations so resetRegistryToBuiltins
+// knows how many entries to preserve.
+builtinRegistryLength = failurePatternRegistry.length
 
 export function classifyFailureReason(
   notes: string | undefined,

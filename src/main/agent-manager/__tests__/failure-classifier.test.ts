@@ -1,5 +1,9 @@
-import { describe, it, expect, vi } from 'vitest'
-import { classifyFailureReason, registerFailurePattern } from '../failure-classifier'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { classifyFailureReason, registerFailurePattern, resetRegistryToBuiltins } from '../failure-classifier'
+
+afterEach(() => {
+  resetRegistryToBuiltins()
+})
 
 describe('classifyFailureReason', () => {
   describe('auth pattern matching', () => {
