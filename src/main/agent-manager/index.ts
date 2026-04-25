@@ -518,24 +518,35 @@ export class AgentManagerImpl implements AgentManager {
     this.clearStaleClaims()
     this.initDependencyIndex()
     this.kickOffInitialWorktreePrune()
-    this.lifecycle.startTimers(this.config.pollIntervalMs, {
-      onDrainTick: () => this.tickDrain(),
-      onWatchdogTick: () => {
-        this._watchdogLoop().catch((err) =>
-          this.logger.warn(`[agent-manager] Watchdog loop error: ${err}`)
-        )
+    this.lifecycle.startTimers(
+      this.config.pollIntervalMs,
+      {
+        onDrainTick: () => this.tickDrain(),
+        onWatchdogTick: () => {
+          this._watchdogLoop().catch((err) =>
+            this.logger.warn(`[agent-manager] Watchdog loop error: ${err}`)
+          )
+        },
+        onOrphanTick: () => {
+          this._orphanLoop().catch((err) =>
+            this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
+          )
+        },
+        onPruneTick: () => {
+          this._pruneLoop().catch((err) =>
+            this.logger.warn(`[agent-manager] Prune loop error: ${err}`)
+          )
+        }
       },
-      onOrphanTick: () => {
-        this._orphanLoop().catch((err) =>
-          this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
-        )
-      },
-      onPruneTick: () => {
-        this._pruneLoop().catch((err) =>
-          this.logger.warn(`[agent-manager] Prune loop error: ${err}`)
-        )
+      // Stagger the four loop timers so they don't all fire at t=0.
+      // Drain starts first (no delay); watchdog/orphan/prune spread across 250ms.
+      {
+        drainInitialDelayMs: 0,
+        watchdogInitialDelayMs: 100,
+        orphanInitialDelayMs: 175,
+        pruneInitialDelayMs: 250
       }
-    })
+    )
     this._scheduleInitialDrain()
 
     this.logger.info('[agent-manager] Started')

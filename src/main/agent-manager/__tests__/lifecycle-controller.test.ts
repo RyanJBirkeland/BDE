@@ -151,4 +151,61 @@ describe('LifecycleController', () => {
     expect(restartCallbacks.orphan).toHaveBeenCalled()
     expect(restartCallbacks.prune).toHaveBeenCalled()
   })
+
+  describe('timer stagger (initialDelayMs)', () => {
+    it('does not fire staggered timer before its initial delay elapses', () => {
+      // Drain interval is set to a short 100ms so we can confirm it fires
+      // while watchdog's stagger delay of 500ms hasn't elapsed yet.
+      const shortPollMs = 100
+      controller.startTimers(shortPollMs, callbacks, {
+        watchdogInitialDelayMs: 500
+      })
+
+      // Advance 400ms — drain (100ms interval) fires several times; watchdog (500ms stagger) has not
+      vi.advanceTimersByTime(400)
+
+      // Drain has no stagger — it should have fired multiple times
+      expect(callbacks.drain).toHaveBeenCalled()
+      // Watchdog stagger hasn't elapsed yet — no ticks yet
+      expect(callbacks.watchdog).not.toHaveBeenCalled()
+    })
+
+    it('fires staggered timer after initial delay plus one interval', () => {
+      controller.startTimers(POLL_INTERVAL_MS, callbacks, {
+        watchdogInitialDelayMs: 500
+      })
+
+      // 500ms stagger + 1 interval = watchdog should now fire
+      vi.advanceTimersByTime(500 + WATCHDOG_INTERVAL_MS)
+
+      expect(callbacks.watchdog).toHaveBeenCalledTimes(1)
+    })
+
+    it('stopTimers cancels pending stagger delays before they fire', () => {
+      controller.startTimers(POLL_INTERVAL_MS, callbacks, {
+        watchdogInitialDelayMs: 1_000,
+        orphanInitialDelayMs: 2_000,
+        pruneInitialDelayMs: 3_000
+      })
+
+      controller.stopTimers()
+
+      // Advance well past all stagger delays — no staggered timers should fire
+      vi.advanceTimersByTime(WORKTREE_PRUNE_INTERVAL_MS * 3)
+
+      expect(callbacks.watchdog).not.toHaveBeenCalled()
+      expect(callbacks.orphan).not.toHaveBeenCalled()
+      expect(callbacks.prune).not.toHaveBeenCalled()
+    })
+
+    it('zero or omitted initialDelayMs starts interval immediately (backward compat)', () => {
+      controller.startTimers(POLL_INTERVAL_MS, callbacks, {
+        drainInitialDelayMs: 0
+      })
+
+      vi.advanceTimersByTime(POLL_INTERVAL_MS)
+
+      expect(callbacks.drain).toHaveBeenCalledTimes(1)
+    })
+  })
 })
