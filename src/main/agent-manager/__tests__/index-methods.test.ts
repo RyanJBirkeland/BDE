@@ -1050,6 +1050,41 @@ describe('AgentManagerImpl — class internals', () => {
       // Both failures should be counted by the circuit breaker
       expect(manager.__testInternals.circuitBreaker.failureCount).toBe(2)
     })
+
+    it('does NOT increment circuit breaker on stream/post-spawn failures (EP-5)', async () => {
+      // Simulate a successful spawn followed by a mid-stream crash. The spawn-phase
+      // callback fires (onSpawnSuccess), then runAgent rejects from the streaming
+      // phase. Circuit breaker scope: spawn-phase only.
+      vi.mocked(runAgent).mockImplementation(async (_task, _wt, _rp, deps) => {
+        deps.onSpawnSuccess?.()
+        throw new Error('stream interrupted: ECONNRESET')
+      })
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
+
+      // Spawn succeeded → circuit breaker reset to 0; stream error must NOT trip it.
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(0)
+    })
+
+    it('DOES increment circuit breaker on spawn-phase failures (EP-5)', async () => {
+      // Spawn-phase failure: onSpawnFailure callback fires before runAgent rejects.
+      vi.mocked(runAgent).mockImplementation(async (task, _wt, _rp, deps) => {
+        deps.onSpawnFailure?.(task.id, 'enoent: claude not found')
+        throw new Error('spawn failed')
+      })
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
+
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(1)
+    })
   })
 
   // -------------------------------------------------------------------------

@@ -231,16 +231,25 @@ describe('classifyFailureReason', () => {
   })
 
   describe('pattern precedence', () => {
+    function makeTracingLogger() {
+      return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
+    }
+
     it('matches first pattern found in order — timeout beats test_failure (timeout registered before test_failure)', () => {
       // 'timeout' pattern is registered before 'test_failure' in the registry
+      const logger = makeTracingLogger()
       const msg = 'timeout during test execution'
-      expect(classifyFailureReason(msg)).toBe('timeout')
+      expect(classifyFailureReason(msg, logger)).toBe('timeout')
+      // Determinism: assert the specific pattern name that won, not just the verdict.
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('"timeout"'))
     })
 
     it('matches first pattern found in order — auth beats timeout (auth registered before timeout)', () => {
       // 'auth' is registered before 'timeout'; message contains both 'timeout' and 'invalid token'
+      const logger = makeTracingLogger()
       const msg = 'timeout: invalid token'
-      expect(classifyFailureReason(msg)).toBe('auth')
+      expect(classifyFailureReason(msg, logger)).toBe('auth')
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('"auth"'))
     })
   })
 
