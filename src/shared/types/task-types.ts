@@ -119,6 +119,12 @@ export interface SprintTask {
    *          truncated?: boolean }
    */
   review_diff_snapshot?: string | null
+  /**
+   * Number of times this task has been rescued by orphan recovery.
+   * When this reaches MAX_ORPHAN_RECOVERY_COUNT the task is transitioned
+   * to `error` instead of being re-queued, preventing infinite crash loops.
+   */
+  orphan_recovery_count?: number
   updated_at: string
   created_at: string
 }
