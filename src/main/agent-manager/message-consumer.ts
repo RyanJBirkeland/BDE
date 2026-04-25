@@ -112,9 +112,16 @@ export async function consumeMessages(
   const pendingPlaygroundPaths: PlaygroundWriteResult[] = []
   const playgroundDetector = createPlaygroundDetector()
   let turnCount = 0
+  let messagesConsumed = 0
+  let lastEventType = 'none'
 
   try {
     for await (const msg of handle.messages) {
+      messagesConsumed++
+      const sdkMsg = asSDKMessage(msg)
+      if (sdkMsg?.type) {
+        lastEventType = sdkMsg.type
+      }
       const result = processSDKMessage(
         msg,
         agent,
@@ -175,12 +182,18 @@ export async function consumeMessages(
       }
     }
   } catch (err) {
-    logError(logger, `[agent-manager] Error consuming messages for task ${task.id}`, err)
     const errMsg = err instanceof Error ? err.message : String(err)
+    logger.warn(
+      `[agent-manager] Stream interrupted for task ${task.id}: ${errMsg} (messagesConsumed=${messagesConsumed} lastEventType=${lastEventType})`
+    )
+    logError(logger, `[agent-manager] Error consuming messages for task ${task.id}`, err)
     emitAgentEvent(agentRunId, {
       type: 'agent:error',
       message: `Stream interrupted: ${errMsg}`,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      taskId: task.id,
+      messagesConsumed,
+      lastEventType
     })
     if (
       errMsg.includes('Invalid API key') ||

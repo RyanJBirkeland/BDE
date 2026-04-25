@@ -498,7 +498,7 @@ async function finalizeAgentRun(
 
   await persistAndCleanupAfterRun(task, worktree, repoPath, agent, deps)
   deps.logger.info(
-    `[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'})`
+    `[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'} durationMs=${durationMs} model=${agent.model || 'unknown'} costUsd=${agent.costUsd ?? 'unknown'})`
   )
 }
 

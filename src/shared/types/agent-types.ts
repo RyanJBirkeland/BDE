@@ -248,7 +248,14 @@ export type AgentEvent =
       timestamp: number
     }
   | { type: 'agent:rate_limited'; retryDelayMs: number; attempt: number; timestamp: number }
-  | { type: 'agent:error'; message: string; timestamp: number }
+  | {
+      type: 'agent:error'
+      message: string
+      timestamp: number
+      taskId?: string
+      messagesConsumed?: number
+      lastEventType?: string
+    }
   | { type: 'agent:stderr'; text: string; timestamp: number }
   | {
       type: 'agent:completed'
