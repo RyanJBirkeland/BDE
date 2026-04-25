@@ -10,6 +10,9 @@
  *
  * transitionTaskToReview is called by resolveSuccess() after all guards pass.
  */
+
+/** Hard timeout for all git subprocess calls in the success-path phases. */
+const GIT_EXEC_TIMEOUT_MS = 30_000
 import { existsSync } from 'node:fs'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
@@ -138,7 +141,8 @@ const defaultReadTipCommit: ReadTipCommit = async (branch, repoPath) => {
   const env = buildAgentEnv()
   const { stdout } = await execFileAsync('git', ['log', '-1', '--format=%B', branch], {
     cwd: repoPath,
-    env
+    env,
+    timeout: GIT_EXEC_TIMEOUT_MS
   })
   return stdout.trim()
 }
@@ -226,7 +230,8 @@ async function detectBranch(worktreePath: string): Promise<string> {
   const env = buildAgentEnv()
   const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
     cwd: worktreePath,
-    env
+    env,
+    timeout: GIT_EXEC_TIMEOUT_MS
   })
   return stdout.trim()
 }
@@ -366,8 +371,8 @@ async function logUncommittedWorktreeState(
   const env = buildAgentEnv()
   try {
     const [{ stdout: diff }, { stdout: status }] = await Promise.all([
-      execFileAsync('git', ['diff', 'HEAD'], { cwd: worktreePath, env }),
-      execFileAsync('git', ['status', '--porcelain'], { cwd: worktreePath, env })
+      execFileAsync('git', ['diff', 'HEAD'], { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }),
+      execFileAsync('git', ['status', '--porcelain'], { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS })
     ])
     logger.warn(
       `[completion] Task ${taskId}: no-commits — uncommitted status:\n${status.trim() || '(empty)'}`
@@ -403,7 +408,7 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
     const { stdout: diffOut } = await execFileAsync(
       'git',
       ['rev-list', '--count', `origin/main..${branch}`],
-      { cwd: worktreePath, env }
+      { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
       await logUncommittedWorktreeState(taskId, worktreePath, logger)

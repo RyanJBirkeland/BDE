@@ -8,6 +8,10 @@
  * No business logic lives here — this file is the public API surface.
  * All existing imports from other files pointing to completion.ts remain valid.
  */
+
+/** Hard timeout for all git subprocess calls in the completion path. */
+const GIT_EXEC_TIMEOUT_MS = 30_000
+
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
 import type { Logger } from '../logger'
@@ -87,7 +91,7 @@ export async function deleteAgentBranchBeforeRetry(
 ): Promise<void> {
   const env = buildAgentEnv()
   try {
-    await execFileAsync('git', ['branch', '-D', agentBranch], { cwd: repoPath, env })
+    await execFileAsync('git', ['branch', '-D', agentBranch], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
     logger.info(`[completion] deleted agent branch before retry: ${agentBranch}`)
   } catch (err) {
     // Branch may not exist (first-time retry, already cleaned, etc.) — non-fatal.
@@ -287,7 +291,8 @@ async function annotateUnverifiedFacts(
     const env = buildAgentEnv()
     const { stdout: diff } = await execFileAsync('git', ['diff', 'HEAD~1', 'HEAD'], {
       cwd: worktreePath,
-      env
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
     })
 
     const packageJsonPath = join(worktreePath, 'package.json')
