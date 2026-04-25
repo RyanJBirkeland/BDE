@@ -6,7 +6,8 @@ import {
   XCircle,
   GitMerge,
   GitPullRequestClosed,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react'
 import {
   useNotificationsStore,
@@ -65,6 +66,8 @@ export function NotificationBell(): React.JSX.Element {
   const notifications = useNotificationsStore((s) => s.notifications)
   const markAsRead = useNotificationsStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead)
+  const clearOne = useNotificationsStore((s) => s.clearOne)
+  const clearAll = useNotificationsStore((s) => s.clearAll)
   const unreadCount = useNotificationsStore(selectUnreadCount)
   const setView = usePanelLayoutStore((s) => s.setView)
   const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
@@ -202,6 +205,15 @@ export function NotificationBell(): React.JSX.Element {
     markAllAsRead()
   }
 
+  const handleClearAll = (): void => {
+    clearAll()
+  }
+
+  const handleClearOne = (event: React.MouseEvent, id: string): void => {
+    event.stopPropagation()
+    clearOne(id)
+  }
+
   return (
     <div className="notification-bell">
       <button
@@ -237,14 +249,24 @@ export function NotificationBell(): React.JSX.Element {
           >
             <div className="notification-bell__header">
               <h3 className="notification-bell__title">Notifications</h3>
-              {unreadCount > 0 && (
-                <button
-                  className="bde-btn bde-btn--ghost bde-btn--sm"
-                  onClick={handleMarkAllAsRead}
-                >
-                  Mark all as read
-                </button>
-              )}
+              <div className="notification-bell__header-actions">
+                {unreadCount > 0 && (
+                  <button
+                    className="bde-btn bde-btn--ghost bde-btn--sm"
+                    onClick={handleMarkAllAsRead}
+                  >
+                    Mark all as read
+                  </button>
+                )}
+                {notifications.length > 0 && (
+                  <button
+                    className="bde-btn bde-btn--ghost bde-btn--sm"
+                    onClick={handleClearAll}
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
             </div>
 
             <div
@@ -265,7 +287,7 @@ export function NotificationBell(): React.JSX.Element {
                   const colorClass = NOTIFICATION_COLORS[notification.type]
 
                   return (
-                    <button
+                    <div
                       key={notification.id}
                       role="menuitem"
                       tabIndex={-1}
@@ -287,7 +309,15 @@ export function NotificationBell(): React.JSX.Element {
                         </div>
                       </div>
                       {!notification.read && <div className="notification-item__unread-dot" />}
-                    </button>
+                      <button
+                        type="button"
+                        className="notification-item__clear"
+                        aria-label={`Clear notification: ${notification.title}`}
+                        onClick={(event) => handleClearOne(event, notification.id)}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   )
                 })
               )}

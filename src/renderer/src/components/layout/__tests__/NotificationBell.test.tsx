@@ -98,12 +98,12 @@ describe('NotificationBell', () => {
     })
 
     render(<NotificationBell />)
-    const button = screen.getByRole('button', { name: /notifications/i })
+    const button = screen.getByRole('button', { name: /^notifications$/i })
     await user.click(button)
 
-    const notification = screen.getByText('Agent completed').closest('button')
+    const notification = screen.getByRole('menuitem', { name: /agent completed/i })
     expect(notification).toBeInTheDocument()
-    await user.click(notification!)
+    await user.click(notification)
 
     // Badge should be gone (no more unread)
     expect(screen.queryByText('1')).not.toBeInTheDocument()
@@ -133,6 +133,80 @@ describe('NotificationBell', () => {
 
     // Badge should be gone
     expect(screen.queryByText('2')).not.toBeInTheDocument()
+  })
+
+  it('clears a single notification when its X button is clicked', async () => {
+    const user = userEvent.setup()
+    useNotificationsStore.getState().addNotification({
+      type: 'agent_completed',
+      title: 'Keep me',
+      message: 'Stay'
+    })
+    useNotificationsStore.getState().addNotification({
+      type: 'agent_failed',
+      title: 'Remove me',
+      message: 'Goodbye'
+    })
+
+    render(<NotificationBell />)
+    await user.click(screen.getByRole('button', { name: /^notifications$/i }))
+
+    const clearButton = screen.getByRole('button', { name: /clear notification: remove me/i })
+    await user.click(clearButton)
+
+    expect(screen.queryByText('Remove me')).not.toBeInTheDocument()
+    expect(screen.getByText('Keep me')).toBeInTheDocument()
+  })
+
+  it('does not navigate when the per-item clear button is clicked', async () => {
+    const user = userEvent.setup()
+    const setView = vi.fn()
+    usePanelLayoutStore.setState({ setView })
+
+    useNotificationsStore.getState().addNotification({
+      type: 'agent_completed',
+      title: 'Task done',
+      message: 'Completed',
+      viewLink: '/sprint/task-123'
+    })
+
+    render(<NotificationBell />)
+    await user.click(screen.getByRole('button', { name: /^notifications$/i }))
+    await user.click(screen.getByRole('button', { name: /clear notification: task done/i }))
+
+    expect(setView).not.toHaveBeenCalled()
+    expect(screen.queryByText('Task done')).not.toBeInTheDocument()
+  })
+
+  it('clears every notification when "Clear all" is clicked', async () => {
+    const user = userEvent.setup()
+    useNotificationsStore.getState().addNotification({
+      type: 'agent_completed',
+      title: 'First',
+      message: 'First message'
+    })
+    useNotificationsStore.getState().addNotification({
+      type: 'pr_merged',
+      title: 'Second',
+      message: 'Second message'
+    })
+
+    render(<NotificationBell />)
+    await user.click(screen.getByRole('button', { name: /^notifications$/i }))
+
+    await user.click(screen.getByRole('button', { name: /clear all/i }))
+
+    expect(screen.queryByText('First')).not.toBeInTheDocument()
+    expect(screen.queryByText('Second')).not.toBeInTheDocument()
+    expect(screen.getByText(/no notifications/i)).toBeInTheDocument()
+  })
+
+  it('does not show "Clear all" button when there are no notifications', async () => {
+    const user = userEvent.setup()
+    render(<NotificationBell />)
+    await user.click(screen.getByRole('button', { name: /^notifications$/i }))
+
+    expect(screen.queryByRole('button', { name: /clear all/i })).not.toBeInTheDocument()
   })
 
   it('does not show "Mark all as read" button when all are read', async () => {
@@ -214,8 +288,8 @@ describe('NotificationBell', () => {
     })
 
     render(<NotificationBell />)
-    await user.click(screen.getByRole('button', { name: /notifications/i }))
-    await user.click(screen.getByText('Task done').closest('button')!)
+    await user.click(screen.getByRole('button', { name: /^notifications$/i }))
+    await user.click(screen.getByRole('menuitem', { name: /task done/i }))
 
     expect(setView).toHaveBeenCalledWith('sprint')
   })
@@ -232,8 +306,8 @@ describe('NotificationBell', () => {
     })
 
     render(<NotificationBell />)
-    await user.click(screen.getByRole('button', { name: /notifications/i }))
-    await user.click(screen.getByText('PR merged').closest('button')!)
+    await user.click(screen.getByRole('button', { name: /^notifications$/i }))
+    await user.click(screen.getByRole('menuitem', { name: /pr merged/i }))
 
     expect(windowOpenSpy).toHaveBeenCalledWith('https://github.com/org/repo/pull/42', '_blank')
     windowOpenSpy.mockRestore()

@@ -40,6 +40,7 @@ interface NotificationsStore {
   markAsRead: (id: string) => void
   markAllAsRead: () => void
   getUnreadCount: () => number
+  clearOne: (id: string) => void
   clearAll: () => void
 }
 
@@ -111,6 +112,14 @@ export const useNotificationsStore = create<NotificationsStore>((set, get) => ({
 
   getUnreadCount: (): number => {
     return get().notifications.filter((n) => !n.read).length
+  },
+
+  clearOne: (id): void => {
+    set((state) => {
+      const newNotifications = state.notifications.filter((n) => n.id !== id)
+      saveToStorage(newNotifications)
+      return { notifications: newNotifications }
+    })
   },
 
   clearAll: (): void => {

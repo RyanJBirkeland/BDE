@@ -111,6 +111,43 @@ describe('notifications store', () => {
     expect(unreadCount).toBe(2)
   })
 
+  it('clearOne removes a single notification by id', () => {
+    const { addNotification, clearOne } = useNotificationsStore.getState()
+    addNotification({ type: 'agent_completed', title: 'Keep', message: 'Stay' })
+    addNotification({ type: 'agent_failed', title: 'Remove', message: 'Bye' })
+
+    const targetId = useNotificationsStore
+      .getState()
+      .notifications.find((n) => n.title === 'Remove')!.id
+    clearOne(targetId)
+
+    const notifications = useNotificationsStore.getState().notifications
+    expect(notifications).toHaveLength(1)
+    expect(notifications[0].title).toBe('Keep')
+  })
+
+  it('clearOne is a no-op for an unknown id', () => {
+    const { addNotification, clearOne } = useNotificationsStore.getState()
+    addNotification({ type: 'agent_completed', title: 'First', message: 'msg' })
+    clearOne('does-not-exist')
+    expect(useNotificationsStore.getState().notifications).toHaveLength(1)
+  })
+
+  it('clearOne persists the new list to localStorage', () => {
+    const { addNotification, clearOne } = useNotificationsStore.getState()
+    addNotification({ type: 'agent_completed', title: 'Stay', message: 'msg1' })
+    addNotification({ type: 'agent_failed', title: 'Drop', message: 'msg2' })
+
+    const targetId = useNotificationsStore
+      .getState()
+      .notifications.find((n) => n.title === 'Drop')!.id
+    clearOne(targetId)
+
+    const stored = JSON.parse(localStorage.getItem('bde:notifications')!)
+    expect(stored).toHaveLength(1)
+    expect(stored[0].title).toBe('Stay')
+  })
+
   it('clearAll removes all notifications', () => {
     const { addNotification, clearAll } = useNotificationsStore.getState()
     addNotification({ type: 'agent_completed', title: 'First', message: 'Message 1' })
