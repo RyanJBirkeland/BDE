@@ -4,6 +4,7 @@ import type { JSX } from 'react'
 interface Props {
   onAction: (prompt: string) => void
   disabled?: boolean | undefined
+  disabledReason?: string | undefined
 }
 
 const ACTIONS = [
@@ -26,7 +27,12 @@ const ACTIONS = [
   }
 ] as const
 
-export function ReviewQuickActions({ onAction, disabled = false }: Props): JSX.Element {
+export function ReviewQuickActions({
+  onAction,
+  disabled = false,
+  disabledReason
+}: Props): JSX.Element {
+  const tooltip = disabled ? disabledReason : undefined
   return (
     <div className="cr-quick-actions">
       <div className="cr-quick-actions__label">Quick actions:</div>
@@ -37,6 +43,7 @@ export function ReviewQuickActions({ onAction, disabled = false }: Props): JSX.E
           className="cr-quick-actions__chip"
           onClick={() => onAction(prompt)}
           disabled={disabled}
+          title={tooltip}
         >
           <Icon size={14} />
           <span>{label}</span>

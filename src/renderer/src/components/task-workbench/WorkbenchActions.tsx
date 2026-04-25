@@ -31,6 +31,8 @@ export function WorkbenchActions({
   const canSave = titlePasses
   const canQueue = noTier1Fails && !tier3HasFails && !missingRepo && !specTooShort
 
+  const saveTooltip = !canSave ? 'Add a title before saving' : undefined
+
   // Build tooltip explaining why queue is disabled
   const queueDisabledReasons: string[] = []
   if (missingRepo) queueDisabledReasons.push('Select a repository')
@@ -56,6 +58,7 @@ export function WorkbenchActions({
         disabled={!canSave || submitting}
         className="wb-actions__btn wb-actions__btn--secondary"
         aria-label="Save task to backlog"
+        title={saveTooltip}
       >
         {mode === 'edit' ? 'Save Changes' : 'Save to Backlog'}
       </button>

@@ -77,4 +77,21 @@ describe('ToastContainer', () => {
     render(<ToastContainer />)
     expect(screen.getByText('View')).toBeInTheDocument()
   })
+
+  it('places error toasts in an aria-live=assertive region and others in polite', () => {
+    useToastStore.setState({
+      toasts: [
+        { id: '1', message: 'Saved', type: 'success' },
+        { id: '2', message: 'Critical failure', type: 'error' }
+      ]
+    })
+    render(<ToastContainer />)
+
+    const assertiveRegion = screen.getByRole('region', { name: 'Error notifications' })
+    const politeRegion = screen.getByRole('region', { name: 'Status notifications' })
+    expect(assertiveRegion).toHaveAttribute('aria-live', 'assertive')
+    expect(politeRegion).toHaveAttribute('aria-live', 'polite')
+    expect(assertiveRegion).toContainElement(screen.getByText('Critical failure'))
+    expect(politeRegion).toContainElement(screen.getByText('Saved'))
+  })
 })

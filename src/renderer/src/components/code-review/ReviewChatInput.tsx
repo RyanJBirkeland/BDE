@@ -6,15 +6,18 @@ interface Props {
   onAbort?: (() => void) | undefined
   streaming?: boolean | undefined
   disabled?: boolean | undefined
+  disabledReason?: string | undefined
 }
 
 export function ReviewChatInput({
   onSend,
   onAbort,
   streaming = false,
-  disabled = false
+  disabled = false,
+  disabledReason
 }: Props): JSX.Element {
   const [value, setValue] = useState('')
+  const tooltip = disabled ? disabledReason : undefined
 
   function handleSubmit(): void {
     const trimmed = value.trim()
@@ -41,6 +44,7 @@ export function ReviewChatInput({
         rows={1}
         className="cr-chat-input__textarea"
         aria-label="Message to AI Review Partner"
+        title={tooltip}
       />
       {streaming ? (
         <button
@@ -58,6 +62,7 @@ export function ReviewChatInput({
           onClick={handleSubmit}
           disabled={!value.trim() || disabled}
           aria-label="Send message"
+          title={tooltip ?? (!value.trim() ? 'Type a message to send' : undefined)}
         >
           <Send size={14} />
         </button>

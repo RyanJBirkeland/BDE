@@ -155,11 +155,15 @@ export function AIAssistantPanel(): JSX.Element {
           void sendMessage(selectedTaskId, prompt)
         }}
         disabled={!selectedTaskId || streaming}
+        disabledReason={
+          !selectedTaskId ? 'Select a review task first' : streaming ? 'Reviewing…' : undefined
+        }
       />
 
       <ReviewChatInput
         streaming={streaming}
         disabled={!selectedTaskId}
+        disabledReason={!selectedTaskId ? 'Select a review task first' : undefined}
         onSend={(content) => {
           if (!selectedTaskId) return
           void sendMessage(selectedTaskId, content)

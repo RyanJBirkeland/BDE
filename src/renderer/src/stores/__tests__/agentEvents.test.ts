@@ -137,6 +137,38 @@ describe('loadHistory', () => {
 
     expect(useAgentEventsStore.getState().events['other']).toHaveLength(1)
   })
+
+  it('deduplicates tool_result events with large outputs without comparing the output payload', async () => {
+    const largeOutput = 'x'.repeat(10_000)
+    const sharedToolResult: AgentEvent = {
+      type: 'agent:tool_result',
+      tool: 'Bash',
+      success: true,
+      summary: 'ran command',
+      output: largeOutput,
+      timestamp: 200
+    }
+    useAgentEventsStore.setState({
+      events: { 'agent-w': [sharedToolResult, makeEvent('after', 300)] }
+    })
+    // History returns an "equivalent" tool_result with the same distinguishing
+    // fields but a different (also large) output payload — the dedup key must
+    // collapse them rather than keep both, regardless of output content.
+    const historyToolResult: AgentEvent = {
+      ...sharedToolResult,
+      output: 'y'.repeat(10_000)
+    }
+    vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([
+      makeEvent('before', 100),
+      historyToolResult
+    ])
+
+    await useAgentEventsStore.getState().loadHistory('agent-w')
+
+    const stored = useAgentEventsStore.getState().events['agent-w']
+    expect(stored).toHaveLength(3)
+    expect(stored.map((e) => e.type)).toEqual(['agent:text', 'agent:tool_result', 'agent:text'])
+  })
 })
 
 describe('clear', () => {

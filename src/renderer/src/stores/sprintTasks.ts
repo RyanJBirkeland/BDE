@@ -9,6 +9,7 @@ import { nowIso } from '../../../shared/time'
 import {
   mergePendingFields,
   expirePendingUpdates,
+  areSprintTasksEquivalent,
   trackPendingOperation,
   type PendingUpdates,
   type SprintTaskField
@@ -90,7 +91,7 @@ export const selectTasks = (state: SprintTasksState): SprintTask[] => state.task
  */
 function stableTaskRef(incoming: SprintTask, existing: SprintTask | undefined): SprintTask {
   if (existing === undefined) return incoming
-  return JSON.stringify(incoming) === JSON.stringify(existing) ? existing : incoming
+  return areSprintTasksEquivalent(incoming, existing) ? existing : incoming
 }
 
 export const useSprintTasks = create<SprintTasksState>((set, get) => ({

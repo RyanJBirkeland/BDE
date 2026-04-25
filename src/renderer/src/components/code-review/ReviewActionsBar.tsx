@@ -192,6 +192,7 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
                 className="rab__btn rab__btn--ghost"
                 onClick={requestRevision}
                 disabled={!!actionInFlight}
+                title={actionInFlight ? 'Another action is in progress' : undefined}
               >
                 {actionInFlight === 'revise' ? (
                   <Loader2 size={14} className="spin" />
@@ -204,6 +205,7 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
                 className="rab__btn rab__btn--danger"
                 onClick={discard}
                 disabled={!!actionInFlight}
+                title={actionInFlight ? 'Another action is in progress' : undefined}
               >
                 {actionInFlight === 'discard' ? (
                   <Loader2 size={14} className="spin" />

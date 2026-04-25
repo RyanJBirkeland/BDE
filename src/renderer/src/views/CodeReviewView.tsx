@@ -1,5 +1,5 @@
 import './CodeReviewView.css'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { TopBar } from '../components/code-review/TopBar'
 import { FileTreePanel } from '../components/code-review/FileTreePanel'
@@ -28,6 +28,17 @@ export default function CodeReviewView(): React.JSX.Element {
   useAutoReview(selectedTaskId, selectedTask?.status ?? null)
   const panelOpen = useReviewPartnerStore((s) => s.panelOpen)
 
+  // Filter + sort once per task change instead of inside every j/k action callback.
+  // Recomputing in three call sites was both O(n log n) per keystroke on large
+  // task lists and a forced re-registration of all review commands on every poll.
+  const reviewTasksSorted = useMemo(
+    () =>
+      tasks
+        .filter((t) => t.status === 'review')
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
+    [tasks]
+  )
+
   useEffect(() => {
     const reviewCommands: Command[] = [
       {
@@ -37,17 +48,14 @@ export default function CodeReviewView(): React.JSX.Element {
         hint: 'j',
         keywords: ['review', 'next', 'navigate'],
         action: () => {
-          const reviewTasks = tasks
-            .filter((t) => t.status === 'review')
-            .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-          if (reviewTasks.length === 0) {
+          if (reviewTasksSorted.length === 0) {
             toast.error('No tasks in review')
             return
           }
-          const currentIndex = reviewTasks.findIndex((t) => t.id === selectedTaskId)
+          const currentIndex = reviewTasksSorted.findIndex((t) => t.id === selectedTaskId)
           const nextIndex =
-            currentIndex === -1 ? 0 : Math.min(currentIndex + 1, reviewTasks.length - 1)
-          const nextTask = reviewTasks[nextIndex]
+            currentIndex === -1 ? 0 : Math.min(currentIndex + 1, reviewTasksSorted.length - 1)
+          const nextTask = reviewTasksSorted[nextIndex]
           if (nextTask) selectTask(nextTask.id)
         }
       },
@@ -58,16 +66,13 @@ export default function CodeReviewView(): React.JSX.Element {
         hint: 'k',
         keywords: ['review', 'previous', 'navigate'],
         action: () => {
-          const reviewTasks = tasks
-            .filter((t) => t.status === 'review')
-            .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-          if (reviewTasks.length === 0) {
+          if (reviewTasksSorted.length === 0) {
             toast.error('No tasks in review')
             return
           }
-          const currentIndex = reviewTasks.findIndex((t) => t.id === selectedTaskId)
+          const currentIndex = reviewTasksSorted.findIndex((t) => t.id === selectedTaskId)
           const nextIndex = currentIndex === -1 ? 0 : Math.max(currentIndex - 1, 0)
-          const nextTask = reviewTasks[nextIndex]
+          const nextTask = reviewTasksSorted[nextIndex]
           if (nextTask) selectTask(nextTask.id)
         }
       },
@@ -77,13 +82,12 @@ export default function CodeReviewView(): React.JSX.Element {
         category: 'review',
         keywords: ['review', 'batch', 'select', 'all'],
         action: () => {
-          const reviewTasks = tasks.filter((t) => t.status === 'review')
-          if (reviewTasks.length === 0) {
+          if (reviewTasksSorted.length === 0) {
             toast.error('No tasks in review')
             return
           }
-          selectAllBatch(reviewTasks.map((t) => t.id))
-          toast.success(`Selected ${reviewTasks.length} tasks`)
+          selectAllBatch(reviewTasksSorted.map((t) => t.id))
+          toast.success(`Selected ${reviewTasksSorted.length} tasks`)
         }
       },
       {
@@ -109,7 +113,7 @@ export default function CodeReviewView(): React.JSX.Element {
     selectedTaskId,
     selectAllBatch,
     clearBatch,
-    tasks
+    reviewTasksSorted
   ])
 
   return (
