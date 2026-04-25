@@ -21,6 +21,30 @@
   gap: var(--bde-space-2);
   font-size: var(--bde-size-xs);
   color: var(--bde-text-dim);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* ── Tool Group: deduped icons with count badges ── */
+.console-tool-group__icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.console-tool-group__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.console-tool-group__count {
+  color: var(--bde-text-dim);
+  font-size: var(--bde-size-2xs);
+  font-family: var(--bde-font-code);
 }
 
 /* ── Card Content ── */
