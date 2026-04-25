@@ -57,7 +57,7 @@ function mockExecFileSequence(responses: Array<{ stdout?: string; error?: Error 
   })
 }
 
-const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
 
 let capturedNotes: string | undefined
 

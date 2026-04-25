@@ -36,6 +36,13 @@ export async function transitionToReview(opts: TransitionToReviewOpts): Promise<
     logger,
     taskStateService
   } = opts
+
+  logger.event('completion.review_transition', {
+    taskId,
+    rebaseSucceeded,
+    hasRebaseNote: rebaseNote !== undefined
+  })
+
   const task = repo.getTask(taskId)
   let durationMs: number | undefined
   if (task?.started_at) {

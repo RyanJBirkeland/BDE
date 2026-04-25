@@ -329,10 +329,13 @@ async function detectNoOpAndFailIfSo(
   const changedFiles = await listChangedFiles(branch, worktreePath, env, { logger })
   if (!detectNoOpRun(changedFiles, worktreePath)) return false
 
+  logger.event('completion.noop', { taskId, changedFiles })
   logger.warn(
     `[completion] task ${taskId}: detected no-op run on branch ${branch} — failing instead of transitioning to review`
   )
   const isTerminal = resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo }, logger)
+  const decision = isTerminal ? 'terminal' : 'requeue'
+  logger.event('completion.decision', { taskId, decision, reason: 'noop' })
   await onTaskTerminal(taskId, isTerminal ? 'failed' : 'queued')
   return true
 }
@@ -522,6 +525,8 @@ async function verifyWorktreeOrFail(opts: {
   const notes = JSON.stringify(feedback)
 
   const isTerminal = resolveFailurePhase({ taskId, retryCount, notes, repo }, logger)
+  const decision = isTerminal ? 'terminal' : 'requeue'
+  logger.event('completion.decision', { taskId, decision, reason: result.failure.kind })
   await onTaskTerminal(taskId, isTerminal ? 'failed' : 'queued')
   return false
 }

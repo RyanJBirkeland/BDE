@@ -96,7 +96,7 @@ const mockRepo: IAgentTaskRepository = {
 const getTaskMock = vi.mocked(getTask)
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
 }
 
 /** Build a minimal task-like object for getTask mock returns */
