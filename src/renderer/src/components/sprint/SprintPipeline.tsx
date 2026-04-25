@@ -15,6 +15,9 @@ import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcu
 import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useVisibleStuckTasks } from '../../hooks/useVisibleStuckTasks'
 import { useSprintPipelineState } from '../../hooks/useSprintPipelineState'
+import { useDrainStatus } from '../../hooks/useDrainStatus'
+import { useNow } from '../../hooks/useNow'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
 import { PipelineBacklog } from './PipelineBacklog'
@@ -73,6 +76,10 @@ export function SprintPipeline(): React.JSX.Element {
 
   const orphanBanner = useSprintUI(selectOrphanRecoveryBanner)
   const dismissOrphanBanner = useSprintUI((s) => s.setOrphanRecoveryBanner)
+
+  const drainStatus = useDrainStatus()
+  const now = useNow()
+  const repos = useRepoOptions()
 
   const setStatusFilter = useSprintFilters((s) => s.setStatusFilter)
   const setView = usePanelLayoutStore((s) => s.setView)
@@ -305,6 +312,16 @@ export function SprintPipeline(): React.JSX.Element {
         </div>
       )}
 
+      {drainStatus && (
+        <div role="alert" className="pipeline-drain-paused-banner">
+          <strong>Drain loop paused:</strong>&nbsp;{drainStatus.reason} —{' '}
+          {drainStatus.affectedTaskCount} queued.{' '}
+          {Math.max(0, Math.floor((drainStatus.pausedUntil - now) / 1000)) > 0
+            ? `Resuming in ${Math.max(0, Math.floor((drainStatus.pausedUntil - now) / 1000))}s`
+            : 'Resuming soon'}
+        </div>
+      )}
+
       {loading && tasks.length === 0 && (
         <div className="sprint-pipeline__body">
           <div className="pipeline-sidebar pipeline-sidebar--loading">
@@ -332,14 +349,28 @@ export function SprintPipeline(): React.JSX.Element {
 
       {!loading && !loadError && tasks.length === 0 && (
         <div className="sprint-pipeline__empty-container">
-          <NeonCard accent="purple" title="No tasks yet">
-            <p className="sprint-pipeline__empty-text">
-              Create your first task to start the pipeline.
-            </p>
-            <button className="task-drawer__btn task-drawer__btn--primary" onClick={openWorkbench}>
-              New Task
-            </button>
-          </NeonCard>
+          {repos.length === 0 ? (
+            <NeonCard accent="orange" title="No repository configured">
+              <p className="sprint-pipeline__empty-text">
+                Add a repository in Settings before creating tasks.
+              </p>
+              <button
+                className="task-drawer__btn task-drawer__btn--primary"
+                onClick={() => setView('settings')}
+              >
+                Configure Repository
+              </button>
+            </NeonCard>
+          ) : (
+            <NeonCard accent="purple" title="No tasks yet">
+              <p className="sprint-pipeline__empty-text">
+                Create your first task to start the pipeline.
+              </p>
+              <button className="task-drawer__btn task-drawer__btn--primary" onClick={openWorkbench}>
+                New Task
+              </button>
+            </NeonCard>
+          )}
         </div>
       )}
 

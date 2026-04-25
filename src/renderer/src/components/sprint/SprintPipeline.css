@@ -77,6 +77,18 @@
   overflow-y: auto;
 }
 
+/* Drain-paused banner */
+.pipeline-drain-paused-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--bde-space-2);
+  padding: var(--bde-space-2) var(--bde-space-4);
+  background: color-mix(in srgb, var(--bde-danger) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--bde-danger) 30%, transparent);
+  font-size: var(--bde-size-sm);
+  color: var(--bde-text-dim);
+}
+
 /* Orphan recovery banner */
 .pipeline-orphan-banner {
   display: flex;
