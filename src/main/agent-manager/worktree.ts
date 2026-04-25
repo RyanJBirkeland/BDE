@@ -74,6 +74,8 @@ export interface SetupWorktreeOpts {
   taskId: string
   title: string
   groupId?: string | undefined
+  /** Called when fetchMain fails so the task's notes field records the failure. Optional. */
+  appendToNotes?: (text: string) => void
 }
 
 export interface SetupWorktreeResult {
@@ -228,7 +230,7 @@ function asMessage(err: unknown): string {
 export async function setupWorktree(
   opts: SetupWorktreeOpts & { logger?: Logger | undefined }
 ): Promise<SetupWorktreeResult> {
-  const { repoPath, worktreeBase, taskId, title, groupId, logger } = opts
+  const { repoPath, worktreeBase, taskId, title, groupId, logger, appendToNotes } = opts
   const branch = branchNameForTask(title, taskId, groupId)
   const repoDir = path.join(worktreeBase, repoSlug(repoPath))
   const worktreePath = path.join(repoDir, taskId)
@@ -261,8 +263,10 @@ export async function setupWorktree(
       await fetchMain(repoPath, env, log, GIT_FETCH_TIMEOUT_MS)
       log.info(`[worktree] Fetched origin/main for task ${taskId}`)
     } catch (err) {
-      // Non-fatal — proceed with whatever HEAD we have
-      log.warn(`[worktree] Failed to fetch origin/main (proceeding anyway): ${err}`)
+      // Non-fatal — proceed with whatever local HEAD we have
+      const stderr = err instanceof Error ? err.message : String(err)
+      log.warn(`[worktree] Failed to fetch origin/main (proceeding anyway): ${stderr}`)
+      appendToNotes?.(`[worktree] fetchMain failed: ${stderr}`)
     }
 
     // Step 2: Acquire the per-repo lock for the conflict-sensitive operations.

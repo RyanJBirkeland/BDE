@@ -190,7 +190,14 @@ export async function prepareWorktreeForTask(
       taskId: task.id,
       title: task.title,
       groupId: task.group_id ?? undefined,
-      logger: deps.logger
+      logger: deps.logger,
+      appendToNotes: (text) => {
+        try {
+          deps.repo.updateTask(task.id, { notes: text })
+        } catch (err) {
+          deps.logger.warn(`[task-claimer] Failed to append fetchMain failure to notes for task ${task.id}: ${err}`)
+        }
+      }
     })
   } catch (err) {
     logError(deps.logger, `[agent-manager] setupWorktree failed for task ${task.id}`, err)

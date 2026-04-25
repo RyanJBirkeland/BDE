@@ -485,6 +485,46 @@ describe('setupWorktree', () => {
     expect(lockExistedDuringFetch).toBe(false)
     expect(lockExistedDuringAdd).toBe(true)
   })
+
+  it('calls appendToNotes when fetchMain fails and continues setup', async () => {
+    const fetchError = new Error('fatal: unable to connect to origin')
+    let appendedText: string | undefined
+
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+
+      // git fetch fails
+      if (gitArgs[0] === 'fetch') {
+        if (typeof cb === 'function') cb(fetchError, '', '')
+        return Object.assign(Promise.reject(fetchError), { child: null }) as unknown as ChildProcess
+      }
+
+      // Everything else succeeds
+      if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), {
+        child: null
+      }) as unknown as ChildProcess
+    })
+
+    const result = await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'fetch-fail',
+      title: 'Fetch fail test',
+      appendToNotes: (text) => {
+        appendedText = text
+      }
+    })
+
+    // Setup should complete despite the fetch failure
+    expect(result.branch).toBe('agent/fetch-fail-test-fetch-fa')
+
+    // Notes should record the failure
+    expect(appendedText).toBeDefined()
+    expect(appendedText).toContain('[worktree] fetchMain failed:')
+    expect(appendedText).toContain('unable to connect to origin')
+  })
 })
 
 describe('ensureFreeDiskSpace', () => {
