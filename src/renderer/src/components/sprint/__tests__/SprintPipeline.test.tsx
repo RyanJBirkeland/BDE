@@ -46,9 +46,11 @@ const mocks = vi.hoisted(() => {
     doneViewOpen: false,
     conflictDrawerOpen: false,
     healthCheckDrawerOpen: false,
+    orphanRecoveryBanner: null as null | { recovered: string[]; exhausted: string[] },
     setDoneViewOpen: mockSetDoneViewOpen,
     setConflictDrawerOpen: mockSetConflictDrawerOpen,
-    setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
+    setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen,
+    setOrphanRecoveryBanner: vi.fn()
   }
 
   const filtersState = {
@@ -108,7 +110,8 @@ vi.mock('../../../stores/sprintUI', () => ({
       return selector(mocks.uiState)
     }
     return undefined
-  })
+  }),
+  selectOrphanRecoveryBanner: (s: { orphanRecoveryBanner: null }) => s.orphanRecoveryBanner
 }))
 
 vi.mock('../../../stores/sprintSelection', () => ({
