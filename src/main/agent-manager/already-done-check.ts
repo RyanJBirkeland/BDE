@@ -7,11 +7,12 @@
  * waste tokens re-investigating already-merged code.
  *
  * The taxonomy of matches is intentionally broad (three OR'd criteria) because
- * commit subjects vary across auto-merge, manual merge, and squash workflows:
+ * commit messages vary across auto-merge, manual merge, and squash workflows:
  *
- *   1. `(T-<taskId>)` appears anywhere in the subject
+ *   1. `(T-<taskId>)` appears anywhere in the subject or body
  *   2. the subject line equals the task title exactly
- *   3. `agent-run-id: <runId>` appears in the subject (only when runId is set)
+ *   3. `agent-run-id: <runId>` trailer appears anywhere in the subject or body
+ *      (only when runId is set)
  *
  * A positive match returns the full commit SHA so callers can record it in the
  * audit note.
@@ -46,6 +47,7 @@ export const ALREADY_DONE_CACHE_TTL_MS = 5_000
 interface CommitRecord {
   sha: string
   subject: string
+  body: string
 }
 
 interface CachedCommitList {
@@ -85,10 +87,13 @@ export async function taskHasMatchingCommitOnMain(
     if (commit.subject === task.title) {
       return { sha: commit.sha, matchedOn: 'title' }
     }
-    if (commit.subject.includes(taskIdMarker)) {
+    if (commit.subject.includes(taskIdMarker) || commit.body.includes(taskIdMarker)) {
       return { sha: commit.sha, matchedOn: 'task-id' }
     }
-    if (runIdMarker && commit.subject.includes(runIdMarker)) {
+    if (
+      runIdMarker &&
+      (commit.subject.includes(runIdMarker) || commit.body.includes(runIdMarker))
+    ) {
       return { sha: commit.sha, matchedOn: 'agent-run-id' }
     }
   }
@@ -110,7 +115,7 @@ async function loadRecentCommits(repoPath: string, logger: Logger): Promise<Comm
   if (cached) return cached
 
   try {
-    const format = `%H${COMMIT_FIELD_SEPARATOR}%s${COMMIT_RECORD_SEPARATOR}`
+    const format = `%H${COMMIT_FIELD_SEPARATOR}%s${COMMIT_FIELD_SEPARATOR}%b${COMMIT_RECORD_SEPARATOR}`
     const { stdout } = await execFileAsync(
       'git',
       ['log', 'origin/main', `--format=${format}`, '-n', String(COMMIT_SCAN_DEPTH)],
@@ -154,8 +159,8 @@ function parseCommitRecords(stdout: string): CommitRecord[] {
     .map((record) => record.trim())
     .filter((record) => record.length > 0)
     .map((record) => {
-      const [sha = '', subject = ''] = record.split(COMMIT_FIELD_SEPARATOR)
-      return { sha: sha.trim(), subject: subject.trim() }
+      const [sha = '', subject = '', body = ''] = record.split(COMMIT_FIELD_SEPARATOR)
+      return { sha: sha.trim(), subject: subject.trim(), body: body.trim() }
     })
     .filter((record) => record.sha.length > 0)
 }

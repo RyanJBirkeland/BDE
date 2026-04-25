@@ -6,6 +6,9 @@
  *    rather than the silent-error empty list)
  *  - The per-`repoPath` TTL cache collapses repeated drain-tick lookups into one
  *    git invocation, and re-fetches once the TTL has elapsed
+ *  - Body-trailer matching: a commit whose subject is generic but whose body
+ *    contains the task-id marker or the `agent-run-id:` trailer is still detected
+ *    (squash-merge / historical-commit fallback)
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -45,9 +48,14 @@ const sampleTask: AlreadyDoneTask = {
   agent_run_id: null
 }
 
-function makeCommitStdout(records: Array<{ sha: string; subject: string }>): string {
+function makeCommitStdout(
+  records: Array<{ sha: string; subject: string; body?: string }>
+): string {
   return records
-    .map((r) => `${r.sha}${COMMIT_FIELD_SEPARATOR}${r.subject}${COMMIT_RECORD_SEPARATOR}`)
+    .map(
+      (r) =>
+        `${r.sha}${COMMIT_FIELD_SEPARATOR}${r.subject}${COMMIT_FIELD_SEPARATOR}${r.body ?? ''}${COMMIT_RECORD_SEPARATOR}`
+    )
     .join('')
 }
 
@@ -96,6 +104,58 @@ describe('taskHasMatchingCommitOnMain — large output handling', () => {
       maxBuffer?: number
     }
     expect(callOptions.maxBuffer).toBe(16 * 1024 * 1024)
+  })
+})
+
+describe('taskHasMatchingCommitOnMain — commit-body matching', () => {
+  it('matches when (T-<id>) appears only in the commit body', async () => {
+    const { execFileAsync } = await import('../../lib/async-utils')
+
+    const task: AlreadyDoneTask = {
+      id: 'task-body-1',
+      title: 'A title that will not appear in any commit subject',
+      agent_run_id: null
+    }
+    const stdout = makeCommitStdout([
+      {
+        sha: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+        subject: 'chore: cleanup unrelated module',
+        body: `Some explanatory paragraph.\n\nRefs (T-${task.id})`
+      }
+    ])
+    ;(execFileAsync as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ stdout, stderr: '' })
+
+    const match = await taskHasMatchingCommitOnMain(task, repoPath, silentLogger)
+
+    expect(match).toEqual({
+      sha: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+      matchedOn: 'task-id'
+    })
+  })
+
+  it('matches when agent-run-id: <runId> appears only in the commit body', async () => {
+    const { execFileAsync } = await import('../../lib/async-utils')
+
+    const task: AlreadyDoneTask = {
+      id: 'task-body-2',
+      title: 'Another title that will not appear in any commit subject',
+      agent_run_id: 'run-abc-123'
+    }
+    const stdout = makeCommitStdout([
+      {
+        sha: 'feedfacefeedfacefeedfacefeedfacefeedface',
+        subject: 'feat(scope): squash-merged work',
+        body: `Implements the feature.\n\nagent-run-id: ${task.agent_run_id}`
+      }
+    ])
+    ;(execFileAsync as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ stdout, stderr: '' })
+
+    const match = await taskHasMatchingCommitOnMain(task, repoPath, silentLogger)
+
+    expect(match).toEqual({
+      sha: 'feedfacefeedfacefeedfacefeedfacefeedface',
+      matchedOn: 'agent-run-id'
+    })
   })
 })
 
