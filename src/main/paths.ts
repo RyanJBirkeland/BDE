@@ -134,8 +134,18 @@ export interface RepoConfig {
   promptProfile?: 'bde' | 'minimal'
 }
 
+function isRepoConfig(item: unknown): item is RepoConfig {
+  if (typeof item !== 'object' || item === null) return false
+  const r = item as Record<string, unknown>
+  return typeof r.name === 'string' && r.name.trim() !== ''
+}
+
+function isRepoConfigArray(value: unknown): value is RepoConfig[] {
+  return Array.isArray(value) && value.every(isRepoConfig)
+}
+
 export function getConfiguredRepos(): RepoConfig[] {
-  return getSettingJson<RepoConfig[]>('repos') ?? []
+  return getSettingJson<RepoConfig[]>('repos', isRepoConfigArray) ?? []
 }
 
 export function getRepoConfig(name: string): RepoConfig | null {

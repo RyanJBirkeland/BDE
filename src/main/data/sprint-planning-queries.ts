@@ -2,6 +2,40 @@ import type Database from 'better-sqlite3'
 import { getDb } from '../db'
 import type { Sprint } from '../../shared/types'
 
+const VALID_SPRINT_STATUSES: ReadonlySet<string> = new Set([
+  'planning',
+  'active',
+  'completed',
+  'cancelled'
+])
+
+function isSprintStatus(value: unknown): value is Sprint['status'] {
+  return typeof value === 'string' && VALID_SPRINT_STATUSES.has(value)
+}
+
+export function mapRowToSprint(row: Record<string, unknown>): Sprint {
+  if (typeof row.id !== 'string' || row.id.trim() === '') {
+    throw new Error(
+      `Invalid sprints row: id must be a non-empty string, got ${String(row.id)}`
+    )
+  }
+  if (!isSprintStatus(row.status)) {
+    throw new Error(
+      `Invalid sprints row: status must be one of [${[...VALID_SPRINT_STATUSES].join(', ')}], got ${String(row.status)}`
+    )
+  }
+  return {
+    id: row.id,
+    name: typeof row.name === 'string' ? row.name : '',
+    goal: typeof row.goal === 'string' ? row.goal : null,
+    start_date: typeof row.start_date === 'string' ? row.start_date : '',
+    end_date: typeof row.end_date === 'string' ? row.end_date : '',
+    status: row.status,
+    created_at: typeof row.created_at === 'string' ? row.created_at : '',
+    updated_at: typeof row.updated_at === 'string' ? row.updated_at : ''
+  }
+}
+
 export function createSprint(
   input: {
     name: string
@@ -24,16 +58,7 @@ export function createSprint(
 
   if (!row) return null
 
-  return {
-    id: row.id as string,
-    name: row.name as string,
-    goal: (row.goal as string) ?? null,
-    start_date: row.start_date as string,
-    end_date: row.end_date as string,
-    status: row.status as Sprint['status'],
-    created_at: row.created_at as string,
-    updated_at: row.updated_at as string
-  }
+  return mapRowToSprint(row)
 }
 
 export function getSprint(id: string, db?: Database.Database): Sprint | null {
@@ -44,16 +69,7 @@ export function getSprint(id: string, db?: Database.Database): Sprint | null {
 
   if (!row) return null
 
-  return {
-    id: row.id as string,
-    name: row.name as string,
-    goal: (row.goal as string) ?? null,
-    start_date: row.start_date as string,
-    end_date: row.end_date as string,
-    status: row.status as Sprint['status'],
-    created_at: row.created_at as string,
-    updated_at: row.updated_at as string
-  }
+  return mapRowToSprint(row)
 }
 
 export function getAllSprints(db?: Database.Database): Sprint[] {
@@ -63,16 +79,7 @@ export function getAllSprints(db?: Database.Database): Sprint[] {
     unknown
   >[]
 
-  return rows.map((row) => ({
-    id: row.id as string,
-    name: row.name as string,
-    goal: (row.goal as string) ?? null,
-    start_date: row.start_date as string,
-    end_date: row.end_date as string,
-    status: row.status as Sprint['status'],
-    created_at: row.created_at as string,
-    updated_at: row.updated_at as string
-  }))
+  return rows.map(mapRowToSprint)
 }
 
 export function updateSprint(
@@ -115,16 +122,7 @@ export function updateSprint(
 
   if (!row) return null
 
-  return {
-    id: row.id as string,
-    name: row.name as string,
-    goal: (row.goal as string) ?? null,
-    start_date: row.start_date as string,
-    end_date: row.end_date as string,
-    status: row.status as Sprint['status'],
-    created_at: row.created_at as string,
-    updated_at: row.updated_at as string
-  }
+  return mapRowToSprint(row)
 }
 
 export function deleteSprint(id: string, db?: Database.Database): boolean {

@@ -6,8 +6,28 @@
 import type Database from 'better-sqlite3'
 import type { AgentMeta } from '../../shared/types'
 import { nowIso } from '../../shared/time'
+import { createLogger } from '../logger'
+
+const log = createLogger('agent-queries')
 
 // --- Column mapping between snake_case DB rows and camelCase AgentMeta ---
+
+const VALID_AGENT_STATUSES: ReadonlySet<string> = new Set([
+  'running',
+  'done',
+  'failed',
+  'cancelled',
+  'unknown'
+])
+const VALID_AGENT_SOURCES: ReadonlySet<string> = new Set(['bde', 'external', 'adhoc'])
+
+function isAgentStatus(value: unknown): value is AgentMeta['status'] {
+  return typeof value === 'string' && VALID_AGENT_STATUSES.has(value)
+}
+
+function isAgentSource(value: unknown): value is AgentMeta['source'] {
+  return typeof value === 'string' && VALID_AGENT_SOURCES.has(value)
+}
 
 export interface TurnRecord {
   runId: string
@@ -43,7 +63,11 @@ export interface AgentRunRow {
   branch: string | null
 }
 
-export function rowToMeta(row: AgentRunRow): AgentMeta {
+export function rowToMeta(row: AgentRunRow): AgentMeta | null {
+  if (!isAgentStatus(row.status)) {
+    log.warn(`[agent-queries] Skipping agent_runs row id=${row.id}: unknown status "${row.status}"`)
+    return null
+  }
   return {
     id: row.id,
     pid: row.pid,
@@ -55,9 +79,9 @@ export function rowToMeta(row: AgentRunRow): AgentMeta {
     startedAt: row.started_at,
     finishedAt: row.finished_at,
     exitCode: row.exit_code,
-    status: row.status as AgentMeta['status'],
+    status: row.status,
     logPath: row.log_path ?? '',
-    source: (row.source as AgentMeta['source']) ?? 'external',
+    source: isAgentSource(row.source) ? row.source : 'external',
     costUsd: row.cost_usd ?? null,
     tokensIn: row.tokens_in ?? null,
     tokensOut: row.tokens_out ?? null,
@@ -75,13 +99,13 @@ export function listAgents(db: Database.Database, limit = 100, status?: string):
       db
         .prepare('SELECT * FROM agent_runs WHERE status = ? ORDER BY started_at DESC LIMIT ?')
         .all(status, limit) as AgentRunRow[]
-    ).map(rowToMeta)
+    ).map(rowToMeta).filter((r): r is AgentMeta => r !== null)
   }
   return (
     db
       .prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?')
       .all(limit) as AgentRunRow[]
-  ).map(rowToMeta)
+  ).map(rowToMeta).filter((r): r is AgentMeta => r !== null)
 }
 
 export function getAgentMeta(db: Database.Database, id: string): AgentMeta | null {
@@ -289,13 +313,13 @@ export function listAgentRunsByTaskId(
           'SELECT * FROM agent_runs WHERE sprint_task_id = ? ORDER BY started_at DESC LIMIT ?'
         )
         .all(sprintTaskId, limit) as AgentRunRow[]
-    ).map(rowToMeta)
+    ).map(rowToMeta).filter((r): r is AgentMeta => r !== null)
   }
   return (
     db
       .prepare('SELECT * FROM agent_runs ORDER BY started_at DESC LIMIT ?')
       .all(limit) as AgentRunRow[]
-  ).map(rowToMeta)
+  ).map(rowToMeta).filter((r): r is AgentMeta => r !== null)
 }
 
 export function insertAgentRunTurn(db: Database.Database, record: TurnRecord): void {

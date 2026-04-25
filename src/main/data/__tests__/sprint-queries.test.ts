@@ -24,6 +24,7 @@ vi.mock('../task-changes', () => ({
 
 // Import AFTER mocks are set up
 import { nowIso } from '../../../shared/time'
+import { setSprintQueriesLogger } from '../sprint-query-logger'
 import {
   getTask,
   listTasks,
@@ -1167,5 +1168,62 @@ describe('sprint-pr-ops SQL projections', () => {
     const source = await readFile(sourcePath, 'utf-8')
 
     expect(source).not.toMatch(/SELECT\s+\*/i)
+  })
+})
+
+describe('sprint-pr-ops — isTaskStatus guard', () => {
+  it('skips rows with an invalid status and logs a warning', () => {
+    // Insert a task with a valid status, then corrupt the DB row directly
+    // to simulate a row that has an unrecognised status value.
+    insertTask({ id: 'corrupted-status', status: 'active', pr_number: 555, pr_status: 'open' })
+    db.prepare("UPDATE sprint_tasks SET status = 'legacy_open' WHERE id = 'corrupted-status'").run()
+
+    const warnSpy = vi.fn()
+    setSprintQueriesLogger({ info: vi.fn(), warn: warnSpy, error: vi.fn(), debug: vi.fn() })
+
+    const affected = markTaskDoneByPrNumber(555)
+
+    // The corrupted row must be skipped — nothing should transition.
+    expect(affected).toHaveLength(0)
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('unrecognised status'))
+  })
+
+  it('processes rows with a valid status normally', () => {
+    insertTask({ id: 'valid-status', status: 'active', pr_number: 556, pr_status: 'open' })
+
+    const affected = markTaskDoneByPrNumber(556)
+
+    expect(affected).toContain('valid-status')
+    const task = getTask('valid-status')!
+    expect(task.status).toBe('done')
+  })
+})
+
+describe('getQueueStats — isQueueStatsKey guard', () => {
+  it('correctly counts known status values', () => {
+    insertTask({ status: 'backlog' })
+    insertTask({ status: 'queued' })
+    insertTask({ status: 'active' })
+
+    const stats = getQueueStats()
+
+    expect(stats.backlog).toBe(1)
+    expect(stats.queued).toBe(1)
+    expect(stats.active).toBe(1)
+  })
+
+  it('does not corrupt counts with unknown status values', () => {
+    insertTask({ id: 'task-known', status: 'active' })
+    // Bypass IPC to inject an invalid status value directly into the DB,
+    // simulating a row from a future schema version or data migration artifact.
+    db.prepare("UPDATE sprint_tasks SET status = 'legacy_unknown' WHERE id = 'task-known'").run()
+
+    const stats = getQueueStats()
+
+    // The unknown status row must be silently skipped.
+    // All known counters should remain at zero (the row is not counted anywhere).
+    expect(stats.active).toBe(0)
+    expect(stats.backlog).toBe(0)
+    expect(stats.queued).toBe(0)
   })
 })

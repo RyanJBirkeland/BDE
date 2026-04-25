@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { runMigrations } from '../../db'
+import { mapRowToSprint } from '../sprint-planning-queries'
 
 let db: Database.Database
 
@@ -273,5 +274,53 @@ describe('getSprintTasks', () => {
     const taskIds = getSprintTasks(sprint!.id)
     expect(taskIds[0]).toBe(task1Id.id)
     expect(taskIds[1]).toBe(task2Id.id)
+  })
+})
+
+describe('mapRowToSprint — boundary validation', () => {
+  it('maps a valid row correctly', () => {
+    const row: Record<string, unknown> = {
+      id: 'sprint-1',
+      name: 'Sprint One',
+      goal: 'Ship it',
+      start_date: '2026-04-01',
+      end_date: '2026-04-14',
+      status: 'planning',
+      created_at: '2026-04-01T00:00:00Z',
+      updated_at: '2026-04-01T00:00:00Z'
+    }
+    const sprint = mapRowToSprint(row)
+    expect(sprint.id).toBe('sprint-1')
+    expect(sprint.name).toBe('Sprint One')
+    expect(sprint.goal).toBe('Ship it')
+    expect(sprint.status).toBe('planning')
+  })
+
+  it('throws on an unknown status', () => {
+    const row: Record<string, unknown> = {
+      id: 'sprint-2',
+      name: 'Bad Sprint',
+      goal: null,
+      start_date: '2026-04-01',
+      end_date: '2026-04-14',
+      status: 'unknown_status',
+      created_at: '2026-04-01T00:00:00Z',
+      updated_at: '2026-04-01T00:00:00Z'
+    }
+    expect(() => mapRowToSprint(row)).toThrow(/status must be one of/)
+  })
+
+  it('throws on a null id', () => {
+    const row: Record<string, unknown> = {
+      id: null,
+      name: 'Bad Sprint',
+      goal: null,
+      start_date: '2026-04-01',
+      end_date: '2026-04-14',
+      status: 'planning',
+      created_at: '2026-04-01T00:00:00Z',
+      updated_at: '2026-04-01T00:00:00Z'
+    }
+    expect(() => mapRowToSprint(row)).toThrow(/id must be a non-empty string/)
   })
 })

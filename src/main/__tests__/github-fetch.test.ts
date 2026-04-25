@@ -513,6 +513,74 @@ describe('fetchAllGitHubPages', () => {
   })
 })
 
+describe('fetchAllGitHubPages — validate option', () => {
+  type Item = { id: number }
+
+  function isItem(x: unknown): x is Item {
+    return typeof x === 'object' && x !== null && typeof (x as Record<string, unknown>).id === 'number'
+  }
+
+  function jsonResponse(body: unknown, linkNext: string | null = null, ok = true, status = 200) {
+    const headers = new Map<string, string>()
+    if (linkNext) {
+      headers.set('Link', `<${linkNext}>; rel="next"`)
+    }
+    return {
+      ok,
+      status,
+      json: async () => body,
+      headers: { get: (name: string) => headers.get(name) ?? null }
+    }
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('returns all items when all pass the validator', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse([{ id: 1 }, { id: 2 }]) as unknown as Response
+    )
+
+    const result = await fetchAllGitHubPages<Item>(
+      'https://api.github.com/test',
+      { token: 'tok', validate: isItem }
+    )
+
+    expect(result).toEqual([{ id: 1 }, { id: 2 }])
+  })
+
+  it('filters out items that fail the validator', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse([{ id: 1 }, { notId: 'bad' }, { id: 3 }]) as unknown as Response
+    )
+
+    const result = await fetchAllGitHubPages<Item>(
+      'https://api.github.com/test',
+      { token: 'tok', validate: isItem }
+    )
+
+    expect(result).toEqual([{ id: 1 }, { id: 3 }])
+  })
+
+  it('returns [] when response is a non-array object', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ message: 'Not found' }) as unknown as Response
+    )
+
+    const result = await fetchAllGitHubPages<Item>(
+      'https://api.github.com/test',
+      { token: 'tok', validate: isItem }
+    )
+
+    expect(result).toEqual([])
+  })
+})
+
 // ---------------------------------------------------------------------------
 // Structured error classification (shared with renderer via broadcast)
 // ---------------------------------------------------------------------------

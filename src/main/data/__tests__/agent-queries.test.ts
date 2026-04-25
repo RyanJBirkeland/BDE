@@ -15,8 +15,10 @@ import {
   updateAgentRunCost,
   listAgentRunsByTaskId,
   insertAgentRunTurn,
-  getAgentRunContextTokens
+  getAgentRunContextTokens,
+  rowToMeta
 } from '../agent-queries'
+import type { AgentRunRow } from '../agent-queries'
 
 let db: Database.Database
 
@@ -365,5 +367,68 @@ describe('getAgentRunContextTokens', () => {
 
     expect(getAgentRunContextTokens(db, 'run-1')?.contextWindowTokens).toBe(215)
     expect(getAgentRunContextTokens(db, 'run-b')?.contextWindowTokens).toBe(430)
+  })
+})
+
+function makeRow(overrides: Partial<AgentRunRow> = {}): AgentRunRow {
+  return {
+    id: 'row-1',
+    pid: null,
+    bin: 'claude',
+    task: null,
+    repo: null,
+    repo_path: null,
+    model: null,
+    status: 'running',
+    log_path: null,
+    started_at: '2025-01-01T00:00:00Z',
+    finished_at: null,
+    exit_code: null,
+    source: 'bde',
+    cost_usd: null,
+    tokens_in: null,
+    tokens_out: null,
+    cache_read: null,
+    cache_create: null,
+    sprint_task_id: null,
+    worktree_path: null,
+    branch: null,
+    ...overrides
+  }
+}
+
+describe('rowToMeta — union membership guards', () => {
+  it('maps a row with valid status and source correctly', () => {
+    const row = makeRow({ status: 'done', source: 'adhoc' })
+    const result = rowToMeta(row)
+    expect(result).not.toBeNull()
+    expect(result!.status).toBe('done')
+    expect(result!.source).toBe('adhoc')
+  })
+
+  it('returns null and does not throw when status is unknown', () => {
+    const row = makeRow({ status: 'bogus-status' })
+    expect(() => rowToMeta(row)).not.toThrow()
+    expect(rowToMeta(row)).toBeNull()
+  })
+
+  it('falls back to "external" when source is unknown', () => {
+    const row = makeRow({ status: 'running', source: 'unknown-source' })
+    const result = rowToMeta(row)
+    expect(result).not.toBeNull()
+    expect(result!.source).toBe('external')
+  })
+
+  it('filters out rows with unknown status from listAgents', () => {
+    insertAgentRecord(db, makeAgent({ id: 'valid-agent', status: 'running' }))
+    // Inject a row with an invalid status directly into the DB
+    db.prepare(
+      `INSERT INTO agent_runs (id, bin, status, started_at)
+       VALUES ('bad-agent', 'claude', 'corrupted', '2025-01-01T00:00:00Z')`
+    ).run()
+
+    const agents = listAgents(db)
+    expect(agents.find((a) => a.id === 'valid-agent')).toBeDefined()
+    expect(agents.find((a) => a.id === 'bad-agent')).toBeUndefined()
   })
 })
