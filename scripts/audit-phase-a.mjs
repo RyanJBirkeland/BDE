@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/explicit-function-return-type, prettier/prettier */
 /**
  * Phase A correctness audit.
  *
@@ -28,6 +29,7 @@ import { join } from 'node:path'
 
 const REPO_ROOT = process.cwd()
 
+/** @returns {string[]} */
 function rg(pattern, ...paths) {
   try {
     const out = execFileSync('rg', ['-n', '--no-heading', pattern, ...paths], {
@@ -41,11 +43,13 @@ function rg(pattern, ...paths) {
   }
 }
 
+/** @returns {boolean} */
 function fileContains(path, needle) {
   if (!existsSync(join(REPO_ROOT, path))) return false
   return readFileSync(join(REPO_ROOT, path), 'utf8').includes(needle)
 }
 
+/** @returns {boolean} */
 function fileExists(path) {
   return existsSync(join(REPO_ROOT, path))
 }
@@ -231,6 +235,7 @@ const INVARIANTS = [
   }
 ]
 
+/** @returns {{ passed: number, failed: number, skipped: number, failures: Array<{ id: string, description: string, detail: string }> }} */
 function runAudit() {
   const report = { passed: 0, failed: 0, skipped: 0, failures: [] }
   for (const inv of INVARIANTS) {
@@ -260,6 +265,7 @@ function runAudit() {
   return report
 }
 
+/** @returns {void} */
 function main() {
   console.log('Phase A correctness audit')
   console.log('=========================')
