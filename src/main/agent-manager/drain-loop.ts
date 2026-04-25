@@ -107,6 +107,14 @@ export interface DrainLoopDeps {
    * a single drain tick can be correlated in the log.
    */
   tickId?: string
+  /**
+   * IDs of tasks claimed since the previous drain tick. Used as a hint to
+   * `refreshDependencyIndex`: tasks outside this set whose fingerprint is
+   * already cached are presumed dependency-stable for the upcoming tick and
+   * skip the per-task fingerprint re-compute. The set is consumed and cleared
+   * at the start of every drain tick so a task only counts as dirty once.
+   */
+  recentlyProcessedTaskIds: Set<string>
 }
 
 // ---------------------------------------------------------------------------
@@ -180,7 +188,15 @@ export function buildTaskStatusMap(deps: DrainLoopDeps): Map<string, string> {
       deps.setDepIndexDirty(false)
     }
   }
-  return refreshDependencyIndex(deps.depIndex, deps.lastTaskDeps, deps.repo, deps.logger)
+  const dirty = new Set(deps.recentlyProcessedTaskIds)
+  deps.recentlyProcessedTaskIds.clear()
+  return refreshDependencyIndex(
+    deps.depIndex,
+    deps.lastTaskDeps,
+    deps.repo,
+    deps.logger,
+    dirty
+  )
 }
 
 /**

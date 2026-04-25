@@ -660,65 +660,61 @@ describe('AgentManagerImpl — class internals', () => {
   // -------------------------------------------------------------------------
 
   describe('taskStatusMap refresh after claim', () => {
-    it('refreshes map after successful claim so subsequent tasks see updated statuses', async () => {
-      // This test simulates: drain loop builds map with task-2='blocked',
-      // then concurrent completion changes task-2 to 'queued' in DB,
-      // refresh after claim picks up the new status.
-
-      let callCount = 0
+    it('updates only the just-claimed task in the map (targeted reload)', async () => {
+      // EP-9 targeted-data-queries: a successful claim should refresh ONLY the
+      // claimed task's status — a full-catalog rescan is wasted I/O.
+      // First getTask call (fresh-status guard before claim) sees 'queued';
+      // second call (post-claim targeted refresh) sees 'active'.
+      let getTaskCalls = 0
       const mockRepo = {
-        getTask: vi.fn().mockReturnValue({ id: 'task-1', status: 'queued' }),
+        getTask: vi.fn().mockImplementation(() => {
+          getTaskCalls++
+          if (getTaskCalls === 1) return { id: 'task-1', status: 'queued' }
+          return { id: 'task-1', status: 'active' }
+        }),
         updateTask: vi.fn(),
         getQueuedTasks: vi.fn(),
         getOrphanedTasks: vi.fn(),
         getActiveTaskCount: vi.fn().mockReturnValue(0),
         claimTask: vi.fn().mockReturnValue({ id: 'task-1' }),
-        // First call (drain loop builds map): task-2 is blocked
-        // Second call (refresh after claim): task-2 is now queued
-        getTasksWithDependencies: vi.fn().mockImplementation(() => {
-          callCount++
-          if (callCount === 1) {
-            return [
-              { id: 'task-1', status: 'queued', depends_on: null },
-              { id: 'task-2', status: 'blocked', depends_on: null }
-            ]
-          }
-          return [
-            { id: 'task-1', status: 'active', depends_on: null },
-            { id: 'task-2', status: 'queued', depends_on: null }
-          ]
-        })
+        getTasksWithDependencies: vi.fn().mockReturnValue([])
       }
 
       const manager = new AgentManagerImpl(baseConfig, mockRepo as never, makeLogger())
 
-      // Simulate drain loop: build initial map from first getTasksWithDependencies call
-      const initialTasks = mockRepo.getTasksWithDependencies()
-      const taskStatusMap = new Map(initialTasks.map((t) => [t.id, t.status]))
-
-      // Verify initial state: task-2 is blocked
-      expect(taskStatusMap.get('task-2')).toBe('blocked')
+      const taskStatusMap = new Map([
+        ['task-1', 'queued'],
+        ['task-2', 'blocked']
+      ])
 
       const raw = makeRawTask({ id: 'task-1' })
       await manager.__testInternals.processQueuedTask(raw, taskStatusMap)
 
-      // Verify refresh happened: task-2 should now be 'queued', task-1 should be 'active'
-      expect(taskStatusMap.get('task-2')).toBe('queued')
+      // task-1 was claimed — its map entry is now the post-claim status.
       expect(taskStatusMap.get('task-1')).toBe('active')
-      expect(mockRepo.getTasksWithDependencies).toHaveBeenCalledTimes(2) // initial + refresh
+      // task-2 is untouched — no full-catalog reload happened.
+      expect(taskStatusMap.get('task-2')).toBe('blocked')
+      // The targeted reload uses getTask, not getTasksWithDependencies.
+      expect(mockRepo.getTask).toHaveBeenCalledWith('task-1')
+      expect(mockRepo.getTasksWithDependencies).not.toHaveBeenCalled()
     })
 
     it('continues with stale map when refresh fails (non-fatal)', async () => {
+      // First getTask call (fresh-status guard before claim) succeeds; the
+      // post-claim targeted refresh call throws and must be swallowed.
+      let getTaskCalls = 0
       const mockRepo = {
-        getTask: vi.fn(),
+        getTask: vi.fn().mockImplementation(() => {
+          getTaskCalls++
+          if (getTaskCalls === 1) return { id: 'task-1', status: 'queued' }
+          throw new Error('DB connection lost')
+        }),
         updateTask: vi.fn(),
         getQueuedTasks: vi.fn(),
         getOrphanedTasks: vi.fn(),
         getActiveTaskCount: vi.fn().mockReturnValue(0),
         claimTask: vi.fn().mockReturnValue({ id: 'task-1' }),
-        getTasksWithDependencies: vi.fn().mockImplementation(() => {
-          throw new Error('DB connection lost')
-        })
+        getTasksWithDependencies: vi.fn()
       }
 
       const manager = new AgentManagerImpl(baseConfig, mockRepo as never, makeLogger())

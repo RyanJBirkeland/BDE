@@ -6,6 +6,7 @@ import type Database from 'better-sqlite3'
 import type { TaskGroup, SprintTask, EpicDependency } from '../../shared/types'
 import { getDb } from '../db'
 import { mapRowsToTasks } from './sprint-queries'
+import { SPRINT_TASK_LIST_COLUMNS } from './sprint-query-constants'
 import { getErrorMessage } from '../../shared/errors'
 import { sanitizeEpicDependsOn } from '../../shared/sanitize-epic-depends-on'
 import type { Logger } from '../logger'
@@ -238,11 +239,8 @@ export function getGroupTasks(groupId: string, db?: Database.Database): SprintTa
   return withDataLayerError(
     () => {
       const conn = db ?? getDb()
-      const rows = conn
-        .prepare(
-          'SELECT * FROM sprint_tasks WHERE group_id = ? ORDER BY sort_order ASC, priority DESC, created_at'
-        )
-        .all(groupId) as Record<string, unknown>[]
+      const sql = `SELECT ${SPRINT_TASK_LIST_COLUMNS} FROM sprint_tasks WHERE group_id = ? ORDER BY sort_order ASC, priority DESC, created_at`
+      const rows = conn.prepare(sql).all(groupId) as Record<string, unknown>[]
       return mapRowsToTasks(rows)
     },
     `getGroupTasks(groupId=${groupId})`,

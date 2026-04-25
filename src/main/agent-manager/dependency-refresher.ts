@@ -32,6 +32,13 @@ export function computeDepsFingerprint(deps: TaskDependency[] | null): string {
  *   frozen; keeping entries just grows the map unboundedly).
  * - Updates the dep-index for tasks whose dependency fingerprint changed.
  *
+ * When `dirtyTaskIds` is provided, the dep-index update step skips tasks not
+ * in the set unless their fingerprint differs from the cached value — the
+ * fingerprint comparison is the authoritative change check, the dirty set is
+ * a hint that lets us skip the comparison entirely for known-stable tasks.
+ * Deletion sweep and terminal eviction always run over the full set so a
+ * caller-supplied dirty hint can never leak stale fingerprints.
+ *
  * Returns a Map<taskId, status> built from the current task list.
  * On repo error, logs a warning and returns an empty map so the drain loop
  * continues with a stale-but-safe state.
@@ -40,7 +47,8 @@ export function refreshDependencyIndex(
   depIndex: DependencyIndex,
   fingerprints: DepsFingerprint,
   repo: IAgentTaskRepository,
-  logger: Logger
+  logger: Logger,
+  dirtyTaskIds?: Set<string>
 ): Map<string, string> {
   try {
     const allTasks = repo.getTasksWithDependencies()
@@ -71,6 +79,12 @@ export function refreshDependencyIndex(
         continue
       }
       const cached = fingerprints.get(task.id)
+      // When the caller flags a dirty set, tasks outside it whose fingerprint
+      // is already cached are presumed stable and skipped — the cached
+      // fingerprint stays authoritative until something dirties it.
+      if (dirtyTaskIds && cached && !dirtyTaskIds.has(task.id)) {
+        continue
+      }
       const newDeps = task.depends_on ?? null
       const newHash = computeDepsFingerprint(newDeps)
       if (!cached || cached.hash !== newHash) {
