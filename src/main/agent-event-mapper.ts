@@ -226,7 +226,10 @@ export function flushAgentEventBatcher(db?: Database.Database): void {
       _pending.unshift(...rows)
       if (_pending.length > MAX_PENDING_EVENTS) {
         const dropped = _pending.splice(0, _pending.length - MAX_PENDING_EVENTS)
-        logger.warn(`Dropped ${dropped.length} oldest events (cap)`)
+        const droppedAgentIds = Array.from(new Set(dropped.map((r) => r.agentId)))
+        logger.warn(
+          `Dropped ${dropped.length} oldest events (cap) — agentIds=${droppedAgentIds.join(',')}`
+        )
       }
     } else {
       logger.error(
@@ -236,7 +239,10 @@ export function flushAgentEventBatcher(db?: Database.Database): void {
     // Rate-limited error logging for context
     const now = Date.now()
     if (now - _lastSqliteErrorLog > SQLITE_ERROR_LOG_INTERVAL_MS) {
-      logger.warn(`SQLite batch write failed (attempt ${_consecutiveFailures}): ${err}`)
+      const batchAgentIds = Array.from(new Set(rows.map((r) => r.agentId)))
+      logger.warn(
+        `SQLite batch write failed (attempt ${_consecutiveFailures}, agentIds=${batchAgentIds.join(',')}): ${err}`
+      )
       _lastSqliteErrorLog = now
     }
   }

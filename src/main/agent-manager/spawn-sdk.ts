@@ -42,6 +42,8 @@ export function spawnViaSdk(
     model: string
     maxBudgetUsd?: number | undefined
     pipelineTuning?: PipelineSpawnTuning | undefined
+    taskId?: string | undefined
+    agentType?: string | undefined
   },
   env: NodeJS.ProcessEnv,
   token: string | null,
@@ -53,6 +55,11 @@ export function spawnViaSdk(
   const effectiveDisallowedTools = opts.pipelineTuning?.disallowedTools
     ? [...opts.pipelineTuning.disallowedTools]
     : undefined
+
+  const effectiveMaxBudget = opts.maxBudgetUsd ?? 2.0
+  ;(logger ?? console).info(
+    `[spawn-sdk] spawning agent taskId=${opts.taskId ?? 'unknown'} agentType=${opts.agentType ?? 'unknown'} model=${opts.model} maxBudgetUsd=${effectiveMaxBudget} cwd=${opts.cwd}`
+  )
 
   const queryResult = sdk.query({
     prompt: opts.prompt,

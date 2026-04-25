@@ -88,13 +88,28 @@ function rotateIfNeeded(): void {
 let writeCount = 0
 const ROTATION_CHECK_INTERVAL = 1000 // check every 1000 writes
 
+// Disk-pressure meta-warning. The synchronous appendFileSync in fileLog blocks
+// the main thread; if a single write exceeds this threshold the process is
+// likely on a stalled or saturated disk. Warn once per process via console
+// (not the logger itself — that would recurse on a slow disk and infinite loop).
+const SLOW_WRITE_THRESHOLD_MS = 50
+let slowWriteWarned = false
+
 function fileLog(level: string, name: string, msg: string): void {
   try {
     const ts = nowIso()
     // The `mode` option only applies when the file is newly created — existing
     // installs are covered by the chmod in ensureLogDir. Keeping this here
     // means a fresh install (or post-rotation recreate) lands at 0600 directly.
+    const startedAt = Date.now()
     appendFileSync(LOG_PATH, `${ts} [${level}] [${name}] ${msg}\n`, { mode: 0o600 })
+    const elapsedMs = Date.now() - startedAt
+    if (!slowWriteWarned && elapsedMs > SLOW_WRITE_THRESHOLD_MS) {
+      slowWriteWarned = true
+      console.warn(
+        `[logger] slow log write: ${elapsedMs}ms (threshold ${SLOW_WRITE_THRESHOLD_MS}ms) — disk may be under pressure. Further slow writes will be silent.`
+      )
+    }
     if (++writeCount >= ROTATION_CHECK_INTERVAL) {
       writeCount = 0
       rotateIfNeeded()
