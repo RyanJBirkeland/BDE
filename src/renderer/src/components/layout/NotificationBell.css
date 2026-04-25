@@ -27,10 +27,11 @@
   line-height: 1;
 }
 
+/* Rendered into a React portal at document.body to escape the unified
+   header's overflow:hidden and stacking context. Top/right are set inline
+   from the bell button's bounding rect. */
 .notification-bell__dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  position: fixed;
   width: 360px;
   max-height: 480px;
   display: flex;
