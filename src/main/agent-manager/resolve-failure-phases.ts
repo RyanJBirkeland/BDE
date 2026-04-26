@@ -125,7 +125,7 @@ export async function resolveFailure(
           caller: 'resolve-failure:terminal'
         })
       } else {
-        await repo.updateTask(taskId, { status: 'failed', ...failFields })
+        await repo.updateTask(taskId, { status: 'failed', ...failFields }) // phase-a-bypass
       }
       return { isTerminal: true }
     }

@@ -24,7 +24,6 @@ vi.mock('../task-changes', () => ({
 
 // Import AFTER mocks are set up
 import { nowIso } from '../../../shared/time'
-import { setSprintQueriesLogger } from '../sprint-query-logger'
 import {
   getTask,
   listTasks,

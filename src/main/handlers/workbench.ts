@@ -174,9 +174,7 @@ export function registerWorkbenchHandlers(
   })
 
   // --- Fully implemented: Repo research via grep ---
-  safeHandle(
-    'workbench:researchRepo',
-    async (_e, input: { query: string; repo: string }) => {
+  safeHandle('workbench:researchRepo', async (_e, input: { query: string; repo: string }) => {
       const { query, repo } = input
       const repoPath = getRepoPath(repo)
       if (!repoPath) {
@@ -187,9 +185,7 @@ export function registerWorkbenchHandlers(
         }
       }
       return searchRepo(repoPath, query)
-    },
-    parseResearchRepoArgs
-  )
+  }, parseResearchRepoArgs)
 
   // NOTE: The non-streaming `workbench:chat` IPC handler was removed.
   // It is fully superseded by `workbench:chatStream`, which is the only
@@ -200,9 +196,7 @@ export function registerWorkbenchHandlers(
   // this channel without routing it through `getCopilotSdkOptions`.
 
   // --- AI-powered streaming chat ---
-  safeHandle(
-    'workbench:chatStream',
-    async (e, input) => {
+  safeHandle('workbench:chatStream', async (e, input) => {
     // Case-insensitive lookup — the renderer sends e.g. `repo: 'BDE'` but
     // the underlying map is keyed by lowercase name.
     const repoPath = getRepoPath(input.formContext.repo)
@@ -281,9 +275,7 @@ export function registerWorkbenchHandlers(
       )
 
     return { streamId }
-  },
-    parseChatStreamArgs
-  )
+  }, parseChatStreamArgs)
 
   // --- Cancel active stream ---
   safeHandle('workbench:cancelStream', async (_e, streamId) => {

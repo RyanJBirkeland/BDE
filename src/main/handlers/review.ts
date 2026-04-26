@@ -88,21 +88,13 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   // Query Handlers (delegate to review-query-service)
   // ============================================================================
 
-  safeHandle(
-    'review:getDiff',
-    async (_e, payload) => getReviewDiff(payload.worktreePath, payload.base, { env }),
-    parseReviewWorktreeArgs as IpcArgsParser<'review:getDiff'>
-  )
+  safeHandle('review:getDiff', async (_e, payload) => getReviewDiff(payload.worktreePath, payload.base, { env }),
+    parseReviewWorktreeArgs as IpcArgsParser<'review:getDiff'>)
 
-  safeHandle(
-    'review:getCommits',
-    async (_e, payload) => getReviewCommits(payload.worktreePath, payload.base, { env }),
-    parseReviewWorktreeArgs as IpcArgsParser<'review:getCommits'>
-  )
+  safeHandle('review:getCommits', async (_e, payload) => getReviewCommits(payload.worktreePath, payload.base, { env }),
+    parseReviewWorktreeArgs as IpcArgsParser<'review:getCommits'>)
 
-  safeHandle(
-    'review:getFileDiff',
-    async (_e, payload) =>
+  safeHandle('review:getFileDiff', async (_e, payload) =>
       getReviewFileDiff(payload.worktreePath, payload.filePath, payload.base, { env }),
     parseReviewFileDiffArgs
   )

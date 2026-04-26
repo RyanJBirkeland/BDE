@@ -512,7 +512,7 @@ async function failTaskExhaustedNoCommits(
         caller: 'resolve-success:no-commits-exhausted'
       })
     } else {
-      await repo.updateTask(taskId, { status: 'failed', ...failFields })
+      await repo.updateTask(taskId, { status: 'failed', ...failFields }) // phase-a-bypass
     }
   } catch (err) {
     logger.error(`[completion] Failed to mark task ${taskId} no-commits-exhausted: ${err}`)

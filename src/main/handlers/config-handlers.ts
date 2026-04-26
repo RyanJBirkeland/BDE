@@ -68,14 +68,10 @@ export function registerConfigHandlers(): void {
     if (SENSITIVE_SETTING_KEYS.has(key)) return null
     return getSettingJson(key)
   })
-  safeHandle(
-    'settings:setJson',
-    (_e, key: string, value: unknown) => {
-      setSettingJson(key, value)
-      emitSettingChanged({ key, value: typeof value === 'string' ? value : JSON.stringify(value) })
-    },
-    parseSetJsonArgs
-  )
+  safeHandle('settings:setJson', (_e, key: string, value: unknown) => {
+    setSettingJson(key, value)
+    emitSettingChanged({ key, value: typeof value === 'string' ? value : JSON.stringify(value) })
+  }, parseSetJsonArgs)
   safeHandle('settings:delete', (_e, key: string) => {
     if (SENSITIVE_SETTING_KEYS.has(key)) {
       throw new Error(`Cannot delete sensitive setting "${key}" via this channel`)

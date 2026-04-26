@@ -49,9 +49,7 @@ export function registerTerminalHandlers(): void {
     shell?: string | undefined
     cwd?: string | undefined
   }
-  safeHandle(
-    'terminal:create',
-    (event, { cols, rows, shell, cwd }: CreatePtyArgs) => {
+  safeHandle('terminal:create', (event, { cols, rows, shell, cwd }: CreatePtyArgs) => {
     if (!isPtyAvailable()) throw new Error('Terminal unavailable: node-pty failed to load')
     const id = ++termId
     const shellPath = shell || process.env.SHELL || '/bin/zsh'
@@ -84,9 +82,7 @@ export function registerTerminalHandlers(): void {
       terminalWindows.delete(id)
     })
     return id
-  },
-    parseTerminalCreateArgs
-  )
+  }, parseTerminalCreateArgs)
 
   safeOn('terminal:write', (_e, { id, data }: { id: number; data: string }) => {
     if (typeof data !== 'string' || data.length > 65_536) return

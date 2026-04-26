@@ -133,9 +133,7 @@ export function registerSprintLocalHandlers(
     parseSprintCreateArgs
   )
 
-  safeHandle(
-    'sprint:createWorkflow',
-    async (_e, template: WorkflowTemplate) => {
+  safeHandle('sprint:createWorkflow', async (_e, template: WorkflowTemplate) => {
     const result = await instantiateWorkflow(template, effectiveRepo)
 
     if (result.errors.length > 0) {
@@ -149,9 +147,7 @@ export function registerSprintLocalHandlers(
       errors: result.errors,
       success: result.errors.length === 0
     }
-  },
-    parseCreateWorkflowArgs
-  )
+  }, parseCreateWorkflowArgs)
 
   const sprintUpdateHandler = async (
     _e: Electron.IpcMainInvokeEvent,
