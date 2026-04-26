@@ -635,12 +635,13 @@ describe('pruneStaleWorktrees', () => {
     rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  // Realistic UUID v4 fixtures — the pruner now requires the leaf
-  // directory name to look like a sprint task UUID before considering
-  // it for deletion.
-  const UUID_A = 'aaaaaaaa-1111-4111-8111-111111111111'
-  const UUID_B = 'bbbbbbbb-2222-4222-8222-222222222222'
-  const UUID_C = 'cccccccc-3333-4333-8333-333333333333'
+  // Realistic BDE task ID fixtures — 32-char lowercase hex strings
+  // produced by SQLite's lower(hex(randomblob(16))). The pruner requires
+  // the leaf directory name to match this format before considering it
+  // for deletion.
+  const TASK_ID_A = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  const TASK_ID_B = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+  const TASK_ID_C = 'cccccccccccccccccccccccccccccccc'
 
   /**
    * Creates a realistic BDE worktree directory: <tmp>/<repoSlug>/<uuid>/
@@ -659,20 +660,46 @@ describe('pruneStaleWorktrees', () => {
     expect(count).toBe(0)
   })
 
+  // Regression: before this fix TASK_ID_HEX_PATTERN required a dashed UUID,
+  // so every real BDE worktree was rejected and pruneStaleWorktrees always
+  // returned 0 — a silent no-op.
+  it('prunes a real-shaped 32-char hex task ID when the task is inactive', async () => {
+    const realTaskId = '00313fab513f1807706c8b7665afc329'
+    makeWorktreeDir('repo-regression', realTaskId)
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    expect(count).toBeGreaterThan(0)
+  })
+
+  it('does NOT prune a dashed-UUID directory name (not a BDE task ID)', async () => {
+    const dashedUuid = 'aaaaaaaa-1111-4111-8111-111111111111'
+    const repoDir = path.join(tmpDir, 'repo-dashed')
+    const dashedDir = path.join(repoDir, dashedUuid)
+    mkdirSync(dashedDir, { recursive: true })
+    writeFileSync(path.join(dashedDir, '.git'), 'gitdir: /fake/path\n')
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    expect(count).toBe(0)
+    const { existsSync } = await import('node:fs')
+    expect(existsSync(dashedDir)).toBe(true)
+  })
+
   it('removes directories for inactive tasks and returns count', async () => {
-    makeWorktreeDir('repo-a', UUID_A)
-    makeWorktreeDir('repo-a', UUID_B)
+    makeWorktreeDir('repo-a', TASK_ID_A)
+    makeWorktreeDir('repo-a', TASK_ID_B)
 
     const count = await pruneStaleWorktrees(tmpDir, () => false)
     expect(count).toBe(2)
   })
 
   it('keeps directories for active tasks', async () => {
-    const activeDir = makeWorktreeDir('repo-b', UUID_A)
-    makeWorktreeDir('repo-b', UUID_B)
+    const activeDir = makeWorktreeDir('repo-b', TASK_ID_A)
+    makeWorktreeDir('repo-b', TASK_ID_B)
 
     const { existsSync } = await import('node:fs')
-    const count = await pruneStaleWorktrees(tmpDir, (id) => id === UUID_A)
+    const count = await pruneStaleWorktrees(tmpDir, (id) => id === TASK_ID_A)
     expect(count).toBe(1)
     expect(existsSync(activeDir)).toBe(true)
   })
@@ -686,8 +713,8 @@ describe('pruneStaleWorktrees', () => {
   })
 
   it('returns 0 when all tasks are active', async () => {
-    makeWorktreeDir('repo-c', UUID_A)
-    makeWorktreeDir('repo-c', UUID_B)
+    makeWorktreeDir('repo-c', TASK_ID_A)
+    makeWorktreeDir('repo-c', TASK_ID_B)
 
     const count = await pruneStaleWorktrees(tmpDir, () => true)
     expect(count).toBe(0)
@@ -718,12 +745,12 @@ describe('pruneStaleWorktrees', () => {
     expect(existsSync(humanDocs)).toBe(true)
   })
 
-  it('does NOT delete UUID-named directories without a .git entry', async () => {
-    // Defense-in-depth: a directory whose name happens to match a UUID
-    // but isn't actually a git worktree (e.g. user has a UUID-named
-    // backup folder) must be left alone.
+  it('does NOT delete task-ID-named directories without a .git entry', async () => {
+    // Defense-in-depth: a directory whose name happens to match a BDE
+    // task ID but isn't actually a git worktree (e.g. user has a
+    // hex-named backup folder) must be left alone.
     const repoDir = path.join(tmpDir, 'repo-d')
-    const fakeUuidDir = path.join(repoDir, UUID_C)
+    const fakeUuidDir = path.join(repoDir, TASK_ID_C)
     mkdirSync(fakeUuidDir, { recursive: true })
     // Note: NO .git file written
 
@@ -739,8 +766,8 @@ describe('pruneStaleWorktrees', () => {
     // task worktrees and human-created branch worktrees side by side.
     // The pruner should only issue rm -rf for BDE-managed inactive ones,
     // never for human worktree subdirectories.
-    const bdeActive = makeWorktreeDir('bde', UUID_A)
-    const bdeInactive = makeWorktreeDir('bde', UUID_B)
+    const bdeActive = makeWorktreeDir('bde', TASK_ID_A)
+    const bdeInactive = makeWorktreeDir('bde', TASK_ID_B)
     const humanWorktree = path.join(tmpDir, 'fix-my-feature')
     const humanSrc = path.join(humanWorktree, 'src')
     const humanDocs = path.join(humanWorktree, 'docs')
@@ -754,7 +781,7 @@ describe('pruneStaleWorktrees', () => {
     execFileMock.mockClear()
     mockExecFileSuccess()
 
-    const count = await pruneStaleWorktrees(tmpDir, (id) => id === UUID_A)
+    const count = await pruneStaleWorktrees(tmpDir, (id) => id === TASK_ID_A)
 
     expect(count).toBe(1) // only the inactive BDE worktree
 

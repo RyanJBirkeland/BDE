@@ -385,14 +385,12 @@ export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> 
 }
 
 /**
- * UUID v4 / v5 format that BDE uses for sprint task IDs (and therefore
- * for the leaf directory name of every BDE-created worktree). The pruner
- * uses this to filter out anything that doesn't look like a task ID, so
- * it never deletes human-created worktrees, source directories, etc.
- *
- * Pattern: 8-4-4-4-12 hex with dashes, case-insensitive.
+ * Matches the BDE task ID format: a 32-character lowercase hex string
+ * produced by SQLite's `lower(hex(randomblob(16)))` — no dashes. The
+ * pruner uses this to filter out anything that doesn't look like a task
+ * ID, so it never deletes human-created worktrees, source directories, etc.
  */
-const TASK_ID_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TASK_ID_HEX_PATTERN = /^[0-9a-f]{32}$/i
 
 /**
  * Returns true if the given path looks like a real git worktree:
@@ -460,11 +458,12 @@ function* enumerateRepoCandidates(
  * Returns true only when it is safe to delete `candidate.worktreePath`.
  *
  * Safety gates, in order:
- *  1. Directory name must look like a BDE task id (UUID-shaped). Users may
- *     point `worktreeBase` at a directory they share with human worktrees,
- *     so we must not delete anything that doesn't look like our own.
+ *  1. Directory name must look like a BDE task id (BDE hex task ID-shaped —
+ *     32-char hex, no dashes). Users may point `worktreeBase` at a directory
+ *     they share with human worktrees, so we must not delete anything that
+ *     doesn't look like our own.
  *  2. The directory must contain a `.git` entry — defense-in-depth in case a
- *     UUID-named directory exists that we did not create.
+ *     hex-named directory exists that we did not create.
  *  3. The task must not be currently active or in review.
  */
 function isPrunableCandidate(
@@ -473,10 +472,10 @@ function isPrunableCandidate(
   isReview: ((taskId: string) => boolean) | undefined,
   log: Logger
 ): boolean {
-  if (!TASK_ID_UUID_PATTERN.test(candidate.taskId)) return false
+  if (!TASK_ID_HEX_PATTERN.test(candidate.taskId)) return false
   if (!looksLikeWorktree(candidate.worktreePath)) {
     log.warn(
-      `[worktree] Skipping prune of ${candidate.worktreePath}: UUID-named but not a git worktree (no .git entry)`
+      `[worktree] Skipping prune of ${candidate.worktreePath}: BDE task ID-named but not a git worktree (no .git entry)`
     )
     return false
   }
