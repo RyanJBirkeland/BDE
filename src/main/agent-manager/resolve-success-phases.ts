@@ -347,6 +347,7 @@ interface CommitCheckContext {
   repo: IAgentTaskRepository
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  taskStateService?: TaskStateService
   resolveFailure: (
     opts: {
       taskId: string
@@ -401,6 +402,7 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
     repo,
     logger,
     onTaskTerminal,
+    taskStateService,
     resolveFailure
   } = opts
   const env = buildAgentEnv()
@@ -436,11 +438,25 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
       return false
     }
   } catch (err) {
-    // rev-list can fail if the remote ref doesn't exist yet (fresh worktree, no fetch).
-    // Assume commits exist so the agent's work proceeds to review rather than silently failing.
-    logger.warn(
-      `[completion] git rev-list check failed for task ${taskId} — assuming commits exist: ${err}`
-    )
+    // rev-list failure is a hard failure: promoting a task to review without
+    // confirming commits exist risks empty reviews and false dependency unblocking.
+    logger.error(`[completion] git rev-list check failed for task ${taskId}: ${err}`)
+    if (taskStateService) {
+      await taskStateService.transition(taskId, 'failed', {
+        fields: {
+          failure_reason: 'git-precondition-failed',
+          notes: `git rev-list failed: ${String(err)}`,
+          claimed_by: null
+        },
+        caller: 'resolve-success.rev-list'
+      })
+      await onTaskTerminal(taskId, 'failed')
+    } else {
+      // No TaskStateService injected — fall back to resolveFailure path
+      const isTerminal = resolveFailure({ taskId, retryCount, notes: `git rev-list failed: ${String(err)}`, repo }, logger)
+      if (isTerminal) await onTaskTerminal(taskId, 'failed')
+    }
+    return false
   }
   return true
 }

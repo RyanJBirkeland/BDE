@@ -610,7 +610,7 @@ describe('resolveSuccess — catch handler coverage', () => {
     vi.mocked(existsSync).mockReturnValue(true)
   })
 
-  it('logs error when updateTask fails during review transition', async () => {
+  it('falls back to failed when review transition throws (T-8 fix)', async () => {
     mockExecFileSequence([
       { stdout: 'agent/b\n' },
       { stdout: '' },
@@ -626,8 +626,8 @@ describe('resolveSuccess — catch handler coverage', () => {
     expect(noopLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to transition task task-catch to review status')
     )
-    // onTaskTerminal should NOT be called — review is not terminal
-    expect(mockOnTaskTerminal2).not.toHaveBeenCalled()
+    // T-8 fix: fallback to 'failed' so the task does not stay stuck active
+    expect(mockOnTaskTerminal2).toHaveBeenCalledWith('task-catch', 'failed')
   })
 
   it('transitions to review with worktree_path preserved', async () => {
@@ -834,19 +834,16 @@ describe('resolveFailure', () => {
     expect(result).toBe(true)
   })
 
-  it('returns true when retries exhausted even if updateTask throws (AM-5)', async () => {
+  it('rethrows when updateTask throws so caller does NOT invoke onTaskTerminal (T-3 fix)', () => {
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB error')
     })
 
-    const result = await resolveFailure({
-      taskId: 'task-5',
-      retryCount: MAX_RETRIES,
-      repo: mockRepo
-    })
-
-    // AM-5 fix: should return true (terminal) even though DB update failed
-    expect(result).toBe(true)
+    // Phase A T-3: rethrow so caller skips onTaskTerminal — the row was not
+    // updated, so unblocking dependents would be incorrect.
+    expect(() =>
+      resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES, repo: mockRepo })
+    ).toThrow('DB error')
   })
 })
 

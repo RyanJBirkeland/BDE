@@ -419,16 +419,14 @@ describe('rowToMeta — union membership guards', () => {
     expect(result!.source).toBe('external')
   })
 
-  it('filters out rows with unknown status from listAgents', () => {
-    insertAgentRecord(db, makeAgent({ id: 'valid-agent', status: 'running' }))
-    // Inject a row with an invalid status directly into the DB
-    db.prepare(
-      `INSERT INTO agent_runs (id, bin, status, started_at)
-       VALUES ('bad-agent', 'claude', 'corrupted', '2025-01-01T00:00:00Z')`
-    ).run()
-
-    const agents = listAgents(db)
-    expect(agents.find((a) => a.id === 'valid-agent')).toBeDefined()
-    expect(agents.find((a) => a.id === 'bad-agent')).toBeUndefined()
+  it('CHECK constraint prevents inserting rows with invalid status (no longer filterable at read)', () => {
+    // The agent_runs table has a CHECK constraint on status. Invalid statuses
+    // are rejected at insert time, so the read-side filter is no longer exercised.
+    expect(() => {
+      db.prepare(
+        `INSERT INTO agent_runs (id, bin, status, started_at)
+         VALUES ('bad-agent', 'claude', 'corrupted', '2025-01-01T00:00:00Z')`
+      ).run()
+    }).toThrow(/CHECK constraint failed/)
   })
 })

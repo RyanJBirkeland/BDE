@@ -95,9 +95,10 @@ export function resolveFailure(opts: ResolveFailureContext, logger?: Logger): bo
       return true // terminal
     }
   } catch (err) {
+    logger?.event?.('failure.persist_failed', { taskId, error: String(err) })
     logger?.error(`[completion] Failed to update task ${taskId} during failure resolution: ${err}`)
-    // Still return correct terminal status even if DB update failed
-    // so caller knows to trigger onStatusTerminal callback
-    return isTerminal
+    // Rethrow: the DB row was not updated, so invoking onTaskTerminal would
+    // unblock dependents against a task that is still 'active' in SQLite.
+    throw err
   }
 }

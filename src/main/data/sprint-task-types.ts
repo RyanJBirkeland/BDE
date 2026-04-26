@@ -51,7 +51,6 @@ if (COLUMN_MAP.size !== UPDATE_ALLOWLIST.size) {
 }
 
 export interface QueueStats {
-  [key: string]: number
   backlog: number
   queued: number
   active: number

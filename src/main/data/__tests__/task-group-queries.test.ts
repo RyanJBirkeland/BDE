@@ -280,25 +280,15 @@ describe('sanitizeGroup — isTaskGroupStatus guard', () => {
     expect(fetched?.status).toBe('ready')
   })
 
-  it('defaults to "draft" when status is unknown and logs a warning', () => {
-    const warnSpy = vi.fn()
-    setTaskGroupQueriesLogger({
-      info: vi.fn(),
-      warn: warnSpy,
-      error: vi.fn(),
-      debug: vi.fn()
-    })
-
+  it('CHECK constraint prevents inserting rows with invalid status (guard scenario is pre-DB-constraint)', () => {
     const group = createGroup({ name: 'Corrupt Group' }, db)!
 
-    // Inject an invalid status directly, bypassing the ORM
-    db.prepare('UPDATE task_groups SET status = ? WHERE id = ?').run('invalid-status', group.id)
-
-    const fetched = getGroup(group.id, db)
-    expect(fetched?.status).toBe('draft')
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Unknown TaskGroup status "invalid-status"')
-    )
+    // The task_groups table has a CHECK constraint — invalid status values are
+    // rejected at the DB level. The isTaskGroupStatus guard is a defense-in-depth
+    // safeguard for rows from older schema versions without the constraint.
+    expect(() => {
+      db.prepare('UPDATE task_groups SET status = ? WHERE id = ?').run('invalid-status', group.id)
+    }).toThrow(/CHECK constraint failed/)
 
     // Restore default logger
     setTaskGroupQueriesLogger({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })

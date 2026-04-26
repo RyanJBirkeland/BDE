@@ -9,7 +9,7 @@ import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { resolveDependents } from '../lib/resolve-dependents'
 import { getSetting } from '../settings'
-import type { TerminalDispatcher } from '../services/task-state-service'
+import type { TerminalDispatcher, TaskStateService } from '../services/task-state-service'
 
 function wrapTransactionWithLogging(
   unitOfWork: IUnitOfWork,
@@ -47,7 +47,8 @@ async function resolveTerminalDependents(
   repo: IAgentTaskRepository,
   unitOfWork: IUnitOfWork,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
-  logger: Logger
+  logger: Logger,
+  taskStateService?: TaskStateService
 ): Promise<void> {
   // DESIGN: Inline resolution for immediate drain loop feedback.
   // When a pipeline agent completes, we resolve dependents synchronously
@@ -74,7 +75,8 @@ async function resolveTerminalDependents(
       repo.getGroup,
       repo.getGroupTasks,
       runInTransactionSafe,
-      onTaskTerminal
+      onTaskTerminal,
+      taskStateService
     )
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err)
@@ -101,6 +103,7 @@ export interface TerminalHandlerDeps {
   config: AgentManagerConfig
   terminalCalled: Map<string, Promise<void>>
   logger: Logger
+  taskStateService?: TaskStateService
 }
 
 async function executeTerminal(
@@ -122,7 +125,8 @@ async function executeTerminal(
       repo,
       unitOfWork,
       onTaskTerminal,
-      logger
+      logger,
+      deps.taskStateService
     )
   }
 }

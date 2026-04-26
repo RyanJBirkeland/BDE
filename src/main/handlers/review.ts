@@ -15,7 +15,8 @@ import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
 import { execFileAsync } from '../lib/async-utils'
 import { checkAutoReview } from '../services/auto-review-service'
-import { getTask, updateTask } from '../services/sprint-service'
+import { getTask } from '../services/sprint-service'
+import type { TaskStateService } from '../services/task-state-service'
 import type { AutoReviewRule } from '../../shared/types'
 import { getRepoConfig } from '../paths'
 import * as reviewOrchestration from '../services/review-orchestration-service'
@@ -32,6 +33,7 @@ const logger = createLogger('review-handlers')
 
 export interface ReviewHandlersDeps {
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
+  taskStateService: TaskStateService
 }
 
 export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
@@ -206,8 +208,10 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     }
 
     logger.info(`review:markShippedOutsideBde task=${taskId}`)
-    updateTask(taskId, { status: 'done', completed_at: nowIso() })
-    await deps.onStatusTerminal(taskId, 'done')
+    await deps.taskStateService.transition(taskId, 'done', {
+      fields: { completed_at: nowIso() },
+      caller: 'review:markShippedOutsideBde'
+    })
     return { success: true }
   })
 }

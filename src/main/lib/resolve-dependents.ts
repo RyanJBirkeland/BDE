@@ -2,6 +2,7 @@ import type { SprintTask, TaskDependency, TaskGroup } from '../../shared/types'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import type { TaskStateService } from '../services/task-state-service'
 import {
   type DependencyIndex,
   buildBlockedNotes,
@@ -41,7 +42,8 @@ export function resolveDependents(
   getGroup?: (id: string) => TaskGroup | null,
   listGroupTasks?: (groupId: string) => SprintTask[],
   runInTransaction?: (fn: () => void) => void,
-  onTaskTerminal?: (taskId: string, status: TaskStatus) => void
+  onTaskTerminal?: (taskId: string, status: TaskStatus) => void,
+  taskStateService?: TaskStateService
 ): void {
   // Guard: only process terminal statuses — calling with active/queued/blocked
   // produces nonsensical cascade-cancel and satisfaction results.
@@ -102,7 +104,24 @@ export function resolveDependents(
         ;(logger ?? console).warn(`[resolve-dependents] onTaskTerminal threw for ${depId}: ${err}`)
         throw err
       }
-      updateTask(depId, { status: 'cancelled', notes: cancelNote })
+      if (taskStateService) {
+        taskStateService
+          .transition(depId, 'cancelled', {
+            fields: { notes: cancelNote },
+            caller: 'resolve-dependents.cascade-cancel'
+          })
+          .catch((err) => {
+            ;(logger ?? console).warn(
+              `[resolve-dependents] taskStateService.transition threw for ${depId}: ${err}`
+            )
+          })
+      } else {
+        // phase-a-bypass: T-36 (ResolveDependentsDeps object) will thread taskStateService
+        // through this path. Until then, fall back to the injected updateTask to avoid
+        // leaving the cancelled status unwritten when taskStateService is unavailable
+        // (e.g. the circular-dep init-order constraint in task-terminal-service).
+        updateTask(depId, { status: 'cancelled', notes: cancelNote }) // phase-a-bypass: T-36
+      }
       // Recursively cancel this task's blocked dependents — pass runInTransaction
       // so nested cascades are also wrapped in the outer transaction
       resolveDependents(
@@ -117,7 +136,8 @@ export function resolveDependents(
         getGroup,
         listGroupTasks,
         runInTransaction,
-        onTaskTerminal
+        onTaskTerminal,
+        taskStateService
       )
       return
     }

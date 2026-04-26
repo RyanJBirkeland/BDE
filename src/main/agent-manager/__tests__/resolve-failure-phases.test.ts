@@ -54,29 +54,25 @@ describe('resolveFailure — terminal (retries exhausted)', () => {
 })
 
 describe('resolveFailure — repo.updateTask throws', () => {
-  it('catches the error and still returns the correct isTerminal value (non-terminal)', () => {
+  it('rethrows when updateTask throws — caller must NOT invoke onTaskTerminal', () => {
     const repo = makeRepo({ updateTask: vi.fn().mockImplementation(() => { throw new Error('DB locked') }) })
-    const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
+    const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), event: vi.fn() }
 
-    const result = resolveFailure({ taskId: 't-4', retryCount: 0, repo: repo as never }, logger as never)
-
-    // Error is caught — returns false (non-terminal) even though DB write failed.
-    // This means onTaskTerminal will NOT be called, but the task remains claimed.
-    expect(result).toBe(false)
-    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to update task t-4'))
+    // Phase A fix (T-3): rethrow so caller knows NOT to call onTaskTerminal
+    expect(() =>
+      resolveFailure({ taskId: 't-4', retryCount: 0, repo: repo as never }, logger as never)
+    ).toThrow('DB locked')
+    expect(logger.event).toHaveBeenCalledWith('failure.persist_failed', expect.objectContaining({ taskId: 't-4' }))
   })
 
-  it('catches the error and still returns true when terminal', () => {
+  it('rethrows when terminal and updateTask throws', () => {
     const repo = makeRepo({ updateTask: vi.fn().mockImplementation(() => { throw new Error('DB locked') }) })
-    const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
+    const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), event: vi.fn() }
 
-    const result = resolveFailure(
-      { taskId: 't-5', retryCount: MAX_RETRIES, repo: repo as never },
-      logger as never
-    )
-
-    expect(result).toBe(true)
-    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Failed to update task t-5'))
+    expect(() =>
+      resolveFailure({ taskId: 't-5', retryCount: MAX_RETRIES, repo: repo as never }, logger as never)
+    ).toThrow('DB locked')
+    expect(logger.event).toHaveBeenCalledWith('failure.persist_failed', expect.objectContaining({ taskId: 't-5' }))
   })
 })
 

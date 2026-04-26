@@ -74,7 +74,9 @@ describe('createTaskTerminalService', () => {
       expect.anything(), // epicIndex
       deps.getGroup,
       deps.listGroupTasks,
-      undefined // runInTransaction (not provided by default)
+      undefined, // runInTransaction (not provided by default)
+      undefined, // onTaskTerminal
+      undefined  // taskStateService
     )
   })
 
@@ -167,7 +169,9 @@ describe('createTaskTerminalService', () => {
       expect.anything(),
       deps.getGroup,
       deps.listGroupTasks,
-      undefined // runInTransaction (not provided by default)
+      undefined, // runInTransaction (not provided by default)
+      undefined, // onTaskTerminal
+      undefined  // taskStateService
     )
   })
 
@@ -195,7 +199,9 @@ describe('createTaskTerminalService', () => {
       expect.anything(), // epicIndex
       deps.getGroup,
       deps.listGroupTasks,
-      runInTransaction
+      runInTransaction,
+      undefined, // onTaskTerminal
+      undefined  // taskStateService
     )
   })
 
@@ -255,7 +261,9 @@ describe('createTaskTerminalService', () => {
       expect.anything(),
       deps.getGroup,
       deps.listGroupTasks,
-      runInTransaction
+      runInTransaction,
+      undefined, // onTaskTerminal
+      undefined  // taskStateService
     )
   })
 

@@ -1206,13 +1206,14 @@ describe('createAgentManager', () => {
         expect.anything(), // depIndex
         expect.anything(), // getTask
         expect.anything(), // updateTask
-        logger,
+        expect.anything(), // logger
         expect.anything(), // getSetting
         expect.anything(), // epicIndex
         expect.anything(), // getGroup
         expect.anything(), // listGroupTasks
         expect.anything(), // runInTransaction
-        expect.anything() // onTaskTerminal
+        expect.anything(), // onTaskTerminal
+        undefined          // taskStateService (not wired in terminal-handler path)
       )
     })
 

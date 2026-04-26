@@ -1,4 +1,5 @@
 import { resolveDependents } from '../lib/resolve-dependents'
+import type { TaskStateService } from './task-state-service'
 import {
   createDependencyIndex,
   type DependencyIndex,
@@ -32,6 +33,7 @@ export interface TaskTerminalServiceDeps {
   epicDepsReader: EpicDepsReader
   getSetting?: (key: string) => string | null
   runInTransaction?: (fn: () => void) => void
+  taskStateService?: TaskStateService
   logger: Logger
 }
 
@@ -100,7 +102,9 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
               deps.epicDepsReader,
               deps.getGroup,
               deps.listGroupTasks,
-              deps.runInTransaction
+              deps.runInTransaction,
+              undefined,
+              deps.taskStateService
             )
           } catch (err) {
             failedTaskIds.push(id)

@@ -452,18 +452,16 @@ describe('Agent completion pipeline integration', () => {
       expect(isTerminal).toBe(true)
     })
 
-    it('returns false (non-terminal) when updateTask throws during failure resolution', () => {
+    it('rethrows when updateTask throws during failure resolution (T-3 fix)', () => {
       updateTaskMock.mockImplementationOnce(() => {
         throw new Error('DB error')
       })
 
-      const isTerminal = resolveFailure(
-        { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES },
-        logger
-      )
-
-      // AM-5 fix: resolveFailure returns true when retries exhausted, even on DB error
-      expect(isTerminal).toBe(true)
+      // Phase A T-3: rethrow prevents caller from invoking onTaskTerminal
+      // when the DB row was not actually updated.
+      expect(() =>
+        resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
+      ).toThrow('DB error')
     })
   })
 

@@ -181,35 +181,24 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
     )
   })
 
-  it('returns false when retries not exhausted (DB error)', () => {
-    vi.mocked(mockRepo.updateTask).mockImplementation(() => {
+  it('rethrows when DB error (retries not exhausted) — T-3 fix', () => {
+    vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
       throw new Error('DB connection lost')
     })
 
-    const result = resolveFailure({ taskId: 'task-3', retryCount: 1, repo: mockRepo }, logger)
-
-    expect(result).toBe(false)
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-3')
-    )
+    expect(() =>
+      resolveFailure({ taskId: 'task-3', retryCount: 1, repo: mockRepo }, logger)
+    ).toThrow('DB connection lost')
   })
 
-  it('returns true when retries exhausted (DB error) - CRITICAL FIX', () => {
-    vi.mocked(mockRepo.updateTask).mockImplementation(() => {
+  it('rethrows when retries exhausted and DB error — T-3 fix', () => {
+    vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
       throw new Error('DB connection lost')
     })
 
-    const result = resolveFailure(
-      { taskId: 'task-4', retryCount: MAX_RETRIES, repo: mockRepo },
-      logger
-    )
-
-    // This is the fix: even though DB update failed, we return true
-    // so the caller knows to trigger onStatusTerminal callback
-    expect(result).toBe(true)
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-4')
-    )
+    expect(() =>
+      resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES, repo: mockRepo }, logger)
+    ).toThrow('DB connection lost')
   })
 
   it('includes notes when provided', () => {

@@ -196,6 +196,7 @@ const verifyCommitsPhase: SuccessPhase = {
       repo: ctx.repo,
       logger: ctx.logger,
       onTaskTerminal: ctx.onTaskTerminal,
+      taskStateService: ctx.taskStateService,
       resolveFailure: resolveFailurePhase
     })
     if (!hasCommits) throw new PipelineAbortError()
@@ -227,7 +228,8 @@ const branchTipVerifyPhase: SuccessPhase = {
       ctx.repoPath,
       ctx.repo,
       ctx.logger,
-      ctx.onTaskTerminal
+      ctx.onTaskTerminal,
+      ctx.taskStateService
     )
     if (!verified) throw new PipelineAbortError()
   }
@@ -463,7 +465,8 @@ async function verifyBranchTipOrFail(
   repoPath: string | undefined,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  _onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService: TaskStateService
 ): Promise<boolean> {
   if (!repoPath) return true
 
@@ -488,21 +491,16 @@ async function verifyBranchTipOrFail(
         `Expected one of: [${expectedSummary}]. Actual subject: "${err.actualSubject}". ` +
         `This usually means a stale branch or a cross-task leak — task will not be promoted to review.`
       logger.error(`[completion] ${failureNotes}`)
-      try {
-        repo.updateTask(taskId, {
-          status: 'failed',
+      await taskStateService.transition(taskId, 'failed', {
+        fields: {
           completed_at: nowIso(),
           claimed_by: null,
           needs_review: true,
           failure_reason: 'tip-mismatch',
           notes: failureNotes
-        })
-      } catch (updateErr) {
-        logger.error(
-          `[completion] Failed to persist tip-mismatch status for task ${taskId}: ${updateErr}`
-        )
-      }
-      await onTaskTerminal(taskId, 'failed')
+        },
+        caller: 'completion.tip-mismatch'
+      })
       return false
     }
     // Non-mismatch error (git missing, branch vanished, etc.) — log and let

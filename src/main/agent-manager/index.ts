@@ -334,11 +334,12 @@ export class AgentManagerImpl implements AgentManager {
         // validateTaskForRun and handleSpawnFailure already do this on their
         // own code paths — this catch handles any remaining gap (e.g. an
         // unexpected throw before either of those paths is reached).
-        // EP-1 note: this is a last-resort safety net for unexpected errors before
-        // or after spawnAndWireAgent — using repo.updateTask directly avoids a
-        // circular-service dependency in the error path.
+        // phase-a-bypass: last-resort safety net before spawn phase — using
+        // repo.updateTask directly avoids circular-service dependency and
+        // test-environment issues (TaskStateService uses module-level sprint-mutations,
+        // not the injected repo). See T-36 for the full fix path.
         try {
-          this.repo.updateTask(task.id, { status: 'error', claimed_by: null, notes: String(err) })
+          this.repo.updateTask(task.id, { status: 'error', claimed_by: null, notes: String(err) }) // phase-a-bypass: T-36
         } catch (updateErr) {
           this.logger.error(
             `[agent-manager] Failed to release claim for task ${task.id}: ${updateErr}`

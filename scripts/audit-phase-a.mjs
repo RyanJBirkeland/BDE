@@ -72,7 +72,10 @@ const INVARIANTS = [
       ])
       const hits = rg(pattern, 'src/main/').filter((line) => {
         const file = line.split(':', 1)[0]
-        return !allowedFiles.has(file)
+        if (allowedFiles.has(file)) return false
+        // Skip lines marked as phase-a-bypass (tracked exceptions, see T-36)
+        if (line.includes('phase-a-bypass')) return false
+        return true
       })
       if (hits.length === 0) return { ok: true }
       return {

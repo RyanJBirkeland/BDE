@@ -109,6 +109,16 @@ export async function transitionToReview(opts: TransitionToReviewOpts): Promise<
       caller: 'review-transition'
     })
   } catch (err) {
+    logger.event('review-transition.fallback', { taskId, error: String(err) })
     logger.error(`[completion] Failed to transition task ${taskId} to review status: ${err}`)
+    // Fall back to failed so the task does not stay stuck active
+    try {
+      await taskStateService.transition(taskId, 'failed', {
+        fields: { failure_reason: 'review-transition-failed', claimed_by: null },
+        caller: 'review-transition.fallback'
+      })
+    } catch (fallbackErr) {
+      logger.error(`[completion] Fallback failed transition also failed for task ${taskId}: ${fallbackErr}`)
+    }
   }
 }
