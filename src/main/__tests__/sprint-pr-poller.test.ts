@@ -502,18 +502,17 @@ describe('createSprintPrPoller', () => {
     const poller = createSprintPrPoller(deps)
     poller.start()
 
-    // Run 5 full poll cycles to exhaust retry attempts
-    for (let cycle = 0; cycle < 5; cycle++) {
-      for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
-      await vi.advanceTimersByTimeAsync(60_000)
-    }
+    // Exponential backoff means retries don't all fire in 5×60s cycles.
+    // Advance enough wall-time for all 5 attempts to fire (incl. backoff delays):
+    //   attempt 1 at t≈0, attempt 2 at t≈60s (nextRetryAt=0), attempt 3 at t≈120s
+    //   (nextRetryAt=120s), attempt 4 at t≈240s (nextRetryAt=240s),
+    //   attempt 5 (exhausted) at t≈480s. Use 600s to cover the last interval tick.
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+    await vi.advanceTimersByTimeAsync(600_000)
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
 
-    expect(logError).toHaveBeenCalledWith(
-      expect.stringContaining('failed after')
-    )
-    expect(logError).toHaveBeenCalledWith(
-      expect.stringContaining('task-1')
-    )
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining('failed after'))
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining('task-1'))
 
     poller.stop()
   })
@@ -578,6 +577,39 @@ describe('createSprintPrPoller', () => {
     for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
 
     expect(logEvent).toHaveBeenCalledWith('pr-poller.tick.idle', { taskCount: 0 })
+  })
+
+  // ── T-114: Exponential backoff on terminal retry ──────────────────────────
+
+  it('includes backoff delay in retry warning log (T-114)', async () => {
+    // The direct proof that backoff fires: the warn log says "next attempt in Xms".
+    // We can't count calls cleanly because the poll itself retries every cycle too.
+    const logWarn = vi.fn()
+    const task = makeTask()
+
+    const deps = makeDeps({
+      listTasksWithOpenPrs: vi.fn().mockReturnValueOnce([task]).mockReturnValue([]),
+      pollPrStatuses: vi.fn().mockResolvedValue([
+        { taskId: 'task-1', merged: true, state: 'MERGED', mergedAt: null, mergeableState: null }
+      ]),
+      markTaskDoneByPrNumber: vi.fn().mockResolvedValue(['task-1']),
+      onTaskTerminal: vi.fn().mockRejectedValue(new Error('transient')),
+      logger: { info: vi.fn(), warn: logWarn, error: vi.fn(), debug: vi.fn(), event: vi.fn() }
+    })
+
+    const poller = createSprintPrPoller(deps)
+    poller.start()
+
+    // Cycle 1: initial attempt fails, entry added with nextRetryAt:0
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    // Cycle 2 (60s later): flush retries, fails again — backoff warn fires
+    await vi.advanceTimersByTimeAsync(60_000)
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+
+    expect(logWarn).toHaveBeenCalledWith(expect.stringContaining('next attempt in'))
+
+    poller.stop()
   })
 })
 

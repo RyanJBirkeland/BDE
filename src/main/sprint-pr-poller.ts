@@ -26,6 +26,8 @@ const MAX_TERMINAL_RETRY_ATTEMPTS = 5
  * `terminal-retry.evicted` event fires so the loss is observable.
  */
 const MAX_PENDING_TASKS = 500
+const TERMINAL_RETRY_BASE_DELAY_MS = 30_000
+const TERMINAL_RETRY_MAX_DELAY_MS = 300_000
 
 export interface SprintPrPollerDeps {
   listTasksWithOpenPrs: () => SprintTaskPR[]
@@ -61,6 +63,7 @@ type Logger = NonNullable<SprintPrPollerDeps['logger']>
 interface PendingTerminalRetry {
   status: TaskStatus
   attempts: number
+  nextRetryAt: number
 }
 
 class PollTimeoutError extends Error {
@@ -136,7 +139,10 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
   async function flushPendingRetries(): Promise<void> {
     if (pendingTerminalRetries.size === 0) return
 
+    const now = Date.now()
     for (const [taskId, pending] of Array.from(pendingTerminalRetries.entries())) {
+      if (now < pending.nextRetryAt) continue
+
       try {
         await Promise.resolve(deps.onTaskTerminal(taskId, pending.status))
         pendingTerminalRetries.delete(taskId)
@@ -154,9 +160,17 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
           })
           pendingTerminalRetries.delete(taskId)
         } else {
-          pendingTerminalRetries.set(taskId, { status: pending.status, attempts: nextAttempts })
+          const backoffMs = Math.min(
+            TERMINAL_RETRY_BASE_DELAY_MS * Math.pow(2, nextAttempts - 1),
+            TERMINAL_RETRY_MAX_DELAY_MS
+          )
+          pendingTerminalRetries.set(taskId, {
+            status: pending.status,
+            attempts: nextAttempts,
+            nextRetryAt: now + backoffMs
+          })
           log.warn(
-            `[sprint-pr-poller] terminal notify retry ${nextAttempts}/${MAX_TERMINAL_RETRY_ATTEMPTS} failed for task ${taskId}`
+            `[sprint-pr-poller] terminal notify retry ${nextAttempts}/${MAX_TERMINAL_RETRY_ATTEMPTS} failed for task ${taskId} — next attempt in ${backoffMs}ms`
           )
         }
       }
@@ -188,7 +202,7 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
     const failedIds = await attemptTerminalNotifications(ids, status, deps.onTaskTerminal)
     for (const id of failedIds) {
       const prior = pendingTerminalRetries.get(id)
-      enqueueRetry(id, { status, attempts: (prior?.attempts ?? 0) + 1 })
+      enqueueRetry(id, { status, attempts: (prior?.attempts ?? 0) + 1, nextRetryAt: 0 })
     }
     if (failedIds.length > 0) {
       log.warn(

@@ -8,6 +8,7 @@ import { getErrorMessage } from '../shared/errors'
 
 export const POLL_INTERVAL_MS = 60_000
 const REQUEST_TIMEOUT_MS = 10_000
+const MAX_ERROR_COUNT = 10
 const logger = createLogger('pr-poller')
 
 function getGitHubRepos(): { owner: string; repo: string }[] {
@@ -111,18 +112,20 @@ function safePoll(): void {
   // Backoff gate — skip this tick if we're still within a backoff window.
   if (Date.now() < nextPollAt) return
 
+  logger.event('pr-poller.tick.start', { errorCount })
+
   poll()
     .then(() => {
-      // Reset backoff on success
       errorCount = 0
       nextPollAt = 0
+      logger.event('pr-poller.tick.end', { ok: true })
     })
     .catch((err) => {
-      logger.error(`PR poller error: ${getErrorMessage(err)}`)
-      errorCount++
-      // Exponential backoff with max 5 minutes
+      errorCount = Math.min(errorCount + 1, MAX_ERROR_COUNT)
       const backoffMs = Math.min(POLL_INTERVAL_MS * Math.pow(2, errorCount - 1), 300_000)
       nextPollAt = Date.now() + backoffMs
+      logger.error(`PR poller error: ${getErrorMessage(err)}`)
+      logger.event('pr-poller.tick.end', { ok: false, error: getErrorMessage(err), backoffMs })
       logger.warn(`PR poller backing off for ${backoffMs}ms after ${errorCount} consecutive errors`)
     })
 }
