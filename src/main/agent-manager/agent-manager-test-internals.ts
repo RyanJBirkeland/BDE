@@ -49,7 +49,8 @@ export class AgentManagerTestInternals {
     return this.mgr._concurrency
   }
   get lastTaskDeps(): Map<string, { deps: TaskDependency[] | null; hash: string }> {
-    return this.mgr._lastTaskDeps
+    // lastTaskDeps moved to DrainLoop in T-58 — delegate through the test-accessible DrainLoop.
+    return this.mgr._drainLoopInstance['lastTaskDeps'] as Map<string, { deps: TaskDependency[] | null; hash: string }>
   }
   get depIndexDirty(): boolean {
     return this.mgr._depIndexDirty

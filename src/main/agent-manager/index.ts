@@ -1,9 +1,7 @@
 import type { AgentManagerConfig, ActiveAgent, SteerResult } from './types'
 import type { Logger } from '../logger'
-import type { TaskDependency } from '../../shared/types'
 import type { SprintTask } from '../../shared/types/task-types'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { computeDepsFingerprint, refreshDependencyIndex } from './dependency-refresher'
 import { handleTaskTerminal } from './terminal-handler'
 import { createTaskStateService, type TaskStateService } from '../services/task-state-service'
 import { EXECUTOR_ID, INITIAL_DRAIN_DEFER_MS } from './types'
@@ -15,12 +13,12 @@ import { runAgent as _runAgent, type RunAgentDeps, type AgentRunClaim } from './
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { createUnitOfWork, type IUnitOfWork } from '../data/unit-of-work'
 import { createMetricsCollector, type MetricsCollector, type MetricsSnapshot } from './metrics'
-import { CircuitBreaker } from './circuit-breaker'
+import { CircuitBreaker, type CircuitObserver } from './circuit-breaker'
 
 import type { MappedTask } from './task-mapper'
 
 // Extracted module imports
-import { runDrain, type DrainLoopDeps } from './drain-loop'
+import { DrainLoop, type DrainLoopDeps } from './drain-loop'
 import { runWatchdog, killActiveAgent, type WatchdogLoopDeps } from './watchdog-loop'
 import { validateAndClaimTask, prepareWorktreeForTask, processQueuedTask } from './task-claimer'
 import { checkIsReviewTask, runPruneLoop } from './worktree-manager'
@@ -123,30 +121,20 @@ export class AgentManagerImpl implements AgentManager {
   _started = false
 
   // ---- Drain runtime ----
-  _concurrency: ConcurrencyState
+  /** The DrainLoop instance owns all mutable drain state (concurrency, failure counts, pause gate, dep fingerprints). */
+  _drainLoopInstance!: DrainLoop // assigned in constructor after deps are ready
   _drainInFlight: Promise<void> | null = null
-  // F-t1-sysprof-1/-4: cache deps fingerprint so subsequent drain ticks can
-  // short-circuit the deep compare via hash equality.
-  _lastTaskDeps = new Map<string, { deps: TaskDependency[] | null; hash: string }>()
   // Set when a terminal event fires; next drain tick rebuilds the dep index
   // fully instead of doing an incremental refresh.
   _depIndexDirty = false
-  // IDs of tasks claimed in the most recent drain tick. Consumed (and cleared)
-  // by the next tick's `refreshDependencyIndex` call as a dirty-set hint so
-  // unchanged tasks skip fingerprint recompute.
-  _recentlyProcessedTaskIds = new Set<string>()
-  // Suspends drain ticks until this Unix-ms timestamp; broadcasts the pause
-  // to the renderer when the drain catches an environmental failure.
-  _drainPausedUntil: number | undefined
-  // Per-task processing-failure counts that persist across drain ticks; cleared
-  // on success or quarantine. Accessor to _errorRegistry.drainFailureCounts —
-  // kept for backward compat with DrainLoopDeps (which expects a Map reference).
-  get _drainFailureCounts(): Map<string, number> {
-    return this._errorRegistry.drainFailureCounts
-  }
   // Drain-tick-level error counter. Reset on any successful tick. Emits
   // `manager:warning` after 3 consecutive failures.
   _consecutiveDrainErrors = 0
+
+  // Concurrency state is owned by _drainLoopInstance.
+  // These accessors delegate for backward compat with test internals and watchdog deps.
+  get _concurrency(): ConcurrencyState { return this._drainLoopInstance.getConcurrency() }
+  set _concurrency(state: ConcurrencyState) { this._drainLoopInstance.setConcurrency(state) }
 
   // ---- Spawn tracking ----
   readonly _activeAgents = new Map<string, ActiveAgent>()
@@ -197,14 +185,13 @@ export class AgentManagerImpl implements AgentManager {
     unitOfWork: IUnitOfWork = createUnitOfWork()
   ) {
     this.config = config
-    this._concurrency = makeConcurrencyState(config.maxConcurrent)
     this._depIndex = createDependencyIndex()
     this._epicIndex = epicDepsReader
     this._metrics = createMetricsCollector()
-    this._circuitBreaker = new CircuitBreaker(
-      logger,
-      (payload) => broadcast('agent-manager:circuit-breaker-open', payload)
-    )
+    const circuitObserver: CircuitObserver = {
+      onCircuitOpen: (payload) => broadcast('agent-manager:circuit-breaker-open', payload)
+    }
+    this._circuitBreaker = new CircuitBreaker(logger, circuitObserver)
     this._errorRegistry = new ErrorRegistry(logger)
     this._wipTracker = new WipTracker(() => this._activeAgents.size)
     this.unitOfWork = unitOfWork
@@ -252,6 +239,27 @@ export class AgentManagerImpl implements AgentManager {
         })
       }
     }
+
+    // Construct the DrainLoop after runAgentDeps is ready (processQueuedTask needs _spawnAgent).
+    const drainLoopDeps: DrainLoopDeps = {
+      config: this.config,
+      repo: this.repo,
+      depIndex: this._depIndex,
+      metrics: this._metrics,
+      logger,
+      isShuttingDown: () => this._shuttingDown,
+      isCircuitOpen: (now?: number) => this._circuitBreaker.isOpen(now),
+      activeAgents: this._activeAgents,
+      getPendingSpawns: () => this._pendingSpawns,
+      isDepIndexDirty: () => this._depIndexDirty,
+      setDepIndexDirty: (dirty) => { this._depIndexDirty = dirty },
+      processQueuedTask: (raw, map) => this._processQueuedTask(raw, map),
+      onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService,
+      emitDrainPaused: (event) => broadcast('agentManager:drainPaused', event),
+      awaitOAuthRefresh: () => this.awaitOAuthRefresh()
+    }
+    this._drainLoopInstance = new DrainLoop(drainLoopDeps, makeConcurrencyState(config.maxConcurrent))
   }
 
   // ---- Test seam ----
@@ -282,7 +290,9 @@ export class AgentManagerImpl implements AgentManager {
    * Exposed via _ prefix convention (not private keyword) for testability.
    */
   _refreshDependencyIndex(): Map<string, string> {
-    return refreshDependencyIndex(this._depIndex, this._lastTaskDeps, this.repo, this.logger)
+    // Delegate to the DrainLoop's dep-status map builder, which manages the
+    // lastTaskDeps fingerprint cache internally.
+    return this._drainLoopInstance.buildTaskStatusMap()
   }
 
   async onTaskTerminal(taskId: string, status: TaskStatus): Promise<void> {
@@ -449,7 +459,7 @@ export class AgentManagerImpl implements AgentManager {
       processingTasks: this._processingTasks,
       activeAgents: this._activeAgents,
       spawnAgent: (task, wt, repoPath) => this._spawnAgent(task, wt, repoPath, tickId),
-      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds
+      recentlyProcessedTaskIds: this._drainLoopInstance.recentlyProcessedTaskIds
     })
   }
 
@@ -476,47 +486,11 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   /**
-   * Execute one full drain tick. Delegates to drain-loop.ts.
+   * Execute one full drain tick. Delegates to the DrainLoop instance.
    * Exposed via _ prefix for testability.
    */
   async _drainLoop(): Promise<void> {
-    // Capture circuit breaker state at drain start — the open timestamp only
-    // changes when recordFailure() is called, which happens on spawn failures.
-    // Reading it once here is safe for this drain tick's precondition log.
-    const circuitBreaker = this._circuitBreaker
-    const drainDeps: DrainLoopDeps = {
-      config: this.config,
-      repo: this.repo,
-      depIndex: this._depIndex,
-      metrics: this._metrics,
-      logger: this.logger,
-      isShuttingDown: () => this._shuttingDown,
-      isCircuitOpen: (now?: number) => circuitBreaker.isOpen(now),
-      circuitOpenUntil: circuitBreaker.openUntilTimestamp,
-      activeAgents: this._activeAgents,
-      getConcurrency: () => this._concurrency,
-      getPendingSpawns: () => this._pendingSpawns,
-      lastTaskDeps: this._lastTaskDeps,
-      isDepIndexDirty: () => this._depIndexDirty,
-      setDepIndexDirty: (dirty) => {
-        this._depIndexDirty = dirty
-      },
-      setConcurrency: (state) => {
-        this._concurrency = state
-      },
-      processQueuedTask: (raw, map) => this._processQueuedTask(raw, map, drainDeps.tickId),
-      drainFailureCounts: this._drainFailureCounts,
-      onTaskTerminal: this.onTaskTerminal.bind(this),
-      taskStateService: this._taskStateService,
-      drainPausedUntil: this._drainPausedUntil,
-      emitDrainPaused: (event) => {
-        this._drainPausedUntil = event.pausedUntil
-        broadcast('agentManager:drainPaused', event)
-      },
-      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds,
-      awaitOAuthRefresh: () => this.awaitOAuthRefresh()
-    }
-    return runDrain(drainDeps)
+    return this._drainLoopInstance.runDrain()
   }
 
   // ---- Watchdog delegates ----
@@ -533,9 +507,9 @@ export class AgentManagerImpl implements AgentManager {
       logger: this.logger,
       activeAgents: this._activeAgents,
       processingTasks: this._processingTasks,
-      getConcurrency: () => this._concurrency,
+      getConcurrency: () => this._drainLoopInstance.getConcurrency(),
       setConcurrency: (state) => {
-        this._concurrency = state
+        this._drainLoopInstance.setConcurrency(state)
       },
       onTaskTerminal: this.onTaskTerminal.bind(this),
       cleanupAgentWorktree: async (agent) => {
@@ -680,14 +654,7 @@ export class AgentManagerImpl implements AgentManager {
     try {
       const tasks = this.repo.getTasksWithDependencies()
       this._depIndex.rebuild(tasks)
-      this._lastTaskDeps.clear()
-      for (const task of tasks) {
-        const deps = task.depends_on ?? null
-        this._lastTaskDeps.set(task.id, {
-          deps,
-          hash: computeDepsFingerprint(deps)
-        })
-      }
+      this._drainLoopInstance.initializeFingerprintsFrom(tasks)
       this.logger.info(`[agent-manager] Dependency index built with ${tasks.length} tasks`)
     } catch (err) {
       this.logger.error(`[agent-manager] Failed to build dependency index: ${err}`)

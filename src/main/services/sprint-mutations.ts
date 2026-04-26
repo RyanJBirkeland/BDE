@@ -1,22 +1,21 @@
 /**
  * Sprint mutations — pure data layer operations without side effects.
  *
- * These functions delegate to ISprintTaskRepository for data access.
- * They do NOT trigger notifications, broadcasts, or webhooks.
+ * The composition root calls `createSprintMutations(repo)` once at startup.
+ * That call binds every exported function to the provided repository instance.
+ * There is no module-scope repo singleton; the bound object is the authority.
  *
  * For mutation + notification, see sprint-mutation-broadcaster.ts.
  * For the legacy unified interface, see sprint-service.ts.
  */
-import {
-  getSharedSprintTaskRepository,
-  setSharedSprintTaskRepository,
-  type ISprintTaskRepository,
-  type CreateTaskInput,
-  type QueueStats,
-  type SpecTypeSuccessRate,
-  type DailySuccessRate,
-  type ListTasksOptions,
-  type UpdateTaskOptions
+import type {
+  ISprintTaskRepository,
+  CreateTaskInput,
+  QueueStats,
+  SpecTypeSuccessRate,
+  DailySuccessRate,
+  ListTasksOptions,
+  UpdateTaskOptions
 } from '../data/sprint-task-repository'
 import type { SprintTask, SprintTaskPR } from '../../shared/types'
 import { STUCK_TASK_THRESHOLD_MS } from '../constants'
@@ -30,73 +29,124 @@ export type {
   UpdateTaskOptions
 }
 
-// Explicitly-installed repository instance. The composition root sets this
-// once at startup via `setSprintMutationsRepo(repo)`. Before that call the
-// accessor falls back to the shared singleton so tests and lazy callers still
-// get a working instance without requiring a boot sequence.
-let _repo: ISprintTaskRepository | null = null
+// ---------------------------------------------------------------------------
+// Bound mutations object — set by createSprintMutations at startup
+// ---------------------------------------------------------------------------
 
-function getRepo(): ISprintTaskRepository {
-  return _repo ?? getSharedSprintTaskRepository()
+let _bound: SprintMutations | null = null
+
+function getBound(): SprintMutations {
+  if (!_bound) throw new Error('[sprint-mutations] Not initialised — call createSprintMutations(repo) before use')
+  return _bound
+}
+
+export interface SprintMutations {
+  getTask(id: string): SprintTask | null
+  listTasks(options?: string | ListTasksOptions): SprintTask[]
+  listTasksRecent(): SprintTask[]
+  getQueueStats(): QueueStats
+  getDoneTodayCount(): number
+  listTasksWithOpenPrs(): SprintTaskPR[]
+  getHealthCheckTasks(): SprintTask[]
+  getSuccessRateBySpecType(): SpecTypeSuccessRate[]
+  getDailySuccessRate(days?: number): DailySuccessRate[]
+  createTask(input: CreateTaskInput): Promise<SprintTask | null>
+  claimTask(id: string, claimedBy: string): Promise<SprintTask | null>
+  updateTask(id: string, patch: Record<string, unknown>, options?: UpdateTaskOptions): Promise<SprintTask | null>
+  forceUpdateTask(id: string, patch: Record<string, unknown>): Promise<SprintTask | null>
+  deleteTask(id: string): void
+  releaseTask(id: string, claimedBy: string): Promise<SprintTask | null>
+  markTaskDoneByPrNumber(prNumber: number): Promise<string[]>
+  markTaskCancelledByPrNumber(prNumber: number): Promise<string[]>
+  updateTaskMergeableState(prNumber: number, mergeableState: string | null): Promise<void>
+  flagStuckTasks(): void
+  createReviewTaskFromAdhoc(input: {
+    title: string
+    repo: string
+    spec: string
+    worktreePath: string
+    branch: string
+  }): Promise<SprintTask | null>
 }
 
 /**
- * Composition-root entry point — installs the repository instance used by
- * every mutation in this module. Call once after `createSprintTaskRepository()`
- * in `index.ts`. Re-exports `setSharedSprintTaskRepository` so both the
- * module-local reference and the shared singleton point to the same instance.
+ * Composition-root entry point — binds every sprint mutation to the given
+ * repository instance and installs it as the module-level authority.
+ * Call once after `createSprintTaskRepository()` in `index.ts`.
  */
-export function setSprintMutationsRepo(instance: ISprintTaskRepository): void {
-  _repo = instance
-  setSharedSprintTaskRepository(instance)
+export function createSprintMutations(repo: ISprintTaskRepository): SprintMutations {
+  _bound = {
+    getTask: (id) => repo.getTask(id),
+    listTasks: (options) => repo.listTasks(options),
+    listTasksRecent: () => repo.listTasksRecent(),
+    getQueueStats: () => repo.getQueueStats(),
+    getDoneTodayCount: () => repo.getDoneTodayCount(),
+    listTasksWithOpenPrs: () => repo.listTasksWithOpenPrs(),
+    getHealthCheckTasks: () => repo.getHealthCheckTasks(),
+    getSuccessRateBySpecType: () => repo.getSuccessRateBySpecType(),
+    getDailySuccessRate: (days) => repo.getDailySuccessRate(days),
+    createTask: (input) => repo.createTask(input),
+    claimTask: (id, claimedBy) => repo.claimTask(id, claimedBy),
+    updateTask: (id, patch, options) => repo.updateTask(id, patch, options),
+    forceUpdateTask: (id, patch) => repo.forceUpdateTask(id, patch),
+    deleteTask: (id) => repo.deleteTask(id),
+    releaseTask: (id, claimedBy) => repo.releaseTask(id, claimedBy),
+    markTaskDoneByPrNumber: (prNumber) => repo.markTaskDoneByPrNumber(prNumber),
+    markTaskCancelledByPrNumber: (prNumber) => repo.markTaskCancelledByPrNumber(prNumber),
+    updateTaskMergeableState: (prNumber, mergeableState) => repo.updateTaskMergeableState(prNumber, mergeableState),
+    flagStuckTasks: () => flagStuckTasksUsing(repo),
+    createReviewTaskFromAdhoc: (input) => repo.createReviewTaskFromAdhoc(input)
+  }
+  return _bound
 }
 
-// --- Read operations ---
+// ---------------------------------------------------------------------------
+// Free-function exports — delegate to the bound SprintMutations object.
+// Consumed by sprint-service.ts (barrel re-export) and legacy call sites.
+// ---------------------------------------------------------------------------
 
 export function getTask(id: string): SprintTask | null {
-  return getRepo().getTask(id)
+  return getBound().getTask(id)
 }
 
 export function listTasks(options?: string | ListTasksOptions): SprintTask[] {
-  return getRepo().listTasks(options)
+  return getBound().listTasks(options)
 }
 
 export function listTasksRecent(): SprintTask[] {
-  return getRepo().listTasksRecent()
+  return getBound().listTasksRecent()
 }
 
 export function getQueueStats(): QueueStats {
-  return getRepo().getQueueStats()
+  return getBound().getQueueStats()
 }
 
 export function getDoneTodayCount(): number {
-  return getRepo().getDoneTodayCount()
+  return getBound().getDoneTodayCount()
 }
 
 export function listTasksWithOpenPrs(): SprintTaskPR[] {
-  return getRepo().listTasksWithOpenPrs()
+  return getBound().listTasksWithOpenPrs()
 }
 
 export function getHealthCheckTasks(): SprintTask[] {
-  return getRepo().getHealthCheckTasks()
+  return getBound().getHealthCheckTasks()
 }
 
 export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
-  return getRepo().getSuccessRateBySpecType()
+  return getBound().getSuccessRateBySpecType()
 }
 
 export function getDailySuccessRate(days?: number): DailySuccessRate[] {
-  return getRepo().getDailySuccessRate(days)
+  return getBound().getDailySuccessRate(days)
 }
 
-// --- Write operations (no notifications) ---
-
 export function createTask(input: CreateTaskInput): Promise<SprintTask | null> {
-  return getRepo().createTask(input)
+  return getBound().createTask(input)
 }
 
 export function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  return getRepo().claimTask(id, claimedBy)
+  return getBound().claimTask(id, claimedBy)
 }
 
 export function updateTask(
@@ -104,35 +154,53 @@ export function updateTask(
   patch: Record<string, unknown>,
   options?: UpdateTaskOptions
 ): Promise<SprintTask | null> {
-  return getRepo().updateTask(id, patch, options)
+  return getBound().updateTask(id, patch, options)
 }
 
 export function forceUpdateTask(id: string, patch: Record<string, unknown>): Promise<SprintTask | null> {
-  return getRepo().forceUpdateTask(id, patch)
+  return getBound().forceUpdateTask(id, patch)
 }
 
 export function deleteTask(id: string): void {
-  getRepo().deleteTask(id)
+  getBound().deleteTask(id)
 }
 
 export function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  return getRepo().releaseTask(id, claimedBy)
+  return getBound().releaseTask(id, claimedBy)
 }
 
 export function markTaskDoneByPrNumber(prNumber: number): Promise<string[]> {
-  return getRepo().markTaskDoneByPrNumber(prNumber)
+  return getBound().markTaskDoneByPrNumber(prNumber)
 }
 
 export function markTaskCancelledByPrNumber(prNumber: number): Promise<string[]> {
-  return getRepo().markTaskCancelledByPrNumber(prNumber)
+  return getBound().markTaskCancelledByPrNumber(prNumber)
 }
 
 export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): Promise<void> {
-  return getRepo().updateTaskMergeableState(prNumber, mergeableState)
+  return getBound().updateTaskMergeableState(prNumber, mergeableState)
 }
 
 export function flagStuckTasks(): void {
-  const allTasks = getRepo().listTasks()
+  getBound().flagStuckTasks()
+}
+
+export function createReviewTaskFromAdhoc(input: {
+  title: string
+  repo: string
+  spec: string
+  worktreePath: string
+  branch: string
+}): Promise<SprintTask | null> {
+  return getBound().createReviewTaskFromAdhoc(input)
+}
+
+// ---------------------------------------------------------------------------
+// Private implementation
+// ---------------------------------------------------------------------------
+
+function flagStuckTasksUsing(repo: ISprintTaskRepository): void {
+  const allTasks = repo.listTasks()
   const oneHourAgo = Date.now() - STUCK_TASK_THRESHOLD_MS
   const stuck = allTasks.filter(
     (t) =>
@@ -144,16 +212,6 @@ export function flagStuckTasks(): void {
   )
   for (const t of stuck) {
     // fire-and-forget: flagging is best-effort, failures are logged by the data layer
-    void getRepo().updateTask(t.id, { needs_review: true })
+    void repo.updateTask(t.id, { needs_review: true })
   }
-}
-
-export function createReviewTaskFromAdhoc(input: {
-  title: string
-  repo: string
-  spec: string
-  worktreePath: string
-  branch: string
-}): Promise<SprintTask | null> {
-  return getRepo().createReviewTaskFromAdhoc(input)
 }
