@@ -390,6 +390,164 @@ describe('mapRawMessage tool_result from user content blocks', () => {
   })
 })
 
+describe('EP-15: DLQ sentinel on permanent batch failure', () => {
+  it('logs WARN with droppedCount and sampleAgentIds, clears pending, resets counter', async () => {
+    const {
+      emitAgentEvent,
+      flushAgentEventBatcher,
+      getDroppedEventCount,
+      __resetDroppedEventCount
+    } = await import('../agent-event-mapper')
+
+    __resetDroppedEventCount()
+
+    insertEventBatchMock.mockImplementation(() => {
+      throw new Error('SQLITE_LOCKED')
+    })
+
+    // Emit 3 events across two agents
+    emitAgentEvent('agent-A', { type: 'agent:text', text: 'a', timestamp: 1 })
+    emitAgentEvent('agent-A', { type: 'agent:text', text: 'b', timestamp: 2 })
+    emitAgentEvent('agent-B', { type: 'agent:text', text: 'c', timestamp: 3 })
+
+    // Fail 5 consecutive times
+    for (let i = 0; i < 5; i++) {
+      flushAgentEventBatcher()
+    }
+
+    // The 5th flush should have triggered the DLQ sentinel WARN
+    const dlqWarn = loggerWarnMock.mock.calls.find((call) =>
+      String(call[0]).includes('event-batcher: permanent failure — dropping events')
+    )
+    expect(dlqWarn).toBeDefined()
+    const payload = String(dlqWarn?.[0])
+    expect(payload).toContain('"droppedCount":3')
+    expect(payload).toContain('agent-A')
+    expect(payload).toContain('agent-B')
+    expect(payload).toContain('SQLITE_LOCKED')
+
+    // The dropped counter should reflect the loss
+    expect(getDroppedEventCount()).toBe(3)
+
+    // Reset mock; another flush should be a no-op (pending was cleared)
+    insertEventBatchMock.mockReset()
+    flushAgentEventBatcher()
+    expect(insertEventBatchMock).not.toHaveBeenCalled()
+
+    // After the DLQ drop the failure counter resets — subsequent failures
+    // count fresh, not as failure #6.
+    insertEventBatchMock.mockImplementation(() => {
+      throw new Error('SQLITE_LOCKED')
+    })
+    emitAgentEvent('agent-C', { type: 'agent:text', text: 'd', timestamp: 4 })
+    flushAgentEventBatcher()
+    // One attempt, event re-queued — circuit breaker not tripped.
+    expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('EP-15: per-run tool-name map isolation', () => {
+  it('does not share tool-use IDs between concurrent agents', async () => {
+    const { mapRawMessage, __resetAllToolNameTracking } = await import('../agent-event-mapper')
+    __resetAllToolNameTracking()
+
+    // Agent A registers a tool_use with id "toolu_shared" -> Read
+    mapRawMessage(
+      {
+        type: 'assistant',
+        message: {
+          role: 'assistant',
+          content: [
+            { type: 'tool_use', id: 'toolu_shared', name: 'Read', input: { file_path: 'a.md' } }
+          ]
+        }
+      },
+      'agent-A'
+    )
+
+    // Agent B sees a tool_result with the same tool_use_id but never registered
+    // it for itself. Without per-agent isolation, agent B would label it "Read".
+    const eventsForB = mapRawMessage(
+      {
+        type: 'user',
+        message: {
+          role: 'user',
+          content: [
+            { type: 'tool_result', tool_use_id: 'toolu_shared', content: 'x', is_error: false }
+          ]
+        }
+      },
+      'agent-B'
+    )
+    const resultB = eventsForB[0] as Extract<
+      ReturnType<typeof mapRawMessage>[number],
+      { type: 'agent:tool_result' }
+    >
+    expect(resultB.tool).toBe('unknown')
+
+    // Agent A still resolves the tool name correctly.
+    const eventsForA = mapRawMessage(
+      {
+        type: 'user',
+        message: {
+          role: 'user',
+          content: [
+            { type: 'tool_result', tool_use_id: 'toolu_shared', content: 'y', is_error: false }
+          ]
+        }
+      },
+      'agent-A'
+    )
+    const resultA = eventsForA[0] as Extract<
+      ReturnType<typeof mapRawMessage>[number],
+      { type: 'agent:tool_result' }
+    >
+    expect(resultA.tool).toBe('Read')
+  })
+
+  it('clears per-agent tool-name entries on agent:started', async () => {
+    const { mapRawMessage, emitAgentEvent, __resetAllToolNameTracking } =
+      await import('../agent-event-mapper')
+    __resetAllToolNameTracking()
+    insertEventBatchMock.mockReset()
+
+    // Agent X registers a tool_use, then a new run starts (agent:started).
+    mapRawMessage(
+      {
+        type: 'assistant',
+        message: {
+          role: 'assistant',
+          content: [
+            { type: 'tool_use', id: 'toolu_stale', name: 'Read', input: { file_path: 'a.md' } }
+          ]
+        }
+      },
+      'agent-X'
+    )
+
+    emitAgentEvent('agent-X', { type: 'agent:started', model: 'sonnet', timestamp: 1 })
+
+    // Tool result arriving after the new run should not pick up the stale name.
+    const events = mapRawMessage(
+      {
+        type: 'user',
+        message: {
+          role: 'user',
+          content: [
+            { type: 'tool_result', tool_use_id: 'toolu_stale', content: 'z', is_error: false }
+          ]
+        }
+      },
+      'agent-X'
+    )
+    const result = events[0] as Extract<
+      ReturnType<typeof mapRawMessage>[number],
+      { type: 'agent:tool_result' }
+    >
+    expect(result.tool).toBe('unknown')
+  })
+})
+
 describe('mapRawMessage rate-limits unrecognized message-type logs', () => {
   it('logs an unknown message type at most once across 100 calls', async () => {
     const { mapRawMessage, __resetUnknownMessageTypeSentinel } =

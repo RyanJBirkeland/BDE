@@ -9,6 +9,37 @@ import type { Logger } from '../logger'
 import { captureDiffSnapshot } from './diff-snapshot'
 import { nowIso } from '../../shared/time'
 import type { TaskStateService } from '../services/task-state-service'
+import { execFileAsync } from '../lib/async-utils'
+import { buildAgentEnv } from '../env-utils'
+
+/** Hard timeout for git subprocess calls in the review transition. */
+const GIT_EXEC_TIMEOUT_MS = 30_000
+
+/**
+ * Counts commits on the agent's branch ahead of `origin/main`. Returns
+ * `undefined` when the count cannot be obtained — the caller should treat
+ * that as "diagnostic-only data missing" and proceed.
+ */
+async function countCommitsAheadOfMain(
+  worktreePath: string,
+  logger: Logger
+): Promise<number | undefined> {
+  try {
+    const env = buildAgentEnv()
+    const { stdout } = await execFileAsync(
+      'git',
+      ['rev-list', '--count', 'origin/main..HEAD'],
+      { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }
+    )
+    const parsed = parseInt(stdout.trim(), 10)
+    return Number.isFinite(parsed) ? parsed : undefined
+  } catch (err) {
+    logger.warn(
+      `[completion] Commit count for review-transition log unavailable: ${err instanceof Error ? err.message : String(err)}`
+    )
+    return undefined
+  }
+}
 
 export interface TransitionToReviewOpts {
   taskId: string
@@ -37,10 +68,12 @@ export async function transitionToReview(opts: TransitionToReviewOpts): Promise<
     taskStateService
   } = opts
 
+  const commitsAhead = await countCommitsAheadOfMain(worktreePath, logger)
   logger.event('completion.review_transition', {
     taskId,
     rebaseSucceeded,
-    hasRebaseNote: rebaseNote !== undefined
+    hasRebaseNote: rebaseNote !== undefined,
+    commitsAhead: commitsAhead ?? null
   })
 
   const task = repo.getTask(taskId)

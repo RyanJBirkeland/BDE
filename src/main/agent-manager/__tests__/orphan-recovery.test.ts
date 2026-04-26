@@ -189,6 +189,32 @@ describe('recoverOrphans', () => {
       expect(calls[0][1]).not.toMatchObject({ status: 'queued' })
     })
 
+    it('routes exhausted path through TaskStateService.transition when injected', async () => {
+      const task = {
+        ...makeTask('task-routed'),
+        orphan_recovery_count: MAX_ORPHAN_RECOVERY_COUNT
+      }
+      getOrphanedTasksMock.mockReturnValue([task])
+      const transition = vi.fn().mockResolvedValue(undefined)
+      const fakeStateService = { transition } as unknown as Parameters<typeof recoverOrphans>[3]
+
+      const result = await recoverOrphans(() => false, mockRepo, logger, fakeStateService)
+
+      expect(transition).toHaveBeenCalledWith(
+        'task-routed',
+        'error',
+        expect.objectContaining({
+          fields: expect.objectContaining({
+            failure_reason: 'exhausted: orphan recovery cap reached'
+          }),
+          caller: 'orphan-recovery'
+        })
+      )
+      // Direct repo.updateTask must not be used for the exhausted write.
+      expect(updateTaskMock).not.toHaveBeenCalled()
+      expect(result.exhausted).toEqual(['task-routed'])
+    })
+
     it('handles undefined orphan_recovery_count as 0', async () => {
       const task = { ...makeTask('task-undefined-count') }
       delete (task as any).orphan_recovery_count

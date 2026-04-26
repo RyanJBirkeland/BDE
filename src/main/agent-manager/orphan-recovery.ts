@@ -1,4 +1,5 @@
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { TaskStateService } from '../services/task-state-service'
 import { EXECUTOR_ID } from './types'
 import { reconcileRunningAgentRuns } from '../agent-history'
 
@@ -24,7 +25,8 @@ let prClearingAlreadyLogged = false
 export async function recoverOrphans(
   isAgentActive: (taskId: string) => boolean,
   repo: IAgentTaskRepository,
-  logger: { info: (msg: string) => void; warn: (msg: string) => void }
+  logger: { info: (msg: string) => void; warn: (msg: string) => void },
+  taskStateService?: TaskStateService
 ): Promise<OrphanRecoveryResult> {
   const orphans = repo.getOrphanedTasks(EXECUTOR_ID)
   const recovered: string[] = []
@@ -51,11 +53,30 @@ export async function recoverOrphans(
         `[agent-manager] Task ${task.id} "${task.title}" exhausted orphan recovery cap ` +
           `(count=${recoveryCount}, priorStatus=${task.status}, retryCount=${task.retry_count ?? 0}, startedAt=${task.started_at ?? 'null'}) — marking error`
       )
-      repo.updateTask(task.id, {
-        status: 'error',
-        claimed_by: null,
-        failure_reason: 'exhausted: orphan recovery cap reached'
-      })
+      if (taskStateService) {
+        try {
+          await taskStateService.transition(task.id, 'error', {
+            fields: {
+              claimed_by: null,
+              failure_reason: 'exhausted: orphan recovery cap reached'
+            },
+            caller: 'orphan-recovery'
+          })
+        } catch (err) {
+          logger.warn(
+            `[agent-manager] TaskStateService.transition failed for exhausted orphan ${task.id}: ${err}`
+          )
+        }
+      } else {
+        // Legacy fallback for callers (older tests) that have not yet been
+        // migrated to inject TaskStateService.
+        const exhaustedReason = 'exhausted: orphan recovery cap reached'
+        repo.updateTask(task.id, {
+          status: 'error',
+          claimed_by: null,
+          failure_reason: exhaustedReason
+        })
+      }
       exhausted.push(task.id)
       continue
     }

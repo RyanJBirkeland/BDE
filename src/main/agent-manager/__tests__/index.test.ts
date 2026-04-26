@@ -144,6 +144,7 @@ vi.mock('../../services/credential-service', () => ({
 
 import { createAgentManager } from '../index'
 import type { AgentManagerConfig, AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { createAgentRecord } from '../../agent-history'
 import {
@@ -169,7 +170,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeLogger() {
@@ -412,7 +413,7 @@ describe('createAgentManager', () => {
         expect.objectContaining({
           prompt: expect.stringContaining('Do the thing'),
           cwd: '/tmp/wt/myrepo/task-1',
-          model: 'claude-sonnet-4-5'
+          model: DEFAULT_CONFIG.defaultModel
         })
       )
       expect(vi.mocked(claimTask)).toHaveBeenCalledWith(

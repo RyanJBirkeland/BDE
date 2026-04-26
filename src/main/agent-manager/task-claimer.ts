@@ -148,6 +148,13 @@ async function skipIfAlreadyOnMain(
   const autoCompleteNote = `auto-completed: matching commit found on main at ${match.sha} (matched on ${match.matchedOn})`
   deps.logger.info(`[agent-manager] Task ${task.id} ${autoCompleteNote} — skipping spawn`)
 
+  // EP-1 note: this write bypasses TaskStateService because the state machine does not
+  // permit `queued → done` directly (queued can only transition to active/blocked/cancelled).
+  // This auto-complete path is a documented exception — the work physically landed on main
+  // out-of-band, so we short-circuit the normal pipeline. Migrating to TaskStateService would
+  // require either (a) a state-machine relaxation or (b) routing through forceTerminalOverride,
+  // which carries a hardcoded "manually by user" note that would mislead operators reading the
+  // audit trail. Deferred to EP-2 / Phase A audit task T-3.
   try {
     deps.repo.updateTask(task.id, {
       status: 'done',
@@ -247,6 +254,11 @@ export interface ProcessQueuedTaskDeps extends TaskClaimerDeps {
     worktree: { worktreePath: string; branch: string },
     repoPath: string
   ) => Promise<void>
+  /**
+   * Optional sink for IDs of tasks successfully claimed in this tick. Read by
+   * the next drain tick's dependency refresh as a dirty-set hint.
+   */
+  recentlyProcessedTaskIds?: Set<string>
 }
 
 /**
@@ -269,15 +281,14 @@ export async function processQueuedTask(
     if (!claimed) return
 
     const { task, repoPath } = claimed
+    deps.recentlyProcessedTaskIds?.add(task.id)
 
-    // Refresh the task-status map after claiming to minimise stale-state windows
-    // for subsequent tasks in the same drain tick.
+    // Targeted post-claim refresh: only the just-claimed task's status changed.
+    // A full-catalog rescan here is wasted I/O — every other entry in the map
+    // is still valid for the rest of this drain tick.
     try {
-      const freshTasks = deps.repo.getTasksWithDependencies()
-      taskStatusMap.clear()
-      for (const t of freshTasks) {
-        taskStatusMap.set(t.id, t.status)
-      }
+      const fresh = deps.repo.getTask(task.id)
+      if (fresh) taskStatusMap.set(fresh.id, fresh.status)
     } catch {
       // non-fatal: stale map is better than aborting the drain
     }

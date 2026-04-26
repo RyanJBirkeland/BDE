@@ -117,6 +117,10 @@ export class AgentManagerImpl implements AgentManager {
   // Set when a terminal event fires; next drain tick rebuilds the dep index
   // fully instead of doing an incremental refresh.
   _depIndexDirty = false
+  // IDs of tasks claimed in the most recent drain tick. Consumed (and cleared)
+  // by the next tick's `refreshDependencyIndex` call as a dirty-set hint so
+  // unchanged tasks skip fingerprint recompute.
+  _recentlyProcessedTaskIds = new Set<string>()
   // Suspends drain ticks until this Unix-ms timestamp; broadcasts the pause
   // to the renderer when the drain catches an environmental failure.
   _drainPausedUntil: number | undefined
@@ -402,7 +406,8 @@ export class AgentManagerImpl implements AgentManager {
       onTaskTerminal: this.onTaskTerminal.bind(this),
       processingTasks: this._processingTasks,
       activeAgents: this._activeAgents,
-      spawnAgent: (task, wt, repoPath) => this._spawnAgent(task, wt, repoPath, tickId)
+      spawnAgent: (task, wt, repoPath) => this._spawnAgent(task, wt, repoPath, tickId),
+      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds
     })
   }
 
@@ -465,7 +470,8 @@ export class AgentManagerImpl implements AgentManager {
       emitDrainPaused: (event) => {
         this._drainPausedUntil = event.pausedUntil
         broadcast('agentManager:drainPaused', event)
-      }
+      },
+      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds
     }
     return runDrain(drainDeps)
   }
@@ -511,7 +517,8 @@ export class AgentManagerImpl implements AgentManager {
       const result = await recoverOrphans(
         (id: string) => this._activeAgents.has(id),
         this.repo,
-        this.logger
+        this.logger,
+        this._taskStateService
       )
       this._broadcastOrphanResultIfNonEmpty(result)
     } catch (err) {
@@ -612,7 +619,12 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   private kickOffOrphanRecovery(): void {
-    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger)
+    recoverOrphans(
+      (id: string) => this._activeAgents.has(id),
+      this.repo,
+      this.logger,
+      this._taskStateService
+    )
       .then((result) => this._broadcastOrphanResultIfNonEmpty(result))
       .catch((err) => {
         this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
@@ -685,7 +697,8 @@ export class AgentManagerImpl implements AgentManager {
           const result = await recoverOrphans(
             (id: string) => this._activeAgents.has(id),
             this.repo,
-            this.logger
+            this.logger,
+            this._taskStateService
           )
           this._broadcastOrphanResultIfNonEmpty(result)
         } catch (err) {

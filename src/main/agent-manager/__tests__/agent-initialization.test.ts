@@ -14,6 +14,7 @@ vi.mock('../../agent-event-mapper', () => ({
 
 import { initializeAgentTracking } from '../agent-initialization'
 import type { AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { AgentRunClaim } from '../run-agent'
 import type { TurnTracker } from '../turn-tracker'
@@ -89,7 +90,7 @@ describe('initializeAgentTracking', () => {
     const result = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -106,7 +107,7 @@ describe('initializeAgentTracking', () => {
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -121,7 +122,7 @@ describe('initializeAgentTracking', () => {
     const { agent } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -129,7 +130,7 @@ describe('initializeAgentTracking', () => {
       makeLogger()
     )
     expect(agent.taskId).toBe('task-1')
-    expect(agent.model).toBe('claude-sonnet-4-5')
+    expect(agent.model).toBe(DEFAULT_CONFIG.defaultModel)
     expect(agent.costUsd).toBe(0)
     expect(agent.rateLimitCount).toBe(0)
   })
@@ -139,7 +140,7 @@ describe('initializeAgentTracking', () => {
     const { agent, agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -154,7 +155,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -169,7 +170,7 @@ describe('initializeAgentTracking', () => {
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -193,7 +194,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -212,7 +213,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       handle,
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -238,7 +239,7 @@ describe('initializeAgentTracking', () => {
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -255,7 +256,7 @@ describe('initializeAgentTracking', () => {
     const { agent } = initializeAgentTracking(
       makeTask({ max_runtime_ms: 120000 }),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -270,7 +271,7 @@ describe('initializeAgentTracking', () => {
     const { agent } = initializeAgentTracking(
       makeTask({ max_cost_usd: 3.0 }),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -285,7 +286,7 @@ describe('initializeAgentTracking', () => {
     const { turnTracker } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -303,7 +304,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ActiveAgent } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
 vi.mock('../../agent-event-mapper', () => ({
@@ -14,7 +15,7 @@ function makeAgent(taskId: string): ActiveAgent {
     taskId,
     agentRunId: `run-${taskId}`,
     handle: { abort: vi.fn(), messages: (async function* () {})(), sessionId: 's', steer: vi.fn() },
-    model: 'claude-sonnet-4-5',
+    model: DEFAULT_CONFIG.defaultModel,
     startedAt: 0,
     lastOutputAt: 0,
     rateLimitCount: 0,

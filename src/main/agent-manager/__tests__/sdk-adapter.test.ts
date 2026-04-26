@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { DEFAULT_CONFIG } from '../types'
 import { withMaxOldSpaceOption, AGENT_PROCESS_MAX_OLD_SPACE_MB } from '../sdk-adapter'
 
 vi.mock('../../env-utils', () => ({
@@ -24,27 +25,27 @@ describe('pipeline agent SDK options', () => {
   })
 
   it('passes maxTurns: 20 to SDK query', async () => {
-    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5' })
+    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: DEFAULT_CONFIG.defaultModel })
     const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
     expect(callArgs?.options?.maxTurns).toBe(20)
   })
 
   it('uses settingSources [user, local] — not project', async () => {
-    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5' })
+    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: DEFAULT_CONFIG.defaultModel })
     const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
     expect(callArgs?.options?.settingSources).toEqual(['user', 'local'])
     expect(callArgs?.options?.settingSources).not.toContain('project')
   })
 
   it('passes maxBudgetUsd to SDK query', async () => {
-    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5' })
+    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: DEFAULT_CONFIG.defaultModel })
     const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
     expect(typeof callArgs?.options?.maxBudgetUsd).toBe('number')
     expect(callArgs?.options?.maxBudgetUsd).toBeGreaterThan(0)
   })
 
   it('uses caller-supplied maxBudgetUsd over default', async () => {
-    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: 'claude-sonnet-4-5', maxBudgetUsd: 5.0 })
+    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: DEFAULT_CONFIG.defaultModel, maxBudgetUsd: 5.0 })
     const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
     expect(callArgs?.options?.maxBudgetUsd).toBe(5.0)
   })

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { checkAgent } from '../watchdog'
 import type { ActiveAgent, AgentManagerConfig } from '../types'
-import { RATE_LIMIT_LOOP_THRESHOLD } from '../types'
+import { RATE_LIMIT_LOOP_THRESHOLD , DEFAULT_CONFIG} from '../types'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
@@ -9,7 +9,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeAgent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
@@ -22,7 +22,7 @@ function makeAgent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
       abort: () => {},
       steer: async () => {}
     },
-    model: 'claude-sonnet-4-5',
+    model: DEFAULT_CONFIG.defaultModel,
     startedAt: 0,
     lastOutputAt: 0,
     rateLimitCount: 0,

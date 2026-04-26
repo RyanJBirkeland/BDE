@@ -9,6 +9,7 @@ import { reloadConfiguration, type ConfigManagerDeps } from '../config-manager'
 import { getSetting, getSettingJson } from '../../settings'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 
 function makeConfig(overrides: Partial<AgentManagerConfig> = {}): AgentManagerConfig {
   return {
@@ -17,7 +18,7 @@ function makeConfig(overrides: Partial<AgentManagerConfig> = {}): AgentManagerCo
     maxRuntimeMs: 3_600_000,
     idleTimeoutMs: 900_000,
     pollIntervalMs: 30_000,
-    defaultModel: 'claude-sonnet-4-5',
+    defaultModel: DEFAULT_CONFIG.defaultModel,
     ...overrides
   }
 }
@@ -30,7 +31,7 @@ function makeDeps(overrides: Partial<ConfigManagerDeps> = {}): ConfigManagerDeps
   return {
     config: makeConfig(),
     concurrency: makeConcurrencyState(2),
-    runAgentDeps: { defaultModel: 'claude-sonnet-4-5' },
+    runAgentDeps: { defaultModel: DEFAULT_CONFIG.defaultModel },
     logger: makeLogger(),
     ...overrides
   }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { ActiveAgent } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
 vi.mock('../watchdog', () => ({
@@ -28,6 +29,7 @@ import { handleWatchdogVerdict } from '../watchdog-handler'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
@@ -35,7 +37,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeAgent(taskId: string): ActiveAgent {
@@ -43,7 +45,7 @@ function makeAgent(taskId: string): ActiveAgent {
     taskId,
     agentRunId: `run-${taskId}`,
     handle: { abort: vi.fn(), messages: (async function* () {})(), sessionId: 's', steer: vi.fn() },
-    model: 'claude-sonnet-4-5',
+    model: DEFAULT_CONFIG.defaultModel,
     startedAt: 0,
     lastOutputAt: 0,
     rateLimitCount: 0,

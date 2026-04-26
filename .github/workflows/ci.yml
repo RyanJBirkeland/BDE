@@ -16,8 +16,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Install ripgrep
+        run: sudo apt-get install -y ripgrep
       - run: npm run lint
       - run: npm run typecheck
+      # Phase A correctness audit: mechanical grep gate for the invariants in
+      # openspec/changes/pipeline-stop-the-bleeding. Currently advisory — does
+      # not block merge until the constituent ep* changes have landed.
+      - name: Phase A correctness audit (advisory)
+        run: npm run audit:phase-a || echo "::warning::Phase A invariants not yet satisfied"
 
       # Heavy test suites run on PRs only. Pushes to `main` are already verified
       # locally by the pre-push hook (`npm run typecheck && npm test && npm run

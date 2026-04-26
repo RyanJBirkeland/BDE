@@ -34,6 +34,7 @@
     "posttest:main": "electron-rebuild -v 39.8.6 -f -w better-sqlite3,node-pty",
     "test:main:coverage": "vitest run --config src/main/vitest.main.config.ts --coverage",
     "test:watch": "vitest",
+    "audit:phase-a": "node scripts/audit-phase-a.mjs",
     "prepare": "husky"
   },
   "dependencies": {

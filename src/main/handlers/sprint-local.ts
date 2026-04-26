@@ -257,8 +257,15 @@ export function registerSprintLocalHandlers(
     if (task.status !== 'active') {
       throw new Error(`Cannot force-release a task with status ${task.status} — only active tasks can be released`)
     }
+    // TODO(audit T-10): also abort the running agent before re-queue. Out of scope for EP-1
+    // (which only routes the status write through TaskStateService). The agent process can
+    // continue running against the now-queued task until it terminates naturally.
     resetTaskForRetry(taskId)
-    const released = updateTask(taskId, { status: 'queued', notes: null, agent_run_id: null })
+    await deps.taskStateService.transition(taskId, 'queued', {
+      fields: { notes: null, agent_run_id: null },
+      caller: 'sprint:forceReleaseClaim'
+    })
+    const released = getTask(taskId)
     if (!released) throw new Error(`Failed to release task ${taskId}`)
     notifySprintMutation('updated', released)
     return released

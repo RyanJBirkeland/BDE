@@ -48,6 +48,7 @@ import { emitAgentEvent } from '../../agent-event-mapper'
 import { cleanupWorktree } from '../worktree'
 import type { RunAgentDeps, AgentRunClaim } from '../run-agent'
 import type { ActiveAgent, AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
 const mockRepo: IAgentTaskRepository = {
@@ -85,7 +86,7 @@ function makeLogger() {
 function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
   return {
     activeAgents: new Map(),
-    defaultModel: 'claude-sonnet-4-5',
+    defaultModel: DEFAULT_CONFIG.defaultModel,
     logger: makeLogger(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,

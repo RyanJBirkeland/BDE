@@ -20,6 +20,12 @@ const POLL_TIMEOUT_MS = 30_000
 const POLL_INITIAL_DELAY_MS = 30_000
 
 const MAX_TERMINAL_RETRY_ATTEMPTS = 5
+/**
+ * Upper bound on the in-memory retry queue size. If GitHub stays unhealthy
+ * long enough to fill this, the oldest entry is evicted and a structured
+ * `terminal-retry.evicted` event fires so the loss is observable.
+ */
+const MAX_PENDING_TASKS = 500
 
 export interface SprintPrPollerDeps {
   listTasksWithOpenPrs: () => SprintTaskPR[]
@@ -141,6 +147,11 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
           log.error(
             `[sprint-pr-poller] terminal notify for task ${taskId} failed after ${nextAttempts} attempts — dropping`
           )
+          log.event('terminal-retry.exhausted', {
+            taskId,
+            status: pending.status,
+            attempts: nextAttempts
+          })
           pendingTerminalRetries.delete(taskId)
         } else {
           pendingTerminalRetries.set(taskId, { status: pending.status, attempts: nextAttempts })
@@ -152,12 +163,32 @@ export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerIn
     }
   }
 
+  function enqueueRetry(id: string, entry: PendingTerminalRetry): void {
+    if (!pendingTerminalRetries.has(id) && pendingTerminalRetries.size >= MAX_PENDING_TASKS) {
+      const oldestKey = pendingTerminalRetries.keys().next().value
+      if (oldestKey !== undefined) {
+        const evicted = pendingTerminalRetries.get(oldestKey)
+        pendingTerminalRetries.delete(oldestKey)
+        log.error(
+          `[sprint-pr-poller] retry queue full (cap=${MAX_PENDING_TASKS}); evicted oldest task ${oldestKey}`
+        )
+        log.event('terminal-retry.evicted', {
+          taskId: oldestKey,
+          status: evicted?.status,
+          attempts: evicted?.attempts ?? 0,
+          cap: MAX_PENDING_TASKS
+        })
+      }
+    }
+    pendingTerminalRetries.set(id, entry)
+  }
+
   async function notifyTaskTerminalBatch(ids: string[], status: TaskStatus): Promise<void> {
     if (ids.length === 0) return
     const failedIds = await attemptTerminalNotifications(ids, status, deps.onTaskTerminal)
     for (const id of failedIds) {
       const prior = pendingTerminalRetries.get(id)
-      pendingTerminalRetries.set(id, { status, attempts: (prior?.attempts ?? 0) + 1 })
+      enqueueRetry(id, { status, attempts: (prior?.attempts ?? 0) + 1 })
     }
     if (failedIds.length > 0) {
       log.warn(

@@ -25,6 +25,7 @@ import type {
 } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { buildAgentPrompt } from '../../lib/prompt-composer'
 import { TurnTracker } from '../turn-tracker'
@@ -203,7 +204,7 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
 
   return {
     activeAgents: new Map<string, ActiveAgent>(),
-    defaultModel: 'claude-sonnet-4-5',
+    defaultModel: DEFAULT_CONFIG.defaultModel,
     logger: {
       info: vi.fn(),
       warn: vi.fn(),
@@ -857,7 +858,7 @@ describe('runAgent — prompt composer integration', () => {
     await runAgent(makeTask({ model: null }), worktree, repoPath, deps)
     expect(spawnAgent).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: 'claude-sonnet-4-5' // defaultModel from makeDeps
+        model: DEFAULT_CONFIG.defaultModel // defaultModel from makeDeps
       })
     )
   })
@@ -1111,7 +1112,7 @@ describe('consumeMessages', () => {
       taskId: 'task-1',
       agentRunId: 'run-1',
       handle: handle as any,
-      model: 'claude-sonnet-4-5',
+      model: DEFAULT_CONFIG.defaultModel,
       startedAt: Date.now(),
       lastOutputAt: Date.now(),
       rateLimitCount: 0,

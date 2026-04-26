@@ -18,6 +18,7 @@ vi.mock('../../db', () => ({
 
 import { trackAgentCosts, persistAgentRunTelemetry, computeTokenCost } from '../agent-telemetry'
 import type { ActiveAgent, AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { TurnTracker } from '../turn-tracker'
 import { updateAgentMeta } from '../../agent-history'
 import { updateAgentRunCost } from '../../data/agent-queries'
@@ -194,7 +195,7 @@ describe('persistAgentRunTelemetry', () => {
     // agent.costUsd stays at 0. The fallback should compute from token totals.
     const agent = makeAgent({
       costUsd: 0,
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
     const turnTracker = makeTurnTracker({
       totals: vi.fn().mockReturnValue({
@@ -213,7 +214,7 @@ describe('persistAgentRunTelemetry', () => {
   })
 
   it('keeps agent.costUsd when it was populated from the SDK result message', () => {
-    const agent = makeAgent({ costUsd: 0.15, model: 'claude-sonnet-4-5' })
+    const agent = makeAgent({ costUsd: 0.15, model: DEFAULT_CONFIG.defaultModel })
     const turnTracker = makeTurnTracker({
       totals: vi.fn().mockReturnValue({
         tokensIn: 180,
@@ -236,19 +237,19 @@ describe('computeTokenCost', () => {
   })
 
   it('computes non-zero cost for a known Sonnet 4.5 model with cache reads', () => {
-    const cost = computeTokenCost('claude-sonnet-4-5', 180, 39, 366162, 116822)
+    const cost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 180, 39, 366162, 116822)
     expect(cost).toBeGreaterThan(0)
   })
 
   it('computes cost proportional to cache reads for Sonnet 4.5', () => {
-    const noCacheCost = computeTokenCost('claude-sonnet-4-5', 100, 50, 0, 0)
-    const withCacheCost = computeTokenCost('claude-sonnet-4-5', 100, 50, 1_000_000, 0)
+    const noCacheCost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 100, 50, 0, 0)
+    const withCacheCost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 100, 50, 1_000_000, 0)
     expect(withCacheCost).toBeGreaterThan(noCacheCost)
   })
 
   it('matches haiku pricing for haiku-4-5 model', () => {
     const haikuCost = computeTokenCost('claude-haiku-4-5', 1_000_000, 0, 0, 0)
-    const sonnetCost = computeTokenCost('claude-sonnet-4-5', 1_000_000, 0, 0, 0)
+    const sonnetCost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 1_000_000, 0, 0, 0)
     expect(haikuCost).toBeLessThan(sonnetCost)
   })
 })

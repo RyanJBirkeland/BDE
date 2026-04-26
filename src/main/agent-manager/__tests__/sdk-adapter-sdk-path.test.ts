@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { DEFAULT_CONFIG } from '../types'
 
 // ---------- mocks ----------
 
@@ -70,7 +71,7 @@ describe('spawnAgent (SDK path)', () => {
     const handle = await spawnAgent({
       prompt: 'Hello',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     expect(handle).toHaveProperty('messages')
@@ -89,7 +90,7 @@ describe('spawnAgent (SDK path)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     // Before consuming, sessionId is a fallback UUID
@@ -112,7 +113,7 @@ describe('spawnAgent (SDK path)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     // Consume all messages
@@ -133,7 +134,7 @@ describe('spawnAgent (SDK path)', () => {
     const handle = await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5',
+      model: DEFAULT_CONFIG.defaultModel,
       logger
     })
 
@@ -157,7 +158,7 @@ describe('spawnAgent (SDK path)', () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     // AM-2: Verify SDK query was called WITHOUT apiKey parameter
@@ -172,7 +173,7 @@ describe('spawnAgent (SDK path)', () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     const callArgs = mockQuery.mock.calls[0][0]
@@ -186,7 +187,7 @@ describe('spawnAgent (SDK path)', () => {
     await spawnAgent({
       prompt: 'test',
       cwd: '/tmp',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     const callArgs = mockQuery.mock.calls[0][0]

@@ -6,6 +6,7 @@
  * starts with the base prefix.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { DEFAULT_CONFIG } from '../types'
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -53,7 +54,7 @@ describe('isInsideAllowedWorktreeBase symlink defense', () => {
       spawnAgent({
         prompt: 'test',
         cwd: trojanCwd,
-        model: 'claude-sonnet-4-5',
+        model: DEFAULT_CONFIG.defaultModel,
         pipelineTuning: { maxTurns: 20 },
         worktreeBase,
         logger
@@ -72,7 +73,7 @@ describe('isInsideAllowedWorktreeBase symlink defense', () => {
       spawnAgent({
         prompt: 'test',
         cwd: realCwd,
-        model: 'claude-sonnet-4-5',
+        model: DEFAULT_CONFIG.defaultModel,
         pipelineTuning: { maxTurns: 20 },
         worktreeBase,
         logger
@@ -91,7 +92,7 @@ describe('isInsideAllowedWorktreeBase symlink defense', () => {
       spawnAgent({
         prompt: 'test',
         cwd: missingCwd,
-        model: 'claude-sonnet-4-5',
+        model: DEFAULT_CONFIG.defaultModel,
         pipelineTuning: { maxTurns: 20 },
         worktreeBase,
         logger

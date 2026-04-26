@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { DEFAULT_CONFIG } from '../types'
 
 // ---------- mocks ----------
 
@@ -64,12 +65,12 @@ import { spawnAgent } from '../sdk-adapter'
 // ---------- helpers ----------
 
 const CLAUDE_SETTINGS = {
-  pipeline: { backend: 'claude' as const, model: 'claude-sonnet-4-5' },
-  synthesizer: { backend: 'claude' as const, model: 'claude-sonnet-4-5' },
-  copilot: { backend: 'claude' as const, model: 'claude-sonnet-4-5' },
-  assistant: { backend: 'claude' as const, model: 'claude-sonnet-4-5' },
-  adhoc: { backend: 'claude' as const, model: 'claude-sonnet-4-5' },
-  reviewer: { backend: 'claude' as const, model: 'claude-sonnet-4-5' },
+  pipeline: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
+  synthesizer: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
+  copilot: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
+  assistant: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
+  adhoc: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
+  reviewer: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
   localEndpoint: 'http://localhost:1234/v1',
   opencodeExecutable: 'opencode'
 }
@@ -144,7 +145,7 @@ describe('spawnAgent — backend selection', () => {
     await spawnAgent({
       prompt: 'task',
       cwd: '/tmp/work',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     expect(mockResolveBackend).toHaveBeenCalledWith('pipeline', LOCAL_PIPELINE_SETTINGS)
@@ -221,12 +222,12 @@ describe('spawnAgent — backend selection', () => {
     await spawnAgent({
       prompt: 'task',
       cwd: '/tmp/work',
-      model: 'claude-sonnet-4-5'
+      model: DEFAULT_CONFIG.defaultModel
     })
 
     const sdkCall = mockSpawnViaSdk.mock.calls[0]
     const optsArg = sdkCall?.[1] as { model: string } | undefined
-    expect(optsArg?.model).toBe('claude-sonnet-4-5')
+    expect(optsArg?.model).toBe(DEFAULT_CONFIG.defaultModel)
   })
 })
 

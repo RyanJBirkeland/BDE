@@ -30,6 +30,7 @@ import { checkOAuthToken } from '../oauth-checker'
 import { refreshDependencyIndex } from '../dependency-refresher'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import { getConfiguredRepos } from '../../paths'
 
 const baseConfig: AgentManagerConfig = {
@@ -38,7 +39,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeRepo(): IAgentTaskRepository {
@@ -116,6 +117,7 @@ function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
     taskStateService: makeTaskStateService(repo),
     emitDrainPaused: vi.fn(),
     drainPausedUntil: undefined,
+    recentlyProcessedTaskIds: new Set<string>(),
     ...overrides
   }
 }

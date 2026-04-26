@@ -1,6 +1,12 @@
 /**
  * Shared constants for sprint task queries.
  * Extracted to eliminate duplication across query functions.
+ *
+ * WARNING: Do NOT use `SELECT *` against `sprint_tasks`. Always project columns
+ * via `SPRINT_TASK_COLUMNS` (full row) or `SPRINT_TASK_LIST_COLUMNS` (excludes
+ * the `review_diff_snapshot` blob). The snapshot blob can reach hundreds of
+ * kilobytes; transferring it on list/poll paths dominates renderer poll cost.
+ * `getGroupTasks` and `listTasksRecent` are list paths — use the LIST variant.
  */
 
 /**

@@ -110,6 +110,7 @@ vi.mock('../oauth-checker', () => ({
 
 import { AgentManagerImpl } from '../index'
 import type { AgentManagerConfig, ActiveAgent, AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { getRepoPaths } from '../../paths'
 import { setupWorktree, pruneStaleWorktrees } from '../worktree'
@@ -138,7 +139,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeLogger() {
@@ -174,7 +175,7 @@ function makeActiveAgent(taskId: string): ActiveAgent {
       abort: vi.fn(),
       steer: vi.fn().mockResolvedValue({ delivered: true })
     } as AgentHandle,
-    model: 'claude-sonnet-4-5',
+    model: DEFAULT_CONFIG.defaultModel,
     startedAt: Date.now(),
     lastOutputAt: Date.now(),
     rateLimitCount: 0,
@@ -660,65 +661,61 @@ describe('AgentManagerImpl — class internals', () => {
   // -------------------------------------------------------------------------
 
   describe('taskStatusMap refresh after claim', () => {
-    it('refreshes map after successful claim so subsequent tasks see updated statuses', async () => {
-      // This test simulates: drain loop builds map with task-2='blocked',
-      // then concurrent completion changes task-2 to 'queued' in DB,
-      // refresh after claim picks up the new status.
-
-      let callCount = 0
+    it('updates only the just-claimed task in the map (targeted reload)', async () => {
+      // EP-9 targeted-data-queries: a successful claim should refresh ONLY the
+      // claimed task's status — a full-catalog rescan is wasted I/O.
+      // First getTask call (fresh-status guard before claim) sees 'queued';
+      // second call (post-claim targeted refresh) sees 'active'.
+      let getTaskCalls = 0
       const mockRepo = {
-        getTask: vi.fn().mockReturnValue({ id: 'task-1', status: 'queued' }),
+        getTask: vi.fn().mockImplementation(() => {
+          getTaskCalls++
+          if (getTaskCalls === 1) return { id: 'task-1', status: 'queued' }
+          return { id: 'task-1', status: 'active' }
+        }),
         updateTask: vi.fn(),
         getQueuedTasks: vi.fn(),
         getOrphanedTasks: vi.fn(),
         getActiveTaskCount: vi.fn().mockReturnValue(0),
         claimTask: vi.fn().mockReturnValue({ id: 'task-1' }),
-        // First call (drain loop builds map): task-2 is blocked
-        // Second call (refresh after claim): task-2 is now queued
-        getTasksWithDependencies: vi.fn().mockImplementation(() => {
-          callCount++
-          if (callCount === 1) {
-            return [
-              { id: 'task-1', status: 'queued', depends_on: null },
-              { id: 'task-2', status: 'blocked', depends_on: null }
-            ]
-          }
-          return [
-            { id: 'task-1', status: 'active', depends_on: null },
-            { id: 'task-2', status: 'queued', depends_on: null }
-          ]
-        })
+        getTasksWithDependencies: vi.fn().mockReturnValue([])
       }
 
       const manager = new AgentManagerImpl(baseConfig, mockRepo as never, makeLogger())
 
-      // Simulate drain loop: build initial map from first getTasksWithDependencies call
-      const initialTasks = mockRepo.getTasksWithDependencies()
-      const taskStatusMap = new Map(initialTasks.map((t) => [t.id, t.status]))
-
-      // Verify initial state: task-2 is blocked
-      expect(taskStatusMap.get('task-2')).toBe('blocked')
+      const taskStatusMap = new Map([
+        ['task-1', 'queued'],
+        ['task-2', 'blocked']
+      ])
 
       const raw = makeRawTask({ id: 'task-1' })
       await manager.__testInternals.processQueuedTask(raw, taskStatusMap)
 
-      // Verify refresh happened: task-2 should now be 'queued', task-1 should be 'active'
-      expect(taskStatusMap.get('task-2')).toBe('queued')
+      // task-1 was claimed — its map entry is now the post-claim status.
       expect(taskStatusMap.get('task-1')).toBe('active')
-      expect(mockRepo.getTasksWithDependencies).toHaveBeenCalledTimes(2) // initial + refresh
+      // task-2 is untouched — no full-catalog reload happened.
+      expect(taskStatusMap.get('task-2')).toBe('blocked')
+      // The targeted reload uses getTask, not getTasksWithDependencies.
+      expect(mockRepo.getTask).toHaveBeenCalledWith('task-1')
+      expect(mockRepo.getTasksWithDependencies).not.toHaveBeenCalled()
     })
 
     it('continues with stale map when refresh fails (non-fatal)', async () => {
+      // First getTask call (fresh-status guard before claim) succeeds; the
+      // post-claim targeted refresh call throws and must be swallowed.
+      let getTaskCalls = 0
       const mockRepo = {
-        getTask: vi.fn(),
+        getTask: vi.fn().mockImplementation(() => {
+          getTaskCalls++
+          if (getTaskCalls === 1) return { id: 'task-1', status: 'queued' }
+          throw new Error('DB connection lost')
+        }),
         updateTask: vi.fn(),
         getQueuedTasks: vi.fn(),
         getOrphanedTasks: vi.fn(),
         getActiveTaskCount: vi.fn().mockReturnValue(0),
         claimTask: vi.fn().mockReturnValue({ id: 'task-1' }),
-        getTasksWithDependencies: vi.fn().mockImplementation(() => {
-          throw new Error('DB connection lost')
-        })
+        getTasksWithDependencies: vi.fn()
       }
 
       const manager = new AgentManagerImpl(baseConfig, mockRepo as never, makeLogger())
@@ -1052,6 +1049,41 @@ describe('AgentManagerImpl — class internals', () => {
 
       // Both failures should be counted by the circuit breaker
       expect(manager.__testInternals.circuitBreaker.failureCount).toBe(2)
+    })
+
+    it('does NOT increment circuit breaker on stream/post-spawn failures (EP-5)', async () => {
+      // Simulate a successful spawn followed by a mid-stream crash. The spawn-phase
+      // callback fires (onSpawnSuccess), then runAgent rejects from the streaming
+      // phase. Circuit breaker scope: spawn-phase only.
+      vi.mocked(runAgent).mockImplementation(async (_task, _wt, _rp, deps) => {
+        deps.onSpawnSuccess?.()
+        throw new Error('stream interrupted: ECONNRESET')
+      })
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
+
+      // Spawn succeeded → circuit breaker reset to 0; stream error must NOT trip it.
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(0)
+    })
+
+    it('DOES increment circuit breaker on spawn-phase failures (EP-5)', async () => {
+      // Spawn-phase failure: onSpawnFailure callback fires before runAgent rejects.
+      vi.mocked(runAgent).mockImplementation(async (task, _wt, _rp, deps) => {
+        deps.onSpawnFailure?.(task.id, 'enoent: claude not found')
+        throw new Error('spawn failed')
+      })
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
+
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(1)
     })
   })
 
