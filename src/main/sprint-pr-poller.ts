@@ -27,6 +27,8 @@ const MAX_TERMINAL_RETRY_ATTEMPTS = 5
  * `terminal-retry.evicted` event fires so the loss is observable.
  */
 const MAX_PENDING_TASKS = 500
+const TERMINAL_RETRY_BASE_DELAY_MS = 30_000
+const TERMINAL_RETRY_MAX_DELAY_MS = 300_000
 
 const moduleLogger = createLogger('sprint-pr-poller')
 
@@ -64,6 +66,7 @@ type Logger = NonNullable<SprintPrPollerDeps['logger']>
 interface PendingTerminalRetry {
   status: TaskStatus
   attempts: number
+  nextRetryAt: number
 }
 
 class PollTimeoutError extends Error {
@@ -293,7 +296,7 @@ export class SprintPrPoller implements SprintPrPollerInstance {
     const failed = await attemptTerminalNotifications(ids, status, this.deps.onTaskTerminal)
     for (const { id, reason } of failed) {
       const prior = this.pendingTerminalRetries.get(id)
-      this.enqueueRetry(id, { status, attempts: (prior?.attempts ?? 0) + 1 })
+      this.enqueueRetry(id, { status, attempts: (prior?.attempts ?? 0) + 1, nextRetryAt: 0 })
       this.log.warn(
         `[sprint-pr-poller] onTaskTerminal failed for ${id}: ${reason}; queued for retry`
       )
@@ -331,15 +334,20 @@ export class SprintPrPoller implements SprintPrPollerInstance {
   private async flushPendingRetries(): Promise<void> {
     if (this.pendingTerminalRetries.size === 0) return
 
+    const now = Date.now()
     const entries = Array.from(this.pendingTerminalRetries.entries())
+    const dueEntries = entries.filter(([, pending]) => now >= pending.nextRetryAt)
+
+    if (dueEntries.length === 0) return
+
     const results = await Promise.allSettled(
-      entries.map(([taskId, pending]) =>
+      dueEntries.map(([taskId, pending]) =>
         Promise.resolve(this.deps.onTaskTerminal(taskId, pending.status))
       )
     )
 
     for (let i = 0; i < results.length; i++) {
-      const entry = entries[i]
+      const entry = dueEntries[i]
       const result = results[i]
       if (!entry || !result) continue
 
@@ -361,15 +369,25 @@ export class SprintPrPoller implements SprintPrPollerInstance {
           })
           this.pendingTerminalRetries.delete(taskId)
         } else {
+          const backoffMs = Math.min(
+            TERMINAL_RETRY_BASE_DELAY_MS * Math.pow(2, nextAttempts - 1),
+            TERMINAL_RETRY_MAX_DELAY_MS
+          )
           this.pendingTerminalRetries.set(taskId, {
             status: pending.status,
-            attempts: nextAttempts
+            attempts: nextAttempts,
+            nextRetryAt: now + backoffMs
           })
           this.log.warn(
-            `[sprint-pr-poller] terminal notify retry ${nextAttempts}/${MAX_TERMINAL_RETRY_ATTEMPTS} failed for ${taskId}: ${reason}`
+            `[sprint-pr-poller] terminal notify retry ${nextAttempts}/${MAX_TERMINAL_RETRY_ATTEMPTS} failed for ${taskId}: ${reason} — next attempt in ${backoffMs}ms`
           )
         }
       }
     }
   }
+}
+
+/** Factory wrapper for backward compatibility with callers that use the function form. */
+export function createSprintPrPoller(deps: SprintPrPollerDeps): SprintPrPollerInstance {
+  return new SprintPrPoller(deps)
 }

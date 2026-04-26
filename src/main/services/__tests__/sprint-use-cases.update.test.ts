@@ -108,6 +108,36 @@ describe('updateTaskFromUi', () => {
     const result = await updateTaskFromUi('t1', { status: 'done' }, makeDeps())
     expect(result).toBeNull()
   })
+
+  it('strips fields not in UPDATE_ALLOWLIST from patch before calling updateTask', async () => {
+    await updateTaskFromUi('t1', { title: 'ok', invented_field: 'bad' } as never, makeDeps())
+    expect(mockUpdateTask).toHaveBeenCalledWith('t1', { title: 'ok' })
+    expect(mockUpdateTask.mock.calls[0][1]).not.toHaveProperty('invented_field')
+  })
+
+  it('queued-to-blocked redirect carries blockedNotes in transition fields', async () => {
+    const { computeBlockState, buildBlockedNotes } = await import('../dependency-service')
+    vi.mocked(computeBlockState).mockReturnValue({ shouldBlock: true, blockedBy: ['dep-1'] })
+    vi.mocked(buildBlockedNotes).mockReturnValue('blocked: dep-1')
+    await updateTaskFromUi('t1', { status: 'queued' }, makeDeps())
+    expect(mockTransition).toHaveBeenCalledWith(
+      't1',
+      'blocked',
+      expect.objectContaining({
+        fields: expect.objectContaining({ notes: 'blocked: dep-1' }),
+        caller: 'ui'
+      })
+    )
+  })
+
+  it('status change with concurrent field update sends fields to transition not updateTask', async () => {
+    await updateTaskFromUi('t1', { status: 'active', notes: 'starting' }, makeDeps())
+    expect(mockTransition).toHaveBeenCalledWith('t1', 'active', {
+      fields: { notes: 'starting' },
+      caller: 'ui'
+    })
+    expect(mockUpdateTask).not.toHaveBeenCalled()
+  })
 })
 
 describe('createTaskWithValidation — auto-blocking (T-6)', () => {
