@@ -18,6 +18,7 @@ interface RetryOptions {
   maxRetries?: number
   baseDelayMs?: number
   maxDelayMs?: number
+  logger?: { warn: (msg: string) => void }
 }
 
 function isBusyError(err: unknown): boolean {
@@ -85,6 +86,9 @@ export async function withRetryAsync<T>(
       lastError = err
       if (!isBusyError(err) || attempt === maxRetries) throw err
       const delay = computeBackoff(attempt, baseDelayMs, maxDelayMs)
+      opts.logger?.warn(
+        `[sqlite-retry] SQLITE_BUSY retry attempt=${attempt + 1} backoffMs=${delay}`
+      )
       await new Promise<void>((resolve) => setTimeout(resolve, delay))
     }
   }

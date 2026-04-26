@@ -295,7 +295,7 @@ async function handleEnvironmentalFailure(taskId: string, err: unknown, deps: Dr
   const affectedTaskCount = readQueueDepth(deps)
   deps.emitDrainPaused({ reason, pausedUntil, affectedTaskCount })
   deps.logger.warn(
-    `[drain-loop] environmental failure — pausing drain until ${new Date(pausedUntil).toISOString()}: ${reason}`
+    `[drain-loop] environmental failure for task ${taskId} — pausing drain until ${new Date(pausedUntil).toISOString()}: ${reason}`
   )
   return true
 }
