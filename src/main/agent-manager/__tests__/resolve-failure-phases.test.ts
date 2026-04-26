@@ -10,9 +10,9 @@ function makeRepo(overrides: { updateTask?: ReturnType<typeof vi.fn>; getTask?: 
 }
 
 describe('resolveFailure — non-terminal (retries remaining)', () => {
-  it('calls repo.updateTask with status queued and returns isTerminal:false', () => {
+  it('calls repo.updateTask with status queued and returns isTerminal:false', async () => {
     const repo = makeRepo()
-    const result = resolveFailure({ taskId: 't-1', retryCount: 0, repo: repo as never })
+    const result = await resolveFailure({ taskId: 't-1', retryCount: 0, repo: repo as never })
 
     expect(result).toMatchObject({ isTerminal: false })
     expect(result.writeFailed).toBeFalsy()
@@ -25,18 +25,18 @@ describe('resolveFailure — non-terminal (retries remaining)', () => {
     expect(patch.next_eligible_at).toBeTruthy()
   })
 
-  it('includes notes in the update when provided', () => {
+  it('includes notes in the update when provided', async () => {
     const repo = makeRepo()
-    resolveFailure({ taskId: 't-1', retryCount: 1, notes: 'test failed', repo: repo as never })
+    await resolveFailure({ taskId: 't-1', retryCount: 1, notes: 'test failed', repo: repo as never })
     const [, patch] = repo.updateTask.mock.calls[0]
     expect(patch.notes).toBe('test failed')
   })
 })
 
 describe('resolveFailure — terminal (retries exhausted)', () => {
-  it('calls repo.updateTask with status failed and returns isTerminal:true when at MAX_RETRIES', () => {
+  it('calls repo.updateTask with status failed and returns isTerminal:true when at MAX_RETRIES', async () => {
     const repo = makeRepo()
-    const result = resolveFailure({ taskId: 't-2', retryCount: MAX_RETRIES, repo: repo as never })
+    const result = await resolveFailure({ taskId: 't-2', retryCount: MAX_RETRIES, repo: repo as never })
 
     expect(result).toMatchObject({ isTerminal: true })
     expect(result.writeFailed).toBeFalsy()
@@ -48,30 +48,30 @@ describe('resolveFailure — terminal (retries exhausted)', () => {
     expect(patch.needs_review).toBe(true)
   })
 
-  it('returns isTerminal:true for any retry count >= MAX_RETRIES', () => {
+  it('returns isTerminal:true for any retry count >= MAX_RETRIES', async () => {
     const repo = makeRepo()
-    const result = resolveFailure({ taskId: 't-3', retryCount: MAX_RETRIES + 5, repo: repo as never })
+    const result = await resolveFailure({ taskId: 't-3', retryCount: MAX_RETRIES + 5, repo: repo as never })
     expect(result).toMatchObject({ isTerminal: true })
   })
 })
 
 describe('resolveFailure — repo.updateTask throws', () => {
-  it('returns { writeFailed: true } instead of throwing — caller must NOT invoke onTaskTerminal', () => {
+  it('returns { writeFailed: true } instead of throwing — caller must NOT invoke onTaskTerminal', async () => {
     const repo = makeRepo({ updateTask: vi.fn().mockImplementation(() => { throw new Error('DB locked') }) })
     const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), event: vi.fn() }
 
-    const result = resolveFailure({ taskId: 't-4', retryCount: 0, repo: repo as never }, logger as never)
+    const result = await resolveFailure({ taskId: 't-4', retryCount: 0, repo: repo as never }, logger as never)
 
     expect(result).toMatchObject({ writeFailed: true })
     expect(result).toHaveProperty('error')
     expect(logger.event).toHaveBeenCalledWith('failure.persist_failed', expect.objectContaining({ taskId: 't-4' }))
   })
 
-  it('returns { writeFailed: true, isTerminal: true } when terminal and updateTask throws', () => {
+  it('returns { writeFailed: true, isTerminal: true } when terminal and updateTask throws', async () => {
     const repo = makeRepo({ updateTask: vi.fn().mockImplementation(() => { throw new Error('DB locked') }) })
     const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), event: vi.fn() }
 
-    const result = resolveFailure({ taskId: 't-5', retryCount: MAX_RETRIES, repo: repo as never }, logger as never)
+    const result = await resolveFailure({ taskId: 't-5', retryCount: MAX_RETRIES, repo: repo as never }, logger as never)
 
     expect(result).toMatchObject({ writeFailed: true, isTerminal: true })
     expect(logger.event).toHaveBeenCalledWith('failure.persist_failed', expect.objectContaining({ taskId: 't-5' }))

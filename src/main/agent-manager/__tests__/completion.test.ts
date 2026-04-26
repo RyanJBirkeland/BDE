@@ -841,12 +841,12 @@ describe('resolveFailure', () => {
     expect(result.writeFailed).toBeFalsy()
   })
 
-  it('returns { writeFailed: true } when updateTask throws — caller must NOT invoke onTaskTerminal', () => {
+  it('returns { writeFailed: true } when updateTask throws — caller must NOT invoke onTaskTerminal', async () => {
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB error')
     })
 
-    const result = resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES, repo: mockRepo })
+    const result = await resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES, repo: mockRepo })
     expect(result).toMatchObject({ writeFailed: true })
     expect(result).toHaveProperty('error')
   })

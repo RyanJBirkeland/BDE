@@ -262,26 +262,26 @@ describe('T-35 — watchdog does not call onTaskTerminal when DB write fails', (
 // ---------------------------------------------------------------------------
 
 describe('T-92 — resolveFailure returns writeFailed:true instead of throwing', () => {
-  it('returns { writeFailed: true } when updateTask throws — does not throw', () => {
+  it('returns { writeFailed: true } when updateTask throws — does not throw', async () => {
     const repo = makeRepo({
       updateTask: vi.fn().mockImplementation(() => { throw new Error('DB locked') }),
       getTask: vi.fn().mockReturnValue({ started_at: new Date(Date.now() - 5000).toISOString() })
     })
     const logger = makeLogger()
 
-    const result = resolveFailure({ taskId: 't-92', retryCount: 0, repo: repo as never }, logger as never)
+    const result = await resolveFailure({ taskId: 't-92', retryCount: 0, repo: repo as never }, logger as never)
 
     expect(result).toMatchObject({ writeFailed: true })
     expect(result).toHaveProperty('error')
   })
 
-  it('returns { writeFailed: true, isTerminal: true } when terminal and write fails', () => {
+  it('returns { writeFailed: true, isTerminal: true } when terminal and write fails', async () => {
     const repo = makeRepo({
       updateTask: vi.fn().mockImplementation(() => { throw new Error('DB locked') }),
       getTask: vi.fn().mockReturnValue({ started_at: new Date(Date.now() - 5000).toISOString() })
     })
 
-    const result = resolveFailure({ taskId: 't-92b', retryCount: MAX_RETRIES, repo: repo as never })
+    const result = await resolveFailure({ taskId: 't-92b', retryCount: MAX_RETRIES, repo: repo as never })
 
     expect(result).toMatchObject({ writeFailed: true, isTerminal: true })
   })
@@ -293,7 +293,7 @@ describe('T-92 — resolveFailure returns writeFailed:true instead of throwing',
     })
     const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
 
-    const result = resolveFailure({ taskId: 't-92c', retryCount: MAX_RETRIES, repo: repo as never })
+    const result = await resolveFailure({ taskId: 't-92c', retryCount: MAX_RETRIES, repo: repo as never })
 
     if (!result.writeFailed) {
       await onTaskTerminal('t-92c', result.isTerminal ? 'failed' : 'queued')
@@ -302,25 +302,25 @@ describe('T-92 — resolveFailure returns writeFailed:true instead of throwing',
     expect(onTaskTerminal).not.toHaveBeenCalled()
   })
 
-  it('returns { isTerminal: false } on successful non-terminal write', () => {
+  it('returns { isTerminal: false } on successful non-terminal write', async () => {
     const repo = makeRepo({
       updateTask: vi.fn().mockReturnValue(undefined),
       getTask: vi.fn().mockReturnValue(null)
     })
 
-    const result = resolveFailure({ taskId: 't-92d', retryCount: 0, repo: repo as never })
+    const result = await resolveFailure({ taskId: 't-92d', retryCount: 0, repo: repo as never })
 
     expect(result).toMatchObject({ isTerminal: false })
     expect(result.writeFailed).toBeFalsy()
   })
 
-  it('returns { isTerminal: true } on successful terminal write', () => {
+  it('returns { isTerminal: true } on successful terminal write', async () => {
     const repo = makeRepo({
       updateTask: vi.fn().mockReturnValue(undefined),
       getTask: vi.fn().mockReturnValue({ started_at: new Date(Date.now() - 5000).toISOString() })
     })
 
-    const result = resolveFailure({ taskId: 't-92e', retryCount: MAX_RETRIES, repo: repo as never })
+    const result = await resolveFailure({ taskId: 't-92e', retryCount: MAX_RETRIES, repo: repo as never })
 
     expect(result).toMatchObject({ isTerminal: true })
     expect(result.writeFailed).toBeFalsy()

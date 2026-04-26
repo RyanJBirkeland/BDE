@@ -142,11 +142,16 @@ describe('task-state-machine', () => {
       expect(isValidTransition('failed', 'queued')).toBe(true)
     })
 
+    it('should return true for queued → done (auto-complete edge)', () => {
+      // queued → done is permitted for the auto-complete path: agent-manager
+      // detects that matching work already landed on origin/main out-of-band.
+      expect(isValidTransition('queued', 'done')).toBe(true)
+    })
+
     it('should return false for invalid transitions', () => {
       expect(isValidTransition('done', 'active')).toBe(false)
       expect(isValidTransition('cancelled', 'queued')).toBe(false)
       expect(isValidTransition('backlog', 'done')).toBe(false)
-      expect(isValidTransition('queued', 'done')).toBe(false)
     })
   })
 

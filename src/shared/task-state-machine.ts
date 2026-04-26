@@ -85,7 +85,11 @@ export const HARD_SATISFIED_STATUSES: ReadonlySet<TaskStatus> = new Set<TaskStat
  */
 export const VALID_TRANSITIONS: Record<TaskStatus, ReadonlySet<TaskStatus>> = {
   backlog: new Set<TaskStatus>(['queued', 'blocked', 'cancelled']),
-  queued: new Set<TaskStatus>(['active', 'blocked', 'cancelled']),
+  // 'done' is permitted for the auto-complete path: agent-manager detected that
+  // matching work already landed on origin/main out-of-band (prior run, manual
+  // commit, cherry-pick). This is not the normal pipeline completion path —
+  // TerminalDispatcher still fires so dependency resolution and metrics run.
+  queued: new Set<TaskStatus>(['active', 'blocked', 'cancelled', 'done']),
   blocked: new Set<TaskStatus>(['queued', 'cancelled']),
   active: new Set<TaskStatus>(['review', 'done', 'failed', 'error', 'cancelled', 'queued']),
   review: new Set<TaskStatus>(['queued', 'done', 'cancelled', 'failed']),

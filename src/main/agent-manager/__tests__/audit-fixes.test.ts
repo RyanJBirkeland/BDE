@@ -150,8 +150,8 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
     logger.error.mockClear()
   })
 
-  it('returns { isTerminal: false } when retries not exhausted (DB success)', () => {
-    const result = resolveFailure({ taskId: 'task-1', retryCount: 0, repo: mockRepo }, logger)
+  it('returns { isTerminal: false } when retries not exhausted (DB success)', async () => {
+    const result = await resolveFailure({ taskId: 'task-1', retryCount: 0, repo: mockRepo }, logger)
 
     expect(result).toMatchObject({ isTerminal: false })
     expect(result.writeFailed).toBeFalsy()
@@ -165,8 +165,8 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
     )
   })
 
-  it('returns { isTerminal: true } when retries exhausted (DB success)', () => {
-    const result = resolveFailure(
+  it('returns { isTerminal: true } when retries exhausted (DB success)', async () => {
+    const result = await resolveFailure(
       { taskId: 'task-2', retryCount: MAX_RETRIES, repo: mockRepo },
       logger
     )
@@ -183,27 +183,27 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
     )
   })
 
-  it('returns { writeFailed: true } when DB error (retries not exhausted)', () => {
+  it('returns { writeFailed: true } when DB error (retries not exhausted)', async () => {
     vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
       throw new Error('DB connection lost')
     })
 
-    const result = resolveFailure({ taskId: 'task-3', retryCount: 1, repo: mockRepo }, logger)
+    const result = await resolveFailure({ taskId: 'task-3', retryCount: 1, repo: mockRepo }, logger)
     expect(result).toMatchObject({ writeFailed: true })
     expect(result).toHaveProperty('error')
   })
 
-  it('returns { writeFailed: true, isTerminal: true } when retries exhausted and DB error', () => {
+  it('returns { writeFailed: true, isTerminal: true } when retries exhausted and DB error', async () => {
     vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
       throw new Error('DB connection lost')
     })
 
-    const result = resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES, repo: mockRepo }, logger)
+    const result = await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES, repo: mockRepo }, logger)
     expect(result).toMatchObject({ writeFailed: true, isTerminal: true })
   })
 
-  it('includes notes when provided', () => {
-    resolveFailure(
+  it('includes notes when provided', async () => {
+    await resolveFailure(
       {
         taskId: 'task-5',
         retryCount: 0,

@@ -404,7 +404,8 @@ export class AgentManagerImpl implements AgentManager {
       repo: this.repo,
       depIndex: this._depIndex,
       logger: this.logger,
-      onTaskTerminal: this.onTaskTerminal.bind(this)
+      onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService
     })
   }
 
@@ -421,7 +422,8 @@ export class AgentManagerImpl implements AgentManager {
       repo: this.repo,
       depIndex: this._depIndex,
       logger: this.logger,
-      onTaskTerminal: this.onTaskTerminal.bind(this)
+      onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService
     })
   }
 
@@ -440,6 +442,7 @@ export class AgentManagerImpl implements AgentManager {
       depIndex: this._depIndex,
       logger: this.logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService,
       processingTasks: this._processingTasks,
       activeAgents: this._activeAgents,
       spawnAgent: (task, wt, repoPath) => this._spawnAgent(task, wt, repoPath, tickId),

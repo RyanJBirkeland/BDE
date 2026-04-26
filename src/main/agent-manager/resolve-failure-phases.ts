@@ -11,12 +11,14 @@ import type { Logger } from '../logger'
 import { nowIso } from '../../shared/time'
 import { classifyFailureReason } from './failure-classifier'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { TaskStateService } from '../services/task-state-service'
 
 export interface ResolveFailureContext {
   taskId: string
   retryCount: number
   notes?: string | undefined
   repo: IAgentTaskRepository
+  taskStateService?: TaskStateService
 }
 
 /**
@@ -58,9 +60,17 @@ function truncateNotesTail(notes: string | undefined): string | undefined {
  * Returns a tagged result indicating whether the task is terminal and whether the DB write
  * succeeded. Callers must check `writeFailed` before calling `onTaskTerminal` — firing
  * dependency resolution against a task still `active` in SQLite would corrupt the graph.
+ *
+ * When `opts.taskStateService` is supplied, all status writes go through
+ * `TaskStateService.transition()` so the audit trail and terminal dispatch fire uniformly.
+ * When absent (legacy callers or tests), the function falls back to `repo.updateTask` and
+ * the caller is responsible for invoking `onTaskTerminal` on the terminal branch.
  */
-export function resolveFailure(opts: ResolveFailureContext, logger?: Logger): ResolveFailureResult {
-  const { taskId, retryCount, repo } = opts
+export async function resolveFailure(
+  opts: ResolveFailureContext,
+  logger?: Logger
+): Promise<ResolveFailureResult> {
+  const { taskId, retryCount, repo, taskStateService } = opts
   // Tail-truncate before writing to DB so stack trace root causes are preserved.
   const notes = truncateNotesTail(opts.notes)
 
@@ -84,28 +94,39 @@ export function resolveFailure(opts: ResolveFailureContext, logger?: Logger): Re
       // Exponential backoff: 30s, 60s, 120s, capped at 5 minutes
       const backoffMs = calculateRetryBackoff(retryCount)
       const nextEligibleAt = new Date(Date.now() + backoffMs).toISOString()
-      // EP-1 note: these writes bypass TaskStateService because resolveFailure is synchronous.
-      // Migrating them requires making this function async (breaking change). Deferred to EP-2.
-      repo.updateTask(taskId, {
-        status: 'queued',
+      const requeueFields = {
         retry_count: retryCount + 1,
         claimed_by: null,
         next_eligible_at: nextEligibleAt,
         failure_reason: failureReason,
         ...(notes ? { notes } : {})
-      })
+      }
+      if (taskStateService) {
+        await taskStateService.transition(taskId, 'queued', {
+          fields: requeueFields,
+          caller: 'resolve-failure:requeue'
+        })
+      } else {
+        repo.updateTask(taskId, { status: 'queued', ...requeueFields })
+      }
       return { isTerminal: false }
     } else {
-      // EP-1 note: same deferral as the non-terminal branch above.
-      repo.updateTask(taskId, {
-        status: 'failed',
+      const failFields = {
         completed_at: nowIso(),
         claimed_by: null,
         needs_review: true,
         failure_reason: failureReason,
         ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
         ...(notes ? { notes } : {})
-      })
+      }
+      if (taskStateService) {
+        await taskStateService.transition(taskId, 'failed', {
+          fields: failFields,
+          caller: 'resolve-failure:terminal'
+        })
+      } else {
+        repo.updateTask(taskId, { status: 'failed', ...failFields })
+      }
       return { isTerminal: true }
     }
   } catch (err) {

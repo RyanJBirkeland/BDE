@@ -20,6 +20,7 @@ import { nowIso } from '../../shared/time'
 import type { AgentRunClaim } from './run-agent'
 import { taskHasMatchingCommitOnMain } from './already-done-check'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import type { TaskStateService } from '../services/task-state-service'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -31,6 +32,7 @@ export interface TaskClaimerDeps {
   depIndex: DependencyIndex
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  taskStateService: TaskStateService
 }
 
 // ---------------------------------------------------------------------------
@@ -148,27 +150,13 @@ async function skipIfAlreadyOnMain(
   const autoCompleteNote = `auto-completed: matching commit found on main at ${match.sha} (matched on ${match.matchedOn})`
   deps.logger.info(`[agent-manager] Task ${task.id} ${autoCompleteNote} — skipping spawn`)
 
-  // EP-1 note: this write bypasses TaskStateService because the state machine does not
-  // permit `queued → done` directly (queued can only transition to active/blocked/cancelled).
-  // This auto-complete path is a documented exception — the work physically landed on main
-  // out-of-band, so we short-circuit the normal pipeline. Migrating to TaskStateService would
-  // require either (a) a state-machine relaxation or (b) routing through forceTerminalOverride,
-  // which carries a hardcoded "manually by user" note that would mislead operators reading the
-  // audit trail. Deferred to EP-2 / Phase A audit task T-3.
   try {
-    deps.repo.updateTask(task.id, {
-      status: 'done',
-      completed_at: nowIso(),
-      claimed_by: null,
-      notes: autoCompleteNote
+    await deps.taskStateService.transition(task.id, 'done', {
+      fields: { completed_at: nowIso(), claimed_by: null, notes: autoCompleteNote },
+      caller: 'task-claimer:auto-complete'
     })
-    await deps
-      .onTaskTerminal(task.id, 'done')
-      .catch((err) =>
-        deps.logger.warn(`[agent-manager] onTerminal failed for already-done task ${task.id}: ${err}`)
-      )
   } catch (err) {
-    // DB write failed — do NOT call onTaskTerminal. The task is still in its
+    // Transition failed — do NOT call onTaskTerminal. The task is still in its
     // prior status in SQLite; firing dependency resolution here would unblock
     // dependents against a task that has not actually completed.
     deps.logger.warn(

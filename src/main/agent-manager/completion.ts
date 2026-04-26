@@ -426,7 +426,7 @@ async function detectNoOpAndFailIfSo(
   logger.warn(
     `[completion] task ${taskId}: detected no-op run on branch ${branch} — failing instead of transitioning to review`
   )
-  const result = resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo }, logger)
+  const result = await resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo }, logger)
   if (result.writeFailed) {
     logger.warn(
       `[completion] task ${taskId}: noop failure DB write failed — skipping terminal notification to avoid corrupting dependency graph`
@@ -545,7 +545,7 @@ async function verifyWorktreeOrFail(opts: {
   const feedback = buildVerificationRevisionFeedback(result.failure.kind, result.failure.stderr)
   const notes = JSON.stringify(feedback)
 
-  const failureResult = resolveFailurePhase({ taskId, retryCount, notes, repo }, logger)
+  const failureResult = await resolveFailurePhase({ taskId, retryCount, notes, repo }, logger)
   if (failureResult.writeFailed) {
     logger.warn(
       `[completion] task ${taskId}: verification failure DB write failed — skipping terminal notification to avoid corrupting dependency graph`
@@ -558,7 +558,7 @@ async function verifyWorktreeOrFail(opts: {
   return false
 }
 
-export function resolveFailure(
+export async function resolveFailure(
   opts: {
     taskId: string
     retryCount: number
@@ -566,6 +566,6 @@ export function resolveFailure(
     repo: IAgentTaskRepository
   },
   logger?: Logger
-): ResolveFailureResult {
+): Promise<ResolveFailureResult> {
   return resolveFailurePhase(opts, logger)
 }

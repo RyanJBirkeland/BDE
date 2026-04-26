@@ -357,7 +357,7 @@ interface CommitCheckContext {
       repo: IAgentTaskRepository
     },
     logger?: Logger
-  ) => ResolveFailureResult
+  ) => Promise<ResolveFailureResult>
 }
 
 /**
@@ -421,11 +421,11 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
         : NO_COMMITS_NOTE
 
       if (retryCount >= MAX_NO_COMMITS_RETRIES) {
-        await failTaskExhaustedNoCommits(taskId, branch, repo, logger, onTaskTerminal)
+        await failTaskExhaustedNoCommits(taskId, branch, repo, logger, onTaskTerminal, taskStateService)
         return false
       }
 
-      const failureResult = resolveFailure({ taskId, retryCount, notes: summaryNote, repo }, logger)
+      const failureResult = await resolveFailure({ taskId, retryCount, notes: summaryNote, repo }, logger)
       if (failureResult.writeFailed) {
         logger.warn(
           `[completion] Task ${taskId}: no-commits failure DB write failed — skipping terminal notification`
@@ -460,7 +460,7 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
       await onTaskTerminal(taskId, 'failed')
     } else {
       // No TaskStateService injected — fall back to resolveFailure path
-      const fallbackResult = resolveFailure({ taskId, retryCount, notes: `git rev-list failed: ${String(err)}`, repo }, logger)
+      const fallbackResult = await resolveFailure({ taskId, retryCount, notes: `git rev-list failed: ${String(err)}`, repo }, logger)
       if (!fallbackResult.writeFailed && fallbackResult.isTerminal) await onTaskTerminal(taskId, 'failed')
     }
     return false
@@ -483,7 +483,8 @@ async function failTaskExhaustedNoCommits(
   branch: string,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService?: TaskStateService
 ): Promise<void> {
   logger.warn(
     `[completion] Task ${taskId}: no commits on branch ${branch} after ${MAX_NO_COMMITS_RETRIES} attempts — marking failed`
@@ -495,19 +496,24 @@ async function failTaskExhaustedNoCommits(
       ? Date.now() - new Date(task.started_at).getTime()
       : undefined
 
+  const failFields = {
+    completed_at: nowIso(),
+    claimed_by: null,
+    needs_review: true,
+    failure_reason: 'no-commits-exhausted',
+    notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.bde/bde.log`,
+    ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
+  }
+
   try {
-    // EP-1 note: migrating to taskStateService.transition() here would require adding
-    // taskStateService to the CommitCheckContext, changing this function to async, and
-    // updating all callers. Deferred to EP-2 completion-path refactoring.
-    repo.updateTask(taskId, {
-      status: 'failed',
-      completed_at: nowIso(),
-      claimed_by: null,
-      needs_review: true,
-      failure_reason: 'no-commits-exhausted',
-      notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.bde/bde.log`,
-      ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
-    })
+    if (taskStateService) {
+      await taskStateService.transition(taskId, 'failed', {
+        fields: failFields,
+        caller: 'resolve-success:no-commits-exhausted'
+      })
+    } else {
+      repo.updateTask(taskId, { status: 'failed', ...failFields })
+    }
   } catch (err) {
     logger.error(`[completion] Failed to mark task ${taskId} no-commits-exhausted: ${err}`)
   }

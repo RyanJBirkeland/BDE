@@ -414,7 +414,7 @@ async function handleIncompleteFiles(
   const notes = `Files to Change checklist incomplete. Missing: ${missingFiles.join(', ')}`
   ctx.logger.warn(`[run-agent] task ${ctx.task.id}: ${notes}`)
 
-  const result = resolveFailure(
+  const result = await resolveFailure(
     {
       taskId: ctx.task.id,
       retryCount: ctx.task.retry_count ?? 0,
@@ -476,7 +476,7 @@ async function handleResolveSuccessFailure(
   ctx.logger.warn(`[agent-manager] resolveSuccess failed for task ${ctx.task.id}: ${err}`)
   // Pass lastAgentOutput so the retry agent knows what failed and doesn't repeat blindly.
   const failureNotes = [ctx.lastAgentOutput, String(err)].filter(Boolean).join('\n---\n')
-  const result = resolveFailure(
+  const result = await resolveFailure(
     {
       taskId: ctx.task.id,
       retryCount: ctx.task.retry_count ?? 0,
