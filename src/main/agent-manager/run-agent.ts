@@ -85,6 +85,12 @@ export interface RunAgentSpawnDeps {
   onAgentRegistered?: () => void
   /** Drain-tick correlation ID — threads from DrainLoopDeps to the spawn log. */
   tickId?: string | undefined
+  /**
+   * Called with the in-flight Keychain refresh promise when an auth error
+   * triggers `handleOAuthRefresh`. The drain loop awaits this via
+   * `AgentManager.awaitOAuthRefresh` before the next spawn.
+   */
+  onOAuthRefreshStart?: (promise: Promise<unknown>) => void
 }
 
 /** Sprint task data access and status transition service. */
@@ -664,21 +670,18 @@ async function abortPhaseUnexpectedly(
   taskId: string,
   phase: string,
   err: unknown,
-  deps: Pick<RunAgentDeps, 'repo' | 'onTaskTerminal' | 'logger'>
+  deps: Pick<RunAgentDeps, 'repo' | 'onTaskTerminal' | 'logger' | 'taskStateService'>
 ): Promise<void> {
   const message = err instanceof Error ? err.message : String(err)
   deps.logger.error(`[run-agent] ${phase} aborted unexpectedly for ${taskId}: ${message}`)
 
   try {
-    deps.repo.updateTask(taskId, { status: 'error', claimed_by: null })
+    await deps.taskStateService.transition(taskId, 'error', {
+      fields: { claimed_by: null },
+      caller: `run-agent.${phase}.unexpected-abort`
+    })
   } catch (updateErr) {
     deps.logger.warn(`[run-agent] failed to release claim for ${taskId} after ${phase} abort: ${updateErr}`)
-  }
-
-  try {
-    await deps.onTaskTerminal(taskId, 'error')
-  } catch (terminalErr) {
-    deps.logger.warn(`[run-agent] onTaskTerminal failed for ${taskId} after ${phase} abort: ${terminalErr}`)
   }
 }
 
@@ -717,7 +720,8 @@ async function runStreamingPhase(ctx: StreamingContext): Promise<StreamResult> {
     agentRunId,
     turnTracker,
     logger,
-    computeMaxTurns(task.spec ?? task.prompt ?? task.title ?? '')
+    computeMaxTurns(task.spec ?? task.prompt ?? task.title ?? ''),
+    deps.onOAuthRefreshStart
   )
 
   // Await playground events before worktree cleanup so the worktree isn't

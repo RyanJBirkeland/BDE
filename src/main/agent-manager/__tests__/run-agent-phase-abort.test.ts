@@ -290,15 +290,13 @@ describe('runAgent — Phase 1 unexpected error', () => {
     expect(deps.onTaskTerminal).not.toHaveBeenCalled()
   })
 
-  it('still returns (no rethrow) when DB update fails during Phase 1 abort recovery', async () => {
+  it('still returns (no rethrow) when transition fails during Phase 1 abort recovery', async () => {
     vi.mocked(assembleRunContext).mockRejectedValue(new Error('unexpected'))
-    const localRepo: IAgentTaskRepository = {
-      ...mockRepo,
-      updateTask: vi.fn().mockImplementation(() => { throw new Error('DB unavailable') }),
-      getTask: vi.fn().mockReturnValue(null)
-    }
+    const throwingStateService = {
+      transition: vi.fn().mockRejectedValue(new Error('DB unavailable'))
+    } as unknown as import('../../services/task-state-service').TaskStateService
 
-    const deps = makeDeps({ repo: localRepo })
+    const deps = makeDeps({ taskStateService: throwingStateService })
     // Must not throw
     await expect(runAgent(makeTask(), worktree, repoPath, deps)).resolves.toBeUndefined()
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('failed to release claim'))
@@ -340,15 +338,13 @@ describe('runAgent — Phase 2 unexpected error', () => {
     expect(deps.onTaskTerminal).not.toHaveBeenCalled()
   })
 
-  it('still returns (no rethrow) when DB update fails during Phase 2 abort recovery', async () => {
+  it('still returns (no rethrow) when transition fails during Phase 2 abort recovery', async () => {
     vi.mocked(spawnAndWireAgent).mockRejectedValue(new Error('unexpected phase 2'))
-    const localRepo: IAgentTaskRepository = {
-      ...mockRepo,
-      updateTask: vi.fn().mockImplementation(() => { throw new Error('DB down') }),
-      getTask: vi.fn().mockReturnValue(null)
-    }
+    const throwingStateService = {
+      transition: vi.fn().mockRejectedValue(new Error('DB down'))
+    } as unknown as import('../../services/task-state-service').TaskStateService
 
-    const deps = makeDeps({ repo: localRepo })
+    const deps = makeDeps({ taskStateService: throwingStateService })
     await expect(runAgent(makeTask(), worktree, repoPath, deps)).resolves.toBeUndefined()
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('failed to release claim'))
   })

@@ -71,6 +71,20 @@ export interface AgentManager {
   getMetrics(): MetricsSnapshot
   steerAgent(taskId: string, message: string): Promise<SteerResult>
   killAgent(taskId: string): { killed: boolean; error?: string }
+  /**
+   * Abort the running agent for the given task and clear its active-agent
+   * registration. No-op when no agent is running for the task.
+   * Used by `sprint:forceReleaseClaim` to prevent a detached agent from
+   * continuing work against a task that has been re-queued.
+   */
+  cancelAgent(taskId: string): Promise<void>
+  /**
+   * Resolves when any in-flight OAuth token refresh initiated by
+   * `handleOAuthRefresh` in message-consumer has completed (success or failure).
+   * The drain loop awaits this before spawning new agents so the refreshed
+   * token is on disk before the next SDK spawn reads it.
+   */
+  awaitOAuthRefresh(): Promise<void>
   onTaskTerminal(taskId: string, status: string): Promise<void>
   /**
    * Re-read settings from the settings store and hot-update the in-memory
@@ -157,6 +171,11 @@ export class AgentManagerImpl implements AgentManager {
   // terminal promise. Duplicate callers receive the same promise; the entry is
   // deleted in finally.
   private readonly _terminalCalled = new Map<string, Promise<void>>()
+  // Set by onOAuthRefreshStart when message-consumer detects an auth error and
+  // fires refreshOAuthTokenFromKeychain. Cleared in .finally(). Drain loop
+  // awaits this before each spawn (awaitOAuthRefresh) so new agents don't start
+  // with the same stale token that caused the auth error.
+  private _oauthRefreshPromise: Promise<unknown> | null = null
 
   // ---- Timers ----
   private readonly lifecycle = new LifecycleController()
@@ -223,6 +242,11 @@ export class AgentManagerImpl implements AgentManager {
       },
       isFastFailExhausted: (taskId: string) => {
         return this._errorRegistry.fastFailTracker.isExhausted(taskId)
+      },
+      onOAuthRefreshStart: (promise: Promise<unknown>) => {
+        this._oauthRefreshPromise = promise.finally(() => {
+          this._oauthRefreshPromise = null
+        })
       }
     }
   }
@@ -483,7 +507,8 @@ export class AgentManagerImpl implements AgentManager {
         this._drainPausedUntil = event.pausedUntil
         broadcast('agentManager:drainPaused', event)
       },
-      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds
+      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds,
+      awaitOAuthRefresh: () => this.awaitOAuthRefresh()
     }
     return runDrain(drainDeps)
   }
@@ -816,6 +841,21 @@ export class AgentManagerImpl implements AgentManager {
     } catch (err) {
       return { killed: false, error: String(err) }
     }
+  }
+
+  async cancelAgent(taskId: string): Promise<void> {
+    const result = this.killAgent(taskId)
+    if (!result.killed) {
+      this.logger.warn(`[agent-manager] cancelAgent(${taskId}): ${result.error ?? 'agent not found'}`)
+    }
+  }
+
+  awaitOAuthRefresh(): Promise<void> {
+    if (!this._oauthRefreshPromise) return Promise.resolve()
+    return this._oauthRefreshPromise.then(
+      () => {},
+      () => {}
+    )
   }
 }
 

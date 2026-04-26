@@ -115,6 +115,13 @@ export interface DrainLoopDeps {
    * at the start of every drain tick so a task only counts as dirty once.
    */
   recentlyProcessedTaskIds: Set<string>
+  /**
+   * Resolves when any in-flight OAuth token refresh has completed.
+   * The drain loop awaits this before each spawn so the refreshed token
+   * is on disk before the next SDK process reads `~/.bde/oauth-token`.
+   * Optional — callers that don't inject AgentManager (tests) omit it.
+   */
+  awaitOAuthRefresh?: () => Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -241,6 +248,9 @@ export async function drainQueuedTasks(
       deps.logger.info('[agent-manager] No slots available — stopping drain iteration')
       break
     }
+    // Wait for any in-flight OAuth refresh before spawning so the new agent
+    // reads the refreshed token rather than the stale one that caused the error.
+    await deps.awaitOAuthRefresh?.()
     const taskId = rawTask.id
     try {
       await deps.processQueuedTask(rawTask, taskStatusMap)

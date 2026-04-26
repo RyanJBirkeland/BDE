@@ -78,13 +78,20 @@ export interface ConsumeMessagesResult {
 
 /**
  * Handles OAuth token refresh after auth errors.
+ *
+ * Calls `onRefreshStarted` with the in-flight promise so the drain loop can
+ * await it (via `AgentManager.awaitOAuthRefresh`) before spawning the next
+ * agent — preventing the new spawn from reading the same stale token.
  */
-function handleOAuthRefresh(logger: Logger): void {
+function handleOAuthRefresh(
+  logger: Logger,
+  onRefreshStarted?: (promise: Promise<unknown>) => void
+): void {
   invalidateOAuthToken()
   // Intentionally fire-and-forget: Keychain access on macOS can block for several seconds.
   // Awaiting it here would stall the entire message-consumer loop while the stream is still live.
   // The next agent spawn will pick up the refreshed token; errors are logged via .catch() below.
-  refreshOAuthTokenFromKeychain()
+  const refreshPromise = refreshOAuthTokenFromKeychain()
     .then((ok) => {
       if (ok)
         logger.info('[agent-manager] OAuth token auto-refreshed from Keychain after auth failure')
@@ -92,6 +99,7 @@ function handleOAuthRefresh(logger: Logger): void {
     .catch((err) => {
       logError(logger, '[agent-manager] Failed to auto-refresh OAuth token after auth failure', err)
     })
+  onRefreshStarted?.(refreshPromise)
   logger.warn(`[agent-manager] Auth failure detected — OAuth token cache invalidated`)
 }
 
@@ -149,6 +157,10 @@ function processSDKMessage(
  * Consumes SDK message stream, tracking costs, emitting events, and accumulating playground paths.
  * Playground HTML paths are collected but not emitted — the caller awaits emission
  * after the stream ends to prevent worktree cleanup from racing async file reads.
+ *
+ * `onOAuthRefreshStart` — when provided, called with the in-flight Keychain
+ * refresh promise so the drain loop can await token availability before the
+ * next spawn (see `AgentManager.awaitOAuthRefresh`).
  */
 export async function consumeMessages(
   handle: AgentHandle,
@@ -157,7 +169,8 @@ export async function consumeMessages(
   agentRunId: string,
   turnTracker: TurnTracker,
   logger: Logger,
-  maxTurns: number
+  maxTurns: number,
+  onOAuthRefreshStart?: (promise: Promise<unknown>) => void
 ): Promise<ConsumeMessagesResult> {
   let exitCode: number | undefined
   let lastAgentOutput = ''
@@ -285,7 +298,7 @@ export async function consumeMessages(
       errMsg.includes('invalid_api_key') ||
       errMsg.includes('authentication')
     ) {
-      handleOAuthRefresh(logger)
+      handleOAuthRefresh(logger, onOAuthRefreshStart)
     }
     // Flush immediately: the batcher's 100ms timer may not fire before the
     // next drain tick or process shutdown, so the stream-error event would

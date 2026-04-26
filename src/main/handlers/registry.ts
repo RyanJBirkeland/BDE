@@ -83,8 +83,11 @@ export function registerAllHandlers(deps: AppHandlerDeps): void {
   registerTerminalHandlers()
   registerWindowHandlers()
 
-  // Sprint task handlers
-  registerSprintLocalHandlers(terminalDeps, repo)
+  // Sprint task handlers — thread cancelAgent so forceReleaseClaim can abort the running agent
+  const sprintLocalDeps = agentManager
+    ? { ...terminalDeps, cancelAgent: (taskId: string) => agentManager.cancelAgent(taskId) }
+    : terminalDeps
+  registerSprintLocalHandlers(sprintLocalDeps, repo)
   registerSprintExportHandlers({ dialog: terminalDeps.dialog })
   registerSprintBatchHandlers({ onStatusTerminal: terminalDeps.onStatusTerminal, repo })
   registerSprintRetryHandler()

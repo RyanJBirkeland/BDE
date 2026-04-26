@@ -75,6 +75,8 @@ const INVARIANTS = [
         if (allowedFiles.has(file)) return false
         // Skip lines marked as phase-a-bypass (tracked exceptions, see T-36)
         if (line.includes('phase-a-bypass')) return false
+        // Test files simulate old behavior in stubs — not production code
+        if (file.includes('__tests__')) return false
         return true
       })
       if (hits.length === 0) return { ok: true }
