@@ -593,10 +593,13 @@ async function finalizeAgentRun(
     ...(deps.isFastFailExhausted && { isFastFailExhausted: deps.isFastFailExhausted })
   })
 
+  const finalTask = deps.repo.getTask(task.id)
+  const finalStatus = finalTask?.status ?? 'unknown'
+
   await persistAndCleanupAfterRun(task, worktree, repoPath, agent, deps)
   deps.logger.event('agent.completed', {
     taskId: task.id,
-    status: 'review',
+    status: finalStatus,
     durationMs,
     model: agent.model || 'unknown',
     costUsd: agent.costUsd ?? null

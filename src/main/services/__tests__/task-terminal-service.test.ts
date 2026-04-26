@@ -339,4 +339,49 @@ describe('createTaskTerminalService', () => {
     )
     expect(hasConsolidatedError).toBe(true)
   })
+
+  it('logs info with correct resolved/total counts on a partial-failure batch', () => {
+    // Two tasks: ta fails, tb succeeds → resolved = 1, total = 2
+    let callCount = 0
+    mockResolveDependents.mockImplementation((id: string) => {
+      callCount++
+      if (callCount === 1) {
+        throw new Error(`resolution failure for ${id}`)
+      }
+    })
+
+    const deps = makeDeps({
+      getTasksWithDependencies: vi.fn().mockReturnValue([
+        { id: 'ta', depends_on: null },
+        { id: 'tb', depends_on: null }
+      ])
+    })
+    const service = createTaskTerminalService(deps)
+
+    service.onStatusTerminal('ta', 'done')
+    service.onStatusTerminal('tb', 'done')
+
+    vi.runAllTimers()
+
+    expect(deps.logger.info).toHaveBeenCalledWith(
+      '[task-terminal] resolved 1 dependents in 2 tasks'
+    )
+  })
+
+  it('does not emit the batch success log when refreshTaskDepIndex throws', () => {
+    mockRefreshDependencyIndex.mockImplementationOnce(() => {
+      throw new Error('index boom')
+    })
+    const deps = makeDeps()
+    const service = createTaskTerminalService(deps)
+    service.onStatusTerminal('t1', 'done')
+
+    vi.runAllTimers()
+
+    const infoCalls = (deps.logger.info as ReturnType<typeof vi.fn>).mock.calls
+    const hasBatchSuccessLog = infoCalls.some((args: unknown[]) =>
+      String(args[0]).includes('[task-terminal] resolved')
+    )
+    expect(hasBatchSuccessLog).toBe(false)
+  })
 })

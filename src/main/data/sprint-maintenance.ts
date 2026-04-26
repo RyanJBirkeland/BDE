@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3'
 import { getDb } from '../db'
+import { MS_PER_DAY } from '../../shared/time'
 
 /**
  * How many days to retain `review_diff_snapshot` blobs for tasks in terminal
@@ -36,7 +37,7 @@ export function pruneOldDiffSnapshots(
   db?: Database.Database
 ): number {
   const conn = db ?? getDb()
-  const cutoff = new Date(Date.now() - retentionDays * 86400000).toISOString()
+  const cutoff = new Date(Date.now() - retentionDays * MS_PER_DAY).toISOString()
   const result = conn
     .prepare(
       `UPDATE sprint_tasks

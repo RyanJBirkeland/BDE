@@ -245,7 +245,8 @@ function makeErrorHandle(error: Error) {
         throw error
       }
     },
-    result: Promise.resolve({ exitCode: 1 })
+    result: Promise.resolve({ exitCode: 1 }),
+    abort: vi.fn()
   }
 }
 

@@ -9,7 +9,8 @@ vi.mock('../../logger', () => ({
 vi.mock('../../services/sprint-service', () => ({
   getTask: vi.fn(),
   resetTaskForRetry: vi.fn(),
-  notifySprintMutation: vi.fn()
+  notifySprintMutation: vi.fn(),
+  forceReleaseClaim: vi.fn()
 }))
 vi.mock('../../services/spec-quality/factory', () => ({
   createSpecQualityService: vi.fn()
@@ -66,9 +67,7 @@ vi.mock('../../data/sprint-task-repository', () => ({
 
 import { registerSprintLocalHandlers } from '../sprint-local'
 import { safeHandle } from '../../ipc-utils'
-import { getTask, resetTaskForRetry } from '../../services/sprint-service'
-
-const ACTIVE_TASK = { id: 't1', status: 'active', title: 'Test', repo: 'bde' }
+import { forceReleaseClaim } from '../../services/sprint-service'
 
 function extractHandler(channel: string): (...args: unknown[]) => Promise<unknown> {
   const call = vi.mocked(safeHandle).mock.calls.find(([ch]) => ch === channel)
@@ -76,90 +75,59 @@ function extractHandler(channel: string): (...args: unknown[]) => Promise<unknow
   return call[1] as (...args: unknown[]) => Promise<unknown>
 }
 
-describe('sprint:forceReleaseClaim — T-10 agent abort', () => {
+function registerWithDeps(extra: Record<string, unknown> = {}) {
+  const taskStateService = { transition: vi.fn().mockResolvedValue(undefined) }
+  registerSprintLocalHandlers({
+    onStatusTerminal: vi.fn(),
+    dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() },
+    taskStateService: taskStateService as never,
+    ...extra
+  })
+  return { taskStateService }
+}
+
+describe('sprint:forceReleaseClaim handler — thin delegation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('calls cancelAgent before re-queuing when agent manager is present', async () => {
-    vi.mocked(getTask)
-      .mockReturnValueOnce(ACTIVE_TASK as never)
-      .mockReturnValueOnce({ ...ACTIVE_TASK, status: 'queued' } as never)
+  it('delegates to forceReleaseClaim with the task ID and deps', async () => {
+    const releasedTask = { id: 't1', status: 'queued' }
+    vi.mocked(forceReleaseClaim).mockResolvedValue(releasedTask as never)
+    registerWithDeps()
 
-    const cancelAgent = vi.fn().mockResolvedValue(undefined)
-    const taskStateService = { transition: vi.fn().mockResolvedValue(undefined) }
+    const handler = extractHandler('sprint:forceReleaseClaim')
+    const result = await handler(null, 't1')
 
-    registerSprintLocalHandlers({
-      onStatusTerminal: vi.fn(),
-      dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() },
-      taskStateService: taskStateService as never,
-      cancelAgent
-    })
+    expect(forceReleaseClaim).toHaveBeenCalledWith('t1', expect.objectContaining({
+      taskStateService: expect.any(Object)
+    }))
+    expect(result).toBe(releasedTask)
+  })
+
+  it('passes cancelAgent through to forceReleaseClaim', async () => {
+    const cancelAgent = vi.fn()
+    vi.mocked(forceReleaseClaim).mockResolvedValue({ id: 't1', status: 'queued' } as never)
+    registerWithDeps({ cancelAgent })
 
     const handler = extractHandler('sprint:forceReleaseClaim')
     await handler(null, 't1')
 
-    expect(cancelAgent).toHaveBeenCalledWith('t1')
-    expect(cancelAgent.mock.invocationCallOrder[0]).toBeLessThan(
-      (resetTaskForRetry as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]
-    )
+    expect(forceReleaseClaim).toHaveBeenCalledWith('t1', expect.objectContaining({ cancelAgent }))
   })
 
-  it('proceeds without abort when cancelAgent is not provided', async () => {
-    vi.mocked(getTask)
-      .mockReturnValueOnce(ACTIVE_TASK as never)
-      .mockReturnValueOnce({ ...ACTIVE_TASK, status: 'queued' } as never)
-
-    const taskStateService = { transition: vi.fn().mockResolvedValue(undefined) }
-
-    registerSprintLocalHandlers({
-      onStatusTerminal: vi.fn(),
-      dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() },
-      taskStateService: taskStateService as never
-    })
-
+  it('rejects invalid task ID before calling forceReleaseClaim', async () => {
+    registerWithDeps()
     const handler = extractHandler('sprint:forceReleaseClaim')
-    await expect(handler(null, 't1')).resolves.toBeDefined()
-    expect(taskStateService.transition).toHaveBeenCalledWith('t1', 'queued', expect.anything())
+    await expect(handler(null, '../../etc/passwd')).rejects.toThrow('Invalid task ID format')
+    expect(forceReleaseClaim).not.toHaveBeenCalled()
   })
 
   it('throws when task is not active', async () => {
-    vi.mocked(getTask).mockReturnValue({ ...ACTIVE_TASK, status: 'queued' } as never)
-
-    const taskStateService = { transition: vi.fn() }
-    registerSprintLocalHandlers({
-      onStatusTerminal: vi.fn(),
-      dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() },
-      taskStateService: taskStateService as never
-    })
+    vi.mocked(forceReleaseClaim).mockRejectedValue(new Error('Cannot force-release a task with status queued — only active tasks can be released'))
+    registerWithDeps()
 
     const handler = extractHandler('sprint:forceReleaseClaim')
     await expect(handler(null, 't1')).rejects.toThrow('only active tasks can be released')
-  })
-
-  it('transition routes to queued with cleared fields', async () => {
-    vi.mocked(getTask)
-      .mockReturnValueOnce(ACTIVE_TASK as never)
-      .mockReturnValueOnce({ ...ACTIVE_TASK, status: 'queued' } as never)
-
-    const taskStateService = { transition: vi.fn().mockResolvedValue(undefined) }
-
-    registerSprintLocalHandlers({
-      onStatusTerminal: vi.fn(),
-      dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() },
-      taskStateService: taskStateService as never
-    })
-
-    const handler = extractHandler('sprint:forceReleaseClaim')
-    await handler(null, 't1')
-
-    expect(taskStateService.transition).toHaveBeenCalledWith(
-      't1',
-      'queued',
-      expect.objectContaining({
-        fields: { notes: null, agent_run_id: null },
-        caller: 'sprint:forceReleaseClaim'
-      })
-    )
   })
 })

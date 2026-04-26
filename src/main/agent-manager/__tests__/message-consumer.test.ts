@@ -17,13 +17,14 @@ vi.mock('../playground-handler', () => ({
 
 vi.mock('../../env-utils', () => ({
   invalidateOAuthToken: vi.fn(),
-  refreshOAuthTokenFromKeychain: vi.fn().mockResolvedValue(false)
+  refreshOAuthTokenFromKeychain: vi.fn().mockResolvedValue(true)
 }))
 
 // TurnTracker is not mocked — pass a stub object to avoid SQLite access.
 
 import {
   consumeMessages,
+  OAuthRefreshFailedError,
   __setStallTimeoutMsForTesting,
   __resetStallTimeoutForTesting
 } from '../message-consumer'
@@ -31,7 +32,7 @@ import type { ActiveAgent, AgentHandle } from '../types'
 import type { AgentRunClaim } from '../run-agent'
 import type { TurnTracker } from '../turn-tracker'
 import { emitAgentEvent, flushAgentEventBatcher } from '../../agent-event-mapper'
-import { invalidateOAuthToken } from '../../env-utils'
+import { invalidateOAuthToken, refreshOAuthTokenFromKeychain } from '../../env-utils'
 // detectorOnMessage is the shared spy declared at the top of this file —
 // tests push a hit into it via `detectorOnMessage.mockReturnValueOnce(...)`.
 
@@ -186,8 +187,127 @@ describe('consumeMessages', () => {
   it('invalidates OAuth token on Invalid API key error', async () => {
     const handle = makeErrorHandle(new Error('Invalid API key'))
     const agent = makeAgent()
-    await consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger())
+    const result = await consumeMessages(
+      handle,
+      agent,
+      makeTask(),
+      'run-1',
+      makeTurnTracker(),
+      makeLogger()
+    )
     expect(invalidateOAuthToken).toHaveBeenCalled()
+    expect(refreshOAuthTokenFromKeychain).toHaveBeenCalled()
+    // Result is fully settled before assertions — refresh was awaited in-band.
+    expect(result).toBeDefined()
+  })
+
+  describe('OAuth refresh on auth error', () => {
+    it('returns no streamError when refresh succeeds', async () => {
+      vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(true)
+      const handle = makeErrorHandle(new Error('Invalid API key'))
+      const agent = makeAgent()
+      const result = await consumeMessages(
+        handle,
+        agent,
+        makeTask(),
+        'run-1',
+        makeTurnTracker(),
+        makeLogger()
+      )
+      expect(result.streamError).toBeUndefined()
+    })
+
+    it('aborts handle and returns OAuthRefreshFailedError when refresh returns false', async () => {
+      vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(false)
+      const handle = makeErrorHandle(new Error('Invalid API key'))
+      const agent = makeAgent()
+      const result = await consumeMessages(
+        handle,
+        agent,
+        makeTask(),
+        'run-1',
+        makeTurnTracker(),
+        makeLogger()
+      )
+      expect(handle.abort).toHaveBeenCalledTimes(1)
+      expect(result.streamError).toBeInstanceOf(OAuthRefreshFailedError)
+      expect(emitAgentEvent).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ type: 'agent:error', message: expect.stringContaining('Stream interrupted:') })
+      )
+      expect(flushAgentEventBatcher).toHaveBeenCalled()
+    })
+
+    it('aborts handle and returns OAuthRefreshFailedError when refresh throws', async () => {
+      vi.mocked(refreshOAuthTokenFromKeychain).mockRejectedValue(new Error('Keychain unavailable'))
+      const handle = makeErrorHandle(new Error('Invalid API key'))
+      const agent = makeAgent()
+      const result = await consumeMessages(
+        handle,
+        agent,
+        makeTask(),
+        'run-1',
+        makeTurnTracker(),
+        makeLogger()
+      )
+      expect(handle.abort).toHaveBeenCalledTimes(1)
+      expect(result.streamError).toBeInstanceOf(OAuthRefreshFailedError)
+      expect(emitAgentEvent).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ type: 'agent:error', message: expect.stringContaining('Stream interrupted:') })
+      )
+      expect(flushAgentEventBatcher).toHaveBeenCalled()
+    })
+
+    it('calls onOAuthRefreshStart callback on refresh success', async () => {
+      vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(true)
+      const handle = makeErrorHandle(new Error('Invalid API key'))
+      const agent = makeAgent()
+      const onOAuthRefreshStart = vi.fn()
+      await consumeMessages(
+        handle,
+        agent,
+        makeTask(),
+        'run-1',
+        makeTurnTracker(),
+        makeLogger(),
+        20,
+        onOAuthRefreshStart
+      )
+      expect(onOAuthRefreshStart).toHaveBeenCalledTimes(1)
+      // Callback receives a pre-settled promise.
+      const receivedPromise = onOAuthRefreshStart.mock.calls[0][0]
+      await expect(receivedPromise).resolves.toBeUndefined()
+    })
+
+    it('calls onOAuthRefreshStart callback on refresh failure', async () => {
+      vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(false)
+      const handle = makeErrorHandle(new Error('Invalid API key'))
+      const agent = makeAgent()
+      const onOAuthRefreshStart = vi.fn()
+      await consumeMessages(
+        handle,
+        agent,
+        makeTask(),
+        'run-1',
+        makeTurnTracker(),
+        makeLogger(),
+        20,
+        onOAuthRefreshStart
+      )
+      expect(onOAuthRefreshStart).toHaveBeenCalledTimes(1)
+      const receivedPromise = onOAuthRefreshStart.mock.calls[0][0]
+      await expect(receivedPromise).resolves.toBeUndefined()
+    })
+
+    it('completes without throwing when onOAuthRefreshStart is absent', async () => {
+      vi.mocked(refreshOAuthTokenFromKeychain).mockResolvedValue(true)
+      const handle = makeErrorHandle(new Error('Invalid API key'))
+      const agent = makeAgent()
+      await expect(
+        consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger(), 20)
+      ).resolves.toBeDefined()
+    })
   })
 
   it('increments rateLimitCount on rate_limit messages', async () => {

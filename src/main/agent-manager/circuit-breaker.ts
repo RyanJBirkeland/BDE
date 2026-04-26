@@ -108,9 +108,13 @@ export class CircuitBreaker {
   isOpen(now: number = Date.now()): boolean {
     if (this.openUntil === 0) return false
     if (now >= this.openUntil) {
-      this.logger.info('[circuit-breaker] Pause elapsed — resuming drain')
+      const failureCount = this.consecutiveFailures
+      const openDurationMs = now - (this.openUntil - SPAWN_CIRCUIT_PAUSE_MS)
       this.openUntil = 0
       this.consecutiveFailures = 0
+      this.logger.info(
+        `[circuit-breaker] Pause elapsed — resuming drain (was open for ${openDurationMs}ms after ${failureCount} consecutive failures)`
+      )
       return false
     }
     return true

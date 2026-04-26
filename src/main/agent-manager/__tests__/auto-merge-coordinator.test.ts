@@ -31,7 +31,7 @@ import { getSettingJson } from '../../settings'
 // ---------------------------------------------------------------------------
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
 }
 
 function makeRepo(overrides: Record<string, unknown> = {}) {
@@ -246,6 +246,37 @@ describe('evaluateAutoMerge', () => {
       expect(ctx.onTaskTerminal).not.toHaveBeenCalled()
       expect(ctx.logger.error).toHaveBeenCalledWith(
         expect.stringContaining('Auto-merge check failed')
+      )
+    })
+
+    it('emits logger.event with auto-merge.status-update-failed when taskStateService.transition throws', async () => {
+      const dbError = new Error('db write failed')
+      const failingStateService = {
+        transition: vi.fn().mockRejectedValue(dbError)
+      }
+      const ctx = makeContext({
+        taskStateService: failingStateService as unknown as AutoMergeContext['taskStateService']
+      })
+
+      // evaluateAutoMerge catches the re-throw from finalizeAutoMergeStatus — task stays in review
+      await expect(evaluateAutoMerge(ctx)).resolves.toBeUndefined()
+
+      expect(ctx.logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('COMMIT LANDED ON MAIN but status update failed')
+      )
+      expect(ctx.logger.event).toHaveBeenCalledWith(
+        'auto-merge.status-update-failed',
+        expect.objectContaining({ taskId: 'task-1', error: expect.stringContaining('db write failed') })
+      )
+    })
+
+    it('does not call logger.event on the happy path', async () => {
+      const ctx = makeContext()
+      await evaluateAutoMerge(ctx)
+
+      expect(ctx.logger.event).not.toHaveBeenCalledWith(
+        'auto-merge.status-update-failed',
+        expect.anything()
       )
     })
   })

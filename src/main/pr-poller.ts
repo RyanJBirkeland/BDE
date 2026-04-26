@@ -1,3 +1,4 @@
+import pLimit from 'p-limit'
 import { broadcast as broadcastEvent } from './broadcast'
 import { getGitHubToken } from './config'
 import { githubFetchJson, fetchAllGitHubPages } from './github-fetch'
@@ -8,6 +9,7 @@ import { getErrorMessage } from '../shared/errors'
 
 export const POLL_INTERVAL_MS = 60_000
 const REQUEST_TIMEOUT_MS = 10_000
+const MAX_ERROR_COUNT = 10
 const logger = createLogger('pr-poller')
 
 function getGitHubRepos(): { owner: string; repo: string }[] {
@@ -30,16 +32,20 @@ function isOpenPr(item: unknown): item is OpenPr {
   return typeof pr.number === 'number' && typeof pr.html_url === 'string'
 }
 
-async function fetchOpenPrs(owner: string, repo: string, token: string): Promise<OpenPr[]> {
+async function fetchOpenPrs(
+  owner: string,
+  repo: string,
+  token: string
+): Promise<{ prs: OpenPr[]; error?: string }> {
   try {
     const data = await fetchAllGitHubPages<OpenPr>(
       `https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
       { token, timeoutMs: REQUEST_TIMEOUT_MS, validate: isOpenPr }
     )
-    return data.map((pr) => ({ ...pr, repo }))
+    return { prs: data.map((pr) => ({ ...pr, repo })) }
   } catch (err) {
     logger.warn(`Failed to fetch PRs for ${owner}/${repo}: ${getErrorMessage(err)}`)
-    return []
+    return { prs: [], error: getErrorMessage(err) }
   }
 }
 
@@ -49,17 +55,22 @@ async function fetchCheckRuns(
   sha: string,
   token: string
 ): Promise<CheckRunSummary> {
-  const empty: CheckRunSummary = { status: 'pending', total: 0, passed: 0, failed: 0, pending: 0 }
+  const unknownSummary: CheckRunSummary = {
+    status: 'unknown',
+    total: 0,
+    passed: 0,
+    failed: 0,
+    pending: 0
+  }
   const result = await githubFetchJson<{
     total_count: number
     check_runs: { status: string; conclusion: string | null }[]
   }>(`https://api.github.com/repos/${owner}/${repo}/commits/${sha}/check-runs`, token, {
     timeoutMs: REQUEST_TIMEOUT_MS
   })
-  // On any error, degrade to the "pending" sentinel so the UI doesn't flash
-  // false positives. Error details are logged + broadcast by githubFetchJson
-  // via `github:error` for the renderer toast system to surface.
-  if (!result.ok) return empty
+  // On any error, return 'unknown' — distinguishable from 'pending' (genuine in-progress builds).
+  // Error details are logged + broadcast by githubFetchJson via `github:error`.
+  if (!result.ok) return unknownSummary
 
   const data = result.data
   let passed = 0
@@ -79,28 +90,35 @@ async function poll(): Promise<void> {
   if (!token) return
 
   const repos = getGitHubRepos()
-  const settled = await Promise.allSettled(repos.map((r) => fetchOpenPrs(r.owner, r.repo, token)))
-  const results = settled
-    .filter((r): r is PromiseFulfilledResult<OpenPr[]> => r.status === 'fulfilled')
-    .map((r) => r.value)
-  settled
-    .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-    .forEach((r) => logger.warn(`[pr-poller] Repo fetch failed: ${r.reason}`))
-  const prs = results
-    .flat()
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+  const startMs = Date.now()
+  logger.info(`pr-poller: poll started — repos: ${repos.length}`)
 
-  const checks: Record<string, CheckRunSummary> = {}
-  const checkPromises = prs.map(async (pr) => {
-    const repoConfig = repos.find((r) => r.repo === pr.repo)
-    if (!repoConfig) return
-    const summary = await fetchCheckRuns(repoConfig.owner, repoConfig.repo, pr.head.sha, token)
-    checks[`${pr.repo}-${pr.number}`] = summary
+  const fetchResults = await Promise.all(repos.map((r) => fetchOpenPrs(r.owner, r.repo, token)))
+
+  const repoErrors: Record<string, string> = {}
+  const prs: OpenPr[] = []
+  fetchResults.forEach((result, i) => {
+    if (result.error) repoErrors[repos[i]!.repo] = result.error
+    prs.push(...result.prs)
   })
-  await Promise.allSettled(checkPromises)
+  prs.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
-  latestPayload = { prs, checks }
+  const limit = pLimit(4)
+  const checks: Record<string, CheckRunSummary> = {}
+  await Promise.allSettled(
+    prs.map((pr) =>
+      limit(async () => {
+        const repoConfig = repos.find((r) => r.repo === pr.repo)
+        if (!repoConfig) return
+        const summary = await fetchCheckRuns(repoConfig.owner, repoConfig.repo, pr.head.sha, token)
+        checks[`${pr.repo}-${pr.number}`] = summary
+      })
+    )
+  )
+
+  latestPayload = Object.keys(repoErrors).length > 0 ? { prs, checks, repoErrors } : { prs, checks }
   broadcastPrList(latestPayload)
+  logger.info(`pr-poller: poll completed — prs: ${prs.length}, repos: ${repos.length}, durationMs: ${Date.now() - startMs}`)
 }
 
 function broadcastPrList(payload: PrListPayload): void {
@@ -111,18 +129,20 @@ function safePoll(): void {
   // Backoff gate — skip this tick if we're still within a backoff window.
   if (Date.now() < nextPollAt) return
 
+  logger.event('pr-poller.tick.start', { errorCount })
+
   poll()
     .then(() => {
-      // Reset backoff on success
       errorCount = 0
       nextPollAt = 0
+      logger.event('pr-poller.tick.end', { ok: true })
     })
     .catch((err) => {
-      logger.error(`PR poller error: ${getErrorMessage(err)}`)
-      errorCount++
-      // Exponential backoff with max 5 minutes
+      errorCount = Math.min(errorCount + 1, MAX_ERROR_COUNT)
       const backoffMs = Math.min(POLL_INTERVAL_MS * Math.pow(2, errorCount - 1), 300_000)
       nextPollAt = Date.now() + backoffMs
+      logger.error(`PR poller error: ${getErrorMessage(err)}`)
+      logger.event('pr-poller.tick.end', { ok: false, error: getErrorMessage(err), backoffMs })
       logger.warn(`PR poller backing off for ${backoffMs}ms after ${errorCount} consecutive errors`)
     })
 }

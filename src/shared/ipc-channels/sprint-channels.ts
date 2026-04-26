@@ -4,6 +4,7 @@
 
 import type {
   SprintTask,
+  SprintTaskCore,
   ClaimedTask,
   TaskTemplate,
   TaskGroup,
@@ -67,7 +68,7 @@ export interface SprintChannels {
   }
   'sprint:healthCheck': {
     args: []
-    result: SprintTask[]
+    result: SprintTaskCore[]
   }
   'sprint:claimTask': {
     args: [taskId: string]

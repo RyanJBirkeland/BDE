@@ -15,7 +15,15 @@
  */
 import * as mutations from './sprint-mutations'
 import * as broadcaster from './sprint-mutation-broadcaster'
-import type { SprintTask } from '../../shared/types'
+import type { SprintTask, SprintTaskExecution, ClaimedTask, TaskTemplate } from '../../shared/types'
+import { getSettingJson } from '../settings'
+import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
+import type { TaskStateService } from './task-state-service'
+import { execFileAsync } from '../lib/async-utils'
+import { getErrorMessage } from '../../shared/errors'
+import { createLogger } from '../logger'
+
+const logger = createLogger('sprint-service')
 
 export type {
   CreateTaskInput,
@@ -58,9 +66,11 @@ export async function createTask(input: mutations.CreateTaskInput): Promise<Spri
   return row
 }
 
-export async function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
+export async function claimTask(id: string, claimedBy: string): Promise<SprintTaskExecution | null> {
   const result = await mutations.claimTask(id, claimedBy)
-  if (result) broadcaster.notifySprintMutation('updated', result)
+  // Broadcaster expects SprintTask (full shape) — the value IS a full task at runtime;
+  // the narrowed declared type is a contract hint, not a runtime shape change.
+  if (result) broadcaster.notifySprintMutation('updated', result as SprintTask)
   return result
 }
 
@@ -132,6 +142,7 @@ export type {
 
 import {
   createTaskWithValidation as _createTaskWithValidation,
+  resetTaskForRetry as _resetTaskForRetry,
   type CreateTaskWithValidationDeps,
   type CreateTaskWithValidationOpts,
 } from './sprint-use-cases'
@@ -148,4 +159,93 @@ export function createTaskWithValidation(
   opts?: CreateTaskWithValidationOpts
 ): Promise<SprintTask> {
   return _createTaskWithValidation(input, { ...deps, createTask }, opts)
+}
+
+export function buildClaimedTask(taskId: string): ClaimedTask | null {
+  const task = mutations.getTask(taskId)
+  if (!task) return null
+
+  let templatePromptPrefix: string | null = null
+  if (task.template_name) {
+    const templates = getSettingJson<TaskTemplate[]>('task.templates') ?? [...DEFAULT_TASK_TEMPLATES]
+    const match = templates.find((t) => t.name === task.template_name)
+    templatePromptPrefix = match?.promptPrefix ?? null
+  }
+
+  return { ...task, templatePromptPrefix }
+}
+
+export type ForceReleaseClaimDeps = {
+  cancelAgent?: (id: string) => Promise<void>
+  taskStateService: TaskStateService
+}
+
+export async function forceReleaseClaim(
+  taskId: string,
+  deps: ForceReleaseClaimDeps
+): Promise<SprintTask> {
+  const task = mutations.getTask(taskId)
+  if (!task) throw new Error(`Task ${taskId} not found`)
+  if (task.status !== 'active') {
+    throw new Error(
+      `Cannot force-release a task with status ${task.status} — only active tasks can be released`
+    )
+  }
+  await deps.cancelAgent?.(taskId)
+  await _resetTaskForRetry(taskId)
+  await deps.taskStateService.transition(taskId, 'queued', {
+    fields: { notes: null, agent_run_id: null },
+    caller: 'sprint:forceReleaseClaim'
+  })
+  const released = mutations.getTask(taskId)
+  if (!released) throw new Error(`Failed to release task ${taskId}`)
+  broadcaster.notifySprintMutation('updated', released)
+  return released
+}
+
+export async function retryTask(taskId: string): Promise<SprintTask> {
+  const task = mutations.getTask(taskId)
+  if (!task) throw new Error(`Task ${taskId} not found`)
+  if (task.status !== 'failed' && task.status !== 'error' && task.status !== 'cancelled') {
+    throw new Error(`Cannot retry task with status ${task.status}`)
+  }
+
+  const repos = getSettingJson<Array<{ name: string; localPath: string }>>('repos')
+  const repoConfig = repos?.find((r) => r.name === task.repo)
+  const repoPath = repoConfig?.localPath
+
+  if (repoPath) {
+    const slug = task.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .slice(0, 40)
+    try {
+      await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath })
+      const { stdout: branches } = await execFileAsync(
+        'git',
+        ['branch', '--list', `agent/${slug}*`],
+        { cwd: repoPath }
+      )
+      for (const branch of branches
+        .split('\n')
+        .map((b) => b.trim())
+        .filter(Boolean)) {
+        await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath }).catch((err) => {
+          logger.warn(`retryTask: failed to delete branch ${branch}: ${getErrorMessage(err)}`)
+        })
+      }
+    } catch {
+      /* cleanup is best-effort */
+    }
+  }
+
+  await _resetTaskForRetry(taskId)
+  const updated = await mutations.updateTask(taskId, {
+    status: 'queued',
+    notes: null,
+    agent_run_id: null
+  })
+  if (!updated) throw new Error(`Failed to update task ${taskId}`)
+  broadcaster.notifySprintMutation('updated', updated)
+  return updated
 }

@@ -17,7 +17,7 @@ import type {
   ListTasksOptions,
   UpdateTaskOptions
 } from '../data/sprint-task-repository'
-import type { SprintTask, SprintTaskPR } from '../../shared/types'
+import type { SprintTask, SprintTaskCore, SprintTaskExecution, SprintTaskPR } from '../../shared/types'
 import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
 export type {

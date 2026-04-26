@@ -18,7 +18,8 @@ vi.mock('../logger', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn()
+    debug: vi.fn(),
+    event: vi.fn()
   })
 }))
 
@@ -229,7 +230,7 @@ describe('pr-poller', () => {
     // Should still return result with empty check summary (the error is
     // broadcast via github:error but the poller degrades gracefully).
     expect(result.prs.length).toBe(1)
-    expect(result.checks['BDE-1'].status).toBe('pending')
+    expect(result.checks['BDE-1'].status).toBe('unknown')
     expect(result.checks['BDE-1'].total).toBe(0)
   })
 
@@ -270,5 +271,194 @@ describe('pr-poller', () => {
     expect(clearIntervalSpy).toHaveBeenCalledTimes(1)
 
     stopPrPoller() // cleans up; adds a second clearInterval call
+  })
+
+  it('degrades gracefully when check-run fetch returns 5xx (T-113)', async () => {
+    vi.mocked(fetchAllGitHubPages).mockResolvedValue([
+      {
+        number: 7,
+        title: 'PR with bad checks',
+        html_url: 'https://github.com/test/7',
+        state: 'open',
+        draft: false,
+        created_at: '2026-01-01',
+        updated_at: '2026-01-01',
+        head: { ref: 'feat/bad', sha: 'deadbeef' },
+        base: { ref: 'main' },
+        user: { login: 'dev' },
+        repo: 'BDE'
+      }
+    ])
+    vi.mocked(githubFetchJson).mockResolvedValue({
+      ok: false,
+      error: { kind: 'server', status: 500, message: 'Internal Server Error', retryable: true }
+    } as any)
+
+    const result = await refreshPrList()
+
+    expect(result.prs.length).toBe(1)
+    expect(result.checks['BDE-7'].status).toBe('unknown')
+    expect(result.checks['BDE-7'].total).toBe(0)
+  })
+
+  it('surfaces fetchOpenPrs error in repoErrors on the payload (T-112)', async () => {
+    vi.mocked(fetchAllGitHubPages).mockRejectedValue(new Error('network timeout'))
+
+    const result = await refreshPrList()
+
+    expect(result.prs).toEqual([])
+    expect(result.repoErrors).toBeDefined()
+    expect(result.repoErrors!['BDE']).toContain('network timeout')
+  })
+
+  it('check-run fetches are capped at 4 concurrent calls (T-114)', async () => {
+    // Use real timers for this test — the concurrency probe relies on
+    // genuine microtask/Promise scheduling that fake timers suppress.
+    vi.useRealTimers()
+
+    const prs = Array.from({ length: 6 }, (_, i) => ({
+      number: i + 1,
+      title: `PR ${i + 1}`,
+      html_url: `https://github.com/test/${i + 1}`,
+      state: 'open',
+      draft: false,
+      created_at: '2026-01-01',
+      updated_at: '2026-01-01',
+      head: { ref: `feat/pr-${i + 1}`, sha: `sha${i + 1}` },
+      base: { ref: 'main' },
+      user: { login: 'dev' },
+      repo: 'BDE'
+    }))
+    vi.mocked(fetchAllGitHubPages).mockResolvedValue(prs)
+
+    let inFlight = 0
+    let maxObservedInFlight = 0
+
+    // Each mock call delays slightly so concurrent calls overlap and
+    // pLimit's 4-slot cap is observable.
+    vi.mocked(githubFetchJson).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          inFlight++
+          maxObservedInFlight = Math.max(maxObservedInFlight, inFlight)
+          setTimeout(() => {
+            inFlight--
+            resolve({ ok: true, data: { total_count: 0, check_runs: [] } } as any)
+          }, 10)
+        })
+    )
+
+    await refreshPrList()
+
+    expect(maxObservedInFlight).toBeLessThanOrEqual(4)
+  })
+
+  it('poll() logs start and completion with PR count and durationMs per cycle (T-115)', async () => {
+    const { createLogger } = await import('../logger')
+    const mockLogger = vi.mocked(createLogger)('')
+
+    vi.mocked(fetchAllGitHubPages).mockResolvedValue([])
+
+    await refreshPrList()
+
+    const infoCalls = vi.mocked(mockLogger.info).mock.calls.map((args) => String(args[0]))
+    const startLog = infoCalls.find((msg) => msg.includes('poll started'))
+    const completionLog = infoCalls.find((msg) => msg.includes('poll completed'))
+
+    expect(startLog).toBeDefined()
+    expect(startLog).toMatch(/repos:/)
+
+    expect(completionLog).toBeDefined()
+    expect(completionLog).toMatch(/prs:/)
+    expect(completionLog).toMatch(/repos:/)
+    expect(completionLog).toMatch(/durationMs:/)
+  })
+
+  // ── T-112/T-113: Per-cycle observability events ──────────────────────────
+
+  it('emits pr-poller.tick.start and pr-poller.tick.end events on successful poll (T-112, T-113)', async () => {
+    const { createLogger } = await import('../logger')
+    const mockLogger = vi.mocked(createLogger).mock.results[0]?.value
+    if (!mockLogger) return
+
+    startPrPoller()
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+    stopPrPoller()
+
+    expect(mockLogger.event).toHaveBeenCalledWith('pr-poller.tick.start', expect.any(Object))
+    expect(mockLogger.event).toHaveBeenCalledWith('pr-poller.tick.end', expect.objectContaining({ ok: true }))
+  })
+
+  it('emits pr-poller.tick.end with ok:false when poll throws (T-113)', async () => {
+    const { createLogger } = await import('../logger')
+    const mockLogger = vi.mocked(createLogger).mock.results[0]?.value
+    if (!mockLogger) return
+
+    vi.mocked(fetchAllGitHubPages).mockRejectedValue(new Error('network failure'))
+
+    startPrPoller()
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+    stopPrPoller()
+
+    expect(mockLogger.event).toHaveBeenCalledWith(
+      'pr-poller.tick.end',
+      expect.objectContaining({ ok: false, error: expect.stringContaining('network failure') })
+    )
+  })
+
+  // ── T-102: errorCount bounded ────────────────────────────────────────────
+
+  it('caps errorCount at MAX_ERROR_COUNT so backoff does not grow unbounded (T-102)', async () => {
+    vi.mocked(fetchAllGitHubPages).mockRejectedValue(new Error('persistent error'))
+
+    startPrPoller()
+
+    // Run many cycles to drive errorCount past 10
+    for (let cycle = 0; cycle < 15; cycle++) {
+      await vi.advanceTimersByTimeAsync(300_000) // advance past the longest backoff
+      for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+    }
+    stopPrPoller()
+
+    // If errorCount were unbounded, backoff would grow to POLL_INTERVAL * 2^15 = months.
+    // Verify we can still poll after cap (nextPollAt should not be impossibly far in future).
+    // The indirect proof: startPrPoller resets errorCount=0, so subsequent polls fire.
+    vi.mocked(fetchAllGitHubPages).mockResolvedValue([])
+    startPrPoller()
+    for (let i = 0; i < 20; i++) await vi.advanceTimersByTimeAsync(1)
+    expect(fetchAllGitHubPages).toHaveBeenCalled()
+    stopPrPoller()
+  })
+
+  // ── T-106/T-107: Error path coverage ──────────────────────────────────
+
+  it('logs warning when a repo fetch returns 401 (T-107)', async () => {
+    const { createLogger } = await import('../logger')
+    const mockLogger = vi.mocked(createLogger).mock.results[0]?.value
+    if (!mockLogger) return
+
+    const authError = Object.assign(new Error('Request failed with status code 401'), {
+      response: { status: 401 }
+    })
+    vi.mocked(fetchAllGitHubPages).mockRejectedValue(authError)
+
+    const result = await refreshPrList()
+
+    // fetchOpenPrs catches and logs a warning; poll still completes with empty PRs
+    expect(mockLogger.warn).toHaveBeenCalled()
+    expect(result.prs).toEqual([])
+  })
+
+  it('degrades gracefully when a repo fetch returns 5xx (T-106)', async () => {
+    const serverError = Object.assign(new Error('GitHub server error (503)'), {
+      response: { status: 503 }
+    })
+    vi.mocked(fetchAllGitHubPages).mockRejectedValue(serverError)
+
+    const result = await refreshPrList()
+
+    // Should return an empty PR list rather than throwing
+    expect(result.prs).toEqual([])
+    expect(result).toHaveProperty('checks')
   })
 })

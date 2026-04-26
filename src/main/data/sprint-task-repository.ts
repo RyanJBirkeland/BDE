@@ -10,6 +10,8 @@
  */
 import type {
   SprintTask,
+  SprintTaskCore,
+  SprintTaskExecution,
   SprintTaskPR,
   TaskDependency,
   TaskGroup,
@@ -60,7 +62,7 @@ export interface IAgentTaskRepository {
   getOrphanedTasks(claimedBy: string): SprintTask[]
   clearStaleClaimedBy(claimedBy: string): number
   getActiveTaskCount(): number
-  claimTask(id: string, claimedBy: string, maxActive?: number): Promise<SprintTask | null>
+  claimTask(id: string, claimedBy: string, maxActive?: number): Promise<SprintTaskExecution | null>
   getGroup(id: string): TaskGroup | null
   getGroupTasks(groupId: string): SprintTask[]
   getGroupsWithDependencies(): Array<{ id: string; depends_on: EpicDependency[] | null }>
@@ -95,7 +97,7 @@ export interface IDashboardRepository {
   releaseTask(id: string, claimedBy: string): Promise<SprintTask | null>
   getQueueStats(): QueueStats
   getDoneTodayCount(): number
-  getHealthCheckTasks(): SprintTask[]
+  getHealthCheckTasks(): SprintTaskCore[]
   getSuccessRateBySpecType(): SpecTypeSuccessRate[]
   createReviewTaskFromAdhoc(input: {
     title: string

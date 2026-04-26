@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { SprintTask } from '../../shared/types'
+import type { SprintTaskPR } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { validateTransition, TASK_STATUSES } from '../../shared/task-state-machine'
 
@@ -175,7 +175,7 @@ export async function markTaskCancelledByPrNumber(
   }
 }
 
-export function listTasksWithOpenPrs(db?: Database.Database): SprintTask[] {
+export function listTasksWithOpenPrs(db?: Database.Database): SprintTaskPR[] {
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {

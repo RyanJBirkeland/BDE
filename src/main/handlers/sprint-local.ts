@@ -5,10 +5,8 @@ import { getTaskChanges } from '../data/task-changes'
 import { readFile } from 'fs/promises'
 import { createLogger } from '../logger'
 import type { DialogService } from '../dialog-service'
-import type { TaskTemplate, ClaimedTask, SprintTask } from '../../shared/types'
+import type { SprintTask } from '../../shared/types'
 import type { WorkflowTemplate } from '../../shared/workflow-types'
-import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
-import { getSettingJson } from '../settings'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { validateDependencyGraph } from '../services/dependency-service'
 import {
@@ -27,8 +25,8 @@ import {
   getSuccessRateBySpecType,
   createTaskWithValidation,
   updateTaskFromUi,
-  resetTaskForRetry,
-  notifySprintMutation,
+  buildClaimedTask,
+  forceReleaseClaim,
   type CreateTaskInput
 } from '../services/sprint-service'
 import { createSprintTaskRepository } from '../data/sprint-task-repository'
@@ -183,21 +181,9 @@ export function registerSprintLocalHandlers(
   ): GeneratePromptResponse => generatePrompt(args)
   safeHandle('sprint:generatePrompt', generatePromptHandler)
 
-  safeHandle('sprint:claimTask', async (_e, taskId: string): Promise<ClaimedTask | null> => {
+  safeHandle('sprint:claimTask', async (_e, taskId: string) => {
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-    const task = getTask(taskId)
-    if (!task) return null
-
-    let templatePromptPrefix: string | null = null
-    if (task.template_name) {
-      const templates = getSettingJson<TaskTemplate[]>('task.templates') ?? [
-        ...DEFAULT_TASK_TEMPLATES
-      ]
-      const match = templates.find((t) => t.name === task.template_name)
-      templatePromptPrefix = match?.promptPrefix ?? null
-    }
-
-    return { ...task, templatePromptPrefix }
+    return buildClaimedTask(taskId)
   })
 
   safeHandle('sprint:healthCheck', async () => {
@@ -267,24 +253,7 @@ export function registerSprintLocalHandlers(
 
   safeHandle('sprint:forceReleaseClaim', async (_e, taskId: string) => {
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-    const task = getTask(taskId)
-    if (!task) throw new Error(`Task ${taskId} not found`)
-    if (task.status !== 'active') {
-      throw new Error(`Cannot force-release a task with status ${task.status} — only active tasks can be released`)
-    }
-    // Abort the running agent before re-queuing so it does not continue
-    // consuming API credits or commit to a task that is no longer claimed.
-    // No-op when no agent is currently running for this task.
-    await deps.cancelAgent?.(taskId)
-    await resetTaskForRetry(taskId)
-    await deps.taskStateService.transition(taskId, 'queued', {
-      fields: { notes: null, agent_run_id: null },
-      caller: 'sprint:forceReleaseClaim'
-    })
-    const released = getTask(taskId)
-    if (!released) throw new Error(`Failed to release task ${taskId}`)
-    notifySprintMutation('updated', released)
-    return released
+    return forceReleaseClaim(taskId, deps)
   })
 }
 

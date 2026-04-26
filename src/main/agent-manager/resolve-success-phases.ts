@@ -415,6 +415,7 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
       await logUncommittedWorktreeState(taskId, worktreePath, logger)
+      logger.event('completion.no_commits', { taskId, branch, retryCount })
 
       const summaryNote = agentSummary
         ? `${NO_COMMITS_NOTE} Last agent output: ${agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)}`

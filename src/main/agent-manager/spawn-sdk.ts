@@ -114,14 +114,19 @@ export function spawnViaSdk(
     }
   })
 
-  // Extract sessionId from the first message that carries it
+  // Extract sessionId from the first message that carries it; subsequent
+  // messages with a different session_id are ignored — only the first wins.
   let resolvedSessionId = randomUUID()
+  let sessionIdResolved = false
 
   async function* wrapMessages(): AsyncIterable<unknown> {
     for await (const msg of queryResult) {
-      const sid = getSessionId(msg)
-      if (sid && sid !== resolvedSessionId) {
-        resolvedSessionId = sid as ReturnType<typeof randomUUID>
+      if (!sessionIdResolved) {
+        const sid = getSessionId(msg)
+        if (sid) {
+          resolvedSessionId = sid as ReturnType<typeof randomUUID>
+          sessionIdResolved = true
+        }
       }
       yield msg
     }

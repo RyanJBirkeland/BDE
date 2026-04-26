@@ -7,7 +7,7 @@ import { is } from '@electron-toolkit/utils'
 import { BDE_DB_PATH } from './paths'
 import { getDb, backupDatabase } from './db'
 import { startPrPoller, stopPrPoller } from './pr-poller'
-import { createSprintPrPoller } from './sprint-pr-poller'
+import { SprintPrPoller } from './sprint-pr-poller'
 import { pollPrStatuses } from './github-pr-status'
 import {
   listTasksWithOpenPrs,
@@ -234,7 +234,7 @@ export function startPrPollers(terminalDeps: {
   dialog: DialogService
 }): void {
   const pollerLogger = createLogger('sprint-pr-poller')
-  const sprintPrPoller = createSprintPrPoller({
+  const sprintPrPoller = new SprintPrPoller({
     listTasksWithOpenPrs,
     pollPrStatuses,
     markTaskDoneByPrNumber,

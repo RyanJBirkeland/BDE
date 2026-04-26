@@ -77,30 +77,43 @@ export interface ConsumeMessagesResult {
 }
 
 /**
- * Handles OAuth token refresh after auth errors.
- *
- * Calls `onRefreshStarted` with the in-flight promise so the drain loop can
- * await it (via `AgentManager.awaitOAuthRefresh`) before spawning the next
- * agent — preventing the new spawn from reading the same stale token.
+ * Raised when an OAuth refresh fails after an auth error.
+ * Callers can `instanceof`-check this without comparing error message strings.
  */
-function handleOAuthRefresh(
+export class OAuthRefreshFailedError extends Error {
+  constructor(message = 'OAuth refresh failed after auth error — stream aborted') {
+    super(message)
+    this.name = 'OAuthRefreshFailedError'
+  }
+}
+
+/**
+ * Awaits an OAuth token refresh after an auth error.
+ *
+ * Returns `true` when the new token is on disk, `false` when the refresh
+ * failed or threw. The caller receives a boolean so it can decide whether
+ * to let the stream retry cleanly or abort with `OAuthRefreshFailedError`.
+ */
+async function handleOAuthRefresh(
   logger: Logger,
   onRefreshStarted?: (promise: Promise<unknown>) => void
-): void {
+): Promise<boolean> {
   invalidateOAuthToken()
-  // Intentionally fire-and-forget: Keychain access on macOS can block for several seconds.
-  // Awaiting it here would stall the entire message-consumer loop while the stream is still live.
-  // The next agent spawn will pick up the refreshed token; errors are logged via .catch() below.
-  const refreshPromise = refreshOAuthTokenFromKeychain()
-    .then((ok) => {
-      if (ok)
-        logger.info('[agent-manager] OAuth token auto-refreshed from Keychain after auth failure')
-    })
-    .catch((err) => {
-      logError(logger, '[agent-manager] Failed to auto-refresh OAuth token after auth failure', err)
-    })
-  onRefreshStarted?.(refreshPromise)
-  logger.warn(`[agent-manager] Auth failure detected — OAuth token cache invalidated`)
+  logger.warn('[agent-manager] Auth failure detected — OAuth token cache invalidated')
+  try {
+    const refreshed = await refreshOAuthTokenFromKeychain()
+    if (refreshed) {
+      logger.info('[agent-manager] OAuth token auto-refreshed from Keychain after auth failure')
+      onRefreshStarted?.(Promise.resolve())
+      return true
+    }
+    onRefreshStarted?.(Promise.resolve())
+    return false
+  } catch (err) {
+    logError(logger, '[agent-manager] Failed to auto-refresh OAuth token after auth failure', err)
+    onRefreshStarted?.(Promise.resolve())
+    return false
+  }
 }
 
 /**
@@ -246,7 +259,8 @@ export async function consumeMessages(
           emitAgentEvent(agentRunId, {
             type: 'agent:error',
             message: turnsError.message,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            taskId: task.id
           })
           flushAgentEventBatcher()
           return { exitCode, lastAgentOutput, streamError: turnsError, pendingPlaygroundPaths }
@@ -265,7 +279,8 @@ export async function consumeMessages(
         emitAgentEvent(agentRunId, {
           type: 'agent:error',
           message: budgetError.message,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          taskId: task.id
         })
         flushAgentEventBatcher()
         return {
@@ -285,6 +300,35 @@ export async function consumeMessages(
       error: errMsg
     })
     logError(logger, `[agent-manager] Error consuming messages for task ${task.id}`, err)
+
+    const isAuthError =
+      errMsg.includes('Invalid API key') ||
+      errMsg.includes('invalid_api_key') ||
+      errMsg.includes('authentication')
+
+    if (isAuthError) {
+      const refreshSucceeded = await handleOAuthRefresh(logger, onOAuthRefreshStart)
+      if (refreshSucceeded) {
+        // Token is fresh — caller can retry cleanly; no streamError.
+        flushAgentEventBatcher()
+        return { exitCode, lastAgentOutput, pendingPlaygroundPaths }
+      }
+      // Refresh failed: abort the handle and return a typed error so the caller
+      // can distinguish "auth failure we already handled" from generic stream errors.
+      handle.abort()
+      const refreshError = new OAuthRefreshFailedError()
+      emitAgentEvent(agentRunId, {
+        type: 'agent:error',
+        message: `Stream interrupted: OAuth refresh failed after auth error — stream aborted`,
+        timestamp: Date.now(),
+        taskId: task.id,
+        messagesConsumed,
+        lastEventType
+      })
+      flushAgentEventBatcher()
+      return { exitCode, lastAgentOutput, streamError: refreshError, pendingPlaygroundPaths }
+    }
+
     emitAgentEvent(agentRunId, {
       type: 'agent:error',
       message: `Stream interrupted: ${errMsg}`,
@@ -293,13 +337,6 @@ export async function consumeMessages(
       messagesConsumed,
       lastEventType
     })
-    if (
-      errMsg.includes('Invalid API key') ||
-      errMsg.includes('invalid_api_key') ||
-      errMsg.includes('authentication')
-    ) {
-      handleOAuthRefresh(logger, onOAuthRefreshStart)
-    }
     // Flush immediately: the batcher's 100ms timer may not fire before the
     // next drain tick or process shutdown, so the stream-error event would
     // be lost. Flushing here guarantees it reaches SQLite.

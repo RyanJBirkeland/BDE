@@ -111,6 +111,9 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
             deps.logger.error(`[task-terminal-service] resolveDependents failed for ${id}: ${err}`)
           }
         }
+        deps.logger.info(
+          `[task-terminal] resolved ${totalCount - failedTaskIds.length} dependents in ${totalCount} tasks`
+        )
         if (failedTaskIds.length > 0) {
           deps.logger.error(
             `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`

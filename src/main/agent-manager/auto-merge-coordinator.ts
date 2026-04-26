@@ -134,6 +134,7 @@ async function finalizeAutoMergeStatus(
     logger.error(
       `[auto-merge] COMMIT LANDED ON MAIN but status update failed — task ${taskId} may need manual status reconciliation: ${err}`
     )
+    logger.event('auto-merge.status-update-failed', { taskId, error: String(err) })
     throw err
   }
 }

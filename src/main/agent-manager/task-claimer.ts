@@ -164,6 +164,7 @@ async function skipIfAlreadyOnMain(
     )
     return false
   }
+  deps.logger.event('task.auto-complete', { taskId: task.id, sha: match.sha, matchedOn: match.matchedOn })
   return true
 }
 
@@ -286,6 +287,7 @@ export async function processQueuedTask(
     const wt = await prepareWorktreeForTask(task, repoPath, deps)
     if (!wt) return
 
+    deps.logger.info(`[agent-manager] Task ${task.id} claimed — spawning agent in ${wt.worktreePath}`)
     await deps.spawnAgent(task, wt, repoPath)
   } finally {
     deps.processingTasks.delete(taskId)

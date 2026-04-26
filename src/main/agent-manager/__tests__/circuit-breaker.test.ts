@@ -121,6 +121,22 @@ describe('spawn failure circuit breaker (PHASE3-3.4)', () => {
     expect(mgr.__testInternals.circuitBreaker.failureCount).toBe(0)
   })
 
+  it('logs failure count and open duration when auto-resetting', () => {
+    const logger = makeLogger()
+    const breaker = new CircuitBreaker(logger)
+    for (let i = 0; i < SPAWN_CIRCUIT_FAILURE_THRESHOLD; i++) {
+      breaker.recordFailure('task-x', 'spawn error')
+    }
+    expect(breaker.isOpen()).toBe(true)
+
+    const future = breaker.openUntilTimestamp + 1
+    breaker.isOpen(future)
+
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringMatching(/Pause elapsed — resuming drain \(was open for \d+ms after \d+ consecutive failures\)/)
+    )
+  })
+
   it('drain loop is skipped while breaker is open', async () => {
     const repo = makeRepo()
     const mgr = new AgentManagerImpl(baseConfig, repo, makeLogger())

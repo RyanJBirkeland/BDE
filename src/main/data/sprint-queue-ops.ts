@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { SprintTask } from '../../shared/types'
+import type { SprintTask, SprintTaskExecution } from '../../shared/types'
 import { getDb } from '../db'
 import { recordTaskChanges } from './task-changes'
 import { withRetryAsync } from './sqlite-retry'
@@ -40,7 +40,7 @@ export async function claimTask(
   claimedBy: string,
   maxActive?: number,
   db?: Database.Database
-): Promise<SprintTask | null> {
+): Promise<SprintTaskExecution | null> {
   const conn = db ?? getDb()
   const now = nowIso()
 
@@ -49,20 +49,21 @@ export async function claimTask(
   // under contention (replacing the blocking Atomics.wait in withRetry).
   // IMMEDIATE acquires the write lock upfront to prevent concurrent WIP-check races.
   try {
-    const result = await withRetryAsync(() =>
-      conn.transaction(() => {
-        if (maxActive !== undefined && !checkWipLimit(conn, maxActive)) {
-          return null
-        }
+    const result = await withRetryAsync(
+      () =>
+        conn.transaction(() => {
+          if (maxActive !== undefined && !checkWipLimit(conn, maxActive)) {
+            return null
+          }
 
-        // DL-13 & DL-18: Record audit trail before update (pass conn for consistency)
-        const oldTask = fetchTask(id, conn)
+          // DL-13 & DL-18: Record audit trail before update (pass conn for consistency)
+          const oldTask = fetchTask(id, conn)
         if (!oldTask) return null
 
         const claimValidation = validateTransition(oldTask.status, 'active')
         if (!claimValidation.ok) {
           getSprintQueriesLogger().warn(
-            `[sprint-queue-ops] claimTask(id=${id}): ${claimValidation.reason}`
+            `[sprint-queue-ops] claimTask(id=${id}, title="${oldTask.title}"): invalid transition ${oldTask.status} → active — ${claimValidation.reason}`
           )
           return null
         }
@@ -87,7 +88,8 @@ export async function claimTask(
         }
 
         return updated
-      })()
+      })(),
+      { logger: getSprintQueriesLogger() }
     )
 
     return result ? mapRowToTask(result) : null

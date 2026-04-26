@@ -1,10 +1,31 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+const mockExecFileAsync = vi.fn()
+vi.mock('../../lib/async-utils', () => ({
+  execFileAsync: (...args: unknown[]) => mockExecFileAsync(...args)
+}))
+
+vi.mock('../../env-utils', () => ({
+  buildAgentEnv: vi.fn().mockReturnValue({})
+}))
+
+vi.mock('../git-operations', () => ({
+  rebaseOntoMain: vi.fn(),
+  autoCommitIfDirty: vi.fn()
+}))
+
+vi.mock('../review-transition', () => ({
+  transitionToReview: vi.fn()
+}))
+
 import {
   extractTaskIdFromBranch,
   branchMatchesTask,
   assertBranchTipMatches,
-  BranchTipMismatchError
+  BranchTipMismatchError,
+  hasCommitsAheadOfMain
 } from '../resolve-success-phases'
+import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
 describe('extractTaskIdFromBranch', () => {
   it('extracts the task id slug from a standard agent branch name', () => {
@@ -228,5 +249,85 @@ describe('legitimate tip-mismatch still rejected', () => {
         readTipCommit
       )
     ).rejects.toBeInstanceOf(BranchTipMismatchError)
+  })
+})
+
+describe('hasCommitsAheadOfMain — no-commits structured event', () => {
+  function makeLogger() {
+    return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
+  }
+
+  function makeRepo(): IAgentTaskRepository {
+    return {
+      getTask: vi.fn().mockReturnValue({ id: 'task-1', status: 'active', started_at: null }),
+      updateTask: vi.fn().mockResolvedValue(undefined),
+      claimTask: vi.fn(),
+      getQueuedTasks: vi.fn().mockReturnValue([]),
+      getOrphanedTasks: vi.fn().mockReturnValue([]),
+      getTasksWithDependencies: vi.fn().mockReturnValue([]),
+      clearStaleClaimedBy: vi.fn().mockReturnValue(0),
+      getActiveTaskCount: vi.fn().mockReturnValue(0),
+      getGroup: vi.fn().mockReturnValue(null),
+      getGroupTasks: vi.fn().mockReturnValue([]),
+      getGroupsWithDependencies: vi.fn().mockReturnValue([])
+    } as unknown as IAgentTaskRepository
+  }
+
+  function makeBaseOpts(overrides: Partial<Parameters<typeof hasCommitsAheadOfMain>[0]> = {}) {
+    const logger = makeLogger()
+    const repo = makeRepo()
+    const resolveFailure = vi.fn().mockResolvedValue({ isTerminal: false, writeFailed: false })
+    return {
+      taskId: 'task-1',
+      branch: 'agent/t-1-test-branch-abcdef12',
+      worktreePath: '/tmp/worktrees/task-1',
+      agentSummary: null,
+      retryCount: 0,
+      repo,
+      logger,
+      onTaskTerminal: vi.fn().mockResolvedValue(undefined),
+      taskStateService: { transition: vi.fn().mockResolvedValue(undefined) } as never,
+      resolveFailure,
+      ...overrides
+    }
+  }
+
+  beforeEach(() => {
+    mockExecFileAsync.mockReset()
+  })
+
+  it('emits completion.no_commits event when rev-list returns 0 and retry is available', async () => {
+    // All execFileAsync calls return empty — rev-list=0, git diff/status for logging
+    mockExecFileAsync.mockResolvedValue({ stdout: '0\n', stderr: '' })
+
+    const opts = makeBaseOpts({ retryCount: 0 })
+    await hasCommitsAheadOfMain(opts)
+
+    expect(opts.logger.event).toHaveBeenCalledWith(
+      'completion.no_commits',
+      expect.objectContaining({ taskId: 'task-1', branch: 'agent/t-1-test-branch-abcdef12', retryCount: 0 })
+    )
+  })
+
+  it('emits completion.no_commits event when rev-list returns 0 and retries are exhausted', async () => {
+    mockExecFileAsync.mockResolvedValue({ stdout: '0\n', stderr: '' })
+
+    // MAX_NO_COMMITS_RETRIES is 3 — pass retryCount at or above to trigger exhausted path
+    const opts = makeBaseOpts({ retryCount: 3 })
+    await hasCommitsAheadOfMain(opts)
+
+    expect(opts.logger.event).toHaveBeenCalledWith(
+      'completion.no_commits',
+      expect.objectContaining({ taskId: 'task-1', retryCount: 3 })
+    )
+  })
+
+  it('does not emit completion.no_commits when commits exist', async () => {
+    mockExecFileAsync.mockResolvedValue({ stdout: '3\n', stderr: '' })
+
+    const opts = makeBaseOpts()
+    await hasCommitsAheadOfMain(opts)
+
+    expect(opts.logger.event).not.toHaveBeenCalledWith('completion.no_commits', expect.anything())
   })
 })
