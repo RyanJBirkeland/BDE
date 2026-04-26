@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { SprintTask } from '../../shared/types'
+import type { SprintTask, SprintTaskExecution } from '../../shared/types'
 import { getDb } from '../db'
 import { recordTaskChanges } from './task-changes'
 import { withRetryAsync } from './sqlite-retry'
@@ -40,7 +40,7 @@ export async function claimTask(
   claimedBy: string,
   maxActive?: number,
   db?: Database.Database
-): Promise<SprintTask | null> {
+): Promise<SprintTaskExecution | null> {
   const conn = db ?? getDb()
   const now = nowIso()
 

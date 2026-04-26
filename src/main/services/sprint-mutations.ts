@@ -18,7 +18,7 @@ import {
   type ListTasksOptions,
   type UpdateTaskOptions
 } from '../data/sprint-task-repository'
-import type { SprintTask, SprintTaskPR } from '../../shared/types'
+import type { SprintTask, SprintTaskCore, SprintTaskExecution, SprintTaskPR } from '../../shared/types'
 import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
 export type {
@@ -77,7 +77,7 @@ export function listTasksWithOpenPrs(): SprintTaskPR[] {
   return getRepo().listTasksWithOpenPrs()
 }
 
-export function getHealthCheckTasks(): SprintTask[] {
+export function getHealthCheckTasks(): SprintTaskCore[] {
   return getRepo().getHealthCheckTasks()
 }
 
@@ -95,7 +95,7 @@ export function createTask(input: CreateTaskInput): Promise<SprintTask | null> {
   return getRepo().createTask(input)
 }
 
-export function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
+export function claimTask(id: string, claimedBy: string): Promise<SprintTaskExecution | null> {
   return getRepo().claimTask(id, claimedBy)
 }
 

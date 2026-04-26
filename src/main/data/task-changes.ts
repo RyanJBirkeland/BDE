@@ -1,5 +1,6 @@
 import { getDb } from '../db'
 import type Database from 'better-sqlite3'
+import { MS_PER_DAY } from '../../shared/time'
 
 export interface TaskChange {
   id: number
@@ -138,7 +139,7 @@ function normalizeHistoryOptions(limitOrOptions: number | GetTaskChangesOptions 
  */
 export function pruneOldChanges(daysToKeep: number = 30, db?: Database.Database): number {
   const conn = db ?? getDb()
-  const cutoff = new Date(Date.now() - daysToKeep * 86400000).toISOString()
+  const cutoff = new Date(Date.now() - daysToKeep * MS_PER_DAY).toISOString()
   const result = conn.prepare('DELETE FROM task_changes WHERE changed_at < ?').run(cutoff)
   return result.changes
 }

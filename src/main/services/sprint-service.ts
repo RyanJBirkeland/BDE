@@ -15,7 +15,7 @@
  */
 import * as mutations from './sprint-mutations'
 import * as broadcaster from './sprint-mutation-broadcaster'
-import type { SprintTask, ClaimedTask, TaskTemplate } from '../../shared/types'
+import type { SprintTask, SprintTaskExecution, ClaimedTask, TaskTemplate } from '../../shared/types'
 import { getSettingJson } from '../settings'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import type { TaskStateService } from './task-state-service'
@@ -66,9 +66,11 @@ export async function createTask(input: mutations.CreateTaskInput): Promise<Spri
   return row
 }
 
-export async function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
+export async function claimTask(id: string, claimedBy: string): Promise<SprintTaskExecution | null> {
   const result = await mutations.claimTask(id, claimedBy)
-  if (result) broadcaster.notifySprintMutation('updated', result)
+  // Broadcaster expects SprintTask (full shape) — the value IS a full task at runtime;
+  // the narrowed declared type is a contract hint, not a runtime shape change.
+  if (result) broadcaster.notifySprintMutation('updated', result as SprintTask)
   return result
 }
 
