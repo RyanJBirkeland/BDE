@@ -31,7 +31,7 @@ function makeRepo(overrides: Partial<IAgentTaskRepository> = {}): IAgentTaskRepo
 
 function makeDeps(
   overrides: Partial<DrainLoopDeps> = {},
-  drainFailureCounts = new Map<string, number>()
+  counts = new Map<string, number>()
 ): DrainLoopDeps {
   const repo = makeRepo(overrides.repo as any)
   const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() } as any
@@ -66,7 +66,9 @@ function makeDeps(
     isDepIndexDirty: () => false,
     setDepIndexDirty: vi.fn(),
     setConcurrency: vi.fn(),
-    drainFailureCounts,
+    incrementDrainFailure: (taskId) => counts.set(taskId, (counts.get(taskId) ?? 0) + 1),
+    clearDrainFailure: (taskId) => counts.delete(taskId),
+    drainFailureCountFor: (taskId) => counts.get(taskId) ?? 0,
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     taskStateService,
     emitDrainPaused: vi.fn(),

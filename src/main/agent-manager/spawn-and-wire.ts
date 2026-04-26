@@ -101,7 +101,7 @@ export async function spawnAndWireAgent(
   effectiveModel: string,
   deps: RunAgentDeps
 ): Promise<{ agent: ActiveAgent; agentRunId: string; turnTracker: TurnTracker }> {
-  const { activeAgents, logger, repo, onSpawnSuccess } = deps
+  const { spawnRegistry, logger, repo, onSpawnSuccess } = deps
 
   // V0.6 — refresh credentials immediately before spawn. The drain-loop
   // precondition caches for 5 minutes; assembleRunContext + validateTaskForRun
@@ -152,7 +152,7 @@ export async function spawnAndWireAgent(
     effectiveModel,
     worktree,
     prompt,
-    activeAgents,
+    spawnRegistry,
     repo,
     logger
   )

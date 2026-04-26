@@ -81,7 +81,7 @@ export interface DrainLoopDeps {
   isShuttingDown: () => boolean
   isCircuitOpen: (now?: number) => boolean
   circuitOpenUntil: number
-  activeAgents: Map<string, ActiveAgent>
+  activeAgents: ReadonlyMap<string, ActiveAgent>
   /** Returns the live ConcurrencyState — called each time to avoid stale captures. */
   getConcurrency: () => ConcurrencyState
   /** Returns the count of spawned agents not yet registered in activeAgents. */
@@ -91,8 +91,12 @@ export interface DrainLoopDeps {
   setDepIndexDirty: (dirty: boolean) => void
   setConcurrency: (state: ConcurrencyState) => void
   processQueuedTask: (rawTask: SprintTask, taskStatusMap: Map<string, string>) => Promise<void>
-  /** Counts consecutive drain-loop failures per task. Lives on AgentManagerImpl, passed in to persist across ticks. */
-  drainFailureCounts: Map<string, number>
+  /** Increment the consecutive drain-failure count for a task. */
+  incrementDrainFailure: (taskId: string) => void
+  /** Clear the consecutive drain-failure count for a task (called on success or quarantine). */
+  clearDrainFailure: (taskId: string) => void
+  /** Returns the current consecutive drain-failure count for a task. */
+  drainFailureCountFor: (taskId: string) => number
   /** Called when a task is quarantined after repeated failures so dependency resolution runs. */
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   /** Central status-transition service — used by applyQuarantine to route status writes. */
@@ -255,7 +259,7 @@ export async function drainQueuedTasks(
     try {
       await deps.processQueuedTask(rawTask, taskStatusMap)
       // Clear failure count on successful processing — task is no longer churning.
-      if (taskId) deps.drainFailureCounts.delete(taskId)
+      if (taskId) deps.clearDrainFailure(taskId)
     } catch (err) {
       deps.logger.error(`[agent-manager] Failed to process task ${taskId}: ${err}`)
       if (!taskId) continue
@@ -316,8 +320,8 @@ function readQueueDepth(deps: DrainLoopDeps): number {
  * delegate to `applyQuarantine`. Each step has a single responsibility.
  */
 function handleSpecLevelFailure(taskId: string, err: unknown, deps: DrainLoopDeps): void {
-  const count = (deps.drainFailureCounts.get(taskId) ?? 0) + 1
-  deps.drainFailureCounts.set(taskId, count)
+  deps.incrementDrainFailure(taskId)
+  const count = deps.drainFailureCountFor(taskId)
   if (!shouldQuarantine(count)) return
 
   deps.logger.error(
@@ -358,7 +362,7 @@ function applyQuarantine(taskId: string, note: string, deps: DrainLoopDeps): voi
       .then(() => {
         // Clear the failure count only after a successful status write —
         // if the write fails the count must stay so future ticks can re-quarantine.
-        deps.drainFailureCounts.delete(taskId)
+        deps.clearDrainFailure(taskId)
       })
       .catch((termErr) =>
         deps.logger.warn(`[agent-manager] transition failed for quarantined task ${taskId}: ${termErr}`)

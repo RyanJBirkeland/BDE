@@ -20,6 +20,7 @@ import type { AgentRunClaim } from '../run-agent'
 import type { TurnTracker } from '../turn-tracker'
 import { createAgentRecord } from '../../agent-history'
 import { emitAgentEvent } from '../../agent-event-mapper'
+import { SpawnRegistry } from '../spawn-registry'
 
 function _makeTurnTrackerStub(): TurnTracker {
   return {
@@ -86,14 +87,14 @@ describe('initializeAgentTracking', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('returns agent, agentRunId, and turnTracker', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const result = initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -103,29 +104,29 @@ describe('initializeAgentTracking', () => {
   })
 
   it('registers agent in activeAgents map', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
-    expect(activeAgents.has('task-1')).toBe(true)
+    expect(spawnRegistry.hasActiveAgent('task-1')).toBe(true)
   })
 
   it('agent has expected shape', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { agent } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -136,14 +137,14 @@ describe('initializeAgentTracking', () => {
   })
 
   it('agent agentRunId matches returned agentRunId', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { agent, agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -151,14 +152,14 @@ describe('initializeAgentTracking', () => {
   })
 
   it('persists agent_run_id on the task via repo.updateTask', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -166,14 +167,14 @@ describe('initializeAgentTracking', () => {
   })
 
   it('calls createAgentRecord', async () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -190,14 +191,14 @@ describe('initializeAgentTracking', () => {
   })
 
   it('emits agent:started event', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -208,7 +209,7 @@ describe('initializeAgentTracking', () => {
   })
 
   it('wires handle.onStderr to emit agent:stderr events', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const handle = makeHandle()
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
@@ -216,7 +217,7 @@ describe('initializeAgentTracking', () => {
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -231,7 +232,7 @@ describe('initializeAgentTracking', () => {
   })
 
   it('logs warning when updateTask fails', async () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     vi.mocked(mockRepo.updateTask).mockRejectedValueOnce(new Error('DB error'))
     const logger = makeLogger()
     initializeAgentTracking(
@@ -240,7 +241,7 @@ describe('initializeAgentTracking', () => {
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       logger
     )
@@ -252,14 +253,14 @@ describe('initializeAgentTracking', () => {
   })
 
   it('applies max_runtime_ms from task', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { agent } = initializeAgentTracking(
       makeTask({ max_runtime_ms: 120000 }),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -267,14 +268,14 @@ describe('initializeAgentTracking', () => {
   })
 
   it('applies max_cost_usd from task', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { agent } = initializeAgentTracking(
       makeTask({ max_cost_usd: 3.0 }),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -282,14 +283,14 @@ describe('initializeAgentTracking', () => {
   })
 
   it('turnTracker is a TurnTracker instance', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { turnTracker } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )
@@ -300,14 +301,14 @@ describe('initializeAgentTracking', () => {
 
   // Use stub to verify the turnTracker returned is the same one registered in the result
   it('returned turnTracker has the agentRunId bound', () => {
-    const activeAgents = new Map()
+    const spawnRegistry = new SpawnRegistry()
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
       DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
-      activeAgents,
+      spawnRegistry,
       mockRepo,
       makeLogger()
     )

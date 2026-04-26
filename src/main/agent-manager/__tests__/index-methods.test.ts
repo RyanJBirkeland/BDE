@@ -237,9 +237,8 @@ describe('AgentManagerImpl — class internals', () => {
   // -------------------------------------------------------------------------
 
   describe('state visibility', () => {
-    it('_activeAgents is an empty Map on construction', () => {
+    it('_activeAgents is empty on construction', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      expect(manager.__testInternals.activeAgents).toBeInstanceOf(Map)
       expect(manager.__testInternals.activeAgents.size).toBe(0)
     })
 
@@ -249,9 +248,8 @@ describe('AgentManagerImpl — class internals', () => {
       expect(manager.__testInternals.concurrency.maxSlots).toBe(5)
     })
 
-    it('_processingTasks is an empty Set on construction', () => {
+    it('_processingTasks is empty on construction', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      expect(manager.__testInternals.processingTasks).toBeInstanceOf(Set)
       expect(manager.__testInternals.processingTasks.size).toBe(0)
     })
   })
@@ -265,8 +263,8 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const raw = makeRawTask({ id: 'task-race' })
 
-      // Pre-populate the guard set
-      manager.__testInternals.processingTasks.add('task-race')
+      // Pre-populate the guard via spawnRegistry
+      manager.__testInternals.spawnRegistry.markProcessing('task-race')
 
       await manager.__testInternals.processQueuedTask(raw, new Map())
 
@@ -284,7 +282,7 @@ describe('AgentManagerImpl — class internals', () => {
 
       await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager.__testInternals.processingTasks.has('task-cleanup')).toBe(false)
+      expect(manager.__testInternals.spawnRegistry.isProcessing('task-cleanup')).toBe(false)
     })
 
     it('removes task from _processingTasks even when claim fails (early return path)', async () => {
@@ -294,7 +292,7 @@ describe('AgentManagerImpl — class internals', () => {
 
       await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager.__testInternals.processingTasks.has('task-claim-fail')).toBe(false)
+      expect(manager.__testInternals.spawnRegistry.isProcessing('task-claim-fail')).toBe(false)
     })
 
     it('removes task from _processingTasks when repo path not found (early return path)', async () => {
@@ -304,7 +302,7 @@ describe('AgentManagerImpl — class internals', () => {
 
       await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager.__testInternals.processingTasks.has('task-no-repo')).toBe(false)
+      expect(manager.__testInternals.spawnRegistry.isProcessing('task-no-repo')).toBe(false)
       expect(claimTask).not.toHaveBeenCalled()
     })
 
@@ -315,7 +313,7 @@ describe('AgentManagerImpl — class internals', () => {
 
       await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager.__testInternals.processingTasks.has('task-wt-fail')).toBe(false)
+      expect(manager.__testInternals.spawnRegistry.isProcessing('task-wt-fail')).toBe(false)
     })
   })
 
@@ -327,23 +325,23 @@ describe('AgentManagerImpl — class internals', () => {
     it('skips agents whose taskId is in _processingTasks — agent NOT killed despite max-runtime verdict', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-in-flight')
-      manager.__testInternals.activeAgents.set('task-in-flight', agent)
-      manager.__testInternals.processingTasks.add('task-in-flight')
+      manager.__testInternals.spawnRegistry.registerAgent(agent)
+      manager.__testInternals.spawnRegistry.markProcessing('task-in-flight')
 
       // checkAgent returns max-runtime — without the guard the agent would be killed
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
       manager.__testInternals.watchdogLoop()
 
-      // Agent must still be in _activeAgents — guard protected it
-      expect(manager.__testInternals.activeAgents.has('task-in-flight')).toBe(true)
+      // Agent must still be in registry — guard protected it
+      expect(manager.__testInternals.spawnRegistry.hasActiveAgent('task-in-flight')).toBe(true)
       expect(agent.handle.abort).not.toHaveBeenCalled()
     })
 
     it('kills agents NOT in _processingTasks when verdict is max-runtime', async () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-idle')
-      manager.__testInternals.activeAgents.set('task-idle', agent)
+      manager.__testInternals.spawnRegistry.registerAgent(agent)
       // _processingTasks does NOT contain this agent
 
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
@@ -351,20 +349,20 @@ describe('AgentManagerImpl — class internals', () => {
       await manager.__testInternals.watchdogLoop()
 
       // Agent should be removed and abort called
-      expect(manager.__testInternals.activeAgents.has('task-idle')).toBe(false)
+      expect(manager.__testInternals.spawnRegistry.hasActiveAgent('task-idle')).toBe(false)
       expect(agent.handle.abort).toHaveBeenCalledOnce()
     })
 
     it('does not kill agents when verdict is ok', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-healthy')
-      manager.__testInternals.activeAgents.set('task-healthy', agent)
+      manager.__testInternals.spawnRegistry.registerAgent(agent)
 
       vi.mocked(checkAgent).mockReturnValue('ok')
 
       manager.__testInternals.watchdogLoop()
 
-      expect(manager.__testInternals.activeAgents.has('task-healthy')).toBe(true)
+      expect(manager.__testInternals.spawnRegistry.hasActiveAgent('task-healthy')).toBe(true)
       expect(agent.handle.abort).not.toHaveBeenCalled()
     })
 
@@ -374,21 +372,21 @@ describe('AgentManagerImpl — class internals', () => {
       const agentA = makeActiveAgent('task-a')
       const agentB = makeActiveAgent('task-b')
 
-      manager.__testInternals.activeAgents.set('task-a', agentA)
-      manager.__testInternals.activeAgents.set('task-b', agentB)
+      manager.__testInternals.spawnRegistry.registerAgent(agentA)
+      manager.__testInternals.spawnRegistry.registerAgent(agentB)
 
       // task-a is being processed — protected by guard
-      manager.__testInternals.processingTasks.add('task-a')
+      manager.__testInternals.spawnRegistry.markProcessing('task-a')
 
       // Both would fail max-runtime check
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
       await manager.__testInternals.watchdogLoop()
 
-      expect(manager.__testInternals.activeAgents.has('task-a')).toBe(true)
+      expect(manager.__testInternals.spawnRegistry.hasActiveAgent('task-a')).toBe(true)
       expect(agentA.handle.abort).not.toHaveBeenCalled()
 
-      expect(manager.__testInternals.activeAgents.has('task-b')).toBe(false)
+      expect(manager.__testInternals.spawnRegistry.hasActiveAgent('task-b')).toBe(false)
       expect(agentB.handle.abort).toHaveBeenCalledOnce()
     })
 
@@ -400,7 +398,7 @@ describe('AgentManagerImpl — class internals', () => {
         const agent = makeActiveAgent('task-sigkill')
         // Attach a mock process with kill() to the handle, simulating the SDK subprocess
         ;(agent.handle as any).process = { kill: killFn }
-        manager.__testInternals.activeAgents.set('task-sigkill', agent)
+        manager.__testInternals.spawnRegistry.registerAgent(agent)
 
         vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
@@ -411,9 +409,9 @@ describe('AgentManagerImpl — class internals', () => {
         expect(killFn).not.toHaveBeenCalled()
 
         // SIGKILL escalation fires after FORCE_KILL_DELAY_MS only if the agent
-        // is still in the active map. The watchdog removed it on the same tick,
-        // so re-insert to simulate a stuck agent that did not exit.
-        manager.__testInternals.activeAgents.set('task-sigkill', agent)
+        // is still in the registry. The watchdog removed it on the same tick,
+        // so re-register to simulate a stuck agent that did not exit.
+        manager.__testInternals.spawnRegistry.registerAgent(agent)
         vi.advanceTimersByTime(5_000)
 
         expect(killFn).toHaveBeenCalledWith('SIGKILL')
@@ -426,7 +424,7 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-no-proc')
       // No process property on handle
-      manager.__testInternals.activeAgents.set('task-no-proc', agent)
+      manager.__testInternals.spawnRegistry.registerAgent(agent)
 
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
@@ -905,7 +903,7 @@ describe('AgentManagerImpl — class internals', () => {
 
       const processSpy = vi.spyOn(manager, '_processQueuedTask').mockImplementation(async () => {
         // Simulate a slot being consumed after the first task
-        manager.__testInternals.activeAgents.set('fill-slot', makeActiveAgent('fill-slot'))
+        manager.__testInternals.spawnRegistry.registerAgent(makeActiveAgent('fill-slot'))
       })
 
       await manager.__testInternals.drainQueuedTasks(2, new Map())

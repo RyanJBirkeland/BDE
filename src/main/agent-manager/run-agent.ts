@@ -6,6 +6,7 @@
  */
 import type { ActiveAgent } from './types'
 import type { Logger } from '../logger'
+import type { SpawnRegistry } from './spawn-registry'
 import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'
 import { resolveSuccess, resolveFailure, deleteAgentBranchBeforeRetry } from './completion'
@@ -59,7 +60,7 @@ export interface AgentRunClaim {
 
 /** Spawn lifecycle and agent process management. */
 export interface RunAgentSpawnDeps {
-  activeAgents: Map<string, ActiveAgent>
+  spawnRegistry: SpawnRegistry
   defaultModel: string
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
@@ -634,7 +635,7 @@ async function handleSupersededRun(
   agent: ActiveAgent,
   deps: RunAgentDeps
 ): Promise<boolean> {
-  if (deps.activeAgents.get(task.id)?.agentRunId === agent.agentRunId) return false
+  if (deps.spawnRegistry.getAgent(task.id)?.agentRunId === agent.agentRunId) return false
   deps.logger.info(
     `[agent-manager] Agent ${task.id} (run ${agent.agentRunId}) already cleaned up or superseded by retry`
   )
@@ -654,8 +655,8 @@ async function persistAndCleanupAfterRun(
   deps: RunAgentDeps
 ): Promise<void> {
   // Remove from active map — guarded: a retry may have already overwritten this entry.
-  if (deps.activeAgents.get(task.id)?.agentRunId === agent.agentRunId) {
-    deps.activeAgents.delete(task.id)
+  if (deps.spawnRegistry.getAgent(task.id)?.agentRunId === agent.agentRunId) {
+    deps.spawnRegistry.removeAgent(task.id)
   }
   // Flush events before the next drain tick or cleanup — the 100ms batcher
   // timer is not guaranteed to fire before a new task starts or shutdown.

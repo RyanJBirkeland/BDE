@@ -64,7 +64,7 @@ export class ErrorRegistry {
   readonly circuitBreaker: CircuitBreaker
   readonly fastFailTracker: FastFailTracker
   /** Per-task consecutive drain-loop failure counts. Cleared on success or quarantine. */
-  readonly drainFailureCounts: Map<string, number>
+  private readonly drainFailureCounts: Map<string, number>
 
   constructor(logger: Logger) {
     this.circuitBreaker = new CircuitBreaker(logger)
@@ -90,8 +90,24 @@ export class ErrorRegistry {
     this.circuitBreaker.recordFailure(taskId, reason)
   }
 
-  getDrainFailureCount(taskId: string): number {
+  // ---- Drain-failure verb API ----
+
+  incrementFailure(taskId: string): void {
+    this.drainFailureCounts.set(taskId, (this.drainFailureCounts.get(taskId) ?? 0) + 1)
+  }
+
+  clearFailure(taskId: string): void {
+    this.drainFailureCounts.delete(taskId)
+  }
+
+  failureCountFor(taskId: string): number {
     return this.drainFailureCounts.get(taskId) ?? 0
+  }
+
+  // ---- Legacy accessors (kept for backward compat until all callers migrate) ----
+
+  getDrainFailureCount(taskId: string): number {
+    return this.failureCountFor(taskId)
   }
 
   setDrainFailureCount(taskId: string, count: number): void {
@@ -99,6 +115,6 @@ export class ErrorRegistry {
   }
 
   clearDrainFailureCount(taskId: string): void {
-    this.drainFailureCounts.delete(taskId)
+    this.clearFailure(taskId)
   }
 }

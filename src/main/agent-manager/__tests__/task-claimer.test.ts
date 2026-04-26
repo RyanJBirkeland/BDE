@@ -29,6 +29,7 @@ import { mapQueuedTask, checkAndBlockDeps } from '../task-mapper'
 import { getRepoPaths } from '../../paths'
 import { setupWorktree } from '../worktree'
 import type { MappedTask } from '../task-mapper'
+import { SpawnRegistry } from '../spawn-registry'
 
 function makeTask(overrides: Partial<MappedTask> = {}): MappedTask {
   return {
@@ -223,16 +224,16 @@ describe('processQueuedTask', () => {
   function makeProcessDeps(overrides: Partial<ProcessQueuedTaskDeps> = {}): ProcessQueuedTaskDeps {
     return {
       ...makeClaimerDeps(),
-      processingTasks: new Set(),
-      activeAgents: new Map(),
+      spawnRegistry: new SpawnRegistry(),
       spawnAgent: vi.fn(),
       ...overrides
     }
   }
 
   it('skips task if already in processingTasks (idempotency guard)', async () => {
-    const processingTasks = new Set(['task-1'])
-    const deps = makeProcessDeps({ processingTasks })
+    const spawnRegistry = new SpawnRegistry()
+    spawnRegistry.markProcessing('task-1')
+    const deps = makeProcessDeps({ spawnRegistry })
     await processQueuedTask({ id: 'task-1' }, new Map(), deps)
     expect(deps.spawnAgent).not.toHaveBeenCalled()
   })
@@ -248,18 +249,18 @@ describe('processQueuedTask', () => {
   })
 
   it('removes taskId from processingTasks after completion', async () => {
-    const processingTasks = new Set<string>()
-    const deps = makeProcessDeps({ processingTasks })
+    const spawnRegistry = new SpawnRegistry()
+    const deps = makeProcessDeps({ spawnRegistry })
     await processQueuedTask({ id: 'task-1' }, new Map(), deps)
-    expect(processingTasks.has('task-1')).toBe(false)
+    expect(spawnRegistry.isProcessing('task-1')).toBe(false)
   })
 
   it('removes taskId from processingTasks even when an error occurs', async () => {
     vi.mocked(setupWorktree).mockRejectedValue(new Error('wt error'))
-    const processingTasks = new Set<string>()
-    const deps = makeProcessDeps({ processingTasks })
+    const spawnRegistry = new SpawnRegistry()
+    const deps = makeProcessDeps({ spawnRegistry })
     await processQueuedTask({ id: 'task-1' }, new Map(), deps)
-    expect(processingTasks.has('task-1')).toBe(false)
+    expect(spawnRegistry.isProcessing('task-1')).toBe(false)
   })
 
   it('does not call spawnAgent when claim fails', async () => {

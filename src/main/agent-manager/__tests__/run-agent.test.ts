@@ -31,6 +31,7 @@ import { buildAgentPrompt } from '../../lib/prompt-composer'
 import { TurnTracker } from '../turn-tracker'
 import { FAST_FAIL_EXHAUSTED_NOTE } from '../failure-messages'
 import { emitAgentEvent } from '../../agent-event-mapper'
+import { SpawnRegistry } from '../spawn-registry'
 const mockMkdirSync = vi.mocked(mkdirSync)
 const mockReadFileSync = vi.mocked(readFileSync)
 const mockBuildAgentPrompt = vi.mocked(buildAgentPrompt)
@@ -204,7 +205,7 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
   } as unknown as import('../../../services/task-state-service').TaskStateService
 
   return {
-    activeAgents: new Map<string, ActiveAgent>(),
+    spawnRegistry: new SpawnRegistry(),
     defaultModel: DEFAULT_CONFIG.defaultModel,
     logger: {
       info: vi.fn(),
@@ -367,16 +368,16 @@ describe('runAgent — watchdog race', () => {
     const { resolveSuccess } = await import('../completion')
     const { cleanupWorktree } = await import('../worktree')
 
-    const activeAgents = new Map<string, ActiveAgent>()
+    const spawnRegistry = new SpawnRegistry()
 
-    // After messages are consumed, activeAgents should NOT have task.id
-    // We achieve this by deleting from activeAgents during message iteration
+    // After messages are consumed, registry should NOT have task.id
+    // We achieve this by removing from registry during message iteration
     const handle = {
       messages: {
         async *[Symbol.asyncIterator]() {
           yield { exit_code: 0 }
           // Simulate watchdog removing the agent between message loop end and the check
-          activeAgents.delete('task-1')
+          spawnRegistry.removeAgent('task-1')
         }
       },
       result: Promise.resolve({ exitCode: 0 })
@@ -384,7 +385,7 @@ describe('runAgent — watchdog race', () => {
 
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(handle)
 
-    const deps = makeDeps({ activeAgents })
+    const deps = makeDeps({ spawnRegistry })
     await runAgent(makeTask(), worktree, repoPath, deps)
 
     expect(deps.logger.info).toHaveBeenCalledWith(
@@ -933,7 +934,7 @@ describe('validateTaskForRun', () => {
 
     await expect(
       validateTaskForRun(emptyTask, { worktreePath: '/wt', branch: 'b' }, '/repo', {
-        activeAgents: new Map(),
+        spawnRegistry: new SpawnRegistry(),
         defaultModel: 'claude-3-5-sonnet-20241022',
         logger,
         onTaskTerminal,
@@ -965,7 +966,7 @@ describe('validateTaskForRun', () => {
 
     await expect(
       validateTaskForRun(task, { worktreePath: '/wt', branch: 'b' }, '/repo', {
-        activeAgents: new Map(),
+        spawnRegistry: new SpawnRegistry(),
         defaultModel: 'claude-3-5-sonnet-20241022',
         logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() },
         onTaskTerminal: vi.fn(),
@@ -1084,7 +1085,7 @@ describe('assembleRunContext', () => {
       task,
       { worktreePath: '/wt', branch: 'feat/x' },
       {
-        activeAgents: new Map(),
+        spawnRegistry: new SpawnRegistry(),
         defaultModel: 'claude-3-5-sonnet-20241022',
         logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() },
         onTaskTerminal: vi.fn(),
@@ -1145,14 +1146,14 @@ describe('runAgent — watchdog race: flushAgentEventBatcher', () => {
     const { spawnAgent } = await import('../sdk-adapter')
     const { flushAgentEventBatcher } = await import('../../agent-event-mapper')
 
-    const activeAgents = new Map<string, ActiveAgent>()
+    const spawnRegistry = new SpawnRegistry()
 
     const handle = {
       messages: {
         async *[Symbol.asyncIterator]() {
           yield { exit_code: 0 }
           // Simulate watchdog removing the agent before finalizeAgentRun checks
-          activeAgents.delete('task-1')
+          spawnRegistry.removeAgent('task-1')
         }
       },
       result: Promise.resolve({ exitCode: 0 })
@@ -1160,7 +1161,7 @@ describe('runAgent — watchdog race: flushAgentEventBatcher', () => {
 
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(handle)
 
-    const deps = makeDeps({ activeAgents })
+    const deps = makeDeps({ spawnRegistry })
     await runAgent(makeTask(), worktree, repoPath, deps)
 
     expect(vi.mocked(flushAgentEventBatcher)).toHaveBeenCalled()

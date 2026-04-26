@@ -9,6 +9,7 @@ vi.mock('../../agent-event-mapper', () => ({
 
 import { executeShutdown, type ShutdownCoordinatorDeps } from '../shutdown-coordinator'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
+import { SpawnRegistry } from '../spawn-registry'
 
 function makeAgent(taskId: string): ActiveAgent {
   return {
@@ -45,12 +46,26 @@ function makeLogger() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }
 
-function makeDeps(overrides: Partial<ShutdownCoordinatorDeps> = {}): ShutdownCoordinatorDeps {
+function registryWith(...agents: ActiveAgent[]): SpawnRegistry {
+  const registry = new SpawnRegistry()
+  for (const agent of agents) registry.registerAgent(agent)
+  return registry
+}
+
+function registryWithPromise(p: Promise<void>): SpawnRegistry {
+  const registry = new SpawnRegistry()
+  registry.trackPromise(p)
+  return registry
+}
+
+function makeDeps(
+  spawnRegistry: SpawnRegistry = new SpawnRegistry(),
+  overrides: Partial<Omit<ShutdownCoordinatorDeps, 'spawnRegistry'>> = {}
+): ShutdownCoordinatorDeps {
   return {
     repo: makeRepo(),
     logger: makeLogger(),
-    activeAgents: new Map(),
-    agentPromises: new Set(),
+    spawnRegistry,
     drainInFlight: null,
     ...overrides
   }
@@ -81,10 +96,7 @@ describe('executeShutdown', () => {
       order.push('abort')
     })
 
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
-      drainInFlight
-    })
+    const deps = makeDeps(registryWith(agent), { drainInFlight })
 
     const shutdownPromise = executeShutdown(deps, 100)
     resolveDrain()
@@ -97,12 +109,7 @@ describe('executeShutdown', () => {
   it('aborts all active agents', async () => {
     const agent1 = makeAgent('task-1')
     const agent2 = makeAgent('task-2')
-    const deps = makeDeps({
-      activeAgents: new Map([
-        ['task-1', agent1],
-        ['task-2', agent2]
-      ])
-    })
+    const deps = makeDeps(registryWith(agent1, agent2))
 
     await executeShutdown(deps, 100)
 
@@ -115,9 +122,7 @@ describe('executeShutdown', () => {
     vi.mocked(agent.handle.abort).mockImplementation(() => {
       throw new Error('abort failed')
     })
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]])
-    })
+    const deps = makeDeps(registryWith(agent))
 
     await expect(executeShutdown(deps, 100)).resolves.toBeUndefined()
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to abort agent'))
@@ -125,9 +130,7 @@ describe('executeShutdown', () => {
 
   it('re-queues active tasks after shutdown', async () => {
     const agent = makeAgent('task-1')
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]])
-    })
+    const deps = makeDeps(registryWith(agent))
 
     await executeShutdown(deps, 100)
 
@@ -142,14 +145,14 @@ describe('executeShutdown', () => {
     expect(deps.logger.info).toHaveBeenCalledWith(expect.stringContaining('Re-queued task task-1'))
   })
 
-  it('clears activeAgents after re-queuing', async () => {
+  it('clears active registry entries after re-queuing', async () => {
     const agent = makeAgent('task-1')
-    const activeAgents = new Map([['task-1', agent]])
-    const deps = makeDeps({ activeAgents })
+    const registry = registryWith(agent)
+    const deps = makeDeps(registry)
 
     await executeShutdown(deps, 100)
 
-    expect(activeAgents.size).toBe(0)
+    expect(registry.hasActiveAgent('task-1')).toBe(false)
   })
 
   it('logs a warning when re-queue updateTask throws', async () => {
@@ -158,10 +161,7 @@ describe('executeShutdown', () => {
     vi.mocked(repo.updateTask).mockImplementation(() => {
       throw new Error('DB error')
     })
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
-      repo
-    })
+    const deps = makeDeps(registryWith(agent), { repo })
 
     await expect(executeShutdown(deps, 100)).resolves.toBeUndefined()
     expect(deps.logger.warn).toHaveBeenCalledWith(
@@ -174,7 +174,7 @@ describe('executeShutdown', () => {
     const p = new Promise<void>((r) => setTimeout(r, 10)).then(() => {
       settled.push('agent-done')
     })
-    const deps = makeDeps({ agentPromises: new Set([p]) })
+    const deps = makeDeps(registryWithPromise(p))
 
     await executeShutdown(deps, 500)
     expect(settled).toContain('agent-done')
@@ -188,7 +188,7 @@ describe('executeShutdown', () => {
 
   it('continues when drainInFlight rejects', async () => {
     const drainInFlight = Promise.reject(new Error('drain failed'))
-    const deps = makeDeps({ drainInFlight })
+    const deps = makeDeps(new SpawnRegistry(), { drainInFlight })
 
     await expect(executeShutdown(deps, 100)).resolves.toBeUndefined()
   })
@@ -197,10 +197,7 @@ describe('executeShutdown', () => {
     const agent = makeAgent('task-review')
     const repo = makeRepo()
     vi.mocked(repo.getTask).mockReturnValue({ id: 'task-review', status: 'review' } as any)
-    const deps = makeDeps({
-      activeAgents: new Map([['task-review', agent]]),
-      repo
-    })
+    const deps = makeDeps(registryWith(agent), { repo })
 
     await executeShutdown(deps, 100)
 
@@ -218,13 +215,7 @@ describe('executeShutdown', () => {
       if (id === 'task-review') return { id: 'task-review', status: 'review' } as any
       return { id: 'task-active', status: 'active' } as any
     })
-    const deps = makeDeps({
-      activeAgents: new Map([
-        ['task-active', activeAgent],
-        ['task-review', reviewAgent]
-      ]),
-      repo
-    })
+    const deps = makeDeps(registryWith(activeAgent, reviewAgent), { repo })
 
     await executeShutdown(deps, 100)
 

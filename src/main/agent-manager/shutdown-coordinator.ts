@@ -10,9 +10,9 @@
 
 import type { Logger } from '../logger'
 import { logError } from '../logger'
-import type { ActiveAgent } from './types'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { flushAgentEventBatcher } from '../agent-event-mapper'
+import type { SpawnRegistry } from './spawn-registry'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -21,8 +21,7 @@ import { flushAgentEventBatcher } from '../agent-event-mapper'
 export interface ShutdownCoordinatorDeps {
   repo: IAgentTaskRepository
   logger: Logger
-  activeAgents: Map<string, ActiveAgent>
-  agentPromises: Set<Promise<void>>
+  spawnRegistry: SpawnRegistry
   drainInFlight: Promise<void> | null
 }
 
@@ -50,7 +49,7 @@ export async function executeShutdown(
   }
 
   // Abort all active agents
-  for (const agent of deps.activeAgents.values()) {
+  for (const agent of deps.spawnRegistry.allAgents()) {
     try {
       agent.handle.abort()
     } catch (err) {
@@ -66,8 +65,9 @@ export async function executeShutdown(
   flushAgentEventBatcher()
 
   // Wait for all agent promises to settle (with timeout)
-  if (deps.agentPromises.size > 0) {
-    const allSettled = Promise.allSettled([...deps.agentPromises])
+  const promises = [...deps.spawnRegistry.allPromises()]
+  if (promises.length > 0) {
+    const allSettled = Promise.allSettled(promises)
     const timeout = new Promise<void>((r) => setTimeout(r, timeoutMs))
     await Promise.race([allSettled, timeout])
   }
@@ -75,7 +75,7 @@ export async function executeShutdown(
   // Re-queue tasks that are still in an active (non-review) state after shutdown.
   // Tasks already in 'review' status represent completed agent work waiting for
   // human review — they must not be disrupted by a shutdown-triggered re-queue.
-  for (const agent of deps.activeAgents.values()) {
+  for (const agent of deps.spawnRegistry.allAgents()) {
     try {
       const currentTask = deps.repo.getTask(agent.taskId)
       if (currentTask?.status === 'review') {
@@ -95,5 +95,8 @@ export async function executeShutdown(
       deps.logger.warn(`[agent-manager] Failed to re-queue task ${agent.taskId}: ${err}`)
     }
   }
-  deps.activeAgents.clear()
+  // Clear all active agents from the registry after shutdown
+  for (const agent of [...deps.spawnRegistry.allAgents()]) {
+    deps.spawnRegistry.removeAgent(agent.taskId)
+  }
 }

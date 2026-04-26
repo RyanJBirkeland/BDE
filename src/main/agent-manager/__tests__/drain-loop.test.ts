@@ -112,7 +112,9 @@ function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
     setDepIndexDirty: vi.fn(),
     setConcurrency: vi.fn(),
     processQueuedTask: vi.fn().mockResolvedValue(undefined),
-    drainFailureCounts: new Map<string, number>(),
+    incrementDrainFailure: vi.fn(),
+    clearDrainFailure: vi.fn(),
+    drainFailureCountFor: vi.fn().mockReturnValue(0),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     taskStateService: makeTaskStateService(repo),
     emitDrainPaused: vi.fn(),
@@ -404,9 +406,12 @@ describe('drain-loop: environmental failure pauses drain', () => {
     const processQueuedTask = vi
       .fn()
       .mockRejectedValue(new Error('TypeError: foo is not a function'))
-    // Pre-set failure count so the third failure trips the quarantine threshold in a single drain.
-    const drainFailureCounts = new Map<string, number>([['task-spec', 2]])
-    const deps = makeDeps({ repo, processQueuedTask, emitDrainPaused, drainFailureCounts })
+    // drainFailureCountFor returns 3 (DRAIN_QUARANTINE_THRESHOLD) so quarantine fires immediately.
+    // incrementDrainFailure is called before the count read; we simulate the post-increment state.
+    const drainFailureCountFor = vi.fn().mockImplementation((taskId: string) =>
+      taskId === 'task-spec' ? 3 : 0
+    )
+    const deps = makeDeps({ repo, processQueuedTask, emitDrainPaused, drainFailureCountFor })
 
     await drainQueuedTasks(1, new Map(), deps)
 

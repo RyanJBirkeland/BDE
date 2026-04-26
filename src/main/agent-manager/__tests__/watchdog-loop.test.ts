@@ -27,6 +27,7 @@ import {
   FORCE_KILL_DELAY_MS,
   type WatchdogLoopDeps
 } from '../watchdog-loop'
+import { SpawnRegistry } from '../spawn-registry'
 import { checkAgent } from '../watchdog'
 import { handleWatchdogVerdict } from '../watchdog-handler'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
@@ -86,20 +87,32 @@ function makeMetrics() {
   }
 }
 
-function makeDeps(overrides: Partial<WatchdogLoopDeps> = {}): WatchdogLoopDeps {
+function makeDepsWithRegistry(
+  spawnRegistry: SpawnRegistry,
+  overrides: Partial<WatchdogLoopDeps> = {}
+): WatchdogLoopDeps {
   const concurrency = makeConcurrencyState(2)
   return {
     config: baseConfig,
     repo: makeRepo(),
     metrics: makeMetrics() as any,
     logger: makeLogger(),
-    activeAgents: new Map(),
-    processingTasks: new Set(),
+    spawnRegistry,
     getConcurrency: () => concurrency,
     setConcurrency: vi.fn(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     ...overrides
   }
+}
+
+function registryWith(...agents: ActiveAgent[]): SpawnRegistry {
+  const registry = new SpawnRegistry()
+  for (const agent of agents) registry.registerAgent(agent)
+  return registry
+}
+
+function makeDeps(overrides: Partial<WatchdogLoopDeps> = {}): WatchdogLoopDeps {
+  return makeDepsWithRegistry(new SpawnRegistry(), overrides)
 }
 
 describe('forceKillAgent', () => {
@@ -154,10 +167,11 @@ describe('killAgentWithEscalation', () => {
     const agent = makeAgent('task-esc')
     const forceKill = vi.fn()
     agent.handle.forceKill = forceKill
-    const activeAgents = new Map([[agent.taskId, agent]])
+    const registry = new SpawnRegistry()
+    registry.registerAgent(agent)
     const logger = makeLogger()
 
-    killAgentWithEscalation(agent, activeAgents, logger)
+    killAgentWithEscalation(agent, registry, logger)
 
     expect(agent.handle.abort).toHaveBeenCalledTimes(1)
     expect(forceKill).not.toHaveBeenCalled()
@@ -170,14 +184,14 @@ describe('killAgentWithEscalation', () => {
     )
   })
 
-  it('skips the forced kill if the agent has already been removed from the active map', () => {
+  it('skips the forced kill if the agent has already been removed from the registry', () => {
     const agent = makeAgent('task-esc-gone')
     const forceKill = vi.fn()
     agent.handle.forceKill = forceKill
-    const activeAgents = new Map<string, ActiveAgent>()
+    const registry = new SpawnRegistry() // agent never registered — simulates already-removed
     const logger = makeLogger()
 
-    killAgentWithEscalation(agent, activeAgents, logger)
+    killAgentWithEscalation(agent, registry, logger)
 
     vi.advanceTimersByTime(FORCE_KILL_DELAY_MS)
 
@@ -226,10 +240,9 @@ describe('runWatchdog', () => {
 
   it('skips agents that are in processingTasks', async () => {
     const agent = makeAgent('task-1')
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
-      processingTasks: new Set(['task-1'])
-    })
+    const registry = registryWith(agent)
+    registry.markProcessing('task-1')
+    const deps = makeDepsWithRegistry(registry)
     vi.mocked(checkAgent).mockReturnValue('idle')
     await runWatchdog(deps)
     expect(deps.repo.updateTask).not.toHaveBeenCalled()
@@ -238,8 +251,7 @@ describe('runWatchdog', () => {
   it('kills agent and updates task when verdict is not ok', async () => {
     const agent = makeAgent('task-1')
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       getConcurrency: () => concurrency
     })
     vi.mocked(checkAgent).mockReturnValue('idle')
@@ -269,8 +281,7 @@ describe('runWatchdog', () => {
   it('records rate-limit-loop verdict and increments retriesQueued', async () => {
     const agent = makeAgent('task-1')
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       getConcurrency: () => concurrency
     })
     vi.mocked(checkAgent).mockReturnValue('rate-limit-loop')
@@ -290,8 +301,7 @@ describe('runWatchdog', () => {
   it('does not call onTaskTerminal when shouldNotifyTerminal is false', async () => {
     const agent = makeAgent('task-1')
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       getConcurrency: () => concurrency
     })
     vi.mocked(checkAgent).mockReturnValue('rate-limit-loop')
@@ -317,8 +327,7 @@ describe('runWatchdog', () => {
       callOrder.push('updateTask')
       return undefined as any
     })
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       repo,
       getConcurrency: () => concurrency
     })
@@ -350,8 +359,7 @@ describe('runWatchdog', () => {
       callOrder.push('onTaskTerminal')
       return Promise.resolve()
     })
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       getConcurrency: () => concurrency,
       onTaskTerminal
     })
@@ -383,8 +391,7 @@ describe('runWatchdog', () => {
     vi.mocked(repo.updateTask).mockImplementation(() => {
       throw new Error('DB error')
     })
-    const deps = makeDeps({
-      activeAgents: new Map([['task-1', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       repo,
       getConcurrency: () => concurrency
     })
@@ -409,16 +416,16 @@ describe('runWatchdog', () => {
   it('skips terminal notify and logs debug when orphan recovery wins the race (EP-5 T-29)', async () => {
     const agent = makeAgent('task-orphan')
     const concurrency = makeConcurrencyState(2)
-    const activeAgents = new Map<string, ActiveAgent>([['task-orphan', agent]])
-    const deps = makeDeps({ activeAgents, getConcurrency: () => concurrency })
+    const registry = registryWith(agent)
+    const deps = makeDepsWithRegistry(registry, { getConcurrency: () => concurrency })
 
     // Simulate orphan recovery replacing the agent between the collection loop
     // and the kill loop: checkAgent fires during collection (agent is still
     // present with agentRunId 'run-task-orphan'), then during the kill loop
-    // the map entry has been replaced with a newer run.
+    // the registry entry has been replaced with a newer run.
     vi.mocked(checkAgent).mockImplementation(() => {
-      // Replace the map entry with a newer run, as orphan recovery would do
-      activeAgents.set('task-orphan', { ...agent, agentRunId: 'run-newer' })
+      // Replace the registry entry with a newer run, as orphan recovery would do
+      registry.registerAgent({ ...agent, agentRunId: 'run-newer' })
       return 'idle'
     })
     vi.mocked(handleWatchdogVerdict).mockReturnValue({

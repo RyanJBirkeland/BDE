@@ -16,6 +16,7 @@ import { flushAgentEventBatcher } from '../agent-event-mapper'
 import { nowIso } from '../../shared/time'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { withRetryAsync } from '../data/sqlite-retry'
+import type { SpawnRegistry } from './spawn-registry'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -26,8 +27,7 @@ export interface WatchdogLoopDeps {
   repo: IAgentTaskRepository
   metrics: MetricsCollector
   logger: Logger
-  activeAgents: Map<string, ActiveAgent>
-  processingTasks: Set<string>
+  spawnRegistry: SpawnRegistry
   /** Returns the live ConcurrencyState — called each time to avoid stale captures. */
   getConcurrency: () => ConcurrencyState
   setConcurrency: (state: ConcurrencyState) => void
@@ -104,19 +104,19 @@ export function forceKillAgent(agent: ActiveAgent, logger: Logger): void {
 
 /**
  * Soft-kill the agent now and schedule a forced kill after the grace window
- * if the agent is still in `activeAgents`. The returned timer handle is
+ * if the agent is still in the spawn registry. The returned timer handle is
  * `unref()`'d so it never blocks process shutdown — pipeline tests that exit
  * during the grace window do not hang on a pending timeout.
  */
 export function killAgentWithEscalation(
   agent: ActiveAgent,
-  activeAgents: Map<string, ActiveAgent>,
+  spawnRegistry: SpawnRegistry,
   logger: Logger,
   delayMs: number = FORCE_KILL_DELAY_MS
 ): NodeJS.Timeout {
   softKillAgent(agent, logger)
   const timer = setTimeout(() => {
-    if (activeAgents.get(agent.taskId)?.agentRunId !== agent.agentRunId) return
+    if (spawnRegistry.getAgent(agent.taskId)?.agentRunId !== agent.agentRunId) return
     forceKillAgent(agent, logger)
   }, delayMs)
   if (typeof timer.unref === 'function') timer.unref()
@@ -142,7 +142,7 @@ export function abortAgent(agent: ActiveAgent, logger: Logger): void {
 }
 
 /**
- * Remove an agent from the active-agents map if it is still current.
+ * Remove an agent from the spawn registry if it is still current.
  * Guards against removing a newer retry that has overwritten the same task slot.
  */
 export function removeAgentFromMap(
@@ -156,16 +156,33 @@ export function removeAgentFromMap(
 }
 
 /**
+ * Remove an agent from the spawn registry if it is still current.
+ * Guards against removing a newer retry that has overwritten the same task slot.
+ */
+export function removeAgentFromRegistry(
+  agent: ActiveAgent,
+  spawnRegistry: SpawnRegistry
+): void {
+  if (spawnRegistry.getAgent(agent.taskId)?.agentRunId === agent.agentRunId) {
+    spawnRegistry.removeAgent(agent.taskId)
+  }
+}
+
+/**
  * Abort an active agent's handle and remove it from the active agents map.
  * Kept for backward compatibility with callers that need the combined operation.
  */
 export function killActiveAgent(
   agent: ActiveAgent,
-  activeAgents: Map<string, ActiveAgent>,
+  activeAgentsOrRegistry: Map<string, ActiveAgent> | SpawnRegistry,
   logger: Logger
 ): void {
   abortAgent(agent, logger)
-  removeAgentFromMap(agent, activeAgents)
+  if (activeAgentsOrRegistry instanceof Map) {
+    removeAgentFromMap(agent, activeAgentsOrRegistry)
+  } else {
+    removeAgentFromRegistry(agent, activeAgentsOrRegistry)
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -181,8 +198,8 @@ export function killActiveAgent(
 export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
   const agentsToKill: Array<{ agent: ActiveAgent; verdict: WatchdogAction }> = []
 
-  for (const agent of deps.activeAgents.values()) {
-    if (deps.processingTasks.has(agent.taskId)) continue
+  for (const agent of deps.spawnRegistry.allAgents()) {
+    if (deps.spawnRegistry.isProcessing(agent.taskId)) continue
     const verdict = checkAgent(agent, Date.now(), deps.config)
     if (verdict !== 'ok') {
       agentsToKill.push({ agent, verdict })
@@ -194,7 +211,7 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
     // from the active map and triggered terminal notification between the time
     // we collected agentsToKill and now. If the entry is gone (or has been
     // replaced by a newer retry), skip the kill path to prevent double-notify.
-    if (deps.activeAgents.get(agent.taskId)?.agentRunId !== agent.agentRunId) {
+    if (deps.spawnRegistry.getAgent(agent.taskId)?.agentRunId !== agent.agentRunId) {
       deps.logger.debug(
         `[watchdog] agent ${agent.taskId} (run ${agent.agentRunId}) already removed — skipping terminal notify`
       )
@@ -220,7 +237,7 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
     // if the agent has not exited by FORCE_KILL_DELAY_MS the timer fires a
     // SIGKILL (or the SDK abort fallback) so a stuck process never pins the
     // active-agents slot indefinitely.
-    killAgentWithEscalation(agent, deps.activeAgents, deps.logger)
+    killAgentWithEscalation(agent, deps.spawnRegistry, deps.logger)
     cleanupWorktreeIfNotInReview(agent, deps)
 
     const now = nowIso()
@@ -250,16 +267,16 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
         )
         const warningMessage = `Watchdog kill for task ${agent.taskId} could not be persisted after all retries — manual rescue may be needed. Error: ${err}`
         deps.broadcastToRenderer?.('manager:warning', { message: warningMessage })
-        removeAgentFromMap(agent, deps.activeAgents)
+        removeAgentFromRegistry(agent, deps.spawnRegistry)
         return
       }
 
       if (!writeSucceeded) return
     }
 
-    // Step 4: Remove from map only after DB write attempt so the watchdog does
+    // Step 4: Remove from registry only after DB write attempt so the watchdog does
     // not re-kill the same agent on the next tick before the status lands.
-    removeAgentFromMap(agent, deps.activeAgents)
+    removeAgentFromRegistry(agent, deps.spawnRegistry)
 
     // Step 5: Notify terminal handler after map removal so downstream logic
     // (dep resolution, metrics) sees a consistent state.
@@ -285,7 +302,7 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
  * `review` status — review worktrees are preserved for human inspection.
  * Errors are caught and logged so cleanup failure never blocks the watchdog.
  */
-function cleanupWorktreeIfNotInReview(agent: ActiveAgent, deps: WatchdogLoopDeps): void {
+function cleanupWorktreeIfNotInReview(agent: ActiveAgent, deps: Pick<WatchdogLoopDeps, 'repo' | 'logger' | 'cleanupAgentWorktree'>): void {
   if (!deps.cleanupAgentWorktree) return
 
   const task = deps.repo.getTask(agent.taskId)
