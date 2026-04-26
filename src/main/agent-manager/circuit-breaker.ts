@@ -8,7 +8,6 @@
  * reduce index.ts file size.
  */
 
-import { broadcast } from '../broadcast'
 import type { Logger } from '../logger'
 
 /**
@@ -35,7 +34,13 @@ export class CircuitBreaker {
   private openUntil = 0
   private recentFailures: SpawnFailureEntry[] = []
 
-  constructor(private readonly logger: Logger) {}
+  constructor(
+    private readonly logger: Logger,
+    private readonly onCircuitOpen?: (payload: {
+      consecutiveFailures: number
+      openUntil: number
+    }) => void
+  ) {}
 
   /**
    * Reset the circuit breaker counter on a successful agent spawn.
@@ -79,12 +84,12 @@ export class CircuitBreaker {
         recentFailures: this.recentFailures.map((f) => ({ taskId: f.taskId, reason: f.reason }))
       })
       try {
-        broadcast('agent-manager:circuit-breaker-open', {
+        this.onCircuitOpen?.({
           consecutiveFailures: this.consecutiveFailures,
           openUntil: this.openUntil
         })
       } catch (err) {
-        this.logger.warn(`[circuit-breaker] Failed to broadcast circuit-breaker event: ${err}`)
+        this.logger.warn(`[circuit-breaker] Failed to emit circuit-breaker event: ${err}`)
       }
     }
   }

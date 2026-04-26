@@ -13,11 +13,7 @@ vi.mock('electron', () => ({
   }
 }))
 
-// Mock broadcast
-vi.mock('../../broadcast', () => ({
-  broadcast: vi.fn(),
-  broadcastCoalesced: vi.fn()
-}))
+// broadcast is now injected via setSprintBroadcaster — no module-level mock needed
 
 // Mock webhook-service
 vi.mock('../webhook-service', () => ({
@@ -113,12 +109,16 @@ import {
 
 import { getDoneTodayCount as _getDoneTodayCount } from '../../data/reporting-queries'
 
-import { broadcast } from '../../broadcast'
+import { setSprintBroadcaster } from '../sprint-mutation-broadcaster'
+
+const mockBroadcastFn = vi.fn()
 
 describe('sprint-service', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
+    mockBroadcastFn.mockReset()
+    setSprintBroadcaster(mockBroadcastFn)
   })
 
   afterEach(() => {
@@ -155,51 +155,51 @@ describe('sprint-service', () => {
   })
 
   describe('createTask', () => {
-    it('creates task and fires created notification', () => {
+    it('creates task and fires created notification', async () => {
       const input: Partial<CreateTaskInput> = { title: 'New', repo: 'bde' }
       const created: Partial<SprintTask> = { id: 'abc', ...input }
-      vi.mocked(_createTask).mockReturnValue(created as SprintTask)
+      vi.mocked(_createTask).mockResolvedValue(created as SprintTask)
 
-      const result = createTask(input as CreateTaskInput)
+      const result = await createTask(input as CreateTaskInput)
       expect(result).toEqual(created)
       expect(_createTask).toHaveBeenCalledWith(input)
       vi.runAllTimers()
-      expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
+      expect(mockBroadcastFn).toHaveBeenCalled()
     })
 
-    it('does not notify when createTask returns null', () => {
-      vi.mocked(_createTask).mockReturnValue(null)
-      const result = createTask({ title: 'Bad', repo: 'bde' } as CreateTaskInput)
+    it('does not notify when createTask returns null', async () => {
+      vi.mocked(_createTask).mockResolvedValue(null)
+      const result = await createTask({ title: 'Bad', repo: 'bde' } as CreateTaskInput)
       expect(result).toBeNull()
-      expect(broadcast).not.toHaveBeenCalled()
+      expect(mockBroadcastFn).not.toHaveBeenCalled()
     })
   })
 
   describe('updateTask', () => {
-    it('updates task and fires updated notification', () => {
+    it('updates task and fires updated notification', async () => {
       const updated: Partial<SprintTask> = { id: '1', title: 'Updated' }
-      vi.mocked(_updateTask).mockReturnValue(updated as SprintTask)
+      vi.mocked(_updateTask).mockResolvedValue(updated as SprintTask)
 
-      const result = updateTask('1', { title: 'Updated' })
+      const result = await updateTask('1', { title: 'Updated' })
       expect(result).toEqual(updated)
       expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' }, undefined)
       vi.runAllTimers()
-      expect(broadcast).toHaveBeenCalledWith('sprint:externalChange') // updated)
+      expect(mockBroadcastFn).toHaveBeenCalled() // updated)
     })
 
-    it('forwards the optional caller attribution to the data layer', () => {
+    it('forwards the optional caller attribution to the data layer', async () => {
       const updated: Partial<SprintTask> = { id: '1', title: 'Updated' }
-      vi.mocked(_updateTask).mockReturnValue(updated as SprintTask)
+      vi.mocked(_updateTask).mockResolvedValue(updated as SprintTask)
 
-      updateTask('1', { title: 'Updated' }, { caller: 'mcp' })
+      await updateTask('1', { title: 'Updated' }, { caller: 'mcp' })
       expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' }, { caller: 'mcp' })
     })
 
-    it('does not notify when updateTask returns null', () => {
-      vi.mocked(_updateTask).mockReturnValue(null)
-      const result = updateTask('missing', { title: 'X' })
+    it('does not notify when updateTask returns null', async () => {
+      vi.mocked(_updateTask).mockResolvedValue(null)
+      const result = await updateTask('missing', { title: 'X' })
       expect(result).toBeNull()
-      expect(broadcast).not.toHaveBeenCalled()
+      expect(mockBroadcastFn).not.toHaveBeenCalled()
     })
   })
 
@@ -211,14 +211,14 @@ describe('sprint-service', () => {
       deleteTask('1')
       expect(_deleteTask).toHaveBeenCalledWith('1')
       vi.runAllTimers()
-      expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
+      expect(mockBroadcastFn).toHaveBeenCalled()
     })
 
     it('does not notify when task not found before delete', () => {
       vi.mocked(_getTask).mockReturnValue(null)
       deleteTask('missing')
       expect(_deleteTask).toHaveBeenCalledWith('missing')
-      expect(broadcast).not.toHaveBeenCalled()
+      expect(mockBroadcastFn).not.toHaveBeenCalled()
     })
   })
 
@@ -231,34 +231,34 @@ describe('sprint-service', () => {
       expect(result).toEqual(claimed)
       expect(_claimTask).toHaveBeenCalledWith('1', 'agent-1', undefined)
       vi.runAllTimers()
-      expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
+      expect(mockBroadcastFn).toHaveBeenCalled()
     })
 
     it('does not notify when claim fails', async () => {
       vi.mocked(_claimTask).mockResolvedValue(null)
       const result = await claimTask('1', 'agent-1')
       expect(result).toBeNull()
-      expect(broadcast).not.toHaveBeenCalled()
+      expect(mockBroadcastFn).not.toHaveBeenCalled()
     })
   })
 
   describe('releaseTask', () => {
-    it('releases task and fires updated notification', () => {
+    it('releases task and fires updated notification', async () => {
       const released: Partial<SprintTask> = { id: '1', claimed_by: null }
-      vi.mocked(_releaseTask).mockReturnValue(released as SprintTask)
+      vi.mocked(_releaseTask).mockResolvedValue(released as SprintTask)
 
-      const result = releaseTask('1', 'agent-1')
+      const result = await releaseTask('1', 'agent-1')
       expect(result).toEqual(released)
       expect(_releaseTask).toHaveBeenCalledWith('1', 'agent-1')
       vi.runAllTimers()
-      expect(broadcast).toHaveBeenCalledWith('sprint:externalChange') // released)
+      expect(mockBroadcastFn).toHaveBeenCalled() // released)
     })
 
-    it('does not notify when release fails', () => {
-      vi.mocked(_releaseTask).mockReturnValue(null)
-      const result = releaseTask('1', 'agent-1')
+    it('does not notify when release fails', async () => {
+      vi.mocked(_releaseTask).mockResolvedValue(null)
+      const result = await releaseTask('1', 'agent-1')
       expect(result).toBeNull()
-      expect(broadcast).not.toHaveBeenCalled()
+      expect(mockBroadcastFn).not.toHaveBeenCalled()
     })
   })
 
@@ -267,7 +267,7 @@ describe('sprint-service', () => {
       const stats: Partial<QueueStats> = { queued: 5, active: 2 }
       vi.mocked(_getQueueStats).mockReturnValue(stats as QueueStats)
       expect(getQueueStats()).toEqual(stats)
-      expect(broadcast).not.toHaveBeenCalled()
+      expect(mockBroadcastFn).not.toHaveBeenCalled()
     })
 
     it('getDoneTodayCount delegates without notification', () => {
@@ -275,14 +275,14 @@ describe('sprint-service', () => {
       expect(getDoneTodayCount()).toBe(3)
     })
 
-    it('markTaskDoneByPrNumber delegates without notification', () => {
-      vi.mocked(_markTaskDoneByPrNumber).mockReturnValue(['t1'])
-      expect(markTaskDoneByPrNumber(42)).toEqual(['t1'])
+    it('markTaskDoneByPrNumber delegates without notification', async () => {
+      vi.mocked(_markTaskDoneByPrNumber).mockResolvedValue(['t1'])
+      expect(await markTaskDoneByPrNumber(42)).toEqual(['t1'])
     })
 
-    it('markTaskCancelledByPrNumber delegates without notification', () => {
-      vi.mocked(_markTaskCancelledByPrNumber).mockReturnValue(['t2'])
-      expect(markTaskCancelledByPrNumber(99)).toEqual(['t2'])
+    it('markTaskCancelledByPrNumber delegates without notification', async () => {
+      vi.mocked(_markTaskCancelledByPrNumber).mockResolvedValue(['t2'])
+      expect(await markTaskCancelledByPrNumber(99)).toEqual(['t2'])
     })
 
     it('listTasksWithOpenPrs delegates without notification', () => {
@@ -291,10 +291,11 @@ describe('sprint-service', () => {
       expect(listTasksWithOpenPrs()).toEqual([{ id: '1' }])
     })
 
-    it('updateTaskMergeableState delegates without notification', () => {
-      updateTaskMergeableState(42, 'clean')
+    it('updateTaskMergeableState delegates without notification', async () => {
+      vi.mocked(_updateTaskMergeableState).mockResolvedValue(undefined)
+      await updateTaskMergeableState(42, 'clean')
       expect(_updateTaskMergeableState).toHaveBeenCalledWith(42, 'clean')
-      expect(broadcast).not.toHaveBeenCalled()
+      expect(mockBroadcastFn).not.toHaveBeenCalled()
     })
 
     it('getHealthCheckTasks delegates without notification', () => {

@@ -17,6 +17,7 @@ vi.mock('../../data/sprint-queries', () => ({
   setSprintQueriesLogger: vi.fn()
 }))
 
+// broadcast is now injected via CircuitBreaker constructor — no module-level mock needed
 vi.mock('../../broadcast', () => ({
   broadcast: vi.fn(),
   broadcastCoalesced: vi.fn()
@@ -199,5 +200,28 @@ describe('spawn-phase circuit breaker scope (EP-5 T-55)', () => {
         ])
       })
     )
+  })
+
+  it('calls injected onCircuitOpen when breaker trips', () => {
+    const logger = makeLogger()
+    const onCircuitOpen = vi.fn()
+    const breaker = new CircuitBreaker(logger, onCircuitOpen)
+    for (let i = 0; i < SPAWN_CIRCUIT_FAILURE_THRESHOLD; i++) {
+      breaker.recordFailure('task-x', 'spawn error')
+    }
+    expect(onCircuitOpen).toHaveBeenCalledTimes(1)
+    expect(onCircuitOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ consecutiveFailures: SPAWN_CIRCUIT_FAILURE_THRESHOLD })
+    )
+  })
+
+  it('does not throw when onCircuitOpen is absent', () => {
+    const logger = makeLogger()
+    const breaker = new CircuitBreaker(logger)
+    expect(() => {
+      for (let i = 0; i < SPAWN_CIRCUIT_FAILURE_THRESHOLD; i++) {
+        breaker.recordFailure('task-x', 'spawn error')
+      }
+    }).not.toThrow()
   })
 })

@@ -2,15 +2,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createTaskTerminalService } from '../task-terminal-service'
 import type { TaskTerminalServiceDeps } from '../task-terminal-service'
 
-vi.mock('../../broadcast', () => ({
-  broadcast: vi.fn(),
-  broadcastCoalesced: vi.fn()
-}))
-
 // Controllable mock for resolveDependents — used in the consolidated error test
 const mockResolveDependents = vi.fn()
 vi.mock('../../lib/resolve-dependents', () => ({
   resolveDependents: (...args: unknown[]) => mockResolveDependents(...args)
+}))
+
+// Controllable mock for refreshDependencyIndex — used to trigger the outer catch
+const mockRefreshDependencyIndex = vi.fn()
+vi.mock('../../agent-manager/dependency-refresher', () => ({
+  refreshDependencyIndex: (...args: unknown[]) => mockRefreshDependencyIndex(...args),
+  computeDepsFingerprint: vi.fn().mockReturnValue({ hash: 'x', deps: null })
 }))
 
 function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTerminalServiceDeps {
@@ -32,6 +34,7 @@ function makeDeps(overrides: Partial<TaskTerminalServiceDeps> = {}): TaskTermina
       areEpicDepsSatisfied: vi.fn().mockReturnValue({ satisfied: true, blockedBy: [] })
     },
     getSetting: vi.fn().mockReturnValue(null),
+    broadcast: vi.fn(),
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
     ...overrides
   }
@@ -42,6 +45,8 @@ describe('createTaskTerminalService', () => {
     vi.useFakeTimers()
     // Default: resolveDependents succeeds (no-op); individual tests can override
     mockResolveDependents.mockReset()
+    // Default: refreshDependencyIndex is a no-op; tests that need it to throw override
+    mockRefreshDependencyIndex.mockReset().mockReturnValue(new Map())
   })
 
   afterEach(() => {
@@ -90,19 +95,47 @@ describe('createTaskTerminalService', () => {
     expect(deps.getTasksWithDependencies).not.toHaveBeenCalled()
   })
 
-  it('swallows errors and logs them', () => {
-    const deps = makeDeps({
-      getTasksWithDependencies: vi.fn().mockImplementation(() => {
-        throw new Error('db boom')
-      })
+  it('swallows errors and does not throw when dep-index refresh fails', () => {
+    mockRefreshDependencyIndex.mockImplementationOnce(() => {
+      throw new Error('db boom')
     })
+    const deps = makeDeps()
+    const service = createTaskTerminalService(deps)
+    service.onStatusTerminal('t1', 'done')
+
+    // The outer catch logs with error and calls broadcast — must not throw
+    expect(() => vi.runAllTimers()).not.toThrow()
+    expect(deps.logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('refreshTaskDepIndex failed')
+    )
+  })
+
+  it('calls injected broadcast when dep-index refresh throws', () => {
+    mockRefreshDependencyIndex.mockImplementationOnce(() => {
+      throw new Error('index failure')
+    })
+    const broadcastFn = vi.fn()
+    const deps = makeDeps({ broadcast: broadcastFn })
     const service = createTaskTerminalService(deps)
     service.onStatusTerminal('t1', 'done')
 
     vi.runAllTimers()
 
-    // refreshDependencyIndex catches errors and logs with warn (not error)
-    expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('db boom'))
+    expect(broadcastFn).toHaveBeenCalledWith(
+      'task-terminal:resolution-error',
+      expect.objectContaining({ error: expect.stringContaining('index failure') })
+    )
+  })
+
+  it('does not throw when broadcast dep is absent and refresh throws', () => {
+    mockRefreshDependencyIndex.mockImplementationOnce(() => {
+      throw new Error('no broadcaster')
+    })
+    const deps = makeDeps({ broadcast: undefined })
+    const service = createTaskTerminalService(deps)
+    service.onStatusTerminal('t1', 'done')
+
+    expect(() => vi.runAllTimers()).not.toThrow()
   })
 
   it('debounces multiple concurrent terminal events into one resolution pass', () => {
@@ -132,13 +165,13 @@ describe('createTaskTerminalService', () => {
     service.onStatusTerminal('t5', 'error')
 
     // rebuildIndex should not be called yet
-    expect(deps.getTasksWithDependencies).not.toHaveBeenCalled()
+    expect(mockRefreshDependencyIndex).not.toHaveBeenCalled()
 
     // Advance timers to flush setTimeout(0)
     vi.runAllTimers()
 
     // rebuildIndex should be called exactly once (not 5 times)
-    expect(deps.getTasksWithDependencies).toHaveBeenCalledTimes(1)
+    expect(mockRefreshDependencyIndex).toHaveBeenCalledTimes(1)
   })
 
   it('resolves each unique task exactly once when called multiple times with same id', () => {

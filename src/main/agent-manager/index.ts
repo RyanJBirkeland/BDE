@@ -201,7 +201,10 @@ export class AgentManagerImpl implements AgentManager {
     this._depIndex = createDependencyIndex()
     this._epicIndex = epicDepsReader
     this._metrics = createMetricsCollector()
-    this._circuitBreaker = new CircuitBreaker(logger)
+    this._circuitBreaker = new CircuitBreaker(
+      logger,
+      (payload) => broadcast('agent-manager:circuit-breaker-open', payload)
+    )
     this._errorRegistry = new ErrorRegistry(logger)
     this._wipTracker = new WipTracker(() => this._activeAgents.size)
     this.unitOfWork = unitOfWork

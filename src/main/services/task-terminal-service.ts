@@ -8,7 +8,6 @@ import {
 import type { EpicDepsReader } from './epic-dependency-service'
 import type { SprintTask, TaskDependency, TaskGroup } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { broadcast } from '../broadcast'
 import { getErrorMessage } from '../../shared/errors'
 import { refreshDependencyIndex, type DepsFingerprint } from '../agent-manager/dependency-refresher'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
@@ -34,6 +33,7 @@ export interface TaskTerminalServiceDeps {
   getSetting?: (key: string) => string | null
   runInTransaction?: (fn: () => void) => void
   taskStateService?: TaskStateService
+  broadcast?: (channel: string, payload?: Record<string, unknown>) => void
   logger: Logger
 }
 
@@ -118,7 +118,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
         }
       } catch (err) {
         deps.logger.error(`[task-terminal-service] refreshTaskDepIndex failed: ${err}`)
-        broadcast('task-terminal:resolution-error', { error: getErrorMessage(err) })
+        deps.broadcast?.('task-terminal:resolution-error', { error: getErrorMessage(err) })
       }
     })
   }
