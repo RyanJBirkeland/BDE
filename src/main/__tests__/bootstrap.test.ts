@@ -155,21 +155,25 @@ describe('bootstrap', () => {
   })
 
   describe('warnPlaintextSensitiveSettings', () => {
-    it('should not warn when all sensitive settings return null', () => {
+    it('should not warn when all sensitive settings return null', async () => {
+      vi.useRealTimers()
       vi.mocked(settingsQueries.getSetting).mockReturnValue(null)
 
       warnPlaintextSensitiveSettings()
+      await new Promise(setImmediate)
 
       expect(mockLogger.warn).not.toHaveBeenCalled()
     })
 
-    it('should re-encrypt a plaintext sensitive setting at startup', () => {
+    it('should re-encrypt a plaintext sensitive setting at startup', async () => {
+      vi.useRealTimers()
       vi.mocked(settingsQueries.getSetting).mockImplementation((_db, key) => {
         if (key === 'github.token') return 'ghp_plaintext'
         return null
       })
 
       warnPlaintextSensitiveSettings()
+      await new Promise(setImmediate)
 
       expect(settingsQueries.setSetting).toHaveBeenCalledWith(
         mockDb,
@@ -179,7 +183,8 @@ describe('bootstrap', () => {
       expect(mockLogger.warn).not.toHaveBeenCalled()
     })
 
-    it('should warn when re-encryption fails', () => {
+    it('should warn when re-encryption fails', async () => {
+      vi.useRealTimers()
       vi.mocked(settingsQueries.getSetting).mockImplementation((_db, key) => {
         if (key === 'github.token') return 'ghp_plaintext'
         return null
@@ -189,6 +194,7 @@ describe('bootstrap', () => {
       })
 
       warnPlaintextSensitiveSettings()
+      await new Promise(setImmediate)
 
       expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('github.token'))
     })
@@ -199,8 +205,30 @@ describe('bootstrap', () => {
 
       warnPlaintextSensitiveSettings()
 
+      // The fast-path (encryption unavailable) returns synchronously without calling setImmediate
       expect(settingsQueries.setSetting).not.toHaveBeenCalled()
       expect(mockLogger.warn).toHaveBeenCalledWith(expect.stringContaining('unavailable'))
+    })
+
+    it('does not call encryptSetting synchronously — defers to setImmediate', async () => {
+      vi.useRealTimers()
+      vi.mocked(settingsQueries.getSetting).mockImplementation((_db, key) => {
+        if (key === 'github.token') return 'ghp_plaintext'
+        return null
+      })
+
+      warnPlaintextSensitiveSettings()
+
+      // Immediately after the synchronous return, encryptSetting must NOT have been called yet
+      expect(settingsQueries.setSetting).not.toHaveBeenCalled()
+
+      // After flushing setImmediate, the encryption should have run
+      await new Promise(setImmediate)
+      expect(settingsQueries.setSetting).toHaveBeenCalledWith(
+        mockDb,
+        'github.token',
+        'ENC:ghp_plaintext'
+      )
     })
   })
 

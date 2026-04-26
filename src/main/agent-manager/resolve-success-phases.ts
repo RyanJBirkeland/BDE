@@ -21,7 +21,6 @@ import { buildAgentEnv } from '../env-utils'
 import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
 import { MAX_NO_COMMITS_RETRIES } from './prompt-constants'
 import type { Logger } from '../logger'
-import { broadcastCoalesced } from '../broadcast'
 import type { AgentEvent } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { nowIso } from '../../shared/time'
@@ -192,7 +191,8 @@ export async function failTaskWithError(
   repo: IAgentTaskRepository,
   logger: Logger,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
-  taskStateService?: TaskStateService
+  taskStateService?: TaskStateService,
+  broadcastCoalesced?: (channel: string, payload: unknown) => void
 ): Promise<void> {
   logger.error(`[completion] ${message}`)
 
@@ -201,7 +201,7 @@ export async function failTaskWithError(
     message,
     timestamp: Date.now()
   }
-  broadcastCoalesced('agent:event', { agentId: taskId, event })
+  broadcastCoalesced?.('agent:event', { agentId: taskId, event })
 
   try {
     if (taskStateService) {

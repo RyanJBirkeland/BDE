@@ -120,4 +120,22 @@ describe('sanitizePlaygroundHtml', () => {
     expect(result).not.toContain('</style>')
     expect(result).toContain('Safe')
   })
+
+  it('strips autoplay attribute from video elements', () => {
+    const input = '<video autoplay src="clip.mp4"></video>'
+    const result = sanitizePlaygroundHtml(input)
+    expect(result).not.toContain('autoplay')
+  })
+
+  it('preserves controls attribute on video elements', () => {
+    const input = '<video controls src="clip.mp4"></video>'
+    const result = sanitizePlaygroundHtml(input)
+    expect(result).toContain('controls')
+  })
+
+  it('strips autoplay from audio elements', () => {
+    const input = '<audio autoplay src="sound.mp3"></audio>'
+    const result = sanitizePlaygroundHtml(input)
+    expect(result).not.toContain('autoplay')
+  })
 })

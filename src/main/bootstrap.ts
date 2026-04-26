@@ -131,28 +131,33 @@ export function warnPlaintextSensitiveSettings(): void {
     return
   }
 
-  const db = getDb()
-  const stillPlaintext: string[] = []
+  // Defer the safeStorage loop off the synchronous startup call stack so it
+  // doesn't block the first event-loop tick (safeStorage IPC calls are
+  // expensive and would delay renderer IPC responsiveness).
+  setImmediate(() => {
+    const db = getDb()
+    const stillPlaintext: string[] = []
 
-  for (const key of SENSITIVE_SETTING_KEYS) {
-    const raw = _getRawSetting(db, key)
-    if (raw === null || raw.startsWith(ENCRYPTED_PREFIX)) continue
+    for (const key of SENSITIVE_SETTING_KEYS) {
+      const raw = _getRawSetting(db, key)
+      if (raw === null || raw.startsWith(ENCRYPTED_PREFIX)) continue
 
-    try {
-      _setSetting(db, key, encryptSetting(raw))
-      logger.info(`Re-encrypted "${key}" at startup`)
-    } catch (err) {
-      stillPlaintext.push(key)
-      logger.warn(`Could not re-encrypt "${key}" at startup: ${getErrorMessage(err)}`)
+      try {
+        _setSetting(db, key, encryptSetting(raw))
+        logger.info(`Re-encrypted "${key}" at startup`)
+      } catch (err) {
+        stillPlaintext.push(key)
+        logger.warn(`Could not re-encrypt "${key}" at startup: ${getErrorMessage(err)}`)
+      }
     }
-  }
 
-  if (stillPlaintext.length > 0) {
-    logger.warn(
-      `Sensitive settings remain as plaintext: ${stillPlaintext.join(', ')}. ` +
-        'Re-save each credential via Settings → Connections to encrypt it.'
-    )
-  }
+    if (stillPlaintext.length > 0) {
+      logger.warn(
+        `Sensitive settings remain as plaintext: ${stillPlaintext.join(', ')}. ` +
+          'Re-save each credential via Settings → Connections to encrypt it.'
+      )
+    }
+  })
 }
 
 /**

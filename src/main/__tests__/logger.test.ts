@@ -1,18 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Mock fs before import
+// Mock node:fs (callback-based appendFile + sync setup ops)
 vi.mock('node:fs', () => ({
-  appendFileSync: vi.fn(),
-  statSync: vi.fn(() => ({ size: 100 })),
+  appendFile: vi.fn(),
   existsSync: vi.fn(() => true),
   mkdirSync: vi.fn(),
-  renameSync: vi.fn(),
-  rmSync: vi.fn(),
   chmodSync: vi.fn()
 }))
 
+// Mock node:fs/promises (async rotation ops)
+vi.mock('node:fs/promises', () => ({
+  stat: vi.fn().mockResolvedValue({ size: 100 }),
+  rename: vi.fn().mockResolvedValue(undefined),
+  rm: vi.fn().mockResolvedValue(undefined)
+}))
+
 import { createLogger } from '../logger'
-import { appendFileSync, statSync, renameSync, rmSync, chmodSync } from 'node:fs'
+import { appendFile, chmodSync } from 'node:fs'
+import { stat, rename, rm } from 'node:fs/promises'
+
+/** Flush all pending microtasks (async rotation calls) */
+async function flushPromises(): Promise<void> {
+  await new Promise<void>((resolve) => setImmediate(resolve))
+}
 
 describe('logger.event()', () => {
   beforeEach(() => {
@@ -23,7 +33,7 @@ describe('logger.event()', () => {
     const logger = createLogger('test-module')
     logger.event('agent.spawn', { taskId: 'abc123', model: 'claude-opus-4-7' })
 
-    const calls = vi.mocked(appendFileSync).mock.calls
+    const calls = vi.mocked(appendFile).mock.calls
     const eventCall = calls.find((c) => {
       const line = String(c[1])
       return line.includes('"event"')
@@ -42,7 +52,7 @@ describe('logger.event()', () => {
     const logger = createLogger('test-module')
     logger.event('drain.tick.idle', { tickId: 'x1' })
 
-    const calls = vi.mocked(appendFileSync).mock.calls
+    const calls = vi.mocked(appendFile).mock.calls
     const eventCall = calls.find((c) => String(c[1]).includes('"drain.tick.idle"'))
     expect(eventCall).toBeDefined()
     const parsed = JSON.parse(String(eventCall![1]).trim())
@@ -54,7 +64,7 @@ describe('logger.event()', () => {
     const logger = createLogger('test-module')
     logger.event('agent.watchdog.kill', { taskId: 't-1', runtimeMs: 5000, limitMs: 3600000, agentType: 'pipeline', verdict: 'timeout' })
 
-    const calls = vi.mocked(appendFileSync).mock.calls
+    const calls = vi.mocked(appendFile).mock.calls
     const eventCall = calls.find((c) => String(c[1]).includes('"agent.watchdog.kill"'))
     expect(eventCall).toBeDefined()
     const parsed = JSON.parse(String(eventCall![1]).trim())
@@ -83,56 +93,56 @@ describe('createLogger', () => {
   it('writes new log lines with mode:0o600 so any rotation-created file is tightened', () => {
     const logger = createLogger('test')
     logger.info('hello')
-    expect(appendFileSync).toHaveBeenCalledWith(
+    expect(appendFile).toHaveBeenCalledWith(
       expect.stringContaining('bde.log'),
       expect.any(String),
-      expect.objectContaining({ mode: 0o600 })
+      expect.objectContaining({ mode: 0o600 }),
+      expect.any(Function)
     )
   })
 
   it('writes to log file with correct format', () => {
     const logger = createLogger('my-module')
     logger.info('hello world')
-    expect(appendFileSync).toHaveBeenCalledWith(
+    expect(appendFile).toHaveBeenCalledWith(
       expect.stringContaining('bde.log'),
       expect.stringMatching(/\[INFO\] \[my-module\] hello world/),
-      expect.any(Object)
+      expect.any(Object),
+      expect.any(Function)
     )
   })
 
   it('includes timestamp in log entries', () => {
     const logger = createLogger('test')
     logger.warn('warning message')
-    const call = vi.mocked(appendFileSync).mock.calls[0]
-    // Timestamp format: 2026-03-25T...
-    expect(call[1]).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+    const call = vi.mocked(appendFile).mock.calls[0]
+    expect(String(call[1])).toMatch(/^\d{4}-\d{2}-\d{2}T/)
   })
 
-  it('renames log to .old when size exceeds MAX_LOG_SIZE', () => {
-    const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
-    vi.mocked(statSync).mockReturnValueOnce({ size: MAX_LOG_SIZE + 1 } as ReturnType<
-      typeof statSync
-    >)
+  it('renames log to .old when size exceeds MAX_LOG_SIZE', async () => {
+    const MAX_LOG_SIZE = 10 * 1024 * 1024
+    vi.mocked(stat).mockResolvedValueOnce({ size: MAX_LOG_SIZE + 1 } as Awaited<ReturnType<typeof stat>>)
     createLogger('test')
-    expect(renameSync).toHaveBeenCalledWith(
+    await flushPromises()
+    expect(rename).toHaveBeenCalledWith(
       expect.stringContaining('bde.log'),
       expect.stringContaining('bde.log.old')
     )
   })
 
-  it('removes existing .old file before renaming', () => {
-    const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
-    vi.mocked(statSync).mockReturnValueOnce({ size: MAX_LOG_SIZE + 1 } as ReturnType<
-      typeof statSync
-    >)
+  it('removes existing .old file before renaming', async () => {
+    const MAX_LOG_SIZE = 10 * 1024 * 1024
+    vi.mocked(stat).mockResolvedValueOnce({ size: MAX_LOG_SIZE + 1 } as Awaited<ReturnType<typeof stat>>)
     createLogger('test')
-    expect(rmSync).toHaveBeenCalledWith(expect.stringContaining('bde.log.old'))
-    expect(renameSync).toHaveBeenCalled()
+    await flushPromises()
+    expect(rm).toHaveBeenCalledWith(expect.stringContaining('.old'))
+    expect(rename).toHaveBeenCalled()
   })
 
-  it('does not rename log when size is within limit', () => {
-    vi.mocked(statSync).mockReturnValueOnce({ size: 100 } as ReturnType<typeof statSync>)
+  it('does not rename log when size is within limit', async () => {
+    vi.mocked(stat).mockResolvedValueOnce({ size: 100 } as Awaited<ReturnType<typeof stat>>)
     createLogger('test')
-    expect(renameSync).not.toHaveBeenCalled()
+    await flushPromises()
+    expect(rename).not.toHaveBeenCalled()
   })
 })

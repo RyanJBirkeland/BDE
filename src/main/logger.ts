@@ -1,12 +1,5 @@
-import {
-  appendFileSync,
-  statSync,
-  mkdirSync,
-  chmodSync,
-  existsSync,
-  renameSync,
-  rmSync
-} from 'node:fs'
+import { appendFile, mkdirSync, chmodSync, existsSync } from 'node:fs'
+import { stat, rename, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { nowIso } from '../shared/time'
@@ -57,94 +50,58 @@ function ensureLogDir(): void {
   }
 }
 
-function rotateIfNeeded(): void {
+let _rotating = false
+
+async function rotateIfNeededAsync(): Promise<void> {
+  if (_rotating) return
+  _rotating = true
   try {
-    const stats = statSync(LOG_PATH)
+    const stats = await stat(LOG_PATH)
     if (stats.size > MAX_LOG_SIZE) {
       const old1 = LOG_PATH + '.old'
       const old2 = LOG_PATH + '.old.2'
       const old3 = LOG_PATH + '.old.3'
-      try {
-        rmSync(old3)
-      } catch {
-        /* may not exist */
-      }
-      try {
-        renameSync(old2, old3)
-      } catch {
-        /* may not exist */
-      }
-      try {
-        renameSync(old1, old2)
-      } catch {
-        /* may not exist */
-      }
-      renameSync(LOG_PATH, old1)
+      await rm(old3).catch(() => {})
+      await rename(old2, old3).catch(() => {})
+      await rename(old1, old2).catch(() => {})
+      await rename(LOG_PATH, old1)
     }
   } catch {
     // File doesn't exist yet — fine
+  } finally {
+    _rotating = false
   }
 }
 
 let writeCount = 0
 const ROTATION_CHECK_INTERVAL = 1000 // check every 1000 writes
 
-// Disk-pressure meta-warning. The synchronous appendFileSync in fileLog blocks
-// the main thread; if a single write exceeds this threshold the process is
-// likely on a stalled or saturated disk. Warn once per process via console
-// (not the logger itself — that would recurse on a slow disk and infinite loop).
-const SLOW_WRITE_THRESHOLD_MS = 50
-let slowWriteWarned = false
-
-function fileEvent(name: string, eventName: string, fields: Record<string, unknown>): void {
-  try {
-    const line = JSON.stringify({ ts: nowIso(), level: 'INFO', module: name, event: eventName, ...fields })
-    const startedAt = Date.now()
-    appendFileSync(LOG_PATH, line + '\n', { mode: 0o600 })
-    const elapsedMs = Date.now() - startedAt
-    if (!slowWriteWarned && elapsedMs > SLOW_WRITE_THRESHOLD_MS) {
-      slowWriteWarned = true
-      console.warn(
-        `[logger] slow log write: ${elapsedMs}ms (threshold ${SLOW_WRITE_THRESHOLD_MS}ms) — disk may be under pressure. Further slow writes will be silent.`
-      )
-    }
-    if (++writeCount >= ROTATION_CHECK_INTERVAL) {
-      writeCount = 0
-      rotateIfNeeded()
-    }
-  } catch {
-    // Logging should never crash the app
+function scheduleRotationCheck(): void {
+  if (++writeCount >= ROTATION_CHECK_INTERVAL) {
+    writeCount = 0
+    void rotateIfNeededAsync()
   }
 }
 
+function fileEvent(name: string, eventName: string, fields: Record<string, unknown>): void {
+  const line = JSON.stringify({ ts: nowIso(), level: 'INFO', module: name, event: eventName, ...fields })
+  // Fire-and-forget: appendFile is non-blocking so the main thread never stalls
+  // on disk I/O. Log ordering is preserved by libuv's sequential I/O queue.
+  appendFile(LOG_PATH, line + '\n', { mode: 0o600 }, () => {})
+  scheduleRotationCheck()
+}
+
 function fileLog(level: string, name: string, msg: string): void {
-  try {
-    const ts = nowIso()
-    // The `mode` option only applies when the file is newly created — existing
-    // installs are covered by the chmod in ensureLogDir. Keeping this here
-    // means a fresh install (or post-rotation recreate) lands at 0600 directly.
-    const startedAt = Date.now()
-    appendFileSync(LOG_PATH, `${ts} [${level}] [${name}] ${msg}\n`, { mode: 0o600 })
-    const elapsedMs = Date.now() - startedAt
-    if (!slowWriteWarned && elapsedMs > SLOW_WRITE_THRESHOLD_MS) {
-      slowWriteWarned = true
-      console.warn(
-        `[logger] slow log write: ${elapsedMs}ms (threshold ${SLOW_WRITE_THRESHOLD_MS}ms) — disk may be under pressure. Further slow writes will be silent.`
-      )
-    }
-    if (++writeCount >= ROTATION_CHECK_INTERVAL) {
-      writeCount = 0
-      rotateIfNeeded()
-    }
-  } catch {
-    // Logging should never crash the app
-  }
+  // The `mode` option only applies when the file is newly created — existing
+  // installs are covered by the chmod in ensureLogDir.
+  appendFile(LOG_PATH, `${nowIso()} [${level}] [${name}] ${msg}\n`, { mode: 0o600 }, () => {})
+  scheduleRotationCheck()
 }
 
 /** Create a named logger that writes to ~/.bde/bde.log */
 export function createLogger(name: string): Logger {
   ensureLogDir()
-  rotateIfNeeded()
+  void rotateIfNeededAsync()
   return {
     info: (m: string) => {
       if (CONSOLE_LOG_ENABLED) console.log(`[${name}]`, m)

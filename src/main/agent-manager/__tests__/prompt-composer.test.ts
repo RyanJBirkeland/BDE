@@ -963,34 +963,35 @@ describe('buildAgentPrompt', () => {
       expect(prompt).not.toContain('## Task Scratchpad')
     })
 
-    it('injects ## Prior Attempt Context before ## Task Specification when priorScratchpad is provided', () => {
+    it('injects <prior_scratchpad> after task spec when priorScratchpad is provided', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'implement feature x',
         priorScratchpad: 'I tried approach A but hit error XYZ'
       })
-      expect(prompt).toContain('## Prior Attempt Context')
+      expect(prompt).toContain('<prior_scratchpad>')
+      expect(prompt).toContain('</prior_scratchpad>')
       expect(prompt).toContain('I tried approach A but hit error XYZ')
       // Prior context must appear after the task spec so the agent reads the spec first,
       // then understands what the previous attempt tried relative to that spec.
-      const priorIdx = prompt.indexOf('## Prior Attempt Context')
+      const priorIdx = prompt.indexOf('<prior_scratchpad>')
       const specIdx = prompt.indexOf('## Task Specification')
       expect(priorIdx).toBeGreaterThan(specIdx)
     })
 
-    it('does not inject ## Prior Attempt Context when priorScratchpad is empty or absent', () => {
+    it('does not inject <prior_scratchpad> when priorScratchpad is empty or absent', () => {
       const noScratchpad = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'implement feature x'
       })
-      expect(noScratchpad).not.toContain('## Prior Attempt Context')
+      expect(noScratchpad).not.toContain('<prior_scratchpad>')
 
       const emptyScratchpad = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'implement feature x',
         priorScratchpad: ''
       })
-      expect(emptyScratchpad).not.toContain('## Prior Attempt Context')
+      expect(emptyScratchpad).not.toContain('<prior_scratchpad>')
     })
 
     it('does not inject scratchpad sections for non-pipeline agents', () => {
@@ -1001,7 +1002,7 @@ describe('buildAgentPrompt', () => {
         priorScratchpad: 'some prior notes'
       })
       expect(prompt).not.toContain('## Task Scratchpad')
-      expect(prompt).not.toContain('## Prior Attempt Context')
+      expect(prompt).not.toContain('<prior_scratchpad>')
     })
   })
 

@@ -46,6 +46,7 @@ import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
 import { getTask, updateTask } from './services/sprint-service'
 import { setSprintMutationsRepo } from './services/sprint-mutations'
+import { setSprintBroadcaster } from './services/sprint-mutation-broadcaster'
 import {
   closeTearoffWindows,
   setQuitting,
@@ -53,6 +54,7 @@ import {
   restoreTearoffWindows
 } from './tearoff-manager'
 import { clearAnthropicEnvVars } from './auth-guard'
+import { broadcast } from './broadcast'
 
 // Side-effecting startup steps run before any whenReady-time work touches
 // process.env, the network, or the singleton lock. Order matters: PATH first,
@@ -328,6 +330,9 @@ function initCoreServices(): CoreStartupServices {
   // Install the repo into sprint-mutations so all mutation functions route
   // through the composition-root instance instead of the lazy singleton.
   setSprintMutationsRepo(repo)
+  // Wire the IPC broadcast function into sprint-mutation-broadcaster so it
+  // can notify renderer windows without importing the framework adapter directly.
+  setSprintBroadcaster(() => broadcast('sprint:externalChange'))
 
   // The epic dependency graph has one owner — EpicGroupService, constructed
   // at the composition root and injected to every consumer (task-terminal-
@@ -343,6 +348,8 @@ function initCoreServices(): CoreStartupServices {
     epicDepsReader: epicGroupService,
     getSetting,
     runInTransaction: (fn) => getDb().transaction(fn)(),
+    broadcast: (channel, payload) =>
+      broadcast(channel as 'task-terminal:resolution-error', payload as { error: string }),
     logger: createLogger('task-terminal')
   })
 
@@ -406,7 +413,13 @@ function wireAgentManagerAndMcp(
   )
   agentManager.start()
 
-  const statusServer = createStatusServer(agentManager, core.repo)
+  const statusServer = createStatusServer(
+    agentManager,
+    core.repo,
+    undefined,
+    undefined,
+    (channel, payload) => broadcast(channel as 'manager:warning', payload as { message: string })
+  )
   statusServer.start().catch((err) => {
     createLogger('startup').error(`Failed to start status server: ${err}`)
   })

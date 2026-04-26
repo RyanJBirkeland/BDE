@@ -143,7 +143,7 @@ describe('IPC vs MCP parity', () => {
     const logger = createLogger('parity-test')
     const input = { title: 'parity-test', repo: 'bde', status: 'backlog' as const, priority: 3 }
 
-    const ipcTask = createTaskWithValidation(input, { logger })
+    const ipcTask = await createTaskWithValidation(input, { logger })
     createdTaskIds.push(ipcTask.id)
 
     const mcpResult = await mcpClient.callTool({ name: 'tasks.create', arguments: input })
@@ -178,7 +178,7 @@ describe('IPC vs MCP parity', () => {
       priority: 2
     }
 
-    const ipcTask = createTaskWithValidation(baseInput, { logger })
+    const ipcTask = await createTaskWithValidation(baseInput, { logger })
     createdTaskIds.push(ipcTask.id)
     const mcpCreate = await mcpClient.callTool({ name: 'tasks.create', arguments: baseInput })
     const mcpTask = readMcpJson<SprintTask>(mcpCreate as { content: unknown[] })
@@ -230,7 +230,7 @@ describe('IPC vs MCP parity', () => {
 
     let ipcError: TaskValidationError | null = null
     try {
-      createTaskWithValidation(input, { logger })
+      await createTaskWithValidation(input, { logger })
     } catch (err) {
       if (err instanceof TaskValidationError) ipcError = err
     }

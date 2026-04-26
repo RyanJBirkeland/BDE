@@ -261,11 +261,17 @@ function surfaceCleanupFailureToTaskNotes(
   const truncated =
     note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
   // fire-and-forget: best-effort note update for stale-worktree diagnostic
-  void repo.updateTask(taskId, { notes: truncated }).catch((updateErr) => {
+  try {
+    void Promise.resolve(repo.updateTask(taskId, { notes: truncated })).catch((updateErr) => {
+      logger.error(
+        `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
+      )
+    })
+  } catch (updateErr) {
     logger.error(
       `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
     )
-  })
+  }
 }
 
 /**

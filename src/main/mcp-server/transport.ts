@@ -240,7 +240,6 @@ function scheduleCleanup(res: ServerResponse, scope: RequestScope, logger: Logge
  */
 function allowedOriginsFor(port: number): string[] {
   return [
-    'null', // file:// and sandboxed contexts emit "Origin: null"
     `http://127.0.0.1:${port}`,
     `http://localhost:${port}`
   ]

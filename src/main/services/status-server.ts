@@ -3,7 +3,6 @@ import type { AgentManagerStatusReader } from './ports/agent-manager-status'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { createLogger } from '../logger'
 import { nowIso } from '../../shared/time'
-import { broadcast } from '../broadcast'
 
 const logger = createLogger('status-server')
 
@@ -20,12 +19,14 @@ export interface StatusServer {
  * @param repo - Sprint task repository for queue statistics
  * @param port - Port to listen on (default 18791, use 0 for random port in tests)
  * @param token - Optional bearer token; when provided, all requests must carry it
+ * @param broadcast - Optional IPC broadcast function; called with manager:warning on bind errors
  */
 export function createStatusServer(
   agentManager: AgentManagerStatusReader,
   repo: Pick<ISprintTaskRepository, 'getQueueStats'>,
   port = 18791,
-  token?: string
+  token?: string,
+  broadcast?: (channel: string, payload?: Record<string, unknown>) => void
 ): StatusServer {
   let server: http.Server | null = null
   // Updated after bind so the Host check uses the real port (important when port=0).
@@ -104,7 +105,7 @@ export function createStatusServer(
             : `Status server failed to start: ${errMsg}`
           // broadcast is a no-op before any window exists (early bootstrap);
           // the logger still captures the error for triage in that case.
-          broadcast('manager:warning', { message })
+          broadcast?.('manager:warning', { message })
           reject(err)
         })
 

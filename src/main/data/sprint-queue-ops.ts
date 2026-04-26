@@ -42,21 +42,18 @@ export async function claimTask(
   db?: Database.Database
 ): Promise<SprintTask | null> {
   const conn = db ?? getDb()
-  try {
-    const now = nowIso()
+  const now = nowIso()
 
-    // Atomic WIP check + claim in IMMEDIATE transaction with retry on SQLITE_BUSY.
-    // IMMEDIATE acquires the write lock upfront, preventing a second concurrent
-    // reader from passing the WIP check before either writer commits.
+  // Atomic WIP check + claim in IMMEDIATE transaction with async retry on SQLITE_BUSY.
+  // withRetryAsync uses setTimeout for backoff so the main thread stays responsive
+  // under contention (replacing the blocking Atomics.wait in withRetry).
+  // IMMEDIATE acquires the write lock upfront to prevent concurrent WIP-check races.
+  try {
     const result = await withRetryAsync(() =>
       conn.transaction(() => {
-        // Optional WIP limit enforcement
         if (maxActive !== undefined && !checkWipLimit(conn, maxActive)) {
           return null
         }
-        // Note: better-sqlite3 transactions are synchronous and Node.js is single-threaded,
-        // so true concurrent WIP violations from the same process are impossible.
-        // The IMMEDIATE comment above documents intent for future multi-process scenarios.
 
         // DL-13 & DL-18: Record audit trail before update (pass conn for consistency)
         const oldTask = fetchTask(id, conn)

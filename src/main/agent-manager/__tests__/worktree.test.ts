@@ -327,10 +327,10 @@ describe('setupWorktree', () => {
       })
     ).rejects.toThrow('fatal: unable to create worktree')
 
-    // Lock should have been released (lock file should not exist)
+    // releaseLock fires rm() fire-and-forget (async libuv I/O) — poll until gone
     const repoSlugVal = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
     const lockFile = path.join(tmpDir, '.locks', `${repoSlugVal}.lock`)
-    expect(existsSync(lockFile)).toBe(false)
+    await vi.waitFor(() => expect(existsSync(lockFile)).toBe(false), { timeout: 1000 })
   })
 
   it('cleans up lock and throws when worktree add fails after nuke', async () => {
@@ -361,10 +361,10 @@ describe('setupWorktree', () => {
       })
     ).rejects.toThrow('fatal: unable to create worktree')
 
-    // Lock should have been released
+    // releaseLock fires rm() fire-and-forget (async libuv I/O) — poll until gone
     const repoSlugVal = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
     const lockFile = path.join(tmpDir, '.locks', `${repoSlugVal}.lock`)
-    expect(existsSync(lockFile)).toBe(false)
+    await vi.waitFor(() => expect(existsSync(lockFile)).toBe(false), { timeout: 1000 })
   })
 
   it('removes corrupted lock file and proceeds', async () => {
@@ -560,9 +560,9 @@ describe('ensureFreeDiskSpace', () => {
   it('throws DiskSpaceProbeError and logs WARN when statfs fails on a non-existent path', async () => {
     const { ensureFreeDiskSpace, DiskSpaceProbeError } = await import('../disk-space')
     const log = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
-    await expect(
-      ensureFreeDiskSpace('/definitely/not/a/real/path', 1, log)
-    ).rejects.toBeInstanceOf(DiskSpaceProbeError)
+    await expect(ensureFreeDiskSpace('/definitely/not/a/real/path', 1, log)).rejects.toBeInstanceOf(
+      DiskSpaceProbeError
+    )
     expect(log.warn).toHaveBeenCalledWith(
       expect.stringContaining('[disk-space] Probe failed at /definitely/not/a/real/path')
     )
@@ -759,6 +759,23 @@ describe('pruneStaleWorktrees', () => {
     expect(count).toBe(0)
     const { existsSync } = await import('node:fs')
     expect(existsSync(fakeUuidDir)).toBe(true)
+  })
+
+  it('uses the async readdir path — successfully prunes without calling readdirSync', async () => {
+    // This test confirms the async enumeration path works end-to-end.
+    // The synchronous readdirSync is no longer imported by worktree.ts — the
+    // module import list is the authoritative check; this test validates the
+    // runtime behavior: the pruner correctly enumerates and removes stale dirs
+    // via the async path.
+    makeWorktreeDir('repo-async', TASK_ID_A)
+
+    execFileMock.mockClear()
+    mockExecFileSuccess()
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    // If async enumeration worked, the inactive worktree was found and pruned
+    expect(count).toBe(1)
   })
 
   it('coexists safely with mixed BDE and human worktrees in same base', async () => {

@@ -7,7 +7,6 @@
 import type { Logger } from '../logger'
 import { execFileAsync, sleep } from '../lib/async-utils'
 import { validateGitRef } from '../lib/review-paths'
-import { broadcast } from '../broadcast'
 import { getDefaultCredentialService } from '../services/credential-service'
 
 /**
@@ -153,7 +152,8 @@ export async function createNewPr(
   ghRepo: string,
   env: NodeJS.ProcessEnv,
   logger: Logger,
-  customBody?: string
+  customBody?: string,
+  broadcast?: (channel: string, payload: unknown) => void
 ): Promise<{ prUrl: string | null; prNumber: number | null }> {
   await ensureGithubCredential(logger)
 
@@ -218,7 +218,7 @@ export async function createNewPr(
     `PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}. ` +
     `Run \`gh auth status\` to verify GitHub CLI authentication. Check ~/.bde/bde.log for details.`
   logger.warn(`[git-ops] ${failureMsg}: ${lastError}`)
-  broadcast('manager:warning', { message: failureMsg })
+  broadcast?.('manager:warning', { message: failureMsg })
   return { prUrl: null, prNumber: null }
 }
 
@@ -232,10 +232,11 @@ export async function findOrCreatePR(
   title: string,
   ghRepo: string,
   env: NodeJS.ProcessEnv,
-  logger: Logger
+  logger: Logger,
+  broadcast?: (channel: string, payload: unknown) => void
 ): Promise<{ prUrl: string | null; prNumber: number | null }> {
   const existing = await checkExistingPr(worktreePath, branch, env, logger)
   if (existing) return existing
 
-  return createNewPr(worktreePath, branch, title, ghRepo, env, logger)
+  return createNewPr(worktreePath, branch, title, ghRepo, env, logger, undefined, broadcast)
 }

@@ -1,4 +1,5 @@
-import { mkdirSync, existsSync, readdirSync, rmSync, symlinkSync } from 'node:fs'
+import fs from 'node:fs'
+import { mkdirSync, existsSync, rmSync, symlinkSync } from 'node:fs'
 import path from 'node:path'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
@@ -273,7 +274,7 @@ export async function setupWorktree(
     // The lock guards `git worktree add`, branch creation, and the merge --ff-only
     // (which mutates the main checkout's HEAD) — these races corrupted state in
     // testing when multiple agents started simultaneously on the same repo.
-    acquireLock(worktreeBase, repoPath, log)
+    await acquireLock(worktreeBase, repoPath, log)
 
     try {
       // Clean any stale state for this task/branch (other worktrees with the
@@ -362,25 +363,19 @@ export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> 
   try {
     await removeWorktreeForce(repoPath, worktreePath, env)
   } catch (err) {
-    log.warn(
-      `[worktree] Failed to remove worktree (worktreePath=${worktreePath}): ${err}`
-    )
+    log.warn(`[worktree] Failed to remove worktree (worktreePath=${worktreePath}): ${err}`)
   }
 
   try {
     await pruneWorktrees(repoPath, env)
   } catch (err) {
-    log.warn(
-      `[worktree] Failed to prune worktrees (worktreePath=${worktreePath}): ${err}`
-    )
+    log.warn(`[worktree] Failed to prune worktrees (worktreePath=${worktreePath}): ${err}`)
   }
 
   try {
     await deleteBranch(repoPath, branch, env)
   } catch (err) {
-    log.warn(
-      `[worktree] Failed to delete branch ${branch} (worktreePath=${worktreePath}): ${err}`
-    )
+    log.warn(`[worktree] Failed to delete branch ${branch} (worktreePath=${worktreePath}): ${err}`)
   }
 }
 
@@ -412,7 +407,8 @@ export async function pruneStaleWorktrees(
   if (!existsSync(worktreeBase)) return 0
   const log = logger ?? defaultLogger
   let pruned = 0
-  for (const candidate of enumeratePruneCandidates(worktreeBase, log)) {
+  const candidates = await enumeratePruneCandidates(worktreeBase, log)
+  for (const candidate of candidates) {
     if (!isPrunableCandidate(candidate, isActive, isReview, log)) continue
     if (await deleteWorktreeDir(candidate.worktreePath, log)) pruned++
   }
@@ -424,34 +420,31 @@ interface PruneCandidate {
   worktreePath: string
 }
 
-function* enumeratePruneCandidates(
+async function enumeratePruneCandidates(
   worktreeBase: string,
   log: Logger
-): Generator<PruneCandidate> {
-  const repoDirs = readdirSync(worktreeBase, { withFileTypes: true })
+): Promise<PruneCandidate[]> {
+  const entries = await fs.promises.readdir(worktreeBase, { withFileTypes: true })
+  const repoDirs = entries
     .filter((d) => d.isDirectory() && d.name !== '.locks')
     .map((d) => path.join(worktreeBase, d.name))
-  for (const repoDir of repoDirs) {
-    yield* enumerateRepoCandidates(repoDir, log)
-  }
+  const candidateLists = await Promise.all(
+    repoDirs.map((repoDir) => enumerateRepoCandidates(repoDir, log))
+  )
+  return candidateLists.flat()
 }
 
-function* enumerateRepoCandidates(
-  repoDir: string,
-  log: Logger
-): Generator<PruneCandidate> {
-  let taskDirs: string[]
+async function enumerateRepoCandidates(repoDir: string, log: Logger): Promise<PruneCandidate[]> {
+  let entries: fs.Dirent[]
   try {
-    taskDirs = readdirSync(repoDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name)
+    entries = await fs.promises.readdir(repoDir, { withFileTypes: true })
   } catch (err) {
     log.warn(`[worktree] Failed to read repo directory during prune: ${err}`)
-    return
+    return []
   }
-  for (const taskId of taskDirs) {
-    yield { taskId, worktreePath: path.join(repoDir, taskId) }
-  }
+  return entries
+    .filter((d) => d.isDirectory())
+    .map((d) => ({ taskId: d.name, worktreePath: path.join(repoDir, d.name) }))
 }
 
 /**

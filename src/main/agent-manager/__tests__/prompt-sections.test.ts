@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildRetryContext } from '../prompt-sections'
+import { buildRetryContext, escapeXmlContent } from '../prompt-sections'
 
 describe('buildRetryContext', () => {
   describe('revision feedback', () => {
@@ -94,5 +94,32 @@ describe('buildRetryContext', () => {
       // The closing tag sequence should be escaped, not literal
       expect(result).not.toContain('</revision_feedback> payload')
     })
+  })
+})
+
+describe('escapeXmlContent', () => {
+  it('escapes closing-tag sequences', () => {
+    expect(escapeXmlContent('</prior_scratchpad>')).toBe('<\\/prior_scratchpad>')
+    expect(escapeXmlContent('</user_spec>')).toBe('<\\/user_spec>')
+  })
+
+  it('escapes opening-tag sequences', () => {
+    expect(escapeXmlContent('<instructions>')).toBe('<\\instructions>')
+    expect(escapeXmlContent('<system>attack</system>')).toBe('<\\system>attack<\\/system>')
+  })
+
+  it('leaves less-than before digits and spaces unchanged', () => {
+    expect(escapeXmlContent('x < 3')).toBe('x < 3')
+    expect(escapeXmlContent('count<2')).toBe('count<2')
+    expect(escapeXmlContent('value<')).toBe('value<')
+  })
+
+  it('leaves diff output unchanged (< at start of removed line)', () => {
+    const diff = '< removed line\n> added line'
+    expect(escapeXmlContent(diff)).toBe('< removed line\n> added line')
+  })
+
+  it('handles empty string without error', () => {
+    expect(escapeXmlContent('')).toBe('')
   })
 })

@@ -578,60 +578,58 @@ describe('deleteTask', () => {
 })
 
 describe('claimTask', () => {
-  it('atomically sets status to active', () => {
+  it('atomically sets status to active', async () => {
     const created = createTask({ title: 'Claim me', repo: 'bde' })!
     updateTask(created.id, { status: 'queued' })
 
-    const claimed = claimTask(created.id, 'exec-1')
+    const claimed = await claimTask(created.id, 'exec-1')
     expect(claimed).not.toBeNull()
     expect(claimed!.status).toBe('active')
     expect(claimed!.claimed_by).toBe('exec-1')
     expect(claimed!.started_at).toBeTruthy()
   })
 
-  it('returns null if not queued', () => {
+  it('returns null if not queued', async () => {
     const created = createTask({ title: 'Not queued', repo: 'bde' })!
     // status is 'backlog' by default
-    const result = claimTask(created.id, 'exec-1')
+    const result = await claimTask(created.id, 'exec-1')
     expect(result).toBeNull()
   })
 
-  it('returns null for non-existent task', () => {
-    const result = claimTask('nonexistent', 'exec-1')
+  it('returns null for non-existent task', async () => {
+    const result = await claimTask('nonexistent', 'exec-1')
     expect(result).toBeNull()
   })
 
-  it('enforces WIP limit atomically when maxActive is provided', () => {
-    // Use valid transitions: backlog → queued → active (via claimTask)
+  it('enforces WIP limit atomically when maxActive is provided', async () => {
     const t1 = createTask({ title: 'Active 1', repo: 'bde' })!
     updateTask(t1.id, { status: 'queued' })
-    claimTask(t1.id, 'setup-exec')
+    await claimTask(t1.id, 'setup-exec')
     const t2 = createTask({ title: 'Active 2', repo: 'bde' })!
     updateTask(t2.id, { status: 'queued' })
-    claimTask(t2.id, 'setup-exec')
+    await claimTask(t2.id, 'setup-exec')
 
     const queued = createTask({ title: 'Should be blocked', repo: 'bde' })!
     updateTask(queued.id, { status: 'queued' })
 
     // WIP limit of 2 — should reject
-    const result = claimTask(queued.id, 'exec-1', 2)
+    const result = await claimTask(queued.id, 'exec-1', 2)
     expect(result).toBeNull()
     // Task must remain queued
     const unchanged = getTask(queued.id)
     expect(unchanged!.status).toBe('queued')
   })
 
-  it('allows claim when active count is below maxActive', () => {
-    // Use valid transitions: backlog → queued → active (via claimTask)
+  it('allows claim when active count is below maxActive', async () => {
     const active = createTask({ title: 'Active', repo: 'bde' })!
     updateTask(active.id, { status: 'queued' })
-    claimTask(active.id, 'setup-exec')
+    await claimTask(active.id, 'setup-exec')
 
     const queued = createTask({ title: 'Claimable', repo: 'bde' })!
     updateTask(queued.id, { status: 'queued' })
 
     // WIP limit of 2 — one active, should allow
-    const result = claimTask(queued.id, 'exec-1', 2)
+    const result = await claimTask(queued.id, 'exec-1', 2)
     expect(result).not.toBeNull()
     expect(result!.status).toBe('active')
   })
@@ -641,12 +639,12 @@ describe('claimTask', () => {
   // workers from claiming the same row. If a future change drops that
   // predicate, both calls below would return non-null and the loser would
   // overwrite the winner's claimed_by — this test makes that regression loud.
-  it('only one of two consecutive callers wins the claim', () => {
+  it('only one of two consecutive callers wins the claim', async () => {
     const created = createTask({ title: 'Race target', repo: 'bde' })!
     updateTask(created.id, { status: 'queued' })
 
-    const firstClaim = claimTask(created.id, 'executor-winner')
-    const secondClaim = claimTask(created.id, 'executor-loser')
+    const firstClaim = await claimTask(created.id, 'executor-winner')
+    const secondClaim = await claimTask(created.id, 'executor-loser')
 
     const winners = [firstClaim, secondClaim].filter((claim) => claim !== null)
     const losers = [firstClaim, secondClaim].filter((claim) => claim === null)
@@ -664,10 +662,10 @@ describe('claimTask', () => {
 })
 
 describe('releaseTask', () => {
-  it('resets status to queued', () => {
+  it('resets status to queued', async () => {
     const created = createTask({ title: 'Release me', repo: 'bde' })!
     updateTask(created.id, { status: 'queued' })
-    claimTask(created.id, 'exec-1')
+    await claimTask(created.id, 'exec-1')
 
     const released = releaseTask(created.id, 'exec-1')
     expect(released).not.toBeNull()
@@ -677,10 +675,10 @@ describe('releaseTask', () => {
     expect(released!.agent_run_id).toBeNull()
   })
 
-  it('returns null if claimed_by does not match', () => {
+  it('returns null if claimed_by does not match', async () => {
     const created = createTask({ title: 'T', repo: 'bde' })!
     updateTask(created.id, { status: 'queued' })
-    claimTask(created.id, 'exec-1')
+    await claimTask(created.id, 'exec-1')
 
     const result = releaseTask(created.id, 'exec-2')
     expect(result).toBeNull()

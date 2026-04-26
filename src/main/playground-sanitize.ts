@@ -199,7 +199,6 @@ const PLAYGROUND_ALLOWED_ATTR = [
   'selected',
   // Media
   'controls',
-  'autoplay',
   'loop',
   'muted',
   'preload',

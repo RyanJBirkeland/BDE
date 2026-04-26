@@ -46,12 +46,12 @@ function getTaskRow(id: string): { status: string; claimed_by: string | null } {
 }
 
 describe('claimTask concurrent-claim race', () => {
-  it('allows exactly one caller to win when two callers attempt to claim the same queued task', () => {
+  it('allows exactly one caller to win when two callers attempt to claim the same queued task', async () => {
     const taskId = 'race-task-1'
     insertQueuedTask(taskId)
 
-    const firstResult = claimTask(taskId, 'executor-a', undefined, db)
-    const secondResult = claimTask(taskId, 'executor-b', undefined, db)
+    const firstResult = await claimTask(taskId, 'executor-a', undefined, db)
+    const secondResult = await claimTask(taskId, 'executor-b', undefined, db)
 
     const winners = [firstResult, secondResult].filter((r) => r !== null)
     const losers = [firstResult, secondResult].filter((r) => r === null)
@@ -63,23 +63,23 @@ describe('claimTask concurrent-claim race', () => {
     expect(secondResult).toBeNull()
   })
 
-  it('leaves the task in active status with the winner as claimed_by after a race', () => {
+  it('leaves the task in active status with the winner as claimed_by after a race', async () => {
     const taskId = 'race-task-2'
     insertQueuedTask(taskId)
 
-    claimTask(taskId, 'executor-winner', undefined, db)
-    claimTask(taskId, 'executor-loser', undefined, db)
+    await claimTask(taskId, 'executor-winner', undefined, db)
+    await claimTask(taskId, 'executor-loser', undefined, db)
 
     const stored = getTaskRow(taskId)
     expect(stored.status).toBe('active')
     expect(stored.claimed_by).toBe('executor-winner')
   })
 
-  it('returns the claimed task with correct fields for the winner', () => {
+  it('returns the claimed task with correct fields for the winner', async () => {
     const taskId = 'race-task-3'
     insertQueuedTask(taskId, 'Claimable task')
 
-    const claimed = claimTask(taskId, 'executor-first', undefined, db)
+    const claimed = await claimTask(taskId, 'executor-first', undefined, db)
 
     expect(claimed).not.toBeNull()
     expect(claimed!.id).toBe(taskId)
@@ -88,8 +88,8 @@ describe('claimTask concurrent-claim race', () => {
     expect(claimed!.started_at).not.toBeNull()
   })
 
-  it('returns null when no queued task exists with the given id', () => {
-    const result = claimTask('nonexistent-id', 'executor-a', undefined, db)
+  it('returns null when no queued task exists with the given id', async () => {
+    const result = await claimTask('nonexistent-id', 'executor-a', undefined, db)
     expect(result).toBeNull()
   })
 })

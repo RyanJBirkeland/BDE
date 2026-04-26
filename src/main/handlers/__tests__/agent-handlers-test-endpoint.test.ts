@@ -94,4 +94,23 @@ describe('testLocalEndpoint', () => {
       expect(result.error.length).toBeGreaterThan(0)
     }
   })
+
+  it('rejects 0.0.0.0 — not a loopback address', async () => {
+    const result = await testLocalEndpoint('http://0.0.0.0:11434')
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/localhost/i) })
+  })
+
+  it('accepts 127.0.0.1 and localhost as valid loopback targets', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [{ id: 'model-a' }] })
+    }) as unknown as typeof fetch
+
+    const r1 = await testLocalEndpoint('http://127.0.0.1:11434')
+    expect(r1.ok).toBe(true)
+
+    const r2 = await testLocalEndpoint('http://localhost:11434')
+    expect(r2.ok).toBe(true)
+  })
 })
