@@ -239,8 +239,10 @@ export function buildPipelinePrompt(input: BuildPromptInput): string {
 
   // Prior attempt scratchpad (after spec so the agent can cross-reference what it tried vs what's asked)
   if (priorScratchpad) {
-    prompt += '\n\n## Prior Attempt Context\n\n'
-    prompt += truncateSpec(priorScratchpad, PROMPT_TRUNCATION.PRIOR_SCRATCHPAD_CHARS)
+    const escapedScratchpad = escapeXmlContent(
+      truncateSpec(priorScratchpad, PROMPT_TRUNCATION.PRIOR_SCRATCHPAD_CHARS)
+    )
+    prompt += `\n\n<prior_scratchpad>\n${escapedScratchpad}\n</prior_scratchpad>`
   }
 
   // Retry context (after spec and scratchpad — failure notes are most useful with full task context in mind)

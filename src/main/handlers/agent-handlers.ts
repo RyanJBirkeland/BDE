@@ -91,7 +91,7 @@ function validateLocalEndpointUrl(endpoint: string): string | null {
       return 'Only http:// and https:// endpoints are supported'
     }
     const hostname = url.hostname
-    const LOOPBACK = ['localhost', '127.0.0.1', '::1', '0.0.0.0']
+    const LOOPBACK = ['localhost', '127.0.0.1', '::1']
     if (!LOOPBACK.includes(hostname)) {
       return 'Endpoint must be a localhost address (127.0.0.1 or ::1)'
     }
