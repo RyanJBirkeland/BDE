@@ -37,6 +37,7 @@ import type {
 } from './review-orchestration-types'
 import type { SprintTask } from '../../shared/types/task-types'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import type { TaskStateService } from './task-state-service'
 
 export type {
   MergeLocallyInput,
@@ -327,4 +328,64 @@ export async function rebase(i: RebaseInput): Promise<RebaseResult> {
     const e = err as Error & { conflicts?: string[] }
     return { success: false, error: getErrorMessage(err), conflicts: e.conflicts }
   }
+}
+
+export type FreshnessResult =
+  | { status: 'fresh'; commitsBehind: 0 }
+  | { status: 'stale'; commitsBehind: number }
+  | { status: 'unknown' }
+
+export async function checkReviewFreshness(
+  taskId: string,
+  env: NodeJS.ProcessEnv
+): Promise<FreshnessResult> {
+  const task = getTask(taskId)
+  if (!task) return { status: 'unknown' }
+  if (!task.rebase_base_sha) return { status: 'unknown' }
+
+  try {
+    const repoConfig = getRepoConfig(task.repo)
+    if (!repoConfig) return { status: 'unknown' }
+
+    await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: repoConfig.localPath, env })
+
+    const { stdout: currentShaOut } = await execFileAsync(
+      'git',
+      ['rev-parse', 'origin/main'],
+      { cwd: repoConfig.localPath, env }
+    )
+    const currentSha = currentShaOut.trim()
+
+    if (currentSha === task.rebase_base_sha) {
+      return { status: 'fresh', commitsBehind: 0 }
+    }
+
+    const { stdout: countOut } = await execFileAsync(
+      'git',
+      ['rev-list', '--count', `${task.rebase_base_sha}..origin/main`],
+      { cwd: repoConfig.localPath, env }
+    )
+    return { status: 'stale', commitsBehind: parseInt(countOut.trim(), 10) }
+  } catch (err: unknown) {
+    logger.warn(`[checkReviewFreshness] Error for task ${taskId}: ${err}`)
+    return { status: 'unknown' }
+  }
+}
+
+export async function markShippedOutsideBde(
+  taskId: string,
+  deps: { taskStateService: TaskStateService }
+): Promise<{ success: true }> {
+  const task = getTask(taskId)
+  if (!task) throw new Error(`Task ${taskId} not found`)
+  if (task.status !== 'review') {
+    throw new Error(`Task ${taskId} is not in review status (status: ${task.status})`)
+  }
+
+  logger.info(`markShippedOutsideBde task=${taskId}`)
+  await deps.taskStateService.transition(taskId, 'done', {
+    fields: { completed_at: nowIso() },
+    caller: 'review:markShippedOutsideBde'
+  })
+  return { success: true }
 }

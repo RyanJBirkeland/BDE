@@ -12,15 +12,13 @@ import { safeHandle } from '../ipc-utils'
 import type { IpcArgsParser } from '../ipc-utils'
 import type { IpcChannelMap } from '../../shared/ipc-channels'
 import { isValidTaskId } from '../lib/validation'
-import { createLogger } from '../logger'
+
 import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
-import { execFileAsync } from '../lib/async-utils'
 import { checkAutoReview } from '../services/auto-review-service'
 import { getTask } from '../services/sprint-service'
 import type { TaskStateService } from '../services/task-state-service'
 import type { AutoReviewRule } from '../../shared/types'
-import { getRepoConfig } from '../paths'
 import * as reviewOrchestration from '../services/review-orchestration-service'
 import {
   getReviewDiff,
@@ -34,7 +32,6 @@ import {
 } from '../lib/review-paths'
 import { shipBatch } from '../services/review-ship-batch'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { nowIso } from '../../shared/time'
 
 export function parseReviewWorktreeArgs(
   args: unknown[]
@@ -74,8 +71,6 @@ export function parseReviewFileDiffArgs(
   return [p as IpcChannelMap['review:getFileDiff']['args'][0]]
 }
 
-const logger = createLogger('review-handlers')
-
 export interface ReviewHandlersDeps {
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
   taskStateService: TaskStateService
@@ -103,43 +98,7 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   safeHandle('review:checkFreshness', async (_e, payload) => {
     const { taskId } = payload
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-
-    const task = getTask(taskId)
-    if (!task) return { status: 'unknown' as const }
-    if (!task.rebase_base_sha) return { status: 'unknown' as const }
-
-    try {
-      const repoConfig = getRepoConfig(task.repo)
-      if (!repoConfig) return { status: 'unknown' as const }
-
-      await execFileAsync('git', ['fetch', 'origin', 'main'], {
-        cwd: repoConfig.localPath,
-        env
-      })
-
-      const { stdout: currentShaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
-        cwd: repoConfig.localPath,
-        env
-      })
-      const currentSha = currentShaOut.trim()
-
-      if (currentSha === task.rebase_base_sha) {
-        return { status: 'fresh' as const, commitsBehind: 0 }
-      }
-
-      // Count commits between task's base and current origin/main
-      const { stdout: countOut } = await execFileAsync(
-        'git',
-        ['rev-list', '--count', `${task.rebase_base_sha}..origin/main`],
-        { cwd: repoConfig.localPath, env }
-      )
-      const commitsBehind = parseInt(countOut.trim(), 10)
-
-      return { status: 'stale' as const, commitsBehind }
-    } catch (err: unknown) {
-      logger.warn(`[review:checkFreshness] Error for task ${taskId}: ${err}`)
-      return { status: 'unknown' as const }
-    }
+    return reviewOrchestration.checkReviewFreshness(taskId, env)
   })
 
   // review:checkAutoReview — check if task qualifies for auto-review
@@ -244,18 +203,6 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   safeHandle('review:markShippedOutsideBde', async (_e, payload) => {
     const { taskId } = payload
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-
-    const task = getTask(taskId)
-    if (!task) throw new Error(`Task ${taskId} not found`)
-    if (task.status !== 'review') {
-      throw new Error(`Task ${taskId} is not in review status (status: ${task.status})`)
-    }
-
-    logger.info(`review:markShippedOutsideBde task=${taskId}`)
-    await deps.taskStateService.transition(taskId, 'done', {
-      fields: { completed_at: nowIso() },
-      caller: 'review:markShippedOutsideBde'
-    })
-    return { success: true }
+    return reviewOrchestration.markShippedOutsideBde(taskId, { taskStateService: deps.taskStateService })
   })
 }
