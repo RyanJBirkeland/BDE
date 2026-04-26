@@ -1,22 +1,21 @@
-/**
- * T-140 — createUnitOfWork rollback behavior.
- *
- * The function is a thin wrapper around better-sqlite3's db.transaction().
- * Key behaviors:
- *   - Wraps the callback in a SQLite transaction (all-or-nothing).
- *   - If the callback throws, better-sqlite3 rolls back the transaction
- *     and re-throws the error.
- */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { runMigrations } from '../../db'
 
+// In-memory SQLite instance shared across tests in this file.
+let db: Database.Database
+
+// Override getDb so createUnitOfWork uses our in-memory DB — not the live user DB.
 vi.mock('../../db', async () => {
   const actual = await vi.importActual<typeof import('../../db')>('../../db')
-  return { ...actual, getDb: () => db }
+  return {
+    ...actual,
+    getDb: () => db
+  }
 })
 
-let db: Database.Database
+// Import after mocks are set up so the module sees the mocked getDb.
+import { createUnitOfWork } from '../unit-of-work'
 
 beforeEach(() => {
   db = new Database(':memory:')
@@ -25,43 +24,62 @@ beforeEach(() => {
   runMigrations(db)
 })
 
-import { createUnitOfWork } from '../unit-of-work'
+afterEach(() => {
+  db.close()
+})
+
+// Minimal columns sufficient for an insert without touching nullable fields
+// that future migrations may add non-null constraints to.
+function insertTaskRow(id: string): void {
+  const sql = `
+    INSERT INTO sprint_tasks (id, title, status, repo, priority, needs_review)
+    VALUES (?, 'test task', 'backlog', 'bde', 1, 0)
+  `
+  db.prepare(sql).run(id)
+}
+
+function countTasksById(id: string): number {
+  const row = db.prepare('SELECT COUNT(*) as n FROM sprint_tasks WHERE id = ?').get(id) as {
+    n: number
+  }
+  return row.n
+}
 
 describe('createUnitOfWork', () => {
-  it('commits work when the callback completes without throwing', () => {
-    const uow = createUnitOfWork()
-    db.prepare(`INSERT INTO sprint_tasks (title, repo, status) VALUES ('T1','bde','backlog')`).run()
+  describe('runInTransaction', () => {
+    it('commits the insert when work completes without throwing', () => {
+      const uow = createUnitOfWork()
+      const taskId = 'uow-commit-test'
 
-    uow.runInTransaction(() => {
-      db.prepare(`UPDATE sprint_tasks SET title='Updated' WHERE title='T1'`).run()
+      uow.runInTransaction(() => insertTaskRow(taskId))
+
+      expect(countTasksById(taskId)).toBe(1)
     })
 
-    const row = db.prepare(`SELECT title FROM sprint_tasks WHERE repo='bde'`).get() as { title: string } | undefined
-    expect(row?.title).toBe('Updated')
-  })
+    it('rolls back the insert when work throws', () => {
+      const uow = createUnitOfWork()
+      const taskId = 'uow-rollback-test'
 
-  it('rolls back when the callback throws (T-140)', () => {
-    const uow = createUnitOfWork()
-    db.prepare(`INSERT INTO sprint_tasks (title, repo, status) VALUES ('T2','bde','backlog')`).run()
+      try {
+        uow.runInTransaction(() => {
+          insertTaskRow(taskId)
+          throw new Error('simulated failure')
+        })
+      } catch {
+        // Expected — the error propagates; we only care about DB state here.
+      }
 
-    expect(() => {
-      uow.runInTransaction(() => {
-        db.prepare(`UPDATE sprint_tasks SET title='ShouldRollback' WHERE title='T2'`).run()
-        throw new Error('intentional rollback')
-      })
-    }).toThrow('intentional rollback')
+      expect(countTasksById(taskId)).toBe(0)
+    })
 
-    // Title must still be 'T2' — the UPDATE was rolled back
-    const row = db.prepare(`SELECT title FROM sprint_tasks WHERE repo='bde'`).get() as { title: string } | undefined
-    expect(row?.title).toBe('T2')
-  })
+    it('re-throws the error to the caller', () => {
+      const uow = createUnitOfWork()
 
-  it('re-throws the error after rollback', () => {
-    const uow = createUnitOfWork()
-    const boom = new Error('boom')
-
-    expect(() => {
-      uow.runInTransaction(() => { throw boom })
-    }).toThrow(boom)
+      expect(() =>
+        uow.runInTransaction(() => {
+          throw new Error('simulated failure')
+        })
+      ).toThrow('simulated failure')
+    })
   })
 })
