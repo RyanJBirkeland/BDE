@@ -419,8 +419,7 @@ describe('runWatchdog', () => {
     const repo = makeRepo()
     vi.mocked(repo.getTask).mockReturnValue({ status: 'review' } as never)
     const cleanupAgentWorktree = vi.fn().mockResolvedValue(undefined)
-    const deps = makeDeps({
-      activeAgents: new Map([['task-review', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       repo,
       getConcurrency: () => concurrency,
       cleanupAgentWorktree
@@ -450,8 +449,7 @@ describe('runWatchdog', () => {
     const repo = makeRepo()
     vi.mocked(repo.getTask).mockReturnValue({ status: 'active' } as never)
     const cleanupAgentWorktree = vi.fn().mockResolvedValue(undefined)
-    const deps = makeDeps({
-      activeAgents: new Map([['task-active', agent]]),
+    const deps = makeDepsWithRegistry(registryWith(agent), {
       repo,
       getConcurrency: () => concurrency,
       cleanupAgentWorktree
@@ -526,8 +524,7 @@ describe('cleanupWorktreeIfNotInReview (T-38)', () => {
     vi.mocked(repo.getTask).mockReturnValue({ id: 'task-review', status: 'review' } as any)
 
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDeps({ repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
-    deps.activeAgents.set('task-review', agent)
+    const deps = makeDepsWithRegistry(registryWith(agent), { repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
 
     vi.mocked(checkAgent).mockReturnValue('idle')
     vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
@@ -545,8 +542,7 @@ describe('cleanupWorktreeIfNotInReview (T-38)', () => {
     vi.mocked(repo.getTask).mockReturnValue({ id: 'task-failed', status: 'failed' } as any)
 
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDeps({ repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
-    deps.activeAgents.set('task-failed', agent)
+    const deps = makeDepsWithRegistry(registryWith(agent), { repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
 
     vi.mocked(checkAgent).mockReturnValue('idle')
     vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
@@ -562,8 +558,7 @@ describe('cleanupWorktreeIfNotInReview (T-38)', () => {
     vi.mocked(repo.getTask).mockReturnValue({ id: 'task-no-cleanup', status: 'error' } as any)
 
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDeps({ repo, getConcurrency: () => concurrency }) // no cleanupAgentWorktree
-    deps.activeAgents.set('task-no-cleanup', agent)
+    const deps = makeDepsWithRegistry(registryWith(agent), { repo, getConcurrency: () => concurrency }) // no cleanupAgentWorktree
 
     vi.mocked(checkAgent).mockReturnValue('idle')
     vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
