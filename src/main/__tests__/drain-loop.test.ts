@@ -33,7 +33,7 @@ function makeRepo(overrides: Partial<IAgentTaskRepository> = {}): IAgentTaskRepo
 function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
   const repo = makeRepo(overrides.repo as any)
   const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), event: vi.fn() } as any
-  const concurrency: ConcurrencyState = {
+  const _concurrency: ConcurrencyState = {
     maxSlots: 4,
     capacityAfterBackpressure: 4,
     activeCount: 0,
@@ -132,11 +132,11 @@ describe('drainQueuedTasks — quarantine', () => {
   })
 
   it('clears failure count on successful processing', async () => {
-    const successRepo = makeRepo({
+    const _successRepo = makeRepo({
       processQueuedTask: vi.fn().mockResolvedValue(undefined)
     } as any)
     const deps = makeDeps({ processQueuedTask: vi.fn().mockResolvedValue(undefined) })
-    const loop = new DrainLoop(deps)
+    const _loop = new DrainLoop(deps)
 
     // Seed failure count by failing twice
     const failLoop = new DrainLoop(deps)
