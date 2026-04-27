@@ -5,8 +5,8 @@
 import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Command palette navigation', () => {
-  test('Cmd+P opens palette, typing Sprint navigates to Sprint view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+P opens palette, typing Sprint navigates to Sprint view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Open command palette with Cmd+P
@@ -37,8 +37,8 @@ test.describe('Command palette navigation', () => {
     await expect(palette).not.toBeVisible({ timeout: 5_000 })
   })
 
-  test('palette opens and closes with Escape', async ({ bde }) => {
-    const { window } = bde
+  test('palette opens and closes with Escape', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Open palette
@@ -54,8 +54,8 @@ test.describe('Command palette navigation', () => {
     await expect(palette).not.toBeVisible({ timeout: 3_000 })
   })
 
-  test('palette shows grouped commands with list', async ({ bde }) => {
-    const { window } = bde
+  test('palette shows grouped commands with list', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+p')

@@ -1,6 +1,6 @@
-# BDE Network Requirements
+# FLEET Network Requirements
 
-Required outbound HTTPS (port 443) access for BDE to function on a corporate network.
+Required outbound HTTPS (port 443) access for FLEET to function on a corporate network.
 All traffic uses TLS 1.2+. No inbound ports are required.
 
 ## Required domains
@@ -12,7 +12,7 @@ All traffic uses TLS 1.2+. No inbound ports are required.
 | `api.anthropic.com` | Claude API — all agent inference calls, OAuth token creation |
 | `mcp-proxy.anthropic.com` | MCP tool proxy used by the Claude Code CLI |
 
-These are hard blockers. BDE will not be able to run agents if either is unreachable.
+These are hard blockers. FLEET will not be able to run agents if either is unreachable.
 
 ### GitHub
 
@@ -32,14 +32,14 @@ but `api.github.com` always uses HTTPS.
 |--------|---------|
 | `api.segment.io` | Anonymous usage telemetry sent by the Claude Code CLI |
 
-Blocking this domain will not prevent BDE from functioning. The CLI handles connection
+Blocking this domain will not prevent FLEET from functioning. The CLI handles connection
 failures to telemetry endpoints gracefully.
 
 ---
 
 ## Proxy configuration
 
-BDE respects standard proxy environment variables. Set these before launching the app
+FLEET respects standard proxy environment variables. Set these before launching the app
 (e.g., in your shell profile or via a launch script):
 
 ```sh
@@ -60,12 +60,12 @@ The Claude Code CLI also reads `GIT_SSL_CAINFO` for git operations.
 
 ## Corporate GitHub (GitHub Enterprise)
 
-BDE currently targets `api.github.com` directly. GitHub Enterprise Server is not yet
+FLEET currently targets `api.github.com` directly. GitHub Enterprise Server is not yet
 supported — the GitHub API base URL is hardcoded.
 
 ## Verifying connectivity
 
-After setting proxy variables, you can test from the terminal before launching BDE:
+After setting proxy variables, you can test from the terminal before launching FLEET:
 
 ```sh
 # Test Anthropic API reachability
@@ -74,6 +74,6 @@ curl -I https://api.anthropic.com
 # Test GitHub API reachability
 curl -I https://api.github.com
 
-# Test gh CLI auth (should already be set up before first BDE launch)
+# Test gh CLI auth (should already be set up before first FLEET launch)
 gh auth status
 ```

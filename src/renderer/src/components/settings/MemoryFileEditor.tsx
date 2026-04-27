@@ -56,7 +56,7 @@ export function MemoryFileEditor({
     <div className="memory-editor">
       {loadingContent ? (
         <div className="memory-editor__loading">
-          <div className="bde-skeleton memory-editor__skeleton" />
+          <div className="fleet-skeleton memory-editor__skeleton" />
         </div>
       ) : selectedPath ? (
         <>

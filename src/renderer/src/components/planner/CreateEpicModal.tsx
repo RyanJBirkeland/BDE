@@ -19,12 +19,12 @@ interface CreateEpicModalProps {
 }
 
 const ACCENT_COLORS = [
-  { name: 'Cyan', value: 'var(--bde-accent)' },
-  { name: 'Pink', value: 'var(--bde-status-done)' },
-  { name: 'Blue', value: 'var(--bde-status-review)' },
-  { name: 'Purple', value: 'var(--bde-status-active)' },
-  { name: 'Orange', value: 'var(--bde-warning)' },
-  { name: 'Red', value: 'var(--bde-danger)' }
+  { name: 'Cyan', value: 'var(--fleet-accent)' },
+  { name: 'Pink', value: 'var(--fleet-status-done)' },
+  { name: 'Blue', value: 'var(--fleet-status-review)' },
+  { name: 'Purple', value: 'var(--fleet-status-active)' },
+  { name: 'Orange', value: 'var(--fleet-warning)' },
+  { name: 'Red', value: 'var(--fleet-danger)' }
 ]
 
 export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.JSX.Element {
@@ -34,7 +34,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
 
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('E')
-  const [accentColor, setAccentColor] = useState('var(--bde-accent)')
+  const [accentColor, setAccentColor] = useState('var(--fleet-accent)')
   const [goal, setGoal] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<EpicTemplate | null>(null)
@@ -51,7 +51,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
       // Reset form on open
       setName('')
       setIcon('E')
-      setAccentColor('var(--bde-accent)')
+      setAccentColor('var(--fleet-accent)')
       setGoal('')
       setSubmitting(false)
       setSelectedTemplate(null)
@@ -220,7 +220,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
                     setSelectedTemplate(null)
                     setName('')
                     setIcon('E')
-                    setAccentColor('var(--bde-accent)')
+                    setAccentColor('var(--fleet-accent)')
                     setGoal('')
                   }}
                 >
@@ -273,7 +273,7 @@ export function CreateEpicModal({ open, onClose }: CreateEpicModalProps): React.
                     border:
                       accentColor === color.value
                         ? `2px solid ${color.value}`
-                        : '1px solid var(--bde-border)',
+                        : '1px solid var(--fleet-border)',
                     opacity: accentColor === color.value ? 1 : 0.6
                   }}
                   aria-label={`Select ${color.name} accent color`}

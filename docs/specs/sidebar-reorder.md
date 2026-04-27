@@ -13,7 +13,7 @@ The sidebar store (`src/renderer/src/stores/sidebar.ts`) already has `reorderVie
 ## Approach
 
 1. **NeonSidebar.tsx** — Add `onDragOver`/`onDrop` handlers to the nav list that:
-   - Detect sidebar-to-sidebar reorder (same MIME type `application/bde-panel`)
+   - Detect sidebar-to-sidebar reorder (same MIME type `application/fleet-panel`)
    - Calculate insertion index from cursor Y position relative to sidebar items
    - Show a visual drop indicator (horizontal line) between items at the insertion point
    - On drop, call `useSidebarStore.getState().reorderViews(newOrder)`

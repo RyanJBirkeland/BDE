@@ -36,7 +36,7 @@ describe('useRepoOptions', () => {
     await waitFor(() => {
       expect(result.current).toEqual([
         { label: 'MyRepo', owner: 'myorg', color: '#ff0000' },
-        { label: 'OtherRepo', owner: '', color: 'var(--bde-text-dim)' }
+        { label: 'OtherRepo', owner: '', color: 'var(--fleet-text-dim)' }
       ])
     })
   })

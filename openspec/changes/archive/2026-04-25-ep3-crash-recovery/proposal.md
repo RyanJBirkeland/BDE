@@ -1,6 +1,6 @@
 ## Why
 
-After a crash or forced kill, `recoverOrphans` re-queues `active` tasks with no counter bump — a task that crashes BDE three times in a row will spin forever. Recovery is invisible to the user (no UI signal, no banner). Tasks in `review` status with preserved PRs leave dependents blocked because their PR-poller terminal path was never fired. Repeated "has PR, clearing claimed_by" log lines on every startup are noise that masks real problems.
+After a crash or forced kill, `recoverOrphans` re-queues `active` tasks with no counter bump — a task that crashes FLEET three times in a row will spin forever. Recovery is invisible to the user (no UI signal, no banner). Tasks in `review` status with preserved PRs leave dependents blocked because their PR-poller terminal path was never fired. Repeated "has PR, clearing claimed_by" log lines on every startup are noise that masks real problems.
 
 ## What Changes
 

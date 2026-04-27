@@ -1,11 +1,11 @@
 .git-diff-drawer {
-  border-top: 1px solid var(--bde-border);
+  border-top: 1px solid var(--fleet-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   max-height: 40%;
   min-height: 120px;
-  background-color: var(--bde-surface);
+  background-color: var(--fleet-surface);
   transition: max-height 200ms ease;
 }
 
@@ -20,8 +20,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--bde-space-1) var(--bde-space-3);
-  border-bottom: 1px solid var(--bde-border);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
 }
 
@@ -33,9 +33,9 @@
 }
 
 .git-diff-drawer__path {
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-code);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-code);
+  color: var(--fleet-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -50,13 +50,13 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--bde-text-muted);
-  border-radius: var(--bde-radius-sm);
+  color: var(--fleet-text-muted);
+  border-radius: var(--fleet-radius-sm);
   flex-shrink: 0;
 }
 
 .git-diff-drawer__close-btn:hover:not(:disabled) {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .git-diff-drawer__close-btn:active:not(:disabled) {
@@ -66,41 +66,41 @@
 .git-diff-drawer__content {
   flex: 1;
   overflow: auto;
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-sm);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-sm);
 }
 
 .git-diff-drawer__empty {
-  padding: var(--bde-space-3);
-  color: var(--bde-text-muted);
+  padding: var(--fleet-space-3);
+  color: var(--fleet-text-muted);
   text-align: center;
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-ui);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-ui);
 }
 
 .git-diff-drawer__line {
   display: block;
-  padding: 1px var(--bde-space-3);
+  padding: 1px var(--fleet-space-3);
   white-space: pre;
   line-height: 1.6;
 }
 
 .git-diff-drawer__line--add {
-  color: var(--bde-success);
-  background-color: var(--bde-diff-add-bg);
+  color: var(--fleet-success);
+  background-color: var(--fleet-diff-add-bg);
 }
 
 .git-diff-drawer__line--delete {
-  color: var(--bde-danger);
-  background-color: var(--bde-diff-del-bg);
+  color: var(--fleet-danger);
+  background-color: var(--fleet-diff-del-bg);
 }
 
 .git-diff-drawer__line--meta {
-  color: var(--bde-info);
-  background-color: var(--bde-info-dim);
+  color: var(--fleet-info);
+  background-color: var(--fleet-info-dim);
 }
 
 .git-diff-drawer__line--default {
-  color: var(--bde-text);
+  color: var(--fleet-text);
   background-color: transparent;
 }

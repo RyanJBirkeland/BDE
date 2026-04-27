@@ -75,7 +75,7 @@ function makeTask(overrides: Partial<AgentRunClaim> = {}): AgentRunClaim {
     title: 'Test',
     prompt: 'Do it',
     spec: null,
-    repo: 'bde',
+    repo: 'fleet',
     retry_count: 0,
     fast_fail_count: 0,
     ...overrides

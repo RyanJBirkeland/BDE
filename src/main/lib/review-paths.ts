@@ -20,7 +20,7 @@ export function validateGitRef(ref: string | undefined | null): void {
 
 /**
  * Returns the configured pipeline worktree base, defaulting to
- * `DEFAULT_PIPELINE_WORKTREE_BASE` (~/.bde/worktrees). Resolved to an absolute
+ * `DEFAULT_PIPELINE_WORKTREE_BASE` (~/.fleet/worktrees). Resolved to an absolute
  * path (no trailing slash). Used by the agent manager and disk-space tracking —
  * they only know about pipeline worktrees.
  */

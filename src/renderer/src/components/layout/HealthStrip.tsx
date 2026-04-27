@@ -19,7 +19,7 @@ interface HealthStripProps {
 const DOT_COLOR: Record<HealthManagerState, string> = {
   running: neonVar('cyan', 'color'),
   error: neonVar('red', 'color'),
-  idle: 'var(--bde-text-dim, rgba(255,255,255,0.35))'
+  idle: 'var(--fleet-text-dim, rgba(255,255,255,0.35))'
 }
 
 const DOT_LABEL: Record<HealthManagerState, string> = {
@@ -50,9 +50,9 @@ export function HealthStrip({
       title={ariaLabel}
       data-testid="unified-header-health-strip"
       style={{
-        background: 'var(--bde-surface-raised, rgba(255,255,255,0.04))',
-        border: '1px solid var(--bde-border, rgba(255,255,255,0.08))',
-        color: 'var(--bde-text, rgba(255,255,255,0.85))'
+        background: 'var(--fleet-surface-raised, rgba(255,255,255,0.04))',
+        border: '1px solid var(--fleet-border, rgba(255,255,255,0.08))',
+        color: 'var(--fleet-text, rgba(255,255,255,0.85))'
       }}
     >
       <span
@@ -78,7 +78,7 @@ export function HealthStrip({
       </span>
       <span
         data-testid="health-strip-queued"
-        style={{ fontSize: 11, color: 'var(--bde-text-dim, rgba(255,255,255,0.55))' }}
+        style={{ fontSize: 11, color: 'var(--fleet-text-dim, rgba(255,255,255,0.55))' }}
       >
         {queuedCount}
       </span>

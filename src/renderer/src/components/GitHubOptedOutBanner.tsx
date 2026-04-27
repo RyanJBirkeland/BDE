@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 
-const DISMISS_KEY = 'bde:github-opted-out-dismissed'
+const DISMISS_KEY = 'fleet:github-opted-out-dismissed'
 
 /**
  * Surfaces a small banner whenever `settings.githubOptedOut === 'true'`, so
@@ -34,17 +34,17 @@ export function GitHubOptedOutBanner(): React.JSX.Element | null {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 'var(--bde-space-2)',
+        gap: 'var(--fleet-space-2)',
         padding: '6px 12px',
-        margin: '0 0 var(--bde-space-2) 0',
-        background: 'var(--bde-warning-surface, rgba(255,159,67,0.1))',
-        border: '1px solid var(--bde-warning, #ff9f43)',
+        margin: '0 0 var(--fleet-space-2) 0',
+        background: 'var(--fleet-warning-surface, rgba(255,159,67,0.1))',
+        border: '1px solid var(--fleet-warning, #ff9f43)',
         borderRadius: '4px',
-        color: 'var(--bde-text)',
-        fontSize: 'var(--bde-size-xs)'
+        color: 'var(--fleet-text)',
+        fontSize: 'var(--fleet-size-xs)'
       }}
     >
-      <AlertTriangle size={14} color="var(--bde-warning, #ff9f43)" />
+      <AlertTriangle size={14} color="var(--fleet-warning, #ff9f43)" />
       <span style={{ flex: 1 }}>
         GitHub disabled — PR actions unavailable. Enable in Onboarding or run{' '}
         <code>gh auth login</code>, then unset <code>githubOptedOut</code> in Settings.
@@ -66,7 +66,7 @@ export function GitHubOptedOutBanner(): React.JSX.Element | null {
           padding: '2px',
           display: 'flex',
           alignItems: 'center',
-          color: 'var(--bde-text-muted)'
+          color: 'var(--fleet-text-muted)'
         }}
       >
         <X size={14} />

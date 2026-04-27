@@ -4,8 +4,8 @@ import { StatusBar } from '../StatusBar'
 
 describe('StatusBar', () => {
   it('renders title', () => {
-    render(<StatusBar title="BDE Command Center" status="ok" />)
-    expect(screen.getByText('BDE Command Center')).toBeInTheDocument()
+    render(<StatusBar title="FLEET Command Center" status="ok" />)
+    expect(screen.getByText('FLEET Command Center')).toBeInTheDocument()
   })
 
   it('renders status indicator dot', () => {
@@ -44,6 +44,6 @@ describe('StatusBar', () => {
   it('uses neon border token for bottom border', () => {
     const { container } = render(<StatusBar title="Test" status="ok" accent="cyan" />)
     const bar = container.firstChild as HTMLElement
-    expect(bar.style.borderBottom).toContain('var(--bde-accent-border)')
+    expect(bar.style.borderBottom).toContain('var(--fleet-accent-border)')
   })
 })

@@ -129,7 +129,7 @@ export function ReviewQueue(): React.JSX.Element {
               style={{
                 marginLeft: 'auto',
                 fontSize: 10,
-                color: 'var(--bde-text-dim, rgba(255,255,255,0.5))'
+                color: 'var(--fleet-text-dim, rgba(255,255,255,0.5))'
               }}
             >
               {timeAgo(task.completed_at ?? task.updated_at)}

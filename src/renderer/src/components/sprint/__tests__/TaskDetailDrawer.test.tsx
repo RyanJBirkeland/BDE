@@ -8,7 +8,7 @@ import { useSprintSelection } from '../../../stores/sprintSelection'
 const baseTask: SprintTask = {
   id: 'task-1',
   title: 'Implement login flow',
-  repo: 'BDE',
+  repo: 'FLEET',
   prompt: 'Build the login page with OAuth support',
   priority: 2,
   status: 'queued',
@@ -375,7 +375,7 @@ describe('TaskDetailDrawer - additional status combos', () => {
       status: 'done',
       pr_status: 'branch_only',
       notes:
-        'Branch agent/fix-foo pushed to RyanBirkeland/BDE but PR creation failed after 3 attempts'
+        'Branch agent/fix-foo pushed to RyanBirkeland/FLEET but PR creation failed after 3 attempts'
     }
     render(<TaskDetailDrawer {...makeProps({ task })} />)
     const section = screen.getByTestId('branch-only-section')
@@ -386,7 +386,7 @@ describe('TaskDetailDrawer - additional status combos', () => {
     // URL components are encoded for security (SP-10 fix)
     expect(link).toHaveAttribute(
       'href',
-      'https://github.com/RyanBirkeland%2FBDE/pull/new/agent%2Ffix-foo'
+      'https://github.com/RyanBirkeland%2FFLEET/pull/new/agent%2Ffix-foo'
     )
   })
 

@@ -10,12 +10,12 @@
  * The v2 Session API (unstable_v2_createSession) doesn't support cwd, so agents
  * spawned with it can't operate in the worktree directory. We use v1 intentionally.
  *
- * `settingSources` is intentionally `[]` here — BDE conventions are injected via
+ * `settingSources` is intentionally `[]` here — FLEET conventions are injected via
  * `buildAgentPrompt()`, so loading CLAUDE.md through the settings system would
  * double-inject the same context at ~5-10KB extra per turn.
  *
  * **Worktree isolation**: each adhoc agent runs in its own git worktree under a
- * dedicated adhoc base (`~/.bde/worktrees-adhoc/`) so concurrent sessions can't
+ * dedicated adhoc base (`~/.fleet/worktrees-adhoc/`) so concurrent sessions can't
  * stomp on each other or on the user's main checkout. The worktree is preserved
  * after the session ends so the user can review the diff and optionally promote
  * the work into a sprint task via `agents:promoteToReview`.
@@ -150,9 +150,9 @@ export async function spawnAdhocAgent(args: {
     repoName
   })
 
-  // In-process MCP server exposing BDE's task/epic CRUD to this session.
+  // In-process MCP server exposing FLEET's task/epic CRUD to this session.
   // Without it the agent has no first-class way to create tasks or epics
-  // and falls back to shelling out with sqlite3 against ~/.bde/bde.db —
+  // and falls back to shelling out with sqlite3 against ~/.fleet/fleet.db —
   // which bypasses validation, audit, dependency auto-blocking, and the
   // renderer broadcast. See src/main/services/planner-mcp-server.ts.
   const plannerServer = createPlannerMcpServer({
@@ -165,14 +165,14 @@ export async function spawnAdhocAgent(args: {
     cwd: worktreePath,
     env: env as Record<string, string>,
     pathToClaudeCodeExecutable: getClaudeCliPath(),
-    // Adhoc agents receive BDE conventions via buildAgentPrompt() — loading
+    // Adhoc agents receive FLEET conventions via buildAgentPrompt() — loading
     // CLAUDE.md via 'project' would double-inject conventions and cost ~5-10KB
     // extra per turn. 'user' and 'local' kept for permission settings.
     settingSources: [],
-    mcpServers: { bde: plannerServer },
+    mcpServers: { fleet: plannerServer },
     // Without a canUseTool hook the SDK defaults to prompting the user for
     // every tool call — and adhoc agents have no interactive permission UI,
-    // so calls to the in-process BDE MCP server (mcp__bde__tasks.create etc.)
+    // so calls to the in-process FLEET MCP server (mcp__fleet__tasks.create etc.)
     // stay permanently denied with "you haven't granted it yet". Reusing the
     // pipeline's worktree-isolation hook lets all reads and MCP tools through
     // while still refusing writes that escape the adhoc worktree.
@@ -223,7 +223,7 @@ export async function spawnAdhocAgent(args: {
     // Start a per-session MCP HTTP server backed by the same sprint-service +
     // EpicGroupService as the in-process planner server used by the Claude path.
     // opencode is an external process so it can only reach MCP tools over HTTP;
-    // this ephemeral server gives it the same mcp__bde__tasks/epics/meta tools
+    // this ephemeral server gives it the same mcp__fleet__tasks/epics/meta tools
     // without routing through the persistent external server (port 18792).
     const sessionMcp = await startOpencodeSessionMcp(
       createEpicGroupService(),

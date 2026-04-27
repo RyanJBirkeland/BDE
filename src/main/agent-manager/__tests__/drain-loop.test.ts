@@ -15,7 +15,7 @@ vi.mock('../concurrency', async () => {
   return { ...actual }
 })
 vi.mock('../../paths', () => ({
-  getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'bde', localPath: '/tmp/bde' }])
+  getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'fleet', localPath: '/tmp/fleet' }])
 }))
 
 import {
@@ -151,7 +151,7 @@ describe('validateDrainPreconditions', () => {
     expect(deps.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('No repositories configured')
     )
-    vi.mocked(getConfiguredRepos).mockReturnValue([{ name: 'bde', localPath: '/tmp/bde' }])
+    vi.mocked(getConfiguredRepos).mockReturnValue([{ name: 'fleet', localPath: '/tmp/fleet' }])
   })
 
   it('returns false and logs when OAuth token is invalid', async () => {
@@ -404,7 +404,7 @@ describe('drain-loop: environmental failure pauses drain', () => {
     const repo = envErrorRepo()
     const processQueuedTask = vi
       .fn()
-      .mockRejectedValue(new Error('credential unavailable for bde repo'))
+      .mockRejectedValue(new Error('credential unavailable for fleet repo'))
     const deps = makeDeps({ repo, processQueuedTask })
 
     await drainQueuedTasks(1, new Map(), deps)

@@ -2,14 +2,14 @@
 
 .wb-actions {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   justify-content: flex-end;
 }
 
 .wb-actions__btn {
-  border-radius: var(--bde-radius-md);
-  padding: var(--bde-space-2) var(--bde-space-4);
-  font-size: var(--bde-size-md);
+  border-radius: var(--fleet-radius-md);
+  padding: var(--fleet-space-2) var(--fleet-space-4);
+  font-size: var(--fleet-size-md);
   font-family: inherit;
   transition:
     background 150ms ease,
@@ -19,14 +19,14 @@
 
 .wb-actions__btn--secondary {
   background: none;
-  border: 1px solid var(--bde-accent-border);
-  color: var(--bde-text);
+  border: 1px solid var(--fleet-accent-border);
+  color: var(--fleet-text);
   cursor: pointer;
 }
 
 .wb-actions__btn--secondary:hover:not(:disabled) {
-  border-color: var(--bde-border-hover);
-  background: var(--bde-border);
+  border-color: var(--fleet-border-hover);
+  background: var(--fleet-border);
 }
 
 .wb-actions__btn--secondary:active:not(:disabled) {
@@ -34,14 +34,14 @@
 }
 
 .wb-actions__btn--secondary:disabled {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: not-allowed;
 }
 
 .wb-actions__btn--primary {
-  background: var(--bde-status-active);
+  background: var(--fleet-status-active);
   border: none;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   font-weight: 600;
   cursor: pointer;
 }
@@ -55,15 +55,15 @@
 }
 
 .wb-actions__btn--primary:disabled {
-  background: var(--bde-border);
-  color: var(--bde-text-dim);
+  background: var(--fleet-border);
+  color: var(--fleet-text-dim);
   cursor: not-allowed;
 }
 
 .wb-actions__btn--launch {
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
   border: none;
-  color: var(--bde-bg);
+  color: var(--fleet-bg);
   font-weight: 600;
   cursor: pointer;
 }
@@ -77,21 +77,21 @@
 }
 
 .wb-actions__btn--launch:disabled {
-  background: var(--bde-border);
-  color: var(--bde-text-dim);
+  background: var(--fleet-border);
+  color: var(--fleet-text-dim);
   cursor: not-allowed;
 }
 
 .wb-actions__btn--ghost {
   background: none;
   border: 1px solid transparent;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: pointer;
 }
 
 .wb-actions__btn--ghost:hover:not(:disabled) {
-  color: var(--bde-text);
-  border-color: var(--bde-accent-border);
+  color: var(--fleet-text);
+  border-color: var(--fleet-accent-border);
 }
 
 .wb-actions__btn--ghost:active:not(:disabled) {
@@ -99,7 +99,7 @@
 }
 
 .wb-actions__btn:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -107,11 +107,11 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
 }
 
 .wb-actions__hint {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-dim);
   white-space: nowrap;
 }

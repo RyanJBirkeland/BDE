@@ -15,12 +15,12 @@ export function Badge({
   className,
   style
 }: BadgeProps): React.JSX.Element {
-  const cls = [`bde-badge`, `bde-badge--${variant}`, `bde-badge--${size}`, className]
+  const cls = [`fleet-badge`, `fleet-badge--${variant}`, `fleet-badge--${size}`, className]
     .filter(Boolean)
     .join(' ')
   return (
     <span className={cls} style={style}>
-      <span className="bde-badge__dot" />
+      <span className="fleet-badge__dot" />
       {children}
     </span>
   )

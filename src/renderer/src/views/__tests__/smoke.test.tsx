@@ -140,7 +140,7 @@ vi.mock('../../stores/pendingReview', () => ({
 // Mock window.api for views that use it — assign directly to preserve window methods
 Object.defineProperty(window, 'api', {
   value: {
-    getRepoPaths: vi.fn().mockResolvedValue({ bde: '/path/to/BDE' }),
+    getRepoPaths: vi.fn().mockResolvedValue({ fleet: '/path/to/FLEET' }),
     gitStatus: vi.fn().mockResolvedValue({ files: [] }),
     gitBranches: vi.fn().mockResolvedValue({ branches: ['main'], current: 'main' }),
     gitDiff: vi.fn().mockResolvedValue(''),

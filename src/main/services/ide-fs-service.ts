@@ -221,7 +221,7 @@ export async function readFileContent(filePath: string): Promise<string> {
 export async function writeFileAtomic(filePath: string, content: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true })
   const random = Math.random().toString(36).substring(2, 8)
-  const tmpPath = `${filePath}.bde-tmp-${Date.now()}-${random}`
+  const tmpPath = `${filePath}.fleet-tmp-${Date.now()}-${random}`
   try {
     await writeFile(tmpPath, content, 'utf-8')
     await rename(tmpPath, filePath)

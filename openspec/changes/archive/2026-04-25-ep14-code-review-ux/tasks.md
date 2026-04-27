@@ -5,14 +5,14 @@
 - [x] 1.3 Optionally add "Resolve with Agent" button that calls `onRequestRevision` with a pre-filled conflict resolution prompt
 - [x] 1.4 Commit: `feat(code-review): conflict resolution path with Open in IDE (EP-14)`
 
-## 2. Connect GitHub CTA + Mark Shipped Outside BDE
+## 2. Connect GitHub CTA + Mark Shipped Outside FLEET
 
 - [x] 2.1 Find where Ship It is disabled due to missing GitHub config in ReviewActions
 - [x] 2.2 Replace disabled tooltip with an inline "Connect GitHub →" button that navigates to Settings → Connections
-- [x] 2.3 Add `review:markShippedOutsideBde` channel to `src/shared/ipc-channels/`
+- [x] 2.3 Add `review:markShippedOutsideFleet` channel to `src/shared/ipc-channels/`
 - [x] 2.4 Add handler: `TaskStateService.transition(taskId, 'done', { fields: { completed_at: new Date().toISOString() } })` + worktree cleanup
-- [x] 2.5 Wire in preload; add "Mark Shipped Outside BDE" button in ReviewActions
-- [x] 2.6 Commit: `feat(code-review): Connect GitHub CTA and Mark Shipped Outside BDE (EP-14)`
+- [x] 2.5 Wire in preload; add "Mark Shipped Outside FLEET" button in ReviewActions
+- [x] 2.6 Commit: `feat(code-review): Connect GitHub CTA and Mark Shipped Outside FLEET (EP-14)`
 
 ## 3. Revision Cap + Discard Modal
 

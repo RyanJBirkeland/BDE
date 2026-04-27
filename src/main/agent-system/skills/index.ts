@@ -3,14 +3,14 @@ import { taskOrchestrationSkill } from './task-orchestration'
 import { codePatternsSkill } from './code-patterns'
 import { prReviewSkill } from './pr-review'
 import { debuggingSkill } from './debugging'
-import type { BDESkill } from './types'
+import type { FLEETSkill } from './types'
 
 /**
  * Consolidate all skill guidance into a single markdown string for interactive agents.
  *
  * Skills provide actionable guidance for common agent tasks: system introspection
  * (querying SQLite, reading logs), task orchestration (creating tasks, setting dependencies),
- * and code patterns (generating BDE-idiomatic code like IPC handlers, Zustand stores).
+ * and code patterns (generating FLEET-idiomatic code like IPC handlers, Zustand stores).
  *
  * This function is called by `buildAgentPrompt()` when the agent type is assistant or adhoc. Pipeline agents do not receive skills since
  * they execute specs, not open-ended exploration.
@@ -30,7 +30,7 @@ export function getAllSkills(): string {
 }
 
 /**
- * Get all BDE skills as structured data objects.
+ * Get all FLEET skills as structured data objects.
  *
  * Each skill object includes:
  * - `id`: Unique skill identifier
@@ -42,9 +42,9 @@ export function getAllSkills(): string {
  * Use this function when you need programmatic access to skill metadata.
  * For prompt injection, use `getAllSkills()` instead.
  *
- * @returns Array of BDESkill objects
+ * @returns Array of FLEETSkill objects
  */
-export function getSkillList(): BDESkill[] {
+export function getSkillList(): FLEETSkill[] {
   return [
     systemIntrospectionSkill,
     taskOrchestrationSkill,
@@ -79,7 +79,7 @@ export function selectSkills(taskContent: string): string {
 
   const lower = taskContent.toLowerCase()
   const skills = getSkillList()
-  const matched: BDESkill[] = []
+  const matched: FLEETSkill[] = []
   let foundNonCodePatterns = false
 
   for (const skill of skills) {

@@ -161,7 +161,7 @@ vi.mock('../../data/sprint-queries', () => ({
 
 vi.mock('../../settings', () => ({
   getSettingJson: vi.fn(),
-  getSetting: vi.fn().mockReturnValue(null) // null → uses default ~/.bde/worktrees
+  getSetting: vi.fn().mockReturnValue(null) // null → uses default ~/.fleet/worktrees
 }))
 
 vi.mock('../../env-utils', () => ({
@@ -234,7 +234,7 @@ describe('Review handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('review:rebase', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:checkFreshness', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:checkAutoReview', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('review:markShippedOutsideBde', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('review:markShippedOutsideFleet', expect.any(Function))
   })
 
   it('deps.onStatusTerminal is called on terminal transitions', () => {
@@ -991,7 +991,7 @@ describe('Review handlers', () => {
     }
 
     const _mockEvent = {} as IpcMainInvokeEvent
-    const VALID_WORKTREE = `${homedir()}/.bde/worktrees/Users-ryan-projects-BDE/some-task-id`
+    const VALID_WORKTREE = `${homedir()}/.fleet/worktrees/Users-ryan-projects-FLEET/some-task-id`
 
     it.each([
       ['main', true],
@@ -1077,11 +1077,11 @@ describe('Review handlers', () => {
 
     const _mockEvent = {} as IpcMainInvokeEvent
     const VALID_BASE = 'main'
-    const VALID_WORKTREE = `${homedir()}/.bde/worktrees/Users-ryan-projects-BDE/abc123`
+    const VALID_WORKTREE = `${homedir()}/.fleet/worktrees/Users-ryan-projects-FLEET/abc123`
 
     it.each([
-      [`${homedir()}/.bde/worktrees/Users-ryan-projects-BDE/abc123`, true],
-      [`${homedir()}/.bde/worktrees-adhoc/Users-ryan-projects-BDE/abc123`, true],
+      [`${homedir()}/.fleet/worktrees/Users-ryan-projects-FLEET/abc123`, true],
+      [`${homedir()}/.fleet/worktrees-adhoc/Users-ryan-projects-FLEET/abc123`, true],
       ['/etc/passwd', false],
       ['../../etc', false],
       ['/tmp/evil', false],
@@ -1103,7 +1103,7 @@ describe('Review handlers', () => {
       // Pins the fix for the bug where adhoc-spawned tasks could not be
       // reviewed because validateWorktreePath only knew the pipeline base.
       const handlers = captureHandlers()
-      const adhocPath = `${homedir()}/.bde/worktrees-adhoc/Users-ryan-projects-BDE/abc123`
+      const adhocPath = `${homedir()}/.fleet/worktrees-adhoc/Users-ryan-projects-FLEET/abc123`
       await expect(
         handlers['review:getDiff'](_mockEvent, { worktreePath: adhocPath, base: VALID_BASE })
       ).resolves.not.toThrow()
@@ -1172,7 +1172,7 @@ describe('Review handlers', () => {
     }
 
     const _mockEvent = {} as IpcMainInvokeEvent
-    const VALID_WORKTREE = `${homedir()}/.bde/worktrees/Users-ryan-projects-BDE/abc123`
+    const VALID_WORKTREE = `${homedir()}/.fleet/worktrees/Users-ryan-projects-FLEET/abc123`
     const VALID_BASE = 'main'
 
     it.each([

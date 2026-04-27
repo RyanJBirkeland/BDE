@@ -94,7 +94,7 @@ describe('setupWorktree', () => {
   let mockRepoPath: string
 
   beforeEach(() => {
-    tmpDir = path.join(os.tmpdir(), `bde-worktree-test-${Date.now()}`)
+    tmpDir = path.join(os.tmpdir(), `fleet-worktree-test-${Date.now()}`)
     mockRepoPath = path.join(tmpDir, 'mock-repo')
     mkdirSync(tmpDir, { recursive: true })
     // Create a mock git repository structure
@@ -627,7 +627,7 @@ describe('pruneStaleWorktrees', () => {
   let tmpDir: string
 
   beforeEach(() => {
-    tmpDir = path.join(os.tmpdir(), `bde-prune-test-${Date.now()}`)
+    tmpDir = path.join(os.tmpdir(), `fleet-prune-test-${Date.now()}`)
     mkdirSync(tmpDir, { recursive: true })
   })
 
@@ -635,7 +635,7 @@ describe('pruneStaleWorktrees', () => {
     rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  // Realistic BDE task ID fixtures — 32-char lowercase hex strings
+  // Realistic FLEET task ID fixtures — 32-char lowercase hex strings
   // produced by SQLite's lower(hex(randomblob(16))). The pruner requires
   // the leaf directory name to match this format before considering it
   // for deletion.
@@ -644,7 +644,7 @@ describe('pruneStaleWorktrees', () => {
   const TASK_ID_C = 'cccccccccccccccccccccccccccccccc'
 
   /**
-   * Creates a realistic BDE worktree directory: <tmp>/<repoSlug>/<uuid>/
+   * Creates a realistic FLEET worktree directory: <tmp>/<repoSlug>/<uuid>/
    * with a `.git` file inside, mimicking what `git worktree add` produces.
    * The pruner's defense-in-depth check requires the .git entry to exist.
    */
@@ -661,7 +661,7 @@ describe('pruneStaleWorktrees', () => {
   })
 
   // Regression: before this fix TASK_ID_HEX_PATTERN required a dashed UUID,
-  // so every real BDE worktree was rejected and pruneStaleWorktrees always
+  // so every real FLEET worktree was rejected and pruneStaleWorktrees always
   // returned 0 — a silent no-op.
   it('prunes a real-shaped 32-char hex task ID when the task is inactive', async () => {
     const realTaskId = '00313fab513f1807706c8b7665afc329'
@@ -672,7 +672,7 @@ describe('pruneStaleWorktrees', () => {
     expect(count).toBeGreaterThan(0)
   })
 
-  it('does NOT prune a dashed-UUID directory name (not a BDE task ID)', async () => {
+  it('does NOT prune a dashed-UUID directory name (not a FLEET task ID)', async () => {
     const dashedUuid = 'aaaaaaaa-1111-4111-8111-111111111111'
     const repoDir = path.join(tmpDir, 'repo-dashed')
     const dashedDir = path.join(repoDir, dashedUuid)
@@ -720,14 +720,14 @@ describe('pruneStaleWorktrees', () => {
     expect(count).toBe(0)
   })
 
-  // Regression: the prune base (~/worktrees/bde/) is shared with human
+  // Regression: the prune base (~/worktrees/fleet/) is shared with human
   // git worktrees per the documented ~/worktrees/<project>/<branch>
   // convention. Without UUID + .git guards the pruner deletes src/,
   // docs/, etc. inside human worktree branches. These tests lock in the
   // safety guards.
 
   it('does NOT delete non-UUID directories (human worktree branches)', async () => {
-    // Simulate a human worktree at ~/worktrees/bde/fix-some-bug/ with
+    // Simulate a human worktree at ~/worktrees/fleet/fix-some-bug/ with
     // src/, docs/, .github/ inside — exactly the structure that got
     // nuked previously.
     const humanWorktree = path.join(tmpDir, 'fix-some-bug')
@@ -746,7 +746,7 @@ describe('pruneStaleWorktrees', () => {
   })
 
   it('does NOT delete task-ID-named directories without a .git entry', async () => {
-    // Defense-in-depth: a directory whose name happens to match a BDE
+    // Defense-in-depth: a directory whose name happens to match a FLEET
     // task ID but isn't actually a git worktree (e.g. user has a
     // hex-named backup folder) must be left alone.
     const repoDir = path.join(tmpDir, 'repo-d')
@@ -778,13 +778,13 @@ describe('pruneStaleWorktrees', () => {
     expect(count).toBe(1)
   })
 
-  it('coexists safely with mixed BDE and human worktrees in same base', async () => {
-    // Realistic scenario: ~/worktrees/bde/ contains both BDE-managed
+  it('coexists safely with mixed FLEET and human worktrees in same base', async () => {
+    // Realistic scenario: ~/worktrees/fleet/ contains both FLEET-managed
     // task worktrees and human-created branch worktrees side by side.
-    // The pruner should only issue rm -rf for BDE-managed inactive ones,
+    // The pruner should only issue rm -rf for FLEET-managed inactive ones,
     // never for human worktree subdirectories.
-    const bdeActive = makeWorktreeDir('bde', TASK_ID_A)
-    const bdeInactive = makeWorktreeDir('bde', TASK_ID_B)
+    const fleetActive = makeWorktreeDir('fleet', TASK_ID_A)
+    const fleetInactive = makeWorktreeDir('fleet', TASK_ID_B)
     const humanWorktree = path.join(tmpDir, 'fix-my-feature')
     const humanSrc = path.join(humanWorktree, 'src')
     const humanDocs = path.join(humanWorktree, 'docs')
@@ -800,15 +800,15 @@ describe('pruneStaleWorktrees', () => {
 
     const count = await pruneStaleWorktrees(tmpDir, (id) => id === TASK_ID_A)
 
-    expect(count).toBe(1) // only the inactive BDE worktree
+    expect(count).toBe(1) // only the inactive FLEET worktree
 
     // Inspect every rm invocation. The only acceptable target is the
-    // inactive BDE worktree path. Anything inside the human worktree
-    // (src, docs) or the active BDE worktree is a regression.
+    // inactive FLEET worktree path. Anything inside the human worktree
+    // (src, docs) or the active FLEET worktree is a regression.
     const rmCalls = execFileMock.mock.calls.filter((c) => c[0] === 'rm')
     expect(rmCalls).toHaveLength(1)
     const rmArgs = rmCalls[0][1] as string[]
-    expect(rmArgs).toEqual(['-rf', bdeInactive])
+    expect(rmArgs).toEqual(['-rf', fleetInactive])
 
     // Belt-and-suspenders: assert nothing under the human worktree was targeted.
     for (const call of rmCalls) {
@@ -817,7 +817,7 @@ describe('pruneStaleWorktrees', () => {
       expect(target).not.toContain(humanSrc)
       expect(target).not.toContain(humanDocs)
       expect(target).not.toContain(humanWorktree)
-      expect(target).not.toBe(bdeActive)
+      expect(target).not.toBe(fleetActive)
     }
   })
 })

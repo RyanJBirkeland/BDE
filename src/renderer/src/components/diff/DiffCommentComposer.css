@@ -1,24 +1,24 @@
 .diff-comment-composer {
-  margin: var(--bde-space-1) 0 var(--bde-space-1) 96px;
-  border: 1px solid var(--bde-accent);
-  border-radius: var(--bde-radius-md);
-  background: var(--bde-bg);
+  margin: var(--fleet-space-1) 0 var(--fleet-space-1) 96px;
+  border: 1px solid var(--fleet-accent);
+  border-radius: var(--fleet-radius-md);
+  background: var(--fleet-bg);
   overflow: hidden;
 }
 .diff-comment-composer__input {
   width: 100%;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text);
-  background: var(--bde-surface);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
   border: none;
   resize: vertical;
   min-height: 60px;
   outline: none;
 }
 .diff-comment-composer__input:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 .diff-comment-composer__actions {
@@ -26,20 +26,20 @@
   justify-content: flex-end;
   gap: 6px;
   padding: 6px 10px;
-  border-top: 1px solid var(--bde-border);
+  border-top: 1px solid var(--fleet-border);
 }
 .diff-comment-composer {
-  border: 1px solid var(--bde-accent-border);
-  background: var(--bde-bg);
+  border: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-bg);
   /* Neon enhancement: subtle glow on focus (via border) */
 }
 .diff-comment-composer__input {
-  color: var(--bde-text);
-  background: var(--bde-accent-surface);
+  color: var(--fleet-text);
+  background: var(--fleet-accent-surface);
 }
 .diff-comment-composer__input::placeholder {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 .diff-comment-composer__actions {
-  border-top: 1px solid var(--bde-accent-border);
+  border-top: 1px solid var(--fleet-accent-border);
 }

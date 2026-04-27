@@ -1,6 +1,6 @@
 # Audit 2026-04-20 — install-readiness pass
 
-Pre-install audit across install-critical surfaces of BDE: main entry, bootstrap,
+Pre-install audit across install-critical surfaces of FLEET: main entry, bootstrap,
 DB + 25 migrations, auth-guard, onboarding, settings (incl. uncommitted),
 agent spawning, MCP server, plus `package.json` and `electron-builder.yml`.
 ~60 files audited across six lenses (clean-code, architecture, security,

@@ -62,7 +62,7 @@ const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn(
 const stubTask = {
   id: 'task-1',
   title: 'Add login page',
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 1,
   status: 'queued' as const,

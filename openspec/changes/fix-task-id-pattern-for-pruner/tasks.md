@@ -3,7 +3,7 @@
 - [x] 1.1 In `src/main/agent-manager/worktree.ts` at line 394, replace the regex `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` with `/^[0-9a-f]{32}$/i`
 - [x] 1.2 Rename the constant from `TASK_ID_UUID_PATTERN` to `TASK_ID_HEX_PATTERN` (update both the declaration and the single call-site in `isPrunableCandidate`)
 - [x] 1.3 Replace the doc comment on the constant (lines 386–393) with one that accurately describes the `lower(hex(randomblob(16)))` format — no mention of UUID or dashes
-- [x] 1.4 In `isPrunableCandidate`'s JSDoc (lines 458–467), replace the phrase "UUID-shaped" with "BDE hex task ID-shaped" (or equivalent accurate wording)
+- [x] 1.4 In `isPrunableCandidate`'s JSDoc (lines 458–467), replace the phrase "UUID-shaped" with "FLEET hex task ID-shaped" (or equivalent accurate wording)
 
 ## 2. Fix test fixtures and add regression test
 

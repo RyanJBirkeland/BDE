@@ -1,10 +1,10 @@
-# BDE — Visual Identity Spec v2
+# FLEET — Visual Identity Spec v2
 
 > **Status: SHIPPED / SUPERSEDED (verified 2026-04-21).** The full Neon theme and `tokens.css` are implemented; visual identity v3+ has shipped across Dashboard, Agents, and other neon views. Retained as the foundational reference for the "liquid obsidian" aesthetic — useful historical context, not an active backlog item.
 
 ## 1. Design Philosophy
 
-BDE should feel like piloting a spacecraft designed by Jony Ive — every surface breathes with translucent depth, every interaction has weight and inertia, every glow communicates state without demanding attention. The aesthetic is **liquid obsidian**: deep blacks that aren't flat but _dimensional_, panels that float above each other like sheets of tinted sapphire glass, and accent colors that bloom outward as light rather than sitting static as paint. This is not a code editor with a dark theme — it is an instrument panel for someone who commands AI agents the way a pilot commands systems. Premium is communicated through restraint: whitespace, perfect alignment, and surfaces that respond to context with cinematic smoothness.
+FLEET should feel like piloting a spacecraft designed by Jony Ive — every surface breathes with translucent depth, every interaction has weight and inertia, every glow communicates state without demanding attention. The aesthetic is **liquid obsidian**: deep blacks that aren't flat but _dimensional_, panels that float above each other like sheets of tinted sapphire glass, and accent colors that bloom outward as light rather than sitting static as paint. This is not a code editor with a dark theme — it is an instrument panel for someone who commands AI agents the way a pilot commands systems. Premium is communicated through restraint: whitespace, perfect alignment, and surfaces that respond to context with cinematic smoothness.
 
 ---
 
@@ -157,7 +157,7 @@ For headings, section titles, and emphasis spans:
 }
 ```
 
-Usage: Apply to the "BDE" logotype in the title bar, section headings on settings/onboarding, and the model name badge when the agent is actively reasoning.
+Usage: Apply to the "FLEET" logotype in the title bar, section headings on settings/onboarding, and the model name badge when the agent is actively reasoning.
 
 ---
 
@@ -262,7 +262,7 @@ Apple visionOS uses a very subtle top-edge light reflection on glass elements. R
   /* Mono font — JetBrains Mono for all code and data */
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
 
-  /* Display font — for BDE logotype and large headings only */
+  /* Display font — for FLEET logotype and large headings only */
   --font-display: 'Inter', 'SF Pro Display', system-ui, sans-serif;
 }
 ```
@@ -289,7 +289,7 @@ Apple visionOS uses a very subtle top-edge light reflection on glass elements. R
 /* Letter-spacing */
 --tracking-tight: -0.02em; /* headings xl+ */
 --tracking-normal: 0; /* body text */
---tracking-wide: 0.06em; /* "BDE" logotype, status labels */
+--tracking-wide: 0.06em; /* "FLEET" logotype, status labels */
 --tracking-widest: 0.12em; /* section divider labels */
 ```
 
@@ -329,9 +329,9 @@ Apple visionOS uses a very subtle top-edge light reflection on glass elements. R
 }
 ```
 
-### 4.4 "BDE" Logotype
+### 4.4 "FLEET" Logotype
 
-The "BDE" text in the title bar should be treated as a logomark:
+The "FLEET" text in the title bar should be treated as a logomark:
 
 ```css
 .logotype {
@@ -550,7 +550,7 @@ Inspired by visionOS and macOS layering. Each level adds blur, luminance, and sh
 
 ### 7.1 Philosophy
 
-Motion in BDE communicates **physics and hierarchy**, not decoration. Every animation should answer: _where did this come from, and how important is it?_ Premium motion is defined by three qualities:
+Motion in FLEET communicates **physics and hierarchy**, not decoration. Every animation should answer: _where did this come from, and how important is it?_ Premium motion is defined by three qualities:
 
 - **Spring-based**: No linear or ease-in-out. Natural spring physics with configurable stiffness/damping.
 - **Directional**: Elements enter from the direction they logically originate. Sidebar items slide from left. Notifications drop from top. Modals scale from center.
@@ -701,9 +701,9 @@ export const VARIANTS = {
   {/* Logotype with glow */}
   <span className="relative">
     <span className="logotype-glow" aria-hidden>
-      BDE
+      FLEET
     </span>
-    <span className="logotype">BDE</span>
+    <span className="logotype">FLEET</span>
   </span>
 
   {/* Gradient separator */}
@@ -776,7 +776,7 @@ export const VARIANTS = {
 
 ## 9. Reference Points
 
-These are the north-star products/interfaces BDE should channel:
+These are the north-star products/interfaces FLEET should channel:
 
 | Reference               | What to take from it                                                                                 |
 | ----------------------- | ---------------------------------------------------------------------------------------------------- |

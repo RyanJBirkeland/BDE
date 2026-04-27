@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { mkdirSync, existsSync, chmodSync, statSync, unlinkSync } from 'fs'
 import path from 'path'
-import { BDE_DIR as DB_DIR, BDE_DB_PATH as DB_PATH, BDE_TASK_MEMORY_DIR } from './paths'
+import { FLEET_DIR as DB_DIR, FLEET_DB_PATH as DB_PATH, FLEET_TASK_MEMORY_DIR } from './paths'
 import { getErrorMessage } from '../shared/errors'
 import { loadMigrations, getPendingMigrations, type Migration } from './migrations/loader'
 import { createLogger } from './logger'
@@ -13,15 +13,15 @@ let _db: Database.Database | null = null
 export function getDb(): Database.Database {
   if (!_db) {
     mkdirSync(DB_DIR, { recursive: true, mode: 0o700 })
-    mkdirSync(BDE_TASK_MEMORY_DIR, { recursive: true })
-    // Enforce restrictive permissions on the .bde directory on every startup.
+    mkdirSync(FLEET_TASK_MEMORY_DIR, { recursive: true })
+    // Enforce restrictive permissions on the .fleet directory on every startup.
     // mkdirSync mode is only respected on creation — chmod fixes existing installs
     // that were created without the mode parameter.
     try {
       chmodSync(DB_DIR, 0o700)
     } catch (err) {
       // Non-fatal: log but continue — app can still function
-      log.warn(`[db] Failed to enforce .bde directory permissions: ${err}`)
+      log.warn(`[db] Failed to enforce .fleet directory permissions: ${err}`)
     }
     const dbExists = existsSync(DB_PATH)
     _db = new Database(DB_PATH)
@@ -92,7 +92,7 @@ export function backupDatabase(): void {
   if (!existsSync(backupPath)) {
     throw new Error('Backup file was not created')
   }
-  // The backup is a full snapshot of bde.db and contains the same secrets
+  // The backup is a full snapshot of fleet.db and contains the same secrets
   // (tokens, webhook HMAC keys, settings). Match the primary DB's 0600 mode
   // so endpoint-scanning and backup software cannot read it under umask 022.
   chmodSync(backupPath, 0o600)

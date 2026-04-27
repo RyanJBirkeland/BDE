@@ -54,7 +54,7 @@ function makeTask(overrides: Partial<AgentRunClaim> = {}): AgentRunClaim {
     title: 'Test task',
     prompt: 'Do something',
     spec: null,
-    repo: 'bde',
+    repo: 'fleet',
     retry_count: 0,
     fast_fail_count: 0,
     max_runtime_ms: null,
@@ -184,7 +184,7 @@ describe('initializeAgentTracking', () => {
       expect.objectContaining({
         bin: 'claude',
         status: 'running',
-        source: 'bde',
+        source: 'fleet',
         sprintTaskId: 'task-1'
       })
     )

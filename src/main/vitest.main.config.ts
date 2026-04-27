@@ -7,7 +7,7 @@ const maxWorkers = Math.max(1, Math.ceil(os.cpus().length / 3))
 export default defineConfig({
   test: {
     env: {
-      BDE_TEST_DB: ':memory:'
+      FLEET_TEST_DB: ':memory:'
     },
     environment: 'node',
     globals: true,

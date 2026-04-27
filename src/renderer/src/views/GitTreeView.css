@@ -6,16 +6,16 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bde-surface);
+  background: var(--fleet-surface);
   overflow: hidden;
 }
 
 .git-tree-view__header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-3);
-  border-bottom: 1px solid var(--bde-border);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
   flex-wrap: wrap;
 }
@@ -23,9 +23,9 @@
 .git-tree-view__title {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
-  font-size: var(--bde-size-xs);
-  font-family: var(--bde-font-ui);
+  gap: var(--fleet-space-1);
+  font-size: var(--fleet-size-xs);
+  font-family: var(--fleet-font-ui);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -40,13 +40,13 @@
 }
 
 .git-tree-view__repo-select {
-  background-color: var(--bde-surface-high);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
-  color: var(--bde-text);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-ui);
-  padding: 2px var(--bde-space-2);
+  background-color: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-ui);
+  padding: 2px var(--fleet-space-2);
   cursor: pointer;
 }
 
@@ -59,9 +59,9 @@
   padding: 0;
   background: none;
   border: none;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   cursor: pointer;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   transition: all 0.15s ease;
 }
 
@@ -70,8 +70,8 @@
 }
 
 .git-tree-view__refresh-btn:hover:not(:disabled) {
-  color: var(--bde-text);
-  background: var(--bde-accent-hover);
+  color: var(--fleet-text);
+  background: var(--fleet-accent-hover);
 }
 
 .git-tree-view__refresh-btn:active:not(:disabled) {
@@ -81,47 +81,47 @@
 .git-tree-view__body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--bde-space-2) var(--bde-space-3);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 .git-tree-view__empty {
-  padding: var(--bde-space-6);
+  padding: var(--fleet-space-6);
 }
 
 .git-tree-view__error-banner {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-danger-surface);
-  border-top: 1px solid var(--bde-danger);
-  border-bottom: 1px solid var(--bde-danger);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  background: var(--fleet-danger-surface);
+  border-top: 1px solid var(--fleet-danger);
+  border-bottom: 1px solid var(--fleet-danger);
 }
 
 .git-tree-view__error-text {
   flex: 1;
-  font-size: var(--bde-size-sm);
-  color: var(--bde-danger);
-  font-family: var(--bde-font-code);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-danger);
+  font-family: var(--fleet-font-code);
 }
 
 .git-tree-view__error-retry {
-  padding: var(--bde-space-1) var(--bde-space-3);
-  background: var(--bde-danger);
-  color: var(--bde-btn-primary-text);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
+  background: var(--fleet-danger);
+  color: var(--fleet-btn-primary-text);
   border: none;
-  border-radius: var(--bde-radius-sm);
-  font-size: var(--bde-size-sm);
+  border-radius: var(--fleet-radius-sm);
+  font-size: var(--fleet-size-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .git-tree-view__error-retry:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--bde-danger) 85%, black);
+  background: color-mix(in srgb, var(--fleet-danger) 85%, black);
 }
 
 .git-tree-view__error-retry:active:not(:disabled) {
@@ -129,16 +129,16 @@
 }
 
 .git-tree-view__error-dismiss {
-  padding: var(--bde-space-1);
+  padding: var(--fleet-space-1);
   background: none;
   border: none;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   cursor: pointer;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   transition: all 0.15s ease;
 }
 
 .git-tree-view__error-dismiss:hover:not(:disabled) {
-  color: var(--bde-text);
-  background: var(--bde-accent-hover);
+  color: var(--fleet-text);
+  background: var(--fleet-accent-hover);
 }

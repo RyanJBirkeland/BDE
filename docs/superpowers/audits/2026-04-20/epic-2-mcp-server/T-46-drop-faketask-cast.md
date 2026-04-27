@@ -18,7 +18,7 @@ Define a complete base `SprintTask` with every required field explicitly populat
 const baseTask: SprintTask = {
   id: 't1',
   title: 'test',
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 0,
   status: 'backlog',

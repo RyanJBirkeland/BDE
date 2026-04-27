@@ -1,5 +1,5 @@
 /**
- * Unit tests for BDE's MCP transport wrapper.
+ * Unit tests for FLEET's MCP transport wrapper.
  *
  * The wrapper (`createTransportHandler`) is responsible for three things:
  *   1. Rejecting requests with the wrong URL path or missing/invalid bearer token
@@ -227,7 +227,7 @@ describe('transport handler delegation to the SDK', () => {
     await handler.handle(req, res)
 
     expect(written.status).toBe(401)
-    expect(written.headers['WWW-Authenticate']).toBe('Bearer realm="bde-mcp"')
+    expect(written.headers['WWW-Authenticate']).toBe('Bearer realm="fleet-mcp"')
     const parsed = JSON.parse(written.body)
     expect(parsed.jsonrpc).toBe('2.0')
     expect(parsed.id).toBe(null)

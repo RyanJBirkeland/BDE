@@ -35,11 +35,11 @@ On every successful call to `TaskStateService.transition()`, the system SHALL em
 
 #### Scenario: Normal queued → active transition
 - **WHEN** `transition(taskId, 'active', { caller: 'drain-loop' })` succeeds
-- **THEN** `bde.log` contains a line matching `[task-state] task <id>: queued → active (caller=drain-loop)`
+- **THEN** `fleet.log` contains a line matching `[task-state] task <id>: queued → active (caller=drain-loop)`
 
 #### Scenario: Terminal transition to review
 - **WHEN** `transition(taskId, 'review', { caller: 'run-agent' })` succeeds
-- **THEN** `bde.log` contains a line matching `[task-state] task <id>: active → review (caller=run-agent)`
+- **THEN** `fleet.log` contains a line matching `[task-state] task <id>: active → review (caller=run-agent)`
 
 #### Scenario: Transition throws InvalidTransitionError — no log line
 - **WHEN** `transition(taskId, 'done', ...)` is called but the current status does not permit that transition
@@ -65,7 +65,7 @@ Before calling `deps.spawnAgent(...)` in `processQueuedTask`, the system SHALL e
 
 #### Scenario: Normal claim and dispatch
 - **WHEN** `prepareWorktreeForTask` returns successfully and `spawnAgent` is about to be called
-- **THEN** `bde.log` contains a line matching `[agent-manager] Task <id> claimed — spawning agent in <worktreePath>`
+- **THEN** `fleet.log` contains a line matching `[agent-manager] Task <id> claimed — spawning agent in <worktreePath>`
 
 #### Scenario: Worktree preparation fails — no dispatch line
 - **WHEN** `prepareWorktreeForTask` returns `null`

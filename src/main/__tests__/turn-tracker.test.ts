@@ -4,7 +4,7 @@ import Database from 'better-sqlite3'
 vi.mock('electron', () => ({
   app: {
     getPath: vi.fn(() => '/tmp'),
-    getName: vi.fn(() => 'BDE'),
+    getName: vi.fn(() => 'FLEET'),
     getVersion: vi.fn(() => '0.0.0')
   },
   BrowserWindow: { getAllWindows: vi.fn(() => []) },

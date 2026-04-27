@@ -34,7 +34,7 @@ describe('AgentPicker', () => {
         pid: 123,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'BDE',
+        repo: 'FLEET',
         repoPath: '/tmp',
         task: 'Fix bug',
         startedAt: nowIso(),
@@ -42,7 +42,7 @@ describe('AgentPicker', () => {
         exitCode: null,
         status: 'running' as const,
         logPath: '/tmp/log',
-        source: 'bde' as const,
+        source: 'fleet' as const,
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -51,7 +51,7 @@ describe('AgentPicker', () => {
     ])
     render(<AgentPicker {...defaultProps} />)
     await waitFor(() => {
-      expect(screen.getByText('BDE')).toBeInTheDocument()
+      expect(screen.getByText('FLEET')).toBeInTheDocument()
       expect(screen.getByText('Fix bug')).toBeInTheDocument()
     })
   })
@@ -63,7 +63,7 @@ describe('AgentPicker', () => {
         pid: 123,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'BDE',
+        repo: 'FLEET',
         repoPath: '/tmp',
         task: 'Fix bug',
         startedAt: nowIso(),
@@ -71,7 +71,7 @@ describe('AgentPicker', () => {
         exitCode: null,
         status: 'running' as const,
         logPath: '/tmp/log',
-        source: 'bde' as const,
+        source: 'fleet' as const,
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -80,10 +80,10 @@ describe('AgentPicker', () => {
     ])
     render(<AgentPicker {...defaultProps} />)
     await waitFor(() => {
-      expect(screen.getByText('BDE')).toBeInTheDocument()
+      expect(screen.getByText('FLEET')).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByText('BDE').closest('button')!)
-    expect(defaultProps.onSelect).toHaveBeenCalledWith('a1', expect.stringContaining('BDE'))
+    fireEvent.click(screen.getByText('FLEET').closest('button')!)
+    expect(defaultProps.onSelect).toHaveBeenCalledWith('a1', expect.stringContaining('FLEET'))
   })
 
   it('renders the header', () => {

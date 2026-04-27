@@ -4,22 +4,22 @@
  *
  * Dashboard uses neon components: StatusCounters (Active, Queued, Blocked, Done),
  * CenterColumn (charts + pipeline flow), and ActivitySection (feed + completions).
- * StatusBar shows "BDE Command Center" title.
+ * StatusBar shows "FLEET Command Center" title.
  */
 import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Dashboard — smoke tests', () => {
-  test('App launches to Dashboard as default view', async ({ bde }) => {
-    const { window } = bde
+  test('App launches to Dashboard as default view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
-    // Dashboard is the default view (Cmd+1). The StatusBar renders "BDE Command Center".
+    // Dashboard is the default view (Cmd+1). The StatusBar renders "FLEET Command Center".
     await expect(window.locator('.dashboard-root')).toBeVisible({ timeout: 5_000 })
-    await expect(window.locator('text=BDE Command Center')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('text=FLEET Command Center')).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Dashboard shows status counters', async ({ bde }) => {
-    const { window } = bde
+  test('Dashboard shows status counters', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to dashboard explicitly
@@ -32,14 +32,14 @@ test.describe('Dashboard — smoke tests', () => {
     await expect(dashboardContent).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Dashboard grid or onboarding card renders', async ({ bde }) => {
-    const { window } = bde
+  test('Dashboard grid or onboarding card renders', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+1')
     await expect(window.locator('.dashboard-root')).toBeVisible({ timeout: 5_000 })
 
-    // With no tasks: onboarding card with "Welcome to BDE" appears
+    // With no tasks: onboarding card with "Welcome to FLEET" appears
     // With tasks: dashboard-grid with role="region" appears
     const hasGrid = await window
       .locator('.dashboard-grid')

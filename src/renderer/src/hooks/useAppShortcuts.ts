@@ -47,7 +47,7 @@ export function useAppShortcuts({
           ;(document.activeElement as HTMLElement)?.blur()
           return
         }
-        window.dispatchEvent(new CustomEvent('bde:escape'))
+        window.dispatchEvent(new CustomEvent('fleet:escape'))
         return
       }
 
@@ -155,7 +155,7 @@ export function useAppShortcuts({
       // Refresh
       if (combo === bindings['refresh']) {
         e.preventDefault()
-        window.dispatchEvent(new CustomEvent('bde:refresh'))
+        window.dispatchEvent(new CustomEvent('fleet:refresh'))
         return
       }
 
@@ -199,8 +199,8 @@ export function useAppShortcuts({
         }
       }
     }
-    window.addEventListener('bde:navigate', handler as EventListener)
-    return () => window.removeEventListener('bde:navigate', handler as EventListener)
+    window.addEventListener('fleet:navigate', handler as EventListener)
+    return () => window.removeEventListener('fleet:navigate', handler as EventListener)
   }, [setView])
 
   // Listen for shortcuts modal trigger
@@ -208,7 +208,7 @@ export function useAppShortcuts({
     const handler = (): void => {
       setShortcutsOpen(true)
     }
-    window.addEventListener('bde:show-shortcuts', handler)
-    return () => window.removeEventListener('bde:show-shortcuts', handler)
+    window.addEventListener('fleet:show-shortcuts', handler)
+    return () => window.removeEventListener('fleet:show-shortcuts', handler)
   }, [setShortcutsOpen])
 }

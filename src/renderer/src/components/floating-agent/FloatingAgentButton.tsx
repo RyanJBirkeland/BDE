@@ -10,9 +10,9 @@ export function FloatingAgentButton(): React.JSX.Element {
       <button
         className={`fa-fab${isOpen ? ' fa-fab--active' : ''}`}
         onClick={toggle}
-        aria-label={isOpen ? 'Close BDE Advisor' : 'Open BDE Advisor'}
+        aria-label={isOpen ? 'Close FLEET Advisor' : 'Open FLEET Advisor'}
         aria-expanded={isOpen}
-        title="BDE Advisor (⌘.)"
+        title="FLEET Advisor (⌘.)"
       >
         <span className="fa-fab__icon" aria-hidden="true">
           ✦

@@ -105,7 +105,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: 'task-1',
     title: 'Test task',
-    repo: 'BDE',
+    repo: 'FLEET',
     prompt: null,
     priority: 1,
     status: 'queued',
@@ -176,7 +176,7 @@ describe('useSprintTaskActions', () => {
     const taskId = await act(async () => {
       return await result.current.createTask({
         title: 'New task',
-        repo: 'bde',
+        repo: 'fleet',
         priority: 1,
         spec: 'existing spec'
       })
@@ -192,13 +192,13 @@ describe('useSprintTaskActions', () => {
     await act(async () => {
       await result.current.createTask({
         title: 'Quick task',
-        repo: 'bde',
+        repo: 'fleet',
         priority: 1
       })
     })
 
     expect(mockAddGeneratingId).toHaveBeenCalledWith('new-task-id')
-    expect(mockGenerateSpec).toHaveBeenCalledWith('new-task-id', 'Quick task', 'bde', 'feature')
+    expect(mockGenerateSpec).toHaveBeenCalledWith('new-task-id', 'Quick task', 'fleet', 'feature')
   })
 
   it('createTask skips spec generation when spec provided', async () => {
@@ -207,7 +207,7 @@ describe('useSprintTaskActions', () => {
     await act(async () => {
       await result.current.createTask({
         title: 'Task with spec',
-        repo: 'bde',
+        repo: 'fleet',
         priority: 1,
         spec: 'existing spec'
       })
@@ -348,7 +348,7 @@ describe('useSprintTaskActions', () => {
     const { result } = renderHook(() => useSprintTaskActions())
     const task = makeTask({
       title: 'My task',
-      repo: 'BDE',
+      repo: 'FLEET',
       prompt: 'do the thing',
       spec: '# Spec',
       priority: 2,
@@ -362,7 +362,7 @@ describe('useSprintTaskActions', () => {
     expect(window.api.sprint.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'My task',
-        repo: 'BDE',
+        repo: 'FLEET',
         prompt: 'do the thing',
         spec: '# Spec',
         priority: 2,

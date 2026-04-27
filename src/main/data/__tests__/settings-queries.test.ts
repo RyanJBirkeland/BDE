@@ -74,7 +74,7 @@ describe('getSettingJson / setSettingJson', () => {
   })
 
   it('valid value passes validator and is returned', () => {
-    const data = [{ name: 'bde', localPath: '/code/bde' }]
+    const data = [{ name: 'fleet', localPath: '/code/fleet' }]
     setSettingJson(db, 'repos', data)
     function isRepoArray(v: unknown): v is typeof data {
       return Array.isArray(v) && v.every((r) => typeof (r as Record<string, unknown>).name === 'string')

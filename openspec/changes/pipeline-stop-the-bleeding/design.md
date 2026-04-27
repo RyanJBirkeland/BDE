@@ -2,7 +2,7 @@
 
 The 2026-04-25 audit produced 73 findings. Phase A is the subset that, if not fixed first, makes every later refactor land on top of broken correctness. Several of the constituent fixes already have prior change proposals (`ep1`–`ep16`). Rather than restate those proposals, this design defines (1) the milestone-level invariants Phase A must satisfy, (2) how the constituent changes coordinate, and (3) the pattern for the net-new audit tasks not yet covered.
 
-Two BDE-specific constraints shape the design:
+Two FLEET-specific constraints shape the design:
 
 1. **Single-threaded main process.** SQLite (better-sqlite3) is synchronous, IPC handlers run on the same thread as the drain loop and watchdog. Any new fix must avoid introducing blocking work on hot paths.
 2. **TaskStateService is the named chokepoint.** CLAUDE.md and `ep1-unified-task-state-machine` both name `TaskStateService.transition()` as the single chokepoint for terminal status writes. Phase A's correctness invariants are stated in terms of this chokepoint; if `ep1` slips, Phase A slips with it.
@@ -13,7 +13,7 @@ Two BDE-specific constraints shape the design:
 - Every terminal status write (`failed` | `error` | `done` | `cancelled` | `review`) flows through `TaskStateService.transition()`.
 - Every retry/queue structure on a critical path has a defined upper bound and a structured exhaustion event.
 - Watchdog kill → worktree cleanup → next-claim is strictly ordered (no race window where a new agent's `git worktree add` collides with the previous agent's cleanup).
-- Per-task crash-loop cap exists (no infinite re-queue under repeated BDE crashes).
+- Per-task crash-loop cap exists (no infinite re-queue under repeated FLEET crashes).
 - The five named state-mutating functions (`updateTaskFromUi`, `transitionToReview`, `handleWatchdogVerdict`, `resolveNodeExecutable`, plus the assistant/copilot/synthesizer prompt builders) have direct unit tests with ≥90% line and branch coverage.
 - The reliability-focused IPC handler `forceReleaseClaim` aborts the live agent before re-queuing.
 

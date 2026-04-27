@@ -16,7 +16,7 @@ vi.mock('framer-motion', () => ({
 const baseTask: SprintTask = {
   id: 'task-1',
   title: 'Implement login flow',
-  repo: 'BDE',
+  repo: 'FLEET',
   prompt: null,
   priority: 1,
   status: 'queued',
@@ -54,7 +54,7 @@ describe('TaskRow', () => {
 
   it('renders repo badge', () => {
     render(<TaskRow task={baseTask} selected={false} onClick={vi.fn()} />)
-    expect(screen.getByText('BDE')).toBeInTheDocument()
+    expect(screen.getByText('FLEET')).toBeInTheDocument()
   })
 
   it('applies selected class when selected=true', () => {

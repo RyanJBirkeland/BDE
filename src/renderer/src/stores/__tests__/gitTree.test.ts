@@ -296,7 +296,7 @@ describe('useGitTreeStore', () => {
 
   describe('loadRepoPaths', () => {
     it('loads repo paths from Record<name, path> and sets first as active when none selected', async () => {
-      mockApi.git.getRepoPaths.mockResolvedValue({ bde: '/repo/a', 'life-os': '/repo/b' })
+      mockApi.git.getRepoPaths.mockResolvedValue({ fleet: '/repo/a', 'life-os': '/repo/b' })
       await useGitTreeStore.getState().loadRepoPaths()
 
       const state = useGitTreeStore.getState()
@@ -306,7 +306,7 @@ describe('useGitTreeStore', () => {
 
     it('does not override existing activeRepo', async () => {
       useGitTreeStore.setState({ activeRepo: '/repo/b' })
-      mockApi.git.getRepoPaths.mockResolvedValue({ bde: '/repo/a', 'life-os': '/repo/b' })
+      mockApi.git.getRepoPaths.mockResolvedValue({ fleet: '/repo/a', 'life-os': '/repo/b' })
       await useGitTreeStore.getState().loadRepoPaths()
 
       expect(useGitTreeStore.getState().activeRepo).toBe('/repo/b')

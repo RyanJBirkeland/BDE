@@ -30,7 +30,7 @@ export function validateWorktreeBase(value: string): void {
 }
 
 /**
- * Validates that BDE_TEST_DB is either `:memory:` (SQLite in-memory) or a
+ * Validates that FLEET_TEST_DB is either `:memory:` (SQLite in-memory) or a
  * path inside the system temp directory. Throws for any other location.
  *
  * Security: prevents a misconfigured test environment from writing the SQLite
@@ -71,37 +71,37 @@ export function validateTestDbPath(value: string | undefined): void {
 
   if (!isAllowed) {
     throw new Error(
-      `BDE_TEST_DB must be ':memory:' or a path inside the system tmp directory. ` +
+      `FLEET_TEST_DB must be ':memory:' or a path inside the system tmp directory. ` +
         `Rejected: ${resolvedValue}`
     )
   }
 }
 
-// --- BDE data directory ---
-export const BDE_DIR = process.env.BDE_DATA_DIR ?? join(homedir(), '.bde')
+// --- FLEET data directory ---
+export const FLEET_DIR = process.env.FLEET_DATA_DIR ?? join(homedir(), '.fleet')
 
 // Allow tests to redirect the DB to an isolated path (prevents test artifact pollution).
 // Validate the path to prevent pointing the database at arbitrary system files.
-validateTestDbPath(process.env.BDE_TEST_DB)
-export const BDE_DB_PATH =
-  process.env.BDE_TEST_DB ?? process.env.BDE_DB_PATH ?? join(BDE_DIR, 'bde.db')
-export const BDE_AGENTS_INDEX = join(BDE_DIR, 'agents.json')
-export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
-export const BDE_AGENT_TMP_DIR = join(tmpdir(), 'bde-agents')
-export const BDE_AGENT_LOG_PATH = join(BDE_DIR, 'agent-manager.log')
-export const BDE_MEMORY_DIR = join(BDE_DIR, 'memory')
-export const BDE_TASK_MEMORY_DIR = join(BDE_MEMORY_DIR, 'tasks')
+validateTestDbPath(process.env.FLEET_TEST_DB)
+export const FLEET_DB_PATH =
+  process.env.FLEET_TEST_DB ?? process.env.FLEET_DB_PATH ?? join(FLEET_DIR, 'fleet.db')
+export const FLEET_AGENTS_INDEX = join(FLEET_DIR, 'agents.json')
+export const FLEET_AGENT_LOGS_DIR = join(FLEET_DIR, 'agent-logs')
+export const FLEET_AGENT_TMP_DIR = join(tmpdir(), 'fleet-agents')
+export const FLEET_AGENT_LOG_PATH = join(FLEET_DIR, 'agent-manager.log')
+export const FLEET_MEMORY_DIR = join(FLEET_DIR, 'memory')
+export const FLEET_TASK_MEMORY_DIR = join(FLEET_MEMORY_DIR, 'tasks')
 
 /**
- * Default pipeline worktree base. Lives under `~/.bde/` alongside the SQLite DB
- * and logs so all BDE state consolidates in one dotfile directory — hidden from
+ * Default pipeline worktree base. Lives under `~/.fleet/` alongside the SQLite DB
+ * and logs so all FLEET state consolidates in one dotfile directory — hidden from
  * Finder and typically skipped by employer file-indexers that scan visible home
  * subdirectories (Documents, Desktop, Downloads).
  *
  * Users can override via the `agentManager.worktreeBase` setting; the override
  * is still validated to stay inside `$HOME` by `validateWorktreeBase()`.
  */
-export const DEFAULT_PIPELINE_WORKTREE_BASE = join(BDE_DIR, 'worktrees')
+export const DEFAULT_PIPELINE_WORKTREE_BASE = join(FLEET_DIR, 'worktrees')
 
 /**
  * Dedicated worktree base for adhoc agents. Kept separate from the pipeline
@@ -111,7 +111,7 @@ export const DEFAULT_PIPELINE_WORKTREE_BASE = join(BDE_DIR, 'worktrees')
  * Exported here so any module that needs to recognize an adhoc worktree path
  * (e.g. the review handlers' worktree validator) shares the same constant.
  */
-export const ADHOC_WORKTREE_BASE = join(BDE_DIR, 'worktrees-adhoc')
+export const ADHOC_WORKTREE_BASE = join(FLEET_DIR, 'worktrees-adhoc')
 
 // --- Dynamic repo configuration (backed by settings table) ---
 
@@ -125,13 +125,13 @@ export interface RepoConfig {
   color?: string
   /**
    * Selects the pipeline prompt preamble:
-   * - `'bde'` (default): full BDE-monorepo preamble — `npm run typecheck`,
+   * - `'fleet'` (default): full FLEET-monorepo preamble — `npm run typecheck`,
    *   `docs/modules/` update rule, pre-push hook guidance.
-   * - `'minimal'`: short preamble for non-BDE targets where the TypeScript /
+   * - `'minimal'`: short preamble for non-FLEET targets where the TypeScript /
    *   Node-monorepo guidance is noise (or actively harmful — see M8 dogfood
    *   findings). Keeps the spec + success criteria; drops the boilerplate.
    */
-  promptProfile?: 'bde' | 'minimal'
+  promptProfile?: 'fleet' | 'minimal'
 }
 
 function isRepoConfig(item: unknown): item is RepoConfig {
@@ -154,14 +154,14 @@ export function getRepoConfig(name: string): RepoConfig | null {
 }
 
 /**
- * Look up the prompt profile for a configured repo. Returns `'bde'` (the
+ * Look up the prompt profile for a configured repo. Returns `'fleet'` (the
  * backward-compatible default) when the repo isn't configured or has no
- * explicit profile — existing BDE workflows keep the full preamble.
+ * explicit profile — existing FLEET workflows keep the full preamble.
  */
-export function getRepoPromptProfile(repoName: string | null | undefined): 'bde' | 'minimal' {
-  if (!repoName) return 'bde'
+export function getRepoPromptProfile(repoName: string | null | undefined): 'fleet' | 'minimal' {
+  if (!repoName) return 'fleet'
   const repo = getConfiguredRepos().find((r) => r.name.toLowerCase() === repoName.toLowerCase())
-  return repo?.promptProfile ?? 'bde'
+  return repo?.promptProfile ?? 'fleet'
 }
 
 export function getRepoPaths(): Record<string, string> {
@@ -175,7 +175,7 @@ export function getRepoPaths(): Record<string, string> {
 
 /**
  * Look up a configured repo's local path by name. Case-insensitive — callers
- * may pass `'BDE'`, `'bde'`, etc. Returns `undefined` if no repo is configured
+ * may pass `'FLEET'`, `'fleet'`, etc. Returns `undefined` if no repo is configured
  * with that name. Prefer this helper over `getRepoPaths()[name]`, which is
  * easy to use incorrectly because the underlying map is keyed by lowercased
  * name (and a mismatched-case lookup silently returns `undefined`).

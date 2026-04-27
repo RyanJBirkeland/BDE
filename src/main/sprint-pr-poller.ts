@@ -1,7 +1,7 @@
 /**
  * Main-process timer that polls PR statuses for sprint tasks.
  * Runs independently of the renderer — ensures PR merges/closes
- * are detected even when no BDE window is open.
+ * are detected even when no FLEET window is open.
  */
 import { parsePrUrl } from '../shared/github'
 import type { SprintTaskPR } from '../shared/types'

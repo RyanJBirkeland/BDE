@@ -2,11 +2,11 @@
 
 .cr-changes__snapshot-banner {
   grid-column: 1 / -1;
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   padding: 6px 10px;
-  background: var(--bde-surface-raised, rgba(255, 255, 255, 0.04));
-  border-bottom: 1px solid var(--bde-border, rgba(255, 255, 255, 0.08));
-  color: var(--bde-text-dim, rgba(255, 255, 255, 0.6));
+  background: var(--fleet-surface-raised, rgba(255, 255, 255, 0.04));
+  border-bottom: 1px solid var(--fleet-border, rgba(255, 255, 255, 0.08));
+  color: var(--fleet-text-dim, rgba(255, 255, 255, 0.6));
 }
 
 .cr-changes {
@@ -22,15 +22,15 @@
 }
 
 .cr-changes__diff--loading {
-  padding: var(--bde-space-4);
+  padding: var(--fleet-space-4);
 }
 
 .cr-changes__diff-content {
   margin: 0;
-  padding: var(--bde-space-3);
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  padding: var(--fleet-space-3);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.5;

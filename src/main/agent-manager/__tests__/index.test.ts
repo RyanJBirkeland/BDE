@@ -42,9 +42,9 @@ vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'myrepo', localPath: '/repos/myrepo' }]),
   getGhRepo: vi.fn(),
-  BDE_DIR: '/tmp/bde-test',
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
-  BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
+  FLEET_DIR: '/tmp/fleet-test',
+  FLEET_AGENT_LOG_PATH: '/tmp/fleet-agent-test.log',
+  FLEET_TASK_MEMORY_DIR: '/tmp/fleet-test/tasks'
 }))
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -166,7 +166,7 @@ import { recoverOrphans } from '../orphan-recovery'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
-  worktreeBase: '/tmp/worktrees/bde',
+  worktreeBase: '/tmp/worktrees/fleet',
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,
@@ -428,7 +428,7 @@ describe('createAgentManager', () => {
       )
       expect(vi.mocked(claimTask)).toHaveBeenCalledWith(
         'task-1',
-        'bde-embedded',
+        'fleet-embedded',
         expect.any(Number)
       )
 
@@ -485,7 +485,7 @@ describe('createAgentManager', () => {
           repo: expect.any(String),
           status: 'running',
           sprintTaskId: 'task-1',
-          source: 'bde'
+          source: 'fleet'
         })
       )
 

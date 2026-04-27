@@ -56,7 +56,7 @@ export class EpicCycleError extends Error {
 
 /**
  * Run a function inside a single SQLite transaction — rolls back on throw.
- * Default uses the shared bde.db connection; tests may inject a trivial
+ * Default uses the shared fleet.db connection; tests may inject a trivial
  * pass-through wrapper.
  */
 export type RunInTransaction = <T>(fn: () => T) => T

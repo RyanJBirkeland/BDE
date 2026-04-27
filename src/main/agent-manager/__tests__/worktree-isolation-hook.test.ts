@@ -24,7 +24,7 @@ describe('createWorktreeIsolationHook', () => {
   it('allows MCP tools and echoes the model-supplied input back', async () => {
     const input = { name: 'Test Epic', goal: 'verify tool access' }
 
-    const result = await hook('mcp__bde__epics_create', input, permissionExtras)
+    const result = await hook('mcp__fleet__epics_create', input, permissionExtras)
 
     expect(result.behavior).toBe('allow')
     if (result.behavior === 'allow') {

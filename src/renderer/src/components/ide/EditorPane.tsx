@@ -40,11 +40,11 @@ export function EditorPane({
     if (!monacoRef.current) return
     const monaco = monacoRef.current
     if (theme === 'light') {
-      monaco.editor.defineTheme('bde-light', getLightMonacoTheme())
-      monaco.editor.setTheme('bde-light')
+      monaco.editor.defineTheme('fleet-light', getLightMonacoTheme())
+      monaco.editor.setTheme('fleet-light')
     } else {
-      monaco.editor.defineTheme('bde-dark', getMonacoTheme())
-      monaco.editor.setTheme('bde-dark')
+      monaco.editor.defineTheme('fleet-dark', getMonacoTheme())
+      monaco.editor.setTheme('fleet-dark')
     }
   }, [theme])
 
@@ -54,13 +54,13 @@ export function EditorPane({
 
   function handleBeforeMount(monaco: typeof Monaco): void {
     monacoRef.current = monaco
-    monaco.editor.defineTheme('bde-dark', getMonacoTheme())
-    monaco.editor.defineTheme('bde-light', getLightMonacoTheme())
+    monaco.editor.defineTheme('fleet-dark', getMonacoTheme())
+    monaco.editor.defineTheme('fleet-light', getLightMonacoTheme())
   }
 
   function handleMount(editor: Monaco.editor.IStandaloneCodeEditor, monaco: typeof Monaco): void {
     monacoRef.current = monaco
-    monaco.editor.setTheme(theme === 'light' ? 'bde-light' : 'bde-dark')
+    monaco.editor.setTheme(theme === 'light' ? 'fleet-light' : 'fleet-dark')
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       onSave?.()
     })
@@ -79,7 +79,7 @@ export function EditorPane({
       width="100%"
       language={language}
       value={content}
-      theme={theme === 'light' ? 'bde-light' : 'bde-dark'}
+      theme={theme === 'light' ? 'fleet-light' : 'fleet-dark'}
       beforeMount={handleBeforeMount}
       onMount={handleMount}
       onChange={handleChange}

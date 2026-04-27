@@ -66,7 +66,7 @@ runStartupPreflight()
 
 function runStartupPreflight(): void {
   // Clear raw API key env vars before any agent or service code runs.
-  // BDE authenticates via the OAuth token written to ~/.bde/oauth-token;
+  // FLEET authenticates via the OAuth token written to ~/.fleet/oauth-token;
   // a stray ANTHROPIC_API_KEY in the environment would bypass that path
   // and could allow unauthenticated cost accumulation.
   clearAnthropicEnvVars()
@@ -105,7 +105,7 @@ function assertSupportedNodeVersion(): void {
   const [nodeMajor = 0] = process.versions.node.split('.').map(Number)
   if (nodeMajor >= 22) return
   process.stderr.write(
-    `[BDE] Node.js v22+ required (found ${process.versions.node}). Please upgrade.\n`
+    `[FLEET] Node.js v22+ required (found ${process.versions.node}). Please upgrade.\n`
   )
   process.exit(1)
 }
@@ -182,8 +182,8 @@ function createMainWindow(): BrowserWindow | null {
     // failure and quit so the launcher's exit code is diagnostic.
     const message = err instanceof Error ? err.message : String(err)
     dialog.showErrorBox(
-      'BDE could not open its window',
-      `The application failed to create its main window.\n\nDetails: ${message}\n\nThis typically means BDE was launched on a system with no display, or Electron could not initialize a graphics context.`
+      'FLEET could not open its window',
+      `The application failed to create its main window.\n\nDetails: ${message}\n\nThis typically means FLEET was launched on a system with no display, or Electron could not initialize a graphics context.`
     )
     app.quit()
     return null
@@ -274,7 +274,7 @@ function createWindow(): void {
 }
 
 app.on('second-instance', () => {
-  // A second BDE instance was launched — focus the existing window instead
+  // A second FLEET instance was launched — focus the existing window instead
   const win = BrowserWindow.getAllWindows()[0]
   if (win) {
     if (win.isMinimized()) win.restore()
@@ -298,9 +298,9 @@ function initDatabaseOrExit(): void {
   } catch (err) {
     dialog.showErrorBox(
       'Database Migration Failed',
-      `BDE could not upgrade its database:\n\n${err instanceof Error ? err.message : String(err)}\n\n` +
-        `Check ~/.bde/bde.log for details.\n` +
-        `To recover: back up ~/.bde/bde.db, then delete it to start fresh.`
+      `FLEET could not upgrade its database:\n\n${err instanceof Error ? err.message : String(err)}\n\n` +
+        `Check ~/.fleet/fleet.log for details.\n` +
+        `To recover: back up ~/.fleet/fleet.db, then delete it to start fresh.`
     )
     app.exit(1)
   }
@@ -554,7 +554,7 @@ function buildReviewWiring(repo: ReturnType<typeof createSprintTaskRepository>):
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.bde')
+  electronApp.setAppUserModelId('com.fleet')
 
   initDatabaseOrExit()
   const core = initCoreServices()

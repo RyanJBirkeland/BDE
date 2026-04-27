@@ -32,7 +32,7 @@ registerFailurePattern({
   keywords: [
     'main repo has uncommitted changes',
     'refusing to proceed',
-    'is not configured in bde settings',
+    'is not configured in fleet settings',
     'credential unavailable',
     'no claude subscription token',
     'unable to access https://',

@@ -1,6 +1,6 @@
 # Pipeline dogfood notes — audit 2026-04-20
 
-Live-log of observations while the 23-task audit batch runs through the BDE
+Live-log of observations while the 23-task audit batch runs through the FLEET
 pipeline. Each entry is timestamped. Categories: **Pain point**, **Annoyance**,
 **Bug**, **Positive**, **Process note**.
 
@@ -59,7 +59,7 @@ with follow-up entries if context changes.
    not fast-fail to `error`. The spec is fine; the environment isn't.
 
 3. **🟡 ANNOYANCE — `failure_reason` column is empty on errored tasks.**
-   The diagnostic is in `~/.bde/bde.log` with full detail, but the task row
+   The diagnostic is in `~/.fleet/fleet.log` with full detail, but the task row
    itself shows `error` status with no explanation. A user inspecting the
    Task Pipeline has to know to open the log file to learn what broke. The
    `failure_reason` field exists (it's in the schema). It's just not populated
@@ -71,7 +71,7 @@ with follow-up entries if context changes.
    Dashboard or Task Pipeline view.
 
 5. **🟢 POSITIVE — Log is clear and actionable.**
-   Once I checked `~/.bde/bde.log`, the error (`main-repo-guard: Main repo
+   Once I checked `~/.fleet/fleet.log`, the error (`main-repo-guard: Main repo
    dirty ... ?? docs/superpowers/audits/2026-04-20/`) was immediately obvious.
    Good instrumentation on the main-repo-guard check.
 

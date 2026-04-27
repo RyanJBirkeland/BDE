@@ -2,8 +2,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bde-bg);
-  font-family: var(--bde-font-code);
+  background: var(--fleet-bg);
+  font-family: var(--fleet-font-code);
 }
 
 .pipeline-empty-state {
@@ -12,28 +12,28 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: var(--bde-space-4);
-  color: var(--bde-text-dim);
-  font-family: var(--bde-font-code);
+  gap: var(--fleet-space-4);
+  color: var(--fleet-text-dim);
+  font-family: var(--fleet-font-code);
 }
 
 .pipeline-empty-state__title {
-  font-size: var(--bde-size-xxl);
+  font-size: var(--fleet-size-xxl);
 }
 
 .pipeline-empty-state__hint {
-  font-size: var(--bde-size-lg);
+  font-size: var(--fleet-size-lg);
   opacity: 0.7;
 }
 
 .pipeline-empty-state__hint--spaced {
-  margin-bottom: var(--bde-space-3);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .sprint-pipeline__empty-text {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-size: var(--font-sm, 12px);
-  margin: 0 0 var(--bde-space-3);
+  margin: 0 0 var(--fleet-space-3);
 }
 
 .sprint-pipeline__body {
@@ -81,12 +81,12 @@
 .pipeline-drain-paused-banner {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-4);
-  background: color-mix(in srgb, var(--bde-danger) 12%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--bde-danger) 30%, transparent);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-4);
+  background: color-mix(in srgb, var(--fleet-danger) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--fleet-danger) 30%, transparent);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
 }
 
 /* Orphan recovery banner */
@@ -94,12 +94,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--bde-space-3);
-  padding: var(--bde-space-2) var(--bde-space-4);
-  background: color-mix(in srgb, var(--bde-warning) 12%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--bde-warning) 30%, transparent);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  gap: var(--fleet-space-3);
+  padding: var(--fleet-space-2) var(--fleet-space-4);
+  background: color-mix(in srgb, var(--fleet-warning) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--fleet-warning) 30%, transparent);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
 }
 
 .pipeline-orphan-banner__message {
@@ -116,11 +116,11 @@
   width: 2px;
   background: linear-gradient(
     180deg,
-    var(--bde-accent) 0%,
-    var(--bde-warning) 20%,
-    var(--bde-status-active) 45%,
-    var(--bde-status-review) 70%,
-    var(--bde-status-done) 100%
+    var(--fleet-accent) 0%,
+    var(--fleet-warning) 20%,
+    var(--fleet-status-active) 45%,
+    var(--fleet-status-review) 70%,
+    var(--fleet-status-done) 100%
   );
   z-index: 0;
   opacity: 0.3;

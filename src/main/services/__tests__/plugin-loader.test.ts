@@ -19,7 +19,7 @@ vi.mock('../../logger', () => ({
 const { loadPlugins, getPlugins, emitPluginEvent } = await import('../plugin-loader')
 
 describe('plugin-loader', () => {
-  const mockPluginsDir = '/mock/home/.bde/plugins'
+  const mockPluginsDir = '/mock/home/.fleet/plugins'
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -48,8 +48,8 @@ describe('plugin-loader', () => {
         'readme.txt'
       ] as unknown as fs.Dirent[])
 
-      const mockPlugin1: BdePlugin = { name: 'plugin1' }
-      const mockPlugin2: BdePlugin = { name: 'plugin2' }
+      const mockPlugin1: FleetPlugin = { name: 'plugin1' }
+      const mockPlugin2: FleetPlugin = { name: 'plugin2' }
 
       vi.doMock(path.join(mockPluginsDir, 'plugin1.js'), () => mockPlugin1, { virtual: true })
       vi.doMock(path.join(mockPluginsDir, 'plugin2.cjs'), () => mockPlugin2, { virtual: true })

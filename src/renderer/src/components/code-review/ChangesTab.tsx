@@ -29,7 +29,7 @@ export function ChangesTab(): React.JSX.Element {
     return (
       <div className="cr-changes">
         <div className="cr-changes__diff cr-changes__diff--loading">
-          <div className="bde-skeleton" style={{ height: 200 }} />
+          <div className="fleet-skeleton" style={{ height: 200 }} />
         </div>
       </div>
     )

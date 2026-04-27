@@ -3,15 +3,15 @@
   height: 40px;
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: 0 var(--bde-space-3);
-  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-border) 100%);
-  border-bottom: 1px solid var(--bde-accent-border);
+  gap: var(--fleet-space-2);
+  padding: 0 var(--fleet-space-3);
+  background: linear-gradient(180deg, var(--fleet-accent-surface) 0%, var(--fleet-border) 100%);
+  border-bottom: 1px solid var(--fleet-accent-border);
   flex-shrink: 0;
 }
 
 .console-search-bar__icon {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
   flex-shrink: 0;
 }
 
@@ -19,25 +19,25 @@
   flex: 1;
   background: transparent;
   border: none;
-  color: var(--bde-text);
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-sm);
+  color: var(--fleet-text);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-sm);
   outline: none;
 }
 
 .console-search-bar__input:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .console-search-bar__input::placeholder {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .console-search-bar__count {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-muted);
-  font-family: var(--bde-font-code);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted);
+  font-family: var(--fleet-font-code);
   flex-shrink: 0;
 }
 
@@ -51,10 +51,10 @@
 .console-search-bar__nav-btn {
   background: transparent;
   border: none;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: pointer;
-  padding: var(--bde-space-1);
-  border-radius: var(--bde-radius-sm);
+  padding: var(--fleet-space-1);
+  border-radius: var(--fleet-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,8 +64,8 @@
 }
 
 .console-search-bar__nav-btn:hover:not(:disabled) {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
 }
 
 .console-search-bar__nav-btn:disabled {
@@ -76,10 +76,10 @@
 .console-search-bar__close-btn {
   background: transparent;
   border: none;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: pointer;
-  padding: var(--bde-space-1);
-  border-radius: var(--bde-radius-sm);
+  padding: var(--fleet-space-1);
+  border-radius: var(--fleet-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -90,8 +90,8 @@
 }
 
 .console-search-bar__close-btn:hover:not(:disabled) {
-  background: var(--bde-danger-surface);
-  color: var(--bde-danger);
+  background: var(--fleet-danger-surface);
+  color: var(--fleet-danger);
 }
 
 .console-search-bar__close-btn:active:not(:disabled) {
@@ -100,14 +100,14 @@
 
 /* ── Console Search Highlighting ── */
 .console-line--search-match {
-  background: var(--bde-warning-surface);
-  border-left: 2px solid var(--bde-warning);
+  background: var(--fleet-warning-surface);
+  border-left: 2px solid var(--fleet-warning);
   padding-left: 10px;
 }
 
 .console-line--search-active {
-  background: var(--bde-accent-surface);
-  border-left: 2px solid var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  border-left: 2px solid var(--fleet-accent);
   padding-left: 10px;
   box-shadow: none;
 }

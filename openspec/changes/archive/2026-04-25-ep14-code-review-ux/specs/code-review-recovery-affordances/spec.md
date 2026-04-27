@@ -14,12 +14,12 @@ The system SHALL show an inline "Connect GitHub" button when Ship It is disabled
 - **WHEN** Ship It is disabled because `githubOwner` or `githubRepo` is not configured
 - **THEN** a "Connect GitHub" button is shown that navigates to Settings → Connections
 
-### Requirement: Mark Shipped Outside BDE action
+### Requirement: Mark Shipped Outside FLEET action
 The system SHALL provide a "Mark Shipped" action that transitions a task to `done` without requiring a local merge or PR, for users who shipped via the command line.
 
 #### Scenario: Mark Shipped transitions task to done
-- **WHEN** a user clicks "Mark Shipped Outside BDE"
-- **THEN** `review:markShippedOutsideBde` is called, the task transitions to `done`, and dependency resolution fires
+- **WHEN** a user clicks "Mark Shipped Outside FLEET"
+- **THEN** `review:markShippedOutsideFleet` is called, the task transitions to `done`, and dependency resolution fires
 
 ### Requirement: Revision request cap
 The system SHALL disable the Request Revision action and show the current count when `revision_count >= MAX_REVISION_ATTEMPTS`.

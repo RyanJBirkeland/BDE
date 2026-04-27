@@ -35,10 +35,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref
 ) {
   const classes = [
-    'bde-btn',
-    `bde-btn--${variant}`,
-    `bde-btn--${size}`,
-    loading && 'bde-btn--loading',
+    'fleet-btn',
+    `fleet-btn--${variant}`,
+    `fleet-btn--${size}`,
+    loading && 'fleet-btn--loading',
     className
   ]
     .filter(Boolean)
@@ -58,7 +58,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-controls={ariaControls}
       aria-busy={loading || undefined}
     >
-      {loading && <span className="bde-btn__spinner" aria-hidden="true" />}
+      {loading && <span className="fleet-btn__spinner" aria-hidden="true" />}
       {children}
     </button>
   )

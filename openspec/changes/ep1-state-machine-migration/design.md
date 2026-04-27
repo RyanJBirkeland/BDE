@@ -29,7 +29,7 @@ The EP-1 comment cited synchronous signature as the blocker. The simplest fix is
 
 ### 2. Add `queued → done` to the state machine with documented `autoComplete` semantics
 
-The `skipIfAlreadyOnMain` path genuinely needs `queued → done` — the work landed on main out-of-band (prior run, manual commit) and BDE is just reconciling. Using `forceTerminalOverride` is wrong here because that path hard-codes "manually by user" in the audit note, which misleads operators. The clean solution is to permit the transition in the state machine and use `taskStateService.transition()` with a correct `caller` note (`'task-claimer:auto-complete'`). A comment in `VALID_TRANSITIONS` documents why this edge exists.
+The `skipIfAlreadyOnMain` path genuinely needs `queued → done` — the work landed on main out-of-band (prior run, manual commit) and FLEET is just reconciling. Using `forceTerminalOverride` is wrong here because that path hard-codes "manually by user" in the audit note, which misleads operators. The clean solution is to permit the transition in the state machine and use `taskStateService.transition()` with a correct `caller` note (`'task-claimer:auto-complete'`). A comment in `VALID_TRANSITIONS` documents why this edge exists.
 
 ### 3. Inject `taskStateService` into `TaskClaimerDeps` (required, not optional)
 

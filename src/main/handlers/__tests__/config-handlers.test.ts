@@ -331,7 +331,7 @@ describe('Config handlers', () => {
     describe('settings:set — worktreeBase path validation', () => {
       it('allows agentManager.worktreeBase set to a path inside homedir', () => {
         const handlers = captureHandlers()
-        const safePath = join(homedir(), 'worktrees', 'bde')
+        const safePath = join(homedir(), 'worktrees', 'fleet')
 
         expect(() =>
           handlers['settings:set'](mockEvent, 'agentManager.worktreeBase', safePath)

@@ -86,7 +86,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('Queue Now enabled when all tier 1 pass, no tier 3 fails, repo set, and spec long enough', () => {
-    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC })
+    useTaskWorkbenchStore.setState({ repo: 'FLEET', spec: VALID_SPEC })
     useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
@@ -123,7 +123,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('calls onQueueNow when Queue Now clicked', () => {
-    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC })
+    useTaskWorkbenchStore.setState({ repo: 'FLEET', spec: VALID_SPEC })
     useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }
@@ -152,7 +152,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('Queue Now enabled when advisory checks are warn status (test profile)', () => {
-    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC, specType: 'test' })
+    useTaskWorkbenchStore.setState({ repo: 'FLEET', spec: VALID_SPEC, specType: 'test' })
     useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' },
@@ -191,7 +191,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('shows hint when spec is too short', () => {
-    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: 'too short' })
+    useTaskWorkbenchStore.setState({ repo: 'FLEET', spec: 'too short' })
     render(<WorkbenchActions {...defaultProps} />)
     expect(screen.getByText('Spec must be at least 50 characters')).toBeInTheDocument()
   })
@@ -203,7 +203,7 @@ describe('WorkbenchActions', () => {
   })
 
   it('shows no hint when all validations pass', () => {
-    useTaskWorkbenchStore.setState({ repo: 'BDE', spec: VALID_SPEC })
+    useTaskWorkbenchStore.setState({ repo: 'FLEET', spec: VALID_SPEC })
     useTaskWorkbenchValidation.setState({
       structuralChecks: [
         { id: 'title-present', label: 'Title', tier: 1, status: 'pass', message: 'OK' }

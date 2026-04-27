@@ -127,14 +127,14 @@ vi.mock('../../db', () => ({
 // Mock paths
 vi.mock('../../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue('/tmp/specs'),
-  BDE_DIR: '/tmp/bde',
-  BDE_AGENTS_INDEX: '/tmp/agents-index.json',
-  BDE_AGENT_LOGS_DIR: '/tmp/agent-logs',
+  FLEET_DIR: '/tmp/fleet',
+  FLEET_AGENTS_INDEX: '/tmp/agents-index.json',
+  FLEET_AGENT_LOGS_DIR: '/tmp/agent-logs',
   // Phase-5 audit: getRepoPaths/getRepoPath canonical owner is paths.ts now;
   // sprint-service routes its repo-configured check through here.
-  getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' })),
+  getRepoPaths: vi.fn(() => ({ fleet: '/Users/ryan/projects/FLEET' })),
   getRepoPath: vi.fn((name: string) =>
-    name.toLowerCase() === 'bde' ? '/Users/ryan/projects/BDE' : undefined
+    name.toLowerCase() === 'fleet' ? '/Users/ryan/projects/FLEET' : undefined
   )
 }))
 
@@ -157,7 +157,7 @@ vi.mock('fs/promises', () => ({
 
 // Mock git (getRepoPaths used by sprint:create repo-existence check)
 vi.mock('../../git', () => ({
-  getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' }))
+  getRepoPaths: vi.fn(() => ({ fleet: '/Users/ryan/projects/FLEET' }))
 }))
 
 // Mock dependency-index (used lazily inside sprint:update and sprint:validateDependencies)
@@ -322,7 +322,7 @@ describe('sprint:create handler', () => {
 
   it('creates a task and fires mutation notification', async () => {
     const validSpec = `${'x'.repeat(60)}\n## Overview\nContext\n## Files to Change\n- src/foo.ts\n## Implementation Steps\n1. Do it\n## How to Test\nRun tests`
-    const input = { title: 'New task', repo: 'bde', status: 'queued', spec: validSpec }
+    const input = { title: 'New task', repo: 'fleet', status: 'queued', spec: validSpec }
     const created = { id: 'abc', ...input }
     vi.mocked(_createTask).mockReturnValue(created as any)
 
@@ -375,7 +375,7 @@ describe('sprint:update handler', () => {
     vi.mocked(_getTask).mockReturnValue({
       id: '1',
       title: 'Task 1',
-      repo: 'bde',
+      repo: 'fleet',
       spec: validSpec,
       status: 'backlog',
       depends_on: [{ id: 'dep1', type: 'hard' }]
@@ -407,7 +407,7 @@ describe('sprint:update handler', () => {
     vi.mocked(_getTask).mockReturnValue({
       id: '1',
       title: 'Task 1',
-      repo: 'bde',
+      repo: 'fleet',
       spec: validSpec,
       status: 'backlog',
       depends_on: [{ id: 'dep1', type: 'hard' }]
@@ -639,12 +639,12 @@ describe('sprint:create spec validation', () => {
     vi.mocked(_createTask).mockReturnValue({
       id: 'new-1',
       title: 'Fix',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     } as any)
 
     const handler = captureHandler('sprint:create')
-    const result = await handler(mockEvent, { title: 'Fix', repo: 'bde' })
+    const result = await handler(mockEvent, { title: 'Fix', repo: 'fleet' })
 
     expect(result.id).toBe('new-1')
   })
@@ -653,12 +653,12 @@ describe('sprint:create spec validation', () => {
     vi.mocked(_createTask).mockReturnValue({
       id: 'new-1',
       title: 'Fix',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     } as any)
 
     const handler = captureHandler('sprint:create')
-    const result = await handler(mockEvent, { title: 'Fix', repo: 'bde', status: 'backlog' })
+    const result = await handler(mockEvent, { title: 'Fix', repo: 'fleet', status: 'backlog' })
 
     expect(result.id).toBe('new-1')
   })
@@ -667,14 +667,14 @@ describe('sprint:create spec validation', () => {
     const handler = captureHandler('sprint:create')
 
     await expect(
-      handler(mockEvent, { title: 'Fix', repo: 'bde', status: 'queued' })
+      handler(mockEvent, { title: 'Fix', repo: 'fleet', status: 'queued' })
     ).rejects.toThrow(/spec is required/)
   })
 
   it('rejects task with empty title', async () => {
     const handler = captureHandler('sprint:create')
 
-    await expect(handler(mockEvent, { title: '', repo: 'bde', spec: validSpec })).rejects.toThrow(
+    await expect(handler(mockEvent, { title: '', repo: 'fleet', spec: validSpec })).rejects.toThrow(
       /title is required/
     )
   })
@@ -686,7 +686,7 @@ describe('sprint:create spec validation', () => {
     await expect(
       handler(mockEvent, {
         title: 'Task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued',
         spec: specMissingRequired
       })
@@ -698,7 +698,7 @@ describe('sprint:create spec validation', () => {
     vi.mocked(_createTask).mockReturnValue({
       id: 'new-1',
       title: 'Task',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog',
       spec: specMissingRequired
     } as any)
@@ -706,7 +706,7 @@ describe('sprint:create spec validation', () => {
     const handler = captureHandler('sprint:create')
     const result = await handler(mockEvent, {
       title: 'Task',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog',
       spec: specMissingRequired
     })
@@ -720,24 +720,24 @@ describe('sprint:create spec validation', () => {
 
     const handler = captureHandler('sprint:create')
     await expect(
-      handler(mockEvent, { title: 'Fix bug', repo: 'bde', status: 'backlog' })
+      handler(mockEvent, { title: 'Fix bug', repo: 'fleet', status: 'backlog' })
     ).rejects.toThrow(/not configured/)
 
     expect(_createTask).not.toHaveBeenCalled()
   })
 
   it('allows task creation when repo is configured', async () => {
-    vi.mocked(_getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
-    vi.mocked(_getRepoPathsFromPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
+    vi.mocked(_getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
+    vi.mocked(_getRepoPathsFromPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
     vi.mocked(_createTask).mockReturnValue({
       id: 'new-2',
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     } as any)
 
     const handler = captureHandler('sprint:create')
-    const result = await handler(mockEvent, { title: 'Fix bug', repo: 'bde', status: 'backlog' })
+    const result = await handler(mockEvent, { title: 'Fix bug', repo: 'fleet', status: 'backlog' })
 
     expect(result.id).toBe('new-2')
     expect(_createTask).toHaveBeenCalled()
@@ -762,7 +762,7 @@ describe('sprint:update spec validation on queue transition', () => {
     vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
       title: 'Test',
-      repo: 'bde',
+      repo: 'fleet',
       spec: 'too short',
       status: 'backlog'
     } as any)
@@ -777,7 +777,7 @@ describe('sprint:update spec validation on queue transition', () => {
     vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
       title: 'Test',
-      repo: 'bde',
+      repo: 'fleet',
       spec: validSpec,
       status: 'backlog'
     } as any)
@@ -793,7 +793,7 @@ describe('sprint:update spec validation on queue transition', () => {
     vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
       title: 'Test',
-      repo: 'bde',
+      repo: 'fleet',
       spec: 'too short',
       status: 'active'
     } as any)
@@ -811,7 +811,7 @@ describe('sprint:update spec validation on queue transition', () => {
     vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
       title: 'Test',
-      repo: 'bde',
+      repo: 'fleet',
       spec: validSpec,
       status: 'backlog'
     } as any)

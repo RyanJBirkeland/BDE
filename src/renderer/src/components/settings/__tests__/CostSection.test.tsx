@@ -90,7 +90,7 @@ describe('CostSection', () => {
       {
         id: 'run-1',
         task: 'Fix bug in login',
-        repo: 'bde',
+        repo: 'fleet',
         startedAt: '2026-04-01T10:00:00Z',
         finishedAt: '2026-04-01T10:30:00Z',
         costUsd: 0.35,
@@ -116,7 +116,7 @@ describe('CostSection', () => {
       {
         id: 'run-1',
         task: 'Task A',
-        repo: 'bde',
+        repo: 'fleet',
         startedAt: '2026-04-01T10:00:00Z',
         finishedAt: '2026-04-01T10:30:00Z',
         costUsd: 0.35,
@@ -132,7 +132,7 @@ describe('CostSection', () => {
       {
         id: 'run-2',
         task: 'Task B',
-        repo: 'bde',
+        repo: 'fleet',
         startedAt: '2026-04-02T10:00:00Z',
         finishedAt: '2026-04-02T11:00:00Z',
         costUsd: 1.5,

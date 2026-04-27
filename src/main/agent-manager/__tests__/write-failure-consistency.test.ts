@@ -43,7 +43,7 @@ vi.mock('../task-mapper', () => ({
   checkAndBlockDeps: vi.fn().mockReturnValue(false)
 }))
 vi.mock('../../paths', () => ({
-  getRepoPaths: vi.fn().mockReturnValue({ bde: '/repos/bde' })
+  getRepoPaths: vi.fn().mockReturnValue({ fleet: '/repos/fleet' })
 }))
 vi.mock('../worktree', () => ({
   setupWorktree: vi.fn()

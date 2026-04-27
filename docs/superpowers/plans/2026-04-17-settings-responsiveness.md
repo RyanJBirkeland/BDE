@@ -4,9 +4,9 @@
 
 **Goal:** Make every Settings view section responsive on wide displays, fix three concrete layout bugs (broken permissions grid, cramped Auto-start row, duplicate About card, orphaned Webhooks empty state), and centralize the content container to a readable 960px cap.
 
-**Architecture:** Pure CSS + minimal markup cleanup. No behavior changes. Lift the hardcoded 560px cap in `SettingsView.css` to a responsive `min(960px, 100%)` centered container. Add the missing `permissions-*` styles that `AgentPermissionsSection.tsx` already references. Introduce a `.settings-field--inline` modifier for checkbox rows. Remove the redundant "About BDE" card from Connections. Wrap the Webhooks empty state in a `SettingsCard`.
+**Architecture:** Pure CSS + minimal markup cleanup. No behavior changes. Lift the hardcoded 560px cap in `SettingsView.css` to a responsive `min(960px, 100%)` centered container. Add the missing `permissions-*` styles that `AgentPermissionsSection.tsx` already references. Introduce a `.settings-field--inline` modifier for checkbox rows. Remove the redundant "About FLEET" card from Connections. Wrap the Webhooks empty state in a `SettingsCard`.
 
-**Tech Stack:** React + TypeScript, CSS custom properties (`--bde-*` design tokens), vitest + testing-library for component tests.
+**Tech Stack:** React + TypeScript, CSS custom properties (`--fleet-*` design tokens), vitest + testing-library for component tests.
 
 Spec: `docs/superpowers/specs/2026-04-17-settings-responsiveness-design.md`
 
@@ -24,7 +24,7 @@ Spec: `docs/superpowers/specs/2026-04-17-settings-responsiveness-design.md`
 **TSX files touched (3):**
 - `src/renderer/src/components/settings/AgentPermissionsSection.tsx` — add `import './AgentPermissionsSection.css'`
 - `src/renderer/src/components/settings/AgentManagerSection.tsx` — Auto-start label gets `settings-field--inline`
-- `src/renderer/src/components/settings/ConnectionsSection.tsx` — remove About BDE card + dead imports (`APP_VERSION`, `GITHUB_URL`, `ExternalLink`)
+- `src/renderer/src/components/settings/ConnectionsSection.tsx` — remove About FLEET card + dead imports (`APP_VERSION`, `GITHUB_URL`, `ExternalLink`)
 - `src/renderer/src/components/settings/WebhooksSection.tsx` — wrap empty state in `SettingsCard`
 
 **Test files touched (1):**
@@ -64,7 +64,7 @@ Replace the entire file contents with:
 
 .stg-content {
   flex: 1;
-  padding: var(--bde-space-5) clamp(var(--bde-space-4), 4vw, var(--bde-space-8));
+  padding: var(--fleet-space-5) clamp(var(--fleet-space-4), 4vw, var(--fleet-space-8));
   overflow-y: auto;
   min-width: 0;
 }
@@ -116,8 +116,8 @@ Append after the existing `.settings-field__input[aria-invalid='true']` rule (en
 .settings-field--inline {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  margin-bottom: var(--bde-space-3);
+  gap: var(--fleet-space-2);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .settings-field--inline .settings-field__label {
@@ -127,9 +127,9 @@ Append after the existing `.settings-field__input[aria-invalid='true']` rule (en
 /* ── Empty state inside a SettingsCard ── */
 
 .settings-empty-state {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   margin: 0;
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
 }
 ```
 
@@ -186,24 +186,24 @@ Create `src/renderer/src/components/settings/AgentPermissionsSection.css`:
 .permissions-banner {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-3);
-  padding: var(--bde-space-3) var(--bde-space-4);
-  margin-bottom: var(--bde-space-3);
-  border-radius: var(--bde-radius-md);
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-border);
+  gap: var(--fleet-space-3);
+  padding: var(--fleet-space-3) var(--fleet-space-4);
+  margin-bottom: var(--fleet-space-3);
+  border-radius: var(--fleet-radius-md);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-border);
 }
 
 .permissions-banner__text {
   margin: 0;
-  color: var(--bde-text);
-  font-size: var(--bde-size-sm);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-sm);
   line-height: 1.5;
 }
 
 .permissions-banner__actions {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   flex-wrap: wrap;
 }
 
@@ -211,23 +211,23 @@ Create `src/renderer/src/components/settings/AgentPermissionsSection.css`:
 .permissions-presets {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
 /* Grid of allow-tool checkboxes. */
 .permissions-tools {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--bde-space-2) var(--bde-space-4);
-  margin-bottom: var(--bde-space-3);
+  gap: var(--fleet-space-2) var(--fleet-space-4);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .permissions-tool {
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: baseline;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-1) 0;
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-1) 0;
   cursor: pointer;
 }
 
@@ -237,20 +237,20 @@ Create `src/renderer/src/components/settings/AgentPermissionsSection.css`:
 
 .permissions-tool__name {
   font-weight: 600;
-  color: var(--bde-text);
-  font-size: var(--bde-size-sm);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-sm);
 }
 
 .permissions-tool__desc {
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-xs);
 }
 
 /* Footer explainer below the grid. */
 .permissions-info {
   margin: 0;
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-xs);
   line-height: 1.5;
 }
 
@@ -258,32 +258,32 @@ Create `src/renderer/src/components/settings/AgentPermissionsSection.css`:
 .permissions-deny-list {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-1);
-  margin-bottom: var(--bde-space-3);
+  gap: var(--fleet-space-1);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .permissions-deny-rule {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-1) var(--bde-space-2);
-  background: var(--bde-surface);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-1) var(--fleet-space-2);
+  background: var(--fleet-surface);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
 }
 
 .permissions-deny-rule code {
   flex: 1;
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text);
   background: none;
   padding: 0;
 }
 
 .permissions-deny-add {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 ```
 
@@ -299,7 +299,7 @@ The import block should now read:
 
 ```tsx
 /**
- * AgentPermissionsSection — manage allow/deny tool permissions for BDE agents.
+ * AgentPermissionsSection — manage allow/deny tool permissions for FLEET agents.
  * Reads/writes ~/.claude/settings.json via IPC. Includes a consent banner,
  * preset configurations, tool checkboxes, and a custom deny-rule editor.
  */
@@ -333,13 +333,13 @@ git commit -m "fix(settings): add missing agent permissions styles"
 
 ---
 
-## Task 4: Remove duplicate About BDE card from Connections
+## Task 4: Remove duplicate About FLEET card from Connections
 
 **Files:**
 - Modify: `src/renderer/src/components/settings/ConnectionsSection.tsx`
 - Modify: `src/renderer/src/components/settings/__tests__/ConnectionsSection.test.tsx:47` (stale comment)
 
-- [ ] **Step 1: Delete the About BDE card and its dead dependencies**
+- [ ] **Step 1: Delete the About FLEET card and its dead dependencies**
 
 In `src/renderer/src/components/settings/ConnectionsSection.tsx`:
 
@@ -347,7 +347,7 @@ In `src/renderer/src/components/settings/ConnectionsSection.tsx`:
 
 ```tsx
 {/* About Card */}
-<SettingsCard title="About BDE">
+<SettingsCard title="About FLEET">
   <div className="settings-about">
     <div className="settings-about__row">
       <span className="settings-about__label">Version</span>
@@ -373,7 +373,7 @@ In `src/renderer/src/components/settings/ConnectionsSection.tsx`:
 
 ```tsx
 const APP_VERSION = __APP_VERSION__
-const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE'
+const GITHUB_URL = 'https://github.com/RyanJBirkeland/FLEET'
 ```
 
 **(c)** Remove `ExternalLink` from the `lucide-react` import. The import becomes:
@@ -409,13 +409,13 @@ In `npm run dev`, navigate to Settings → Connections. The page should show:
 - GitHub card (with Read-only mode toggle)
 - Webhooks section (next task polishes this)
 
-No "About BDE" card. Then navigate to Settings → About & Usage and confirm version + GitHub link still exist there.
+No "About FLEET" card. Then navigate to Settings → About & Usage and confirm version + GitHub link still exist there.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/renderer/src/components/settings/ConnectionsSection.tsx src/renderer/src/components/settings/__tests__/ConnectionsSection.test.tsx
-git commit -m "fix(settings): remove duplicate About BDE card from Connections"
+git commit -m "fix(settings): remove duplicate About FLEET card from Connections"
 ```
 
 ---
@@ -529,7 +529,7 @@ No separate final commit — each task committed its own change. Summary of comm
 fix(settings): responsive content container, lift 560px cap
 fix(settings): inline checkbox variant for Auto-start row
 fix(settings): add missing agent permissions styles
-fix(settings): remove duplicate About BDE card from Connections
+fix(settings): remove duplicate About FLEET card from Connections
 fix(settings): wrap Webhooks empty state in SettingsCard
 docs: update settings module docs for responsiveness pass
 ```

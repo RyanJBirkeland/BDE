@@ -38,7 +38,7 @@ import { getConfiguredRepos } from '../paths'
 function setupDefaultMocks(): void {
   vi.mocked(getGitHubToken).mockReturnValue('test-token')
   vi.mocked(getConfiguredRepos).mockReturnValue([
-    { name: 'BDE', localPath: '/tmp/bde', githubOwner: 'TestOwner', githubRepo: 'BDE' }
+    { name: 'FLEET', localPath: '/tmp/fleet', githubOwner: 'TestOwner', githubRepo: 'FLEET' }
   ] as any)
   vi.mocked(fetchAllGitHubPages).mockResolvedValue([])
   vi.mocked(githubFetch).mockResolvedValue({
@@ -77,7 +77,7 @@ describe('pr-poller', () => {
         head: { ref: 'feat/test', sha: 'abc123' },
         base: { ref: 'main' },
         user: { login: 'dev' },
-        repo: 'BDE'
+        repo: 'FLEET'
       }
     ])
 
@@ -87,7 +87,7 @@ describe('pr-poller', () => {
     expect(broadcast).toHaveBeenCalledWith('pr:listUpdated', expect.any(Object))
     expect(result).toBeTruthy()
     expect(result.prs.length).toBe(1)
-    expect(result.prs[0].repo).toBe('BDE')
+    expect(result.prs[0].repo).toBe('FLEET')
   })
 
   it('getLatestPrList returns cached data after refresh', async () => {
@@ -144,7 +144,7 @@ describe('pr-poller', () => {
         head: { ref: 'feat/test', sha: 'sha123' },
         base: { ref: 'main' },
         user: { login: 'dev' },
-        repo: 'BDE'
+        repo: 'FLEET'
       }
     ])
     vi.mocked(githubFetchJson).mockResolvedValue({
@@ -162,10 +162,10 @@ describe('pr-poller', () => {
 
     expect(githubFetchJson).toHaveBeenCalled()
     expect(result.checks).toBeDefined()
-    expect(result.checks['BDE-42']).toBeDefined()
-    expect(result.checks['BDE-42'].failed).toBe(1)
-    expect(result.checks['BDE-42'].passed).toBe(1)
-    expect(result.checks['BDE-42'].status).toBe('fail')
+    expect(result.checks['FLEET-42']).toBeDefined()
+    expect(result.checks['FLEET-42'].failed).toBe(1)
+    expect(result.checks['FLEET-42'].passed).toBe(1)
+    expect(result.checks['FLEET-42'].status).toBe('fail')
   })
 
   it('sorts PRs by updated_at descending', async () => {
@@ -181,7 +181,7 @@ describe('pr-poller', () => {
         head: { ref: 'feat/old', sha: 'aaa' },
         base: { ref: 'main' },
         user: { login: 'dev' },
-        repo: 'BDE'
+        repo: 'FLEET'
       },
       {
         number: 2,
@@ -194,7 +194,7 @@ describe('pr-poller', () => {
         head: { ref: 'feat/new', sha: 'bbb' },
         base: { ref: 'main' },
         user: { login: 'dev' },
-        repo: 'BDE'
+        repo: 'FLEET'
       }
     ])
 
@@ -217,7 +217,7 @@ describe('pr-poller', () => {
         head: { ref: 'feat/test', sha: 'abc' },
         base: { ref: 'main' },
         user: { login: 'dev' },
-        repo: 'BDE'
+        repo: 'FLEET'
       }
     ])
     vi.mocked(githubFetchJson).mockResolvedValue({
@@ -230,8 +230,8 @@ describe('pr-poller', () => {
     // Should still return result with empty check summary (the error is
     // broadcast via github:error but the poller degrades gracefully).
     expect(result.prs.length).toBe(1)
-    expect(result.checks['BDE-1'].status).toBe('unknown')
-    expect(result.checks['BDE-1'].total).toBe(0)
+    expect(result.checks['FLEET-1'].status).toBe('unknown')
+    expect(result.checks['FLEET-1'].total).toBe(0)
   })
 
   it('startPrPoller uses a single setInterval — no timer recreation on backoff (F-t1-sre-4)', async () => {
@@ -286,7 +286,7 @@ describe('pr-poller', () => {
         head: { ref: 'feat/bad', sha: 'deadbeef' },
         base: { ref: 'main' },
         user: { login: 'dev' },
-        repo: 'BDE'
+        repo: 'FLEET'
       }
     ])
     vi.mocked(githubFetchJson).mockResolvedValue({
@@ -297,8 +297,8 @@ describe('pr-poller', () => {
     const result = await refreshPrList()
 
     expect(result.prs.length).toBe(1)
-    expect(result.checks['BDE-7'].status).toBe('unknown')
-    expect(result.checks['BDE-7'].total).toBe(0)
+    expect(result.checks['FLEET-7'].status).toBe('unknown')
+    expect(result.checks['FLEET-7'].total).toBe(0)
   })
 
   it('surfaces fetchOpenPrs error in repoErrors on the payload (T-112)', async () => {
@@ -308,7 +308,7 @@ describe('pr-poller', () => {
 
     expect(result.prs).toEqual([])
     expect(result.repoErrors).toBeDefined()
-    expect(result.repoErrors!['BDE']).toContain('network timeout')
+    expect(result.repoErrors!['FLEET']).toContain('network timeout')
   })
 
   it('check-run fetches are capped at 4 concurrent calls (T-114)', async () => {
@@ -327,7 +327,7 @@ describe('pr-poller', () => {
       head: { ref: `feat/pr-${i + 1}`, sha: `sha${i + 1}` },
       base: { ref: 'main' },
       user: { login: 'dev' },
-      repo: 'BDE'
+      repo: 'FLEET'
     }))
     vi.mocked(fetchAllGitHubPages).mockResolvedValue(prs)
 

@@ -33,7 +33,7 @@ function parseErrorBody(res: ToolResult): { code: number; message: string; data?
 const baseTask: SprintTask = {
   id: 't1',
   title: 'demo',
-  repo: 'bde',
+  repo: 'fleet',
   status: 'backlog',
   priority: 0,
   created_at: '2026-04-17T00:00:00.000Z',
@@ -113,9 +113,9 @@ describe('tasks.* write tools', () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
-    const res = await call('tasks.create', { title: 't', repo: 'bde' })
+    const res = await call('tasks.create', { title: 't', repo: 'fleet' })
     expect(deps.createTaskWithValidation).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 't', repo: 'bde' }),
+      expect.objectContaining({ title: 't', repo: 'fleet' }),
       expect.any(Object)
     )
     expect(JSON.parse(res.content[0].text).id).toBe('t1')
@@ -132,7 +132,7 @@ describe('tasks.* write tools', () => {
     // successful response that quietly discarded the input.
     const res = await call('tasks.create', {
       title: 't',
-      repo: 'bde',
+      repo: 'fleet',
       claimed_by: 'x',
       pr_url: 'https://example.com/pr/1',
       pr_status: 'open',
@@ -151,7 +151,7 @@ describe('tasks.* write tools', () => {
     registerTaskTools(server, deps)
     const fullInput = {
       title: 'Full-coverage task',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'queued',
       prompt: 'build it',
       spec: '## Problem\nx\n## Solution\ny\n## Files to Change\n- a.ts\n',
@@ -177,7 +177,7 @@ describe('tasks.* write tools', () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
-    await call('tasks.create', { title: 't', repo: 'bde', skipReadinessCheck: true })
+    await call('tasks.create', { title: 't', repo: 'fleet', skipReadinessCheck: true })
     const invocation = (deps.createTaskWithValidation as any).mock.calls[0]
     const opts = invocation[2]
     expect(opts).toEqual(expect.objectContaining({ skipReadinessCheck: true }))
@@ -190,7 +190,7 @@ describe('tasks.* write tools', () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
-    await call('tasks.create', { title: 't', repo: 'bde' })
+    await call('tasks.create', { title: 't', repo: 'fleet' })
     const invocation = (deps.createTaskWithValidation as any).mock.calls[0]
     const opts = invocation[2]
     expect(opts?.skipReadinessCheck).toBeUndefined()
@@ -471,7 +471,7 @@ describe('tasks.* write tools', () => {
     })
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
-    const res = await call('tasks.create', { title: 't', repo: 'bde' })
+    const res = await call('tasks.create', { title: 't', repo: 'fleet' })
     const body = parseErrorBody(res)
     expect(body.code).toBe(-32005)
     expect(body.message).toMatch(/Spec missing required headings/)
@@ -486,7 +486,7 @@ describe('tasks.* write tools', () => {
     })
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
-    await expect(call('tasks.create', { title: 't', repo: 'bde' })).rejects.toThrow(
+    await expect(call('tasks.create', { title: 't', repo: 'fleet' })).rejects.toThrow(
       /database offline/
     )
   })
@@ -527,7 +527,7 @@ describe('tasks.* read tools', () => {
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
     // Missing required `title` — schema enforces a minimum length.
-    const res = await call('tasks.create', { title: '', repo: 'bde' })
+    const res = await call('tasks.create', { title: '', repo: 'fleet' })
     const body = parseErrorBody(res)
     expect(body.code).toBe(-32602)
     expect(body.message).toMatch(/title/i)
@@ -555,10 +555,10 @@ describe('tasks.list — forwards filter + pagination into the data layer (T-2)'
   }
 
   it('forwards repo as an option', async () => {
-    const { listTasks, call } = callWith({ repo: 'bde' })
+    const { listTasks, call } = callWith({ repo: 'fleet' })
     await call()
     expect(listTasks).toHaveBeenCalledWith(
-      expect.objectContaining({ repo: 'bde', limit: 100, offset: 0 })
+      expect.objectContaining({ repo: 'fleet', limit: 100, offset: 0 })
     )
   })
 
@@ -587,10 +587,10 @@ describe('tasks.list — forwards filter + pagination into the data layer (T-2)'
   })
 
   it('composes multiple filters into a single options object', async () => {
-    const { listTasks, call } = callWith({ repo: 'bde', tag: 'bar', search: 'thing' })
+    const { listTasks, call } = callWith({ repo: 'fleet', tag: 'bar', search: 'thing' })
     await call()
     const options = (listTasks.mock.calls[0][0] ?? {}) as Record<string, unknown>
-    expect(options).toMatchObject({ repo: 'bde', tag: 'bar', search: 'thing' })
+    expect(options).toMatchObject({ repo: 'fleet', tag: 'bar', search: 'thing' })
   })
 
   it('forwards explicit offset and limit verbatim', async () => {
@@ -606,7 +606,7 @@ describe('tasks.list — forwards filter + pagination into the data layer (T-2)'
   })
 
   it('returns the rows the data layer produced without further filtering', async () => {
-    const { call } = callWith({ repo: 'bde' })
+    const { call } = callWith({ repo: 'fleet' })
     const res = await call()
     const ids = (JSON.parse(res.content[0].text) as SprintTask[]).map((t) => t.id)
     expect(ids).toEqual(['x'])

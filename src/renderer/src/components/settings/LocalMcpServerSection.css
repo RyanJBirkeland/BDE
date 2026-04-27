@@ -1,16 +1,16 @@
 .mcp-token-row {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   flex-wrap: wrap;
 }
 
 .mcp-token {
-  font-family: var(--bde-font-mono, monospace);
+  font-family: var(--fleet-font-mono, monospace);
   font-size: 12px;
-  padding: var(--bde-space-1) var(--bde-space-2);
-  background: var(--bde-color-surface-muted);
-  border-radius: var(--bde-radius-sm);
+  padding: var(--fleet-space-1) var(--fleet-space-2);
+  background: var(--fleet-color-surface-muted);
+  border-radius: var(--fleet-radius-sm);
   overflow-wrap: anywhere;
   flex: 1 1 280px;
 }

@@ -53,7 +53,7 @@ Add these CSS rules exactly:
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .new-ticket-modal__row {
@@ -71,23 +71,23 @@ Add these CSS rules exactly:
 .new-ticket-modal__chip {
   padding: 5px 12px;
   border-radius: 6px;
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   background: transparent;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .new-ticket-modal__chip:hover {
-  border-color: var(--bde-accent);
-  color: var(--bde-text);
+  border-color: var(--fleet-accent);
+  color: var(--fleet-text);
 }
 
 .new-ticket-modal__chip--active {
-  border-color: var(--bde-accent);
-  background: color-mix(in srgb, var(--bde-accent) 15%, transparent);
-  color: var(--bde-accent);
+  border-color: var(--fleet-accent);
+  background: color-mix(in srgb, var(--fleet-accent) 15%, transparent);
+  color: var(--fleet-accent);
 }
 
 .new-ticket-modal__spec-header {
@@ -102,10 +102,10 @@ Add these CSS rules exactly:
   resize: vertical;
   padding: 10px 12px;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   border-radius: 8px;
-  color: var(--bde-text);
-  font-family: var(--bde-font-mono);
+  color: var(--fleet-text);
+  font-family: var(--fleet-font-mono);
   font-size: 12px;
   line-height: 1.6;
   outline: none;
@@ -113,7 +113,7 @@ Add these CSS rules exactly:
 }
 
 .new-ticket-modal__spec-editor:focus {
-  border-color: var(--bde-accent);
+  border-color: var(--fleet-accent);
 }
 
 .new-ticket-modal__footer {
@@ -122,23 +122,23 @@ Add these CSS rules exactly:
   align-items: center;
   gap: 10px;
   padding: 16px 24px;
-  border-top: 1px solid var(--bde-border);
+  border-top: 1px solid var(--fleet-border);
 }
 
 .new-ticket-modal__ask-paul {
   padding: 5px 12px;
   font-size: 12px;
   border-radius: 6px;
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   background: transparent;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .new-ticket-modal__ask-paul:hover:not(:disabled) {
-  border-color: var(--bde-accent);
-  color: var(--bde-accent);
+  border-color: var(--fleet-accent);
+  color: var(--fleet-accent);
 }
 
 .new-ticket-modal__ask-paul:disabled {
@@ -147,7 +147,7 @@ Add these CSS rules exactly:
 }
 ```
 
-**Note:** Check which CSS custom properties (`--bde-accent`, `--bde-border`, `--bde-text`, `--bde-text-dim`, `--bde-font-mono`) are defined in `design-system.css` or `main.css`. Use exact variable names from those files. If any variable doesn't exist, use the closest existing one.
+**Note:** Check which CSS custom properties (`--fleet-accent`, `--fleet-border`, `--fleet-text`, `--fleet-text-dim`, `--fleet-font-mono`) are defined in `design-system.css` or `main.css`. Use exact variable names from those files. If any variable doesn't exist, use the closest existing one.
 
 ### 2. NewTicketModal.tsx — Template-aware Ask Paul
 
@@ -343,5 +343,5 @@ After implementing:
 ## PR Command
 
 ```bash
-git add -A && git commit -m "fix: template-aware Ask Paul, error feedback, overwrite confirmation, CSS, new templates" && git push origin HEAD && gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="fix: NewTicketModal — template-aware AI, error handling, CSS, Test+Perf templates" -f body="5 fixes in NewTicketModal:\n- Ask Paul now generates within selected template structure\n- Error toast on Ask Paul failure (was silent catch)\n- Confirm dialog before template chip overwrites user content\n- Full CSS rules for all .new-ticket-modal__* classes\n- Added Test Coverage and Performance template options" -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
+git add -A && git commit -m "fix: template-aware Ask Paul, error feedback, overwrite confirmation, CSS, new templates" && git push origin HEAD && gh api repos/RyanJBirkeland/FLEET/pulls --method POST -f title="fix: NewTicketModal — template-aware AI, error handling, CSS, Test+Perf templates" -f body="5 fixes in NewTicketModal:\n- Ask Paul now generates within selected template structure\n- Error toast on Ask Paul failure (was silent catch)\n- Confirm dialog before template chip overwrites user content\n- Full CSS rules for all .new-ticket-modal__* classes\n- Added Test Coverage and Performance template options" -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
 ```

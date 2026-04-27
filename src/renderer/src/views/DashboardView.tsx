@@ -71,7 +71,7 @@ export default function DashboardView(): React.JSX.Element {
     if (briefingChecked.current || tasks.length === 0) return
     briefingChecked.current = true
 
-    const lastClose = localStorage.getItem('bde:last-window-close')
+    const lastClose = localStorage.getItem('fleet:last-window-close')
     if (!lastClose) return
 
     const lastCloseTime = parseInt(lastClose, 10)
@@ -91,7 +91,7 @@ export default function DashboardView(): React.JSX.Element {
   }, [tasks])
 
   const handleDismissBriefing = useCallback(() => {
-    localStorage.setItem('bde:last-window-close', Date.now().toString())
+    localStorage.setItem('fleet:last-window-close', Date.now().toString())
     setShowBriefing(false)
   }, [])
 
@@ -232,7 +232,7 @@ export default function DashboardView(): React.JSX.Element {
 
         {/* Content (above effects) */}
         <div className="dashboard-content">
-          <StatusBar title="BDE Command Center" status={dataStale ? 'warning' : 'ok'}>
+          <StatusBar title="FLEET Command Center" status={dataStale ? 'warning' : 'ok'}>
             {loading && !throughputData.length ? (
               <span className="dashboard-status-loading">Loading...</span>
             ) : errorCount > 0 ? (
@@ -251,8 +251,8 @@ export default function DashboardView(): React.JSX.Element {
           {drainStatus && (
             <div
               role="alert"
-              className="bde-warning-banner"
-              style={{ marginTop: 'var(--bde-space-2)' }}
+              className="fleet-warning-banner"
+              style={{ marginTop: 'var(--fleet-space-2)' }}
             >
               <strong>Drain loop paused:</strong>&nbsp;{drainStatus.reason} (
               {drainStatus.affectedTaskCount} queued; resumes at{' '}
@@ -276,7 +276,7 @@ export default function DashboardView(): React.JSX.Element {
           {/* 3-column Ops Deck grid or onboarding */}
           {tasks.length === 0 ? (
             <div className="dashboard-onboarding">
-              <NeonCard accent="cyan" title="Welcome to BDE">
+              <NeonCard accent="cyan" title="Welcome to FLEET">
                 <div className="dashboard-onboarding__content">
                   <p className="dashboard-onboarding__text">
                     Create your first sprint task to see the pipeline in action.

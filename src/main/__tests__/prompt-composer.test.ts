@@ -35,7 +35,7 @@ describe('buildAgentPrompt', () => {
     const types = ['pipeline', 'assistant', 'adhoc'] as const
     for (const agentType of types) {
       const prompt = buildAgentPrompt({ ...baseInput, agentType })
-      expect(prompt).toContain('You are a BDE')
+      expect(prompt).toContain('You are a FLEET')
     }
   })
 
@@ -43,7 +43,7 @@ describe('buildAgentPrompt', () => {
     const types = ['copilot', 'synthesizer'] as const
     for (const agentType of types) {
       const prompt = buildAgentPrompt({ ...baseInput, agentType })
-      expect(prompt).toContain('BDE Task Workbench Copilot')
+      expect(prompt).toContain('FLEET Task Workbench Copilot')
       expect(prompt).toContain('read-only spec drafting')
     }
   })
@@ -101,11 +101,11 @@ describe('buildAgentPrompt', () => {
       agentType: 'copilot',
       taskContent: 'Help me write a spec',
       messages: [{ role: 'user', content: 'What should the spec cover?' }],
-      formContext: { title: 'Feature X', repo: 'BDE', spec: 'Draft spec content' }
+      formContext: { title: 'Feature X', repo: 'FLEET', spec: 'Draft spec content' }
     })
     expect(prompt).toContain('## Task Context')
     expect(prompt).toContain('Feature X')
-    expect(prompt).toContain('BDE')
+    expect(prompt).toContain('FLEET')
     expect(prompt).toContain('Draft spec content')
     expect(prompt).toContain('## Conversation')
     expect(prompt).toContain('What should the spec cover?')
@@ -115,7 +115,7 @@ describe('buildAgentPrompt', () => {
     const prompt = buildAgentPrompt({
       agentType: 'copilot',
       messages: [{ role: 'user', content: 'hello' }],
-      formContext: { title: 'My Task', repo: 'BDE', spec: '' }
+      formContext: { title: 'My Task', repo: 'FLEET', spec: '' }
     })
     expect(prompt).toContain('(no spec yet)')
   })
@@ -157,7 +157,7 @@ describe('buildAgentPrompt', () => {
 
   it('assistant role mentions interactive assistant', () => {
     const prompt = buildAgentPrompt({ ...baseInput, agentType: 'assistant' })
-    expect(prompt).toContain('BDE Assistant')
+    expect(prompt).toContain('FLEET Assistant')
   })
 
   it('copilot role mentions spec drafting', () => {

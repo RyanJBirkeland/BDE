@@ -17,14 +17,14 @@ describe('AboutSection', () => {
   it('displays log path', () => {
     render(<AboutSection />)
     expect(screen.getByText('Log Path')).toBeInTheDocument()
-    expect(screen.getByText('~/.bde/bde.log')).toBeInTheDocument()
+    expect(screen.getByText('~/.fleet/fleet.log')).toBeInTheDocument()
   })
 
   it('opens GitHub on click', () => {
     render(<AboutSection />)
     fireEvent.click(screen.getByText('GitHub'))
     expect(window.api.window.openExternal).toHaveBeenCalledWith(
-      'https://github.com/RyanJBirkeland/BDE/releases'
+      'https://github.com/RyanJBirkeland/FLEET/releases'
     )
   })
 
@@ -33,7 +33,7 @@ describe('AboutSection', () => {
     render(<AboutSection />)
     fireEvent.click(screen.getByText('Keyboard Shortcuts'))
     expect(dispatchSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'bde:show-shortcuts' })
+      expect.objectContaining({ type: 'fleet:show-shortcuts' })
     )
     dispatchSpy.mockRestore()
   })

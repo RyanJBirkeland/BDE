@@ -5,8 +5,8 @@ vi.mock('../../lib/review-paths', () => ({
   validateWorktreePath: vi.fn(),
   validateFilePath: vi.fn(),
   validateGitRef: vi.fn(),
-  getAllowedWorktreeBases: vi.fn().mockReturnValue(['/home/user/.bde/worktrees']),
-  getWorktreeBase: vi.fn().mockReturnValue('/home/user/.bde/worktrees')
+  getAllowedWorktreeBases: vi.fn().mockReturnValue(['/home/user/.fleet/worktrees']),
+  getWorktreeBase: vi.fn().mockReturnValue('/home/user/.fleet/worktrees')
 }))
 
 // Minimal mocks to allow the module to load without Electron

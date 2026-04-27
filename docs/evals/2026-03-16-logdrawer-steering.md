@@ -57,7 +57,7 @@ But the handler returns `{ content, status, nextByte }` and accepts `(agentId, f
 1. Never passes `fromByte`, so every poll re-reads the **entire** log file from byte 0
 2. Omits `nextByte` from the return type
 
-For BDE-spawned agents with stream-json logs (up to 3.4MB observed), this means re-reading megabytes every 2 seconds. Not the root cause of Bug 1, but a performance problem.
+For FLEET-spawned agents with stream-json logs (up to 3.4MB observed), this means re-reading megabytes every 2 seconds. Not the root cause of Bug 1, but a performance problem.
 
 ---
 
@@ -65,15 +65,15 @@ For BDE-spawned agents with stream-json logs (up to 3.4MB observed), this means 
 
 **Root cause:** Two independent failures make steering completely broken for task-runner agents:
 
-### Failure 1: Wrong process — agent lives in task-runner, not BDE
+### Failure 1: Wrong process — agent lives in task-runner, not FLEET
 
 1. User types in steer input, presses Enter (`LogDrawer.tsx:69-81`)
 2. Calls `window.api.steerAgent(task.agent_run_id, msg)` (`LogDrawer.tsx:77`)
 3. Preload sends `ipcRenderer.invoke('agent:steer', { agentId, message })` (`preload/index.ts:68-69`)
 4. Handler calls `steerAgent(agentId, message)` from `local-agents.ts` (`agent-handlers.ts:34-37`)
 5. `steerAgent` looks up `activeAgentsById.get(agentId)` (`local-agents.ts:308`)
-6. **This map is only populated by `spawnClaudeAgent()`** (`local-agents.ts:261`) — the BDE Electron main process spawn function
-7. Task-runner is a **separate Node.js process** with its own child process references. BDE Electron has **no reference** to task-runner's children
+6. **This map is only populated by `spawnClaudeAgent()`** (`local-agents.ts:261`) — the FLEET Electron main process spawn function
+7. Task-runner is a **separate Node.js process** with its own child process references. FLEET Electron has **no reference** to task-runner's children
 8. `activeAgentsById.get(agentId)` returns `undefined`
 9. Returns `{ ok: false, error: 'Agent not found or stdin closed' }` (`local-agents.ts:309`)
 
@@ -86,23 +86,23 @@ Even if we somehow got the child reference:
 3. `child.stdin.destroyed` would be `true`
 4. The steer attempt would still fail at the `child.stdin.destroyed` check (`local-agents.ts:309`)
 
-### Note on BDE-spawned agents
+### Note on FLEET-spawned agents
 
-Steering **would** work for agents spawned via BDE's `spawnClaudeAgent()` because:
+Steering **would** work for agents spawned via FLEET's `spawnClaudeAgent()` because:
 
 - They use `--input-format stream-json` (accepts stdin messages)
 - stdin is **not** closed after the initial message
 - The child is registered in `activeAgentsById`
 - Message format is correct: `{ type: "user", message: { role: "user", content: "..." } }`
 
-But the Sprint → LogDrawer flow is for task-runner agents, not BDE-spawned agents.
+But the Sprint → LogDrawer flow is for task-runner agents, not FLEET-spawned agents.
 
 ---
 
 ## Data Flow: Log file -> LogDrawer
 
 ```
-task-runner.js                    BDE Electron (main)              BDE Renderer
+task-runner.js                    FLEET Electron (main)              FLEET Renderer
 ───────────────                   ───────────────────              ────────────
 1. claimTask(id)
    → status='active'
@@ -111,8 +111,8 @@ task-runner.js                    BDE Electron (main)              BDE Renderer
 2. spawnAgent(task)
    → spawn claude --print
    → createAgentLogPath(uuid)
-     → ~/.bde/agent-logs/DATE/UUID/output.log (0 bytes)
-   → registerBdeAgent()
+     → ~/.fleet/agent-logs/DATE/UUID/output.log (0 bytes)
+   → registerFleetAgent()
      → INSERT INTO agent_runs (status='running', log_path=...)
    → UPDATE sprint_tasks SET agent_run_id=UUID
 
@@ -130,7 +130,7 @@ task-runner.js                    BDE Electron (main)              BDE Renderer
 5. Agent exits
    → stdout dumps result text
    → appendFileSync(logPath)   ← readLog                    ← poll
-   → finishBdeAgent(id, code)    → reads full file             → content=text
+   → finishFleetAgent(id, code)    → reads full file             → content=text
      → status='done'             → return {content:text,       → plain items
                                     status:'done'}             → ChatThread
 ```
@@ -180,15 +180,15 @@ LogDrawer                   Preload                    Main Process             
 
 | #   | Where                  | What breaks                                                                       |
 | --- | ---------------------- | --------------------------------------------------------------------------------- |
-| 1   | `activeAgentsById` map | Only populated by BDE's `spawnClaudeAgent()`, not task-runner                     |
+| 1   | `activeAgentsById` map | Only populated by FLEET's `spawnClaudeAgent()`, not task-runner                     |
 | 2   | `child.stdin.end()`    | Task-runner closes stdin immediately — `--print` doesn't accept follow-ups        |
-| 3   | Process boundary       | Child process belongs to task-runner (separate Node.js process), not BDE Electron |
+| 3   | Process boundary       | Child process belongs to task-runner (separate Node.js process), not FLEET Electron |
 
 ---
 
 ## Architecture: --print vs Interactive mode
 
-### BDE's `spawnClaudeAgent()` (`local-agents.ts:239-288`)
+### FLEET's `spawnClaudeAgent()` (`local-agents.ts:239-288`)
 
 ```
 Mode:     Interactive (stream-json)
@@ -209,7 +209,7 @@ Flags:    --permission-mode bypassPermissions --print --add-dir <worktree>
 stdin:    CLOSED — prompt written as plain text, then stdin.end()
 Output:   Plain text final result only (dumped at exit)
 Steering: NO — stdin is closed, --print doesn't accept follow-ups
-Tracking: Registered in BDE DB but NOT in BDE's in-memory maps
+Tracking: Registered in FLEET DB but NOT in FLEET's in-memory maps
 Exit:     Exits after writing result to stdout
 Log size: Tiny (0 bytes during run, ~100-500 bytes after exit)
 ```
@@ -319,7 +319,7 @@ This is a performance fix — avoids re-reading multi-MB log files every 2 secon
 
 1. Keep a `Map<string, ChildProcess>` of active agent children keyed by `agent_run_id`
 2. Add REST endpoint: `POST /agents/:id/steer` that writes to the child's stdin
-3. In BDE, route `agent:steer` to the task-runner REST API when the agent is `source: 'external'`
+3. In FLEET, route `agent:steer` to the task-runner REST API when the agent is `source: 'external'`
 
 **File:** `src/main/local-agents.ts`, `steerAgent()` function (line 307-318)
 
@@ -335,15 +335,15 @@ if (!child) {
 }
 ```
 
-### Fix 4: Alternative — move agent spawning into BDE [HIGH RISK, HIGH REWARD]
+### Fix 4: Alternative — move agent spawning into FLEET [HIGH RISK, HIGH REWARD]
 
-Instead of task-runner spawning agents, have BDE's main process do it. This would:
+Instead of task-runner spawning agents, have FLEET's main process do it. This would:
 
-- Put child processes in BDE's `activeAgentsById` map (steering works)
+- Put child processes in FLEET's `activeAgentsById` map (steering works)
 - Use stream-json mode (live output works)
 - Eliminate the cross-process problem entirely
 
-But requires significant refactoring of the task-runner's queue/worktree/reconciliation logic into BDE.
+But requires significant refactoring of the task-runner's queue/worktree/reconciliation logic into FLEET.
 
 ### Recommended order
 
@@ -358,12 +358,12 @@ But requires significant refactoring of the task-runner's queue/worktree/reconci
 
 1. **`extractPrUrl` with stream-json**: The PR URL appears inside text content which is embedded in JSON strings. The regex `https:\/\/github\.com\/[^\s]+\/pull\/\d+` would still match against the raw log text (URLs appear inside `"text":"..."` JSON values). Need Ryan to confirm this is acceptable or if proper JSON parsing is needed.
 
-2. **Agent exit with stream-json**: Does Claude Code in stream-json mode reliably exit after completing a single-turn conversation? (BDE's `spawnClaudeAgent` uses it and seems to exit fine, so likely yes — but task-runner has no `result` event handler to confirm completion.)
+2. **Agent exit with stream-json**: Does Claude Code in stream-json mode reliably exit after completing a single-turn conversation? (FLEET's `spawnClaudeAgent` uses it and seems to exit fine, so likely yes — but task-runner has no `result` event handler to confirm completion.)
 
 3. **Task-runner SSE port**: Is `18799` always available? The steer fallback in Fix 3 assumes the task-runner is reachable at this address.
 
-4. **Concurrent DB access**: Both BDE and task-runner write to `bde.db`. Currently works via WAL mode + busy_timeout. Adding steer traffic through task-runner REST API doesn't change DB access patterns, but worth noting.
+4. **Concurrent DB access**: Both FLEET and task-runner write to `fleet.db`. Currently works via WAL mode + busy_timeout. Adding steer traffic through task-runner REST API doesn't change DB access patterns, but worth noting.
 
-5. **`[bde-spawn]` prefix**: Some BDE-spawned logs start with `[bde-spawn] Starting: <uuid>`. This is not valid JSON and gets parsed as a `plain` item. Where is this prefix written? It's not in the current `spawnClaudeAgent()` code — may be from an older version. Not harmful but worth cleaning up.
+5. **`[fleet-spawn]` prefix**: Some FLEET-spawned logs start with `[fleet-spawn] Starting: <uuid>`. This is not valid JSON and gets parsed as a `plain` item. Where is this prefix written? It's not in the current `spawnClaudeAgent()` code — may be from an older version. Not harmful but worth cleaning up.
 
-6. **Should LogDrawer differentiate source?**: BDE-spawned agents (source='bde') have rich stream-json output and steering works. Task-runner agents (source='external') have plain text and no steering. Should the UI adapt based on source? (e.g., hide steer input for external agents until Fix 3 lands)
+6. **Should LogDrawer differentiate source?**: FLEET-spawned agents (source='fleet') have rich stream-json output and steering works. Task-runner agents (source='external') have plain text and no steering. Should the UI adapt based on source? (e.g., hide steer input for external agents until Fix 3 lands)

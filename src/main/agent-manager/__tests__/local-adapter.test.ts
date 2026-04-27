@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-const spawnBdeAgentMock = vi.fn()
+const spawnFleetAgentMock = vi.fn()
 
-vi.mock('rbt-coding-agent/adapters/bde', () => ({
-  spawnBdeAgent: spawnBdeAgentMock
+vi.mock('rbt-coding-agent/adapters/fleet', () => ({
+  spawnFleetAgent: spawnFleetAgentMock
 }))
 
 import { spawnLocalAgent } from '../local-adapter'
@@ -23,8 +23,8 @@ describe('spawnLocalAgent', () => {
   const previousBase = process.env.OPENAI_API_BASE
 
   beforeEach(() => {
-    spawnBdeAgentMock.mockReset()
-    spawnBdeAgentMock.mockResolvedValue(fakeHandle())
+    spawnFleetAgentMock.mockReset()
+    spawnFleetAgentMock.mockResolvedValue(fakeHandle())
   })
 
   afterEach(() => {
@@ -32,14 +32,14 @@ describe('spawnLocalAgent', () => {
     else process.env.OPENAI_API_BASE = previousBase
   })
 
-  it('forwards prompt / cwd / model to spawnBdeAgent', async () => {
+  it('forwards prompt / cwd / model to spawnFleetAgent', async () => {
     await spawnLocalAgent({
       prompt: 'do the thing',
       cwd: '/tmp/work',
       model: 'openai/qwen/qwen3.6-35b-a3b',
       endpoint: 'http://localhost:1234/v1'
     })
-    expect(spawnBdeAgentMock).toHaveBeenCalledWith({
+    expect(spawnFleetAgentMock).toHaveBeenCalledWith({
       prompt: 'do the thing',
       cwd: '/tmp/work',
       model: 'openai/qwen/qwen3.6-35b-a3b'
@@ -48,7 +48,7 @@ describe('spawnLocalAgent', () => {
 
   it('sets OPENAI_API_BASE during the spawn call', async () => {
     let observed: string | undefined
-    spawnBdeAgentMock.mockImplementation(async () => {
+    spawnFleetAgentMock.mockImplementation(async () => {
       observed = process.env.OPENAI_API_BASE
       return fakeHandle()
     })
@@ -83,8 +83,8 @@ describe('spawnLocalAgent', () => {
     expect(process.env.OPENAI_API_BASE).toBeUndefined()
   })
 
-  it('propagates errors from spawnBdeAgent', async () => {
-    spawnBdeAgentMock.mockRejectedValue(new Error('preflight blew up'))
+  it('propagates errors from spawnFleetAgent', async () => {
+    spawnFleetAgentMock.mockRejectedValue(new Error('preflight blew up'))
     await expect(
       spawnLocalAgent({
         prompt: 'p',
@@ -95,9 +95,9 @@ describe('spawnLocalAgent', () => {
     ).rejects.toThrow('preflight blew up')
   })
 
-  it('restores OPENAI_API_BASE even when spawnBdeAgent throws', async () => {
+  it('restores OPENAI_API_BASE even when spawnFleetAgent throws', async () => {
     process.env.OPENAI_API_BASE = 'http://original:1234/v1'
-    spawnBdeAgentMock.mockRejectedValue(new Error('boom'))
+    spawnFleetAgentMock.mockRejectedValue(new Error('boom'))
     await expect(
       spawnLocalAgent({
         prompt: 'p',

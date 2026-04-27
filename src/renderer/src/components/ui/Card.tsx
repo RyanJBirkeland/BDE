@@ -16,10 +16,10 @@ export function Card({
   active = false
 }: CardProps): React.JSX.Element {
   const classes = [
-    'bde-card',
-    `bde-card--pad-${padding}`,
-    active && 'bde-card--active',
-    onClick && 'bde-card--clickable',
+    'fleet-card',
+    `fleet-card--pad-${padding}`,
+    active && 'fleet-card--active',
+    onClick && 'fleet-card--clickable',
     className
   ]
     .filter(Boolean)

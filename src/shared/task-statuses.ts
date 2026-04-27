@@ -79,7 +79,7 @@ export interface StatusMetadata {
   label: string
   /** Which UI bucket this status maps to */
   bucketKey: BucketKey
-  /** CSS variable name for status color (e.g., "--bde-status-active") */
+  /** CSS variable name for status color (e.g., "--fleet-status-active") */
   colorToken: string
   /** lucide-react icon name for this status */
   iconName: string
@@ -94,63 +94,63 @@ export const STATUS_METADATA: Readonly<Record<TaskStatus, StatusMetadata>> = {
   backlog: {
     label: 'Backlog',
     bucketKey: 'backlog',
-    colorToken: '--bde-accent',
+    colorToken: '--fleet-accent',
     iconName: 'Inbox',
     actionable: true
   },
   queued: {
     label: 'Queued',
     bucketKey: 'todo',
-    colorToken: '--bde-accent',
+    colorToken: '--fleet-accent',
     iconName: 'Clock',
     actionable: true
   },
   blocked: {
     label: 'Blocked',
     bucketKey: 'blocked',
-    colorToken: '--bde-warning',
+    colorToken: '--fleet-warning',
     iconName: 'AlertCircle',
     actionable: true
   },
   active: {
     label: 'In Progress',
     bucketKey: 'inProgress',
-    colorToken: '--bde-status-active',
+    colorToken: '--fleet-status-active',
     iconName: 'Play',
     actionable: false
   },
   review: {
     label: 'Awaiting Review',
     bucketKey: 'awaitingReview',
-    colorToken: '--bde-status-review',
+    colorToken: '--fleet-status-review',
     iconName: 'Eye',
     actionable: true
   },
   done: {
     label: 'Done',
     bucketKey: 'done',
-    colorToken: '--bde-status-done',
+    colorToken: '--fleet-status-done',
     iconName: 'CheckCircle',
     actionable: false
   },
   cancelled: {
     label: 'Cancelled',
     bucketKey: 'failed',
-    colorToken: '--bde-danger',
+    colorToken: '--fleet-danger',
     iconName: 'Slash',
     actionable: false
   },
   failed: {
     label: 'Failed',
     bucketKey: 'failed',
-    colorToken: '--bde-danger',
+    colorToken: '--fleet-danger',
     iconName: 'XCircle',
     actionable: true
   },
   error: {
     label: 'Error',
     bucketKey: 'failed',
-    colorToken: '--bde-danger',
+    colorToken: '--fleet-danger',
     iconName: 'AlertTriangle',
     actionable: true
   }

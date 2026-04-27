@@ -218,7 +218,7 @@ export function NotificationBell(): React.JSX.Element {
     <div className="notification-bell">
       <button
         ref={buttonRef}
-        className="bde-btn bde-btn--icon bde-btn--sm notification-bell__button"
+        className="fleet-btn fleet-btn--icon fleet-btn--sm notification-bell__button"
         onClick={handleToggle}
         title="Notifications"
         aria-label="Notifications"
@@ -252,7 +252,7 @@ export function NotificationBell(): React.JSX.Element {
               <div className="notification-bell__header-actions">
                 {unreadCount > 0 && (
                   <button
-                    className="bde-btn bde-btn--ghost bde-btn--sm"
+                    className="fleet-btn fleet-btn--ghost fleet-btn--sm"
                     onClick={handleMarkAllAsRead}
                   >
                     Mark all as read
@@ -260,7 +260,7 @@ export function NotificationBell(): React.JSX.Element {
                 )}
                 {notifications.length > 0 && (
                   <button
-                    className="bde-btn bde-btn--ghost bde-btn--sm"
+                    className="fleet-btn fleet-btn--ghost fleet-btn--sm"
                     onClick={handleClearAll}
                   >
                     Clear all

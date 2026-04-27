@@ -1,4 +1,4 @@
-# BDE Performance Architecture Evaluation
+# FLEET Performance Architecture Evaluation
 
 > **Status: PRE-FIX AUDIT (2026-03-16)**
 > This document was written before several performance fixes shipped. Key changes since:

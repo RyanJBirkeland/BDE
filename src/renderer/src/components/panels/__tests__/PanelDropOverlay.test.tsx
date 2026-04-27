@@ -47,7 +47,7 @@ describe('getDropZone', () => {
 function makeDragInit(opts: { panelData?: string } = {}) {
   const store: Record<string, string> = {}
   if (opts.panelData !== undefined) {
-    store['application/bde-panel'] = opts.panelData
+    store['application/fleet-panel'] = opts.panelData
   }
   return {
     dataTransfer: {

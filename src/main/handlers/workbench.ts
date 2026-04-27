@@ -197,13 +197,13 @@ export function registerWorkbenchHandlers(
 
   // --- AI-powered streaming chat ---
   safeHandle('workbench:chatStream', async (e, input) => {
-    // Case-insensitive lookup — the renderer sends e.g. `repo: 'BDE'` but
+    // Case-insensitive lookup — the renderer sends e.g. `repo: 'FLEET'` but
     // the underlying map is keyed by lowercase name.
     const repoPath = getRepoPath(input.formContext.repo)
     const streamId = randomUUID()
 
     // Fail fast if the repo is not configured: code-awareness depends on a
-    // valid `cwd`, and silently falling back to `process.cwd()` (the BDE app
+    // valid `cwd`, and silently falling back to `process.cwd()` (the FLEET app
     // directory) means the copilot would operate on the wrong codebase.
     if (!repoPath) {
       const message = `Repo "${input.formContext.repo}" is not configured — code-awareness unavailable. Add the repo in Settings → Repositories.`

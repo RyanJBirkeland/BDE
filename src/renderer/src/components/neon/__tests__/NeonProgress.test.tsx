@@ -24,7 +24,7 @@ describe('NeonProgress', () => {
     const { container } = render(<NeonProgress value={50} accent="cyan" />)
     const fill = container.querySelector('[data-role="progress-fill"]') as HTMLElement
     const track = fill.parentElement as HTMLElement
-    expect(track.style.background).toBe('var(--bde-surface)')
+    expect(track.style.background).toBe('var(--fleet-surface)')
   })
 
   it('uses CSS custom property for label font size', () => {
@@ -32,14 +32,14 @@ describe('NeonProgress', () => {
     // The label is the first child div of the root div
     const root = container.querySelector('div') as HTMLElement
     const label = root.firstElementChild as HTMLElement
-    expect(label.style.fontSize).toBe('var(--bde-size-xs)')
+    expect(label.style.fontSize).toBe('var(--fleet-size-xs)')
   })
 
   it('uses CSS custom property for label margin bottom', () => {
     const { container } = render(<NeonProgress value={50} accent="cyan" label="Test" />)
     const root = container.querySelector('div') as HTMLElement
     const label = root.firstElementChild as HTMLElement
-    expect(label.style.marginBottom).toBe('var(--bde-space-1)')
+    expect(label.style.marginBottom).toBe('var(--fleet-space-1)')
   })
 
   it('does not render label element when label is not provided', () => {

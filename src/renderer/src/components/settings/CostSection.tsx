@@ -47,7 +47,7 @@ function truncate(s: string, max: number): string {
 
 function ClaudeCodePanel({ summary }: { summary: CostSummary }): React.JSX.Element {
   return (
-    <div className="bde-card bde-card--pad-none cost-panel cost-panel--blue">
+    <div className="fleet-card fleet-card--pad-none cost-panel cost-panel--blue">
       <h3 className="cost-panel__title">Claude Code</h3>
       <span className="cost-panel__badge cost-panel__badge--blue">Subscription</span>
 
@@ -281,7 +281,7 @@ export function CostSection(): React.JSX.Element {
 
   const handleRowClick = useCallback((run: AgentRunSummary) => {
     window.dispatchEvent(
-      new CustomEvent('bde:navigate', {
+      new CustomEvent('fleet:navigate', {
         detail: { view: 'agents', sessionId: run.id }
       })
     )
@@ -292,10 +292,10 @@ export function CostSection(): React.JSX.Element {
       <div className="cost-view cost-view--glass" style={{ height: '100%' }}>
         <div className="cost-view__scroll">
           <div className="cost-view__panels">
-            <div className="bde-skeleton" style={{ height: 200 }} />
-            <div className="bde-skeleton" style={{ height: 200 }} />
+            <div className="fleet-skeleton" style={{ height: 200 }} />
+            <div className="fleet-skeleton" style={{ height: 200 }} />
           </div>
-          <div className="bde-skeleton" style={{ height: 300 }} />
+          <div className="fleet-skeleton" style={{ height: 300 }} />
         </div>
       </div>
     )

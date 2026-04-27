@@ -1,5 +1,5 @@
 /**
- * AgentPermissionsSection — manage allow/deny tool permissions for BDE agents.
+ * AgentPermissionsSection — manage allow/deny tool permissions for FLEET agents.
  * Reads/writes ~/.claude/settings.json via IPC. Includes a consent banner,
  * preset configurations, tool checkboxes, and a custom deny-rule editor.
  */
@@ -9,7 +9,7 @@ import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { SettingsCard } from './SettingsCard'
 
-const CONSENT_KEY = 'bde-permissions-consent'
+const CONSENT_KEY = 'fleet-permissions-consent'
 
 const ALL_TOOLS = [
   'Read',
@@ -187,7 +187,7 @@ export function AgentPermissionsSection(): React.JSX.Element {
     <div className="settings-field__row">
       <div className="settings-field__status">
         {dirty && (
-          <span style={{ color: 'var(--bde-text-muted)', fontSize: 'var(--bde-size-sm)' }}>
+          <span style={{ color: 'var(--fleet-text-muted)', fontSize: 'var(--fleet-size-sm)' }}>
             Unsaved changes
           </span>
         )}
@@ -212,7 +212,7 @@ export function AgentPermissionsSection(): React.JSX.Element {
       {!consented && (
         <div className="permissions-banner">
           <p className="permissions-banner__text">
-            BDE agents need permission to use tools on your machine. Choose a preset to get started,
+            FLEET agents need permission to use tools on your machine. Choose a preset to get started,
             or configure permissions manually.
           </p>
           <div className="permissions-banner__actions">
@@ -253,7 +253,7 @@ export function AgentPermissionsSection(): React.JSX.Element {
       <SettingsCard title="Tool Rules" footer={saveFooter}>
         <div className="permissions-tools" aria-label="Allowed tools">
           {loading ? (
-            <span style={{ color: 'var(--bde-text-muted)', fontSize: 'var(--bde-size-sm)' }}>
+            <span style={{ color: 'var(--fleet-text-muted)', fontSize: 'var(--fleet-size-sm)' }}>
               Loading...
             </span>
           ) : (
@@ -285,7 +285,7 @@ export function AgentPermissionsSection(): React.JSX.Element {
               <code>{rule}</code>
               <button
                 type="button"
-                className="bde-btn bde-btn--ghost bde-btn--sm"
+                className="fleet-btn fleet-btn--ghost fleet-btn--sm"
                 onClick={() => handleRemoveDeny(rule)}
                 aria-label={`Remove ${rule}`}
               >

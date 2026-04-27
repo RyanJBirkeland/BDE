@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 
 const mockSpawnAgent = vi.fn().mockResolvedValue({ pid: 1, logPath: '/tmp/log', id: 'agent-1' })
 const mockFetchProcesses = vi.fn()
-const mockGetRepoPaths = vi.fn().mockResolvedValue({ bde: '/Users/test/projects/BDE' })
+const mockGetRepoPaths = vi.fn().mockResolvedValue({ fleet: '/Users/test/projects/FLEET' })
 const mockLoadTemplates = vi.fn()
 const mockTemplates = [
   {
@@ -45,7 +45,7 @@ vi.mock('../../../stores/toasts', () => ({
 }))
 
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => [{ label: 'BDE', owner: 'owner', color: '#fff' }]
+  useRepoOptions: () => [{ label: 'FLEET', owner: 'owner', color: '#fff' }]
 }))
 
 Object.defineProperty(window, 'api', {
@@ -75,7 +75,7 @@ describe('AgentLaunchpad', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGetRepoPaths.mockResolvedValue({ bde: '/Users/test/projects/BDE' })
+    mockGetRepoPaths.mockResolvedValue({ fleet: '/Users/test/projects/FLEET' })
   })
 
   it('renders LaunchpadGrid with templates', () => {

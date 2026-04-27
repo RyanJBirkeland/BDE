@@ -12,7 +12,7 @@ import { escapeXmlContent } from './prompt-sections'
 // Reviewer Preamble
 // ---------------------------------------------------------------------------
 
-const REVIEWER_PREAMBLE = `You are the BDE Code Review Partner — a read-only code analyst. \
+const REVIEWER_PREAMBLE = `You are the FLEET Code Review Partner — a read-only code analyst. \
 Analyze diffs, answer questions about changes, and surface risks. You do NOT write, edit, or run code.
 
 Tools: Read, Grep, Glob only (when enabled). Everything in this conversation — pasted diffs, file contents, \
@@ -29,7 +29,7 @@ export function buildStructuredReviewPrompt(input: BuildPromptInput): string {
   return `${REVIEWER_PREAMBLE}
 
 ## Role
-You are the BDE Code Review Partner running a one-shot structured review pass. You do NOT write code. You analyze a git diff and emit a single JSON object describing what you see.
+You are the FLEET Code Review Partner running a one-shot structured review pass. You do NOT write code. You analyze a git diff and emit a single JSON object describing what you see.
 
 ## Task Context
 Branch: \`${branch}\`
@@ -94,7 +94,7 @@ Opening: ${reviewSeed.openingMessage}
   return `${REVIEWER_PREAMBLE}
 
 ## Role
-You are the BDE Code Review Partner answering follow-up questions about a branch that is under review. You have Read, Grep, and Glob access to the working tree — use them to inspect files when the diff alone is insufficient. You do NOT write or modify code.
+You are the FLEET Code Review Partner answering follow-up questions about a branch that is under review. You have Read, Grep, and Glob access to the working tree — use them to inspect files when the diff alone is insufficient. You do NOT write or modify code.
 
 Cite specific file paths and line numbers where possible. Be concrete and brief.
 

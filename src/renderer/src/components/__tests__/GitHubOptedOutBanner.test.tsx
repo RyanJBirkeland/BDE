@@ -42,7 +42,7 @@ describe('GitHubOptedOutBanner', () => {
     await user.click(dismissBtn)
 
     expect(screen.queryByRole('status')).toBeNull()
-    expect(sessionStorage.getItem('bde:github-opted-out-dismissed')).toBe('1')
+    expect(sessionStorage.getItem('fleet:github-opted-out-dismissed')).toBe('1')
 
     unmount()
     // Re-mount in the same session — banner should stay hidden.

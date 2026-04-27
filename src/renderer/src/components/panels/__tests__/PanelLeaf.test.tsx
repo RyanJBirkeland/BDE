@@ -204,19 +204,19 @@ describe('PanelLeaf', () => {
     expect(outerDiv.className).not.toContain('panel-leaf--focused')
   })
 
-  it('shows drop overlay when drag enters with bde-panel data type', () => {
+  it('shows drop overlay when drag enters with fleet-panel data type', () => {
     const node = makeLeaf()
     const { container } = render(<PanelLeaf node={node} />)
     const outerDiv = container.firstChild as HTMLElement
 
     fireEvent.dragEnter(outerDiv, {
-      dataTransfer: { types: ['application/bde-panel'] }
+      dataTransfer: { types: ['application/fleet-panel'] }
     })
 
     expect(screen.getByTestId('drop-overlay')).toBeInTheDocument()
   })
 
-  it('does not show drop overlay for non-bde-panel drag types', () => {
+  it('does not show drop overlay for non-fleet-panel drag types', () => {
     const node = makeLeaf()
     const { container } = render(<PanelLeaf node={node} />)
     const outerDiv = container.firstChild as HTMLElement
@@ -236,7 +236,7 @@ describe('PanelLeaf', () => {
 
     // Trigger drag enter to show overlay
     fireEvent.dragEnter(outerDiv, {
-      dataTransfer: { types: ['application/bde-panel'] }
+      dataTransfer: { types: ['application/fleet-panel'] }
     })
 
     const overlay = screen.getByTestId('drop-overlay')

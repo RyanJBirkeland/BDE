@@ -1,6 +1,6 @@
 ## Context
 
-`SprintTask` is BDE's core task record type — 43 fields spanning core identity, agent runtime state, spec/template data, and PR lifecycle data. Four named view types already exist in `src/shared/types/task-types.ts`:
+`SprintTask` is FLEET's core task record type — 43 fields spanning core identity, agent runtime state, spec/template data, and PR lifecycle data. Four named view types already exist in `src/shared/types/task-types.ts`:
 
 - `SprintTaskCore` — 11 fields: id, status, title, repo, priority, created_at, completed_at, depends_on, tags, epic_id, notes
 - `SprintTaskSpec` — Core + spec/template fields (spec, spec_type, prompt, template_name, playground_enabled)

@@ -5,7 +5,7 @@ import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest'
 import { usePendingReviewStore } from '../pendingReview'
 import type { PendingComment } from '../pendingReview'
 
-const STORAGE_KEY = 'bde:pendingReviewComments'
+const STORAGE_KEY = 'fleet:pendingReviewComments'
 
 function makeComment(id: string): PendingComment {
   return {

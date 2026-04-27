@@ -122,7 +122,7 @@ export const useLocalAgentsStore = create<LocalAgentsState>()(
       }
     },
     {
-      name: 'bde-local-agents',
+      name: 'fleet-local-agents',
       partialize: (s) => ({ spawnedAgents: s.spawnedAgents })
     }
   )

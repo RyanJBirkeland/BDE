@@ -123,7 +123,7 @@ describe('post-merge-dedup', () => {
 
     expect(mockExecFile).toHaveBeenCalledWith(
       'git',
-      ['commit', '-m', 'chore: deduplicate CSS from merge\n\nAutomated by BDE post-merge dedup'],
+      ['commit', '-m', 'chore: deduplicate CSS from merge\n\nAutomated by FLEET post-merge dedup'],
       expect.any(Object),
       expect.any(Function)
     )

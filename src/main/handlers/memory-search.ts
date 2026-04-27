@@ -3,7 +3,7 @@
  */
 import { safeHandle } from '../ipc-utils'
 import { execFileAsync } from '../lib/async-utils'
-import { BDE_MEMORY_DIR } from '../paths'
+import { FLEET_MEMORY_DIR } from '../paths'
 import { createLogger } from '../logger'
 
 const logger = createLogger('memory-search')
@@ -42,7 +42,7 @@ async function searchMemory(query: string): Promise<MemorySearchResponse> {
 
   try {
     const { stdout } = await execFileAsync('grep', ['-Frni', '--', query, '.'], {
-      cwd: BDE_MEMORY_DIR,
+      cwd: FLEET_MEMORY_DIR,
       encoding: 'utf-8',
       maxBuffer: 5 * 1024 * 1024, // 5MB
       timeout: 5000

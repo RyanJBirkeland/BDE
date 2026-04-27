@@ -22,9 +22,9 @@
 ### Requirement: pruneStaleWorktrees uses async directory enumeration
 `enumeratePruneCandidates` and `enumerateRepoCandidates` SHALL use `fs.promises.readdir` (or equivalent async API). Neither function MUST call `readdirSync`.
 
-#### Scenario: Worktree base with inactive BDE task directories
+#### Scenario: Worktree base with inactive FLEET task directories
 - **WHEN** `pruneStaleWorktrees` is called and the base directory contains subdirectories with 32-char hex task IDs that have a `.git` entry and are not active
-- **THEN** those directories are deleted and the returned count equals the number of inactive BDE task directories
+- **THEN** those directories are deleted and the returned count equals the number of inactive FLEET task directories
 
 #### Scenario: Error reading a repo subdirectory
 - **WHEN** `fs.promises.readdir` throws for a repo subdirectory

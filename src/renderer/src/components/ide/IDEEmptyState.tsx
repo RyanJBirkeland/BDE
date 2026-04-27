@@ -27,7 +27,7 @@ export function IDEEmptyState({ onOpenFolder }: IDEEmptyStateProps): React.JSX.E
   return (
     <div className="ide-empty-state">
       <Code size={48} className="ide-empty-state__icon" />
-      <h1 className="ide-empty-state__title">BDE IDE</h1>
+      <h1 className="ide-empty-state__title">FLEET IDE</h1>
       <p className="ide-empty-state__subtitle">Open a folder to start editing</p>
       <div className="ide-empty-state__actions">
         <button className="ide-empty-state__open-btn" onClick={onOpenFolder}>

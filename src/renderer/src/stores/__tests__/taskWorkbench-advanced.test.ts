@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useTaskWorkbenchStore } from '../taskWorkbench'
 
-const ADVANCED_KEY = 'bde:workbench-advanced-open'
+const ADVANCED_KEY = 'fleet:workbench-advanced-open'
 
 describe('taskWorkbench advancedOpen persistence', () => {
   beforeEach(() => {

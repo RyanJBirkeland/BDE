@@ -12,9 +12,9 @@ describe('NeonCard', () => {
   it('applies accent-based CSS variables via style', () => {
     const { container } = render(<NeonCard accent="pink">Content</NeonCard>)
     const card = container.firstChild as HTMLElement
-    expect(card.style.getPropertyValue('--card-accent')).toBe('var(--bde-status-done)')
-    expect(card.style.getPropertyValue('--card-accent-border')).toBe('var(--bde-accent-border)')
-    expect(card.style.getPropertyValue('--card-accent-surface')).toBe('var(--bde-accent-surface)')
+    expect(card.style.getPropertyValue('--card-accent')).toBe('var(--fleet-status-done)')
+    expect(card.style.getPropertyValue('--card-accent-border')).toBe('var(--fleet-accent-border)')
+    expect(card.style.getPropertyValue('--card-accent-surface')).toBe('var(--fleet-accent-surface)')
   })
 
   it('applies custom className', () => {
@@ -23,7 +23,7 @@ describe('NeonCard', () => {
         X
       </NeonCard>
     )
-    expect(container.firstChild).toHaveClass('bde-card', 'custom')
+    expect(container.firstChild).toHaveClass('fleet-card', 'custom')
   })
 
   it('renders with header when title is provided', () => {
@@ -39,7 +39,7 @@ describe('NeonCard', () => {
   it('defaults accent to purple when not specified', () => {
     const { container } = render(<NeonCard>Default</NeonCard>)
     const card = container.firstChild as HTMLElement
-    expect(card.style.getPropertyValue('--card-accent')).toBe('var(--bde-status-active)')
+    expect(card.style.getPropertyValue('--card-accent')).toBe('var(--fleet-status-active)')
   })
 
   it('renders action in header when provided', () => {

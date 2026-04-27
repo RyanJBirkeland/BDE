@@ -19,7 +19,7 @@ Every other view uses plain text for its title:
 
 | View               | Header Text                       | Current Style                               | Line Reference         |
 | ------------------ | --------------------------------- | ------------------------------------------- | ---------------------- |
-| Sessions sidebar   | "AGENTS"                          | `bde-section-title` (plain uppercase muted) | `SessionsView.tsx:290` |
+| Sessions sidebar   | "AGENTS"                          | `fleet-section-title` (plain uppercase muted) | `SessionsView.tsx:290` |
 | DiffView           | (no view title — just repo chips) | N/A                                         | `DiffView.tsx:240`     |
 | MemoryView sidebar | "Memory"                          | `memory-sidebar__title` (plain)             | `MemoryView.tsx:193`   |
 | CostView           | "Cost Tracker"                    | `cost-view__title` (16px plain)             | `CostView.tsx:403`     |
@@ -78,7 +78,7 @@ Create a reusable `.view-header` CSS pattern:
 
 | View                      | Change                                                                                              |
 | ------------------------- | --------------------------------------------------------------------------------------------------- |
-| Sessions sidebar header   | Replace `bde-section-title` with `view-header__title text-gradient-aurora`                          |
+| Sessions sidebar header   | Replace `fleet-section-title` with `view-header__title text-gradient-aurora`                          |
 | DiffView                  | Add a `.view-header` bar with "GIT" title above repo chips                                          |
 | MemoryView sidebar header | Apply `text-gradient-aurora` to "MEMORY" title, add accent underline                                |
 | CostView header           | Replace `cost-view__title` with `view-header__title text-gradient-aurora`, wrap in `.view-header`   |

@@ -1,10 +1,10 @@
 /**
  * Local-backend adapter — thin pass-through to `rbt-coding-agent`.
  *
- * BDE calls `spawnLocalAgent` when the backend-selector picks `local`
- * for an agent type. The framework's own BDE adapter already returns a
+ * FLEET calls `spawnLocalAgent` when the backend-selector picks `local`
+ * for an agent type. The framework's own FLEET adapter already returns a
  * handle whose `messages` iterable emits `SDKWireMessage`-shaped objects,
- * so BDE's downstream drain loop / event mapper / cost tracker consume
+ * so FLEET's downstream drain loop / event mapper / cost tracker consume
  * the stream without any translation on this side.
  *
  * Dynamic `import()` of the framework module keeps Electron's bundler
@@ -23,9 +23,9 @@ export interface LocalSpawnOptions {
 }
 
 export async function spawnLocalAgent(opts: LocalSpawnOptions): Promise<AgentHandle> {
-  let spawnBdeAgent: (typeof import('rbt-coding-agent/adapters/bde'))['spawnBdeAgent']
+  let spawnFleetAgent: (typeof import('rbt-coding-agent/adapters/fleet'))['spawnFleetAgent']
   try {
-    ;({ spawnBdeAgent } = await import('rbt-coding-agent/adapters/bde'))
+    ;({ spawnFleetAgent } = await import('rbt-coding-agent/adapters/fleet'))
   } catch (err) {
     throw new Error(
       'The "local" agent backend requires the optional rbt-coding-agent package, ' +
@@ -38,7 +38,7 @@ export async function spawnLocalAgent(opts: LocalSpawnOptions): Promise<AgentHan
   const previousBase = process.env.OPENAI_API_BASE
   process.env.OPENAI_API_BASE = opts.endpoint
   try {
-    const handle = await spawnBdeAgent({
+    const handle = await spawnFleetAgent({
       prompt: opts.prompt,
       cwd: opts.cwd,
       model: opts.model

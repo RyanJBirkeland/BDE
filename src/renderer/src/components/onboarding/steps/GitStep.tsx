@@ -64,7 +64,7 @@ export function GitStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Eleme
       <h1 className="onboarding-step__title">Git Setup</h1>
 
       <p className="onboarding-step__description">
-        BDE agents work in isolated git worktrees. Make sure git is installed and accessible.
+        FLEET agents work in isolated git worktrees. Make sure git is installed and accessible.
       </p>
 
       <div className="onboarding-step__checks">
@@ -85,24 +85,24 @@ export function GitStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Eleme
       {!checking && !gitAvailable && (
         <div className="onboarding-step__help">
           <p>Install git using one of these methods:</p>
-          <p style={{ marginTop: 'var(--bde-space-2)', fontWeight: 600 }}>
+          <p style={{ marginTop: 'var(--fleet-space-2)', fontWeight: 600 }}>
             Option 1 — Xcode Command Line Tools (recommended):
           </p>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 'var(--bde-space-2)',
-              marginTop: 'var(--bde-space-1)'
+              gap: 'var(--fleet-space-2)',
+              marginTop: 'var(--fleet-space-1)'
             }}
           >
             <code
               style={{
                 padding: '4px 10px',
-                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                 borderRadius: '4px',
                 fontFamily: 'monospace',
-                fontSize: 'var(--bde-size-sm)'
+                fontSize: 'var(--fleet-size-sm)'
               }}
             >
               xcode-select --install
@@ -115,22 +115,22 @@ export function GitStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Eleme
               <Copy size={14} />
             </Button>
           </div>
-          <p style={{ marginTop: 'var(--bde-space-2)', fontWeight: 600 }}>Option 2 — Homebrew:</p>
+          <p style={{ marginTop: 'var(--fleet-space-2)', fontWeight: 600 }}>Option 2 — Homebrew:</p>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 'var(--bde-space-2)',
-              marginTop: 'var(--bde-space-1)'
+              gap: 'var(--fleet-space-2)',
+              marginTop: 'var(--fleet-space-1)'
             }}
           >
             <code
               style={{
                 padding: '4px 10px',
-                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                 borderRadius: '4px',
                 fontFamily: 'monospace',
-                fontSize: 'var(--bde-size-sm)'
+                fontSize: 'var(--fleet-size-sm)'
               }}
             >
               brew install git
@@ -146,9 +146,9 @@ export function GitStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Eleme
           {timedOut && (
             <p
               style={{
-                marginTop: 'var(--bde-space-2)',
-                color: 'var(--bde-color-warning, orange)',
-                fontSize: 'var(--bde-size-sm)'
+                marginTop: 'var(--fleet-space-2)',
+                color: 'var(--fleet-color-warning, orange)',
+                fontSize: 'var(--fleet-size-sm)'
               }}
             >
               Git check timed out — ensure git is installed and accessible on your PATH.

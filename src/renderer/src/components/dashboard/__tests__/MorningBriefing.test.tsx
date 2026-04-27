@@ -7,7 +7,7 @@ import { nowIso } from '../../../../../shared/time'
 const makeTask = (id: string, overrides: Partial<SprintTask> = {}): SprintTask => ({
   id,
   title: `Task ${id}`,
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 1,
   status: 'done',

@@ -9,7 +9,7 @@ export interface WorktreeIsolationDeps {
   mainRepoPaths: readonly string[]
   /**
    * Absolute paths outside the worktree that the agent is still permitted
-   * to read/write (e.g. `~/.bde/memory/`). Everything not in the worktree
+   * to read/write (e.g. `~/.fleet/memory/`). Everything not in the worktree
    * and not on this allowlist is denied by default.
    */
   extraAllowedPaths?: readonly string[]

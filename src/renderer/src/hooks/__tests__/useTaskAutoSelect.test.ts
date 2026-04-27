@@ -12,7 +12,7 @@ const createTask = (overrides: Partial<SprintTask> = {}): SprintTask => ({
   id: 'task-1',
   title: 'Test Task',
   status: 'review',
-  repo: 'bde',
+  repo: 'fleet',
   spec: 'Test spec',
   prompt: null,
   notes: null,

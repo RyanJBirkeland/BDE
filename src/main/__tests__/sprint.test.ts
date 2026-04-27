@@ -10,8 +10,8 @@ import { tmpdir } from 'os'
  * and template resolution logic that remain local.
  */
 
-const TEST_DIR = join(tmpdir(), `bde-sprint-test-${process.pid}`)
-const TEST_DB_PATH = join(TEST_DIR, 'bde.db')
+const TEST_DIR = join(tmpdir(), `fleet-sprint-test-${process.pid}`)
+const TEST_DB_PATH = join(TEST_DIR, 'fleet.db')
 
 let db: Database.Database
 

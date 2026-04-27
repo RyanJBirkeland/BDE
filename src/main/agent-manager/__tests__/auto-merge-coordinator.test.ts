@@ -38,7 +38,7 @@ function makeRepo(overrides: Record<string, unknown> = {}) {
   return {
     getTask: vi.fn().mockReturnValue({
       id: 'task-1',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'review',
       ...overrides
     }),
@@ -89,7 +89,7 @@ describe('evaluateAutoMerge', () => {
     vi.clearAllMocks()
     // Default: settings returns a repo config
     vi.mocked(getSettingJson).mockImplementation((key: string) => {
-      if (key === 'repos') return [{ name: 'bde', localPath: '/repos/bde' }]
+      if (key === 'repos') return [{ name: 'fleet', localPath: '/repos/fleet' }]
       if (key === 'autoReview.rules') return [{ name: 'always-merge', condition: 'always' }]
       return null
     })
@@ -105,7 +105,7 @@ describe('evaluateAutoMerge', () => {
     it('does nothing when rules list is empty', async () => {
       vi.mocked(getSettingJson).mockImplementation((key: string) => {
         if (key === 'autoReview.rules') return []
-        if (key === 'repos') return [{ name: 'bde', localPath: '/repos/bde' }]
+        if (key === 'repos') return [{ name: 'fleet', localPath: '/repos/fleet' }]
         return null
       })
 
@@ -159,7 +159,7 @@ describe('evaluateAutoMerge', () => {
       await evaluateAutoMerge(ctx)
 
       expect(executeSquashMerge).not.toHaveBeenCalled()
-      expect(ctx.logger.error).toHaveBeenCalledWith(expect.stringContaining('"bde" not found'))
+      expect(ctx.logger.error).toHaveBeenCalledWith(expect.stringContaining('"fleet" not found'))
     })
   })
 
@@ -173,7 +173,7 @@ describe('evaluateAutoMerge', () => {
           taskId: 'task-1',
           branch: 'agent/test-task',
           worktreePath: '/tmp/worktrees/task-1',
-          repoPath: '/repos/bde',
+          repoPath: '/repos/fleet',
           title: 'Test task'
         })
       )

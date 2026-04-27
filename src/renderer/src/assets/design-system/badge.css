@@ -1,88 +1,88 @@
 /* ── Badge ────────────────────────────────────────────── */
 
-.bde-badge {
+.fleet-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: var(--bde-font-ui);
+  font-family: var(--fleet-font-ui);
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  border-radius: var(--bde-radius-full);
+  border-radius: var(--fleet-radius-full);
   white-space: nowrap;
 }
 
-.bde-badge--pulse {
-  animation: bde-pulse 3s ease-in-out infinite;
+.fleet-badge--pulse {
+  animation: fleet-pulse 3s ease-in-out infinite;
 }
 
-.bde-badge--sm {
-  font-size: var(--bde-size-xs);
-  padding: 2px var(--bde-space-2);
+.fleet-badge--sm {
+  font-size: var(--fleet-size-xs);
+  padding: 2px var(--fleet-space-2);
 }
 
-.bde-badge--md {
-  font-size: var(--bde-size-sm);
+.fleet-badge--md {
+  font-size: var(--fleet-size-sm);
   padding: 3px 10px;
 }
 
-.bde-badge__dot {
+.fleet-badge__dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.bde-badge--default {
-  background: var(--bde-surface-high);
-  color: var(--bde-text-muted);
+.fleet-badge--default {
+  background: var(--fleet-surface-high);
+  color: var(--fleet-text-muted);
 }
 
-.bde-badge--default .bde-badge__dot {
-  background: var(--bde-text-muted);
+.fleet-badge--default .fleet-badge__dot {
+  background: var(--fleet-text-muted);
 }
 
-.bde-badge--success {
-  background: var(--bde-accent-dim);
-  color: var(--bde-success);
+.fleet-badge--success {
+  background: var(--fleet-accent-dim);
+  color: var(--fleet-success);
 }
 
-.bde-badge--success .bde-badge__dot {
-  background: var(--bde-success);
+.fleet-badge--success .fleet-badge__dot {
+  background: var(--fleet-success);
 }
 
-.bde-badge--warning {
-  background: var(--bde-warning-dim);
-  color: var(--bde-warning);
+.fleet-badge--warning {
+  background: var(--fleet-warning-dim);
+  color: var(--fleet-warning);
 }
 
-.bde-badge--warning .bde-badge__dot {
-  background: var(--bde-warning);
+.fleet-badge--warning .fleet-badge__dot {
+  background: var(--fleet-warning);
 }
 
-.bde-badge--danger {
-  background: var(--bde-danger-dim);
-  color: var(--bde-danger);
+.fleet-badge--danger {
+  background: var(--fleet-danger-dim);
+  color: var(--fleet-danger);
 }
 
-.bde-badge--danger .bde-badge__dot {
-  background: var(--bde-danger);
+.fleet-badge--danger .fleet-badge__dot {
+  background: var(--fleet-danger);
 }
 
-.bde-badge--info {
-  background: var(--bde-info-dim);
-  color: var(--bde-info);
+.fleet-badge--info {
+  background: var(--fleet-info-dim);
+  color: var(--fleet-info);
 }
 
-.bde-badge--info .bde-badge__dot {
-  background: var(--bde-info);
+.fleet-badge--info .fleet-badge__dot {
+  background: var(--fleet-info);
 }
 
-.bde-badge--muted {
-  background: var(--bde-surface-high);
-  color: var(--bde-text-dim);
+.fleet-badge--muted {
+  background: var(--fleet-surface-high);
+  color: var(--fleet-text-dim);
 }
 
-.bde-badge--muted .bde-badge__dot {
-  background: var(--bde-text-dim);
+.fleet-badge--muted .fleet-badge__dot {
+  background: var(--fleet-text-dim);
 }

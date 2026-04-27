@@ -74,7 +74,7 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'Fix bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       },
@@ -88,7 +88,7 @@ describe('ReviewQueue', () => {
       {
         id: 't3',
         title: 'Active task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'active',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -105,7 +105,7 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'Fix bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -120,7 +120,7 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'Fix bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -136,14 +136,14 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'Older',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-03-01T00:00:00Z'
       },
       {
         id: 't2',
         title: 'Newer',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -159,14 +159,14 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'First',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-02T00:00:00Z'
       },
       {
         id: 't2',
         title: 'Second',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -182,14 +182,14 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'First',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-02T00:00:00Z'
       },
       {
         id: 't2',
         title: 'Second',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -205,14 +205,14 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'First',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-02T00:00:00Z'
       },
       {
         id: 't2',
         title: 'Second',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -236,7 +236,7 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'First',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-02T00:00:00Z'
       }
@@ -255,14 +255,14 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'First',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-02T00:00:00Z'
       },
       {
         id: 't2',
         title: 'Second',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -278,14 +278,14 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'First',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-02T00:00:00Z'
       },
       {
         id: 't2',
         title: 'Second',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -301,7 +301,7 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'Fix bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -316,7 +316,7 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'Fix bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -333,14 +333,14 @@ describe('ReviewQueue', () => {
       {
         id: 't1',
         title: 'Fix bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       },
       {
         id: 't2',
         title: 'Add feature',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-02T00:00:00Z'
       }

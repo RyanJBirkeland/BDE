@@ -1,6 +1,6 @@
 ## Context
 
-The BDE main process reads data from three untrusted sources: SQLite rows, local JSON files, and external HTTP APIs. Currently, values from all three are forwarded to TypeScript types using bare `as` casts — meaning the compiler treats them as verified but no runtime check exists. When a value deviates from the expected shape (schema drift, corrupt row, API change), the lie propagates silently until a property access crashes the renderer.
+The FLEET main process reads data from three untrusted sources: SQLite rows, local JSON files, and external HTTP APIs. Currently, values from all three are forwarded to TypeScript types using bare `as` casts — meaning the compiler treats them as verified but no runtime check exists. When a value deviates from the expected shape (schema drift, corrupt row, API change), the lie propagates silently until a property access crashes the renderer.
 
 The existing `mapRowToTask` in `sprint-task-mapper.ts` validates 7 of ~40 `SprintTask` fields and spreads the rest with `...row as SprintTask`. Other row types (`Sprint`, `TaskGroup`, `AgentRun`) have no validator at all. External responses (`/oauth/token`, GitHub REST, AI model JSON) are cast with `as T` immediately after `JSON.parse` or `.json()`.
 

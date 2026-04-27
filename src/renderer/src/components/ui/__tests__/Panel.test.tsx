@@ -15,7 +15,7 @@ describe('Panel', () => {
 
   it('does not render header when no title', () => {
     const { container } = render(<Panel>Content</Panel>)
-    expect(container.querySelector('.bde-panel__header')).not.toBeInTheDocument()
+    expect(container.querySelector('.fleet-panel__header')).not.toBeInTheDocument()
   })
 
   it('renders actions in header', () => {
@@ -32,8 +32,8 @@ describe('Panel', () => {
     expect(container.firstChild).toHaveClass('custom-panel')
   })
 
-  it('has base bde-panel class', () => {
+  it('has base fleet-panel class', () => {
     const { container } = render(<Panel>Content</Panel>)
-    expect(container.firstChild).toHaveClass('bde-panel')
+    expect(container.firstChild).toHaveClass('fleet-panel')
   })
 })

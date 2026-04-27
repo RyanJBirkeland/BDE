@@ -1,58 +1,58 @@
 /* ─── Settings Sidebar ──────────────────────────────────────────────────── */
 
 .stg-sidebar {
-  border-right: 1px solid var(--bde-accent-border);
-  padding: var(--bde-space-4) var(--bde-space-2) var(--bde-space-4) var(--bde-space-4);
-  background: var(--bde-bg-elevated);
+  border-right: 1px solid var(--fleet-accent-border);
+  padding: var(--fleet-space-4) var(--fleet-space-2) var(--fleet-space-4) var(--fleet-space-4);
+  background: var(--fleet-bg-elevated);
   overflow-y: auto;
   height: 100%;
 }
 
 .stg-sidebar__search {
   position: relative;
-  margin-bottom: var(--bde-space-3);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .stg-sidebar__search-icon {
   position: absolute;
-  left: var(--bde-space-2);
+  left: var(--fleet-space-2);
   top: 50%;
   transform: translateY(-50%);
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   pointer-events: none;
 }
 
 .stg-sidebar__search-input {
   width: 100%;
-  padding: 6px var(--bde-space-2) 6px 28px;
-  border-radius: var(--bde-radius-md);
-  border: 1px solid var(--bde-accent-border);
-  background: var(--bde-surface);
-  color: var(--bde-text);
-  font-size: var(--bde-space-3);
+  padding: 6px var(--fleet-space-2) 6px 28px;
+  border-radius: var(--fleet-radius-md);
+  border: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-surface);
+  color: var(--fleet-text);
+  font-size: var(--fleet-space-3);
   transition: border-color 0.15s ease;
 }
 
 .stg-sidebar__search-input::placeholder {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 
 .stg-sidebar__search-input:focus-visible {
   outline: none;
-  border-color: var(--bde-status-active);
+  border-color: var(--fleet-status-active);
 }
 
 .stg-sidebar__group {
-  margin-bottom: var(--bde-space-4);
+  margin-bottom: var(--fleet-space-4);
 }
 
 .stg-sidebar__category {
   text-transform: uppercase;
-  font-size: var(--bde-size-2xs);
-  color: color-mix(in srgb, var(--bde-status-active) 60%, transparent);
+  font-size: var(--fleet-size-2xs);
+  color: color-mix(in srgb, var(--fleet-status-active) 60%, transparent);
   letter-spacing: 1.2px;
   font-weight: 600;
-  padding: 0 var(--bde-space-2);
+  padding: 0 var(--fleet-space-2);
   margin-bottom: 6px;
 }
 
@@ -60,11 +60,11 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px var(--bde-space-2);
-  border-radius: var(--bde-radius-md);
+  padding: 6px var(--fleet-space-2);
+  border-radius: var(--fleet-radius-md);
   cursor: pointer;
-  color: var(--bde-text-muted);
-  font-size: var(--bde-space-3);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-space-3);
   transition:
     background 0.15s ease,
     color 0.15s ease;
@@ -76,17 +76,17 @@
 }
 
 .stg-sidebar__item--active {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-active);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-active);
   font-weight: 500;
 }
 
 .stg-sidebar__item:hover:not(.stg-sidebar__item--active) {
-  background: var(--bde-surface);
+  background: var(--fleet-surface);
 }
 
 .stg-sidebar__item:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -95,8 +95,8 @@
 .settings-view__tabs {
   display: flex;
   gap: 2px;
-  padding: 6px var(--bde-space-4);
-  border-bottom: 1px solid var(--bde-border);
+  padding: 6px var(--fleet-space-4);
+  border-bottom: 1px solid var(--fleet-border);
   background: var(--glass-tint-dark);
   flex-shrink: 0;
   overflow-x: auto;
@@ -106,13 +106,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px var(--bde-space-3);
-  font-size: var(--bde-space-3);
+  padding: 5px var(--fleet-space-3);
+  font-size: var(--fleet-space-3);
   font-weight: 500;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   background: none;
   border: 1px solid transparent;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -122,17 +122,17 @@
 }
 
 .settings-tab:hover {
-  color: var(--bde-text);
-  background: var(--bde-surface);
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
 }
 
 .settings-tab:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .settings-tab--active {
-  color: var(--bde-text);
-  background: var(--bde-surface);
-  border-color: var(--bde-border);
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
+  border-color: var(--fleet-border);
 }

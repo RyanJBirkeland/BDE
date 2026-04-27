@@ -39,9 +39,9 @@ Phase 3 fixes are parallelizable. Phase 2 can land with or just after Phase 1.
 
 ### Problem
 
-Pipeline agents run with `cwd` set to their worktree, but the SDK's `Bash`, `Edit`, and `Write` tools accept arbitrary absolute paths. An agent that writes `/Users/ryanbirkeland/Projects/git-repos/BDE/src/main/foo.ts` bypasses the worktree entirely. 5 of 7 wave-1 tasks did exactly this. The resulting commits landed on local `main` via the agent running `git commit` in the main checkout — the completion flow never saw them on the agent branch, so every task was marked `failed: tip-mismatch`.
+Pipeline agents run with `cwd` set to their worktree, but the SDK's `Bash`, `Edit`, and `Write` tools accept arbitrary absolute paths. An agent that writes `/Users/ryanbirkeland/Projects/git-repos/FLEET/src/main/foo.ts` bypasses the worktree entirely. 5 of 7 wave-1 tasks did exactly this. The resulting commits landed on local `main` via the agent running `git commit` in the main checkout — the completion flow never saw them on the agent branch, so every task was marked `failed: tip-mismatch`.
 
-Wave-2's prompt-level mitigation (explicit constraints in `pipeline-personality.ts`) reduced but did not eliminate the behavior: T-11 still ran `find /Users/.../BDE/docs` (absolute main-repo path), T-46 wrote to `src/main/mcp-server/tools/tasks.test.ts` in the main repo mid-flight, and T-66 committed directly to main.
+Wave-2's prompt-level mitigation (explicit constraints in `pipeline-personality.ts`) reduced but did not eliminate the behavior: T-11 still ran `find /Users/.../FLEET/docs` (absolute main-repo path), T-46 wrote to `src/main/mcp-server/tools/tasks.test.ts` in the main repo mid-flight, and T-66 committed directly to main.
 
 ### Root cause
 
@@ -94,7 +94,7 @@ The hook:
 
 ### Problem
 
-After the agent exits, the completion flow in `src/main/agent-manager/completion.ts` checks the tip commit on the agent branch and expects its subject to match one of: the task UUID (`agent_run_id`), the task title verbatim, or the task id (`audit-20260420-t-NN`). Agents correctly follow BDE's commit-message convention (`{type}({scope}): {what} — {why}`) which contains none of those. Result: every successful agent run is flagged `failed: tip-mismatch` and requires manual cherry-pick salvage from `origin/agent/*` branches.
+After the agent exits, the completion flow in `src/main/agent-manager/completion.ts` checks the tip commit on the agent branch and expects its subject to match one of: the task UUID (`agent_run_id`), the task title verbatim, or the task id (`audit-20260420-t-NN`). Agents correctly follow FLEET's commit-message convention (`{type}({scope}): {what} — {why}`) which contains none of those. Result: every successful agent run is flagged `failed: tip-mismatch` and requires manual cherry-pick salvage from `origin/agent/*` branches.
 
 This is a 100% false-positive rate against clean commits. Wave-2 produced 5 salvageable cases out of 6.
 
@@ -102,7 +102,7 @@ This is a 100% false-positive rate against clean commits. Wave-2 produced 5 salv
 
 The check assumes agents write commit subjects that identify the task. They don't — and shouldn't, because the commit-message convention prioritizes what-and-why prose over bookkeeping. The task linkage is already encoded elsewhere:
 - The branch name: `agent/t-11-pass-encoding-utf8-to-execfile-in-a-064f79ef` contains the task ID (`t-11`) and group ID.
-- The `~/.bde/memory/tasks/<task-id>/` scratchpad directory.
+- The `~/.fleet/memory/tasks/<task-id>/` scratchpad directory.
 - The worktree path itself.
 
 The check is pattern-matching the wrong artifact.

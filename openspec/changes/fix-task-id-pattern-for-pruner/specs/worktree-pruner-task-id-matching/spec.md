@@ -1,9 +1,9 @@
 ## ADDED Requirements
 
-### Requirement: Pruner recognises BDE task IDs as 32-char hex strings
+### Requirement: Pruner recognises FLEET task IDs as 32-char hex strings
 The pruner's candidate guard (`isPrunableCandidate`) SHALL match directory names that are exactly 32 lowercase hexadecimal characters with no dashes, reflecting the `lower(hex(randomblob(16)))` format used to generate `sprint_tasks.id` values. Directory names that do not match this shape MUST be left untouched.
 
-#### Scenario: Real BDE task ID is prunable
+#### Scenario: Real FLEET task ID is prunable
 - **WHEN** a worktree directory is named with a 32-char hex string (e.g. `00313fab513f1807706c8b7665afc329`)
 - **THEN** `isPrunableCandidate` returns true (and the directory is deleted when the task is not active)
 

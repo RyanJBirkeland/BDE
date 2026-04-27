@@ -123,7 +123,7 @@ export const useFloatingAgentStore = create<FloatingAgentState>()(
       }
     }),
     {
-      name: 'bde:floating-agent',
+      name: 'fleet:floating-agent',
       // agentId is process-local (agent run ID dies with the process — never reload it)
       // isSending is ephemeral UI state — never reload it
       partialize: (s) => ({

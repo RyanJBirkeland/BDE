@@ -12,19 +12,19 @@
 import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Keyboard navigation — full cycle', () => {
-  test('Cmd+1 → Dashboard view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+1 → Dashboard view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+1')
 
-    // Dashboard renders StatusBar with "BDE Command Center" title
+    // Dashboard renders StatusBar with "FLEET Command Center" title
     await expect(window.locator('.dashboard-root')).toBeVisible({ timeout: 5_000 })
-    await expect(window.locator('text=BDE Command Center')).toBeVisible({ timeout: 5_000 })
+    await expect(window.locator('text=FLEET Command Center')).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Cmd+2 → Agents view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+2 → Agents view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+2')
@@ -34,8 +34,8 @@ test.describe('Keyboard navigation — full cycle', () => {
     await expect(window.locator('text=Fleet')).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Cmd+3 → IDE view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+3 → IDE view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+3')
@@ -48,8 +48,8 @@ test.describe('Keyboard navigation — full cycle', () => {
     expect(hasIDE || hasEmpty).toBe(true)
   })
 
-  test('Cmd+4 → Sprint (Task Pipeline) view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+4 → Sprint (Task Pipeline) view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+4')
@@ -59,8 +59,8 @@ test.describe('Keyboard navigation — full cycle', () => {
     await expect(window.locator('.sprint-pipeline__title')).toContainText('Task Pipeline')
   })
 
-  test('Cmd+5 → Code Review view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+5 → Code Review view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+5')
@@ -70,8 +70,8 @@ test.describe('Keyboard navigation — full cycle', () => {
     await expect(window.locator('.cr-queue__title')).toContainText('Review Queue')
   })
 
-  test('Cmd+6 → Source Control (Git) view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+6 → Source Control (Git) view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+6')
@@ -81,8 +81,8 @@ test.describe('Keyboard navigation — full cycle', () => {
     await expect(window.locator('.git-tree-view__title')).toContainText('Source Control')
   })
 
-  test('Cmd+7 → Settings view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+7 → Settings view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -95,8 +95,8 @@ test.describe('Keyboard navigation — full cycle', () => {
 })
 
 test.describe('Keyboard navigation — sequential cycle', () => {
-  test('Navigate through views in order', async ({ bde }) => {
-    const { window } = bde
+  test('Navigate through views in order', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // 1 → Dashboard
@@ -136,8 +136,8 @@ test.describe('Keyboard navigation — sequential cycle', () => {
 })
 
 test.describe('Command palette navigation', () => {
-  test('Cmd+P → type "Agents" → Enter → Agents view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+P → type "Agents" → Enter → Agents view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Start on Settings so the navigation is a visible change
@@ -165,8 +165,8 @@ test.describe('Command palette navigation', () => {
     await expect(window.locator('.agents-sidebar')).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Cmd+P → type "Sprint" → Enter → Sprint view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+P → type "Sprint" → Enter → Sprint view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+p')
@@ -185,8 +185,8 @@ test.describe('Command palette navigation', () => {
     await expect(window.locator('[data-testid="sprint-pipeline"]')).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Cmd+P → type "Settings" → Enter → Settings view', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+P → type "Settings" → Enter → Settings view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+p')
@@ -204,8 +204,8 @@ test.describe('Command palette navigation', () => {
     await expect(window.locator('.stg-layout')).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Cmd+P → Escape closes palette without navigating', async ({ bde }) => {
-    const { window } = bde
+  test('Cmd+P → Escape closes palette without navigating', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to a known view first
@@ -226,8 +226,8 @@ test.describe('Command palette navigation', () => {
 })
 
 test.describe('Return to previous view', () => {
-  test('Navigate Sprint → Settings via keyboard shortcut', async ({ bde }) => {
-    const { window } = bde
+  test('Navigate Sprint → Settings via keyboard shortcut', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Go to Sprint first
@@ -244,8 +244,8 @@ test.describe('Return to previous view', () => {
     })
   })
 
-  test('Navigate Settings → Agents → Settings restores each view', async ({ bde }) => {
-    const { window } = bde
+  test('Navigate Settings → Agents → Settings restores each view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -262,8 +262,8 @@ test.describe('Return to previous view', () => {
 })
 
 test.describe('Activity bar reflects active view', () => {
-  test('Active item highlighted in nav after keyboard nav', async ({ bde }) => {
-    const { window } = bde
+  test('Active item highlighted in nav after keyboard nav', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to Dashboard

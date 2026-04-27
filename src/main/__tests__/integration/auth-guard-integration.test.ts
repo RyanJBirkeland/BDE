@@ -18,7 +18,7 @@ vi.mock('../../env-utils', () => ({
 
 // auth-guard now imports credential-service, which transitively loads
 // settings-queries.ts — and its module-scope `createLogger()` call writes to
-// ~/.bde at import time. Mock the logger module so the test stays hermetic
+// ~/.fleet at import time. Mock the logger module so the test stays hermetic
 // regardless of which path reaches it.
 vi.mock('../../logger', () => ({
   createLogger: () => ({

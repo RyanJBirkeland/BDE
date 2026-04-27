@@ -32,7 +32,7 @@ describe('IDEEmptyState', () => {
 
   it('renders title and subtitle', () => {
     render(<IDEEmptyState onOpenFolder={onOpenFolder} />)
-    expect(screen.getByText('BDE IDE')).toBeInTheDocument()
+    expect(screen.getByText('FLEET IDE')).toBeInTheDocument()
     expect(screen.getByText('Open a folder to start editing')).toBeInTheDocument()
   })
 

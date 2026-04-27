@@ -19,7 +19,7 @@ vi.mock('../../ipc-utils', () => ({
 }))
 
 vi.mock('../../paths', () => ({
-  BDE_MEMORY_DIR: '/mock/memory/dir'
+  FLEET_MEMORY_DIR: '/mock/memory/dir'
 }))
 
 import { registerMemorySearchHandler } from '../memory-search'

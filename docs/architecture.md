@@ -1,14 +1,14 @@
-# BDE Architecture
+# FLEET Architecture
 
 **Last updated:** 2026-04-21
 
-This doc is a **bird's-eye overview**. It describes how BDE's pieces fit together and links into the authoritative per-module reference under [`docs/modules/`](modules/README.md). Per the pre-commit rule in `CLAUDE.md`, each source file has a matching row in its layer's `index.md` — treat those as ground truth for specifics (types, exports, conventions). If the overview here ever disagrees with `docs/modules/`, the module doc wins.
+This doc is a **bird's-eye overview**. It describes how FLEET's pieces fit together and links into the authoritative per-module reference under [`docs/modules/`](modules/README.md). Per the pre-commit rule in `CLAUDE.md`, each source file has a matching row in its layer's `index.md` — treat those as ground truth for specifics (types, exports, conventions). If the overview here ever disagrees with `docs/modules/`, the module doc wins.
 
 ---
 
 ## System Overview
 
-BDE is an Electron desktop app with three process layers:
+FLEET is an Electron desktop app with three process layers:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -18,7 +18,7 @@ BDE is an Electron desktop app with three process layers:
 │  ┌────────────────────────────────────────────────────────────────┐  │
 │  │ agent-manager/  data/  handlers/  services/  mcp-server/  lib/ │  │
 │  │    db.ts (SQLite WAL)    migrations/    logger.ts              │  │
-│  │    auth-guard.ts    fs.watch(bde.db) → sprint:externalChange   │  │
+│  │    auth-guard.ts    fs.watch(fleet.db) → sprint:externalChange   │  │
 │  │    status-server :18791 (always)    mcp-server :18792 (opt-in) │  │
 │  └──────────────────────────┬─────────────────────────────────────┘  │
 │                             │ IPC (safeHandle + typed channel map)   │
@@ -60,7 +60,7 @@ Every user-facing feature lives in one of the three processes and crosses bounda
 | UI components                    | [`docs/modules/components/index.md`](modules/components/index.md)                  |
 | Renderer utilities               | [`docs/modules/lib/renderer/index.md`](modules/lib/renderer/index.md)              |
 | Local MCP server                 | [`docs/modules/mcp-server/`](modules/mcp-server/)                                  |
-| Feature reference (user-facing)  | [`docs/BDE_FEATURES.md`](BDE_FEATURES.md)                                          |
+| Feature reference (user-facing)  | [`docs/FLEET_FEATURES.md`](FLEET_FEATURES.md)                                          |
 | Security posture + loopback surface | [`docs/security-posture.md`](security-posture.md)                               |
 | Architecture decisions           | [`docs/architecture-decisions/`](architecture-decisions/)                          |
 
@@ -68,7 +68,7 @@ Every user-facing feature lives in one of the three processes and crosses bounda
 
 ## Task Lifecycle
 
-Every piece of work in BDE flows through the same state machine (`src/shared/task-state-machine.ts`):
+Every piece of work in FLEET flows through the same state machine (`src/shared/task-state-machine.ts`):
 
 ```
                  ┌───────────┐
@@ -108,12 +108,12 @@ The `TaskStatus` union has 9 members: `backlog`, `queued`, `blocked`, `active`, 
 
 ## Persistence
 
-- **Database:** `~/.bde/bde.db` — better-sqlite3, WAL mode, `foreign_keys = ON`. Schema is defined in `src/main/db.ts`; migrations are individual files under `src/main/migrations/v001-*.ts` through `vNNN-*.ts` (52+ so far), loaded by `migrations/loader.ts` in order. `PRAGMA user_version` is the authoritative migration pointer — don't trust any version number in docs.
-- **Backup:** `VACUUM INTO bde.db.backup` runs on startup and every 24 hours.
-- **File watcher:** `fs.watch()` on `bde.db` and the WAL file debounces external writes and pushes `sprint:externalChange` to the renderer (500 ms). This lets external mutators (the MCP server, direct SQL, other BDE windows) stay in sync with UI state.
+- **Database:** `~/.fleet/fleet.db` — better-sqlite3, WAL mode, `foreign_keys = ON`. Schema is defined in `src/main/db.ts`; migrations are individual files under `src/main/migrations/v001-*.ts` through `vNNN-*.ts` (52+ so far), loaded by `migrations/loader.ts` in order. `PRAGMA user_version` is the authoritative migration pointer — don't trust any version number in docs.
+- **Backup:** `VACUUM INTO fleet.db.backup` runs on startup and every 24 hours.
+- **File watcher:** `fs.watch()` on `fleet.db` and the WAL file debounces external writes and pushes `sprint:externalChange` to the renderer (500 ms). This lets external mutators (the MCP server, direct SQL, other FLEET windows) stay in sync with UI state.
 - **Audit trail:** every field-level mutation on `sprint_tasks` via `updateTask()` writes a row to `task_changes` with `changed_by` attribution (IPC caller, MCP caller, etc.). `ISprintTaskRepository` is the single write path for agent-manager code.
 - **Boundary validators:** raw JSON columns (`depends_on`, webhook events, agent history, task-group depends_on) all have matching sanitizers/validators that run on row-read. See [`docs/modules/shared/index.md`](modules/shared/index.md) and the T-series entries in [`docs/modules/data/index.md`](modules/data/index.md).
-- **User state files:** `~/.bde/oauth-token` (Claude), `~/.bde/mcp-token` (MCP, when enabled), `~/.bde/bde.log` (authoritative log; rotated at 10 MB), `~/.bde/worktrees/<repo-slug>/<task-id>/` (pipeline agents), `~/.bde/worktrees-adhoc/` (user-spawned adhoc agents), `~/.bde/agent-logs/` (per-agent output), `~/.bde/memory/` (user memory).
+- **User state files:** `~/.fleet/oauth-token` (Claude), `~/.fleet/mcp-token` (MCP, when enabled), `~/.fleet/fleet.log` (authoritative log; rotated at 10 MB), `~/.fleet/worktrees/<repo-slug>/<task-id>/` (pipeline agents), `~/.fleet/worktrees-adhoc/` (user-spawned adhoc agents), `~/.fleet/agent-logs/` (per-agent output), `~/.fleet/memory/` (user memory).
 
 ---
 
@@ -129,7 +129,7 @@ These run without any renderer interaction:
 | Status HTTP server     | `src/main/services/status-server.ts`        | Loopback `:18791` read-only `/status` endpoint                      |
 | Local MCP server (opt-in) | `src/main/mcp-server/`                    | Loopback `:18792` MCP Streamable HTTP with bearer-token auth        |
 | DB backup + watcher    | `src/main/db.ts`, watcher wired in `index.ts` | WAL-mode backup on start + every 24h; fs.watch pushes `sprint:externalChange` |
-| Auth guard             | `src/main/auth-guard.ts`                    | Validates Claude token (falls back to `~/.bde/oauth-token` if Keychain is empty) |
+| Auth guard             | `src/main/auth-guard.ts`                    | Validates Claude token (falls back to `~/.fleet/oauth-token` if Keychain is empty) |
 
 Every service uses `createLogger(name)` from `src/main/logger.ts` — no raw `console.*` in new main-process code.
 
@@ -155,7 +155,7 @@ Pipeline and adhoc agents are Claude Code sessions spawned via `@anthropic-ai/cl
 
 Prompt composition is centralised in `src/main/lib/prompt-composer.ts` — all spawn paths must call `buildAgentPrompt()` rather than assemble prompts inline. Per-agent builders and the universal preamble live alongside under `src/main/agent-manager/prompt-*.ts`. User-controlled content is wrapped in XML boundary tags (`<user_spec>`, `<upstream_spec>`, `<failure_notes>`, …) to prevent prompt injection — follow the same pattern when adding new interpolation sites.
 
-Agent types and their behaviours (pipeline, adhoc, assistant, reviewer, copilot, synthesizer) are catalogued in [`docs/BDE_FEATURES.md`](BDE_FEATURES.md) and the agent-system architecture is in [`docs/agent-system-guide.md`](agent-system-guide.md).
+Agent types and their behaviours (pipeline, adhoc, assistant, reviewer, copilot, synthesizer) are catalogued in [`docs/FLEET_FEATURES.md`](FLEET_FEATURES.md) and the agent-system architecture is in [`docs/agent-system-guide.md`](agent-system-guide.md).
 
 ---
 

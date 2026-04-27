@@ -50,7 +50,7 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
       <h1 className="onboarding-step__title">GitHub CLI</h1>
 
       <p className="onboarding-step__description">
-        BDE uses the GitHub CLI to create pull requests and interact with GitHub repositories.
+        FLEET uses the GitHub CLI to create pull requests and interact with GitHub repositories.
       </p>
 
       <div className="onboarding-step__checks">
@@ -90,24 +90,24 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
       {!checking && !ghAvailable && (
         <div className="onboarding-step__help">
           <p>Install the GitHub CLI using one of these methods:</p>
-          <p style={{ marginTop: 'var(--bde-space-2)', fontWeight: 600 }}>
+          <p style={{ marginTop: 'var(--fleet-space-2)', fontWeight: 600 }}>
             Option 1 — Homebrew (recommended):
           </p>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 'var(--bde-space-2)',
-              marginTop: 'var(--bde-space-1)'
+              gap: 'var(--fleet-space-2)',
+              marginTop: 'var(--fleet-space-1)'
             }}
           >
             <code
               style={{
                 padding: '4px 10px',
-                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                 borderRadius: '4px',
                 fontFamily: 'monospace',
-                fontSize: 'var(--bde-size-sm)'
+                fontSize: 'var(--fleet-size-sm)'
               }}
             >
               brew install gh
@@ -120,10 +120,10 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
               <Copy size={14} />
             </Button>
           </div>
-          <p style={{ marginTop: 'var(--bde-space-2)', fontWeight: 600 }}>
+          <p style={{ marginTop: 'var(--fleet-space-2)', fontWeight: 600 }}>
             Option 2 — Manual download:
           </p>
-          <p style={{ marginTop: 'var(--bde-space-1)' }}>
+          <p style={{ marginTop: 'var(--fleet-space-1)' }}>
             <a href="https://cli.github.com" target="_blank" rel="noreferrer">
               Download from cli.github.com{' '}
               <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
@@ -139,17 +139,17 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 'var(--bde-space-2)',
-              marginTop: 'var(--bde-space-2)'
+              gap: 'var(--fleet-space-2)',
+              marginTop: 'var(--fleet-space-2)'
             }}
           >
             <code
               style={{
                 padding: '4px 10px',
-                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                 borderRadius: '4px',
                 fontFamily: 'monospace',
-                fontSize: 'var(--bde-size-sm)'
+                fontSize: 'var(--fleet-size-sm)'
               }}
             >
               {GH_AUTH_LOGIN_COMMAND}
@@ -175,9 +175,9 @@ export function GhStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elemen
       {!ready && !checking && (
         <p
           style={{
-            fontSize: 'var(--bde-size-sm)',
-            color: 'var(--bde-text-muted)',
-            marginTop: 'var(--bde-space-2)',
+            fontSize: 'var(--fleet-size-sm)',
+            color: 'var(--fleet-text-muted)',
+            marginTop: 'var(--fleet-space-2)',
             textAlign: 'center'
           }}
         >

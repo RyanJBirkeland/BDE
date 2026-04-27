@@ -190,8 +190,8 @@ describe('webhook-handlers', () => {
       const fetchCall = vi.mocked(fetch).mock.calls[0]
       const headers = fetchCall[1]?.headers as Record<string, string>
 
-      expect(headers['X-BDE-Signature']).toBeDefined()
-      expect(headers['X-BDE-Event']).toBe('webhook.test')
+      expect(headers['X-FLEET-Signature']).toBeDefined()
+      expect(headers['X-FLEET-Event']).toBe('webhook.test')
     })
   })
 })

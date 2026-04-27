@@ -4,46 +4,46 @@
   width: 256px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--bde-border);
-  background: var(--bde-surface);
+  border-right: 1px solid var(--fleet-border);
+  background: var(--fleet-surface);
   position: relative;
 }
 
 .cr-filetree__expand-btn {
   position: absolute;
-  top: var(--bde-space-2);
-  left: var(--bde-space-2);
+  top: var(--fleet-space-2);
+  left: var(--fleet-space-2);
   width: 32px;
   height: 32px;
   display: none;
   align-items: center;
   justify-content: center;
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
   border: none;
-  border-radius: var(--bde-radius-md);
-  color: var(--bde-btn-primary-text);
+  border-radius: var(--fleet-radius-md);
+  color: var(--fleet-btn-primary-text);
   cursor: pointer;
   z-index: 10;
   transition: background 120ms ease;
 }
 
 .cr-filetree__expand-btn:hover {
-  background: var(--bde-accent-hover);
+  background: var(--fleet-accent-hover);
 }
 
 .cr-filetree__collapse-btn {
   background: transparent;
   border: none;
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-xxl);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-xxl);
   line-height: 1;
   cursor: pointer;
-  padding: 0 var(--bde-space-2);
+  padding: 0 var(--fleet-space-2);
   transition: color 120ms ease;
 }
 
 .cr-filetree__collapse-btn:hover {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 @media (max-width: 860px) {
@@ -61,21 +61,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--bde-space-3) var(--bde-space-4);
-  border-bottom: 1px solid var(--bde-border);
-  background: var(--bde-surface-raised);
+  padding: var(--fleet-space-3) var(--fleet-space-4);
+  border-bottom: 1px solid var(--fleet-border);
+  background: var(--fleet-surface-raised);
 }
 
 .cr-filetree__label {
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .cr-filetree__count {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .cr-filetree__list {
@@ -87,34 +87,34 @@
 .cr-filetree__row {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   width: 100%;
   height: 28px;
-  padding: 0 var(--bde-space-4);
+  padding: 0 var(--fleet-space-4);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--bde-border);
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-code);
+  border-bottom: 1px solid var(--fleet-border);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-code);
   cursor: pointer;
   text-align: left;
 }
 
 .cr-filetree__row:hover {
-  background: var(--bde-hover);
+  background: var(--fleet-hover);
 }
 
 .cr-filetree__row:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: -2px;
 }
 
 .cr-filetree__row--selected {
-  background: var(--bde-selected);
-  border-left: 2px solid var(--bde-accent);
-  padding-left: calc(var(--bde-space-4) - 2px);
-  color: var(--bde-text);
+  background: var(--fleet-selected);
+  border-left: 2px solid var(--fleet-accent);
+  padding-left: calc(var(--fleet-space-4) - 2px);
+  color: var(--fleet-text);
 }
 
 .cr-filetree__filename {
@@ -122,29 +122,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
   min-width: 0;
 }
 
 .cr-filetree__stats {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   flex-shrink: 0;
 }
 
 .cr-file-added {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
   flex-shrink: 0;
 }
 
 .cr-file-deleted {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
   flex-shrink: 0;
 }
 
 .cr-file-modified {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
   flex-shrink: 0;
 }
 

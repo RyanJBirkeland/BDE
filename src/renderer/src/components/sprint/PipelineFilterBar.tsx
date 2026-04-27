@@ -129,7 +129,7 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
         open={showSavePrompt}
         title="Save Filter Preset"
         message="Enter a name for this filter preset:"
-        placeholder="e.g. Active BDE tasks"
+        placeholder="e.g. Active FLEET tasks"
         confirmLabel="Save"
         onConfirm={(name) => {
           savePreset(name, { repoFilter, searchQuery, statusFilter })

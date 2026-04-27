@@ -74,7 +74,7 @@ describe('agent_runs CRUD', () => {
     // Insert
     db.prepare(
       'INSERT INTO agent_runs (id, bin, task, repo, status, started_at) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(id, 'claude', 'fix bug', 'bde', 'running', now)
+    ).run(id, 'claude', 'fix bug', 'fleet', 'running', now)
 
     // Select
     const row = db.prepare('SELECT * FROM agent_runs WHERE id = ?').get(id) as Record<

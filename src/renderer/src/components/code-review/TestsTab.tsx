@@ -40,8 +40,8 @@ export function TestsTab(): React.JSX.Element {
   if (!agentEvents) {
     return (
       <div className="cr-tests cr-tests__loading">
-        <div className="bde-skeleton" />
-        <div className="bde-skeleton" />
+        <div className="fleet-skeleton" />
+        <div className="fleet-skeleton" />
       </div>
     )
   }

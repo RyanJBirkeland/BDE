@@ -8,8 +8,8 @@ import type { ConcurrencyState } from '../agent-manager/concurrency'
 
 // drain-loop.ts imports getConfiguredRepos and checkOAuthToken — mock them
 vi.mock('../paths', () => ({
-  getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'bde', localPath: '/repo' }]),
-  getRepoPaths: vi.fn().mockReturnValue({ bde: '/repo' })
+  getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'fleet', localPath: '/repo' }]),
+  getRepoPaths: vi.fn().mockReturnValue({ fleet: '/repo' })
 }))
 
 vi.mock('../agent-manager/oauth-checker', () => ({
@@ -21,7 +21,7 @@ function makeRepo(overrides: Partial<IAgentTaskRepository> = {}): IAgentTaskRepo
     getTask: vi.fn().mockReturnValue({ id: 'task-abc', status: 'queued' }),
     updateTask: vi.fn(),
     claimTask: vi.fn(),
-    getQueuedTasks: vi.fn().mockReturnValue([{ id: 'task-abc', repo: 'bde', title: 'Test' }]),
+    getQueuedTasks: vi.fn().mockReturnValue([{ id: 'task-abc', repo: 'fleet', title: 'Test' }]),
     getQueueStats: vi.fn().mockReturnValue({ queued: 1 }),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
     getGroup: vi.fn().mockReturnValue(null),

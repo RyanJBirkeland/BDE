@@ -18,7 +18,7 @@ describe('token-store', () => {
   let filePath: string
 
   beforeEach(async () => {
-    dir = await fs.mkdtemp(join(tmpdir(), 'bde-mcp-token-'))
+    dir = await fs.mkdtemp(join(tmpdir(), 'fleet-mcp-token-'))
     filePath = join(dir, 'mcp-token')
   })
 
@@ -85,7 +85,7 @@ describe('token-store', () => {
 
   it('creates a missing parent directory on first generation', async () => {
     const suffix = randomBytes(8).toString('hex')
-    const missingDir = join(tmpdir(), `bde-mcp-token-missing-${suffix}`)
+    const missingDir = join(tmpdir(), `fleet-mcp-token-missing-${suffix}`)
     const nestedPath = join(missingDir, 'nested', 'mcp-token')
     try {
       const result = await readOrCreateToken(nestedPath)

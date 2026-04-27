@@ -1,8 +1,8 @@
 ## Context
 
-BDE task IDs are generated in SQLite as `lower(hex(randomblob(16)))`, producing a 32-character lowercase hex string with no dashes (e.g. `00313fab513f1807706c8b7665afc329`). This format has been stable since the `sprint_tasks` table was created in migration v006.
+FLEET task IDs are generated in SQLite as `lower(hex(randomblob(16)))`, producing a 32-character lowercase hex string with no dashes (e.g. `00313fab513f1807706c8b7665afc329`). This format has been stable since the `sprint_tasks` table was created in migration v006.
 
-`pruneStaleWorktrees` in `src/main/agent-manager/worktree.ts` uses `TASK_ID_UUID_PATTERN` to decide whether a directory name looks like a BDE-managed worktree before deleting it. The pattern was authored as `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` — the dashed UUID v4 format — which never matches a real task ID. As a result `isPrunableCandidate` always returns false for every real worktree, so the pruner silently returns 0 every time it runs.
+`pruneStaleWorktrees` in `src/main/agent-manager/worktree.ts` uses `TASK_ID_UUID_PATTERN` to decide whether a directory name looks like a FLEET-managed worktree before deleting it. The pattern was authored as `/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i` — the dashed UUID v4 format — which never matches a real task ID. As a result `isPrunableCandidate` always returns false for every real worktree, so the pruner silently returns 0 every time it runs.
 
 The existing tests in `worktree.test.ts` use the same dashed UUID fixtures (`UUID_A/B/C`) and therefore pass despite the bug; the tests are internally consistent but test the wrong shape.
 

@@ -13,7 +13,7 @@ const base: Omit<AgentMeta, 'id' | 'status' | 'startedAt' | 'finishedAt'> = {
   task: 'do stuff',
   exitCode: null,
   logPath: '/tmp/log',
-  source: 'bde',
+  source: 'fleet',
   costUsd: null,
   tokensIn: null,
   tokensOut: null,

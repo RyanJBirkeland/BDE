@@ -9,7 +9,7 @@ The native module rebuild pipeline is **PRESENT but INCOMPLETE**. `better-sqlite
 ## F-t1-native-1: Production build script does not invoke electron-rebuild
 **Severity:** Critical  
 **Category:** rebuild  
-**Location:** `/Users/ryan/projects/BDE/package.json:25`  
+**Location:** `/Users/ryan/projects/FLEET/package.json:25`  
 **Evidence:**
 ```
 "package": "npm run build && electron-builder --mac --arm64"
@@ -32,7 +32,7 @@ Or add an `install-app-deps` step if using electron-builder's built-in npm rebui
 ## F-t1-native-2: electron-builder.yml lacks npmRebuild and asarUnpack directives
 **Severity:** High  
 **Category:** rebuild, asarUnpack  
-**Location:** `/Users/ryan/projects/BDE/electron-builder.yml (lines 1-30)`  
+**Location:** `/Users/ryan/projects/FLEET/electron-builder.yml (lines 1-30)`  
 **Evidence:**
 The yml is minimal and does not include:
 - `npmRebuild: false` (explicitly disable npm rebuild if electron-builder auto-detects)
@@ -65,7 +65,7 @@ electron-rebuild -f -a arm64 -v "$ELECTRON_VERSION" --build-from-source
 ## F-t1-native-3: ABI mismatch risk: Electron 39 ABI 140 vs system Node.js ABI 141
 **Severity:** Critical  
 **Category:** abi  
-**Location:** `/Users/ryan/projects/BDE/node_modules/electron/abi_version`, system Node.js v25.8.1  
+**Location:** `/Users/ryan/projects/FLEET/node_modules/electron/abi_version`, system Node.js v25.8.1  
 **Evidence:**
 - Electron 39.8.6 (in package-lock.json, used in package.json devDependencies) → **ABI 140**
 - System Node.js v25.8.1 (on build machine) → **ABI 141**
@@ -100,7 +100,7 @@ Also update predev to target Electron:
 ## F-t1-native-4: electron-rebuild v4.0.3 requires Node.js >=22.12.0, may conflict with postinstall
 **Severity:** Medium  
 **Category:** rebuild  
-**Location:** `/Users/ryan/projects/BDE/package-lock.json` → `@electron/rebuild@4.0.3.engines.node`  
+**Location:** `/Users/ryan/projects/FLEET/package-lock.json` → `@electron/rebuild@4.0.3.engines.node`  
 **Evidence:**
 ```
 "@electron/rebuild": {
@@ -130,7 +130,7 @@ If a developer with Node 20.x runs `npm install`, npm will NOT block (because pa
 ## F-t1-native-5: node-pty postinstall script runs but only cleans build artifacts, does not rebuild for Electron
 **Severity:** High  
 **Category:** rebuild  
-**Location:** `/Users/ryan/projects/BDE/node_modules/node-pty/scripts/post-install.js` (first 40 lines)  
+**Location:** `/Users/ryan/projects/FLEET/node_modules/node-pty/scripts/post-install.js` (first 40 lines)  
 **Evidence:**
 ```js
 console.log('\x1b[32m> Cleaning release folder...\x1b[0m');
@@ -155,7 +155,7 @@ This rebuilds for **system Node.js**, not Electron.
 ## F-t1-native-6: asarUnpack correctly configured (implicit auto-detection), native modules in app.asar.unpacked
 **Severity:** Low (Informational, passing)  
 **Category:** asarUnpack  
-**Location:** `/Users/ryan/projects/BDE/release/mac-arm64/BDE.app/Contents/Resources/app.asar.unpacked/`  
+**Location:** `/Users/ryan/projects/FLEET/release/mac-arm64/FLEET.app/Contents/Resources/app.asar.unpacked/`  
 **Evidence:**
 Verified in packaged DMG (Apr 10 build):
 ```
@@ -185,7 +185,7 @@ asarUnpack:
 ## F-t1-native-7: electron-vite correctly externalizes better-sqlite3, node-pty, jsdom from bundle
 **Severity:** Low (Informational, passing)  
 **Category:** rebuild  
-**Location:** `/Users/ryan/projects/BDE/electron.vite.config.ts:9-11`  
+**Location:** `/Users/ryan/projects/FLEET/electron.vite.config.ts:9-11`  
 **Evidence:**
 ```ts
 external: ['node-pty', 'better-sqlite3', 'jsdom']
@@ -202,7 +202,7 @@ The main process is built with rollup-external, so requires() of native modules 
 ## F-t1-native-8: db.ts loads better-sqlite3 at module-import time, early crash on ABI mismatch
 **Severity:** High  
 **Category:** abi  
-**Location:** `/Users/ryan/projects/BDE/src/main/db.ts:1`  
+**Location:** `/Users/ryan/projects/FLEET/src/main/db.ts:1`  
 **Evidence:**
 ```ts
 import Database from 'better-sqlite3'
@@ -240,7 +240,7 @@ try {
 ## F-t1-native-9: vitest-global-setup correctly rebuilds better-sqlite3 for Node.js in test context
 **Severity:** Low (Informational, passing)  
 **Category:** rebuild  
-**Location:** `/Users/ryan/projects/BDE/src/main/vitest-global-setup.ts:19-44`  
+**Location:** `/Users/ryan/projects/FLEET/src/main/vitest-global-setup.ts:19-44`  
 **Evidence:**
 ```ts
 function isNativeModuleCompatible(): boolean {
@@ -273,7 +273,7 @@ This is correct: before running tests, verify better-sqlite3 is compatible with 
 ## F-t1-native-10: package-lock.json pins all versions correctly, better-sqlite3 v12.8.0 has hasInstallScript
 **Severity:** Low (Informational, passing)  
 **Category:** rebuild  
-**Location:** `/Users/ryan/projects/BDE/package-lock.json`  
+**Location:** `/Users/ryan/projects/FLEET/package-lock.json`  
 **Evidence:**
 ```json
 "better-sqlite3": {

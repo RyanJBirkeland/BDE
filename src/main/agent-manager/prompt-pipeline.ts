@@ -20,15 +20,15 @@ import type { BuildPromptInput } from '../../shared/types'
 import { PROMPT_TRUNCATION } from './prompt-constants'
 import { getConfiguredRepos } from '../paths'
 
-type PipelinePromptProfile = 'bde' | 'minimal'
+type PipelinePromptProfile = 'fleet' | 'minimal'
 
 function getRepoPromptProfile(repoName: string | null | undefined): PipelinePromptProfile {
-  if (!repoName) return 'bde'
+  if (!repoName) return 'fleet'
   try {
     const repo = getConfiguredRepos().find((r) => r.name.toLowerCase() === repoName.toLowerCase())
-    return repo?.promptProfile ?? 'bde'
+    return repo?.promptProfile ?? 'fleet'
   } catch {
-    return 'bde'
+    return 'fleet'
   }
 }
 
@@ -124,7 +124,7 @@ You only run targeted tests (\`npx vitest run <your-test-file>\`), not the full 
 - Do NOT tail bash output files, sleep-and-recheck logs, or poll stdout caches to detect push completion. Those files can be stale, truncated, or overwritten, and have caused agents to hang for minutes on pushes that had already succeeded.
 - If \`git push\` appears to be still running when you check, wait 5 seconds and re-run \`git ls-remote\` — not the output file.`
 
-const MUST_COMMIT_BEFORE_EXIT = `\n\n## Commit Before Exit — REQUIRED\nWhen your work is complete, your FINAL action before exiting MUST be\n\`git add -A && git commit -m "<message matching the BDE commit convention>"\`.\nVerify your commit exists with \`git log -1 --oneline\`. Do not exit your\nsession with uncommitted changes — if you run out of turns before\ncommitting, your work will be discarded.`
+const MUST_COMMIT_BEFORE_EXIT = `\n\n## Commit Before Exit — REQUIRED\nWhen your work is complete, your FINAL action before exiting MUST be\n\`git add -A && git commit -m "<message matching the FLEET commit convention>"\`.\nVerify your commit exists with \`git log -1 --oneline\`. Do not exit your\nsession with uncommitted changes — if you run out of turns before\ncommitting, your work will be discarded.`
 
 const DEFINITION_OF_DONE = `\n\n## Definition of Done\nYour task is complete when ALL of these are true:\n1. All changes are committed to your branch\n2. \`npm run typecheck\` passes with zero errors\n3. \`npx vitest run <your-test-file>\` passes for each test file you created or modified (skip if no test files touched)\n4. \`npm run lint\` passes with zero errors\n5. Your commit is on \`origin/<your-branch>\` (verified via \`git ls-remote\`, not by reading bash output files)\n6. \`docs/modules/\` updated for every source file you created or modified — add a row to the layer \`index.md\`; update the \`<module>.md\` detail file if exports or observable behavior changed\nDo NOT run \`npm test\` — the pre-push hook runs the full suite. Only run the specific test files you touched.\nDo NOT exit without verifying all six.`
 

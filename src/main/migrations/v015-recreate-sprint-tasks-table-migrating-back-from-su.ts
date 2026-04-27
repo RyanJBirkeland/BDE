@@ -10,7 +10,7 @@ export const up: (db: Database.Database) => void = (db) => {
           id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
           title               TEXT NOT NULL,
           prompt              TEXT NOT NULL DEFAULT '',
-          repo                TEXT NOT NULL DEFAULT 'bde',
+          repo                TEXT NOT NULL DEFAULT 'fleet',
           status              TEXT NOT NULL DEFAULT 'backlog'
                                 CHECK(status IN ('backlog','queued','blocked','active','done','cancelled','failed','error')),
           priority            INTEGER NOT NULL DEFAULT 1,

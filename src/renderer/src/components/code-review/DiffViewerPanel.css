@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
 }
 
 .cr-diffviewer__header {
@@ -12,30 +12,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--bde-space-4);
-  background: var(--bde-surface);
-  border-bottom: 1px solid var(--bde-border);
+  padding: 0 var(--fleet-space-4);
+  background: var(--fleet-surface);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
 }
 
 .cr-diffviewer__breadcrumb {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   flex: 1 1 auto;
   min-width: 0;
 }
 
 .cr-diffviewer__path {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .cr-diffviewer__path--empty {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-style: italic;
 }
 
@@ -48,8 +48,8 @@
   height: 20px;
   background: transparent;
   border: none;
-  border-radius: var(--bde-radius-sm);
-  color: var(--bde-text-dim);
+  border-radius: var(--fleet-radius-sm);
+  color: var(--fleet-text-dim);
   cursor: pointer;
   transition: all 120ms ease;
   opacity: 0;
@@ -60,37 +60,37 @@
 }
 
 .cr-diffviewer__copy-btn:hover {
-  background: var(--bde-hover);
-  color: var(--bde-text);
+  background: var(--fleet-hover);
+  color: var(--fleet-text);
 }
 
 .cr-diffviewer__mode-control {
   display: flex;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
   padding: 2px;
-  background: var(--bde-surface-high);
-  border-radius: var(--bde-radius-md);
+  background: var(--fleet-surface-high);
+  border-radius: var(--fleet-radius-md);
 }
 
 .cr-diffviewer__mode-pill {
-  padding: 2px var(--bde-space-3);
+  padding: 2px var(--fleet-space-3);
   background: transparent;
   border: none;
-  border-radius: var(--bde-radius-md);
-  font-size: var(--bde-size-xs);
+  border-radius: var(--fleet-radius-md);
+  font-size: var(--fleet-size-xs);
   font-weight: 500;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   cursor: pointer;
   transition: all 120ms ease;
 }
 
 .cr-diffviewer__mode-pill:hover {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .cr-diffviewer__mode-pill--active {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
 }
 
 .cr-diffviewer__body {

@@ -38,9 +38,9 @@ describe('Personality System', () => {
       expect(assistantPersonality.voice).toContain('pipeline/status questions')
     })
 
-    it('should frame role as BDE Project Assistant', () => {
-      expect(assistantPersonality.roleFrame).toContain('BDE Assistant')
-      expect(assistantPersonality.roleFrame).toContain('BDE (Birkeland Development Environment)')
+    it('should frame role as FLEET Project Assistant', () => {
+      expect(assistantPersonality.roleFrame).toContain('FLEET Assistant')
+      expect(assistantPersonality.roleFrame).toContain('FLEET (Agentic Development Environment)')
       expect(assistantPersonality.roleFrame).toContain('sprint pipeline')
     })
 
@@ -173,8 +173,8 @@ describe('Personality System', () => {
       expect(adhocPersonality.voice).toContain('execution-focused')
     })
 
-    it('should frame role as BDE Dev Agent - conversational coding partner', () => {
-      expect(adhocPersonality.roleFrame).toContain('BDE Dev Agent')
+    it('should frame role as FLEET Dev Agent - conversational coding partner', () => {
+      expect(adhocPersonality.roleFrame).toContain('FLEET Dev Agent')
       expect(adhocPersonality.roleFrame).toContain('conversational coding partner')
     })
 
@@ -206,7 +206,7 @@ describe('Personality System', () => {
     it('should have different role frames', () => {
       expect(adhocPersonality.roleFrame).not.toEqual(assistantPersonality.roleFrame)
       expect(adhocPersonality.roleFrame).toContain('Dev Agent')
-      expect(assistantPersonality.roleFrame).toContain('BDE Assistant')
+      expect(assistantPersonality.roleFrame).toContain('FLEET Assistant')
     })
 
     it('should have different patterns', () => {

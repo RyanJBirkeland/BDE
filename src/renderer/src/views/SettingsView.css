@@ -17,7 +17,7 @@
 
 .stg-content {
   flex: 1;
-  padding: var(--bde-space-5) clamp(var(--bde-space-4), 4vw, var(--bde-space-8));
+  padding: var(--fleet-space-5) clamp(var(--fleet-space-4), 4vw, var(--fleet-space-8));
   overflow-y: auto;
   min-width: 0;
 }

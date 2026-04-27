@@ -58,7 +58,7 @@ vi.mock('../../../hooks/useValidationChecks', () => ({
 
 vi.mock('../../../hooks/useRepoOptions', () => ({
   useRepoOptions: () => [
-    { label: 'BDE', owner: 'RyanJBirkeland', color: '#6C8EEF' },
+    { label: 'FLEET', owner: 'RyanJBirkeland', color: '#6C8EEF' },
     { label: 'life-os', owner: 'RyanJBirkeland', color: '#00D37F' }
   ]
 }))
@@ -142,9 +142,9 @@ describe('WorkbenchForm', () => {
   })
 
   it('updates store repo on select change', () => {
-    useTaskWorkbenchStore.setState({ repo: 'BDE' })
+    useTaskWorkbenchStore.setState({ repo: 'FLEET' })
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
-    const select = screen.getByDisplayValue('BDE')
+    const select = screen.getByDisplayValue('FLEET')
     fireEvent.change(select, { target: { value: 'life-os' } })
     expect(useTaskWorkbenchStore.getState().repo).toBe('life-os')
   })
@@ -197,7 +197,7 @@ describe('WorkbenchForm', () => {
   })
 
   it('calls createTask on save to backlog', async () => {
-    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE', spec: 'Some spec' })
+    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'FLEET', spec: 'Some spec' })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
     fireEvent.click(screen.getByTestId('save-backlog'))
@@ -214,7 +214,7 @@ describe('WorkbenchForm', () => {
       mode: 'edit',
       taskId: 'task-1',
       title: 'Updated task',
-      repo: 'BDE',
+      repo: 'FLEET',
       spec: 'Updated spec'
     })
 
@@ -237,7 +237,7 @@ describe('WorkbenchForm', () => {
       noConflict: { status: 'pass', message: 'OK' },
       slotsAvailable: { status: 'pass', message: 'OK' }
     })
-    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
+    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'FLEET' })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
     fireEvent.click(screen.getByTestId('queue-now'))
@@ -257,7 +257,7 @@ describe('WorkbenchForm', () => {
       noConflict: { status: 'pass', message: 'OK' },
       slotsAvailable: { status: 'pass', message: 'OK' }
     })
-    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
+    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'FLEET' })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
     fireEvent.click(screen.getByTestId('queue-now'))
@@ -275,7 +275,7 @@ describe('WorkbenchForm', () => {
       noConflict: { status: 'pass', message: 'OK' },
       slotsAvailable: { status: 'pass', message: 'OK' }
     })
-    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
+    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'FLEET' })
 
     render(<WorkbenchForm onSendCopilotMessage={mockOnSendCopilotMessage} />)
     fireEvent.click(screen.getByTestId('queue-now'))
@@ -295,7 +295,7 @@ describe('WorkbenchForm', () => {
       tasks: []
     })
     mockCreateTask.mockResolvedValue('new-1')
-    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'BDE' })
+    useTaskWorkbenchStore.setState({ title: 'Test task', repo: 'FLEET' })
 
     // Make it show the confirm modal (warn state)
     ;(window.api as any).workbench.checkOperational = vi.fn().mockResolvedValue({
@@ -331,7 +331,7 @@ describe('WorkbenchForm', () => {
       mode: 'edit',
       taskId: 'task-99',
       title: 'Edit me',
-      repo: 'BDE'
+      repo: 'FLEET'
     })
     ;(window.api as any).workbench.checkOperational = vi.fn().mockResolvedValue({
       auth: { status: 'pass', message: 'OK' },
@@ -361,7 +361,7 @@ describe('WorkbenchForm', () => {
   it('includes dependsOn when non-empty', async () => {
     useTaskWorkbenchStore.setState({
       title: 'With deps',
-      repo: 'BDE',
+      repo: 'FLEET',
       dependsOn: [{ task_id: 'dep-1', depends_on_task_id: 'dep-2' }] as any
     })
 

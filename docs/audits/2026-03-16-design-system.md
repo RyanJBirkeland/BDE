@@ -10,9 +10,9 @@
 
 ## Executive Summary
 
-The BDE Electron app has a **dual design token system** — CSS variables (`--bde-*`) in `base.css` and JavaScript tokens in `tokens.ts`. While both systems define the same values, the codebase inconsistently uses:
+The FLEET Electron app has a **dual design token system** — CSS variables (`--fleet-*`) in `base.css` and JavaScript tokens in `tokens.ts`. While both systems define the same values, the codebase inconsistently uses:
 
-- CSS variables (`var(--bde-accent)`)
+- CSS variables (`var(--fleet-accent)`)
 - JS tokens (`tokens.color.accent`)
 - Hardcoded inline styles (`color: '#f87171'`)
 
@@ -29,9 +29,9 @@ This creates **maintenance burden** and **theming inconsistency**. A cleanup epi
 **CSS Variables** (`base.css:8-25`):
 
 ```css
---bde-bg: #0a0a0a;
---bde-surface: #141414;
---bde-accent: #00d37f;
+--fleet-bg: #0a0a0a;
+--fleet-surface: #141414;
+--fleet-accent: #00d37f;
 ```
 
 **JS Tokens** (`design-system/tokens.ts:9-25`):
@@ -47,7 +47,7 @@ color: {
 **Examples of mixed usage:**
 
 - `TerminalView.tsx:140` — Uses `tokens.color.bg` inline
-- `sessions.css:44` — Uses `var(--bde-surface)` in CSS
+- `sessions.css:44` — Uses `var(--fleet-surface)` in CSS
 - Both styles exist side-by-side, causing confusion
 
 **Impact:**
@@ -59,7 +59,7 @@ color: {
 **Recommendation:**
 
 - **Consolidate on CSS variables** as single source of truth
-- Update `tokens.ts` to export CSS var references: `accent: 'var(--bde-accent)'`
+- Update `tokens.ts` to export CSS var references: `accent: 'var(--fleet-accent)'`
 - Or deprecate `tokens.ts` entirely and use CSS classes
 
 ---
@@ -108,17 +108,17 @@ Create CSS classes:
 .terminal-tab {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
-  padding: 0 var(--bde-space-4);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
-  transition: var(--bde-transition-fast);
+  gap: var(--fleet-space-1);
+  padding: 0 var(--fleet-space-4);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
+  transition: var(--fleet-transition-fast);
 }
 
 .terminal-tab--active {
-  color: var(--bde-text);
-  background: var(--bde-bg);
-  border-bottom: 2px solid var(--bde-accent);
+  color: var(--fleet-text);
+  background: var(--fleet-bg);
+  border-bottom: 2px solid var(--fleet-accent);
 }
 ```
 
@@ -132,14 +132,14 @@ Create CSS classes:
 
 ```tsx
 <div style={{
-  padding: 16,              // Should be var(--bde-space-4)
-  color: '#f87171',         // Should be var(--bde-danger) or tokens.color.danger
-  fontFamily: 'monospace',  // Should be var(--bde-font-code)
-  fontSize: 12              // Should be var(--bde-size-sm)
+  padding: 16,              // Should be var(--fleet-space-4)
+  color: '#f87171',         // Should be var(--fleet-danger) or tokens.color.danger
+  fontFamily: 'monospace',  // Should be var(--fleet-font-code)
+  fontSize: 12              // Should be var(--fleet-size-sm)
 }}>
   <div style={{
     fontWeight: 600,
-    marginBottom: 4         // Should be var(--bde-space-1)
+    marginBottom: 4         // Should be var(--fleet-space-1)
   }}>
 ```
 
@@ -164,7 +164,7 @@ Replace with tokens or create `.error-boundary` CSS class.
 | **Animation durations** | Only 3 defined (fast/base/slow) | Need `instant`, `bouncy`, custom durations for specific animations                                       |
 | **Max widths**          | None                            | Memory sidebar (240px), diff sidebar (200px), git sidebar (260px) — all hardcoded                        |
 | **Line heights**        | None                            | Scattered 1.5, 1.6, 1.7 throughout CSS                                                                   |
-| **Agent purple color**  | `#a78bfa` hardcoded             | Used in `TerminalView.tsx:190`, `terminal.css:154` — should be `--bde-agent-accent`                      |
+| **Agent purple color**  | `#a78bfa` hardcoded             | Used in `TerminalView.tsx:190`, `terminal.css:154` — should be `--fleet-agent-accent`                      |
 | **Opacity values**      | None                            | `0.5`, `0.6`, `0.7`, `0.8` scattered everywhere                                                          |
 
 **Recommendation:**
@@ -172,20 +172,20 @@ Extend design tokens:
 
 ```css
 /* base.css additions */
---bde-z-base: 1;
---bde-z-dropdown: 10;
---bde-z-overlay: 100;
---bde-z-modal: 1000;
+--fleet-z-base: 1;
+--fleet-z-dropdown: 10;
+--fleet-z-overlay: 100;
+--fleet-z-modal: 1000;
 
---bde-line-height-tight: 1.25;
---bde-line-height-normal: 1.5;
---bde-line-height-loose: 1.75;
+--fleet-line-height-tight: 1.25;
+--fleet-line-height-normal: 1.5;
+--fleet-line-height-loose: 1.75;
 
---bde-accent-purple: #a78bfa; /* Agent UI accent */
+--fleet-accent-purple: #a78bfa; /* Agent UI accent */
 
---bde-max-width-sm: 240px;
---bde-max-width-md: 400px;
---bde-max-width-lg: 640px;
+--fleet-max-width-sm: 240px;
+--fleet-max-width-md: 400px;
+--fleet-max-width-lg: 640px;
 ```
 
 ---
@@ -232,7 +232,7 @@ Or better: **move to component-scoped CSS modules**.
 | Rule                       | Locations                                                                      | Recommendation                      |
 | -------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
 | Skeleton shimmer animation | `design-system.css:523-528`, `sprint.css:120-125`                              | Keep in design-system.css only      |
-| Button reset styles        | `.bde-btn`, `.command-palette__item`, `.git-sidebar__action`, many more        | Create `.btn-reset` utility class   |
+| Button reset styles        | `.fleet-btn`, `.command-palette__item`, `.git-sidebar__action`, many more        | Create `.btn-reset` utility class   |
 | Flex centering             | Repeated `display: flex; align-items: center; justify-content: center`         | Create `.flex-center` utility       |
 | Truncate text              | `white-space: nowrap; overflow: hidden; text-overflow: ellipsis` in 15+ places | Create `.truncate` utility          |
 | Disabled state             | `opacity: 0.5; cursor: not-allowed` repeated                                   | Create `[disabled]` global selector |
@@ -256,19 +256,19 @@ Create `utilities.css`:
 
 ```css
 /* main.css:290 */
-background: var(--bde-surface-high, var(--bde-surface));
+background: var(--fleet-surface-high, var(--fleet-surface));
 
 /* terminal.css:11 */
-background: var(--bde-surface-high, var(--bde-surface));
+background: var(--fleet-surface-high, var(--fleet-surface));
 
 /* terminal.css:61 */
-background: var(--bde-surface, #111111);
+background: var(--fleet-surface, #111111);
 ```
 
-**Problem:** Fallbacks suggest `--bde-surface-high` might not be defined everywhere.
+**Problem:** Fallbacks suggest `--fleet-surface-high` might not be defined everywhere.
 
 **Investigation needed:**
-Check if `--bde-surface-high` is in `:root` in base.css (it is: line 12), so fallbacks are defensive but unnecessary.
+Check if `--fleet-surface-high` is in `:root` in base.css (it is: line 12), so fallbacks are defensive but unnecessary.
 
 **Recommendation:**
 Remove fallbacks if variables are guaranteed to exist. Fallbacks add noise.
@@ -298,22 +298,22 @@ Remove fallbacks if variables are guaranteed to exist. Fallbacks add noise.
 
 | Color     | Location                                 | Usage               | Should be token?                                        |
 | --------- | ---------------------------------------- | ------------------- | ------------------------------------------------------- |
-| `#a78bfa` | TerminalView.tsx:190, terminal.css:154   | Agent tab accent    | **Yes** — `--bde-accent-purple`                         |
-| `#f87171` | ErrorBoundary.tsx:27, multiple CSS files | Error red (lighter) | Maybe — already have `--bde-danger: #FF4D4D`            |
-| `#6ee7b7` | diff-viewer CSS                          | Diff add green      | **Yes** — `--bde-diff-add`                              |
-| `#fca5a5` | diff-viewer CSS                          | Diff delete red     | **Yes** — `--bde-diff-del`                              |
-| `#facc15` | sprint.css, diff CSS                     | Warning yellow      | Use existing `--bde-warning: #F59E0B`? Or add separate? |
-| `#60a5fa` | sprint.css                               | Info blue           | Use existing `--bde-info: #3B82F6`? Or add separate?    |
+| `#a78bfa` | TerminalView.tsx:190, terminal.css:154   | Agent tab accent    | **Yes** — `--fleet-accent-purple`                         |
+| `#f87171` | ErrorBoundary.tsx:27, multiple CSS files | Error red (lighter) | Maybe — already have `--fleet-danger: #FF4D4D`            |
+| `#6ee7b7` | diff-viewer CSS                          | Diff add green      | **Yes** — `--fleet-diff-add`                              |
+| `#fca5a5` | diff-viewer CSS                          | Diff delete red     | **Yes** — `--fleet-diff-del`                              |
+| `#facc15` | sprint.css, diff CSS                     | Warning yellow      | Use existing `--fleet-warning: #F59E0B`? Or add separate? |
+| `#60a5fa` | sprint.css                               | Info blue           | Use existing `--fleet-info: #3B82F6`? Or add separate?    |
 
 **Recommendation:**
 Extend color palette:
 
 ```css
 /* Specialized colors */
---bde-accent-purple: #a78bfa; /* Agent UI */
---bde-diff-add: #6ee7b7;
---bde-diff-del: #fca5a5;
---bde-code-modified: #facc15;
+--fleet-accent-purple: #a78bfa; /* Agent UI */
+--fleet-diff-add: #6ee7b7;
+--fleet-diff-del: #fca5a5;
+--fleet-code-modified: #facc15;
 ```
 
 ---
@@ -324,7 +324,7 @@ Extend color palette:
 
 1. **Fix ErrorBoundary.tsx** — Replace hardcoded styles with tokens (5 min fix)
 2. **Document the dual system** — Add comment to `tokens.ts` explaining when to use CSS vars vs JS tokens
-3. **Add missing critical tokens** — Add `--bde-accent-purple`, `--bde-z-*` scale
+3. **Add missing critical tokens** — Add `--fleet-accent-purple`, `--fleet-z-*` scale
 
 ### Medium-term (next sprint)
 
@@ -471,7 +471,7 @@ components/sessions/ChatPane.module.css  (scoped styles)
 ### Immediate (before next commit)
 
 - [ ] Fix `ErrorBoundary.tsx` hardcoded styles
-- [ ] Add `--bde-accent-purple: #a78bfa` to base.css
+- [ ] Add `--fleet-accent-purple: #a78bfa` to base.css
 - [ ] Document CSS vars vs tokens.ts usage in README
 
 ### Sprint cleanup
@@ -479,7 +479,7 @@ components/sessions/ChatPane.module.css  (scoped styles)
 - [ ] Create `utilities.css` with common patterns
 - [ ] Refactor `TerminalView.tsx` inline styles to CSS classes
 - [ ] Add z-index, line-height, max-width tokens
-- [ ] Add diff color tokens (`--bde-diff-add`, `--bde-diff-del`)
+- [ ] Add diff color tokens (`--fleet-diff-add`, `--fleet-diff-del`)
 
 ### Epic: Design System Consolidation
 
@@ -494,7 +494,7 @@ components/sessions/ChatPane.module.css  (scoped styles)
 
 ## Conclusion
 
-The BDE design system is **80% there** — good token coverage, clean component classes, consistent naming. The main issues are:
+The FLEET design system is **80% there** — good token coverage, clean component classes, consistent naming. The main issues are:
 
 1. **Dual system confusion** (CSS vars vs JS tokens)
 2. **Inline style overuse** (TerminalView, ErrorBoundary)

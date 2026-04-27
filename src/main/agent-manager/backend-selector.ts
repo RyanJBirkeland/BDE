@@ -7,7 +7,7 @@
  * (rbt-coding-agent via OpenAI-compatible endpoint), and `opencode` (opencode CLI).
  * `opencodeExecutable` defaults to `'opencode'` (PATH lookup).
  *
- * Settings live in BDE's SQLite-backed JSON store under `SETTING_BACKEND_CONFIG`.
+ * Settings live in FLEET's SQLite-backed JSON store under `SETTING_BACKEND_CONFIG`.
  * A missing value resolves to `DEFAULT_SETTINGS` (every type on `claude` with
  * the shared default model — zero behaviour change for existing users).
  */

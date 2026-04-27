@@ -141,8 +141,8 @@ export function PipelineHeader({
           <div
             className="sprint-pipeline__export-menu"
             style={{
-              backgroundColor: 'var(--bde-surface)',
-              border: '1px solid var(--bde-border)'
+              backgroundColor: 'var(--fleet-surface)',
+              border: '1px solid var(--fleet-border)'
             }}
           >
             <button

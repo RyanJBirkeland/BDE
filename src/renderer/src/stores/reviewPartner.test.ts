@@ -47,7 +47,7 @@ describe('useReviewPartnerStore', () => {
       expect(useReviewPartnerStore.getState().messagesByTask['task-1']).toEqual([])
       // Verify localStorage was touched with the cleared state
       const calls = localStorageMock.setItem.mock.calls.filter(
-        ([key]) => key === 'bde:review-partner-messages'
+        ([key]) => key === 'fleet:review-partner-messages'
       )
       expect(calls.length).toBeGreaterThan(0)
     })

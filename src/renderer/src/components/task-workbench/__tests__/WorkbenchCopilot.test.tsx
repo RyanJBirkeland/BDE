@@ -356,7 +356,7 @@ describe('research integration', () => {
 
     it('shortens deep paths to last 3 segments', () => {
       expect(
-        formatToolUse('Read', { file_path: '/Users/ryan/projects/BDE/src/main/handlers/git.ts' })
+        formatToolUse('Read', { file_path: '/Users/ryan/projects/FLEET/src/main/handlers/git.ts' })
       ).toBe('Reading …/main/handlers/git.ts')
     })
 
@@ -395,7 +395,7 @@ describe('research integration', () => {
       localStorage.clear()
       useTaskWorkbenchStore.getState().resetForm()
       useCopilotStore.getState().reset()
-      useTaskWorkbenchStore.setState({ repo: 'bde' })
+      useTaskWorkbenchStore.setState({ repo: 'fleet' })
       ;(window.api as any).workbench = {
         chat: vi.fn().mockResolvedValue({ content: 'AI response here' }),
         chatStream: vi.fn().mockResolvedValue({ streamId: 'test-stream-1' }),

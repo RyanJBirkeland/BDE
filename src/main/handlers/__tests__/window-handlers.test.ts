@@ -145,7 +145,7 @@ describe('Window handlers', () => {
 
         expect(writeFileSync).toHaveBeenCalledOnce()
         const writeCall = vi.mocked(writeFileSync).mock.calls[0]
-        expect(writeCall[0]).toMatch(/^\/tmp\/bde-playground-[0-9a-f]+\.html$/)
+        expect(writeCall[0]).toMatch(/^\/tmp\/fleet-playground-[0-9a-f]+\.html$/)
 
         // Verify sanitization: dirty HTML is cleaned before writing
         const writtenHtml = writeCall[1] as string
@@ -156,9 +156,9 @@ describe('Window handlers', () => {
 
         expect(shell.openPath).toHaveBeenCalledOnce()
         const openCall = vi.mocked(shell.openPath).mock.calls[0]
-        expect(openCall[0]).toMatch(/^\/tmp\/bde-playground-[0-9a-f]+\.html$/)
+        expect(openCall[0]).toMatch(/^\/tmp\/fleet-playground-[0-9a-f]+\.html$/)
 
-        expect(result).toMatch(/^\/tmp\/bde-playground-[0-9a-f]+\.html$/)
+        expect(result).toMatch(/^\/tmp\/fleet-playground-[0-9a-f]+\.html$/)
       })
     })
   })

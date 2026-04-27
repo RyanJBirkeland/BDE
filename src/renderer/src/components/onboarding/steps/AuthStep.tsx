@@ -95,7 +95,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       <h1 className="onboarding-step__title">Claude Authentication</h1>
 
       <p className="onboarding-step__description">
-        BDE requires Claude Code CLI for agent execution. Let&apos;s verify your setup.
+        FLEET requires Claude Code CLI for agent execution. Let&apos;s verify your setup.
       </p>
 
       <div className="onboarding-step__checks">
@@ -177,25 +177,25 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
             <strong>Authentication check timed out.</strong> The Claude CLI may be slow to respond
             or blocked by a firewall.
           </p>
-          <p style={{ marginTop: 'var(--bde-space-2)' }}>Try these diagnostic steps:</p>
-          <ol style={{ marginTop: 'var(--bde-space-1)', paddingLeft: 'var(--bde-space-4)' }}>
-            <li style={{ marginBottom: 'var(--bde-space-2)' }}>
+          <p style={{ marginTop: 'var(--fleet-space-2)' }}>Try these diagnostic steps:</p>
+          <ol style={{ marginTop: 'var(--fleet-space-1)', paddingLeft: 'var(--fleet-space-4)' }}>
+            <li style={{ marginBottom: 'var(--fleet-space-2)' }}>
               Run this command in Terminal to check CLI status:
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 'var(--bde-space-2)',
-                  marginTop: 'var(--bde-space-1)'
+                  gap: 'var(--fleet-space-2)',
+                  marginTop: 'var(--fleet-space-1)'
                 }}
               >
                 <code
                   style={{
                     padding: '4px 10px',
-                    background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                    background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                     borderRadius: '4px',
                     fontFamily: 'monospace',
-                    fontSize: 'var(--bde-size-sm)'
+                    fontSize: 'var(--fleet-size-sm)'
                   }}
                 >
                   {CLAUDE_AUTH_STATUS_COMMAND}
@@ -210,22 +210,22 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               </div>
             </li>
             <li>
-              If the CLI itself hangs, quit BDE and relaunch it.
+              If the CLI itself hangs, quit FLEET and relaunch it.
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 'var(--bde-space-2)',
-                  marginTop: 'var(--bde-space-1)'
+                  gap: 'var(--fleet-space-2)',
+                  marginTop: 'var(--fleet-space-1)'
                 }}
               >
                 <code
                   style={{
                     padding: '4px 10px',
-                    background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                    background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                     borderRadius: '4px',
                     fontFamily: 'monospace',
-                    fontSize: 'var(--bde-size-sm)'
+                    fontSize: 'var(--fleet-size-sm)'
                   }}
                 >
                   ⌘Q then relaunch
@@ -239,12 +239,12 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
                 </Button>
               </div>
             </li>
-            <li style={{ marginBottom: 'var(--bde-space-2)' }}>
+            <li style={{ marginBottom: 'var(--fleet-space-2)' }}>
               On macOS, this can mean the system Keychain is locked. Try locking and unlocking your
               screen, then click &quot;Check Again&quot;.
             </li>
           </ol>
-          <p style={{ marginTop: 'var(--bde-space-2)' }}>
+          <p style={{ marginTop: 'var(--fleet-space-2)' }}>
             <a href={TROUBLESHOOTING_DOCS_URL} target="_blank" rel="noreferrer">
               View full troubleshooting guide{' '}
               <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
@@ -256,14 +256,14 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       {!checking && !isReady && !status?.cliFound && (
         <div className="onboarding-step__help">
           <p>Install Claude Code CLI:</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--fleet-space-2)' }}>
             <code
               style={{
                 padding: '4px 10px',
-                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                 borderRadius: '4px',
                 fontFamily: 'monospace',
-                fontSize: 'var(--bde-size-sm)'
+                fontSize: 'var(--fleet-size-sm)'
               }}
             >
               {CLAUDE_INSTALL_COMMAND}
@@ -276,7 +276,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               <Copy size={14} />
             </Button>
           </div>
-          <p style={{ marginTop: 'var(--bde-space-2)' }}>
+          <p style={{ marginTop: 'var(--fleet-space-2)' }}>
             <a href={CLAUDE_INSTALL_DOCS_URL} target="_blank" rel="noreferrer">
               Full install docs <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
             </a>
@@ -287,14 +287,14 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       {!checking && !isReady && status?.cliFound && (
         <div className="onboarding-step__help">
           <p>Run this command in your terminal to authenticate:</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--fleet-space-2)' }}>
             <code
               style={{
                 padding: '4px 10px',
-                background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
                 borderRadius: '4px',
                 fontFamily: 'monospace',
-                fontSize: 'var(--bde-size-sm)'
+                fontSize: 'var(--fleet-size-sm)'
               }}
             >
               {CLAUDE_LOGIN_COMMAND}
@@ -309,9 +309,9 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
           </div>
           <p
             style={{
-              marginTop: 'var(--bde-space-2)',
-              fontSize: 'var(--bde-size-sm)',
-              color: 'var(--bde-text-muted)'
+              marginTop: 'var(--fleet-space-2)',
+              fontSize: 'var(--fleet-size-sm)',
+              color: 'var(--fleet-text-muted)'
             }}
           >
             If you&apos;ve previously logged in and this is unexpected, your macOS Keychain may be

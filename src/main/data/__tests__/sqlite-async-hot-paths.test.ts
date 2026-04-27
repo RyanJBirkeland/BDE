@@ -32,7 +32,7 @@ afterEach(() => {
 function insertQueuedTask(id: string, title = 'Test task'): void {
   db.prepare(
     `INSERT INTO sprint_tasks (id, title, repo, status, priority)
-     VALUES (?, ?, 'bde', 'queued', 1)`
+     VALUES (?, ?, 'fleet', 'queued', 1)`
   ).run(id, title)
 }
 

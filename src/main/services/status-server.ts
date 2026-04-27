@@ -101,7 +101,7 @@ export function createStatusServer(
           const isAddrInUse =
             (err as NodeJS.ErrnoException).code === 'EADDRINUSE' || errMsg.includes('EADDRINUSE')
           const message = isAddrInUse
-            ? `Status server could not bind to port ${port} — another BDE instance may be running.`
+            ? `Status server could not bind to port ${port} — another FLEET instance may be running.`
             : `Status server failed to start: ${errMsg}`
           // broadcast is a no-op before any window exists (early bootstrap);
           // the logger still captures the error for triage in that case.

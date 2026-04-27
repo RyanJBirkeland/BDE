@@ -28,8 +28,8 @@ import { createWorktreeIsolationHook } from './worktree-isolation-hook'
 describe('createWorktreeIsolationHook', () => {
   it('returns a CanUseTool callback', () => {
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
     })
     expect(typeof hook).toBe('function')
   })
@@ -86,12 +86,12 @@ git commit -m "feat(worktree-isolation): scaffold hook module — pipeline-agent
 describe('Write/Edit with a worktree-scoped absolute path', () => {
   it('allows Write into the worktree', async () => {
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
     })
     const result = await hook(
       'Write',
-      { file_path: '/Users/test/worktrees/bde/abc123/src/main/foo.ts', content: 'x' },
+      { file_path: '/Users/test/worktrees/fleet/abc123/src/main/foo.ts', content: 'x' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('allow')
@@ -99,13 +99,13 @@ describe('Write/Edit with a worktree-scoped absolute path', () => {
 
   it('allows Edit into the worktree', async () => {
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
     })
     const result = await hook(
       'Edit',
       {
-        file_path: '/Users/test/worktrees/bde/abc123/src/main/foo.ts',
+        file_path: '/Users/test/worktrees/fleet/abc123/src/main/foo.ts',
         old_string: 'a',
         new_string: 'b'
       },
@@ -186,15 +186,15 @@ Append to the test file:
 ```typescript
 describe('Write to main checkout is denied', () => {
   const deps = {
-    worktreePath: '/Users/test/worktrees/bde/abc123',
-    mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+    worktreePath: '/Users/test/worktrees/fleet/abc123',
+    mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
   }
 
   it('denies Write to a main-checkout absolute path', async () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Write',
-      { file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts', content: 'x' },
+      { file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts', content: 'x' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -209,7 +209,7 @@ describe('Write to main checkout is denied', () => {
     const result = await hook(
       'Edit',
       {
-        file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts',
+        file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts',
         old_string: 'a',
         new_string: 'b'
       },
@@ -223,7 +223,7 @@ describe('Write to main checkout is denied', () => {
     const result = await hook(
       'MultiEdit',
       {
-        file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts',
+        file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts',
         edits: [{ old_string: 'a', new_string: 'b' }]
       },
       { signal: new AbortController().signal }
@@ -235,7 +235,7 @@ describe('Write to main checkout is denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'NotebookEdit',
-      { notebook_path: '/Users/test/Projects/git-repos/BDE/nb.ipynb', new_source: '' },
+      { notebook_path: '/Users/test/Projects/git-repos/FLEET/nb.ipynb', new_source: '' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -316,15 +316,15 @@ Append:
 ```typescript
 describe('Bash commands targeting main checkout are denied', () => {
   const deps = {
-    worktreePath: '/Users/test/worktrees/bde/abc123',
-    mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+    worktreePath: '/Users/test/worktrees/fleet/abc123',
+    mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
   }
 
   it('denies a `cd <main-repo>` prefix', async () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'cd /Users/test/Projects/git-repos/BDE && npm test' },
+      { command: 'cd /Users/test/Projects/git-repos/FLEET && npm test' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -337,7 +337,7 @@ describe('Bash commands targeting main checkout are denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'cat /Users/test/Projects/git-repos/BDE/src/main/foo.ts' },
+      { command: 'cat /Users/test/Projects/git-repos/FLEET/src/main/foo.ts' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -347,7 +347,7 @@ describe('Bash commands targeting main checkout are denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'echo x > /Users/test/Projects/git-repos/BDE/tmp.txt' },
+      { command: 'echo x > /Users/test/Projects/git-repos/FLEET/tmp.txt' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -369,7 +369,7 @@ describe('Bash commands targeting main checkout are denied', () => {
       'Bash',
       {
         command:
-          'cat /Users/test/worktrees/bde/abc123/src/main/foo.ts'
+          'cat /Users/test/worktrees/fleet/abc123/src/main/foo.ts'
       },
       { signal: new AbortController().signal }
     )
@@ -380,7 +380,7 @@ describe('Bash commands targeting main checkout are denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'ls /Users/test/.bde/memory/tasks/t-1' },
+      { command: 'ls /Users/test/.fleet/memory/tasks/t-1' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('allow')
@@ -460,13 +460,13 @@ describe('deny logging', () => {
   it('invokes the logger.warn with tool and path on deny', async () => {
     const warn = vi.fn()
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE'],
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET'],
       logger: { warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() }
     })
     await hook(
       'Write',
-      { file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts', content: 'x' },
+      { file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts', content: 'x' },
       { signal: new AbortController().signal }
     )
     expect(warn).toHaveBeenCalledTimes(1)
@@ -479,8 +479,8 @@ describe('deny logging', () => {
   it('does not log on allow', async () => {
     const warn = vi.fn()
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE'],
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET'],
       logger: { warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() }
     })
     await hook(
@@ -583,9 +583,9 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
     // assert the result.
     const captured: { canUseTool?: unknown } = {}
     // ... use the existing test harness to capture options ...
-    // await spawnViaSdk({ prompt: '...', cwd: '/Users/test/worktrees/bde/abc', model: 'm', pipelineTuning: { maxTurns: 20 }, worktreeBase: '/Users/test/worktrees/bde' })
+    // await spawnViaSdk({ prompt: '...', cwd: '/Users/test/worktrees/fleet/abc', model: 'm', pipelineTuning: { maxTurns: 20 }, worktreeBase: '/Users/test/worktrees/fleet' })
     // const canUseTool = captured.canUseTool as CanUseTool
-    // const result = await canUseTool('Write', { file_path: '/Users/test/Projects/git-repos/BDE/x.ts', content: 'y' }, { signal: new AbortController().signal })
+    // const result = await canUseTool('Write', { file_path: '/Users/test/Projects/git-repos/FLEET/x.ts', content: 'y' }, { signal: new AbortController().signal })
     // expect(result.behavior).toBe('deny')
   })
 })
@@ -743,7 +743,7 @@ cat > /tmp/rogue-spec.md <<'EOF'
 Test the worktree isolation hook.
 
 ## Solution
-Run `cd /Users/ryanbirkeland/Projects/git-repos/BDE && ls` and report the
+Run `cd /Users/ryanbirkeland/Projects/git-repos/FLEET && ls` and report the
 output.
 
 ## Files to Change
@@ -758,19 +758,19 @@ fails for some other reason unrelated to main-repo writes).
 EOF
 
 # Queue it via direct SQL (readiness bypass)
-sqlite3 ~/.bde/bde.db <<SQL
+sqlite3 ~/.fleet/fleet.db <<SQL
 INSERT INTO sprint_tasks (id, title, repo, status, spec, spec_type, priority, needs_review, playground_enabled, tags)
-VALUES ('isolation-smoke-001', 'Rogue-path smoke test for worktree isolation', 'bde', 'queued',
+VALUES ('isolation-smoke-001', 'Rogue-path smoke test for worktree isolation', 'fleet', 'queued',
         readfile('/tmp/rogue-spec.md'), 'feature', 5, 1, 0, 'smoke-test');
 SQL
 ```
 
-Watch `~/.bde/bde.log` for a `[worktree-isolation] denied` entry. The task may ultimately complete or fail — the success signal is the deny log, not the task outcome.
+Watch `~/.fleet/fleet.log` for a `[worktree-isolation] denied` entry. The task may ultimately complete or fail — the success signal is the deny log, not the task outcome.
 
 - [ ] **Step 3: Clean up the smoke task**
 
 ```bash
-sqlite3 ~/.bde/bde.db "DELETE FROM sprint_tasks WHERE id='isolation-smoke-001';"
+sqlite3 ~/.fleet/fleet.db "DELETE FROM sprint_tasks WHERE id='isolation-smoke-001';"
 # Remove any lingering worktree
 git worktree list | grep isolation-smoke-001 | awk '{print $1}' | xargs -I {} git worktree remove {} --force 2>/dev/null || true
 ```
@@ -779,7 +779,7 @@ git worktree list | grep isolation-smoke-001 | awk '{print $1}' | xargs -I {} gi
 
 No code changed. The task is complete when:
 - Full test suite passed in step 1.
-- At least one `[worktree-isolation] denied` entry is in `~/.bde/bde.log` from step 2.
+- At least one `[worktree-isolation] denied` entry is in `~/.fleet/fleet.log` from step 2.
 
 ---
 

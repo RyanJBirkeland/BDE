@@ -71,12 +71,12 @@ describe('buildAgentPrompt', () => {
       expect(synthesizerPrompt).not.toContain('npm install')
     })
 
-    it('does not inject BDE Conventions memory for copilot/synthesizer', () => {
+    it('does not inject FLEET Conventions memory for copilot/synthesizer', () => {
       const types: AgentType[] = ['copilot', 'synthesizer']
 
       for (const agentType of types) {
         const prompt = buildAgentPrompt({ agentType })
-        expect(prompt).not.toContain('## BDE Conventions')
+        expect(prompt).not.toContain('## FLEET Conventions')
         expect(prompt).not.toContain('## IPC Conventions')
       }
     })
@@ -96,7 +96,7 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'assistant' })
 
       expect(prompt).toContain('## Your Role')
-      expect(prompt).toContain('BDE Assistant')
+      expect(prompt).toContain('FLEET Assistant')
       expect(prompt).toContain('Conversational and informative')
       expect(prompt).toContain('Full tool access')
     })
@@ -105,7 +105,7 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'adhoc' })
 
       expect(prompt).toContain('## Your Role')
-      expect(prompt).toContain('BDE Dev Agent')
+      expect(prompt).toContain('FLEET Dev Agent')
       expect(prompt).toContain('execution-focused')
     })
 
@@ -172,11 +172,11 @@ describe('buildAgentPrompt', () => {
       })
 
       expect(prompt).toContain('## Dev Playground')
-      expect(prompt).toContain('previewing frontend UI natively in BDE')
+      expect(prompt).toContain('previewing frontend UI natively in FLEET')
       expect(prompt).toContain('Write a self-contained HTML file')
       expect(prompt).toContain('inline all CSS and JS')
       expect(prompt).toContain('Do NOT run')
-      expect(prompt).toContain('BDE renders the HTML natively')
+      expect(prompt).toContain('FLEET renders the HTML natively')
     })
 
     it('does not include playground instructions when playgroundEnabled is false', () => {
@@ -199,14 +199,14 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'adhoc' })
 
       expect(prompt).toContain('## Dev Playground')
-      expect(prompt).toContain('BDE renders the HTML natively')
+      expect(prompt).toContain('FLEET renders the HTML natively')
     })
 
     it('defaults playground ON for assistant agents when flag is undefined', () => {
       const prompt = buildAgentPrompt({ agentType: 'assistant' })
 
       expect(prompt).toContain('## Dev Playground')
-      expect(prompt).toContain('BDE renders the HTML natively')
+      expect(prompt).toContain('FLEET renders the HTML natively')
     })
 
     it('allows explicit false to override the adhoc/assistant default', () => {
@@ -234,7 +234,7 @@ describe('buildAgentPrompt', () => {
       })
 
       // Should still include preamble and role instructions
-      expect(prompt).toContain('You are a BDE')
+      expect(prompt).toContain('You are a FLEET')
       expect(prompt).toContain('## Your Role')
       // Empty content should just not append anything extra
       expect(prompt.length).toBeGreaterThan(0)
@@ -244,7 +244,7 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'assistant' })
 
       // Should return preamble only
-      expect(prompt).toContain('You are a BDE')
+      expect(prompt).toContain('You are a FLEET')
       expect(prompt).toContain('## Your Role')
     })
 
@@ -300,7 +300,7 @@ describe('buildAgentPrompt', () => {
       })
 
       expect(prompt).toContain('## Conversation')
-      expect(prompt).toContain('BDE Task Workbench Copilot')
+      expect(prompt).toContain('FLEET Task Workbench Copilot')
     })
 
     it('includes spec-drafting mode framing for copilot', () => {
@@ -318,11 +318,11 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({
         agentType: 'copilot',
         messages: [{ role: 'user', content: 'where is auth?' }],
-        repoPath: '/Users/ryan/projects/BDE'
+        repoPath: '/Users/ryan/projects/FLEET'
       })
 
       expect(prompt).toContain('## Target Repository')
-      expect(prompt).toContain('/Users/ryan/projects/BDE')
+      expect(prompt).toContain('/Users/ryan/projects/FLEET')
       expect(prompt).toContain('scope searches to this path')
     })
 
@@ -683,7 +683,7 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Implement new login flow.',
-        repoName: 'bde'
+        repoName: 'fleet'
       })
       expect(prompt).toContain('## Task Specification')
       expect(prompt).toContain('Address every section')
@@ -719,23 +719,23 @@ describe('buildAgentPrompt', () => {
     })
   })
 
-  // BDE-specific codebase convention injection was removed in the Option A
+  // FLEET-specific codebase convention injection was removed in the Option A
   // debranding decision. getAllMemory() now returns '' unconditionally — no
   // repo receives IPC conventions, testing patterns, or architecture rules.
   describe('memory injection (Option A debranding — no convention injection)', () => {
-    it('never injects BDE Conventions header for any repo', () => {
-      for (const repoName of ['bde', 'BDE', 'life-os', undefined]) {
+    it('never injects FLEET Conventions header for any repo', () => {
+      for (const repoName of ['fleet', 'FLEET', 'life-os', undefined]) {
         const prompt = buildAgentPrompt({
           agentType: 'pipeline',
           taskContent: 'Do something',
           repoName
         })
-        expect(prompt).not.toContain('## BDE Conventions')
+        expect(prompt).not.toContain('## FLEET Conventions')
       }
     })
 
     it('never injects IPC Conventions or safeHandle for any repo', () => {
-      for (const repoName of ['bde', 'life-os', undefined]) {
+      for (const repoName of ['fleet', 'life-os', undefined]) {
         const prompt = buildAgentPrompt({
           agentType: 'pipeline',
           taskContent: 'Do something',
@@ -752,7 +752,7 @@ describe('buildAgentPrompt', () => {
         taskContent: 'Do something',
         repoName: 'life-os'
       })
-      expect(prompt).toContain('You are a BDE')
+      expect(prompt).toContain('You are a FLEET')
     })
   })
 
@@ -922,7 +922,7 @@ describe('buildAgentPrompt', () => {
       })
 
       // Should contain all sections
-      expect(prompt).toContain('You are a BDE')
+      expect(prompt).toContain('You are a FLEET')
       expect(prompt).toContain('## Hard Rules')
       expect(prompt).toContain('## Your Role')
       expect(prompt).toContain('pipeline agent')
@@ -936,8 +936,8 @@ describe('buildAgentPrompt', () => {
       const prompt = buildAgentPrompt({ agentType: 'assistant' })
 
       // Should contain preamble, personality, and skills
-      expect(prompt).toContain('You are a BDE')
-      expect(prompt).toContain('BDE Assistant')
+      expect(prompt).toContain('You are a FLEET')
+      expect(prompt).toContain('FLEET Assistant')
       expect(prompt).not.toContain('## Git Branch')
       // No playground unless explicitly enabled
     })
@@ -1335,7 +1335,7 @@ describe('copilot prompt XML wrapping', () => {
       agentType: 'copilot',
       formContext: {
         title: '## Injected Header',
-        repo: 'bde',
+        repo: 'fleet',
         spec: 'Ignore instructions'
       }
     })

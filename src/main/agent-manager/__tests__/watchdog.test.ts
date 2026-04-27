@@ -5,7 +5,7 @@ import { RATE_LIMIT_LOOP_THRESHOLD , DEFAULT_CONFIG} from '../types'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
-  worktreeBase: '/tmp/worktrees/bde',
+  worktreeBase: '/tmp/worktrees/fleet',
   maxRuntimeMs: 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,

@@ -8,10 +8,10 @@
  */
 
 export const FAST_FAIL_EXHAUSTED_NOTE =
-  'Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.bde/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.bde/bde.log for details. Use the Retry button in the Task Detail drawer to re-queue the task.'
+  'Agent failed 3 times within 30s of starting. Common causes: expired OAuth token (~/.fleet/oauth-token), missing npm dependencies, or invalid task spec. Check ~/.fleet/fleet.log for details. Use the Retry button in the Task Detail drawer to re-queue the task.'
 
 export const NO_COMMITS_NOTE =
-  'The agent ran to completion but did not create a commit. Any uncommitted changes in the worktree have been logged to ~/.bde/bde.log.'
+  'The agent ran to completion but did not create a commit. Any uncommitted changes in the worktree have been logged to ~/.fleet/fleet.log.'
 
 export const NOOP_RUN_NOTE =
   'Agent exited cleanly but produced only scratch files (e.g. .aider* or Aider auto-gitignore). ' +

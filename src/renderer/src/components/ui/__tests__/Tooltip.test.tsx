@@ -15,7 +15,7 @@ describe('Tooltip', () => {
 
   it('applies top side class by default', () => {
     const { container } = render(<Tooltip content="Hint">Child</Tooltip>)
-    expect(container.firstChild).toHaveClass('bde-tooltip--top')
+    expect(container.firstChild).toHaveClass('fleet-tooltip--top')
   })
 
   it('applies custom side class', () => {
@@ -24,6 +24,6 @@ describe('Tooltip', () => {
         Child
       </Tooltip>
     )
-    expect(container.firstChild).toHaveClass('bde-tooltip--bottom')
+    expect(container.firstChild).toHaveClass('fleet-tooltip--bottom')
   })
 })

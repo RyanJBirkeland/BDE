@@ -21,8 +21,8 @@ vi.mock('../config', () => ({
 
 vi.mock('../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue(null),
-  BDE_DIR: '/tmp/bde-test',
-  BDE_DB_PATH: '/tmp/bde-test/bde.db'
+  FLEET_DIR: '/tmp/fleet-test',
+  FLEET_DB_PATH: '/tmp/fleet-test/fleet.db'
 }))
 
 vi.mock('electron', () => ({
@@ -159,7 +159,7 @@ describe('task template resolution in claimTask', () => {
         started_at TEXT NOT NULL,
         finished_at TEXT,
         exit_code INTEGER,
-        source TEXT NOT NULL DEFAULT 'bde'
+        source TEXT NOT NULL DEFAULT 'fleet'
       );
       CREATE TABLE IF NOT EXISTS settings (
         key TEXT PRIMARY KEY,
@@ -170,7 +170,7 @@ describe('task template resolution in claimTask', () => {
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         title TEXT NOT NULL,
         prompt TEXT NOT NULL DEFAULT '',
-        repo TEXT NOT NULL DEFAULT 'bde',
+        repo TEXT NOT NULL DEFAULT 'fleet',
         status TEXT NOT NULL DEFAULT 'backlog',
         priority INTEGER NOT NULL DEFAULT 1,
         spec TEXT,

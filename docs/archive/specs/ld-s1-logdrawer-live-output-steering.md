@@ -35,7 +35,7 @@ This immediately fixes Bug 1: log file starts filling with token-by-token stream
 
 Store each running child in `activeChildren: Map<agentId, ChildProcess>`. Add one new HTTP route to the existing 18799 server. This fixes Bug 2.
 
-### Fix 3: `steerAgent` in BDE falls back to task-runner REST API
+### Fix 3: `steerAgent` in FLEET falls back to task-runner REST API
 
 If the local process map lookup misses, try the task-runner steer endpoint. This wires up the existing LogDrawer steer input without changing the LogDrawer at all.
 
@@ -99,7 +99,7 @@ const child = spawn(
 )
 
 // Register child for steering before writing prompt
-activeChildren.set(agentId, child) // agentId is set above at registerBdeAgent()
+activeChildren.set(agentId, child) // agentId is set above at registerFleetAgent()
 
 // Write initial prompt as JSON message (interactive format)
 child.stdin.write(
@@ -117,7 +117,7 @@ In the existing `child.on('close', (code) => { ... })` handler, add `activeChild
 ```javascript
 child.on('close', (code) => {
   activeChildren.delete(agentId) // ← ADD THIS
-  finishBdeAgent(agentId, code)
+  finishFleetAgent(agentId, code)
   // ... rest of existing handler unchanged ...
 })
 ```
@@ -170,7 +170,7 @@ export async function steerAgent(
   agentId: string,
   message: string
 ): Promise<{ ok: boolean; error?: string }> {
-  // First: try local process map (BDE-spawned agents)
+  // First: try local process map (FLEET-spawned agents)
   const child = activeAgentsById.get(agentId)
   if (child && child.stdin && !child.stdin.destroyed) {
     const event =
@@ -203,7 +203,7 @@ export async function steerAgent(
 
 **Note 1:** This function was previously synchronous. It's now `async`. Update the return type annotation in the function signature AND check if the call site in `agent-handlers.ts` awaits it (it should, since it calls `return steerAgent(...)` — add `await` if it's missing).
 
-**Note 2:** `SPRINT_API_KEY` is the same env var the task-runner uses. It's already available in the BDE main process env. If there's a `getGatewayConfig()` pattern in the existing file for reading config, use that instead if it also provides the sprint key.
+**Note 2:** `SPRINT_API_KEY` is the same env var the task-runner uses. It's already available in the FLEET main process env. If there's a `getGatewayConfig()` pattern in the existing file for reading config, use that instead if it also provides the sprint key.
 
 ### 3. `src/main/handlers/agent-handlers.ts` — await the now-async steerAgent
 
@@ -326,7 +326,7 @@ Add CSS in `sprint.css`:
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-size: 13px;
 }
 
@@ -348,12 +348,12 @@ Add CSS in `sprint.css`:
 | File                                               | Repo    | What Changes                                                                                                                                   |
 | -------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `scripts/task-runner.js`                           | life-os | `activeChildren` map, interactive spawn (remove `--print`, stream-json flags, JSON stdin), `POST /agents/:id/steer` endpoint, cleanup on close |
-| `src/main/local-agents.ts`                         | BDE     | `steerAgent` becomes async, adds task-runner REST fallback                                                                                     |
-| `src/main/handlers/agent-handlers.ts`              | BDE     | Await the now-async `steerAgent`                                                                                                               |
-| `src/preload/index.ts`                             | BDE     | `sprint.readLog` signature update (fromByte + nextByte)                                                                                        |
-| `src/preload/index.d.ts`                           | BDE     | Type declaration update                                                                                                                        |
-| `src/renderer/src/components/sprint/LogDrawer.tsx` | BDE     | `fromByteRef`, incremental append, 750ms poll, better empty states                                                                             |
-| `src/renderer/src/assets/sprint.css`               | BDE     | Spinner + waiting state CSS                                                                                                                    |
+| `src/main/local-agents.ts`                         | FLEET     | `steerAgent` becomes async, adds task-runner REST fallback                                                                                     |
+| `src/main/handlers/agent-handlers.ts`              | FLEET     | Await the now-async `steerAgent`                                                                                                               |
+| `src/preload/index.ts`                             | FLEET     | `sprint.readLog` signature update (fromByte + nextByte)                                                                                        |
+| `src/preload/index.d.ts`                           | FLEET     | Type declaration update                                                                                                                        |
+| `src/renderer/src/components/sprint/LogDrawer.tsx` | FLEET     | `fromByteRef`, incremental append, 750ms poll, better empty states                                                                             |
+| `src/renderer/src/assets/sprint.css`               | FLEET     | Spinner + waiting state CSS                                                                                                                    |
 
 ## Out of Scope
 
@@ -361,7 +361,7 @@ Add CSS in `sprint.css`:
 - Killing a running agent from LogDrawer
 - "Pause autopilot" UI toggle — steer input already exists and is shown when `status=active`
 - Changing ChatThread to a terminal aesthetic
-- BDE-spawned agent changes (steering already works for those)
+- FLEET-spawned agent changes (steering already works for those)
 
 ## ⚠️ Critical: Task Runner Must Be Restarted After Merge
 
@@ -400,20 +400,20 @@ git commit -m "feat: stream-json spawn mode + agent steering endpoint (POST /age
 git push origin HEAD
 gh api repos/RyanJBirkeland/life-os/pulls --method POST \
   -f title="feat: task runner stream-json mode + POST /agents/:id/steer" \
-  -f body="Switches Claude Code spawn from --print (no streaming) to interactive stream-json mode. Log files now fill in real-time. Keeps stdin open for steering. Adds activeChildren map and POST /agents/:id/steer endpoint so BDE can send mid-run corrections. See docs/eval-logdrawer-steering.md for full investigation." \
+  -f body="Switches Claude Code spawn from --print (no streaming) to interactive stream-json mode. Log files now fill in real-time. Keeps stdin open for steering. Adds activeChildren map and POST /agents/:id/steer endpoint so FLEET can send mid-run corrections. See docs/eval-logdrawer-steering.md for full investigation." \
   -f head="$(git branch --show-current)" -f base=main --jq ".html_url"
 ```
 
-**BDE PR (can be simultaneous):**
+**FLEET PR (can be simultaneous):**
 
 ```bash
-cd ~/Documents/Repositories/BDE
+cd ~/Documents/Repositories/FLEET
 git checkout -b fix/logdrawer-live-output-steering
 # ... make changes ...
 git add src/
 git commit -m "fix: LogDrawer live output + agent steering — incremental reads, steer routes to task-runner"
 git push origin HEAD
-gh api repos/RyanJBirkeland/BDE/pulls --method POST \
+gh api repos/RyanJBirkeland/FLEET/pulls --method POST \
   -f title="fix: LogDrawer live output + agent steering" \
   -f body="Fixes the 'Agent is starting up...' bug that persisted for the entire run. Root cause (--print buffering) fixed in life-os. This PR: incremental log reads with nextByte, 750ms poll when active, better waiting state UI, steerAgent now falls back to task-runner REST API so mid-run corrections actually reach the agent. See docs/eval-logdrawer-steering.md." \
   -f head="$(git branch --show-current)" -f base=main --jq ".html_url"

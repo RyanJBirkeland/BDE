@@ -13,21 +13,21 @@ interface PipelineFlowProps {
 export function PipelineFlow({ stages }: PipelineFlowProps): React.JSX.Element {
   return (
     <div
-      style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-1)', flexWrap: 'wrap' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 'var(--fleet-space-1)', flexWrap: 'wrap' }}
     >
       {stages.map((stage, i) => (
         <div
           key={stage.label}
-          style={{ display: 'flex', alignItems: 'center', gap: 'var(--bde-space-1)' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 'var(--fleet-space-1)' }}
         >
           <div
             style={{
               background: neonVar(stage.accent, 'surface'),
               border: `1px solid ${neonVar(stage.accent, 'border')}`,
-              borderRadius: 'var(--bde-radius-md)',
-              padding: `${'var(--bde-space-1)'} ${'var(--bde-space-2)'}`,
+              borderRadius: 'var(--fleet-radius-md)',
+              padding: `${'var(--fleet-space-1)'} ${'var(--fleet-space-2)'}`,
               color: neonVar(stage.accent, 'color'),
-              fontSize: 'var(--bde-size-xs)',
+              fontSize: 'var(--fleet-size-xs)',
               fontWeight: 600,
               whiteSpace: 'nowrap'
             }}
@@ -38,8 +38,8 @@ export function PipelineFlow({ stages }: PipelineFlowProps): React.JSX.Element {
             <span
               data-role="pipeline-arrow"
               style={{
-                color: 'var(--bde-text-dim)',
-                fontSize: 'var(--bde-size-lg)'
+                color: 'var(--fleet-text-dim)',
+                fontSize: 'var(--fleet-size-lg)'
               }}
             >
               →

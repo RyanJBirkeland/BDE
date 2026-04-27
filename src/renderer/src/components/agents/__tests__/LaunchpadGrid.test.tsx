@@ -5,7 +5,7 @@ import { LaunchpadGrid } from '../LaunchpadGrid'
 import { DEFAULT_TEMPLATES } from '../../../lib/default-templates'
 
 const mockRepos = [
-  { label: 'BDE', owner: 'owner', color: '#fff' },
+  { label: 'FLEET', owner: 'owner', color: '#fff' },
   { label: 'life-os', owner: 'owner', color: '#fff' }
 ]
 
@@ -37,7 +37,7 @@ describe('LaunchpadGrid', () => {
 
   it('renders repo chip', () => {
     render(<LaunchpadGrid {...defaultProps} />)
-    expect(screen.getByText(/BDE/)).toBeInTheDocument()
+    expect(screen.getByText(/FLEET/)).toBeInTheDocument()
   })
 
   it('renders chat input with placeholder "What would you like to work on?"', () => {

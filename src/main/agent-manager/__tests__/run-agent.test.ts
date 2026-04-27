@@ -93,7 +93,7 @@ vi.mock('../../data/sprint-queries', () => ({
 
 vi.mock('../../paths', () => ({
   getGhRepo: vi.fn().mockReturnValue('owner/repo'),
-  BDE_TASK_MEMORY_DIR: '/home/user/.bde/memory/tasks'
+  FLEET_TASK_MEMORY_DIR: '/home/user/.fleet/memory/tasks'
 }))
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -166,7 +166,7 @@ function makeTask(overrides: Partial<AgentRunClaim> = {}): AgentRunClaim {
     title: 'Test task',
     prompt: 'Do something',
     spec: null,
-    repo: 'BDE',
+    repo: 'FLEET',
     retry_count: 0,
     fast_fail_count: 0,
     ...overrides
@@ -814,7 +814,7 @@ describe('runAgent — prompt composer integration', () => {
       maxRuntimeMs: undefined,
       upstreamContext: undefined,
       crossRepoContract: undefined,
-      repoName: 'BDE',
+      repoName: 'FLEET',
       taskId: 'task-1',
       priorScratchpad: ''
     })
@@ -877,7 +877,7 @@ describe('runAgent — prompt composer integration', () => {
 
       await runAgent(makeTask({ id: 'task-xyz' }), worktree, repoPath, makeDeps())
 
-      expect(mockMkdirSync).toHaveBeenCalledWith('/home/user/.bde/memory/tasks/task-xyz', {
+      expect(mockMkdirSync).toHaveBeenCalledWith('/home/user/.fleet/memory/tasks/task-xyz', {
         recursive: true
       })
     })
@@ -928,7 +928,7 @@ describe('validateTaskForRun', () => {
       title: '',
       prompt: null,
       spec: null,
-      repo: 'bde',
+      repo: 'fleet',
       retry_count: 0,
       fast_fail_count: 0
     }
@@ -960,7 +960,7 @@ describe('validateTaskForRun', () => {
       title: 'Do the thing',
       prompt: null,
       spec: null,
-      repo: 'bde',
+      repo: 'fleet',
       retry_count: 0,
       fast_fail_count: 0
     }
@@ -1055,7 +1055,7 @@ describe('readPriorScratchpad', () => {
     })
     const result = readPriorScratchpad('task-abc')
     expect(result).toBe('')
-    expect(mockMkdirSync).toHaveBeenCalledWith('/home/user/.bde/memory/tasks/task-abc', {
+    expect(mockMkdirSync).toHaveBeenCalledWith('/home/user/.fleet/memory/tasks/task-abc', {
       recursive: true
     })
   })
@@ -1077,7 +1077,7 @@ describe('assembleRunContext', () => {
       title: 'Test task',
       prompt: 'Do the thing.',
       spec: null,
-      repo: 'bde',
+      repo: 'fleet',
       retry_count: 0,
       fast_fail_count: 0
     }

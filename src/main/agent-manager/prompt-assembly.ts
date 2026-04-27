@@ -10,7 +10,7 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { AgentRunClaim, RunAgentDeps } from './run-agent'
 import { cleanupWorktree } from './worktree'
 import { buildAgentPrompt } from '../lib/prompt-composer'
-import { BDE_TASK_MEMORY_DIR } from '../paths'
+import { FLEET_TASK_MEMORY_DIR } from '../paths'
 import { nowIso } from '../../shared/time'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -112,7 +112,7 @@ export function fetchUpstreamContext(
  * progress.md content. Returns an empty string on first run.
  */
 export function readPriorScratchpad(taskId: string): string {
-  const scratchpadDir = join(BDE_TASK_MEMORY_DIR, taskId)
+  const scratchpadDir = join(FLEET_TASK_MEMORY_DIR, taskId)
   mkdirSync(scratchpadDir, { recursive: true })
   try {
     return readFileSync(join(scratchpadDir, 'progress.md'), 'utf-8')

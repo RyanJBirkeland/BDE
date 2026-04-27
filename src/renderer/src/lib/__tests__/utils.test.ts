@@ -14,7 +14,7 @@ describe('cwdToRepoLabel', () => {
 
   describe('Unix paths', () => {
     it('returns the last path segment for a projects-style path', () => {
-      expect(cwdToRepoLabel('/Users/alice/projects/BDE')).toBe('BDE')
+      expect(cwdToRepoLabel('/Users/alice/projects/FLEET')).toBe('FLEET')
     })
 
     it('returns the last path segment for a src-style path', () => {
@@ -28,13 +28,13 @@ describe('cwdToRepoLabel', () => {
 
   describe('Windows paths', () => {
     it('returns the last path segment for a Windows path', () => {
-      expect(cwdToRepoLabel('C:\\Users\\alice\\projects\\BDE')).toBe('BDE')
+      expect(cwdToRepoLabel('C:\\Users\\alice\\projects\\FLEET')).toBe('FLEET')
     })
   })
 
   describe('worktrees paths', () => {
     it('returns the last segment of a worktree path', () => {
-      expect(cwdToRepoLabel('/Users/ryan/worktrees/BDE/feat/my-feature')).toBe('my-feature')
+      expect(cwdToRepoLabel('/Users/ryan/worktrees/FLEET/feat/my-feature')).toBe('my-feature')
     })
 
     it('returns single segment after worktrees root', () => {

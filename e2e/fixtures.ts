@@ -3,20 +3,20 @@ import { _electron as electron } from 'playwright'
 import path from 'path'
 
 export type TestFixtures = {
-  bde: { app: ElectronApplication; window: Page }
+  fleet: { app: ElectronApplication; window: Page }
 }
 
 /**
- * Launch BDE Electron app in test mode.
+ * Launch FLEET Electron app in test mode.
  * Reused across all E2E specs via `test.use()`.
  */
-async function launchBDE(): Promise<{ app: ElectronApplication; window: Page }> {
+async function launchFLEET(): Promise<{ app: ElectronApplication; window: Page }> {
   const app = await electron.launch({
     args: [path.resolve(__dirname, '..')],
     env: {
       ...process.env,
       NODE_ENV: 'test',
-      BDE_TEST_MODE: '1'
+      FLEET_TEST_MODE: '1'
     }
   })
 
@@ -27,14 +27,14 @@ async function launchBDE(): Promise<{ app: ElectronApplication; window: Page }> 
 }
 
 /**
- * Extended test fixture that provides a launched BDE instance.
+ * Extended test fixture that provides a launched FLEET instance.
  * Each test gets a fresh app that is closed after the test completes.
  */
 export const test = base.extend<TestFixtures>({
-  bde: async ({}, use) => {
-    const bde = await launchBDE()
-    await use(bde)
-    await bde.app.close()
+  fleet: async ({}, use) => {
+    const fleet = await launchFLEET()
+    await use(fleet)
+    await fleet.app.close()
   }
 })
 

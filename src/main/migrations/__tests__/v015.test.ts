@@ -58,7 +58,7 @@ describe('migration v015', () => {
     let idx = 0
     for (const status of validStatuses) {
       db.prepare(
-        `INSERT INTO sprint_tasks (id, title, repo, status, priority) VALUES (?, ?, 'bde', ?, 1)`
+        `INSERT INTO sprint_tasks (id, title, repo, status, priority) VALUES (?, ?, 'fleet', ?, 1)`
       ).run(`task-${idx++}`, `Task for ${status}`, status)
     }
 

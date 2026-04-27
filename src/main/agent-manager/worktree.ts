@@ -380,7 +380,7 @@ export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> 
 }
 
 /**
- * Matches the BDE task ID format: a 32-character lowercase hex string
+ * Matches the FLEET task ID format: a 32-character lowercase hex string
  * produced by SQLite's `lower(hex(randomblob(16)))` — no dashes. The
  * pruner uses this to filter out anything that doesn't look like a task
  * ID, so it never deletes human-created worktrees, source directories, etc.
@@ -389,7 +389,7 @@ const TASK_ID_HEX_PATTERN = /^[0-9a-f]{32}$/i
 
 /**
  * Returns true if the given path looks like a real git worktree:
- * it must contain a `.git` entry (file or directory). BDE-created
+ * it must contain a `.git` entry (file or directory). FLEET-created
  * worktrees always have a `.git` *file* (added by `git worktree add`),
  * so this rules out plain non-worktree directories that just happen
  * to have a UUID-shaped name.
@@ -451,7 +451,7 @@ async function enumerateRepoCandidates(repoDir: string, log: Logger): Promise<Pr
  * Returns true only when it is safe to delete `candidate.worktreePath`.
  *
  * Safety gates, in order:
- *  1. Directory name must look like a BDE task id (BDE hex task ID-shaped —
+ *  1. Directory name must look like a FLEET task id (FLEET hex task ID-shaped —
  *     32-char hex, no dashes). Users may point `worktreeBase` at a directory
  *     they share with human worktrees, so we must not delete anything that
  *     doesn't look like our own.
@@ -468,7 +468,7 @@ function isPrunableCandidate(
   if (!TASK_ID_HEX_PATTERN.test(candidate.taskId)) return false
   if (!looksLikeWorktree(candidate.worktreePath)) {
     log.warn(
-      `[worktree] Skipping prune of ${candidate.worktreePath}: BDE task ID-named but not a git worktree (no .git entry)`
+      `[worktree] Skipping prune of ${candidate.worktreePath}: FLEET task ID-named but not a git worktree (no .git entry)`
     )
     return false
   }

@@ -4,7 +4,7 @@
 import { readdir, stat, unlink, open } from 'fs/promises'
 import { join } from 'path'
 import { validateLogPath } from './fs'
-import { BDE_AGENT_TMP_DIR as LOG_DIR } from './paths'
+import { FLEET_AGENT_TMP_DIR as LOG_DIR } from './paths'
 
 export const LOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 

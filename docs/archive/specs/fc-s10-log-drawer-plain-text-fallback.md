@@ -4,7 +4,7 @@
 
 ## Problem
 
-Task runner agents are spawned with `--print` (plain text output). BDE's own "Spawn Agent" button uses `--output-format stream-json --verbose`, which produces newline-delimited JSON that `parseStreamJson` + `ChatThread` can render.
+Task runner agents are spawned with `--print` (plain text output). FLEET's own "Spawn Agent" button uses `--output-format stream-json --verbose`, which produces newline-delimited JSON that `parseStreamJson` + `ChatThread` can render.
 
 When a task runner agent's log is opened in `LogDrawer`, `parseStreamJson` finds zero parseable JSON events → `chatItemsToMessages([])` returns `[]` → `ChatThread` renders nothing. The drawer opens but shows a completely blank content area, even while the agent is actively writing output.
 
@@ -27,7 +27,7 @@ to:
 '--verbose',
 ```
 
-This makes all task runner output compatible with the existing `parseStreamJson` + `ChatThread` pipeline. No changes needed in BDE itself. Log files will be stream-json just like native agents.
+This makes all task runner output compatible with the existing `parseStreamJson` + `ChatThread` pipeline. No changes needed in FLEET itself. Log files will be stream-json just like native agents.
 
 **Tradeoff:** Slightly larger log files (JSON wrapping). Still perfectly readable in Sessions view.
 
@@ -66,9 +66,9 @@ Add CSS for `.log-drawer__plain-text`:
 ```css
 .log-drawer__plain-text {
   padding: 12px 16px;
-  font-family: var(--bde-font-mono);
+  font-family: var(--fleet-font-mono);
   font-size: 12px;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   white-space: pre-wrap;
   word-break: break-word;
   overflow-y: auto;
@@ -78,7 +78,7 @@ Add CSS for `.log-drawer__plain-text`:
 
 .log-drawer__empty {
   padding: 16px;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   font-size: 12px;
   text-align: center;
 }
@@ -105,7 +105,7 @@ Add CSS for `.log-drawer__plain-text`:
 - If the log is stream-json format, `ChatThread` renders it (rich, existing behaviour)
 - If the log is plain text, a `<pre>` block renders it with mono font
 - "Agent is starting up..." placeholder shown when log exists but is still empty (< 3s grace)
-- No regression on BDE-native-spawned agents (still render via ChatThread)
+- No regression on FLEET-native-spawned agents (still render via ChatThread)
 
 ## Out of Scope
 

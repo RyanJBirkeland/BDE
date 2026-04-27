@@ -100,8 +100,8 @@ When the user clicks `Save Changes` or `Queue Now` (existing `WorkbenchActions`)
   height: 800px;
   max-width: 95vw;
   max-height: 90vh;
-  background: var(--bde-surface-1);
-  border: 1px solid var(--bde-border);
+  background: var(--fleet-surface-1);
+  border: 1px solid var(--fleet-border);
   border-radius: 8px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
   display: flex;
@@ -114,7 +114,7 @@ When the user clicks `Save Changes` or `Queue Now` (existing `WorkbenchActions`)
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--bde-border);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
 }
 
@@ -125,7 +125,7 @@ When the user clicks `Save Changes` or `Queue Now` (existing `WorkbenchActions`)
 }
 ```
 
-Tokens: `--bde-surface-1`, `--bde-border` (existing). The neon theme will get a separate visual pass if/when we apply it; this change ships the structural modal first.
+Tokens: `--fleet-surface-1`, `--fleet-border` (existing). The neon theme will get a separate visual pass if/when we apply it; this change ships the structural modal first.
 
 ### Accessibility
 

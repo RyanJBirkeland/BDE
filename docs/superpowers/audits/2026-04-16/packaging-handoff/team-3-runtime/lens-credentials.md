@@ -1,7 +1,7 @@
 # Credential Portability Audit: Fresh Machine Startup
 
 **Audit Date:** 2026-04-16  
-**Scope:** Cold-start behavior on fresh Mac without prior BDE, gh auth, or claude login  
+**Scope:** Cold-start behavior on fresh Mac without prior FLEET, gh auth, or claude login  
 **Status:** Multiple critical and high-severity issues identified
 
 ---
@@ -9,7 +9,7 @@
 ## Execution Trace: Fresh Machine, First Launch
 
 1. **App starts** → `src/main/index.ts` at line 35: `ensureExtraPathsOnProcessEnv()` prepends homebrew/npm paths to `process.env.PATH`
-2. **DB init** → `src/main/index.ts` line 185: `initializeDatabase()` creates `~/.bde/` directory with `0o700` permissions (lines 12-22 in db.ts)
+2. **DB init** → `src/main/index.ts` line 185: `initializeDatabase()` creates `~/.fleet/` directory with `0o700` permissions (lines 12-22 in db.ts)
 3. **Agent manager configured** → `src/main/index.ts` line 236: `getSettingJson('agentManager.autoStart')` defaults to `true`
 4. **Agent manager starts immediately** → `src/main/index.ts` line 240-254: Creates AgentManager, calls `am.start()`
 5. **Drain loop enters precondition checks** → `src/main/agent-manager/drain-loop.ts` line 67-93: `validateDrainPreconditions()`
@@ -33,7 +33,7 @@
 ```typescript
 export async function checkOAuthToken(logger: Logger): Promise<boolean> {
   try {
-    const tokenPath = joinPath(home(), '.bde', 'oauth-token')
+    const tokenPath = joinPath(home(), '.fleet', 'oauth-token')
     const tokenStats = await stat(tokenPath).catch(() => null)
     if (tokenStats && tokenStats.size > MAX_TOKEN_FILE_BYTES) { ... }
     const token = (await readFile(tokenPath, 'utf-8')).trim()
@@ -99,7 +99,7 @@ if (!token || token.length < 20) {
 ```
 
 **Impact:** On a fresh machine:
-1. `~/.bde/oauth-token` does NOT exist (or is empty from old install)
+1. `~/.fleet/oauth-token` does NOT exist (or is empty from old install)
 2. `readFile()` throws → caught in outer catch, returns false immediately
 3. `refreshOAuthTokenFromKeychain()` is NEVER called on the fast path
 4. If keychain HAS credentials (e.g., from web login), the fallback is never triggered
@@ -127,7 +127,7 @@ export function getOAuthToken(): string | null {
   const now = Date.now()
   if (_tokenLoadedAt > 0 && now - _tokenLoadedAt < TOKEN_TTL_MS) return _cachedOAuthToken
   _tokenLoadedAt = now
-  const tokenPath = join(homedir(), '.bde', 'oauth-token')
+  const tokenPath = join(homedir(), '.fleet', 'oauth-token')
   try {
     if (existsSync(tokenPath)) {
       const lstats = lstatSync(tokenPath)
@@ -165,7 +165,7 @@ export function getOAuthToken(): string | null {
 ```
 
 **Impact:** 
-- When `~/.bde/oauth-token` is missing, this returns `null`
+- When `~/.fleet/oauth-token` is missing, this returns `null`
 - Callers in `src/main/agent-manager/spawn-sdk.ts` line 35-36 and `spawn-cli.ts` line 38-44 pass `token: null | ''` to the SDK/CLI
 - SDK receives `apiKey: undefined` (line 35: `...(token ? { apiKey: token } : {})`) → SDK uses default credential chain
 - CLI receives `ANTHROPIC_API_KEY=` (undefined env var, line 43: `env = { ...env, ANTHROPIC_API_KEY: token }`) → CLI fails with "No API key"
@@ -221,7 +221,7 @@ export async function handleSpawnFailure(
 **Impact:** When spawn fails due to missing token:
 1. Task status changes to `error` with notes: `"Spawn failed: <message from claude CLI>"`
 2. User sees task in error state in UI, but the error message is opaque (e.g., "Spawn failed: ENOENT: no such file or directory")
-3. User must check `~/.bde/agent-manager.log` to understand the real issue
+3. User must check `~/.fleet/agent-manager.log` to understand the real issue
 4. No guidance to run `claude login` is attached to the task or displayed in-app
 
 **Recommendation:**
@@ -234,7 +234,7 @@ export async function handleSpawnFailure(
 
 ---
 
-### F-t3-credentials-5: Missing .bde/oauth-token Directory Not Created by App
+### F-t3-credentials-5: Missing .fleet/oauth-token Directory Not Created by App
 **Severity:** Low  
 **Category:** token-missing  
 **Location:** `src/main/env-utils.ts:129` (read-only), `src/main/db.ts:12` (write-only)  
@@ -247,13 +247,13 @@ if (existsSync(tokenPath)) {
   _cachedOAuthToken = null
 }
 
-// db.ts — creates ~/.bde on startup if missing
+// db.ts — creates ~/.fleet on startup if missing
 mkdirSync(DB_DIR, { recursive: true, mode: 0o700 })
 ```
 
 **Impact:**
-- `~/.bde/` directory IS created by `getDb()` at startup (db.ts:12)
-- `~/.bde/oauth-token` is NOT pre-created by the app; it must exist from `claude login`
+- `~/.fleet/` directory IS created by `getDb()` at startup (db.ts:12)
+- `~/.fleet/oauth-token` is NOT pre-created by the app; it must exist from `claude login`
 - If user never runs `claude login`, the file is missing → token reads return null
 - This is correct behavior, but could be documented more clearly in error messages
 
@@ -375,7 +375,7 @@ safeHandle('settings:getEncryptionStatus', () => {
 - User may think they're compromised, but this is expected on first boot before Keychain unlock
 
 **Recommendation:**
-- Change reason text to: "System keychain locked. Unlock it (macOS: biometric or password) and restart BDE to enable credential encryption"
+- Change reason text to: "System keychain locked. Unlock it (macOS: biometric or password) and restart FLEET to enable credential encryption"
 - Add a "Retry" button in the banner that re-checks encryption status without restart
 - Document this in onboarding or in a "What is encryption?" help modal
 
@@ -608,7 +608,7 @@ try {
 | F-t3-credentials-2 | High | token-refresh | OAuth file missing bypasses keychain refresh | Explicitly catch ENOENT and attempt refresh | S |
 | F-t3-credentials-3 | Critical | token-missing | Token null at spawn → silent CLI failure | Check token upfront, throw with clear error | M |
 | F-t3-credentials-4 | High | error-surface | Spawn failure omits "run: claude login" guidance | Catch auth errors, append guidance to notes | M |
-| F-t3-credentials-5 | Low | token-missing | .bde/oauth-token not pre-created (correct design) | No fix; document in error messages | S |
+| F-t3-credentials-5 | Low | token-missing | .fleet/oauth-token not pre-created (correct design) | No fix; document in error messages | S |
 | F-t3-credentials-6 | Medium | cli-detection | No install guidance if Claude CLI not found | Add install command based on package manager | M |
 | F-t3-credentials-7 | Medium | token-missing | GitHub auth check doesn't show login command | Add "gh auth login" hint in onboarding | M |
 | F-t3-credentials-8 | Medium | safestorage | Keychain unavailable message unclear | Clarify "unlock keychain and restart" | M |
@@ -633,7 +633,7 @@ try {
 
 ## Testing Checklist
 
-- [ ] Fresh install: verify `~/.bde/oauth-token` missing → onboarding blocks at Auth step
+- [ ] Fresh install: verify `~/.fleet/oauth-token` missing → onboarding blocks at Auth step
 - [ ] Fresh install: run `claude login` → token file created → onboarding unblocks
 - [ ] Fresh install: verify `gh auth status` check shown in onboarding
 - [ ] Token expired: verify proactive refresh from keychain works (mocked in tests)

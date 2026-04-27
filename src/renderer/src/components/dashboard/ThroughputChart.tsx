@@ -96,7 +96,7 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
         position: 'relative',
         fontFamily: 'ui-monospace, Menlo, monospace',
         fontSize: 10,
-        color: 'var(--bde-text-muted)'
+        color: 'var(--fleet-text-muted)'
       }}
     >
       <div
@@ -109,13 +109,13 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
       >
         <div>
           <strong
-            style={{ color: 'var(--bde-text)', fontSize: isNarrow ? 24 : 20, fontWeight: 700 }}
+            style={{ color: 'var(--fleet-text)', fontSize: isNarrow ? 24 : 20, fontWeight: 700 }}
           >
             {lastHour}
           </strong>
-          <span style={{ color: 'var(--bde-text-dim)', marginLeft: 6 }}> last hour</span>
+          <span style={{ color: 'var(--fleet-text-dim)', marginLeft: 6 }}> last hour</span>
         </div>
-        <div style={{ color: 'var(--bde-text-dim)' }}>
+        <div style={{ color: 'var(--fleet-text-dim)' }}>
           {avg.toFixed(1)}/hr avg · peak {peak} @ {peakLabel}
         </div>
       </div>
@@ -126,8 +126,8 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--bde-text-dim)',
-            border: '1px dashed var(--bde-border)',
+            color: 'var(--fleet-text-dim)',
+            border: '1px dashed var(--fleet-border)',
             borderRadius: 4
           }}
         >
@@ -145,21 +145,21 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
             y1={PAD.top}
             x2={PAD.left}
             y2={height - PAD.bottom}
-            stroke="var(--bde-border)"
+            stroke="var(--fleet-border)"
           />
           <line
             x1={PAD.left}
             y1={height - PAD.bottom}
             x2={SVG_W - PAD.right}
             y2={height - PAD.bottom}
-            stroke="var(--bde-border)"
+            stroke="var(--fleet-border)"
           />
           <line
             x1={PAD.left}
             y1={y(yMax)}
             x2={SVG_W - PAD.right}
             y2={y(yMax)}
-            stroke="var(--bde-border)"
+            stroke="var(--fleet-border)"
             strokeDasharray="2 3"
           />
           <line
@@ -167,7 +167,7 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
             y1={y(yMax / 2)}
             x2={SVG_W - PAD.right}
             y2={y(yMax / 2)}
-            stroke="var(--bde-border)"
+            stroke="var(--fleet-border)"
             strokeDasharray="2 3"
           />
           <text
@@ -175,7 +175,7 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
             y={y(yMax) + 3}
             textAnchor="end"
             fontSize="9"
-            fill="var(--bde-text-dim)"
+            fill="var(--fleet-text-dim)"
             data-testid="y-max"
           >
             {yMax}
@@ -185,7 +185,7 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
             y={y(yMax / 2) + 3}
             textAnchor="end"
             fontSize="9"
-            fill="var(--bde-text-dim)"
+            fill="var(--fleet-text-dim)"
           >
             {yMax / 2}
           </text>
@@ -194,7 +194,7 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
             y={height - PAD.bottom + 3}
             textAnchor="end"
             fontSize="9"
-            fill="var(--bde-text-dim)"
+            fill="var(--fleet-text-dim)"
           >
             0
           </text>
@@ -242,7 +242,7 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
               y={height - 4}
               textAnchor="middle"
               fontSize="9"
-              fill="var(--bde-text-dim)"
+              fill="var(--fleet-text-dim)"
             >
               {i === 23 ? 'now' : slots[i]?.label}
             </text>
@@ -255,19 +255,19 @@ export function ThroughputChart({ data, height = 140 }: ThroughputChartProps): R
             position: 'absolute',
             top: 32,
             right: 8,
-            background: 'var(--bde-surface)',
-            border: '1px solid var(--bde-border)',
+            background: 'var(--fleet-surface)',
+            border: '1px solid var(--fleet-border)',
             padding: '4px 8px',
             borderRadius: 4,
             fontSize: 9,
-            color: 'var(--bde-text)'
+            color: 'var(--fleet-text)'
           }}
         >
           {slots[hoverIdx].label}: {slots[hoverIdx].successCount} done,{' '}
           {slots[hoverIdx].failedCount} failed
         </div>
       )}
-      <div style={{ marginTop: 6, fontSize: 9, color: 'var(--bde-text-dim)' }}>
+      <div style={{ marginTop: 6, fontSize: 9, color: 'var(--fleet-text-dim)' }}>
         <span style={{ color: neonVar('cyan', 'color') }}>▪ success</span>
         {'  '}
         <span style={{ color: neonVar('red', 'color') }}>▪ failed</span>

@@ -401,7 +401,7 @@ it('passes the synthesizer model to runSdkStreaming', async () => {
     {
       templateName: 'Feature',
       answers: { goal: 'ship it' },
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '/tmp/fake'
     } as any,
     () => {},
@@ -500,7 +500,7 @@ it('passes the copilot model from settings to runSdkStreaming', async () => {
   const handler = getChatStreamHandler()
   await handler({ sender: fakeSender }, {
     messages: [{ role: 'user', content: 'hi' }],
-    formContext: { title: 't', repo: 'bde', spec: '' }
+    formContext: { title: 't', repo: 'fleet', spec: '' }
   })
   await new Promise((r) => setTimeout(r, 0))
   const opts = runSdkStreamingCalls[0].options as SdkStreamingOptions

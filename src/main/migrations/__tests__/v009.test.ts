@@ -13,7 +13,7 @@ describe('migration v009', () => {
 
     db.prepare(
       `INSERT INTO sprint_tasks (id, title, repo, status, priority)
-       VALUES ('task-pre-v9', 'Legacy task', 'bde', 'queued', 1)`
+       VALUES ('task-pre-v9', 'Legacy task', 'fleet', 'queued', 1)`
     ).run()
 
     up(db)
@@ -34,7 +34,7 @@ describe('migration v009', () => {
     expect(() => {
       db.prepare(
         `INSERT INTO sprint_tasks (id, title, repo, status, priority)
-         VALUES ('task-error', 'Error task', 'bde', 'error', 1)`
+         VALUES ('task-error', 'Error task', 'fleet', 'error', 1)`
       ).run()
     }).not.toThrow()
 
@@ -52,7 +52,7 @@ describe('migration v009', () => {
     expect(() => {
       db.prepare(
         `INSERT INTO sprint_tasks (id, title, repo, status, priority)
-         VALUES ('task-bad', 'Bad status', 'bde', 'not-a-real-status', 1)`
+         VALUES ('task-bad', 'Bad status', 'fleet', 'not-a-real-status', 1)`
       ).run()
     }).toThrow()
     db.close()

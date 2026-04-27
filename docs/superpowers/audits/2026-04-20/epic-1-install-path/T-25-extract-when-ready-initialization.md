@@ -26,7 +26,7 @@ The `whenReady` body becomes:
 
 ```ts
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.bde')
+  electronApp.setAppUserModelId('com.fleet')
   const services = await initStartupServices()
   const review = createReviewWiring(services)
   const mcp = wireMcpServer(services)

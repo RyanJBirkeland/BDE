@@ -18,9 +18,9 @@ test.afterAll(() => {
 
 test.describe('IDE view — empty state', () => {
   test('Cmd+3 navigates to IDE and shows empty state with "Open Folder" prompt', async ({
-    bde
+    fleet
   }) => {
-    const { window } = bde
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+3')
@@ -29,8 +29,8 @@ test.describe('IDE view — empty state', () => {
     const emptyState = window.locator('.ide-empty-state')
     await expect(emptyState).toBeVisible({ timeout: 5_000 })
 
-    // Title says "BDE IDE"
-    await expect(window.locator('.ide-empty-state__title')).toContainText('BDE IDE')
+    // Title says "FLEET IDE"
+    await expect(window.locator('.ide-empty-state__title')).toContainText('FLEET IDE')
 
     // Subtitle prompts the user to open a folder
     await expect(window.locator('.ide-empty-state__subtitle')).toContainText('Open a folder')
@@ -43,8 +43,8 @@ test.describe('IDE view — empty state', () => {
 })
 
 test.describe('IDE view — file explorer', () => {
-  test('Opening a folder shows FileSidebar with repo files', async ({ bde }) => {
-    const { window } = bde
+  test('Opening a folder shows FileSidebar with repo files', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to IDE
@@ -84,8 +84,8 @@ test.describe('IDE view — file explorer', () => {
     })
   })
 
-  test('Clicking a file in the tree opens an editor tab with the file name', async ({ bde }) => {
-    const { window } = bde
+  test('Clicking a file in the tree opens an editor tab with the file name', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to IDE and set rootPath

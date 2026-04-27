@@ -2,22 +2,22 @@
 .playground-card {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
   width: 100%;
   max-width: 500px;
-  padding: var(--bde-space-3);
-  border-radius: var(--bde-radius-md);
+  padding: var(--fleet-space-3);
+  border-radius: var(--fleet-radius-md);
   cursor: pointer;
-  transition: var(--bde-transition-fast);
-  font-family: var(--bde-font-ui);
+  transition: var(--fleet-transition-fast);
+  font-family: var(--fleet-font-ui);
   text-align: left;
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-accent-border);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-accent-border);
 }
 
 .playground-card:hover {
-  border-color: var(--bde-accent);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent);
+  background: var(--fleet-accent-surface);
 }
 
 .playground-card__icon-box {
@@ -26,13 +26,13 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   flex-shrink: 0;
-  background: var(--bde-accent-surface);
+  background: var(--fleet-accent-surface);
 }
 
 .playground-card__icon {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .playground-card__content {
@@ -43,39 +43,39 @@
 .playground-card__filename-row {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   overflow: hidden;
 }
 
 .playground-card__filename {
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-sm);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-sm);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .playground-card__content-type-badge {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   flex-shrink: 0;
 }
 
 .playground-card__filesize {
-  font-size: var(--bde-size-xs);
-  margin-top: var(--bde-space-1);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-xs);
+  margin-top: var(--fleet-space-1);
+  color: var(--fleet-text-muted);
 }
 
 .playground-card__preview-hint {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
-  padding: var(--bde-space-1) var(--bde-space-2);
-  border-radius: var(--bde-radius-sm);
-  font-size: var(--bde-size-xs);
+  gap: var(--fleet-space-1);
+  padding: var(--fleet-space-1) var(--fleet-space-2);
+  border-radius: var(--fleet-radius-sm);
+  font-size: var(--fleet-size-xs);
   flex-shrink: 0;
-  background: var(--bde-border);
-  color: var(--bde-text-muted);
+  background: var(--fleet-border);
+  color: var(--fleet-text-muted);
 }

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('electron', () => ({
   app: {
     getPath: vi.fn(() => '/tmp'),
-    getName: vi.fn(() => 'BDE'),
+    getName: vi.fn(() => 'FLEET'),
     getVersion: vi.fn(() => '0.0.0')
   },
   BrowserWindow: { getAllWindows: vi.fn(() => []) },
@@ -157,12 +157,12 @@ describe('writeFileContent', () => {
 
     expect(mkdir).toHaveBeenCalledWith('/some/dir', { recursive: true })
     expect(writeFileFn).toHaveBeenCalledWith(
-      expect.stringMatching(/\/some\/dir\/file\.ts\.bde-tmp-\d+/),
+      expect.stringMatching(/\/some\/dir\/file\.ts\.fleet-tmp-\d+/),
       'hello',
       'utf-8'
     )
     expect(renameFn).toHaveBeenCalledWith(
-      expect.stringMatching(/\.bde-tmp-\d+/),
+      expect.stringMatching(/\.fleet-tmp-\d+/),
       '/some/dir/file.ts'
     )
   })
@@ -177,6 +177,6 @@ describe('writeFileContent', () => {
     rmFn.mockResolvedValue(undefined)
 
     await expect(writeFileContent('/some/dir/file.ts', 'hello')).rejects.toThrow('disk full')
-    expect(rmFn).toHaveBeenCalledWith(expect.stringMatching(/\.bde-tmp-\d+/), { force: true })
+    expect(rmFn).toHaveBeenCalledWith(expect.stringMatching(/\.fleet-tmp-\d+/), { force: true })
   })
 })

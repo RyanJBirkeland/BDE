@@ -24,7 +24,7 @@ export interface TokenReadResult {
 }
 
 export function tokenFilePath(): string {
-  return join(homedir(), '.bde', 'mcp-token')
+  return join(homedir(), '.fleet', 'mcp-token')
 }
 
 function isWellFormedToken(value: string): boolean {

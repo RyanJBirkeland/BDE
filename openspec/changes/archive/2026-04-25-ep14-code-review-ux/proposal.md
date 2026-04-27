@@ -6,7 +6,7 @@ The Code Review Station has several dead-end states with no in-UI resolution pat
 
 - **Conflict resolution path**: when a branch has conflicts, show an "Open in IDE" link and optionally an "Auto-resolve with Agent" button that spawns a revision
 - **Connect GitHub CTA**: when Ship It is disabled due to unconfigured GitHub, show an inline "Connect GitHub" button that navigates to Settings → Connections
-- **Mark Shipped Outside BDE**: first-class action alongside Merge Locally / Create PR — marks task `done` without requiring a local merge or PR
+- **Mark Shipped Outside FLEET**: first-class action alongside Merge Locally / Create PR — marks task `done` without requiring a local merge or PR
 - **Revision cap + rollup**: after N revision requests (configurable, default 5), disable Request Revision and show a rollup of prior feedback
 - **Discard permanence messaging**: confirmation modal with explicit "this cannot be undone" language
 - **Empty Code Review CTA**: when queue is empty, show "No tasks awaiting review" with a link to the Pipeline
@@ -15,7 +15,7 @@ The Code Review Station has several dead-end states with no in-UI resolution pat
 
 ### New Capabilities
 
-- `code-review-recovery-affordances`: Connect GitHub CTA, Mark Shipped Outside BDE, conflict path, revision cap, discard confirmation
+- `code-review-recovery-affordances`: Connect GitHub CTA, Mark Shipped Outside FLEET, conflict path, revision cap, discard confirmation
 
 ### Modified Capabilities
 
@@ -26,5 +26,5 @@ The Code Review Station has several dead-end states with no in-UI resolution pat
 - `src/renderer/src/components/code-review/ReviewActions.tsx` — new actions, revision cap, discard modal
 - `src/renderer/src/components/code-review/ReviewDetail.tsx` — conflict state rendering, empty state
 - `src/renderer/src/views/CodeReviewView.tsx` — empty state CTA
-- `src/main/handlers/review-handlers.ts` (or equivalent) — `review:markShippedOutsideBde` IPC
+- `src/main/handlers/review-handlers.ts` (or equivalent) — `review:markShippedOutsideFleet` IPC
 - `src/shared/ipc-channels/` — new channel

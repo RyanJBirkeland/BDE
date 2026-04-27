@@ -17,9 +17,9 @@ vi.mock('../../broadcast', () => ({
 }))
 
 vi.mock('../../paths', () => ({
-  BDE_DIR: '/tmp/bde-lifecycle-test',
-  BDE_DB_PATH: '/tmp/bde-lifecycle-test/bde.db',
-  BDE_TASK_MEMORY_DIR: '/tmp/bde-lifecycle-test/memory/tasks',
+  FLEET_DIR: '/tmp/fleet-lifecycle-test',
+  FLEET_DB_PATH: '/tmp/fleet-lifecycle-test/fleet.db',
+  FLEET_TASK_MEMORY_DIR: '/tmp/fleet-lifecycle-test/memory/tasks',
   getRepoPaths: vi.fn().mockReturnValue({}),
   getConfiguredRepos: vi.fn().mockReturnValue([])
 }))
@@ -61,7 +61,7 @@ describe('task lifecycle integration — real in-memory SQLite', () => {
     const task = await createTask(
       {
         title: 'Lifecycle test',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued',
         priority: 0,
         playground_enabled: false

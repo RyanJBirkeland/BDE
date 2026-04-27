@@ -18,7 +18,7 @@ const mockGetWorktreeBase = vi.fn()
 
 vi.mock('../../paths', () => ({
   getRepoPaths: (...args: unknown[]) => mockGetRepoPaths(...args),
-  ADHOC_WORKTREE_BASE: '/home/user/.bde/worktrees-adhoc'
+  ADHOC_WORKTREE_BASE: '/home/user/.fleet/worktrees-adhoc'
 }))
 vi.mock('../../lib/review-paths', () => ({
   getWorktreeBase: (...args: unknown[]) => mockGetWorktreeBase(...args)
@@ -30,27 +30,27 @@ describe('validateTerminalCwd', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetRepoPaths.mockReturnValue({
-      bde: '/home/user/Projects/bde',
+      fleet: '/home/user/Projects/fleet',
       other: '/home/user/Projects/other'
     })
-    mockGetWorktreeBase.mockReturnValue('/home/user/.bde/worktrees')
+    mockGetWorktreeBase.mockReturnValue('/home/user/.fleet/worktrees')
   })
 
   it('accepts cwd exactly matching a configured repo localPath', () => {
-    expect(() => validateTerminalCwd('/home/user/Projects/bde')).not.toThrow()
+    expect(() => validateTerminalCwd('/home/user/Projects/fleet')).not.toThrow()
   })
 
   it('accepts cwd inside a configured repo localPath', () => {
-    expect(() => validateTerminalCwd('/home/user/Projects/bde/src/main')).not.toThrow()
+    expect(() => validateTerminalCwd('/home/user/Projects/fleet/src/main')).not.toThrow()
   })
 
   it('accepts cwd inside the pipeline worktree base', () => {
-    expect(() => validateTerminalCwd('/home/user/.bde/worktrees/some-task-id')).not.toThrow()
+    expect(() => validateTerminalCwd('/home/user/.fleet/worktrees/some-task-id')).not.toThrow()
   })
 
   it('accepts cwd inside the adhoc worktree base', () => {
     expect(() =>
-      validateTerminalCwd('/home/user/.bde/worktrees-adhoc/some-session')
+      validateTerminalCwd('/home/user/.fleet/worktrees-adhoc/some-session')
     ).not.toThrow()
   })
 
@@ -63,8 +63,8 @@ describe('validateTerminalCwd', () => {
   })
 
   it('rejects a repo prefix path that does not actually start with the repo root', () => {
-    // /home/user/Projects/bde-evil is NOT inside /home/user/Projects/bde
-    expect(() => validateTerminalCwd('/home/user/Projects/bde-evil')).toThrow(
+    // /home/user/Projects/fleet-evil is NOT inside /home/user/Projects/fleet
+    expect(() => validateTerminalCwd('/home/user/Projects/fleet-evil')).toThrow(
       'not inside an allowed directory'
     )
   })
@@ -76,7 +76,7 @@ describe('validateTerminalCwd', () => {
     } catch (e) {
       error = e as Error
     }
-    expect(error?.message).toContain('/home/user/Projects/bde')
-    expect(error?.message).toContain('/home/user/.bde/worktrees')
+    expect(error?.message).toContain('/home/user/Projects/fleet')
+    expect(error?.message).toContain('/home/user/.fleet/worktrees')
   })
 })

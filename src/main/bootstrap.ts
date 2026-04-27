@@ -4,7 +4,7 @@
 import { watch, existsSync, type FSWatcher } from 'fs'
 import { app, BrowserWindow, session } from 'electron'
 import { is } from '@electron-toolkit/utils'
-import { BDE_DB_PATH } from './paths'
+import { FLEET_DB_PATH } from './paths'
 import { getDb, backupDatabase } from './db'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { SprintPrPoller } from './sprint-pr-poller'
@@ -82,7 +82,7 @@ export function emitStartupWarnings(): void {
 }
 
 export function startDbWatcher(): () => void {
-  const dbPath = BDE_DB_PATH
+  const dbPath = FLEET_DB_PATH
   const walPath = dbPath + '-wal'
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -121,7 +121,7 @@ export function buildConnectSrc(): string {
  * immediately rather than waiting for the lazy migration in getSetting().
  *
  * If safeStorage is unavailable (headless CI, locked keychain), we log a warning and skip —
- * the values remain readable so BDE continues to function.
+ * the values remain readable so FLEET continues to function.
  */
 export function warnPlaintextSensitiveSettings(): void {
   if (!isEncryptionAvailable()) {
@@ -188,7 +188,7 @@ export function initializeDatabase(): void {
   // Warn about configured repos whose local paths don't exist on this machine
   validateRepoPaths()
 
-  // Ensure Claude Code has sensible default permissions for BDE agents
+  // Ensure Claude Code has sensible default permissions for FLEET agents
   import('./claude-settings-bootstrap')
     .then((m) => m.ensureClaudeSettings())
     .catch((err) => {

@@ -4,7 +4,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-dropdown);
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
 }
 
 .confirm-modal {
@@ -18,30 +18,30 @@
   max-width: min(440px, calc(100vw - 32px));
   max-height: calc(100vh - 64px);
   overflow-y: auto;
-  padding: var(--bde-space-5);
-  border-radius: var(--bde-radius-xl);
+  padding: var(--fleet-space-5);
+  border-radius: var(--fleet-radius-xl);
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 .confirm-modal__title {
-  font-size: var(--bde-size-lg);
+  font-size: var(--fleet-size-lg);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .confirm-modal__message {
-  font-size: var(--bde-size-md);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-md);
+  color: var(--fleet-text-muted);
   line-height: 1.5;
 }
 
 .confirm-modal__actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--bde-space-2);
-  margin-top: var(--bde-space-2);
+  gap: var(--fleet-space-2);
+  margin-top: var(--fleet-space-2);
 }
 
 /* PromptModal (similar to ConfirmModal, but with input field) */
@@ -50,7 +50,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-dropdown);
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
 }
 
 .prompt-modal {
@@ -64,56 +64,56 @@
   max-width: min(440px, calc(100vw - 32px));
   max-height: calc(100vh - 64px);
   overflow-y: auto;
-  padding: var(--bde-space-5);
-  border-radius: var(--bde-radius-xl);
+  padding: var(--fleet-space-5);
+  border-radius: var(--fleet-radius-xl);
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 .prompt-modal__title {
-  font-size: var(--bde-size-lg);
+  font-size: var(--fleet-size-lg);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .prompt-modal__message {
-  font-size: var(--bde-size-md);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-md);
+  color: var(--fleet-text-muted);
   line-height: 1.5;
 }
 
 .prompt-modal__input {
   width: 100%;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-bg-elevated);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  color: var(--bde-text);
-  font-family: var(--bde-font-ui);
-  font-size: var(--bde-size-md);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  background: var(--fleet-bg-elevated);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  color: var(--fleet-text);
+  font-family: var(--fleet-font-ui);
+  font-size: var(--fleet-size-md);
   outline: none;
   transition: border-color 0.15s ease;
 }
 
 .prompt-modal__input:focus-visible {
-  border-color: var(--bde-accent);
+  border-color: var(--fleet-accent);
 }
 
 .prompt-modal__input:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .prompt-modal__textarea {
   width: 100%;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-bg-elevated);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  color: var(--bde-text);
-  font-family: var(--bde-font-ui);
-  font-size: var(--bde-size-md);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  background: var(--fleet-bg-elevated);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  color: var(--fleet-text);
+  font-family: var(--fleet-font-ui);
+  font-size: var(--fleet-size-md);
   line-height: 1.5;
   outline: none;
   transition: border-color 0.15s ease;
@@ -122,23 +122,23 @@
 }
 
 .prompt-modal__textarea:focus-visible {
-  border-color: var(--bde-accent);
+  border-color: var(--fleet-accent);
 }
 
 .prompt-modal__textarea:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .prompt-modal__hint {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
   font-style: italic;
 }
 
 .prompt-modal__actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--bde-space-2);
-  margin-top: var(--bde-space-2);
+  gap: var(--fleet-space-2);
+  margin-top: var(--fleet-space-2);
 }

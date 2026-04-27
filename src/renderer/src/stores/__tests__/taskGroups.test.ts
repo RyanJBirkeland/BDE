@@ -31,7 +31,7 @@ const makeGroup = (id: string, overrides: Partial<TaskGroup> = {}): TaskGroup =>
 const makeTask = (id: string, overrides: Partial<SprintTask> = {}): SprintTask => ({
   id,
   title: `Task ${id}`,
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 1,
   status: 'backlog',
@@ -396,7 +396,7 @@ describe('taskGroups store', () => {
         ]
       }
 
-      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'bde')
+      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'fleet')
 
       expect(result).toEqual(newGroup)
       expect(window.api.groups.create).toHaveBeenCalledWith({
@@ -421,7 +421,7 @@ describe('taskGroups store', () => {
         tasks: []
       }
 
-      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'bde')
+      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'fleet')
 
       expect(result).toBeNull()
       expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('create failed'))
@@ -450,7 +450,7 @@ describe('taskGroups store', () => {
         ]
       }
 
-      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'bde')
+      const result = await useTaskGroups.getState().createGroupFromTemplate(template, 'fleet')
 
       expect(result).toEqual(newGroup)
       // Second task should still be created

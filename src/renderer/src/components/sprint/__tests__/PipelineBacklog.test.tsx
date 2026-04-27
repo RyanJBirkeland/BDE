@@ -9,7 +9,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
     id: 'task-1',
     title: 'Test Task',
     prompt: '',
-    repo: 'bde',
+    repo: 'fleet',
     status: 'backlog',
     priority: 3,
     depends_on: [],

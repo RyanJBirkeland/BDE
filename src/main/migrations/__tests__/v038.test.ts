@@ -117,7 +117,7 @@ function buildFullySeededRow(
     needs_review: 1,
     max_runtime_ms: 3_600_000,
     spec_type: 'feature',
-    worktree_path: '/tmp/worktrees/bde/task-seed',
+    worktree_path: '/tmp/worktrees/fleet/task-seed',
     session_id: 'sess-abc-123',
     next_eligible_at: '2026-02-03T10:00:00.000Z',
     model: 'claude-sonnet-4-5',
@@ -172,10 +172,10 @@ describe('migration v038', () => {
     const db = new Database(':memory:')
     applyMigrationsUpTo(db, 37)
 
-    const uppercaseRow = buildFullySeededRow({ id: 'task-uppercase', repo: 'BDE' })
+    const uppercaseRow = buildFullySeededRow({ id: 'task-uppercase', repo: 'FLEET' })
     const titleCaseRow = buildFullySeededRow({
       id: 'task-titlecase',
-      repo: 'Bde',
+      repo: 'Fleet',
       status: 'queued',
       claimed_by: null,
       started_at: null,
@@ -194,7 +194,7 @@ describe('migration v038', () => {
     })
     const lowercaseRow = buildFullySeededRow({
       id: 'task-lowercase',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'done',
       completed_at: '2026-02-04T12:00:00.000Z',
       pr_status: 'merged'
@@ -205,10 +205,10 @@ describe('migration v038', () => {
 
     up(db)
 
-    expect(selectSprintTaskById(db, 'task-uppercase').repo).toBe('bde')
-    expect(selectSprintTaskById(db, 'task-titlecase').repo).toBe('bde')
-    expect(selectSprintTaskById(db, 'task-mixed').repo).toBe('bde')
-    expect(selectSprintTaskById(db, 'task-lowercase').repo).toBe('bde')
+    expect(selectSprintTaskById(db, 'task-uppercase').repo).toBe('fleet')
+    expect(selectSprintTaskById(db, 'task-titlecase').repo).toBe('fleet')
+    expect(selectSprintTaskById(db, 'task-mixed').repo).toBe('fleet')
+    expect(selectSprintTaskById(db, 'task-lowercase').repo).toBe('fleet')
 
     for (const seed of seeds) {
       const row = selectSprintTaskById(db, seed.id as string)
@@ -243,7 +243,7 @@ describe('migration v038', () => {
     const seededUpdatedAt = '2026-02-03T09:15:00.000Z'
     const uppercaseRow = buildFullySeededRow({
       id: 'task-will-update',
-      repo: 'BDE',
+      repo: 'FLEET',
       updated_at: seededUpdatedAt
     })
     insertSprintTaskRow(db, uppercaseRow)
@@ -251,7 +251,7 @@ describe('migration v038', () => {
     up(db)
 
     const row = selectSprintTaskById(db, 'task-will-update')
-    expect(row.repo).toBe('bde')
+    expect(row.repo).toBe('fleet')
     expect(row.updated_at).not.toBe(seededUpdatedAt)
     expect(typeof row.updated_at).toBe('string')
     db.close()
@@ -261,7 +261,7 @@ describe('migration v038', () => {
     const db = new Database(':memory:')
     applyMigrationsUpTo(db, 37)
 
-    const rowA = buildFullySeededRow({ id: 'a', repo: 'bde' })
+    const rowA = buildFullySeededRow({ id: 'a', repo: 'fleet' })
     const rowB = buildFullySeededRow({ id: 'b', repo: 'other-repo' })
     insertSprintTaskRow(db, rowA)
     insertSprintTaskRow(db, rowB)
@@ -272,7 +272,7 @@ describe('migration v038', () => {
     expect(info.changes).toBe(0)
 
     expect(() => up(db)).not.toThrow()
-    expect(selectSprintTaskById(db, 'a').repo).toBe('bde')
+    expect(selectSprintTaskById(db, 'a').repo).toBe('fleet')
     expect(selectSprintTaskById(db, 'b').repo).toBe('other-repo')
     db.close()
   })

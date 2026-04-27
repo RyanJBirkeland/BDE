@@ -109,7 +109,7 @@ describe('parseNumstat', () => {
 
 describe('executeMergeStrategy (squash)', () => {
   const mockEnv = { PATH: '/usr/bin' }
-  const repoPath = '/repo/bde'
+  const repoPath = '/repo/fleet'
   const branch = 'agent/some-branch'
 
   beforeEach(() => {

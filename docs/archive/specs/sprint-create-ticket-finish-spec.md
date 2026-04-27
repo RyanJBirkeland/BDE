@@ -3,8 +3,8 @@
 > **Status: IMPLEMENTED (2026-03-16)**
 > Create ticket flow is functional end-to-end.
 > **Data layer note:** This spec originally referenced Supabase. The data layer is now local
-> SQLite (`~/.bde/bde.db`). All "Supabase enum" references should be read as SQLite CHECK constraints.
-> Repo values are stored as lowercase strings: `bde`, `feast`, `life-os`.
+> SQLite (`~/.fleet/fleet.db`). All "Supabase enum" references should be read as SQLite CHECK constraints.
+> Repo values are stored as lowercase strings: `fleet`, `feast`, `life-os`.
 
 **Date:** 2026-03-16
 **Branch:** feat/sprint-ticket-finish
@@ -16,13 +16,13 @@
 
 ### 1. Repo label vs enum mismatch
 
-NewTicketModal stores repo as display label (e.g. "BDE", "Feast", "Life OS") but sprint_tasks expects lowercase enum values (e.g. "bde", "feast", "life-os"). Creating a ticket will likely fail with a Supabase enum error.
+NewTicketModal stores repo as display label (e.g. "FLEET", "Feast", "Life OS") but sprint_tasks expects lowercase enum values (e.g. "fleet", "feast", "life-os"). Creating a ticket will likely fail with a Supabase enum error.
 
 **Fix:** Map display label → enum value before `window.api.sprint.create()`:
 
 ```typescript
 const REPO_LABEL_TO_ENUM: Record<string, string> = {
-  BDE: 'bde',
+  FLEET: 'fleet',
   Feast: 'feast',
   'Life OS': 'life-os'
 }
@@ -93,7 +93,7 @@ The spec says SpecDrawer should have a "→ Push to Sprint" button for backlog t
 
 ## Repo Enum Values (from Supabase schema)
 
-Check `task_repo` enum values — likely: `bde`, `feast`, `life-os`, `other`
+Check `task_repo` enum values — likely: `fleet`, `feast`, `life-os`, `other`
 Run this to confirm: `SELECT enum_range(NULL::task_repo);`
 
 ---
@@ -101,7 +101,7 @@ Run this to confirm: `SELECT enum_range(NULL::task_repo);`
 ## Success Criteria
 
 - [ ] Creating a ticket via "New Ticket" modal → appears in Backlog immediately
-- [ ] Repo selected as "BDE" → stores as `bde` in Supabase (no enum error)
+- [ ] Repo selected as "FLEET" → stores as `fleet` in Supabase (no enum error)
 - [ ] Ask Paul button with a title → replaces spec textarea with generated spec
 - [ ] "Save to Backlog" shows a toast confirmation
 - [ ] SpecDrawer "Push to Sprint" button works for backlog tasks

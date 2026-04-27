@@ -16,10 +16,10 @@ export function WelcomeStep({ onNext, onBack, isFirst }: StepProps): React.JSX.E
         <Zap size={48} />
       </div>
 
-      <h1 className="onboarding-step__title">Welcome to BDE</h1>
+      <h1 className="onboarding-step__title">Welcome to FLEET</h1>
 
       <p className="onboarding-step__description">
-        The Birkeland Development Environment is your autonomous AI-powered development assistant.
+        The Agentic Development Environment is your autonomous AI-powered development assistant.
         Let&apos;s get you set up in just a few steps.
       </p>
 

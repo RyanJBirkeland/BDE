@@ -17,7 +17,7 @@ vi.mock('framer-motion', () => ({
 const makeTask = (overrides: Partial<SprintTask> = {}): SprintTask => ({
   id: 'task-1',
   title: 'Test task',
-  repo: 'BDE',
+  repo: 'FLEET',
   prompt: null,
   priority: 1,
   status: 'queued',

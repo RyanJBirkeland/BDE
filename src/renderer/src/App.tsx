@@ -128,11 +128,11 @@ function App(): React.JSX.Element {
   useAppShortcuts({ paletteOpen, shortcutsOpen, setShortcutsOpen })
 
   useEffect(() => {
-    const raw = localStorage.getItem('bde:pending-first-task')
+    const raw = localStorage.getItem('fleet:pending-first-task')
     if (!raw) return
     try {
       const task = JSON.parse(raw) as { title: string; spec: string; repo: string; specType: string }
-      localStorage.removeItem('bde:pending-first-task')
+      localStorage.removeItem('fleet:pending-first-task')
       const wb = useTaskWorkbenchStore.getState()
       wb.setField('title', task.title)
       wb.setField('spec', task.spec)
@@ -140,7 +140,7 @@ function App(): React.JSX.Element {
       wb.setSpecType(task.specType as Parameters<typeof wb.setSpecType>[0])
       usePanelLayoutStore.getState().setView('planner')
     } catch {
-      localStorage.removeItem('bde:pending-first-task')
+      localStorage.removeItem('fleet:pending-first-task')
     }
   }, [])
 
@@ -197,7 +197,7 @@ function App(): React.JSX.Element {
   }, [crossDrop.active])
 
   useEffect(() => {
-    const title = 'BDE \u2014 ' + VIEW_LABELS[activeView]
+    const title = 'FLEET \u2014 ' + VIEW_LABELS[activeView]
     document.title = title
     window.api.window.setTitle(title)
   }, [activeView])
@@ -206,14 +206,14 @@ function App(): React.JSX.Element {
     const handler = (): void => {
       setFeatureGuideOpen(true)
     }
-    window.addEventListener('bde:open-feature-guide', handler)
-    return () => window.removeEventListener('bde:open-feature-guide', handler)
+    window.addEventListener('fleet:open-feature-guide', handler)
+    return () => window.removeEventListener('fleet:open-feature-guide', handler)
   }, [])
 
   // Save timestamp on window close for morning briefing detection
   useEffect(() => {
     const handleBeforeUnload = (): void => {
-      localStorage.setItem('bde:last-window-close', Date.now().toString())
+      localStorage.setItem('fleet:last-window-close', Date.now().toString())
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
@@ -244,8 +244,8 @@ function App(): React.JSX.Element {
             position: 'absolute',
             top: '-40px',
             left: 0,
-            background: 'var(--bde-text)',
-            color: 'var(--bde-bg)',
+            background: 'var(--fleet-text)',
+            color: 'var(--fleet-bg)',
             padding: '8px 16px',
             zIndex: 9999,
             transition: 'top 0.2s'

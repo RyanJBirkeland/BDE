@@ -27,7 +27,7 @@ vi.mock('../settings', () => ({
   getSettingJson: vi.fn((key: string) => {
     if (key === 'repos') {
       return [
-        { name: 'BDE', localPath: '/Users/ryan/projects/BDE' },
+        { name: 'FLEET', localPath: '/Users/ryan/projects/FLEET' },
         { name: 'life-os', localPath: '/Users/ryan/projects/life-os' },
         { name: 'feast', localPath: '/Users/ryan/projects/feast' }
       ]
@@ -303,7 +303,7 @@ describe('git.ts', () => {
   describe('getRepoPaths', () => {
     it('returns repo paths keyed by lowercase name from settings', () => {
       const paths = getRepoPaths()
-      expect(paths).toHaveProperty('bde')
+      expect(paths).toHaveProperty('fleet')
       expect(paths).toHaveProperty('life-os')
       expect(paths).toHaveProperty('feast')
     })
@@ -318,8 +318,8 @@ describe('git.ts', () => {
     })
 
     it('handles RBTECHBOT fork URLs', () => {
-      const result = parsePrUrl('https://github.com/RyanJBirkeland/BDE/pull/163')
-      expect(result).toEqual({ owner: 'RyanJBirkeland', repo: 'BDE', number: 163 })
+      const result = parsePrUrl('https://github.com/RyanJBirkeland/FLEET/pull/163')
+      expect(result).toEqual({ owner: 'RyanJBirkeland', repo: 'FLEET', number: 163 })
     })
 
     it('returns null for non-PR GitHub URLs', () => {

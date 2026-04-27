@@ -130,7 +130,7 @@ export function repoBadgeVariant(
 export function repoColor(repoName: string, repos: RepoOption[]): string {
   return (
     repos.find((r) => r.label.toLowerCase() === repoName.toLowerCase())?.color ??
-    'var(--bde-text-dim)'
+    'var(--fleet-text-dim)'
   )
 }
 

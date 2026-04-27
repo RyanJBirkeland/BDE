@@ -1,6 +1,6 @@
 ## Context
 
-BDE's main-process log at `~/.bde/bde.log` is the primary debugging tool for operators. Three observable failure modes currently emit no actionable log context:
+FLEET's main-process log at `~/.fleet/fleet.log` is the primary debugging tool for operators. Three observable failure modes currently emit no actionable log context:
 
 1. **SQLite retry contention** — `withRetryAsync` retries silently up to 5 times with exponential backoff. A query that takes 5 retries at ~1s each looks identical in the log to one that succeeds on the first attempt. Operators cannot distinguish a healthy system from one where WAL contention is degrading throughput.
 
@@ -52,7 +52,7 @@ All three are additive log-line enrichments. No behavior changes.
 
   → Mitigation: The task list includes updating `claimTask`'s `withRetryAsync` call to pass `getSprintQueriesLogger()` as the logger.
 
-- **`fields` parameter on the minimal logger interface**: The `warn(msg, fields?)` signature assumes callers pass structured fields as a second argument. BDE's `Logger` type accepts `(msg: string, ...args: unknown[])` (variadic). If the shapes diverge, TypeScript will reject the assignment.
+- **`fields` parameter on the minimal logger interface**: The `warn(msg, fields?)` signature assumes callers pass structured fields as a second argument. FLEET's `Logger` type accepts `(msg: string, ...args: unknown[])` (variadic). If the shapes diverge, TypeScript will reject the assignment.
 
   → Mitigation: Verify `Logger`'s `warn` signature accepts a single optional object as the second argument, or use `warn: (msg: string) => void` (no fields) if not. The proposal calls for `{ attempt, backoffMs }` in the message string, which can be interpolated directly without a structured fields object.
 

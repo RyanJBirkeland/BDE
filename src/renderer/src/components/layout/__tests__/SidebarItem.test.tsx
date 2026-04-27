@@ -109,7 +109,7 @@ describe('SidebarItem', () => {
 
     expect(mockDataTransfer.effectAllowed).toBe('move')
     expect(mockDataTransfer.setData).toHaveBeenCalledWith(
-      'application/bde-panel',
+      'application/fleet-panel',
       JSON.stringify({ viewKey: 'dashboard' })
     )
     expect(mockDataTransfer.setData).toHaveBeenCalledWith('text/plain', 'Dashboard')

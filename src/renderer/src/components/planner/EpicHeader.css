@@ -13,22 +13,22 @@
 }
 
 .epic-menu__item:hover {
-  background: var(--bde-accent-alpha);
+  background: var(--fleet-accent-alpha);
 }
 
 .epic-menu__item:focus {
-  outline: 1px solid var(--bde-accent);
+  outline: 1px solid var(--fleet-accent);
   outline-offset: -1px;
 }
 
 .epic-menu__item--default {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .epic-menu__item--success {
-  color: var(--bde-status-done);
+  color: var(--fleet-status-done);
 }
 
 .epic-menu__item--danger {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }

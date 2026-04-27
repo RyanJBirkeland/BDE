@@ -152,12 +152,12 @@ describe('sprintFilters store', () => {
   })
 
   it('setRepoFilter updates repoFilter', () => {
-    useSprintFilters.getState().setRepoFilter('bde')
-    expect(useSprintFilters.getState().repoFilter).toBe('bde')
+    useSprintFilters.getState().setRepoFilter('fleet')
+    expect(useSprintFilters.getState().repoFilter).toBe('fleet')
   })
 
   it('setRepoFilter can clear the filter', () => {
-    useSprintFilters.getState().setRepoFilter('bde')
+    useSprintFilters.getState().setRepoFilter('fleet')
     useSprintFilters.getState().setRepoFilter(null)
     expect(useSprintFilters.getState().repoFilter).toBeNull()
   })
@@ -197,7 +197,7 @@ describe('sprintFilters store', () => {
 
   it('clearAllFilters resets every filter to its default', () => {
     useSprintFilters.getState().setStatusFilter('in-progress')
-    useSprintFilters.getState().setRepoFilter('bde')
+    useSprintFilters.getState().setRepoFilter('fleet')
     useSprintFilters.getState().setTagFilter('urgent')
     useSprintFilters.getState().setSearchQuery('hello')
 

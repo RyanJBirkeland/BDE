@@ -51,7 +51,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Active task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'active',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -66,7 +66,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Review task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -84,7 +84,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Review task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -100,7 +100,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Review task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -118,7 +118,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Review task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -136,7 +136,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Review task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         spec: '## Spec',
         updated_at: '2026-04-01T00:00:00Z'
@@ -165,7 +165,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Review task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }
@@ -180,7 +180,7 @@ describe('ReviewActions', () => {
       {
         id: 't1',
         title: 'Review task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         updated_at: '2026-04-01T00:00:00Z'
       }

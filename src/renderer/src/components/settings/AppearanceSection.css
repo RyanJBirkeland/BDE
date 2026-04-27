@@ -3,13 +3,13 @@
 .settings-theme-buttons {
   display: flex;
   gap: 6px;
-  margin-top: var(--bde-space-1);
+  margin-top: var(--fleet-space-1);
 }
 
 .settings-colors {
   display: flex;
-  gap: var(--bde-space-2);
-  margin-top: var(--bde-space-1);
+  gap: var(--fleet-space-2);
+  margin-top: var(--fleet-space-1);
 }
 
 .settings-color {
@@ -28,6 +28,6 @@
 }
 
 .settings-color--active {
-  border-color: var(--bde-text);
+  border-color: var(--fleet-text);
   transform: scale(1.15);
 }

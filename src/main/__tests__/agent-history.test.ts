@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from
 vi.mock('electron', () => ({
   app: {
     getPath: vi.fn(() => '/tmp'),
-    getName: vi.fn(() => 'BDE'),
+    getName: vi.fn(() => 'FLEET'),
     getVersion: vi.fn(() => '0.0.0')
   },
   BrowserWindow: { getAllWindows: vi.fn(() => []) },
@@ -17,8 +17,8 @@ import { tmpdir } from 'os'
 import { vi } from 'vitest'
 import { nowIso } from '../../shared/time'
 
-const TEST_DIR = join(tmpdir(), `bde-agent-history-test-${process.pid}`)
-const TEST_DB_PATH = join(TEST_DIR, 'bde.db')
+const TEST_DIR = join(tmpdir(), `fleet-agent-history-test-${process.pid}`)
+const TEST_DB_PATH = join(TEST_DIR, 'fleet.db')
 
 // Mock db.ts to use test database
 vi.mock('../db', () => {
@@ -90,7 +90,7 @@ describe('agent-history (SQLite)', () => {
 
   beforeAll(() => {
     mkdirSync(TEST_DIR, { recursive: true })
-    mkdirSync(join(TEST_DIR, '.bde'), { recursive: true })
+    mkdirSync(join(TEST_DIR, '.fleet'), { recursive: true })
   })
 
   beforeEach(async () => {
@@ -116,14 +116,14 @@ describe('agent-history (SQLite)', () => {
       pid: 1234,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
-      repoPath: '/tmp/bde',
+      repo: 'fleet',
+      repoPath: '/tmp/fleet',
       task: 'fix bug',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -148,14 +148,14 @@ describe('agent-history (SQLite)', () => {
       pid: null,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'first',
       startedAt: '2026-03-16T09:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -166,14 +166,14 @@ describe('agent-history (SQLite)', () => {
       pid: null,
       bin: 'claude',
       model: 'opus',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'second',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'done',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -192,14 +192,14 @@ describe('agent-history (SQLite)', () => {
       pid: null,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'run',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -210,14 +210,14 @@ describe('agent-history (SQLite)', () => {
       pid: null,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'done',
       startedAt: '2026-03-16T09:00:00.000Z',
       finishedAt: '2026-03-16T09:30:00.000Z',
       exitCode: 0,
       status: 'done',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -235,14 +235,14 @@ describe('agent-history (SQLite)', () => {
       pid: 100,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'test',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -267,14 +267,14 @@ describe('agent-history (SQLite)', () => {
       pid: null,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'logging',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -294,14 +294,14 @@ describe('agent-history (SQLite)', () => {
       pid: null,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'reading',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -330,14 +330,14 @@ describe('agent-history (SQLite)', () => {
       pid: null,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'test',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -354,14 +354,14 @@ describe('agent-history (SQLite)', () => {
       pid: 9999,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'test',
       startedAt: '2026-03-16T10:00:00.000Z',
       finishedAt: null,
       exitCode: null,
       status: 'running',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -372,14 +372,14 @@ describe('agent-history (SQLite)', () => {
       pid: 8888,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
+      repo: 'fleet',
       repoPath: '',
       task: 'done',
       startedAt: '2026-03-16T09:00:00.000Z',
       finishedAt: '2026-03-16T09:30:00.000Z',
       exitCode: 0,
       status: 'done',
-      source: 'bde',
+      source: 'fleet',
       costUsd: null,
       tokensIn: null,
       tokensOut: null,
@@ -414,14 +414,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '',
         task: `task ${i}`,
         startedAt: `2026-03-${String(10 + i).padStart(2, '0')}T10:00:00.000Z`,
         finishedAt: null,
         exitCode: null,
         status: 'done',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -448,14 +448,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '',
         task: `task ${i}`,
         startedAt: `2026-03-${String(10 + i).padStart(2, '0')}T10:00:00.000Z`,
         finishedAt: null,
         exitCode: null,
         status: 'done',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -493,14 +493,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'opus',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp',
         task: 'test',
         startedAt: nowIso(),
         finishedAt: null,
         exitCode: null,
         status: 'running',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -518,14 +518,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'opus',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp',
         task: 'test',
         startedAt: nowIso(),
         finishedAt: null,
         exitCode: null,
         status: 'running',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -547,7 +547,7 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'opus',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp',
         task: 'help me',
         startedAt: nowIso(),
@@ -579,14 +579,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp',
         task: 'do thing',
         startedAt: nowIso(),
         finishedAt: null,
         exitCode: null,
         status: 'running',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -609,14 +609,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp',
         task: 'do thing',
         startedAt: nowIso(),
         finishedAt: null,
         exitCode: null,
         status: 'running',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -646,14 +646,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp',
         task: 'reg test',
         startedAt: nowIso(),
         finishedAt: null,
         exitCode: null,
         status: 'running',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -689,14 +689,14 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         model: 'sonnet',
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp',
         task: 'old',
         startedAt: oldStart,
         finishedAt: null,
         exitCode: null,
         status: 'running',
-        source: 'bde',
+        source: 'fleet',
         costUsd: null,
         tokensIn: null,
         tokensOut: null,
@@ -747,7 +747,7 @@ describe('agent-history (SQLite)', () => {
       const db = getDb()
       db.prepare(
         `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
-         VALUES (?, NULL, 'claude', 'broken', 'bde', '/tmp', 'sonnet', 'failed', '/tmp/log', ?, ?, NULL, 'bde')`
+         VALUES (?, NULL, 'claude', 'broken', 'fleet', '/tmp', 'sonnet', 'failed', '/tmp/log', ?, ?, NULL, 'fleet')`
       ).run('broken-ts-1', '2026-04-07T02:29:39.417Z', '2026-04-07 02:30:01')
 
       const fixed = agentHistory.backfillUtcTimestamps()
@@ -765,7 +765,7 @@ describe('agent-history (SQLite)', () => {
       const db = getDb()
       db.prepare(
         `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
-         VALUES (?, NULL, 'claude', 'already-fixed', 'bde', '/tmp', 'sonnet', 'done', '/tmp/log', ?, ?, NULL, 'bde')`
+         VALUES (?, NULL, 'claude', 'already-fixed', 'fleet', '/tmp', 'sonnet', 'done', '/tmp/log', ?, ?, NULL, 'fleet')`
       ).run('already-iso-1', '2026-04-07T02:29:39.417Z', '2026-04-07T02:30:01.000Z')
 
       const fixed = agentHistory.backfillUtcTimestamps()
@@ -782,7 +782,7 @@ describe('agent-history (SQLite)', () => {
       const db = getDb()
       db.prepare(
         `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
-         VALUES (?, NULL, 'claude', 'still-running', 'bde', '/tmp', 'sonnet', 'running', '/tmp/log', ?, NULL, NULL, 'bde')`
+         VALUES (?, NULL, 'claude', 'still-running', 'fleet', '/tmp', 'sonnet', 'running', '/tmp/log', ?, NULL, NULL, 'fleet')`
       ).run('null-ts-1', '2026-04-07T02:29:39.417Z')
 
       const fixed = agentHistory.backfillUtcTimestamps()
@@ -799,7 +799,7 @@ describe('agent-history (SQLite)', () => {
       const db = getDb()
       db.prepare(
         `INSERT INTO agent_runs (id, pid, bin, task, repo, repo_path, model, status, log_path, started_at, finished_at, exit_code, source)
-         VALUES (?, NULL, 'claude', 'broken', 'bde', '/tmp', 'sonnet', 'failed', '/tmp/log', ?, ?, NULL, 'bde')`
+         VALUES (?, NULL, 'claude', 'broken', 'fleet', '/tmp', 'sonnet', 'failed', '/tmp/log', ?, ?, NULL, 'fleet')`
       ).run('idempotent-1', '2026-04-07T02:29:39.417Z', '2026-04-07 02:30:01')
 
       expect(agentHistory.backfillUtcTimestamps()).toBe(1)
@@ -809,12 +809,12 @@ describe('agent-history (SQLite)', () => {
   })
 
   describe('migrateFromJson — isAgentMetaEntry guard', () => {
-    // migrateFromJson reads from AGENTS_INDEX which is TEST_DIR/.bde/agents.json
+    // migrateFromJson reads from AGENTS_INDEX which is TEST_DIR/.fleet/agents.json
     // (because the os mock redirects homedir() to TEST_DIR).
     // The count guard skips migration if agent_runs already has rows, so each
     // test uses a fresh in-memory DB (not the shared mocked one).
-    const bdeDir = join(TEST_DIR, '.bde')
-    const agentsIndexPath = join(bdeDir, 'agents.json')
+    const fleetDir = join(TEST_DIR, '.fleet')
+    const agentsIndexPath = join(fleetDir, 'agents.json')
 
     afterEach(() => {
       // Remove agents.json and its .bak sibling so tests don't interfere.
@@ -877,15 +877,15 @@ describe('agent-history (SQLite)', () => {
         pid: null,
         bin: 'claude',
         task: 'do work',
-        repo: 'bde',
-        repoPath: '/tmp/bde',
+        repo: 'fleet',
+        repoPath: '/tmp/fleet',
         model: 'sonnet',
         status: 'done',
         logPath: '/tmp/log',
         startedAt: '2026-04-01T10:00:00.000Z',
         finishedAt: '2026-04-01T10:30:00.000Z',
         exitCode: 0,
-        source: 'bde'
+        source: 'fleet'
       }
       const invalidEntry = { notAnAgent: true }
       writeFileSync(agentsIndexPath, JSON.stringify([validEntry, invalidEntry]), 'utf-8')

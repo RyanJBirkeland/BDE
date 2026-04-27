@@ -1,4 +1,4 @@
-# BDE Engineering Audit Report
+# FLEET Engineering Audit Report
 
 > **Snapshot: 2026-03-16 — PARTIALLY ADDRESSED (last refresh 2026-04-21). Several findings carry their own in-doc status tags; the T-series validator work, auth-guard token fallback, and repository-pattern refactor address further items. Re-audit items #2/#3/#4/#6/#7 before acting.**
 
@@ -22,7 +22,7 @@
 
 ### 1.1 Process Boundary Model
 
-BDE follows the standard Electron three-process model:
+FLEET follows the standard Electron three-process model:
 
 | Layer        | Path                   | Responsibility                                                              |
 | ------------ | ---------------------- | --------------------------------------------------------------------------- |

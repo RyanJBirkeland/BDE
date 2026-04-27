@@ -295,14 +295,14 @@ export function TaskDetailDrawer({
             className="task-drawer__failure"
             data-testid="task-drawer-failure"
             style={{
-              border: '1px solid var(--bde-danger-border)',
-              background: 'var(--bde-danger-surface)'
+              border: '1px solid var(--fleet-danger-border)',
+              background: 'var(--fleet-danger-surface)'
             }}
           >
             <h4
               className="task-drawer__failure-label"
               style={{
-                color: 'var(--bde-danger)'
+                color: 'var(--fleet-danger)'
               }}
             >
               {task.status === 'cancelled' ? 'Cancellation details' : 'Failure details'}
@@ -339,7 +339,7 @@ export function TaskDetailDrawer({
                 className="task-drawer__failure-notes"
                 data-testid="task-drawer-failure-notes"
                 style={{
-                  color: 'var(--bde-text, rgba(255,255,255,0.85))'
+                  color: 'var(--fleet-text, rgba(255,255,255,0.85))'
                 }}
               >
                 {task.notes}

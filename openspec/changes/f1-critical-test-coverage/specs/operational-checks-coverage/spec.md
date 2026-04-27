@@ -27,8 +27,8 @@ The test suite SHALL verify `validateRepoPath` returns `fail` when no path is co
 - **THEN** the result is `{ status: 'fail' }`
 
 #### Scenario: configured repo returns pass with path
-- **WHEN** `getRepoPath(repo)` returns `'/projects/bde'`
-- **THEN** the result is `{ status: 'pass', path: '/projects/bde' }`
+- **WHEN** `getRepoPath(repo)` returns `'/projects/fleet'`
+- **THEN** the result is `{ status: 'pass', path: '/projects/fleet' }`
 
 ### Requirement: validateGitCleanStatus covers all four branches including git-error silent-warn
 The test suite SHALL exercise every branch of `validateGitCleanStatus`, with explicit coverage of the error-catch path that silently degrades to `warn`.

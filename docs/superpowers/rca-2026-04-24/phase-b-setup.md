@@ -29,7 +29,7 @@ Full ID mapping: see [`phase_b_manifest.json`](./phase_b_manifest.json).
 
 ## Why this design (not the 3-arm I originally proposed)
 
-The 3-arm design (status quo / header-only / header+cap-raised) needs a temp patch to `turn-budget.ts` and a BDE restart to take effect. Restarting BDE while you're AFK would interrupt your environment. So this pass isolates **header-vs-no-header at the current 75-turn cap** — answers "is the heuristic too literal?" cleanly. If results show Arm B routinely bumps the 76-turn cap, Phase C (cap-raised arm) goes back on the table when you can authorize the restart.
+The 3-arm design (status quo / header-only / header+cap-raised) needs a temp patch to `turn-budget.ts` and a FLEET restart to take effect. Restarting FLEET while you're AFK would interrupt your environment. So this pass isolates **header-vs-no-header at the current 75-turn cap** — answers "is the heuristic too literal?" cleanly. If results show Arm B routinely bumps the 76-turn cap, Phase C (cap-raised arm) goes back on the table when you can authorize the restart.
 
 ## Measurement plan
 

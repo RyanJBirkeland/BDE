@@ -7,7 +7,7 @@
 Progressive-delay rate limit for consecutive 401s on the MCP server. The
 bearer token is 256-bit random so brute-force is infeasible, but a
 misconfigured client in a tight loop — or a probing attacker — can still
-spam `~/.bde/bde.log` and burn CPU on every rejection. This module tracks
+spam `~/.fleet/fleet.log` and burn CPU on every rejection. This module tracks
 failed auth attempts per remote address and returns a delay (0 ≤ N ≤
 5000 ms) the caller applies before writing the 401.
 

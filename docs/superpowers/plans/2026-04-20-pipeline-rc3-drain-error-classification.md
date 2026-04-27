@@ -39,7 +39,7 @@ describe('Environmental failures', () => {
 
   it('classifies "No repo path" as environmental', () => {
     expect(
-      classifyFailureReason('Repo "bde" is not configured in BDE settings')
+      classifyFailureReason('Repo "fleet" is not configured in FLEET settings')
     ).toBe('environmental')
   })
 
@@ -74,7 +74,7 @@ Add an `environmental` category to the existing enum/type if absent, then add pa
 const ENVIRONMENTAL_PATTERNS: RegExp[] = [
   /Main repo has uncommitted changes/i,
   /refusing to proceed/i,
-  /is not configured in BDE settings/i,
+  /is not configured in FLEET settings/i,
   /credential unavailable/i,
   /No Claude subscription token/i,
   /unable to access https?:\/\/[^ ]+/i,
@@ -629,7 +629,7 @@ Clean up:
 
 ```bash
 rm docs/tmp-smoke.md
-sqlite3 ~/.bde/bde.db "DELETE FROM sprint_tasks WHERE id='smoke-<whatever>'"
+sqlite3 ~/.fleet/fleet.db "DELETE FROM sprint_tasks WHERE id='smoke-<whatever>'"
 ```
 
 - [ ] **Step 3: No additional commit**

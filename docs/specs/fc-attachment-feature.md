@@ -16,7 +16,7 @@ Currently there's no way to share images, screenshots, or files with an agent in
 
 ## How Attachments Work Per Agent Type
 
-BDE has two agent types. Each needs different attachment handling:
+FLEET has two agent types. Each needs different attachment handling:
 
 ### Local agents (Claude Code CLI, spawned via `local-agents.ts`)
 

@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-modal-backdrop);
-  background: var(--bde-overlay, rgba(0, 0, 0, 0.55));
+  background: var(--fleet-overlay, rgba(0, 0, 0, 0.55));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,9 +14,9 @@
   inset: 0;
   z-index: var(--z-modal);
   margin: auto;
-  background: var(--bde-surface-1);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-xl, 8px);
+  background: var(--fleet-surface-1);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-xl, 8px);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
@@ -58,16 +58,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--bde-border);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
   gap: 16px;
 }
 
 .modal__title {
   margin: 0;
-  font-size: var(--bde-size-xl, 18px);
+  font-size: var(--fleet-size-xl, 18px);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -78,7 +78,7 @@
 .modal__close {
   background: none;
   border: none;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: pointer;
   padding: 6px;
   border-radius: 4px;
@@ -89,12 +89,12 @@
 }
 
 .modal__close:hover {
-  color: var(--bde-text);
-  background: var(--bde-surface-2);
+  color: var(--fleet-text);
+  background: var(--fleet-surface-2);
 }
 
 .modal__close:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -109,8 +109,8 @@
    typically host their own layout (TaskWorkbench manages its own padding). */
 .modal--sm .modal__body,
 .modal--md .modal__body {
-  padding: var(--bde-space-4, 16px) var(--bde-space-5, 20px) var(--bde-space-5, 20px);
-  gap: var(--bde-space-3, 12px);
+  padding: var(--fleet-space-4, 16px) var(--fleet-space-5, 20px) var(--fleet-space-5, 20px);
+  gap: var(--fleet-space-3, 12px);
 }
 
 /* Footer slot — flex row of action buttons aligned right. Apply this class to
@@ -118,6 +118,6 @@
 .modal__footer {
   display: flex;
   justify-content: flex-end;
-  gap: var(--bde-space-2, 8px);
-  margin-top: var(--bde-space-3, 12px);
+  gap: var(--fleet-space-2, 8px);
+  margin-top: var(--fleet-space-3, 12px);
 }

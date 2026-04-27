@@ -84,7 +84,7 @@ export function initializeAgentTracking(
     finishedAt: null,
     exitCode: null,
     status: 'running',
-    source: 'bde',
+    source: 'fleet',
     costUsd: null,
     tokensIn: null,
     tokensOut: null,

@@ -1,6 +1,6 @@
 /**
  * Agent history — persistent storage for agent metadata and logs.
- * Metadata stored in SQLite agent_runs table; log files stay on disk at ~/.bde/agent-logs/.
+ * Metadata stored in SQLite agent_runs table; log files stay on disk at ~/.fleet/agent-logs/.
  * DB queries are delegated to data/agent-queries.ts.
  */
 import { mkdir, writeFile, appendFile, open, rm, readdir, rename, stat } from 'fs/promises'
@@ -9,7 +9,7 @@ import { join } from 'path'
 import { randomUUID } from 'crypto'
 import type Database from 'better-sqlite3'
 import { getDb } from './db'
-import { BDE_AGENTS_INDEX as AGENTS_INDEX, BDE_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
+import { FLEET_AGENTS_INDEX as AGENTS_INDEX, FLEET_AGENT_LOGS_DIR as LOGS_DIR } from './paths'
 import { clearSprintTaskFk } from './data/sprint-maintenance-facade'
 import { getErrorMessage } from '../shared/errors'
 import {

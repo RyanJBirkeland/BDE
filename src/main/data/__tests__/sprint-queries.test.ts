@@ -69,7 +69,7 @@ function insertTask(overrides: Record<string, unknown> = {}) {
   const defaults: Record<string, unknown> = {
     title: 'Test task',
     prompt: 'Do the thing',
-    repo: 'bde',
+    repo: 'fleet',
     status: 'backlog',
     priority: 1
   }
@@ -117,17 +117,17 @@ describe('UPDATE_ALLOWLIST', () => {
 
 describe('createTask', () => {
   it('returns task with generated id', async () => {
-    const result = await createTask({ title: 'New task', repo: 'bde' })
+    const result = await createTask({ title: 'New task', repo: 'fleet' })
     expect(result).not.toBeNull()
     expect(result!.id).toBeTruthy()
     expect(typeof result!.id).toBe('string')
     expect(result!.id.length).toBeGreaterThan(0)
     expect(result!.title).toBe('New task')
-    expect(result!.repo).toBe('bde')
+    expect(result!.repo).toBe('fleet')
   })
 
   it('applies default values', async () => {
-    const result = await createTask({ title: 'Defaults', repo: 'bde' })!
+    const result = await createTask({ title: 'Defaults', repo: 'fleet' })!
     expect(result.status).toBe('backlog')
     expect(result.priority).toBe(0)
     expect(result.prompt).toBe('Defaults') // falls back to title
@@ -138,24 +138,24 @@ describe('createTask', () => {
   })
 
   it('uses spec as prompt fallback', async () => {
-    const result = await createTask({ title: 'T', repo: 'bde', spec: 'My spec' })!
+    const result = await createTask({ title: 'T', repo: 'fleet', spec: 'My spec' })!
     expect(result.prompt).toBe('My spec')
     expect(result.spec).toBe('My spec')
   })
 
   it('stores playground_enabled as boolean', async () => {
-    const result = await createTask({ title: 'T', repo: 'bde', playground_enabled: true })!
+    const result = await createTask({ title: 'T', repo: 'fleet', playground_enabled: true })!
     expect(result.playground_enabled).toBe(true)
   })
 
   it('serializes depends_on as JSON', async () => {
     const deps = [{ id: 'dep-1', type: 'hard' as const }]
-    const result = await createTask({ title: 'T', repo: 'bde', depends_on: deps })!
+    const result = await createTask({ title: 'T', repo: 'fleet', depends_on: deps })!
     expect(result.depends_on).toEqual(deps)
   })
 
   it('sets created_at and updated_at', async () => {
-    const result = await createTask({ title: 'T', repo: 'bde' })!
+    const result = await createTask({ title: 'T', repo: 'fleet' })!
     expect(result.created_at).toBeTruthy()
     expect(result.updated_at).toBeTruthy()
   })
@@ -168,7 +168,7 @@ describe('getTask', () => {
   })
 
   it('returns created task', async () => {
-    const created = await createTask({ title: 'Find me', repo: 'bde' })!
+    const created = await createTask({ title: 'Find me', repo: 'fleet' })!
     const found = getTask(created.id)
     expect(found).not.toBeNull()
     expect(found!.id).toBe(created.id)
@@ -220,7 +220,7 @@ describe('listTasks — SQL push-down (T-2)', () => {
     insertTask({
       id: 'a',
       title: 'Alpha widget',
-      repo: 'bde',
+      repo: 'fleet',
       tags: JSON.stringify(['foo']),
       group_id: 'epic-1',
       spec: 'details about alpha'
@@ -228,7 +228,7 @@ describe('listTasks — SQL push-down (T-2)', () => {
     insertTask({
       id: 'b',
       title: 'Beta panel',
-      repo: 'bde',
+      repo: 'fleet',
       tags: JSON.stringify(['foo', 'bar']),
       group_id: 'epic-2',
       spec: null
@@ -252,7 +252,7 @@ describe('listTasks — SQL push-down (T-2)', () => {
     insertTask({
       id: 'e',
       title: 'Epsilon task',
-      repo: 'bde',
+      repo: 'fleet',
       tags: JSON.stringify(['baz']),
       group_id: 'epic-2',
       spec: 'nothing special'
@@ -261,7 +261,7 @@ describe('listTasks — SQL push-down (T-2)', () => {
 
   it('filters by repo', async () => {
     seedFixture()
-    const tasks = listTasks({ repo: 'bde' })
+    const tasks = listTasks({ repo: 'fleet' })
     expect(tasks.map((t) => t.id).sort()).toEqual(['a', 'b', 'e'])
   })
 
@@ -303,7 +303,7 @@ describe('listTasks — SQL push-down (T-2)', () => {
 
   it('intersects multiple filters with AND', async () => {
     seedFixture()
-    const tasks = listTasks({ repo: 'bde', tag: 'bar' })
+    const tasks = listTasks({ repo: 'fleet', tag: 'bar' })
     expect(tasks.map((t) => t.id)).toEqual(['b'])
   })
 
@@ -424,7 +424,7 @@ describe('listTasksRecent', () => {
 
 describe('updateTask', () => {
   it('updates fields and returns updated task', async () => {
-    const created = await createTask({ title: 'Original', repo: 'bde' })!
+    const created = await createTask({ title: 'Original', repo: 'fleet' })!
     const updated = await updateTask(created.id, { title: 'Changed', priority: 5 })
     expect(updated).not.toBeNull()
     expect(updated!.title).toBe('Changed')
@@ -432,7 +432,7 @@ describe('updateTask', () => {
   })
 
   it('returns null when no allowed fields provided', async () => {
-    const created = await createTask({ title: 'T', repo: 'bde' })!
+    const created = await createTask({ title: 'T', repo: 'fleet' })!
     const result = await updateTask(created.id, { id: 'hacked', created_at: 'hacked' })
     expect(result).toBeNull()
   })
@@ -441,7 +441,7 @@ describe('updateTask', () => {
   // A misspelled field must be silently dropped (no write, no audit row)
   // rather than coerced onto the task via a permissive double cast.
   it('rejects typoed patch keys and never writes them to the task', async () => {
-    const created = await createTask({ title: 'Typo target', repo: 'bde', priority: 1 })!
+    const created = await createTask({ title: 'Typo target', repo: 'fleet', priority: 1 })!
     mockRecordTaskChanges.mockClear()
 
     // `titlee` is a typo for `title`; `statuss` is a typo for `status`.
@@ -458,7 +458,7 @@ describe('updateTask', () => {
   })
 
   it('applies valid fields and drops typoed keys when both are present', async () => {
-    const created = await createTask({ title: 'Mixed patch', repo: 'bde', priority: 1 })!
+    const created = await createTask({ title: 'Mixed patch', repo: 'fleet', priority: 1 })!
     mockRecordTaskChanges.mockClear()
 
     // `priority` is valid; `prioritee` is a typo that must be ignored.
@@ -480,14 +480,14 @@ describe('updateTask', () => {
   })
 
   it('sanitizes depends_on on update', async () => {
-    const created = await createTask({ title: 'T', repo: 'bde' })!
+    const created = await createTask({ title: 'T', repo: 'fleet' })!
     const deps = [{ id: 'dep-1', type: 'hard' }]
     const updated = await updateTask(created.id, { depends_on: deps })
     expect(updated!.depends_on).toEqual(deps)
   })
 
   it('records audit trail via recordTaskChanges', async () => {
-    const created = await createTask({ title: 'Audit me', repo: 'bde' })!
+    const created = await createTask({ title: 'Audit me', repo: 'fleet' })!
     await updateTask(created.id, { title: 'Audited' })
     expect(mockRecordTaskChanges).toHaveBeenCalledWith(
       created.id,
@@ -499,7 +499,7 @@ describe('updateTask', () => {
   })
 
   it('records the supplied caller attribution in the audit trail', async () => {
-    const created = await createTask({ title: 'Attr', repo: 'bde' })!
+    const created = await createTask({ title: 'Attr', repo: 'fleet' })!
     mockRecordTaskChanges.mockClear()
 
     await updateTask(created.id, { title: 'Attributed' }, { caller: 'mcp' })
@@ -510,7 +510,7 @@ describe('updateTask', () => {
   })
 
   it('falls back to "unknown" when no caller attribution is supplied', async () => {
-    const created = await createTask({ title: 'NoAttr', repo: 'bde' })!
+    const created = await createTask({ title: 'NoAttr', repo: 'fleet' })!
     mockRecordTaskChanges.mockClear()
 
     await updateTask(created.id, { title: 'Still no caller' })
@@ -522,7 +522,7 @@ describe('updateTask', () => {
 
   // no-op updates short-circuit to avoid write amplification
   it('skips SQL update and audit row when patch fields all match current values', async () => {
-    const created = await createTask({ title: 'No-op test', repo: 'bde', priority: 5 })!
+    const created = await createTask({ title: 'No-op test', repo: 'fleet', priority: 5 })!
     mockRecordTaskChanges.mockClear()
 
     // Patch with values identical to the current task — should be a no-op
@@ -535,7 +535,7 @@ describe('updateTask', () => {
   })
 
   it('records only the fields that actually changed when patch is partially redundant', async () => {
-    const created = await createTask({ title: 'Partial', repo: 'bde', priority: 1 })!
+    const created = await createTask({ title: 'Partial', repo: 'fleet', priority: 1 })!
     mockRecordTaskChanges.mockClear()
 
     // title unchanged, priority changes
@@ -550,7 +550,7 @@ describe('updateTask', () => {
   })
 
   it('serializes booleans as 0/1 for SQLite', async () => {
-    const created = await createTask({ title: 'T', repo: 'bde' })!
+    const created = await createTask({ title: 'T', repo: 'fleet' })!
     const updated = await updateTask(created.id, { playground_enabled: true, needs_review: true })
     expect(updated!.playground_enabled).toBe(true)
     expect(updated!.needs_review).toBe(true)
@@ -566,7 +566,7 @@ describe('updateTask', () => {
 
 describe('deleteTask', () => {
   it('removes the task', async () => {
-    const created = await createTask({ title: 'Delete me', repo: 'bde' })!
+    const created = await createTask({ title: 'Delete me', repo: 'fleet' })!
     deleteTask(created.id)
     const found = getTask(created.id)
     expect(found).toBeNull()
@@ -579,7 +579,7 @@ describe('deleteTask', () => {
 
 describe('claimTask', () => {
   it('atomically sets status to active', async () => {
-    const created = await createTask({ title: 'Claim me', repo: 'bde' })!
+    const created = await createTask({ title: 'Claim me', repo: 'fleet' })!
     updateTask(created.id, { status: 'queued' })
 
     const claimed = await claimTask(created.id, 'exec-1')
@@ -590,7 +590,7 @@ describe('claimTask', () => {
   })
 
   it('returns null if not queued', async () => {
-    const created = await createTask({ title: 'Not queued', repo: 'bde' })!
+    const created = await createTask({ title: 'Not queued', repo: 'fleet' })!
     // status is 'backlog' by default
     const result = await claimTask(created.id, 'exec-1')
     expect(result).toBeNull()
@@ -602,14 +602,14 @@ describe('claimTask', () => {
   })
 
   it('enforces WIP limit atomically when maxActive is provided', async () => {
-    const t1 = (await createTask({ title: 'Active 1', repo: 'bde' }))!
+    const t1 = (await createTask({ title: 'Active 1', repo: 'fleet' }))!
     await updateTask(t1.id, { status: 'queued' })
     await claimTask(t1.id, 'setup-exec')
-    const t2 = (await createTask({ title: 'Active 2', repo: 'bde' }))!
+    const t2 = (await createTask({ title: 'Active 2', repo: 'fleet' }))!
     await updateTask(t2.id, { status: 'queued' })
     await claimTask(t2.id, 'setup-exec')
 
-    const queued = (await createTask({ title: 'Should be blocked', repo: 'bde' }))!
+    const queued = (await createTask({ title: 'Should be blocked', repo: 'fleet' }))!
     await updateTask(queued.id, { status: 'queued' })
 
     // WIP limit of 2 — should reject
@@ -621,11 +621,11 @@ describe('claimTask', () => {
   })
 
   it('allows claim when active count is below maxActive', async () => {
-    const active = (await createTask({ title: 'Active', repo: 'bde' }))!
+    const active = (await createTask({ title: 'Active', repo: 'fleet' }))!
     await updateTask(active.id, { status: 'queued' })
     await claimTask(active.id, 'setup-exec')
 
-    const queued = (await createTask({ title: 'Claimable', repo: 'bde' }))!
+    const queued = (await createTask({ title: 'Claimable', repo: 'fleet' }))!
     await updateTask(queued.id, { status: 'queued' })
 
     // WIP limit of 2 — one active, should allow
@@ -640,7 +640,7 @@ describe('claimTask', () => {
   // predicate, both calls below would return non-null and the loser would
   // overwrite the winner's claimed_by — this test makes that regression loud.
   it('only one of two consecutive callers wins the claim', async () => {
-    const created = await createTask({ title: 'Race target', repo: 'bde' })!
+    const created = await createTask({ title: 'Race target', repo: 'fleet' })!
     updateTask(created.id, { status: 'queued' })
 
     const firstClaim = await claimTask(created.id, 'executor-winner')
@@ -663,7 +663,7 @@ describe('claimTask', () => {
 
 describe('releaseTask', () => {
   it('resets status to queued', async () => {
-    const created = await createTask({ title: 'Release me', repo: 'bde' })!
+    const created = await createTask({ title: 'Release me', repo: 'fleet' })!
     updateTask(created.id, { status: 'queued' })
     await claimTask(created.id, 'exec-1')
 
@@ -676,7 +676,7 @@ describe('releaseTask', () => {
   })
 
   it('returns null if claimed_by does not match', async () => {
-    const created = await createTask({ title: 'T', repo: 'bde' })!
+    const created = await createTask({ title: 'T', repo: 'fleet' })!
     updateTask(created.id, { status: 'queued' })
     await claimTask(created.id, 'exec-1')
 
@@ -685,7 +685,7 @@ describe('releaseTask', () => {
   })
 
   it('returns null if not active', async () => {
-    const created = await createTask({ title: 'T', repo: 'bde' })!
+    const created = await createTask({ title: 'T', repo: 'fleet' })!
     const result = await releaseTask(created.id, 'exec-1')
     expect(result).toBeNull()
   })
@@ -768,7 +768,7 @@ describe('boolean field coercion', () => {
 describe('depends_on serialization', () => {
   it('serialized as JSON string on write, deserialized on read', async () => {
     const deps = [{ id: 'dep-1', type: 'hard' as const }]
-    const created = await createTask({ title: 'T', repo: 'bde', depends_on: deps })!
+    const created = await createTask({ title: 'T', repo: 'fleet', depends_on: deps })!
 
     // Verify raw storage is JSON string
     const raw = db.prepare('SELECT depends_on FROM sprint_tasks WHERE id = ?').get(created.id) as {
@@ -783,7 +783,7 @@ describe('depends_on serialization', () => {
   })
 
   it('null depends_on stays null', async () => {
-    const created = await createTask({ title: 'T', repo: 'bde' })!
+    const created = await createTask({ title: 'T', repo: 'fleet' })!
     const task = getTask(created.id)!
     expect(task.depends_on).toBeNull()
   })
@@ -983,7 +983,7 @@ describe('pruneOldDiffSnapshots', () => {
   ): void {
     db.prepare(
       `INSERT INTO sprint_tasks (id, title, prompt, repo, status, priority, review_diff_snapshot, updated_at)
-       VALUES (?, 'T', '', 'bde', ?, 1, ?, ?)`
+       VALUES (?, 'T', '', 'fleet', ?, 1, ?, ?)`
     ).run(id, status, snapshot, updatedAt)
   }
 
@@ -1113,7 +1113,7 @@ describe('updateTask — transition enforcement', () => {
     const row = db
       .prepare(
         `INSERT INTO sprint_tasks (title, repo, prompt, status, priority)
-         VALUES ('Test', 'bde', 'prompt', ?, 0) RETURNING id`
+         VALUES ('Test', 'fleet', 'prompt', ?, 0) RETURNING id`
       )
       .get(status) as { id: string }
     return row.id
@@ -1143,7 +1143,7 @@ describe('createReviewTaskFromAdhoc', () => {
   it('creates a task in review status with the adhoc worktree metadata', async () => {
     const task = await createReviewTaskFromAdhoc({
       title: 'Promoted adhoc work',
-      repo: 'bde',
+      repo: 'fleet',
       spec: 'An adhoc agent wrote this',
       worktreePath: '/tmp/wt/adhoc-1',
       branch: 'agent/adhoc-1'
@@ -1158,7 +1158,7 @@ describe('createReviewTaskFromAdhoc', () => {
   it('stamps promoted_to_review_at with an ISO8601 timestamp', async () => {
     const task = await createReviewTaskFromAdhoc({
       title: 'Promoted adhoc work',
-      repo: 'bde',
+      repo: 'fleet',
       spec: 'An adhoc agent wrote this',
       worktreePath: '/tmp/wt/adhoc-2',
       branch: 'agent/adhoc-2'

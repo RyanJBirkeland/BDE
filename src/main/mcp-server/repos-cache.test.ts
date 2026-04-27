@@ -5,10 +5,10 @@ import type { RepoConfig } from '../paths'
 
 function sampleRepo(overrides: Partial<RepoConfig> = {}): RepoConfig {
   return {
-    name: 'bde',
-    localPath: '/tmp/bde',
+    name: 'fleet',
+    localPath: '/tmp/fleet',
     githubOwner: 'example',
-    githubRepo: 'bde',
+    githubRepo: 'fleet',
     color: '#00ff88',
     ...overrides
   }

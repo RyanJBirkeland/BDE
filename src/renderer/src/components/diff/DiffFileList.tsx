@@ -18,7 +18,7 @@ export function DiffFileList({
     <div className="diff-sidebar">
       <div className="diff-sidebar__header">
         <span className="diff-sidebar__title">Files</span>
-        <span className="diff-sidebar__count bde-count-badge">{files.length}</span>
+        <span className="diff-sidebar__count fleet-count-badge">{files.length}</span>
       </div>
       <div className="diff-sidebar__list">
         {files.length === 0 && <EmptyState message="No files changed. The diff is empty." />}

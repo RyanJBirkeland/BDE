@@ -87,8 +87,8 @@ const mockStoreState = {
   selectedFile: null,
   diffContent: '',
   commitMessage: '',
-  repoPaths: ['/repo/bde'],
-  activeRepo: '/repo/bde',
+  repoPaths: ['/repo/fleet'],
+  activeRepo: '/repo/fleet',
   branches: ['main', 'feat/test'],
   commitLoading: false,
   pushLoading: false,
@@ -382,10 +382,10 @@ describe('GitTreeView', () => {
         if (typeof selector === 'function') {
           return selector({
             ...mockStoreState,
-            repoPaths: ['/repo/bde', '/repo/other']
+            repoPaths: ['/repo/fleet', '/repo/other']
           } as any)
         }
-        return { ...mockStoreState, repoPaths: ['/repo/bde', '/repo/other'] } as any
+        return { ...mockStoreState, repoPaths: ['/repo/fleet', '/repo/other'] } as any
       })
 
       render(<GitTreeView />)
@@ -450,7 +450,7 @@ describe('GitTreeView', () => {
     it('calls fetchStatus on refresh button click', () => {
       render(<GitTreeView />)
       fireEvent.click(screen.getByLabelText('Refresh git status'))
-      expect(mockStoreState.fetchStatus).toHaveBeenCalledWith('/repo/bde')
+      expect(mockStoreState.fetchStatus).toHaveBeenCalledWith('/repo/fleet')
     })
 
     it('does not call fetchStatus when activeRepo is null', () => {
@@ -469,7 +469,7 @@ describe('GitTreeView', () => {
 
   describe('Repo change handler', () => {
     it('calls setActiveRepo when repo selector changes', () => {
-      const state = { ...mockStoreState, repoPaths: ['/repo/bde', '/repo/other'] }
+      const state = { ...mockStoreState, repoPaths: ['/repo/fleet', '/repo/other'] }
       vi.mocked(useGitTreeStore).mockImplementation((selector) => {
         if (typeof selector === 'function') return selector(state as any)
         return state as any
@@ -488,13 +488,13 @@ describe('GitTreeView', () => {
     it('calls commit on commit button click', () => {
       render(<GitTreeView />)
       fireEvent.click(screen.getByTestId('commit-btn'))
-      expect(mockStoreState.commit).toHaveBeenCalledWith('/repo/bde')
+      expect(mockStoreState.commit).toHaveBeenCalledWith('/repo/fleet')
     })
 
     it('calls push on push button click', () => {
       render(<GitTreeView />)
       fireEvent.click(screen.getByTestId('push-btn'))
-      expect(mockStoreState.push).toHaveBeenCalledWith('/repo/bde')
+      expect(mockStoreState.push).toHaveBeenCalledWith('/repo/fleet')
     })
 
     it('does not call commit when activeRepo is null', () => {
@@ -563,14 +563,14 @@ describe('GitTreeView', () => {
       renderWithError('Commit failed: conflict', 'commit')
       fireEvent.click(screen.getByLabelText('Retry failed operation'))
       expect(mockStoreState.clearError).toHaveBeenCalled()
-      expect(mockStoreState.commit).toHaveBeenCalledWith('/repo/bde')
+      expect(mockStoreState.commit).toHaveBeenCalledWith('/repo/fleet')
     })
 
     it('calls clearError and push on Retry when lastErrorOp is push', () => {
       renderWithError('Push failed: auth error', 'push')
       fireEvent.click(screen.getByLabelText('Retry failed operation'))
       expect(mockStoreState.clearError).toHaveBeenCalled()
-      expect(mockStoreState.push).toHaveBeenCalledWith('/repo/bde')
+      expect(mockStoreState.push).toHaveBeenCalledWith('/repo/fleet')
     })
 
     it('calls clearError when Dismiss button clicked', () => {

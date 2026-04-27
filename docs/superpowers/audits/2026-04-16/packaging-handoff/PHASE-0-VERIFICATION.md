@@ -55,7 +55,7 @@
       NSBluetoothAlwaysUsageDescription: null
       NSAudioCaptureUsageDescription: null
   ```
-  Or accept the default keys as harmless dead metadata (they're merely descriptions shown in TCC prompts — if BDE never triggers the underlying API, no prompt ever appears).
+  Or accept the default keys as harmless dead metadata (they're merely descriptions shown in TCC prompts — if FLEET never triggers the underlying API, no prompt ever appears).
 
 **Recommendation:** Low priority. Fold into T1.3 (same file) if done. Otherwise defer — there is no security or functional impact.
 

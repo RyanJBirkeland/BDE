@@ -55,7 +55,7 @@ export type KeychainPayload = z.infer<typeof KeychainPayloadSchema>
 export interface CredentialStore {
   readToken(): Promise<KeychainPayload | null>
   /**
-   * Reads the file-based OAuth token at `~/.bde/oauth-token`. Used as a
+   * Reads the file-based OAuth token at `~/.fleet/oauth-token`. Used as a
    * fallback when the Keychain lookup returns null — which happens for
    * unsigned/newly-installed bundles whose code identity isn't on the
    * keychain entry's ACL. The file is written by the agent manager's

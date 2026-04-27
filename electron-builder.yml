@@ -1,6 +1,6 @@
-appId: com.rbtechbot.bde
-productName: BDE
-copyright: Copyright © 2026 BDE
+appId: com.rbtechbot.fleet
+productName: FLEET
+copyright: Copyright © 2026 FLEET
 npmRebuild: true
 afterSign: scripts/after-sign.cjs
 directories:
@@ -23,11 +23,11 @@ mac:
   gatekeeperAssess: false
   icon: resources/icon.icns
 dmg:
-  title: 'BDE ${version}'
+  title: 'FLEET ${version}'
   contents:
     - x: 130
       y: 220
-      name: BDE.app
+      name: FLEET.app
     - x: 410
       y: 220
       type: link

@@ -13,7 +13,7 @@ const base: Omit<AgentMeta, 'id' | 'status' | 'startedAt' | 'finishedAt'> = {
   task: 'do stuff',
   exitCode: null,
   logPath: '/tmp/log',
-  source: 'bde',
+  source: 'fleet',
   costUsd: null,
   tokensIn: null,
   tokensOut: null,
@@ -178,7 +178,7 @@ describe('AgentList', () => {
     const agents = [
       makeAgent({
         task: 'Task A',
-        repo: 'BDE',
+        repo: 'FLEET',
         status: 'done',
         finishedAt: new Date(Date.now() - 3600_000).toISOString()
       }),
@@ -281,13 +281,13 @@ describe('AgentList', () => {
 
   it('renders 4 skeleton divs when loading and agents is empty', () => {
     const { container } = render(<AgentList {...defaultProps} loading={true} agents={[]} />)
-    const skeletons = container.querySelectorAll('.bde-skeleton')
+    const skeletons = container.querySelectorAll('.fleet-skeleton')
     expect(skeletons).toHaveLength(4)
   })
 
   it('does not render skeletons when loading is false', () => {
     const { container } = render(<AgentList {...defaultProps} loading={false} agents={[]} />)
-    const skeletons = container.querySelectorAll('.bde-skeleton')
+    const skeletons = container.querySelectorAll('.fleet-skeleton')
     expect(skeletons).toHaveLength(0)
   })
 
@@ -296,7 +296,7 @@ describe('AgentList', () => {
       makeAgent({ status: 'done', finishedAt: new Date(Date.now() - 3600_000).toISOString() })
     ]
     const { container } = render(<AgentList {...defaultProps} loading={true} agents={agents} />)
-    const skeletons = container.querySelectorAll('.bde-skeleton')
+    const skeletons = container.querySelectorAll('.fleet-skeleton')
     expect(skeletons).toHaveLength(0)
   })
 })

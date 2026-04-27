@@ -8,7 +8,7 @@ type TooltipProps = {
 
 export function Tooltip({ content, children, side = 'top' }: TooltipProps): React.JSX.Element {
   return (
-    <span className={`bde-tooltip bde-tooltip--${side}`} data-tooltip={content}>
+    <span className={`fleet-tooltip fleet-tooltip--${side}`} data-tooltip={content}>
       {children}
     </span>
   )

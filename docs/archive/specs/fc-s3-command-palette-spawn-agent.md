@@ -1,10 +1,10 @@
 # FC-S3: CommandPalette "Spawn Agent" command is broken
 
-> **Status: ABANDONED (verified 2026-04-21). SessionsView + SpawnModal + the `bde:spawn-agent` event concept no longer exist in the current architecture. Adhoc spawn lives in the Agents view directly.**
+> **Status: ABANDONED (verified 2026-04-21). SessionsView + SpawnModal + the `fleet:spawn-agent` event concept no longer exist in the current architecture. Adhoc spawn lives in the Agents view directly.**
 
 ## Problem Statement
 
-The "Spawn Agent" command in the CommandPalette (`src/renderer/src/components/layout/CommandPalette.tsx:99-110`) dispatches a `bde:open-spawn-modal` custom event after navigating to the Sessions view. However, no component in the entire codebase listens for this event. `SessionsView` controls the `spawnOpen` state via `useState` and only opens the modal through a local button click handler. The result: the command palette closes, the Sessions view appears, but the SpawnModal never opens.
+The "Spawn Agent" command in the CommandPalette (`src/renderer/src/components/layout/CommandPalette.tsx:99-110`) dispatches a `fleet:open-spawn-modal` custom event after navigating to the Sessions view. However, no component in the entire codebase listens for this event. `SessionsView` controls the `spawnOpen` state via `useState` and only opens the modal through a local button click handler. The result: the command palette closes, the Sessions view appears, but the SpawnModal never opens.
 
 ## Root Cause
 
@@ -14,7 +14,7 @@ The event dispatch was added to `CommandPalette` but the corresponding `addEvent
 
 | File                                      | Change                                                                                                    |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `src/renderer/src/views/SessionsView.tsx` | Add a `useEffect` that listens for the `bde:open-spawn-modal` custom event and sets `spawnOpen` to `true` |
+| `src/renderer/src/views/SessionsView.tsx` | Add a `useEffect` that listens for the `fleet:open-spawn-modal` custom event and sets `spawnOpen` to `true` |
 
 ## Implementation Notes
 
@@ -23,8 +23,8 @@ Add to `SessionsView.tsx`, near the existing `useEffect` blocks:
 ```typescript
 useEffect(() => {
   const handler = (): void => setSpawnOpen(true)
-  window.addEventListener('bde:open-spawn-modal', handler)
-  return () => window.removeEventListener('bde:open-spawn-modal', handler)
+  window.addEventListener('fleet:open-spawn-modal', handler)
+  return () => window.removeEventListener('fleet:open-spawn-modal', handler)
 }, [])
 ```
 
@@ -32,7 +32,7 @@ This is a 4-line fix. No changes needed in `CommandPalette.tsx` — the dispatch
 
 ### Alternative considered
 
-Instead of a custom event, `CommandPalette` could import and call a Zustand action. However, the existing `bde:navigate` pattern already uses custom events for cross-view communication, so this approach is consistent with the codebase conventions.
+Instead of a custom event, `CommandPalette` could import and call a Zustand action. However, the existing `fleet:navigate` pattern already uses custom events for cross-view communication, so this approach is consistent with the codebase conventions.
 
 ## Success Criteria
 

@@ -58,7 +58,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-1',
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.ACTIVE,
       priority: 1,
       notes: null,
@@ -93,7 +93,7 @@ describe('useDesktopNotifications', () => {
     const notifications = useNotificationsStore.getState().notifications
     expect(notifications).toHaveLength(1)
     expect(notifications[0].type).toBe('agent_completed')
-    expect(notifications[0].title).toContain('BDE: Task Completed')
+    expect(notifications[0].title).toContain('FLEET: Task Completed')
   })
 
   it('adds in-app notification even when window is focused', () => {
@@ -103,7 +103,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-1',
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.ACTIVE,
       priority: 1,
       notes: null,
@@ -138,7 +138,7 @@ describe('useDesktopNotifications', () => {
     const notifications = useNotificationsStore.getState().notifications
     expect(notifications).toHaveLength(1)
     expect(notifications[0].type).toBe('agent_completed')
-    expect(notifications[0].title).toContain('BDE: Task Completed')
+    expect(notifications[0].title).toContain('FLEET: Task Completed')
   })
 
   it('fires desktop notification when task transitions to failed', () => {
@@ -147,7 +147,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-2',
       title: 'Broken task',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.ACTIVE,
       priority: 1,
       notes: null,
@@ -194,7 +194,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-3',
       title: 'Feature PR',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.DONE,
       priority: 1,
       notes: null,
@@ -228,7 +228,7 @@ describe('useDesktopNotifications', () => {
     const notifications = useNotificationsStore.getState().notifications
     expect(notifications).toHaveLength(1)
     expect(notifications[0].type).toBe('pr_merged')
-    expect(notifications[0].title).toContain('BDE: PR Merged')
+    expect(notifications[0].title).toContain('FLEET: PR Merged')
   })
 
   it('does not fire duplicate notifications for same task', () => {
@@ -237,7 +237,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-4',
       title: 'Test task',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.ACTIVE,
       priority: 1,
       notes: null,
@@ -283,7 +283,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-pr',
       title: 'Add feature',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.ACTIVE,
       priority: 1,
       notes: null,
@@ -322,7 +322,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-notmerged',
       title: 'Not merged',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.DONE,
       priority: 1,
       notes: null,
@@ -371,7 +371,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-no-pr-num',
       title: 'No PR number',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.DONE,
       priority: 1,
       notes: null,
@@ -409,7 +409,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-5',
       title: 'Already done',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.DONE,
       priority: 1,
       notes: null,
@@ -460,7 +460,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-single',
       title: 'Single notification task',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.ACTIVE,
       priority: 1,
       notes: null,
@@ -496,7 +496,7 @@ describe('useDesktopNotifications', () => {
     // Should be called exactly once for active → review
     expect(constructorSpy).toHaveBeenCalledTimes(1)
     expect(constructorSpy).toHaveBeenCalledWith(
-      'BDE: Task Ready for Review',
+      'FLEET: Task Ready for Review',
       expect.objectContaining({ body: task.title })
     )
 
@@ -524,7 +524,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-done',
       title: 'Done task',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.ACTIVE,
       priority: 1,
       notes: null,
@@ -560,7 +560,7 @@ describe('useDesktopNotifications', () => {
     // Should be called exactly once for active → done
     expect(constructorSpy).toHaveBeenCalledTimes(1)
     expect(constructorSpy).toHaveBeenCalledWith(
-      'BDE: Task Completed',
+      'FLEET: Task Completed',
       expect.objectContaining({ body: task.title })
     )
 
@@ -587,7 +587,7 @@ describe('useDesktopNotifications', () => {
     const task: SprintTask = {
       id: 'task-merged',
       title: 'Merged task',
-      repo: 'bde',
+      repo: 'fleet',
       status: TASK_STATUS.DONE,
       priority: 1,
       notes: null,
@@ -624,7 +624,7 @@ describe('useDesktopNotifications', () => {
     // Should be called exactly once for PR merged
     expect(constructorSpy).toHaveBeenCalledTimes(1)
     expect(constructorSpy).toHaveBeenCalledWith(
-      'BDE: PR Merged',
+      'FLEET: PR Merged',
       expect.objectContaining({ body: expect.stringContaining('PR #456 merged') })
     )
 

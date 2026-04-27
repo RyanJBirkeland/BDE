@@ -34,7 +34,7 @@ export function registerWindowHandlers(): void {
     // sanitized version (e.g. user edits in source view). Use a cryptographically
     // random filename to prevent predictable-path timing attacks.
     const cleanHtml = sanitizePlaygroundHtml(html)
-    const filename = `bde-playground-${randomBytes(16).toString('hex')}.html`
+    const filename = `fleet-playground-${randomBytes(16).toString('hex')}.html`
     const filepath = join(tmpdir(), filename)
     writeFileSync(filepath, cleanHtml, 'utf-8')
     await shell.openPath(filepath)

@@ -21,7 +21,7 @@ the audit-flagged exposure where only main-repo paths were blocked.
     wording when that's what was hit.
   - `extraAllowedPaths?: readonly string[]` — absolute paths outside the
     worktree that the agent is still permitted to read/write (e.g.
-    `BDE_MEMORY_DIR`). Everything not in the worktree and not on this
+    `FLEET_MEMORY_DIR`). Everything not in the worktree and not on this
     allowlist is denied.
   - `logger?: Logger` — optional; `warn` called on every deny with tool
     name and offending path.

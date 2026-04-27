@@ -4,7 +4,7 @@ import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import { createSprintMutations } from '../services/sprint-mutations'
 
 /**
- * Seeds a test bde repo config so integration tests don't silently skip.
+ * Seeds a test fleet repo config so integration tests don't silently skip.
  * Also initialises the sprint-mutations factory so calls to `getTask`,
  * `createTask`, etc. work without a full composition-root bootstrap.
  *
@@ -14,13 +14,13 @@ import { createSprintMutations } from '../services/sprint-mutations'
  *   Defaults to `process.cwd()` for backward compat; callers running from a
  *   non-repo cwd should pass the real repo root.
  */
-export function seedBdeRepo(localPath: string = process.cwd()): void {
+export function seedFleetRepo(localPath: string = process.cwd()): void {
   setSettingJson<RepoConfig[]>('repos', [
     {
-      name: 'bde',
+      name: 'fleet',
       localPath,
       githubOwner: 'test',
-      githubRepo: 'bde',
+      githubRepo: 'fleet',
       color: '#00ff88'
     }
   ])

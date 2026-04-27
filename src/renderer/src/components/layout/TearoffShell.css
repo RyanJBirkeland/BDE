@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
 }
 
 .tearoff-shell__header {
@@ -12,17 +12,17 @@
   align-items: center;
   height: 32px;
   padding: 0 8px 0 80px;
-  background: var(--bde-surface-high);
-  border-bottom: 1px solid var(--bde-accent-border);
+  background: var(--fleet-surface-high);
+  border-bottom: 1px solid var(--fleet-accent-border);
   -webkit-app-region: drag;
   flex-shrink: 0;
 }
 
 .tearoff-shell__title {
   flex: 1;
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
   font-weight: 600;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -41,8 +41,8 @@
   height: 24px;
   background: none;
   border: none;
-  border-radius: var(--bde-radius-sm);
-  color: var(--bde-text-dim);
+  border-radius: var(--fleet-radius-sm);
+  color: var(--fleet-text-dim);
   cursor: pointer;
   transition:
     color 100ms ease,
@@ -50,8 +50,8 @@
 }
 
 .tearoff-shell__btn:hover:not(:disabled) {
-  color: var(--bde-text);
-  background: var(--bde-surface);
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
 }
 
 .tearoff-shell__btn:active:not(:disabled) {
@@ -70,18 +70,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
 }
 
 .tearoff-shell__dialog {
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-accent-border);
-  border-radius: var(--bde-radius-xl);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-xl);
   padding: 20px 24px;
   min-width: 300px;
   text-align: center;
-  color: var(--bde-text);
-  font-size: var(--bde-size-lg);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-lg);
 }
 
 .tearoff-shell__dialog-remember {
@@ -90,8 +90,8 @@
   justify-content: center;
   gap: 6px;
   margin: 12px 0;
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
 }
 
 .tearoff-shell__dialog-actions {
@@ -104,8 +104,8 @@
 .tearoff-tab-bar {
   display: flex;
   overflow-x: auto;
-  border-bottom: 1px solid var(--bde-accent-border);
-  background: var(--bde-surface-high);
+  border-bottom: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-surface-high);
   flex-shrink: 0;
 }
 .tearoff-tab {
@@ -113,23 +113,23 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
   cursor: pointer;
-  border-right: 1px solid var(--bde-border);
+  border-right: 1px solid var(--fleet-border);
   transition:
     color 100ms ease,
     background 100ms ease;
   white-space: nowrap;
 }
 .tearoff-tab:hover {
-  color: var(--bde-text-muted);
-  background: var(--bde-border);
+  color: var(--fleet-text-muted);
+  background: var(--fleet-border);
 }
 .tearoff-tab--active {
-  color: var(--bde-text);
-  background: var(--bde-bg);
-  border-top: 2px solid var(--bde-accent);
+  color: var(--fleet-text);
+  background: var(--fleet-bg);
+  border-top: 2px solid var(--fleet-accent);
 }
 .tearoff-tab__close {
   display: flex;
@@ -139,7 +139,7 @@
   color: inherit;
   cursor: pointer;
   padding: 2px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   opacity: 0;
   transition: opacity 100ms ease;
 }
@@ -148,11 +148,11 @@
 }
 .tearoff-tab__close:hover:not(:disabled) {
   opacity: 1;
-  background: var(--bde-surface);
+  background: var(--fleet-surface);
 }
 .tearoff-tab__close:focus-visible {
   opacity: 1;
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 

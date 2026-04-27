@@ -17,7 +17,7 @@ Opencode is an open-source AI coding agent (`opencode run`) that supports 75+ LL
 
 ## Architecture
 
-The integration adds a new `spawn-opencode.ts` adapter that bridges opencode's CLI event stream into BDE's existing `AgentHandle` contract. All downstream machinery — drain loop, watchdog, `consumeMessages`, `agent-event-mapper`, cost tracker, Code Review Station — is unchanged.
+The integration adds a new `spawn-opencode.ts` adapter that bridges opencode's CLI event stream into FLEET's existing `AgentHandle` contract. All downstream machinery — drain loop, watchdog, `consumeMessages`, `agent-event-mapper`, cost tracker, Code Review Station — is unchanged.
 
 ### Backend kind
 
@@ -69,7 +69,7 @@ Pure translation layer — no side effects, no process spawning. Takes a single 
 | `step_finish` (reason=`tool-calls`) | `message_delta(tool_use)` + `message_stop` |
 | `error` | synthetic assistant `text` block with the error message |
 
-Cost data: `step_finish.part.tokens` (input/output/total) and `part.cost` (USD float) are mapped directly into `message_delta.usage` so BDE's existing cost tracker picks them up without modification.
+Cost data: `step_finish.part.tokens` (input/output/total) and `part.cost` (USD float) are mapped directly into `message_delta.usage` so FLEET's existing cost tracker picks them up without modification.
 
 ### `src/main/agent-manager/spawn-opencode.ts`
 

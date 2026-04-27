@@ -1,20 +1,20 @@
 /* ── TestsTab: test run output display ── */
 
 .cr-tests {
-  padding: var(--bde-space-3);
+  padding: var(--fleet-space-3);
 }
 
 .cr-tests__loading {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
-.cr-tests__loading .bde-skeleton:first-child {
+.cr-tests__loading .fleet-skeleton:first-child {
   height: 28px;
 }
 
-.cr-tests__loading .bde-skeleton:last-child {
+.cr-tests__loading .fleet-skeleton:last-child {
   height: 140px;
 }
 
@@ -22,47 +22,47 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
 }
 
 .cr-tests__command {
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text);
 }
 
 .cr-tests__status {
-  font-size: var(--bde-size-xs);
-  padding: 2px var(--bde-space-2);
-  border-radius: var(--bde-radius-sm);
+  font-size: var(--fleet-size-xs);
+  padding: 2px var(--fleet-space-2);
+  border-radius: var(--fleet-radius-sm);
   text-transform: uppercase;
   font-weight: 600;
-  border: 1px solid var(--bde-accent-border);
-  color: var(--bde-accent);
+  border: 1px solid var(--fleet-accent-border);
+  color: var(--fleet-accent);
 }
 
 .cr-tests__status--failed {
-  color: var(--bde-danger);
-  border-color: var(--bde-danger-border);
+  color: var(--fleet-danger);
+  border-color: var(--fleet-danger-border);
 }
 
 .cr-tests__hint {
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
   opacity: 0.6;
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
 }
 
 .cr-tests__output {
   margin: 0;
-  padding: var(--bde-space-3);
-  background: var(--bde-surface-raised);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-code);
+  padding: var(--fleet-space-3);
+  background: var(--fleet-surface-raised);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-code);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 600px;
   overflow: auto;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }

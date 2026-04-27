@@ -2,7 +2,7 @@
 
 The single file in this directory was **created in the main repo by a misbehaving pipeline agent** during Phase B (B-arm T-47 clone, agent run `dafed796-3e6e-45a5-a2b6-ad57b41b9aed`, 2026-04-24 ~13:54 local).
 
-The agent had absolute paths to both its own worktree (`~/.bde/worktrees/.../e79e2836…/…`) and the main repo (`/Users/ryanbirkeland/Projects/git-repos/BDE/…`). It used the Write tool with the main-repo path, creating an untracked file there.
+The agent had absolute paths to both its own worktree (`~/.fleet/worktrees/.../e79e2836…/…`) and the main repo (`/Users/ryanbirkeland/Projects/git-repos/FLEET/…`). It used the Write tool with the main-repo path, creating an untracked file there.
 
 The file was MOVED here (not copied) so that:
 

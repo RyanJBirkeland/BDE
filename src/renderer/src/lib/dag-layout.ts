@@ -157,23 +157,23 @@ export function computeDagLayout(tasks: SprintTask[]): DagLayout {
 export function getNodeColor(status: SprintTask['status']): string {
   switch (status) {
     case 'backlog':
-      return 'var(--bde-text-muted)'
+      return 'var(--fleet-text-muted)'
     case 'queued':
-      return 'var(--bde-accent)'
+      return 'var(--fleet-accent)'
     case 'blocked':
-      return 'var(--bde-warning)'
+      return 'var(--fleet-warning)'
     case 'active':
-      return 'var(--bde-status-active)'
+      return 'var(--fleet-status-active)'
     case 'review':
-      return 'var(--bde-status-review)'
+      return 'var(--fleet-status-review)'
     case 'done':
-      return 'var(--bde-status-done)'
+      return 'var(--fleet-status-done)'
     case 'cancelled':
     case 'failed':
     case 'error':
-      return 'var(--bde-danger)'
+      return 'var(--fleet-danger)'
     default:
-      return 'var(--bde-text-muted)'
+      return 'var(--fleet-text-muted)'
   }
 }
 
@@ -181,5 +181,5 @@ export function getNodeColor(status: SprintTask['status']): string {
  * Get edge color based on dependency type.
  */
 export function getEdgeColor(type: 'hard' | 'soft'): string {
-  return type === 'hard' ? 'var(--bde-status-active)' : 'var(--bde-text-muted)'
+  return type === 'hard' ? 'var(--fleet-status-active)' : 'var(--fleet-text-muted)'
 }

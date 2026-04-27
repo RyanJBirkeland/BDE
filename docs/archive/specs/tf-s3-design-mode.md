@@ -41,7 +41,7 @@ Uses `window.api.invokeTool('sessions_send', ...)` — same as current "Ask Paul
 ```typescript
 // Call shape (matches existing invokeTool usage):
 const result = await window.api.invokeTool('sessions_send', {
-  sessionKey: 'bde-design-mode', // dedicated session — NOT 'main'
+  sessionKey: 'fleet-design-mode', // dedicated session — NOT 'main'
   message: fullConversationPrompt,
   timeoutSeconds: 45
 })
@@ -50,7 +50,7 @@ const responseText: string = result?.result?.content?.[0]?.text ?? ''
 
 **Why `sessions_send` not WebSocket chat:** One-shot request/response is sufficient. Design Mode responses are 2-4 paragraphs. No streaming needed in v1. Zero new infrastructure required.
 
-**Why `sessionKey: 'bde-design-mode'`:** Isolates conversation from the main agent session. The gateway creates this session lazily on first message. Ephemeral — Design Mode conversations are never persisted.
+**Why `sessionKey: 'fleet-design-mode'`:** Isolates conversation from the main agent session. The gateway creates this session lazily on first message. Ephemeral — Design Mode conversations are never persisted.
 
 ### Spec extraction from responses
 
@@ -106,7 +106,7 @@ const OPENING_MESSAGE: DesignMessage = {
 
 ```typescript
 function buildDesignSystemPrompt(repo: string): string {
-  return `You are Paul, a senior product engineer at BDE (an AI agent IDE for solo developers).
+  return `You are Paul, a senior product engineer at FLEET (an AI agent IDE for solo developers).
 
 Your job: help the user design a coding task, then produce an agent-executable spec.
 
@@ -239,7 +239,7 @@ export function DesignModeContent({ repo, priority, onSave, onClose }: DesignMod
 
     try {
       const result = await window.api.invokeTool('sessions_send', {
-        sessionKey: 'bde-design-mode',
+        sessionKey: 'fleet-design-mode',
         message: fullPrompt,
         timeoutSeconds: 45,
       })
@@ -439,7 +439,7 @@ Append to `sprint.css`:
 .design-mode__chat {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--bde-border);
+  border-right: 1px solid var(--fleet-border);
   overflow: hidden;
 }
 
@@ -472,7 +472,7 @@ Append to `sprint.css`:
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .design-mode__message-content {
@@ -486,15 +486,15 @@ Append to `sprint.css`:
 }
 
 .design-mode__message--user .design-mode__message-content {
-  background: color-mix(in srgb, var(--bde-accent) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--bde-accent) 40%, transparent);
-  color: var(--bde-text);
+  background: color-mix(in srgb, var(--fleet-accent) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fleet-accent) 40%, transparent);
+  color: var(--fleet-text);
 }
 
 .design-mode__message--assistant .design-mode__message-content {
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--bde-border);
-  color: var(--bde-text);
+  border: 1px solid var(--fleet-border);
+  color: var(--fleet-text);
 }
 
 /* Typing indicator */
@@ -533,7 +533,7 @@ Append to `sprint.css`:
   display: flex;
   gap: 8px;
   padding: 12px;
-  border-top: 1px solid var(--bde-border);
+  border-top: 1px solid var(--fleet-border);
   align-items: flex-end;
 }
 
@@ -541,9 +541,9 @@ Append to `sprint.css`:
   flex: 1;
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   border-radius: 8px;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   font-size: 13px;
   line-height: 1.4;
   resize: none;
@@ -552,7 +552,7 @@ Append to `sprint.css`:
 }
 
 .design-mode__input:focus {
-  border-color: var(--bde-accent);
+  border-color: var(--fleet-accent);
 }
 
 .design-mode__input:disabled {
@@ -561,7 +561,7 @@ Append to `sprint.css`:
 
 .design-mode__send-btn {
   padding: 8px 14px;
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
   border: none;
   border-radius: 8px;
   color: white;
@@ -588,7 +588,7 @@ Append to `sprint.css`:
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--bde-border);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
 }
 
@@ -597,22 +597,22 @@ Append to `sprint.css`:
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .design-mode__copy-btn {
   font-size: 11px;
   background: none;
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   border-radius: 4px;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   padding: 3px 8px;
   cursor: pointer;
 }
 
 .design-mode__copy-btn:hover {
-  color: var(--bde-text);
-  border-color: var(--bde-text-dim);
+  color: var(--fleet-text);
+  border-color: var(--fleet-text-dim);
 }
 
 .design-mode__spec-content {
@@ -622,7 +622,7 @@ Append to `sprint.css`:
 }
 
 .design-mode__spec-empty {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-size: 13px;
   text-align: center;
   margin-top: 60px;
@@ -672,5 +672,5 @@ Append to `sprint.css`:
 ## PR Command
 
 ```bash
-git add -A && git commit -m "feat: Design Mode — conversational spec design with Paul (split-panel chat + live spec preview)" && git push origin HEAD && gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: Design Mode — co-design features with Paul in a conversational split-panel UI" -f body="Implements the Design Mode tab in NewTicketModal. Split-panel layout: chat with Paul on the left, live spec preview on the right. Paul asks clarifying questions then proposes a spec. User can refine conversationally. Save creates a Backlog task with the finalized spec. Uses dedicated ephemeral session (bde-design-mode) to avoid polluting main agent history." -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
+git add -A && git commit -m "feat: Design Mode — conversational spec design with Paul (split-panel chat + live spec preview)" && git push origin HEAD && gh api repos/RyanJBirkeland/FLEET/pulls --method POST -f title="feat: Design Mode — co-design features with Paul in a conversational split-panel UI" -f body="Implements the Design Mode tab in NewTicketModal. Split-panel layout: chat with Paul on the left, live spec preview on the right. Paul asks clarifying questions then proposes a spec. User can refine conversationally. Save creates a Backlog task with the finalized spec. Uses dedicated ephemeral session (fleet-design-mode) to avoid polluting main agent history." -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
 ```

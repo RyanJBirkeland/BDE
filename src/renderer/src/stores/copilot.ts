@@ -48,7 +48,7 @@ const WELCOME_MESSAGE: CopilotMessage = {
   timestamp: Date.now()
 }
 
-const COPILOT_STORAGE_KEY = 'bde:copilot-messages'
+const COPILOT_STORAGE_KEY = 'fleet:copilot-messages'
 
 function loadPersistedMessages(): CopilotMessage[] {
   try {

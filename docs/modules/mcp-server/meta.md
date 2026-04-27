@@ -4,7 +4,7 @@
 **Source:** `src/main/mcp-server/tools/meta.ts`
 
 ## Purpose
-Read-only meta tools that expose BDE enums and configuration to MCP clients without hard-coding values. Allows clients to discover valid statuses, transitions, dependency types, and configured repositories at runtime.
+Read-only meta tools that expose FLEET enums and configuration to MCP clients without hard-coding values. Allows clients to discover valid statuses, transitions, dependency types, and configured repositories at runtime.
 
 ## Public API
 - `registerMetaTools(server, deps)` — Registers three MCP tools: `meta.repos`, `meta.taskStatuses`, `meta.dependencyConditions`

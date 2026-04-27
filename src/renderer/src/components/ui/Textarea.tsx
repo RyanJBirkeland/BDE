@@ -44,7 +44,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
     autoResize()
   }, [value, autoResize])
 
-  const classes = ['bde-textarea', variant === 'code' && 'bde-textarea--code', className]
+  const classes = ['fleet-textarea', variant === 'code' && 'fleet-textarea--code', className]
     .filter(Boolean)
     .join(' ')
 

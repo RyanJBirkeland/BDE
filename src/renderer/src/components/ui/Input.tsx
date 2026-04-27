@@ -32,10 +32,10 @@ export function Input({
   'aria-describedby': ariaDescribedby
 }: InputProps): React.JSX.Element {
   const classes = [
-    'bde-input',
-    prefix && 'bde-input--has-prefix',
-    suffix && 'bde-input--has-suffix',
-    invalid && 'bde-input--invalid',
+    'fleet-input',
+    prefix && 'fleet-input--has-prefix',
+    suffix && 'fleet-input--has-suffix',
+    invalid && 'fleet-input--invalid',
     className
   ]
     .filter(Boolean)
@@ -44,9 +44,9 @@ export function Input({
   return (
     <>
       <div className={classes}>
-        {prefix && <span className="bde-input__prefix">{prefix}</span>}
+        {prefix && <span className="fleet-input__prefix">{prefix}</span>}
         <input
-          className="bde-input__field"
+          className="fleet-input__field"
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -57,9 +57,9 @@ export function Input({
           aria-required={required}
           aria-describedby={ariaDescribedby}
         />
-        {suffix && <span className="bde-input__suffix">{suffix}</span>}
+        {suffix && <span className="fleet-input__suffix">{suffix}</span>}
       </div>
-      {error && <span className="bde-input__error">{error}</span>}
+      {error && <span className="fleet-input__error">{error}</span>}
     </>
   )
 }

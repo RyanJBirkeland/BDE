@@ -4,8 +4,8 @@ import { createWorktreeIsolationHook } from './worktree-isolation-hook'
 describe('createWorktreeIsolationHook', () => {
   it('returns a CanUseTool callback', () => {
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
     })
     expect(typeof hook).toBe('function')
   })
@@ -14,12 +14,12 @@ describe('createWorktreeIsolationHook', () => {
 describe('Write/Edit with a worktree-scoped absolute path', () => {
   it('allows Write into the worktree', async () => {
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
     })
     const result = await hook(
       'Write',
-      { file_path: '/Users/test/worktrees/bde/abc123/src/main/foo.ts', content: 'x' },
+      { file_path: '/Users/test/worktrees/fleet/abc123/src/main/foo.ts', content: 'x' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('allow')
@@ -27,13 +27,13 @@ describe('Write/Edit with a worktree-scoped absolute path', () => {
 
   it('allows Edit into the worktree', async () => {
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
     })
     const result = await hook(
       'Edit',
       {
-        file_path: '/Users/test/worktrees/bde/abc123/src/main/foo.ts',
+        file_path: '/Users/test/worktrees/fleet/abc123/src/main/foo.ts',
         old_string: 'a',
         new_string: 'b'
       },
@@ -45,15 +45,15 @@ describe('Write/Edit with a worktree-scoped absolute path', () => {
 
 describe('Write to main checkout is denied', () => {
   const deps = {
-    worktreePath: '/Users/test/worktrees/bde/abc123',
-    mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+    worktreePath: '/Users/test/worktrees/fleet/abc123',
+    mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
   }
 
   it('denies Write to a main-checkout absolute path', async () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Write',
-      { file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts', content: 'x' },
+      { file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts', content: 'x' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -68,7 +68,7 @@ describe('Write to main checkout is denied', () => {
     const result = await hook(
       'Edit',
       {
-        file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts',
+        file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts',
         old_string: 'a',
         new_string: 'b'
       },
@@ -82,7 +82,7 @@ describe('Write to main checkout is denied', () => {
     const result = await hook(
       'MultiEdit',
       {
-        file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts',
+        file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts',
         edits: [{ old_string: 'a', new_string: 'b' }]
       },
       { signal: new AbortController().signal }
@@ -94,7 +94,7 @@ describe('Write to main checkout is denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'NotebookEdit',
-      { notebook_path: '/Users/test/Projects/git-repos/BDE/nb.ipynb', new_source: '' },
+      { notebook_path: '/Users/test/Projects/git-repos/FLEET/nb.ipynb', new_source: '' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -113,15 +113,15 @@ describe('Write to main checkout is denied', () => {
 
 describe('Bash commands targeting main checkout are denied', () => {
   const deps = {
-    worktreePath: '/Users/test/worktrees/bde/abc123',
-    mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+    worktreePath: '/Users/test/worktrees/fleet/abc123',
+    mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
   }
 
   it('denies a `cd <main-repo>` prefix', async () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'cd /Users/test/Projects/git-repos/BDE && npm test' },
+      { command: 'cd /Users/test/Projects/git-repos/FLEET && npm test' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -134,7 +134,7 @@ describe('Bash commands targeting main checkout are denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'cat /Users/test/Projects/git-repos/BDE/src/main/foo.ts' },
+      { command: 'cat /Users/test/Projects/git-repos/FLEET/src/main/foo.ts' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -144,7 +144,7 @@ describe('Bash commands targeting main checkout are denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'echo x > /Users/test/Projects/git-repos/BDE/tmp.txt' },
+      { command: 'echo x > /Users/test/Projects/git-repos/FLEET/tmp.txt' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -165,7 +165,7 @@ describe('Bash commands targeting main checkout are denied', () => {
     const result = await hook(
       'Bash',
       {
-        command: 'cat /Users/test/worktrees/bde/abc123/src/main/foo.ts'
+        command: 'cat /Users/test/worktrees/fleet/abc123/src/main/foo.ts'
       },
       { signal: new AbortController().signal }
     )
@@ -176,7 +176,7 @@ describe('Bash commands targeting main checkout are denied', () => {
     const hook = createWorktreeIsolationHook(deps)
     const result = await hook(
       'Bash',
-      { command: 'ls /Users/test/.bde/memory/tasks/t-1' },
+      { command: 'ls /Users/test/.fleet/memory/tasks/t-1' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -185,11 +185,11 @@ describe('Bash commands targeting main checkout are denied', () => {
   it('allows Bash referencing a path explicitly on extraAllowedPaths', async () => {
     const hook = createWorktreeIsolationHook({
       ...deps,
-      extraAllowedPaths: ['/Users/test/.bde/memory']
+      extraAllowedPaths: ['/Users/test/.fleet/memory']
     })
     const result = await hook(
       'Bash',
-      { command: 'ls /Users/test/.bde/memory/tasks/t-1' },
+      { command: 'ls /Users/test/.fleet/memory/tasks/t-1' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('allow')
@@ -198,8 +198,8 @@ describe('Bash commands targeting main checkout are denied', () => {
 
 describe('Default-deny: writes outside the worktree are blocked by default', () => {
   const deps = {
-    worktreePath: '/Users/test/worktrees/bde/abc123',
-    mainRepoPaths: ['/Users/test/Projects/git-repos/BDE']
+    worktreePath: '/Users/test/worktrees/fleet/abc123',
+    mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET']
   }
 
   it('denies Write to ~/.ssh/authorized_keys', async () => {
@@ -265,12 +265,12 @@ describe('Default-deny: writes outside the worktree are blocked by default', () 
   it('allows Write to a path in extraAllowedPaths', async () => {
     const hook = createWorktreeIsolationHook({
       ...deps,
-      extraAllowedPaths: ['/Users/test/.bde/memory']
+      extraAllowedPaths: ['/Users/test/.fleet/memory']
     })
     const result = await hook(
       'Write',
       {
-        file_path: '/Users/test/.bde/memory/notes.md',
+        file_path: '/Users/test/.fleet/memory/notes.md',
         content: 'scratch'
       },
       { signal: new AbortController().signal }
@@ -281,7 +281,7 @@ describe('Default-deny: writes outside the worktree are blocked by default', () 
   it('still denies paths outside both the worktree and extraAllowedPaths', async () => {
     const hook = createWorktreeIsolationHook({
       ...deps,
-      extraAllowedPaths: ['/Users/test/.bde/memory']
+      extraAllowedPaths: ['/Users/test/.fleet/memory']
     })
     const result = await hook(
       'Write',
@@ -316,13 +316,13 @@ describe('deny logging', () => {
   it('invokes the logger.warn with tool and path on deny', async () => {
     const warn = vi.fn()
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE'],
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET'],
       logger: { warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() }
     })
     await hook(
       'Write',
-      { file_path: '/Users/test/Projects/git-repos/BDE/src/main/foo.ts', content: 'x' },
+      { file_path: '/Users/test/Projects/git-repos/FLEET/src/main/foo.ts', content: 'x' },
       { signal: new AbortController().signal }
     )
     expect(warn).toHaveBeenCalledTimes(1)
@@ -335,8 +335,8 @@ describe('deny logging', () => {
   it('does not log on allow', async () => {
     const warn = vi.fn()
     const hook = createWorktreeIsolationHook({
-      worktreePath: '/Users/test/worktrees/bde/abc123',
-      mainRepoPaths: ['/Users/test/Projects/git-repos/BDE'],
+      worktreePath: '/Users/test/worktrees/fleet/abc123',
+      mainRepoPaths: ['/Users/test/Projects/git-repos/FLEET'],
       logger: { warn, info: vi.fn(), error: vi.fn(), debug: vi.fn() }
     })
     await hook('Bash', { command: 'npm test' }, { signal: new AbortController().signal })

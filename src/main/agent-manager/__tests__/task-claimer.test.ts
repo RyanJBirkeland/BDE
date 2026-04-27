@@ -8,7 +8,7 @@ vi.mock('../task-mapper', () => ({
   checkAndBlockDeps: vi.fn().mockReturnValue(false)
 }))
 vi.mock('../../paths', () => ({
-  getRepoPaths: vi.fn().mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
+  getRepoPaths: vi.fn().mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
 }))
 vi.mock('../worktree', () => ({
   setupWorktree: vi.fn()
@@ -37,7 +37,7 @@ function makeTask(overrides: Partial<MappedTask> = {}): MappedTask {
     title: 'Test task',
     prompt: null,
     spec: '## Goal\nDo stuff',
-    repo: 'bde',
+    repo: 'fleet',
     retry_count: 0,
     fast_fail_count: 0,
     notes: null,
@@ -102,18 +102,18 @@ describe('resolveRepoPath', () => {
   })
 
   it('returns path for known repo slug', () => {
-    vi.mocked(getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
-    expect(resolveRepoPath('bde')).toBe('/Users/ryan/projects/BDE')
+    vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
+    expect(resolveRepoPath('fleet')).toBe('/Users/ryan/projects/FLEET')
   })
 
   it('returns null for unknown repo slug', () => {
-    vi.mocked(getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
+    vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
     expect(resolveRepoPath('unknown-repo')).toBeNull()
   })
 
   it('is case-insensitive (lowercases slug)', () => {
-    vi.mocked(getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
-    expect(resolveRepoPath('BDE')).toBe('/Users/ryan/projects/BDE')
+    vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
+    expect(resolveRepoPath('FLEET')).toBe('/Users/ryan/projects/FLEET')
   })
 })
 
@@ -122,7 +122,7 @@ describe('validateAndClaimTask', () => {
     vi.clearAllMocks()
     vi.mocked(mapQueuedTask).mockReturnValue(makeTask())
     vi.mocked(checkAndBlockDeps).mockReturnValue(false)
-    vi.mocked(getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
+    vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
   })
 
   it('returns null when mapQueuedTask returns null', async () => {
@@ -183,7 +183,7 @@ describe('validateAndClaimTask', () => {
     const result = await validateAndClaimTask({}, new Map(), deps)
     expect(result).not.toBeNull()
     expect(result?.task.id).toBe('task-1')
-    expect(result?.repoPath).toBe('/Users/ryan/projects/BDE')
+    expect(result?.repoPath).toBe('/Users/ryan/projects/FLEET')
   })
 })
 
@@ -217,7 +217,7 @@ describe('processQueuedTask', () => {
     vi.clearAllMocks()
     vi.mocked(mapQueuedTask).mockReturnValue(makeTask())
     vi.mocked(checkAndBlockDeps).mockReturnValue(false)
-    vi.mocked(getRepoPaths).mockReturnValue({ bde: '/Users/ryan/projects/BDE' })
+    vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
     vi.mocked(setupWorktree).mockResolvedValue({ worktreePath: '/tmp/wt', branch: 'agent/task-1' })
   })
 
@@ -244,7 +244,7 @@ describe('processQueuedTask', () => {
     expect(deps.spawnAgent).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'task-1' }),
       { worktreePath: '/tmp/wt', branch: 'agent/task-1' },
-      '/Users/ryan/projects/BDE'
+      '/Users/ryan/projects/FLEET'
     )
   })
 

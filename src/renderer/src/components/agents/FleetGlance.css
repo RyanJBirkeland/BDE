@@ -17,9 +17,9 @@
   gap: 16px;
   flex-wrap: wrap;
   padding: 20px;
-  background: linear-gradient(135deg, var(--bde-purple-dim), var(--bde-bg));
+  background: linear-gradient(135deg, var(--fleet-purple-dim), var(--fleet-bg));
   border: 1px solid rgba(138, 124, 181, 0.3);
-  border-radius: var(--bde-radius-md);
+  border-radius: var(--fleet-radius-md);
 }
 
 .fleet-glance__stat {
@@ -27,9 +27,9 @@
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: var(--bde-bg-subtle);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
+  background: var(--fleet-bg-subtle);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
   flex: 1;
   min-width: 140px;
 }
@@ -39,37 +39,37 @@
 }
 
 .fleet-glance__stat-icon--running {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .fleet-glance__stat-icon--done {
-  color: var(--bde-success);
+  color: var(--fleet-success);
 }
 
 .fleet-glance__stat-icon--failed {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .fleet-glance__stat-icon--cost {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
 }
 
 .fleet-glance__stat-icon--runtime {
-  color: var(--bde-purple);
+  color: var(--fleet-purple);
 }
 
 .fleet-glance__stat-label {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex: 1;
 }
 
 .fleet-glance__stat-value {
-  font-size: var(--bde-size-xxl);
+  font-size: var(--fleet-size-xxl);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -81,9 +81,9 @@
 }
 
 .fleet-glance__section-title {
-  font-size: var(--bde-size-lg);
+  font-size: var(--fleet-size-lg);
   font-weight: 600;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin: 0;
@@ -102,18 +102,18 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: var(--bde-bg-subtle);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
+  background: var(--fleet-bg-subtle);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
   cursor: pointer;
   transition: all 0.15s ease-out;
   text-align: left;
 }
 
 .fleet-glance__item:hover {
-  background: var(--bde-bg-hover);
-  border-color: var(--bde-accent-border);
-  box-shadow: 0 0 8px var(--bde-accent);
+  background: var(--fleet-bg-hover);
+  border-color: var(--fleet-accent-border);
+  box-shadow: 0 0 8px var(--fleet-accent);
 }
 
 .fleet-glance__status-dot {
@@ -124,12 +124,12 @@
 }
 
 .fleet-glance__status-dot--running {
-  background: var(--bde-accent);
-  box-shadow: 0 0 8px var(--bde-accent);
-  animation: bde-pulse-dot 2s ease-in-out infinite;
+  background: var(--fleet-accent);
+  box-shadow: 0 0 8px var(--fleet-accent);
+  animation: fleet-pulse-dot 2s ease-in-out infinite;
 }
 
-@keyframes bde-pulse-dot {
+@keyframes fleet-pulse-dot {
   0%,
   100% {
     opacity: 1;
@@ -141,8 +141,8 @@
 
 .fleet-glance__task {
   flex: 1;
-  font-size: var(--bde-size-lg);
-  color: var(--bde-text);
+  font-size: var(--fleet-size-lg);
+  color: var(--fleet-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -150,30 +150,30 @@
 }
 
 .fleet-glance__hint {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
   font-family: 'JetBrains Mono', monospace;
 }
 
 .fleet-glance__duration {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
   font-family: 'JetBrains Mono', monospace;
   min-width: 60px;
   text-align: right;
 }
 
 .fleet-glance__cost {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-warning);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-warning);
   font-family: 'JetBrains Mono', monospace;
   min-width: 50px;
   text-align: right;
 }
 
 .fleet-glance__ago {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
   font-family: 'JetBrains Mono', monospace;
   min-width: 60px;
   text-align: right;
@@ -184,31 +184,31 @@
 }
 
 .fleet-glance__completion-icon--done {
-  color: var(--bde-success);
+  color: var(--fleet-success);
 }
 
 .fleet-glance__completion-icon--failed {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 /* Empty state */
 .fleet-glance__empty {
   padding: 48px 24px;
   text-align: center;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .fleet-glance__empty p {
   margin: 0 0 12px;
-  font-size: var(--bde-size-lg);
+  font-size: var(--fleet-size-lg);
 }
 
 .fleet-glance__empty-hint {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dimmer);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dimmer);
 }
 
 .fleet-glance__empty-hint strong {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
   font-weight: 600;
 }

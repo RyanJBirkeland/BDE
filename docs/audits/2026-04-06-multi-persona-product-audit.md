@@ -1,8 +1,8 @@
-# BDE Multi-Persona Product Audit
+# FLEET Multi-Persona Product Audit
 
 **Date:** 2026-04-06
 **Scope:** Prompting quality, agent behaviors, features, out-of-box experience, scale readiness
-**Core Question:** Does BDE actually deliver amazing out-of-the-box agentic development at scale — without the user having to babysit or argue with the system?
+**Core Question:** Does FLEET actually deliver amazing out-of-the-box agentic development at scale — without the user having to babysit or argue with the system?
 
 ---
 
@@ -23,16 +23,16 @@
 
 ## Executive Summary
 
-BDE's core value proposition — spec → queue → autonomous agent → human review → merge — is **working and well-designed**. The Code Review Station is a genuine killer feature. The prompt system is battle-hardened from real operational learnings. The design system is coherent and themeable.
+FLEET's core value proposition — spec → queue → autonomous agent → human review → merge — is **working and well-designed**. The Code Review Station is a genuine killer feature. The prompt system is battle-hardened from real operational learnings. The design system is coherent and themeable.
 
-**What prevents BDE from being exceptional:**
+**What prevents FLEET from being exceptional:**
 
 1. **The copilot can't see code** — Every spec starts with code exploration, and the copilot can't help. This is the #1 daily friction.
 2. **No guided first-task experience** — Users complete onboarding and land on an empty dashboard with zero guidance.
 3. **Agents are black boxes while running** — No progress phases, no meaningful steering beyond `/stop`.
 4. **Failure feedback doesn't close the loop** — Users know something failed but not how to fix their spec.
 5. **Scale ceiling is ~8 agents** on a 16GB machine due to no memory caps on spawned processes.
-6. **BDE-specific memory bleeds into non-BDE repos** — Agents working on Python projects get Zustand and IPC conventions injected.
+6. **FLEET-specific memory bleeds into non-FLEET repos** — Agents working on Python projects get Zustand and IPC conventions injected.
 
 ---
 
@@ -56,13 +56,13 @@ These issues cause agents to produce worse work or cause users to waste time on 
 - **Impact:** Specs written without codebase context reference wrong file paths, miss architectural constraints, and produce failing agent runs. This is the **#1 daily time-waster**.
 - **Fix:** Create a "copilot-plus" personality with read-only file access (Read/Grep tools) for the target repo. The `workbench:researchRepo` IPC already exists — make it a first-class copilot capability.
 
-### 1.3 Memory modules inject BDE-specific context into all repos
+### 1.3 Memory modules inject FLEET-specific context into all repos
 
 - **Source:** Prompt Engineer
 - **File:** `src/main/agent-system/memory/index.ts`
-- **Problem:** `getAllMemory()` always returns IPC conventions, BDE testing thresholds, and Electron architecture rules — even for agents working on Python projects or unrelated TypeScript repos.
+- **Problem:** `getAllMemory()` always returns IPC conventions, FLEET testing thresholds, and Electron architecture rules — even for agents working on Python projects or unrelated TypeScript repos.
 - **Impact:** Wastes tokens and can actively mislead agents. A Python agent gets Zustand patterns injected.
-- **Fix:** Make memory injection conditional on `targetRepo`. If repo !== BDE, skip BDE-specific conventions. Add a `repoName` parameter to `getAllMemory()`.
+- **Fix:** Make memory injection conditional on `targetRepo`. If repo !== FLEET, skip FLEET-specific conventions. Add a `repoName` parameter to `getAllMemory()`.
 
 ### 1.4 `maxRuntimeMs` never reaches the prompt
 
@@ -276,9 +276,9 @@ These issues cause agents to produce worse work or cause users to waste time on 
 
 ### Positioning
 
-BDE is best positioned as **"the missing infrastructure for Claude Code power users"** — developers who already use Claude Code daily and want to scale from 1 agent to 20. Trying to pitch to developers who've never used AI coding tools will fail because the Claude Code CLI + Anthropic subscription is a hard prerequisite.
+FLEET is best positioned as **"the missing infrastructure for Claude Code power users"** — developers who already use Claude Code daily and want to scale from 1 agent to 20. Trying to pitch to developers who've never used AI coding tools will fail because the Claude Code CLI + Anthropic subscription is a hard prerequisite.
 
-### What Makes BDE Uniquely Valuable (vs. running Claude Code manually)
+### What Makes FLEET Uniquely Valuable (vs. running Claude Code manually)
 
 1. **Worktree isolation** — No branch conflicts between agents
 2. **Dependency-aware pipeline** — Tasks auto-unblock in order
@@ -292,7 +292,7 @@ BDE is best positioned as **"the missing infrastructure for Claude Code power us
 2. Guided first-task experience (empty dashboard kills first impressions)
 3. Global health indicator (users need to trust the system is working)
 4. Failure → spec feedback loop (learning from failures is how users improve)
-5. Memory repo-awareness (stop injecting BDE conventions into other repos)
+5. Memory repo-awareness (stop injecting FLEET conventions into other repos)
 
 ### What to Build After v1
 

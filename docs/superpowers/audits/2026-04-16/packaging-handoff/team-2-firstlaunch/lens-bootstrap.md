@@ -2,20 +2,20 @@
 
 ## Executive Summary
 
-The BDE Electron app implements a **well-structured cold-start sequence** that creates the `~/.bde/` directory, initializes the SQLite database with 52 migrations, loads default settings via the `??` operator, registers IPC handlers, and emits startup warnings at the precise moment (`ready-to-show`) when the renderer is ready to receive broadcasts. The implementation is **production-ready** with good error isolation and signal propagation. No critical blockers for first-launch.
+The FLEET Electron app implements a **well-structured cold-start sequence** that creates the `~/.fleet/` directory, initializes the SQLite database with 52 migrations, loads default settings via the `??` operator, registers IPC handlers, and emits startup warnings at the precise moment (`ready-to-show`) when the renderer is ready to receive broadcasts. The implementation is **production-ready** with good error isolation and signal propagation. No critical blockers for first-launch.
 
 ---
 
 ## Startup Sequence (Numbered for Mental Model)
 
 1. **Process startup** (`main/index.ts` lines 33–72): Enforce Node.js v22+, set proxy, acquire single-instance lock
-2. **Module initialization** (line 74): Create logger (which creates `~/.bde/` with 0o700 perms if missing)
+2. **Module initialization** (line 74): Create logger (which creates `~/.fleet/` with 0o700 perms if missing)
 3. **Error handlers** (lines 98–115): Catch uncaught exceptions and unhandled rejections
 4. **`app.whenReady()`** (line 181): Main async startup sequence begins
 5. **Database initialization** (lines 185–194): 
-   - `getDb()` creates `~/.bde/` (recursive, mode 0o700) if missing
-   - Creates `~/.bde/memory/tasks/` for task memory
-   - Opens SQLite, enforces 0o700 on `~/.bde/` (fixes older installs)
+   - `getDb()` creates `~/.fleet/` (recursive, mode 0o700) if missing
+   - Creates `~/.fleet/memory/tasks/` for task memory
+   - Opens SQLite, enforces 0o700 on `~/.fleet/` (fixes older installs)
    - Runs 52 migrations in sequence; each wraps in a transaction with explicit version bumping
    - Migration v1 creates `settings` table (empty on first run)
 6. **Post-DB checks** (lines 196–224):
@@ -68,30 +68,30 @@ mainWindow.on('ready-to-show', () => {
 ```typescript
 // logger.ts
 function ensureLogDir(): void {
-  if (!existsSync(BDE_DIR)) {
-    mkdirSync(BDE_DIR, { recursive: true, mode: 0o700 })
+  if (!existsSync(FLEET_DIR)) {
+    mkdirSync(FLEET_DIR, { recursive: true, mode: 0o700 })
   }
   try {
-    chmodSync(BDE_DIR, 0o700)  // Enforce even on existing dirs
+    chmodSync(FLEET_DIR, 0o700)  // Enforce even on existing dirs
   } catch (err) {
-    console.warn('[logger] Failed to enforce .bde directory permissions:', err)
+    console.warn('[logger] Failed to enforce .fleet directory permissions:', err)
   }
 }
 
 // db.ts
 if (!_db) {
   mkdirSync(DB_DIR, { recursive: true, mode: 0o700 })
-  mkdirSync(BDE_TASK_MEMORY_DIR, { recursive: true })
+  mkdirSync(FLEET_TASK_MEMORY_DIR, { recursive: true })
   try {
     chmodSync(DB_DIR, 0o700)
   } catch (err) {
-    console.warn('[db] Failed to enforce .bde directory permissions:', err)
+    console.warn('[db] Failed to enforce .fleet directory permissions:', err)
   }
   // ...
 }
 ```
 
-**Impact:** `~/.bde/` is created twice: first by logger (line 74 in index.ts, during module load), second by db.ts (line 185 in index.ts, inside `whenReady()`). Both use `recursive: true`, so second call is idempotent. Permissions (0o700) are enforced on every startup via `chmodSync` to fix legacy installs created without the mode flag. This is **robust and necessary for security**.
+**Impact:** `~/.fleet/` is created twice: first by logger (line 74 in index.ts, during module load), second by db.ts (line 185 in index.ts, inside `whenReady()`). Both use `recursive: true`, so second call is idempotent. Permissions (0o700) are enforced on every startup via `chmodSync` to fix legacy installs created without the mode flag. This is **robust and necessary for security**.
 
 **Recommendation:** No changes needed. Pattern is sound: chmod is non-fatal (logged as warning only), and catching permission errors (e.g., read-only filesystem, insufficient permissions) prevents startup crash.
 
@@ -182,7 +182,7 @@ db.exec(`
 // index.ts: defaults applied via ?? operator
 const amConfig = {
   maxConcurrent: getSettingJson<number>('agentManager.maxConcurrent') ?? 2,
-  worktreeBase: getSetting('agentManager.worktreeBase') ?? join(homedir(), 'worktrees', 'bde'),
+  worktreeBase: getSetting('agentManager.worktreeBase') ?? join(homedir(), 'worktrees', 'fleet'),
   maxRuntimeMs: getSettingJson<number>('agentManager.maxRuntimeMs') ?? 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
@@ -278,7 +278,7 @@ export function getOAuthToken(): string | null {
   const now = Date.now()
   if (_tokenLoadedAt > 0 && now - _tokenLoadedAt < TOKEN_TTL_MS) return _cachedOAuthToken
   _tokenLoadedAt = now
-  const tokenPath = join(homedir(), '.bde', 'oauth-token')
+  const tokenPath = join(homedir(), '.fleet', 'oauth-token')
   try {
     if (existsSync(tokenPath)) {
       // Use lstatSync (not statSync) to detect symlinks before following them.
@@ -318,7 +318,7 @@ export function getOAuthToken(): string | null {
 ```
 
 **Impact:** 
-- `~/.bde/oauth-token` is **not** created by the app at startup. It is read-only at this point.
+- `~/.fleet/oauth-token` is **not** created by the app at startup. It is read-only at this point.
 - On fresh install, the file doesn't exist, `getOAuthToken()` returns `null`, and `ANTHROPIC_API_KEY` is not set for agent subprocesses.
 - The code explicitly checks for symlinks (security), file size, and permissions (0o600 required).
 - If the token is invalid, the code logs a clear error message and continues.
@@ -390,29 +390,29 @@ export function warnPlaintextSensitiveSettings(): void {
 
 ---
 
-### F-t2-bootstrap-9: Missing `~/.bde/logs/` Directory Creation
+### F-t2-bootstrap-9: Missing `~/.fleet/logs/` Directory Creation
 
 **Severity:** Low  
 **Category:** dir-creation  
 **Location:** `src/main/paths.ts:88–91` (defined but not created)  
 **Evidence:**
 ```typescript
-export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
-export const BDE_AGENT_LOG_PATH = join(BDE_DIR, 'agent-manager.log')
-export const BDE_MEMORY_DIR = join(BDE_DIR, 'memory')
-export const BDE_TASK_MEMORY_DIR = join(BDE_MEMORY_DIR, 'tasks')
+export const FLEET_AGENT_LOGS_DIR = join(FLEET_DIR, 'agent-logs')
+export const FLEET_AGENT_LOG_PATH = join(FLEET_DIR, 'agent-manager.log')
+export const FLEET_MEMORY_DIR = join(FLEET_DIR, 'memory')
+export const FLEET_TASK_MEMORY_DIR = join(FLEET_MEMORY_DIR, 'tasks')
 ```
 
 And in `db.ts:13`:
 ```typescript
-mkdirSync(BDE_TASK_MEMORY_DIR, { recursive: true })
+mkdirSync(FLEET_TASK_MEMORY_DIR, { recursive: true })
 ```
 
 **Impact:** 
-- `BDE_TASK_MEMORY_DIR` (`~/.bde/memory/tasks/`) is created at startup via `recursive: true` on the deepest path.
-- `BDE_AGENT_LOGS_DIR` (`~/.bde/agent-logs/`) is **not** explicitly created at startup, but it's created on-demand by the agent manager when it first writes a log.
-- `BDE_AGENT_LOG_PATH` (`~/.bde/agent-manager.log`) is created on-demand when the first log entry is written (via `appendFileSync` in logger.ts).
-- This is **safe**: `appendFileSync` doesn't require the parent directory to exist first (the parent `~/.bde/` already exists), so lazy creation is fine.
+- `FLEET_TASK_MEMORY_DIR` (`~/.fleet/memory/tasks/`) is created at startup via `recursive: true` on the deepest path.
+- `FLEET_AGENT_LOGS_DIR` (`~/.fleet/agent-logs/`) is **not** explicitly created at startup, but it's created on-demand by the agent manager when it first writes a log.
+- `FLEET_AGENT_LOG_PATH` (`~/.fleet/agent-manager.log`) is created on-demand when the first log entry is written (via `appendFileSync` in logger.ts).
+- This is **safe**: `appendFileSync` doesn't require the parent directory to exist first (the parent `~/.fleet/` already exists), so lazy creation is fine.
 
 **Recommendation:** No changes needed. Agent logs are created on-demand by the agent manager. The `memory/tasks/` directory is explicitly created because the memory module may read from it before writing anything, and it contains user data (agent reasoning), so it should exist early.
 
@@ -578,7 +578,7 @@ function fileLog(level: string, name: string, msg: string): void {
 }
 ```
 
-**Impact:** On first run, `LOG_PATH` (`~/.bde/bde.log`) doesn't exist. `rotateIfNeeded()` catches the error and continues. `appendFileSync()` creates the file on first write. All errors are caught, so logging never crashes the app.
+**Impact:** On first run, `LOG_PATH` (`~/.fleet/fleet.log`) doesn't exist. `rotateIfNeeded()` catches the error and continues. `appendFileSync()` creates the file on first write. All errors are caught, so logging never crashes the app.
 
 **Recommendation:** No changes. Pattern is defensive and correct.
 

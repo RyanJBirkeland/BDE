@@ -1,26 +1,26 @@
 .git-section {
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
 }
 
 .git-section__header {
   display: flex;
   align-items: center;
-  padding: var(--bde-space-1) var(--bde-space-3);
-  gap: var(--bde-space-1);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
+  gap: var(--fleet-space-1);
   user-select: none;
 }
 
 .git-section__toggle {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
   flex: 1;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-xs);
-  font-family: var(--bde-font-ui);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-xs);
+  font-family: var(--fleet-font-ui);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -34,11 +34,11 @@
   justify-content: center;
   min-width: 16px;
   height: 16px;
-  padding: 0 var(--bde-space-1);
-  background-color: var(--bde-surface-high);
-  border-radius: var(--bde-radius-full);
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-muted);
+  padding: 0 var(--fleet-space-1);
+  background-color: var(--fleet-surface-high);
+  border-radius: var(--fleet-radius-full);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted);
   font-weight: 400;
 }
 
@@ -46,14 +46,14 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-xs);
-  font-family: var(--bde-font-ui);
-  padding: 2px var(--bde-space-1);
-  border-radius: var(--bde-radius-sm);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-xs);
+  font-family: var(--fleet-font-ui);
+  padding: 2px var(--fleet-space-1);
+  border-radius: var(--fleet-radius-sm);
 }
 
 .git-section__action-btn:hover:not(:disabled) {
-  color: var(--bde-text);
-  background-color: var(--bde-surface-high);
+  color: var(--fleet-text);
+  background-color: var(--fleet-surface-high);
 }

@@ -20,12 +20,12 @@ async function navigateToSprint(window: import('@playwright/test').Page): Promis
 }
 
 test.describe('Sprint Pipeline — stage rendering', () => {
-  test.afterEach(async ({ bde }) => {
-    await cleanupTestTasks(bde.window, TEST_PREFIX)
+  test.afterEach(async ({ fleet }) => {
+    await cleanupTestTasks(fleet.window, TEST_PREFIX)
   })
 
-  test('Pipeline view renders with queued, active, and done stage columns', async ({ bde }) => {
-    const { window } = bde
+  test('Pipeline view renders with queued, active, and done stage columns', async ({ fleet }) => {
+    const { window } = fleet
     await navigateToSprint(window)
 
     // Verify the three primary stages exist via data-testid
@@ -47,12 +47,12 @@ test.describe('Sprint Pipeline — stage rendering', () => {
 })
 
 test.describe('Sprint Pipeline — task placement', () => {
-  test.afterEach(async ({ bde }) => {
-    await cleanupTestTasks(bde.window, TEST_PREFIX)
+  test.afterEach(async ({ fleet }) => {
+    await cleanupTestTasks(fleet.window, TEST_PREFIX)
   })
 
-  test('Seeded backlog task appears in the backlog sidebar', async ({ bde }) => {
-    const { window } = bde
+  test('Seeded backlog task appears in the backlog sidebar', async ({ fleet }) => {
+    const { window } = fleet
 
     const task = await seedTask(window, {
       title: `${TEST_PREFIX}backlog-${Date.now()}`,
@@ -67,8 +67,8 @@ test.describe('Sprint Pipeline — task placement', () => {
     await expect(backlog.locator('text=' + task.title)).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Seeded queued task appears in the queued stage', async ({ bde }) => {
-    const { window } = bde
+  test('Seeded queued task appears in the queued stage', async ({ fleet }) => {
+    const { window } = fleet
 
     const task = await seedTask(window, {
       title: `${TEST_PREFIX}queued-${Date.now()}`,
@@ -85,12 +85,12 @@ test.describe('Sprint Pipeline — task placement', () => {
 })
 
 test.describe('Sprint Pipeline — detail drawer', () => {
-  test.afterEach(async ({ bde }) => {
-    await cleanupTestTasks(bde.window, TEST_PREFIX)
+  test.afterEach(async ({ fleet }) => {
+    await cleanupTestTasks(fleet.window, TEST_PREFIX)
   })
 
-  test('Clicking a task pill opens the detail drawer', async ({ bde }) => {
-    const { window } = bde
+  test('Clicking a task pill opens the detail drawer', async ({ fleet }) => {
+    const { window } = fleet
 
     const task = await seedTask(window, {
       title: `${TEST_PREFIX}drawer-${Date.now()}`,
@@ -114,12 +114,12 @@ test.describe('Sprint Pipeline — detail drawer', () => {
 })
 
 test.describe('Sprint Pipeline — blocked tasks', () => {
-  test.afterEach(async ({ bde }) => {
-    await cleanupTestTasks(bde.window, TEST_PREFIX)
+  test.afterEach(async ({ fleet }) => {
+    await cleanupTestTasks(fleet.window, TEST_PREFIX)
   })
 
-  test('Blocked task with hard dependency shows in blocked stage', async ({ bde }) => {
-    const { window } = bde
+  test('Blocked task with hard dependency shows in blocked stage', async ({ fleet }) => {
+    const { window } = fleet
     const ts = Date.now()
 
     // Seed a parent task (queued)

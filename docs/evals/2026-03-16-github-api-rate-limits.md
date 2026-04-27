@@ -13,7 +13,7 @@ REST 5000 req/hr bucket was NOT exhausted.
 ### A. Agent prompt templates — `gh pr create` (per-agent)
 
 Every spawned Claude Code agent is instructed to run `gh pr create` at the end of its work.
-This appears in all 8 BDE prompt files (`scripts/prompts/bde-*.md`) and all ~25 life-os
+This appears in all 8 FLEET prompt files (`scripts/prompts/fleet-*.md`) and all ~25 life-os
 prompt files (`life-os/scripts/prompts/*.md`).
 
 **Pattern in every prompt:**
@@ -31,13 +31,13 @@ without explicit prompt instructions — Claude Code's built-in `/commit` skill 
 - **`gh pr view $branch`** — called once per task to check if a PR already exists (line 30)
 - **`gh pr create`** — called if the branch has work but no PR yet (line 48)
 
-### C. BDE main process (`src/main/git.ts`) — `gh pr view` (polling)
+### C. FLEET main process (`src/main/git.ts`) — `gh pr view` (polling)
 
 `pollPrStatuses()` (line 159) calls `gh pr view <number> --repo ... --json state,mergedAt`
 for every sprint task that has a `pr_url`. This is polled at `POLL_PR_STATUS_MS = 15_000`
 (every 15 seconds) from `SprintCenter.tsx` (line 86).
 
-### D. BDE renderer (`src/renderer/src/lib/github-api.ts`) — REST (already!)
+### D. FLEET renderer (`src/renderer/src/lib/github-api.ts`) — REST (already!)
 
 `listOpenPRs()` and `mergePR()` already use the REST API directly via `fetch()`. These
 do NOT consume GraphQL points. The `PRList` component polls at
@@ -57,7 +57,7 @@ do NOT consume GraphQL points. The `PRList` component polls at
 
 **Estimated per-agent GraphQL cost: ~5-7 points** for a clean run.
 
-### The real problem: BDE's PR status polling
+### The real problem: FLEET's PR status polling
 
 With `POLL_PR_STATUS_MS = 15_000` and N tasks with PR URLs:
 
@@ -69,7 +69,7 @@ With `POLL_PR_STATUS_MS = 15_000` and N tasks with PR URLs:
 | 20                    | 20 × 240 × 1 = **4,800 pts/hr**             |
 
 **This is almost certainly the primary cause of hitting the limit.** With 27 agent
-runs producing PRs, the BDE app was polling 20+ PRs every 15 seconds via `gh pr view`,
+runs producing PRs, the FLEET app was polling 20+ PRs every 15 seconds via `gh pr view`,
 burning ~4,800 GraphQL points/hour on status polling alone.
 
 ### Daily budget math (27 agents)
@@ -77,7 +77,7 @@ burning ~4,800 GraphQL points/hour on status polling alone.
 | Source                                      | GraphQL pts/day                   |
 | ------------------------------------------- | --------------------------------- |
 | Agent `gh pr create` (27×)                  | ~135-189 pts                      |
-| BDE PR status polling (20 PRs, 8hr workday) | **~38,400 pts**                   |
+| FLEET PR status polling (20 PRs, 8hr workday) | **~38,400 pts**                   |
 | Sprint runner `gh pr view` checks           | ~27 pts                           |
 | **Total**                                   | **~38,500+ pts**                  |
 | **Budget**                                  | 5,000 pts/hr × 24hr = 120,000/day |
@@ -205,7 +205,7 @@ Better yet: only poll PRs in `OPEN` state. Once merged, stop polling.
 
 #### 4c. Update agent prompt templates to use `gh api` (REST)
 
-**All 8 BDE prompts + all life-os prompts:**
+**All 8 FLEET prompts + all life-os prompts:**
 
 Replace:
 
@@ -254,7 +254,7 @@ Instead of N individual `gh pr view` calls, use a single GraphQL query:
 
 ```graphql
 query {
-  repository(owner: "RyanJBirkeland", name: "BDE") {
+  repository(owner: "RyanJBirkeland", name: "FLEET") {
     pr1: pullRequest(number: 101) { state mergedAt }
     pr2: pullRequest(number: 102) { state mergedAt }
     ...
@@ -285,7 +285,7 @@ staying on GraphQL. The REST switch (4a) is simpler and sufficient.
 | ----------------------------------------------- | ------ | --------------------------- |
 | Convert `pollPrStatuses` to REST fetch          | 30 min | **~4,800 pts/hr**           |
 | Increase `POLL_PR_STATUS_MS` to 60s             | 1 min  | 75% reduction in REST calls |
-| Update 8 BDE prompt templates to `gh api`       | 15 min | ~40 pts/day                 |
+| Update 8 FLEET prompt templates to `gh api`       | 15 min | ~40 pts/day                 |
 | Update ~25 life-os prompt templates to `gh api` | 30 min | ~125 pts/day                |
 | Move PR creation into task-runner.js            | 2 hr   | Centralizes all API calls   |
 | Add rate limit pre-flight check                 | 15 min | Early warning system        |

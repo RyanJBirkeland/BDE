@@ -74,12 +74,12 @@ function CloseDialog({ onClose }: CloseDialogProps): React.ReactElement {
           Remember my choice
         </label>
         <div className="tearoff-shell__dialog-actions">
-          <button className="bde-btn bde-btn--ghost" onClick={() => handleClose('close')}>
+          <button className="fleet-btn fleet-btn--ghost" onClick={() => handleClose('close')}>
             Close
           </button>
           <button
             ref={returnBtnRef}
-            className="bde-btn bde-btn--primary"
+            className="fleet-btn fleet-btn--primary"
             onClick={() => handleClose('return')}
           >
             Return

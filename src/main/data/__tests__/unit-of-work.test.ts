@@ -33,7 +33,7 @@ afterEach(() => {
 function insertTaskRow(id: string): void {
   const sql = `
     INSERT INTO sprint_tasks (id, title, status, repo, priority, needs_review)
-    VALUES (?, 'test task', 'backlog', 'bde', 1, 0)
+    VALUES (?, 'test task', 'backlog', 'fleet', 1, 0)
   `
   db.prepare(sql).run(id)
 }

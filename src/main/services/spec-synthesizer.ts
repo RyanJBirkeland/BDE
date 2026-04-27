@@ -232,7 +232,7 @@ export async function synthesizeSpec(
   const prompt = buildSpecPrompt(request, context)
 
   // Stream generation — settingSources:[] skips CLAUDE.md; synthesizer
-  // receives BDE conventions via its prompt and doesn't need the project file.
+  // receives FLEET conventions via its prompt and doesn't need the project file.
   const spec = await runSdkStreaming(prompt, onChunk, activeStreams, streamId, 180_000, {
     model,
     settingSources: [],

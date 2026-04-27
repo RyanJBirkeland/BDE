@@ -161,7 +161,7 @@ export function MemoryFileList({
     <div className="memory-sidebar">
       <div className="memory-sidebar__header">
         <span className="memory-sidebar__title">Files</span>
-        <span className="memory-sidebar__count bde-count-badge">{files.length}</span>
+        <span className="memory-sidebar__count fleet-count-badge">{files.length}</span>
         <div className="memory-sidebar__actions">
           <Button
             variant="icon"
@@ -214,7 +214,7 @@ export function MemoryFileList({
           <>
             {isSearching ? (
               <div className="memory-sidebar__loading">
-                <div className="bde-skeleton memory-sidebar__skeleton" />
+                <div className="fleet-skeleton memory-sidebar__skeleton" />
               </div>
             ) : searchResults.length > 0 ? (
               <div className="memory-search-results">
@@ -343,7 +343,7 @@ export function MemoryFileList({
             {loadingFiles && files.length === 0 && (
               <div className="memory-sidebar__loading">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="bde-skeleton memory-sidebar__skeleton" />
+                  <div key={i} className="fleet-skeleton memory-sidebar__skeleton" />
                 ))}
               </div>
             )}

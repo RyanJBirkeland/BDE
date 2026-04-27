@@ -4,25 +4,25 @@
   gap: 4px;
   padding: 8px 12px;
   margin-bottom: 10px;
-  background: var(--bde-danger-surface);
-  border: 1px solid var(--bde-danger-border);
-  border-radius: var(--bde-radius-md);
+  background: var(--fleet-danger-surface);
+  border: 1px solid var(--fleet-danger-border);
+  border-radius: var(--fleet-radius-md);
   font-family: ui-monospace, Menlo, monospace;
-  font-size: var(--bde-size-xs);
-  color: var(--bde-danger-text);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-danger-text);
 }
 
 .fires-strip__alert {
   background: transparent;
   border: none;
-  color: var(--bde-danger-text);
+  color: var(--fleet-danger-text);
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
   padding: 2px 6px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
 }
 
 .fires-strip__separator {
-  color: var(--bde-border);
+  color: var(--fleet-border);
 }

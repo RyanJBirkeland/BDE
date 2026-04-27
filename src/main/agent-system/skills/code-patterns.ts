@@ -1,10 +1,10 @@
-import type { BDESkill } from './types'
+import type { FLEETSkill } from './types'
 
-export const codePatternsSkill: BDESkill = {
+export const codePatternsSkill: FLEETSkill = {
   id: 'code-patterns',
-  trigger: 'User asks to generate BDE-idiomatic code (IPC, Zustand, panels)',
-  description: 'Generate code following BDE conventions',
-  guidance: `# BDE Code Patterns
+  trigger: 'User asks to generate FLEET-idiomatic code (IPC, Zustand, panels)',
+  description: 'Generate code following FLEET conventions',
+  guidance: `# FLEET Code Patterns
 
 ## IPC Handlers
 All handlers must use safeHandle() wrapper:

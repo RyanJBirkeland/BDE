@@ -1,13 +1,13 @@
-# BDE Packaging & Handoff Readiness Audit
+# FLEET Packaging & Handoff Readiness Audit
 
 **Date:** 2026-04-16
 **Git SHA:** 8254204b9a294a38848875bb98a10e344c13dccf (main)
 **Branch:** audit/packaging-handoff-2026-04-16
-**Audit target:** The packaged .dmg installed on a fresh Mac with no prior BDE setup.
+**Audit target:** The packaged .dmg installed on a fresh Mac with no prior FLEET setup.
 
 ## Scope
 
-What breaks when a user downloads BDE-*.dmg, installs it on a clean macOS box, and launches it for the first time. Not the dev repo clone — the packaged app.
+What breaks when a user downloads FLEET-*.dmg, installs it on a clean macOS box, and launches it for the first time. Not the dev repo clone — the packaged app.
 
 ## Out of Scope (already fixed)
 

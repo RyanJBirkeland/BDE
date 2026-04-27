@@ -9,7 +9,7 @@ interface NeonBadgeProps {
 export function NeonBadge({ accent, label, pulse = false }: NeonBadgeProps): React.JSX.Element {
   return (
     <span
-      className={`bde-badge bde-badge--sm ${pulse ? 'bde-badge--pulse' : ''}`}
+      className={`fleet-badge fleet-badge--sm ${pulse ? 'fleet-badge--pulse' : ''}`}
       style={
         {
           color: neonVar(accent, 'color'),

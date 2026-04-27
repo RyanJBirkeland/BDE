@@ -3,7 +3,7 @@
  *
  * Supports structured queries like:
  * - status:active
- * - repo:BDE
+ * - repo:FLEET
  * - priority:<=2
  * - tag:frontend
  * - created:>7d

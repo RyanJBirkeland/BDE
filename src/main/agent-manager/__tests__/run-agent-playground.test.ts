@@ -56,7 +56,7 @@ vi.mock('../../data/sprint-queries', () => ({
 
 vi.mock('../../paths', () => ({
   getGhRepo: vi.fn().mockReturnValue('owner/repo'),
-  BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
+  FLEET_TASK_MEMORY_DIR: '/tmp/fleet-test/tasks'
 }))
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -210,7 +210,7 @@ describe('runAgent — playground prompt injection', () => {
       title: 'Build a button component',
       prompt: 'Create a styled button',
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0,
       playground_enabled: true
@@ -222,7 +222,7 @@ describe('runAgent — playground prompt injection', () => {
     expect(capturedPrompt).toContain('Create a styled button')
     expect(capturedPrompt).toContain('## Dev Playground')
     expect(capturedPrompt).toContain('self-contained HTML file')
-    expect(capturedPrompt).toContain('BDE renders the HTML natively')
+    expect(capturedPrompt).toContain('FLEET renders the HTML natively')
   })
 
   it('does not append playground instructions when playground_enabled is false', async () => {
@@ -232,7 +232,7 @@ describe('runAgent — playground prompt injection', () => {
       title: 'Fix backend bug',
       prompt: 'Fix the database query',
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0,
       playground_enabled: false
@@ -252,7 +252,7 @@ describe('runAgent — playground prompt injection', () => {
       title: 'Refactor module',
       prompt: 'Refactor the module',
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0
       // playground_enabled not set
@@ -272,7 +272,7 @@ describe('runAgent — playground prompt injection', () => {
       title: 'Component work',
       prompt: null,
       spec: 'Build a card component with hover effects',
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0,
       playground_enabled: true
@@ -292,7 +292,7 @@ describe('runAgent — playground prompt injection', () => {
       title: 'Create landing page',
       prompt: null,
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0,
       playground_enabled: true
@@ -313,7 +313,7 @@ describe('runAgent — playground prompt injection', () => {
       title: '',
       prompt: '',
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0,
       playground_enabled: true
@@ -345,7 +345,7 @@ describe('AgentRunClaim interface', () => {
       title: 'test',
       prompt: 'test',
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0,
       playground_enabled: true
@@ -357,7 +357,7 @@ describe('AgentRunClaim interface', () => {
       title: 'test',
       prompt: 'test',
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0
     }
@@ -448,7 +448,7 @@ describe('runAgent — playground-before-cleanup ordering', () => {
       title: 'Ordering test',
       prompt: 'Build something visual',
       spec: null,
-      repo: 'BDE',
+      repo: 'FLEET',
       retry_count: 0,
       fast_fail_count: 0,
       playground_enabled: true

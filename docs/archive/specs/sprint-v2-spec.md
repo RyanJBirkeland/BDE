@@ -1,9 +1,9 @@
-# BDE Sprint Center v2 — Spec
+# FLEET Sprint Center v2 — Spec
 
 > **Status: IMPLEMENTED (2026-03-16)**
 > Core features shipped: 4-column Kanban (backlog/queued/active/done), New Ticket modal,
 > glass column styling, "Push to Sprint" action, SpecDrawer with Ask Paul.
-> **Data layer note:** This spec originally referenced Supabase — the data layer is now local SQLite (`~/.bde/bde.db`).
+> **Data layer note:** This spec originally referenced Supabase — the data layer is now local SQLite (`~/.fleet/fleet.db`).
 > All `supabaseFetch()` references below should be read as SQLite queries via `getDb()`.
 
 **Date:** 2026-03-16
@@ -36,7 +36,7 @@
 
 ### Data Layer
 
-Currently SprintCenter reads from `memory/projects/bde-agent-queue.json` via `window.api.readMemoryFile`. This is a local file, not the Supabase sprint_tasks table. The task runner reads from Supabase.
+Currently SprintCenter reads from `memory/projects/fleet-agent-queue.json` via `window.api.readMemoryFile`. This is a local file, not the Supabase sprint_tasks table. The task runner reads from Supabase.
 
 **New data layer:** SprintCenter must read/write Supabase `sprint_tasks` directly. Add IPC handlers to main process:
 
@@ -95,7 +95,7 @@ Replace `AddCardForm` (the tiny "+ Add Card" at bottom of Backlog column) with a
 │  └─────────────────────────────────────────────────────────┘     │
 │                                                                   │
 │  Repo              Priority                                       │
-│  [BDE ▼]           [● Medium ▼]                                  │
+│  [FLEET ▼]           [● Medium ▼]                                  │
 │                                                                   │
 │  Template                                                         │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │
@@ -142,7 +142,7 @@ The "Ask Paul to generate" button calls the OpenClaw gateway to generate a spec 
 
 ```typescript
 async function askPaulToGenerateSpec(title: string, repo: string, draft: string): Promise<string> {
-  const prompt = `You are a senior engineer writing a coding agent spec for BDE (Birkeland Development Environment).
+  const prompt = `You are a senior engineer writing a coding agent spec for FLEET (Agentic Development Environment).
 
 Task title: "${title}"
 Repo: ${repo}
@@ -255,7 +255,7 @@ Columns themselves are glass panels:
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│  ✦ SPRINT CENTER                    [BDE] [Feast] [Life OS] [All]  │
+│  ✦ SPRINT CENTER                    [FLEET] [Feast] [Life OS] [All]  │
 │  ──────────────────────────────── gradient line ────────────────── │
 │  [+ New Ticket]                                          [↻ Refresh]│
 └────────────────────────────────────────────────────────────────────┘
@@ -388,7 +388,7 @@ The sprint IPC handlers need the Supabase URL + service role key. These should b
 1. `process.env.SUPABASE_SERVICE_ROLE_KEY` (already set in launchd plist via life-os .env)
 2. `process.env.VITE_SUPABASE_URL`
 
-Both are already in `~/Documents/Repositories/life-os/.env` and loaded by the task runner. The BDE main process launchd plist (`com.rbtechbot.bde-dev`) may not have these env vars. Agent should:
+Both are already in `~/Documents/Repositories/life-os/.env` and loaded by the task runner. The FLEET main process launchd plist (`com.rbtechbot.fleet-dev`) may not have these env vars. Agent should:
 
 1. Check if they're available via `process.env`
 2. If not, read `~/Documents/Repositories/life-os/.env` at startup and inject

@@ -1,4 +1,4 @@
-# ASAR Path Resolution Audit — BDE Electron App
+# ASAR Path Resolution Audit — FLEET Electron App
 
 **Date:** 2026-04-16  
 **Auditor:** Claude (ASAR Path Expert)  
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-BDE's Electron bundle is laid out as **three compiled entry points** bundled by `electron-vite` into `/out/{main,preload,renderer}/`:
+FLEET's Electron bundle is laid out as **three compiled entry points** bundled by `electron-vite` into `/out/{main,preload,renderer}/`:
 
 - **`out/main/index.js`** — monolithic main process (1.5MB), with all migrations pre-resolved via `import.meta.glob()` at build time into a static `migrationModules` object. No runtime filesystem scans.
 - **`out/preload/index.js`** — preload script (16.5KB), bundled as a single file.
@@ -16,7 +16,7 @@ BDE's Electron bundle is laid out as **three compiled entry points** bundled by 
 
 The **critical path-resolution pattern** throughout the codebase uses **`__dirname` relative to the compiled output location**, not the source tree. This works in both dev (where `__dirname` points to `out/` subdirs) and production (where `__dirname` points to `.asar/out/` subdirs).
 
-**Verdict: No Critical ASAR path bugs detected.** All migrations are static-bundled, all dynamic requires go to user-writable directories (`~/.bde/`), and the HTML loading path is guarded by `is.dev` correctly. One minor hardening opportunity identified.
+**Verdict: No Critical ASAR path bugs detected.** All migrations are static-bundled, all dynamic requires go to user-writable directories (`~/.fleet/`), and the HTML loading path is guarded by `is.dev` correctly. One minor hardening opportunity identified.
 
 ---
 
@@ -113,7 +113,7 @@ In production, this resolves to `.asar/out/preload/index.js` — a bundled file 
 
 ---
 
-### ✅ F-t1-asar-paths-4: Plugin loader targets user-writable directory (~/.bde/plugins)
+### ✅ F-t1-asar-paths-4: Plugin loader targets user-writable directory (~/.fleet/plugins)
 
 **Severity:** N/A (Correct Implementation)  
 **Category:** resource-loading  
@@ -124,9 +124,9 @@ In production, this resolves to `.asar/out/preload/index.js` — a bundled file 
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 
-const PLUGINS_DIR = join(homedir(), '.bde', 'plugins')
+const PLUGINS_DIR = join(homedir(), '.fleet', 'plugins')
 
-export function loadPlugins(): BdePlugin[] {
+export function loadPlugins(): FleetPlugin[] {
   if (!existsSync(PLUGINS_DIR)) {
     logger.info(`[plugin-loader] No plugins directory at ${PLUGINS_DIR}`)
     return []
@@ -156,15 +156,15 @@ export function loadPlugins(): BdePlugin[] {
 **Evidence:**
 
 ```typescript
-export const BDE_DIR = process.env.BDE_DATA_DIR ?? join(homedir(), '.bde')
-export const BDE_DB_PATH = process.env.BDE_TEST_DB ?? process.env.BDE_DB_PATH ?? join(BDE_DIR, 'bde.db')
-export const BDE_AGENTS_INDEX = join(BDE_DIR, 'agents.json')
-export const BDE_AGENT_LOGS_DIR = join(BDE_DIR, 'agent-logs')
-export const BDE_MEMORY_DIR = join(BDE_DIR, 'memory')
-export const BDE_TASK_MEMORY_DIR = join(BDE_MEMORY_DIR, 'tasks')
+export const FLEET_DIR = process.env.FLEET_DATA_DIR ?? join(homedir(), '.fleet')
+export const FLEET_DB_PATH = process.env.FLEET_TEST_DB ?? process.env.FLEET_DB_PATH ?? join(FLEET_DIR, 'fleet.db')
+export const FLEET_AGENTS_INDEX = join(FLEET_DIR, 'agents.json')
+export const FLEET_AGENT_LOGS_DIR = join(FLEET_DIR, 'agent-logs')
+export const FLEET_MEMORY_DIR = join(FLEET_DIR, 'memory')
+export const FLEET_TASK_MEMORY_DIR = join(FLEET_MEMORY_DIR, 'tasks')
 ```
 
-All user data lives outside the ASAR bundle, in `~/.bde/` or environment-overridable paths.
+All user data lives outside the ASAR bundle, in `~/.fleet/` or environment-overridable paths.
 
 **Impact:** ✅ **No risk.** User data is kept out of the bundle boundary.
 
@@ -332,7 +332,7 @@ const csp = is.dev
 
 ## Conclusion
 
-**BDE's packaging is production-ready.** The codebase demonstrates:
+**FLEET's packaging is production-ready.** The codebase demonstrates:
 
 1. **Correct migration bundling** — No runtime filesystem scans; all migrations are pre-resolved by Vite.
 2. **Proper data isolation** — User data and plugins live outside the ASAR bundle.

@@ -52,7 +52,7 @@ When sessions are loading for the first time (empty array + loading), show 4-5 s
   loading && agents.length === 0 && (
     <div className="session-list__loading">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="bde-skeleton session-list__skeleton" />
+        <div key={i} className="fleet-skeleton session-list__skeleton" />
       ))}
     </div>
   )
@@ -65,7 +65,7 @@ Add CSS:
 .session-list__skeleton {
   height: 48px;
   margin: 4px 8px;
-  border-radius: var(--bde-radius-md);
+  border-radius: var(--fleet-radius-md);
 }
 ```
 

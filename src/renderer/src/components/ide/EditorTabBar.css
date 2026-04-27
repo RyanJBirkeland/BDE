@@ -4,8 +4,8 @@
   align-items: center;
   height: 35px;
   flex-shrink: 0;
-  background: var(--bde-surface);
-  border-bottom: 1px solid var(--bde-border);
+  background: var(--fleet-surface);
+  border-bottom: 1px solid var(--fleet-border);
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -16,21 +16,21 @@
   background: transparent;
 }
 .ide-editor-tab-bar::-webkit-scrollbar-thumb {
-  background: var(--bde-border);
+  background: var(--fleet-border);
 }
 .ide-editor-tab {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 var(--bde-space-2) 0 var(--bde-space-3);
+  padding: 0 var(--fleet-space-2) 0 var(--fleet-space-3);
   height: 100%;
   min-width: 80px;
   max-width: 200px;
   flex-shrink: 0;
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
   cursor: pointer;
-  border-right: 1px solid var(--bde-border);
+  border-right: 1px solid var(--fleet-border);
   background: transparent;
   border-top: 2px solid transparent;
   transition:
@@ -41,17 +41,17 @@
   overflow: hidden;
 }
 .ide-editor-tab:hover {
-  background: var(--bde-hover);
-  color: var(--bde-text);
+  background: var(--fleet-hover);
+  color: var(--fleet-text);
 }
 .ide-editor-tab:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: -2px;
 }
 .ide-editor-tab--active {
-  color: var(--bde-text);
-  background: var(--bde-bg);
-  border-top-color: var(--bde-accent);
+  color: var(--fleet-text);
+  background: var(--fleet-bg);
+  border-top-color: var(--fleet-accent);
 }
 .ide-editor-tab__name {
   flex: 1;
@@ -59,8 +59,8 @@
   text-overflow: ellipsis;
 }
 .ide-editor-tab__dirty {
-  color: var(--bde-accent);
-  font-size: var(--bde-size-2xs);
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-2xs);
   flex-shrink: 0;
 }
 .ide-editor-tab__close {
@@ -71,8 +71,8 @@
   height: 16px;
   border: none;
   background: transparent;
-  color: var(--bde-text-dim);
-  border-radius: var(--bde-radius-sm);
+  color: var(--fleet-text-dim);
+  border-radius: var(--fleet-radius-sm);
   cursor: pointer;
   flex-shrink: 0;
   opacity: 0;
@@ -86,19 +86,19 @@
   opacity: 1;
 }
 .ide-editor-tab__close:hover {
-  color: var(--bde-text);
-  background: var(--bde-hover-strong);
+  color: var(--fleet-text);
+  background: var(--fleet-hover-strong);
 }
 .ide-editor-tab__close:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: -2px;
 }
 
 /* Neon Theme Overrides */
 .ide-editor-tab-bar {
   position: relative;
-  background: var(--bde-surface-high);
-  border-bottom: 1px solid var(--bde-accent-border);
+  background: var(--fleet-surface-high);
+  border-bottom: 1px solid var(--fleet-accent-border);
   /* Scroll shadow indicators for overflow */
   mask-image: linear-gradient(
     to right,
@@ -123,35 +123,35 @@
 }
 
 .ide-editor-tab-bar::-webkit-scrollbar-thumb {
-  background: var(--bde-accent-border);
+  background: var(--fleet-accent-border);
 }
 
 .ide-editor-tab {
-  color: var(--bde-text-dim);
-  border-right: 1px solid var(--bde-border);
+  color: var(--fleet-text-dim);
+  border-right: 1px solid var(--fleet-border);
 }
 
 .ide-editor-tab:hover {
-  background: var(--bde-border);
-  color: var(--bde-text-muted);
+  background: var(--fleet-border);
+  color: var(--fleet-text-muted);
 }
 
 .ide-editor-tab--active {
-  color: var(--bde-text);
-  background: var(--bde-bg);
-  border-top-color: var(--bde-accent);
-  box-shadow: inset 0 2px 8px var(--bde-accent-surface);
+  color: var(--fleet-text);
+  background: var(--fleet-bg);
+  border-top-color: var(--fleet-accent);
+  box-shadow: inset 0 2px 8px var(--fleet-accent-surface);
 }
 
 .ide-editor-tab__dirty {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .ide-editor-tab__close {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .ide-editor-tab__close:hover {
-  color: var(--bde-text);
-  background: var(--bde-surface);
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
 }

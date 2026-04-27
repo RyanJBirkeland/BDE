@@ -28,7 +28,7 @@ vi.stubGlobal('window', {
   ...window,
   api: {
     sprint: { create: mockCreate, generatePrompt: mockGeneratePrompt },
-    getRepoPaths: vi.fn().mockResolvedValue({ bde: '/path/bde' })
+    getRepoPaths: vi.fn().mockResolvedValue({ fleet: '/path/fleet' })
   }
 })
 
@@ -40,17 +40,17 @@ describe('QuickCreateBar', () => {
   })
 
   it('renders input when open', () => {
-    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="bde" />)
+    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="fleet" />)
     expect(screen.getByPlaceholderText(/task title/i)).toBeInTheDocument()
   })
 
   it('does not render when closed', () => {
-    render(<QuickCreateBar open={false} onClose={onClose} defaultRepo="bde" />)
+    render(<QuickCreateBar open={false} onClose={onClose} defaultRepo="fleet" />)
     expect(screen.queryByPlaceholderText(/task title/i)).not.toBeInTheDocument()
   })
 
   it('creates backlog task on Enter', async () => {
-    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="bde" />)
+    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="fleet" />)
     const input = screen.getByPlaceholderText(/task title/i)
     fireEvent.change(input, { target: { value: 'Fix bug' } })
     fireEvent.keyDown(input, { key: 'Enter' })
@@ -60,21 +60,21 @@ describe('QuickCreateBar', () => {
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Fix bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'backlog'
       })
     )
   })
 
   it('closes on Escape', () => {
-    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="bde" />)
+    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="fleet" />)
     const input = screen.getByPlaceholderText(/task title/i)
     fireEvent.keyDown(input, { key: 'Escape' })
     expect(onClose).toHaveBeenCalled()
   })
 
   it('creates queued task on Cmd+Enter', async () => {
-    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="bde" />)
+    render(<QuickCreateBar open={true} onClose={onClose} defaultRepo="fleet" />)
     const input = screen.getByPlaceholderText(/task title/i)
     fireEvent.change(input, { target: { value: 'Add feature' } })
     fireEvent.keyDown(input, { key: 'Enter', metaKey: true })
@@ -84,7 +84,7 @@ describe('QuickCreateBar', () => {
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Add feature',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued'
       })
     )

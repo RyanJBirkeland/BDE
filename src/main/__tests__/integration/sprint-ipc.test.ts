@@ -187,7 +187,7 @@ vi.mock('../../db', () => ({
 
 // Mock git (getRepoPaths used by sprint:create repo-existence check)
 vi.mock('../../git', () => ({
-  getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' }))
+  getRepoPaths: vi.fn(() => ({ fleet: '/Users/ryan/projects/FLEET' }))
 }))
 
 // Phase-5 audit: getRepoPaths canonical owner is paths.ts now; sprint-service
@@ -196,9 +196,9 @@ vi.mock('../../paths', async () => {
   const actual = await vi.importActual<typeof import('../../paths')>('../../paths')
   return {
     ...actual,
-    getRepoPaths: vi.fn(() => ({ bde: '/Users/ryan/projects/BDE' })),
+    getRepoPaths: vi.fn(() => ({ fleet: '/Users/ryan/projects/FLEET' })),
     getRepoPath: vi.fn((name: string) =>
-      name.toLowerCase() === 'bde' ? '/Users/ryan/projects/BDE' : undefined
+      name.toLowerCase() === 'fleet' ? '/Users/ryan/projects/FLEET' : undefined
     )
   }
 })
@@ -253,7 +253,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: 'task-001',
     title: 'Fix login bug',
-    repo: 'bde',
+    repo: 'fleet',
     prompt: 'Fix the login bug in auth module',
     priority: 0,
     status: 'backlog',
@@ -316,19 +316,19 @@ describe('Sprint IPC handlers — integration', () => {
 
       const result = await invoke('sprint:create', {
         title: 'Fix login bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'backlog'
       })
 
       expect(result).toEqual(created)
       expect(mockCreateTask).toHaveBeenCalledOnce()
       expect(mockCreateTask).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Fix login bug', repo: 'bde' })
+        expect.objectContaining({ title: 'Fix login bug', repo: 'fleet' })
       )
     })
 
     it('rejects creation when title is missing', async () => {
-      await expect(invoke('sprint:create', { title: '', repo: 'bde' })).rejects.toThrow(
+      await expect(invoke('sprint:create', { title: '', repo: 'fleet' })).rejects.toThrow(
         'task.title must be a non-empty string'
       )
     })
@@ -349,7 +349,7 @@ describe('Sprint IPC handlers — integration', () => {
 
       const result = await invoke('sprint:create', {
         title: 'Fix login bug',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'backlog',
         model: 'claude-haiku-3-5'
       })
@@ -490,7 +490,7 @@ describe('Sprint IPC handlers — integration', () => {
 
       const result = await invoke('sprint:create', {
         title: 'Depends on another',
-        repo: 'bde',
+        repo: 'fleet',
         spec: validSpec,
         status: 'queued',
         depends_on: [{ id: 'dep-task-1', type: 'hard' }]
@@ -525,7 +525,7 @@ describe('Sprint IPC handlers — integration', () => {
 
       const result = await invoke('sprint:create', {
         title: 'Depends on done task',
-        repo: 'bde',
+        repo: 'fleet',
         spec: validSpec,
         status: 'queued',
         depends_on: [{ id: 'dep-task-1', type: 'hard' }]
@@ -552,7 +552,7 @@ describe('Sprint IPC handlers — integration', () => {
         throw new Error('Insert failed: duplicate key')
       })
 
-      await expect(invoke('sprint:create', { title: 'Dup task', repo: 'bde' })).rejects.toThrow(
+      await expect(invoke('sprint:create', { title: 'Dup task', repo: 'fleet' })).rejects.toThrow(
         'Insert failed: duplicate key'
       )
     })

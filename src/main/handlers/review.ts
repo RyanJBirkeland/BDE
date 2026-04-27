@@ -200,9 +200,9 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     })
   })
 
-  safeHandle('review:markShippedOutsideBde', async (_e, payload) => {
+  safeHandle('review:markShippedOutsideFleet', async (_e, payload) => {
     const { taskId } = payload
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-    return reviewOrchestration.markShippedOutsideBde(taskId, { taskStateService: deps.taskStateService })
+    return reviewOrchestration.markShippedOutsideFleet(taskId, { taskStateService: deps.taskStateService })
   })
 }

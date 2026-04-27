@@ -235,7 +235,7 @@ export function WorkbenchForm({
             id="wb-form-repo"
             value={repo}
             onChange={(e) => setField('repo', e.target.value)}
-            className="wb-form__select bde-select"
+            className="wb-form__select fleet-select"
           >
             <option value="" disabled>
               Select a repository...
@@ -259,7 +259,7 @@ export function WorkbenchForm({
             id="wb-form-priority"
             value={priority}
             onChange={(e) => setField('priority', Number(e.target.value))}
-            className="wb-form__select bde-select"
+            className="wb-form__select fleet-select"
           >
             {PRIORITY_OPTIONS.map((p) => (
               <option key={p.value} value={p.value}>
@@ -346,7 +346,7 @@ export function WorkbenchForm({
                     <div
                       style={{
                         fontSize: '0.85em',
-                        color: 'var(--bde-text-muted)',
+                        color: 'var(--fleet-text-muted)',
                         marginTop: '0.25rem'
                       }}
                     >

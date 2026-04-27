@@ -57,7 +57,7 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
     } catch {
       setReposConfigured(false)
       setExistingRepos([])
-      setSettingsError('Failed to read settings — check ~/.bde/bde.log')
+      setSettingsError('Failed to read settings — check ~/.fleet/fleet.log')
     }
     setChecking(false)
   }
@@ -124,7 +124,7 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       <h1 className="onboarding-step__title">Repository Configuration</h1>
 
       <p className="onboarding-step__description">
-        Add a repository so BDE can dispatch agents to work on it. We&apos;ll auto-detect the
+        Add a repository so FLEET can dispatch agents to work on it. We&apos;ll auto-detect the
         GitHub remote when you pick a folder. This step is optional — you can{' '}
         <button
           type="button"
@@ -133,7 +133,7 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
             background: 'none',
             border: 'none',
             padding: 0,
-            color: 'var(--bde-accent)',
+            color: 'var(--fleet-accent)',
             cursor: 'pointer',
             textDecoration: 'underline',
             font: 'inherit'
@@ -162,12 +162,12 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       </div>
 
       {existingRepos.length > 0 && (
-        <div style={{ marginTop: 'var(--bde-space-2)' }}>
+        <div style={{ marginTop: 'var(--fleet-space-2)' }}>
           <p
             style={{
-              fontSize: 'var(--bde-size-sm)',
-              color: 'var(--bde-text-muted)',
-              marginBottom: 'var(--bde-space-1)'
+              fontSize: 'var(--fleet-size-sm)',
+              color: 'var(--fleet-text-muted)',
+              marginBottom: 'var(--fleet-space-1)'
             }}
           >
             Configured repositories:
@@ -179,15 +179,15 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 'var(--bde-space-2)',
+                  gap: 'var(--fleet-space-2)',
                   padding: '4px 0',
-                  fontSize: 'var(--bde-size-sm)'
+                  fontSize: 'var(--fleet-size-sm)'
                 }}
               >
                 <Check size={14} className="onboarding-step__check-icon--success" />
                 <span>{r.name}</span>
                 {r.localPath && (
-                  <span style={{ color: 'var(--bde-text-muted)' }}>{r.localPath}</span>
+                  <span style={{ color: 'var(--fleet-text-muted)' }}>{r.localPath}</span>
                 )}
               </li>
             ))}
@@ -198,9 +198,9 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       {settingsError && (
         <p
           style={{
-            color: 'var(--bde-color-error, red)',
-            fontSize: 'var(--bde-size-sm)',
-            marginTop: 'var(--bde-space-2)'
+            color: 'var(--fleet-color-error, red)',
+            fontSize: 'var(--fleet-size-sm)',
+            marginTop: 'var(--fleet-space-2)'
           }}
         >
           ⚠ {settingsError}

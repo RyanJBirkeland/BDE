@@ -78,7 +78,7 @@ describe('AgentConsole', () => {
     exitCode: null,
     status: 'running',
     logPath: '/path/to/log',
-    source: 'bde',
+    source: 'fleet',
     costUsd: null,
     tokensIn: null,
     tokensOut: null,

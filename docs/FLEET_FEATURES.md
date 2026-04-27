@@ -1,13 +1,13 @@
-# BDE Feature Reference
+# FLEET Feature Reference
 
-BDE (Birkeland Development Environment) is an Electron desktop app for autonomous software development. It orchestrates AI agents that execute sprint tasks — from spec creation through code, PR, and merge.
+FLEET (Agentic Development Environment) is an Electron desktop app for autonomous software development. It orchestrates AI agents that execute sprint tasks — from spec creation through code, PR, and merge.
 
-This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.md. It serves as both agent context and user documentation.
+This document is auto-loaded by all FLEET agents via the `@` directive in CLAUDE.md. It serves as both agent context and user documentation.
 
-## How Work Flows Through BDE
+## How Work Flows Through FLEET
 
 1. **Create** — Task Workbench: draft specs with AI copilot assistance, define dependencies between tasks, run validation checks before queuing
-2. **Queue** — Tasks enter the Sprint Pipeline with status `queued` via the BDE UI (Task Workbench or Sprint Pipeline)
+2. **Queue** — Tasks enter the Sprint Pipeline with status `queued` via the FLEET UI (Task Workbench or Sprint Pipeline)
 3. **Execute** — Agent Manager claims queued tasks, spawns pipeline agents in isolated git worktrees. Agents write code, run tests, and commit. If `playground_enabled` is set, HTML file writes render inline via Dev Playground
 4. **Review** — Agents complete work and transition tasks to `review` status, preserving the worktree. Code Review Station provides diff inspection, commit history, and action buttons (merge locally, create PR, request revision, discard). Users review changes before integration
 5. **Complete** — Merged PRs or local merges mark tasks `done`. Dependency resolution automatically unblocks downstream tasks with satisfied dependencies
@@ -20,7 +20,7 @@ This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.m
 
 Planning and spec creation interface, presented as a centered modal (`TaskWorkbenchModal`). Opens from the Task Planner (Add Task / Edit Task) and from the Task Pipeline (Edit on a selected task). Users draft task specs with AI copilot assistance, configure task properties, and run validation checks before queuing.
 
-- **Copilot**: AI chat assistant for drafting specs. Text-only, uses Agent SDK streaming via `workbench:chatStream` IPC. Messages persist to localStorage under `bde:copilot-messages` (capped at 100). Cannot use tools or explore code — for codebase-aware spec generation, use the Synthesizer instead
+- **Copilot**: AI chat assistant for drafting specs. Text-only, uses Agent SDK streaming via `workbench:chatStream` IPC. Messages persist to localStorage under `fleet:copilot-messages` (capped at 100). Cannot use tools or explore code — for codebase-aware spec generation, use the Synthesizer instead
 - **Validation checks**: Validates spec quality before queuing. Specs require at least 2 `## heading` sections. Semantic checks use SDK with haiku model for speed
 - **Spec types**: `spec` (structured markdown with headings — required for `status=queued`) or `prompt` (freeform text)
 - **Dev Playground toggle**: Enables inline HTML rendering for the task's pipeline agent. When enabled, any `.html` file the agent writes will render in-app
@@ -65,7 +65,7 @@ Multi-task workflow planning view (Cmd+8). Organizes tasks into epics (task grou
 
 ### Agent Types
 
-BDE spawns six types of AI agents, each with different capabilities and contexts:
+FLEET spawns six types of AI agents, each with different capabilities and contexts:
 
 | Type        | Spawned by             | Interactive      | Tool access      | Worktree              | Playground |
 | ----------- | ---------------------- | ---------------- | ---------------- | --------------------- | ---------- |
@@ -77,8 +77,8 @@ BDE spawns six types of AI agents, each with different capabilities and contexts
 | Synthesizer | Task Workbench         | No (single-turn) | None             | No                    | No         |
 
 - **Pipeline**: Executes sprint tasks autonomously. Works in isolated git worktree. Commits changes and transitions to `review` status, preserving worktree for human inspection. Prompt includes task spec/prompt and branch name
-- **Adhoc**: User-spawned one-off tasks from the Agents view. Multi-turn sessions via SDK `query()` with session resumption (`resume: sessionId`). Runs in a dedicated worktree under `~/.bde/worktrees-adhoc/` so user sessions don't mutate the main repo tree
-- **Assistant**: Same as adhoc but with assistant role framing — answers questions, suggests approaches, recommends Dev Playground for visual/UI work. Runs in a dedicated worktree under `~/.bde/worktrees-adhoc/` (same setup as Adhoc) so user sessions never mutate the main repo tree
+- **Adhoc**: User-spawned one-off tasks from the Agents view. Multi-turn sessions via SDK `query()` with session resumption (`resume: sessionId`). Runs in a dedicated worktree under `~/.fleet/worktrees-adhoc/` so user sessions don't mutate the main repo tree
+- **Assistant**: Same as adhoc but with assistant role framing — answers questions, suggests approaches, recommends Dev Playground for visual/UI work. Runs in a dedicated worktree under `~/.fleet/worktrees-adhoc/` (same setup as Adhoc) so user sessions never mutate the main repo tree
 - **Reviewer**: Spawned from Code Review Station against a completed agent's worktree. Produces either a structured JSON review (via `buildStructuredReviewPrompt`) or an interactive conversation (via `buildInteractiveReviewPrompt`). Does not commit code
 - **Copilot**: Text-only spec drafting helper in Task Workbench. ~500 word limit. Cannot use tools, open URLs, or explore code. Helps users refine task specs through conversation
 - **Synthesizer**: Generates structured specs from codebase context + user answers. Receives file tree and relevant code snippets. Outputs markdown with `## heading` sections. Single-turn (`maxTurns: 1`)
@@ -87,15 +87,15 @@ Each agent type uses a specific `settingSources` value when spawning via the SDK
 
 | Agent type | `settingSources` | Rationale |
 |---|---|---|
-| Pipeline | `['user', 'local']` | `'project'` excluded — BDE conventions are injected via the composed prompt to avoid double-injecting CLAUDE.md |
+| Pipeline | `['user', 'local']` | `'project'` excluded — FLEET conventions are injected via the composed prompt to avoid double-injecting CLAUDE.md |
 | Adhoc / Assistant / Reviewer | `[]` | Conventions injected via explicit prompt context |
 | Copilot / Synthesizer | `[]` | Conventions injected via explicit prompt context |
 
 Prompts are composed by `buildAgentPrompt()` in `src/main/lib/prompt-composer.ts`. Reviewer prompts have dedicated builders in `src/main/agent-manager/prompt-composer-reviewer.ts`.
 
 - **Universal preamble**: Cross-cutting rules (commit format, pre-commit checks, branch hygiene) are injected via the universal preamble in the prompt composer. No CLAUDE.md is required at spawn time.
-- **User memory portability**: User memory (`~/.bde/memory/`) is per-machine and is not synced across machines. On a new machine, agents will not have access to memory files created on the original machine.
-- **Codebase conventions**: As of the Option A debranding decision, BDE-specific codebase conventions (IPC patterns, Zustand rules, testing standards) are no longer injected as memory modules. Agents pick them up from `CLAUDE.md` when it is present in the repo.
+- **User memory portability**: User memory (`~/.fleet/memory/`) is per-machine and is not synced across machines. On a new machine, agents will not have access to memory files created on the original machine.
+- **Codebase conventions**: As of the Option A debranding decision, FLEET-specific codebase conventions (IPC patterns, Zustand rules, testing standards) are no longer injected as memory modules. Agents pick them up from `CLAUDE.md` when it is present in the repo.
 
 ### Agent Manager
 
@@ -105,22 +105,22 @@ Orchestrates pipeline agent lifecycle. Core module: `src/main/agent-manager/`.
 - **WIP limit**: `MAX_ACTIVE_TASKS` concurrent agents, enforced at agent manager drain loop
 - **Watchdog**: Monitors agent health with configurable timeout. Default 1 hour, overridable per-task via `max_runtime_ms` field
 - **Completion flow**: Agent exits normally → classify exit → mark task `review` → preserve worktree for human review. On failure: retry up to 3x, then mark `failed`. Human actions in Code Review Station (merge locally, create PR, revise, discard) determine final task status
-- **Fast-fail detection**: 3 failures within 30s of starting = exhausted. Task marked `error` with diagnostic notes pointing to `~/.bde/bde.log`
-- **Worktree isolation**: Each pipeline agent gets `~/.bde/worktrees/<repo-slug>/<task-id>/`. Worktree cleaned up after completion (success or failure). Stale worktrees from previous runs should be cleaned with `git worktree prune`
+- **Fast-fail detection**: 3 failures within 30s of starting = exhausted. Task marked `error` with diagnostic notes pointing to `~/.fleet/fleet.log`
+- **Worktree isolation**: Each pipeline agent gets `~/.fleet/worktrees/<repo-slug>/<task-id>/`. Worktree cleaned up after completion (success or failure). Stale worktrees from previous runs should be cleaned with `git worktree prune`
 - **Config**: Max concurrent agents, worktree base path, and max runtime are read once at startup. Changes via Settings UI take effect on next app restart
 - Related: Sprint Pipeline, Task Dependencies
 
 ### Dev Playground
 
-Inline HTML rendering for visual prototyping, UI exploration, and interactive tools. Renders natively inside BDE — agents should never open a browser.
+Inline HTML rendering for visual prototyping, UI exploration, and interactive tools. Renders natively inside FLEET — agents should never open a browser.
 
-- **How it works**: When an agent writes an `.html` file (via the Write tool), BDE detects the `tool_result` message, reads the file, sanitizes it with DOMPurify, and broadcasts an `agent:playground` event to the renderer
+- **How it works**: When an agent writes an `.html` file (via the Write tool), FLEET detects the `tool_result` message, reads the file, sanitizes it with DOMPurify, and broadcasts an `agent:playground` event to the renderer
 - **User experience**: A PlaygroundCard appears in the agent's chat stream showing filename and size. Click it to open PlaygroundModal — a full-screen overlay with a sandboxed iframe. Three view modes: split (source + preview), preview only, source only
 - **Security**: HTML sanitized via DOMPurify (strips `<script>` tags, event handlers like `onclick`/`onerror`, and `javascript:` URLs). Iframe uses `sandbox="allow-scripts"`. Maximum file size: 5MB
 - **Pipeline agents**: Playground detection gated by `playground_enabled` flag on the task. File path must be within the agent's worktree (path traversal prevention)
 - **Adhoc/assistant agents**: Playground always enabled. No path restriction since the user directly controls the session
 - **When to use**: CSS theme builders, component playgrounds, data visualizations, architecture diagrams, interactive configuration tools, mockups — anything that benefits from visual output rendered in-app
-- **How agents should use it**: Write a self-contained `.html` file using the Write tool. Include all CSS and JS inline. BDE handles detection, sanitization, and rendering automatically. Do NOT use shell `open` commands to launch a browser — the playground renders natively in the app
+- **How agents should use it**: Write a self-contained `.html` file using the Write tool. Include all CSS and JS inline. FLEET handles detection, sanitization, and rendering automatically. Do NOT use shell `open` commands to launch a browser — the playground renders natively in the app
 - Related: Agent Types, Task Workbench (playground toggle)
 
 ## Code Review
@@ -178,10 +178,10 @@ Git workflow interface for staging, committing, and pushing across configured re
 
 ### Local MCP Server
 
-Opt-in HTTP server that exposes BDE's task and epic CRUD to local MCP-speaking agents (Claude Code, Claude Desktop, Cursor). Runs inside the Electron main process; all mutations go through the same services the UI uses, so validation, dependency auto-blocking, status-transition checks, audit trail, and renderer broadcast are preserved.
+Opt-in HTTP server that exposes FLEET's task and epic CRUD to local MCP-speaking agents (Claude Code, Claude Desktop, Cursor). Runs inside the Electron main process; all mutations go through the same services the UI uses, so validation, dependency auto-blocking, status-transition checks, audit trail, and renderer broadcast are preserved.
 
 - **Transport**: MCP Streamable HTTP at `http://127.0.0.1:<port>/mcp`. Default port `18792`.
-- **Auth**: bearer token stored in `~/.bde/mcp-token` (mode `0600`). Set `Authorization: Bearer <token>` on every request.
+- **Auth**: bearer token stored in `~/.fleet/mcp-token` (mode `0600`). Set `Authorization: Bearer <token>` on every request.
 - **Enable**: Settings → Connections → Local MCP Server → toggle "Enable MCP server".
 - **Tools**:
   - `tasks.list` / `tasks.get` / `tasks.create` / `tasks.update` / `tasks.cancel` / `tasks.history`
@@ -193,7 +193,7 @@ Opt-in HTTP server that exposes BDE's task and epic CRUD to local MCP-speaking a
   ```json
   {
     "mcpServers": {
-      "bde": {
+      "fleet": {
         "url": "http://127.0.0.1:18792/mcp",
         "headers": { "Authorization": "Bearer <paste-from-settings>" }
       }
@@ -245,9 +245,9 @@ Application configuration organized into 8 tabs. Most settings persisted to SQLi
 
 ## Packaging
 
-Notes for users running the packaged `BDE.app` bundle on macOS.
+Notes for users running the packaged `FLEET.app` bundle on macOS.
 
 - **Node auto-detection**: The agent manager probes well-known install locations for `node` (fnm default alias, highest nvm version, Homebrew at `/opt/homebrew/bin` or `/usr/local/bin`) and prepends the matching directory to the PATH passed to the Claude Agent SDK. This fixes "Claude Code executable not found" errors when the `.app` is launched from Finder/Spotlight, which inherits only `/etc/paths` and excludes fnm/nvm locations
-- **PATH fallback**: If no node is found at the probed locations, BDE falls back to the ambient PATH lookup — the SDK's own `spawn('node', …)` resolution still applies
+- **PATH fallback**: If no node is found at the probed locations, FLEET falls back to the ambient PATH lookup — the SDK's own `spawn('node', …)` resolution still applies
 - **Shell-launched workaround**: Users hitting SDK spawn errors can bypass the issue by launching via `npm run dev` from a terminal, which inherits the full shell PATH
 - Related: Agent Manager

@@ -41,7 +41,7 @@ describe('migration v019', () => {
 
     insertSetting(db, TARGET_KEY, 'true')
     insertSetting(db, 'github.token', 'ghp_unrelated_secret')
-    insertSetting(db, 'agentManager.worktreeBase', '/Users/dev/worktrees/bde')
+    insertSetting(db, 'agentManager.worktreeBase', '/Users/dev/worktrees/fleet')
     insertSetting(db, 'agentManager.maxConcurrent', '2')
     insertSetting(db, 'theme', 'dark')
 
@@ -49,7 +49,7 @@ describe('migration v019', () => {
 
     expect(selectSetting(db, TARGET_KEY)).toBeUndefined()
     expect(selectSetting(db, 'github.token')?.value).toBe('ghp_unrelated_secret')
-    expect(selectSetting(db, 'agentManager.worktreeBase')?.value).toBe('/Users/dev/worktrees/bde')
+    expect(selectSetting(db, 'agentManager.worktreeBase')?.value).toBe('/Users/dev/worktrees/fleet')
     expect(selectSetting(db, 'agentManager.maxConcurrent')?.value).toBe('2')
     expect(selectSetting(db, 'theme')?.value).toBe('dark')
 
@@ -79,14 +79,14 @@ describe('migration v019', () => {
     makeSettingsTable(db)
 
     insertSetting(db, 'github.token', 'ghp_unrelated_secret')
-    insertSetting(db, 'agentManager.worktreeBase', '/Users/dev/worktrees/bde')
+    insertSetting(db, 'agentManager.worktreeBase', '/Users/dev/worktrees/fleet')
     insertSetting(db, 'agentManager.maxConcurrent', '2')
     insertSetting(db, 'theme', 'dark')
 
     expect(() => up(db)).not.toThrow()
 
     expect(selectSetting(db, 'github.token')?.value).toBe('ghp_unrelated_secret')
-    expect(selectSetting(db, 'agentManager.worktreeBase')?.value).toBe('/Users/dev/worktrees/bde')
+    expect(selectSetting(db, 'agentManager.worktreeBase')?.value).toBe('/Users/dev/worktrees/fleet')
     expect(selectSetting(db, 'agentManager.maxConcurrent')?.value).toBe('2')
     expect(selectSetting(db, 'theme')?.value).toBe('dark')
 

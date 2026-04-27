@@ -161,7 +161,7 @@ describe('git:getRepoPaths handler', () => {
   })
 
   it('returns repo paths map', () => {
-    const paths = { BDE: '/Users/test/projects/BDE' }
+    const paths = { FLEET: '/Users/test/projects/FLEET' }
     vi.mocked(getRepoPaths).mockReturnValue(paths)
 
     const handler = captureHandler('git:getRepoPaths')
@@ -182,9 +182,9 @@ describe('git:status handler', () => {
     vi.mocked(gitStatus).mockResolvedValue({ ok: true, data: { files } })
 
     const handler = captureHandler('git:status')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET')
 
-    expect(gitStatus).toHaveBeenCalledWith('/Users/test/projects/BDE')
+    expect(gitStatus).toHaveBeenCalledWith('/Users/test/projects/FLEET')
     expect(result).toEqual({ files })
   })
 
@@ -192,7 +192,7 @@ describe('git:status handler', () => {
     vi.mocked(gitStatus).mockResolvedValue({ ok: false, error: 'git failed' })
 
     const handler = captureHandler('git:status')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET')
 
     expect(result).toEqual({ files: [], branch: '' })
   })
@@ -208,9 +208,9 @@ describe('git:diff handler', () => {
     vi.mocked(gitDiffFile).mockResolvedValue({ ok: true, data: diff })
 
     const handler = captureHandler('git:diff')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE', 'src/foo.ts')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET', 'src/foo.ts')
 
-    expect(gitDiffFile).toHaveBeenCalledWith('/Users/test/projects/BDE', 'src/foo.ts')
+    expect(gitDiffFile).toHaveBeenCalledWith('/Users/test/projects/FLEET', 'src/foo.ts')
     expect(result).toBe(diff)
   })
 
@@ -218,7 +218,7 @@ describe('git:diff handler', () => {
     vi.mocked(gitDiffFile).mockResolvedValue({ ok: false, error: 'diff error' })
 
     const handler = captureHandler('git:diff')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET')
 
     expect(result).toBe('')
   })
@@ -233,9 +233,9 @@ describe('git:commit handler', () => {
     vi.mocked(gitCommit).mockResolvedValue(undefined as any)
 
     const handler = captureHandler('git:commit')
-    await handler(mockEvent, '/Users/test/projects/BDE', 'feat: add feature')
+    await handler(mockEvent, '/Users/test/projects/FLEET', 'feat: add feature')
 
-    expect(gitCommit).toHaveBeenCalledWith('/Users/test/projects/BDE', 'feat: add feature')
+    expect(gitCommit).toHaveBeenCalledWith('/Users/test/projects/FLEET', 'feat: add feature')
   })
 })
 
@@ -594,24 +594,24 @@ describe('git:fetch handler', () => {
     vi.mocked(gitFetch).mockResolvedValue({ success: true, stdout: 'Fetched from origin' })
 
     const handler = captureHandler('git:fetch')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET')
 
-    expect(gitFetch).toHaveBeenCalledWith('/Users/test/projects/BDE')
+    expect(gitFetch).toHaveBeenCalledWith('/Users/test/projects/FLEET')
     expect(result).toEqual({ success: true, stdout: 'Fetched from origin' })
   })
 
   it('returns error when fetch fails', async () => {
     vi.mocked(gitFetch).mockResolvedValue({
       success: false,
-      error: 'git fetch failed in /Users/test/projects/BDE: network error'
+      error: 'git fetch failed in /Users/test/projects/FLEET: network error'
     })
 
     const handler = captureHandler('git:fetch')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET')
 
     expect(result).toEqual({
       success: false,
-      error: 'git fetch failed in /Users/test/projects/BDE: network error'
+      error: 'git fetch failed in /Users/test/projects/FLEET: network error'
     })
   })
 })
@@ -625,9 +625,9 @@ describe('git:pull handler', () => {
     vi.mocked(gitPull).mockResolvedValue({ success: true, stdout: 'Pulled from origin' })
 
     const handler = captureHandler('git:pull')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE', 'main')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET', 'main')
 
-    expect(gitPull).toHaveBeenCalledWith('/Users/test/projects/BDE', 'main')
+    expect(gitPull).toHaveBeenCalledWith('/Users/test/projects/FLEET', 'main')
     expect(result).toEqual({ success: true, stdout: 'Pulled from origin' })
   })
 
@@ -638,7 +638,7 @@ describe('git:pull handler', () => {
     })
 
     const handler = captureHandler('git:pull')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE', 'main')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET', 'main')
 
     expect(result).toEqual({
       success: false,
@@ -649,15 +649,15 @@ describe('git:pull handler', () => {
   it('returns error when pull fails for other reasons', async () => {
     vi.mocked(gitPull).mockResolvedValue({
       success: false,
-      error: 'git pull failed in /Users/test/projects/BDE: network error'
+      error: 'git pull failed in /Users/test/projects/FLEET: network error'
     })
 
     const handler = captureHandler('git:pull')
-    const result = await handler(mockEvent, '/Users/test/projects/BDE', 'main')
+    const result = await handler(mockEvent, '/Users/test/projects/FLEET', 'main')
 
     expect(result).toEqual({
       success: false,
-      error: 'git pull failed in /Users/test/projects/BDE: network error'
+      error: 'git pull failed in /Users/test/projects/FLEET: network error'
     })
   })
 
@@ -665,7 +665,7 @@ describe('git:pull handler', () => {
     const handler = captureHandler('git:pull')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', '--malicious')
+      handler(mockEvent, '/Users/test/projects/FLEET', '--malicious')
     }).toThrow(/Invalid git ref/)
 
     expect(gitPull).not.toHaveBeenCalled()
@@ -675,7 +675,7 @@ describe('git:pull handler', () => {
     const handler = captureHandler('git:pull')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', 'branch;rm -rf /')
+      handler(mockEvent, '/Users/test/projects/FLEET', 'branch;rm -rf /')
     }).toThrow(/Invalid git ref/)
 
     expect(gitPull).not.toHaveBeenCalled()
@@ -685,7 +685,7 @@ describe('git:pull handler', () => {
     const handler = captureHandler('git:pull')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', 'branch$(whoami)')
+      handler(mockEvent, '/Users/test/projects/FLEET', 'branch$(whoami)')
     }).toThrow(/Invalid git ref/)
 
     expect(gitPull).not.toHaveBeenCalled()
@@ -695,7 +695,7 @@ describe('git:pull handler', () => {
     const handler = captureHandler('git:pull')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', '../../../etc/passwd')
+      handler(mockEvent, '/Users/test/projects/FLEET', '../../../etc/passwd')
     }).toThrow(/Invalid git ref/)
 
     expect(gitPull).not.toHaveBeenCalled()
@@ -705,7 +705,7 @@ describe('git:pull handler', () => {
     const handler = captureHandler('git:pull')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', '')
+      handler(mockEvent, '/Users/test/projects/FLEET', '')
     }).toThrow(/Invalid git ref/)
 
     expect(gitPull).not.toHaveBeenCalled()
@@ -721,7 +721,7 @@ describe('git:checkout handler', () => {
     const handler = captureHandler('git:checkout')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', '--malicious')
+      handler(mockEvent, '/Users/test/projects/FLEET', '--malicious')
     }).toThrow(/Invalid git ref/)
   })
 
@@ -729,7 +729,7 @@ describe('git:checkout handler', () => {
     const handler = captureHandler('git:checkout')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', 'branch;rm -rf /')
+      handler(mockEvent, '/Users/test/projects/FLEET', 'branch;rm -rf /')
     }).toThrow(/Invalid git ref/)
   })
 
@@ -737,7 +737,7 @@ describe('git:checkout handler', () => {
     const handler = captureHandler('git:checkout')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', 'branch$(whoami)')
+      handler(mockEvent, '/Users/test/projects/FLEET', 'branch$(whoami)')
     }).toThrow(/Invalid git ref/)
   })
 
@@ -745,7 +745,7 @@ describe('git:checkout handler', () => {
     const handler = captureHandler('git:checkout')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', '../../../etc/passwd')
+      handler(mockEvent, '/Users/test/projects/FLEET', '../../../etc/passwd')
     }).toThrow(/Invalid git ref/)
   })
 
@@ -753,7 +753,7 @@ describe('git:checkout handler', () => {
     const handler = captureHandler('git:checkout')
 
     expect(() => {
-      handler(mockEvent, '/Users/test/projects/BDE', '')
+      handler(mockEvent, '/Users/test/projects/FLEET', '')
     }).toThrow(/Invalid git ref/)
   })
 })
@@ -791,7 +791,7 @@ describe('git:checkout handler', () => {
   it('throws when branch name starts with -- (flag abuse)', () => {
     const handler = captureHandler('git:checkout')
 
-    expect(() => handler(mockEvent, '/Users/test/projects/BDE', '--force')).toThrow(
+    expect(() => handler(mockEvent, '/Users/test/projects/FLEET', '--force')).toThrow(
       /Invalid git ref/
     )
   })
@@ -799,6 +799,6 @@ describe('git:checkout handler', () => {
   it('throws when branch name is empty', () => {
     const handler = captureHandler('git:checkout')
 
-    expect(() => handler(mockEvent, '/Users/test/projects/BDE', '')).toThrow(/Invalid git ref/)
+    expect(() => handler(mockEvent, '/Users/test/projects/FLEET', '')).toThrow(/Invalid git ref/)
   })
 })

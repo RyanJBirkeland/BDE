@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('electron', () => ({
   app: {
     getPath: vi.fn(() => '/tmp'),
-    getName: vi.fn(() => 'BDE'),
+    getName: vi.fn(() => 'FLEET'),
     getVersion: vi.fn(() => '0.0.0')
   },
   BrowserWindow: { getAllWindows: vi.fn(() => []) },
@@ -28,8 +28,8 @@ vi.mock('fs/promises', async (importOriginal) => {
 
 import { stat, readFile } from 'fs/promises'
 
-const MEMORY_ROOT = resolve(homedir(), '.bde/memory')
-const AGENT_LOGS_ROOT = resolve(homedir(), '.bde/agent-logs')
+const MEMORY_ROOT = resolve(homedir(), '.fleet/memory')
+const AGENT_LOGS_ROOT = resolve(homedir(), '.fleet/agent-logs')
 
 describe('validateMemoryPath', () => {
   it('accepts a simple relative path', () => {
@@ -61,14 +61,14 @@ describe('validateMemoryPath', () => {
 })
 
 describe('validateLogPath', () => {
-  it('accepts a path under ~/.bde/agent-logs/', () => {
+  it('accepts a path under ~/.fleet/agent-logs/', () => {
     const logPath = join(AGENT_LOGS_ROOT, 'agent-1/log.txt')
     const result = validateLogPath(logPath)
     expect(result).toBe(logPath)
   })
 
   it('accepts a path under tmpdir()', () => {
-    const logPath = join(resolve(tmpdir()), 'bde-agents/agent-1/log.txt')
+    const logPath = join(resolve(tmpdir()), 'fleet-agents/agent-1/log.txt')
     const result = validateLogPath(logPath)
     expect(result).toBe(logPath)
   })
@@ -87,8 +87,8 @@ describe('validateLogPath', () => {
   })
 
   it('rejects path that is a prefix sibling of agent-logs', () => {
-    // e.g. ~/.bde/agent-logs-evil/secret
-    const evilPath = resolve(homedir(), '.bde/agent-logs-evil/secret')
+    // e.g. ~/.fleet/agent-logs-evil/secret
+    const evilPath = resolve(homedir(), '.fleet/agent-logs-evil/secret')
     expect(() => validateLogPath(evilPath)).toThrow('Path traversal blocked')
   })
 

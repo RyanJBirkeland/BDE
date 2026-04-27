@@ -11,12 +11,12 @@ interface StatusPillProps {
 }
 
 export function StatusPill({ label, variant }: StatusPillProps): ReactNode {
-  // Map StatusVariant to bde-badge variants
+  // Map StatusVariant to fleet-badge variants
   const badgeVariant = variant === 'neutral' ? 'muted' : variant === 'error' ? 'danger' : variant
 
   return (
-    <span className={`bde-badge bde-badge--md bde-badge--${badgeVariant}`}>
-      {variant === 'success' && <span className="bde-badge__dot" aria-hidden="true" />}
+    <span className={`fleet-badge fleet-badge--md fleet-badge--${badgeVariant}`}>
+      {variant === 'success' && <span className="fleet-badge__dot" aria-hidden="true" />}
       {label}
     </span>
   )

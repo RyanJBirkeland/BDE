@@ -15,7 +15,7 @@ export function encryptSetting(value: string): string {
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error(
       'Cannot store sensitive setting: safeStorage encryption is unavailable. ' +
-        'Unlock your system keychain or run BDE in a supported environment.'
+        'Unlock your system keychain or run FLEET in a supported environment.'
     )
   }
   const encrypted = safeStorage.encryptString(value)

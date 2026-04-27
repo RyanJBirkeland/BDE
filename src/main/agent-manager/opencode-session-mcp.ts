@@ -3,7 +3,7 @@
  *
  * opencode is an external process and can only reach MCP tools over HTTP.
  * Rather than routing through the persistent external MCP server (port 18792,
- * designed for non-BDE-native tools like Claude Desktop and Cursor), this
+ * designed for non-FLEET-native tools like Claude Desktop and Cursor), this
  * module spins up a lightweight per-session HTTP listener backed by the same
  * sprint-service and EpicGroupService that the in-process planner MCP server
  * uses for Claude agents.
@@ -128,7 +128,7 @@ async function handleRequest(
 
 function buildMcpServer(epicService: EpicGroupService, logger: Logger): McpServer {
   const mcp = wrapServerWithSafeToolHandlers(
-    new McpServer({ name: 'bde', version: '1.0.0' }),
+    new McpServer({ name: 'fleet', version: '1.0.0' }),
     logger
   )
 

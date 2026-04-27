@@ -10,13 +10,13 @@ describe('validateStructural', () => {
   const validSpec = `${'x'.repeat(60)}\n## Problem\nSomething is broken\n## Solution\nFix it`
 
   it('returns error when title is empty', () => {
-    const result = validateStructural({ title: '', repo: 'bde', spec: validSpec })
+    const result = validateStructural({ title: '', repo: 'fleet', spec: validSpec })
     expect(result.valid).toBe(false)
     expect(result.errors).toContainEqual(expect.stringContaining('title is required'))
   })
 
   it('returns error when title is null', () => {
-    const result = validateStructural({ title: null, repo: 'bde', spec: validSpec })
+    const result = validateStructural({ title: null, repo: 'fleet', spec: validSpec })
     expect(result.valid).toBe(false)
     expect(result.errors).toContainEqual(expect.stringContaining('title is required'))
   })
@@ -34,7 +34,7 @@ describe('validateStructural', () => {
   })
 
   it('returns error when spec is null (non-backlog)', () => {
-    const result = validateStructural({ title: 'Fix bug', repo: 'bde', spec: null })
+    const result = validateStructural({ title: 'Fix bug', repo: 'fleet', spec: null })
     expect(result.valid).toBe(false)
     expect(result.errors).toContainEqual(expect.stringContaining('spec is required'))
   })
@@ -42,7 +42,7 @@ describe('validateStructural', () => {
   it('returns error when spec is too short', () => {
     const result = validateStructural({
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       spec: 'Short spec with ## A\n## B'
     })
     expect(result.valid).toBe(false)
@@ -52,7 +52,7 @@ describe('validateStructural', () => {
   it('returns error when spec has no ## headings', () => {
     const result = validateStructural({
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       spec: 'x'.repeat(100)
     })
     expect(result.valid).toBe(false)
@@ -64,7 +64,7 @@ describe('validateStructural', () => {
   it('returns error when spec has only 1 heading', () => {
     const result = validateStructural({
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       spec: `${'x'.repeat(60)}\n## Problem\nSomething is broken`
     })
     expect(result.valid).toBe(false)
@@ -76,7 +76,7 @@ describe('validateStructural', () => {
   it('returns valid when spec has 2+ headings and sufficient length', () => {
     const result = validateStructural({
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       spec: validSpec
     })
     expect(result.valid).toBe(true)
@@ -87,7 +87,7 @@ describe('validateStructural', () => {
   it('returns valid for backlog status with no spec', () => {
     const result = validateStructural({
       title: 'Fix bug',
-      repo: 'bde',
+      repo: 'fleet',
       spec: null,
       status: 'backlog'
     })
@@ -97,7 +97,7 @@ describe('validateStructural', () => {
   it('returns error for backlog status with no title', () => {
     const result = validateStructural({
       title: '',
-      repo: 'bde',
+      repo: 'fleet',
       spec: null,
       status: 'backlog'
     })
@@ -160,7 +160,7 @@ describe('validateStructural with specType', () => {
   it('enforces 50-char min for feature', () => {
     const result = validateStructural({
       title: 'Fix',
-      repo: 'BDE',
+      repo: 'FLEET',
       spec: 'Short',
       status: 'queued'
     })
@@ -170,7 +170,7 @@ describe('validateStructural with specType', () => {
   it('uses 20-char threshold for test type', () => {
     const result = validateStructural({
       title: 'Fix',
-      repo: 'BDE',
+      repo: 'FLEET',
       spec: 'Run integration tests for auth',
       status: 'queued',
       specType: 'test'
@@ -187,7 +187,7 @@ describe('validateStructural with specType', () => {
   it('treats advisory failures as warnings not errors', () => {
     const result = validateStructural({
       title: 'Test',
-      repo: 'BDE',
+      repo: 'FLEET',
       spec: 'Run tests',
       status: 'queued',
       specType: 'test'

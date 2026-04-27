@@ -270,7 +270,7 @@ function PlannerAssistantInner({
     setInput('')
     setIsStreaming(true)
 
-    const systemPrefix = `You are a planning assistant for the BDE software development environment. Help the user brainstorm and plan tasks for their epic.\n\nEpic context:\n${epicContext}\n\nWhen you propose creating a task, use this exact format:\n[ACTION:create-task]{"title":"...","spec":"..."}[/ACTION]\n\nWhen you propose creating an epic, use:\n[ACTION:create-epic]{"name":"...","goal":"..."}[/ACTION]\n\nWhen you propose updating a task spec, use:\n[ACTION:update-spec]{"taskId":"<existing task id>","spec":"..."}[/ACTION]\n\nKeep responses concise and actionable.`
+    const systemPrefix = `You are a planning assistant for the FLEET software development environment. Help the user brainstorm and plan tasks for their epic.\n\nEpic context:\n${epicContext}\n\nWhen you propose creating a task, use this exact format:\n[ACTION:create-task]{"title":"...","spec":"..."}[/ACTION]\n\nWhen you propose creating an epic, use:\n[ACTION:create-epic]{"name":"...","goal":"..."}[/ACTION]\n\nWhen you propose updating a task spec, use:\n[ACTION:update-spec]{"taskId":"<existing task id>","spec":"..."}[/ACTION]\n\nKeep responses concise and actionable.`
 
     const apiMessages = [
       ...messages.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),

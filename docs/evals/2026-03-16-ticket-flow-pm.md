@@ -11,11 +11,11 @@
 
 ### Who
 
-Ryan — a solo technical founder managing three codebases (BDE, life-os, feast). He treats AI coding agents like junior engineers on a sprint team. He's the PM, the architect, and the reviewer. He doesn't have a team to bounce ideas off of — the AI is his team.
+Ryan — a solo technical founder managing three codebases (FLEET, life-os, feast). He treats AI coding agents like junior engineers on a sprint team. He's the PM, the architect, and the reviewer. He doesn't have a team to bounce ideas off of — the AI is his team.
 
 ### Why
 
-Ryan needs to translate raw product ideas into agent-executable specs fast enough that the bottleneck is _thinking_, not _typing_. Every minute spent formatting a spec template or wrestling with a form is a minute not spent on the next idea. The ticket creation flow is the **front door** of BDE — if it's slow or clunky, the entire agentic workflow stalls.
+Ryan needs to translate raw product ideas into agent-executable specs fast enough that the bottleneck is _thinking_, not _typing_. Every minute spent formatting a spec template or wrestling with a form is a minute not spent on the next idea. The ticket creation flow is the **front door** of FLEET — if it's slow or clunky, the entire agentic workflow stalls.
 
 ### What Outcome
 
@@ -100,7 +100,7 @@ Default mode: **Quick** (fastest path to a backlog card).
 │  │ Fix toast z-index so it renders above the SpecDrawer  │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                              │
-│  Repo: [BDE ▼]                                               │
+│  Repo: [FLEET ▼]                                               │
 │                                                              │
 │           [Cancel]  [⚡ Save to Backlog — Paul writes spec]  │
 └──────────────────────────────────────────────────────────────┘
@@ -108,7 +108,7 @@ Default mode: **Quick** (fastest path to a backlog card).
 
 #### Behavior
 
-1. **Two fields only:** Title (required) + Repo (required, defaults to BDE).
+1. **Two fields only:** Title (required) + Repo (required, defaults to FLEET).
 2. **Priority auto-set to Medium** (can be changed later in SpecDrawer or card context menu).
 3. **On save:** Task is created in Backlog with `prompt = title`. A background job fires "Ask Paul" to auto-generate a spec from the title alone. The card appears with a subtle shimmer/loading indicator while the spec generates.
 4. **Auto-generated spec uses heuristics from the title:**
@@ -227,7 +227,7 @@ This means templates and AI compose naturally — the template provides structur
 
 **Philosophy:** Conversational product design. Instead of filling out a form, the user describes what they want in plain language. Paul asks clarifying questions, proposes approaches, and generates the spec collaboratively. Like pair programming, but for product design.
 
-This is the **signature feature** of BDE's ticket creation flow. It's what makes BDE more than a task board — it's an AI pair-programmer for solo devs.
+This is the **signature feature** of FLEET's ticket creation flow. It's what makes FLEET more than a task board — it's an AI pair-programmer for solo devs.
 
 #### Layout
 
@@ -289,7 +289,7 @@ This is the **signature feature** of BDE's ticket creation flow. It's what makes
 Paul's system prompt:
 
 ```
-You are Paul, a senior product engineer helping design a coding task for BDE.
+You are Paul, a senior product engineer helping design a coding task for FLEET.
 Your job is to understand what the user wants to build, ask 2-3 clarifying
 questions, then propose a spec. Be concise. Don't over-engineer. Ask about:
 - Scope (what's in, what's out)
@@ -372,7 +372,7 @@ Tickets:
 
 **Phase 2 — Quick Mode (high impact, moderate effort)**
 
-Quick Mode unlocks the "idea capture" use case. Ryan should be able to fire off 5 task ideas in 60 seconds without stopping to write specs. Background spec generation means the specs are ready by the time he circles back to review them. This changes BDE from "a tool you sit down to use" to "a tool you capture ideas into throughout the day."
+Quick Mode unlocks the "idea capture" use case. Ryan should be able to fire off 5 task ideas in 60 seconds without stopping to write specs. Background spec generation means the specs are ready by the time he circles back to review them. This changes FLEET from "a tool you sit down to use" to "a tool you capture ideas into throughout the day."
 
 Tickets:
 
@@ -383,7 +383,7 @@ Tickets:
 
 **Phase 3 — Design Mode (big bet, high reward)**
 
-Design Mode is the differentiator. It turns ticket creation from a _form-filling exercise_ into a _thinking exercise_. Paul becomes a product thinking partner, not just a spec writer. This is what makes BDE an AI pair-programmer rather than a fancy task board.
+Design Mode is the differentiator. It turns ticket creation from a _form-filling exercise_ into a _thinking exercise_. Paul becomes a product thinking partner, not just a spec writer. This is what makes FLEET an AI pair-programmer rather than a fancy task board.
 
 Tickets:
 
@@ -398,11 +398,11 @@ Tickets:
 
 ---
 
-## 5. How Design Mode Fits the BDE Vision
+## 5. How Design Mode Fits the FLEET Vision
 
-### BDE's Core Promise
+### FLEET's Core Promise
 
-BDE exists because solo devs shouldn't have to choose between "moving fast" and "thinking carefully." The traditional workflow is:
+FLEET exists because solo devs shouldn't have to choose between "moving fast" and "thinking carefully." The traditional workflow is:
 
 ```
 Think about feature → Write spec → Write code → Review code → Ship
@@ -434,7 +434,7 @@ When specs are higher quality:
 2. Ryan spends less time reviewing/correcting agent output
 3. Ryan has more time and energy for the _next_ design conversation
 4. More tasks get done per day
-5. BDE becomes genuinely multiplicative — one person doing the work of a team
+5. FLEET becomes genuinely multiplicative — one person doing the work of a team
 
 ### Design Mode vs. ChatGPT / Claude.ai
 
@@ -446,9 +446,9 @@ Because Design Mode is **contextual**. Paul knows:
 - What the file structure looks like
 - What the spec template format is
 - That the output needs to be an agent-executable prompt, not just a design doc
-- That the result feeds directly into BDE's sprint pipeline
+- That the result feeds directly into FLEET's sprint pipeline
 
-Design Mode isn't a generic chatbot — it's a purpose-built product design tool that outputs directly into BDE's workflow. No copy-paste. No context switching. No re-formatting.
+Design Mode isn't a generic chatbot — it's a purpose-built product design tool that outputs directly into FLEET's workflow. No copy-paste. No context switching. No re-formatting.
 
 ---
 

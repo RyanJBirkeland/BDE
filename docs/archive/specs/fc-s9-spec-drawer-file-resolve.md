@@ -10,7 +10,7 @@ Every Ticket Tear task has `spec = NULL` in SQLite. The `prompt` field starts wi
 Read docs/specs/ax-s3-ipc-boundary-validation.md in full before writing code.
 ```
 
-`SpecDrawer.tsx` falls back to rendering `task.prompt` when `task.spec` is null — so users see the raw prompt text instead of the actual spec content. The spec markdown is sitting on disk at `~/Documents/Repositories/BDE/docs/specs/<file>.md` but nothing reads it.
+`SpecDrawer.tsx` falls back to rendering `task.prompt` when `task.spec` is null — so users see the raw prompt text instead of the actual spec content. The spec markdown is sitting on disk at `~/Documents/Repositories/FLEET/docs/specs/<file>.md` but nothing reads it.
 
 ## Solution
 
@@ -22,8 +22,8 @@ Add a new IPC handler in `src/main/handlers/sprint-handlers.ts` (or wherever spr
 
 ```ts
 safeHandle('sprint:read-spec-file', (_e, filePath: string) => {
-  // filePath is relative to BDE repo root, e.g. "docs/specs/ax-s3-ipc-boundary-validation.md"
-  // Resolve against the BDE repo root (use app.getAppPath() or __dirname traversal)
+  // filePath is relative to FLEET repo root, e.g. "docs/specs/ax-s3-ipc-boundary-validation.md"
+  // Resolve against the FLEET repo root (use app.getAppPath() or __dirname traversal)
   const repoRoot = join(__dirname, '../../..') // adjust depth as needed
   const abs = validatePath(repoRoot, filePath) // use existing validateMemoryPath pattern
   return readFileSync(abs, 'utf-8')

@@ -258,7 +258,7 @@ export function ConsoleHeader({ agent, events }: ConsoleHeaderProps): React.JSX.
               onClick={handlePromote}
               title="Promote this scratchpad agent's work to Code Review"
               aria-label="Promote to Code Review"
-              style={{ color: 'var(--bde-accent)' }}
+              style={{ color: 'var(--fleet-accent)' }}
             >
               <GitPullRequest size={14} />
             </button>

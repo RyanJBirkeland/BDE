@@ -13,14 +13,14 @@ describe('LoadingState', () => {
     expect(screen.getByText('Loading tasks...')).toBeInTheDocument()
   })
 
-  it('uses bde-loading-state class', () => {
+  it('uses fleet-loading-state class', () => {
     const { container } = render(<LoadingState />)
-    expect(container.firstChild).toHaveClass('bde-loading-state')
+    expect(container.firstChild).toHaveClass('fleet-loading-state')
   })
 
   it('applies custom className', () => {
     const { container } = render(<LoadingState className="custom" />)
-    expect(container.firstChild).toHaveClass('bde-loading-state')
+    expect(container.firstChild).toHaveClass('fleet-loading-state')
     expect(container.firstChild).toHaveClass('custom')
   })
 })

@@ -14,7 +14,7 @@ export function PanelResizeHandle({
         height: isVertical ? 4 : '100%',
         background: 'transparent',
         cursor: isVertical ? 'row-resize' : 'col-resize',
-        transition: 'var(--bde-transition-fast)'
+        transition: 'var(--fleet-transition-fast)'
       }}
     />
   )

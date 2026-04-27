@@ -8,7 +8,7 @@ function createTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: 'test-id',
     title: 'Test task',
-    repo: 'BDE',
+    repo: 'FLEET',
     prompt: null,
     priority: 1,
     status: 'queued',
@@ -44,8 +44,8 @@ describe('parseTaskQuery', () => {
   })
 
   it('should parse repo filter', () => {
-    const predicates = parseTaskQuery('repo:BDE')
-    expect(predicates).toEqual([{ type: 'repo', value: 'BDE' }])
+    const predicates = parseTaskQuery('repo:FLEET')
+    expect(predicates).toEqual([{ type: 'repo', value: 'FLEET' }])
   })
 
   it('should parse tag filter', () => {
@@ -147,11 +147,11 @@ describe('applyPredicates', () => {
 
   it('should filter by repo', () => {
     const tasks = [
-      createTask({ id: '1', repo: 'BDE' }),
+      createTask({ id: '1', repo: 'FLEET' }),
       createTask({ id: '2', repo: 'repomap' }),
-      createTask({ id: '3', repo: 'BDE' })
+      createTask({ id: '3', repo: 'FLEET' })
     ]
-    const predicates = parseTaskQuery('repo:BDE')
+    const predicates = parseTaskQuery('repo:FLEET')
     const result = applyPredicates(tasks, predicates)
     expect(result).toHaveLength(2)
     expect(result.map((t) => t.id)).toEqual(['1', '3'])

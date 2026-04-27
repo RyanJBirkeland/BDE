@@ -46,13 +46,13 @@ export function FloatingAgentPanel({ onClose }: Props): React.JSX.Element {
       store.addMessage({
         role: 'assistant',
         content:
-          'Please configure a repository in Settings → Repositories before using the BDE Advisor.'
+          'Please configure a repository in Settings → Repositories before using the FLEET Advisor.'
       })
       store.setIsSending(false)
       return
     }
 
-    const sessionId = `bde-floating-${crypto.randomUUID()}`
+    const sessionId = `fleet-floating-${crypto.randomUUID()}`
     store.setSessionId(sessionId)
 
     const result = await window.api.agents.spawnLocal({ task: text, repoPath, assistant: true })
@@ -111,9 +111,9 @@ export function FloatingAgentPanel({ onClose }: Props): React.JSX.Element {
   }, [])
 
   return (
-    <div className="fa-panel" role="complementary" aria-label="BDE Advisor">
+    <div className="fa-panel" role="complementary" aria-label="FLEET Advisor">
       <div className="fa-panel__header">
-        <span className="fa-panel__title">BDE Advisor</span>
+        <span className="fa-panel__title">FLEET Advisor</span>
         <div className="fa-panel__header-right">
           <span
             className="fa-panel__token-bar"
@@ -139,7 +139,7 @@ export function FloatingAgentPanel({ onClose }: Props): React.JSX.Element {
       <div className="fa-panel__messages" role="log" aria-live="polite">
         {messages.length === 0 && (
           <div className="fa-panel__empty">
-            Ask about your sprint, pipeline health, agent errors, or anything BDE-related.
+            Ask about your sprint, pipeline health, agent errors, or anything FLEET-related.
           </div>
         )}
         {messages.map((m) => (
@@ -154,10 +154,10 @@ export function FloatingAgentPanel({ onClose }: Props): React.JSX.Element {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask BDE Advisor..."
+          placeholder="Ask FLEET Advisor..."
           rows={2}
           disabled={isSending}
-          aria-label="Message BDE Advisor"
+          aria-label="Message FLEET Advisor"
         />
         <button
           className="fa-panel__send"

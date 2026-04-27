@@ -3,12 +3,12 @@
  *
  * Two responsibilities:
  *   1. Write `.opencode/opencode.json` into the worktree, wiring in the
- *      per-session BDE MCP server so the model gets the same task/epic CRUD
+ *      per-session FLEET MCP server so the model gets the same task/epic CRUD
  *      tools as the Claude path (without touching the external HTTP MCP server
- *      at port 18792, which is for non-BDE-native agents).
+ *      at port 18792, which is for non-FLEET-native agents).
  *   2. Build the opencode-specific first-turn prompt — branch name and commit
  *      rules prepended to the raw user task. opencode auto-reads CLAUDE.md
- *      from --dir, so BDE conventions and architecture notes don't need
+ *      from --dir, so FLEET conventions and architecture notes don't need
  *      re-injection here.
  */
 import { promises as fs } from 'node:fs'
@@ -31,7 +31,7 @@ interface OpencodeWorktreeConfig {
 
 /**
  * Writes `.opencode/opencode.json` into the worktree, wiring in the
- * per-session BDE MCP server at the given URL and token.
+ * per-session FLEET MCP server at the given URL and token.
  *
  * Safe to call on every spawn — the file is overwritten, not accumulated.
  */
@@ -43,7 +43,7 @@ export async function writeOpencodeWorktreeConfig(
   const config: OpencodeWorktreeConfig = {
     $schema: OPENCODE_SCHEMA,
     mcp: {
-      bde: {
+      fleet: {
         type: 'remote',
         url: mcpUrl,
         headers: { Authorization: `Bearer ${mcpToken}` }
@@ -63,7 +63,7 @@ export async function writeOpencodeWorktreeConfig(
 /**
  * Builds the first-turn prompt for opencode sessions.
  *
- * opencode auto-reads CLAUDE.md from the working directory, so BDE
+ * opencode auto-reads CLAUDE.md from the working directory, so FLEET
  * conventions don't need to be re-injected. Only branch name and commit
  * rules — the two things CLAUDE.md can't supply at spawn time — are added.
  */

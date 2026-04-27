@@ -20,7 +20,7 @@ const MULTI_LINE_HTML = `<!DOCTYPE html>
   <title>Test Page</title>
   <style>
     body { font-family: sans-serif; background: #f0f0f0; }
-    .card { padding: 16px; border-radius: var(--bde-radius-lg); background: white; }
+    .card { padding: 16px; border-radius: var(--fleet-radius-lg); background: white; }
   </style>
 </head>
 <body>

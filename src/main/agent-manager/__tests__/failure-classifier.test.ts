@@ -263,7 +263,7 @@ describe('classifyFailureReason', () => {
     })
 
     it('classifies missing repo configuration as environmental', () => {
-      expect(classifyFailureReason('Repo "bde" is not configured in BDE settings')).toBe(
+      expect(classifyFailureReason('Repo "fleet" is not configured in FLEET settings')).toBe(
         'environmental'
       )
     })

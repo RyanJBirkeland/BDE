@@ -133,7 +133,7 @@ describe('Playground Integration', () => {
       let finalPrompt = basePrompt
       if (playgroundEnabled) {
         finalPrompt +=
-          '\n\n## Dev Playground\n\nYou have access to a Dev Playground for previewing frontend UI natively in BDE.'
+          '\n\n## Dev Playground\n\nYou have access to a Dev Playground for previewing frontend UI natively in FLEET.'
       }
 
       expect(finalPrompt).toContain('Dev Playground')

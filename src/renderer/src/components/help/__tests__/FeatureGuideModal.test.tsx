@@ -25,7 +25,7 @@ describe('FeatureGuideModal', () => {
 
   it('renders modal content when open', () => {
     render(<FeatureGuideModal open={true} onClose={vi.fn()} />)
-    expect(screen.getByText('BDE Feature Guide')).toBeInTheDocument()
+    expect(screen.getByText('FLEET Feature Guide')).toBeInTheDocument()
   })
 
   it('shows view buttons in sidebar', () => {

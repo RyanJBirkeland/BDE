@@ -68,7 +68,7 @@ function createV16SprintTasksTable(db: Database.Database): void {
       id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       title               TEXT NOT NULL,
       prompt              TEXT NOT NULL DEFAULT '',
-      repo                TEXT NOT NULL DEFAULT 'bde',
+      repo                TEXT NOT NULL DEFAULT 'fleet',
       status              TEXT NOT NULL DEFAULT 'backlog'
                             CHECK(status IN ('backlog','queued','blocked','active','done','cancelled','failed','error')),
       priority            INTEGER NOT NULL DEFAULT 1,
@@ -102,7 +102,7 @@ type SeedTaskOverrides = Partial<TaskRow> & Pick<TaskRow, 'id' | 'title' | 'stat
 function seedTask(db: Database.Database, overrides: SeedTaskOverrides): void {
   const row: TaskRow = {
     prompt: 'initial prompt',
-    repo: 'bde',
+    repo: 'fleet',
     priority: 1,
     depends_on: null,
     spec: null,
@@ -152,7 +152,7 @@ describe('migration v017', () => {
         id: 'task-queued',
         title: 'Queued task',
         prompt: 'do a thing',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued',
         priority: 2,
         depends_on: '[{"id":"other","type":"hard"}]',
@@ -180,7 +180,7 @@ describe('migration v017', () => {
         id: 'task-active',
         title: 'Active task',
         prompt: 'running now',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'active',
         priority: 3,
         depends_on: null,

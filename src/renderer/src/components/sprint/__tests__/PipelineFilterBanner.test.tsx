@@ -9,7 +9,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: crypto.randomUUID(),
     title: 'Test task',
-    repo: 'bde',
+    repo: 'fleet',
     prompt: null,
     priority: 1,
     status: 'backlog',
@@ -58,10 +58,10 @@ describe('PipelineFilterBanner', () => {
   })
 
   it('renders when repoFilter is set', () => {
-    useSprintFilters.setState({ repoFilter: 'bde' })
+    useSprintFilters.setState({ repoFilter: 'fleet' })
     const tasks = [makeTask()]
     render(<PipelineFilterBanner filteredTasks={tasks} totalTasks={tasks} />)
-    expect(screen.getByText(/repo: bde/)).toBeInTheDocument()
+    expect(screen.getByText(/repo: fleet/)).toBeInTheDocument()
   })
 
   it('renders when tagFilter is set', () => {
@@ -82,14 +82,14 @@ describe('PipelineFilterBanner', () => {
   it('shows multiple chips when multiple filters are active', () => {
     useSprintFilters.setState({
       statusFilter: 'done',
-      repoFilter: 'bde',
+      repoFilter: 'fleet',
       tagFilter: 'urgent',
       searchQuery: 'foo'
     })
     const tasks = [makeTask()]
     render(<PipelineFilterBanner filteredTasks={tasks} totalTasks={tasks} />)
     expect(screen.getByText(/status: done/)).toBeInTheDocument()
-    expect(screen.getByText(/repo: bde/)).toBeInTheDocument()
+    expect(screen.getByText(/repo: fleet/)).toBeInTheDocument()
     expect(screen.getByText(/tag: urgent/)).toBeInTheDocument()
     expect(screen.getByText(/search:/)).toBeInTheDocument()
   })
@@ -105,7 +105,7 @@ describe('PipelineFilterBanner', () => {
   it('clear-all button resets every filter via clearAllFilters action', () => {
     useSprintFilters.setState({
       statusFilter: 'done',
-      repoFilter: 'bde',
+      repoFilter: 'fleet',
       tagFilter: 'urgent',
       searchQuery: 'foo'
     })

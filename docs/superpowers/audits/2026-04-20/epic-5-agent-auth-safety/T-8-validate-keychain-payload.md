@@ -61,7 +61,7 @@ npm run test:main -- auth-guard
 npm run lint
 ```
 
-Manual: temporarily corrupt a test keychain entry (or mock `security` to return garbage) and confirm BDE logs a warning and proceeds with a clean auth-failure path.
+Manual: temporarily corrupt a test keychain entry (or mock `security` to return garbage) and confirm FLEET logs a warning and proceeds with a clean auth-failure path.
 
 ## Acceptance
 

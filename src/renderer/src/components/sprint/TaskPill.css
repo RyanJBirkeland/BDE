@@ -1,64 +1,64 @@
 /* ── Task Pill ── */
 .task-pill {
-  background: var(--bde-border);
-  border: 1px solid var(--bde-border-hover);
-  border-radius: var(--bde-radius-lg);
-  padding: 6px var(--bde-space-3);
+  background: var(--fleet-border);
+  border: 1px solid var(--fleet-border-hover);
+  border-radius: var(--fleet-radius-lg);
+  padding: 6px var(--fleet-space-3);
   cursor: pointer;
   transition: all 200ms ease;
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   max-width: 300px;
 }
 
 .task-pill:hover {
-  background: var(--bde-surface);
-  border-color: var(--bde-border-hover);
+  background: var(--fleet-surface);
+  border-color: var(--fleet-border-hover);
   transform: translateY(-1px);
 }
 
 .task-pill:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .pipeline-center .task-pill--selected {
-  border-color: var(--bde-accent-border);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
 }
 
 .task-pill--active {
-  border-color: var(--bde-accent-border);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
 }
 
 .task-pill--active:hover {
-  border-color: var(--bde-accent-border);
+  border-color: var(--fleet-accent-border);
 }
 
 .task-pill--blocked {
-  border-color: var(--bde-warning-border);
-  background: var(--bde-warning-surface);
+  border-color: var(--fleet-warning-border);
+  background: var(--fleet-warning-surface);
 }
 
 .task-pill--review {
-  border-color: var(--bde-accent-border);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
 }
 
 .task-pill--branch-only {
-  border-color: var(--bde-warning-border);
-  background: var(--bde-warning-surface);
+  border-color: var(--fleet-warning-border);
+  background: var(--fleet-warning-surface);
 }
 
 .task-pill--branch-only:hover {
-  border-color: var(--bde-warning-border);
+  border-color: var(--fleet-warning-border);
 }
 
 .task-pill--done {
   opacity: 0.7;
-  border-color: var(--bde-accent-border);
+  border-color: var(--fleet-accent-border);
 }
 
 .task-pill__dot {
@@ -70,7 +70,7 @@
 
 .task-pill__title {
   font-size: var(--font-xs, 11px);
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -81,7 +81,7 @@
 .task-pill__badge {
   font-size: var(--font-2xs, 10px);
   padding: 1px 5px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   flex-shrink: 0;
   font-weight: 600;
 }
@@ -94,20 +94,20 @@
 
 .task-pill__time {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   flex-shrink: 0;
 }
 
 /* Done footer */
 .pipeline-stage__done-footer {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   margin-top: 6px;
   width: 100%;
 }
 
 .pipeline-stage__done-link {
-  color: var(--bde-status-done);
+  color: var(--fleet-status-done);
   cursor: pointer;
   background: none;
   border: none;
@@ -121,35 +121,35 @@
 
 .pipeline-stage__done-link:focus-visible {
   text-decoration: underline;
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .pipeline-stage__subtitle {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-style: italic;
 }
 
 .pipeline-stage__done-summary {
-  padding: 6px var(--bde-space-3);
-  background: var(--bde-border);
-  border: 1px solid var(--bde-accent-border);
-  border-radius: var(--bde-radius-lg);
-  color: var(--bde-status-done);
+  padding: 6px var(--fleet-space-3);
+  background: var(--fleet-border);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-lg);
+  color: var(--fleet-status-done);
   font-size: var(--font-xs, 11px);
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
   cursor: pointer;
   transition: background 150ms ease;
 }
 
 .pipeline-stage__done-summary:hover {
-  background: var(--bde-accent-surface);
+  background: var(--fleet-accent-surface);
 }
 
 .pipeline-stage__done-summary:focus-visible {
-  background: var(--bde-accent-surface);
-  outline: 2px solid var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -158,50 +158,50 @@
 }
 
 .task-pill--zombie {
-  border-color: var(--bde-warning-border);
-  background: var(--bde-warning-surface);
+  border-color: var(--fleet-warning-border);
+  background: var(--fleet-warning-surface);
 }
 
 .task-pill__zombie-icon {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
   flex-shrink: 0;
 }
 
 .task-pill__stale-icon {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
   flex-shrink: 0;
-  animation: bde-pulse 2s ease-in-out infinite;
+  animation: fleet-pulse 2s ease-in-out infinite;
 }
 
 .task-pill__fail--push {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
   flex-shrink: 0;
 }
 .task-pill__fail--agent {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
   flex-shrink: 0;
 }
 .task-pill__fail--fastfail {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
   flex-shrink: 0;
 }
 .task-pill__fail--cancelled {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   flex-shrink: 0;
 }
 
 /* ── Task Pill: Duration (completed tasks) ── */
 .task-pill__duration {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
-  font-family: var(--bde-font-code);
+  color: var(--fleet-text-dim);
+  font-family: var(--fleet-font-code);
 }
 
 /* ── Task Pill: Cost Badge (done/review tasks) ── */
 .task-pill__cost {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
-  font-family: var(--bde-font-code);
+  color: var(--fleet-text-dim);
+  font-family: var(--fleet-font-code);
 }
 
 /* ── Task Pill: Activity Dot (active tasks) ── */
@@ -209,20 +209,20 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--bde-accent);
-  animation: bde-pulse 2s ease-in-out infinite;
+  background: var(--fleet-accent);
+  animation: fleet-pulse 2s ease-in-out infinite;
   flex-shrink: 0;
 }
 
 /* ── Task Pill: Multi-select highlight ── */
 .task-pill--multi-selected {
-  border-color: var(--bde-accent-border);
+  border-color: var(--fleet-accent-border);
 }
 
 /* ── Task Pill: Failure category chip ── */
 .task-pill__failure-chip {
   font-size: var(--font-2xs, 10px);
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
   padding: 0 4px;
   border-radius: 3px;
   border: 1px solid currentColor;
@@ -230,22 +230,22 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
-.failure-chip--timeout   { color: var(--bde-warning); }
-.failure-chip--test      { color: var(--bde-danger); }
-.failure-chip--compilation { color: var(--bde-warning); }
-.failure-chip--auth      { color: var(--bde-danger); }
-.failure-chip--spawn     { color: var(--bde-danger); }
-.failure-chip--no-commits { color: var(--bde-text-dim); }
-.failure-chip--incomplete { color: var(--bde-warning); }
-.failure-chip--env       { color: var(--bde-warning); }
-.failure-chip--tip-mismatch { color: var(--bde-text-dim); }
-.failure-chip--unknown   { color: var(--bde-text-dim); }
+.failure-chip--timeout   { color: var(--fleet-warning); }
+.failure-chip--test      { color: var(--fleet-danger); }
+.failure-chip--compilation { color: var(--fleet-warning); }
+.failure-chip--auth      { color: var(--fleet-danger); }
+.failure-chip--spawn     { color: var(--fleet-danger); }
+.failure-chip--no-commits { color: var(--fleet-text-dim); }
+.failure-chip--incomplete { color: var(--fleet-warning); }
+.failure-chip--env       { color: var(--fleet-warning); }
+.failure-chip--tip-mismatch { color: var(--fleet-text-dim); }
+.failure-chip--unknown   { color: var(--fleet-text-dim); }
 
 /* ── Task Pill: "Agent starting…" indicator (queued + claimed) ── */
 .task-pill__starting {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
   font-style: italic;
   flex-shrink: 0;
-  animation: bde-pulse 2s ease-in-out infinite;
+  animation: fleet-pulse 2s ease-in-out infinite;
 }

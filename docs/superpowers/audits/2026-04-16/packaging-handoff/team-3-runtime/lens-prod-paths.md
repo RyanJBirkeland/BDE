@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The BDE Electron app's prod-vs-dev runtime divergence is **mostly well-handled** but contains **three substantive issues**:
+The FLEET Electron app's prod-vs-dev runtime divergence is **mostly well-handled** but contains **three substantive issues**:
 
 1. **Status Server Silently Fails in Production** — A networking error in the status server (port bind failure) is caught and logged but does NOT prevent app startup. In prod, if port 18791 is blocked/in-use, the monitoring endpoint silently goes down with only a file log entry users will never see. The main app continues, but admin/support has no visibility into agent queue status.
 
@@ -19,7 +19,7 @@ Renderer loading logic is sound; dev/prod branches are correctly placed. The app
 ### F-t3-prod-paths-1: CSP Missing `wasm-unsafe-eval` for Monaco Workers
 **Severity:** High  
 **Category:** csp  
-**Location:** `/Users/ryan/projects/BDE/src/main/bootstrap.ts:295-303`
+**Location:** `/Users/ryan/projects/FLEET/src/main/bootstrap.ts:295-303`
 
 **Evidence:**
 ```typescript
@@ -53,7 +53,7 @@ Alternatively, if WASM is truly not needed, test Monaco in prod build with verbo
 ### F-t3-prod-paths-2: Status Server Startup Failure Not Visible to User
 **Severity:** Medium  
 **Category:** dev-guard  
-**Location:** `/Users/ryan/projects/BDE/src/main/index.ts:257-262`
+**Location:** `/Users/ryan/projects/FLEET/src/main/index.ts:257-262`
 
 **Evidence:**
 ```typescript
@@ -65,7 +65,7 @@ app.on('will-quit', () => statusServer.stop())
 ```
 
 **Impact:**  
-The status server listens on hardcoded `127.0.0.1:18791` (src/main/services/status-server.ts:79-82). If port 18791 is already in use (e.g., another app, leftover process, or OS reservation), the `.start()` promise rejects with a network error. This is caught and logged to `~/.bde/bde.log` but NOT reported to the user via UI dialog or startup warning. The main app continues running, but the agent queue monitoring endpoint is unavailable. Since this is a background service, users won't notice until they try to query agent status externally (e.g., via monitoring tool). In production, logs are not user-visible, so the failure is completely hidden.
+The status server listens on hardcoded `127.0.0.1:18791` (src/main/services/status-server.ts:79-82). If port 18791 is already in use (e.g., another app, leftover process, or OS reservation), the `.start()` promise rejects with a network error. This is caught and logged to `~/.fleet/fleet.log` but NOT reported to the user via UI dialog or startup warning. The main app continues running, but the agent queue monitoring endpoint is unavailable. Since this is a background service, users won't notice until they try to query agent status externally (e.g., via monitoring tool). In production, logs are not user-visible, so the failure is completely hidden.
 
 **Recommendation:**  
 Option A (User-facing): Emit a startup warning to the renderer if status server fails:
@@ -77,7 +77,7 @@ statusServer.start().catch((err) => {
 })
 ```
 
-Option B (Operational): Use dynamic port allocation instead of hardcoded 18791, with fallback to random port and log the actual port to a user-accessible location (e.g., settings DB or ~/.bde/status-server.txt).
+Option B (Operational): Use dynamic port allocation instead of hardcoded 18791, with fallback to random port and log the actual port to a user-accessible location (e.g., settings DB or ~/.fleet/status-server.txt).
 
 Option C (Minimal): At least log to file with max verbosity so support can diagnose issues. Current implementation is acceptable if monitoring is truly optional and external consumers are not expected.
 
@@ -89,7 +89,7 @@ Option C (Minimal): At least log to file with max verbosity so support can diagn
 ### F-t3-prod-paths-3: Console Logging Unconditionally Writes to stdout/stderr in Production
 **Severity:** Low  
 **Category:** logging  
-**Location:** `/Users/ryan/projects/BDE/src/main/logger.ts:82-96`
+**Location:** `/Users/ryan/projects/FLEET/src/main/logger.ts:82-96`
 
 **Evidence:**
 ```typescript
@@ -146,7 +146,7 @@ export function createLogger(name: string): Logger {
 
 Or expose a disable flag:
 ```typescript
-let CONSOLE_ENABLED = !process.env.BDE_LOG_FILE_ONLY
+let CONSOLE_ENABLED = !process.env.FLEET_LOG_FILE_ONLY
 export function disableConsoleLogging() { CONSOLE_ENABLED = false }
 ```
 
@@ -204,7 +204,7 @@ export function disableConsoleLogging() { CONSOLE_ENABLED = false }
 Before shipping packaged app:
 - [ ] Test Monaco editor in prod build (file open, edit, search, rename, goto-definition)
 - [ ] Verify status server binds on first run (no port conflicts)
-- [ ] Check `~/.bde/bde.log` contains startup errors if any (not just empty)
+- [ ] Check `~/.fleet/fleet.log` contains startup errors if any (not just empty)
 - [ ] Confirm no console output in packaged macOS app (run with `electron` CLI to verify)
 - [ ] Load https://api.github.com in dev CSP for reachability (GitHub API, not localhost)
 

@@ -152,7 +152,7 @@ export function DagOverlay({
                     width={NODE_WIDTH}
                     height={NODE_HEIGHT}
                     rx={6}
-                    fill="var(--bde-surface)"
+                    fill="var(--fleet-surface)"
                     stroke={fillColor}
                     strokeWidth={isSelected ? 3 : 1.5}
                     opacity={isSelected ? 1 : 0.8}
@@ -164,7 +164,7 @@ export function DagOverlay({
                     fill={fillColor}
                     fontSize={12}
                     fontWeight={600}
-                    fontFamily="var(--bde-font-code)"
+                    fontFamily="var(--fleet-font-code)"
                   >
                     {truncate(node.task.title, 20)}
                   </text>
@@ -172,9 +172,9 @@ export function DagOverlay({
                     x={NODE_WIDTH / 2}
                     y={NODE_HEIGHT / 2 + 8}
                     textAnchor="middle"
-                    fill="var(--bde-text-muted)"
+                    fill="var(--fleet-text-muted)"
                     fontSize={10}
-                    fontFamily="var(--bde-font-code)"
+                    fontFamily="var(--fleet-font-code)"
                   >
                     {node.task.status}
                   </text>

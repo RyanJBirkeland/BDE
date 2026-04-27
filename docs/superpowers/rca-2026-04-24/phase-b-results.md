@@ -39,8 +39,8 @@ n=1 isn't enough to call the cap conclusively too low, but combined with the aud
 ### 2.3 Pipeline agents are NOT properly isolated to their worktrees
 
 This is the painful surprise. While running, B-arm T-47 (agent run `dafed796-…`) made tool calls with absolute paths to BOTH:
-- `/Users/ryanbirkeland/.bde/worktrees/.../e79e2836…/src/main/agent-manager/review-transition.ts` (its own worktree — correct)
-- `/Users/ryanbirkeland/Projects/git-repos/BDE/src/main/agent-manager/review-transition.ts` (**main repo — wrong**)
+- `/Users/ryanbirkeland/.fleet/worktrees/.../e79e2836…/src/main/agent-manager/review-transition.ts` (its own worktree — correct)
+- `/Users/ryanbirkeland/Projects/git-repos/FLEET/src/main/agent-manager/review-transition.ts` (**main repo — wrong**)
 
 The agent successfully Read, Grep'd, and *Wrote* to main repo paths. Specifically, it created `src/main/agent-manager/__tests__/review-transition.test.ts` in main via the Write tool (preserved as evidence at [`contamination/review-transition.test.ts.evidence`](./contamination/review-transition.test.ts.evidence)). The Edit attempt on `review-transition.ts` failed (string mismatch), so only the new file made it through.
 
@@ -94,7 +94,7 @@ So we got 5 Arm A data points and 1 Arm B data point — enough to call the **30
 
 - **Main repo: cleaned.** The agent-created `review-transition.test.ts` was moved to [`contamination/review-transition.test.ts.evidence`](./contamination/review-transition.test.ts.evidence) (preserves the work for review; main is no longer dirty).
 - **5 [B-arm] clones: deleted.** SQL `DELETE` against `sprint_tasks` removed all 5 rows. No worktrees or branches existed for them (the `setupWorktree` failures aborted before either was created), so no further pruning was needed.
-- **5 originals: still at status=`error`** with retry exhausted. They can't be productively re-queued until the running BDE process picks up the new 75-turn default — which requires rebuild + restart (the running app is using the pre-commit code). After restart, the user should `resetTaskForRetry(id)` (or `sprint:retry` IPC / `tasks.update` MCP) for each to clear `retry_count` / `failure_reason` / `completed_at` cleanly. Manual SQL `UPDATE sprint_tasks SET status='queued'` is *not* recommended — leaves stale fields per CLAUDE.md.
+- **5 originals: still at status=`error`** with retry exhausted. They can't be productively re-queued until the running FLEET process picks up the new 75-turn default — which requires rebuild + restart (the running app is using the pre-commit code). After restart, the user should `resetTaskForRetry(id)` (or `sprint:retry` IPC / `tasks.update` MCP) for each to clear `retry_count` / `failure_reason` / `completed_at` cleanly. Manual SQL `UPDATE sprint_tasks SET status='queued'` is *not* recommended — leaves stale fields per CLAUDE.md.
 
 ## 6. Status of follow-ups
 
@@ -114,4 +114,4 @@ What I want your decision on (when you're back):
 
 1. **The agent-created test file** at [`contamination/review-transition.test.ts.evidence`](./contamination/review-transition.test.ts.evidence) — keep, fix, or discard? It's a draft of a real test for `review-transition.ts`; might be salvageable.
 2. **Path-traversal spec** — want me to draft it as a queued task once the new turn budget is in production?
-3. **The 5 originals** — once you rebuild + restart BDE, do you want me to draft the `resetTaskForRetry` calls, or do that yourself?
+3. **The 5 originals** — once you rebuild + restart FLEET, do you want me to draft the `resetTaskForRetry` calls, or do that yourself?

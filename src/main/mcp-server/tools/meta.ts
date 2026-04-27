@@ -42,7 +42,7 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
   server.registerTool(
     'meta.repos',
     {
-      description: 'List repositories configured in BDE Settings.',
+      description: 'List repositories configured in FLEET Settings.',
       inputSchema: NoArgsSchema
     },
     async () => jsonContent(deps.getRepos())

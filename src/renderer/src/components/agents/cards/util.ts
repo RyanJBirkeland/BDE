@@ -33,17 +33,17 @@ export interface ToolMeta {
 }
 
 export const TOOL_MAP: Record<string, ToolMeta> = {
-  bash: { Icon: Terminal, color: 'var(--bde-warning)' },
-  read: { Icon: FileText, color: 'var(--bde-status-review)' },
-  edit: { Icon: Edit3, color: 'var(--bde-accent)' },
-  write: { Icon: FilePlus, color: 'var(--bde-accent)' },
-  grep: { Icon: Search, color: 'var(--bde-status-active)' },
-  glob: { Icon: Folder, color: 'var(--bde-warning)' },
-  agent: { Icon: Bot, color: 'var(--bde-status-done)' },
-  task: { Icon: Bot, color: 'var(--bde-status-done)' },
-  list: { Icon: List, color: 'var(--bde-text-muted)' }
+  bash: { Icon: Terminal, color: 'var(--fleet-warning)' },
+  read: { Icon: FileText, color: 'var(--fleet-status-review)' },
+  edit: { Icon: Edit3, color: 'var(--fleet-accent)' },
+  write: { Icon: FilePlus, color: 'var(--fleet-accent)' },
+  grep: { Icon: Search, color: 'var(--fleet-status-active)' },
+  glob: { Icon: Folder, color: 'var(--fleet-warning)' },
+  agent: { Icon: Bot, color: 'var(--fleet-status-done)' },
+  task: { Icon: Bot, color: 'var(--fleet-status-done)' },
+  list: { Icon: List, color: 'var(--fleet-text-muted)' }
 }
 
 export function getToolMeta(toolName: string): ToolMeta {
-  return TOOL_MAP[toolName.toLowerCase()] ?? { Icon: Wrench, color: 'var(--bde-text-muted)' }
+  return TOOL_MAP[toolName.toLowerCase()] ?? { Icon: Wrench, color: 'var(--fleet-text-muted)' }
 }

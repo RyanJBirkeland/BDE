@@ -21,7 +21,7 @@ import { AgentPermissionsSection } from '../AgentPermissionsSection'
 describe('AgentPermissionsSection', () => {
   it('shows consent banner when localStorage has no consent', () => {
     render(<AgentPermissionsSection />)
-    expect(screen.getByText(/BDE agents need permission/)).toBeInTheDocument()
+    expect(screen.getByText(/FLEET agents need permission/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Accept Recommended/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /I'll Configure Manually/i })).toBeInTheDocument()
   })
@@ -33,9 +33,9 @@ describe('AgentPermissionsSection', () => {
     await user.click(screen.getByRole('button', { name: /Accept Recommended/i }))
 
     await waitFor(() => {
-      expect(screen.queryByText(/BDE agents need permission/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/FLEET agents need permission/)).not.toBeInTheDocument()
     })
-    expect(localStorage.getItem('bde-permissions-consent')).toBe('true')
+    expect(localStorage.getItem('fleet-permissions-consent')).toBe('true')
   })
 
   it('Accept Recommended sets correct allow/deny', async () => {
@@ -120,7 +120,7 @@ describe('AgentPermissionsSection', () => {
 
   it('apply preset changes allow/deny', async () => {
     const user = userEvent.setup()
-    localStorage.setItem('bde-permissions-consent', 'true')
+    localStorage.setItem('fleet-permissions-consent', 'true')
     render(<AgentPermissionsSection />)
 
     // Apply restrictive preset — only Read, Glob, Grep
@@ -144,7 +144,7 @@ describe('AgentPermissionsSection', () => {
     })
 
     const user = userEvent.setup()
-    localStorage.setItem('bde-permissions-consent', 'true')
+    localStorage.setItem('fleet-permissions-consent', 'true')
     render(<AgentPermissionsSection />)
 
     // Make dirty by toggling a checkbox
@@ -169,7 +169,7 @@ describe('AgentPermissionsSection', () => {
   })
 
   it('Save button disabled when not dirty', async () => {
-    localStorage.setItem('bde-permissions-consent', 'true')
+    localStorage.setItem('fleet-permissions-consent', 'true')
     render(<AgentPermissionsSection />)
 
     await waitFor(() => {
@@ -182,7 +182,7 @@ describe('AgentPermissionsSection', () => {
 
   it('Add deny rule via Enter key', async () => {
     const user = userEvent.setup()
-    localStorage.setItem('bde-permissions-consent', 'true')
+    localStorage.setItem('fleet-permissions-consent', 'true')
     render(<AgentPermissionsSection />)
 
     const denyInput = screen.getByRole('textbox', { name: /Add blocked command/i })
@@ -207,7 +207,7 @@ describe('AgentPermissionsSection', () => {
     })
 
     const user = userEvent.setup()
-    localStorage.setItem('bde-permissions-consent', 'true')
+    localStorage.setItem('fleet-permissions-consent', 'true')
     render(<AgentPermissionsSection />)
 
     await waitFor(() => {

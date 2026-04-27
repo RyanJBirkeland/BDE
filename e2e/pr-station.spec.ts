@@ -6,8 +6,8 @@
 import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Code Review', () => {
-  test('Navigate to Code Review view', async ({ bde }) => {
-    const { window } = bde
+  test('Navigate to Code Review view', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to Code Review via Cmd+5
@@ -23,8 +23,8 @@ test.describe('Code Review', () => {
     await expect(title).toContainText('Review Queue')
   })
 
-  test('Review queue sidebar renders with count badge', async ({ bde }) => {
-    const { window } = bde
+  test('Review queue sidebar renders with count badge', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+5')
@@ -43,8 +43,8 @@ test.describe('Code Review', () => {
     await expect(list).toBeVisible({ timeout: 3_000 })
   })
 
-  test('Main content area renders when no task selected', async ({ bde }) => {
-    const { window } = bde
+  test('Main content area renders when no task selected', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+5')

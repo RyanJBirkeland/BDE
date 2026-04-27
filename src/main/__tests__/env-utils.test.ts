@@ -483,20 +483,20 @@ describe('postOAuthRefresh — isRefreshResponse guard', () => {
   })
 })
 
-describe('BDE_EXTRA_PATHS', () => {
-  const originalExtra = process.env.BDE_EXTRA_PATHS
+describe('FLEET_EXTRA_PATHS', () => {
+  const originalExtra = process.env.FLEET_EXTRA_PATHS
 
   afterEach(() => {
     if (originalExtra !== undefined) {
-      process.env.BDE_EXTRA_PATHS = originalExtra
+      process.env.FLEET_EXTRA_PATHS = originalExtra
     } else {
-      delete process.env.BDE_EXTRA_PATHS
+      delete process.env.FLEET_EXTRA_PATHS
     }
     vi.resetModules()
   })
 
-  it('includes BDE_EXTRA_PATHS entries in the PATH returned by buildAgentEnv', async () => {
-    process.env.BDE_EXTRA_PATHS = '/my/custom/bin'
+  it('includes FLEET_EXTRA_PATHS entries in the PATH returned by buildAgentEnv', async () => {
+    process.env.FLEET_EXTRA_PATHS = '/my/custom/bin'
     vi.resetModules()
 
     const { buildAgentEnv: freshBuildAgentEnv } = await import('../env-utils')
@@ -505,8 +505,8 @@ describe('BDE_EXTRA_PATHS', () => {
     expect(env.PATH).toContain('/my/custom/bin')
   })
 
-  it('does not insert an empty segment when BDE_EXTRA_PATHS is empty', async () => {
-    process.env.BDE_EXTRA_PATHS = ''
+  it('does not insert an empty segment when FLEET_EXTRA_PATHS is empty', async () => {
+    process.env.FLEET_EXTRA_PATHS = ''
     vi.resetModules()
 
     const { buildAgentEnv: freshBuildAgentEnv } = await import('../env-utils')

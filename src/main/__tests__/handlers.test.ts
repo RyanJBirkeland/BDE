@@ -56,7 +56,7 @@ vi.mock('../data/event-queries', () => ({
 }))
 
 vi.mock('../git', () => ({
-  getRepoPaths: vi.fn().mockReturnValue({ bde: '/tmp/bde' }),
+  getRepoPaths: vi.fn().mockReturnValue({ fleet: '/tmp/fleet' }),
   gitStatus: vi.fn().mockResolvedValue({ files: [] }),
   gitDiffFile: vi.fn().mockResolvedValue('diff content'),
   gitStage: vi.fn().mockResolvedValue(undefined),
@@ -74,8 +74,8 @@ vi.mock('../paths', async () => {
   const actual = await vi.importActual<typeof import('../paths')>('../paths')
   return {
     ...actual,
-    getRepoPaths: vi.fn().mockReturnValue({ bde: '/tmp/bde' }),
-    getRepoPath: vi.fn((name: string) => (name.toLowerCase() === 'bde' ? '/tmp/bde' : undefined))
+    getRepoPaths: vi.fn().mockReturnValue({ fleet: '/tmp/fleet' }),
+    getRepoPath: vi.fn((name: string) => (name.toLowerCase() === 'fleet' ? '/tmp/fleet' : undefined))
   }
 })
 
@@ -264,7 +264,7 @@ describe('IPC handler registration', () => {
 
     it('"local:spawnClaudeAgent" calls spawnAdhocAgent and returns result', async () => {
       const result = await invoke('local:spawnClaudeAgent', {
-        repoPath: '/tmp/bde',
+        repoPath: '/tmp/fleet',
         task: 'fix bug'
       })
       expect(result).toEqual({ id: 'test-id', pid: 0, logPath: '/tmp/log', interactive: true })
@@ -324,49 +324,49 @@ describe('IPC handler registration', () => {
     it('"git:getRepoPaths" calls getRepoPaths', async () => {
       const result = await invoke('git:getRepoPaths')
       expect(git.getRepoPaths).toHaveBeenCalled()
-      expect(result).toEqual({ bde: '/tmp/bde' })
+      expect(result).toEqual({ fleet: '/tmp/fleet' })
     })
 
     it('"git:status" passes validated cwd to gitStatus', async () => {
-      await invoke('git:status', '/tmp/bde')
-      expect(git.gitStatus).toHaveBeenCalledWith(resolve('/tmp/bde'))
+      await invoke('git:status', '/tmp/fleet')
+      expect(git.gitStatus).toHaveBeenCalledWith(resolve('/tmp/fleet'))
     })
 
     it('"git:diff" passes (validated cwd, file) to gitDiffFile', async () => {
-      await invoke('git:diff', '/tmp/bde', 'src/app.ts')
-      expect(git.gitDiffFile).toHaveBeenCalledWith(resolve('/tmp/bde'), 'src/app.ts')
+      await invoke('git:diff', '/tmp/fleet', 'src/app.ts')
+      expect(git.gitDiffFile).toHaveBeenCalledWith(resolve('/tmp/fleet'), 'src/app.ts')
     })
 
     it('"git:stage" passes (validated cwd, files) to gitStage', async () => {
-      await invoke('git:stage', '/tmp/bde', ['file1.ts', 'file2.ts'])
-      expect(git.gitStage).toHaveBeenCalledWith(resolve('/tmp/bde'), ['file1.ts', 'file2.ts'])
+      await invoke('git:stage', '/tmp/fleet', ['file1.ts', 'file2.ts'])
+      expect(git.gitStage).toHaveBeenCalledWith(resolve('/tmp/fleet'), ['file1.ts', 'file2.ts'])
     })
 
     it('"git:unstage" passes (validated cwd, files) to gitUnstage', async () => {
-      await invoke('git:unstage', '/tmp/bde', ['file1.ts'])
-      expect(git.gitUnstage).toHaveBeenCalledWith(resolve('/tmp/bde'), ['file1.ts'])
+      await invoke('git:unstage', '/tmp/fleet', ['file1.ts'])
+      expect(git.gitUnstage).toHaveBeenCalledWith(resolve('/tmp/fleet'), ['file1.ts'])
     })
 
     it('"git:commit" passes (validated cwd, message) to gitCommit', async () => {
-      await invoke('git:commit', '/tmp/bde', 'fix: bug')
-      expect(git.gitCommit).toHaveBeenCalledWith(resolve('/tmp/bde'), 'fix: bug')
+      await invoke('git:commit', '/tmp/fleet', 'fix: bug')
+      expect(git.gitCommit).toHaveBeenCalledWith(resolve('/tmp/fleet'), 'fix: bug')
     })
 
     it('"git:push" passes validated cwd to gitPush', async () => {
-      const result = await invoke('git:push', '/tmp/bde')
-      expect(git.gitPush).toHaveBeenCalledWith(resolve('/tmp/bde'))
+      const result = await invoke('git:push', '/tmp/fleet')
+      expect(git.gitPush).toHaveBeenCalledWith(resolve('/tmp/fleet'))
       expect(result).toBe('push output')
     })
 
     it('"git:branches" passes validated cwd to gitBranches', async () => {
-      const result = await invoke('git:branches', '/tmp/bde')
-      expect(git.gitBranches).toHaveBeenCalledWith(resolve('/tmp/bde'))
+      const result = await invoke('git:branches', '/tmp/fleet')
+      expect(git.gitBranches).toHaveBeenCalledWith(resolve('/tmp/fleet'))
       expect(result).toEqual({ current: 'main', branches: ['main'] })
     })
 
     it('"git:checkout" passes (validated cwd, branch) to gitCheckout', async () => {
-      await invoke('git:checkout', '/tmp/bde', 'feat/new')
-      expect(git.gitCheckout).toHaveBeenCalledWith(resolve('/tmp/bde'), 'feat/new')
+      await invoke('git:checkout', '/tmp/fleet', 'feat/new')
+      expect(git.gitCheckout).toHaveBeenCalledWith(resolve('/tmp/fleet'), 'feat/new')
     })
 
     it('"pr:pollStatuses" passes prs to pollPrStatuses', async () => {
@@ -381,7 +381,7 @@ describe('IPC handler registration', () => {
 
     it('error in gitStatus propagates via safeHandle', async () => {
       vi.mocked(git.gitStatus).mockRejectedValueOnce(new Error('not a git repo'))
-      await expect(invoke('git:status', '/tmp/bde')).rejects.toThrow('not a git repo')
+      await expect(invoke('git:status', '/tmp/fleet')).rejects.toThrow('not a git repo')
     })
   })
 

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { createDebouncedPersister } from '../lib/createDebouncedPersister'
 import type { StatusFilter } from './sprintFilters'
 
-const STORAGE_KEY = 'bde:filterPresets'
+const STORAGE_KEY = 'fleet:filterPresets'
 
 export interface FilterPreset {
   repoFilter: string | null

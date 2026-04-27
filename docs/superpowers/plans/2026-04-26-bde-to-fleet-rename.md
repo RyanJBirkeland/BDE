@@ -1,21 +1,21 @@
-# BDE → FLEET Rename Implementation Plan
+# FLEET → FLEET Rename Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rename the product from "BDE" to "FLEET" across all source files, config, docs, runtime paths, and the project directory itself — zero stale references remaining.
+**Goal:** Rename the product from "FLEET" to "FLEET" across all source files, config, docs, runtime paths, and the project directory itself — zero stale references remaining.
 
 **Architecture:** Automated sed sweep over all text files (longest-match-first to avoid partial replacements), followed by targeted manual edits for the GitHub URL and a new SQLite migration for existing task rows, then a runtime directory migration on startup, and finally a filesystem directory rename.
 
 **Tech Stack:** Node.js/TypeScript, Electron, better-sqlite3, shell (sed/grep/mv)
 
-**Spec:** `docs/superpowers/specs/2026-04-26-bde-to-fleet-rename-design.md`
+**Spec:** `docs/superpowers/specs/2026-04-26-fleet-to-fleet-rename-design.md`
 
 ---
 
 ## File Map
 
 **Renamed:**
-- `docs/BDE_FEATURES.md` → `docs/FLEET_FEATURES.md`
+- `docs/FLEET_FEATURES.md` → `docs/FLEET_FEATURES.md`
 
 **Modified (automated sed):**
 - All `.ts`, `.tsx`, `.js`, `.mjs`, `.json`, `.yml`, `.yaml`, `.md`, `.css`, `.html`, `.sh` under `src/`, `scripts/`, `resources/`, `e2e/`, `docs/` (excl. `node_modules`, `.git`, `out/`, `release/`)
@@ -23,36 +23,36 @@
 
 **Manually edited:**
 - `src/renderer/src/components/settings/AboutSection.tsx` — GitHub URL TODO comment
-- `src/main/index.ts` — `setAppUserModelId('com.bde')` → `com.fleet`
+- `src/main/index.ts` — `setAppUserModelId('com.fleet')` → `com.fleet`
 
 **Created:**
-- `src/main/migrations/v055-rename-bde-to-fleet-repo-column.ts`
+- `src/main/migrations/v055-rename-fleet-to-fleet-repo-column.ts`
 - `src/main/migrations/__tests__/v055.test.ts`
 - Runtime migration logic added to `src/main/startup-migration.ts` (new file) and wired into `src/main/index.ts`
 
 **Directory rename (last step):**
-- `~/projects/BDE` → `~/projects/FLEET`
+- `~/projects/FLEET` → `~/projects/FLEET`
 
 ---
 
-### Task 1: Rename BDE_FEATURES.md and update the @ directive
+### Task 1: Rename FLEET_FEATURES.md and update the @ directive
 
 **Files:**
-- Rename: `docs/BDE_FEATURES.md` → `docs/FLEET_FEATURES.md`
-- Modify: `CLAUDE.md` (repo root) — update `@docs/BDE_FEATURES.md` → `@docs/FLEET_FEATURES.md`
+- Rename: `docs/FLEET_FEATURES.md` → `docs/FLEET_FEATURES.md`
+- Modify: `CLAUDE.md` (repo root) — update `@docs/FLEET_FEATURES.md` → `@docs/FLEET_FEATURES.md`
 
 - [ ] **Step 1: Rename the file**
 
 ```bash
-cd ~/projects/BDE
-git mv docs/BDE_FEATURES.md docs/FLEET_FEATURES.md
+cd ~/projects/FLEET
+git mv docs/FLEET_FEATURES.md docs/FLEET_FEATURES.md
 ```
 
 - [ ] **Step 2: Update the @ directive in CLAUDE.md**
 
 In `CLAUDE.md`, find and replace:
 ```
-@docs/BDE_FEATURES.md
+@docs/FLEET_FEATURES.md
 ```
 with:
 ```
@@ -62,18 +62,18 @@ with:
 - [ ] **Step 3: Verify**
 
 ```bash
-grep "@docs/BDE_FEATURES" ~/projects/BDE/CLAUDE.md
+grep "@docs/FLEET_FEATURES" ~/projects/FLEET/CLAUDE.md
 # Expected: no output
-ls ~/projects/BDE/docs/FLEET_FEATURES.md
+ls ~/projects/FLEET/docs/FLEET_FEATURES.md
 # Expected: file exists
 ```
 
 - [ ] **Step 4: Commit**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 git add docs/FLEET_FEATURES.md CLAUDE.md
-git commit -m "chore: rename BDE_FEATURES.md to FLEET_FEATURES.md"
+git commit -m "chore: rename FLEET_FEATURES.md to FLEET_FEATURES.md"
 ```
 
 ---
@@ -87,7 +87,7 @@ Apply substitutions in longest-match-first order to avoid partial replacements. 
 - [ ] **Step 1: Run full sed sweep**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 
 # Helper: apply a sed substitution to all text files
 sweep() {
@@ -100,16 +100,16 @@ sweep() {
 }
 
 # 1. Longest phrase first
-sweep 'Birkeland Development Environment' 'Agentic Development Environment'
+sweep 'Agentic Development Environment' 'Agentic Development Environment'
 
 # 2. ALL-CAPS variant
-sweep 'BDE' 'FLEET'
+sweep 'FLEET' 'FLEET'
 
 # 3. lowercase variant
-sweep 'bde' 'fleet'
+sweep 'fleet' 'fleet'
 
-# 4. PascalCase variant (e.g. BdeConfig → FleetConfig — rare, but cover it)
-sweep 'Bde' 'Fleet'
+# 4. PascalCase variant (e.g. FleetConfig → FleetConfig — rare, but cover it)
+sweep 'Fleet' 'Fleet'
 ```
 
 > **Note:** `sed -i ''` is the macOS syntax for in-place edit. On Linux use `sed -i`.
@@ -118,28 +118,28 @@ sweep 'Bde' 'Fleet'
 
 ```bash
 # Check package.json name and productName
-grep '"name"\|"productName"\|"description"' ~/projects/BDE/package.json
+grep '"name"\|"productName"\|"description"' ~/projects/FLEET/package.json
 # Expected: "fleet", "FLEET", "Agentic Development Environment"
 
 # Check electron-builder.yml
-grep "appId\|productName\|copyright" ~/projects/BDE/electron-builder.yml
+grep "appId\|productName\|copyright" ~/projects/FLEET/electron-builder.yml
 # Expected: com.rbtechboy.fleet, FLEET
 
 # Check paths.ts constants
-grep "FLEET_DIR\|FLEET_DB_PATH\|\.fleet" ~/projects/BDE/src/main/paths.ts | head -5
+grep "FLEET_DIR\|FLEET_DB_PATH\|\.fleet" ~/projects/FLEET/src/main/paths.ts | head -5
 # Expected: FLEET_DIR, fleet.db, ~/.fleet
 
 # Check HTTP headers
-grep "X-FLEET-\|X-BDE-" ~/projects/BDE/src/main/mcp-server/ -r
-# Expected: X-FLEET-Delivery, X-FLEET-Event (no X-BDE- remaining)
+grep "X-FLEET-\|X-FLEET-" ~/projects/FLEET/src/main/mcp-server/ -r
+# Expected: X-FLEET-Delivery, X-FLEET-Event (no X-FLEET- remaining)
 ```
 
 - [ ] **Step 3: Commit**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 git add -A
-git commit -m "chore: automated BDE→FLEET rename sweep"
+git commit -m "chore: automated FLEET→FLEET rename sweep"
 ```
 
 ---
@@ -155,12 +155,12 @@ The GitHub URL points to an external repo that hasn't been renamed yet. Add a TO
 
 In `src/renderer/src/components/settings/AboutSection.tsx`, find:
 ```ts
-const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE/releases'
+const GITHUB_URL = 'https://github.com/RyanJBirkeland/FLEET/releases'
 ```
 Replace with:
 ```ts
-// TODO: update URL when GitHub repo is renamed from BDE to FLEET
-const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE/releases'
+// TODO: update URL when GitHub repo is renamed from FLEET to FLEET
+const GITHUB_URL = 'https://github.com/RyanJBirkeland/FLEET/releases'
 ```
 
 > **Do NOT change the URL itself** — the GitHub repo has not been renamed yet.
@@ -168,16 +168,16 @@ const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE/releases'
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -n "GITHUB_URL" ~/projects/BDE/src/renderer/src/components/settings/AboutSection.tsx
+grep -n "GITHUB_URL" ~/projects/FLEET/src/renderer/src/components/settings/AboutSection.tsx
 # Expected: line with TODO comment above the const, URL unchanged
 ```
 
-> **Note:** `setAppUserModelId('com.fleet')` in `src/main/index.ts` is already handled by the sweep in Task 2 (the `bde` → `fleet` rule matches the substring `'com.bde'`). No manual edit needed for that.
+> **Note:** `setAppUserModelId('com.fleet')` in `src/main/index.ts` is already handled by the sweep in Task 2 (the `fleet` → `fleet` rule matches the substring `'com.fleet'`). No manual edit needed for that.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 git add src/renderer/src/components/settings/AboutSection.tsx
 git commit -m "chore: add GitHub URL TODO comment post-sweep"
 ```
@@ -187,10 +187,10 @@ git commit -m "chore: add GitHub URL TODO comment post-sweep"
 ### Task 4: SQLite migration — rename repo column values
 
 **Files:**
-- Create: `src/main/migrations/v055-rename-bde-to-fleet-repo-column.ts`
+- Create: `src/main/migrations/v055-rename-fleet-to-fleet-repo-column.ts`
 - Create: `src/main/migrations/__tests__/v055.test.ts`
 
-Existing sprint tasks have `repo = 'bde'`. After the rename the settings will use `repos[].name = 'fleet'`, so all existing rows must be updated.
+Existing sprint tasks have `repo = 'fleet'`. After the rename the settings will use `repos[].name = 'fleet'`, so all existing rows must be updated.
 
 - [ ] **Step 1: Write the failing test first**
 
@@ -199,18 +199,18 @@ Create `src/main/migrations/__tests__/v055.test.ts`:
 ```ts
 import { describe, it, expect } from 'vitest'
 import Database from 'better-sqlite3'
-import { up, version } from '../v055-rename-bde-to-fleet-repo-column'
+import { up, version } from '../v055-rename-fleet-to-fleet-repo-column'
 
 describe('migration v055', () => {
   it('has version 55', () => {
     expect(version).toBe(55)
   })
 
-  it('renames repo bde → fleet and BDE → fleet', () => {
+  it('renames repo fleet → fleet and FLEET → fleet', () => {
     const db = new Database(':memory:')
     db.prepare('CREATE TABLE sprint_tasks (id TEXT PRIMARY KEY, repo TEXT)').run()
-    db.prepare("INSERT INTO sprint_tasks VALUES ('t1', 'bde')").run()
-    db.prepare("INSERT INTO sprint_tasks VALUES ('t2', 'BDE')").run()
+    db.prepare("INSERT INTO sprint_tasks VALUES ('t1', 'fleet')").run()
+    db.prepare("INSERT INTO sprint_tasks VALUES ('t2', 'FLEET')").run()
     db.prepare("INSERT INTO sprint_tasks VALUES ('t3', 'other')").run()
 
     up(db)
@@ -222,7 +222,7 @@ describe('migration v055', () => {
     db.close()
   })
 
-  it('is a no-op when no bde rows exist', () => {
+  it('is a no-op when no fleet rows exist', () => {
     const db = new Database(':memory:')
     db.prepare('CREATE TABLE sprint_tasks (id TEXT PRIMARY KEY, repo TEXT)').run()
     db.prepare("INSERT INTO sprint_tasks VALUES ('t1', 'fleet')").run()
@@ -239,23 +239,23 @@ describe('migration v055', () => {
 - [ ] **Step 2: Run test to confirm it fails**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 npx vitest run --config vitest.node.config.ts src/main/migrations/__tests__/v055.test.ts
 # Expected: FAIL — module not found
 ```
 
 - [ ] **Step 3: Create the migration**
 
-Create `src/main/migrations/v055-rename-bde-to-fleet-repo-column.ts`:
+Create `src/main/migrations/v055-rename-fleet-to-fleet-repo-column.ts`:
 
 ```ts
 import type Database from 'better-sqlite3'
 
 export const version = 55
-export const description = 'Rename sprint_tasks.repo values from bde/BDE to fleet'
+export const description = 'Rename sprint_tasks.repo values from fleet/FLEET to fleet'
 
 export const up: (db: Database.Database) => void = (db) => {
-  const sql = `UPDATE sprint_tasks SET repo = 'fleet' WHERE repo IN ('bde', 'BDE')`
+  const sql = `UPDATE sprint_tasks SET repo = 'fleet' WHERE repo IN ('fleet', 'FLEET')`
   db.prepare(sql).run()
 }
 ```
@@ -263,7 +263,7 @@ export const up: (db: Database.Database) => void = (db) => {
 - [ ] **Step 4: Run test to confirm it passes**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 npx vitest run --config vitest.node.config.ts src/main/migrations/__tests__/v055.test.ts
 # Expected: 3 tests pass
 ```
@@ -271,21 +271,21 @@ npx vitest run --config vitest.node.config.ts src/main/migrations/__tests__/v055
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/projects/BDE
-git add src/main/migrations/v055-rename-bde-to-fleet-repo-column.ts \
+cd ~/projects/FLEET
+git add src/main/migrations/v055-rename-fleet-to-fleet-repo-column.ts \
         src/main/migrations/__tests__/v055.test.ts
-git commit -m "feat(migration): v055 rename sprint_tasks.repo bde→fleet"
+git commit -m "feat(migration): v055 rename sprint_tasks.repo fleet→fleet"
 ```
 
 ---
 
-### Task 5: Runtime directory migration (~/.bde → ~/.fleet)
+### Task 5: Runtime directory migration (~/.fleet → ~/.fleet)
 
 **Files:**
 - Create: `src/main/startup-migration.ts`
 - Modify: `src/main/index.ts` — call migration before any path constants are used
 
-On first launch after the rename, copy `~/.bde/` to `~/.fleet/` (non-destructive — old dir stays).
+On first launch after the rename, copy `~/.fleet/` to `~/.fleet/` (non-destructive — old dir stays).
 
 - [ ] **Step 1: Create the migration module**
 
@@ -296,11 +296,11 @@ import { existsSync, mkdirSync } from 'node:fs'
 import { cp } from 'node:fs/promises'
 import { join, homedir } from 'node:path'
 
-const legacyDir = join(homedir(), '.bde')
+const legacyDir = join(homedir(), '.fleet')
 const newDir = join(homedir(), '.fleet')
 
 /**
- * On first launch after the BDE→FLEET rename, copies ~/.bde to ~/.fleet.
+ * On first launch after the FLEET→FLEET rename, copies ~/.fleet to ~/.fleet.
  * Non-destructive — the old directory is left intact for manual cleanup.
  * Safe to call on every launch; no-ops when ~/.fleet already exists.
  */
@@ -344,7 +344,7 @@ app.whenReady().then(async () => {
 - [ ] **Step 3: Verify typecheck passes**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 npm run typecheck
 # Expected: zero errors
 ```
@@ -352,9 +352,9 @@ npm run typecheck
 - [ ] **Step 4: Commit**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 git add src/main/startup-migration.ts src/main/index.ts
-git commit -m "feat: migrate ~/.bde to ~/.fleet on first launch after rename"
+git commit -m "feat: migrate ~/.fleet to ~/.fleet on first launch after rename"
 ```
 
 ---
@@ -364,22 +364,22 @@ git commit -m "feat: migrate ~/.bde to ~/.fleet on first launch after rename"
 **Files:**
 - Modify: `~/CLAUDE.md`
 
-The global CLAUDE.md still references `BDE`, `~/projects/BDE`, and `~/.bde`. Apply the same substitutions manually (sed would work, but this file is short enough to do precisely).
+The global CLAUDE.md still references `FLEET`, `~/projects/FLEET`, and `~/.fleet`. Apply the same substitutions manually (sed would work, but this file is short enough to do precisely).
 
 - [ ] **Step 1: Run sed sweep on ~/CLAUDE.md**
 
 ```bash
 sed -i '' \
-  -e 's/Birkeland Development Environment/Agentic Development Environment/g' \
-  -e 's/BDE/FLEET/g' \
-  -e 's/bde/fleet/g' \
+  -e 's/Agentic Development Environment/Agentic Development Environment/g' \
+  -e 's/FLEET/FLEET/g' \
+  -e 's/fleet/fleet/g' \
   ~/CLAUDE.md
 ```
 
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -n "BDE\|bde\|Birkeland\|\.bde" ~/CLAUDE.md
+grep -n "FLEET\|fleet\|Birkeland\|\.fleet" ~/CLAUDE.md
 # Expected: zero matches
 ```
 
@@ -394,8 +394,8 @@ Confirm zero stale references across all tracked file types.
 - [ ] **Step 1: Run the success-criteria grep**
 
 ```bash
-cd ~/projects/BDE
-grep -r "BDE\|bde\|Birkeland\|\.bde" \
+cd ~/projects/FLEET
+grep -r "FLEET\|fleet\|Birkeland\|\.fleet" \
   --include="*.ts" --include="*.tsx" --include="*.js" --include="*.mjs" \
   --include="*.json" --include="*.yml" --include="*.yaml" \
   --include="*.md" --include="*.css" --include="*.html" --include="*.sh" \
@@ -412,7 +412,7 @@ If any unexpected matches appear, fix them and re-run.
 - [ ] **Step 2: Run typecheck and tests**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 npm run typecheck
 npm test
 npm run test:main
@@ -422,9 +422,9 @@ npm run test:main
 - [ ] **Step 3: Commit any remaining fixes found during verification**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 git add -A
-git commit -m "chore: post-rename cleanup — fix remaining BDE references"
+git commit -m "chore: post-rename cleanup — fix remaining FLEET references"
 ```
 
 ---
@@ -436,14 +436,14 @@ This is the final step — it cannot be undone easily, so all previous tasks mus
 - [ ] **Step 1: Push everything to origin before renaming**
 
 ```bash
-cd ~/projects/BDE
+cd ~/projects/FLEET
 git push origin main
 ```
 
 - [ ] **Step 2: Rename the directory**
 
 ```bash
-mv ~/projects/BDE ~/projects/FLEET
+mv ~/projects/FLEET ~/projects/FLEET
 ```
 
 - [ ] **Step 3: Verify the repo still works from the new path**
@@ -453,15 +453,15 @@ cd ~/projects/FLEET
 git status
 # Expected: clean working tree
 git remote -v
-# Expected: origin pointing to RyanJBirkeland/BDE (or FLEET once GitHub repo is renamed)
+# Expected: origin pointing to RyanJBirkeland/FLEET (or FLEET once GitHub repo is renamed)
 ```
 
 - [ ] **Step 4: Update CLAUDE.md path reference (if ~/CLAUDE.md was not already updated in Task 6)**
 
 ```bash
-grep "projects/BDE\|projects/FLEET" ~/CLAUDE.md
-# If any projects/BDE remain, fix them:
-sed -i '' 's|projects/BDE|projects/FLEET|g' ~/CLAUDE.md
+grep "projects/FLEET\|projects/FLEET" ~/CLAUDE.md
+# If any projects/FLEET remain, fix them:
+sed -i '' 's|projects/FLEET|projects/FLEET|g' ~/CLAUDE.md
 ```
 
 - [ ] **Step 5: Final sanity check from the new location**
@@ -472,4 +472,4 @@ npm run typecheck 2>&1 | tail -3
 # Expected: zero errors
 ```
 
-Done. The app is now FLEET. The old `~/.bde/` directory remains on disk for manual cleanup. Once the GitHub repo is renamed, update the URL in `src/renderer/src/components/settings/AboutSection.tsx` and remove the TODO comment.
+Done. The app is now FLEET. The old `~/.fleet/` directory remains on disk for manual cleanup. Once the GitHub repo is renamed, update the URL in `src/renderer/src/components/settings/AboutSection.tsx` and remove the TODO comment.

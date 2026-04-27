@@ -1,6 +1,6 @@
-# BDE MVP Polish
+# FLEET MVP Polish
 
-You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
+You are working in the FLEET (Agentic Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/FLEET`.
 
 ## Task
 
@@ -26,6 +26,6 @@ Polish the app for a clean MVP. Fix rough edges, improve consistency.
 
 - Work on a branch: `git checkout -b feat/mvp-polish`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE MVP polish — loading states, error states, consistent spacing" -f body="Polish pass for MVP" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/FLEET/pulls --method POST -f title="feat: FLEET MVP polish — loading states, error states, consistent spacing" -f body="Polish pass for MVP" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/FLEET/pulls --method POST ...`

@@ -127,9 +127,9 @@ describe('createSprintTaskRepository', () => {
       const repo = createSprintTaskRepository()
       vi.mocked(queries.clearStaleClaimedBy).mockReturnValue(3)
 
-      const result = repo.clearStaleClaimedBy('bde-embedded')
+      const result = repo.clearStaleClaimedBy('fleet-embedded')
 
-      expect(queries.clearStaleClaimedBy).toHaveBeenCalledWith('bde-embedded')
+      expect(queries.clearStaleClaimedBy).toHaveBeenCalledWith('fleet-embedded')
       expect(result).toBe(3)
     })
 
@@ -216,10 +216,10 @@ describe('createSprintTaskRepository', () => {
       const mockTasks = [{ id: '1' }]
       vi.mocked(queries.listTasks).mockReturnValue(mockTasks as any)
 
-      const result = repo.listTasks({ repo: 'bde', tag: 'foo', limit: 10, offset: 5 })
+      const result = repo.listTasks({ repo: 'fleet', tag: 'foo', limit: 10, offset: 5 })
 
       expect(queries.listTasks).toHaveBeenCalledWith({
-        repo: 'bde',
+        repo: 'fleet',
         tag: 'foo',
         limit: 10,
         offset: 5
@@ -241,7 +241,7 @@ describe('createSprintTaskRepository', () => {
     it('should delegate createTask to queries.createTask', () => {
       const repo = createSprintTaskRepository()
       const mockTask = { id: '1' }
-      const input = { title: 'Test', repo: 'bde' }
+      const input = { title: 'Test', repo: 'fleet' }
       vi.mocked(queries.createTask).mockReturnValue(mockTask as any)
 
       const result = repo.createTask(input as any)

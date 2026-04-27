@@ -169,7 +169,7 @@ function mapTopLevelToolResult(msg: Record<string, unknown>, now: number): Agent
 /**
  * Each unrecognized SDK message type is logged exactly once per process lifetime.
  * Without this, a new SDK message type or control frame would log on every event
- * (potentially hundreds per task) and drown real signal in `~/.bde/bde.log`.
+ * (potentially hundreds per task) and drown real signal in `~/.fleet/fleet.log`.
  */
 const loggedUnknownMessageTypes = new Set<string>()
 
@@ -301,7 +301,7 @@ export function flushAgentEventBatcher(db?: Database.Database): void {
     } else {
       // EP-15 DLQ sentinel: at the consecutive-failure ceiling we cannot keep
       // re-queuing forever. Log a structured WARN with sample agent IDs so
-      // operators can find affected runs in `~/.bde/bde.log`, bump the dropped
+      // operators can find affected runs in `~/.fleet/fleet.log`, bump the dropped
       // counter (for future metrics), and reset the failure counter so a
       // subsequent recovery does not stay tripped indefinitely.
       const droppedCount = rows.length

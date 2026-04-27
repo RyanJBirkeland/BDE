@@ -1,17 +1,17 @@
 /* ─── Settings Page Header ──────────────────────────────────────────────── */
 
 .stg-page-header {
-  margin-bottom: var(--bde-space-4);
+  margin-bottom: var(--fleet-space-4);
 }
 
 .stg-page-header__title {
-  font-size: var(--bde-space-4);
+  font-size: var(--fleet-space-4);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .stg-page-header__subtitle {
-  font-size: var(--bde-space-3);
-  color: var(--bde-text-muted);
-  margin-top: var(--bde-space-1);
+  font-size: var(--fleet-space-3);
+  color: var(--fleet-text-muted);
+  margin-top: var(--fleet-space-1);
 }

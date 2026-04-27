@@ -10,7 +10,7 @@
  * One file so the whole policy is grep-able in a single place. Each block
  * documents the agent type's purpose and the invariant being asserted —
  * treat this as the executable version of the "agent types" section in
- * `docs/BDE_FEATURES.md`.
+ * `docs/FLEET_FEATURES.md`.
  */
 import { describe, it, expect, vi } from 'vitest'
 
@@ -101,7 +101,7 @@ describe('agent SDK options policy', () => {
   describe('synthesizer', () => {
     // Synthesizer generates a full task spec in a single turn from
     // pre-gathered codebase context. It must not load CLAUDE.md — the
-    // composed prompt already contains the relevant BDE conventions and
+    // composed prompt already contains the relevant FLEET conventions and
     // loading project settings wastes tokens every call. Asserted here by
     // capturing the exact options object passed to runSdkStreaming.
     it('passes settingSources:[] to every SDK call', async () => {
@@ -113,7 +113,7 @@ describe('agent SDK options policy', () => {
       await synthesizeSpec(
         {
           templateName: 'Feature',
-          repo: 'bde',
+          repo: 'fleet',
           repoPath: '/tmp/repo',
           answers: {}
         },
@@ -122,7 +122,7 @@ describe('agent SDK options policy', () => {
       )
       await reviseSpec(
         {
-          repo: 'bde',
+          repo: 'fleet',
           repoPath: '/tmp/repo',
           currentSpec: 'existing',
           revisionNotes: 'tighten'

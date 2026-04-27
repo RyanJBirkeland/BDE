@@ -1,5 +1,5 @@
 /**
- * Integration tests for BDE native agent system
+ * Integration tests for FLEET native agent system
  */
 import { describe, it, expect } from 'vitest'
 import { pipelinePersonality } from '../../agent-system/personality/pipeline-personality'
@@ -21,7 +21,7 @@ describe('Agent System Integration', () => {
     it('exports assistant personality with all required fields', () => {
       expect(assistantPersonality).toBeDefined()
       expect(assistantPersonality.voice).toContain('Conversational')
-      expect(assistantPersonality.roleFrame).toContain('BDE Assistant')
+      expect(assistantPersonality.roleFrame).toContain('FLEET Assistant')
       expect(assistantPersonality.constraints.length).toBeGreaterThan(0)
       expect(assistantPersonality.patterns[0]).toContain('why did X fail')
     })
@@ -30,7 +30,7 @@ describe('Agent System Integration', () => {
   describe('Memory Module', () => {
     it('exports getAllMemory function that returns empty string (Option A debranding)', () => {
       expect(getAllMemory()).toBe('')
-      expect(getAllMemory({ repoName: 'bde' })).toBe('')
+      expect(getAllMemory({ repoName: 'fleet' })).toBe('')
       expect(getAllMemory({ repoName: 'life-os' })).toBe('')
     })
   })
@@ -55,12 +55,12 @@ describe('Agent System Integration', () => {
   })
 
   describe('Prompt Composer Integration', () => {
-    it('includes personality for pipeline agent (no BDE Conventions — Option A debranding)', () => {
+    it('includes personality for pipeline agent (no FLEET Conventions — Option A debranding)', () => {
       const prompt = buildAgentPrompt({
         agentType: 'pipeline',
         taskContent: 'Build feature X',
         branch: 'feat/test',
-        repoName: 'bde'
+        repoName: 'fleet'
       })
 
       expect(prompt).toContain('## Voice')
@@ -68,23 +68,23 @@ describe('Agent System Integration', () => {
       expect(prompt).toContain('## Your Role')
       expect(prompt).toContain('## Constraints')
       expect(prompt).toContain('NEVER push to, checkout, or merge into')
-      expect(prompt).not.toContain('## BDE Conventions')
+      expect(prompt).not.toContain('## FLEET Conventions')
       expect(prompt).not.toContain('IPC Conventions')
       expect(prompt).toContain('Build feature X')
     })
 
-    it('includes personality and skills for assistant agent (no BDE Conventions — Option A debranding)', () => {
+    it('includes personality and skills for assistant agent (no FLEET Conventions — Option A debranding)', () => {
       const prompt = buildAgentPrompt({
         agentType: 'assistant',
         taskContent: 'Help me understand X',
-        repoName: 'bde'
+        repoName: 'fleet'
       })
 
       expect(prompt).toContain('## Voice')
       expect(prompt).toContain('Conversational')
       expect(prompt).toContain('## Your Role')
-      expect(prompt).toContain('BDE Assistant')
-      expect(prompt).not.toContain('## BDE Conventions')
+      expect(prompt).toContain('FLEET Assistant')
+      expect(prompt).not.toContain('## FLEET Conventions')
       expect(prompt).toContain('## Available Skills')
       expect(prompt).toContain('System Introspection')
     })

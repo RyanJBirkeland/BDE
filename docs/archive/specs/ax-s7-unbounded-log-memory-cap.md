@@ -128,5 +128,5 @@ No store files or consumer components change — the `logContent` API stays the 
 ## Notes
 
 - 2 MB is ~40,000 lines of typical agent output. This covers the visible scrollback in the log viewer with generous margin.
-- The full log remains on disk at `~/.bde/agent-logs/{date}/{id}/output.log` — nothing is lost. A future "scroll to beginning" feature could use the `fromByte=0` parameter to re-read from disk.
+- The full log remains on disk at `~/.fleet/agent-logs/{date}/{id}/output.log` — nothing is lost. A future "scroll to beginning" feature could use the `fromByte=0` parameter to re-read from disk.
 - The `agentHistory` store's `readLog` IPC already supports `fromByte`, so a paginated "load more" feature is straightforward to add later.

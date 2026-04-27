@@ -13,7 +13,7 @@
 
 ### 1. Worktree Bleed
 
-Vitest's default test discovery walks the entire project tree. BDE has 20+ `.worktrees/` directories (and `.claude/worktrees/`), each containing their own `node_modules/`. Some dependencies ship `.spec.ts` files (e.g., `exponential-backoff/src/backoff.spec.ts`) that use Jest globals. When Vitest encounters these, it fails with `jest is not defined`.
+Vitest's default test discovery walks the entire project tree. FLEET has 20+ `.worktrees/` directories (and `.claude/worktrees/`), each containing their own `node_modules/`. Some dependencies ship `.spec.ts` files (e.g., `exponential-backoff/src/backoff.spec.ts`) that use Jest globals. When Vitest encounters these, it fails with `jest is not defined`.
 
 **Current exclusion in `vitest.config.ts:8`:**
 

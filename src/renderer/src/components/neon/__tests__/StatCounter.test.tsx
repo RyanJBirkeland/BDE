@@ -29,7 +29,7 @@ describe('StatCounter', () => {
   it('applies accent color to label', () => {
     render(<StatCounter label="Tasks" value={17} accent="pink" />)
     const label = document.querySelector('[data-role="stat-label"]') as HTMLElement
-    expect(label.style.color).toBe('var(--bde-status-done)')
+    expect(label.style.color).toBe('var(--fleet-status-done)')
   })
 
   it('renders up arrow and red color for upward trend', () => {

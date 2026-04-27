@@ -48,15 +48,15 @@ The system SHALL ensure that when the watchdog terminates an agent, the agent's 
 
 The system SHALL guarantee that the SIGKILL escalation timer in `forceKillAgent` is `ref`'d during application shutdown so the kill lands before process exit.
 
-#### Scenario: BDE shutdown leaves no Claude child process
+#### Scenario: FLEET shutdown leaves no Claude child process
 - **WHEN** an agent is mid-run and `agentManager.shutdown()` is called
-- **THEN** the SIGKILL escalation runs and the child Claude process is observed to be gone before BDE exits
+- **THEN** the SIGKILL escalation runs and the child Claude process is observed to be gone before FLEET exits
 
 ### Requirement: Crash-loop cap on orphan recovery
 
-The system SHALL maintain a per-task orphan-recovery counter and SHALL transition a task to `error` once that counter exceeds a configured maximum, preventing infinite re-queue loops across BDE restarts.
+The system SHALL maintain a per-task orphan-recovery counter and SHALL transition a task to `error` once that counter exceeds a configured maximum, preventing infinite re-queue loops across FLEET restarts.
 
-#### Scenario: Task that crashes BDE three times reaches terminal error
+#### Scenario: Task that crashes FLEET three times reaches terminal error
 - **WHEN** a task has been re-queued by orphan recovery `MAX_ORPHAN_RECOVERY_COUNT` times
 - **THEN** the task transitions to `error` via `TaskStateService.transition()` (not via direct `updateTask`)
 

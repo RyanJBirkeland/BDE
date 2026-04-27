@@ -454,7 +454,7 @@ function shouldQuarantine(consecutiveFailures: number): boolean {
 
 function formatQuarantineNote(count: number, err: unknown): string {
   const errMsg = err instanceof Error ? err.message : String(err)
-  const note = `Task processing failed ${count} consecutive times in the drain loop: ${errMsg}. Check ~/.bde/bde.log for details.`
+  const note = `Task processing failed ${count} consecutive times in the drain loop: ${errMsg}. Check ~/.fleet/fleet.log for details.`
   return note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
 }
 

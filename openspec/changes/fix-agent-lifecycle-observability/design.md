@@ -1,6 +1,6 @@
 ## Context
 
-The agent manager lifecycle spans four files: `run-agent.ts` (orchestration), `message-consumer.ts` (SDK stream), `task-state-service.ts` (status transitions), and `task-claimer.ts` (claim + dispatch). Operators debug agent failures by reading `~/.bde/bde.log`, but five structural gaps make log reconstruction unreliable:
+The agent manager lifecycle spans four files: `run-agent.ts` (orchestration), `message-consumer.ts` (SDK stream), `task-state-service.ts` (status transitions), and `task-claimer.ts` (claim + dispatch). Operators debug agent failures by reading `~/.fleet/fleet.log`, but five structural gaps make log reconstruction unreliable:
 
 1. `agent.completed` always records `status: 'review'` — it was written before `resolveAgentExit` could produce failure/requeue outcomes.
 2. Two hard-abort paths in the message consumer (`max_turns_exceeded`, budget cap) emit `agent:error` without `taskId`, breaking any log analysis that joins on task ID.
@@ -35,15 +35,15 @@ Alternative considered: thread the final status through `resolveAgentExit` via a
 
 **D2 — Log `transition()` success at `info` level, not `debug`**
 
-`info` is the right level for state-machine transitions: they are relatively low-frequency (one per task per stage), always meaningful for debugging, and should appear in the default log view. `debug` would require enabling a separate log level and would be invisible in production `bde.log` by default.
+`info` is the right level for state-machine transitions: they are relatively low-frequency (one per task per stage), always meaningful for debugging, and should appear in the default log view. `debug` would require enabling a separate log level and would be invisible in production `fleet.log` by default.
 
 **D3 — Emit `task.auto-complete` as a structured `logger.event(...)` (not `logger.info`)**
 
-`auto-complete` is a business-significant event — it fires when BDE detects that a commit matching the task is already on `main`. It deserves a structured event (key-value payload: `taskId`, `sha`, `matchedOn`) rather than a free-form info string, so it can be reliably parsed by log analysis tools. The existing `logger.event` method is the right vehicle.
+`auto-complete` is a business-significant event — it fires when FLEET detects that a commit matching the task is already on `main`. It deserves a structured event (key-value payload: `taskId`, `sha`, `matchedOn`) rather than a free-form info string, so it can be reliably parsed by log analysis tools. The existing `logger.event` method is the right vehicle.
 
 **D4 — "Task claimed — spawning" as `logger.info` (not `logger.event`)**
 
-Claim is already a structured DB operation (`claimTask`). The log line here is purely for human operators reading the tail of `bde.log` to know when a task entered the spawn phase. A free-form `info` line suffices; a structured event would be redundant given the DB audit trail.
+Claim is already a structured DB operation (`claimTask`). The log line here is purely for human operators reading the tail of `fleet.log` to know when a task entered the spawn phase. A free-form `info` line suffices; a structured event would be redundant given the DB audit trail.
 
 ## Risks / Trade-offs
 
@@ -53,4 +53,4 @@ Claim is already a structured DB operation (`claimTask`). The log line here is p
 
 ## Migration Plan
 
-No migration needed. All changes are additive log emissions. Existing `bde.log` files are unaffected. The changes deploy with the next app build.
+No migration needed. All changes are additive log emissions. Existing `fleet.log` files are unaffected. The changes deploy with the next app build.

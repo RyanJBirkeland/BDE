@@ -28,7 +28,7 @@ import { TASK_STATUSES } from '../../shared/task-state-machine'
  * changes in the same PR as the schema — that co-location is the point.
  */
 
-const minimalValidTask = { title: 't', repo: 'bde' }
+const minimalValidTask = { title: 't', repo: 'fleet' }
 
 function taskWith<K extends string>(field: K, value: unknown): Record<string, unknown> {
   return { ...minimalValidTask, [field]: value }
@@ -392,7 +392,7 @@ describe('strict schemas — reject unknown top-level fields', () => {
   it('TaskWriteFieldsSchema rejects unknown top-level field', () => {
     const result = TaskWriteFieldsSchema.safeParse({
       title: 't',
-      repo: 'bde',
+      repo: 'fleet',
       bogus_field: 'x'
     })
     expectUnknownKeyError(result, 'bogus_field')
@@ -481,7 +481,7 @@ describe('strict schemas — reject unknown top-level fields', () => {
   it('TaskDependency rejects unknown field inside a dependency entry', () => {
     const result = TaskWriteFieldsSchema.safeParse({
       title: 't',
-      repo: 'bde',
+      repo: 'fleet',
       depends_on: [{ id: 'dep-1', type: 'hard', bogus: 1 }]
     })
     expectUnknownKeyError(result, 'bogus')

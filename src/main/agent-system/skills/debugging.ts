@@ -1,6 +1,6 @@
-import type { BDESkill } from './types'
+import type { FLEETSkill } from './types'
 
-export const debuggingSkill: BDESkill = {
+export const debuggingSkill: FLEETSkill = {
   id: 'debugging',
   trigger: 'User reports failed tasks, agent errors, pipeline stalls, or unexpected behavior',
   description: 'Diagnose agent failures, inspect logs, fix stuck tasks',
@@ -8,8 +8,8 @@ export const debuggingSkill: BDESkill = {
 
 ## Check Agent Logs
 \`\`\`bash
-tail -200 ~/.bde/bde.log
-grep -i "error\\|fail\\|timeout" ~/.bde/bde.log | tail -50
+tail -200 ~/.fleet/fleet.log
+grep -i "error\\|fail\\|timeout" ~/.fleet/fleet.log | tail -50
 \`\`\`
 
 ## Inspect Task History
@@ -32,8 +32,8 @@ git branch | grep agent/ | xargs git branch -D
 \`\`\`
 
 ## Common Failure Modes
-- **OAuth token expired**: Refresh ~/.bde/oauth-token
-- **Fast-fail (3 failures in 30s)**: Check bde.log, fix root cause, reset task
+- **OAuth token expired**: Refresh ~/.fleet/oauth-token
+- **Fast-fail (3 failures in 30s)**: Check fleet.log, fix root cause, reset task
 - **Watchdog timeout (1hr)**: Increase max_runtime_ms or reduce task scope
 - **Worktree conflicts**: Run prune + delete stale branches first
 `,

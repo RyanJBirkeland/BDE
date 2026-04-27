@@ -59,16 +59,16 @@ describe('getRecentAgentRunsWithCost', () => {
     const earlier = new Date(Date.now() - 60000).toISOString()
     db.prepare(
       `INSERT INTO agent_runs (id, bin, task, repo, status, started_at, cost_usd)
-       VALUES (?, 'claude', 'task A', 'bde', 'done', ?, 0.05)`
+       VALUES (?, 'claude', 'task A', 'fleet', 'done', ?, 0.05)`
     ).run('run-1', earlier)
     db.prepare(
       `INSERT INTO agent_runs (id, bin, task, repo, status, started_at, cost_usd)
-       VALUES (?, 'claude', 'task B', 'bde', 'failed', ?, 0.10)`
+       VALUES (?, 'claude', 'task B', 'fleet', 'failed', ?, 0.10)`
     ).run('run-2', now)
     // Running tasks should not appear
     db.prepare(
       `INSERT INTO agent_runs (id, bin, task, repo, status, started_at)
-       VALUES (?, 'claude', 'task C', 'bde', 'running', ?)`
+       VALUES (?, 'claude', 'task C', 'fleet', 'running', ?)`
     ).run('run-3', now)
 
     const result = getRecentAgentRunsWithCost(db)

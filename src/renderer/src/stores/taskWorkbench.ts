@@ -65,8 +65,8 @@ interface TaskWorkbenchState {
 // Defaults
 // ---------------------------------------------------------------------------
 
-const ADVANCED_OPEN_STORAGE_KEY = 'bde:workbench-advanced-open'
-const DRAFT_STORAGE_KEY = 'bde:workbench-draft'
+const ADVANCED_OPEN_STORAGE_KEY = 'fleet:workbench-advanced-open'
+const DRAFT_STORAGE_KEY = 'fleet:workbench-draft'
 const DRAFT_SAVE_DEBOUNCE_MS = 500
 
 export interface PersistedDraft {

@@ -5,5 +5,5 @@ type KbdProps = {
 }
 
 export function Kbd({ children }: KbdProps): React.JSX.Element {
-  return <kbd className="bde-kbd">{children}</kbd>
+  return <kbd className="fleet-kbd">{children}</kbd>
 }

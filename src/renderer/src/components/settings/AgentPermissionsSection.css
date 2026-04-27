@@ -4,24 +4,24 @@
 .permissions-banner {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-3);
-  padding: var(--bde-space-3) var(--bde-space-4);
-  margin-bottom: var(--bde-space-3);
-  border-radius: var(--bde-radius-md);
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-border);
+  gap: var(--fleet-space-3);
+  padding: var(--fleet-space-3) var(--fleet-space-4);
+  margin-bottom: var(--fleet-space-3);
+  border-radius: var(--fleet-radius-md);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-border);
 }
 
 .permissions-banner__text {
   margin: 0;
-  color: var(--bde-text);
-  font-size: var(--bde-size-sm);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-sm);
   line-height: 1.5;
 }
 
 .permissions-banner__actions {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   flex-wrap: wrap;
 }
 
@@ -29,23 +29,23 @@
 .permissions-presets {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
 /* Grid of allow-tool checkboxes. */
 .permissions-tools {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--bde-space-2) var(--bde-space-4);
-  margin-bottom: var(--bde-space-3);
+  gap: var(--fleet-space-2) var(--fleet-space-4);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .permissions-tool {
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: baseline;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-1) 0;
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-1) 0;
   cursor: pointer;
 }
 
@@ -55,20 +55,20 @@
 
 .permissions-tool__name {
   font-weight: 600;
-  color: var(--bde-text);
-  font-size: var(--bde-size-sm);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-sm);
 }
 
 .permissions-tool__desc {
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-xs);
 }
 
 /* Footer explainer below the grid. */
 .permissions-info {
   margin: 0;
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-xs);
   line-height: 1.5;
 }
 
@@ -76,30 +76,30 @@
 .permissions-deny-list {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-1);
-  margin-bottom: var(--bde-space-3);
+  gap: var(--fleet-space-1);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .permissions-deny-rule {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-1) var(--bde-space-2);
-  background: var(--bde-surface);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-1) var(--fleet-space-2);
+  background: var(--fleet-surface);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
 }
 
 .permissions-deny-rule code {
   flex: 1;
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text);
   background: none;
   padding: 0;
 }
 
 .permissions-deny-add {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }

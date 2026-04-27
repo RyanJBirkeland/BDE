@@ -8,7 +8,7 @@ interface CopilotDiscoveryPopoverProps {
  * First-run discoverability popover for the Task Workbench AI Copilot.
  *
  * Rendered once per user — dismissal is persisted via localStorage key
- * `bde:workbench-copilot-popover-seen` by the parent (TaskWorkbench).
+ * `fleet:workbench-copilot-popover-seen` by the parent (TaskWorkbench).
  */
 export function CopilotDiscoveryPopover({
   onDismiss

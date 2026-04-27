@@ -10,7 +10,7 @@ vi.mock('../useBackoffInterval', () => ({
 
 // Mock the gitTree store
 const mockFetchStatus = vi.fn().mockResolvedValue(undefined)
-let mockActiveRepo: string | null = '/Users/test/repos/bde'
+let mockActiveRepo: string | null = '/Users/test/repos/fleet'
 
 vi.mock('../../stores/gitTree', () => {
   const store = vi.fn((sel: (s: unknown) => unknown) =>
@@ -24,7 +24,7 @@ describe('useGitStatusPolling', () => {
   beforeEach(() => {
     mockFetchStatus.mockClear()
     mockUseBackoffInterval.mockClear()
-    mockActiveRepo = '/Users/test/repos/bde'
+    mockActiveRepo = '/Users/test/repos/fleet'
   })
 
   it('renders without error', () => {
@@ -49,7 +49,7 @@ describe('useGitStatusPolling', () => {
     // Extract the poll callback passed to useBackoffInterval
     const pollFn = mockUseBackoffInterval.mock.calls[0][0]
     pollFn()
-    expect(mockFetchStatus).toHaveBeenCalledWith('/Users/test/repos/bde')
+    expect(mockFetchStatus).toHaveBeenCalledWith('/Users/test/repos/fleet')
   })
 
   it('poll callback does not call fetchStatus when no activeRepo', () => {

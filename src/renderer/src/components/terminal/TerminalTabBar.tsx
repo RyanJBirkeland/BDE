@@ -187,10 +187,10 @@ export function TerminalTabBar({
   }
 
   const getStatusDotColor = (tab: TerminalTab): string => {
-    if (tab.hasUnread) return 'var(--bde-info)'
-    if (tab.kind === 'agent') return 'var(--bde-subagent)'
-    if (tab.status === 'exited') return 'var(--bde-text-dim)'
-    return 'var(--bde-accent)'
+    if (tab.hasUnread) return 'var(--fleet-info)'
+    if (tab.kind === 'agent') return 'var(--fleet-subagent)'
+    if (tab.status === 'exited') return 'var(--fleet-text-dim)'
+    return 'var(--fleet-accent)'
   }
 
   // Roving tabindex for keyboard navigation

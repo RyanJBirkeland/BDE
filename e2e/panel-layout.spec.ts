@@ -19,8 +19,8 @@ const MIN_SIDEBAR_WIDTH = 120 // px — anything less signals a collapse bug
 // ---------------------------------------------------------------------------
 
 test.describe('Code Review — sidebar width', () => {
-  test('cr-queue sidebar has usable width', async ({ bde }) => {
-    const { window } = bde
+  test('cr-queue sidebar has usable width', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+5')
@@ -34,8 +34,8 @@ test.describe('Code Review — sidebar width', () => {
     expect(box!.width).toBeGreaterThanOrEqual(MIN_SIDEBAR_WIDTH)
   })
 
-  test('cr-queue sidebar is not clipped — count badge fully visible', async ({ bde }) => {
-    const { window } = bde
+  test('cr-queue sidebar is not clipped — count badge fully visible', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+5')
@@ -55,8 +55,8 @@ test.describe('Code Review — sidebar width', () => {
     expect(badgeBox!.x + badgeBox!.width).toBeLessThanOrEqual(viewBox!.x + viewBox!.width + 1)
   })
 
-  test('Code Review empty state — no task selected shows placeholder', async ({ bde }) => {
-    const { window } = bde
+  test('Code Review empty state — no task selected shows placeholder', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+5')
@@ -78,8 +78,8 @@ test.describe('Code Review — sidebar width', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Settings — sidebar width', () => {
-  test('stg-sidebar has usable width', async ({ bde }) => {
-    const { window } = bde
+  test('stg-sidebar has usable width', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -94,9 +94,9 @@ test.describe('Settings — sidebar width', () => {
   })
 
   test('Settings sidebar items are not clipped — Appearance item fully visible', async ({
-    bde
+    fleet
   }) => {
-    const { window } = bde
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -121,8 +121,8 @@ test.describe('Settings — sidebar width', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Agents — sidebar width', () => {
-  test('agents-sidebar has usable width', async ({ bde }) => {
-    const { window } = bde
+  test('agents-sidebar has usable width', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+2')
@@ -135,8 +135,8 @@ test.describe('Agents — sidebar width', () => {
     expect(box!.width).toBeGreaterThanOrEqual(MIN_SIDEBAR_WIDTH)
   })
 
-  test('Fleet header and New Agent button are not clipped', async ({ bde }) => {
-    const { window } = bde
+  test('Fleet header and New Agent button are not clipped', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+2')
@@ -155,8 +155,8 @@ test.describe('Agents — sidebar width', () => {
     expect(btnBox!.x + btnBox!.width).toBeLessThanOrEqual(sidebarBox!.x + sidebarBox!.width + 1)
   })
 
-  test('Agents empty state — launchpad or empty message visible', async ({ bde }) => {
-    const { window } = bde
+  test('Agents empty state — launchpad or empty message visible', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+2')
@@ -184,12 +184,12 @@ test.describe('Agents — sidebar width', () => {
 test.describe('Sprint Pipeline — detail drawer not clipped', () => {
   const TEST_PREFIX = 'e2e-layout-'
 
-  test.afterEach(async ({ bde }) => {
-    await cleanupTestTasks(bde.window, TEST_PREFIX)
+  test.afterEach(async ({ fleet }) => {
+    await cleanupTestTasks(fleet.window, TEST_PREFIX)
   })
 
-  test('Task detail drawer renders at full height when opened', async ({ bde }) => {
-    const { window } = bde
+  test('Task detail drawer renders at full height when opened', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     const task = await seedTask(window, {

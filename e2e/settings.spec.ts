@@ -6,8 +6,8 @@
 import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Settings view', () => {
-  test('Navigate to Settings', async ({ bde }) => {
-    const { window } = bde
+  test('Navigate to Settings', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -20,8 +20,8 @@ test.describe('Settings view', () => {
     await expect(title).toBeVisible({ timeout: 3_000 })
   })
 
-  test('Sidebar section switching — Appearance', async ({ bde }) => {
-    const { window } = bde
+  test('Sidebar section switching — Appearance', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -49,8 +49,8 @@ test.describe('Settings view', () => {
     })
   })
 
-  test('Sidebar section switching — Repositories', async ({ bde }) => {
-    const { window } = bde
+  test('Sidebar section switching — Repositories', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -73,8 +73,8 @@ test.describe('Settings view', () => {
     await expect(addRepoBtn).toBeVisible({ timeout: 3_000 })
   })
 
-  test('Settings sidebar shows search input', async ({ bde }) => {
-    const { window } = bde
+  test('Settings sidebar shows search input', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+7')
@@ -87,8 +87,8 @@ test.describe('Settings view', () => {
 })
 
 test.describe('Settings — Connections section', () => {
-  test('Connections section shows fields and accepts input', async ({ bde }) => {
-    const { window } = bde
+  test('Connections section shows fields and accepts input', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to Settings via Cmd+7

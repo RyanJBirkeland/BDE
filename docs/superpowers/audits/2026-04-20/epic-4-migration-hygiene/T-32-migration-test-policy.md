@@ -17,7 +17,7 @@ Create `src/main/migrations/__tests__/v038.test.ts`. Model the structure on `v04
 
 Minimum cases:
 
-1. **Applies correctly** — insert rows with mixed-case `repo` values (`'BDE'`, `'Bde'`, `'bde'`); run v038; assert all rows have lowercase `repo`.
+1. **Applies correctly** — insert rows with mixed-case `repo` values (`'FLEET'`, `'Fleet'`, `'fleet'`); run v038; assert all rows have lowercase `repo`.
 2. **Idempotent** — run v038 a second time; assert no change (rows still lowercase).
 3. **No-op when already normalized** — insert only lowercase rows; run v038; assert zero row changes (use `db.changes()` or a snapshot).
 4. **Does not touch unrelated columns** — insert rows with non-lowercase values in other text columns (`title`, `notes`); run v038; assert other columns unchanged.

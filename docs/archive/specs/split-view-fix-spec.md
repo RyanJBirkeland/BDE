@@ -1,4 +1,4 @@
-# BDE — Sessions Split View Fix + Toolbar Redesign Spec
+# FLEET — Sessions Split View Fix + Toolbar Redesign Spec
 
 > **Status: ABANDONED (verified 2026-04-21).** Sessions split-view code is gone — no `splitLayout`/`setSplitMode` anywhere in the codebase. Replaced by the Panel system. Retained for historical reference only; do not implement.
 

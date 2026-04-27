@@ -11,7 +11,7 @@
 
 ## Problem
 
-BDE has zero end-to-end tests. Unit and component tests verify individual modules in isolation, but no test exercises the full Electron stack: renderer → preload → main → OS → response → UI update. This means:
+FLEET has zero end-to-end tests. Unit and component tests verify individual modules in isolation, but no test exercises the full Electron stack: renderer → preload → main → OS → response → UI update. This means:
 
 - IPC channel mismatches between preload and handlers go undetected
 - Visual regressions (layouts breaking, modals not opening) are invisible
@@ -134,8 +134,8 @@ export async function launchApp() {
     args: ['.'],
     env: {
       ...process.env,
-      BDE_TEST_MODE: '1',
-      HOME: '/tmp/bde-e2e-test' // Isolated home for test config
+      FLEET_TEST_MODE: '1',
+      HOME: '/tmp/fleet-e2e-test' // Isolated home for test config
     }
   })
   const window = await app.firstWindow()
@@ -155,7 +155,7 @@ export async function launchApp() {
 ```
 Precondition: Mock gateway running with 3 test sessions
 Steps:
-  1. Launch BDE
+  1. Launch FLEET
   2. Wait for sessions view to load
   3. Assert session list contains 3 items
   4. Assert title bar shows session count
@@ -171,7 +171,7 @@ Teardown: Close app, stop mock gateway
 ```
 Precondition: Mock gateway running, claude CLI available in PATH
 Steps:
-  1. Launch BDE
+  1. Launch FLEET
   2. Click "New Agent" button (or Shift+Cmd+N shortcut)
   3. Assert SpawnModal opens
   4. Type "Write hello world" in task field
@@ -194,9 +194,9 @@ Precondition: App launched, Terminal view available
 Steps:
   1. Switch to Terminal view (click sidebar or press Cmd+4)
   2. Wait for PTY to initialize (terminal canvas rendered)
-  3. Type "echo BDE_E2E_TEST"
+  3. Type "echo FLEET_E2E_TEST"
   4. Press Enter
-  5. Assert terminal output contains "BDE_E2E_TEST"
+  5. Assert terminal output contains "FLEET_E2E_TEST"
   6. Type "exit"
   7. Press Enter
   8. Assert terminal tab shows exit indicator
@@ -233,7 +233,7 @@ Teardown: Close app
 ```
 Precondition: Mock gateway with completed agent in history, log file on disk
 Steps:
-  1. Launch BDE
+  1. Launch FLEET
   2. Navigate to agent history panel
   3. Click on completed agent row
   4. Assert log viewer panel opens
@@ -299,9 +299,9 @@ For this story, use CSS selectors and text content matching. Add `data-testid` i
 
 E2E tests should NOT touch the user's real `~/.openclaw/` directory. Use:
 
-- `HOME=/tmp/bde-e2e-test` to isolate config
+- `HOME=/tmp/fleet-e2e-test` to isolate config
 - Mock gateway on a random port to avoid conflicts
-- Clean up `/tmp/bde-e2e-test` in `afterAll`
+- Clean up `/tmp/fleet-e2e-test` in `afterAll`
 
 ## Acceptance Criteria
 

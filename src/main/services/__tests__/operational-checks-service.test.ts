@@ -109,7 +109,7 @@ describe('validateGitCleanStatus', () => {
   it('returns pass when working directory is clean', async () => {
     vi.mocked(execFileAsync).mockResolvedValue({ stdout: '', stderr: '' })
 
-    const result = await validateGitCleanStatus('/projects/bde')
+    const result = await validateGitCleanStatus('/projects/fleet')
 
     expect(result.status).toBe('pass')
   })
@@ -117,7 +117,7 @@ describe('validateGitCleanStatus', () => {
   it('returns warn when uncommitted changes are present', async () => {
     vi.mocked(execFileAsync).mockResolvedValue({ stdout: ' M src/foo.ts\n', stderr: '' })
 
-    const result = await validateGitCleanStatus('/projects/bde')
+    const result = await validateGitCleanStatus('/projects/fleet')
 
     expect(result.status).toBe('warn')
     expect(result.message).toContain('Uncommitted')
@@ -126,7 +126,7 @@ describe('validateGitCleanStatus', () => {
   it('returns warn containing "Unable to check" when git command throws', async () => {
     vi.mocked(execFileAsync).mockRejectedValue(new Error('not a git repository'))
 
-    const result = await validateGitCleanStatus('/projects/bde')
+    const result = await validateGitCleanStatus('/projects/fleet')
 
     expect(result.status).toBe('warn')
     expect(result.message).toContain('Unable to check')
@@ -137,17 +137,17 @@ describe('validateNoTaskConflicts', () => {
   it('returns pass when no tasks exist for the repo', () => {
     vi.mocked(listTasks).mockReturnValue([])
 
-    const result = validateNoTaskConflicts('bde')
+    const result = validateNoTaskConflicts('fleet')
 
     expect(result.status).toBe('pass')
   })
 
   it('returns fail when active tasks are present', () => {
     vi.mocked(listTasks).mockReturnValue([
-      { id: '1', repo: 'bde', status: 'active' } as never
+      { id: '1', repo: 'fleet', status: 'active' } as never
     ])
 
-    const result = validateNoTaskConflicts('bde')
+    const result = validateNoTaskConflicts('fleet')
 
     expect(result.status).toBe('fail')
     expect(result.message).toContain('active')
@@ -155,10 +155,10 @@ describe('validateNoTaskConflicts', () => {
 
   it('returns warn when only queued tasks are present', () => {
     vi.mocked(listTasks).mockReturnValue([
-      { id: '1', repo: 'bde', status: 'queued' } as never
+      { id: '1', repo: 'fleet', status: 'queued' } as never
     ])
 
-    const result = validateNoTaskConflicts('bde')
+    const result = validateNoTaskConflicts('fleet')
 
     expect(result.status).toBe('warn')
     expect(result.message).toContain('queued')
@@ -169,7 +169,7 @@ describe('validateNoTaskConflicts', () => {
       throw new Error('DB unavailable')
     })
 
-    const result = validateNoTaskConflicts('bde')
+    const result = validateNoTaskConflicts('fleet')
 
     expect(result.status).toBe('warn')
     expect(result.message).toContain('Error checking')
@@ -231,7 +231,7 @@ describe('runOperationalChecks', () => {
       })
     }
 
-    const result = await runOperationalChecks('bde', am as never)
+    const result = await runOperationalChecks('fleet', am as never)
 
     expect(result).toHaveProperty('auth')
     expect(result).toHaveProperty('repoPath')
@@ -261,7 +261,7 @@ describe('runOperationalChecks', () => {
       })
     }
 
-    const result = await runOperationalChecks('bde', am as never)
+    const result = await runOperationalChecks('fleet', am as never)
 
     expect(result.auth.status).toBe('pass')
     expect(result.repoPath.status).toBe('pass')
@@ -281,7 +281,7 @@ describe('runOperationalChecks', () => {
       getStatus: vi.fn().mockReturnValue({ concurrency: { maxSlots: 2, activeCount: 0 } })
     }
 
-    const result = await runOperationalChecks('bde', am as never)
+    const result = await runOperationalChecks('fleet', am as never)
 
     expect(result.auth.status).toBe('fail')
     // Other checks are independent — repoPath can still pass

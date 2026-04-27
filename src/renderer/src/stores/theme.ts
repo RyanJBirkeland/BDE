@@ -57,9 +57,9 @@ function applyTheme(t: Theme): void {
  */
 function loadSavedTheme(): Theme {
   try {
-    const stored = localStorage.getItem('bde-theme')
+    const stored = localStorage.getItem('fleet-theme')
     if (stored === 'warm') {
-      localStorage.setItem('bde-theme', 'dark')
+      localStorage.setItem('fleet-theme', 'dark')
       return 'dark'
     }
     if (stored === 'dark' || stored === 'light' || stored === 'system') {
@@ -82,7 +82,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
       const idx = order.indexOf(s.theme)
       const next = order[(idx + 1) % order.length] ?? 'system'
       try {
-        localStorage.setItem('bde-theme', next)
+        localStorage.setItem('fleet-theme', next)
       } catch {
         /* localStorage may be unavailable */
       }
@@ -92,7 +92,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setTheme: (t) =>
     set(() => {
       try {
-        localStorage.setItem('bde-theme', t)
+        localStorage.setItem('fleet-theme', t)
       } catch {
         /* localStorage may be unavailable */
       }
@@ -104,7 +104,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
 // Cross-window theme sync via localStorage storage event
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (e) => {
-    if (e.key === 'bde-theme' && e.newValue) {
+    if (e.key === 'fleet-theme' && e.newValue) {
       // Tolerate legacy values arriving from older windows
       const v = e.newValue
       const next: Theme =

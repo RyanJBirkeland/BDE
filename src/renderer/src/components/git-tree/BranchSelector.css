@@ -7,22 +7,22 @@
 .git-branch-selector__trigger {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
-  padding: 2px var(--bde-space-2);
-  background-color: var(--bde-surface-high);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-ui);
+  gap: var(--fleet-space-1);
+  padding: 2px var(--fleet-space-2);
+  background-color: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-ui);
 }
 
 .git-branch-selector__trigger--enabled {
-  color: var(--bde-text);
+  color: var(--fleet-text);
   cursor: pointer;
 }
 
 .git-branch-selector__trigger--disabled {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: not-allowed;
 }
 
@@ -47,41 +47,41 @@
   min-width: 180px;
   max-height: 240px;
   overflow-y: auto;
-  background-color: var(--bde-surface-high);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  box-shadow: var(--bde-shadow-md);
-  margin-top: var(--bde-space-1);
+  background-color: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  box-shadow: var(--fleet-shadow-md);
+  margin-top: var(--fleet-space-1);
 }
 
 .git-branch-selector__empty {
-  padding: var(--bde-space-3);
-  color: var(--bde-text-muted);
-  font-size: var(--bde-size-sm);
+  padding: var(--fleet-space-3);
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-sm);
   text-align: center;
 }
 
 .git-branch-selector__option {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   width: 100%;
   text-align: left;
-  padding: var(--bde-space-1) var(--bde-space-3);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
   background: none;
   border: none;
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-ui);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-ui);
   cursor: pointer;
 }
 
 .git-branch-selector__option--current {
-  background: var(--bde-accent-dim);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-dim);
+  color: var(--fleet-accent);
 }
 
 .git-branch-selector__option:not(.git-branch-selector__option--current):hover {
-  background-color: var(--bde-surface-high);
+  background-color: var(--fleet-surface-high);
 }
 
 .git-branch-selector__option-name {

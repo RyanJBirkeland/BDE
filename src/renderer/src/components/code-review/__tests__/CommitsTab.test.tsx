@@ -40,7 +40,7 @@ describe('CommitsTab', () => {
       {
         id: 't1',
         title: 'Task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         worktree_path: '/tmp/wt',
         updated_at: '2026-04-01'
@@ -58,7 +58,7 @@ describe('CommitsTab', () => {
   it('shows loading state', () => {
     useCodeReviewStore.setState({ loading: { commits: true } })
     const { container } = render(<CommitsTab />)
-    expect(container.querySelectorAll('.bde-skeleton').length).toBeGreaterThan(0)
+    expect(container.querySelectorAll('.fleet-skeleton').length).toBeGreaterThan(0)
   })
 
   it('shows empty state when no commits', () => {
