@@ -11,6 +11,7 @@ import {
   listTasks,
   updateTask
 } from '../services/sprint-service'
+import type { CancelTaskResult } from '../services/sprint-use-cases'
 import type { EpicGroupService } from '../services/epic-group-service'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { readOrCreateToken } from './token-store'
@@ -43,6 +44,7 @@ export interface McpServerConfig {
 export interface McpServerDeps {
   epicService: EpicGroupService
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
+  taskStateService: import('../services/task-state-service').TaskStateService
 }
 
 export interface McpServerHandle {
@@ -73,6 +75,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       cancelTask: cancelTaskForMcp,
       getTaskChanges: (id, options) => getTaskChanges(id, options),
       onStatusTerminal: deps.onStatusTerminal,
+      taskStateService: deps.taskStateService,
       logger
     })
 
@@ -85,7 +88,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
     id: string,
     reason?: string,
     options?: { caller?: string }
-  ): ReturnType<typeof cancelTask> {
+  ): Promise<CancelTaskResult> {
     try {
       return await cancelTask(
         id,

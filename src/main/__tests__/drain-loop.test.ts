@@ -44,6 +44,12 @@ function makeDeps(
     atMinimumCapacity: false
   }
 
+  const taskStateService = {
+    transition: vi.fn(async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+      repo.updateTask(taskId, { status, ...(ctx?.fields ?? {}) })
+    })
+  } as unknown as import('../services/task-state-service').TaskStateService
+
   return {
     config: { maxConcurrent: 4 } as any,
     repo,
@@ -62,6 +68,9 @@ function makeDeps(
     setConcurrency: vi.fn(),
     drainFailureCounts,
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
+    taskStateService,
+    emitDrainPaused: vi.fn(),
+    drainPausedUntil: undefined,
     processQueuedTask: vi.fn().mockRejectedValue(new Error('DB corruption')),
     ...overrides
   }
@@ -95,6 +104,7 @@ describe('drainQueuedTasks — quarantine', () => {
       await drainQueuedTasks(4, new Map(), deps)
     }
 
+    // transition() is now the single entry point — it calls repo.updateTask via mock
     expect(deps.repo.updateTask).toHaveBeenCalledWith(
       'task-abc',
       expect.objectContaining({
@@ -102,7 +112,7 @@ describe('drainQueuedTasks — quarantine', () => {
         notes: expect.stringContaining('DB corruption')
       })
     )
-    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-abc', 'cancelled')
+    // onTaskTerminal is dispatched by TaskStateService's terminal dispatcher, not called directly
     // Count cleared after quarantine
     expect(counts.has('task-abc')).toBe(false)
   })

@@ -16,6 +16,7 @@ export interface SDKWireMessage {
   cost_usd?: number
   total_cost_usd?: number
   exit_code?: number
+  stop_reason?: string
   text?: string
   message?: {
     role?: string
@@ -24,6 +25,10 @@ export interface SDKWireMessage {
       text?: string
       name?: string
       tool_name?: string
+      id?: string
+      tool_use_id?: string
+      content?: string
+      is_error?: boolean
       input?: Record<string, unknown>
     }>
   }

@@ -23,6 +23,7 @@ import {
 } from '../services/copilot-service'
 import { PIPELINE_DISALLOWED_TOOLS } from '../agent-manager/turn-budget'
 import { REVIEWER_CHAT_MAX_BUDGET_USD } from '../handlers/review-assistant'
+import { DEFAULT_CONFIG } from '../agent-manager/types'
 
 describe('agent SDK options policy', () => {
   describe('pipeline', () => {
@@ -77,13 +78,13 @@ describe('agent SDK options policy', () => {
       // path. If someone adds a new call site and forgets to use it, the
       // matching unit test for that path should catch it — but exercising
       // the helper here protects against drift in the helper itself.
-      const options = getCopilotSdkOptions('/tmp/repo', 'claude-sonnet-4-5')
+      const options = getCopilotSdkOptions('/tmp/repo', DEFAULT_CONFIG.defaultModel)
       expect(options.settingSources).toEqual([])
       expect(options.tools).toEqual(['Read', 'Grep', 'Glob'])
       expect(options.disallowedTools).toEqual([...COPILOT_DISALLOWED_TOOLS])
       expect(options.maxTurns).toBe(COPILOT_MAX_TURNS)
       expect(options.maxBudgetUsd).toBe(COPILOT_MAX_BUDGET_USD)
-      expect(options.model).toBe('claude-sonnet-4-5')
+      expect(options.model).toBe(DEFAULT_CONFIG.defaultModel)
       expect(options.cwd).toBe('/tmp/repo')
     })
   })

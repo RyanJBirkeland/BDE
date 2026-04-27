@@ -14,6 +14,7 @@ vi.mock('../../agent-event-mapper', () => ({
 
 import { initializeAgentTracking } from '../agent-initialization'
 import type { AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { AgentRunClaim } from '../run-agent'
 import type { TurnTracker } from '../turn-tracker'
@@ -63,7 +64,7 @@ function makeTask(overrides: Partial<AgentRunClaim> = {}): AgentRunClaim {
 
 const mockRepo: IAgentTaskRepository = {
   getTask: vi.fn(),
-  updateTask: vi.fn().mockReturnValue(null),
+  updateTask: vi.fn().mockResolvedValue(null),
   getQueuedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn().mockReturnValue([]),
   getOrphanedTasks: vi.fn(),
@@ -89,7 +90,7 @@ describe('initializeAgentTracking', () => {
     const result = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -106,7 +107,7 @@ describe('initializeAgentTracking', () => {
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -121,7 +122,7 @@ describe('initializeAgentTracking', () => {
     const { agent } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -129,7 +130,7 @@ describe('initializeAgentTracking', () => {
       makeLogger()
     )
     expect(agent.taskId).toBe('task-1')
-    expect(agent.model).toBe('claude-sonnet-4-5')
+    expect(agent.model).toBe(DEFAULT_CONFIG.defaultModel)
     expect(agent.costUsd).toBe(0)
     expect(agent.rateLimitCount).toBe(0)
   })
@@ -139,7 +140,7 @@ describe('initializeAgentTracking', () => {
     const { agent, agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -154,7 +155,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -169,7 +170,7 @@ describe('initializeAgentTracking', () => {
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -193,7 +194,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -212,7 +213,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       handle,
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -229,22 +230,22 @@ describe('initializeAgentTracking', () => {
     )
   })
 
-  it('logs warning when updateTask fails', () => {
+  it('logs warning when updateTask fails', async () => {
     const activeAgents = new Map()
-    vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
-      throw new Error('DB error')
-    })
+    vi.mocked(mockRepo.updateTask).mockRejectedValueOnce(new Error('DB error'))
     const logger = makeLogger()
     initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
       mockRepo,
       logger
     )
+    // Allow the async rejection to propagate through the fire-and-forget .catch()
+    await new Promise((r) => setTimeout(r, 0))
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to persist agent_run_id')
     )
@@ -255,7 +256,7 @@ describe('initializeAgentTracking', () => {
     const { agent } = initializeAgentTracking(
       makeTask({ max_runtime_ms: 120000 }),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -270,7 +271,7 @@ describe('initializeAgentTracking', () => {
     const { agent } = initializeAgentTracking(
       makeTask({ max_cost_usd: 3.0 }),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -285,7 +286,7 @@ describe('initializeAgentTracking', () => {
     const { turnTracker } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,
@@ -303,7 +304,7 @@ describe('initializeAgentTracking', () => {
     const { agentRunId } = initializeAgentTracking(
       makeTask(),
       makeHandle(),
-      'claude-sonnet-4-5',
+      DEFAULT_CONFIG.defaultModel,
       worktree,
       'prompt text',
       activeAgents,

@@ -1,23 +1,29 @@
 /**
  * Sprint service — backward-compatible unified interface.
  *
- * Re-exports from sprint-mutations.ts and sprint-mutation-broadcaster.ts
- * to maintain existing import paths. New code should import from those
- * modules directly.
+ * This module is a barrel re-export. It exists to keep existing import paths
+ * working without changes. New code should import from the focused modules:
  *
- * This module wraps mutation operations to automatically trigger notifications,
- * preserving the behavior existing code expects.
+ * - Data / mutations:  `sprint-mutations.ts`
+ * - Notifications:     `sprint-mutation-broadcaster.ts`
+ * - Orchestration:     `sprint-use-cases.ts`
+ *
+ * The broadcaster-wrapped mutation wrappers (`createTask`, `updateTask`, etc.)
+ * still live here because they combine two concerns that callers currently
+ * treat as a single operation. They may be moved to `sprint-use-cases.ts`
+ * in a future cleanup.
  */
 import * as mutations from './sprint-mutations'
 import * as broadcaster from './sprint-mutation-broadcaster'
-import type { SprintTask } from '../../shared/types'
-import { validateTaskCreation } from './task-validation'
-import { SpecParser } from './spec-quality/spec-parser'
-import { RequiredSectionsValidator } from './spec-quality/validators/sync-validators'
-import { getRepoPaths } from '../paths'
-import { listGroups } from '../data/task-group-queries'
-import type { Logger } from '../logger'
-import type { TaskStatus } from '../../shared/task-state-machine'
+import type { SprintTask, SprintTaskExecution, ClaimedTask, TaskTemplate } from '../../shared/types'
+import { getSettingJson } from '../settings'
+import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
+import type { TaskStateService } from './task-state-service'
+import { execFileAsync } from '../lib/async-utils'
+import { getErrorMessage } from '../../shared/errors'
+import { createLogger } from '../logger'
+
+const logger = createLogger('sprint-service')
 
 export type {
   CreateTaskInput,
@@ -54,24 +60,26 @@ export const updateTaskMergeableState = mutations.updateTaskMergeableState
 export const flagStuckTasks = mutations.flagStuckTasks
 
 // Wrap mutation operations to auto-notify
-export function createTask(input: mutations.CreateTaskInput): SprintTask | null {
-  const row = mutations.createTask(input)
+export async function createTask(input: mutations.CreateTaskInput): Promise<SprintTask | null> {
+  const row = await mutations.createTask(input)
   if (row) broadcaster.notifySprintMutation('created', row)
   return row
 }
 
-export function claimTask(id: string, claimedBy: string): SprintTask | null {
-  const result = mutations.claimTask(id, claimedBy)
-  if (result) broadcaster.notifySprintMutation('updated', result)
+export async function claimTask(id: string, claimedBy: string): Promise<SprintTaskExecution | null> {
+  const result = await mutations.claimTask(id, claimedBy)
+  // Broadcaster expects SprintTask (full shape) — the value IS a full task at runtime;
+  // the narrowed declared type is a contract hint, not a runtime shape change.
+  if (result) broadcaster.notifySprintMutation('updated', result as SprintTask)
   return result
 }
 
-export function updateTask(
+export async function updateTask(
   id: string,
   patch: Record<string, unknown>,
   options?: mutations.UpdateTaskOptions
-): SprintTask | null {
-  const result = mutations.updateTask(id, patch, options)
+): Promise<SprintTask | null> {
+  const result = await mutations.updateTask(id, patch, options)
   if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
@@ -80,8 +88,11 @@ export function updateTask(
  * Manual operator override — writes a terminal status bypassing the state machine.
  * See `forceUpdateTask` in sprint-task-crud for rationale.
  */
-export function forceUpdateTask(id: string, patch: Record<string, unknown>): SprintTask | null {
-  const result = mutations.forceUpdateTask(id, patch)
+export async function forceUpdateTask(
+  id: string,
+  patch: Record<string, unknown>
+): Promise<SprintTask | null> {
+  const result = await mutations.forceUpdateTask(id, patch)
   if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
@@ -92,296 +103,149 @@ export function deleteTask(id: string): void {
   if (task) broadcaster.notifySprintMutation('deleted', task)
 }
 
-export function releaseTask(id: string, claimedBy: string): SprintTask | null {
-  const result = mutations.releaseTask(id, claimedBy)
+export async function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
+  const result = await mutations.releaseTask(id, claimedBy)
   if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
 
-export function createReviewTaskFromAdhoc(input: {
+export async function createReviewTaskFromAdhoc(input: {
   title: string
   repo: string
   spec: string
   worktreePath: string
   branch: string
-}): SprintTask | null {
-  const row = mutations.createReviewTaskFromAdhoc(input)
+}): Promise<SprintTask | null> {
+  const row = await mutations.createReviewTaskFromAdhoc(input)
   if (row) broadcaster.notifySprintMutation('created', row)
   return row
 }
 
-export interface CancelTaskDeps {
-  /** Fires task-terminal resolution so dependents unblock. */
-  onStatusTerminal: (taskId: string, status: TaskStatus) => Promise<void> | void
-  logger: Logger
-  /**
-   * Optional override for the underlying update call (tests inject a spy).
-   * Defaults to this module's `updateTask` which wraps the broadcaster.
-   */
-  updateTask?: (
-    id: string,
-    patch: Record<string, unknown>,
-    options?: mutations.UpdateTaskOptions
-  ) => SprintTask | null
-}
+// Re-export use-case orchestration from the focused module.
+export {
+  cancelTask,
+  resetTaskForRetry,
+  updateTaskFromUi,
+  TaskTransitionError,
+  TaskValidationError,
+} from './sprint-use-cases'
 
-export interface CancelTaskOptions {
-  /**
-   * Attribution for the audit trail — forwarded to `updateTask` as the
-   * `changed_by` value. Lets MCP-originated cancels surface as
-   * `'mcp'` / `'mcp:<client>'` instead of `'unknown'`. Optional; the
-   * default `'unknown'` preserves existing behaviour for callers that
-   * do not specify.
-   */
-  caller?: string
-}
+export type {
+  CancelTaskDeps,
+  CancelTaskOptions,
+  ResetTaskForRetryDeps,
+  CreateTaskWithValidationDeps,
+  CreateTaskWithValidationOpts,
+  UpdateTaskFromUiDeps,
+  TaskValidationCode,
+} from './sprint-use-cases'
 
-/**
- * Raised when a caller attempts a status change the state machine forbids
- * (e.g. cancelling an already-`done` task). Lets MCP/IPC adapters branch on
- * the error kind without regex-matching the underlying data-layer message.
- */
-export class TaskTransitionError extends Error {
-  readonly taskId: string
-  readonly fromStatus: string | null
-  readonly toStatus: string
-
-  constructor(
-    message: string,
-    ctx: { taskId: string; fromStatus: string | null; toStatus: string }
-  ) {
-    super(message)
-    this.name = 'TaskTransitionError'
-    this.taskId = ctx.taskId
-    this.fromStatus = ctx.fromStatus
-    this.toStatus = ctx.toStatus
-  }
-}
-
-function isInvalidTransitionError(err: unknown): err is Error {
-  return err instanceof Error && err.message.includes('Invalid transition')
-}
+import {
+  createTaskWithValidation as _createTaskWithValidation,
+  resetTaskForRetry as _resetTaskForRetry,
+  type CreateTaskWithValidationDeps,
+  type CreateTaskWithValidationOpts,
+} from './sprint-use-cases'
 
 /**
- * Cancel a task — sets status to 'cancelled' with an optional reason in
- * notes, then awaits the terminal-status handler so dependents unblock.
- *
- * Consolidates the update-then-terminal two-step so the MCP server and
- * future IPC paths don't re-implement it in drift-prone closures.
- *
- * Throws `TaskTransitionError` when the current status forbids cancellation
- * (e.g. already `done`). Unknown errors propagate unchanged.
+ * Broadcaster-wired variant of `createTaskWithValidation`. Injects the
+ * broadcaster-wrapped `createTask` so the renderer is notified on success.
+ * Callers that need raw (no-broadcast) creation should use
+ * `sprint-use-cases.createTaskWithValidation` directly with an explicit dep.
  */
-export async function cancelTask(
-  id: string,
-  opts: { reason?: string } & CancelTaskOptions,
-  deps: CancelTaskDeps
-): Promise<SprintTask | null> {
-  const patch: Record<string, unknown> = { status: 'cancelled' }
-  if (opts.reason) patch.notes = opts.reason
-  const doUpdate = deps.updateTask ?? updateTask
-  const updateOptions = opts.caller ? { caller: opts.caller } : undefined
-  let row: SprintTask | null
-  try {
-    row = doUpdate(id, patch, updateOptions)
-  } catch (err) {
-    if (isInvalidTransitionError(err)) {
-      const current = mutations.getTask(id)
-      throw new TaskTransitionError(err.message, {
-        taskId: id,
-        fromStatus: current?.status ?? null,
-        toStatus: 'cancelled'
-      })
-    }
-    throw err
-  }
-  if (row) {
-    try {
-      await deps.onStatusTerminal(id, 'cancelled')
-    } catch (err) {
-      deps.logger.error(`onStatusTerminal after cancel ${id}: ${err}`)
-    }
-  }
-  return row
-}
-
-export interface ResetTaskForRetryDeps {
-  updateTask?: (id: string, patch: Record<string, unknown>) => SprintTask | null
-}
-
-/**
- * Clear stale terminal-state fields on a task so it looks fresh after
- * re-queueing. Does NOT set `status` — the caller owns that decision
- * (usually 'queued', sometimes 'backlog'). Fields cleared:
- * - completed_at, failure_reason, claimed_by, started_at
- * - retry_count and fast_fail_count (reset to 0, not null)
- * - next_eligible_at
- */
-export function resetTaskForRetry(id: string, deps: ResetTaskForRetryDeps = {}): SprintTask | null {
-  const doUpdate = deps.updateTask ?? updateTask
-  return doUpdate(id, {
-    completed_at: null,
-    failure_reason: null,
-    claimed_by: null,
-    started_at: null,
-    retry_count: 0,
-    fast_fail_count: 0,
-    next_eligible_at: null
-  })
-}
-
-export type TaskValidationCode = 'spec-structural' | 'spec-readiness' | 'repo-not-configured'
-
-/**
- * Machine-readable validation failure raised by `createTaskWithValidation`.
- * `code` lets MCP clients and IPC handlers branch on failure kind without
- * parsing the human-readable message.
- */
-export class TaskValidationError extends Error {
-  readonly code: TaskValidationCode
-  constructor(code: TaskValidationCode, message: string) {
-    super(message)
-    this.code = code
-    this.name = 'TaskValidationError'
-  }
-}
-
-export interface CreateTaskWithValidationDeps {
-  logger: Logger
-}
-
-export interface CreateTaskWithValidationOpts {
-  /**
-   * Skip the spec-structure check (required headings, min length) that
-   * runs for queued tasks. Structural validation (required fields,
-   * configured repo) always runs. Intended for batch/admin flows with
-   * hand-validated specs; logged at warn level when true.
-   */
-  skipReadinessCheck?: boolean
-}
-
-/** Shared task-creation entry point for the sprint:create IPC handler and the MCP server. */
 export function createTaskWithValidation(
   input: mutations.CreateTaskInput,
   deps: CreateTaskWithValidationDeps,
-  opts: CreateTaskWithValidationOpts = {}
-): SprintTask {
-  const validationInput = opts.skipReadinessCheck ? { ...input, status: 'backlog' as const } : input
-  const validation = validateTaskCreation(validationInput, {
-    logger: { warn: (msg) => deps.logger.warn(msg as string) },
-    listTasks: mutations.listTasks,
-    listGroups
-  })
-  if (!validation.valid) {
-    throw new TaskValidationError(
-      'spec-structural',
-      `Spec quality checks failed: ${validation.errors.join('; ')}`
-    )
+  opts?: CreateTaskWithValidationOpts
+): Promise<SprintTask> {
+  return _createTaskWithValidation(input, { ...deps, createTask }, opts)
+}
+
+export function buildClaimedTask(taskId: string): ClaimedTask | null {
+  const task = mutations.getTask(taskId)
+  if (!task) return null
+
+  let templatePromptPrefix: string | null = null
+  if (task.template_name) {
+    const templates = getSettingJson<TaskTemplate[]>('task.templates') ?? [...DEFAULT_TASK_TEMPLATES]
+    const match = templates.find((t) => t.name === task.template_name)
+    templatePromptPrefix = match?.promptPrefix ?? null
   }
 
-  // Restore caller's intended status (validateStructural only controls spec-length gating).
-  const validatedTask = opts.skipReadinessCheck
-    ? { ...validation.task, status: input.status ?? validation.task.status }
-    : validation.task
+  return { ...task, templatePromptPrefix }
+}
 
-  if (!opts.skipReadinessCheck && validatedTask.status === 'queued' && validatedTask.spec) {
-    const parsed = new SpecParser().parse(validatedTask.spec)
-    const sectionErrors = new RequiredSectionsValidator()
-      .validate(parsed)
-      .filter((issue) => issue.severity === 'error')
-    if (sectionErrors.length > 0 && sectionErrors[0]) {
-      throw new TaskValidationError(
-        'spec-readiness',
-        `Spec quality checks failed: ${sectionErrors[0].message}`
+export type ForceReleaseClaimDeps = {
+  cancelAgent?: (id: string) => Promise<void>
+  taskStateService: TaskStateService
+}
+
+export async function forceReleaseClaim(
+  taskId: string,
+  deps: ForceReleaseClaimDeps
+): Promise<SprintTask> {
+  const task = mutations.getTask(taskId)
+  if (!task) throw new Error(`Task ${taskId} not found`)
+  if (task.status !== 'active') {
+    throw new Error(
+      `Cannot force-release a task with status ${task.status} — only active tasks can be released`
+    )
+  }
+  await deps.cancelAgent?.(taskId)
+  await _resetTaskForRetry(taskId)
+  await deps.taskStateService.transition(taskId, 'queued', {
+    fields: { notes: null, agent_run_id: null },
+    caller: 'sprint:forceReleaseClaim'
+  })
+  const released = mutations.getTask(taskId)
+  if (!released) throw new Error(`Failed to release task ${taskId}`)
+  broadcaster.notifySprintMutation('updated', released)
+  return released
+}
+
+export async function retryTask(taskId: string): Promise<SprintTask> {
+  const task = mutations.getTask(taskId)
+  if (!task) throw new Error(`Task ${taskId} not found`)
+  if (task.status !== 'failed' && task.status !== 'error' && task.status !== 'cancelled') {
+    throw new Error(`Cannot retry task with status ${task.status}`)
+  }
+
+  const repos = getSettingJson<Array<{ name: string; localPath: string }>>('repos')
+  const repoConfig = repos?.find((r) => r.name === task.repo)
+  const repoPath = repoConfig?.localPath
+
+  if (repoPath) {
+    const slug = task.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .slice(0, 40)
+    try {
+      await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath })
+      const { stdout: branches } = await execFileAsync(
+        'git',
+        ['branch', '--list', `agent/${slug}*`],
+        { cwd: repoPath }
       )
+      for (const branch of branches
+        .split('\n')
+        .map((b) => b.trim())
+        .filter(Boolean)) {
+        await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath }).catch((err) => {
+          logger.warn(`retryTask: failed to delete branch ${branch}: ${getErrorMessage(err)}`)
+        })
+      }
+    } catch {
+      /* cleanup is best-effort */
     }
   }
 
-  if (opts.skipReadinessCheck) {
-    deps.logger.warn('createTaskWithValidation: skipReadinessCheck=true (batch/admin path)')
-  }
-
-  const repoPaths = getRepoPaths()
-  if (!repoPaths[validatedTask.repo]) {
-    throw new TaskValidationError(
-      'repo-not-configured',
-      `Repo "${validatedTask.repo}" is not configured. Add it in Settings > Repositories, then try again.`
-    )
-  }
-
-  const row = createTask(validatedTask)
-  if (!row) throw new Error('Failed to create task')
-  return row
-}
-
-import {
-  TASK_STATUSES,
-  TERMINAL_STATUSES,
-  isValidTransition,
-  isTaskStatus
-} from '../../shared/task-state-machine'
-import { isValidTaskId } from '../lib/validation'
-import { UPDATE_ALLOWLIST } from '../data/sprint-maintenance-facade'
-import { validateAndFilterPatch } from '../lib/patch-validation'
-import { prepareQueueTransition } from './task-state-service'
-
-export interface UpdateTaskFromUiDeps {
-  logger: Logger
-  onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
-}
-
-/**
- * Apply an IPC-originated task patch with the full UI safety pipeline:
- * id check, allowlist filtering, status narrowing, transition validation,
- * `queued`-transition policy (spec quality + dependency auto-block), and
- * the post-update terminal callback.
- *
- * Replaces the inline business logic that used to live in
- * `sprint-local.ts:sprintUpdateHandler`. Handlers now delegate here.
- */
-export async function updateTaskFromUi(
-  id: string,
-  patch: Record<string, unknown>,
-  deps: UpdateTaskFromUiDeps
-): Promise<SprintTask | null> {
-  if (!isValidTaskId(id)) throw new Error('Invalid task ID format')
-
-  const filtered = validateAndFilterPatch(patch, UPDATE_ALLOWLIST)
-  if (filtered === null) throw new Error('No valid fields to update')
-  let workingPatch = filtered
-
-  const validatedStatus = narrowStatus(workingPatch.status)
-  if (validatedStatus) {
-    rejectInvalidTransition(id, validatedStatus)
-  }
-
-  if (validatedStatus === 'queued') {
-    const { patch: finalPatch } = await prepareQueueTransition(id, workingPatch, {
-      logger: deps.logger
-    })
-    workingPatch = finalPatch
-  }
-
-  const result = updateTask(id, workingPatch)
-  if (validatedStatus && TERMINAL_STATUSES.has(validatedStatus)) {
-    deps.onStatusTerminal(id, validatedStatus)
-  }
-  return result
-}
-
-function narrowStatus(value: unknown): TaskStatus | undefined {
-  if (value === undefined) return undefined
-  if (typeof value !== 'string' || !isTaskStatus(value)) {
-    throw new Error(
-      `Invalid status "${String(value)}". Valid statuses: ${TASK_STATUSES.join(', ')}`
-    )
-  }
-  return value
-}
-
-function rejectInvalidTransition(taskId: string, target: TaskStatus): void {
-  const current = mutations.getTask(taskId)
-  if (current && !isValidTransition(current.status, target)) {
-    throw new Error(`Invalid status transition: ${current.status} → ${target} for task ${taskId}`)
-  }
+  await _resetTaskForRetry(taskId)
+  const updated = await mutations.updateTask(taskId, {
+    status: 'queued',
+    notes: null,
+    agent_run_id: null
+  })
+  if (!updated) throw new Error(`Failed to update task ${taskId}`)
+  broadcaster.notifySprintMutation('updated', updated)
+  return updated
 }

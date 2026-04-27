@@ -25,7 +25,7 @@ FROM agent_runs
 WHERE status='running';
 \`\`\`
 
-Cross-reference with ~/.bde/agent-manager.log for detailed output.
+Cross-reference with ~/.bde/bde.log for detailed output.
 
 ## Inspect Task Status
 \`\`\`sql
@@ -36,7 +36,7 @@ Check depends_on field for dependency chains.
 
 ## Diagnose Pipeline Stalls
 - Tasks stuck in 'active' for >1hr (check started_at)
-- Check ~/.bde/agent-manager.log for watchdog timeouts
+- Check ~/.bde/bde.log for watchdog timeouts
 - Verify worktrees exist: ls ~/.bde/worktrees/
 
 ## Example Usage
@@ -45,7 +45,7 @@ Check depends_on field for dependency chains.
 sqlite3 ~/.bde/bde.db "SELECT status, COUNT(*) FROM sprint_tasks GROUP BY status"
 
 # Read recent agent logs
-tail -100 ~/.bde/agent-manager.log
+tail -100 ~/.bde/bde.log
 \`\`\`
 `,
   capabilities: ['sqlite-query', 'file-read-logs']

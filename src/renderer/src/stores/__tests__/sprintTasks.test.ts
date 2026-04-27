@@ -15,7 +15,7 @@ vi.mock('../../../../shared/template-heuristics', () => ({
   detectTemplate: vi.fn().mockReturnValue(null)
 }))
 
-import { useSprintTasks } from '../sprintTasks'
+import { useSprintTasks, PENDING_UPDATE_TTL } from '../sprintTasks'
 import { useSprintSelection } from '../sprintSelection'
 import { toast } from '../toasts'
 import { nowIso } from '../../../../shared/time'
@@ -99,6 +99,20 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().loadData()
 
       expect(useSprintTasks.getState().tasks).toEqual([])
+    })
+
+    it('returns same array reference when server data is unchanged', async () => {
+      const tasks = [makeTask('t1'), makeTask('t2')]
+      ;(window.api.sprint.list as ReturnType<typeof vi.fn>).mockResolvedValue(tasks)
+
+      await useSprintTasks.getState().loadData()
+      const firstRef = useSprintTasks.getState().tasks
+
+      // Second poll with identical data
+      await useSprintTasks.getState().loadData()
+      const secondRef = useSprintTasks.getState().tasks
+
+      expect(secondRef).toBe(firstRef)
     })
   })
 
@@ -525,8 +539,7 @@ describe('sprintTasks store', () => {
 
     it('expires pending update TTL and accepts incoming data', async () => {
       const optimistic = makeTask('t1', { status: 'active' })
-      // Timestamp older than PENDING_UPDATE_TTL (5000ms)
-      const oldTs = Date.now() - 6000
+      const oldTs = Date.now() - (PENDING_UPDATE_TTL + 1000)
       const pendingUpdates: Record<string, { ts: number; fields: readonly (keyof SprintTask)[] }> = {
         t1: { ts: oldTs, fields: ['status'] }
       }
@@ -639,10 +652,9 @@ describe('sprintTasks store', () => {
 
     it('overwrites all fields after TTL expires', () => {
       const task = makeTask('t1', { status: 'active', notes: 'local notes' })
-      // Set a timestamp older than PENDING_UPDATE_TTL (5000ms)
       useSprintTasks.setState({
         tasks: [task],
-        pendingUpdates: { t1: { ts: Date.now() - 6000, fields: ['status'] } },
+        pendingUpdates: { t1: { ts: Date.now() - (PENDING_UPDATE_TTL + 1000), fields: ['status'] } },
         pendingCreates: []
       })
 

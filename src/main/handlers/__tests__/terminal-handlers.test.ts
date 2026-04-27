@@ -108,7 +108,7 @@ describe('Terminal handlers', () => {
   it('registers 3 safeHandle channels and 1 safeOn channel', () => {
     registerTerminalHandlers()
     expect(safeHandle).toHaveBeenCalledTimes(3)
-    expect(safeHandle).toHaveBeenCalledWith('terminal:create', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('terminal:create', expect.any(Function), expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('terminal:resize', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('terminal:kill', expect.any(Function))
     expect(safeOn).toHaveBeenCalledWith('terminal:write', expect.any(Function))

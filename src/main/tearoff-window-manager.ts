@@ -176,7 +176,14 @@ export function setupTearoffWindow(
   onPersistBounds: (windowId: string) => void
 ): void {
   win.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    try {
+      const parsed = new URL(details.url)
+      if (['https:', 'http:', 'mailto:'].includes(parsed.protocol)) {
+        shell.openExternal(details.url).catch(() => {})
+      }
+    } catch {
+      // Malformed URL — deny silently
+    }
     return { action: 'deny' }
   })
 
@@ -261,13 +268,34 @@ function askRendererForAction(windowId: string, win: BrowserWindow): Promise<'re
 // Restore persisted tear-off windows on startup
 // ---------------------------------------------------------------------------
 
+function isPersistedTearoff(entry: unknown): entry is PersistedTearoff {
+  if (typeof entry !== 'object' || entry === null) return false
+  const e = entry as Record<string, unknown>
+  return (
+    typeof e.windowId === 'string' &&
+    e.windowId.trim() !== '' &&
+    Array.isArray(e.views) &&
+    typeof e.bounds === 'object' &&
+    e.bounds !== null
+  )
+}
+
 /** Recreates tear-off windows from persisted state (call after app is ready). */
 export function restoreTearoffWindows(onPersistBounds: (windowId: string) => void): void {
-  const saved = getSettingJson('tearoff.windows') as PersistedTearoff[] | null
-  if (!saved || !Array.isArray(saved) || saved.length === 0) return
+  const raw = getSettingJson('tearoff.windows')
+  if (!Array.isArray(raw) || raw.length === 0) return
+
+  const saved: PersistedTearoff[] = []
+  for (const item of raw) {
+    if (isPersistedTearoff(item)) {
+      saved.push(item)
+    } else {
+      logger.warn(`[tearoff] Skipping malformed persisted tearoff entry: ${JSON.stringify(item)}`)
+    }
+  }
 
   for (const entry of saved) {
-    if (!entry.views || entry.views.length === 0) continue
+    if (entry.views.length === 0) continue
     const firstView = entry.views[0]
     if (!firstView) continue
 

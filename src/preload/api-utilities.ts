@@ -246,10 +246,11 @@ export const review = {
     typedInvoke('review:shipIt', payload),
   shipBatch: (payload: { taskIds: string[]; strategy: 'squash' | 'merge' | 'rebase' }) =>
     typedInvoke('review:shipBatch', payload),
-  generateSummary: (payload: { taskId: string }) => typedInvoke('review:generateSummary', payload),
   checkAutoReview: (payload: { taskId: string }) => typedInvoke('review:checkAutoReview', payload),
   rebase: (payload: { taskId: string }) => typedInvoke('review:rebase', payload),
   checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload),
+  markShippedOutsideBde: (payload: { taskId: string }) =>
+    typedInvoke('review:markShippedOutsideBde', payload),
   autoReview: (taskId: string, force?: boolean) =>
     typedInvoke('review:autoReview', taskId, force ?? false),
   chatStream: (params: { taskId: string; messages: PartnerMessage[] }) =>

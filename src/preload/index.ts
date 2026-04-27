@@ -237,6 +237,7 @@ const api = {
   // MCP server management
   mcp: {
     getToken: (): Promise<string> => ipcRenderer.invoke('mcp:getToken'),
+    revealToken: (): Promise<string> => ipcRenderer.invoke('mcp:revealToken'),
     regenerateToken: (): Promise<string> => ipcRenderer.invoke('mcp:regenerateToken')
   }
 }

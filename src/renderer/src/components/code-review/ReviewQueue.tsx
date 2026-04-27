@@ -4,12 +4,13 @@ import { motion } from 'framer-motion'
 import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useCodeReviewStore } from '../../stores/codeReview'
-import { EmptyState } from '../ui/EmptyState'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { timeAgo } from '../../lib/format'
 
 export function ReviewQueue(): React.JSX.Element {
   const reduced = useReducedMotion()
+  const navigateToPipeline = usePanelLayoutStore((s) => s.setView)
 
   // Scoped selector: only re-renders when the review-task subset changes.
   const reviewTasks = useSprintTasks(
@@ -136,7 +137,17 @@ export function ReviewQueue(): React.JSX.Element {
           </motion.button>
         ))}
         {reviewTasks.length === 0 && (
-          <EmptyState message="No tasks awaiting review. Complete agent runs will appear here for inspection." />
+          <div className="cr-queue__empty">
+            <p className="cr-queue__empty-message">
+              No tasks awaiting review. Tasks appear here when agents complete their work.
+            </p>
+            <button
+              className="cr-queue__empty-cta"
+              onClick={() => navigateToPipeline('sprint')}
+            >
+              Go to Pipeline
+            </button>
+          </div>
         )}
       </motion.div>
     </div>

@@ -8,7 +8,8 @@ import {
   SPEC_DRAFTING_PREAMBLE,
   PLAYGROUND_INSTRUCTIONS,
   buildPersonalitySection,
-  buildUpstreamContextSection
+  buildUpstreamContextSection,
+  escapeXmlContent
 } from './prompt-sections'
 import type { BuildPromptInput } from '../../shared/types'
 
@@ -65,9 +66,9 @@ export function buildCopilotPrompt(input: BuildPromptInput): string {
   if (input.formContext) {
     const { title, repo, spec } = input.formContext
     prompt += '\n\n## Task Context\n\n'
-    prompt += `Title:\n<task_title>\n${title}\n</task_title>\nRepo: <repo>${repo}</repo>\n`
+    prompt += `Title:\n<task_title>\n${escapeXmlContent(title)}\n</task_title>\nRepo: <repo>${escapeXmlContent(repo)}</repo>\n`
     if (spec) {
-      prompt += `\nSpec draft:\n<spec_draft>\n${spec}\n</spec_draft>\n`
+      prompt += `\nSpec draft:\n<spec_draft>\n${escapeXmlContent(spec)}\n</spec_draft>\n`
     } else {
       prompt += '\n(no spec yet)\n'
     }
@@ -86,7 +87,7 @@ export function buildCopilotPrompt(input: BuildPromptInput): string {
       prompt += '\n\n## Conversation\n\n'
     }
     for (const msg of cappedConversationHistory) {
-      prompt += `**${msg.role}**: <chat_message>${msg.content}</chat_message>\n\n`
+      prompt += `**${msg.role}**: <chat_message>${escapeXmlContent(msg.content)}</chat_message>\n\n`
     }
   }
 

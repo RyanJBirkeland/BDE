@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCommandPaletteStore } from './stores/commandPalette'
 import { useSprintUI } from './stores/sprintUI'
+import { useTaskWorkbenchStore } from './stores/taskWorkbench'
 import { CommandPalette } from './components/layout/CommandPalette'
 import { QuickCreateBar } from './components/sprint/QuickCreateBar'
 import { ToastContainer } from './components/layout/ToastContainer'
+import { TaskWorkbenchModal } from './components/task-workbench/TaskWorkbenchModal'
 import { UnifiedHeader } from './components/layout/UnifiedHeader'
 import { Sidebar } from './components/layout/Sidebar'
 import { Onboarding } from './components/Onboarding'
@@ -125,6 +127,23 @@ function App(): React.JSX.Element {
   useAppInitialization()
   useAppShortcuts({ paletteOpen, shortcutsOpen, setShortcutsOpen })
 
+  useEffect(() => {
+    const raw = localStorage.getItem('bde:pending-first-task')
+    if (!raw) return
+    try {
+      const task = JSON.parse(raw) as { title: string; spec: string; repo: string; specType: string }
+      localStorage.removeItem('bde:pending-first-task')
+      const wb = useTaskWorkbenchStore.getState()
+      wb.setField('title', task.title)
+      wb.setField('spec', task.spec)
+      wb.setField('repo', task.repo)
+      wb.setSpecType(task.specType as Parameters<typeof wb.setSpecType>[0])
+      usePanelLayoutStore.getState().setView('planner')
+    } catch {
+      localStorage.removeItem('bde:pending-first-task')
+    }
+  }, [])
+
   useGitHubErrorListener()
   useManagerEventListener()
   useDesktopNotifications()
@@ -203,8 +222,8 @@ function App(): React.JSX.Element {
   if (showOnboarding) {
     return (
       <OnboardingWizard
-        onComplete={() => {
-          window.api.settings.set('onboarding.completed', 'true')
+        onComplete={async () => {
+          await window.api.settings.set('onboarding.completed', 'true')
           window.location.reload()
         }}
       />
@@ -258,6 +277,7 @@ function App(): React.JSX.Element {
         </AnimatePresence>
         <FeatureGuideModal open={featureGuideOpen} onClose={() => setFeatureGuideOpen(false)} />
         <ToastContainer />
+        <TaskWorkbenchModal />
         <FloatingAgentButton />
         <CrossWindowDropOverlay
           active={crossDrop.active}

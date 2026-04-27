@@ -67,10 +67,6 @@ vi.mock('../../../views/CodeReviewView', () => ({
   default: () => <div data-testid="view-code-review">Code Review</div>
 }))
 
-vi.mock('../../../views/TaskWorkbenchView', () => ({
-  default: () => <div data-testid="view-task-workbench">Task Workbench</div>
-}))
-
 vi.mock('../../../views/GitTreeView', () => ({
   default: () => <div data-testid="view-git">Git</div>
 }))

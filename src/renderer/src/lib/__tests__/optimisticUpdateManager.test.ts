@@ -5,6 +5,7 @@ import {
   mergePendingFields,
   expirePendingUpdates,
   trackPendingOperation,
+  areSprintTasksEquivalent,
   type PendingUpdates,
   type SprintTaskField
 } from '../optimisticUpdateManager'
@@ -166,6 +167,65 @@ describe('optimisticUpdateManager', () => {
       // @ts-expect-error — 'priorty' is not a keyof SprintTask
       const updates = trackPendingOperation({}, 't1', ['priorty'], Date.now())
       expect(updates.t1).toBeDefined()
+    })
+  })
+
+  describe('areSprintTasksEquivalent', () => {
+    it('returns true for the same reference', () => {
+      const task = makeTask('t1')
+      expect(areSprintTasksEquivalent(task, task)).toBe(true)
+    })
+
+    it('returns true when every field has the same primitive value', () => {
+      const a = makeTask('t1', { status: 'active', priority: 3 })
+      const b = makeTask('t1', {
+        status: 'active',
+        priority: 3,
+        updated_at: a.updated_at,
+        created_at: a.created_at
+      })
+      expect(areSprintTasksEquivalent(a, b)).toBe(true)
+    })
+
+    it('returns false when any primitive field differs', () => {
+      const a = makeTask('t1', { status: 'active' })
+      const b = makeTask('t1', {
+        status: 'queued',
+        updated_at: a.updated_at,
+        created_at: a.created_at
+      })
+      expect(areSprintTasksEquivalent(a, b)).toBe(false)
+    })
+
+    it('returns true when depends_on arrays have identical contents', () => {
+      const deps = [{ id: 't2', type: 'hard' as const }]
+      const a = makeTask('t1', { depends_on: deps })
+      const b = makeTask('t1', {
+        depends_on: [{ id: 't2', type: 'hard' }],
+        updated_at: a.updated_at,
+        created_at: a.created_at
+      })
+      expect(areSprintTasksEquivalent(a, b)).toBe(true)
+    })
+
+    it('returns false when depends_on arrays have different contents', () => {
+      const a = makeTask('t1', { depends_on: [{ id: 't2', type: 'hard' }] })
+      const b = makeTask('t1', {
+        depends_on: [{ id: 't3', type: 'hard' }],
+        updated_at: a.updated_at,
+        created_at: a.created_at
+      })
+      expect(areSprintTasksEquivalent(a, b)).toBe(false)
+    })
+
+    it('returns false when depends_on lengths differ', () => {
+      const a = makeTask('t1', { depends_on: [{ id: 't2', type: 'hard' }] })
+      const b = makeTask('t1', {
+        depends_on: [],
+        updated_at: a.updated_at,
+        created_at: a.created_at
+      })
+      expect(areSprintTasksEquivalent(a, b)).toBe(false)
     })
   })
 })

@@ -7,6 +7,7 @@ import {
   type CreateTaskWithValidationDeps,
   type CreateTaskWithValidationOpts
 } from '../../services/sprint-service'
+import type { CancelTaskResult } from '../../services/sprint-use-cases'
 import type { CreateTaskInput, ListTasksOptions } from '../../data/sprint-task-repository'
 import { McpDomainError, McpErrorCode, parseToolArgs } from '../errors'
 import {
@@ -21,7 +22,7 @@ import {
   TASK_LIST_DEFAULT_LIMIT,
   TASK_LIST_DEFAULT_OFFSET
 } from '../schemas'
-import { TERMINAL_STATUSES } from '../../../shared/task-state-machine'
+import { TERMINAL_STATUSES, isTaskStatus } from '../../../shared/task-state-machine'
 import type { TaskStatus } from '../../../shared/task-state-machine'
 import { jsonContent, safeToolResponse } from './response'
 
@@ -64,19 +65,19 @@ export interface TaskCommandPort {
     input: CreateTaskInput,
     deps: CreateTaskWithValidationDeps,
     opts?: CreateTaskWithValidationOpts
-  ) => SprintTask
+  ) => Promise<SprintTask>
   /**
    * `caller` is recorded in the `task_changes` audit trail as the
    * `changed_by` value. The MCP adapter passes `'mcp'` (or
    * `'mcp:<client-name>'` when the SDK exposes client info) so audit
    * rows can distinguish MCP-originated edits from IPC-originated ones.
    */
-  updateTask: (id: string, patch: TaskPatch, options?: { caller?: string }) => SprintTask | null
+  updateTask: (id: string, patch: TaskPatch, options?: { caller?: string }) => Promise<SprintTask | null>
   cancelTask: (
     id: string,
     reason?: string,
     options?: { caller?: string }
-  ) => Promise<SprintTask | null> | SprintTask | null
+  ) => Promise<CancelTaskResult> | CancelTaskResult
   /**
    * Fired when `tasks.update` drives a task into a terminal status from a
    * non-terminal one. Routes to `TaskTerminalService.onStatusTerminal` so
@@ -84,6 +85,8 @@ export interface TaskCommandPort {
    * The revival direction (terminal → queued/backlog) never triggers this.
    */
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
+  /** Central status-transition service — routes MCP status writes through TaskStateService. */
+  taskStateService: import('../../services/task-state-service').TaskStateService
 }
 
 /**
@@ -132,10 +135,12 @@ export interface TaskToolsDeps extends TaskCommandPort, TaskQueryPort, TaskHisto
 export const MCP_CALLER = 'mcp'
 
 export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void {
-  server.tool(
+  server.registerTool(
     'tasks.list',
-    'List sprint tasks with optional filters (status, repo, epicId, tag, search).',
-    TaskListSchema.shape,
+    {
+      description: 'List sprint tasks with optional filters (status, repo, epicId, tag, search).',
+      inputSchema: TaskListSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -147,25 +152,30 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
       )
   )
 
-  server.tool('tasks.get', 'Fetch one task by id.', TaskIdSchema.shape, async (rawArgs) =>
-    safeToolResponse(
-      async () => {
-        const { id } = parseToolArgs(TaskIdSchema, rawArgs)
-        const row = deps.getTask(id)
-        if (!row) {
-          deps.logger.debug(`mcp.tasks.get: task ${id} not found`)
-          throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
-        }
-        return jsonContent(row)
-      },
-      { schema: TaskIdSchema, logger: deps.logger }
-    )
+  server.registerTool(
+    'tasks.get',
+    { description: 'Fetch one task by id.', inputSchema: TaskIdSchema },
+    async (rawArgs) =>
+      safeToolResponse(
+        async () => {
+          const { id } = parseToolArgs(TaskIdSchema, rawArgs)
+          const row = deps.getTask(id)
+          if (!row) {
+            deps.logger.debug(`mcp.tasks.get: task ${id} not found`)
+            throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
+          }
+          return jsonContent(row)
+        },
+        { schema: TaskIdSchema, logger: deps.logger }
+      )
   )
 
-  server.tool(
+  server.registerTool(
     'tasks.history',
-    'Fetch the audit trail (field-level change log) for a task.',
-    TaskHistorySchema.shape,
+    {
+      description: 'Fetch the audit trail (field-level change log) for a task.',
+      inputSchema: TaskHistorySchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -187,17 +197,20 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
 }
 
 function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
-  server.tool(
+  server.registerTool(
     'tasks.create',
-    'Create a new sprint task. Runs the same validation as the in-app Task Workbench.',
-    TaskCreateSchema.shape,
+    {
+      description:
+        'Create a new sprint task. Runs the same validation as the in-app Task Workbench.',
+      inputSchema: TaskCreateSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
           const parsed = parseToolArgs(TaskCreateSchema, rawArgs)
           const { skipReadinessCheck, ...createInput } = parsed
           try {
-            const row = runCreateWithValidation(
+            const row = await runCreateWithValidation(
               deps,
               createInput as CreateTaskInput,
               skipReadinessCheck
@@ -211,42 +224,74 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
       )
   )
 
-  server.tool(
+  server.registerTool(
     'tasks.update',
-    'Update an existing task. Status transitions are validated; forbidden fields are stripped.',
-    TaskUpdateSchema.shape,
+    {
+      description:
+        'Update an existing task. Status transitions are validated; forbidden fields are stripped.',
+      inputSchema: TaskUpdateSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
           const { id, patch } = parseToolArgs(TaskUpdateSchema, rawArgs)
           const current = deps.getTask(id)
           const effectivePatch = buildEffectiveUpdatePatch(patch, current)
-          const row = deps.updateTask(id, effectivePatch, { caller: MCP_CALLER })
-          if (!row) {
-            deps.logger.debug(`mcp.tasks.update: task ${id} not found`)
+
+          if ('status' in effectivePatch && typeof effectivePatch.status === 'string' && isTaskStatus(effectivePatch.status)) {
+            // Status-changing write — route through TaskStateService for validation + terminal dispatch.
+            const { status, ...nonStatusFields } = effectivePatch
+            await deps.taskStateService.transition(id, status, {
+              fields: nonStatusFields as Record<string, unknown>,
+              caller: MCP_CALLER
+            })
+          } else {
+            // Non-status write — plain field update.
+            const row = await deps.updateTask(id, effectivePatch, { caller: MCP_CALLER })
+            if (!row) {
+              deps.logger.debug(`mcp.tasks.update: task ${id} not found`)
+              throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
+            }
+          }
+
+          const updated = deps.getTask(id)
+          if (!updated) {
+            deps.logger.debug(`mcp.tasks.update: task ${id} not found after update`)
             throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
           }
-          await fireTerminalHookIfNeeded(deps, current, row)
-          return jsonContent(row)
+          return jsonContent(updated)
         },
         { schema: TaskUpdateSchema, logger: deps.logger }
       )
   )
 
-  server.tool(
+  server.registerTool(
     'tasks.cancel',
-    'Cancel a task. Runs through the terminal-status path so dependents are re-evaluated.',
-    TaskCancelSchema.shape,
+    {
+      description:
+        'Cancel a task. Runs through the terminal-status path so dependents are re-evaluated.',
+      inputSchema: TaskCancelSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
           const { id, reason } = parseToolArgs(TaskCancelSchema, rawArgs)
-          const row = await deps.cancelTask(id, reason, { caller: MCP_CALLER })
-          if (!row) {
+          const result = await deps.cancelTask(id, reason, { caller: MCP_CALLER })
+          if (result.row === null) {
             deps.logger.debug(`mcp.tasks.cancel: task ${id} not found`)
             throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
           }
-          return jsonContent(row)
+          if (result.sideEffectFailed) {
+            deps.logger.warn(
+              `mcp.tasks.cancel: task ${id} cancelled but terminal dispatch failed — dependents may need manual unblock`
+            )
+            return jsonContent({
+              ...result.row,
+              warning:
+                'terminal dispatch failed — dependents may need manual unblock'
+            })
+          }
+          return jsonContent(result.row)
         },
         { schema: TaskCancelSchema, logger: deps.logger }
       )
@@ -257,7 +302,7 @@ function runCreateWithValidation(
   deps: TaskToolsDeps,
   createInput: CreateTaskInput,
   skipReadinessCheck: boolean | undefined
-): SprintTask {
+): Promise<SprintTask> {
   const delegateDeps = { logger: deps.logger }
   if (skipReadinessCheck === undefined) {
     return deps.createTaskWithValidation(createInput, delegateDeps)
@@ -299,22 +344,6 @@ function buildEffectiveUpdatePatch(patch: TaskPatch, current: SprintTask | null)
   if (!('status' in patch) || !current) return { ...patch }
   if (!isRevivingTerminalTask(current.status, patch.status)) return { ...patch }
   return { ...patch, ...TERMINAL_STATE_RESET_PATCH }
-}
-
-/**
- * Fire `onStatusTerminal` when `tasks.update` drives a task into a terminal
- * status from a non-terminal one. The revival direction (terminal → queued or
- * terminal → backlog) is handled elsewhere — it is not a terminal *entry*.
- */
-async function fireTerminalHookIfNeeded(
-  deps: TaskToolsDeps,
-  pre: SprintTask | null,
-  post: SprintTask
-): Promise<void> {
-  if (!pre) return
-  if (!TERMINAL_STATUSES.has(post.status)) return
-  if (TERMINAL_STATUSES.has(pre.status)) return
-  await deps.onStatusTerminal(post.id, post.status)
 }
 
 /**

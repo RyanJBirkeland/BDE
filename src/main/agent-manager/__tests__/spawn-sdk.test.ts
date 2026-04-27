@@ -19,7 +19,10 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
 }))
 
 import { spawnViaSdk } from '../spawn-sdk'
+import type { SpawnStrategy } from '../types'
 import * as sdk from '@anthropic-ai/claude-agent-sdk'
+
+const SDK_STRATEGY: SpawnStrategy = { type: 'sdk' }
 
 function setupMockQuery() {
   mockQuery.mockImplementation(() => {
@@ -54,7 +57,8 @@ describe('spawnViaSdk', () => {
       sdk,
       { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
       mockEnv,
-      mockToken
+      mockToken,
+      SDK_STRATEGY
     )
     expect(handle).toHaveProperty('messages')
     expect(handle).toHaveProperty('sessionId')
@@ -68,7 +72,8 @@ describe('spawnViaSdk', () => {
       sdk,
       { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
       mockEnv,
-      mockToken
+      mockToken,
+      SDK_STRATEGY
     )
     expect(handle.sessionId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -82,7 +87,8 @@ describe('spawnViaSdk', () => {
       sdk,
       { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
       mockEnv,
-      mockToken
+      mockToken,
+      SDK_STRATEGY
     )
     const initialId = handle.sessionId
 
@@ -101,7 +107,8 @@ describe('spawnViaSdk', () => {
       sdk,
       { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
       mockEnv,
-      mockToken
+      mockToken,
+      SDK_STRATEGY
     )
     for await (const _msg of handle.messages) {
       /* consume */
@@ -113,25 +120,25 @@ describe('spawnViaSdk', () => {
   })
 
   it('passes maxTurns: 20 to SDK', () => {
-    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken, SDK_STRATEGY)
     const callArgs = mockQuery.mock.calls[0]?.[0]
     expect(callArgs?.options?.maxTurns).toBe(20)
   })
 
   it('uses settingSources [user, local]', () => {
-    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken, SDK_STRATEGY)
     const callArgs = mockQuery.mock.calls[0]?.[0]
     expect(callArgs?.options?.settingSources).toEqual(['user', 'local'])
   })
 
   it('passes token via apiKey when token is provided', () => {
-    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, 'my-token')
+    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, 'my-token', SDK_STRATEGY)
     const callArgs = mockQuery.mock.calls[0]?.[0]
     expect(callArgs?.options?.apiKey).toBe('my-token')
   })
 
   it('omits apiKey when token is null', () => {
-    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, null)
+    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, null, SDK_STRATEGY)
     const callArgs = mockQuery.mock.calls[0]?.[0]
     expect(callArgs?.options).not.toHaveProperty('apiKey')
   })
@@ -141,14 +148,15 @@ describe('spawnViaSdk', () => {
       sdk,
       { prompt: 'test', cwd: '/tmp', model: 'sonnet', maxBudgetUsd: 5.0 },
       mockEnv,
-      mockToken
+      mockToken,
+      SDK_STRATEGY
     )
     const callArgs = mockQuery.mock.calls[0]?.[0]
     expect(callArgs?.options?.maxBudgetUsd).toBe(5.0)
   })
 
   it('defaults maxBudgetUsd to 2.0', () => {
-    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken, SDK_STRATEGY)
     const callArgs = mockQuery.mock.calls[0]?.[0]
     expect(callArgs?.options?.maxBudgetUsd).toBe(2.0)
   })
@@ -158,25 +166,45 @@ describe('spawnViaSdk', () => {
       sdk,
       { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
       mockEnv,
-      mockToken
+      mockToken,
+      SDK_STRATEGY
     )
     const result = await handle.steer('do something')
     expect(result).toEqual({ delivered: false, error: 'SDK mode does not support steering' })
   })
 
   it('steer() logs warning when logger provided', async () => {
-    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
     const handle = spawnViaSdk(
       sdk,
       { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
       mockEnv,
       mockToken,
+      SDK_STRATEGY,
       logger
     )
     await handle.steer('steer message')
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Steer not supported in SDK mode')
     )
+  })
+
+  it('steer() warn log does NOT contain the message body', async () => {
+    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
+    const handle = spawnViaSdk(
+      sdk,
+      { prompt: 'test', cwd: '/tmp', model: 'sonnet' },
+      mockEnv,
+      mockToken,
+      SDK_STRATEGY,
+      logger
+    )
+    const sensitiveMessage = 'TOP-SECRET-PROMPT-CONTENT-DO-NOT-LOG'
+    await handle.steer(sensitiveMessage)
+    const loggedLine = logger.warn.mock.calls.map((c) => c[0]).join('\n')
+    expect(loggedLine).not.toContain(sensitiveMessage)
+    // Length should be reported instead.
+    expect(loggedLine).toContain(`message length: ${sensitiveMessage.length}`)
   })
 })
 
@@ -197,7 +225,8 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
         pipelineTuning: { maxTurns: 20 }
       },
       mockEnv,
-      mockToken
+      mockToken,
+      SDK_STRATEGY
     )
     const callArgs = mockQuery.mock.calls[0]?.[0]
     const canUseTool = callArgs?.options?.canUseTool as
@@ -221,7 +250,7 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
   })
 
   it('leaves canUseTool permissive when pipelineTuning is not set (non-pipeline agents)', async () => {
-    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken)
+    spawnViaSdk(sdk, { prompt: 'test', cwd: '/tmp', model: 'sonnet' }, mockEnv, mockToken, SDK_STRATEGY)
     const callArgs = mockQuery.mock.calls[0]?.[0]
     const canUseTool = callArgs?.options?.canUseTool as
       | ((

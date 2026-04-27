@@ -40,16 +40,21 @@ import { getSetting, getSettingJson, getMcpEnabled, getMcpPort } from './setting
 import { createMcpServer, type McpServerHandle } from './mcp-server'
 import { onSettingChanged } from './events/settings-events'
 import { createEpicGroupService } from './services/epic-group-service'
-import { createTaskTerminalService } from './services/task-terminal-service'
+import { createTaskTerminalService, createPollerTerminalDispatcher } from './services/task-terminal-service'
+import { createTaskStateService } from './services/task-state-service'
 import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
 import { getTask, updateTask } from './services/sprint-service'
+import { setSprintMutationsRepo } from './services/sprint-mutations'
+import { setSprintBroadcaster } from './services/sprint-mutation-broadcaster'
 import {
   closeTearoffWindows,
   setQuitting,
   SHARED_WEB_PREFERENCES,
   restoreTearoffWindows
 } from './tearoff-manager'
+import { clearAnthropicEnvVars } from './auth-guard'
+import { broadcast } from './broadcast'
 
 // Side-effecting startup steps run before any whenReady-time work touches
 // process.env, the network, or the singleton lock. Order matters: PATH first,
@@ -58,6 +63,11 @@ import {
 runStartupPreflight()
 
 function runStartupPreflight(): void {
+  // Clear raw API key env vars before any agent or service code runs.
+  // BDE authenticates via the OAuth token written to ~/.bde/oauth-token;
+  // a stray ANTHROPIC_API_KEY in the environment would bypass that path
+  // and could allow unauthenticated cost accumulation.
+  clearAnthropicEnvVars()
   // Augment process.env.PATH so child_process.spawn() can find user-installed
   // CLIs (claude, gh, git, node) when launched from Finder/Spotlight. Must run
   // before any whenReady-time spawn (agent-manager, status-server, adhoc agents).
@@ -298,17 +308,18 @@ interface CoreStartupServices {
   repo: ReturnType<typeof createSprintTaskRepository>
   epicGroupService: ReturnType<typeof createEpicGroupService>
   terminalService: ReturnType<typeof createTaskTerminalService>
+  /** TaskStateService wired with the poller/manual terminal dispatcher. */
+  pollerTaskStateService: ReturnType<typeof createTaskStateService>
   terminalDeps: {
     onStatusTerminal: ReturnType<typeof createTaskTerminalService>['onStatusTerminal']
     dialog: ReturnType<typeof createElectronDialogService>
+    taskStateService: ReturnType<typeof createTaskStateService>
   }
 }
 
 /**
- * Wires the repo, EpicGroupService, TaskTerminalService, and the pollers
- * that every other startup stage depends on. Runs the DB watcher, the
- * background service init, the PR pollers, and the periodic cleanup
- * scheduler — the low-level infrastructure that sits behind everything.
+ * Wires the repo, EpicGroupService, TaskTerminalService, TaskStateService,
+ * and the pollers that every other startup stage depends on.
  */
 function initCoreServices(): CoreStartupServices {
   const stopDbWatcher = startDbWatcher()
@@ -316,6 +327,12 @@ function initCoreServices(): CoreStartupServices {
   startBackgroundServices()
 
   const repo = createSprintTaskRepository()
+  // Install the repo into sprint-mutations so all mutation functions route
+  // through the composition-root instance instead of the lazy singleton.
+  setSprintMutationsRepo(repo)
+  // Wire the IPC broadcast function into sprint-mutation-broadcaster so it
+  // can notify renderer windows without importing the framework adapter directly.
+  setSprintBroadcaster(() => broadcast('sprint:externalChange'))
 
   // The epic dependency graph has one owner — EpicGroupService, constructed
   // at the composition root and injected to every consumer (task-terminal-
@@ -331,18 +348,30 @@ function initCoreServices(): CoreStartupServices {
     epicDepsReader: epicGroupService,
     getSetting,
     runInTransaction: (fn) => getDb().transaction(fn)(),
+    broadcast: (channel, payload) =>
+      broadcast(channel as 'task-terminal:resolution-error', payload as { error: string }),
     logger: createLogger('task-terminal')
   })
+
+  // TaskStateService for IPC handlers, review services, and the PR poller path.
+  // Uses the poller dispatcher so terminal status changes schedule dependency
+  // resolution via the batched setTimeout(0) approach (vs. agent-manager's inline approach).
+  const pollerTaskStateService = createTaskStateService({
+    terminalDispatcher: createPollerTerminalDispatcher(terminalService),
+    logger: createLogger('task-state')
+  })
+
   const dialogService = createElectronDialogService()
   const terminalDeps = {
     onStatusTerminal: terminalService.onStatusTerminal,
-    dialog: dialogService
+    dialog: dialogService,
+    taskStateService: pollerTaskStateService
   }
 
   startPrPollers(terminalDeps)
   setupCleanupTasks()
 
-  return { repo, epicGroupService, terminalService, terminalDeps }
+  return { repo, epicGroupService, terminalService, pollerTaskStateService, terminalDeps }
 }
 
 /**
@@ -384,7 +413,13 @@ function wireAgentManagerAndMcp(
   )
   agentManager.start()
 
-  const statusServer = createStatusServer(agentManager, core.repo)
+  const statusServer = createStatusServer(
+    agentManager,
+    core.repo,
+    undefined,
+    undefined,
+    (channel, payload) => broadcast(channel as 'manager:warning', payload as { message: string })
+  )
   statusServer.start().catch((err) => {
     createLogger('startup').error(`Failed to start status server: ${err}`)
   })
@@ -397,7 +432,8 @@ function wireAgentManagerAndMcp(
     const handle = createMcpServer(
       {
         epicService: core.epicGroupService,
-        onStatusTerminal: core.terminalService.onStatusTerminal
+        onStatusTerminal: core.terminalService.onStatusTerminal,
+        taskStateService: core.pollerTaskStateService
       },
       { port }
     )

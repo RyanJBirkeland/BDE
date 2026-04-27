@@ -7,6 +7,17 @@ import { checkAuthStatus, defaultCredentialStore, type CredentialStore } from '.
 import { getDefaultCredentialService } from './services/credential-service'
 import { createLogger } from './logger'
 
+/**
+ * Clears Anthropic API key env vars unconditionally at startup.
+ * Calling this early in the startup sequence ensures pipeline agents and SDK
+ * calls cannot accidentally pick up a raw API key from the environment —
+ * BDE authenticates via the OAuth token written to ~/.bde/oauth-token instead.
+ */
+export function clearAnthropicEnvVars(): void {
+  delete process.env['ANTHROPIC_API_KEY']
+  delete process.env['ANTHROPIC_AUTH_TOKEN']
+}
+
 export async function ensureSubscriptionAuth(
   store: CredentialStore = defaultCredentialStore
 ): Promise<void> {

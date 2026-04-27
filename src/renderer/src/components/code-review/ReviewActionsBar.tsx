@@ -6,11 +6,18 @@ import {
   Trash2,
   Loader2,
   Rocket,
-  RefreshCw
+  RefreshCw,
+  FolderOpen,
+  CheckCheck,
+  Settings
 } from 'lucide-react'
 import { useReviewActions } from '../../hooks/useReviewActions'
+import { usePanelLayoutStore } from '../../stores/panelLayout'
+import { useIDEStore } from '../../stores/ide'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { TextareaPromptModal } from '../ui/TextareaPromptModal'
+
+const MAX_REVISION_ATTEMPTS = 5
 
 export interface ReviewActionCallbacks {
   actionInFlight: string | null
@@ -21,12 +28,15 @@ export interface ReviewActionCallbacks {
     commitsBehind?: number | undefined
   }
   ghConfigured: boolean
+  worktreePath: string | null | undefined
+  revisionCount: number
   shipIt: () => Promise<void>
   mergeLocally: () => Promise<void>
   createPr: () => Promise<void>
   requestRevision: () => Promise<void>
   rebase: () => Promise<void>
   discard: () => Promise<void>
+  markShippedOutsideBde: () => Promise<void>
   renderFreshnessBadge: () => React.ReactNode
   renderRebaseButton: () => React.ReactNode
 }
@@ -43,15 +53,31 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
     setMergeStrategy,
     freshness,
     ghConfigured,
+    worktreePath,
+    revisionCount,
     shipIt,
     mergeLocally,
     createPr,
     requestRevision,
     rebase,
     discard,
+    markShippedOutsideBde,
     confirmProps,
     promptProps
   } = useReviewActions()
+
+  const setView = usePanelLayoutStore((s) => s.setView)
+  const setRootPath = useIDEStore((s) => s.setRootPath)
+
+  const openWorktreeInIde = (): void => {
+    if (worktreePath) {
+      setRootPath(worktreePath)
+    }
+    setView('ide')
+  }
+
+  const hasConflicts = freshness.status === 'conflict'
+  const revisionCapReached = revisionCount >= MAX_REVISION_ATTEMPTS
 
   const freshnessTitle =
     freshness.status === 'stale'
@@ -94,12 +120,15 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
     setMergeStrategy,
     freshness,
     ghConfigured,
+    worktreePath,
+    revisionCount,
     shipIt,
     mergeLocally,
     createPr,
     requestRevision,
     rebase,
     discard,
+    markShippedOutsideBde,
     renderFreshnessBadge,
     renderRebaseButton
   }
@@ -108,6 +137,22 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
     <>
       {variant === 'full' && (
         <div className="rab">
+          {/* Conflict resolution banner — shown when rebase left unresolved conflicts */}
+          {hasConflicts && (
+            <div className="rab__conflict-banner">
+              <span className="rab__conflict-banner__message">
+                This branch has conflicts that must be resolved manually.
+              </span>
+              <button
+                className="rab__btn rab__btn--ghost"
+                onClick={openWorktreeInIde}
+                title="Open the worktree in the IDE to resolve conflicts"
+              >
+                <FolderOpen size={14} /> Open in IDE
+              </button>
+            </div>
+          )}
+
           {/* Freshness badge + Rebase button */}
           <div className="rab__rebase-status">
             {renderFreshnessBadge()}
@@ -117,23 +162,32 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
           {/* Action buttons */}
           <div className="rab__buttons-row">
             <div className="rab__primary">
-              <button
-                className="rab__btn rab__btn--ship"
-                onClick={shipIt}
-                disabled={!!actionInFlight || !ghConfigured}
-                aria-busy={actionInFlight === 'shipIt'}
-                aria-label={
-                  actionInFlight === 'shipIt' ? 'Shipping changes, please wait…' : 'Ship It'
-                }
-                title={!ghConfigured ? 'Configure GitHub in Settings → Connections' : undefined}
-              >
-                {actionInFlight === 'shipIt' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <Rocket size={14} />
-                )}{' '}
-                Ship It
-              </button>
+              {ghConfigured ? (
+                <button
+                  className="rab__btn rab__btn--ship"
+                  onClick={shipIt}
+                  disabled={!!actionInFlight}
+                  aria-busy={actionInFlight === 'shipIt'}
+                  aria-label={
+                    actionInFlight === 'shipIt' ? 'Shipping changes, please wait…' : 'Ship It'
+                  }
+                >
+                  {actionInFlight === 'shipIt' ? (
+                    <Loader2 size={14} className="spin" />
+                  ) : (
+                    <Rocket size={14} />
+                  )}{' '}
+                  Ship It
+                </button>
+              ) : (
+                <button
+                  className="rab__btn rab__btn--ghost"
+                  onClick={() => usePanelLayoutStore.getState().setView('settings')}
+                  title="Connect GitHub to enable Ship It and Create PR"
+                >
+                  <Settings size={14} /> Connect GitHub →
+                </button>
+              )}
               <div className="rab__merge-group">
                 <button
                   className="rab__btn rab__btn--primary"
@@ -173,37 +227,61 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
                   <option value="rebase">Rebase</option>
                 </select>
               </div>
-              <button
-                className="rab__btn rab__btn--secondary"
-                onClick={createPr}
-                disabled={!!actionInFlight || !ghConfigured}
-                title={!ghConfigured ? 'Configure GitHub in Settings → Connections' : undefined}
-              >
-                {actionInFlight === 'createPr' ? (
-                  <Loader2 size={14} className="spin" />
-                ) : (
-                  <GitPullRequest size={14} />
-                )}{' '}
-                Create PR
-              </button>
+              {ghConfigured && (
+                <button
+                  className="rab__btn rab__btn--secondary"
+                  onClick={createPr}
+                  disabled={!!actionInFlight}
+                >
+                  {actionInFlight === 'createPr' ? (
+                    <Loader2 size={14} className="spin" />
+                  ) : (
+                    <GitPullRequest size={14} />
+                  )}{' '}
+                  Create PR
+                </button>
+              )}
             </div>
             <div className="rab__secondary">
               <button
                 className="rab__btn rab__btn--ghost"
-                onClick={requestRevision}
+                onClick={markShippedOutsideBde}
                 disabled={!!actionInFlight}
+                title="Mark as done when you shipped this work outside BDE"
+              >
+                {actionInFlight === 'markShipped' ? (
+                  <Loader2 size={14} className="spin" />
+                ) : (
+                  <CheckCheck size={14} />
+                )}{' '}
+                Shipped Outside BDE
+              </button>
+              <button
+                className="rab__btn rab__btn--ghost"
+                onClick={requestRevision}
+                disabled={!!actionInFlight || revisionCapReached}
+                title={
+                  revisionCapReached
+                    ? `Max revisions (${MAX_REVISION_ATTEMPTS}/${MAX_REVISION_ATTEMPTS})`
+                    : actionInFlight
+                      ? 'Another action is in progress'
+                      : undefined
+                }
               >
                 {actionInFlight === 'revise' ? (
                   <Loader2 size={14} className="spin" />
                 ) : (
                   <RotateCcw size={14} />
                 )}{' '}
-                Revise
+                {revisionCapReached
+                  ? `Max revisions (${MAX_REVISION_ATTEMPTS}/${MAX_REVISION_ATTEMPTS})`
+                  : 'Revise'}
               </button>
               <button
                 className="rab__btn rab__btn--danger"
                 onClick={discard}
                 disabled={!!actionInFlight}
+                title={actionInFlight ? 'Another action is in progress' : undefined}
               >
                 {actionInFlight === 'discard' ? (
                   <Loader2 size={14} className="spin" />

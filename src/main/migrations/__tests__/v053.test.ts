@@ -1,48 +1,38 @@
 import { describe, it, expect } from 'vitest'
 import Database from 'better-sqlite3'
-import { up, version } from '../v053-add-promoted-to-review-at-to-sprint-tasks'
-
-const CREATE_SPRINT_TASKS = 'CREATE TABLE sprint_tasks (id TEXT PRIMARY KEY, title TEXT)'
-const INSERT_TASK = 'INSERT INTO sprint_tasks (id, title) VALUES (?, ?)'
-const SELECT_PROMOTED = 'SELECT promoted_to_review_at FROM sprint_tasks WHERE id = ?'
-const UPDATE_PROMOTED = 'UPDATE sprint_tasks SET promoted_to_review_at = ? WHERE id = ?'
+import { up, version } from '../v053-add-orphan-recovery-count-to-sprint-tasks'
 
 describe('migration v053', () => {
   it('has version 53', () => {
     expect(version).toBe(53)
   })
 
-  it('adds promoted_to_review_at column; existing rows read back NULL', () => {
+  it('adds orphan_recovery_count column with default 0', () => {
     const db = new Database(':memory:')
-    db.exec(CREATE_SPRINT_TASKS)
-    db.prepare(INSERT_TASK).run('t1', 'existing task')
+    db.prepare('CREATE TABLE sprint_tasks (id TEXT PRIMARY KEY, title TEXT)').run()
 
     up(db)
 
-    const row = db.prepare(SELECT_PROMOTED).get('t1') as
-      | { promoted_to_review_at: string | null }
-      | undefined
+    const row = db
+      .prepare('SELECT orphan_recovery_count FROM sprint_tasks WHERE id = ?')
+      .get('test') as { orphan_recovery_count: number } | undefined
 
-    expect(row).toBeDefined()
-    expect(row?.promoted_to_review_at).toBeNull()
+    expect(row).toBeUndefined()
+
+    db.prepare('INSERT INTO sprint_tasks (id, title) VALUES (?, ?)').run('t1', 'Test')
+    const inserted = db
+      .prepare('SELECT orphan_recovery_count FROM sprint_tasks WHERE id = ?')
+      .get('t1') as { orphan_recovery_count: number }
+
+    expect(inserted.orphan_recovery_count).toBe(0)
     db.close()
   })
 
-  it('stores an ISO8601 timestamp and reads it back unchanged', () => {
+  it('is idempotent — second run throws (SQLite does not support IF NOT EXISTS for ADD COLUMN)', () => {
     const db = new Database(':memory:')
-    db.exec(CREATE_SPRINT_TASKS)
-    db.prepare(INSERT_TASK).run('t2', 'review task')
-
+    db.prepare('CREATE TABLE sprint_tasks (id TEXT PRIMARY KEY)').run()
     up(db)
-
-    const iso = '2026-04-22T10:30:45.123Z'
-    db.prepare(UPDATE_PROMOTED).run(iso, 't2')
-
-    const row = db.prepare(SELECT_PROMOTED).get('t2') as
-      | { promoted_to_review_at: string | null }
-      | undefined
-
-    expect(row?.promoted_to_review_at).toBe(iso)
+    expect(() => up(db)).toThrow()
     db.close()
   })
 })

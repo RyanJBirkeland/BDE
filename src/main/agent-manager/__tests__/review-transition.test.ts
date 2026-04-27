@@ -1,98 +1,92 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
-// Stub diff-snapshot capture so the test never shells out to git.
-vi.mock('../diff-snapshot', () => ({
-  captureDiffSnapshot: vi.fn().mockResolvedValue(null)
-}))
+vi.mock('../diff-snapshot', () => ({ captureDiffSnapshot: vi.fn() }))
+vi.mock('../../shared/time', () => ({ nowIso: vi.fn(() => '2026-04-25T18:00:00.000Z') }))
+vi.mock('../../lib/async-utils', () => ({ execFileAsync: vi.fn() }))
+vi.mock('../../env-utils', () => ({ buildAgentEnv: vi.fn(() => ({})) }))
 
 import { transitionToReview } from '../review-transition'
+import type { TransitionToReviewOpts } from '../review-transition'
+import { captureDiffSnapshot } from '../diff-snapshot'
+import { execFileAsync } from '../../lib/async-utils'
 
-const ISO8601_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
-
-function makeRepo(): IAgentTaskRepository & {
-  updateTask: ReturnType<typeof vi.fn>
-  getTask: ReturnType<typeof vi.fn>
-} {
+function makeOpts(overrides: Partial<TransitionToReviewOpts> = {}): TransitionToReviewOpts {
   return {
-    getTask: vi.fn().mockReturnValue({
-      id: 't-1',
-      started_at: new Date(Date.now() - 1000).toISOString()
-    }),
-    updateTask: vi.fn().mockReturnValue(null),
-    getQueuedTasks: vi.fn(),
-    getTasksWithDependencies: vi.fn().mockReturnValue([]),
-    getOrphanedTasks: vi.fn(),
-    clearStaleClaimedBy: vi.fn().mockReturnValue(0),
-    getActiveTaskCount: vi.fn().mockReturnValue(0),
-    claimTask: vi.fn(),
-    getGroup: vi.fn().mockReturnValue(null),
-    getGroupTasks: vi.fn().mockReturnValue([]),
-    getGroupsWithDependencies: vi.fn().mockReturnValue([]),
-    getQueueStats: vi.fn().mockReturnValue({
-      backlog: 0,
-      queued: 0,
-      active: 0,
-      review: 0,
-      done: 0,
-      failed: 0,
-      cancelled: 0,
-      error: 0,
-      blocked: 0
-    })
-  } as unknown as IAgentTaskRepository & {
-    updateTask: ReturnType<typeof vi.fn>
-    getTask: ReturnType<typeof vi.fn>
+    taskId: 'task-1',
+    worktreePath: '/tmp/worktrees/task-1',
+    rebaseNote: undefined,
+    rebaseBaseSha: 'abc123',
+    rebaseSucceeded: true,
+    repo: {
+      getTask: vi.fn().mockReturnValue({ id: 'task-1', started_at: '2026-04-25T17:00:00.000Z' })
+    } as never,
+    logger: {
+      info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn()
+    } as never,
+    taskStateService: { transition: vi.fn().mockResolvedValue(undefined) } as never,
+    ...overrides
   }
 }
 
-const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+beforeEach(() => {
+  vi.mocked(captureDiffSnapshot).mockResolvedValue(null)
+  vi.mocked(execFileAsync).mockResolvedValue({ stdout: '3\n', stderr: '' })
+})
 
-describe('transitionToReview', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+describe('transitionToReview — happy path', () => {
+  it('calls transition with review status and core fields', async () => {
+    const opts = makeOpts()
+    await transitionToReview(opts)
+    expect(opts.taskStateService.transition).toHaveBeenCalledWith(
+      'task-1', 'review',
+      expect.objectContaining({
+        fields: expect.objectContaining({
+          worktree_path: '/tmp/worktrees/task-1',
+          claimed_by: null,
+          promoted_to_review_at: '2026-04-25T18:00:00.000Z'
+        }),
+        caller: 'review-transition'
+      })
+    )
   })
 
-  it('stamps promoted_to_review_at as an ISO8601 timestamp on the updateTask payload', async () => {
-    const repo = makeRepo()
-
-    await transitionToReview({
-      taskId: 't-1',
-      worktreePath: '/tmp/wt/t-1',
-      rebaseNote: undefined,
-      rebaseBaseSha: undefined,
-      rebaseSucceeded: false,
-      repo,
-      logger
-    })
-
-    expect(repo.updateTask).toHaveBeenCalledTimes(1)
-    const [taskId, patch] = repo.updateTask.mock.calls[0] as [string, Record<string, unknown>]
-    expect(taskId).toBe('t-1')
-    expect(patch.status).toBe('review')
-    expect(typeof patch.promoted_to_review_at).toBe('string')
-    expect(patch.promoted_to_review_at as string).toMatch(ISO8601_RE)
+  it('includes rebase_base_sha and rebased_at when rebase succeeded', async () => {
+    const opts = makeOpts({ rebaseBaseSha: 'def456', rebaseSucceeded: true })
+    await transitionToReview(opts)
+    const call = vi.mocked(opts.taskStateService.transition).mock.calls[0]
+    expect(call[2]?.fields?.rebase_base_sha).toBe('def456')
+    expect(call[2]?.fields?.rebased_at).toBeTruthy()
   })
 
-  it('writes promoted_to_review_at alongside other review fields even when no rebase note/diff snapshot are present', async () => {
-    const repo = makeRepo()
+  it('sets rebased_at to null when rebase failed', async () => {
+    const opts = makeOpts({ rebaseSucceeded: false })
+    await transitionToReview(opts)
+    const call = vi.mocked(opts.taskStateService.transition).mock.calls[0]
+    expect(call[2]?.fields?.rebased_at).toBeNull()
+  })
+})
 
-    await transitionToReview({
-      taskId: 't-42',
-      worktreePath: '/tmp/wt/t-42',
-      rebaseNote: undefined,
-      rebaseBaseSha: undefined,
-      rebaseSucceeded: false,
-      repo,
-      logger
-    })
+describe('transitionToReview — diff snapshot failure', () => {
+  it('proceeds to transition even when snapshot capture throws', async () => {
+    vi.mocked(captureDiffSnapshot).mockRejectedValue(new Error('git error'))
+    const opts = makeOpts()
+    await transitionToReview(opts)
+    expect(opts.taskStateService.transition).toHaveBeenCalledWith(
+      'task-1', 'review', expect.anything()
+    )
+  })
+})
 
-    const patch = repo.updateTask.mock.calls[0][1] as Record<string, unknown>
-    expect(patch).toMatchObject({
-      status: 'review',
-      worktree_path: '/tmp/wt/t-42',
-      claimed_by: null
-    })
-    expect(patch.promoted_to_review_at).toMatch(ISO8601_RE)
+describe('transitionToReview — T-8 fallback to failed', () => {
+  it('transitions to failed when review transition throws', async () => {
+    const opts = makeOpts()
+    vi.mocked(opts.taskStateService.transition)
+      .mockRejectedValueOnce(new Error('InvalidTransition'))
+      .mockResolvedValueOnce(undefined)
+    await transitionToReview(opts)
+    const calls = vi.mocked(opts.taskStateService.transition).mock.calls
+    expect(calls[0][1]).toBe('review')
+    expect(calls[1][1]).toBe('failed')
+    expect(calls[1][2]?.fields?.failure_reason).toBe('review-transition-failed')
   })
 })

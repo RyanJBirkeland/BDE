@@ -6,18 +6,15 @@ import type Database from 'better-sqlite3'
 import type { TaskGroup, SprintTask, EpicDependency } from '../../shared/types'
 import { getDb } from '../db'
 import { mapRowsToTasks } from './sprint-queries'
+import { SPRINT_TASK_LIST_COLUMNS } from './sprint-query-constants'
 import { getErrorMessage } from '../../shared/errors'
 import { sanitizeEpicDependsOn } from '../../shared/sanitize-epic-depends-on'
 import type { Logger } from '../logger'
+import { createLogger } from '../logger'
 import { withDataLayerError } from './data-utils'
 
-// Module-level logger — defaults to console, injectable for testing/structured logging
-let _logger: Logger = {
-  info: (m) => console.log(m),
-  warn: (m) => console.warn(m),
-  error: (m) => console.error(m),
-  debug: (m) => console.debug(m)
-}
+// Module-level logger — defaults to file logger, injectable for testing/structured logging
+let _logger: Logger = createLogger('task-group-queries')
 
 /**
  * Inject a logger. Called at app startup to route logs to the shared log file.
@@ -50,6 +47,17 @@ export interface UpdateGroupInput {
   depends_on?: EpicDependency[] | null | undefined
 }
 
+const VALID_GROUP_STATUSES: ReadonlySet<string> = new Set([
+  'draft',
+  'ready',
+  'in-pipeline',
+  'completed'
+])
+
+function isTaskGroupStatus(value: unknown): value is TaskGroup['status'] {
+  return typeof value === 'string' && VALID_GROUP_STATUSES.has(value)
+}
+
 /**
  * Sanitize a single group row from SQLite.
  */
@@ -57,13 +65,22 @@ function sanitizeGroup(row: Record<string, unknown>): TaskGroup {
   const sanitized = sanitizeEpicDependsOn(row.depends_on)
   const depends_on: EpicDependency[] | null = sanitized.length > 0 ? sanitized : null
 
+  let status: TaskGroup['status'] = 'draft'
+  if (isTaskGroupStatus(row.status)) {
+    status = row.status
+  } else if (row.status != null) {
+    _logger.warn(
+      `[task-group-queries] Unknown TaskGroup status "${String(row.status)}" for id="${String(row.id)}"; defaulting to "draft"`
+    )
+  }
+
   return {
     id: String(row.id),
     name: String(row.name),
     icon: String(row.icon ?? 'G'),
     accent_color: String(row.accent_color ?? '#00ffcc'),
     goal: row.goal ? String(row.goal) : null,
-    status: String(row.status ?? 'draft') as TaskGroup['status'],
+    status,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
     depends_on
@@ -242,11 +259,8 @@ export function getGroupTasks(groupId: string, db?: Database.Database): SprintTa
   return withDataLayerError(
     () => {
       const conn = db ?? getDb()
-      const rows = conn
-        .prepare(
-          'SELECT * FROM sprint_tasks WHERE group_id = ? ORDER BY sort_order ASC, priority DESC, created_at'
-        )
-        .all(groupId) as Record<string, unknown>[]
+      const sql = `SELECT ${SPRINT_TASK_LIST_COLUMNS} FROM sprint_tasks WHERE group_id = ? ORDER BY sort_order ASC, priority DESC, created_at`
+      const rows = conn.prepare(sql).all(groupId) as Record<string, unknown>[]
       return mapRowsToTasks(rows)
     },
     `getGroupTasks(groupId=${groupId})`,

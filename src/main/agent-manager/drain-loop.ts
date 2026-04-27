@@ -11,6 +11,7 @@ import type { AgentManagerConfig, ActiveAgent } from './types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { NOTES_MAX_LENGTH, DRAIN_PAUSE_ON_ENV_ERROR_MS } from './types'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { TaskStateService } from '../services/task-state-service'
 import type { DependencyIndex } from '../services/dependency-service'
 import type { MetricsCollector } from './metrics'
 import type { ConcurrencyState } from './concurrency'
@@ -25,6 +26,45 @@ import { getConfiguredRepos } from '../paths'
 import type { SprintTask } from '../../shared/types/task-types'
 import { classifyFailureReason } from './failure-classifier'
 import type { AgentManagerDrainPausedEvent } from '../../shared/ipc-channels/broadcast-channels'
+import { sleep } from '../lib/async-utils'
+
+// ---------------------------------------------------------------------------
+// Drain tick deadline
+// ---------------------------------------------------------------------------
+
+/** Hard per-tick deadline for the DB read inside each drain tick. */
+export const DRAIN_TICK_TIMEOUT_MS = 10_000
+
+/**
+ * Thrown when `getQueuedTasks` does not return within `DRAIN_TICK_TIMEOUT_MS`.
+ * The drain loop catches this, logs the event, and skips the tick rather than
+ * hanging indefinitely on a locked WAL or stalled filesystem.
+ */
+export class DrainTimeoutError extends Error {
+  constructor(tickId: string) {
+    super(`Drain tick ${tickId} timed out after ${DRAIN_TICK_TIMEOUT_MS}ms`)
+    this.name = 'DrainTimeoutError'
+  }
+}
+
+/**
+ * Defers `fn` to the next event-loop iteration via `setImmediate`.
+ * This gives the Node.js event loop a chance to process pending callbacks
+ * before the synchronous `better-sqlite3` call occupies the thread.
+ * Note: does not prevent a truly blocking DB call from stalling the loop —
+ * the race with `sleep(DRAIN_TICK_TIMEOUT_MS)` is still the safety net.
+ */
+function runInNextTick<T>(fn: () => T): Promise<T> {
+  return new Promise<T>((resolve, reject) =>
+    setImmediate(() => {
+      try {
+        resolve(fn())
+      } catch (err) {
+        reject(err)
+      }
+    })
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -55,10 +95,33 @@ export interface DrainLoopDeps {
   drainFailureCounts: Map<string, number>
   /** Called when a task is quarantined after repeated failures so dependency resolution runs. */
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  /** Central status-transition service — used by applyQuarantine to route status writes. */
+  taskStateService: TaskStateService
   /** Called when drain pauses because of an environmental failure. */
   emitDrainPaused: (event: AgentManagerDrainPausedEvent) => void
   /** Unix-ms; when set and > Date.now(), the drain tick short-circuits. */
   drainPausedUntil: number | undefined
+  /**
+   * Short random hex token generated once per runDrain() invocation.
+   * Threads through processQueuedTask → spawnAgent so every event in
+   * a single drain tick can be correlated in the log.
+   */
+  tickId?: string
+  /**
+   * IDs of tasks claimed since the previous drain tick. Used as a hint to
+   * `refreshDependencyIndex`: tasks outside this set whose fingerprint is
+   * already cached are presumed dependency-stable for the upcoming tick and
+   * skip the per-task fingerprint re-compute. The set is consumed and cleared
+   * at the start of every drain tick so a task only counts as dirty once.
+   */
+  recentlyProcessedTaskIds: Set<string>
+  /**
+   * Resolves when any in-flight OAuth token refresh has completed.
+   * The drain loop awaits this before each spawn so the refreshed token
+   * is on disk before the next SDK process reads `~/.bde/oauth-token`.
+   * Optional — callers that don't inject AgentManager (tests) omit it.
+   */
+  awaitOAuthRefresh?: () => Promise<void>
 }
 
 // ---------------------------------------------------------------------------
@@ -132,7 +195,15 @@ export function buildTaskStatusMap(deps: DrainLoopDeps): Map<string, string> {
       deps.setDepIndexDirty(false)
     }
   }
-  return refreshDependencyIndex(deps.depIndex, deps.lastTaskDeps, deps.repo, deps.logger)
+  const dirty = new Set(deps.recentlyProcessedTaskIds)
+  deps.recentlyProcessedTaskIds.clear()
+  return refreshDependencyIndex(
+    deps.depIndex,
+    deps.lastTaskDeps,
+    deps.repo,
+    deps.logger,
+    dirty
+  )
 }
 
 /**
@@ -150,7 +221,24 @@ export async function drainQueuedTasks(
   const freshSlots = availableSlots(deps.getConcurrency(), deps.activeAgents.size)
   const limit = Math.min(available, freshSlots)
   deps.logger.info(`[agent-manager] Fetching queued tasks (limit=${limit})...`)
-  const queued = deps.repo.getQueuedTasks(limit)
+
+  const tickId = deps.tickId ?? 'unknown'
+  let queued: SprintTask[]
+  try {
+    queued = await Promise.race([
+      runInNextTick(() => deps.repo.getQueuedTasks(limit)),
+      sleep(DRAIN_TICK_TIMEOUT_MS).then(() => {
+        throw new DrainTimeoutError(tickId)
+      })
+    ])
+  } catch (err) {
+    if (err instanceof DrainTimeoutError) {
+      deps.logger.event('drain.tick.timeout', { tickId })
+      return
+    }
+    throw err
+  }
+
   deps.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
   for (const rawTask of queued) {
     if (deps.isShuttingDown()) break
@@ -160,6 +248,9 @@ export async function drainQueuedTasks(
       deps.logger.info('[agent-manager] No slots available — stopping drain iteration')
       break
     }
+    // Wait for any in-flight OAuth refresh before spawning so the new agent
+    // reads the refreshed token rather than the stale one that caused the error.
+    await deps.awaitOAuthRefresh?.()
     const taskId = rawTask.id
     try {
       await deps.processQueuedTask(rawTask, taskStatusMap)
@@ -168,7 +259,7 @@ export async function drainQueuedTasks(
     } catch (err) {
       deps.logger.error(`[agent-manager] Failed to process task ${taskId}: ${err}`)
       if (!taskId) continue
-      if (handleEnvironmentalFailure(taskId, err, deps)) return
+      if (await handleEnvironmentalFailure(taskId, err, deps)) return
       handleSpecLevelFailure(taskId, err, deps)
     }
   }
@@ -182,13 +273,13 @@ export async function drainQueuedTasks(
  *
  * Returns `true` when the failure was environmental (caller should `return`).
  */
-function handleEnvironmentalFailure(taskId: string, err: unknown, deps: DrainLoopDeps): boolean {
+async function handleEnvironmentalFailure(taskId: string, err: unknown, deps: DrainLoopDeps): Promise<boolean> {
   const message = err instanceof Error ? (err.stack ?? err.message) : String(err)
   if (classifyFailureReason(message) !== 'environmental') return false
 
   const reason = (message.split('\n')[0] ?? '').slice(0, 200)
   try {
-    deps.repo.updateTask(taskId, {
+    await deps.repo.updateTask(taskId, {
       status: 'queued',
       failure_reason: 'environmental',
       claimed_by: null,
@@ -204,7 +295,7 @@ function handleEnvironmentalFailure(taskId: string, err: unknown, deps: DrainLoo
   const affectedTaskCount = readQueueDepth(deps)
   deps.emitDrainPaused({ reason, pausedUntil, affectedTaskCount })
   deps.logger.warn(
-    `[drain-loop] environmental failure — pausing drain until ${new Date(pausedUntil).toISOString()}: ${reason}`
+    `[drain-loop] environmental failure for task ${taskId} — pausing drain until ${new Date(pausedUntil).toISOString()}: ${reason}`
   )
   return true
 }
@@ -259,14 +350,18 @@ function applyQuarantine(taskId: string, note: string, deps: DrainLoopDeps): voi
   try {
     const currentTask = deps.repo.getTask(taskId)
     const status = quarantineStatusFor(currentTask?.status)
-    deps.repo.updateTask(taskId, { status, notes: note, claimed_by: null })
-    deps.drainFailureCounts.delete(taskId)
-    deps
-      .onTaskTerminal(taskId, status)
+    deps.taskStateService
+      .transition(taskId, status, {
+        fields: { notes: note, claimed_by: null },
+        caller: 'drain-loop:quarantine'
+      })
+      .then(() => {
+        // Clear the failure count only after a successful status write —
+        // if the write fails the count must stay so future ticks can re-quarantine.
+        deps.drainFailureCounts.delete(taskId)
+      })
       .catch((termErr) =>
-        deps.logger.warn(
-          `[agent-manager] onTerminal failed for quarantined task ${taskId}: ${termErr}`
-        )
+        deps.logger.warn(`[agent-manager] transition failed for quarantined task ${taskId}: ${termErr}`)
       )
   } catch (quarantineErr) {
     deps.logger.error(`[agent-manager] Failed to quarantine task ${taskId}: ${quarantineErr}`)
@@ -285,6 +380,9 @@ function applyQuarantine(taskId: string, note: string, deps: DrainLoopDeps): voi
  * the caller via `_drainInFlight` — this function is the body of that promise.
  */
 export async function runDrain(deps: DrainLoopDeps): Promise<void> {
+  const tickId = Math.random().toString(16).slice(2, 10)
+  deps.tickId = tickId
+
   deps.logger.info(
     `[agent-manager] Drain loop starting (shuttingDown=${deps.isShuttingDown()}, slots=${availableSlots(deps.getConcurrency(), deps.activeAgents.size)})`
   )
@@ -304,7 +402,11 @@ export async function runDrain(deps: DrainLoopDeps): Promise<void> {
   const taskStatusMap = buildTaskStatusMap(deps)
 
   const available = availableSlots(deps.getConcurrency(), deps.activeAgents.size)
-  if (available <= 0) return
+  if (available <= 0) {
+    deps.logger.debug(`drain.tick.idle tickId=${tickId} queuedCount=0`)
+    deps.logger.event('drain.tick.idle', { tickId, queuedCount: 0 })
+    return
+  }
 
   try {
     await drainQueuedTasks(available, taskStatusMap, deps)

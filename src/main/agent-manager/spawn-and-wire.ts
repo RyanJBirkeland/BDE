@@ -17,6 +17,7 @@ import { nowIso } from '../../shared/time'
 import { TurnTracker } from './turn-tracker'
 import { getDefaultCredentialService } from '../services/credential-service'
 import { computeMaxTurns, PIPELINE_DISALLOWED_TOOLS } from './turn-budget'
+import { PipelineAbortError } from './pipeline-abort-error'
 
 /**
  * Logs a worktree cleanup warning with consistent format.
@@ -46,8 +47,9 @@ export async function handleSpawnFailure(
   deps: RunAgentDeps
 ): Promise<never> {
   const { logger, repo, onTaskTerminal, onSpawnFailure } = deps
+  const errReason = err instanceof Error ? err.message : String(err)
   try {
-    onSpawnFailure?.()
+    onSpawnFailure?.(task.id, errReason)
   } catch (cbErr) {
     logger.warn(`[agent-manager] onSpawnFailure hook threw: ${cbErr}`)
   }
@@ -62,7 +64,7 @@ export async function handleSpawnFailure(
   // persisted to SQLite before the task appears as 'error' in the UI.
   flushAgentEventBatcher()
   try {
-    repo.updateTask(task.id, {
+    await repo.updateTask(task.id, {
       status: 'error',
       completed_at: nowIso(),
       notes: `Spawn failed: ${errMsg}`,
@@ -84,7 +86,7 @@ export async function handleSpawnFailure(
   } catch (cleanupErr) {
     logCleanupWarning(task.id, worktree.worktreePath, cleanupErr, logger)
   }
-  throw err
+  throw new PipelineAbortError('Spawn failed and recovered', err)
 }
 
 /**
@@ -130,7 +132,9 @@ export async function spawnAndWireAgent(
       logger,
       task.max_cost_usd ?? undefined,
       pipelineTuning,
-      deps.worktreeBase
+      deps.worktreeBase,
+      worktree.branch,
+      deps.tickId
     )
     try {
       onSpawnSuccess?.()
@@ -139,10 +143,10 @@ export async function spawnAndWireAgent(
     }
   } catch (err) {
     await handleSpawnFailure(err, task, worktree, repoPath, deps)
-    throw err // unreachable — handleSpawnFailure always throws; satisfies TypeScript
+    throw err // unreachable — handleSpawnFailure throws PipelineAbortError; satisfies TypeScript
   }
 
-  return initializeAgentTracking(
+  const result = initializeAgentTracking(
     task,
     handle,
     effectiveModel,
@@ -152,4 +156,10 @@ export async function spawnAndWireAgent(
     repo,
     logger
   )
+  try {
+    deps.onAgentRegistered?.()
+  } catch (cbErr) {
+    logger.warn(`[agent-manager] onAgentRegistered hook threw: ${cbErr}`)
+  }
+  return result
 }

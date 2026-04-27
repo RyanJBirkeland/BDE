@@ -11,22 +11,50 @@ let unsubscribe: (() => void) | null = null
  * Merge a newly-fetched history snapshot with the live-broadcast events
  * already in the store. History is authoritative up to its query time;
  * live events may carry newer messages that haven't been flushed to SQLite
- * yet. We union the two and de-duplicate identical payloads (serialized
- * form) so a replay from SQLite doesn't produce duplicate cards. Chronology
- * is preserved by sorting on `timestamp`; `Array.prototype.sort` is stable
- * since ES2019, so events sharing a millisecond keep their emit order.
+ * yet. We union the two and de-duplicate equivalent events so a replay
+ * from SQLite doesn't produce duplicate cards. Chronology is preserved by
+ * sorting on `timestamp`; `Array.prototype.sort` is stable since ES2019,
+ * so events sharing a millisecond keep their emit order.
+ *
+ * The dedup key is built from each event's distinguishing primitive fields
+ * rather than `JSON.stringify(event)` — `agent:tool_result` events can carry
+ * 10KB+ of tool output, and stringifying them on every merge was causing
+ * agent-console stutter when an agent streamed many tool calls per second.
  */
 function mergeHistoryWithLiveEvents(history: AgentEvent[], live: AgentEvent[]): AgentEvent[] {
-  const seen = new Set<string>()
-  const merged: AgentEvent[] = []
-  for (const event of history.concat(live)) {
-    const key = JSON.stringify(event)
-    if (seen.has(key)) continue
-    seen.add(key)
-    merged.push(event)
+  const seen = new Map<string, AgentEvent>()
+  for (const event of [...history, ...live]) {
+    const key = dedupKey(event)
+    if (!seen.has(key)) seen.set(key, event)
   }
+  const merged = [...seen.values()]
   merged.sort((a, b) => a.timestamp - b.timestamp)
   return merged
+}
+
+function dedupKey(event: AgentEvent): string {
+  switch (event.type) {
+    case 'agent:text':
+    case 'agent:user_message':
+    case 'agent:stderr':
+      return `${event.type}|${event.timestamp}|${event.text.length}|${event.text.slice(0, 64)}`
+    case 'agent:thinking':
+      return `${event.type}|${event.timestamp}|${event.tokenCount}|${event.text?.slice(0, 32) ?? ''}`
+    case 'agent:tool_call':
+      return `${event.type}|${event.timestamp}|${event.tool}|${event.summary}`
+    case 'agent:tool_result':
+      return `${event.type}|${event.timestamp}|${event.tool}|${event.success}|${event.summary}`
+    case 'agent:error':
+      return `${event.type}|${event.timestamp}|${event.message}`
+    case 'agent:rate_limited':
+      return `${event.type}|${event.timestamp}|${event.attempt}|${event.retryDelayMs}`
+    case 'agent:started':
+      return `${event.type}|${event.timestamp}|${event.model}`
+    case 'agent:completed':
+      return `${event.type}|${event.timestamp}|${event.exitCode}|${event.costUsd}`
+    case 'agent:playground':
+      return `${event.type}|${event.timestamp}|${event.filename}|${event.sizeBytes}`
+  }
 }
 
 interface AgentEventsState {

@@ -2,10 +2,10 @@
  * Per-agent-type runtime resolution.
  *
  * Every agent type — Pipeline, Synthesizer, Copilot, Assistant, Adhoc, Reviewer —
- * resolves its model (and, for Pipeline, its backend) from the user's stored
- * `agents.backendConfig` record. The Local backend is wired through today only
- * for Pipeline; the other types run on Claude regardless of the stored
- * `backend` field.
+ * resolves its model and backend from the user's stored `agents.backendConfig`
+ * record. Three backends are supported: `claude` (Anthropic SDK), `local`
+ * (rbt-coding-agent via OpenAI-compatible endpoint), and `opencode` (opencode CLI).
+ * `opencodeExecutable` defaults to `'opencode'` (PATH lookup).
  *
  * Settings live in BDE's SQLite-backed JSON store under `SETTING_BACKEND_CONFIG`.
  * A missing value resolves to `DEFAULT_SETTINGS` (every type on `claude` with
@@ -33,7 +33,8 @@ export const DEFAULT_SETTINGS: BackendSettings = {
   assistant: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
   adhoc: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
   reviewer: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
-  localEndpoint: DEFAULT_LOCAL_ENDPOINT
+  localEndpoint: DEFAULT_LOCAL_ENDPOINT,
+  opencodeExecutable: 'opencode'
 }
 
 export function loadBackendSettings(): BackendSettings {
@@ -61,6 +62,7 @@ function mergeWithDefaults(stored: Partial<BackendSettings>): BackendSettings {
     assistant: stored.assistant ?? DEFAULT_SETTINGS.assistant,
     adhoc: stored.adhoc ?? DEFAULT_SETTINGS.adhoc,
     reviewer: stored.reviewer ?? DEFAULT_SETTINGS.reviewer,
-    localEndpoint: stored.localEndpoint ?? DEFAULT_SETTINGS.localEndpoint
+    localEndpoint: stored.localEndpoint ?? DEFAULT_SETTINGS.localEndpoint,
+    opencodeExecutable: stored.opencodeExecutable ?? DEFAULT_SETTINGS.opencodeExecutable
   }
 }

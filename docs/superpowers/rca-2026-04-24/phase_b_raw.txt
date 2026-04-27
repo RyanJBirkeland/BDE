@@ -1,0 +1,21 @@
+# Phase B Results — Header Injection A/B
+
+## Per-pair comparison (n=5)
+
+| # | Task | Arm A status | A turns | A cost | A retries | Arm B status | B turns | B cost | B retries |
+|---|------|--------------|---------|--------|-----------|--------------|---------|--------|-----------|
+| 1 | T-22 [P1] Apply escapeXmlContent in renderTaskSection (promp | error | 31 | $0.51 | 1 | error | - | - | 0 |
+| 2 | T-50 [P1] Redirect fast-fail diagnostic to the live log | error | 31 | $0.39 | 2 | error | - | - | 0 |
+| 3 | T-44 [P1] Run orphan recovery before clearStaleClaims | error | 31 | $0.55 | 1 | error | - | - | 0 |
+| 4 | T-47 [P2] Reset fast_fail_count on successful completion | error | 31 | $0.60 | 2 | error | 76 | $1.21 | 1 |
+| 5 | T-23 [P1] Propagate pipeline's disallowedTools/tools allowli | error | 31 | $0.72 | 1 | error | - | - | 0 |
+
+## Aggregate
+
+- Pass rate (status in review/done): A=0/5, B=0/5
+- Mean turns (best run): A=31.0 (n=5), B=76.0 (n=1)
+- Total cost: A=$2.78, B=$1.21
+- Env failures (Stream interrupted): A=0 runs, B=0 runs
+- max_turns_exceeded events: A=7, B=1
+
+Detailed JSON: /tmp/phase_b_results.json

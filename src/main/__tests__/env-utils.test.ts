@@ -438,6 +438,51 @@ describe('buildAgentEnv', () => {
   })
 })
 
+describe('postOAuthRefresh — isRefreshResponse guard', () => {
+  const ORIG_FETCH = globalThis.fetch
+  afterEach(() => {
+    globalThis.fetch = ORIG_FETCH
+    vi.clearAllMocks()
+    invalidateOAuthToken()
+  })
+
+  it('falls back to writing the existing token when the OAuth endpoint returns an unexpected shape', async () => {
+    const expiredAtMs = Date.now() - 60 * 1000 // 1 minute ago — triggers refresh path
+    const initialCreds = {
+      claudeAiOauth: {
+        accessToken: 'existing-token-kept-on-bad-response',
+        refreshToken: 'r-tok',
+        expiresAt: String(expiredAtMs)
+      }
+    }
+
+    vi.mocked(execFile).mockImplementation((_cmd, args: any, _opts, callback: any) => {
+      const argv = Array.isArray(args) ? args : []
+      if (argv[0] === 'find-generic-password') {
+        callback(null, { stdout: JSON.stringify(initialCreds) + '\n', stderr: '' })
+      } else {
+        callback(null, { stdout: '', stderr: '' })
+      }
+      return {} as any
+    })
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ error: 'invalid_grant' }) // missing access_token and refresh_token
+    }) as unknown as typeof fetch
+
+    const result = await refreshOAuthTokenFromKeychain()
+
+    // The guard fires, postOAuthRefresh throws, refreshIfDue catches and falls back
+    expect(result).toBe(true)
+    expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+      expect.stringContaining('oauth-token'),
+      'existing-token-kept-on-bad-response',
+      expect.objectContaining({ mode: 0o600 })
+    )
+  })
+})
+
 describe('BDE_EXTRA_PATHS', () => {
   const originalExtra = process.env.BDE_EXTRA_PATHS
 

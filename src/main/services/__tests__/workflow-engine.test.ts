@@ -8,7 +8,7 @@ import { nowIso } from '../../../shared/time'
 describe('workflow-engine', () => {
   function createMockRepo(): IDashboardRepository {
     let idCounter = 1
-    const mockCreateTask = vi.fn((input) => {
+    const mockCreateTask = vi.fn(async (input) => {
       if (!input.title) return null
       return {
         id: `task-${idCounter++}`,
@@ -41,7 +41,7 @@ describe('workflow-engine', () => {
     }
   }
 
-  it('should create tasks with no dependencies', () => {
+  it('should create tasks with no dependencies', async () => {
     const template: WorkflowTemplate = {
       name: 'Test Workflow',
       description: 'A simple workflow',
@@ -52,7 +52,7 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toEqual([])
     expect(result.tasks).toHaveLength(2)
@@ -64,7 +64,7 @@ describe('workflow-engine', () => {
     expect(result.tasks[1].depends_on).toBeNull()
   })
 
-  it('should create tasks with hard dependencies', () => {
+  it('should create tasks with hard dependencies', async () => {
     const template: WorkflowTemplate = {
       name: 'Dependency Test',
       description: 'Test hard dependencies',
@@ -75,7 +75,7 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toEqual([])
     expect(result.tasks).toHaveLength(2)
@@ -83,7 +83,7 @@ describe('workflow-engine', () => {
     expect(result.tasks[1].depends_on).toEqual([{ id: 'task-1', type: 'hard' }])
   })
 
-  it('should create tasks with soft dependencies', () => {
+  it('should create tasks with soft dependencies', async () => {
     const template: WorkflowTemplate = {
       name: 'Soft Dep Test',
       description: 'Test soft dependencies',
@@ -100,7 +100,7 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toEqual([])
     expect(result.tasks).toHaveLength(2)
@@ -108,7 +108,7 @@ describe('workflow-engine', () => {
     expect(result.tasks[1].depends_on).toEqual([{ id: 'task-1', type: 'soft' }])
   })
 
-  it('should handle multiple dependencies', () => {
+  it('should handle multiple dependencies', async () => {
     const template: WorkflowTemplate = {
       name: 'Multi Dep',
       description: 'Multiple dependencies',
@@ -125,7 +125,7 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toEqual([])
     expect(result.tasks).toHaveLength(3)
@@ -135,7 +135,7 @@ describe('workflow-engine', () => {
     ])
   })
 
-  it('should report error for out-of-range dependency index', () => {
+  it('should report error for out-of-range dependency index', async () => {
     const template: WorkflowTemplate = {
       name: 'Invalid Dep',
       description: 'Out of range dependency',
@@ -151,7 +151,7 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toContain('Step 1: dependsOnSteps[5] out of range')
     expect(result.tasks).toHaveLength(2)
@@ -159,7 +159,7 @@ describe('workflow-engine', () => {
     expect(result.tasks[1].depends_on).toBeNull()
   })
 
-  it('should report error for negative dependency index', () => {
+  it('should report error for negative dependency index', async () => {
     const template: WorkflowTemplate = {
       name: 'Negative Dep',
       description: 'Negative dependency index',
@@ -175,12 +175,12 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toContain('Step 1: dependsOnSteps[-1] out of range')
   })
 
-  it('should stop on createTask failure', () => {
+  it('should stop on createTask failure', async () => {
     const template: WorkflowTemplate = {
       name: 'Fail Test',
       description: 'Test createTask failure',
@@ -193,7 +193,7 @@ describe('workflow-engine', () => {
 
     // Create a mock repo that fails on the second task
     const failingRepo: IDashboardRepository = {
-      createTask: vi.fn((input) => {
+      createTask: vi.fn(async (input) => {
         const callCount = (failingRepo.createTask as ReturnType<typeof vi.fn>).mock.calls.length
         if (callCount === 2) return null // Fail on second call
         return {
@@ -223,13 +223,13 @@ describe('workflow-engine', () => {
       getFailureReasonBreakdown: vi.fn()
     }
 
-    const result = instantiateWorkflow(template, failingRepo)
+    const result = await instantiateWorkflow(template, failingRepo)
 
     expect(result.errors).toContain('Step 1: createTask failed for "Task B"')
     expect(result.tasks).toHaveLength(1) // Only first task created
   })
 
-  it('should pass through playground_enabled flag', () => {
+  it('should pass through playground_enabled flag', async () => {
     const template: WorkflowTemplate = {
       name: 'Playground Test',
       description: 'Test playground flag',
@@ -237,13 +237,13 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toEqual([])
     expect(result.tasks[0].playground_enabled).toBe(true)
   })
 
-  it('should pass through model field', () => {
+  it('should pass through model field', async () => {
     const template: WorkflowTemplate = {
       name: 'Model Test',
       description: 'Test model field',
@@ -251,13 +251,13 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toEqual([])
     expect(result.tasks[0].model).toBe('opus')
   })
 
-  it('should handle empty workflow', () => {
+  it('should handle empty workflow', async () => {
     const template: WorkflowTemplate = {
       name: 'Empty',
       description: 'Empty workflow',
@@ -265,7 +265,7 @@ describe('workflow-engine', () => {
     }
 
     const repo = createMockRepo()
-    const result = instantiateWorkflow(template, repo)
+    const result = await instantiateWorkflow(template, repo)
 
     expect(result.errors).toEqual([])
     expect(result.tasks).toHaveLength(0)

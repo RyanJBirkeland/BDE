@@ -218,3 +218,34 @@
 .task-pill--multi-selected {
   border-color: var(--bde-accent-border);
 }
+
+/* ── Task Pill: Failure category chip ── */
+.task-pill__failure-chip {
+  font-size: var(--font-2xs, 10px);
+  font-family: var(--bde-font-code);
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.failure-chip--timeout   { color: var(--bde-warning); }
+.failure-chip--test      { color: var(--bde-danger); }
+.failure-chip--compilation { color: var(--bde-warning); }
+.failure-chip--auth      { color: var(--bde-danger); }
+.failure-chip--spawn     { color: var(--bde-danger); }
+.failure-chip--no-commits { color: var(--bde-text-dim); }
+.failure-chip--incomplete { color: var(--bde-warning); }
+.failure-chip--env       { color: var(--bde-warning); }
+.failure-chip--tip-mismatch { color: var(--bde-text-dim); }
+.failure-chip--unknown   { color: var(--bde-text-dim); }
+
+/* ── Task Pill: "Agent starting…" indicator (queued + claimed) ── */
+.task-pill__starting {
+  font-size: var(--font-2xs, 10px);
+  color: var(--bde-accent);
+  font-style: italic;
+  flex-shrink: 0;
+  animation: bde-pulse 2s ease-in-out infinite;
+}

@@ -1,13 +1,9 @@
 import type { Logger } from '../logger'
+import { createLogger } from '../logger'
 import { getErrorMessage } from '../../shared/errors'
 
-// Module-level logger — defaults to console, injectable for testing/structured logging
-let logger: Logger = {
-  info: (m) => console.log(m),
-  warn: (m) => console.warn(m),
-  error: (m) => console.error(m),
-  debug: (m) => console.debug(m)
-}
+// Module-level logger — defaults to file logger, injectable for testing/structured logging
+let logger: Logger = createLogger('sprint-queries')
 
 export function setSprintQueriesLogger(l: Logger): void {
   logger = l

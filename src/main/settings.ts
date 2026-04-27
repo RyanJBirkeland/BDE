@@ -47,8 +47,12 @@ export function deleteSetting(key: string, db?: Database.Database): void {
   _deleteSetting(db ?? getDb(), key)
 }
 
-export function getSettingJson<T>(key: string, db?: Database.Database): T | null {
-  return _getSettingJson<T>(db ?? getDb(), key)
+export function getSettingJson<T>(
+  key: string,
+  validator?: (u: unknown) => u is T,
+  db?: Database.Database
+): T | null {
+  return _getSettingJson<T>(db ?? getDb(), key, validator)
 }
 
 export function setSettingJson<T>(key: string, value: T, db?: Database.Database): void {

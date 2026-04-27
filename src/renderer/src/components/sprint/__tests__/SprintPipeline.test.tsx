@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => {
   const mockSetSpecPanelOpen = vi.fn()
   const mockSetDoneViewOpen = vi.fn()
   const mockSetView = vi.fn()
+  const mockOpenWorkbenchForCreate = vi.fn()
+  const mockOpenWorkbenchForEdit = vi.fn()
 
   const storeState = {
     tasks: [] as SprintTask[],
@@ -44,9 +46,11 @@ const mocks = vi.hoisted(() => {
     doneViewOpen: false,
     conflictDrawerOpen: false,
     healthCheckDrawerOpen: false,
+    orphanRecoveryBanner: null as null | { recovered: string[]; exhausted: string[] },
     setDoneViewOpen: mockSetDoneViewOpen,
     setConflictDrawerOpen: mockSetConflictDrawerOpen,
-    setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen
+    setHealthCheckDrawerOpen: mockSetHealthCheckDrawerOpen,
+    setOrphanRecoveryBanner: vi.fn()
   }
 
   const filtersState = {
@@ -65,6 +69,8 @@ const mocks = vi.hoisted(() => {
     mockSetHealthCheckDrawerOpen,
     mockSetStatusFilter,
     mockSetView,
+    mockOpenWorkbenchForCreate,
+    mockOpenWorkbenchForEdit,
     storeState,
     selectionState,
     uiState,
@@ -104,7 +110,8 @@ vi.mock('../../../stores/sprintUI', () => ({
       return selector(mocks.uiState)
     }
     return undefined
-  })
+  }),
+  selectOrphanRecoveryBanner: (s: { orphanRecoveryBanner: null }) => s.orphanRecoveryBanner
 }))
 
 vi.mock('../../../stores/sprintSelection', () => ({
@@ -124,6 +131,21 @@ vi.mock('../../../stores/sprintFilters', () => ({
     return undefined
   })
 }))
+
+vi.mock('../../../stores/taskWorkbenchModal', () => {
+  const state = {
+    open: false,
+    editingTask: null,
+    openForCreate: mocks.mockOpenWorkbenchForCreate,
+    openForEdit: mocks.mockOpenWorkbenchForEdit,
+    close: vi.fn()
+  }
+  const useStore = vi.fn((selector?: (s: typeof state) => unknown) =>
+    typeof selector === 'function' ? selector(state) : state
+  ) as unknown as { (selector?: unknown): unknown; getState: () => typeof state }
+  useStore.getState = () => state
+  return { useTaskWorkbenchModalStore: useStore }
+})
 
 vi.mock('../../../stores/panelLayout', () => ({
   usePanelLayoutStore: vi.fn((selector) => {
@@ -638,16 +660,20 @@ describe('SprintPipeline - additional scenarios', () => {
     expect(mocks.mockSetSpecPanelOpen).toHaveBeenCalledWith(true)
   })
 
-  it('calls setView("planner") when drawer onEdit is triggered', async () => {
+  it('opens the workbench modal in edit mode when drawer onEdit is triggered', async () => {
     const task = makeTask({ id: 'edit-task', status: 'queued' })
     Object.assign(mocks.storeState, { tasks: [task] })
     Object.assign(mocks.selectionState, { selectedTaskId: 'edit-task', drawerOpen: true })
+    mocks.mockOpenWorkbenchForEdit.mockClear()
+    mocks.mockSetView.mockClear()
 
     const { SprintPipeline } = await import('../SprintPipeline')
     const { fireEvent: fe } = await import('@testing-library/react')
     render(<SprintPipeline />)
     fe.click(screen.getByTestId('drawer-edit'))
-    expect(mocks.mockSetView).toHaveBeenCalledWith('planner')
+
+    expect(mocks.mockOpenWorkbenchForEdit).toHaveBeenCalledWith(task)
+    expect(mocks.mockSetView).not.toHaveBeenCalledWith('planner')
   })
 
   it('calls setDrawerOpen(false) and setSelectedTaskId(null) when drawer is closed', async () => {

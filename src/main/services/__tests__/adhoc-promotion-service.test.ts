@@ -177,13 +177,12 @@ describe('promoteAdhocToTask', () => {
 
   describe('autoCommitIfDirty', () => {
     it('runs git add -A and git commit when no commits, dirty tree, and autoCommitIfDirty is true', async () => {
-      // no commits → dirty worktree → after commit, 1 commit
       mockExecFileAsync
-        .mockResolvedValueOnce({ stdout: '0\n', stderr: '' }) // rev-list: no commits
-        .mockResolvedValueOnce({ stdout: 'M src/foo.ts\n', stderr: '' }) // status --porcelain: dirty
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add -A
-        .mockResolvedValueOnce({ stdout: '[adhoc 1234abc] chore: capture\n', stderr: '' }) // git commit
-        .mockResolvedValueOnce({ stdout: '1\n', stderr: '' }) // rev-list: 1 commit now
+        .mockResolvedValueOnce({ stdout: '0\n', stderr: '' })
+        .mockResolvedValueOnce({ stdout: 'M src/foo.ts\n', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '[adhoc 1234abc] chore: capture\n', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '1\n', stderr: '' })
 
       const result = await promoteAdhocToTask('agent-1', { autoCommitIfDirty: true })
 
@@ -197,8 +196,8 @@ describe('promoteAdhocToTask', () => {
 
     it('returns error when no commits, clean tree, and autoCommitIfDirty is true', async () => {
       mockExecFileAsync
-        .mockResolvedValueOnce({ stdout: '0\n', stderr: '' }) // rev-list: no commits
-        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // status --porcelain: clean
+        .mockResolvedValueOnce({ stdout: '0\n', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
 
       const result = await promoteAdhocToTask('agent-1', { autoCommitIfDirty: true })
 
@@ -208,12 +207,10 @@ describe('promoteAdhocToTask', () => {
     })
 
     it('skips auto-commit path when commits already exist even if autoCommitIfDirty is true', async () => {
-      // default mock returns '2\n' (2 commits already)
       const callsBefore = mockExecFileAsync.mock.calls.length
 
       const result = await promoteAdhocToTask('agent-1', { autoCommitIfDirty: true })
 
-      // Only the one rev-list call should have been made (no status/add/commit calls)
       const newCalls = mockExecFileAsync.mock.calls.slice(callsBefore)
       expect(newCalls).toHaveLength(1)
       expect(newCalls[0][1]).toEqual(expect.arrayContaining(['rev-list']))

@@ -134,8 +134,23 @@ export interface RepoConfig {
   promptProfile?: 'bde' | 'minimal'
 }
 
+function isRepoConfig(item: unknown): item is RepoConfig {
+  if (typeof item !== 'object' || item === null) return false
+  const r = item as Record<string, unknown>
+  return typeof r.name === 'string' && r.name.trim() !== ''
+}
+
+function isRepoConfigArray(value: unknown): value is RepoConfig[] {
+  return Array.isArray(value) && value.every(isRepoConfig)
+}
+
 export function getConfiguredRepos(): RepoConfig[] {
-  return getSettingJson<RepoConfig[]>('repos') ?? []
+  return getSettingJson<RepoConfig[]>('repos', isRepoConfigArray) ?? []
+}
+
+export function getRepoConfig(name: string): RepoConfig | null {
+  const target = name.toLowerCase()
+  return getConfiguredRepos().find((r) => r.name.toLowerCase() === target) ?? null
 }
 
 /**
@@ -179,9 +194,7 @@ export function getGhRepo(repoSlug: string): string | null {
 
 export function getSpecsRoot(): string | null {
   const repos = getConfiguredRepos()
-  // TODO: Make spec root configurable via settings instead of hardcoding 'bde'.
-  // Currently only BDE's own development workflow uses this feature.
-  const bdeRepo = repos.find((r) => r.name.toLowerCase() === 'bde')
-  if (!bdeRepo) return null
-  return resolve(bdeRepo.localPath, 'docs', 'specs')
+  const primary = repos[0]
+  if (!primary) return null
+  return resolve(primary.localPath, 'docs', 'specs')
 }

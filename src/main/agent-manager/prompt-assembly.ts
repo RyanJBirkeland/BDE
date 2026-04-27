@@ -15,6 +15,7 @@ import { nowIso } from '../../shared/time'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { TaskDependency } from '../../shared/types'
+import { PipelineAbortError } from './pipeline-abort-error'
 
 /**
  * Logs a worktree cleanup warning with consistent format.
@@ -65,7 +66,7 @@ export async function validateTaskForRun(
     } catch (cleanupErr) {
       logCleanupWarning(task.id, worktree.worktreePath, cleanupErr, logger)
     }
-    throw new Error('Task has no content')
+    throw new PipelineAbortError('Task has no content')
   }
 }
 

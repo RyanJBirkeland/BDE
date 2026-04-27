@@ -4,7 +4,7 @@
  * Wraps `@anthropic-ai/claude-agent-sdk`'s `query()` call with session-ID
  * extraction, abort controller wiring, and a steer() stub.
  */
-import type { AgentHandle, SteerResult } from './types'
+import type { AgentHandle, SteerResult, SpawnStrategy } from './types'
 import type { Logger } from '../logger'
 import { randomUUID } from 'node:crypto'
 import { getClaudeCliPath } from '../env-utils'
@@ -42,9 +42,13 @@ export function spawnViaSdk(
     model: string
     maxBudgetUsd?: number | undefined
     pipelineTuning?: PipelineSpawnTuning | undefined
+    taskId?: string | undefined
+    agentType?: string | undefined
+    tickId?: string | undefined
   },
   env: NodeJS.ProcessEnv,
   token: string | null,
+  strategy: SpawnStrategy,
   logger?: Logger
 ): AgentHandle {
   const abortController = new AbortController()
@@ -53,6 +57,19 @@ export function spawnViaSdk(
   const effectiveDisallowedTools = opts.pipelineTuning?.disallowedTools
     ? [...opts.pipelineTuning.disallowedTools]
     : undefined
+
+  const effectiveMaxBudget = opts.maxBudgetUsd ?? 2.0
+  if (logger) {
+    logger.event('agent.spawn', {
+      taskId: opts.taskId ?? 'unknown',
+      tickId: opts.tickId,
+      agentType: opts.agentType ?? 'unknown',
+      model: opts.model,
+      maxBudgetUsd: effectiveMaxBudget,
+      cwd: opts.cwd,
+      backend: strategy.type
+    })
+  }
 
   const queryResult = sdk.query({
     prompt: opts.prompt,
@@ -97,14 +114,19 @@ export function spawnViaSdk(
     }
   })
 
-  // Extract sessionId from the first message that carries it
+  // Extract sessionId from the first message that carries it; subsequent
+  // messages with a different session_id are ignored — only the first wins.
   let resolvedSessionId = randomUUID()
+  let sessionIdResolved = false
 
   async function* wrapMessages(): AsyncIterable<unknown> {
     for await (const msg of queryResult) {
-      const sid = getSessionId(msg)
-      if (sid && sid !== resolvedSessionId) {
-        resolvedSessionId = sid as ReturnType<typeof randomUUID>
+      if (!sessionIdResolved) {
+        const sid = getSessionId(msg)
+        if (sid) {
+          resolvedSessionId = sid as ReturnType<typeof randomUUID>
+          sessionIdResolved = true
+        }
       }
       yield msg
     }
@@ -120,8 +142,9 @@ export function spawnViaSdk(
     },
     async steer(message: string): Promise<SteerResult> {
       // SDK mode does not support mid-session steering — returns delivered: false. CLI mode writes to stdin. Callers must handle delivered === false.
+      // Log only the message length, never the body — steer messages are user-supplied content and project policy keeps them out of `~/.bde/bde.log`.
       ;(logger ?? console).warn(
-        `[agent-manager] Steer not supported in SDK mode: "${message.slice(0, 100)}"`
+        `[agent-manager] Steer not supported in SDK mode (message length: ${message.length})`
       )
       return { delivered: false, error: 'SDK mode does not support steering' }
     }

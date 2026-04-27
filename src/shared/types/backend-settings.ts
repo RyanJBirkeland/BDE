@@ -6,7 +6,7 @@
  * stored under `agents.backendConfig`.
  */
 
-export type BackendKind = 'claude' | 'local'
+export type BackendKind = 'claude' | 'local' | 'opencode'
 
 export interface AgentBackendConfig {
   backend: BackendKind
@@ -21,4 +21,5 @@ export interface BackendSettings {
   adhoc: AgentBackendConfig
   reviewer: AgentBackendConfig
   localEndpoint: string
+  opencodeExecutable: string
 }

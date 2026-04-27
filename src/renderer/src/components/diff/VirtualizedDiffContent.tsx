@@ -4,9 +4,11 @@ import {
   ROW_HEIGHT,
   FILE_HEADER_HEIGHT,
   HUNK_HEADER_HEIGHT,
+  COMMENT_ROW_HEIGHT,
   rowHeight
 } from './virtualized-diff-utils'
 import type { FlatRow, HunkAddress } from './virtualized-diff-utils'
+import { DiffCommentWidget } from './DiffCommentWidget'
 
 const OVERSCAN = 20
 
@@ -108,6 +110,32 @@ export function VirtualizedDiffContent({
                 style={{ height: HUNK_HEADER_HEIGHT }}
               >
                 {row.header}
+              </div>
+            )
+          }
+          if (row.kind === 'comment') {
+            return (
+              <div
+                key={`comment-${row.filePath}-${row.lineNum}`}
+                style={{ minHeight: COMMENT_ROW_HEIGHT }}
+              >
+                {row.comments.length > 0 && <DiffCommentWidget comments={row.comments} />}
+                {row.pendingComments.map((pc) => (
+                  <div
+                    key={pc.id}
+                    className="diff-comment-widget diff-comment-widget--pending"
+                  >
+                    <div className="diff-comment-widget__toggle">
+                      <span>Pending comment</span>
+                      <span className="diff-comment-widget__pending-badge">Pending</span>
+                    </div>
+                    <div className="diff-comment-widget__thread">
+                      <div className="diff-comment-widget__comment">
+                        <div className="diff-comment-widget__body">{pc.body}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )
           }

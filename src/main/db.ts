@@ -4,6 +4,9 @@ import path from 'path'
 import { BDE_DIR as DB_DIR, BDE_DB_PATH as DB_PATH, BDE_TASK_MEMORY_DIR } from './paths'
 import { getErrorMessage } from '../shared/errors'
 import { loadMigrations, getPendingMigrations, type Migration } from './migrations/loader'
+import { createLogger } from './logger'
+
+const log = createLogger('db')
 
 let _db: Database.Database | null = null
 
@@ -18,7 +21,7 @@ export function getDb(): Database.Database {
       chmodSync(DB_DIR, 0o700)
     } catch (err) {
       // Non-fatal: log but continue — app can still function
-      console.warn('[db] Failed to enforce .bde directory permissions:', err)
+      log.warn(`[db] Failed to enforce .bde directory permissions: ${err}`)
     }
     const dbExists = existsSync(DB_PATH)
     _db = new Database(DB_PATH)
@@ -28,7 +31,7 @@ export function getDb(): Database.Database {
       try {
         chmodSync(DB_PATH, 0o600)
       } catch (err) {
-        console.error('[db] Failed to set database file permissions:', err)
+        log.error(`[db] Failed to set database file permissions: ${err}`)
       }
     }
     _db.pragma('journal_mode = WAL')
@@ -49,7 +52,7 @@ export function closeDb(): void {
       // DL-12: Checkpoint WAL to ensure durability on shutdown
       _db.pragma('wal_checkpoint(TRUNCATE)')
     } catch (err) {
-      console.error('[db] WAL checkpoint failed during close:', err)
+      log.error(`[db] WAL checkpoint failed during close: ${err}`)
     }
     _db.close()
     _db = null
@@ -98,7 +101,7 @@ export function backupDatabase(): void {
   // Backup should be at least 50% of original size — a smaller result indicates
   // data loss, not just VACUUM compression (which is typically modest).
   if (backupSize < originalSize * 0.5) {
-    console.error(
+    log.error(
       `[db] Backup appears incomplete: ${backupSize} bytes vs original ${originalSize} bytes`
     )
   }

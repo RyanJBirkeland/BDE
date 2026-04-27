@@ -582,3 +582,20 @@ describe('returnAll persists state', () => {
     void mainWin
   })
 })
+
+describe('restoreTearoffWindows — isPersistedTearoff guard', () => {
+  beforeEach(() => { resetState() })
+
+  it('skips malformed entries (missing views) and does not throw', () => {
+    mockGetSettingJson.mockReturnValue([
+      { windowId: 'valid-1', views: ['ide'], bounds: { x: 0, y: 0, width: 800, height: 600 } },
+      { windowId: 'missing-views', bounds: { x: 0, y: 0, width: 800, height: 600 } }
+    ])
+    expect(() => restoreTearoffWindows()).not.toThrow()
+  })
+
+  it('handles a non-array getSettingJson result gracefully', () => {
+    mockGetSettingJson.mockReturnValue({ not: 'an array' })
+    expect(() => restoreTearoffWindows()).not.toThrow()
+  })
+})

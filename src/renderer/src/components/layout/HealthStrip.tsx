@@ -50,17 +50,9 @@ export function HealthStrip({
       title={ariaLabel}
       data-testid="unified-header-health-strip"
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        padding: '2px 8px',
-        borderRadius: 999,
         background: 'var(--bde-surface-raised, rgba(255,255,255,0.04))',
         border: '1px solid var(--bde-border, rgba(255,255,255,0.08))',
-        cursor: 'pointer',
-        font: 'inherit',
-        color: 'var(--bde-text, rgba(255,255,255,0.85))',
-        lineHeight: 1
+        color: 'var(--bde-text, rgba(255,255,255,0.85))'
       }}
     >
       <span

@@ -1,0 +1,51 @@
+{
+  "inserted_clone_ids": [
+    "c54e16457d9a98aa00d3cfc40979e72d",
+    "2badf489905c3aebfe398717318c719f",
+    "8d551ff8a5182e0b42a76287cd5c4227",
+    "e79e283652c05cc167387433006a0860",
+    "76a42346b614ceeca053a803220dad84"
+  ],
+  "pairs": [
+    {
+      "arm_a_id": "035eebc8e1da8f75457439c269070c78",
+      "arm_a_title": "T-22 [P1] Apply escapeXmlContent in renderTaskSection (prompt-assistant)",
+      "arm_b_id": "c54e16457d9a98aa00d3cfc40979e72d",
+      "arm_b_title": "[B-arm] T-22 [P1] Apply escapeXmlContent in renderTaskSection (prompt-assistant)",
+      "spec_chars_a": 901,
+      "spec_chars_b": 922
+    },
+    {
+      "arm_a_id": "347fc3a19e6d843962640c5e13fba3ee",
+      "arm_a_title": "T-50 [P1] Redirect fast-fail diagnostic to the live log",
+      "arm_b_id": "2badf489905c3aebfe398717318c719f",
+      "arm_b_title": "[B-arm] T-50 [P1] Redirect fast-fail diagnostic to the live log",
+      "spec_chars_a": 1034,
+      "spec_chars_b": 1055
+    },
+    {
+      "arm_a_id": "3616a07c390eb195884aa4495501f4f1",
+      "arm_a_title": "T-44 [P1] Run orphan recovery before clearStaleClaims",
+      "arm_b_id": "8d551ff8a5182e0b42a76287cd5c4227",
+      "arm_b_title": "[B-arm] T-44 [P1] Run orphan recovery before clearStaleClaims",
+      "spec_chars_a": 874,
+      "spec_chars_b": 895
+    },
+    {
+      "arm_a_id": "696a21b8d370bb976317aec7b43500e0",
+      "arm_a_title": "T-47 [P2] Reset fast_fail_count on successful completion",
+      "arm_b_id": "e79e283652c05cc167387433006a0860",
+      "arm_b_title": "[B-arm] T-47 [P2] Reset fast_fail_count on successful completion",
+      "spec_chars_a": 752,
+      "spec_chars_b": 773
+    },
+    {
+      "arm_a_id": "9164b71c50280aa100c858395d4fe4ab",
+      "arm_a_title": "T-23 [P1] Propagate pipeline's disallowedTools/tools allowlist to adhoc spawn",
+      "arm_b_id": "76a42346b614ceeca053a803220dad84",
+      "arm_b_title": "[B-arm] T-23 [P1] Propagate pipeline's disallowedTools/tools allowlist to adhoc spawn",
+      "spec_chars_a": 866,
+      "spec_chars_b": 887
+    }
+  ]
+}

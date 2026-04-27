@@ -74,6 +74,14 @@ export interface AgentHandle {
   messages: AsyncIterable<unknown>
   sessionId: string
   abort(): void
+  /**
+   * Force-terminate the agent immediately, bypassing the soft-abort
+   * graceful-exit window. Optional: spawn paths that have a process handle
+   * (CLI, opencode) implement SIGKILL; SDK paths fall back to abort().
+   * The watchdog escalates to forceKill after a soft-kill grace window —
+   * see `killAgentWithEscalation` in `watchdog-loop.ts`.
+   */
+  forceKill?(): void
   steer(message: string): Promise<SteerResult>
   /** Optional callback invoked with each line of stderr output. */
   onStderr?: (line: string) => void
@@ -109,6 +117,13 @@ export interface ActiveAgent {
   worktreePath: string
   branch: string
 }
+
+/**
+ * Describes which transport will execute the agent spawn.
+ * The SDK path is preferred; the CLI path is a fallback when the SDK package
+ * is absent from the runtime environment.
+ */
+export type SpawnStrategy = { type: 'sdk' } | { type: 'cli'; claudePath: string }
 
 // Watchdog verdict types
 export type WatchdogCheck =

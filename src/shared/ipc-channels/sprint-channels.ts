@@ -4,12 +4,14 @@
 
 import type {
   SprintTask,
+  SprintTaskCore,
   ClaimedTask,
   TaskTemplate,
   TaskGroup,
   EpicDependency,
   BatchOperation,
   BatchResult,
+  BatchImportTask,
   SpecTypeSuccessRate,
   SynthesizeRequest,
   ReviseRequest,
@@ -66,7 +68,7 @@ export interface SprintChannels {
   }
   'sprint:healthCheck': {
     args: []
-    result: SprintTask[]
+    result: SprintTaskCore[]
   }
   'sprint:claimTask': {
     args: [taskId: string]
@@ -101,22 +103,7 @@ export interface SprintChannels {
     result: { results: BatchResult[] }
   }
   'sprint:batchImport': {
-    args: [
-      tasks: Array<{
-        title: string
-        repo: string
-        prompt?: string | undefined
-        spec?: string | undefined
-        status?: string | undefined
-        dependsOnIndices?: number[]
-        depType?: 'hard' | 'soft'
-        playgroundEnabled?: boolean | undefined
-        model?: string | undefined
-        tags?: string[] | undefined
-        priority?: number | undefined
-        templateName?: string | undefined
-      }>
-    ]
+    args: [tasks: BatchImportTask[]]
     result: {
       created: SprintTask[]
       errors: string[]
@@ -149,6 +136,10 @@ export interface SprintChannels {
   'sprint:forceDoneTask': {
     args: [payload: { taskId: string; reason?: string | undefined; force?: boolean | undefined }]
     result: { ok: true }
+  }
+  'sprint:forceReleaseClaim': {
+    args: [taskId: string]
+    result: SprintTask
   }
 }
 
@@ -216,10 +207,6 @@ export interface ReviewChannels {
           conflicts?: string[] | undefined
         }
   }
-  'review:generateSummary': {
-    args: [payload: { taskId: string }]
-    result: { summary: string }
-  }
   'review:checkAutoReview': {
     args: [payload: { taskId: string }]
     result: { shouldAutoMerge: boolean; shouldAutoApprove: boolean; matchedRule: string | null }
@@ -239,6 +226,15 @@ export interface ReviewChannels {
       status: 'fresh' | 'stale' | 'conflict' | 'unknown'
       commitsBehind?: number | undefined
     }
+  }
+  /**
+   * Mark a task done when work was shipped outside of BDE (terminal push,
+   * manual PR merge, etc.). Transitions status → done without touching the
+   * worktree; dependency resolution and audit trail happen as normal.
+   */
+  'review:markShippedOutsideBde': {
+    args: [payload: { taskId: string }]
+    result: { success: boolean }
   }
 }
 

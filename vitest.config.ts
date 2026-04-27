@@ -25,6 +25,7 @@ export default defineConfig({
     exclude: [
       'src/main/**/*.test.ts',
       'node_modules',
+      '.opencode/**',
       '**/.worktrees/**',
       '.claude/worktrees/**',
       '**/out/**',

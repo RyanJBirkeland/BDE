@@ -46,19 +46,21 @@ import { spawnWithTimeout } from '../sdk-adapter'
 import { initializeAgentTracking } from '../agent-initialization'
 import { emitAgentEvent } from '../../agent-event-mapper'
 import { cleanupWorktree } from '../worktree'
+import { PipelineAbortError } from '../pipeline-abort-error'
 import type { RunAgentDeps, AgentRunClaim } from '../run-agent'
 import type { ActiveAgent, AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
 const mockRepo: IAgentTaskRepository = {
   getTask: vi.fn(),
-  updateTask: vi.fn(),
+  updateTask: vi.fn().mockResolvedValue(null),
   getQueuedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn().mockReturnValue([]),
   getOrphanedTasks: vi.fn(),
   clearStaleClaimedBy: vi.fn(),
   getActiveTaskCount: vi.fn(),
-  claimTask: vi.fn(),
+  claimTask: vi.fn().mockResolvedValue(null),
   getGroup: vi.fn().mockReturnValue(null),
   getGroupTasks: vi.fn().mockReturnValue([]),
   getGroupsWithDependencies: vi.fn().mockReturnValue([])
@@ -85,11 +87,12 @@ function makeLogger() {
 function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
   return {
     activeAgents: new Map(),
-    defaultModel: 'claude-sonnet-4-5',
+    defaultModel: DEFAULT_CONFIG.defaultModel,
     logger: makeLogger(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
     unitOfWork: { runInTransaction: (fn) => fn() },
+    metrics: { increment: vi.fn(), recordWatchdogVerdict: vi.fn(), setLastDrainDuration: vi.fn(), recordAgentDuration: vi.fn(), snapshot: vi.fn().mockReturnValue({}), reset: vi.fn() },
     ...overrides
   }
 }
@@ -161,12 +164,12 @@ describe('spawnAndWireAgent', () => {
     expect(onSpawnSuccess).toHaveBeenCalled()
   })
 
-  it('throws and marks error when spawn fails', async () => {
+  it('throws PipelineAbortError and marks error when spawn fails', async () => {
     vi.mocked(spawnWithTimeout).mockRejectedValue(new Error('Spawn failed'))
     const deps = makeDeps()
     await expect(
       spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)
-    ).rejects.toThrow('Spawn failed')
+    ).rejects.toThrow(PipelineAbortError)
     expect(mockRepo.updateTask).toHaveBeenCalledWith(
       'task-1',
       expect.objectContaining({ status: 'error' })
@@ -182,14 +185,14 @@ describe('spawnAndWireAgent', () => {
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 
-  it('calls onSpawnFailure when spawn fails', async () => {
+  it('calls onSpawnFailure with taskId and reason when spawn fails', async () => {
     vi.mocked(spawnWithTimeout).mockRejectedValue(new Error('Timeout'))
     const onSpawnFailure = vi.fn()
     const deps = makeDeps({ onSpawnFailure })
     await expect(
       spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)
     ).rejects.toThrow()
-    expect(onSpawnFailure).toHaveBeenCalled()
+    expect(onSpawnFailure).toHaveBeenCalledWith('task-1', expect.stringContaining('Timeout'))
   })
 })
 
@@ -200,7 +203,7 @@ describe('handleSpawnFailure', () => {
     const deps = makeDeps()
     const err = new Error('Binary not found')
     await expect(handleSpawnFailure(err, makeTask(), worktree, repoPath, deps)).rejects.toThrow(
-      'Binary not found'
+      PipelineAbortError
     )
     expect(emitAgentEvent).toHaveBeenCalledWith(
       'task-1',
@@ -235,15 +238,17 @@ describe('handleSpawnFailure', () => {
     })
     await expect(
       handleSpawnFailure(new Error('spawn err'), makeTask(), worktree, repoPath, deps)
-    ).rejects.toThrow('spawn err')
+    ).rejects.toThrow(PipelineAbortError)
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('onSpawnFailure hook threw'))
   })
 
-  it('re-throws the original error', async () => {
+  it('re-throws as PipelineAbortError wrapping the original error as cause', async () => {
     const deps = makeDeps()
     const originalErr = new Error('Original spawn error')
-    await expect(
-      handleSpawnFailure(originalErr, makeTask(), worktree, repoPath, deps)
-    ).rejects.toBe(originalErr)
+    const thrown = await handleSpawnFailure(originalErr, makeTask(), worktree, repoPath, deps).catch(
+      (e) => e
+    )
+    expect(thrown instanceof PipelineAbortError).toBe(true)
+    expect((thrown as PipelineAbortError).cause).toBe(originalErr)
   })
 })

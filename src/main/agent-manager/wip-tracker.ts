@@ -1,5 +1,6 @@
 /**
- * WIP tracker — thin facade over ConcurrencyState for readable slot queries.
+ * WIP tracker — thin facade over ConcurrencyState for readable slot queries,
+ * plus a `WipTracker` class for active-agent count management.
  *
  * All actual concurrency arithmetic lives in `concurrency.ts`; this module
  * exposes the question-shaped API ("how many slots are free?") used by the
@@ -12,6 +13,35 @@ import {
   availableSlots,
   type ConcurrencyState
 } from './concurrency'
+
+// ---------------------------------------------------------------------------
+// WipTracker class
+// ---------------------------------------------------------------------------
+
+/**
+ * Wraps the active-agent count with named slot operations.
+ *
+ * Extracted from `AgentManagerImpl` so WIP accounting has its own SRP
+ * boundary. The manager holds one instance and delegates slot queries here.
+ * The active count is read through a callback so the view is always live.
+ */
+export class WipTracker {
+  private readonly getActiveCount: () => number
+
+  constructor(getActiveCount: () => number) {
+    this.getActiveCount = getActiveCount
+  }
+
+  /** Current number of active agents. */
+  get count(): number {
+    return this.getActiveCount()
+  }
+
+  /** True when the active count meets or exceeds `max`. */
+  isFull(max: number): boolean {
+    return this.count >= max
+  }
+}
 
 export interface WipTrackerDeps {
   activeAgentCount: () => number

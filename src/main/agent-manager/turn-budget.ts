@@ -1,25 +1,27 @@
 /**
  * turn-budget.ts — Spec-aware turn budget and tool policy for pipeline agents.
  *
- * Pipeline specs vary widely in scope: a single CSS tweak completes in 10-15 turns,
- * while a multi-file refactor may legitimately need 50+ turns for reads, edits,
- * and verification. A one-size-fits-all `maxTurns` either starves big tasks or
- * wastes capacity (and invites runaway loops) on small ones.
+ * Pipeline tasks routinely need 50-75 turns: read the affected files, make the
+ * edit, write the test, run the test, fix what the test surfaces, commit. The
+ * Phase-B 2026-04-24 measurement showed that a 30-turn cap exhausted on every
+ * task tested — including a 2-line change with one regression test — because
+ * test-writing alone consumes 15-25 turns. A higher floor is the simpler fix.
  *
- * This module classifies a spec into a turn budget by scanning for simple markers:
- * an explicit opt-in header, cross-stack file types, and file-path density.
+ * Multi-file refactors and god-class breakups need more headroom: Phase-B's
+ * single Arm B run (T-47, with the header) hit max_turns at 76, and the audit
+ * showed many recent successes clustered at exactly 71-76 turns — meaning 75
+ * is the binding operating point, not a margin. The header now resolves to
+ * 100 turns to give those tasks real headroom.
  *
  * The pipeline tool policy lives here too so it stays co-located with the rest
  * of the spec-aware spawn tuning.
  */
 
-/** Pipeline turn budgets, in ascending order of spec complexity. */
-const DEFAULT_MAX_TURNS = 30
-const MIXED_STACK_MAX_TURNS = 50
-const MULTI_FILE_MAX_TURNS = 75
+const DEFAULT_MAX_TURNS = 75
+const MULTI_FILE_MAX_TURNS = 100
 
 /**
- * Explicit opt-in header that authors can add to a spec to request the highest
+ * Explicit opt-in header that authors can add to a spec to request a higher
  * turn budget. Case-sensitive on purpose — the spec format itself is informal,
  * and we don't want to accidentally match prose like "multi-file" inside a
  * sentence.
@@ -27,47 +29,18 @@ const MULTI_FILE_MAX_TURNS = 75
 const MULTI_FILE_HEADER = '## Multi-File: true'
 
 /**
- * Minimum number of `src/` path occurrences in a spec for the mixed-stack
- * branch to apply. Three is the smallest count where an agent is plausibly
- * editing "several" files rather than one file plus an incidental mention.
- */
-const MIXED_STACK_SRC_PATH_THRESHOLD = 3
-
-/**
  * Returns the pipeline agent `maxTurns` budget for a given spec.
  *
- * Rule tree:
- *   1. Spec contains the exact opt-in header → 75 turns.
- *   2. Spec mentions both `.tsx` and `.css` (case-insensitive) OR lists at
- *      least {@link MIXED_STACK_SRC_PATH_THRESHOLD} `src/` file paths → 50.
- *   3. Otherwise → 30.
- *
- * Inputs may be empty — callers without a spec should fall back to a
- * sensible default themselves rather than passing `''` here.
+ * 75 by default; 100 when the spec opts in via the explicit header. The
+ * header is the only signal — substring heuristics (file-path density,
+ * mixed-stack detection) were removed in the Phase-B 2026-04-24 cleanup
+ * because they downgraded specs below the new default.
  */
 export function computeMaxTurns(spec: string): number {
   if (spec.includes(MULTI_FILE_HEADER)) {
     return MULTI_FILE_MAX_TURNS
   }
-  if (isMixedStackSpec(spec) || hasHighFilePathDensity(spec)) {
-    return MIXED_STACK_MAX_TURNS
-  }
   return DEFAULT_MAX_TURNS
-}
-
-function isMixedStackSpec(spec: string): boolean {
-  const lower = spec.toLowerCase()
-  return lower.includes('.tsx') && lower.includes('.css')
-}
-
-function hasHighFilePathDensity(spec: string): boolean {
-  return countSrcPathOccurrences(spec) >= MIXED_STACK_SRC_PATH_THRESHOLD
-}
-
-function countSrcPathOccurrences(spec: string): number {
-  // Match ` src/` or `/src/` — both indicate a file path rather than prose.
-  const matches = spec.match(/[ /]src\//g)
-  return matches ? matches.length : 0
 }
 
 /**

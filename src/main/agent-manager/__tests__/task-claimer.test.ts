@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { DependencyIndex } from '../../services/dependency-service'
 
@@ -52,14 +53,14 @@ function makeRepo(
   opts: { status?: string; claimResult?: string | null } = {}
 ): IAgentTaskRepository {
   return {
-    updateTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
     getTask: vi.fn().mockReturnValue({ id: 'task-1', status: opts.status ?? 'queued' }),
     claimTask: vi
       .fn()
-      .mockReturnValue(opts.claimResult !== undefined ? opts.claimResult : 'task-1'),
+      .mockResolvedValue(opts.claimResult !== undefined ? opts.claimResult : 'task-1'),
     getQueuedTasks: vi.fn().mockReturnValue([]),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
-    releaseTask: vi.fn(),
+    releaseTask: vi.fn().mockResolvedValue(null),
     listActiveAgentRuns: vi.fn().mockReturnValue([])
   } as unknown as IAgentTaskRepository
 }
@@ -84,7 +85,7 @@ function makeClaimerDeps(overrides: Partial<TaskClaimerDeps> = {}): TaskClaimerD
       maxRuntimeMs: 3_600_000,
       idleTimeoutMs: 900_000,
       pollIntervalMs: 30_000,
-      defaultModel: 'claude-sonnet-4-5'
+      defaultModel: DEFAULT_CONFIG.defaultModel
     },
     repo: makeRepo(),
     depIndex: makeDepIndex(),

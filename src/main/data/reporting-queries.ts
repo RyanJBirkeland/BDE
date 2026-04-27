@@ -7,15 +7,11 @@
 import type Database from 'better-sqlite3'
 import { getDb } from '../db'
 import type { Logger } from '../logger'
+import { createLogger } from '../logger'
 import { withDataLayerError } from './data-utils'
 
-// Module-level logger — defaults to console, injectable for testing/structured logging
-let logger: Logger = {
-  info: (m) => console.log(m),
-  warn: (m) => console.warn(m),
-  error: (m) => console.error(m),
-  debug: (m) => console.debug(m)
-}
+// Module-level logger — defaults to file logger, injectable for testing/structured logging
+let logger: Logger = createLogger('reporting-queries')
 
 export function setReportingQueriesLogger(l: Logger): void {
   logger = l

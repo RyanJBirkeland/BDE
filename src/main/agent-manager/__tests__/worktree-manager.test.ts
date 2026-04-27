@@ -11,11 +11,11 @@ import { pruneStaleWorktrees } from '../worktree'
 function makeRepo(taskStatus?: string): IAgentTaskRepository {
   return {
     getTask: vi.fn().mockReturnValue(taskStatus ? { id: 'task-1', status: taskStatus } : null),
-    updateTask: vi.fn(),
-    claimTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
+    claimTask: vi.fn().mockResolvedValue(null),
     getQueuedTasks: vi.fn().mockReturnValue([]),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
-    releaseTask: vi.fn(),
+    releaseTask: vi.fn().mockResolvedValue(null),
     listActiveAgentRuns: vi.fn().mockReturnValue([])
   } as unknown as IAgentTaskRepository
 }

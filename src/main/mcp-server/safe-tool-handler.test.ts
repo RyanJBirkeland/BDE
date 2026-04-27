@@ -91,4 +91,32 @@ describe('wrapServerWithSafeToolHandlers', () => {
     ;(server.tool as unknown as (...args: unknown[]) => void)(...passthroughArgs)
     expect(originalTool).toHaveBeenCalledWith(...passthroughArgs)
   })
+
+  it('intercepts server.registerTool and wraps the callback argument', async () => {
+    const originalRegisterTool = vi.fn()
+    const server = {
+      tool: vi.fn(),
+      registerTool: originalRegisterTool
+    } as unknown as McpServer
+    const logger = { error: vi.fn() }
+    wrapServerWithSafeToolHandlers(server, logger)
+
+    const boom = new Error('boom from registerTool')
+    ;(
+      server.registerTool as unknown as (
+        name: string,
+        config: Record<string, unknown>,
+        cb: () => Promise<never>
+      ) => void
+    )('tasks.update', { description: 'Update', inputSchema: {} }, async () => {
+      throw boom
+    })
+
+    expect(originalRegisterTool).toHaveBeenCalledTimes(1)
+    const [nameArg, _config, wrappedCb] = originalRegisterTool.mock.calls[0]
+    expect(nameArg).toBe('tasks.update')
+    const cb = wrappedCb as () => Promise<never>
+    await expect(cb()).rejects.toBe(boom)
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('tasks.update'))
+  })
 })

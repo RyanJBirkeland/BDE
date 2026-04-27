@@ -30,7 +30,13 @@ import { buildAgentEnvWithAuth, getClaudeCliPath, refreshOAuthTokenFromKeychain 
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
 import { buildAgentPrompt } from './lib/prompt-composer'
-import { resolveAgentRuntime } from './agent-manager/backend-selector'
+import { resolveAgentRuntime, loadBackendSettings } from './agent-manager/backend-selector'
+import { spawnOpencode } from './agent-manager/spawn-opencode'
+import {
+  writeOpencodeWorktreeConfig,
+  buildOpencodeFirstTurnPrompt
+} from './agent-manager/opencode-worktree-config'
+import { startOpencodeSessionMcp } from './agent-manager/opencode-session-mcp'
 import { setupWorktree } from './agent-manager/worktree'
 import { TurnTracker } from './agent-manager/turn-tracker'
 import { createPlannerMcpServer } from './services/planner-mcp-server'
@@ -40,6 +46,7 @@ import {
   tryEmitPlaygroundEvent
 } from './agent-manager/playground-handler'
 import { createEpicGroupService } from './services/epic-group-service'
+import { PIPELINE_DISALLOWED_TOOLS } from './agent-manager/turn-budget'
 import type { IDashboardRepository } from './data/sprint-task-repository'
 import { getErrorMessage } from '../shared/errors'
 import { nowIso } from '../shared/time'
@@ -93,7 +100,8 @@ export async function spawnAdhocAgent(args: {
   // Route through agents.backendConfig — the Settings UI is the single source
   // of truth for which model runs each agent type. Assistant and adhoc each
   // get their own entry so they can diverge without code changes.
-  const { model } = resolveAgentRuntime(args.assistant ? 'assistant' : 'adhoc')
+  const agentType = args.assistant ? 'assistant' : 'adhoc'
+  const { model, backend } = resolveAgentRuntime(agentType)
 
   // Proactively refresh the OAuth token before spawning — the pipeline drain
   // loop handles this for pipeline agents, but adhoc agents bypass that path.
@@ -173,6 +181,7 @@ export async function spawnAdhocAgent(args: {
       mainRepoPaths: Object.values(getRepoPaths()),
       logger: log
     }),
+    disallowedTools: [...PIPELINE_DISALLOWED_TOOLS],
     // Hard cap on spend per interactive session. User-controlled agents can
     // rack up cost across many turns. This is a safety ceiling, not a target.
     maxBudgetUsd: 5.0
@@ -198,10 +207,127 @@ export async function spawnAdhocAgent(args: {
     ''
   )
 
-  // State shared across turns
-  let sessionId: string | null = null
+  // Shared mutable state — declared before both the opencode and SDK paths
+  // so both can reference `closed` without a temporal dependency.
   let closed = false
   const startedAt = Date.now()
+
+  // --- Opencode path ---
+  // When the configured backend is opencode, each conversational turn spawns
+  // `opencode run` rather than calling the Anthropic SDK. The existing
+  // mapRawMessage / emitAgentEvent pipeline handles the translated wire messages.
+  if (backend === 'opencode') {
+    const backendSettings = loadBackendSettings()
+    let opencodeSessionId: string | undefined
+
+    // Start a per-session MCP HTTP server backed by the same sprint-service +
+    // EpicGroupService as the in-process planner server used by the Claude path.
+    // opencode is an external process so it can only reach MCP tools over HTTP;
+    // this ephemeral server gives it the same mcp__bde__tasks/epics/meta tools
+    // without routing through the persistent external server (port 18792).
+    const sessionMcp = await startOpencodeSessionMcp(
+      createEpicGroupService(),
+      log
+    )
+    await writeOpencodeWorktreeConfig(worktreePath, sessionMcp.url, sessionMcp.token)
+
+    adhocSessions.set(meta.id, {
+      async send(message: string): Promise<void> {
+        if (closed) return
+
+        emitAgentEvent(meta.id, {
+          type: 'agent:user_message',
+          text: message,
+          timestamp: Date.now()
+        })
+
+        const handle = await spawnOpencode({
+          prompt: message,
+          cwd: worktreePath,
+          model,
+          ...(opencodeSessionId !== undefined && { sessionId: opencodeSessionId }),
+          executable: backendSettings.opencodeExecutable,
+          logger: log
+        })
+
+        for await (const rawMsg of handle.messages) {
+          if (!opencodeSessionId && handle.sessionId) {
+            opencodeSessionId = handle.sessionId
+          }
+          const events = mapRawMessage(rawMsg, meta.id)
+          for (const event of events) {
+            emitAgentEvent(meta.id, event)
+          }
+        }
+      },
+      close() {
+        if (closed) return
+        closed = true
+        const durationMs = Date.now() - startedAt
+        emitAgentEvent(meta.id, {
+          type: 'agent:completed',
+          exitCode: 0,
+          costUsd: 0,
+          tokensIn: 0,
+          tokensOut: 0,
+          durationMs,
+          timestamp: Date.now()
+        })
+        updateAgentMeta(meta.id, { status: 'done', finishedAt: nowIso(), exitCode: 0 }).catch(
+          (err) => log.warn(`[adhoc] ${meta.id} failed to update meta: ${getErrorMessage(err)}`)
+        )
+        adhocSessions.delete(meta.id)
+        sessionMcp.close().catch(
+          (err) => log.warn(`[adhoc] ${meta.id} failed to stop session MCP server: ${getErrorMessage(err)}`)
+        )
+        log.info(`[adhoc] ${meta.id} opencode session completed after ${Math.round(durationMs / 1000)}s`)
+        autoPromoteToReview().catch(
+          (err) => log.warn(`[adhoc] ${meta.id} auto-promote failed: ${getErrorMessage(err)}`)
+        )
+      }
+    })
+
+    emitAgentEvent(meta.id, { type: 'agent:started', model, timestamp: Date.now() })
+    log.info(`[adhoc] ${meta.id} starting opencode session in ${worktreePath}`)
+
+    // Kick off the first turn with a concise opencode-specific prompt. The full
+    // Claude-assembled prompt causes local models to echo context rather than
+    // respond. opencode reads CLAUDE.md from --dir automatically (conventions,
+    // architecture, key files), so only branch + commit rules need injection.
+    adhocSessions
+      .get(meta.id)!
+      .send(buildOpencodeFirstTurnPrompt(args.task, branch))
+      .catch((err) => {
+        log.error(`[adhoc] ${meta.id} opencode initial turn failed: ${err}`)
+        if (closed) return
+        closed = true
+        const durationMs = Date.now() - startedAt
+        emitAgentEvent(meta.id, {
+          type: 'agent:completed',
+          exitCode: 1,
+          costUsd: 0,
+          tokensIn: 0,
+          tokensOut: 0,
+          durationMs,
+          timestamp: Date.now()
+        })
+        updateAgentMeta(meta.id, { status: 'done', finishedAt: nowIso(), exitCode: 1 }).catch(
+          (updateErr) => log.warn(`[adhoc] ${meta.id} failed to update meta: ${getErrorMessage(updateErr)}`)
+        )
+        adhocSessions.delete(meta.id)
+      })
+
+    return {
+      id: meta.id,
+      pid: 0,
+      logPath: meta.logPath ?? '',
+      interactive: true
+    }
+  }
+  // --- end opencode path, fall through to SDK path ---
+
+  // State shared across SDK turns
+  let sessionId: string | null = null
   let costUsd = 0
   let tokensIn = 0
   let tokensOut = 0
@@ -294,7 +420,7 @@ export async function spawnAdhocAgent(args: {
 
     try {
       for await (const raw of queryHandle) {
-        const events = mapRawMessage(raw)
+        const events = mapRawMessage(raw, meta.id)
         for (const event of events) {
           emitAgentEvent(meta.id, event)
         }
@@ -418,7 +544,7 @@ export async function spawnAdhocAgent(args: {
         ?.trim() ?? 'Adhoc agent session'
     const title = firstLine.length > 120 ? firstLine.slice(0, 117) + '...' : firstLine
 
-    const task = args.repo.createReviewTaskFromAdhoc({
+    const task = await args.repo.createReviewTaskFromAdhoc({
       title,
       repo: meta.repo,
       spec: meta.task,

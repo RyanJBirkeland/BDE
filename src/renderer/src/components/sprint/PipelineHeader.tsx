@@ -97,7 +97,11 @@ export function PipelineHeader({
           </button>
         ))}
         {wipSlots !== null && (
-          <span className="sprint-pipeline__wip-badge" title="Agent slots active / maximum">
+          <span
+            className="sprint-pipeline__wip-badge"
+            title="Max concurrent agents. Change in Settings → Agents."
+            aria-label={`${wipSlots.active} of ${wipSlots.max} agent slots active. Max concurrent agents. Change in Settings → Agents.`}
+          >
             <span className="sprint-pipeline__wip-active">{wipSlots.active}</span>
             <span className="sprint-pipeline__wip-sep">/</span>
             <span className="sprint-pipeline__wip-max">{wipSlots.max}</span>

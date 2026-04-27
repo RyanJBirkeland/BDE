@@ -1,6 +1,7 @@
 /**
  * Spec Synthesizer IPC handlers — AI-powered spec generation and revision.
  */
+import { randomUUID } from 'node:crypto'
 import { safeHandle } from '../ipc-utils'
 import { synthesizeSpec, reviseSpec, cancelSynthesis } from '../services/spec-synthesizer'
 import { createLogger } from '../logger'
@@ -46,7 +47,7 @@ export function registerSynthesizerHandlers(): void {
       log.warn('[synthesizer] generate: invalid request payload rejected')
       throw new Error('Invalid synthesizer:generate request payload')
     }
-    const streamId = `synthesizer-gen-${Date.now()}`
+    const streamId = randomUUID()
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer
     synthesizeSpec(
@@ -98,7 +99,7 @@ export function registerSynthesizerHandlers(): void {
       log.warn('[synthesizer] revise: invalid request payload rejected')
       throw new Error('Invalid synthesizer:revise request payload')
     }
-    const streamId = `synthesizer-rev-${Date.now()}`
+    const streamId = randomUUID()
 
     // Fire-and-forget: stream runs in background, pushes chunks to renderer
     reviseSpec(

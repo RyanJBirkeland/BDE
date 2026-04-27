@@ -157,6 +157,52 @@ describe('ModelsSection — backend toggle + model picker', () => {
     const pipelineRow = screen.getByTestId('models-row-pipeline')
     expect(pipelineRow.querySelector('button[data-value="local"]')).not.toBeDisabled()
   })
+
+  it('renders an Opencode radio button on the Pipeline row', () => {
+    render(<ModelsSection />)
+    const pipelineRow = screen.getByTestId('models-row-pipeline')
+    const opencodeBtn = pipelineRow.querySelector(
+      'button[role="radio"][data-value="opencode"]'
+    ) as HTMLButtonElement
+    expect(opencodeBtn).toBeInTheDocument()
+    expect(opencodeBtn).not.toBeDisabled()
+  })
+
+  it('disables the Opencode radio on Synthesizer, Copilot, and Reviewer rows', () => {
+    render(<ModelsSection />)
+    for (const id of ['synthesizer', 'copilot', 'reviewer']) {
+      const row = screen.getByTestId(`models-row-${id}`)
+      const opencodeBtn = row.querySelector('button[data-value="opencode"]') as HTMLButtonElement
+      expect(opencodeBtn).toBeDisabled()
+    }
+  })
+
+  it('enables the Opencode radio on assistant and adhoc rows', () => {
+    render(<ModelsSection />)
+    for (const id of ['assistant', 'adhoc']) {
+      const row = screen.getByTestId(`models-row-${id}`)
+      const opencodeBtn = row.querySelector('button[data-value="opencode"]') as HTMLButtonElement
+      expect(opencodeBtn).not.toBeDisabled()
+    }
+  })
+
+  it('switches to an Opencode model input with the correct placeholder when Opencode is selected', async () => {
+    const user = userEvent.setup()
+    render(<ModelsSection />)
+    const pipelineRow = screen.getByTestId('models-row-pipeline')
+    const opencodeBtn = pipelineRow.querySelector(
+      'button[role="radio"][data-value="opencode"]'
+    ) as HTMLButtonElement
+    await user.click(opencodeBtn)
+
+    await waitFor(() => {
+      const input = pipelineRow.querySelector(
+        'input[placeholder="opencode/gpt-5-nano"]'
+      ) as HTMLInputElement
+      expect(input).toBeInTheDocument()
+      expect(input.value).toBe('')
+    })
+  })
 })
 
 describe('ModelsSection — save orchestration', () => {

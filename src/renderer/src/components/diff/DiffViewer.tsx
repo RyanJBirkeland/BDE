@@ -12,12 +12,7 @@ import { PlainDiffContent } from './PlainDiffContent'
 import { VirtualizedDiffContent } from './VirtualizedDiffContent'
 import { VirtualizedDiffBanner } from './VirtualizedDiffBanner'
 import type { FlatRow, HunkAddress } from './virtualized-diff-utils'
-import {
-  rowHeight,
-  ROW_HEIGHT,
-  FILE_HEADER_HEIGHT,
-  HUNK_HEADER_HEIGHT
-} from './virtualized-diff-utils'
+import { rowHeight, buildFlatRows } from './virtualized-diff-utils'
 
 export interface LineRange {
   file: string
@@ -54,8 +49,7 @@ function DiffViewer({
   const activeView = usePanelLayoutStore((s) => s.activeView)
 
   const totalLines = useMemo(() => countDiffLines(files), [files])
-  const hasComments = comments.length > 0
-  const useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments && !forceFullDiff
+  const useVirtualization = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !forceFullDiff
 
   // Build comments-by-position map
   const commentsByPosition = useMemo(() => {
@@ -99,47 +93,8 @@ function DiffViewer({
         hunkAddressToRow: new Map<string, number>()
       }
     }
-
-    const rows: FlatRow[] = []
-    const fiToRow = new Map<number, number>()
-    const haToRow = new Map<string, number>()
-    let height = 0
-
-    for (let fi = 0; fi < files.length; fi++) {
-      const file = files[fi]
-      if (!file) continue
-      fiToRow.set(fi, rows.length)
-      rows.push({ kind: 'file-header', file, fileIndex: fi })
-      height += FILE_HEADER_HEIGHT
-
-      for (let hi = 0; hi < file.hunks.length; hi++) {
-        const hunk = file.hunks[hi]
-        if (!hunk) continue
-        haToRow.set(`${fi}-${hi}`, rows.length)
-        rows.push({
-          kind: 'hunk-header',
-          header: hunk.header,
-          fileIndex: fi,
-          hunkIndex: hi
-        })
-        height += HUNK_HEADER_HEIGHT
-
-        for (let li = 0; li < hunk.lines.length; li++) {
-          const line = hunk.lines[li]
-          if (!line) continue
-          rows.push({ kind: 'line', line, lineIndex: li })
-          height += ROW_HEIGHT
-        }
-      }
-    }
-
-    return {
-      flatRows: rows,
-      totalHeight: height,
-      fileIndexToRow: fiToRow,
-      hunkAddressToRow: haToRow
-    }
-  }, [files, useVirtualization])
+    return buildFlatRows(files, commentsByPosition, pendingByPosition)
+  }, [files, useVirtualization, commentsByPosition, pendingByPosition])
 
   // Build flat hunk list for arrow key navigation
   const allHunks = useMemo(() => {
@@ -266,7 +221,7 @@ function DiffViewer({
     )
   }
 
-  const shouldShowBanner = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !hasComments && !forceFullDiff
+  const shouldShowBanner = totalLines > DIFF_VIRTUALIZE_THRESHOLD && !forceFullDiff
 
   return (
     <div className="diff-view-container">

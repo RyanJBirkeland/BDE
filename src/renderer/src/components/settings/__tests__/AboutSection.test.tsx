@@ -24,7 +24,7 @@ describe('AboutSection', () => {
     render(<AboutSection />)
     fireEvent.click(screen.getByText('GitHub'))
     expect(window.api.window.openExternal).toHaveBeenCalledWith(
-      'https://github.com/RyanJBirkeland/BDE'
+      'https://github.com/RyanJBirkeland/BDE/releases'
     )
   })
 

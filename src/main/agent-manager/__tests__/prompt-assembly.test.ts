@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { DEFAULT_CONFIG } from '../types'
+import { PipelineAbortError } from '../pipeline-abort-error'
 
 vi.mock('../../lib/prompt-composer', () => ({
   buildAgentPrompt: vi.fn((input) => `prompt:${input.taskContent}:${input.branch}`)
@@ -68,11 +70,12 @@ function makeLogger() {
 function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
   return {
     activeAgents: new Map(),
-    defaultModel: 'claude-sonnet-4-5',
+    defaultModel: DEFAULT_CONFIG.defaultModel,
     logger: makeLogger(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
     unitOfWork: { runInTransaction: (fn) => fn() },
+    metrics: { increment: vi.fn(), recordWatchdogVerdict: vi.fn(), setLastDrainDuration: vi.fn(), recordAgentDuration: vi.fn(), snapshot: vi.fn().mockReturnValue({}), reset: vi.fn() },
     ...overrides
   }
 }
@@ -111,9 +114,12 @@ describe('validateTaskForRun', () => {
     ).resolves.toBeUndefined()
   })
 
-  it('throws and marks error when task has no content', async () => {
+  it('throws PipelineAbortError and marks error when task has no content', async () => {
     const deps = makeDeps()
     const task = makeTask({ prompt: null, spec: null, title: '' })
+    await expect(validateTaskForRun(task, worktree, repoPath, deps)).rejects.toThrow(
+      PipelineAbortError
+    )
     await expect(validateTaskForRun(task, worktree, repoPath, deps)).rejects.toThrow(
       'Task has no content'
     )

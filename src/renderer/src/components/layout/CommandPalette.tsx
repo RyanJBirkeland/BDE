@@ -63,8 +63,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       { view: 'ide', label: 'Go to IDE', actionId: 'view.ide' },
       { view: 'sprint', label: 'Go to Task Pipeline', actionId: 'view.sprint' },
       { view: 'code-review', label: 'Go to Code Review', actionId: 'view.codeReview' },
+      { view: 'git', label: 'Go to Source Control', actionId: 'view.git' },
       { view: 'settings', label: 'Go to Settings', actionId: 'view.settings' },
-      { view: 'planner', label: 'Go to Task Planner', actionId: 'view.taskWorkbench' }
+      { view: 'planner', label: 'Go to Task Planner', actionId: 'view.planner' }
     ]
 
     const nav: Command[] = navCommands.map((v) => ({

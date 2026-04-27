@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { WebContents } from 'electron'
 import { safeHandle } from '../ipc-utils'
 import { createLogger } from '../logger'
@@ -61,7 +62,7 @@ export async function handleChatStream(
   if (!isValidTaskId(input.taskId)) {
     throw new Error('Invalid task ID format')
   }
-  const streamId = `review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  const streamId = randomUUID()
   log.info(`review:chatStream task=${input.taskId} stream=${streamId}`)
 
   const task = deps.taskRepo.getTask(input.taskId)

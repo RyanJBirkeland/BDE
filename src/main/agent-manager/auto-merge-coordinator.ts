@@ -10,10 +10,17 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import type { AutoReviewRule } from '../../shared/types/task-types'
 import { nowIso } from '../../shared/time'
 import { evaluateAutoMergePolicy } from './auto-merge-policy'
 import { executeSquashMerge } from '../lib/git-operations'
 import { getSettingJson } from '../settings'
+import { getRepoConfig } from '../paths'
+import type { TaskStateService } from '../services/task-state-service'
+
+function isAutoReviewRulesArray(u: unknown): u is AutoReviewRule[] {
+  return Array.isArray(u)
+}
 
 export interface AutoMergeContext {
   taskId: string
@@ -24,37 +31,12 @@ export interface AutoMergeContext {
   unitOfWork: IUnitOfWork
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
-}
-
-/**
- * Get repository config for a task from settings.
- * Returns null if task or repo config not found.
- */
-function getRepoConfig(
-  taskId: string,
-  repo: IAgentTaskRepository,
-  logger: Logger
-): { name: string; localPath: string } | null {
-  const task = repo.getTask(taskId)
-  if (!task) {
-    logger.error(`[completion] Task ${taskId} not found`)
-    return null
-  }
-
-  const repos = getSettingJson<Array<{ name: string; localPath: string }>>('repos')
-  const repoConfig = repos?.find((r) => r.name === task.repo)
-  if (!repoConfig) {
-    logger.error(`[completion] Repo "${task.repo}" not found in settings`)
-    return null
-  }
-
-  return repoConfig
+  taskStateService: TaskStateService
 }
 
 export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
-  const { taskId, title, branch, worktreePath, repo, unitOfWork, logger, onTaskTerminal } = opts
-  const rules =
-    getSettingJson<import('../../shared/types/task-types').AutoReviewRule[]>('autoReview.rules')
+  const { taskId, title, branch, worktreePath, repo, unitOfWork, logger, taskStateService } = opts
+  const rules = getSettingJson<AutoReviewRule[]>('autoReview.rules', isAutoReviewRulesArray)
 
   if (!rules || rules.length === 0) {
     return
@@ -71,8 +53,14 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
       `[completion] Task ${taskId} qualifies for auto-merge (rule: ${decision.ruleName}) — merging`
     )
 
-    const repoConfig = getRepoConfig(taskId, repo, logger)
+    const task = repo.getTask(taskId)
+    if (!task) {
+      logger.error(`[completion] Task ${taskId} not found`)
+      return
+    }
+    const repoConfig = getRepoConfig(task.repo)
     if (!repoConfig) {
+      logger.error(`[completion] Repo "${task.repo}" not found in settings`)
       return
     }
 
@@ -86,9 +74,8 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
     })
 
     if (mergeResult === 'merged') {
-      finalizeAutoMergeStatus(taskId, repo, unitOfWork, logger)
+      await finalizeAutoMergeStatus(taskId, repo, unitOfWork, logger, taskStateService)
       logger.info(`[completion] Task ${taskId} auto-merged successfully`)
-      await onTaskTerminal(taskId, 'done')
     } else if (mergeResult === 'dirty-main') {
       logger.warn(
         `[completion] Task ${taskId} auto-merge skipped: main repo has uncommitted changes — task remains in review`
@@ -120,28 +107,34 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
  * loud banner so the on-call operator knows exactly which task needs manual
  * status reconciliation.
  */
-function finalizeAutoMergeStatus(
+async function finalizeAutoMergeStatus(
   taskId: string,
   repo: IAgentTaskRepository,
-  unitOfWork: IUnitOfWork,
-  logger: Logger
-): void {
+  _unitOfWork: IUnitOfWork,
+  logger: Logger,
+  taskStateService: TaskStateService
+): Promise<void> {
   const reviewTask = repo.getTask(taskId)
-  const statusPatch: Record<string, unknown> = {
-    status: 'done',
+  const extraFields: Record<string, unknown> = {
     completed_at: nowIso(),
     worktree_path: null,
     ...(reviewTask?.duration_ms !== undefined ? { duration_ms: reviewTask.duration_ms } : {})
   }
 
   try {
-    unitOfWork.runInTransaction(() => {
-      repo.updateTask(taskId, statusPatch)
+    // transition() writes status + extraFields then dispatches the terminal
+    // handler (dependency resolution + metrics). The prior transaction wrapper
+    // was only needed to atomically pair the DB write with its audit trail,
+    // which updateTask already guarantees internally.
+    await taskStateService.transition(taskId, 'done', {
+      fields: extraFields,
+      caller: 'auto-merge'
     })
   } catch (err) {
     logger.error(
       `[auto-merge] COMMIT LANDED ON MAIN but status update failed — task ${taskId} may need manual status reconciliation: ${err}`
     )
+    logger.event('auto-merge.status-update-failed', { taskId, error: String(err) })
     throw err
   }
 }

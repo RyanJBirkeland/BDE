@@ -1,7 +1,9 @@
 /**
  * Task Workbench IPC handlers — AI-assisted task creation.
  */
+import { randomUUID } from 'node:crypto'
 import { safeHandle } from '../ipc-utils'
+import type { IpcChannelMap } from '../../shared/ipc-channels'
 import { getRepoPath } from '../paths'
 import { searchRepo } from '../services/repo-search-service'
 import type { AgentManager } from '../agent-manager'
@@ -88,6 +90,76 @@ function mapQualityResult(result: SpecQualityResult): {
   return { clarity, scope, filesExist }
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  )
+}
+
+type CheckSpecInput = {
+  title: string
+  repo: string
+  spec: string
+  specType?: string | undefined | null
+}
+
+function parseCheckSpecArgs(args: unknown[]): [CheckSpecInput] {
+  if (args.length !== 1) {
+    throw new Error(`expected [input]; got ${args.length} args`)
+  }
+  const [input] = args
+  if (!isPlainObject(input)) {
+    throw new Error(`input must be a plain object; got ${typeof input}`)
+  }
+  if (typeof input.title !== 'string') {
+    throw new Error('input.title must be a string')
+  }
+  if (typeof input.repo !== 'string') {
+    throw new Error('input.repo must be a string')
+  }
+  if (typeof input.spec !== 'string') {
+    throw new Error('input.spec must be a string')
+  }
+  return [input as unknown as CheckSpecInput]
+}
+
+export function parseResearchRepoArgs(args: unknown[]): [{ query: string; repo: string }] {
+  const [input] = args
+  if (!isPlainObject(input)) {
+    throw new Error('workbench:researchRepo input must be a plain object')
+  }
+  if (typeof input.query !== 'string' || input.query.trim() === '') {
+    throw new Error('workbench:researchRepo input.query must be a non-empty string')
+  }
+  if (typeof input.repo !== 'string' || input.repo.trim() === '') {
+    throw new Error('workbench:researchRepo input.repo must be a non-empty string')
+  }
+  return [input as { query: string; repo: string }]
+}
+
+export function parseChatStreamArgs(args: unknown[]): IpcChannelMap['workbench:chatStream']['args'] {
+  const [input] = args
+  if (!isPlainObject(input)) {
+    throw new Error('workbench:chatStream input must be a plain object')
+  }
+  if (!Array.isArray(input.messages)) {
+    throw new Error('workbench:chatStream input.messages must be an array')
+  }
+  if (!isPlainObject(input.formContext)) {
+    throw new Error('workbench:chatStream input.formContext must be an object')
+  }
+  if (
+    typeof (input.formContext as Record<string, unknown>).repo !== 'string' ||
+    ((input.formContext as Record<string, unknown>).repo as string).trim() === ''
+  ) {
+    throw new Error('workbench:chatStream input.formContext.repo must be a non-empty string')
+  }
+  return [input as IpcChannelMap['workbench:chatStream']['args'][0]]
+}
+
 /** Active streaming handles, keyed by streamId. */
 const activeStreams = new Map<string, { close: () => void }>()
 
@@ -103,17 +175,17 @@ export function registerWorkbenchHandlers(
 
   // --- Fully implemented: Repo research via grep ---
   safeHandle('workbench:researchRepo', async (_e, input: { query: string; repo: string }) => {
-    const { query, repo } = input
-    const repoPath = getRepoPath(repo)
-    if (!repoPath) {
-      return {
-        content: `Error: No path configured for repo "${repo}"`,
-        filesSearched: [],
-        totalMatches: 0
+      const { query, repo } = input
+      const repoPath = getRepoPath(repo)
+      if (!repoPath) {
+        return {
+          content: `Error: No path configured for repo "${repo}"`,
+          filesSearched: [],
+          totalMatches: 0
+        }
       }
-    }
-    return searchRepo(repoPath, query)
-  })
+      return searchRepo(repoPath, query)
+  }, parseResearchRepoArgs)
 
   // NOTE: The non-streaming `workbench:chat` IPC handler was removed.
   // It is fully superseded by `workbench:chatStream`, which is the only
@@ -128,7 +200,7 @@ export function registerWorkbenchHandlers(
     // Case-insensitive lookup — the renderer sends e.g. `repo: 'BDE'` but
     // the underlying map is keyed by lowercase name.
     const repoPath = getRepoPath(input.formContext.repo)
-    const streamId = `copilot-${Date.now()}`
+    const streamId = randomUUID()
 
     // Fail fast if the repo is not configured: code-awareness depends on a
     // valid `cwd`, and silently falling back to `process.cwd()` (the BDE app
@@ -203,7 +275,7 @@ export function registerWorkbenchHandlers(
       )
 
     return { streamId }
-  })
+  }, parseChatStreamArgs)
 
   // --- Cancel active stream ---
   safeHandle('workbench:cancelStream', async (_e, streamId) => {
@@ -224,16 +296,13 @@ export function registerWorkbenchHandlers(
   })
 
   // --- AI-powered spec checks ---
-  type CheckSpecInput = {
-    title: string
-    repo: string
-    spec: string
-    specType?: string | undefined | null
-  }
-  safeHandle('workbench:checkSpec', async (_e, input: CheckSpecInput) => {
-    const result = await specQualityService.validateFull(input.spec)
-    return mapQualityResult(result)
-  })
+  safeHandle('workbench:checkSpec',
+    async (_e, input: CheckSpecInput) => {
+      const result = await specQualityService.validateFull(input.spec)
+      return mapQualityResult(result)
+    },
+    parseCheckSpecArgs
+  )
 
   // --- Plan extraction ---
   safeHandle('workbench:extractPlan', async (_e, markdown: string) => {

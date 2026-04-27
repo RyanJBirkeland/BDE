@@ -349,10 +349,10 @@ describe('transport handler Origin allow-list (T-45)', () => {
 
     const transport = latestMockTransport()
     expect(transport.constructorOptions.allowedOrigins).toEqual([
-      'null',
       `http://127.0.0.1:${port}`,
       `http://localhost:${port}`
     ])
+    expect(transport.constructorOptions.allowedOrigins).not.toContain('null')
   })
 })
 

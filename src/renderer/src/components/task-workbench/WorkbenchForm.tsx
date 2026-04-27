@@ -54,9 +54,13 @@ function describeQueueBlocker(state: QueueBlockerSnapshot): string | null {
 
 interface WorkbenchFormProps {
   onSendCopilotMessage: (message: string) => void
+  onSubmitted?: (() => void) | undefined
 }
 
-export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): React.JSX.Element {
+export function WorkbenchForm({
+  onSendCopilotMessage,
+  onSubmitted
+}: WorkbenchFormProps): React.JSX.Element {
   const form = useTaskFormState()
   const {
     title,
@@ -135,6 +139,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
         // outcome === 'ok'
         resetForm()
         toast.success(mode === 'edit' && taskId ? 'Task updated' : 'Task created')
+        onSubmitted?.()
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Unknown error'
         toast.error(`Failed to ${action === 'queue' ? 'queue' : 'save'} task: ${message}`)
@@ -142,7 +147,7 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
         setSubmitting(false)
       }
     },
-    [save, resetForm, mode, taskId]
+    [save, resetForm, mode, taskId, onSubmitted]
   )
 
   const handleConfirmedQueue = useCallback(async () => {
@@ -151,10 +156,11 @@ export function WorkbenchForm({ onSendCopilotMessage }: WorkbenchFormProps): Rea
     try {
       await saveConfirmed('queued')
       resetForm()
+      onSubmitted?.()
     } finally {
       setSubmitting(false)
     }
-  }, [saveConfirmed, resetForm])
+  }, [saveConfirmed, resetForm, onSubmitted])
 
   const handleGenerate = useCallback(async () => {
     if (!title.trim()) {

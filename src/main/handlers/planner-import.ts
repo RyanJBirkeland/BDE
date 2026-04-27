@@ -112,7 +112,7 @@ export function parsePlanMarkdown(markdown: string): ParsedPlan {
  * Import a plan file into the database.
  * Creates a task group (epic) and associated tasks.
  */
-export function importPlanFile(markdown: string, options: ImportOptions): ImportResult {
+export async function importPlanFile(markdown: string, options: ImportOptions): Promise<ImportResult> {
   const { repo, db } = options
   const parsed = parsePlanMarkdown(markdown)
 
@@ -135,7 +135,7 @@ export function importPlanFile(markdown: string, options: ImportOptions): Import
   // Create tasks
   const tasks: SprintTask[] = []
   for (const parsedTask of parsed.tasks) {
-    const task = createTask({
+    const task = await createTask({
       title: parsedTask.title,
       repo,
       status: 'backlog',
@@ -197,7 +197,7 @@ export function registerPlannerImportHandlers(deps: PlannerImportDeps): void {
     const markdown = await readFile(filePath, 'utf-8')
 
     // Import
-    const importResult = importPlanFile(markdown, { repo })
+    const importResult = await importPlanFile(markdown, { repo })
 
     return {
       epicId: importResult.epic.id,

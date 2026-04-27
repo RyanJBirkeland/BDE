@@ -4,17 +4,25 @@
  * Public API (`spawnAgent`, `spawnWithTimeout`) is unchanged.
  * Protocol helpers re-exported for callers that import them from here.
  */
-import type { AgentHandle } from './types'
+import type { AgentHandle, SpawnStrategy } from './types'
 import type { Logger } from '../logger'
 import type { AgentType } from '../agent-system/personality/types'
 import { dirname, resolve as resolvePath } from 'node:path'
+import { realpathSync } from 'node:fs'
 import { DEFAULT_CONFIG, SPAWN_TIMEOUT_MS } from './types'
-import { buildAgentEnv, getOAuthToken } from '../env-utils'
+import { buildAgentEnv, getOAuthToken, getClaudeCliPath } from '../env-utils'
 import { resolveNodeExecutable } from './resolve-node'
 import { spawnViaSdk, type PipelineSpawnTuning } from './spawn-sdk'
 import { spawnViaCli } from './spawn-cli'
 import { loadBackendSettings, resolveAgentRuntime } from './backend-selector'
 import { spawnLocalAgent } from './local-adapter'
+import { spawnOpencode } from './spawn-opencode'
+import { startOpencodeSessionMcp, type OpencodeSessionMcpHandle } from './opencode-session-mcp'
+import {
+  writeOpencodeWorktreeConfig,
+  buildOpencodeFirstTurnPrompt
+} from './opencode-worktree-config'
+import { createEpicGroupService } from '../services/epic-group-service'
 
 /**
  * Pipeline agents must only spawn with a `cwd` inside a BDE-managed worktree
@@ -26,20 +34,62 @@ import { spawnLocalAgent } from './local-adapter'
  * The allowlist is derived from the caller's `AgentManagerConfig.worktreeBase`
  * (threaded through spawnAgent's options) so users who override the worktree
  * base in Settings are not rejected by a module-scope default snapshot.
+ *
+ * Defense-in-depth: both sides of the prefix compare are normalized via
+ * `realpathSync` so a symlink anywhere along either path cannot smuggle a
+ * physical location outside the base into a string that textually starts with
+ * the base. A `realpathSync` failure (e.g. ENOENT for a not-yet-existent cwd)
+ * fails closed — the spawn is refused.
  */
-function isInsideAllowedWorktreeBase(cwd: string, worktreeBase: string): boolean {
-  const resolved = resolvePath(cwd)
-  return resolved.startsWith(resolvePath(worktreeBase) + '/')
+function isInsideAllowedWorktreeBase(cwd: string, worktreeBase: string, logger?: Logger): boolean {
+  const physicalCwd = resolvePhysicalPath(cwd, logger)
+  if (physicalCwd === null) return false
+  const physicalBase = resolvePhysicalPath(worktreeBase, logger)
+  if (physicalBase === null) return false
+  return physicalCwd.startsWith(physicalBase + '/')
 }
 
-function assertCwdIsInsideWorktreeBase(cwd: string, worktreeBase: string): void {
-  if (!isInsideAllowedWorktreeBase(cwd, worktreeBase)) {
+/**
+ * Returns the canonical filesystem path for `path` (symlinks resolved), or
+ * `null` if the path cannot be resolved. Logs the failure context so a
+ * misconfigured worktree base is diagnosable.
+ */
+function resolvePhysicalPath(path: string, logger?: Logger): string | null {
+  const lexicalPath = resolvePath(path)
+  try {
+    return realpathSync(lexicalPath)
+  } catch (err) {
+    ;(logger ?? console).warn(
+      `[agent-manager] realpath failed for "${lexicalPath}": ${(err as Error).message}`
+    )
+    return null
+  }
+}
+
+function assertCwdIsInsideWorktreeBase(cwd: string, worktreeBase: string, logger?: Logger): void {
+  if (!isInsideAllowedWorktreeBase(cwd, worktreeBase, logger)) {
     throw new Error(
       `Refusing to spawn agent: cwd "${cwd}" is not inside the configured worktree base (${worktreeBase}). ` +
         `Pipeline agents must only run inside isolated worktrees.`
     )
   }
 }
+
+/**
+ * Resolves the spawn strategy by attempting to import the SDK.
+ * Returns `{ type: 'sdk' }` on success, `{ type: 'cli'; claudePath }` on failure.
+ */
+async function resolveSpawnStrategy(): Promise<SpawnStrategy> {
+  try {
+    await import('@anthropic-ai/claude-agent-sdk')
+    return { type: 'sdk' }
+  } catch {
+    return { type: 'cli', claudePath: getClaudeCliPath() }
+  }
+}
+
+// Re-export SpawnStrategy so callers can reference the type without importing types.ts directly
+export type { SpawnStrategy } from './types'
 
 // Re-export protocol helpers so existing imports don't break
 export type { SDKWireMessage } from './sdk-message-protocol'
@@ -78,6 +128,17 @@ export async function spawnAgent(opts: {
    * call sites that don't have access to live config (smoke tests, etc.).
    */
   worktreeBase?: string | undefined
+  sessionId?: string | undefined
+  /**
+   * Branch name for opencode agents. When provided, the prompt is replaced
+   * with a lightweight branch-prefixed version — opencode already reads
+   * CLAUDE.md from --dir, so the full assembled prompt is not needed.
+   */
+  branch?: string | undefined
+  /** Task ID forwarded to spawn log for forensic timeline reconstruction. */
+  taskId?: string | undefined
+  /** Drain-tick correlation ID for cross-event log joins. */
+  tickId?: string | undefined
 }): Promise<AgentHandle> {
   // Worktree-base cwd assertion applies only to pipeline agents — adhoc,
   // assistant, copilot, and synthesizer agents run in the user's repo or
@@ -85,7 +146,7 @@ export async function spawnAgent(opts: {
   // ones that can leak edits into the main repo if misrouted.
   if (opts.pipelineTuning) {
     const base = opts.worktreeBase ?? DEFAULT_CONFIG.worktreeBase
-    assertCwdIsInsideWorktreeBase(opts.cwd, base)
+    assertCwdIsInsideWorktreeBase(opts.cwd, base, opts.logger)
   }
 
   const agentType: AgentType = opts.agentType ?? 'pipeline'
@@ -110,14 +171,81 @@ export async function spawnAgent(opts: {
     }
   }
 
+  if (resolved.backend === 'opencode') {
+    return spawnOpencodeWithMcp(opts, resolved.model, settings.opencodeExecutable)
+  }
+
   const modelForClaude = resolved.backend === 'claude' ? resolved.model : opts.model
   const claudeHandle = await spawnClaudeAgent({ ...opts, model: modelForClaude })
   return annotateHandle(claudeHandle, 'claude', modelForClaude)
 }
 
+async function spawnOpencodeWithMcp(
+  opts: {
+    prompt: string
+    cwd: string
+    model: string
+    logger?: Logger | undefined
+    sessionId?: string | undefined
+    branch?: string | undefined
+  },
+  resolvedModel: string,
+  executable?: string
+): Promise<AgentHandle> {
+  const logger = opts.logger ?? nullLogger()
+  const sessionMcp = await startOpencodeSessionMcp(createEpicGroupService(), logger)
+  await writeOpencodeWorktreeConfig(opts.cwd, sessionMcp.url, sessionMcp.token)
+
+  const prompt =
+    opts.branch != null ? buildOpencodeFirstTurnPrompt(opts.prompt, opts.branch) : opts.prompt
+
+  let handle: AgentHandle
+  try {
+    handle = await spawnOpencode({
+      prompt,
+      cwd: opts.cwd,
+      model: resolvedModel,
+      ...(opts.sessionId && { sessionId: opts.sessionId }),
+      ...(executable && { executable }),
+      ...(opts.logger && { logger: opts.logger })
+    })
+  } catch (err) {
+    sessionMcp.close().catch((closeErr: unknown) => {
+      logger.warn(
+        `[agent-manager] Failed to close opencode session MCP server after spawn error: ${closeErr}`
+      )
+    })
+    throw err
+  }
+
+  return {
+    ...handle,
+    messages: withMcpCleanup(handle.messages, sessionMcp, opts.logger)
+  }
+}
+
+async function* withMcpCleanup(
+  messages: AsyncIterable<unknown>,
+  sessionMcp: OpencodeSessionMcpHandle,
+  logger?: Logger
+): AsyncGenerator<unknown> {
+  try {
+    yield* messages
+  } finally {
+    sessionMcp.close().catch((err: unknown) => {
+      logger?.warn(`[agent-manager] Failed to close opencode session MCP server: ${err}`)
+    })
+  }
+}
+
+function nullLogger(): Logger {
+  const noop = (): void => {}
+  return { info: noop, warn: noop, error: noop, debug: noop, event: noop }
+}
+
 function annotateHandle(
   handle: AgentHandle,
-  backend: 'claude' | 'local',
+  backend: 'claude' | 'local' | 'opencode',
   resolvedModel: string
 ): AgentHandle {
   return Object.assign(handle, { backend, resolvedModel })
@@ -130,19 +258,19 @@ async function spawnClaudeAgent(opts: {
   maxBudgetUsd?: number | undefined
   logger?: Logger | undefined
   pipelineTuning?: PipelineSpawnTuning | undefined
+  taskId?: string | undefined
+  agentType?: string | undefined
+  tickId?: string | undefined
 }): Promise<AgentHandle> {
   const env = { ...buildAgentEnv() }
   prependResolvedNodeDirToPath(env, opts.logger)
 
-  // Get OAuth token for SDK auth (not passed via env)
   const token = getOAuthToken()
+  const strategy = await resolveSpawnStrategy()
 
-  // Try SDK first, fall back to CLI
-  try {
+  if (strategy.type === 'sdk') {
     const sdk = await import('@anthropic-ai/claude-agent-sdk')
-    return spawnViaSdk(sdk, opts, env, token, opts.logger)
-  } catch {
-    // SDK not available — use CLI fallback
+    return spawnViaSdk(sdk, opts, env, token, strategy, opts.logger)
   }
 
   return spawnViaCli(
@@ -163,7 +291,9 @@ export async function spawnWithTimeout(
   logger: Logger,
   maxBudgetUsd?: number,
   pipelineTuning?: PipelineSpawnTuning,
-  worktreeBase?: string
+  worktreeBase?: string,
+  branch?: string,
+  tickId?: string
 ): Promise<AgentHandle> {
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -173,7 +303,7 @@ export async function spawnWithTimeout(
     )
   })
   return await Promise.race([
-    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase }),
+    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId }),
     timeoutPromise
   ]).finally(() => clearTimeout(timer!))
 }

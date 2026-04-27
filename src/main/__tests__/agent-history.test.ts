@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
 
 vi.mock('electron', () => ({
   app: {
@@ -11,7 +11,7 @@ vi.mock('electron', () => ({
   dialog: { showOpenDialog: vi.fn(), showSaveDialog: vi.fn(), showMessageBox: vi.fn() }
 }))
 import Database from 'better-sqlite3'
-import { mkdirSync, rmSync, existsSync, readFileSync } from 'fs'
+import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { vi } from 'vitest'
@@ -805,6 +805,132 @@ describe('agent-history (SQLite)', () => {
       expect(agentHistory.backfillUtcTimestamps()).toBe(1)
       expect(agentHistory.backfillUtcTimestamps()).toBe(0)
       expect(agentHistory.backfillUtcTimestamps()).toBe(0)
+    })
+  })
+
+  describe('migrateFromJson — isAgentMetaEntry guard', () => {
+    // migrateFromJson reads from AGENTS_INDEX which is TEST_DIR/.bde/agents.json
+    // (because the os mock redirects homedir() to TEST_DIR).
+    // The count guard skips migration if agent_runs already has rows, so each
+    // test uses a fresh in-memory DB (not the shared mocked one).
+    const bdeDir = join(TEST_DIR, '.bde')
+    const agentsIndexPath = join(bdeDir, 'agents.json')
+
+    afterEach(() => {
+      // Remove agents.json and its .bak sibling so tests don't interfere.
+      try {
+        rmSync(agentsIndexPath, { force: true })
+      } catch {
+        /* ignore */
+      }
+      try {
+        rmSync(agentsIndexPath + '.bak', { force: true })
+      } catch {
+        /* ignore */
+      }
+    })
+
+    it('exits early without inserting when agents.json is not an array', async () => {
+      writeFileSync(agentsIndexPath, JSON.stringify({ not: 'an array' }), 'utf-8')
+
+      const freshDb = new Database(':memory:')
+      freshDb.exec(`
+        CREATE TABLE IF NOT EXISTS agent_runs (
+          id TEXT PRIMARY KEY,
+          pid INTEGER,
+          bin TEXT NOT NULL DEFAULT 'claude',
+          task TEXT,
+          repo TEXT,
+          repo_path TEXT,
+          model TEXT,
+          status TEXT NOT NULL DEFAULT 'running',
+          log_path TEXT,
+          started_at TEXT NOT NULL,
+          finished_at TEXT,
+          exit_code INTEGER,
+          source TEXT DEFAULT 'external',
+          cost_usd REAL,
+          tokens_in INTEGER,
+          tokens_out INTEGER,
+          cache_read INTEGER,
+          cache_create INTEGER,
+          duration_ms INTEGER,
+          num_turns INTEGER,
+          sprint_task_id TEXT,
+          worktree_path TEXT,
+          branch TEXT
+        )
+      `)
+
+      await agentHistory.migrateFromJson(freshDb)
+
+      const row = freshDb.prepare('SELECT COUNT(*) as cnt FROM agent_runs').get() as {
+        cnt: number
+      }
+      expect(row.cnt).toBe(0)
+      freshDb.close()
+    })
+
+    it('skips invalid entries and imports only valid ones', async () => {
+      const validEntry = {
+        id: 'valid-1',
+        pid: null,
+        bin: 'claude',
+        task: 'do work',
+        repo: 'bde',
+        repoPath: '/tmp/bde',
+        model: 'sonnet',
+        status: 'done',
+        logPath: '/tmp/log',
+        startedAt: '2026-04-01T10:00:00.000Z',
+        finishedAt: '2026-04-01T10:30:00.000Z',
+        exitCode: 0,
+        source: 'bde'
+      }
+      const invalidEntry = { notAnAgent: true }
+      writeFileSync(agentsIndexPath, JSON.stringify([validEntry, invalidEntry]), 'utf-8')
+
+      const freshDb = new Database(':memory:')
+      freshDb.exec(`
+        CREATE TABLE IF NOT EXISTS agent_runs (
+          id TEXT PRIMARY KEY,
+          pid INTEGER,
+          bin TEXT NOT NULL DEFAULT 'claude',
+          task TEXT,
+          repo TEXT,
+          repo_path TEXT,
+          model TEXT,
+          status TEXT NOT NULL DEFAULT 'running',
+          log_path TEXT,
+          started_at TEXT NOT NULL,
+          finished_at TEXT,
+          exit_code INTEGER,
+          source TEXT DEFAULT 'external',
+          cost_usd REAL,
+          tokens_in INTEGER,
+          tokens_out INTEGER,
+          cache_read INTEGER,
+          cache_create INTEGER,
+          duration_ms INTEGER,
+          num_turns INTEGER,
+          sprint_task_id TEXT,
+          worktree_path TEXT,
+          branch TEXT
+        )
+      `)
+
+      await agentHistory.migrateFromJson(freshDb)
+
+      const row = freshDb.prepare('SELECT COUNT(*) as cnt FROM agent_runs').get() as {
+        cnt: number
+      }
+      expect(row.cnt).toBe(1)
+
+      const inserted = freshDb
+        .prepare('SELECT id FROM agent_runs')
+        .get() as { id: string }
+      expect(inserted.id).toBe('valid-1')
+      freshDb.close()
     })
   })
 })

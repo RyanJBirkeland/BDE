@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TaskTransitionError, cancelTask } from '../sprint-service'
 
+vi.mock('../../lib/async-utils', () => ({
+  sleep: vi.fn().mockResolvedValue(undefined)
+}))
+
 const fakeLogger = {
   info: vi.fn(),
   warn: vi.fn(),
@@ -8,14 +12,17 @@ const fakeLogger = {
   debug: vi.fn()
 }
 
+const cancelledRow = { id: 't1', status: 'cancelled', notes: null }
+
 describe('cancelTask', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('sets status to cancelled and awaits onStatusTerminal', async () => {
-    const row = { id: 't1', status: 'cancelled' }
-    const updateTask = vi.fn().mockReturnValue(row)
+  // ---- 6.1 onStatusTerminal succeeds → clean result ----------------------------
+
+  it('sets status to cancelled and returns { row, sideEffectFailed: false } on clean success', async () => {
+    const updateTask = vi.fn().mockReturnValue(cancelledRow)
     const onStatusTerminal = vi.fn().mockResolvedValue(undefined)
 
     const result = await cancelTask(
@@ -30,11 +37,11 @@ describe('cancelTask', () => {
       undefined
     )
     expect(onStatusTerminal).toHaveBeenCalledWith('t1', 'cancelled')
-    expect(result).toBe(row)
+    expect(result).toEqual({ row: cancelledRow, sideEffectFailed: false })
   })
 
   it('omits notes when no reason is provided', async () => {
-    const updateTask = vi.fn().mockReturnValue({ id: 't1', status: 'cancelled' })
+    const updateTask = vi.fn().mockReturnValue(cancelledRow)
     const onStatusTerminal = vi.fn().mockResolvedValue(undefined)
 
     await cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
@@ -43,7 +50,7 @@ describe('cancelTask', () => {
   })
 
   it('forwards the caller attribution through updateTask', async () => {
-    const updateTask = vi.fn().mockReturnValue({ id: 't1', status: 'cancelled' })
+    const updateTask = vi.fn().mockReturnValue(cancelledRow)
     const onStatusTerminal = vi.fn().mockResolvedValue(undefined)
 
     await cancelTask(
@@ -59,42 +66,89 @@ describe('cancelTask', () => {
     )
   })
 
-  it('returns null and skips onStatusTerminal when updateTask misses', async () => {
+  // ---- 6.4 task not found → { row: null } ------------------------------------
+
+  it('returns { row: null } and skips onStatusTerminal when updateTask misses', async () => {
     const updateTask = vi.fn().mockReturnValue(null)
     const onStatusTerminal = vi.fn()
 
     const result = await cancelTask(
       'missing',
       {},
-      {
-        onStatusTerminal,
-        logger: fakeLogger,
-        updateTask
-      }
+      { onStatusTerminal, logger: fakeLogger, updateTask }
     )
 
-    expect(result).toBeNull()
+    expect(result).toEqual({ row: null })
     expect(onStatusTerminal).not.toHaveBeenCalled()
   })
 
-  it('logs but does not throw when onStatusTerminal rejects', async () => {
-    const updateTask = vi.fn().mockReturnValue({ id: 't1', status: 'cancelled' })
-    const onStatusTerminal = vi.fn().mockRejectedValue(new Error('dep-index offline'))
+  // ---- 6.2 onStatusTerminal fails once, succeeds on retry --------------------
+
+  it('returns { row, sideEffectFailed: false } when onStatusTerminal succeeds on retry', async () => {
+    const updateTask = vi.fn().mockReturnValue(cancelledRow)
+    const onStatusTerminal = vi.fn()
+      .mockRejectedValueOnce(new Error('dep-index offline'))
+      .mockResolvedValueOnce(undefined)
 
     const result = await cancelTask(
       't1',
       {},
-      {
-        onStatusTerminal,
-        logger: fakeLogger,
-        updateTask
-      }
+      { onStatusTerminal, logger: fakeLogger, updateTask }
     )
 
-    expect(result).toEqual({ id: 't1', status: 'cancelled' })
-    expect(fakeLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('onStatusTerminal after cancel t1')
+    expect(onStatusTerminal).toHaveBeenCalledTimes(2)
+    expect(result).toEqual({ row: cancelledRow, sideEffectFailed: false })
+  })
+
+  // ---- 6.3 onStatusTerminal fails on both attempts → degraded result + annotation
+
+  it('returns { row, sideEffectFailed: true, sideEffectError } when onStatusTerminal fails both attempts', async () => {
+    const dispatchError = new Error('dep-index offline')
+    const updateTask = vi.fn().mockReturnValue(cancelledRow)
+    const onStatusTerminal = vi.fn().mockRejectedValue(dispatchError)
+
+    const result = await cancelTask(
+      't1',
+      {},
+      { onStatusTerminal, logger: fakeLogger, updateTask }
     )
+
+    expect(onStatusTerminal).toHaveBeenCalledTimes(2)
+    expect(result).toMatchObject({
+      row: cancelledRow,
+      sideEffectFailed: true,
+      sideEffectError: dispatchError
+    })
+  })
+
+  it('writes notes annotation containing "terminal-dispatch-failed" when onStatusTerminal fails persistently', async () => {
+    const updateTask = vi.fn().mockReturnValue(cancelledRow)
+    const onStatusTerminal = vi.fn().mockRejectedValue(new Error('boom'))
+
+    await cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
+
+    const annotationCall = updateTask.mock.calls.find(
+      ([_id, patch]) => typeof patch.notes === 'string' && patch.notes.includes('terminal-dispatch-failed')
+    )
+    expect(annotationCall).toBeDefined()
+  })
+
+  // ---- 6.5 Existing notes are preserved (annotation is appended) -------------
+
+  it('appends annotation to existing notes instead of replacing them', async () => {
+    const rowWithNotes = { ...cancelledRow, notes: 'existing context' }
+    const updateTask = vi.fn().mockReturnValue(rowWithNotes)
+    const onStatusTerminal = vi.fn().mockRejectedValue(new Error('boom'))
+
+    await cancelTask('t1', {}, { onStatusTerminal, logger: fakeLogger, updateTask })
+
+    const annotationCall = updateTask.mock.calls.find(
+      ([_id, patch]) => typeof patch.notes === 'string' && patch.notes.includes('terminal-dispatch-failed')
+    )
+    expect(annotationCall).toBeDefined()
+    const [, patch] = annotationCall!
+    expect(patch.notes).toContain('existing context')
+    expect(patch.notes).toContain('terminal-dispatch-failed')
   })
 
   it('translates data-layer invalid-transition throws into TaskTransitionError', async () => {

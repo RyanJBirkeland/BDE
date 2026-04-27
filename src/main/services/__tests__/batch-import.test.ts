@@ -3,10 +3,10 @@ import { batchImportTasks } from '../batch-import'
 import type { IDashboardRepository } from '../../data/sprint-task-repository'
 
 describe('batchImportTasks', () => {
-  it('creates tasks from JSON array and wires deps by index', () => {
+  it('creates tasks from JSON array and wires deps by index', async () => {
     const createdTasks: Array<{ id: string; title: string }> = []
     const repo = {
-      createTask: vi.fn((input) => {
+      createTask: vi.fn(async (input) => {
         const task = {
           id: `id-${createdTasks.length}`,
           title: input.title,
@@ -32,7 +32,7 @@ describe('batchImportTasks', () => {
         dependsOnIndices: [0]
       }
     ]
-    const result = batchImportTasks(tasks, repo)
+    const result = await batchImportTasks(tasks, repo)
     expect(result.created).toHaveLength(2)
     expect(result.errors).toHaveLength(0)
     expect(repo.createTask).toHaveBeenCalledTimes(2)
@@ -40,19 +40,19 @@ describe('batchImportTasks', () => {
     expect(result.created[1].depends_on).toEqual([{ id: 'id-0', type: 'hard' }])
   })
 
-  it('validates required fields', () => {
+  it('validates required fields', async () => {
     const repo = {
       createTask: vi.fn()
     } as unknown as IDashboardRepository
 
-    const result = batchImportTasks([{ title: '' } as never], repo)
+    const result = await batchImportTasks([{ title: '' } as never], repo)
     expect(result.errors.length).toBeGreaterThan(0)
     expect(repo.createTask).not.toHaveBeenCalled()
   })
 
-  it('rejects out-of-range dependency indices', () => {
+  it('rejects out-of-range dependency indices', async () => {
     const repo = {
-      createTask: vi.fn((input) => ({
+      createTask: vi.fn(async (input) => ({
         id: `id-${Math.random()}`,
         ...input
       }))
@@ -66,15 +66,15 @@ describe('batchImportTasks', () => {
         dependsOnIndices: [5] // Out of range
       }
     ]
-    const result = batchImportTasks(tasks, repo)
+    const result = await batchImportTasks(tasks, repo)
     expect(result.errors.length).toBeGreaterThan(0)
     expect(result.errors[0]).toContain('out of range')
   })
 
-  it('handles soft dependencies', () => {
+  it('handles soft dependencies', async () => {
     const createdTasks: Array<{ id: string; title: string }> = []
     const repo = {
-      createTask: vi.fn((input) => {
+      createTask: vi.fn(async (input) => {
         const task = {
           id: `id-${createdTasks.length}`,
           title: input.title,
@@ -99,14 +99,14 @@ describe('batchImportTasks', () => {
         depType: 'soft' as const
       }
     ]
-    const result = batchImportTasks(tasks, repo)
+    const result = await batchImportTasks(tasks, repo)
     expect(result.created).toHaveLength(2)
     expect(result.created[1].depends_on).toEqual([{ id: 'id-0', type: 'soft' }])
   })
 
-  it('returns null task on creation failure', () => {
+  it('returns null task on creation failure', async () => {
     const repo = {
-      createTask: vi.fn(() => null) // Simulate failure
+      createTask: vi.fn(async () => null) // Simulate failure
     } as unknown as IDashboardRepository
 
     const tasks = [
@@ -116,7 +116,7 @@ describe('batchImportTasks', () => {
         spec: '## Intro\n\n## Details\n\nDo A'
       }
     ]
-    const result = batchImportTasks(tasks, repo)
+    const result = await batchImportTasks(tasks, repo)
     expect(result.created).toHaveLength(0)
     expect(result.errors).toHaveLength(1)
     expect(result.errors[0]).toContain('Failed to create task')
@@ -124,13 +124,13 @@ describe('batchImportTasks', () => {
 
   describe('repo validation against configuredRepos', () => {
     const mockRepo = {
-      createTask: vi.fn().mockImplementation((input) => ({ id: 'generated-id', ...input }))
+      createTask: vi.fn().mockImplementation(async (input) => ({ id: 'generated-id', ...input }))
     } as unknown as IDashboardRepository
 
     beforeEach(() => vi.clearAllMocks())
 
-    it('creates tasks when repo is valid', () => {
-      const result = batchImportTasks([{ title: 'Task A', repo: 'bde' }], mockRepo, [
+    it('creates tasks when repo is valid', async () => {
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'bde' }], mockRepo, [
         'bde',
         'life-os'
       ])
@@ -138,8 +138,8 @@ describe('batchImportTasks', () => {
       expect(result.created).toHaveLength(1)
     })
 
-    it('rejects tasks with unconfigured repo when configuredRepos provided', () => {
-      const result = batchImportTasks([{ title: 'Task A', repo: 'unknown-repo' }], mockRepo, [
+    it('rejects tasks with unconfigured repo when configuredRepos provided', async () => {
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'unknown-repo' }], mockRepo, [
         'bde',
         'life-os'
       ])
@@ -149,18 +149,18 @@ describe('batchImportTasks', () => {
       expect(mockRepo.createTask).not.toHaveBeenCalled()
     })
 
-    it('repo comparison is case-insensitive', () => {
-      const result = batchImportTasks([{ title: 'Task A', repo: 'BDE' }], mockRepo, ['bde'])
+    it('repo comparison is case-insensitive', async () => {
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'BDE' }], mockRepo, ['bde'])
       expect(result.errors).toHaveLength(0)
     })
 
-    it('skips repo validation when configuredRepos is undefined (backward compat)', () => {
-      const result = batchImportTasks([{ title: 'Task A', repo: 'any-repo' }], mockRepo)
+    it('skips repo validation when configuredRepos is undefined (backward compat)', async () => {
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'any-repo' }], mockRepo)
       expect(result.errors).toHaveLength(0)
     })
 
-    it('rejects all tasks when configuredRepos is empty array', () => {
-      const result = batchImportTasks([{ title: 'Task A', repo: 'bde' }], mockRepo, [])
+    it('rejects all tasks when configuredRepos is empty array', async () => {
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'bde' }], mockRepo, [])
       expect(result.errors).toHaveLength(1)
       expect(result.errors[0]).toMatch(/not configured.*No repos are configured/i)
       expect(result.created).toHaveLength(0)

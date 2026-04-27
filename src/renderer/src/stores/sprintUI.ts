@@ -2,6 +2,11 @@ import { create } from 'zustand'
 
 export type PipelineDensity = 'card' | 'compact'
 
+export interface OrphanRecoveryBanner {
+  recovered: string[]
+  exhausted: string[]
+}
+
 interface SprintUIState {
   doneViewOpen: boolean
   conflictDrawerOpen: boolean
@@ -9,6 +14,7 @@ interface SprintUIState {
   quickCreateOpen: boolean
   pipelineDensity: PipelineDensity
   generatingIds: string[]
+  orphanRecoveryBanner: OrphanRecoveryBanner | null
 
   setDoneViewOpen: (open: boolean) => void
   setConflictDrawerOpen: (open: boolean) => void
@@ -19,6 +25,7 @@ interface SprintUIState {
   setGeneratingIds: (updater: (prev: string[]) => string[]) => void
   addGeneratingId: (id: string) => void
   removeGeneratingId: (id: string) => void
+  setOrphanRecoveryBanner: (banner: OrphanRecoveryBanner | null) => void
 }
 
 export const selectDoneViewOpen = (s: SprintUIState): boolean => s.doneViewOpen
@@ -27,6 +34,8 @@ export const selectHealthCheckDrawerOpen = (s: SprintUIState): boolean => s.heal
 export const selectQuickCreateOpen = (s: SprintUIState): boolean => s.quickCreateOpen
 export const selectPipelineDensity = (s: SprintUIState): PipelineDensity => s.pipelineDensity
 export const selectGeneratingIds = (s: SprintUIState): string[] => s.generatingIds
+export const selectOrphanRecoveryBanner = (s: SprintUIState): OrphanRecoveryBanner | null =>
+  s.orphanRecoveryBanner
 
 export const selectIsGenerating =
   (taskId: string) =>
@@ -40,6 +49,7 @@ export const useSprintUI = create<SprintUIState>((set) => ({
   quickCreateOpen: false,
   pipelineDensity: 'card',
   generatingIds: [],
+  orphanRecoveryBanner: null,
 
   setDoneViewOpen: (open): void => set({ doneViewOpen: open }),
   setConflictDrawerOpen: (open): void => set({ conflictDrawerOpen: open }),
@@ -57,5 +67,6 @@ export const useSprintUI = create<SprintUIState>((set) => ({
   },
   removeGeneratingId: (id): void => {
     set((s) => ({ generatingIds: s.generatingIds.filter((gid) => gid !== id) }))
-  }
+  },
+  setOrphanRecoveryBanner: (banner): void => set({ orphanRecoveryBanner: banner })
 }))

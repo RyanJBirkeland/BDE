@@ -9,7 +9,11 @@ import './TaskWorkbench.css'
 
 const COPILOT_POPOVER_SEEN_KEY = 'bde:workbench-copilot-popover-seen'
 
-export function TaskWorkbench(): React.JSX.Element {
+interface TaskWorkbenchProps {
+  onSubmitted?: (() => void) | undefined
+}
+
+export function TaskWorkbench({ onSubmitted }: TaskWorkbenchProps = {}): React.JSX.Element {
   const copilotVisible = useCopilotStore((s) => s.visible)
   const toggleCopilot = useCopilotStore((s) => s.toggleVisible)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -115,7 +119,7 @@ export function TaskWorkbench(): React.JSX.Element {
 
       <Group orientation="horizontal" style={{ flex: 1 }}>
         <Panel defaultSize={copilotVisible ? 65 : 100} minSize={40}>
-          <WorkbenchForm onSendCopilotMessage={handleSendFromForm} />
+          <WorkbenchForm onSendCopilotMessage={handleSendFromForm} onSubmitted={onSubmitted} />
         </Panel>
 
         {copilotVisible && (

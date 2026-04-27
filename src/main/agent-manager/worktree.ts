@@ -1,10 +1,13 @@
-import { mkdirSync, existsSync, readdirSync, rmSync, symlinkSync } from 'node:fs'
+import fs from 'node:fs'
+import { mkdirSync, existsSync, rmSync, symlinkSync } from 'node:fs'
 import path from 'node:path'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { assertRepoCleanOrAbort } from '../lib/main-repo-guards'
 import { BRANCH_SLUG_MAX_LENGTH, GIT_FETCH_TIMEOUT_MS, GIT_FF_MERGE_TIMEOUT_MS } from './types'
-import type { Logger } from '../logger'
+import { createLogger, type Logger } from '../logger'
+
+const defaultLogger = createLogger('worktree')
 import {
   listWorktrees,
   removeWorktreeForce,
@@ -22,13 +25,15 @@ import {
   releaseDisk,
   getPendingReservation,
   ensureFreeDiskSpace,
-  InsufficientDiskSpaceError
+  InsufficientDiskSpaceError,
+  DiskSpaceProbeError
 } from './disk-space'
 import { acquireLock, releaseLock } from './file-lock'
 
 // Re-export for backward compatibility
 export {
   InsufficientDiskSpaceError,
+  DiskSpaceProbeError,
   DISK_RESERVATION_BYTES,
   reserveDisk,
   releaseDisk,
@@ -70,6 +75,8 @@ export interface SetupWorktreeOpts {
   taskId: string
   title: string
   groupId?: string | undefined
+  /** Called when fetchMain fails so the task's notes field records the failure. Optional. */
+  appendToNotes?: (text: string) => void
 }
 
 export interface SetupWorktreeResult {
@@ -91,12 +98,12 @@ async function cleanupStaleWorktrees(
   worktreePath: string,
   branch: string,
   env: Record<string, string | undefined>,
-  log: Logger | Console
+  log: Logger
 ): Promise<void> {
   await removeWorktreesForBranch(repoPath, branch, env, log)
   await removeWorktreeAtPath(repoPath, worktreePath, branch, env, log)
-  await pruneOrphanedWorktreeRefs(repoPath, env, log)
-  await deleteBranchRobustly(repoPath, branch, env, log)
+  await pruneOrphanedWorktreeRefs(repoPath, worktreePath, env, log)
+  await deleteBranchRobustly(repoPath, worktreePath, branch, env, log)
 }
 
 /**
@@ -108,7 +115,7 @@ async function removeWorktreesForBranch(
   repoPath: string,
   branch: string,
   env: Record<string, string | undefined>,
-  log: Logger | Console
+  log: Logger
 ): Promise<void> {
   let stalePaths: string[]
   try {
@@ -147,7 +154,7 @@ async function removeWorktreeAtPath(
   worktreePath: string,
   branch: string,
   env: Record<string, string | undefined>,
-  log: Logger | Console
+  log: Logger
 ): Promise<void> {
   if (!existsSync(worktreePath)) return
   await removeWorktreeWithRmFallback(repoPath, worktreePath, branch, env, log)
@@ -158,7 +165,7 @@ async function removeWorktreeWithRmFallback(
   targetPath: string,
   branch: string,
   env: Record<string, string | undefined>,
-  log: Logger | Console
+  log: Logger
 ): Promise<void> {
   try {
     await removeWorktreeForce(repoPath, targetPath, env)
@@ -176,13 +183,16 @@ async function removeWorktreeWithRmFallback(
 
 async function pruneOrphanedWorktreeRefs(
   repoPath: string,
+  worktreePath: string,
   env: Record<string, string | undefined>,
-  log: Logger | Console
+  log: Logger
 ): Promise<void> {
   try {
     await pruneWorktrees(repoPath, env)
   } catch (pruneErr) {
-    log.warn(`[worktree] pruneWorktrees failed for ${repoPath}: ${asMessage(pruneErr)}`)
+    log.warn(
+      `[worktree] pruneWorktrees failed for ${repoPath} (worktreePath=${worktreePath}): ${asMessage(pruneErr)}`
+    )
   }
 }
 
@@ -194,9 +204,10 @@ async function pruneOrphanedWorktreeRefs(
  */
 async function deleteBranchRobustly(
   repoPath: string,
+  worktreePath: string,
   branch: string,
   env: Record<string, string | undefined>,
-  log: Logger | Console
+  log: Logger
 ): Promise<void> {
   try {
     await deleteBranch(repoPath, branch, env)
@@ -208,7 +219,7 @@ async function deleteBranchRobustly(
     await forceDeleteBranchRef(repoPath, branch, env)
   } catch (forceDeleteErr) {
     log.warn(
-      `[worktree] forceDeleteBranchRef also failed for branch ${branch} in ${repoPath}: ${asMessage(forceDeleteErr)}`
+      `[worktree] forceDeleteBranchRef also failed for branch ${branch} in ${repoPath} (worktreePath=${worktreePath}): ${asMessage(forceDeleteErr)}`
     )
   }
 }
@@ -220,12 +231,12 @@ function asMessage(err: unknown): string {
 export async function setupWorktree(
   opts: SetupWorktreeOpts & { logger?: Logger | undefined }
 ): Promise<SetupWorktreeResult> {
-  const { repoPath, worktreeBase, taskId, title, groupId, logger } = opts
+  const { repoPath, worktreeBase, taskId, title, groupId, logger, appendToNotes } = opts
   const branch = branchNameForTask(title, taskId, groupId)
   const repoDir = path.join(worktreeBase, repoSlug(repoPath))
   const worktreePath = path.join(repoDir, taskId)
   const env = buildAgentEnv()
-  const log = logger ?? console
+  const log = logger ?? defaultLogger
 
   mkdirSync(repoDir, { recursive: true })
 
@@ -253,15 +264,17 @@ export async function setupWorktree(
       await fetchMain(repoPath, env, log, GIT_FETCH_TIMEOUT_MS)
       log.info(`[worktree] Fetched origin/main for task ${taskId}`)
     } catch (err) {
-      // Non-fatal — proceed with whatever HEAD we have
-      log.warn(`[worktree] Failed to fetch origin/main (proceeding anyway): ${err}`)
+      // Non-fatal — proceed with whatever local HEAD we have
+      const stderr = err instanceof Error ? err.message : String(err)
+      log.warn(`[worktree] Failed to fetch origin/main (proceeding anyway): ${stderr}`)
+      appendToNotes?.(`[worktree] fetchMain failed: ${stderr}`)
     }
 
     // Step 2: Acquire the per-repo lock for the conflict-sensitive operations.
     // The lock guards `git worktree add`, branch creation, and the merge --ff-only
     // (which mutates the main checkout's HEAD) — these races corrupted state in
     // testing when multiple agents started simultaneously on the same repo.
-    acquireLock(worktreeBase, repoPath, logger)
+    await acquireLock(worktreeBase, repoPath, log)
 
     try {
       // Clean any stale state for this task/branch (other worktrees with the
@@ -278,7 +291,19 @@ export async function setupWorktree(
       // after, and on any post-condition breach abort + refuse to proceed.
       await assertRepoCleanOrAbort(repoPath, env, log, 'pre-ffMergeMain')
       try {
-        await ffMergeMain(repoPath, env, log, GIT_FF_MERGE_TIMEOUT_MS)
+        const { stdout: branchOut } = await execFileAsync(
+          'git',
+          ['rev-parse', '--abbrev-ref', 'HEAD'],
+          { cwd: repoPath, env }
+        )
+        const currentBranch = branchOut.trim()
+        if (currentBranch !== 'main') {
+          log.warn(
+            `[worktree] Main repo is on branch "${currentBranch}", not "main" — skipping ff-merge to avoid corrupting unrelated branch`
+          )
+        } else {
+          await ffMergeMain(repoPath, env, log, GIT_FF_MERGE_TIMEOUT_MS)
+        }
       } catch (err) {
         log.warn(`[worktree] Failed to ff-merge origin/main (proceeding anyway): ${err}`)
       }
@@ -304,17 +329,18 @@ export async function setupWorktree(
         }
       }
     } catch (err) {
-      // Clean up on failure
+      // Clean up the worktree directory on setup failure (best effort).
+      // The lock is released in the finally block below.
       try {
         rmSync(worktreePath, { recursive: true, force: true })
       } catch {
         /* best effort */
       }
-      releaseLock(worktreeBase, repoPath)
       throw err
+    } finally {
+      releaseLock(worktreeBase, repoPath, log)
     }
 
-    releaseLock(worktreeBase, repoPath)
     return { worktreePath, branch }
   } finally {
     // Always release the disk reservation whether setup succeeded or failed.
@@ -332,36 +358,34 @@ export interface CleanupWorktreeOpts {
 export async function cleanupWorktree(opts: CleanupWorktreeOpts): Promise<void> {
   const { repoPath, worktreePath, branch, logger } = opts
   const env = buildAgentEnv()
-  const log = logger ?? console
+  const log = logger ?? defaultLogger
 
   try {
     await removeWorktreeForce(repoPath, worktreePath, env)
   } catch (err) {
-    log.warn(`[worktree] Failed to remove worktree ${worktreePath}: ${err}`)
+    log.warn(`[worktree] Failed to remove worktree (worktreePath=${worktreePath}): ${err}`)
   }
 
   try {
     await pruneWorktrees(repoPath, env)
   } catch (err) {
-    log.warn(`[worktree] Failed to prune worktrees: ${err}`)
+    log.warn(`[worktree] Failed to prune worktrees (worktreePath=${worktreePath}): ${err}`)
   }
 
   try {
     await deleteBranch(repoPath, branch, env)
   } catch (err) {
-    log.warn(`[worktree] Failed to delete branch ${branch}: ${err}`)
+    log.warn(`[worktree] Failed to delete branch ${branch} (worktreePath=${worktreePath}): ${err}`)
   }
 }
 
 /**
- * UUID v4 / v5 format that BDE uses for sprint task IDs (and therefore
- * for the leaf directory name of every BDE-created worktree). The pruner
- * uses this to filter out anything that doesn't look like a task ID, so
- * it never deletes human-created worktrees, source directories, etc.
- *
- * Pattern: 8-4-4-4-12 hex with dashes, case-insensitive.
+ * Matches the BDE task ID format: a 32-character lowercase hex string
+ * produced by SQLite's `lower(hex(randomblob(16)))` — no dashes. The
+ * pruner uses this to filter out anything that doesn't look like a task
+ * ID, so it never deletes human-created worktrees, source directories, etc.
  */
-const TASK_ID_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TASK_ID_HEX_PATTERN = /^[0-9a-f]{32}$/i
 
 /**
  * Returns true if the given path looks like a real git worktree:
@@ -381,9 +405,10 @@ export async function pruneStaleWorktrees(
   isReview?: (taskId: string) => boolean
 ): Promise<number> {
   if (!existsSync(worktreeBase)) return 0
-  const log = logger ?? console
+  const log = logger ?? defaultLogger
   let pruned = 0
-  for (const candidate of enumeratePruneCandidates(worktreeBase, log)) {
+  const candidates = await enumeratePruneCandidates(worktreeBase, log)
+  for (const candidate of candidates) {
     if (!isPrunableCandidate(candidate, isActive, isReview, log)) continue
     if (await deleteWorktreeDir(candidate.worktreePath, log)) pruned++
   }
@@ -395,57 +420,55 @@ interface PruneCandidate {
   worktreePath: string
 }
 
-function* enumeratePruneCandidates(
+async function enumeratePruneCandidates(
   worktreeBase: string,
-  log: Logger | Console
-): Generator<PruneCandidate> {
-  const repoDirs = readdirSync(worktreeBase, { withFileTypes: true })
+  log: Logger
+): Promise<PruneCandidate[]> {
+  const entries = await fs.promises.readdir(worktreeBase, { withFileTypes: true })
+  const repoDirs = entries
     .filter((d) => d.isDirectory() && d.name !== '.locks')
     .map((d) => path.join(worktreeBase, d.name))
-  for (const repoDir of repoDirs) {
-    yield* enumerateRepoCandidates(repoDir, log)
-  }
+  const candidateLists = await Promise.all(
+    repoDirs.map((repoDir) => enumerateRepoCandidates(repoDir, log))
+  )
+  return candidateLists.flat()
 }
 
-function* enumerateRepoCandidates(
-  repoDir: string,
-  log: Logger | Console
-): Generator<PruneCandidate> {
-  let taskDirs: string[]
+async function enumerateRepoCandidates(repoDir: string, log: Logger): Promise<PruneCandidate[]> {
+  let entries: fs.Dirent[]
   try {
-    taskDirs = readdirSync(repoDir, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name)
+    entries = await fs.promises.readdir(repoDir, { withFileTypes: true })
   } catch (err) {
     log.warn(`[worktree] Failed to read repo directory during prune: ${err}`)
-    return
+    return []
   }
-  for (const taskId of taskDirs) {
-    yield { taskId, worktreePath: path.join(repoDir, taskId) }
-  }
+  return entries
+    .filter((d) => d.isDirectory())
+    .map((d) => ({ taskId: d.name, worktreePath: path.join(repoDir, d.name) }))
 }
 
 /**
  * Returns true only when it is safe to delete `candidate.worktreePath`.
  *
  * Safety gates, in order:
- *  1. Directory name must look like a BDE task id (UUID-shaped). Users may
- *     point `worktreeBase` at a directory they share with human worktrees,
- *     so we must not delete anything that doesn't look like our own.
+ *  1. Directory name must look like a BDE task id (BDE hex task ID-shaped —
+ *     32-char hex, no dashes). Users may point `worktreeBase` at a directory
+ *     they share with human worktrees, so we must not delete anything that
+ *     doesn't look like our own.
  *  2. The directory must contain a `.git` entry — defense-in-depth in case a
- *     UUID-named directory exists that we did not create.
+ *     hex-named directory exists that we did not create.
  *  3. The task must not be currently active or in review.
  */
 function isPrunableCandidate(
   candidate: PruneCandidate,
   isActive: (taskId: string) => boolean,
   isReview: ((taskId: string) => boolean) | undefined,
-  log: Logger | Console
+  log: Logger
 ): boolean {
-  if (!TASK_ID_UUID_PATTERN.test(candidate.taskId)) return false
+  if (!TASK_ID_HEX_PATTERN.test(candidate.taskId)) return false
   if (!looksLikeWorktree(candidate.worktreePath)) {
     log.warn(
-      `[worktree] Skipping prune of ${candidate.worktreePath}: UUID-named but not a git worktree (no .git entry)`
+      `[worktree] Skipping prune of ${candidate.worktreePath}: BDE task ID-named but not a git worktree (no .git entry)`
     )
     return false
   }
@@ -457,7 +480,7 @@ function isPrunableCandidate(
   return true
 }
 
-async function deleteWorktreeDir(worktreePath: string, log: Logger | Console): Promise<boolean> {
+async function deleteWorktreeDir(worktreePath: string, log: Logger): Promise<boolean> {
   try {
     // Use shell `rm -rf` instead of rmSync to avoid Electron's ASAR
     // interception, which treats .asar files as directories and fails with
@@ -466,7 +489,9 @@ async function deleteWorktreeDir(worktreePath: string, log: Logger | Console): P
     await execFileAsync('rm', ['-rf', worktreePath], { env })
     return true
   } catch (err) {
-    log.warn(`[worktree] Failed to remove stale worktree directory: ${err}`)
+    log.warn(
+      `[worktree] Failed to remove stale worktree directory (worktreePath=${worktreePath}): ${err}`
+    )
     return false
   }
 }

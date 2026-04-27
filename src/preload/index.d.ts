@@ -260,6 +260,9 @@ declare global {
         forceDoneTask: (
           ...args: IpcArgs<'sprint:forceDoneTask'>
         ) => Promise<IpcResult<'sprint:forceDoneTask'>>
+        forceReleaseClaim: (
+          ...args: IpcArgs<'sprint:forceReleaseClaim'>
+        ) => Promise<IpcResult<'sprint:forceReleaseClaim'>>
         onExternalChange: (cb: () => void) => () => void
         onMutation: (
           cb: (payload: { type: 'created' | 'updated' | 'deleted'; task: SprintTask }) => void
@@ -347,6 +350,7 @@ declare global {
           cb: (payload: { consecutiveFailures: number; openUntil: number }) => void
         ) => () => void
         onDrainPaused: (cb: (event: AgentManagerDrainPausedEvent) => void) => () => void
+        onOrphanRecovered: (cb: (payload: { recovered: string[]; exhausted: string[] }) => void) => () => void
       }
 
       // Cost analytics
@@ -507,6 +511,12 @@ declare global {
         }) => Promise<IpcResult<'review:shipBatch'>>
         rebase: (payload: { taskId: string }) => Promise<IpcResult<'review:rebase'>>
         checkFreshness: (payload: { taskId: string }) => Promise<IpcResult<'review:checkFreshness'>>
+        checkAutoReview: (payload: {
+          taskId: string
+        }) => Promise<IpcResult<'review:checkAutoReview'>>
+        markShippedOutsideBde: (payload: {
+          taskId: string
+        }) => Promise<IpcResult<'review:markShippedOutsideBde'>>
         // AI Review Partner
         autoReview: (taskId: string, force?: boolean) => Promise<ReviewResult>
         chatStream: (params: {

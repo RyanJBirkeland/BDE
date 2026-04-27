@@ -8,7 +8,7 @@ import type { TailLogArgs } from '../agent-log-manager'
 import { listAgents, readLog, importAgent, pruneOldAgents } from '../agent-history'
 import { getAgentRunContextTokens } from '../data/agent-queries'
 import { getDb } from '../db'
-import { getEventHistory } from '../data/event-queries'
+import { queryEvents } from '../data/event-queries'
 import type { AgentMeta } from '../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { createLogger, logError } from '../logger'
@@ -84,9 +84,29 @@ export interface PromoteToReviewResult {
   error?: string | undefined
 }
 
+function validateLocalEndpointUrl(endpoint: string): string | null {
+  try {
+    const url = new URL(endpoint.replace(/\/$/, ''))
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return 'Only http:// and https:// endpoints are supported'
+    }
+    const hostname = url.hostname
+    const LOOPBACK = ['localhost', '127.0.0.1', '::1']
+    if (!LOOPBACK.includes(hostname)) {
+      return 'Endpoint must be a localhost address (127.0.0.1 or ::1)'
+    }
+    return null
+  } catch {
+    return 'Invalid URL'
+  }
+}
+
 export async function testLocalEndpoint(
   endpoint: string
 ): Promise<{ ok: true; latencyMs: number; modelCount: number } | { ok: false; error: string }> {
+  const validationError = validateLocalEndpointUrl(endpoint)
+  if (validationError) return { ok: false, error: validationError }
+
   const started = Date.now()
   try {
     const trimmed = endpoint.replace(/\/$/, '')
@@ -120,6 +140,32 @@ export async function testLocalEndpoint(
     const message = err instanceof Error ? err.message : String(err)
     return { ok: false, error: message }
   }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  )
+}
+
+function parseAgentsImportArgs(args: unknown[]): [{ meta: Partial<AgentMeta>; content: string }] {
+  if (args.length !== 1) {
+    throw new Error(`expected [args]; got ${args.length} args`)
+  }
+  const [arg] = args
+  if (!isPlainObject(arg)) {
+    throw new Error(`args must be a plain object; got ${typeof arg}`)
+  }
+  if (!isPlainObject(arg.meta)) {
+    throw new Error('args.meta must be a plain object')
+  }
+  if (typeof arg.content !== 'string') {
+    throw new Error(`args.content must be a string; got ${typeof arg.content}`)
+  }
+  return [arg as unknown as { meta: Partial<AgentMeta>; content: string }]
 }
 
 export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardRepository): void {
@@ -180,7 +226,8 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
     }
     return { ok: false, error: 'Agent not found' }
   })
-  safeHandle('agent:history', async (_e, agentId: string) => {
+  type HistoryArgs = { agentId: string; limit?: number; before?: number }
+  safeHandle('agent:history', async (_e, args: HistoryArgs) => {
     // Event history from local SQLite — kept for viewing historical runs.
     // Rows are parsed and shape-guarded before crossing the IPC boundary so
     // corrupted / drifted payloads can't pose as typed AgentEvents downstream.
@@ -188,10 +235,10 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
     // after spawn doesn't race the 100 ms SQLite-batch timer and return an
     // empty slice.
     flushAgentEventBatcher()
-    const rows = getEventHistory(getDb(), agentId)
+    const { events: rows } = queryEvents(getDb(), { agentId: args.agentId, limit: args.limit ?? 500 })
     const events: AgentEvent[] = []
     for (const row of rows) {
-      const event = parseHistoryRow(row.payload, agentId)
+      const event = parseHistoryRow(row.payload, args.agentId)
       if (event) events.push(event)
     }
     return events
@@ -203,8 +250,10 @@ export function registerAgentHandlers(am?: AgentManager, repo?: IDashboardReposi
   safeHandle('agents:list', (_e, args: ListAgentsArgs) => listAgents(args.limit, args.status))
   type ReadLogArgs = { id: string; fromByte?: number | undefined }
   safeHandle('agents:readLog', (_e, args: ReadLogArgs) => readLog(args.id, args.fromByte))
-  safeHandle('agents:import', (_e, args: { meta: Partial<AgentMeta>; content: string }) =>
-    importAgent(args.meta, args.content)
+  safeHandle('agents:import',
+    (_e, args: { meta: Partial<AgentMeta>; content: string }) =>
+      importAgent(args.meta, args.content),
+    parseAgentsImportArgs
   )
 
   /**

@@ -57,16 +57,35 @@ function mockExecFileSequence(responses: Array<{ stdout?: string; error?: Error 
   })
 }
 
-function resetMocks() {
-  getCustomMock().mockReset()
-  updateTaskMock.mockReset()
-  updateTaskMock.mockReturnValue(null)
+const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
+
+const stubTask = {
+  id: 'task-1',
+  title: 'Add login page',
+  repo: 'bde',
+  prompt: null,
+  priority: 1,
+  status: 'queued' as const,
+  notes: null,
+  spec: null,
+  spec_type: 'feature',
+  retry_count: 0,
+  fast_fail_count: 0,
+  agent_run_id: null,
+  pr_number: null,
+  pr_status: null as null,
+  pr_url: null,
+  claimed_by: null,
+  started_at: null,
+  completed_at: null,
+  template_name: null,
+  depends_on: null,
+  updated_at: '2026-01-01T00:00:00.000Z',
+  created_at: '2026-01-01T00:00:00.000Z'
 }
 
-const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-
 const mockRepo: IAgentTaskRepository = {
-  getTask: vi.fn(),
+  getTask: vi.fn().mockReturnValue(stubTask),
   updateTask: (...args: [string, Record<string, unknown>]) => (updateTask as any)(...args),
   getQueuedTasks: vi.fn(),
   getTasksWithDependencies: vi.fn().mockReturnValue([]),
@@ -79,8 +98,45 @@ const mockRepo: IAgentTaskRepository = {
   getGroupsWithDependencies: vi.fn().mockReturnValue([])
 }
 
+function resetMocks() {
+  getCustomMock().mockReset()
+  updateTaskMock.mockReset()
+  updateTaskMock.mockReturnValue(null)
+  vi.mocked(mockRepo.getTask).mockReturnValue(stubTask)
+}
+
+const TERMINAL_STATUS_SET_COMPLETION = new Set(['done', 'cancelled', 'failed', 'error'])
+
+// Reset the transition mock in beforeEach blocks that use it
+function resetTaskStateServiceMock(
+  mockTaskStateService: { transition: ReturnType<typeof vi.fn> },
+  onTerminal?: ReturnType<typeof vi.fn>
+) {
+  mockTaskStateService.transition.mockReset()
+  mockTaskStateService.transition.mockImplementation(
+    async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+      updateTaskMock(taskId, { status, ...(ctx?.fields ?? {}) })
+      if (onTerminal && TERMINAL_STATUS_SET_COMPLETION.has(status)) {
+        await onTerminal(taskId, status)
+      }
+    }
+  )
+}
+
 describe('resolveSuccess', () => {
   const mockOnTaskTerminal = vi.fn()
+
+  // Provide a minimal TaskStateService mock that delegates to the mocked updateTask
+  // so existing test assertions (checking updateTaskMock) keep working.
+  const mockTaskStateService = {
+    transition: vi.fn(async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+      updateTaskMock(taskId, { status, ...(ctx?.fields ?? {}) })
+      // Simulate terminal dispatch so onTaskTerminal assertions pass
+      if (TERMINAL_STATUS_SET_COMPLETION.has(status)) {
+        await mockOnTaskTerminal(taskId, status)
+      }
+    })
+  }
   const opts = {
     taskId: 'task-1',
     worktreePath: '/tmp/worktrees/task-1',
@@ -89,12 +145,15 @@ describe('resolveSuccess', () => {
     onTaskTerminal: mockOnTaskTerminal,
     retryCount: 0,
     repo: mockRepo,
-    unitOfWork: { runInTransaction: (fn: () => void) => fn() }
+    unitOfWork: { runInTransaction: (fn: () => void) => fn() },
+    taskStateService: mockTaskStateService as unknown as import('../../../services/task-state-service').TaskStateService
   }
 
   beforeEach(() => {
     resetMocks()
     mockOnTaskTerminal.mockReset()
+    mockOnTaskTerminal.mockResolvedValue(undefined)
+    resetTaskStateServiceMock(mockTaskStateService, mockOnTaskTerminal)
     vi.mocked(existsSync).mockReturnValue(true)
   })
 
@@ -141,6 +200,7 @@ describe('resolveSuccess', () => {
         status: 'review',
         worktree_path: opts.worktreePath,
         claimed_by: null,
+        fast_fail_count: 0,
         rebase_base_sha: 'abc123',
         rebased_at: expect.any(String),
         promoted_to_review_at: expect.any(String)
@@ -177,6 +237,7 @@ describe('resolveSuccess', () => {
         status: 'review',
         worktree_path: opts.worktreePath,
         claimed_by: null,
+        fast_fail_count: 0,
         rebase_base_sha: 'abc123',
         rebased_at: expect.any(String),
         promoted_to_review_at: expect.any(String)
@@ -357,6 +418,7 @@ describe('resolveSuccess', () => {
         status: 'review',
         worktree_path: opts.worktreePath,
         claimed_by: null,
+        fast_fail_count: 0,
         rebase_base_sha: 'abc123',
         rebased_at: expect.any(String),
         promoted_to_review_at: expect.any(String)
@@ -392,6 +454,7 @@ describe('resolveSuccess', () => {
         status: 'review',
         worktree_path: opts.worktreePath,
         claimed_by: null,
+        fast_fail_count: 0,
         notes: 'Rebase onto main failed — manual conflict resolution needed.',
         rebase_base_sha: null,
         rebased_at: null,
@@ -509,6 +572,7 @@ describe('resolveSuccess', () => {
         status: 'review',
         worktree_path: opts.worktreePath,
         claimed_by: null,
+        fast_fail_count: 0,
         rebase_base_sha: 'abc123',
         rebased_at: expect.any(String),
         promoted_to_review_at: expect.any(String)
@@ -538,6 +602,14 @@ describe('resolveSuccess', () => {
 
 describe('resolveSuccess — catch handler coverage', () => {
   const mockOnTaskTerminal2 = vi.fn()
+  const mockTaskStateService2 = {
+    transition: vi.fn(async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+      updateTaskMock(taskId, { status, ...(ctx?.fields ?? {}) })
+      if (TERMINAL_STATUS_SET_COMPLETION.has(status)) {
+        await mockOnTaskTerminal2(taskId, status)
+      }
+    })
+  }
   const catchOpts = {
     taskId: 'task-catch',
     worktreePath: '/tmp/worktrees/task-catch',
@@ -546,16 +618,19 @@ describe('resolveSuccess — catch handler coverage', () => {
     onTaskTerminal: mockOnTaskTerminal2,
     repo: mockRepo,
     retryCount: 0,
-    unitOfWork: { runInTransaction: (fn: () => void) => fn() }
+    unitOfWork: { runInTransaction: (fn: () => void) => fn() },
+    taskStateService: mockTaskStateService2 as unknown as import('../../../services/task-state-service').TaskStateService
   }
 
   beforeEach(() => {
     resetMocks()
     mockOnTaskTerminal2.mockReset()
+    mockOnTaskTerminal2.mockResolvedValue(undefined)
+    resetTaskStateServiceMock(mockTaskStateService2, mockOnTaskTerminal2)
     vi.mocked(existsSync).mockReturnValue(true)
   })
 
-  it('logs error when updateTask fails during review transition', async () => {
+  it('falls back to failed when review transition throws (T-8 fix)', async () => {
     mockExecFileSequence([
       { stdout: 'agent/b\n' },
       { stdout: '' },
@@ -569,10 +644,10 @@ describe('resolveSuccess — catch handler coverage', () => {
     })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-catch to review status')
+      expect.stringContaining('Failed to transition task task-catch to review status')
     )
-    // onTaskTerminal should NOT be called — review is not terminal
-    expect(mockOnTaskTerminal2).not.toHaveBeenCalled()
+    // T-8 fix: fallback to 'failed' so the task does not stay stuck active
+    expect(mockOnTaskTerminal2).toHaveBeenCalledWith('task-catch', 'failed')
   })
 
   it('transitions to review with worktree_path preserved', async () => {
@@ -591,6 +666,7 @@ describe('resolveSuccess — catch handler coverage', () => {
         status: 'review',
         worktree_path: catchOpts.worktreePath,
         claimed_by: null,
+        fast_fail_count: 0,
         rebase_base_sha: 'abc123',
         rebased_at: expect.any(String),
         promoted_to_review_at: expect.any(String)
@@ -605,7 +681,7 @@ describe('resolveSuccess — catch handler coverage', () => {
     })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-catch after error')
+      expect.stringContaining('Failed to transition task task-catch to error')
     )
   })
 
@@ -616,7 +692,7 @@ describe('resolveSuccess — catch handler coverage', () => {
     })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-catch after error')
+      expect.stringContaining('Failed to transition task task-catch to error')
     )
   })
 
@@ -627,7 +703,7 @@ describe('resolveSuccess — catch handler coverage', () => {
     })
     await resolveSuccess(catchOpts, noopLogger)
     expect(noopLogger.error).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-catch after error')
+      expect.stringContaining('Failed to transition task task-catch to error')
     )
   })
 
@@ -668,7 +744,8 @@ describe('resolveFailure', () => {
         next_eligible_at: expect.any(String)
       })
     )
-    expect(result).toBe(false) // not terminal
+    expect(result).toMatchObject({ isTerminal: false })
+    expect(result.writeFailed).toBeFalsy()
   })
 
   it('marks task failed with needs_review when retry count is exhausted', async () => {
@@ -682,7 +759,8 @@ describe('resolveFailure', () => {
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
     expect(patch.status).toBe('failed')
     expect(typeof patch.completed_at).toBe('string')
-    expect(result).toBe(true) // terminal
+    expect(result).toMatchObject({ isTerminal: true })
+    expect(result.writeFailed).toBeFalsy()
   })
 
   it('re-queues when retryCount is one below MAX_RETRIES', async () => {
@@ -701,7 +779,8 @@ describe('resolveFailure', () => {
         next_eligible_at: expect.any(String)
       })
     )
-    expect(result).toBe(false) // not terminal
+    expect(result).toMatchObject({ isTerminal: false })
+    expect(result.writeFailed).toBeFalsy()
   })
 
   it('includes notes when provided', async () => {
@@ -721,7 +800,8 @@ describe('resolveFailure', () => {
         failure_reason: 'no_commits'
       })
     )
-    expect(result).toBe(false)
+    expect(result).toMatchObject({ isTerminal: false })
+    expect(result.writeFailed).toBeFalsy()
   })
 
   it('includes notes in terminal failure', async () => {
@@ -740,7 +820,8 @@ describe('resolveFailure', () => {
         failure_reason: 'no_commits'
       })
     )
-    expect(result).toBe(true)
+    expect(result).toMatchObject({ isTerminal: true })
+    expect(result.writeFailed).toBeFalsy()
   })
 
   it('classifies failure reason from notes when retrying', async () => {
@@ -760,7 +841,8 @@ describe('resolveFailure', () => {
         failure_reason: 'auth'
       })
     )
-    expect(result).toBe(false)
+    expect(result).toMatchObject({ isTerminal: false })
+    expect(result.writeFailed).toBeFalsy()
   })
 
   it('classifies failure reason from notes when terminal', async () => {
@@ -779,22 +861,18 @@ describe('resolveFailure', () => {
         failure_reason: 'test_failure'
       })
     )
-    expect(result).toBe(true)
+    expect(result).toMatchObject({ isTerminal: true })
+    expect(result.writeFailed).toBeFalsy()
   })
 
-  it('returns true when retries exhausted even if updateTask throws (AM-5)', async () => {
+  it('returns { writeFailed: true } when updateTask throws — caller must NOT invoke onTaskTerminal', async () => {
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB error')
     })
 
-    const result = await resolveFailure({
-      taskId: 'task-5',
-      retryCount: MAX_RETRIES,
-      repo: mockRepo
-    })
-
-    // AM-5 fix: should return true (terminal) even though DB update failed
-    expect(result).toBe(true)
+    const result = await resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES, repo: mockRepo })
+    expect(result).toMatchObject({ writeFailed: true })
+    expect(result).toHaveProperty('error')
   })
 })
 

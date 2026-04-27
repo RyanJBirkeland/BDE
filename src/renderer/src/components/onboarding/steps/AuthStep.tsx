@@ -1,6 +1,7 @@
 import { ArrowRight, ArrowLeft, Terminal, Check, X, Copy, ExternalLink } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Button } from '../../ui/Button'
+import { Spinner } from '../../ui/Spinner'
 import { copyToClipboard } from '../../../lib/copy-to-clipboard'
 
 interface StepProps {
@@ -18,9 +19,12 @@ interface AuthStatus {
 }
 
 const AUTH_CHECK_TIMEOUT_MS = 10_000
+const VISIBILITY_CHECK_THROTTLE_MS = 2_000
 const CLAUDE_INSTALL_DOCS_URL = 'https://docs.claude.com/en/docs/claude-code'
 const CLAUDE_INSTALL_COMMAND = 'curl -fsSL https://claude.ai/install.sh | bash'
 const CLAUDE_LOGIN_COMMAND = 'claude login'
+const CLAUDE_AUTH_STATUS_COMMAND = 'claude auth status'
+const TROUBLESHOOTING_DOCS_URL = 'https://docs.claude.com/en/docs/troubleshooting'
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -42,6 +46,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
   const [status, setStatus] = useState<AuthStatus | null>(null)
   const [checking, setChecking] = useState(true)
   const [timedOut, setTimedOut] = useState(false)
+  const lastVisibilityCheckRef = useRef<number>(0)
 
   const checkAuth = async (): Promise<void> => {
     setChecking(true)
@@ -61,6 +66,22 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void checkAuth()
+  }, [])
+
+  useEffect(() => {
+    const handleVisibilityChange = (): void => {
+      if (document.visibilityState !== 'visible') return
+
+      const now = Date.now()
+      const elapsed = now - lastVisibilityCheckRef.current
+      if (elapsed < VISIBILITY_CHECK_THROTTLE_MS) return
+
+      lastVisibilityCheckRef.current = now
+      void checkAuth()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
   const isReady = status?.cliFound && status?.tokenFound && !status?.tokenExpired
@@ -85,7 +106,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               role="status"
               aria-label="Checking Claude Code CLI"
             >
-              ⏳
+              <Spinner size="sm" />
             </div>
           ) : status?.cliFound ? (
             <Check
@@ -106,7 +127,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
         <div className="onboarding-step__check">
           {checking ? (
             <div className="onboarding-step__check-icon" role="status" aria-label="Checking token">
-              ⏳
+              <Spinner size="sm" />
             </div>
           ) : status?.tokenFound ? (
             <Check
@@ -131,7 +152,7 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               role="status"
               aria-label="Checking token validity"
             >
-              ⏳
+              <Spinner size="sm" />
             </div>
           ) : status?.tokenFound && !status?.tokenExpired ? (
             <Check
@@ -153,8 +174,81 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       {timedOut && (
         <div className="onboarding-step__help" role="alert">
           <p>
-            Authentication check timed out. The Claude CLI may be slow to respond or blocked by a
-            firewall. Resolve the issue, then click &quot;Check Again&quot; to continue.
+            <strong>Authentication check timed out.</strong> The Claude CLI may be slow to respond
+            or blocked by a firewall.
+          </p>
+          <p style={{ marginTop: 'var(--bde-space-2)' }}>Try these diagnostic steps:</p>
+          <ol style={{ marginTop: 'var(--bde-space-1)', paddingLeft: 'var(--bde-space-4)' }}>
+            <li style={{ marginBottom: 'var(--bde-space-2)' }}>
+              Run this command in Terminal to check CLI status:
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--bde-space-2)',
+                  marginTop: 'var(--bde-space-1)'
+                }}
+              >
+                <code
+                  style={{
+                    padding: '4px 10px',
+                    background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                    borderRadius: '4px',
+                    fontFamily: 'monospace',
+                    fontSize: 'var(--bde-size-sm)'
+                  }}
+                >
+                  {CLAUDE_AUTH_STATUS_COMMAND}
+                </code>
+                <Button
+                  variant="ghost"
+                  onClick={() => copyToClipboard(CLAUDE_AUTH_STATUS_COMMAND)}
+                  aria-label="Copy auth status command"
+                >
+                  <Copy size={14} />
+                </Button>
+              </div>
+            </li>
+            <li>
+              If the CLI itself hangs, quit BDE and relaunch it.
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--bde-space-2)',
+                  marginTop: 'var(--bde-space-1)'
+                }}
+              >
+                <code
+                  style={{
+                    padding: '4px 10px',
+                    background: 'var(--bde-surface, rgba(0,0,0,0.08))',
+                    borderRadius: '4px',
+                    fontFamily: 'monospace',
+                    fontSize: 'var(--bde-size-sm)'
+                  }}
+                >
+                  ⌘Q then relaunch
+                </code>
+                <Button
+                  variant="ghost"
+                  onClick={() => copyToClipboard('⌘Q then relaunch')}
+                  aria-label="Copy quit and relaunch instruction"
+                >
+                  <Copy size={14} />
+                </Button>
+              </div>
+            </li>
+            <li style={{ marginBottom: 'var(--bde-space-2)' }}>
+              On macOS, this can mean the system Keychain is locked. Try locking and unlocking your
+              screen, then click &quot;Check Again&quot;.
+            </li>
+          </ol>
+          <p style={{ marginTop: 'var(--bde-space-2)' }}>
+            <a href={TROUBLESHOOTING_DOCS_URL} target="_blank" rel="noreferrer">
+              View full troubleshooting guide{' '}
+              <ExternalLink size={12} style={{ verticalAlign: 'middle' }} />
+            </a>
           </p>
         </div>
       )}
@@ -213,6 +307,16 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
               <Copy size={14} />
             </Button>
           </div>
+          <p
+            style={{
+              marginTop: 'var(--bde-space-2)',
+              fontSize: 'var(--bde-size-sm)',
+              color: 'var(--bde-text-muted)'
+            }}
+          >
+            If you&apos;ve previously logged in and this is unexpected, your macOS Keychain may be
+            locked — lock and unlock your screen, then click &quot;Check Again&quot;.
+          </p>
         </div>
       )}
 
@@ -227,6 +331,11 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
           <Button variant="ghost" onClick={onBack}>
             <ArrowLeft size={16} />
             Back
+          </Button>
+        )}
+        {!checking && !isReady && (
+          <Button variant="ghost" onClick={onNext}>
+            Continue Anyway
           </Button>
         )}
         <Button variant="primary" onClick={onNext} disabled={checking || !isReady}>

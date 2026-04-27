@@ -12,8 +12,8 @@ export type ActionId =
   | 'view.ide'
   | 'view.sprint'
   | 'view.codeReview'
+  | 'view.git'
   | 'view.settings'
-  | 'view.taskWorkbench'
   | 'view.planner'
   | 'palette.toggle'
   | 'quickCreate.toggle'
@@ -37,9 +37,9 @@ export const DEFAULT_KEYBINDINGS: Record<ActionId, string> = {
   'view.ide': '⌘3',
   'view.sprint': '⌘4',
   'view.codeReview': '⌘5',
-  'view.settings': '⌘6',
-  'view.taskWorkbench': '⌘0',
-  'view.planner': '⌘7',
+  'view.git': '⌘6',
+  'view.settings': '⌘7',
+  'view.planner': '⌘8',
   'palette.toggle': '⌘P',
   'quickCreate.toggle': '⌘N',
   refresh: '⌘R',
@@ -57,8 +57,8 @@ export const ACTION_LABELS: Record<ActionId, string> = {
   'view.ide': 'Go to IDE',
   'view.sprint': 'Go to Task Pipeline',
   'view.codeReview': 'Go to Code Review',
+  'view.git': 'Go to Source Control',
   'view.settings': 'Go to Settings',
-  'view.taskWorkbench': 'Go to Task Workbench',
   'view.planner': 'Go to Task Planner',
   'palette.toggle': 'Toggle Command Palette',
   'quickCreate.toggle': 'Toggle Quick Create',

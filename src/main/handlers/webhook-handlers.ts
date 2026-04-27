@@ -14,6 +14,15 @@ import { deliverWebhookTestEvent } from '../services/webhook-delivery-service'
 
 const logger = createLogger('webhook-handlers')
 
+function safeWebhookLogTarget(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return `${parsed.origin}${parsed.pathname}`
+  } catch {
+    return '(invalid URL)'
+  }
+}
+
 /**
  * Validates a webhook URL is a public HTTP/HTTPS endpoint.
  * Rejects:
@@ -92,7 +101,7 @@ export function registerWebhookHandlers(): void {
   safeHandle('webhook:create', async (_e, payload: CreateWebhookInput) => {
     validateWebhookUrl(payload.url)
     const webhook = createWebhook(payload)
-    logger.info(`Created webhook ${webhook.id} for ${payload.url}`)
+    logger.info(`Created webhook ${webhook.id} for ${safeWebhookLogTarget(payload.url)}`)
     return webhook
   })
 

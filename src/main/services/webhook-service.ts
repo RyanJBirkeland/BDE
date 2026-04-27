@@ -68,6 +68,15 @@ function shouldFireForEvent(webhookEvents: string[], event: string): boolean {
   return webhookEvents.includes(event) || webhookEvents.includes('*')
 }
 
+function safeWebhookLogTarget(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return `${parsed.origin}${parsed.pathname}`
+  } catch {
+    return '(invalid URL)'
+  }
+}
+
 export function createWebhookService(deps: WebhookServiceDeps): WebhookService {
   const fetchFn = deps.fetchFn ?? fetch
 
@@ -105,14 +114,14 @@ export function createWebhookService(deps: WebhookServiceDeps): WebhookService {
 
       if (!response.ok) {
         deps.logger.warn(
-          `[webhook] Failed to deliver ${event} to ${url}: ${response.status} ${response.statusText}`
+          `[webhook] Failed to deliver ${event} to ${safeWebhookLogTarget(url)}: ${response.status} ${response.statusText}`
         )
       } else {
-        deps.logger.info(`[webhook] Delivered ${event} to ${url}`)
+        deps.logger.info(`[webhook] Delivered ${event} to ${safeWebhookLogTarget(url)}`)
       }
     } catch (err) {
       const msg = getErrorMessage(err)
-      deps.logger.warn(`[webhook] Error delivering ${event} to ${url}: ${msg}`)
+      deps.logger.warn(`[webhook] Error delivering ${event} to ${safeWebhookLogTarget(url)}: ${msg}`)
     }
   }
 

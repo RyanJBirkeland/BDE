@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useCallback } from 'react'
 import { Search, X } from 'lucide-react'
 import { useSprintFilters } from '../../stores/sprintFilters'
 import { useFilterPresets } from '../../stores/filterPresets'
 import { PromptModal } from '../ui/PromptModal'
 import type { SprintTask } from '../../../../shared/types'
+
+const SEARCH_DEBOUNCE_MS = 150
 
 interface PipelineFilterBarProps {
   tasks: SprintTask[]
@@ -23,6 +25,23 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
   const loadPreset = useFilterPresets((s) => s.loadPreset)
   const deletePreset = useFilterPresets((s) => s.deletePreset)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
+
+  // Local input value so the text field responds instantly while the store
+  // update (which triggers re-partitioning) is debounced by 150ms.
+  const [localSearch, setLocalSearch] = useState(searchQuery)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleSearchChange = useCallback(
+    (value: string): void => {
+      setLocalSearch(value)
+      if (debounceTimerRef.current !== null) clearTimeout(debounceTimerRef.current)
+      debounceTimerRef.current = setTimeout(() => {
+        setSearchQuery(value)
+        debounceTimerRef.current = null
+      }, SEARCH_DEBOUNCE_MS)
+    },
+    [setSearchQuery]
+  )
 
   const repos = useMemo(() => {
     const set = new Set(tasks.map((t) => t.repo))
@@ -45,8 +64,8 @@ export function PipelineFilterBar({ tasks }: PipelineFilterBarProps): React.JSX.
         <Search size={12} />
         <input
           type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={localSearch}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search tasks\u2026"
           className="pipeline-filter-bar__input"
           aria-label="Search tasks"

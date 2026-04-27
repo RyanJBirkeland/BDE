@@ -85,8 +85,8 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 function makeRepo(overrides: Partial<IAgentTaskRepository> = {}): IAgentTaskRepository {
   return {
     getTask: vi.fn().mockReturnValue({ id: 'task-1', status: 'error', notes: null }),
-    updateTask: vi.fn(),
-    claimTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
+    claimTask: vi.fn().mockResolvedValue(null),
     getQueuedTasks: vi.fn().mockReturnValue([]),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
     getGroup: vi.fn().mockReturnValue(null),
@@ -146,9 +146,7 @@ describe('cleanupWorktreeWithRetry', () => {
   it('does not throw even when repo.updateTask fails', async () => {
     vi.mocked(cleanupWorktree).mockRejectedValue(new Error('fail'))
     const repo = makeRepo({
-      updateTask: vi.fn().mockImplementation(() => {
-        throw new Error('write failed')
-      })
+      updateTask: vi.fn().mockRejectedValue(new Error('write failed'))
     })
 
     await expect(

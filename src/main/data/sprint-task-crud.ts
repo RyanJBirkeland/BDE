@@ -4,10 +4,10 @@ import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { sanitizeTags } from '../../shared/sanitize-tags'
 import { getDb } from '../db'
 import { recordTaskChanges } from './task-changes'
-import { withRetry } from './sqlite-retry'
+import { withRetryAsync } from './sqlite-retry'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
-import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
+import { SPRINT_TASK_COLUMNS, SPRINT_TASK_LIST_COLUMNS } from './sprint-query-constants'
 import { validateTransition, isTaskStatus } from '../../shared/task-state-machine'
 import { getSprintQueriesLogger } from './sprint-query-logger'
 import { mapRowToTask, mapRowsToTasks, serializeFieldForStorage } from './sprint-task-mapper'
@@ -166,16 +166,18 @@ export function listTasksRecent(db?: Database.Database): SprintTask[] {
       // UNION ALL form lets each branch use idx_sprint_tasks_status:
       //   1) active set: status IN (5 active statuses)
       //   2) recent terminal set: status IN (4 terminal) AND completed_at recent
+      //
+      // Both branches project SPRINT_TASK_LIST_COLUMNS — the heavy
+      // `review_diff_snapshot` blob is excluded so the renderer's 30s poll
+      // doesn't transfer hundreds of KB per task on every cycle.
       const rows = conn
         .prepare(
-          `SELECT * FROM (
-             SELECT * FROM sprint_tasks
-               WHERE status IN ('backlog','queued','blocked','active','review')
-             UNION ALL
-             SELECT * FROM sprint_tasks
-               WHERE status IN ('done','cancelled','failed','error')
-                 AND completed_at >= datetime('now', '-7 days')
-           )
+          `SELECT ${SPRINT_TASK_LIST_COLUMNS} FROM sprint_tasks
+             WHERE status IN ('backlog','queued','blocked','active','review')
+           UNION ALL
+           SELECT ${SPRINT_TASK_LIST_COLUMNS} FROM sprint_tasks
+             WHERE status IN ('done','cancelled','failed','error')
+               AND completed_at >= datetime('now', '-7 days')
            ORDER BY priority ASC, created_at ASC`
         )
         .all() as Record<string, unknown>[]
@@ -187,10 +189,13 @@ export function listTasksRecent(db?: Database.Database): SprintTask[] {
   )
 }
 
-export function createTask(input: CreateTaskInput, db?: Database.Database): SprintTask | null {
+export async function createTask(
+  input: CreateTaskInput,
+  db?: Database.Database
+): Promise<SprintTask | null> {
   const conn = db ?? getDb()
-  return withDataLayerError(
-    () => {
+  try {
+    return await withRetryAsync(() => {
       const dependsOn = sanitizeDependsOn(input.depends_on)
       const tags = sanitizeTags(input.tags)
 
@@ -220,11 +225,12 @@ export function createTask(input: CreateTaskInput, db?: Database.Database): Spri
         ) as Record<string, unknown> | undefined
 
       return result ? mapRowToTask(result) : null
-    },
-    'createTask',
-    null,
-    getSprintQueriesLogger()
-  )
+    })
+  } catch (err) {
+    const msg = getErrorMessage(err)
+    getSprintQueriesLogger().warn(`[sprint-queries] createTask failed: ${msg}`)
+    return null
+  }
 }
 
 /**
@@ -236,15 +242,15 @@ export function createTask(input: CreateTaskInput, db?: Database.Database): Spri
  * Used by the `agents:promoteToReview` IPC handler. Do not call from anywhere
  * that should respect the standard task lifecycle.
  */
-export function createReviewTaskFromAdhoc(input: {
+export async function createReviewTaskFromAdhoc(input: {
   title: string
   repo: string
   spec: string
   worktreePath: string
   branch: string
-}): SprintTask | null {
+}): Promise<SprintTask | null> {
   // Reuse createTask instead of duplicating INSERT logic
-  const task = createTask({
+  const task = await createTask({
     title: input.title,
     repo: input.repo,
     spec: input.spec,
@@ -257,7 +263,7 @@ export function createReviewTaskFromAdhoc(input: {
   // Set fields not in the create allowlist (worktree_path, started_at,
   // promoted_to_review_at). The adhoc path bypasses `transitionToReview`, so
   // the review-entry watermark has to be stamped here.
-  const updated = updateTask(task.id, {
+  const updated = await updateTask(task.id, {
     worktree_path: input.worktreePath,
     started_at: nowIso(),
     promoted_to_review_at: nowIso()
@@ -286,12 +292,23 @@ export interface UpdateTaskOptions {
   caller?: string
 }
 
-export function updateTask(
+/**
+ * NOTE: `updateTask` is NOT the primary enforcement point for status transitions.
+ * All `sprint_tasks.status` writes must go through `TaskStateService.transition()`
+ * (src/main/services/task-state-service.ts), which validates via `isValidTransition`,
+ * persists via this function, and dispatches to the `TerminalDispatcher` port.
+ *
+ * The `enforceTransitionCheck` flag in `writeTaskUpdate` provides defense-in-depth
+ * only — it fires when code bypasses `TaskStateService`. New callers must not call
+ * `updateTask({ status })` directly; use `TaskStateService.transition()` instead.
+ */
+
+export async function updateTask(
   id: string,
   patch: Record<string, unknown>,
   options?: UpdateTaskOptions,
   db?: Database.Database
-): SprintTask | null {
+): Promise<SprintTask | null> {
   return writeTaskUpdate(
     id,
     patch,
@@ -307,11 +324,11 @@ export function updateTask(
  * state (e.g. `blocked → failed`). Changes are still recorded in `task_changes` for
  * the audit trail, attributed to `'manual-override'`.
  */
-export function forceUpdateTask(
+export async function forceUpdateTask(
   id: string,
   patch: Record<string, unknown>,
   db?: Database.Database
-): SprintTask | null {
+): Promise<SprintTask | null> {
   return writeTaskUpdate(
     id,
     patch,
@@ -345,18 +362,18 @@ function toAuditableTask(task: SprintTask): Record<string, unknown> {
   return { ...task } as Record<string, unknown>
 }
 
-function writeTaskUpdate(
+async function writeTaskUpdate(
   id: string,
   patch: Record<string, unknown>,
   options: WriteTaskUpdateOptions,
   db?: Database.Database
-): SprintTask | null {
+): Promise<SprintTask | null> {
   const allowlistedEntries = filterAllowlistedEntries(patch)
   if (allowlistedEntries.length === 0) return null
 
   try {
     const conn = db ?? getDb()
-    return withRetry(() =>
+    return await withRetryAsync(() =>
       conn.transaction(() => runUpdate(id, patch, allowlistedEntries, options, conn))()
     )
   } catch (err) {
@@ -405,9 +422,14 @@ function filterAllowlistedEntries(
 }
 
 /**
- * Throws a user-visible "Invalid transition" error when the requested status
- * change is not permitted by the state machine. Manual-override callers skip
- * this guard via `options.enforceTransitionCheck === false`.
+ * Defense-in-depth assertion: throws when an invalid status transition reaches
+ * the data layer. Primary enforcement lives in `TaskStateService.transition()`.
+ * This guard fires only when code bypasses `TaskStateService` and calls
+ * `updateTask` with a `status` field directly — protecting DB integrity if
+ * a call site is missed during the EP-1 migration.
+ *
+ * Manual-override callers (`forceUpdateTask`) skip this via
+ * `options.enforceTransitionCheck === false`.
  */
 function enforceTransitionOrThrow(
   taskId: string,
@@ -418,7 +440,9 @@ function enforceTransitionOrThrow(
   if (!isTaskStatus(currentStatus)) return
   const validation = validateTransition(currentStatus, nextStatus)
   if (!validation.ok) {
-    throw new Error(`[sprint-queries] Invalid transition for task ${taskId}: ${validation.reason}`)
+    throw new Error(
+      `[sprint-task-crud] Bypass-prevention: status write for task ${taskId} rejected at data layer — ${validation.reason}. Route through TaskStateService.transition() instead.`
+    )
   }
 }
 

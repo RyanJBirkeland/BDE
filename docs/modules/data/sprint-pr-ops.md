@@ -13,8 +13,11 @@ PR lifecycle queries for sprint tasks. Transitions tasks to done/cancelled on PR
 - `listTasksWithOpenPrs(db?)` — returns tasks where `pr_status = 'open'`
 - `updatePrDetails(taskId, patch)` — sets `pr_url`, `pr_number`, `pr_status` on a task and records audit trail
 
+## Implementation notes
+- Audit-comparison reads use narrow projections (`id, status, completed_at` for the transition path, `id, pr_status` for the bulk pr_status update, `id, pr_mergeable_state` for the mergeable-state update). The wide `SPRINT_TASK_COLUMNS` list previously dragged the multi-hundred-KB `review_diff_snapshot` blob through the PR poller's 60s loop on every cycle.
+
 ## Key Dependencies
 - `task-changes.ts` — `recordTaskChangesBulk` for bulk audit trail (single prepared INSERT reused across tasks)
-- `sprint-task-mapper.ts` — `mapRowsToTasks` for row hydration
-- `sprint-query-constants.ts` — `SPRINT_TASK_COLUMNS` column list
+- `sprint-task-mapper.ts` — `mapRowsToTasks` for row hydration in `listTasksWithOpenPrs`
+- `sprint-query-constants.ts` — `SPRINT_TASK_COLUMNS` for the `listTasksWithOpenPrs` projection
 - `data-utils.ts` — `withDataLayerError` for error logging + fallback on all exported functions

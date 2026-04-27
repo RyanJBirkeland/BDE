@@ -205,10 +205,12 @@ function buildCreatePrPlan(input: ReviewActionInput): ReviewActionPlan {
   if (!task.worktree_path) throw new Error(`Task ${taskId} has no worktree path`)
 
   return {
-    // Push and PR creation handled by review-pr-service (already extracted).
+    // Push and PR creation handled by review-orchestration-service.createPr directly
+    // (not via runPlan). The task stays in `review` after PR creation — the sprint
+    // PR poller marks it done when GitHub reports the PR as merged.
     gitOps: [{ type: 'getBranch', worktreePath: task.worktree_path }],
-    taskPatch: doneStatusPatch(),
-    terminalStatus: 'done',
+    taskPatch: { worktree_path: null },
+    terminalStatus: null,
     errorOnMissingWorktree: true,
     dedup: false
   }

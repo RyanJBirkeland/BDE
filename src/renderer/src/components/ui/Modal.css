@@ -1,0 +1,123 @@
+.modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-backdrop);
+  background: var(--bde-overlay, rgba(0, 0, 0, 0.55));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  margin: auto;
+  background: var(--bde-surface-1);
+  border: 1px solid var(--bde-border);
+  border-radius: var(--bde-radius-xl, 8px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Size presets — width/height bounds. `inset: 0; margin: auto` centers. */
+.modal--sm {
+  width: fit-content;
+  height: fit-content;
+  min-width: 340px;
+  max-width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+}
+
+.modal--md {
+  width: 720px;
+  height: fit-content;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 64px);
+}
+
+.modal--lg {
+  width: 1200px;
+  height: 800px;
+  max-width: 95vw;
+  max-height: 90vh;
+}
+
+.modal--fullscreen {
+  width: 95vw;
+  height: 90vh;
+  max-width: 95vw;
+  max-height: 90vh;
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--bde-border);
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.modal__title {
+  margin: 0;
+  font-size: var(--bde-size-xl, 18px);
+  font-weight: 600;
+  color: var(--bde-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.modal__close {
+  background: none;
+  border: none;
+  color: var(--bde-text-dim);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modal__close:hover {
+  color: var(--bde-text);
+  background: var(--bde-surface-2);
+}
+
+.modal__close:focus-visible {
+  outline: 2px solid var(--bde-accent);
+  outline-offset: 2px;
+}
+
+.modal__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* sm/md modals usually want padding around their body content; lg/fullscreen
+   typically host their own layout (TaskWorkbench manages its own padding). */
+.modal--sm .modal__body,
+.modal--md .modal__body {
+  padding: var(--bde-space-4, 16px) var(--bde-space-5, 20px) var(--bde-space-5, 20px);
+  gap: var(--bde-space-3, 12px);
+}
+
+/* Footer slot — flex row of action buttons aligned right. Apply this class to
+   a div placed at the bottom of <Modal> children. */
+.modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--bde-space-2, 8px);
+  margin-top: var(--bde-space-3, 12px);
+}

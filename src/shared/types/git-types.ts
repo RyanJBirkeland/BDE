@@ -19,7 +19,7 @@ export interface OpenPr {
   repo: string
 }
 
-export type CheckStatus = 'pending' | 'pass' | 'fail'
+export type CheckStatus = 'pending' | 'pass' | 'fail' | 'unknown'
 
 export interface CheckRunSummary {
   status: CheckStatus
@@ -32,6 +32,7 @@ export interface CheckRunSummary {
 export interface PrListPayload {
   prs: OpenPr[]
   checks: Record<string, CheckRunSummary>
+  repoErrors?: Record<string, string>
 }
 
 export interface PrReview {

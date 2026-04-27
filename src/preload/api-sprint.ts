@@ -1,5 +1,5 @@
 import { typedInvoke } from './ipc-helpers'
-import type { BatchOperation, EpicDependency } from '../shared/types'
+import type { BatchOperation, BatchImportTask, EpicDependency } from '../shared/types'
 import type { WorkflowTemplate } from '../shared/workflow-types'
 
 export const sprint = {
@@ -30,22 +30,7 @@ export const sprint = {
   unblockTask: (taskId: string) => typedInvoke('sprint:unblockTask', taskId),
   retry: (taskId: string) => typedInvoke('sprint:retry', taskId),
   batchUpdate: (operations: BatchOperation[]) => typedInvoke('sprint:batchUpdate', operations),
-  batchImport: (
-    tasks: Array<{
-      title: string
-      repo: string
-      prompt?: string
-      spec?: string
-      status?: string
-      dependsOnIndices?: number[]
-      depType?: 'hard' | 'soft'
-      playgroundEnabled?: boolean
-      model?: string
-      tags?: string[]
-      priority?: number
-      templateName?: string
-    }>
-  ) => typedInvoke('sprint:batchImport', tasks),
+  batchImport: (tasks: BatchImportTask[]) => typedInvoke('sprint:batchImport', tasks),
   exportTasks: (format: 'json' | 'csv') => typedInvoke('sprint:exportTasks', format),
   exportTaskHistory: (taskId: string) => typedInvoke('sprint:exportTaskHistory', taskId),
   failureBreakdown: () => typedInvoke('sprint:failureBreakdown'),
@@ -54,7 +39,8 @@ export const sprint = {
   forceFailTask: (payload: { taskId: string; reason?: string; force?: boolean }) =>
     typedInvoke('sprint:forceFailTask', payload),
   forceDoneTask: (payload: { taskId: string; reason?: string; force?: boolean }) =>
-    typedInvoke('sprint:forceDoneTask', payload)
+    typedInvoke('sprint:forceDoneTask', payload),
+  forceReleaseClaim: (taskId: string) => typedInvoke('sprint:forceReleaseClaim', taskId)
 }
 
 export const groups = {

@@ -64,8 +64,9 @@ export function validateTaskCreation(
           warn: opts.logger.warn,
           info: (..._args: unknown[]) => {},
           error: (..._args: unknown[]) => {},
-          debug: (..._args: unknown[]) => {}
-        },
+          debug: (..._args: unknown[]) => {},
+          event: (..._args: unknown[]) => {}
+        } as import('../logger').Logger,
         listTasks: opts.listTasks,
         listGroups: opts.listGroups
       }

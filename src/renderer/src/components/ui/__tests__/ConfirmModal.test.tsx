@@ -119,13 +119,14 @@ describe('ConfirmModal', () => {
     expect(onConfirm).not.toHaveBeenCalled()
   })
 
-  it('calls onCancel when overlay is clicked', async () => {
+  it('calls onCancel when backdrop is clicked', async () => {
     const user = userEvent.setup()
-    const { container } = render(
+    render(
       <ConfirmModal open={true} message="Are you sure?" onConfirm={onConfirm} onCancel={onCancel} />
     )
-    const overlay = container.querySelector('.confirm-modal__overlay')!
-    await user.click(overlay)
+    const backdrop = document.querySelector('.modal__backdrop')
+    if (!backdrop) throw new Error('Modal backdrop not found in document')
+    await user.click(backdrop)
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
 

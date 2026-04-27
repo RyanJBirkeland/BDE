@@ -163,24 +163,25 @@ describe('turn-tracker', () => {
     })
 
     it('should log warning but not throw when insertTurn fails', () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const loggerWarnSpy = vi.fn()
+      const trackerWithLogger = new TurnTracker('run-123', {
+        insertTurn: insertTurnSpy as InsertTurnFn,
+        logger: { info: vi.fn(), warn: loggerWarnSpy, error: vi.fn(), debug: vi.fn() }
+      })
       insertTurnSpy.mockImplementation(() => {
         throw new Error('DB error')
       })
 
       expect(() => {
-        tracker.processMessage({
+        trackerWithLogger.processMessage({
           type: 'assistant',
           message: { usage: { input_tokens: 100, output_tokens: 50 }, content: [] }
         })
       }).not.toThrow()
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[turn-tracker]'),
-        expect.any(Error)
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to write turn record')
       )
-
-      consoleWarnSpy.mockRestore()
     })
   })
 

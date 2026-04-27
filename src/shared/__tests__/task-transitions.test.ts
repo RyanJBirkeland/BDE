@@ -54,8 +54,20 @@ describe('task-transitions', () => {
     expect(isValidTransition('unknown-status' as TaskStatus, 'queued')).toBe(false)
   })
 
-  it('cancelled has no outbound transitions', () => {
+  it('cancelled cannot return to queued or active', () => {
     expect(isValidTransition('cancelled', 'queued')).toBe(false)
     expect(isValidTransition('cancelled', 'active')).toBe(false)
+  })
+
+  describe('manual recovery escape hatches (terminal failure → done)', () => {
+    it('allows cancelled → done so a human can mark a task done after implementing it manually', () => {
+      expect(isValidTransition('cancelled', 'done')).toBe(true)
+    })
+    it('allows failed → done for the same manual-recovery case', () => {
+      expect(isValidTransition('failed', 'done')).toBe(true)
+    })
+    it('allows error → done for the same manual-recovery case', () => {
+      expect(isValidTransition('error', 'done')).toBe(true)
+    })
   })
 })

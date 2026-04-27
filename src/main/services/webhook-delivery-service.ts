@@ -13,6 +13,15 @@ const log = createLogger('webhook-delivery-service')
 
 const WEBHOOK_TEST_TIMEOUT_MS = 10000
 
+function safeWebhookLogTarget(url: string): string {
+  try {
+    const parsed = new URL(url)
+    return `${parsed.origin}${parsed.pathname}`
+  } catch {
+    return '(invalid URL)'
+  }
+}
+
 export interface WebhookTestResult {
   success: boolean
   status: number
@@ -76,11 +85,11 @@ export async function deliverWebhookTestEvent(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
-    log.info(`Test webhook sent to ${webhook.url}`)
+    log.info(`Test webhook sent to ${safeWebhookLogTarget(webhook.url)}`)
     return { success: true, status: response.status }
   } catch (err) {
     const msg = getErrorMessage(err)
-    log.warn(`Test webhook failed for ${webhook.url}: ${msg}`)
+    log.warn(`Test webhook failed for ${safeWebhookLogTarget(webhook.url)}: ${msg}`)
     throw new Error(`Test failed: ${msg}`)
   }
 }

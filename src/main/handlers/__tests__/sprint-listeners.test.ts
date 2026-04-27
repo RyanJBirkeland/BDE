@@ -18,6 +18,7 @@ vi.mock('../../logger', () => ({
 }))
 
 import { onSprintMutation, notifySprintMutation } from '../sprint-listeners'
+import { setSprintBroadcaster } from '../../services/sprint-mutation-broadcaster'
 import type { SprintTask } from '../../../shared/types'
 import { nowIso } from '../../../shared/time'
 
@@ -38,6 +39,8 @@ describe('sprint-listeners', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
+    mockBroadcast.mockReset()
+    setSprintBroadcaster(mockBroadcast)
   })
 
   afterEach(() => {
@@ -152,14 +155,12 @@ describe('sprint-listeners', () => {
       vi.runAllTimers()
 
       expect(mockBroadcast).toHaveBeenCalledTimes(1)
-      expect(mockBroadcast).toHaveBeenCalledWith('sprint:externalChange')
     })
 
     it('calls broadcast on every mutation', () => {
       expect(() => notifySprintMutation('updated', makeTask())).not.toThrow()
       vi.runAllTimers()
       expect(mockBroadcast).toHaveBeenCalledTimes(1)
-      expect(mockBroadcast).toHaveBeenCalledWith('sprint:externalChange')
     })
   })
 })

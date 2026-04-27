@@ -327,10 +327,10 @@ describe('setupWorktree', () => {
       })
     ).rejects.toThrow('fatal: unable to create worktree')
 
-    // Lock should have been released (lock file should not exist)
+    // releaseLock fires rm() fire-and-forget (async libuv I/O) — poll until gone
     const repoSlugVal = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
     const lockFile = path.join(tmpDir, '.locks', `${repoSlugVal}.lock`)
-    expect(existsSync(lockFile)).toBe(false)
+    await vi.waitFor(() => expect(existsSync(lockFile)).toBe(false), { timeout: 1000 })
   })
 
   it('cleans up lock and throws when worktree add fails after nuke', async () => {
@@ -361,10 +361,10 @@ describe('setupWorktree', () => {
       })
     ).rejects.toThrow('fatal: unable to create worktree')
 
-    // Lock should have been released
+    // releaseLock fires rm() fire-and-forget (async libuv I/O) — poll until gone
     const repoSlugVal = mockRepoPath.replace(/[^a-z0-9]/gi, '-').replace(/^-+|-+$/g, '')
     const lockFile = path.join(tmpDir, '.locks', `${repoSlugVal}.lock`)
-    expect(existsSync(lockFile)).toBe(false)
+    await vi.waitFor(() => expect(existsSync(lockFile)).toBe(false), { timeout: 1000 })
   })
 
   it('removes corrupted lock file and proceeds', async () => {
@@ -485,6 +485,46 @@ describe('setupWorktree', () => {
     expect(lockExistedDuringFetch).toBe(false)
     expect(lockExistedDuringAdd).toBe(true)
   })
+
+  it('calls appendToNotes when fetchMain fails and continues setup', async () => {
+    const fetchError = new Error('fatal: unable to connect to origin')
+    let appendedText: string | undefined
+
+    execFileMock.mockImplementation((...args: unknown[]) => {
+      const cb = args[args.length - 1]
+      const gitArgs = args[1] as string[]
+
+      // git fetch fails
+      if (gitArgs[0] === 'fetch') {
+        if (typeof cb === 'function') cb(fetchError, '', '')
+        return Object.assign(Promise.reject(fetchError), { child: null }) as unknown as ChildProcess
+      }
+
+      // Everything else succeeds
+      if (typeof cb === 'function') cb(null, { stdout: '', stderr: '' })
+      return Object.assign(Promise.resolve({ stdout: '', stderr: '' }), {
+        child: null
+      }) as unknown as ChildProcess
+    })
+
+    const result = await setupWorktree({
+      repoPath: mockRepoPath,
+      worktreeBase: tmpDir,
+      taskId: 'fetch-fail',
+      title: 'Fetch fail test',
+      appendToNotes: (text) => {
+        appendedText = text
+      }
+    })
+
+    // Setup should complete despite the fetch failure
+    expect(result.branch).toBe('agent/fetch-fail-test-fetch-fa')
+
+    // Notes should record the failure
+    expect(appendedText).toBeDefined()
+    expect(appendedText).toContain('[worktree] fetchMain failed:')
+    expect(appendedText).toContain('unable to connect to origin')
+  })
 })
 
 describe('ensureFreeDiskSpace', () => {
@@ -517,13 +557,15 @@ describe('ensureFreeDiskSpace', () => {
     await expect(ensureFreeDiskSpace(os.tmpdir(), 1)).resolves.toBeUndefined()
   })
 
-  it('does not throw when statfs fails on a non-existent path', async () => {
-    const { ensureFreeDiskSpace } = await import('../worktree')
+  it('throws DiskSpaceProbeError and logs WARN when statfs fails on a non-existent path', async () => {
+    const { ensureFreeDiskSpace, DiskSpaceProbeError } = await import('../disk-space')
     const log = { warn: vi.fn(), info: vi.fn(), error: vi.fn() }
-    await expect(
-      ensureFreeDiskSpace('/definitely/not/a/real/path', 1, log)
-    ).resolves.toBeUndefined()
-    expect(log.warn).toHaveBeenCalled()
+    await expect(ensureFreeDiskSpace('/definitely/not/a/real/path', 1, log)).rejects.toBeInstanceOf(
+      DiskSpaceProbeError
+    )
+    expect(log.warn).toHaveBeenCalledWith(
+      expect.stringContaining('[disk-space] Probe failed at /definitely/not/a/real/path')
+    )
   })
 })
 
@@ -593,12 +635,13 @@ describe('pruneStaleWorktrees', () => {
     rmSync(tmpDir, { recursive: true, force: true })
   })
 
-  // Realistic UUID v4 fixtures — the pruner now requires the leaf
-  // directory name to look like a sprint task UUID before considering
-  // it for deletion.
-  const UUID_A = 'aaaaaaaa-1111-4111-8111-111111111111'
-  const UUID_B = 'bbbbbbbb-2222-4222-8222-222222222222'
-  const UUID_C = 'cccccccc-3333-4333-8333-333333333333'
+  // Realistic BDE task ID fixtures — 32-char lowercase hex strings
+  // produced by SQLite's lower(hex(randomblob(16))). The pruner requires
+  // the leaf directory name to match this format before considering it
+  // for deletion.
+  const TASK_ID_A = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  const TASK_ID_B = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+  const TASK_ID_C = 'cccccccccccccccccccccccccccccccc'
 
   /**
    * Creates a realistic BDE worktree directory: <tmp>/<repoSlug>/<uuid>/
@@ -617,20 +660,46 @@ describe('pruneStaleWorktrees', () => {
     expect(count).toBe(0)
   })
 
+  // Regression: before this fix TASK_ID_HEX_PATTERN required a dashed UUID,
+  // so every real BDE worktree was rejected and pruneStaleWorktrees always
+  // returned 0 — a silent no-op.
+  it('prunes a real-shaped 32-char hex task ID when the task is inactive', async () => {
+    const realTaskId = '00313fab513f1807706c8b7665afc329'
+    makeWorktreeDir('repo-regression', realTaskId)
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    expect(count).toBeGreaterThan(0)
+  })
+
+  it('does NOT prune a dashed-UUID directory name (not a BDE task ID)', async () => {
+    const dashedUuid = 'aaaaaaaa-1111-4111-8111-111111111111'
+    const repoDir = path.join(tmpDir, 'repo-dashed')
+    const dashedDir = path.join(repoDir, dashedUuid)
+    mkdirSync(dashedDir, { recursive: true })
+    writeFileSync(path.join(dashedDir, '.git'), 'gitdir: /fake/path\n')
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    expect(count).toBe(0)
+    const { existsSync } = await import('node:fs')
+    expect(existsSync(dashedDir)).toBe(true)
+  })
+
   it('removes directories for inactive tasks and returns count', async () => {
-    makeWorktreeDir('repo-a', UUID_A)
-    makeWorktreeDir('repo-a', UUID_B)
+    makeWorktreeDir('repo-a', TASK_ID_A)
+    makeWorktreeDir('repo-a', TASK_ID_B)
 
     const count = await pruneStaleWorktrees(tmpDir, () => false)
     expect(count).toBe(2)
   })
 
   it('keeps directories for active tasks', async () => {
-    const activeDir = makeWorktreeDir('repo-b', UUID_A)
-    makeWorktreeDir('repo-b', UUID_B)
+    const activeDir = makeWorktreeDir('repo-b', TASK_ID_A)
+    makeWorktreeDir('repo-b', TASK_ID_B)
 
     const { existsSync } = await import('node:fs')
-    const count = await pruneStaleWorktrees(tmpDir, (id) => id === UUID_A)
+    const count = await pruneStaleWorktrees(tmpDir, (id) => id === TASK_ID_A)
     expect(count).toBe(1)
     expect(existsSync(activeDir)).toBe(true)
   })
@@ -644,8 +713,8 @@ describe('pruneStaleWorktrees', () => {
   })
 
   it('returns 0 when all tasks are active', async () => {
-    makeWorktreeDir('repo-c', UUID_A)
-    makeWorktreeDir('repo-c', UUID_B)
+    makeWorktreeDir('repo-c', TASK_ID_A)
+    makeWorktreeDir('repo-c', TASK_ID_B)
 
     const count = await pruneStaleWorktrees(tmpDir, () => true)
     expect(count).toBe(0)
@@ -676,12 +745,12 @@ describe('pruneStaleWorktrees', () => {
     expect(existsSync(humanDocs)).toBe(true)
   })
 
-  it('does NOT delete UUID-named directories without a .git entry', async () => {
-    // Defense-in-depth: a directory whose name happens to match a UUID
-    // but isn't actually a git worktree (e.g. user has a UUID-named
-    // backup folder) must be left alone.
+  it('does NOT delete task-ID-named directories without a .git entry', async () => {
+    // Defense-in-depth: a directory whose name happens to match a BDE
+    // task ID but isn't actually a git worktree (e.g. user has a
+    // hex-named backup folder) must be left alone.
     const repoDir = path.join(tmpDir, 'repo-d')
-    const fakeUuidDir = path.join(repoDir, UUID_C)
+    const fakeUuidDir = path.join(repoDir, TASK_ID_C)
     mkdirSync(fakeUuidDir, { recursive: true })
     // Note: NO .git file written
 
@@ -692,13 +761,30 @@ describe('pruneStaleWorktrees', () => {
     expect(existsSync(fakeUuidDir)).toBe(true)
   })
 
+  it('uses the async readdir path — successfully prunes without calling readdirSync', async () => {
+    // This test confirms the async enumeration path works end-to-end.
+    // The synchronous readdirSync is no longer imported by worktree.ts — the
+    // module import list is the authoritative check; this test validates the
+    // runtime behavior: the pruner correctly enumerates and removes stale dirs
+    // via the async path.
+    makeWorktreeDir('repo-async', TASK_ID_A)
+
+    execFileMock.mockClear()
+    mockExecFileSuccess()
+
+    const count = await pruneStaleWorktrees(tmpDir, () => false)
+
+    // If async enumeration worked, the inactive worktree was found and pruned
+    expect(count).toBe(1)
+  })
+
   it('coexists safely with mixed BDE and human worktrees in same base', async () => {
     // Realistic scenario: ~/worktrees/bde/ contains both BDE-managed
     // task worktrees and human-created branch worktrees side by side.
     // The pruner should only issue rm -rf for BDE-managed inactive ones,
     // never for human worktree subdirectories.
-    const bdeActive = makeWorktreeDir('bde', UUID_A)
-    const bdeInactive = makeWorktreeDir('bde', UUID_B)
+    const bdeActive = makeWorktreeDir('bde', TASK_ID_A)
+    const bdeInactive = makeWorktreeDir('bde', TASK_ID_B)
     const humanWorktree = path.join(tmpDir, 'fix-my-feature')
     const humanSrc = path.join(humanWorktree, 'src')
     const humanDocs = path.join(humanWorktree, 'docs')
@@ -712,7 +798,7 @@ describe('pruneStaleWorktrees', () => {
     execFileMock.mockClear()
     mockExecFileSuccess()
 
-    const count = await pruneStaleWorktrees(tmpDir, (id) => id === UUID_A)
+    const count = await pruneStaleWorktrees(tmpDir, (id) => id === TASK_ID_A)
 
     expect(count).toBe(1) // only the inactive BDE worktree
 

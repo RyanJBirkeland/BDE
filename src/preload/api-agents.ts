@@ -78,7 +78,8 @@ export const agentManager = {
   ),
   onDrainPaused: onBroadcast<BroadcastChannels['agentManager:drainPaused']>(
     'agentManager:drainPaused'
-  )
+  ),
+  onOrphanRecovered: onBroadcast<BroadcastChannels['orphan:recovered']>('orphan:recovered')
 }
 
 export const agentEvents = {
@@ -97,5 +98,5 @@ export const agentEvents = {
     }
   },
   getHistory: (agentId: string): Promise<IpcChannelMap['agent:history']['result']> =>
-    typedInvoke('agent:history', agentId)
+    typedInvoke('agent:history', { agentId })
 }

@@ -6,13 +6,18 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
 import { motion, LayoutGroup } from 'framer-motion'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
 import { useSprintFilters } from '../../stores/sprintFilters'
+import { useSprintTasks } from '../../stores/sprintTasks'
 import { usePanelLayoutStore } from '../../stores/panelLayout'
-import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
+import { useSprintUI, selectOrphanRecoveryBanner } from '../../stores/sprintUI'
+import { useTaskWorkbenchModalStore } from '../../stores/taskWorkbenchModal'
 import { setOpenLogDrawerTaskId, useTaskToasts } from '../../hooks/useTaskNotifications'
 import { useSprintKeyboardShortcuts } from '../../hooks/useSprintKeyboardShortcuts'
 import { useSprintTaskActions } from '../../hooks/useSprintTaskActions'
 import { useVisibleStuckTasks } from '../../hooks/useVisibleStuckTasks'
 import { useSprintPipelineState } from '../../hooks/useSprintPipelineState'
+import { useDrainStatus } from '../../hooks/useDrainStatus'
+import { useNow } from '../../hooks/useNow'
+import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { Button } from '../ui/Button'
 import { toast } from '../../stores/toasts'
 import { PipelineBacklog } from './PipelineBacklog'
@@ -26,6 +31,7 @@ import { PipelineOverlays } from './PipelineOverlays'
 import { DagOverlay } from './DagOverlay'
 import { BulkActionBar } from './BulkActionBar'
 import { NeonCard } from '../neon'
+import { ErrorBanner } from '../ui/ErrorBanner'
 import type { SprintTask } from '../../../../shared/types'
 import { useSprintPipelineCommands } from '../../hooks/useSprintPipelineCommands'
 
@@ -65,10 +71,21 @@ export function SprintPipeline(): React.JSX.Element {
     conflictingTasks
   } = useSprintPipelineState()
 
+  const pollError = useSprintTasks((s) => s.pollError)
+  const clearPollError = useSprintTasks((s) => s.clearPollError)
+
+  const orphanBanner = useSprintUI(selectOrphanRecoveryBanner)
+  const dismissOrphanBanner = useSprintUI((s) => s.setOrphanRecoveryBanner)
+
+  const drainStatus = useDrainStatus()
+  const now = useNow()
+  const repos = useRepoOptions()
+
   const setStatusFilter = useSprintFilters((s) => s.setStatusFilter)
   const setView = usePanelLayoutStore((s) => s.setView)
   const reduced = useReducedMotion()
-  const openWorkbench = useCallback(() => setView('planner'), [setView])
+  const openWorkbenchForCreate = useTaskWorkbenchModalStore((s) => s.openForCreate)
+  const openWorkbench = useCallback(() => openWorkbenchForCreate(), [openWorkbenchForCreate])
 
   // --- Extracted hooks ---
   const {
@@ -88,7 +105,6 @@ export function SprintPipeline(): React.JSX.Element {
   // --- Focus management ---
   const triggerRef = useRef<HTMLElement | null>(null)
 
-  const loadTaskInWorkbench = useTaskWorkbenchStore((s) => s.loadTask)
 
   // Register sprint commands in command palette
   useSprintPipelineCommands({
@@ -124,7 +140,7 @@ export function SprintPipeline(): React.JSX.Element {
 
   // SP-7: Wire setConflictDrawerOpen to actual function (wrapped to match Dispatch<SetStateAction> signature)
   useSprintKeyboardShortcuts({
-    openWorkbench: () => setView('planner'),
+    openWorkbench,
     setConflictDrawerOpen: (value) => {
       setConflictDrawerOpen(typeof value === 'function' ? value(conflictDrawerOpen) : value)
     }
@@ -262,6 +278,50 @@ export function SprintPipeline(): React.JSX.Element {
 
       <PipelineFilterBanner filteredTasks={filteredTasks} totalTasks={tasks} />
 
+      {pollError && (
+        <div className="pipeline-poll-error">
+          <ErrorBanner message={pollError} className="pipeline-poll-error__message" />
+          <div className="pipeline-poll-error__actions">
+            <Button variant="primary" size="sm" onClick={() => { clearPollError(); void loadData() }} disabled={loading}>
+              {loading ? 'Retrying…' : 'Retry'}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearPollError}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {orphanBanner && (
+        <div className="pipeline-orphan-banner">
+          <div className="pipeline-orphan-banner__message">
+            {orphanBanner.recovered.length > 0 && (
+              <span>
+                {orphanBanner.recovered.length} task{orphanBanner.recovered.length !== 1 ? 's' : ''} recovered from crash and re-queued.
+              </span>
+            )}
+            {orphanBanner.exhausted.length > 0 && (
+              <span>
+                {' '}{orphanBanner.exhausted.length} task{orphanBanner.exhausted.length !== 1 ? 's' : ''} exceeded the crash recovery limit and were marked as error.
+              </span>
+            )}
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => dismissOrphanBanner(null)}>
+            Dismiss
+          </Button>
+        </div>
+      )}
+
+      {drainStatus && (
+        <div role="alert" className="pipeline-drain-paused-banner">
+          <strong>Drain loop paused:</strong>&nbsp;{drainStatus.reason} —{' '}
+          {drainStatus.affectedTaskCount} queued.{' '}
+          {Math.max(0, Math.floor((drainStatus.pausedUntil - now) / 1000)) > 0
+            ? `Resuming in ${Math.max(0, Math.floor((drainStatus.pausedUntil - now) / 1000))}s`
+            : 'Resuming soon'}
+        </div>
+      )}
+
       {loading && tasks.length === 0 && (
         <div className="sprint-pipeline__body">
           <div className="pipeline-sidebar pipeline-sidebar--loading">
@@ -289,14 +349,28 @@ export function SprintPipeline(): React.JSX.Element {
 
       {!loading && !loadError && tasks.length === 0 && (
         <div className="sprint-pipeline__empty-container">
-          <NeonCard accent="purple" title="No tasks yet">
-            <p className="sprint-pipeline__empty-text">
-              Create your first task to start the pipeline.
-            </p>
-            <button className="task-drawer__btn task-drawer__btn--primary" onClick={openWorkbench}>
-              New Task
-            </button>
-          </NeonCard>
+          {repos.length === 0 ? (
+            <NeonCard accent="orange" title="No repository configured">
+              <p className="sprint-pipeline__empty-text">
+                Add a repository in Settings before creating tasks.
+              </p>
+              <button
+                className="task-drawer__btn task-drawer__btn--primary"
+                onClick={() => setView('settings')}
+              >
+                Configure Repository
+              </button>
+            </NeonCard>
+          ) : (
+            <NeonCard accent="purple" title="No tasks yet">
+              <p className="sprint-pipeline__empty-text">
+                Create your first task to start the pipeline.
+              </p>
+              <button className="task-drawer__btn task-drawer__btn--primary" onClick={openWorkbench}>
+                New Task
+              </button>
+            </NeonCard>
+          )}
         </div>
       )}
 
@@ -384,10 +458,7 @@ export function SprintPipeline(): React.JSX.Element {
               onDelete={handleDeleteTask}
               onViewLogs={() => setView('agents')}
               onOpenSpec={() => setSpecPanelOpen(true)}
-              onEdit={() => {
-                loadTaskInWorkbench(selectedTask)
-                setView('planner')
-              }}
+              onEdit={() => useTaskWorkbenchModalStore.getState().openForEdit(selectedTask)}
               onViewAgents={() => setView('agents')}
               onUnblock={handleUnblock}
               onRetry={handleRetry}

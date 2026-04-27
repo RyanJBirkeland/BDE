@@ -3,7 +3,7 @@ import type { SprintTask } from '../../../../shared/types'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { useSprintSelection } from '../../stores/sprintSelection'
 import { useAgentEventsStore } from '../../stores/agentEvents'
-import { formatElapsed, getDotColor } from '../../lib/task-format'
+import { formatElapsed, getDotColor, failureCategoryForReason } from '../../lib/task-format'
 import { useBackoffInterval } from '../../hooks/useBackoffInterval'
 import { TaskDetailActionButtons } from './TaskDetailActionButtons'
 import { AgentActivityPreview } from './AgentActivityPreview'
@@ -12,6 +12,7 @@ import { useGitHubStatus } from '../../hooks/useGitHubStatus'
 import { useDrawerResize } from '../../hooks/useDrawerResize'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
 import { TextareaPromptModal, useTextareaPrompt } from '../ui/TextareaPromptModal'
+import { toast } from '../../stores/toasts'
 
 import './TaskDetailDrawer.css'
 
@@ -117,9 +118,11 @@ export function TaskDetailDrawer({
 
   const { prompt: promptForReason, promptProps: reasonPromptProps } = useTextareaPrompt()
   const { confirm: confirmForceDone, confirmProps: forceDoneConfirmProps } = useConfirm()
+  const { confirm: confirmForceRelease, confirmProps: forceReleaseConfirmProps } = useConfirm()
 
   const showMarkFailed = FORCE_FAIL_VISIBLE_STATUSES.has(task.status)
   const showForceDone = task.status !== 'done'
+  const showForceRelease = task.status === 'active' && !!task.claimed_by
 
   async function handleMarkFailed(): Promise<void> {
     const reason = await promptForReason({
@@ -143,6 +146,23 @@ export function TaskDetailDrawer({
     })
     if (!approved) return
     await window.api.sprint.forceDoneTask({ taskId: task.id, force: true })
+  }
+
+  async function handleForceRelease(): Promise<void> {
+    const approved = await confirmForceRelease({
+      title: 'Force-release this task?',
+      message:
+        'The task will return to queued and the agent manager will pick it up again. Use this if the agent process died without releasing the claim.',
+      confirmLabel: 'Force Release',
+      variant: 'danger'
+    })
+    if (!approved) return
+    try {
+      await window.api.sprint.forceReleaseClaim(task.id)
+      toast.success('Task released — it will be re-queued shortly')
+    } catch (err) {
+      toast.error(`Failed to release claim: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   return (
@@ -287,11 +307,33 @@ export function TaskDetailDrawer({
             >
               {task.status === 'cancelled' ? 'Cancellation details' : 'Failure details'}
             </h4>
+            {task.failure_reason && (() => {
+              const chip = failureCategoryForReason(task.failure_reason)
+              return (
+                <span
+                  className={`task-drawer__failure-chip ${chip.colorClass}`}
+                  data-testid="task-drawer-failure-chip"
+                >
+                  {chip.label}
+                </span>
+              )
+            })()}
             {task.failure_reason && (
               <pre className="task-drawer__failure-reason" data-testid="task-drawer-failure-reason">
                 {task.failure_reason}
               </pre>
             )}
+            {task.notes &&
+              task.failure_reason === 'timeout' &&
+              task.notes.toLowerCase().includes('watchdog') && (
+                <div
+                  className="task-drawer__watchdog-verdict"
+                  data-testid="task-drawer-watchdog-verdict"
+                >
+                  Watchdog terminated this agent. Increase the task&apos;s{' '}
+                  <strong>max runtime</strong> or split the work into smaller tasks.
+                </div>
+              )}
             {task.notes ? (
               <pre
                 className="task-drawer__failure-notes"
@@ -340,10 +382,19 @@ export function TaskDetailDrawer({
         )}
 
         {/* Override — operator escape-hatches */}
-        {(showMarkFailed || showForceDone) && (
+        {(showMarkFailed || showForceDone || showForceRelease) && (
           <div className="task-drawer__override" data-testid="task-drawer-override">
             <span className="task-drawer__label">Override</span>
             <div className="task-drawer__override-buttons">
+              {showForceRelease && (
+                <button
+                  className="task-drawer__btn task-drawer__btn--danger"
+                  onClick={handleForceRelease}
+                  data-testid="task-drawer-force-release"
+                >
+                  Force Release
+                </button>
+              )}
               {showMarkFailed && (
                 <button
                   className="task-drawer__btn task-drawer__btn--danger"
@@ -417,6 +468,7 @@ export function TaskDetailDrawer({
 
       <TextareaPromptModal {...reasonPromptProps} />
       <ConfirmModal {...forceDoneConfirmProps} />
+      <ConfirmModal {...forceReleaseConfirmProps} />
     </aside>
   )
 }

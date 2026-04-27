@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { runMigrations } from '../../db'
 import {
   createGroup,
@@ -8,7 +8,8 @@ import {
   listGroups,
   deleteGroup,
   addGroupDependency,
-  removeGroupDependency
+  removeGroupDependency,
+  setTaskGroupQueriesLogger
 } from '../task-group-queries'
 import type { EpicDependency } from '../../../shared/types'
 import { up as v047Up } from '../../migrations/v047-add-depends-on-to-task-groups'
@@ -267,5 +268,29 @@ describe('removeGroupDependency — transaction safety', () => {
       depends_on: string | null
     }
     expect(updated.depends_on).toBeNull()
+  })
+})
+
+describe('sanitizeGroup — isTaskGroupStatus guard', () => {
+  it('preserves a valid status', () => {
+    const group = createGroup({ name: 'Status Group' }, db)!
+    updateGroup(group.id, { status: 'ready' }, db)
+
+    const fetched = getGroup(group.id, db)
+    expect(fetched?.status).toBe('ready')
+  })
+
+  it('CHECK constraint prevents inserting rows with invalid status (guard scenario is pre-DB-constraint)', () => {
+    const group = createGroup({ name: 'Corrupt Group' }, db)!
+
+    // The task_groups table has a CHECK constraint — invalid status values are
+    // rejected at the DB level. The isTaskGroupStatus guard is a defense-in-depth
+    // safeguard for rows from older schema versions without the constraint.
+    expect(() => {
+      db.prepare('UPDATE task_groups SET status = ? WHERE id = ?').run('invalid-status', group.id)
+    }).toThrow(/CHECK constraint failed/)
+
+    // Restore default logger
+    setTaskGroupQueriesLogger({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })
   })
 })

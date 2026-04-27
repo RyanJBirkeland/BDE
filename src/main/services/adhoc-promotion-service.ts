@@ -134,7 +134,7 @@ export async function promoteAdhocToTask(
 
   const title = deriveTitleFromTask(agent.task)
 
-  const task = createReviewTaskFromAdhoc({
+  const task = await createReviewTaskFromAdhoc({
     title,
     repo: agent.repo,
     spec: agent.task,

@@ -70,14 +70,49 @@ export function ToastContainer(): React.JSX.Element | null {
 
   if (toasts.length === 0) return null
 
+  // Critical notifications (errors) go in an aria-live=assertive region so
+  // screen readers interrupt current narration. Routine notifications stay
+  // polite so they don't talk over the user. Combining both in a single
+  // polite region let assertive role="alert" toasts get queued behind active
+  // narration in some screen readers.
+  const errorToasts = toasts.filter((t) => t.type === 'error')
+  const routineToasts = toasts.filter((t) => t.type !== 'error')
+
   return (
-    <div
-      className="toast-container"
-      role="region"
-      aria-live="polite"
-      aria-atomic="true"
-      aria-label="Notifications"
-    >
+    <div className="toast-container" aria-label="Notifications">
+      <ToastLiveRegion
+        toasts={errorToasts}
+        liveness="assertive"
+        regionLabel="Error notifications"
+        reduced={reduced}
+        onDismiss={removeToast}
+      />
+      <ToastLiveRegion
+        toasts={routineToasts}
+        liveness="polite"
+        regionLabel="Status notifications"
+        reduced={reduced}
+        onDismiss={removeToast}
+      />
+    </div>
+  )
+}
+
+function ToastLiveRegion({
+  toasts,
+  liveness,
+  regionLabel,
+  reduced,
+  onDismiss
+}: {
+  toasts: Toast[]
+  liveness: 'polite' | 'assertive'
+  regionLabel: string
+  reduced: boolean | null
+  onDismiss: (id: string) => void
+}): React.JSX.Element {
+  return (
+    <div role="region" aria-live={liveness} aria-atomic="true" aria-label={regionLabel}>
       <AnimatePresence>
         {toasts.map((t) => (
           <motion.div
@@ -88,7 +123,7 @@ export function ToastContainer(): React.JSX.Element | null {
             exit="exit"
             transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
           >
-            <ToastItem toast={t} onDismiss={() => removeToast(t.id)} />
+            <ToastItem toast={t} onDismiss={() => onDismiss(t.id)} />
           </motion.div>
         ))}
       </AnimatePresence>

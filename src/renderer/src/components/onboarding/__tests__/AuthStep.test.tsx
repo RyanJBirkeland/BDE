@@ -85,6 +85,17 @@ describe('AuthStep', () => {
     await vi.waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/timed out/i)
     })
+
+    // Verify diagnostic snippets and copy buttons are rendered
+    const authStatusButton = screen.getByRole('button', { name: /copy auth status command/i })
+    const quitRelaunchButton = screen.getByRole('button', {
+      name: /copy quit and relaunch instruction/i
+    })
+    expect(authStatusButton).toBeInTheDocument()
+    expect(quitRelaunchButton).toBeInTheDocument()
+    expect(screen.getByText('claude auth status')).toBeInTheDocument()
+    expect(screen.getByText('⌘Q then relaunch')).toBeInTheDocument()
+
     vi.useRealTimers()
   })
 })

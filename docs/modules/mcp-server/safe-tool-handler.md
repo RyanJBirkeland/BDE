@@ -8,8 +8,8 @@ Uniform error-logging wrapper for MCP tool callbacks — the MCP analog of the `
 
 ## Public API
 - `safeToolHandler(name, logger, fn)` — wrap a single tool callback; rethrows the original error after `logger.error` records it.
-- `wrapServerWithSafeToolHandlers(server, logger)` — Proxy-replace the `McpServer.tool(...)` method so every registration's callback is passed through `safeToolHandler` automatically. `server.tool(...)` call sites are untouched.
+- `wrapServerWithSafeToolHandlers(server, logger)` — swap `McpServer.tool(...)` AND `McpServer.registerTool(...)` in place so every registration's callback is passed through `safeToolHandler` automatically. Call sites are untouched.
 
 ## Key Dependencies
-- `@modelcontextprotocol/sdk/server/mcp.js` — `McpServer` type whose `.tool()` method is intercepted
+- `@modelcontextprotocol/sdk/server/mcp.js` — `McpServer` type whose `.tool()` and `.registerTool()` methods are intercepted
 - `../logger.ts` — the `Logger` interface the wrapper narrows to `Pick<Logger, 'error'>`

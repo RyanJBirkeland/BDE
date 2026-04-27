@@ -10,6 +10,9 @@
  *
  * transitionTaskToReview is called by resolveSuccess() after all guards pass.
  */
+
+/** Hard timeout for all git subprocess calls in the success-path phases. */
+const GIT_EXEC_TIMEOUT_MS = 30_000
 import { existsSync } from 'node:fs'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
@@ -18,12 +21,16 @@ import { buildAgentEnv } from '../env-utils'
 import { MAX_RETRIES, AGENT_SUMMARY_MAX_LENGTH } from './types'
 import { MAX_NO_COMMITS_RETRIES } from './prompt-constants'
 import type { Logger } from '../logger'
-import { broadcastCoalesced } from '../broadcast'
 import type { AgentEvent } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { nowIso } from '../../shared/time'
 import { rebaseOntoMain, autoCommitIfDirty } from '../lib/git-operations'
 import { transitionToReview } from './review-transition'
+import type { SprintTask } from '../../shared/types/task-types'
+import { buildCommitMessage } from './commit-message'
+import { NO_COMMITS_NOTE } from './failure-messages'
+import type { TaskStateService } from '../services/task-state-service'
+import type { ResolveFailureResult } from './resolve-failure-phases'
 
 export interface RebaseOutcome {
   rebaseNote: string | undefined
@@ -104,14 +111,21 @@ export function extractTaskIdFromBranch(branch: string): string | null {
 /**
  * Check whether a branch name identifies a given task.
  *
- * Uses extractTaskIdFromBranch to pull the `<idSlug>` from the branch, then
- * checks that the task id ends with `t-<idSlug>` (case-insensitive). Accepts
- * both short ids ('t-11') and long ones ('audit-20260420-t-11').
+ * Two signals checked in order:
+ * 1. The `<idSlug>` segment (e.g. '13') matches the task id tail via
+ *    `endsWith('t-13')` — covers legacy-style ids like 'audit-20260420-t-13'.
+ * 2. The 8-char hex hash at the end of the branch (BDE appends the first 8
+ *    chars of the task UUID) matches the task id prefix — covers UUID task ids
+ *    like '9f04f0d089a0f3e3a45ff13ab2887a02'.
  */
 export function branchMatchesTask(branch: string, taskId: string): boolean {
   const slug = extractTaskIdFromBranch(branch)
   if (!slug) return false
-  return taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)
+  if (taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)) return true
+  // UUID task IDs: the trailing 8 hex chars of the branch name are the first
+  // 8 chars of the task UUID (BDE's branch generation convention).
+  const hashMatch = /-([a-f0-9]{8})$/.exec(branch)
+  return !!hashMatch?.[1] && taskId.toLowerCase().startsWith(hashMatch[1])
 }
 
 /**
@@ -127,7 +141,8 @@ const defaultReadTipCommit: ReadTipCommit = async (branch, repoPath) => {
   const env = buildAgentEnv()
   const { stdout } = await execFileAsync('git', ['log', '-1', '--format=%B', branch], {
     cwd: repoPath,
-    env
+    env,
+    timeout: GIT_EXEC_TIMEOUT_MS
   })
   return stdout.trim()
 }
@@ -175,7 +190,9 @@ export async function failTaskWithError(
   notes: string,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService?: TaskStateService,
+  broadcastCoalesced?: (channel: string, payload: unknown) => void
 ): Promise<void> {
   logger.error(`[completion] ${message}`)
 
@@ -184,29 +201,38 @@ export async function failTaskWithError(
     message,
     timestamp: Date.now()
   }
-  broadcastCoalesced('agent:event', { agentId: taskId, event })
+  broadcastCoalesced?.('agent:event', { agentId: taskId, event })
 
   try {
-    repo.updateTask(taskId, {
-      status: 'error',
-      completed_at: nowIso(),
-      notes,
-      claimed_by: null
-    })
+    if (taskStateService) {
+      await taskStateService.transition(taskId, 'error', {
+        fields: { completed_at: nowIso(), notes, claimed_by: null },
+        caller: 'completion:failTaskWithError'
+      })
+    } else {
+      // Fallback: direct write + manual terminal notification for callers that have
+      // not yet been migrated to inject TaskStateService.
+      await repo.updateTask(taskId, {
+        status: 'error',
+        completed_at: nowIso(),
+        notes,
+        claimed_by: null
+      })
+      await onTaskTerminal(taskId, 'error')
+    }
   } catch (e) {
     // DB failure after an already-error path: log as error but do not re-throw —
-    // onTaskTerminal must still fire so dependency resolution and metrics run.
-    logger.error(`[completion] Failed to update task ${taskId} after error: ${e}`)
+    // so dependency resolution and metrics always run.
+    logger.error(`[completion] Failed to transition task ${taskId} to error: ${e}`)
   }
-
-  await onTaskTerminal(taskId, 'error')
 }
 
 async function detectBranch(worktreePath: string): Promise<string> {
   const env = buildAgentEnv()
   const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
     cwd: worktreePath,
-    env
+    env,
+    timeout: GIT_EXEC_TIMEOUT_MS
   })
   return stdout.trim()
 }
@@ -216,7 +242,8 @@ export async function verifyWorktreeExists(
   worktreePath: string,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService?: TaskStateService
 ): Promise<boolean> {
   if (existsSync(worktreePath)) {
     return true
@@ -227,7 +254,8 @@ export async function verifyWorktreeExists(
     `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
     repo,
     logger,
-    onTaskTerminal
+    onTaskTerminal,
+    taskStateService
   )
   return false
 }
@@ -237,7 +265,8 @@ export async function detectAgentBranch(
   worktreePath: string,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService?: TaskStateService
 ): Promise<string | null> {
   let branch: string
   try {
@@ -249,7 +278,8 @@ export async function detectAgentBranch(
       'Failed to detect branch',
       repo,
       logger,
-      onTaskTerminal
+      onTaskTerminal,
+      taskStateService
     )
     return null
   }
@@ -261,7 +291,8 @@ export async function detectAgentBranch(
       'Empty branch name',
       repo,
       logger,
-      onTaskTerminal
+      onTaskTerminal,
+      taskStateService
     )
     return null
   }
@@ -272,11 +303,11 @@ export async function detectAgentBranch(
 export async function autoCommitPendingChanges(
   taskId: string,
   worktreePath: string,
-  title: string,
+  task: SprintTask,
   logger: Logger
 ): Promise<void> {
   try {
-    await autoCommitIfDirty(worktreePath, title, logger)
+    await autoCommitIfDirty(worktreePath, buildCommitMessage(task), logger)
   } catch (err) {
     // Auto-commit is best-effort: if it fails the agent's explicit commits are still present.
     // The subsequent rev-list check will catch the no-commits case if the worktree is truly empty.
@@ -317,6 +348,7 @@ interface CommitCheckContext {
   repo: IAgentTaskRepository
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  taskStateService?: TaskStateService
   resolveFailure: (
     opts: {
       taskId: string
@@ -325,7 +357,36 @@ interface CommitCheckContext {
       repo: IAgentTaskRepository
     },
     logger?: Logger
-  ) => boolean
+  ) => Promise<ResolveFailureResult>
+}
+
+/**
+ * Captures `git diff HEAD` and `git status --porcelain` from the worktree and
+ * logs both under the task id. Called whenever the agent exited without commits
+ * so that the next retry (and the operator) can see what work was abandoned.
+ */
+async function logUncommittedWorktreeState(
+  taskId: string,
+  worktreePath: string,
+  logger: Logger
+): Promise<void> {
+  const env = buildAgentEnv()
+  try {
+    const [{ stdout: diff }, { stdout: status }] = await Promise.all([
+      execFileAsync('git', ['diff', 'HEAD'], { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }),
+      execFileAsync('git', ['status', '--porcelain'], { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS })
+    ])
+    logger.warn(
+      `[completion] Task ${taskId}: no-commits — uncommitted status:\n${status.trim() || '(empty)'}`
+    )
+    logger.warn(
+      `[completion] Task ${taskId}: no-commits — uncommitted diff:\n${diff.trim() || '(empty)'}`
+    )
+  } catch (err) {
+    logger.warn(
+      `[completion] Task ${taskId}: could not capture uncommitted state for no-commits log: ${err}`
+    )
+  }
 }
 
 /**
@@ -342,6 +403,7 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
     repo,
     logger,
     onTaskTerminal,
+    taskStateService,
     resolveFailure
   } = opts
   const env = buildAgentEnv()
@@ -349,20 +411,29 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
     const { stdout: diffOut } = await execFileAsync(
       'git',
       ['rev-list', '--count', `origin/main..${branch}`],
-      { cwd: worktreePath, env }
+      { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
+      await logUncommittedWorktreeState(taskId, worktreePath, logger)
+      logger.event('completion.no_commits', { taskId, branch, retryCount })
+
       const summaryNote = agentSummary
-        ? `Agent produced no commits. Last output: ${agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)}`
-        : 'Agent produced no commits (no output captured)'
+        ? `${NO_COMMITS_NOTE} Last agent output: ${agentSummary.slice(0, AGENT_SUMMARY_MAX_LENGTH)}`
+        : NO_COMMITS_NOTE
 
       if (retryCount >= MAX_NO_COMMITS_RETRIES) {
-        await failTaskExhaustedNoCommits(taskId, branch, repo, logger, onTaskTerminal)
+        await failTaskExhaustedNoCommits(taskId, branch, repo, logger, onTaskTerminal, taskStateService)
         return false
       }
 
-      const isTerminal = resolveFailure({ taskId, retryCount, notes: summaryNote, repo }, logger)
-      if (isTerminal) {
+      const failureResult = await resolveFailure({ taskId, retryCount, notes: summaryNote, repo }, logger)
+      if (failureResult.writeFailed) {
+        logger.warn(
+          `[completion] Task ${taskId}: no-commits failure DB write failed — skipping terminal notification`
+        )
+        return false
+      }
+      if (failureResult.isTerminal) {
         logger.warn(
           `[completion] Task ${taskId}: no commits on branch ${branch} — exhausted retries`
         )
@@ -375,11 +446,25 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
       return false
     }
   } catch (err) {
-    // rev-list can fail if the remote ref doesn't exist yet (fresh worktree, no fetch).
-    // Assume commits exist so the agent's work proceeds to review rather than silently failing.
-    logger.warn(
-      `[completion] git rev-list check failed for task ${taskId} — assuming commits exist: ${err}`
-    )
+    // rev-list failure is a hard failure: promoting a task to review without
+    // confirming commits exist risks empty reviews and false dependency unblocking.
+    logger.error(`[completion] git rev-list check failed for task ${taskId}: ${err}`)
+    if (taskStateService) {
+      await taskStateService.transition(taskId, 'failed', {
+        fields: {
+          failure_reason: 'git-precondition-failed',
+          notes: `git rev-list failed: ${String(err)}`,
+          claimed_by: null
+        },
+        caller: 'resolve-success.rev-list'
+      })
+      await onTaskTerminal(taskId, 'failed')
+    } else {
+      // No TaskStateService injected — fall back to resolveFailure path
+      const fallbackResult = await resolveFailure({ taskId, retryCount, notes: `git rev-list failed: ${String(err)}`, repo }, logger)
+      if (!fallbackResult.writeFailed && fallbackResult.isTerminal) await onTaskTerminal(taskId, 'failed')
+    }
+    return false
   }
   return true
 }
@@ -399,7 +484,8 @@ async function failTaskExhaustedNoCommits(
   branch: string,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService?: TaskStateService
 ): Promise<void> {
   logger.warn(
     `[completion] Task ${taskId}: no commits on branch ${branch} after ${MAX_NO_COMMITS_RETRIES} attempts — marking failed`
@@ -411,16 +497,24 @@ async function failTaskExhaustedNoCommits(
       ? Date.now() - new Date(task.started_at).getTime()
       : undefined
 
+  const failFields = {
+    completed_at: nowIso(),
+    claimed_by: null,
+    needs_review: true,
+    failure_reason: 'no-commits-exhausted',
+    notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.bde/bde.log`,
+    ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
+  }
+
   try {
-    repo.updateTask(taskId, {
-      status: 'failed',
-      completed_at: nowIso(),
-      claimed_by: null,
-      needs_review: true,
-      failure_reason: 'no-commits-exhausted',
-      notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.bde/bde.log`,
-      ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
-    })
+    if (taskStateService) {
+      await taskStateService.transition(taskId, 'failed', {
+        fields: failFields,
+        caller: 'resolve-success:no-commits-exhausted'
+      })
+    } else {
+      await repo.updateTask(taskId, { status: 'failed', ...failFields }) // phase-a-bypass
+    }
   } catch (err) {
     logger.error(`[completion] Failed to mark task ${taskId} no-commits-exhausted: ${err}`)
   }
@@ -447,7 +541,9 @@ export async function transitionTaskToReview(
     unitOfWork: IUnitOfWork
     logger: Logger
     onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
-  }) => Promise<void>
+    taskStateService: TaskStateService
+  }) => Promise<void>,
+  taskStateService: TaskStateService
 ): Promise<void> {
   logger.info(
     `[completion] Task ${taskId}: agent finished with commits on branch ${branch} — transitioning to review`
@@ -460,7 +556,8 @@ export async function transitionTaskToReview(
     rebaseBaseSha: rebaseOutcome.rebaseBaseSha,
     rebaseSucceeded: rebaseOutcome.rebaseSucceeded,
     repo,
-    logger
+    logger,
+    taskStateService
   })
 
   await attemptAutoMerge({
@@ -471,7 +568,8 @@ export async function transitionTaskToReview(
     repo,
     unitOfWork,
     logger,
-    onTaskTerminal
+    onTaskTerminal,
+    taskStateService
   })
 
   // The task enters 'review' status to await human inspection — this is NOT a terminal state.

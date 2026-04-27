@@ -68,10 +68,8 @@ export function ToolGroupCard({
   for (const t of tools) {
     counts[t.tool] = (counts[t.tool] || 0) + 1
   }
-  const breakdown = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, count]) => `${count} ${name}`)
-    .join(', ')
+  const sortedTools = Object.entries(counts).sort((a, b) => b[1] - a[1])
+  const breakdown = sortedTools.map(([name, count]) => `${count} ${name}`).join(', ')
 
   return (
     <div className={`console-card ${searchClass}`}>
@@ -80,10 +78,15 @@ export function ToolGroupCard({
         searchClass=""
         header={
           <div className="console-card__header">
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              {tools.map((t, i) => {
-                const meta = getToolMeta(t.tool)
-                return <meta.Icon key={i} size={14} style={{ color: meta.color }} />
+            <div className="console-tool-group__icons">
+              {sortedTools.map(([toolName, count]) => {
+                const meta = getToolMeta(toolName)
+                return (
+                  <span key={toolName} className="console-tool-group__chip">
+                    <meta.Icon size={14} style={{ color: meta.color }} />
+                    {count > 1 && <span className="console-tool-group__count">{count}</span>}
+                  </span>
+                )
               })}
             </div>
             <span className="console-prefix console-prefix--tool">[tools]</span>

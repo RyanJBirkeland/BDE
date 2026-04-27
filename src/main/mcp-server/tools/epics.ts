@@ -23,10 +23,13 @@ export interface EpicToolsDeps {
 export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void {
   const svc = deps.epicService
 
-  server.tool(
+  server.registerTool(
     'epics.list',
-    'List epics (task groups). Optionally filter by status or search string on name.',
-    EpicListSchema.shape,
+    {
+      description:
+        'List epics (task groups). Optionally filter by status or search string on name.',
+      inputSchema: EpicListSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -43,10 +46,13 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       )
   )
 
-  server.tool(
+  server.registerTool(
     'epics.get',
-    "Fetch one epic by id. Pass includeTasks=true to also return the epic's task list.",
-    EpicIdSchema.shape,
+    {
+      description:
+        "Fetch one epic by id. Pass includeTasks=true to also return the epic's task list.",
+      inputSchema: EpicIdSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -62,10 +68,12 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       )
   )
 
-  server.tool(
+  server.registerTool(
     'epics.create',
-    'Create a new epic (task group).',
-    EpicWriteFieldsSchema.shape,
+    {
+      description: 'Create a new epic (task group).',
+      inputSchema: EpicWriteFieldsSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -78,10 +86,12 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       )
   )
 
-  server.tool(
+  server.registerTool(
     'epics.update',
-    "Update an epic's fields (name, icon, accent_color, goal, status).",
-    EpicUpdateSchema.shape,
+    {
+      description: "Update an epic's fields (name, icon, accent_color, goal, status).",
+      inputSchema: EpicUpdateSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -100,10 +110,12 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       )
   )
 
-  server.tool(
+  server.registerTool(
     'epics.delete',
-    'Delete an epic. Its tasks remain but are detached.',
-    EpicIdSchema.shape,
+    {
+      description: 'Delete an epic. Its tasks remain but are detached.',
+      inputSchema: EpicIdSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -115,10 +127,12 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       )
   )
 
-  server.tool(
+  server.registerTool(
     'epics.addTask',
-    'Attach an existing task to an epic.',
-    EpicAddTaskSchema.shape,
+    {
+      description: 'Attach an existing task to an epic.',
+      inputSchema: EpicAddTaskSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -130,10 +144,12 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       )
   )
 
-  server.tool(
+  server.registerTool(
     'epics.removeTask',
-    'Detach a task from its epic.',
-    EpicRemoveTaskSchema.shape,
+    {
+      description: 'Detach a task from its epic.',
+      inputSchema: EpicRemoveTaskSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {
@@ -145,10 +161,12 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
       )
   )
 
-  server.tool(
+  server.registerTool(
     'epics.setDependencies',
-    "Replace an epic's upstream dependencies. Rejects cycles atomically.",
-    EpicSetDependenciesSchema.shape,
+    {
+      description: "Replace an epic's upstream dependencies. Rejects cycles atomically.",
+      inputSchema: EpicSetDependenciesSchema
+    },
     async (rawArgs) =>
       safeToolResponse(
         async () => {

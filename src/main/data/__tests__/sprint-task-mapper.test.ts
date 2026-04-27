@@ -158,6 +158,46 @@ describe('mapRowsToTasks', () => {
   })
 })
 
+describe('mapRowToTask — optional field coercion', () => {
+  it('maps null optional string field to null', () => {
+    const task = mapRowToTask(row({ pr_url: null }))
+    expect(task.pr_url).toBeNull()
+  })
+
+  it('does not propagate extra DB columns not present on SprintTask', () => {
+    const task = mapRowToTask(row({ __extra_column: 'should-be-gone' }))
+    expect(Object.prototype.hasOwnProperty.call(task, '__extra_column')).toBe(false)
+  })
+
+  it('coerces an unrecognised pr_status to null', () => {
+    const task = mapRowToTask(row({ pr_status: 'legacy_open' }))
+    expect(task.pr_status).toBeNull()
+  })
+
+  it('preserves a valid pr_status', () => {
+    const task = mapRowToTask(row({ pr_status: 'open' }))
+    expect(task.pr_status).toBe('open')
+  })
+
+  it('coerces an unrecognised failure_reason to null', () => {
+    const task = mapRowToTask(row({ failure_reason: 'disk_full' }))
+    expect(task.failure_reason).toBeNull()
+  })
+
+  it('filters out depends_on entries with an unrecognised type', () => {
+    const mixed = JSON.stringify([
+      { id: 'a', type: 'hard' },
+      { id: 'b', type: 'unknown_type' },
+      { id: 'c', type: 'soft' }
+    ])
+    const task = mapRowToTask(row({ depends_on: mixed }))
+    expect(task.depends_on).toEqual([
+      { id: 'a', type: 'hard' },
+      { id: 'c', type: 'soft' }
+    ])
+  })
+})
+
 describe('serializeFieldForStorage (regression)', () => {
   it('still serializes tags to JSON string', () => {
     expect(serializeFieldForStorage('tags', ['a', 'b'])).toBe('["a","b"]')

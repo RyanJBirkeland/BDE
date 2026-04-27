@@ -225,15 +225,16 @@ describe('DiffViewer', () => {
     expect(onRemovePendingComment).toHaveBeenCalledWith('pending-1')
   })
 
-  it('uses plain (non-virtualized) mode when file has comments', () => {
-    // Even large diff should stay non-virtualized when comments present
+  it('uses virtualized mode for large diffs with comments, rendering comments inline', () => {
+    // Large diff stays virtualized even when comments are present — comments are injected as
+    // virtual rows so they appear without switching to the slow PlainDiffContent path.
     const files = [makeLargeDiffFile('src/large.ts')]
     const comments = [
       {
         id: 1,
         path: 'src/large.ts',
         line: 1,
-        body: 'force plain mode',
+        body: 'inline comment in virtualized view',
         user: { login: 'reviewer', avatar_url: '' },
         created_at: '2026-01-01T00:00:00Z',
         updated_at: '2026-01-01T00:00:00Z',
@@ -245,8 +246,10 @@ describe('DiffViewer', () => {
       }
     ]
     render(<DiffViewer files={files} comments={comments as any} />)
-    // In plain mode we see diff-file elements; in virt mode we see the absolute-positioned container
-    expect(document.querySelector('.diff-file')).toBeInTheDocument()
+    // Virtualized mode: no .diff-file wrapper elements
+    expect(document.querySelector('.diff-file')).not.toBeInTheDocument()
+    // Comment is rendered as a virtual row within the initial viewport
+    expect(screen.getAllByText('inline comment in virtualized view').length).toBeGreaterThan(0)
   })
 
   it('uses virtualized mode for large diffs without comments', () => {

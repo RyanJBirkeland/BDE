@@ -82,6 +82,10 @@ vi.mock('../watchdog', () => ({
   checkAgent: vi.fn(() => 'ok')
 }))
 
+vi.mock('../../data/sqlite-retry', () => ({
+  withRetryAsync: vi.fn(async (fn: () => unknown) => fn())
+}))
+
 vi.mock('node:fs', () => ({
   appendFileSync: vi.fn(),
   existsSync: vi.fn().mockReturnValue(true),
@@ -110,6 +114,7 @@ vi.mock('../oauth-checker', () => ({
 
 import { AgentManagerImpl } from '../index'
 import type { AgentManagerConfig, ActiveAgent, AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { getRepoPaths } from '../../paths'
 import { setupWorktree, pruneStaleWorktrees } from '../worktree'
@@ -138,11 +143,11 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
 }
 
 function makeMockRepo(): IAgentTaskRepository {
@@ -174,7 +179,7 @@ function makeActiveAgent(taskId: string): ActiveAgent {
       abort: vi.fn(),
       steer: vi.fn().mockResolvedValue({ delivered: true })
     } as AgentHandle,
-    model: 'claude-sonnet-4-5',
+    model: DEFAULT_CONFIG.defaultModel,
     startedAt: Date.now(),
     lastOutputAt: Date.now(),
     rateLimitCount: 0,
@@ -208,7 +213,7 @@ function setupDefaultMocks() {
   vi.mocked(claimTask).mockReturnValue({ id: 'task-1' } as ReturnType<typeof vi.fn>)
   vi.mocked(updateTask).mockReturnValue(null)
   vi.mocked(getTask).mockReturnValue({ id: 'task-1', status: 'queued', repo: 'myrepo' } as any)
-  vi.mocked(recoverOrphans).mockResolvedValue(0)
+  vi.mocked(recoverOrphans).mockResolvedValue({ recovered: [], exhausted: [] })
   vi.mocked(pruneStaleWorktrees).mockResolvedValue(0)
   vi.mocked(setupWorktree).mockResolvedValue({
     worktreePath: '/tmp/wt/myrepo/task-1',
@@ -234,20 +239,20 @@ describe('AgentManagerImpl — class internals', () => {
   describe('state visibility', () => {
     it('_activeAgents is an empty Map on construction', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      expect(manager._activeAgents).toBeInstanceOf(Map)
-      expect(manager._activeAgents.size).toBe(0)
+      expect(manager.__testInternals.activeAgents).toBeInstanceOf(Map)
+      expect(manager.__testInternals.activeAgents.size).toBe(0)
     })
 
     it('_concurrency.maxSlots matches config.maxConcurrent', () => {
       const config = { ...baseConfig, maxConcurrent: 5 }
       const manager = new AgentManagerImpl(config, makeMockRepo(), makeLogger())
-      expect(manager._concurrency.maxSlots).toBe(5)
+      expect(manager.__testInternals.concurrency.maxSlots).toBe(5)
     })
 
     it('_processingTasks is an empty Set on construction', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      expect(manager._processingTasks).toBeInstanceOf(Set)
-      expect(manager._processingTasks.size).toBe(0)
+      expect(manager.__testInternals.processingTasks).toBeInstanceOf(Set)
+      expect(manager.__testInternals.processingTasks.size).toBe(0)
     })
   })
 
@@ -261,9 +266,9 @@ describe('AgentManagerImpl — class internals', () => {
       const raw = makeRawTask({ id: 'task-race' })
 
       // Pre-populate the guard set
-      manager._processingTasks.add('task-race')
+      manager.__testInternals.processingTasks.add('task-race')
 
-      await manager._processQueuedTask(raw, new Map())
+      await manager.__testInternals.processQueuedTask(raw, new Map())
 
       expect(claimTask).not.toHaveBeenCalled()
     })
@@ -277,9 +282,9 @@ describe('AgentManagerImpl — class internals', () => {
       vi.mocked(getRepoPaths).mockReturnValue({})
       const raw = makeRawTask({ id: 'task-cleanup', repo: 'unknown-repo' })
 
-      await manager._processQueuedTask(raw, new Map())
+      await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager._processingTasks.has('task-cleanup')).toBe(false)
+      expect(manager.__testInternals.processingTasks.has('task-cleanup')).toBe(false)
     })
 
     it('removes task from _processingTasks even when claim fails (early return path)', async () => {
@@ -287,9 +292,9 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const raw = makeRawTask({ id: 'task-claim-fail' })
 
-      await manager._processQueuedTask(raw, new Map())
+      await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager._processingTasks.has('task-claim-fail')).toBe(false)
+      expect(manager.__testInternals.processingTasks.has('task-claim-fail')).toBe(false)
     })
 
     it('removes task from _processingTasks when repo path not found (early return path)', async () => {
@@ -297,9 +302,9 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const raw = makeRawTask({ id: 'task-no-repo', repo: 'no-such-repo' })
 
-      await manager._processQueuedTask(raw, new Map())
+      await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager._processingTasks.has('task-no-repo')).toBe(false)
+      expect(manager.__testInternals.processingTasks.has('task-no-repo')).toBe(false)
       expect(claimTask).not.toHaveBeenCalled()
     })
 
@@ -308,9 +313,9 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const raw = makeRawTask({ id: 'task-wt-fail' })
 
-      await manager._processQueuedTask(raw, new Map())
+      await manager.__testInternals.processQueuedTask(raw, new Map())
 
-      expect(manager._processingTasks.has('task-wt-fail')).toBe(false)
+      expect(manager.__testInternals.processingTasks.has('task-wt-fail')).toBe(false)
     })
   })
 
@@ -322,96 +327,110 @@ describe('AgentManagerImpl — class internals', () => {
     it('skips agents whose taskId is in _processingTasks — agent NOT killed despite max-runtime verdict', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-in-flight')
-      manager._activeAgents.set('task-in-flight', agent)
-      manager._processingTasks.add('task-in-flight')
+      manager.__testInternals.activeAgents.set('task-in-flight', agent)
+      manager.__testInternals.processingTasks.add('task-in-flight')
 
       // checkAgent returns max-runtime — without the guard the agent would be killed
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
-      manager._watchdogLoop()
+      manager.__testInternals.watchdogLoop()
 
       // Agent must still be in _activeAgents — guard protected it
-      expect(manager._activeAgents.has('task-in-flight')).toBe(true)
+      expect(manager.__testInternals.activeAgents.has('task-in-flight')).toBe(true)
       expect(agent.handle.abort).not.toHaveBeenCalled()
     })
 
-    it('kills agents NOT in _processingTasks when verdict is max-runtime', () => {
+    it('kills agents NOT in _processingTasks when verdict is max-runtime', async () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-idle')
-      manager._activeAgents.set('task-idle', agent)
+      manager.__testInternals.activeAgents.set('task-idle', agent)
       // _processingTasks does NOT contain this agent
 
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
-      manager._watchdogLoop()
+      await manager.__testInternals.watchdogLoop()
 
       // Agent should be removed and abort called
-      expect(manager._activeAgents.has('task-idle')).toBe(false)
+      expect(manager.__testInternals.activeAgents.has('task-idle')).toBe(false)
       expect(agent.handle.abort).toHaveBeenCalledOnce()
     })
 
     it('does not kill agents when verdict is ok', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-healthy')
-      manager._activeAgents.set('task-healthy', agent)
+      manager.__testInternals.activeAgents.set('task-healthy', agent)
 
       vi.mocked(checkAgent).mockReturnValue('ok')
 
-      manager._watchdogLoop()
+      manager.__testInternals.watchdogLoop()
 
-      expect(manager._activeAgents.has('task-healthy')).toBe(true)
+      expect(manager.__testInternals.activeAgents.has('task-healthy')).toBe(true)
       expect(agent.handle.abort).not.toHaveBeenCalled()
     })
 
-    it('processes multiple agents: kills only those not in _processingTasks', () => {
+    it('processes multiple agents: kills only those not in _processingTasks', async () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
 
       const agentA = makeActiveAgent('task-a')
       const agentB = makeActiveAgent('task-b')
 
-      manager._activeAgents.set('task-a', agentA)
-      manager._activeAgents.set('task-b', agentB)
+      manager.__testInternals.activeAgents.set('task-a', agentA)
+      manager.__testInternals.activeAgents.set('task-b', agentB)
 
       // task-a is being processed — protected by guard
-      manager._processingTasks.add('task-a')
+      manager.__testInternals.processingTasks.add('task-a')
 
       // Both would fail max-runtime check
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
-      manager._watchdogLoop()
+      await manager.__testInternals.watchdogLoop()
 
-      expect(manager._activeAgents.has('task-a')).toBe(true)
+      expect(manager.__testInternals.activeAgents.has('task-a')).toBe(true)
       expect(agentA.handle.abort).not.toHaveBeenCalled()
 
-      expect(manager._activeAgents.has('task-b')).toBe(false)
+      expect(manager.__testInternals.activeAgents.has('task-b')).toBe(false)
       expect(agentB.handle.abort).toHaveBeenCalledOnce()
     })
 
-    it('Fix 2: calls process.kill(SIGKILL) on the underlying subprocess when available', () => {
-      const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      const killFn = vi.fn()
-      const agent = makeActiveAgent('task-sigkill')
-      // Attach a mock process with kill() to the handle, simulating the SDK subprocess
-      ;(agent.handle as any).process = { kill: killFn }
-      manager._activeAgents.set('task-sigkill', agent)
+    it('Fix 2: escalates to process.kill(SIGKILL) on the underlying subprocess after the soft-kill grace window', async () => {
+      vi.useFakeTimers()
+      try {
+        const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
+        const killFn = vi.fn()
+        const agent = makeActiveAgent('task-sigkill')
+        // Attach a mock process with kill() to the handle, simulating the SDK subprocess
+        ;(agent.handle as any).process = { kill: killFn }
+        manager.__testInternals.activeAgents.set('task-sigkill', agent)
 
-      vi.mocked(checkAgent).mockReturnValue('max-runtime')
+        vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
-      manager._watchdogLoop()
+        await manager.__testInternals.watchdogLoop()
 
-      expect(agent.handle.abort).toHaveBeenCalledOnce()
-      expect(killFn).toHaveBeenCalledWith('SIGKILL')
+        // Soft-kill fires immediately
+        expect(agent.handle.abort).toHaveBeenCalledOnce()
+        expect(killFn).not.toHaveBeenCalled()
+
+        // SIGKILL escalation fires after FORCE_KILL_DELAY_MS only if the agent
+        // is still in the active map. The watchdog removed it on the same tick,
+        // so re-insert to simulate a stuck agent that did not exit.
+        manager.__testInternals.activeAgents.set('task-sigkill', agent)
+        vi.advanceTimersByTime(5_000)
+
+        expect(killFn).toHaveBeenCalledWith('SIGKILL')
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('Fix 2: does not throw when process.kill is not available on the handle', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       const agent = makeActiveAgent('task-no-proc')
       // No process property on handle
-      manager._activeAgents.set('task-no-proc', agent)
+      manager.__testInternals.activeAgents.set('task-no-proc', agent)
 
       vi.mocked(checkAgent).mockReturnValue('max-runtime')
 
-      expect(() => manager._watchdogLoop()).not.toThrow()
+      expect(() => manager.__testInternals.watchdogLoop()).not.toThrow()
       expect(agent.handle.abort).toHaveBeenCalledOnce()
     })
   })
@@ -483,6 +502,7 @@ describe('AgentManagerImpl — class internals', () => {
         title: 'Build feature',
         prompt: 'Add login page',
         spec: 'Login spec',
+        spec_type: null,
         repo: 'myrepo',
         retry_count: 2,
         fast_fail_count: 1,
@@ -609,16 +629,16 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
       // Directly seed the cache (simulates a task that was cached while active)
-      manager._lastTaskDeps.set('task-active', { deps: null, hash: 'h1' })
-      manager._lastTaskDeps.set('task-done', { deps: null, hash: 'h2' })
+      manager.__testInternals.lastTaskDeps.set('task-active', { deps: null, hash: 'h1' })
+      manager.__testInternals.lastTaskDeps.set('task-done', { deps: null, hash: 'h2' })
 
       // Drain loop sees task-done as terminal → should evict from fingerprint cache
-      await manager._drainLoop()
+      await manager.__testInternals.drainLoop()
 
       // active task stays cached (non-terminal, hash unchanged → no mutation)
-      expect(manager._lastTaskDeps.has('task-active')).toBe(true)
+      expect(manager.__testInternals.lastTaskDeps.has('task-active')).toBe(true)
       // terminal task must be evicted
-      expect(manager._lastTaskDeps.has('task-done')).toBe(false)
+      expect(manager.__testInternals.lastTaskDeps.has('task-done')).toBe(false)
     })
 
     it('never adds a task to _lastTaskDeps when it starts in terminal status', async () => {
@@ -630,13 +650,13 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
       // Map starts empty — terminal tasks should never be added
-      expect(manager._lastTaskDeps.size).toBe(0)
-      await manager._drainLoop()
+      expect(manager.__testInternals.lastTaskDeps.size).toBe(0)
+      await manager.__testInternals.drainLoop()
 
       // No terminal task should ever land in the cache
-      expect(manager._lastTaskDeps.has('task-failed')).toBe(false)
-      expect(manager._lastTaskDeps.has('task-cancelled')).toBe(false)
-      expect(manager._lastTaskDeps.has('task-error')).toBe(false)
+      expect(manager.__testInternals.lastTaskDeps.has('task-failed')).toBe(false)
+      expect(manager.__testInternals.lastTaskDeps.has('task-cancelled')).toBe(false)
+      expect(manager.__testInternals.lastTaskDeps.has('task-error')).toBe(false)
     })
   })
 
@@ -645,65 +665,61 @@ describe('AgentManagerImpl — class internals', () => {
   // -------------------------------------------------------------------------
 
   describe('taskStatusMap refresh after claim', () => {
-    it('refreshes map after successful claim so subsequent tasks see updated statuses', async () => {
-      // This test simulates: drain loop builds map with task-2='blocked',
-      // then concurrent completion changes task-2 to 'queued' in DB,
-      // refresh after claim picks up the new status.
-
-      let callCount = 0
+    it('updates only the just-claimed task in the map (targeted reload)', async () => {
+      // EP-9 targeted-data-queries: a successful claim should refresh ONLY the
+      // claimed task's status — a full-catalog rescan is wasted I/O.
+      // First getTask call (fresh-status guard before claim) sees 'queued';
+      // second call (post-claim targeted refresh) sees 'active'.
+      let getTaskCalls = 0
       const mockRepo = {
-        getTask: vi.fn().mockReturnValue({ id: 'task-1', status: 'queued' }),
+        getTask: vi.fn().mockImplementation(() => {
+          getTaskCalls++
+          if (getTaskCalls === 1) return { id: 'task-1', status: 'queued' }
+          return { id: 'task-1', status: 'active' }
+        }),
         updateTask: vi.fn(),
         getQueuedTasks: vi.fn(),
         getOrphanedTasks: vi.fn(),
         getActiveTaskCount: vi.fn().mockReturnValue(0),
         claimTask: vi.fn().mockReturnValue({ id: 'task-1' }),
-        // First call (drain loop builds map): task-2 is blocked
-        // Second call (refresh after claim): task-2 is now queued
-        getTasksWithDependencies: vi.fn().mockImplementation(() => {
-          callCount++
-          if (callCount === 1) {
-            return [
-              { id: 'task-1', status: 'queued', depends_on: null },
-              { id: 'task-2', status: 'blocked', depends_on: null }
-            ]
-          }
-          return [
-            { id: 'task-1', status: 'active', depends_on: null },
-            { id: 'task-2', status: 'queued', depends_on: null }
-          ]
-        })
+        getTasksWithDependencies: vi.fn().mockReturnValue([])
       }
 
       const manager = new AgentManagerImpl(baseConfig, mockRepo as never, makeLogger())
 
-      // Simulate drain loop: build initial map from first getTasksWithDependencies call
-      const initialTasks = mockRepo.getTasksWithDependencies()
-      const taskStatusMap = new Map(initialTasks.map((t) => [t.id, t.status]))
-
-      // Verify initial state: task-2 is blocked
-      expect(taskStatusMap.get('task-2')).toBe('blocked')
+      const taskStatusMap = new Map([
+        ['task-1', 'queued'],
+        ['task-2', 'blocked']
+      ])
 
       const raw = makeRawTask({ id: 'task-1' })
-      await manager._processQueuedTask(raw, taskStatusMap)
+      await manager.__testInternals.processQueuedTask(raw, taskStatusMap)
 
-      // Verify refresh happened: task-2 should now be 'queued', task-1 should be 'active'
-      expect(taskStatusMap.get('task-2')).toBe('queued')
+      // task-1 was claimed — its map entry is now the post-claim status.
       expect(taskStatusMap.get('task-1')).toBe('active')
-      expect(mockRepo.getTasksWithDependencies).toHaveBeenCalledTimes(2) // initial + refresh
+      // task-2 is untouched — no full-catalog reload happened.
+      expect(taskStatusMap.get('task-2')).toBe('blocked')
+      // The targeted reload uses getTask, not getTasksWithDependencies.
+      expect(mockRepo.getTask).toHaveBeenCalledWith('task-1')
+      expect(mockRepo.getTasksWithDependencies).not.toHaveBeenCalled()
     })
 
     it('continues with stale map when refresh fails (non-fatal)', async () => {
+      // First getTask call (fresh-status guard before claim) succeeds; the
+      // post-claim targeted refresh call throws and must be swallowed.
+      let getTaskCalls = 0
       const mockRepo = {
-        getTask: vi.fn(),
+        getTask: vi.fn().mockImplementation(() => {
+          getTaskCalls++
+          if (getTaskCalls === 1) return { id: 'task-1', status: 'queued' }
+          throw new Error('DB connection lost')
+        }),
         updateTask: vi.fn(),
         getQueuedTasks: vi.fn(),
         getOrphanedTasks: vi.fn(),
         getActiveTaskCount: vi.fn().mockReturnValue(0),
         claimTask: vi.fn().mockReturnValue({ id: 'task-1' }),
-        getTasksWithDependencies: vi.fn().mockImplementation(() => {
-          throw new Error('DB connection lost')
-        })
+        getTasksWithDependencies: vi.fn()
       }
 
       const manager = new AgentManagerImpl(baseConfig, mockRepo as never, makeLogger())
@@ -716,7 +732,7 @@ describe('AgentManagerImpl — class internals', () => {
       const raw = makeRawTask({ id: 'task-1' })
 
       // Should not throw — refresh failure is caught
-      await expect(manager._processQueuedTask(raw, taskStatusMap)).resolves.toBeUndefined()
+      await expect(manager.__testInternals.processQueuedTask(raw, taskStatusMap)).resolves.toBeUndefined()
 
       // Map unchanged since refresh failed
       expect(taskStatusMap.get('task-2')).toBe('blocked')
@@ -751,7 +767,7 @@ describe('AgentManagerImpl — class internals', () => {
       ])
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
-      const result = manager._refreshDependencyIndex()
+      const result = manager.__testInternals.refreshDependencyIndex()
 
       expect(result).toBeInstanceOf(Map)
       expect(result.get('task-a')).toBe('queued')
@@ -764,15 +780,15 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
       // Pre-seed cache with task-a (which is no longer in DB)
-      manager._lastTaskDeps.set('task-a', { deps: null, hash: 'old-hash' })
-      manager._lastTaskDeps.set('task-b', { deps: null, hash: 'old-hash' })
+      manager.__testInternals.lastTaskDeps.set('task-a', { deps: null, hash: 'old-hash' })
+      manager.__testInternals.lastTaskDeps.set('task-b', { deps: null, hash: 'old-hash' })
 
-      manager._refreshDependencyIndex()
+      manager.__testInternals.refreshDependencyIndex()
 
       // task-a was deleted → should be removed from cache
-      expect(manager._lastTaskDeps.has('task-a')).toBe(false)
+      expect(manager.__testInternals.lastTaskDeps.has('task-a')).toBe(false)
       // task-b still exists (non-terminal) → should be in cache
-      expect(manager._lastTaskDeps.has('task-b')).toBe(true)
+      expect(manager.__testInternals.lastTaskDeps.has('task-b')).toBe(true)
     })
 
     it('returns empty map and logs warning when repo throws', () => {
@@ -791,7 +807,7 @@ describe('AgentManagerImpl — class internals', () => {
       const logger = makeLogger()
       const manager = new AgentManagerImpl(baseConfig, repo, logger)
 
-      const result = manager._refreshDependencyIndex()
+      const result = manager.__testInternals.refreshDependencyIndex()
 
       expect(result).toBeInstanceOf(Map)
       expect(result.size).toBe(0)
@@ -822,7 +838,7 @@ describe('AgentManagerImpl — class internals', () => {
 
       await manager.onTaskTerminal('task-A', 'done')
 
-      expect(manager._depIndexDirty).toBe(true)
+      expect(manager.__testInternals.depIndexDirty).toBe(true)
     })
   })
 
@@ -851,7 +867,7 @@ describe('AgentManagerImpl — class internals', () => {
       const processSpy = vi.spyOn(manager, '_processQueuedTask').mockResolvedValue(undefined)
 
       const taskStatusMap = new Map<string, string>()
-      await manager._drainQueuedTasks(2, taskStatusMap)
+      await manager.__testInternals.drainQueuedTasks(2, taskStatusMap)
 
       expect(processSpy).toHaveBeenCalledTimes(2)
       expect(processSpy).toHaveBeenCalledWith(tasks[0], taskStatusMap)
@@ -871,11 +887,11 @@ describe('AgentManagerImpl — class internals', () => {
       vi.spyOn(manager, '_processQueuedTask').mockImplementation(async () => {
         callCount++
         if (callCount === 1) {
-          manager._shuttingDown = true
+          manager.__testInternals.shuttingDown = true
         }
       })
 
-      await manager._drainQueuedTasks(3, new Map())
+      await manager.__testInternals.drainQueuedTasks(3, new Map())
 
       // Should stop after the first task triggers _shuttingDown
       expect(callCount).toBe(1)
@@ -887,15 +903,15 @@ describe('AgentManagerImpl — class internals', () => {
       const config = { ...baseConfig, maxConcurrent: 1 }
       const manager = new AgentManagerImpl(config, repo, makeLogger())
 
-      vi.spyOn(manager, '_processQueuedTask').mockImplementation(async () => {
+      const processSpy = vi.spyOn(manager, '_processQueuedTask').mockImplementation(async () => {
         // Simulate a slot being consumed after the first task
-        manager._activeAgents.set('fill-slot', makeActiveAgent('fill-slot'))
+        manager.__testInternals.activeAgents.set('fill-slot', makeActiveAgent('fill-slot'))
       })
 
-      await manager._drainQueuedTasks(2, new Map())
+      await manager.__testInternals.drainQueuedTasks(2, new Map())
 
       // Only first task processed; second skipped due to no available slots
-      expect(manager._processQueuedTask).toHaveBeenCalledTimes(1)
+      expect(processSpy).toHaveBeenCalledTimes(1)
     })
 
     it('logs errors per task without stopping the loop', async () => {
@@ -904,14 +920,15 @@ describe('AgentManagerImpl — class internals', () => {
       const logger = makeLogger()
       const manager = new AgentManagerImpl(baseConfig, repo, logger)
 
-      vi.spyOn(manager, '_processQueuedTask')
+      const processSpy = vi
+        .spyOn(manager, '_processQueuedTask')
         .mockRejectedValueOnce(new Error('task-1 exploded'))
         .mockResolvedValueOnce(undefined)
 
-      await manager._drainQueuedTasks(2, new Map())
+      await manager.__testInternals.drainQueuedTasks(2, new Map())
 
       // Both tasks attempted — error didn't stop the loop
-      expect(manager._processQueuedTask).toHaveBeenCalledTimes(2)
+      expect(processSpy).toHaveBeenCalledTimes(2)
       expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('task-1'))
     })
   })
@@ -948,17 +965,17 @@ describe('AgentManagerImpl — class internals', () => {
       const repo = makeMockRepo()
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
-      expect(manager._pendingSpawns).toBe(0)
+      expect(manager.__testInternals.pendingSpawns).toBe(0)
 
-      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
 
       // _pendingSpawns is incremented synchronously before the async work
-      expect(manager._pendingSpawns).toBe(1)
+      expect(manager.__testInternals.pendingSpawns).toBe(1)
 
       // Wait for all pending promises to settle
-      await Promise.allSettled(Array.from(manager._agentPromises))
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
 
-      expect(manager._pendingSpawns).toBe(0)
+      expect(manager.__testInternals.pendingSpawns).toBe(0)
     })
 
     it('decrements _pendingSpawns to 0 when runAgent resolves successfully', async () => {
@@ -967,10 +984,10 @@ describe('AgentManagerImpl — class internals', () => {
       const repo = makeMockRepo()
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
-      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
-      await Promise.allSettled(Array.from(manager._agentPromises))
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
 
-      expect(manager._pendingSpawns).toBe(0)
+      expect(manager.__testInternals.pendingSpawns).toBe(0)
     })
 
     it('releases task claim (status=error, claimed_by=null) when runAgent throws unexpectedly', async () => {
@@ -981,8 +998,8 @@ describe('AgentManagerImpl — class internals', () => {
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
       const task = makeSpawnTask()
 
-      manager._spawnAgent(task, mockWorktree, mockRepoPath)
-      await Promise.allSettled(Array.from(manager._agentPromises))
+      manager.__testInternals.spawnAgent(task, mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
 
       expect(updateTask).toHaveBeenCalledWith(
         task.id,
@@ -996,14 +1013,14 @@ describe('AgentManagerImpl — class internals', () => {
       const repo = makeMockRepo()
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
-      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
-      manager._spawnAgent({ ...makeSpawnTask(), id: 'task-spawn-2' }, mockWorktree, mockRepoPath)
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      manager.__testInternals.spawnAgent({ ...makeSpawnTask(), id: 'task-spawn-2' }, mockWorktree, mockRepoPath)
 
-      expect(manager._pendingSpawns).toBe(2)
+      expect(manager.__testInternals.pendingSpawns).toBe(2)
 
-      await Promise.allSettled(Array.from(manager._agentPromises))
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
 
-      expect(manager._pendingSpawns).toBe(0)
+      expect(manager.__testInternals.pendingSpawns).toBe(0)
     })
 
     it('records a circuit breaker failure when runAgent throws before onSpawnFailure is reached', async () => {
@@ -1014,13 +1031,13 @@ describe('AgentManagerImpl — class internals', () => {
       const repo = makeMockRepo()
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
-      expect(manager._circuitBreaker.failureCount).toBe(0)
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(0)
 
-      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
-      await Promise.allSettled(Array.from(manager._agentPromises))
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
 
       // Circuit breaker must record the failure even though onSpawnFailure was never called
-      expect(manager._circuitBreaker.failureCount).toBe(1)
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(1)
     })
 
     it('accumulates circuit breaker failures across multiple unexpected spawn crashes', async () => {
@@ -1029,13 +1046,48 @@ describe('AgentManagerImpl — class internals', () => {
       const repo = makeMockRepo()
       const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
 
-      manager._spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
-      manager._spawnAgent({ ...makeSpawnTask(), id: 'task-spawn-2' }, mockWorktree, mockRepoPath)
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      manager.__testInternals.spawnAgent({ ...makeSpawnTask(), id: 'task-spawn-2' }, mockWorktree, mockRepoPath)
 
-      await Promise.allSettled(Array.from(manager._agentPromises))
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
 
       // Both failures should be counted by the circuit breaker
-      expect(manager._circuitBreaker.failureCount).toBe(2)
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(2)
+    })
+
+    it('does NOT increment circuit breaker on stream/post-spawn failures (EP-5)', async () => {
+      // Simulate a successful spawn followed by a mid-stream crash. The spawn-phase
+      // callback fires (onSpawnSuccess), then runAgent rejects from the streaming
+      // phase. Circuit breaker scope: spawn-phase only.
+      vi.mocked(runAgent).mockImplementation(async (_task, _wt, _rp, deps) => {
+        deps.onSpawnSuccess?.()
+        throw new Error('stream interrupted: ECONNRESET')
+      })
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
+
+      // Spawn succeeded → circuit breaker reset to 0; stream error must NOT trip it.
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(0)
+    })
+
+    it('DOES increment circuit breaker on spawn-phase failures (EP-5)', async () => {
+      // Spawn-phase failure: onSpawnFailure callback fires before runAgent rejects.
+      vi.mocked(runAgent).mockImplementation(async (task, _wt, _rp, deps) => {
+        deps.onSpawnFailure?.(task.id, 'enoent: claude not found')
+        throw new Error('spawn failed')
+      })
+
+      const repo = makeMockRepo()
+      const manager = new AgentManagerImpl(baseConfig, repo, makeLogger())
+
+      manager.__testInternals.spawnAgent(makeSpawnTask(), mockWorktree, mockRepoPath)
+      await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
+
+      expect(manager.__testInternals.circuitBreaker.failureCount).toBe(1)
     })
   })
 
@@ -1046,7 +1098,7 @@ describe('AgentManagerImpl — class internals', () => {
   describe('consecutive drain error threshold', () => {
     it('initialises _consecutiveDrainErrors to 0', () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
-      expect(manager._consecutiveDrainErrors).toBe(0)
+      expect(manager.__testInternals.consecutiveDrainErrors).toBe(0)
     })
 
     it('increments _consecutiveDrainErrors when _drainLoop rejects', async () => {
@@ -1063,7 +1115,7 @@ describe('AgentManagerImpl — class internals', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
       vi.useRealTimers()
 
-      expect(manager._consecutiveDrainErrors).toBeGreaterThanOrEqual(1)
+      expect(manager.__testInternals.consecutiveDrainErrors).toBeGreaterThanOrEqual(1)
 
       await manager.stop(0)
     })
@@ -1071,7 +1123,7 @@ describe('AgentManagerImpl — class internals', () => {
     it('resets _consecutiveDrainErrors to 0 after a successful drain', async () => {
       const manager = new AgentManagerImpl(baseConfig, makeMockRepo(), makeLogger())
       // Pre-set the counter to simulate prior failures
-      manager._consecutiveDrainErrors = 2
+      manager.__testInternals.consecutiveDrainErrors = 2
 
       vi.spyOn(manager, '_drainLoop').mockResolvedValue(undefined)
 
@@ -1085,7 +1137,7 @@ describe('AgentManagerImpl — class internals', () => {
       for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
       vi.useRealTimers()
 
-      expect(manager._consecutiveDrainErrors).toBe(0)
+      expect(manager.__testInternals.consecutiveDrainErrors).toBe(0)
 
       await manager.stop(0)
     })

@@ -1,9 +1,42 @@
+import { resolve } from 'path'
 import { BrowserWindow } from 'electron'
 import { safeHandle, safeOn } from '../ipc-utils'
 import { createPty, isPtyAvailable, validateShell, _setPty } from '../pty'
 import type { PtyHandle } from '../pty'
+import { getRepoPaths, ADHOC_WORKTREE_BASE } from '../paths'
+import { getWorktreeBase } from '../lib/review-paths'
 
 export { _setPty }
+
+export function validateTerminalCwd(cwd: string): void {
+  const resolved = resolve(cwd)
+  const safeRoots = [
+    ...Object.values(getRepoPaths()),
+    getWorktreeBase(),
+    resolve(ADHOC_WORKTREE_BASE)
+  ]
+  const isAllowed = safeRoots.some(
+    (root) => resolved === root || resolved.startsWith(root + '/')
+  )
+  if (!isAllowed) {
+    throw new Error(
+      `terminal:create cwd "${cwd}" is not inside an allowed directory. ` +
+        `Allowed roots: ${safeRoots.join(', ')}`
+    )
+  }
+}
+
+function parseTerminalCreateArgs(args: unknown[]): [{ cols: number; rows: number; shell?: string; cwd?: string }] {
+  const [opts] = args
+  if (opts === null || typeof opts !== 'object') {
+    throw new Error('terminal:create argument must be an object')
+  }
+  const o = opts as Record<string, unknown>
+  if (typeof o.cwd === 'string' && o.cwd.length > 0) {
+    validateTerminalCwd(o.cwd)
+  }
+  return [o as { cols: number; rows: number; shell?: string; cwd?: string }]
+}
 
 const terminals = new Map<number, PtyHandle>()
 const terminalWindows = new Map<number, number>() // terminalId -> BrowserWindow.id
@@ -49,7 +82,7 @@ export function registerTerminalHandlers(): void {
       terminalWindows.delete(id)
     })
     return id
-  })
+  }, parseTerminalCreateArgs)
 
   safeOn('terminal:write', (_e, { id, data }: { id: number; data: string }) => {
     if (typeof data !== 'string' || data.length > 65_536) return

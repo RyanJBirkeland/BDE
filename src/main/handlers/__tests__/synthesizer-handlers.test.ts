@@ -52,7 +52,7 @@ describe('synthesizer-handlers', () => {
       const handler = handlers.get('synthesizer:generate')!
       const result = await handler({ sender: mockSender }, validGenerateRequest)
 
-      expect(result).toMatchObject({ streamId: expect.stringContaining('synthesizer-gen-') })
+      expect(result).toMatchObject({ streamId: expect.any(String) })
     })
 
     it('should call synthesizeSpec with request and callback', async () => {
@@ -66,7 +66,7 @@ describe('synthesizer-handlers', () => {
       expect(specSynthesizer.synthesizeSpec).toHaveBeenCalledWith(
         req,
         expect.any(Function),
-        expect.stringContaining('synthesizer-gen-')
+        expect.any(String)
       )
     })
 
@@ -131,7 +131,7 @@ describe('synthesizer-handlers', () => {
       const handler = handlers.get('synthesizer:revise')!
       const result = await handler({ sender: mockSender }, validReviseRequest)
 
-      expect(result).toMatchObject({ streamId: expect.stringContaining('synthesizer-rev-') })
+      expect(result).toMatchObject({ streamId: expect.any(String) })
     })
 
     it('should call reviseSpec with request', async () => {
@@ -145,7 +145,7 @@ describe('synthesizer-handlers', () => {
       expect(specSynthesizer.reviseSpec).toHaveBeenCalledWith(
         req,
         expect.any(Function),
-        expect.stringContaining('synthesizer-rev-')
+        expect.any(String)
       )
     })
 

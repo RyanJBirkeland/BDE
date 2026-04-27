@@ -6,6 +6,24 @@
   gap: 0;
 }
 
+.rab__conflict-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bde-space-2);
+  padding: 6px var(--bde-space-3);
+  margin-bottom: var(--bde-space-2);
+  background: var(--bde-danger-surface);
+  border: 1px solid var(--bde-danger-border);
+  border-radius: var(--bde-radius-md);
+  color: var(--bde-danger);
+  font-size: var(--bde-size-sm);
+}
+
+.rab__conflict-banner__message {
+  flex: 1;
+}
+
 .rab--compact {
   flex-direction: row;
   align-items: center;

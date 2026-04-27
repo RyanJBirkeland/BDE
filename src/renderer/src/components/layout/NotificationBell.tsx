@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Bell,
   CheckCircle2,
   XCircle,
   GitMerge,
   GitPullRequestClosed,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react'
 import {
   useNotificationsStore,
@@ -40,8 +42,22 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   app_error: 'notification-item--error'
 }
 
+interface DropdownAnchor {
+  top: number
+  right: number
+}
+
+function anchorBelow(button: HTMLButtonElement): DropdownAnchor {
+  const rect = button.getBoundingClientRect()
+  return {
+    top: rect.bottom + 8,
+    right: window.innerWidth - rect.right
+  }
+}
+
 export function NotificationBell(): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
+  const [anchor, setAnchor] = useState<DropdownAnchor | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -50,10 +66,30 @@ export function NotificationBell(): React.JSX.Element {
   const notifications = useNotificationsStore((s) => s.notifications)
   const markAsRead = useNotificationsStore((s) => s.markAsRead)
   const markAllAsRead = useNotificationsStore((s) => s.markAllAsRead)
+  const clearOne = useNotificationsStore((s) => s.clearOne)
+  const clearAll = useNotificationsStore((s) => s.clearAll)
   const unreadCount = useNotificationsStore(selectUnreadCount)
   const setView = usePanelLayoutStore((s) => s.setView)
   const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
   const selectCodeReviewTask = useCodeReviewStore((s) => s.selectTask)
+
+  // Anchor the portaled dropdown to the bell button. Re-measure on
+  // resize/scroll so the dropdown follows when the page reflows while open.
+  useLayoutEffect(() => {
+    if (!isOpen || !buttonRef.current) return
+
+    const updateAnchor = (): void => {
+      if (buttonRef.current) setAnchor(anchorBelow(buttonRef.current))
+    }
+    updateAnchor()
+
+    window.addEventListener('resize', updateAnchor)
+    window.addEventListener('scroll', updateAnchor, true)
+    return () => {
+      window.removeEventListener('resize', updateAnchor)
+      window.removeEventListener('scroll', updateAnchor, true)
+    }
+  }, [isOpen])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -169,6 +205,15 @@ export function NotificationBell(): React.JSX.Element {
     markAllAsRead()
   }
 
+  const handleClearAll = (): void => {
+    clearAll()
+  }
+
+  const handleClearOne = (event: React.MouseEvent, id: string): void => {
+    event.stopPropagation()
+    clearOne(id)
+  }
+
   return (
     <div className="notification-bell">
       <button
@@ -194,62 +239,92 @@ export function NotificationBell(): React.JSX.Element {
         {unreadCount > 0 && `${unreadCount} unread notifications`}
       </div>
 
-      {isOpen && (
-        <div ref={dropdownRef} className="notification-bell__dropdown glass-modal elevation-3">
-          <div className="notification-bell__header">
-            <h3 className="notification-bell__title">Notifications</h3>
-            {unreadCount > 0 && (
-              <button className="bde-btn bde-btn--ghost bde-btn--sm" onClick={handleMarkAllAsRead}>
-                Mark all as read
-              </button>
-            )}
-          </div>
-
+      {isOpen &&
+        anchor &&
+        createPortal(
           <div
-            ref={listRef}
-            role="menu"
-            aria-label="Notifications"
-            className="notification-bell__list"
-            onKeyDown={handleListKeyDown}
+            ref={dropdownRef}
+            className="notification-bell__dropdown glass-modal elevation-3"
+            style={{ top: anchor.top, right: anchor.right }}
           >
-            {notifications.length === 0 ? (
-              <div className="notification-bell__empty">
-                <Bell size={32} />
-                <p>No notifications yet</p>
-              </div>
-            ) : (
-              notifications.map((notification) => {
-                const Icon = NOTIFICATION_ICONS[notification.type]
-                const colorClass = NOTIFICATION_COLORS[notification.type]
-
-                return (
+            <div className="notification-bell__header">
+              <h3 className="notification-bell__title">Notifications</h3>
+              <div className="notification-bell__header-actions">
+                {unreadCount > 0 && (
                   <button
-                    key={notification.id}
-                    role="menuitem"
-                    tabIndex={-1}
-                    className={`notification-item ${colorClass} ${
-                      notification.read ? 'notification-item--read' : ''
-                    }`}
-                    onClick={() => handleNotificationClick(notification.id, notification.viewLink)}
+                    className="bde-btn bde-btn--ghost bde-btn--sm"
+                    onClick={handleMarkAllAsRead}
                   >
-                    <div className="notification-item__icon">
-                      <Icon size={16} />
-                    </div>
-                    <div className="notification-item__content">
-                      <div className="notification-item__title">{notification.title}</div>
-                      <div className="notification-item__message">{notification.message}</div>
-                      <div className="notification-item__time">
-                        {timeAgo(notification.timestamp)}
-                      </div>
-                    </div>
-                    {!notification.read && <div className="notification-item__unread-dot" />}
+                    Mark all as read
                   </button>
-                )
-              })
-            )}
-          </div>
-        </div>
-      )}
+                )}
+                {notifications.length > 0 && (
+                  <button
+                    className="bde-btn bde-btn--ghost bde-btn--sm"
+                    onClick={handleClearAll}
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
+              ref={listRef}
+              role="menu"
+              aria-label="Notifications"
+              className="notification-bell__list"
+              onKeyDown={handleListKeyDown}
+            >
+              {notifications.length === 0 ? (
+                <div className="notification-bell__empty">
+                  <Bell size={32} />
+                  <p>No notifications yet</p>
+                </div>
+              ) : (
+                notifications.map((notification) => {
+                  const Icon = NOTIFICATION_ICONS[notification.type]
+                  const colorClass = NOTIFICATION_COLORS[notification.type]
+
+                  return (
+                    <div
+                      key={notification.id}
+                      role="menuitem"
+                      tabIndex={-1}
+                      className={`notification-item ${colorClass} ${
+                        notification.read ? 'notification-item--read' : ''
+                      }`}
+                      onClick={() =>
+                        handleNotificationClick(notification.id, notification.viewLink)
+                      }
+                    >
+                      <div className="notification-item__icon">
+                        <Icon size={16} />
+                      </div>
+                      <div className="notification-item__content">
+                        <div className="notification-item__title">{notification.title}</div>
+                        <div className="notification-item__message">{notification.message}</div>
+                        <div className="notification-item__time">
+                          {timeAgo(notification.timestamp)}
+                        </div>
+                      </div>
+                      {!notification.read && <div className="notification-item__unread-dot" />}
+                      <button
+                        type="button"
+                        className="notification-item__clear"
+                        aria-label={`Clear notification: ${notification.title}`}
+                        onClick={(event) => handleClearOne(event, notification.id)}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

@@ -388,7 +388,7 @@ describe('PipelineHeader', () => {
 
       await waitFor(() => {
         expect(screen.getByText('slots')).toBeInTheDocument()
-        const badge = screen.getByTitle('Agent slots active / maximum')
+        const badge = screen.getByTitle('Max concurrent agents. Change in Settings → Agents.')
         expect(badge.textContent).toContain('1')
         expect(badge.textContent).toContain('2')
       })
@@ -446,7 +446,7 @@ describe('PipelineHeader', () => {
       )
 
       await waitFor(() => {
-        const badge = screen.getByTitle('Agent slots active / maximum')
+        const badge = screen.getByTitle('Max concurrent agents. Change in Settings → Agents.')
         expect(badge).toBeInTheDocument()
         expect(badge.textContent).toContain('2')
         expect(badge.textContent).toContain('3')

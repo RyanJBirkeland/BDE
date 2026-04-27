@@ -126,7 +126,7 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
       const { skipReadinessCheck, ...createInput } = parsed.data
       const safeCreateInput = downgradeQueuedOnCreate(createInput as CreateTaskInput)
       try {
-        const row = createTaskWithValidation(
+        const row = await createTaskWithValidation(
           safeCreateInput,
           { logger },
           skipReadinessCheck === true ? { skipReadinessCheck: true } : {}
@@ -151,7 +151,7 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
         )
       }
       try {
-        const row = updateTask(parsed.data.id, parsed.data.patch, { caller: AGENT_CALLER })
+        const row = await updateTask(parsed.data.id, parsed.data.patch, { caller: AGENT_CALLER })
         if (!row) return errorResult(`Task ${parsed.data.id} not found`)
         return jsonResult(row)
       } catch (err) {

@@ -1,5 +1,6 @@
 import { getDb } from '../db'
 import { insertAgentRunTurn, type TurnRecord } from '../data/agent-queries'
+import { createLogger, type Logger } from '../logger'
 
 /**
  * Writes one `agent_run_turns` row. Injecting this instead of a raw `Database`
@@ -9,6 +10,7 @@ export type InsertTurnFn = (record: TurnRecord) => void
 
 export interface TurnTrackerDeps {
   insertTurn: InsertTurnFn
+  logger?: Logger
 }
 
 const defaultTurnTrackerDeps: TurnTrackerDeps = {
@@ -23,12 +25,14 @@ export class TurnTracker {
   private turnCount = 0
   private currentTurnToolCalls = 0
   private readonly insertTurn: InsertTurnFn
+  private readonly logger: Logger
 
   constructor(
     private runId: string,
     deps: TurnTrackerDeps = defaultTurnTrackerDeps
   ) {
     this.insertTurn = deps.insertTurn
+    this.logger = deps.logger ?? createLogger('turn-tracker')
   }
 
   processMessage(msg: unknown): void {
@@ -75,7 +79,7 @@ export class TurnTracker {
         })
       } catch (err) {
         // Non-fatal — must not interrupt the agent message loop, but log so migration failures are visible
-        console.warn(`[turn-tracker] Failed to write turn record for run ${this.runId}:`, err)
+        this.logger.warn(`Failed to write turn record for run ${this.runId}: ${err}`)
       }
       this.currentTurnToolCalls = 0
     }

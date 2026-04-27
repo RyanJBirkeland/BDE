@@ -4,10 +4,8 @@
  * Supports keyboard: Enter to confirm, Escape to cancel.
  */
 import { useEffect, useRef, useCallback, useId } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from './Button'
-import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../../lib/motion'
-import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { Modal } from './Modal'
 
 interface ConfirmModalProps {
   open: boolean
@@ -30,75 +28,42 @@ export function ConfirmModal({
   onConfirm,
   onCancel
 }: ConfirmModalProps): React.JSX.Element {
-  const reduced = useReducedMotion()
   const confirmRef = useRef<HTMLButtonElement>(null)
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const titleId = useId()
   const messageId = useId()
-  useFocusTrap(dialogRef, open)
 
   useEffect(() => {
     if (open) {
-      // Focus the confirm button when the modal opens
       requestAnimationFrame(() => confirmRef.current?.focus())
     }
   }, [open])
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        onCancel()
-      }
-    },
-    [onCancel]
-  )
-
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <div className="confirm-modal__overlay" onClick={onCancel} />
-          <motion.div
-            ref={dialogRef}
-            className="confirm-modal glass-modal elevation-3"
-            variants={VARIANTS.scaleIn}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
-            onKeyDown={handleKeyDown}
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={title ? titleId : undefined}
-            aria-describedby={messageId}
-          >
-            {title && (
-              <div className="confirm-modal__title" id={titleId}>
-                {title}
-              </div>
-            )}
-            <div className="confirm-modal__message" id={messageId}>
-              {message}
-            </div>
-            <div className="confirm-modal__actions">
-              <Button variant="ghost" size="sm" onClick={onCancel}>
-                {cancelLabel}
-              </Button>
-              <Button
-                ref={confirmRef}
-                variant={variant === 'danger' ? 'danger' : 'primary'}
-                size="sm"
-                onClick={onConfirm}
-              >
-                {confirmLabel}
-              </Button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    <Modal
+      open={open}
+      onClose={onCancel}
+      title={title}
+      role="alertdialog"
+      size="sm"
+      hideCloseButton
+      ariaDescribedBy={messageId}
+    >
+      <p className="confirm-modal__message" id={messageId}>
+        {message}
+      </p>
+      <div className="modal__footer">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {cancelLabel}
+        </Button>
+        <Button
+          ref={confirmRef}
+          variant={variant === 'danger' ? 'danger' : 'primary'}
+          size="sm"
+          onClick={onConfirm}
+        >
+          {confirmLabel}
+        </Button>
+      </div>
+    </Modal>
   )
 }
 

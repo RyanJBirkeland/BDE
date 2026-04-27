@@ -4,6 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { EventEmitter } from 'events'
 import type { IpcMainInvokeEvent } from 'electron'
+import { assertHandlersRegistered } from './__test-helpers__/handler-registration'
 
 // Mock SDK response (can be controlled per test)
 let mockSdkResponse: string | Error = 'Placeholder response'
@@ -217,14 +218,15 @@ describe('Workbench handlers', () => {
   it('registers exactly the 7 workbench handlers (chat removed)', () => {
     registerWorkbenchHandlers(mockAgentManager)
 
-    expect(safeHandle).toHaveBeenCalledTimes(7)
-    expect(safeHandle).toHaveBeenCalledWith('workbench:checkOperational', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:researchRepo', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:chatStream', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:cancelStream', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:generateSpec', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:checkSpec', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('workbench:extractPlan', expect.any(Function))
+    assertHandlersRegistered(vi.mocked(safeHandle), [
+      'workbench:checkOperational',
+      'workbench:researchRepo',
+      'workbench:chatStream',
+      'workbench:cancelStream',
+      'workbench:generateSpec',
+      'workbench:checkSpec',
+      'workbench:extractPlan'
+    ])
   })
 
   it('does NOT register the legacy non-streaming workbench:chat handler', () => {

@@ -8,9 +8,8 @@ export const debuggingSkill: BDESkill = {
 
 ## Check Agent Logs
 \`\`\`bash
-tail -200 ~/.bde/agent-manager.log
-grep -i "error\\|fail\\|timeout" ~/.bde/agent-manager.log | tail -50
-tail -100 ~/.bde/bde.log
+tail -200 ~/.bde/bde.log
+grep -i "error\\|fail\\|timeout" ~/.bde/bde.log | tail -50
 \`\`\`
 
 ## Inspect Task History
@@ -34,7 +33,7 @@ git branch | grep agent/ | xargs git branch -D
 
 ## Common Failure Modes
 - **OAuth token expired**: Refresh ~/.bde/oauth-token
-- **Fast-fail (3 failures in 30s)**: Check agent-manager.log, fix root cause, reset task
+- **Fast-fail (3 failures in 30s)**: Check bde.log, fix root cause, reset task
 - **Watchdog timeout (1hr)**: Increase max_runtime_ms or reduce task scope
 - **Worktree conflicts**: Run prune + delete stale branches first
 `,

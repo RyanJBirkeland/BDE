@@ -7,10 +7,10 @@ export interface WorkflowResult {
   errors: string[]
 }
 
-export function instantiateWorkflow(
+export async function instantiateWorkflow(
   template: WorkflowTemplate,
   repo: IDashboardRepository
-): WorkflowResult {
+): Promise<WorkflowResult> {
   const created: SprintTask[] = []
   const errors: string[] = []
 
@@ -47,7 +47,7 @@ export function instantiateWorkflow(
       ...(step.model !== undefined ? { model: step.model } : {})
     }
 
-    const task = repo.createTask(input)
+    const task = await repo.createTask(input)
     if (!task) {
       errors.push(`Step ${i}: createTask failed for "${step.title}"`)
       break // Stop — later steps may depend on this one

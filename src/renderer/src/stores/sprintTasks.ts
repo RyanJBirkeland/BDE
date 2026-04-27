@@ -35,7 +35,31 @@ export interface CreateTicketInput {
 }
 
 /** How long (ms) to protect an optimistic update from being overwritten by poll data. */
-const PENDING_UPDATE_TTL = 5000
+export const PENDING_UPDATE_TTL = 5000
+
+/**
+ * Fields that can change during or after a task run. The poll-merge path
+ * compares only these fields to decide whether to replace the store reference.
+ * Fields outside this list (id, title, repo, spec, …) are treated as immutable
+ * after creation; if one does change the task's `updated_at` timestamp will differ
+ * and the fingerprint check above will force a full merge regardless.
+ */
+export const MUTABLE_TASK_FIELDS = [
+  'status',
+  'claimed_by',
+  'completed_at',
+  'failure_reason',
+  'pr_status',
+  'pr_url',
+  'pr_number',
+  'pr_mergeable_state',
+  'retry_count',
+  'revision_feedback',
+  'notes',
+  'title',
+  'spec',
+  'updated_at'
+] as const satisfies ReadonlyArray<keyof SprintTask>
 
 /**
  * Copy one typed field from the local (optimistic) task onto a server-merged task.
@@ -55,6 +79,8 @@ interface SprintTasksState {
   tasks: SprintTask[]
   loading: boolean
   loadError: string | null
+  /** Non-null when the most recent `sprint:listTasks` IPC call failed. Cleared on success or manual dismiss. */
+  pollError: string | null
 
   // --- Optimistic update protection ---
   pendingUpdates: PendingUpdates // taskId → {timestamp, field names}
@@ -62,6 +88,7 @@ interface SprintTasksState {
 
   // --- Actions ---
   loadData: () => Promise<void>
+  clearPollError: () => void
   updateTask: (taskId: string, patch: Partial<SprintTask>) => Promise<void>
   deleteTask: (taskId: string) => Promise<void>
   createTask: (data: CreateTicketInput) => Promise<string | null>
@@ -82,15 +109,43 @@ export const selectReviewTaskCount = (state: SprintTasksState): number =>
 export const selectFailedTaskCount = (state: SprintTasksState): number =>
   state.tasks.reduce((n, t) => (t.status === 'failed' || t.status === 'error' ? n + 1 : n), 0)
 
+export const selectTasks = (state: SprintTasksState): SprintTask[] => state.tasks
+
+/**
+ * Returns `existing` when all mutable fields are identical to `incoming`, preserving the
+ * object reference so downstream selectors and React components skip unnecessary re-renders.
+ *
+ * Only `MUTABLE_TASK_FIELDS` are compared — fields that never change after creation
+ * (id, repo, created_at, …) are skipped entirely. If both references are already the
+ * same object the check short-circuits immediately.
+ */
+function stableTaskRef(incoming: SprintTask, existing: SprintTask | undefined): SprintTask {
+  if (existing === undefined) return incoming
+  if (incoming === existing) return existing
+  for (const field of MUTABLE_TASK_FIELDS) {
+    if (!mutableFieldEqual(incoming[field], existing[field])) return incoming
+  }
+  return existing
+}
+
+function mutableFieldEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true
+  if (Array.isArray(a) && Array.isArray(b)) return JSON.stringify(a) === JSON.stringify(b)
+  return false
+}
+
 export const useSprintTasks = create<SprintTasksState>((set, get) => ({
   tasks: [],
   loading: true,
   loadError: null,
+  pollError: null,
   pendingUpdates: {},
   pendingCreates: [],
 
+  clearPollError: (): void => set({ pollError: null }),
+
   loadData: async (): Promise<void> => {
-    set({ loadError: null, loading: true })
+    set({ loadError: null, pollError: null, loading: true })
     try {
       const result = await listTasks()
       const incoming = (Array.isArray(result) ? result : []).map((t) => ({
@@ -131,10 +186,14 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         // Merge incoming data, preserving only pending FIELDS from local version
         const mergedById = new Map<string, SprintTask>()
         for (const task of incoming) {
-          mergedById.set(
-            task.id,
-            mergePendingFields(task, currentTaskMap.get(task.id), nextPending[task.id], now, PENDING_UPDATE_TTL)
+          const merged = mergePendingFields(
+            task,
+            currentTaskMap.get(task.id),
+            nextPending[task.id],
+            now,
+            PENDING_UPDATE_TTL
           )
+          mergedById.set(task.id, stableTaskRef(merged, currentTaskMap.get(task.id)))
         }
 
         // Preserve pending-create temp tasks that aren't in the DB yet
@@ -145,14 +204,18 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
           }
         }
 
-        const nextTasks = Array.from(mergedById.values())
+        const nextTasksArr = Array.from(mergedById.values())
+        const unchanged =
+          nextTasksArr.length === state.tasks.length &&
+          nextTasksArr.every((t, i) => t === state.tasks[i])
         return {
-          tasks: nextTasks,
+          tasks: unchanged ? state.tasks : nextTasksArr,
           pendingUpdates: nextPending
         }
       })
     } catch (e) {
-      set({ loadError: 'Failed to load tasks — ' + (e instanceof Error ? e.message : String(e)) })
+      const message = 'Failed to load tasks — ' + (e instanceof Error ? e.message : String(e))
+      set({ loadError: message, pollError: message })
     } finally {
       set({ loading: false })
     }

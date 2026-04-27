@@ -34,35 +34,46 @@ export function safeToolHandler<Args, Result>(
 }
 
 /**
- * Wrap an `McpServer` so every `.tool(...)` registration has its callback
- * (the last argument, per all SDK overloads) replaced with a
- * `safeToolHandler`-wrapped version. Returns the same `server` with a
- * Proxy-intercepted `.tool` method — no change to call sites.
+ * Wrap an `McpServer` so every tool registration — whether via the legacy
+ * `.tool(...)` overload or the newer `.registerTool(...)` config-object form
+ * — has its callback (the last argument) replaced with a `safeToolHandler`-
+ * wrapped version. Returns the same `server` with the registration methods
+ * swapped in place, so no call site has to opt in.
  */
 export function wrapServerWithSafeToolHandlers(
   server: McpServer,
   logger: Pick<Logger, 'error'>
 ): McpServer {
+  wrapRegistrationMethod(server, 'tool', logger)
+  wrapRegistrationMethod(server, 'registerTool', logger)
+  return server
+}
+
+function wrapRegistrationMethod(
+  server: McpServer,
+  methodName: 'tool' | 'registerTool',
+  logger: Pick<Logger, 'error'>
+): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const originalTool = (server.tool as (...args: any[]) => unknown).bind(server)
+  const existing = (server as any)[methodName]
+  if (typeof existing !== 'function') return
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wrappedTool = (...args: any[]): unknown => {
-    if (args.length === 0) return originalTool()
+  const original = (existing as (...args: any[]) => unknown).bind(server)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const wrapped = (...args: any[]): unknown => {
+    if (args.length === 0) return original()
     const name = args[0]
     const cbIndex = args.length - 1
     const cb = args[cbIndex]
     if (typeof cb !== 'function' || typeof name !== 'string') {
-      return originalTool.apply(server, args)
+      return original.apply(server, args)
     }
     const wrappedCb = safeToolHandler(name, logger, cb as ToolHandlerFn<unknown, unknown>)
     const nextArgs = [...args.slice(0, cbIndex), wrappedCb]
-    return originalTool.apply(server, nextArgs)
+    return original.apply(server, nextArgs)
   }
-  // Replace the method in place; keeps the SDK's own `_createRegisteredTool`
-  // wiring intact while routing every external registration through our wrapper.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(server as any).tool = wrappedTool
-  return server
+  ;(server as any)[methodName] = wrapped
 }
 
 function formatError(err: unknown): string {

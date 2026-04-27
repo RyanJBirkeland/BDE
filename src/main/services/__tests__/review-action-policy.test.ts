@@ -250,7 +250,7 @@ describe('classifyReviewAction', () => {
 
       expect(plan.gitOps).toHaveLength(1)
       expect(plan.gitOps[0]).toMatchObject({ type: 'getBranch' })
-      expect(plan.terminalStatus).toBe('done')
+      expect(plan.terminalStatus).toBeNull()
       expect(plan.dedup).toBe(false)
     })
   })

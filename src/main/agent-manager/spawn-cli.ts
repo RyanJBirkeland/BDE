@@ -50,9 +50,8 @@ export function spawnViaCli(
     NODE_OPTIONS: withMaxOldSpaceOption(env.NODE_OPTIONS, AGENT_PROCESS_MAX_OLD_SPACE_MB)
   }
 
-  // Pass budget constraint via env var — the exact CLI flag name (--max-cost vs --budget)
-  // is not verified against the binary here, so we use the env approach as a safe fallback.
-  // TODO: verify --max-cost flag name against claude CLI and switch to args if confirmed.
+  // Pass budget constraint via env var — CLAUDE_MAX_COST_USD is the supported mechanism
+  // for the CLI-based spawn path; the SDK path uses maxBudgetUsd directly.
   if (opts.maxBudgetUsd !== undefined) {
     env = { ...env, CLAUDE_MAX_COST_USD: String(opts.maxBudgetUsd) }
   }

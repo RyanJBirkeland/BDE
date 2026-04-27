@@ -75,7 +75,7 @@ export interface AgentChannels {
 
 export interface AgentEventChannels {
   'agent:history': {
-    args: [agentId: string]
+    args: [args: { agentId: string; limit?: number; before?: number }]
     result: AgentEvent[]
   }
 }

@@ -110,6 +110,45 @@
   text-align: center;
   color: var(--bde-text-dim);
   font-size: var(--bde-size-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bde-space-3);
+}
+
+.cr-queue__empty-message {
+  color: var(--bde-text-dim);
+  font-size: var(--bde-size-sm);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.cr-queue__empty-cta {
+  padding: 6px var(--bde-space-3);
+  background: var(--bde-accent-surface);
+  border: 1px solid var(--bde-accent-border);
+  border-radius: var(--bde-radius-md);
+  color: var(--bde-accent);
+  font-size: var(--bde-size-sm);
+  font-family: var(--bde-font-code);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.cr-queue__empty-cta:hover {
+  background: var(--bde-accent-border);
+}
+
+.cr-queue__empty-cta:focus-visible {
+  outline: 2px solid var(--bde-status-review);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-queue__empty-cta {
+    transition: none;
+  }
 }
 
 /* Batch actions bar */

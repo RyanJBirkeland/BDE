@@ -1,7 +1,10 @@
 import { ArrowRight, ArrowLeft, FolderGit, Check, X, FolderOpen, Plus } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
 import { Button } from '../../ui/Button'
+import { Spinner } from '../../ui/Spinner'
 import { toast } from '../../../stores/toasts'
+import { usePanelLayoutStore } from '../../../stores/panelLayout'
+import { useSettingsNavStore } from '../../../stores/settingsNav'
 
 interface StepProps {
   onNext: () => void
@@ -19,9 +22,15 @@ interface RepoConfig {
   color?: string | undefined
 }
 
+function repoBasename(fullPath: string): string {
+  return fullPath.replace(/[/\\]+$/, '').split(/[/\\]/).pop() ?? ''
+}
+
 export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Element {
   const [reposConfigured, setReposConfigured] = useState<boolean | null>(null)
   const [checking, setChecking] = useState(true)
+  const [existingRepos, setExistingRepos] = useState<RepoConfig[]>([])
+  const [settingsError, setSettingsError] = useState<string | null>(null)
 
   // Inline add form state
   const [newName, setNewName] = useState('')
@@ -30,13 +39,25 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
   const [newRepo, setNewRepo] = useState('')
   const [saving, setSaving] = useState(false)
 
+  const setView = usePanelLayoutStore((s) => s.setView)
+  const setActiveSection = useSettingsNavStore((s) => s.setActiveSection)
+
+  const handleOpenConnections = useCallback((): void => {
+    setView('settings')
+    setActiveSection('connections')
+  }, [setView, setActiveSection])
+
   const checkRepos = async (): Promise<void> => {
     setChecking(true)
     try {
       const raw = await window.api.settings.getJson('repos')
       setReposConfigured(Array.isArray(raw) && raw.length > 0)
+      setExistingRepos(Array.isArray(raw) ? (raw as RepoConfig[]) : [])
+      setSettingsError(null)
     } catch {
       setReposConfigured(false)
+      setExistingRepos([])
+      setSettingsError('Failed to read settings — check ~/.bde/bde.log')
     }
     setChecking(false)
   }
@@ -49,8 +70,8 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
     const dir = await window.api.fs.openDirDialog()
     if (!dir) return
     setNewPath(dir)
-    const basename = dir.split('/').filter(Boolean).pop() ?? ''
-    if (!newName.trim() && basename) setNewName(basename)
+    const name = repoBasename(dir)
+    if (!newName.trim() && name) setNewName(name)
     try {
       const detected = await window.api.git.detectRemote(dir)
       if (detected.isGitRepo && detected.owner && detected.repo) {
@@ -103,14 +124,32 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
       <h1 className="onboarding-step__title">Repository Configuration</h1>
 
       <p className="onboarding-step__description">
-        Add a repository so BDE can dispatch agents to work on it. We&apos;ll auto-detect the GitHub
-        remote when you pick a folder. This step is optional — you can add repos later in Settings.
+        Add a repository so BDE can dispatch agents to work on it. We&apos;ll auto-detect the
+        GitHub remote when you pick a folder. This step is optional — you can{' '}
+        <button
+          type="button"
+          onClick={handleOpenConnections}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            color: 'var(--bde-accent)',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            font: 'inherit'
+          }}
+        >
+          add repos later in Settings → Repositories
+        </button>
+        .
       </p>
 
       <div className="onboarding-step__checks">
         <div className="onboarding-step__check">
           {checking ? (
-            <div className="onboarding-step__check-icon">⏳</div>
+            <div className="onboarding-step__check-icon">
+              <Spinner size="sm" />
+            </div>
           ) : reposConfigured ? (
             <Check size={20} className="onboarding-step__check-icon--success" />
           ) : (
@@ -121,6 +160,52 @@ export function RepoStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
           </span>
         </div>
       </div>
+
+      {existingRepos.length > 0 && (
+        <div style={{ marginTop: 'var(--bde-space-2)' }}>
+          <p
+            style={{
+              fontSize: 'var(--bde-size-sm)',
+              color: 'var(--bde-text-muted)',
+              marginBottom: 'var(--bde-space-1)'
+            }}
+          >
+            Configured repositories:
+          </p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {existingRepos.map((r) => (
+              <li
+                key={r.name}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--bde-space-2)',
+                  padding: '4px 0',
+                  fontSize: 'var(--bde-size-sm)'
+                }}
+              >
+                <Check size={14} className="onboarding-step__check-icon--success" />
+                <span>{r.name}</span>
+                {r.localPath && (
+                  <span style={{ color: 'var(--bde-text-muted)' }}>{r.localPath}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {settingsError && (
+        <p
+          style={{
+            color: 'var(--bde-color-error, red)',
+            fontSize: 'var(--bde-size-sm)',
+            marginTop: 'var(--bde-space-2)'
+          }}
+        >
+          ⚠ {settingsError}
+        </p>
+      )}
 
       <div className="onboarding-step__repo-form" style={{ marginTop: '1rem' }}>
         <div className="settings-repo-form">

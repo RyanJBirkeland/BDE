@@ -3,9 +3,10 @@
  *
  * Loads the composite `agents.backendConfig` setting on mount, renders:
  *   1. a shared Local backend card (endpoint URL + test connection),
- *   2. an Active routing card with one row per agent type. The model
- *      picker is always interactive; the Local backend radio is disabled
- *      on agent types whose spawn path does not yet support local models.
+ *   2. a shared Opencode backend card (executable path),
+ *   3. an Active routing card with one row per agent type. The model
+ *      picker is always interactive; the Local and Opencode backend radios
+ *      are disabled on agent types whose spawn path does not yet support them.
  *
  * Saves the entire BackendSettings object in one atomic setJson call.
  */
@@ -29,7 +30,6 @@ type TestConnState =
 
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1'
 const DEFAULT_CLAUDE_MODEL = DEFAULT_MODEL.modelId
-const DEFAULT_LOCAL_MODEL = ''
 const LOCAL_MODEL_PLACEHOLDER = 'openai/qwen/qwen3.6-35b-a3b'
 
 type AgentTypeId = 'pipeline' | 'synthesizer' | 'copilot' | 'assistant' | 'adhoc' | 'reviewer'
@@ -39,6 +39,7 @@ interface AgentTypeMeta {
   label: string
   description: string
   supportsLocal: boolean
+  supportsOpencode: boolean
 }
 
 const AGENT_TYPES: AgentTypeMeta[] = [
@@ -46,37 +47,43 @@ const AGENT_TYPES: AgentTypeMeta[] = [
     id: 'pipeline',
     label: 'Pipeline',
     description: 'Executes sprint tasks end-to-end.',
-    supportsLocal: true
+    supportsLocal: true,
+    supportsOpencode: true
   },
   {
     id: 'synthesizer',
     label: 'Synthesizer',
     description: 'Drafts spec documents from task titles.',
-    supportsLocal: false
+    supportsLocal: false,
+    supportsOpencode: false
   },
   {
     id: 'copilot',
     label: 'Copilot',
     description: 'Interactive pair-programming agent.',
-    supportsLocal: false
+    supportsLocal: false,
+    supportsOpencode: false
   },
   {
     id: 'assistant',
     label: 'Assistant',
     description: 'One-shot Q&A over the repo.',
-    supportsLocal: false
+    supportsLocal: false,
+    supportsOpencode: true
   },
   {
     id: 'adhoc',
     label: 'Adhoc',
     description: 'Freeform agent runs outside the sprint pipeline.',
-    supportsLocal: false
+    supportsLocal: false,
+    supportsOpencode: true
   },
   {
     id: 'reviewer',
     label: 'Reviewer',
     description: 'Reviews PRs before merge.',
-    supportsLocal: false
+    supportsLocal: false,
+    supportsOpencode: false
   }
 ]
 
@@ -90,7 +97,8 @@ function defaultBackendSettings(): BackendSettings {
     assistant: { ...DEFAULT_ROW },
     adhoc: { ...DEFAULT_ROW },
     reviewer: { ...DEFAULT_ROW },
-    localEndpoint: DEFAULT_LOCAL_ENDPOINT
+    localEndpoint: DEFAULT_LOCAL_ENDPOINT,
+    opencodeExecutable: 'opencode'
   }
 }
 
@@ -180,8 +188,24 @@ export function ModelsSection(): React.JSX.Element {
       </SettingsCard>
 
       <SettingsCard
+        title="Opencode backend"
+        subtitle="Path to the opencode binary. Defaults to 'opencode' (PATH lookup)."
+      >
+        <label className="settings-field">
+          <span className="settings-field__label">Executable path</span>
+          <input
+            className="settings-field__input"
+            type="text"
+            value={settings.opencodeExecutable ?? 'opencode'}
+            onChange={(e) => updateSettings({ ...settings, opencodeExecutable: e.target.value })}
+            placeholder="opencode"
+          />
+        </label>
+      </SettingsCard>
+
+      <SettingsCard
         title="Active routing"
-        subtitle="Route each agent type to Claude or a local model. Local backend is available for Pipeline today."
+        subtitle="Route each agent type to Claude, a local model, or opencode. Opencode and Local are not available for Synthesizer and Copilot."
       >
         {AGENT_TYPES.map((type) => (
           <AgentTypeRow
@@ -190,6 +214,7 @@ export function ModelsSection(): React.JSX.Element {
             value={settings[type.id]}
             onChange={(next) => updateRow(type.id, next)}
             canUseLocal={type.supportsLocal}
+            canUseOpencode={type.supportsOpencode}
           />
         ))}
       </SettingsCard>
@@ -238,20 +263,20 @@ interface AgentTypeRowProps {
   value: AgentBackendConfig
   onChange: (next: AgentBackendConfig) => void
   canUseLocal: boolean
+  canUseOpencode: boolean
 }
 
 function AgentTypeRow({
   type,
   value,
   onChange,
-  canUseLocal
+  canUseLocal,
+  canUseOpencode
 }: AgentTypeRowProps): React.JSX.Element {
   function toggleBackend(next: BackendKind): void {
     if (next === value.backend) return
-    onChange({
-      backend: next,
-      model: next === 'claude' ? DEFAULT_CLAUDE_MODEL : DEFAULT_LOCAL_MODEL
-    })
+    const defaultModel = next === 'claude' ? DEFAULT_CLAUDE_MODEL : ''
+    onChange({ backend: next, model: defaultModel })
   }
 
   return (
@@ -263,6 +288,7 @@ function AgentTypeRow({
           value={value.backend}
           onChange={toggleBackend}
           canUseLocal={canUseLocal}
+          canUseOpencode={canUseOpencode}
           rowId={type.id}
         />
         <ModelPicker
@@ -279,15 +305,19 @@ interface BackendToggleProps {
   value: BackendKind
   onChange: (next: BackendKind) => void
   canUseLocal: boolean
+  canUseOpencode: boolean
   rowId: string
 }
 
 const LOCAL_UNSUPPORTED_TOOLTIP = 'Local backend is not yet supported for this agent type'
+const OPENCODE_UNSUPPORTED_TOOLTIP =
+  'Opencode support for this agent type is coming in a future update'
 
 function BackendToggle({
   value,
   onChange,
   canUseLocal,
+  canUseOpencode,
   rowId
 }: BackendToggleProps): React.JSX.Element {
   return (
@@ -313,6 +343,18 @@ function BackendToggle({
         className="models-seg__btn"
       >
         Local
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={value === 'opencode'}
+        data-value="opencode"
+        disabled={!canUseOpencode}
+        title={canUseOpencode ? undefined : OPENCODE_UNSUPPORTED_TOOLTIP}
+        onClick={() => onChange('opencode')}
+        className="models-seg__btn"
+      >
+        Opencode
       </button>
     </div>
   )
@@ -341,14 +383,16 @@ function ModelPicker({ backend, model, onChange }: ModelPickerProps): React.JSX.
       </select>
     )
   }
+  const placeholder = backend === 'opencode' ? 'opencode/gpt-5-nano' : LOCAL_MODEL_PLACEHOLDER
+  const label = backend === 'opencode' ? 'Opencode model' : 'Local model'
   return (
     <input
       className="settings-field__input"
       type="text"
       value={model}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={LOCAL_MODEL_PLACEHOLDER}
-      aria-label="Local model"
+      placeholder={placeholder}
+      aria-label={label}
     />
   )
 }

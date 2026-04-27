@@ -109,3 +109,48 @@ describe('resolveAgentRuntime', () => {
     }
   })
 })
+
+describe('opencode backend kind', () => {
+  it('DEFAULT_SETTINGS has backend claude for all agent types', () => {
+    const agentTypes = [
+      'pipeline',
+      'synthesizer',
+      'copilot',
+      'assistant',
+      'adhoc',
+      'reviewer'
+    ] as const
+    for (const type of agentTypes) {
+      expect(DEFAULT_SETTINGS[type].backend).toBe('claude')
+    }
+  })
+
+  it('DEFAULT_SETTINGS.opencodeExecutable equals opencode', () => {
+    expect(DEFAULT_SETTINGS.opencodeExecutable).toBe('opencode')
+  })
+
+  it('mergeWithDefaults fills opencodeExecutable from defaults when stored value is absent', () => {
+    vi.mocked(settings.getSettingJson).mockReturnValue({
+      pipeline: { backend: 'opencode', model: 'opencode/gpt-5-nano' }
+    })
+    const result = loadBackendSettings()
+    expect(result.opencodeExecutable).toBe('opencode')
+  })
+
+  it('mergeWithDefaults honours a stored opencodeExecutable override', () => {
+    vi.mocked(settings.getSettingJson).mockReturnValue({
+      opencodeExecutable: '/usr/local/bin/opencode'
+    })
+    const result = loadBackendSettings()
+    expect(result.opencodeExecutable).toBe('/usr/local/bin/opencode')
+  })
+
+  it('resolveAgentRuntime returns opencode backend when pipeline is set to opencode', () => {
+    const opencodeSettings: BackendSettings = {
+      ...DEFAULT_SETTINGS,
+      pipeline: { backend: 'opencode', model: 'opencode/claude-sonnet-4-5' }
+    }
+    const resolved = resolveAgentRuntime('pipeline', opencodeSettings)
+    expect(resolved).toEqual({ backend: 'opencode', model: 'opencode/claude-sonnet-4-5' })
+  })
+})

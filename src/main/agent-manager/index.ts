@@ -5,13 +5,8 @@ import type { SprintTask } from '../../shared/types/task-types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { computeDepsFingerprint, refreshDependencyIndex } from './dependency-refresher'
 import { handleTaskTerminal } from './terminal-handler'
-import {
-  EXECUTOR_ID,
-  WATCHDOG_INTERVAL_MS,
-  ORPHAN_CHECK_INTERVAL_MS,
-  WORKTREE_PRUNE_INTERVAL_MS,
-  INITIAL_DRAIN_DEFER_MS
-} from './types'
+import { createTaskStateService, type TaskStateService } from '../services/task-state-service'
+import { EXECUTOR_ID, INITIAL_DRAIN_DEFER_MS } from './types'
 import { makeConcurrencyState, availableSlots, type ConcurrencyState } from './concurrency'
 import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex } from '../services/dependency-service'
@@ -33,6 +28,10 @@ import { pruneStaleWorktrees, cleanupWorktree } from './worktree'
 import { resolveRepoPath } from './task-claimer'
 import { executeShutdown } from './shutdown-coordinator'
 import { reloadConfiguration } from './config-manager'
+import { LifecycleController } from './lifecycle-controller'
+import { AgentManagerTestInternals } from './agent-manager-test-internals'
+import { WipTracker } from './wip-tracker'
+import { ErrorRegistry } from './error-registry'
 
 // ---------------------------------------------------------------------------
 // Logger helper — callers can supply their own or fall back to createLogger
@@ -40,6 +39,7 @@ import { reloadConfiguration } from './config-manager'
 
 import { createLogger } from '../logger'
 import { broadcast } from '../broadcast'
+import { sleep } from '../lib/async-utils'
 
 const defaultLogger: Logger = createLogger('agent-manager')
 
@@ -71,6 +71,20 @@ export interface AgentManager {
   getMetrics(): MetricsSnapshot
   steerAgent(taskId: string, message: string): Promise<SteerResult>
   killAgent(taskId: string): { killed: boolean; error?: string }
+  /**
+   * Abort the running agent for the given task and clear its active-agent
+   * registration. No-op when no agent is running for the task.
+   * Used by `sprint:forceReleaseClaim` to prevent a detached agent from
+   * continuing work against a task that has been re-queued.
+   */
+  cancelAgent(taskId: string): Promise<void>
+  /**
+   * Resolves when any in-flight OAuth token refresh initiated by
+   * `handleOAuthRefresh` in message-consumer has completed (success or failure).
+   * The drain loop awaits this before spawning new agents so the refreshed
+   * token is on disk before the next SDK spawn reads it.
+   */
+  awaitOAuthRefresh(): Promise<void>
   onTaskTerminal(taskId: string, status: string): Promise<void>
   /**
    * Re-read settings from the settings store and hot-update the in-memory
@@ -101,6 +115,12 @@ export class AgentManagerImpl implements AgentManager {
   // the test-access need.
   _running = false
   _shuttingDown = false
+  /**
+   * Guards against duplicate `start()` calls. A second call while the manager
+   * is already started logs a WARN and returns immediately — no new timers are
+   * created and no startup side-effects are repeated.
+   */
+  _started = false
 
   // ---- Drain runtime ----
   _concurrency: ConcurrencyState
@@ -111,12 +131,19 @@ export class AgentManagerImpl implements AgentManager {
   // Set when a terminal event fires; next drain tick rebuilds the dep index
   // fully instead of doing an incremental refresh.
   _depIndexDirty = false
+  // IDs of tasks claimed in the most recent drain tick. Consumed (and cleared)
+  // by the next tick's `refreshDependencyIndex` call as a dirty-set hint so
+  // unchanged tasks skip fingerprint recompute.
+  _recentlyProcessedTaskIds = new Set<string>()
   // Suspends drain ticks until this Unix-ms timestamp; broadcasts the pause
   // to the renderer when the drain catches an environmental failure.
   _drainPausedUntil: number | undefined
   // Per-task processing-failure counts that persist across drain ticks; cleared
-  // on success or quarantine.
-  readonly _drainFailureCounts = new Map<string, number>()
+  // on success or quarantine. Accessor to _errorRegistry.drainFailureCounts —
+  // kept for backward compat with DrainLoopDeps (which expects a Map reference).
+  get _drainFailureCounts(): Map<string, number> {
+    return this._errorRegistry.drainFailureCounts
+  }
   // Drain-tick-level error counter. Reset on any successful tick. Emits
   // `manager:warning` after 3 consecutive failures.
   _consecutiveDrainErrors = 0
@@ -138,20 +165,25 @@ export class AgentManagerImpl implements AgentManager {
   // ---- Cross-cutting collaborators ----
   readonly _metrics: MetricsCollector
   readonly _circuitBreaker: CircuitBreaker
+  readonly _wipTracker: WipTracker
+  readonly _errorRegistry: ErrorRegistry
   // Idempotency guard for handleTaskTerminal — maps taskId to the in-flight
   // terminal promise. Duplicate callers receive the same promise; the entry is
   // deleted in finally.
   private readonly _terminalCalled = new Map<string, Promise<void>>()
+  // Set by onOAuthRefreshStart when message-consumer detects an auth error and
+  // fires refreshOAuthTokenFromKeychain. Cleared in .finally(). Drain loop
+  // awaits this before each spawn (awaitOAuthRefresh) so new agents don't start
+  // with the same stale token that caused the auth error.
+  private _oauthRefreshPromise: Promise<unknown> | null = null
 
   // ---- Timers ----
-  private pollTimer: ReturnType<typeof setInterval> | null = null
-  private watchdogTimer: ReturnType<typeof setInterval> | null = null
-  private orphanTimer: ReturnType<typeof setInterval> | null = null
-  private pruneTimer: ReturnType<typeof setInterval> | null = null
+  private readonly lifecycle = new LifecycleController()
 
   // ---- Injected deps ----
   private readonly runAgentDeps: RunAgentDeps
   private readonly unitOfWork: IUnitOfWork
+  private readonly _taskStateService: TaskStateService
 
   // `config` is mutable so `reloadConfig()` can hot-update runtime-safe fields.
   // `worktreeBase` is never mutated after construction.
@@ -169,10 +201,27 @@ export class AgentManagerImpl implements AgentManager {
     this._depIndex = createDependencyIndex()
     this._epicIndex = epicDepsReader
     this._metrics = createMetricsCollector()
-    this._circuitBreaker = new CircuitBreaker(logger)
+    this._circuitBreaker = new CircuitBreaker(
+      logger,
+      (payload) => broadcast('agent-manager:circuit-breaker-open', payload)
+    )
+    this._errorRegistry = new ErrorRegistry(logger)
+    this._wipTracker = new WipTracker(() => this._activeAgents.size)
     this.unitOfWork = unitOfWork
 
-    // Build runAgentDeps with bound onTaskTerminal
+    // Build the agent-manager TaskStateService.
+    // The dispatcher delegates to this.onTaskTerminal which sets _depIndexDirty
+    // and calls handleTaskTerminal — preserving the existing pipeline-agent
+    // terminal semantics (metrics, dep resolution, dep-index rebuild).
+    const agentTerminalDispatcher = {
+      dispatch: (taskId: string, status: TaskStatus) => this.onTaskTerminal(taskId, status)
+    }
+    this._taskStateService = createTaskStateService({
+      terminalDispatcher: agentTerminalDispatcher,
+      logger
+    })
+
+    // Build runAgentDeps with bound onTaskTerminal and taskStateService
     this.runAgentDeps = {
       activeAgents: this._activeAgents,
       defaultModel: config.defaultModel,
@@ -180,14 +229,44 @@ export class AgentManagerImpl implements AgentManager {
       onTaskTerminal: this.onTaskTerminal.bind(this),
       repo,
       unitOfWork,
+      metrics: this._metrics,
+      taskStateService: this._taskStateService,
       worktreeBase: config.worktreeBase,
       onSpawnSuccess: () => {
         this._circuitBreaker.recordSuccess()
+        this._errorRegistry.recordSpawnSuccess()
       },
-      onSpawnFailure: () => {
-        this._circuitBreaker.recordFailure()
+      onSpawnFailure: (taskId: string, reason: string) => {
+        this._circuitBreaker.recordFailure(taskId, reason)
+        this._errorRegistry.recordSpawnFailure(taskId, reason)
+      },
+      onFastFailRecorded: (taskId: string, reason: string) => {
+        this._errorRegistry.fastFailTracker.record(taskId, reason)
+      },
+      isFastFailExhausted: (taskId: string) => {
+        return this._errorRegistry.fastFailTracker.isExhausted(taskId)
+      },
+      onOAuthRefreshStart: (promise: Promise<unknown>) => {
+        this._oauthRefreshPromise = promise.finally(() => {
+          this._oauthRefreshPromise = null
+        })
       }
     }
+  }
+
+  // ---- Test seam ----
+
+  /**
+   * Stable typed view of the underscore-prefixed members tests reach into.
+   * Construct lazily and cache so repeat access returns the same view.
+   *
+   * Tests should access internals via `mgr.__testInternals.<name>` rather
+   * than `mgr._<name>` so future field renames touch only the seam mapping
+   * in `agent-manager-test-internals.ts`, not 35+ test sites.
+   */
+  private _testInternalsView?: AgentManagerTestInternals
+  get __testInternals(): AgentManagerTestInternals {
+    return (this._testInternalsView ??= new AgentManagerTestInternals(this))
   }
 
   // ---- Helpers ----
@@ -234,32 +313,79 @@ export class AgentManagerImpl implements AgentManager {
   _spawnAgent(
     task: AgentRunClaim,
     worktree: { worktreePath: string; branch: string },
-    repoPath: string
+    repoPath: string,
+    tickId?: string
   ): Promise<void> {
     this._metrics.increment('agentsSpawned')
     this._pendingSpawns++
-    const agentPromise = _runAgent(task, worktree, repoPath, this.runAgentDeps)
+    // Decrement exactly once: when the agent enters activeAgents (onAgentRegistered),
+    // or on early failure before registration (decrementPendingOnce in .finally).
+    let pendingDecremented = false
+    const decrementPendingOnce = (): void => {
+      if (!pendingDecremented) {
+        pendingDecremented = true
+        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
+      }
+    }
+    // Track whether the spawn phase reported an outcome via its callbacks so the
+    // catch below can distinguish "spawn never attempted" (unexpected early error)
+    // from "spawn failed and onSpawnFailure already counted it" vs "spawn
+    // succeeded but something broke after" — only the first case should trip the
+    // circuit breaker from this catch site.
+    let spawnPhaseReported = false
+    const spawnDeps: typeof this.runAgentDeps = {
+      ...this.runAgentDeps,
+      onAgentRegistered: decrementPendingOnce,
+      tickId,
+      onSpawnSuccess: () => {
+        spawnPhaseReported = true
+        this.runAgentDeps.onSpawnSuccess?.()
+      },
+      onSpawnFailure: (taskId: string, reason: string) => {
+        spawnPhaseReported = true
+        this.runAgentDeps.onSpawnFailure?.(taskId, reason)
+      }
+    }
+    const agentPromise = _runAgent(task, worktree, repoPath, spawnDeps)
       .catch((err) => {
         this.logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
-        // Record the failure so the circuit breaker can open after repeated crashes.
-        // handleSpawnFailure calls onSpawnFailure() when spawnWithTimeout throws, but
-        // if runAgent throws before or after spawnAndWireAgent (e.g. unexpected error),
-        // the circuit breaker would never see the failure without this guard.
-        this._circuitBreaker.recordFailure()
+        // Only increment the circuit breaker when the spawn phase never reported an
+        // outcome — meaning an unexpected error fired before spawnAndWireAgent could
+        // call onSpawnSuccess or onSpawnFailure. Stream errors and post-spawn
+        // failures must NOT trip the circuit breaker (they indicate a task-level
+        // issue, not a systemic spawn infrastructure failure).
+        if (!spawnPhaseReported) {
+          this._circuitBreaker.recordFailure(task.id, String(err))
+        }
         // Release the claim so the task does not remain stuck 'active'.
         // validateTaskForRun and handleSpawnFailure already do this on their
         // own code paths — this catch handles any remaining gap (e.g. an
         // unexpected throw before either of those paths is reached).
+        // phase-a-bypass: last-resort safety net before spawn phase — using
+        // repo.updateTask directly avoids circular-service dependency and
+        // test-environment issues (TaskStateService uses module-level sprint-mutations,
+        // not the injected repo). See T-36 for the full fix path.
+        const errorNotes = String(err)
         try {
-          this.repo.updateTask(task.id, { status: 'error', claimed_by: null, notes: String(err) })
-        } catch (updateErr) {
-          this.logger.error(
-            `[agent-manager] Failed to release claim for task ${task.id}: ${updateErr}`
+          this.repo.updateTask(task.id, { status: 'error', claimed_by: null, notes: errorNotes }) // phase-a-bypass: T-36
+        } catch (statusWriteErr) {
+          // The transition guard rejected the status write (e.g. another path already moved the
+          // task to a terminal state). Fall back to a claim-only patch so `claimed_by` is always
+          // cleared even when the status field cannot be written.
+          this.logger.warn(
+            `[agent-manager] Status write rejected for task ${task.id} — retrying with claim-only patch: ${statusWriteErr}`
           )
+          try {
+            this.repo.updateTask(task.id, { claimed_by: null, notes: errorNotes })
+          } catch (claimReleaseErr) {
+            this.logger.error(
+              `[agent-manager] Failed to release claim for task ${task.id}: ${claimReleaseErr}`
+            )
+          }
         }
       })
       .finally(() => {
-        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
+        decrementPendingOnce() // no-op if onAgentRegistered already fired
         this._agentPromises.delete(agentPromise)
       })
     this._agentPromises.add(agentPromise)
@@ -281,7 +407,8 @@ export class AgentManagerImpl implements AgentManager {
       repo: this.repo,
       depIndex: this._depIndex,
       logger: this.logger,
-      onTaskTerminal: this.onTaskTerminal.bind(this)
+      onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService
     })
   }
 
@@ -298,7 +425,8 @@ export class AgentManagerImpl implements AgentManager {
       repo: this.repo,
       depIndex: this._depIndex,
       logger: this.logger,
-      onTaskTerminal: this.onTaskTerminal.bind(this)
+      onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService
     })
   }
 
@@ -306,16 +434,22 @@ export class AgentManagerImpl implements AgentManager {
    * Full pipeline for one queued task row. Delegates to task-claimer.ts.
    * Exposed via _ prefix for testability.
    */
-  async _processQueuedTask(rawTask: SprintTask, taskStatusMap: Map<string, string>): Promise<void> {
+  async _processQueuedTask(
+    rawTask: SprintTask,
+    taskStatusMap: Map<string, string>,
+    tickId?: string
+  ): Promise<void> {
     return processQueuedTask(rawTask, taskStatusMap, {
       config: this.config,
       repo: this.repo,
       depIndex: this._depIndex,
       logger: this.logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService,
       processingTasks: this._processingTasks,
       activeAgents: this._activeAgents,
-      spawnAgent: this._spawnAgent.bind(this)
+      spawnAgent: (task, wt, repoPath) => this._spawnAgent(task, wt, repoPath, tickId),
+      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds
     })
   }
 
@@ -327,8 +461,6 @@ export class AgentManagerImpl implements AgentManager {
    */
   async _drainQueuedTasks(available: number, taskStatusMap: Map<string, string>): Promise<void> {
     const queued = this.repo.getQueuedTasks(available)
-    this.logger.info(`[agent-manager] Fetching queued tasks (limit=${available})...`)
-    this.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
     for (const rawTask of queued) {
       if (this._shuttingDown) break
       if (availableSlots(this._concurrency, this._activeAgents.size + this._pendingSpawns) <= 0) {
@@ -372,14 +504,17 @@ export class AgentManagerImpl implements AgentManager {
       setConcurrency: (state) => {
         this._concurrency = state
       },
-      processQueuedTask: (raw, map) => this._processQueuedTask(raw, map),
+      processQueuedTask: (raw, map) => this._processQueuedTask(raw, map, drainDeps.tickId),
       drainFailureCounts: this._drainFailureCounts,
       onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService,
       drainPausedUntil: this._drainPausedUntil,
       emitDrainPaused: (event) => {
         this._drainPausedUntil = event.pausedUntil
         broadcast('agentManager:drainPaused', event)
-      }
+      },
+      recentlyProcessedTaskIds: this._recentlyProcessedTaskIds,
+      awaitOAuthRefresh: () => this.awaitOAuthRefresh()
     }
     return runDrain(drainDeps)
   }
@@ -413,7 +548,8 @@ export class AgentManagerImpl implements AgentManager {
           branch: agent.branch,
           logger: this.logger
         })
-      }
+      },
+      broadcastToRenderer: (channel, payload) => broadcast(channel as 'manager:warning', payload as { message: string })
     }
     await runWatchdog(watchdogDeps)
   }
@@ -422,7 +558,13 @@ export class AgentManagerImpl implements AgentManager {
 
   private async _orphanLoop(): Promise<void> {
     try {
-      await recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger)
+      const result = await recoverOrphans(
+        (id: string) => this._activeAgents.has(id),
+        this.repo,
+        this.logger,
+        this._taskStateService
+      )
+      this._broadcastOrphanResultIfNonEmpty(result)
     } catch (err) {
       this.logger.error(`[agent-manager] Orphan recovery error: ${err}`)
     }
@@ -444,22 +586,61 @@ export class AgentManagerImpl implements AgentManager {
     }
   }
 
+  // ---- Orphan broadcast helper ----
+
+  private _broadcastOrphanResultIfNonEmpty(result: {
+    recovered: string[]
+    exhausted: string[]
+  }): void {
+    if (result.recovered.length > 0 || result.exhausted.length > 0) {
+      broadcast('orphan:recovered', result)
+    }
+  }
+
   // ---- Public methods ----
 
   start(): void {
-    if (this._running) return
+    if (this._started) {
+      this.logger.warn('[agent-manager] start() called while already running — ignoring duplicate call')
+      return
+    }
+    this._started = true
     this._running = true
     this._shuttingDown = false
     this._concurrency = makeConcurrencyState(this.config.maxConcurrent)
-
-    this.clearStaleClaims()
     this.kickOffOrphanRecovery()
+    this.clearStaleClaims()
     this.initDependencyIndex()
     this.kickOffInitialWorktreePrune()
-    this.scheduleDrainLoop()
-    this.scheduleWatchdogLoop()
-    this.scheduleOrphanLoop()
-    this.schedulePruneLoop()
+    this.lifecycle.startTimers(
+      this.config.pollIntervalMs,
+      {
+        onDrainTick: () => this.tickDrain(),
+        onWatchdogTick: () => {
+          this._watchdogLoop().catch((err) =>
+            this.logger.warn(`[agent-manager] Watchdog loop error: ${err}`)
+          )
+        },
+        onOrphanTick: () => {
+          this._orphanLoop().catch((err) =>
+            this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
+          )
+        },
+        onPruneTick: () => {
+          this._pruneLoop().catch((err) =>
+            this.logger.warn(`[agent-manager] Prune loop error: ${err}`)
+          )
+        }
+      },
+      // Stagger the four loop timers so they don't all fire at t=0.
+      // Drain starts first (no delay); watchdog/orphan/prune spread across 250ms.
+      {
+        drainInitialDelayMs: 0,
+        watchdogInitialDelayMs: 100,
+        orphanInitialDelayMs: 175,
+        pruneInitialDelayMs: 250
+      }
+    )
     this._scheduleInitialDrain()
 
     this.logger.info('[agent-manager] Started')
@@ -482,11 +663,16 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   private kickOffOrphanRecovery(): void {
-    recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger).catch(
-      (err) => {
-        this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
-      }
+    recoverOrphans(
+      (id: string) => this._activeAgents.has(id),
+      this.repo,
+      this.logger,
+      this._taskStateService
     )
+      .then((result) => this._broadcastOrphanResultIfNonEmpty(result))
+      .catch((err) => {
+        this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
+      })
   }
 
   // The epic graph is owned by EpicGroupService — this.repo does not rebuild it.
@@ -522,10 +708,6 @@ export class AgentManagerImpl implements AgentManager {
     })
   }
 
-  private scheduleDrainLoop(): void {
-    this.pollTimer = setInterval(() => this.tickDrain(), this.config.pollIntervalMs)
-  }
-
   private tickDrain(): void {
     if (this._drainInFlight) return
     this._drainInFlight = this._drainLoop()
@@ -550,35 +732,19 @@ export class AgentManagerImpl implements AgentManager {
     }
   }
 
-  private scheduleWatchdogLoop(): void {
-    this.watchdogTimer = setInterval(() => {
-      this._watchdogLoop().catch((err) =>
-        this.logger.warn(`[agent-manager] Watchdog loop error: ${err}`)
-      )
-    }, WATCHDOG_INTERVAL_MS)
-  }
-
-  private scheduleOrphanLoop(): void {
-    this.orphanTimer = setInterval(() => {
-      this._orphanLoop().catch((err) =>
-        this.logger.warn(`[agent-manager] Orphan loop error: ${err}`)
-      )
-    }, ORPHAN_CHECK_INTERVAL_MS)
-  }
-
-  private schedulePruneLoop(): void {
-    this.pruneTimer = setInterval(() => {
-      this._pruneLoop().catch((err) => this.logger.warn(`[agent-manager] Prune loop error: ${err}`))
-    }, WORKTREE_PRUNE_INTERVAL_MS)
-  }
-
   // Defer the first drain so the event loop settles and orphan recovery can complete
   // before any queued task is claimed.
   private _scheduleInitialDrain(): void {
     setTimeout(() => {
       this._drainInFlight = (async () => {
         try {
-          await recoverOrphans((id: string) => this._activeAgents.has(id), this.repo, this.logger)
+          const result = await recoverOrphans(
+            (id: string) => this._activeAgents.has(id),
+            this.repo,
+            this.logger,
+            this._taskStateService
+          )
+          this._broadcastOrphanResultIfNonEmpty(result)
         } catch (err) {
           this.logger.error(`[agent-manager] Orphan recovery before initial drain error: ${err}`)
         }
@@ -591,26 +757,24 @@ export class AgentManagerImpl implements AgentManager {
     }, INITIAL_DRAIN_DEFER_MS)
   }
 
+  /**
+   * Polls until all active agents have reached a terminal or review state, or
+   * `gracePeriodMs` elapses — whichever comes first.
+   *
+   * Intentionally separate from `stop()` so callers can choose how long to
+   * wait before forcing a re-queue of remaining active tasks.
+   */
+  async waitForAgentsToSettle(gracePeriodMs: number): Promise<void> {
+    const deadline = Date.now() + gracePeriodMs
+    while (this._activeAgents.size > 0 && Date.now() < deadline) {
+      await sleep(100)
+    }
+  }
+
   // finalizeAgentRun includes git rebase + PR creation which can take 30+ seconds
   async stop(timeoutMs = 60_000): Promise<void> {
     this._shuttingDown = true
-
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer)
-      this.pollTimer = null
-    }
-    if (this.watchdogTimer) {
-      clearInterval(this.watchdogTimer)
-      this.watchdogTimer = null
-    }
-    if (this.orphanTimer) {
-      clearInterval(this.orphanTimer)
-      this.orphanTimer = null
-    }
-    if (this.pruneTimer) {
-      clearInterval(this.pruneTimer)
-      this.pruneTimer = null
-    }
+    this.lifecycle.stopTimers()
 
     await executeShutdown(
       {
@@ -624,6 +788,7 @@ export class AgentManagerImpl implements AgentManager {
     )
     this._drainInFlight = null
 
+    this._started = false
     this._running = false
     this.logger.info('[agent-manager] Stopped')
   }
@@ -682,6 +847,21 @@ export class AgentManagerImpl implements AgentManager {
     } catch (err) {
       return { killed: false, error: String(err) }
     }
+  }
+
+  async cancelAgent(taskId: string): Promise<void> {
+    const result = this.killAgent(taskId)
+    if (!result.killed) {
+      this.logger.warn(`[agent-manager] cancelAgent(${taskId}): ${result.error ?? 'agent not found'}`)
+    }
+  }
+
+  awaitOAuthRefresh(): Promise<void> {
+    if (!this._oauthRefreshPromise) return Promise.resolve()
+    return this._oauthRefreshPromise.then(
+      () => {},
+      () => {}
+    )
   }
 }
 

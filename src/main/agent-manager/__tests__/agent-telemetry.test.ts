@@ -16,8 +16,9 @@ vi.mock('../../db', () => ({
 // The TurnTracker constructor accesses getDb() which requires real SQLite;
 // a stub bypasses that entirely without needing to mock TurnTracker itself.
 
-import { trackAgentCosts, persistAgentRunTelemetry } from '../agent-telemetry'
+import { trackAgentCosts, persistAgentRunTelemetry, computeTokenCost } from '../agent-telemetry'
 import type { ActiveAgent, AgentHandle } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { TurnTracker } from '../turn-tracker'
 import { updateAgentMeta } from '../../agent-history'
 import { updateAgentRunCost } from '../../data/agent-queries'
@@ -186,5 +187,69 @@ describe('persistAgentRunTelemetry', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Failed to persist cost breakdown')
     )
+  })
+
+  it('falls back to token-derived cost when SDK result message was never received', () => {
+    // Simulates the common case: pipeline agent exits before the SDK subprocess
+    // yields the result message (e.g. maxTurns abort or process signal), so
+    // agent.costUsd stays at 0. The fallback should compute from token totals.
+    const agent = makeAgent({
+      costUsd: 0,
+      model: DEFAULT_CONFIG.defaultModel
+    })
+    const turnTracker = makeTurnTracker({
+      totals: vi.fn().mockReturnValue({
+        tokensIn: 180,
+        tokensOut: 39,
+        turnCount: 14,
+        cacheTokensRead: 366162,
+        cacheTokensCreated: 116822
+      })
+    })
+    persistAgentRunTelemetry('run-1', agent, 0, turnTracker, Date.now(), 5000, makeLogger())
+
+    const costArg = vi.mocked(updateAgentRunCost).mock.calls[0]?.[2]
+    expect(costArg).toBeDefined()
+    expect(costArg!.costUsd).toBeGreaterThan(0)
+  })
+
+  it('keeps agent.costUsd when it was populated from the SDK result message', () => {
+    const agent = makeAgent({ costUsd: 0.15, model: DEFAULT_CONFIG.defaultModel })
+    const turnTracker = makeTurnTracker({
+      totals: vi.fn().mockReturnValue({
+        tokensIn: 180,
+        tokensOut: 39,
+        turnCount: 14,
+        cacheTokensRead: 366162,
+        cacheTokensCreated: 116822
+      })
+    })
+    persistAgentRunTelemetry('run-1', agent, 0, turnTracker, Date.now(), 5000, makeLogger())
+
+    const costArg = vi.mocked(updateAgentRunCost).mock.calls[0]?.[2]
+    expect(costArg!.costUsd).toBe(0.15)
+  })
+})
+
+describe('computeTokenCost', () => {
+  it('returns 0 for an unrecognized model', () => {
+    expect(computeTokenCost('unknown-model-xyz', 1000, 500, 0, 0)).toBe(0)
+  })
+
+  it('computes non-zero cost for a known Sonnet 4.5 model with cache reads', () => {
+    const cost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 180, 39, 366162, 116822)
+    expect(cost).toBeGreaterThan(0)
+  })
+
+  it('computes cost proportional to cache reads for Sonnet 4.5', () => {
+    const noCacheCost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 100, 50, 0, 0)
+    const withCacheCost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 100, 50, 1_000_000, 0)
+    expect(withCacheCost).toBeGreaterThan(noCacheCost)
+  })
+
+  it('matches haiku pricing for haiku-4-5 model', () => {
+    const haikuCost = computeTokenCost('claude-haiku-4-5', 1_000_000, 0, 0, 0)
+    const sonnetCost = computeTokenCost(DEFAULT_CONFIG.defaultModel, 1_000_000, 0, 0, 0)
+    expect(haikuCost).toBeLessThan(sonnetCost)
   })
 })

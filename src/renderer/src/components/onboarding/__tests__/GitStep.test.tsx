@@ -37,9 +37,12 @@ describe('GitStep', () => {
     setCheckInstalled(false)
     render(<GitStep {...baseProps} />)
 
-    await waitFor(() => {
-      expect(screen.getByText(/install git/i)).toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText(/xcode-select/i)).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
     expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
   })
 

@@ -210,7 +210,8 @@ vi.stubGlobal('api', {
     kill: vi.fn().mockResolvedValue({ ok: true }),
     onWarning: vi.fn().mockReturnValue(() => {}),
     onCircuitBreakerOpen: vi.fn().mockReturnValue(() => {}),
-    onDrainPaused: vi.fn().mockReturnValue(() => {})
+    onDrainPaused: vi.fn().mockReturnValue(() => {}),
+    onOrphanRecovered: vi.fn().mockReturnValue(() => {})
   },
 
   // Cost analytics

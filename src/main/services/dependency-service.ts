@@ -1,6 +1,16 @@
 /**
  * Shared domain service for task dependency management.
  * Consolidates dependency checking, cycle detection, and status classification.
+ *
+ * This module owns the **blocking-policy** layer:
+ *   - `checkTaskDependencies` — checks whether a single task should be blocked
+ *   - `checkEpicDependencies` — checks whether epic-level deps block a task
+ *   - `computeBlockState` — composes task + epic block checks
+ *   - `buildBlockedNotes` / `stripBlockedNote` — auto-block note formatting
+ *
+ * Pure graph operations (cycle detection, reverse-index build) live in
+ * `dependency-graph.ts`. Import `DependencyGraph` / `createDependencyIndex`
+ * from there when you only need graph operations without blocking policy.
  */
 
 import type { SprintTask, TaskDependency, TaskGroup, EpicDependency } from '../../shared/types'
@@ -8,231 +18,32 @@ import type { Logger } from '../logger'
 import {
   TERMINAL_STATUSES,
   FAILURE_STATUSES,
-  HARD_SATISFIED_STATUSES,
-  isTaskStatus
+  HARD_SATISFIED_STATUSES
 } from '../../shared/task-state-machine'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { createEpicDependencyIndex } from './epic-dependency-service'
+import { createDependencyIndex } from './dependency-graph'
+
+// Re-export graph primitives so existing callers keep working without import-path changes.
+export {
+  DependencyGraph,
+  createDependencyIndex,
+  detectCycle,
+  validateDependencyGraph,
+} from './dependency-graph'
+
+export type {
+  DependencyIndex,
+  DependencyGraphValidation,
+  ValidateDependencyGraphDeps,
+} from './dependency-graph'
 
 // Re-export canonical status sets
 export { TERMINAL_STATUSES, FAILURE_STATUSES, HARD_SATISFIED_STATUSES }
 
-export interface DependencyIndex {
-  rebuild(tasks: Array<{ id: string; depends_on: TaskDependency[] | null }>): void
-  update(taskId: string, deps: TaskDependency[] | null): void
-  remove(taskId: string): void
-  getDependents(taskId: string): Set<string>
-  areDependenciesSatisfied(
-    taskId: string,
-    deps: TaskDependency[],
-    getTaskStatus: (id: string) => string | undefined,
-    logger?: { warn: (msg: string) => void }
-  ): { satisfied: boolean; blockedBy: string[] }
-}
-
-/**
- * True when `dep` is currently satisfied for `taskId`.
- *
- * Branches by whichever of the four cases applies, in order:
- *   - upstream task deleted (rawStatus === undefined) → satisfied
- *   - unknown status string (stale/corrupt row) → unsatisfied
- *   - explicit `condition` field set → predicate based on condition
- *   - legacy implicit type (`hard` / `soft`) → predicate based on type, with a
- *     deprecation warning routed through the supplied logger
- */
-function isDependencySatisfied(
-  dep: TaskDependency,
-  taskId: string,
-  getTaskStatus: (id: string) => string | undefined,
-  logger?: { warn: (msg: string) => void }
-): boolean {
-  const rawStatus = getTaskStatus(dep.id)
-  if (rawStatus === undefined) return true
-  if (!isTaskStatus(rawStatus)) return false
-  return dep.condition
-    ? satisfiesCondition(dep.condition, rawStatus)
-    : satisfiesLegacyType(dep, taskId, rawStatus, logger)
-}
-
-function satisfiesCondition(
-  condition: 'on_success' | 'on_failure' | 'always',
-  status: import('../../shared/task-state-machine').TaskStatus
-): boolean {
-  if (condition === 'on_success') return HARD_SATISFIED_STATUSES.has(status)
-  if (condition === 'on_failure') return FAILURE_STATUSES.has(status)
-  return TERMINAL_STATUSES.has(status)
-}
-
-function satisfiesLegacyType(
-  dep: TaskDependency,
-  taskId: string,
-  status: import('../../shared/task-state-machine').TaskStatus,
-  logger?: { warn: (msg: string) => void }
-): boolean {
-  // DEPRECATED: `condition` will be required in a future version. This branch
-  // will be removed once all existing deps are migrated.
-  ;(logger ?? console).warn(
-    `[deprecation] Dependency ${dep.id} on task ${taskId} has no "condition" field — ` +
-      `falling back to type="${dep.type ?? 'hard'}" behavior. ` +
-      `Set an explicit condition ("on_success", "on_failure", or "always") to silence this warning.`
-  )
-  if (dep.type === 'hard') return HARD_SATISFIED_STATUSES.has(status)
-  return TERMINAL_STATUSES.has(status)
-}
-
-export function createDependencyIndex(): DependencyIndex {
-  const reverseMap = new Map<string, Set<string>>()
-  const forwardMap = new Map<string, Set<string>>()
-
-  function addEdges(taskId: string, deps: TaskDependency[] | null): void {
-    if (!deps || deps.length === 0) {
-      forwardMap.delete(taskId)
-      return
-    }
-    const depIds = new Set<string>()
-    for (const dep of deps) {
-      depIds.add(dep.id)
-      let set = reverseMap.get(dep.id)
-      if (!set) {
-        set = new Set()
-        reverseMap.set(dep.id, set)
-      }
-      set.add(taskId)
-    }
-    forwardMap.set(taskId, depIds)
-  }
-
-  function removeEdges(taskId: string): void {
-    const oldDeps = forwardMap.get(taskId)
-    if (oldDeps) {
-      for (const depId of oldDeps) {
-        const dependents = reverseMap.get(depId)
-        if (dependents) {
-          dependents.delete(taskId)
-          if (dependents.size === 0) {
-            reverseMap.delete(depId)
-          }
-        }
-      }
-    }
-    forwardMap.delete(taskId)
-  }
-
-  return {
-    rebuild(tasks) {
-      reverseMap.clear()
-      forwardMap.clear()
-      for (const task of tasks) addEdges(task.id, task.depends_on)
-    },
-    update(taskId, deps) {
-      removeEdges(taskId)
-      addEdges(taskId, deps)
-    },
-    remove(taskId) {
-      removeEdges(taskId)
-      reverseMap.delete(taskId)
-    },
-    getDependents(taskId) {
-      return reverseMap.get(taskId) ?? new Set()
-    },
-    /**
-     * Determine whether a task's dependencies are all satisfied.
-     *
-     * Semantics by dependency type / condition:
-     *
-     * - **hard** (no condition set): upstream must be in `HARD_SATISFIED_STATUSES`
-     *   (currently only `'done'`). A failed/cancelled/errored hard dependency
-     *   keeps the downstream task blocked indefinitely.
-     *
-     * - **soft** (no condition set): upstream must be in `TERMINAL_STATUSES`
-     *   (`done`, `cancelled`, `failed`, `error`). The downstream task unblocks
-     *   regardless of whether the upstream succeeded or failed — "unblock on any
-     *   terminal outcome".
-     *
-     * - **condition: 'on_success'**: equivalent to hard — upstream must be `done`.
-     * - **condition: 'on_failure'**: upstream must be in `FAILURE_STATUSES`.
-     * - **condition: 'always'**: upstream must be in `TERMINAL_STATUSES` (same as soft).
-     *
-     * Deleted upstream tasks (status `undefined`) are treated as satisfied to avoid
-     * permanently blocking downstream tasks when an upstream task is removed.
-     */
-    areDependenciesSatisfied(taskId, deps, getTaskStatus, logger) {
-      if (deps.length === 0) return { satisfied: true, blockedBy: [] }
-      const blockedBy: string[] = []
-      for (const dep of deps) {
-        if (!isDependencySatisfied(dep, taskId, getTaskStatus, logger)) {
-          blockedBy.push(dep.id)
-        }
-      }
-      return { satisfied: blockedBy.length === 0, blockedBy }
-    }
-  }
-}
-
-export type DependencyGraphValidation =
-  | { valid: true }
-  | { valid: false; error: string }
-  | { valid: false; cycle: string[] }
-
-export interface ValidateDependencyGraphDeps {
-  getTask: (id: string) => { id: string; depends_on: TaskDependency[] | null } | null
-  listTasks: () => Array<{ id: string; depends_on: TaskDependency[] | null }>
-}
-
-/**
- * Pure validation for a proposed dependency edit. Returns a discriminated union
- * so callers can branch on missing-target vs cycle without parsing strings.
- *
- * Two checks, in order:
- *   1. Every proposed dep id must resolve to an existing task.
- *   2. Adding the proposed deps must not form a cycle.
- */
-export function validateDependencyGraph(
-  taskId: string,
-  proposedDeps: TaskDependency[],
-  deps: ValidateDependencyGraphDeps
-): DependencyGraphValidation {
-  for (const dep of proposedDeps) {
-    if (!deps.getTask(dep.id)) {
-      return { valid: false, error: `Task ${dep.id} not found` }
-    }
-  }
-  const taskDeps = new Map(deps.listTasks().map((t) => [t.id, t.depends_on]))
-  const cycle = detectCycle(taskId, proposedDeps, (id) => taskDeps.get(id) ?? null)
-  if (cycle) return { valid: false, cycle }
-  return { valid: true }
-}
-
-export function detectCycle(
-  taskId: string,
-  proposedDeps: TaskDependency[],
-  getDepsForTask: (id: string) => TaskDependency[] | null
-): string[] | null {
-  for (const dep of proposedDeps) {
-    if (dep.id === taskId) return [taskId, taskId]
-  }
-  for (const dep of proposedDeps) {
-    const visited = new Set<string>()
-    const path: string[] = [taskId, dep.id]
-    function dfs(current: string): string[] | null {
-      if (current === taskId) return [...path]
-      if (visited.has(current)) return null
-      visited.add(current)
-      const deps = getDepsForTask(current)
-      if (!deps) return null
-      for (const dependency of deps) {
-        path.push(dependency.id)
-        const cycleFound = dfs(dependency.id)
-        if (cycleFound) return cycleFound
-        path.pop()
-      }
-      return null
-    }
-    const cycle = dfs(dep.id)
-    if (cycle) return cycle
-  }
-  return null
-}
+// ============================================================================
+// Blocking-policy helpers
+// ============================================================================
 
 const BLOCK_PREFIX = '[auto-block] '
 
@@ -251,6 +62,10 @@ export function buildBlockedNotes(blockedBy: string[], existingNotes?: string | 
   return userNotes ? `${blockNote}\n${userNotes}` : blockNote
 }
 
+// ============================================================================
+// Blocking-policy functions
+// ============================================================================
+
 /**
  * Check whether a task's dependencies are satisfied.
  * Creates a temporary dependency index from the current task list.
@@ -261,7 +76,7 @@ export function checkTaskDependencies(
   deps: TaskDependency[],
   logger: Logger,
   listTasks: () => SprintTask[]
-): { shouldBlock: boolean; blockedBy: string[] } {
+): { shouldBlock: boolean; blockedBy: string[]; reason?: string } {
   try {
     const allTasks = listTasks()
     const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
@@ -272,7 +87,9 @@ export function checkTaskDependencies(
     return { shouldBlock: !satisfied && blockedBy.length > 0, blockedBy }
   } catch (err) {
     logger.warn(`[dependency-service] checkTaskDependencies failed for ${taskId}: ${err}`)
-    return { shouldBlock: false, blockedBy: [] }
+    logger.event?.('dependency.check.error', { taskId, error: String(err) })
+    const reason = 'dep-check-failed: ' + (err instanceof Error ? err.message : String(err))
+    return { shouldBlock: true, blockedBy: [], reason }
   }
 }
 
@@ -287,7 +104,7 @@ export function checkEpicDependencies(
   logger: Logger,
   listTasks: () => SprintTask[],
   listGroups: () => TaskGroup[]
-): { shouldBlock: boolean; blockedBy: string[] } {
+): { shouldBlock: boolean; blockedBy: string[]; reason?: string } {
   // No epic deps = not blocked
   if (!epicDeps || epicDeps.length === 0) {
     return { shouldBlock: false, blockedBy: [] }
@@ -322,7 +139,9 @@ export function checkEpicDependencies(
     return { shouldBlock: !satisfied && blockedBy.length > 0, blockedBy }
   } catch (err) {
     logger.warn(`[dependency-service] checkEpicDependencies failed for epic ${groupId}: ${err}`)
-    return { shouldBlock: false, blockedBy: [] }
+    logger.event?.('dependency.check.error', { groupId, error: String(err) })
+    const reason = 'dep-check-failed: ' + (err instanceof Error ? err.message : String(err))
+    return { shouldBlock: true, blockedBy: [], reason }
   }
 }
 
@@ -339,7 +158,7 @@ export interface ComputeBlockStateContext {
 export function computeBlockState(
   task: { id: string; depends_on: TaskDependency[] | null; group_id?: string | null | undefined },
   ctx: ComputeBlockStateContext
-): { shouldBlock: boolean; blockedBy: string[] } {
+): { shouldBlock: boolean; blockedBy: string[]; reason?: string } {
   const taskDeps = task.depends_on ?? []
   const taskResult = checkTaskDependencies(task.id, taskDeps, ctx.logger, ctx.listTasks)
 
@@ -362,8 +181,12 @@ export function computeBlockState(
   // Compose blockers: task-level as-is, epic-level with "epic:" prefix
   const allBlockedBy = [...taskResult.blockedBy, ...epicResult.blockedBy.map((id) => `epic:${id}`)]
 
+  // Surface the failure reason from whichever check errored so callers can log why the task was held
+  const reason = taskResult.reason ?? epicResult.reason
+
   return {
-    shouldBlock: allBlockedBy.length > 0,
-    blockedBy: allBlockedBy
+    shouldBlock: allBlockedBy.length > 0 || !!reason,
+    blockedBy: allBlockedBy,
+    ...(reason !== undefined && { reason })
   }
 }

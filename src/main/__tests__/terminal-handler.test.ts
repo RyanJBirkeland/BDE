@@ -15,7 +15,8 @@ vi.mock('../logger', () => ({
     error: vi.fn(),
     warn: vi.fn(),
     info: vi.fn(),
-    debug: vi.fn()
+    debug: vi.fn(),
+    event: vi.fn()
   })
 }))
 
@@ -31,8 +32,8 @@ import type { AgentManagerConfig } from '../agent-manager/types'
 function makeRepo(overrides: Partial<IAgentTaskRepository> = {}): IAgentTaskRepository {
   return {
     getTask: vi.fn().mockReturnValue(null),
-    updateTask: vi.fn(),
-    claimTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
+    claimTask: vi.fn().mockResolvedValue(null),
     getQueuedTasks: vi.fn().mockReturnValue([]),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
     getGroup: vi.fn().mockReturnValue(null),
@@ -53,7 +54,7 @@ function makeDeps(repo: IAgentTaskRepository): TerminalHandlerDeps {
     unitOfWork: { runInTransaction: (fn) => fn() },
     config: {} as AgentManagerConfig,
     terminalCalled: new Map(),
-    logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() } as any
+    logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn(), event: vi.fn() } as any
   }
 }
 
@@ -80,9 +81,7 @@ describe('handleTaskTerminal — dep resolution failure', () => {
 
   it('does not throw when repo.updateTask also fails', async () => {
     const repo = makeRepo({
-      updateTask: vi.fn().mockImplementation(() => {
-        throw new Error('write failed')
-      })
+      updateTask: vi.fn().mockRejectedValue(new Error('write failed'))
     })
     vi.mocked(resolveDependents).mockImplementation(() => {
       throw new Error('dep error')

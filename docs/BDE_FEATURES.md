@@ -18,7 +18,7 @@ This document is auto-loaded by all BDE agents via the `@` directive in CLAUDE.m
 
 ### Task Workbench
 
-Planning and spec creation interface. Users draft task specs with AI copilot assistance, configure task properties, and run validation checks before queuing.
+Planning and spec creation interface, presented as a centered modal (`TaskWorkbenchModal`). Opens from the Task Planner (Add Task / Edit Task) and from the Task Pipeline (Edit on a selected task). Users draft task specs with AI copilot assistance, configure task properties, and run validation checks before queuing.
 
 - **Copilot**: AI chat assistant for drafting specs. Text-only, uses Agent SDK streaming via `workbench:chatStream` IPC. Messages persist to localStorage under `bde:copilot-messages` (capped at 100). Cannot use tools or explore code — for codebase-aware spec generation, use the Synthesizer instead
 - **Validation checks**: Validates spec quality before queuing. Specs require at least 2 `## heading` sections. Semantic checks use SDK with haiku model for speed
@@ -105,7 +105,7 @@ Orchestrates pipeline agent lifecycle. Core module: `src/main/agent-manager/`.
 - **WIP limit**: `MAX_ACTIVE_TASKS` concurrent agents, enforced at agent manager drain loop
 - **Watchdog**: Monitors agent health with configurable timeout. Default 1 hour, overridable per-task via `max_runtime_ms` field
 - **Completion flow**: Agent exits normally → classify exit → mark task `review` → preserve worktree for human review. On failure: retry up to 3x, then mark `failed`. Human actions in Code Review Station (merge locally, create PR, revise, discard) determine final task status
-- **Fast-fail detection**: 3 failures within 30s of starting = exhausted. Task marked `error` with diagnostic notes pointing to `~/.bde/agent-manager.log`
+- **Fast-fail detection**: 3 failures within 30s of starting = exhausted. Task marked `error` with diagnostic notes pointing to `~/.bde/bde.log`
 - **Worktree isolation**: Each pipeline agent gets `~/.bde/worktrees/<repo-slug>/<task-id>/`. Worktree cleaned up after completion (success or failure). Stale worktrees from previous runs should be cleaned with `git worktree prune`
 - **Config**: Max concurrent agents, worktree base path, and max runtime are read once at startup. Changes via Settings UI take effect on next app restart
 - Related: Sprint Pipeline, Task Dependencies
@@ -225,7 +225,7 @@ Flexible split-pane layout system for arranging views side-by-side with drag-and
 - **Drag-and-drop**: 5-zone drop targets (top/bottom/left/right/center) for docking views. Visual overlay shows target zone during drag
 - **Persistence**: Layout tree and active tabs saved to `panel.layout` setting on every mutation. Restored on app launch
 - **Tear-off windows**: Views can be torn off into separate Electron windows. Each tear-off has its own independent panel layout. Tear-off windows set `persistable: false` to prevent overwriting the main window's saved layout
-- **View shortcuts**: Dashboard (Cmd+1), Agents (Cmd+2), IDE (Cmd+3), Task Pipeline (Cmd+4), Code Review (Cmd+5), Source Control (Cmd+6), Settings (Cmd+7)
+- **View shortcuts**: Dashboard (Cmd+1), Agents (Cmd+2), IDE (Cmd+3), Task Pipeline (Cmd+4), Code Review (Cmd+5), Source Control (Cmd+6), Settings (Cmd+7), Task Planner (Cmd+8)
 - Related: All views
 
 ### Settings

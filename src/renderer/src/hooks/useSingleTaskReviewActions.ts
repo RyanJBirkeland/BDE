@@ -29,12 +29,17 @@ export interface UseSingleTaskReviewActionsResult {
     commitsBehind?: number | undefined
   }
   ghConfigured: boolean
+  /** Worktree path for the selected task — used by the conflict resolution "Open in IDE" path. */
+  worktreePath: string | null | undefined
+  /** Number of revision requests already made — enforces the 5-revision cap. */
+  revisionCount: number
   shipIt: () => Promise<void>
   mergeLocally: () => Promise<void>
   createPr: () => Promise<void>
   requestRevision: () => Promise<void>
   rebase: () => Promise<void>
   discard: () => Promise<void>
+  markShippedOutsideBde: () => Promise<void>
   getNextReviewTaskId: (currentTaskId: string) => string | null
   confirmProps: ReturnType<typeof useConfirm>['confirmProps']
   promptProps: ReturnType<typeof useTextareaPrompt>['promptProps']
@@ -213,8 +218,8 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
   const discard = async (): Promise<void> => {
     if (!task) return
     const ok = await confirm({
-      title: 'Discard Changes',
-      message: `Discard all work for "${task.title.slice(0, 50)}"? This cannot be undone.`,
+      title: 'Discard Task',
+      message: `Discard this task? The worktree will be permanently deleted. This cannot be undone.`,
       confirmLabel: 'Discard',
       variant: 'danger'
     })
@@ -234,18 +239,45 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
     }
   }
 
+  const markShippedOutsideBde = async (): Promise<void> => {
+    if (!task) return
+    const ok = await confirm({
+      title: 'Mark Shipped Outside BDE',
+      message: `Mark "${task.title.slice(0, 50)}" as done? Use this when you merged or deployed the work outside of BDE.`,
+      confirmLabel: 'Mark Done',
+      variant: 'default'
+    })
+    if (!ok) return
+    setActionInFlight('markShipped')
+    try {
+      await window.api.review.markShippedOutsideBde({ taskId: task.id })
+      toast.success('Task marked as shipped')
+      const nextTaskId = getNextReviewTaskId(task.id, tasks)
+      selectTask(nextTaskId)
+      if (!nextTaskId) toast.info('Review queue empty')
+      loadData()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to mark shipped')
+    } finally {
+      setActionInFlight(null)
+    }
+  }
+
   return {
     actionInFlight,
     mergeStrategy,
     setMergeStrategy,
     freshness,
     ghConfigured,
+    worktreePath: task?.worktree_path,
+    revisionCount: Array.isArray(task?.revision_feedback) ? task.revision_feedback.length : 0,
     shipIt,
     mergeLocally,
     createPr,
     requestRevision,
     rebase,
     discard,
+    markShippedOutsideBde,
     getNextReviewTaskId: (currentTaskId: string) => getNextReviewTaskId(currentTaskId, tasks),
     confirmProps,
     promptProps

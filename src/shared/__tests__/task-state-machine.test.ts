@@ -122,8 +122,13 @@ describe('task-state-machine', () => {
       expect(VALID_TRANSITIONS.cancelled).not.toContain('queued')
     })
 
-    it('should have empty transitions for cancelled (truly terminal)', () => {
-      expect(VALID_TRANSITIONS.cancelled).toHaveLength(0)
+    it('should allow cancelled → done (manual recovery escape hatch)', () => {
+      expect(VALID_TRANSITIONS.cancelled).toContain('done')
+    })
+
+    it('should allow failed → done and error → done (manual recovery escape hatches)', () => {
+      expect(VALID_TRANSITIONS.failed).toContain('done')
+      expect(VALID_TRANSITIONS.error).toContain('done')
     })
   })
 
@@ -137,11 +142,16 @@ describe('task-state-machine', () => {
       expect(isValidTransition('failed', 'queued')).toBe(true)
     })
 
+    it('should return true for queued → done (auto-complete edge)', () => {
+      // queued → done is permitted for the auto-complete path: agent-manager
+      // detects that matching work already landed on origin/main out-of-band.
+      expect(isValidTransition('queued', 'done')).toBe(true)
+    })
+
     it('should return false for invalid transitions', () => {
       expect(isValidTransition('done', 'active')).toBe(false)
       expect(isValidTransition('cancelled', 'queued')).toBe(false)
       expect(isValidTransition('backlog', 'done')).toBe(false)
-      expect(isValidTransition('queued', 'done')).toBe(false)
     })
   })
 

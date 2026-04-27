@@ -1,21 +1,13 @@
 import type { IDashboardRepository, CreateTaskInput } from '../data/sprint-task-repository'
-import type { SprintTask, TaskDependency } from '../../shared/types'
+import type { SprintTask, TaskDependency, BatchImportTask } from '../../shared/types'
 import { TASK_STATUSES } from '../../shared/task-state-machine'
 
-export interface BatchTaskInput {
-  title: string
-  repo: string
-  prompt?: string | undefined
-  spec?: string | undefined
-  status?: string | undefined
-  dependsOnIndices?: number[] | undefined
-  depType?: 'hard' | 'soft' | undefined
-  playgroundEnabled?: boolean | undefined
-  model?: string | undefined
-  tags?: string[] | undefined
-  priority?: number | undefined
-  templateName?: string | undefined
-}
+/**
+ * @deprecated Import `BatchImportTask` from `'../../shared/types'` instead.
+ * This alias exists so existing callers don't break in the same commit that
+ * unifies the type. Will be removed once external usages migrate.
+ */
+export type BatchTaskInput = BatchImportTask
 
 export interface BatchImportResult {
   created: SprintTask[]
@@ -30,11 +22,11 @@ export interface BatchImportResult {
  * @param repo - Sprint task repository for persistence
  * @returns Result with created tasks and any errors
  */
-export function batchImportTasks(
-  tasks: BatchTaskInput[],
+export async function batchImportTasks(
+  tasks: BatchImportTask[],
   repo: IDashboardRepository,
   configuredRepos?: string[]
-): BatchImportResult {
+): Promise<BatchImportResult> {
   const created: SprintTask[] = []
   const errors: string[] = []
 
@@ -108,7 +100,7 @@ export function batchImportTasks(
     }
 
     // Create task via repository
-    const task = repo.createTask(input)
+    const task = await repo.createTask(input)
     if (!task) {
       errors.push(`Task[${i}]: Failed to create task "${t.title}"`)
       continue

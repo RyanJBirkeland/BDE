@@ -16,24 +16,57 @@ const logger = createLogger('agent-event-mapper')
  * The SDK identifies a tool invocation with `tool_use_id`; only the preceding
  * assistant message carries the human-readable tool name. We remember the
  * mapping long enough to label the paired `tool_result` block when it comes
- * back in the next `user` message. Capped to avoid unbounded growth when a
- * session is long-lived or a tool_result is never returned.
+ * back in the next `user` message. Capped (per-agent) to avoid unbounded
+ * growth when a session is long-lived or a tool_result is never returned.
+ *
+ * EP-15: tool-name state is keyed by `agentId` so concurrent agent runs do not
+ * share state. When `agentId` is unknown (legacy callers of `mapRawMessage`),
+ * the SHARED_AGENT_ID bucket is used to preserve previous behavior.
  */
-const MAX_TRACKED_TOOL_USE_IDS = 1000
-const toolNameByToolUseId = new Map<string, string>()
+const MAX_TRACKED_TOOL_USE_IDS_PER_AGENT = 1000
+const SHARED_AGENT_ID = '__shared__'
+const toolNameByAgent = new Map<string, Map<string, string>>()
 
-function rememberToolName(toolUseId: string, toolName: string): void {
-  if (toolNameByToolUseId.size >= MAX_TRACKED_TOOL_USE_IDS) {
-    const oldest = toolNameByToolUseId.keys().next().value
-    if (oldest !== undefined) toolNameByToolUseId.delete(oldest)
+function getOrCreateAgentToolMap(agentId: string): Map<string, string> {
+  let map = toolNameByAgent.get(agentId)
+  if (!map) {
+    map = new Map<string, string>()
+    toolNameByAgent.set(agentId, map)
   }
-  toolNameByToolUseId.set(toolUseId, toolName)
+  return map
 }
 
-function consumeToolName(toolUseId: string): string {
-  const name = toolNameByToolUseId.get(toolUseId) ?? 'unknown'
-  toolNameByToolUseId.delete(toolUseId)
+function rememberToolName(agentId: string, toolUseId: string, toolName: string): void {
+  const map = getOrCreateAgentToolMap(agentId)
+  if (map.size >= MAX_TRACKED_TOOL_USE_IDS_PER_AGENT) {
+    const oldest = map.keys().next().value
+    if (oldest !== undefined) map.delete(oldest)
+  }
+  map.set(toolUseId, toolName)
+}
+
+function consumeToolName(agentId: string, toolUseId: string): string {
+  const map = toolNameByAgent.get(agentId)
+  if (!map) return 'unknown'
+  const name = map.get(toolUseId) ?? 'unknown'
+  map.delete(toolUseId)
   return name
+}
+
+/**
+ * Clear the tool-name map for a specific agent run. Called when a new run
+ * starts so prior tool-use IDs do not leak across runs (or fixtures).
+ */
+export function resetAgentToolNames(agentId: string): void {
+  toolNameByAgent.delete(agentId)
+}
+
+/**
+ * Test-only helper. Clears all per-agent tool-name maps so each test starts
+ * from a clean slate.
+ */
+export function __resetAllToolNameTracking(): void {
+  toolNameByAgent.clear()
 }
 
 function capToolResultOutput(content: unknown): unknown {
@@ -63,7 +96,11 @@ function buildToolResultEvent(
   }
 }
 
-function mapAssistantMessage(message: Record<string, unknown>, now: number): AgentEvent[] {
+function mapAssistantMessage(
+  message: Record<string, unknown>,
+  agentId: string,
+  now: number
+): AgentEvent[] {
   const events: AgentEvent[] = []
   const content = message?.content
   if (!Array.isArray(content)) return events
@@ -79,7 +116,9 @@ function mapAssistantMessage(message: Record<string, unknown>, now: number): Age
         (typeof contentBlock.name === 'string' && contentBlock.name) ||
         (typeof contentBlock.tool_name === 'string' && contentBlock.tool_name) ||
         'unknown'
-      if (typeof contentBlock.id === 'string') rememberToolName(contentBlock.id, toolName)
+      if (typeof contentBlock.id === 'string') {
+        rememberToolName(agentId, contentBlock.id, toolName)
+      }
       events.push({
         type: 'agent:tool_call',
         tool: toolName,
@@ -92,7 +131,11 @@ function mapAssistantMessage(message: Record<string, unknown>, now: number): Age
   return events
 }
 
-function mapUserMessage(message: Record<string, unknown>, now: number): AgentEvent[] {
+function mapUserMessage(
+  message: Record<string, unknown>,
+  agentId: string,
+  now: number
+): AgentEvent[] {
   const events: AgentEvent[] = []
   const content = message?.content
   if (!Array.isArray(content)) return events
@@ -101,7 +144,7 @@ function mapUserMessage(message: Record<string, unknown>, now: number): AgentEve
     const contentBlock = block as Record<string, unknown>
     if (contentBlock.type !== 'tool_result') continue
     const toolUseId = typeof contentBlock.tool_use_id === 'string' ? contentBlock.tool_use_id : ''
-    const toolName = toolUseId ? consumeToolName(toolUseId) : 'unknown'
+    const toolName = toolUseId ? consumeToolName(agentId, toolUseId) : 'unknown'
     events.push(
       buildToolResultEvent(
         toolName,
@@ -124,22 +167,48 @@ function mapTopLevelToolResult(msg: Record<string, unknown>, now: number): Agent
 }
 
 /**
+ * Each unrecognized SDK message type is logged exactly once per process lifetime.
+ * Without this, a new SDK message type or control frame would log on every event
+ * (potentially hundreds per task) and drown real signal in `~/.bde/bde.log`.
+ */
+const loggedUnknownMessageTypes = new Set<string>()
+
+function logUnknownMessageTypeOnce(msgType: string): void {
+  if (loggedUnknownMessageTypes.has(msgType)) return
+  loggedUnknownMessageTypes.add(msgType)
+  logger.info(`Unrecognized message type (logged once per process): ${msgType}`)
+}
+
+/**
+ * Test-only helper. Clears the per-process sentinel so a fresh test fixture
+ * can observe the first-occurrence log path again. Production code never
+ * needs to call this — the sentinel is intentionally process-lifetime scoped.
+ */
+export function __resetUnknownMessageTypeSentinel(): void {
+  loggedUnknownMessageTypes.clear()
+}
+
+/**
  * Maps a raw SDK wire-protocol message to zero or more typed AgentEvents.
  * Handles assistant messages (text + tool_use blocks), user messages carrying
  * `tool_result` content blocks (current SDK format), and legacy top-level
  * `tool_result` messages (pre-SDK format, kept for back-compat).
+ *
+ * `agentId` scopes the tool-use-id → tool-name tracking so concurrent runs do
+ * not share state. Callers without an agentId fall back to a shared bucket
+ * (legacy behavior).
  */
-export function mapRawMessage(raw: unknown): AgentEvent[] {
+export function mapRawMessage(raw: unknown, agentId: string = SHARED_AGENT_ID): AgentEvent[] {
   if (typeof raw !== 'object' || raw === null) return []
   const msg = raw as Record<string, unknown>
   const msgType = msg.type as string | undefined
   const now = Date.now()
 
   if (msgType === 'assistant') {
-    return mapAssistantMessage((msg.message ?? {}) as Record<string, unknown>, now)
+    return mapAssistantMessage((msg.message ?? {}) as Record<string, unknown>, agentId, now)
   }
   if (msgType === 'user') {
-    return mapUserMessage((msg.message ?? {}) as Record<string, unknown>, now)
+    return mapUserMessage((msg.message ?? {}) as Record<string, unknown>, agentId, now)
   }
   if (msgType === 'tool_result') {
     return mapTopLevelToolResult(msg, now)
@@ -148,7 +217,7 @@ export function mapRawMessage(raw: unknown): AgentEvent[] {
     return []
   }
   if (msgType) {
-    logger.info(`Unrecognized message type: ${msgType}`)
+    logUnknownMessageTypeOnce(msgType)
   }
   return []
 }
@@ -166,6 +235,26 @@ interface PendingRow {
 const _pending: PendingRow[] = []
 let _flushTimer: ReturnType<typeof setTimeout> | null = null
 let _consecutiveFailures = 0
+
+// EP-15: Track DLQ-dropped events for future metrics. Incremented every time the
+// circuit breaker permanently drops a batch.
+let _droppedEventCount = 0
+
+/**
+ * Total number of agent events dropped by the DLQ sentinel since process start.
+ * Exposed for diagnostics and future metrics export. Production code should
+ * read this; tests use `__resetDroppedEventCount` to reset between runs.
+ */
+export function getDroppedEventCount(): number {
+  return _droppedEventCount
+}
+
+/**
+ * Test-only helper. Resets the DLQ counter between test runs.
+ */
+export function __resetDroppedEventCount(): void {
+  _droppedEventCount = 0
+}
 
 // Rate-limited error logging for SQLite failures
 let _lastSqliteErrorLog = 0
@@ -204,17 +293,34 @@ export function flushAgentEventBatcher(db?: Database.Database): void {
       _pending.unshift(...rows)
       if (_pending.length > MAX_PENDING_EVENTS) {
         const dropped = _pending.splice(0, _pending.length - MAX_PENDING_EVENTS)
-        logger.warn(`Dropped ${dropped.length} oldest events (cap)`)
+        const droppedAgentIds = Array.from(new Set(dropped.map((r) => r.agentId)))
+        logger.warn(
+          `Dropped ${dropped.length} oldest events (cap) — agentIds=${droppedAgentIds.join(',')}`
+        )
       }
     } else {
-      logger.error(
-        `${rows.length} events permanently lost after ${MAX_CONSECUTIVE_FAILURES} failures: ${err}`
+      // EP-15 DLQ sentinel: at the consecutive-failure ceiling we cannot keep
+      // re-queuing forever. Log a structured WARN with sample agent IDs so
+      // operators can find affected runs in `~/.bde/bde.log`, bump the dropped
+      // counter (for future metrics), and reset the failure counter so a
+      // subsequent recovery does not stay tripped indefinitely.
+      const droppedCount = rows.length
+      const sampleAgentIds = Array.from(new Set(rows.slice(0, 5).map((r) => r.agentId)))
+      const reason = err instanceof Error ? err.message : String(err)
+      logger.warn(
+        `event-batcher: permanent failure — dropping events ` +
+          JSON.stringify({ droppedCount, sampleAgentIds, reason })
       )
+      _droppedEventCount += droppedCount
+      _consecutiveFailures = 0
     }
     // Rate-limited error logging for context
     const now = Date.now()
     if (now - _lastSqliteErrorLog > SQLITE_ERROR_LOG_INTERVAL_MS) {
-      logger.warn(`SQLite batch write failed (attempt ${_consecutiveFailures}): ${err}`)
+      const batchAgentIds = Array.from(new Set(rows.map((r) => r.agentId)))
+      logger.warn(
+        `SQLite batch write failed (attempt ${_consecutiveFailures}, agentIds=${batchAgentIds.join(',')}): ${err}`
+      )
       _lastSqliteErrorLog = now
     }
   }
@@ -229,6 +335,13 @@ export function flushAgentEventBatcher(db?: Database.Database): void {
  * flushAgentEventBatcher() is called to ensure no events are lost.
  */
 export function emitAgentEvent(agentId: string, event: AgentEvent): void {
+  // EP-15: A new agent run begins — clear any prior tool-use IDs for this
+  // agentId so a stale entry from a previous run cannot mis-label this run's
+  // tool_result blocks.
+  if (event.type === 'agent:started') {
+    resetAgentToolNames(agentId)
+  }
+
   // Queue the event (stringify deferred to flush)
   _pending.push({ agentId, event })
 

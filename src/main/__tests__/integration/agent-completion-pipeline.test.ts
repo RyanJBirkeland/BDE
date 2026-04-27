@@ -96,7 +96,7 @@ const mockRepo: IAgentTaskRepository = {
 const getTaskMock = vi.mocked(getTask)
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
 }
 
 /** Build a minimal task-like object for getTask mock returns */
@@ -131,14 +131,26 @@ function makeTaskRecord(overrides: Record<string, unknown> = {}) {
 // Tests
 // ---------------------------------------------------------------------------
 
+// Mock TaskStateService that delegates to the mocked updateTask for test assertions
+const mockTaskStateService = {
+  transition: vi.fn(async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+    updateTaskMock(taskId, { status, ...(ctx?.fields ?? {}) })
+  })
+} as unknown as import('../../services/task-state-service').TaskStateService
+
 describe('Agent completion pipeline integration', () => {
   const logger = makeLogger()
   const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(mockTaskStateService.transition as ReturnType<typeof vi.fn>).mockImplementation(
+      async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+        updateTaskMock(taskId, { status, ...(ctx?.fields ?? {}) })
+      }
+    )
     updateTaskMock.mockReturnValue(null)
-    getTaskMock.mockReturnValue(null)
+    getTaskMock.mockReturnValue(makeTaskRecord())
     onTaskTerminal.mockReset().mockResolvedValue(undefined)
   })
 
@@ -165,7 +177,8 @@ describe('Agent completion pipeline integration', () => {
           title: 'Add login page',
           ghRepo: 'owner/repo',
           onTaskTerminal,
-          retryCount: 0
+          retryCount: 0,
+          taskStateService: mockTaskStateService
         },
         logger
       )
@@ -190,8 +203,10 @@ describe('Agent completion pipeline integration', () => {
           status: 'review',
           worktree_path: '/tmp/wt/task-1',
           claimed_by: null,
+          fast_fail_count: 0,
           rebase_base_sha: 'abc123',
           rebased_at: expect.any(String),
+          duration_ms: expect.any(Number),
           promoted_to_review_at: expect.any(String)
         })
       )
@@ -226,7 +241,8 @@ describe('Agent completion pipeline integration', () => {
           title: 'Add login page',
           ghRepo: 'owner/repo',
           onTaskTerminal,
-          retryCount: 0
+          retryCount: 0,
+          taskStateService: mockTaskStateService
         },
         logger
       )
@@ -250,8 +266,10 @@ describe('Agent completion pipeline integration', () => {
           status: 'review',
           worktree_path: '/tmp/wt/task-1',
           claimed_by: null,
+          fast_fail_count: 0,
           rebase_base_sha: 'abc123',
           rebased_at: expect.any(String),
+          duration_ms: expect.any(Number),
           promoted_to_review_at: expect.any(String)
         })
       )
@@ -281,7 +299,8 @@ describe('Agent completion pipeline integration', () => {
           title: 'Empty task',
           ghRepo: 'owner/repo',
           onTaskTerminal,
-          retryCount: 0
+          retryCount: 0,
+          taskStateService: mockTaskStateService
         },
         logger
       )
@@ -331,7 +350,8 @@ describe('Agent completion pipeline integration', () => {
           title: 'Empty task',
           ghRepo: 'owner/repo',
           onTaskTerminal,
-          retryCount: MAX_RETRIES
+          retryCount: MAX_RETRIES,
+          taskStateService: mockTaskStateService
         },
         logger
       )
@@ -369,7 +389,8 @@ describe('Agent completion pipeline integration', () => {
           ghRepo: 'owner/repo',
           onTaskTerminal,
           retryCount: 0,
-          agentSummary: 'I could not complete the task because the API was down'
+          agentSummary: 'I could not complete the task because the API was down',
+          taskStateService: mockTaskStateService
         },
         logger
       )
@@ -388,7 +409,7 @@ describe('Agent completion pipeline integration', () => {
   // -------------------------------------------------------------------------
   describe('agent exits non-zero (resolveFailure)', () => {
     it('re-queues task with incremented retry count when under max retries', async () => {
-      const isTerminal = await resolveFailure(
+      const result = await resolveFailure(
         { repo: mockRepo, taskId: 'task-3', retryCount: 0 },
         logger
       )
@@ -401,13 +422,14 @@ describe('Agent completion pipeline integration', () => {
           claimed_by: null
         })
       )
-      expect(isTerminal).toBe(false)
+      expect(result).toMatchObject({ isTerminal: false })
+      expect(result.writeFailed).toBeFalsy()
     })
 
     it('re-queues at every retry count below MAX_RETRIES', async () => {
       for (let i = 0; i < MAX_RETRIES; i++) {
         updateTaskMock.mockClear()
-        const isTerminal = await resolveFailure(
+        const result = await resolveFailure(
           { repo: mockRepo, taskId: 'task-3', retryCount: i },
           logger
         )
@@ -419,12 +441,13 @@ describe('Agent completion pipeline integration', () => {
             claimed_by: null
           })
         )
-        expect(isTerminal).toBe(false)
+        expect(result).toMatchObject({ isTerminal: false })
+        expect(result.writeFailed).toBeFalsy()
       }
     })
 
     it('marks task permanently failed when retry count reaches MAX_RETRIES', async () => {
-      const isTerminal = await resolveFailure(
+      const result = await resolveFailure(
         { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES },
         logger
       )
@@ -436,21 +459,20 @@ describe('Agent completion pipeline integration', () => {
           claimed_by: null
         })
       )
-      expect(isTerminal).toBe(true)
+      expect(result).toMatchObject({ isTerminal: true })
+      expect(result.writeFailed).toBeFalsy()
     })
 
-    it('returns false (non-terminal) when updateTask throws during failure resolution', () => {
+    it('returns { writeFailed: true } when updateTask throws during failure resolution', async () => {
       updateTaskMock.mockImplementationOnce(() => {
         throw new Error('DB error')
       })
 
-      const isTerminal = resolveFailure(
-        { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES },
-        logger
-      )
-
-      // AM-5 fix: resolveFailure returns true when retries exhausted, even on DB error
-      expect(isTerminal).toBe(true)
+      // T-92: returns tagged result so caller can skip onTaskTerminal without
+      // relying on exception propagation.
+      const result = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
+      expect(result).toMatchObject({ writeFailed: true })
+      expect(result).toHaveProperty('error')
     })
   })
 
@@ -616,6 +638,9 @@ describe('Agent completion pipeline integration', () => {
             depends_on: [{ id: 'task-parent', type: 'hard' }]
           }) as any
         }
+        if (id === 'task-parent') {
+          return makeTaskRecord({ id: 'task-parent', status: 'active' }) as any
+        }
         return null
       })
 
@@ -631,7 +656,9 @@ describe('Agent completion pipeline integration', () => {
         { stdout: '' }, // git fetch origin main
         { stdout: '' }, // git rebase origin/main
         { stdout: 'abc123\n' }, // git rev-parse origin/main (rebase base SHA)
-        { stdout: '0\n' } // git rev-list (no commits)
+        { stdout: '0\n' }, // git rev-list (no commits)
+        { stdout: '' }, // logUncommittedWorktreeState: git diff HEAD
+        { stdout: '' } // logUncommittedWorktreeState: git status --porcelain
       ])
 
       await resolveSuccess(
@@ -643,7 +670,8 @@ describe('Agent completion pipeline integration', () => {
           title: 'Parent task',
           ghRepo: 'owner/repo',
           onTaskTerminal: onTerminal,
-          retryCount: MAX_RETRIES
+          retryCount: MAX_RETRIES,
+          taskStateService: mockTaskStateService
         },
         logger
       )

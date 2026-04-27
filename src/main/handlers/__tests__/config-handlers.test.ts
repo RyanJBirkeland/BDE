@@ -59,15 +59,15 @@ describe('Config handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers all 14 settings + mcp channels', () => {
+  it('registers all 15 settings + mcp channels', () => {
     registerConfigHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(14)
+    expect(safeHandle).toHaveBeenCalledTimes(15)
     expect(safeHandle).toHaveBeenCalledWith('settings:get', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:hasSecret', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:set', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:getJson', expect.any(Function))
-    expect(safeHandle).toHaveBeenCalledWith('settings:setJson', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('settings:setJson', expect.any(Function), expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:delete', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:saveProfile', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:loadProfile', expect.any(Function))
@@ -77,6 +77,7 @@ describe('Config handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('settings:getEncryptionStatus', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('mcp:getToken', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('mcp:regenerateToken', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('mcp:revealToken', expect.any(Function))
   })
 
   describe('handler functions', () => {

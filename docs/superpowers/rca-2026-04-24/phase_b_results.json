@@ -1,0 +1,419 @@
+[
+  {
+    "title": "T-22 [P1] Apply escapeXmlContent in renderTaskSection (prompt-assistant)",
+    "arm_a": {
+      "task": {
+        "id": "035eebc8e1da8f75457439c269070c78",
+        "title": "T-22 [P1] Apply escapeXmlContent in renderTaskSection (prompt-assistant)",
+        "status": "error",
+        "retry_count": 1,
+        "fast_fail_count": 0,
+        "failure_reason": "incomplete_files",
+        "started_at": "2026-04-24T20:54:06.613Z",
+        "completed_at": "2026-04-24T20:54:07.203Z",
+        "duration_ms": null
+      },
+      "runs": [
+        {
+          "run_id": "c467056e-46f3-4645-a7d9-030afe3dfa5c",
+          "status": "failed",
+          "started_at": "2026-04-24T20:50:39.140Z",
+          "finished_at": "2026-04-24T20:52:19.738Z",
+          "exit_code": null,
+          "num_turns": 31,
+          "cost_usd": 0.51089655,
+          "duration_ms": 100598,
+          "tokens_in": 41,
+          "tokens_out": 563,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 44
+        }
+      ],
+      "best": {
+        "run_id": "c467056e-46f3-4645-a7d9-030afe3dfa5c",
+        "status": "failed",
+        "started_at": "2026-04-24T20:50:39.140Z",
+        "finished_at": "2026-04-24T20:52:19.738Z",
+        "exit_code": null,
+        "num_turns": 31,
+        "cost_usd": 0.51089655,
+        "duration_ms": 100598,
+        "tokens_in": 41,
+        "tokens_out": 563,
+        "env_failure": false,
+        "max_turns_hit": true,
+        "errors": [
+          "max_turns_exceeded"
+        ],
+        "event_count": 44
+      }
+    },
+    "arm_b": {
+      "task": {
+        "id": "c54e16457d9a98aa00d3cfc40979e72d",
+        "title": "[B-arm] T-22 [P1] Apply escapeXmlContent in renderTaskSection (prompt-assistant)",
+        "status": "error",
+        "retry_count": 0,
+        "fast_fail_count": 0,
+        "failure_reason": null,
+        "started_at": "2026-04-24T20:54:37.282Z",
+        "completed_at": "2026-04-24T20:54:37.809Z",
+        "duration_ms": null
+      },
+      "runs": [],
+      "best": null
+    }
+  },
+  {
+    "title": "T-50 [P1] Redirect fast-fail diagnostic to the live log",
+    "arm_a": {
+      "task": {
+        "id": "347fc3a19e6d843962640c5e13fba3ee",
+        "title": "T-50 [P1] Redirect fast-fail diagnostic to the live log",
+        "status": "error",
+        "retry_count": 2,
+        "fast_fail_count": 0,
+        "failure_reason": "incomplete_files",
+        "started_at": "2026-04-24T20:56:36.660Z",
+        "completed_at": "2026-04-24T20:56:37.258Z",
+        "duration_ms": null
+      },
+      "runs": [
+        {
+          "run_id": "e73f981f-304a-4be9-9ae3-9d1fa1f1dbe0",
+          "status": "done",
+          "started_at": "2026-04-24T20:50:38.548Z",
+          "finished_at": "2026-04-24T20:52:07.400Z",
+          "exit_code": 0,
+          "num_turns": 31,
+          "cost_usd": 0.46231079999999997,
+          "duration_ms": 88852,
+          "tokens_in": 2760,
+          "tokens_out": 798,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 42
+        },
+        {
+          "run_id": "68243da6-07b4-4c8d-8425-caa0d6acf619",
+          "status": "done",
+          "started_at": "2026-04-24T20:53:37.441Z",
+          "finished_at": "2026-04-24T20:55:16.329Z",
+          "exit_code": 0,
+          "num_turns": 31,
+          "cost_usd": 0.39129974999999995,
+          "duration_ms": 98888,
+          "tokens_in": 51,
+          "tokens_out": 332,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 46
+        }
+      ],
+      "best": {
+        "run_id": "68243da6-07b4-4c8d-8425-caa0d6acf619",
+        "status": "done",
+        "started_at": "2026-04-24T20:53:37.441Z",
+        "finished_at": "2026-04-24T20:55:16.329Z",
+        "exit_code": 0,
+        "num_turns": 31,
+        "cost_usd": 0.39129974999999995,
+        "duration_ms": 98888,
+        "tokens_in": 51,
+        "tokens_out": 332,
+        "env_failure": false,
+        "max_turns_hit": true,
+        "errors": [
+          "max_turns_exceeded"
+        ],
+        "event_count": 46
+      }
+    },
+    "arm_b": {
+      "task": {
+        "id": "2badf489905c3aebfe398717318c719f",
+        "title": "[B-arm] T-50 [P1] Redirect fast-fail diagnostic to the live log",
+        "status": "error",
+        "retry_count": 0,
+        "fast_fail_count": 0,
+        "failure_reason": null,
+        "started_at": "2026-04-24T20:55:07.201Z",
+        "completed_at": "2026-04-24T20:55:07.739Z",
+        "duration_ms": null
+      },
+      "runs": [],
+      "best": null
+    }
+  },
+  {
+    "title": "T-44 [P1] Run orphan recovery before clearStaleClaims",
+    "arm_a": {
+      "task": {
+        "id": "3616a07c390eb195884aa4495501f4f1",
+        "title": "T-44 [P1] Run orphan recovery before clearStaleClaims",
+        "status": "error",
+        "retry_count": 1,
+        "fast_fail_count": 0,
+        "failure_reason": "incomplete_files",
+        "started_at": "2026-04-24T20:55:06.627Z",
+        "completed_at": "2026-04-24T20:55:07.189Z",
+        "duration_ms": null
+      },
+      "runs": [
+        {
+          "run_id": "cc0bb2dc-6e63-42be-a6db-715636d37a7c",
+          "status": "done",
+          "started_at": "2026-04-24T20:52:38.317Z",
+          "finished_at": "2026-04-24T20:54:30.547Z",
+          "exit_code": 0,
+          "num_turns": 31,
+          "cost_usd": 0.55142055,
+          "duration_ms": 112230,
+          "tokens_in": 41,
+          "tokens_out": 441,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 37
+        }
+      ],
+      "best": {
+        "run_id": "cc0bb2dc-6e63-42be-a6db-715636d37a7c",
+        "status": "done",
+        "started_at": "2026-04-24T20:52:38.317Z",
+        "finished_at": "2026-04-24T20:54:30.547Z",
+        "exit_code": 0,
+        "num_turns": 31,
+        "cost_usd": 0.55142055,
+        "duration_ms": 112230,
+        "tokens_in": 41,
+        "tokens_out": 441,
+        "env_failure": false,
+        "max_turns_hit": true,
+        "errors": [
+          "max_turns_exceeded"
+        ],
+        "event_count": 37
+      }
+    },
+    "arm_b": {
+      "task": {
+        "id": "8d551ff8a5182e0b42a76287cd5c4227",
+        "title": "[B-arm] T-44 [P1] Run orphan recovery before clearStaleClaims",
+        "status": "error",
+        "retry_count": 0,
+        "fast_fail_count": 0,
+        "failure_reason": null,
+        "started_at": "2026-04-24T20:55:37.235Z",
+        "completed_at": "2026-04-24T20:55:37.780Z",
+        "duration_ms": null
+      },
+      "runs": [],
+      "best": null
+    }
+  },
+  {
+    "title": "T-47 [P2] Reset fast_fail_count on successful completion",
+    "arm_a": {
+      "task": {
+        "id": "696a21b8d370bb976317aec7b43500e0",
+        "title": "T-47 [P2] Reset fast_fail_count on successful completion",
+        "status": "error",
+        "retry_count": 2,
+        "fast_fail_count": 0,
+        "failure_reason": "incomplete_files",
+        "started_at": "2026-04-24T20:55:36.645Z",
+        "completed_at": "2026-04-24T20:55:37.224Z",
+        "duration_ms": null
+      },
+      "runs": [
+        {
+          "run_id": "4dc6a0c9-0590-49e5-8b96-4a2e89f42cbb",
+          "status": "done",
+          "started_at": "2026-04-24T20:50:37.357Z",
+          "finished_at": "2026-04-24T20:51:33.933Z",
+          "exit_code": 0,
+          "num_turns": 31,
+          "cost_usd": 0.46081964999999997,
+          "duration_ms": 56576,
+          "tokens_in": 41,
+          "tokens_out": 815,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 47
+        },
+        {
+          "run_id": "9d6c47ad-86a4-4077-815f-6453dba1d720",
+          "status": "done",
+          "started_at": "2026-04-24T20:52:37.566Z",
+          "finished_at": "2026-04-24T20:54:02.064Z",
+          "exit_code": 0,
+          "num_turns": 31,
+          "cost_usd": 0.6011000999999999,
+          "duration_ms": 84498,
+          "tokens_in": 41,
+          "tokens_out": 855,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 49
+        }
+      ],
+      "best": {
+        "run_id": "9d6c47ad-86a4-4077-815f-6453dba1d720",
+        "status": "done",
+        "started_at": "2026-04-24T20:52:37.566Z",
+        "finished_at": "2026-04-24T20:54:02.064Z",
+        "exit_code": 0,
+        "num_turns": 31,
+        "cost_usd": 0.6011000999999999,
+        "duration_ms": 84498,
+        "tokens_in": 41,
+        "tokens_out": 855,
+        "env_failure": false,
+        "max_turns_hit": true,
+        "errors": [
+          "max_turns_exceeded"
+        ],
+        "event_count": 49
+      }
+    },
+    "arm_b": {
+      "task": {
+        "id": "e79e283652c05cc167387433006a0860",
+        "title": "[B-arm] T-47 [P2] Reset fast_fail_count on successful completion",
+        "status": "error",
+        "retry_count": 1,
+        "fast_fail_count": 0,
+        "failure_reason": "incomplete_files",
+        "started_at": "2026-04-24T20:56:06.653Z",
+        "completed_at": "2026-04-24T20:56:07.056Z",
+        "duration_ms": null
+      },
+      "runs": [
+        {
+          "run_id": "dafed796-3e6e-45a5-a2b6-ad57b41b9aed",
+          "status": "done",
+          "started_at": "2026-04-24T20:50:37.927Z",
+          "finished_at": "2026-04-24T20:55:10.680Z",
+          "exit_code": 0,
+          "num_turns": 76,
+          "cost_usd": 1.20897885,
+          "duration_ms": 272753,
+          "tokens_in": 88,
+          "tokens_out": 1588,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 105
+        }
+      ],
+      "best": {
+        "run_id": "dafed796-3e6e-45a5-a2b6-ad57b41b9aed",
+        "status": "done",
+        "started_at": "2026-04-24T20:50:37.927Z",
+        "finished_at": "2026-04-24T20:55:10.680Z",
+        "exit_code": 0,
+        "num_turns": 76,
+        "cost_usd": 1.20897885,
+        "duration_ms": 272753,
+        "tokens_in": 88,
+        "tokens_out": 1588,
+        "env_failure": false,
+        "max_turns_hit": true,
+        "errors": [
+          "max_turns_exceeded"
+        ],
+        "event_count": 105
+      }
+    }
+  },
+  {
+    "title": "T-23 [P1] Propagate pipeline's disallowedTools/tools allowlist to adhoc spawn",
+    "arm_a": {
+      "task": {
+        "id": "9164b71c50280aa100c858395d4fe4ab",
+        "title": "T-23 [P1] Propagate pipeline's disallowedTools/tools allowlist to adhoc spawn",
+        "status": "error",
+        "retry_count": 1,
+        "fast_fail_count": 0,
+        "failure_reason": "incomplete_files",
+        "started_at": "2026-04-24T20:54:36.618Z",
+        "completed_at": "2026-04-24T20:54:37.265Z",
+        "duration_ms": null
+      },
+      "runs": [
+        {
+          "run_id": "391907ab-32af-477d-9a46-837543f8748f",
+          "status": "failed",
+          "started_at": "2026-04-24T20:51:37.449Z",
+          "finished_at": "2026-04-24T20:53:23.712Z",
+          "exit_code": null,
+          "num_turns": 31,
+          "cost_usd": 0.7240662,
+          "duration_ms": 106263,
+          "tokens_in": 2161,
+          "tokens_out": 486,
+          "env_failure": false,
+          "max_turns_hit": true,
+          "errors": [
+            "max_turns_exceeded"
+          ],
+          "event_count": 43
+        }
+      ],
+      "best": {
+        "run_id": "391907ab-32af-477d-9a46-837543f8748f",
+        "status": "failed",
+        "started_at": "2026-04-24T20:51:37.449Z",
+        "finished_at": "2026-04-24T20:53:23.712Z",
+        "exit_code": null,
+        "num_turns": 31,
+        "cost_usd": 0.7240662,
+        "duration_ms": 106263,
+        "tokens_in": 2161,
+        "tokens_out": 486,
+        "env_failure": false,
+        "max_turns_hit": true,
+        "errors": [
+          "max_turns_exceeded"
+        ],
+        "event_count": 43
+      }
+    },
+    "arm_b": {
+      "task": {
+        "id": "76a42346b614ceeca053a803220dad84",
+        "title": "[B-arm] T-23 [P1] Propagate pipeline's disallowedTools/tools allowlist to adhoc spawn",
+        "status": "error",
+        "retry_count": 0,
+        "fast_fail_count": 0,
+        "failure_reason": null,
+        "started_at": "2026-04-24T20:55:37.791Z",
+        "completed_at": "2026-04-24T20:55:38.333Z",
+        "duration_ms": null
+      },
+      "runs": [],
+      "best": null
+    }
+  }
+]

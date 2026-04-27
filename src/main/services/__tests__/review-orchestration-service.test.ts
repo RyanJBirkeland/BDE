@@ -153,15 +153,16 @@ describe('review-orchestration-service', () => {
   })
 
   describe('createPr', () => {
-    it('should push branch, create PR, cleanup worktree, and mark task done', async () => {
+    it('should push branch, create PR, cleanup worktree, and keep task in review', async () => {
       const mockTask = {
         id: 'task2',
         repo: 'bde',
         title: 'Test PR task',
         worktree_path: '/worktree/task2'
       }
+      const updatedTask = { ...mockTask, worktree_path: null }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
-      vi.mocked(sprintService.updateTask).mockReturnValue(mockTask as any)
+      vi.mocked(sprintService.updateTask).mockReturnValue(updatedTask as any)
       vi.mocked(reviewPr.createPullRequest).mockResolvedValue({
         success: true,
         prUrl: 'https://github.com/org/repo/pull/123',
@@ -187,12 +188,13 @@ describe('review-orchestration-service', () => {
           body: 'PR body'
         })
       )
-      // updateTask calls now go through repository in executor
-      expect(mockOnStatusTerminal).toHaveBeenCalledWith('task2', 'done')
+      // Task stays in review — worktree_path cleared, no done transition
+      expect(sprintService.updateTask).toHaveBeenCalledWith('task2', { worktree_path: null })
+      expect(mockOnStatusTerminal).not.toHaveBeenCalled()
     })
 
     describe('createPr call ordering', () => {
-      it('calls onStatusTerminal before notifySprintMutation', async () => {
+      it('calls notifySprintMutation after the worktree_path update', async () => {
         const callOrder: string[] = []
 
         vi.mocked(sprintService.getTask).mockReturnValue({
@@ -203,10 +205,8 @@ describe('review-orchestration-service', () => {
           title: 'Test'
         } as any)
 
-        vi.mocked(sprintService.updateTask).mockReturnValue({
-          id: 'task-1',
-          status: 'done'
-        } as any)
+        const updatedTask = { id: 'task-1', worktree_path: null, status: 'review' }
+        vi.mocked(sprintService.updateTask).mockReturnValue(updatedTask as any)
 
         vi.mocked(sprintService.notifySprintMutation).mockImplementation(() => {
           callOrder.push('notify')
@@ -227,9 +227,7 @@ describe('review-orchestration-service', () => {
 
         vi.mocked(reviewMerge.cleanupWorktree).mockResolvedValue(undefined)
 
-        const onStatusTerminal = vi.fn().mockImplementation(async () => {
-          callOrder.push('terminal')
-        })
+        const onStatusTerminal = vi.fn()
 
         await orchestration.createPr({
           taskId: 'task-1',
@@ -239,7 +237,11 @@ describe('review-orchestration-service', () => {
           onStatusTerminal
         })
 
-        expect(callOrder).toEqual(['terminal', 'notify'])
+        // notifySprintMutation must be called with the worktree_path-cleared update
+        expect(sprintService.notifySprintMutation).toHaveBeenCalledWith('updated', updatedTask)
+        expect(callOrder).toEqual(['notify'])
+        // onStatusTerminal is not called — task stays in review awaiting PR poller
+        expect(onStatusTerminal).not.toHaveBeenCalled()
       })
     })
   })
@@ -587,6 +589,126 @@ describe('review-orchestration-service', () => {
       expect(result.error).toBe('Rebase failed: Rebase failed')
       expect(result.conflicts).toEqual(['conflict.ts'])
       // updateTask not called on failure
+    })
+  })
+
+  describe('checkReviewFreshness', () => {
+    const taskWithSha = {
+      id: 'task-fresh',
+      repo: 'bde',
+      rebase_base_sha: 'abc123stored'
+    }
+
+    it('returns unknown when task not found', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue(null as any)
+      const result = await orchestration.checkReviewFreshness('task-fresh', mockEnv)
+      expect(result).toEqual({ status: 'unknown' })
+    })
+
+    it('returns unknown when task has no rebase_base_sha', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue({ id: 'task-fresh', repo: 'bde' } as any)
+      const result = await orchestration.checkReviewFreshness('task-fresh', mockEnv)
+      expect(result).toEqual({ status: 'unknown' })
+    })
+
+    it('returns unknown when repo config not found', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue(taskWithSha as any)
+      vi.mocked(getSettingJson).mockReturnValue([]) // no repos
+      const result = await orchestration.checkReviewFreshness('task-fresh', mockEnv)
+      expect(result).toEqual({ status: 'unknown' })
+    })
+
+    it('returns fresh when origin/main SHA matches stored SHA', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue(taskWithSha as any)
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+      getCustomMock()
+        .mockReset()
+        .mockImplementation(async (_cmd: string, args: readonly string[]) => {
+          if (args[0] === 'fetch') return { stdout: '', stderr: '' }
+          if (args[0] === 'rev-parse') return { stdout: 'abc123stored\n', stderr: '' }
+          return { stdout: '', stderr: '' }
+        })
+
+      const result = await orchestration.checkReviewFreshness('task-fresh', mockEnv)
+      expect(result).toEqual({ status: 'fresh', commitsBehind: 0 })
+    })
+
+    it('returns stale with commitsBehind when origin/main has advanced', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue(taskWithSha as any)
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+      getCustomMock()
+        .mockReset()
+        .mockImplementation(async (_cmd: string, args: readonly string[]) => {
+          if (args[0] === 'fetch') return { stdout: '', stderr: '' }
+          if (args[0] === 'rev-parse') return { stdout: 'newsha999\n', stderr: '' }
+          if (args[0] === 'rev-list') return { stdout: '3\n', stderr: '' }
+          return { stdout: '', stderr: '' }
+        })
+
+      const result = await orchestration.checkReviewFreshness('task-fresh', mockEnv)
+      expect(result).toEqual({ status: 'stale', commitsBehind: 3 })
+    })
+
+    it('returns unknown when git operations throw', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue(taskWithSha as any)
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+      getCustomMock()
+        .mockReset()
+        .mockRejectedValue(new Error('git fetch failed'))
+
+      const result = await orchestration.checkReviewFreshness('task-fresh', mockEnv)
+      expect(result).toEqual({ status: 'unknown' })
+    })
+  })
+
+  describe('markShippedOutsideBde', () => {
+    const mockTaskStateService = {
+      transition: vi.fn().mockResolvedValue(undefined)
+    }
+
+    beforeEach(() => {
+      mockTaskStateService.transition.mockReset().mockResolvedValue(undefined)
+    })
+
+    it('transitions review task to done and returns success', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue({
+        id: 'task-ship',
+        status: 'review'
+      } as any)
+
+      const result = await orchestration.markShippedOutsideBde('task-ship', {
+        taskStateService: mockTaskStateService as any
+      })
+
+      expect(result).toEqual({ success: true })
+      expect(mockTaskStateService.transition).toHaveBeenCalledWith(
+        'task-ship',
+        'done',
+        expect.objectContaining({ caller: 'review:markShippedOutsideBde' })
+      )
+    })
+
+    it('throws when task is not found', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue(null as any)
+
+      await expect(
+        orchestration.markShippedOutsideBde('task-missing', {
+          taskStateService: mockTaskStateService as any
+        })
+      ).rejects.toThrow('Task task-missing not found')
+    })
+
+    it('throws when task is not in review status', async () => {
+      vi.mocked(sprintService.getTask).mockReturnValue({
+        id: 'task-active',
+        status: 'active'
+      } as any)
+
+      await expect(
+        orchestration.markShippedOutsideBde('task-active', {
+          taskStateService: mockTaskStateService as any
+        })
+      ).rejects.toThrow('is not in review status')
     })
   })
 })

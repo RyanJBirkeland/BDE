@@ -9,6 +9,7 @@ import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { resolveDependents } from '../lib/resolve-dependents'
 import { getSetting } from '../settings'
+import type { TerminalDispatcher, TaskStateService } from '../services/task-state-service'
 
 function wrapTransactionWithLogging(
   unitOfWork: IUnitOfWork,
@@ -24,12 +25,18 @@ function wrapTransactionWithLogging(
   }
 }
 
-function recordTerminalMetrics(status: TaskStatus, metrics: MetricsCollector): void {
+function recordTerminalMetrics(
+  taskId: string,
+  status: TaskStatus,
+  metrics: MetricsCollector,
+  logger: Logger
+): void {
   if (status === 'done' || status === 'review') {
     metrics.increment('agentsCompleted')
   } else if (status === 'failed' || status === 'error') {
     metrics.increment('agentsFailed')
   }
+  logger.event('agent.terminal', { taskId, status, source: 'terminal-handler' })
 }
 
 async function resolveTerminalDependents(
@@ -40,7 +47,8 @@ async function resolveTerminalDependents(
   repo: IAgentTaskRepository,
   unitOfWork: IUnitOfWork,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
-  logger: Logger
+  logger: Logger,
+  taskStateService?: TaskStateService
 ): Promise<void> {
   // DESIGN: Inline resolution for immediate drain loop feedback.
   // When a pipeline agent completes, we resolve dependents synchronously
@@ -67,7 +75,8 @@ async function resolveTerminalDependents(
       repo.getGroup,
       repo.getGroupTasks,
       runInTransactionSafe,
-      onTaskTerminal
+      onTaskTerminal,
+      taskStateService
     )
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err)
@@ -75,8 +84,13 @@ async function resolveTerminalDependents(
     const note = `Dependency resolution failed: ${errMsg}. Downstream tasks may remain blocked — check and manually re-queue them.`
     const truncated =
       note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+    // fire-and-forget: best-effort note update for dep-resolution failure
     try {
-      repo.updateTask(taskId, { notes: truncated })
+      void Promise.resolve(repo.updateTask(taskId, { notes: truncated })).catch((updateErr) => {
+        logger.error(
+          `[agent-manager] Failed to surface dep-resolution failure for ${taskId}: ${updateErr}`
+        )
+      })
     } catch (updateErr) {
       logger.error(
         `[agent-manager] Failed to surface dep-resolution failure for ${taskId}: ${updateErr}`
@@ -94,6 +108,7 @@ export interface TerminalHandlerDeps {
   config: AgentManagerConfig
   terminalCalled: Map<string, Promise<void>>
   logger: Logger
+  taskStateService?: TaskStateService
 }
 
 async function executeTerminal(
@@ -103,7 +118,7 @@ async function executeTerminal(
   deps: TerminalHandlerDeps
 ): Promise<void> {
   const { metrics, depIndex, epicIndex, repo, unitOfWork, config, logger } = deps
-  recordTerminalMetrics(status, metrics)
+  recordTerminalMetrics(taskId, status, metrics, logger)
   if (config.onStatusTerminal) {
     config.onStatusTerminal(taskId, status)
   } else {
@@ -115,7 +130,8 @@ async function executeTerminal(
       repo,
       unitOfWork,
       onTaskTerminal,
-      logger
+      logger,
+      deps.taskStateService
     )
   }
 }
@@ -142,5 +158,25 @@ export async function handleTaskTerminal(
     await work
   } finally {
     terminalCalled.delete(taskId)
+  }
+}
+
+/**
+ * Wraps `handleTaskTerminal` as a `TerminalDispatcher` so the agent-manager
+ * terminal path plugs into `TaskStateService` via the port rather than being
+ * called directly.
+ *
+ * The `onTaskTerminal` parameter is the recursion hook passed to
+ * `resolveDependents` — it fires when a downstream task also reaches a
+ * terminal state as part of dependency resolution.
+ */
+export function createAgentTerminalDispatcher(
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  deps: TerminalHandlerDeps
+): TerminalDispatcher {
+  return {
+    dispatch(taskId: string, status: TaskStatus): Promise<void> {
+      return handleTaskTerminal(taskId, status, onTaskTerminal, deps)
+    }
   }
 }

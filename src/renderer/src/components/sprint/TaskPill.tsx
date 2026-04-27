@@ -4,9 +4,10 @@ import { AlertTriangle, Clock, Zap, GitBranch, Slash, XCircle } from 'lucide-rea
 import type { LucideIcon } from 'lucide-react'
 import type { SprintTask } from '../../../../shared/types'
 import { SPRINGS } from '../../lib/motion'
-import { formatElapsed } from '../../lib/task-format'
+import { formatElapsed, failureCategoryForReason } from '../../lib/task-format'
 import { STATUS_METADATA } from '../../lib/task-status-ui'
 import { useBackoffInterval } from '../../hooks/useBackoffInterval'
+import { useNow } from '../../hooks/useNow'
 import { useSprintSelection } from '../../stores/sprintSelection'
 import { formatDuration } from '../../lib/format'
 import { useTaskCost } from '../../hooks/useTaskCost'
@@ -53,11 +54,13 @@ function TaskPillInner({
   const [elapsed, setElapsed] = useState('')
   const [arriving, setArriving] = useState(false)
   const prevStatusRef = useRef(task.status)
+  const now = useNow()
   const { costUsd } = useTaskCost(task.agent_run_id)
 
   useEffect(() => {
     if (task.status !== prevStatusRef.current) {
       prevStatusRef.current = task.status
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: schedule animation on status transition
       setArriving(true)
       const timer = setTimeout(() => setArriving(false), 500)
       return () => clearTimeout(timer)
@@ -69,15 +72,18 @@ function TaskPillInner({
   useBackoffInterval(() => setElapsed(formatElapsed(task.started_at!)), isActive ? 10_000 : null)
   // Set initial elapsed value when task becomes active
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: seed elapsed string once on first active render
     if (isActive) setElapsed(formatElapsed(task.started_at!))
   }, [isActive, task.started_at])
 
   const isZombie = task.status === 'active' && (!!task.pr_url || !!task.pr_status)
+  // `now` comes from useNow() — a coarse 10-second tick shared across all pills.
+  // This keeps React.memo effective: the pill only re-renders when task data changes
+  // or the 10-second interval fires, not on every parent render.
   const isStale =
     task.status === 'active' &&
     !!task.started_at &&
-    // eslint-disable-next-line react-hooks/purity -- Date.now() in render is intentional for stale detection
-    Date.now() - new Date(task.started_at).getTime() > (task.max_runtime_ms ?? 3600000)
+    now - new Date(task.started_at).getTime() > (task.max_runtime_ms ?? 3600000)
   const failureInfo = getFailureInfo(task)
 
   const statusClass = getStatusClass(task.status, task.pr_status)
@@ -144,6 +150,14 @@ function TaskPillInner({
           />
         </span>
       )}
+      {failureInfo && task.failure_reason && (() => {
+        const chip = failureCategoryForReason(task.failure_reason)
+        return (
+          <span className={`task-pill__failure-chip ${chip.colorClass}`} aria-label={`Failure category: ${chip.label}`}>
+            {chip.label}
+          </span>
+        )
+      })()}
       {isZombie && (
         <span title="Agent finished but task not marked done">
           <AlertTriangle size={12} className="task-pill__zombie-icon" aria-label="Zombie task" />
@@ -152,6 +166,11 @@ function TaskPillInner({
       {isStale && !isZombie && (
         <span title="Task may be stuck">
           <Clock size={12} className="task-pill__stale-icon" aria-label="Stale task" />
+        </span>
+      )}
+      {task.status === 'queued' && !!task.claimed_by && (
+        <span className="task-pill__starting" aria-label="Agent starting">
+          starting…
         </span>
       )}
       <span className="task-pill__title" title={task.title}>

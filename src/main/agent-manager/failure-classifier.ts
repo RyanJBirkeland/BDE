@@ -1,11 +1,30 @@
 import type { FailureReason } from '../../shared/types'
+import type { Logger } from '../logger'
 
-export type FailurePattern = { type: FailureReason; keywords: string[] }
+export type FailurePattern = {
+  /** Machine type used for task failure_reason field. */
+  type: FailureReason
+  /** Human-readable label logged when this pattern matches. Defaults to `type`. */
+  name?: string
+  keywords: string[]
+}
 
 const failurePatternRegistry: FailurePattern[] = []
 
+/** The index past the last built-in pattern, recorded after all builtin registrations complete. */
+let builtinRegistryLength = 0
+
 export function registerFailurePattern(entry: FailurePattern): void {
   failurePatternRegistry.push(entry)
+}
+
+/**
+ * Truncates any test-registered patterns, leaving only the built-in patterns.
+ * Call in `afterEach` when tests add custom patterns via `registerFailurePattern`
+ * to prevent cross-test pollution.
+ */
+export function resetRegistryToBuiltins(): void {
+  failurePatternRegistry.splice(builtinRegistryLength)
 }
 
 registerFailurePattern({
@@ -21,7 +40,12 @@ registerFailurePattern({
     'could not resolve host',
     'getaddrinfo enotfound',
     'enetunreach',
-    'econnrefused'
+    'econnrefused',
+    'model not found',
+    'failed to connect to ollama',
+    'cannot connect to ollama',
+    'ollama server',
+    'failed to pull model'
   ]
 })
 registerFailurePattern({
@@ -71,12 +95,28 @@ registerFailurePattern({
   type: 'spawn',
   keywords: ['spawn failed', 'failed to spawn', 'enoent', 'command not found']
 })
+registerFailurePattern({
+  type: 'incomplete_files',
+  keywords: ['missing:', 'incomplete files', 'files to change checklist']
+})
 
-export function classifyFailureReason(notes: string | undefined): FailureReason {
+// Record the length after all built-in registrations so resetRegistryToBuiltins
+// knows how many entries to preserve.
+builtinRegistryLength = failurePatternRegistry.length
+
+export function classifyFailureReason(
+  notes: string | undefined,
+  logger?: Logger,
+  taskId?: string
+): FailureReason {
   if (!notes) return 'unknown'
 
   const lower = notes.toLowerCase()
-  return (
-    failurePatternRegistry.find((p) => p.keywords.some((k) => lower.includes(k)))?.type ?? 'unknown'
+  const matched = failurePatternRegistry.find((p) => p.keywords.some((k) => lower.includes(k)))
+  if (!matched) return 'unknown'
+
+  logger?.debug(
+    `[failure-classifier] matched pattern "${matched.name ?? matched.type}" verdict=${matched.type}${taskId ? ` taskId=${taskId}` : ''}`
   )
+  return matched.type
 }

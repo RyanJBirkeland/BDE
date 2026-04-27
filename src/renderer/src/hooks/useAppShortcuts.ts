@@ -90,14 +90,14 @@ export function useAppShortcuts({
         setView('code-review')
         return
       }
+      if (combo === bindings['view.git']) {
+        e.preventDefault()
+        setView('git')
+        return
+      }
       if (combo === bindings['view.settings']) {
         e.preventDefault()
         setView('settings')
-        return
-      }
-      if (combo === bindings['view.taskWorkbench']) {
-        e.preventDefault()
-        setView('planner')
         return
       }
       if (combo === bindings['view.planner']) {

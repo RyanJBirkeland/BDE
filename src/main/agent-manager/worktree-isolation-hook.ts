@@ -51,6 +51,8 @@ export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUse
 
   const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit'])
 
+  const FLAG_INTRODUCING_PATH = new Set(['-o', '--output', '-f', '--file', '--log-file', '--config'])
+
   function findDisallowedAbsolutePath(command: string): string | null {
     const tokens = command.split(/[\s;|&<>()]+/).filter(Boolean)
     for (const rawToken of tokens) {
@@ -60,6 +62,19 @@ export function createWorktreeIsolationHook(deps: WorktreeIsolationDeps): CanUse
       if (isExplicitlyAllowed(unquoted)) continue
       return unquoted
     }
+
+    // Also check paths that follow common flag tokens like -o PATH or --output PATH
+    for (let i = 0; i < tokens.length - 1; i++) {
+      const flag = tokens[i]!
+      if (FLAG_INTRODUCING_PATH.has(flag)) {
+        const nextToken = tokens[i + 1]!
+        const unquoted = nextToken.replace(/^['"]|['"]$/g, '')
+        if (unquoted.startsWith('/') && !isInsideWorktree(unquoted) && !isExplicitlyAllowed(unquoted)) {
+          return unquoted
+        }
+      }
+    }
+
     return null
   }
 

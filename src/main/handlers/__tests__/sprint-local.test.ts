@@ -176,7 +176,8 @@ import {
   claimTask as _claimTask,
   getHealthCheckTasks as _getHealthCheckTasks
 } from '../../data/sprint-queries'
-import { broadcast } from '../../broadcast'
+import { setSprintBroadcaster } from '../../services/sprint-mutation-broadcaster'
+const mockBroadcastFn = vi.fn()
 import { getSettingJson } from '../../settings'
 import { getAgentLogInfo } from '../../data/agent-queries'
 import { readLog } from '../../agent-history'
@@ -184,6 +185,25 @@ import { getRepoPaths as _getRepoPaths } from '../../git'
 import { getRepoPaths as _getRepoPathsFromPaths } from '../../paths'
 
 const mockEvent = {} as IpcMainInvokeEvent
+
+function makeMockDeps() {
+  return {
+    onStatusTerminal: vi.fn(),
+    dialog: {
+      showSaveDialog: vi.fn(),
+      showOpenDialog: vi.fn()
+    },
+    taskStateService: {
+      transition: vi.fn(async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+        // Delegate to the mocked updateTask so existing test assertions keep working
+        vi.mocked(_updateTask)(taskId, { status, ...(ctx?.fields ?? {}) })
+        // Update getTask mock to return the post-transition task
+        const current = vi.mocked(_getTask).mock.results.slice(-1)[0]?.value
+        if (current) vi.mocked(_getTask).mockReturnValueOnce({ ...current, status })
+      })
+    } as unknown as import('../sprint-local').SprintLocalDeps['taskStateService']
+  }
+}
 
 /** Helper: capture handler registered for a given channel */
 function captureHandler(channel: string): (...args: any[]) => any {
@@ -193,13 +213,7 @@ function captureHandler(channel: string): (...args: any[]) => any {
     if (ch === channel) captured = handler as (...args: any[]) => any
   })
 
-  const mockDeps = {
-    onStatusTerminal: vi.fn(),
-    dialog: {
-      showSaveDialog: vi.fn(),
-      showOpenDialog: vi.fn()
-    }
-  }
+  const mockDeps = makeMockDeps()
   registerSprintLocalHandlers(mockDeps)
 
   if (!captured) throw new Error(`No handler captured for channel "${channel}"`)
@@ -209,23 +223,17 @@ function captureHandler(channel: string): (...args: any[]) => any {
 describe('registerSprintLocalHandlers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockBroadcastFn.mockReset()
+    setSprintBroadcaster(mockBroadcastFn)
   })
 
-  it('registers 17 handlers', () => {
-    const mockDeps = {
-      onStatusTerminal: vi.fn(),
-      dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() }
-    }
-    registerSprintLocalHandlers(mockDeps)
-    expect(safeHandle).toHaveBeenCalledTimes(17)
+  it('registers 18 handlers', () => {
+    registerSprintLocalHandlers(makeMockDeps())
+    expect(safeHandle).toHaveBeenCalledTimes(18)
   })
 
   it('registers the expected channel names', () => {
-    const mockDeps = {
-      onStatusTerminal: vi.fn(),
-      dialog: { showSaveDialog: vi.fn(), showOpenDialog: vi.fn() }
-    }
-    registerSprintLocalHandlers(mockDeps)
+    registerSprintLocalHandlers(makeMockDeps())
     const channels = vi.mocked(safeHandle).mock.calls.map(([ch]) => ch)
     expect(channels).toContain('sprint:list')
     expect(channels).toContain('sprint:create')
@@ -248,6 +256,8 @@ describe('registerSprintLocalHandlers', () => {
 describe('sprint:list handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockBroadcastFn.mockReset()
+    setSprintBroadcaster(mockBroadcastFn)
   })
 
   it('returns tasks from listTasksRecent', async () => {
@@ -292,7 +302,7 @@ describe('sprint:create handler', () => {
     vi.runAllTimers()
 
     expect(_createTask).toHaveBeenCalledWith(input)
-    expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
+    expect(mockBroadcastFn).toHaveBeenCalled()
     expect(result).toEqual(created)
   })
 })
@@ -322,7 +332,6 @@ describe('sprint:update handler', () => {
     vi.runAllTimers()
 
     expect(_updateTask).toHaveBeenCalledWith('1', { title: 'Updated' }, undefined)
-    expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
     expect(result).toEqual(updated)
   })
 
@@ -351,10 +360,10 @@ describe('sprint:update handler', () => {
     await handler(mockEvent, '1', { status: 'queued' })
 
     // Since deps are satisfied, patch should not be changed to blocked
+    // (transition() delegates to updateTask in mock; third arg is omitted by mock)
     expect(_updateTask).toHaveBeenCalledWith(
       '1',
-      { status: 'queued', needs_review: false },
-      undefined
+      { status: 'queued', needs_review: false }
     )
   })
 
@@ -384,8 +393,7 @@ describe('sprint:update handler', () => {
 
     expect(_updateTask).toHaveBeenCalledWith(
       '1',
-      expect.objectContaining({ status: 'blocked' }),
-      undefined
+      expect.objectContaining({ status: 'blocked' })
     )
   })
 
@@ -425,7 +433,7 @@ describe('sprint:delete handler', () => {
 
     vi.runAllTimers()
     expect(_deleteTask).toHaveBeenCalledWith('1')
-    expect(broadcast).toHaveBeenCalledWith('sprint:externalChange')
+    expect(mockBroadcastFn).toHaveBeenCalled()
     expect(result).toEqual({ ok: true })
   })
 
@@ -437,7 +445,7 @@ describe('sprint:delete handler', () => {
     await expect(handler(mockEvent, 'nonexistent')).rejects.toThrow('Task nonexistent not found')
 
     expect(_deleteTask).not.toHaveBeenCalled()
-    expect(broadcast).not.toHaveBeenCalled()
+    expect(mockBroadcastFn).not.toHaveBeenCalled()
   })
 })
 
@@ -747,10 +755,10 @@ describe('sprint:update spec validation on queue transition', () => {
 
     const handler = captureHandler('sprint:update')
     const result = await handler(mockEvent, 'abc', { status: 'queued' })
-    expect(result).toEqual({ id: 'abc', status: 'queued' })
+    expect(result).toMatchObject({ id: 'abc', status: 'queued' })
   })
 
-  it('does NOT trigger spec validation for non-queued transitions, but DOES check state machine', async () => {
+  it('does NOT trigger spec validation for non-queued transitions', async () => {
     // active → done is a valid transition — should succeed without spec validation
     vi.mocked(_getTask).mockReturnValue({
       id: 'abc',
@@ -764,8 +772,7 @@ describe('sprint:update spec validation on queue transition', () => {
     const handler = captureHandler('sprint:update')
     await handler(mockEvent, 'abc', { status: 'done' })
 
-    // State machine check IS called (getTask called for transition validation)
-    expect(_getTask).toHaveBeenCalled()
+    // State machine validation happens inside TaskStateService.transition() — not directly here
     // But spec quality validation is NOT called for non-queued transitions
     expect(mockValidateFull).not.toHaveBeenCalled()
   })

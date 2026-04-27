@@ -7,7 +7,14 @@ import { is } from '@electron-toolkit/utils'
 import { BDE_DB_PATH } from './paths'
 import { getDb, backupDatabase } from './db'
 import { startPrPoller, stopPrPoller } from './pr-poller'
-import { startSprintPrPoller, stopSprintPrPoller } from './sprint-pr-poller'
+import { SprintPrPoller } from './sprint-pr-poller'
+import { pollPrStatuses } from './github-pr-status'
+import {
+  listTasksWithOpenPrs,
+  markTaskDoneByPrNumber,
+  markTaskCancelledByPrNumber,
+  updateTaskMergeableState
+} from './services/sprint-service'
 import { pruneOldEvents } from './data/event-queries'
 import { pruneOldChanges } from './data/task-changes'
 import { getEventRetentionDays } from './config'
@@ -124,28 +131,33 @@ export function warnPlaintextSensitiveSettings(): void {
     return
   }
 
-  const db = getDb()
-  const stillPlaintext: string[] = []
+  // Defer the safeStorage loop off the synchronous startup call stack so it
+  // doesn't block the first event-loop tick (safeStorage IPC calls are
+  // expensive and would delay renderer IPC responsiveness).
+  setImmediate(() => {
+    const db = getDb()
+    const stillPlaintext: string[] = []
 
-  for (const key of SENSITIVE_SETTING_KEYS) {
-    const raw = _getRawSetting(db, key)
-    if (raw === null || raw.startsWith(ENCRYPTED_PREFIX)) continue
+    for (const key of SENSITIVE_SETTING_KEYS) {
+      const raw = _getRawSetting(db, key)
+      if (raw === null || raw.startsWith(ENCRYPTED_PREFIX)) continue
 
-    try {
-      _setSetting(db, key, encryptSetting(raw))
-      logger.info(`Re-encrypted "${key}" at startup`)
-    } catch (err) {
-      stillPlaintext.push(key)
-      logger.warn(`Could not re-encrypt "${key}" at startup: ${getErrorMessage(err)}`)
+      try {
+        _setSetting(db, key, encryptSetting(raw))
+        logger.info(`Re-encrypted "${key}" at startup`)
+      } catch (err) {
+        stillPlaintext.push(key)
+        logger.warn(`Could not re-encrypt "${key}" at startup: ${getErrorMessage(err)}`)
+      }
     }
-  }
 
-  if (stillPlaintext.length > 0) {
-    logger.warn(
-      `Sensitive settings remain as plaintext: ${stillPlaintext.join(', ')}. ` +
-        'Re-save each credential via Settings → Connections to encrypt it.'
-    )
-  }
+    if (stillPlaintext.length > 0) {
+      logger.warn(
+        `Sensitive settings remain as plaintext: ${stillPlaintext.join(', ')}. ` +
+          'Re-save each credential via Settings → Connections to encrypt it.'
+      )
+    }
+  })
 }
 
 /**
@@ -221,11 +233,22 @@ export function startPrPollers(terminalDeps: {
   onStatusTerminal: TaskTerminalService['onStatusTerminal']
   dialog: DialogService
 }): void {
+  const pollerLogger = createLogger('sprint-pr-poller')
+  const sprintPrPoller = new SprintPrPoller({
+    listTasksWithOpenPrs,
+    pollPrStatuses,
+    markTaskDoneByPrNumber,
+    markTaskCancelledByPrNumber,
+    updateTaskMergeableState,
+    onTaskTerminal: terminalDeps.onStatusTerminal,
+    logger: pollerLogger
+  })
+
   startPrPoller()
-  startSprintPrPoller(terminalDeps)
+  sprintPrPoller.start()
   app.on('will-quit', () => {
     stopPrPoller()
-    stopSprintPrPoller()
+    sprintPrPoller.stop()
   })
 }
 

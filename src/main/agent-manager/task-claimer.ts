@@ -20,6 +20,7 @@ import { nowIso } from '../../shared/time'
 import type { AgentRunClaim } from './run-agent'
 import { taskHasMatchingCommitOnMain } from './already-done-check'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import type { TaskStateService } from '../services/task-state-service'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -31,6 +32,7 @@ export interface TaskClaimerDeps {
   depIndex: DependencyIndex
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  taskStateService: TaskStateService
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +97,7 @@ export async function validateAndClaimTask(
       `[agent-manager] No repo path for "${task.repo}" — setting task ${task.id} to error`
     )
     try {
-      deps.repo.updateTask(task.id, {
+      await deps.repo.updateTask(task.id, {
         status: 'error',
         notes: `Repo "${task.repo}" is not configured in BDE settings. Add it in Settings > Repos, then reset this task to queued.`,
         claimed_by: null
@@ -115,7 +117,7 @@ export async function validateAndClaimTask(
     return null
   }
 
-  const claimed = deps.repo.claimTask(task.id, EXECUTOR_ID, deps.config.maxConcurrent) !== null
+  const claimed = (await deps.repo.claimTask(task.id, EXECUTOR_ID, deps.config.maxConcurrent)) !== null
   if (!claimed) {
     deps.logger.info(`[agent-manager] Task ${task.id} already claimed — skipping`)
     return null
@@ -149,23 +151,20 @@ async function skipIfAlreadyOnMain(
   deps.logger.info(`[agent-manager] Task ${task.id} ${autoCompleteNote} — skipping spawn`)
 
   try {
-    deps.repo.updateTask(task.id, {
-      status: 'done',
-      completed_at: nowIso(),
-      claimed_by: null,
-      notes: autoCompleteNote
+    await deps.taskStateService.transition(task.id, 'done', {
+      fields: { completed_at: nowIso(), claimed_by: null, notes: autoCompleteNote },
+      caller: 'task-claimer:auto-complete'
     })
   } catch (err) {
+    // Transition failed — do NOT call onTaskTerminal. The task is still in its
+    // prior status in SQLite; firing dependency resolution here would unblock
+    // dependents against a task that has not actually completed.
     deps.logger.warn(
       `[agent-manager] Failed to mark task ${task.id} done after already-on-main match: ${err}`
     )
+    return false
   }
-
-  await deps
-    .onTaskTerminal(task.id, 'done')
-    .catch((err) =>
-      deps.logger.warn(`[agent-manager] onTerminal failed for already-done task ${task.id}: ${err}`)
-    )
+  deps.logger.event('task.auto-complete', { taskId: task.id, sha: match.sha, matchedOn: match.matchedOn })
   return true
 }
 
@@ -190,7 +189,13 @@ export async function prepareWorktreeForTask(
       taskId: task.id,
       title: task.title,
       groupId: task.group_id ?? undefined,
-      logger: deps.logger
+      logger: deps.logger,
+      appendToNotes: (text) => {
+        // fire-and-forget: note append is best-effort, so void the Promise
+        void deps.repo.updateTask(task.id, { notes: text }).catch((err) => {
+          deps.logger.warn(`[task-claimer] Failed to append fetchMain failure to notes for task ${task.id}: ${err}`)
+        })
+      }
     })
   } catch (err) {
     logError(deps.logger, `[agent-manager] setupWorktree failed for task ${task.id}`, err)
@@ -201,7 +206,7 @@ export async function prepareWorktreeForTask(
         ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
         : fullNote
     try {
-      deps.repo.updateTask(task.id, {
+      await deps.repo.updateTask(task.id, {
         status: 'error',
         completed_at: nowIso(),
         notes,
@@ -214,7 +219,7 @@ export async function prepareWorktreeForTask(
         `[task-claimer] Failed to set task ${task.id} to error status: ${updateErr}`
       )
       try {
-        deps.repo.updateTask(task.id, { claimed_by: null })
+        await deps.repo.updateTask(task.id, { claimed_by: null })
       } catch (releaseErr) {
         deps.logger.error(
           `[task-claimer] Failed to release claim for task ${task.id}: ${releaseErr}`
@@ -240,6 +245,11 @@ export interface ProcessQueuedTaskDeps extends TaskClaimerDeps {
     worktree: { worktreePath: string; branch: string },
     repoPath: string
   ) => Promise<void>
+  /**
+   * Optional sink for IDs of tasks successfully claimed in this tick. Read by
+   * the next drain tick's dependency refresh as a dirty-set hint.
+   */
+  recentlyProcessedTaskIds?: Set<string>
 }
 
 /**
@@ -262,15 +272,14 @@ export async function processQueuedTask(
     if (!claimed) return
 
     const { task, repoPath } = claimed
+    deps.recentlyProcessedTaskIds?.add(task.id)
 
-    // Refresh the task-status map after claiming to minimise stale-state windows
-    // for subsequent tasks in the same drain tick.
+    // Targeted post-claim refresh: only the just-claimed task's status changed.
+    // A full-catalog rescan here is wasted I/O — every other entry in the map
+    // is still valid for the rest of this drain tick.
     try {
-      const freshTasks = deps.repo.getTasksWithDependencies()
-      taskStatusMap.clear()
-      for (const t of freshTasks) {
-        taskStatusMap.set(t.id, t.status)
-      }
+      const fresh = deps.repo.getTask(task.id)
+      if (fresh) taskStatusMap.set(fresh.id, fresh.status)
     } catch {
       // non-fatal: stale map is better than aborting the drain
     }
@@ -278,6 +287,7 @@ export async function processQueuedTask(
     const wt = await prepareWorktreeForTask(task, repoPath, deps)
     if (!wt) return
 
+    deps.logger.info(`[agent-manager] Task ${task.id} claimed — spawning agent in ${wt.worktreePath}`)
     await deps.spawnAgent(task, wt, repoPath)
   } finally {
     deps.processingTasks.delete(taskId)

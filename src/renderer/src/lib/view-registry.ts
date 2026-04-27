@@ -64,23 +64,22 @@ export const VIEW_REGISTRY: Record<View, ViewMetadata> = {
     label: 'Source Control',
     description: 'Stage, commit, and push changes across repositories',
     icon: GitCommitHorizontal,
-    shortcut: '',
-    shortcutKey: '',
-    hidden: true
+    shortcut: '⌘6',
+    shortcutKey: '6'
   },
   settings: {
     label: 'Settings',
     description: 'Configure connections, repositories, and preferences',
     icon: Settings,
-    shortcut: '⌘6',
-    shortcutKey: '6'
+    shortcut: '⌘7',
+    shortcutKey: '7'
   },
   planner: {
     label: 'Task Planner',
     description: 'Plan and structure multi-task workflows',
     icon: Hexagon,
-    shortcut: '⌘7',
-    shortcutKey: '7'
+    shortcut: '⌘8',
+    shortcutKey: '8'
   }
 }
 

@@ -119,7 +119,7 @@ Some content.
   })
 
   describe('importPlanFile', () => {
-    it('should create epic and tasks in database', () => {
+    it('should create epic and tasks in database', async () => {
       const markdown = `# Test: Import Integration
 
 ## Tasks
@@ -132,7 +132,7 @@ Do first thing.
 
 Do second thing.
 `
-      const result = importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'bde', db })
 
       expect(result.epic).toBeDefined()
       expect(result.epic.name).toBe('Test: Import Integration')
@@ -153,7 +153,7 @@ Do second thing.
       expect(taskRows).toHaveLength(2)
     })
 
-    it('should set epic status to draft by default', () => {
+    it('should set epic status to draft by default', async () => {
       const markdown = `# Test: Status Check
 
 ## Tasks
@@ -162,11 +162,11 @@ Do second thing.
 
 Content.
 `
-      const result = importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'bde', db })
       expect(result.epic.status).toBe('draft')
     })
 
-    it('should set task status to backlog by default', () => {
+    it('should set task status to backlog by default', async () => {
       const markdown = `# Test: Task Status
 
 ## Tasks
@@ -175,16 +175,16 @@ Content.
 
 Do it.
 `
-      const result = importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'bde', db })
       expect(result.tasks[0].status).toBe('backlog')
     })
 
-    it('should handle plan with no tasks', () => {
+    it('should handle plan with no tasks', async () => {
       const markdown = `# Test: Empty Plan
 
 Just some notes.
 `
-      const result = importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'bde', db })
       expect(result.epic.name).toBe('Test: Empty Plan')
       expect(result.tasks).toHaveLength(0)
     })

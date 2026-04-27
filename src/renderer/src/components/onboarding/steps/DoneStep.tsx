@@ -1,7 +1,6 @@
 import { ArrowLeft, CheckCircle, Rocket, Settings as SettingsIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../ui/Button'
-import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
 import { usePanelLayoutStore } from '../../../stores/panelLayout'
 import { useRepoOptions } from '../../../hooks/useRepoOptions'
 import { SAMPLE_FIRST_TASK } from './sample-first-task'
@@ -15,23 +14,25 @@ interface StepProps {
 }
 
 export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.Element {
-  const setField = useTaskWorkbenchStore((s) => s.setField)
-  const setSpecType = useTaskWorkbenchStore((s) => s.setSpecType)
   const setView = usePanelLayoutStore((s) => s.setView)
   const repoOptions = useRepoOptions()
   const [repoOverride, setRepoOverride] = useState<string | null>(null)
-  const selectedRepoLabel = repoOverride ?? repoOptions[0]?.label ?? ''
+  const selectedRepoLabel = repoOverride ?? repoOptions[repoOptions.length - 1]?.label ?? ''
 
   const handleCreateFirstTask = (): void => {
-    setField('title', SAMPLE_FIRST_TASK.title)
-    setField('spec', SAMPLE_FIRST_TASK.spec)
-    setField('repo', selectedRepoLabel)
-    setSpecType(SAMPLE_FIRST_TASK.specType)
+    localStorage.setItem(
+      'bde:pending-first-task',
+      JSON.stringify({
+        title: SAMPLE_FIRST_TASK.title,
+        spec: SAMPLE_FIRST_TASK.spec,
+        repo: selectedRepoLabel,
+        specType: SAMPLE_FIRST_TASK.specType
+      })
+    )
     window.api.settings.set('onboarding.completed', 'true').catch((err) => {
       console.error('Failed to mark onboarding as completed:', err)
     })
     onComplete()
-    setTimeout(() => setView('planner'), 0)
   }
 
   const handleOpenRepoSettings = (): void => {

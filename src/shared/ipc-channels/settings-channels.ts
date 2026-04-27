@@ -96,6 +96,10 @@ export interface McpChannels {
     args: []
     result: string
   }
+  'mcp:revealToken': {
+    args: []
+    result: string
+  }
   'mcp:regenerateToken': {
     args: []
     result: string

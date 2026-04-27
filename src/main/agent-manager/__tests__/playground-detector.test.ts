@@ -102,4 +102,90 @@ describe('createPlaygroundDetector', () => {
       contentType: 'html'
     })
   })
+
+  describe('opencode edit tool', () => {
+    it('detects an HTML file edit using camelCase filePath', () => {
+      const detector = createPlaygroundDetector()
+      detector.onMessage(
+        assistantToolUse('call_1', 'edit', {
+          filePath: '/tmp/card.html',
+          oldString: '<h1>old</h1>',
+          newString: '<h1>new</h1>'
+        })
+      )
+      expect(detector.onMessage(userToolResult('call_1'))).toEqual({
+        path: '/tmp/card.html',
+        contentType: 'html'
+      })
+    })
+
+    it('ignores edit of a non-playground file type', () => {
+      const detector = createPlaygroundDetector()
+      detector.onMessage(
+        assistantToolUse('call_1', 'edit', {
+          filePath: '/tmp/code.ts',
+          oldString: 'old',
+          newString: 'new'
+        })
+      )
+      expect(detector.onMessage(userToolResult('call_1'))).toBeNull()
+    })
+
+    it('returns null when edit tool_result reports an error', () => {
+      const detector = createPlaygroundDetector()
+      detector.onMessage(
+        assistantToolUse('call_1', 'edit', { filePath: '/tmp/card.html', oldString: '', newString: '' })
+      )
+      expect(detector.onMessage(userToolResult('call_1', true))).toBeNull()
+    })
+  })
+
+  describe('opencode apply_patch tool', () => {
+    it('detects a new HTML file added via apply_patch', () => {
+      const detector = createPlaygroundDetector()
+      detector.onMessage(
+        assistantToolUse('call_1', 'apply_patch', {
+          patchText:
+            '*** Begin Patch\n*** Add File: /tmp/demo.html\n+<h1>Hello</h1>\n*** End Patch'
+        })
+      )
+      expect(detector.onMessage(userToolResult('call_1'))).toEqual({
+        path: '/tmp/demo.html',
+        contentType: 'html'
+      })
+    })
+
+    it('ignores apply_patch that only modifies non-playground files', () => {
+      const detector = createPlaygroundDetector()
+      detector.onMessage(
+        assistantToolUse('call_1', 'apply_patch', {
+          patchText: '*** Begin Patch\n*** Update File: /tmp/code.ts\n-old\n+new\n*** End Patch'
+        })
+      )
+      expect(detector.onMessage(userToolResult('call_1'))).toBeNull()
+    })
+
+    it('returns null when apply_patch tool_result reports an error', () => {
+      const detector = createPlaygroundDetector()
+      detector.onMessage(
+        assistantToolUse('call_1', 'apply_patch', {
+          patchText: '*** Begin Patch\n*** Add File: /tmp/demo.html\n+<h1>Hello</h1>\n*** End Patch'
+        })
+      )
+      expect(detector.onMessage(userToolResult('call_1', true))).toBeNull()
+    })
+
+    it('detects SVG added via apply_patch', () => {
+      const detector = createPlaygroundDetector()
+      detector.onMessage(
+        assistantToolUse('call_1', 'apply_patch', {
+          patchText: '*** Begin Patch\n*** Add File: /tmp/chart.svg\n+<svg/>\n*** End Patch'
+        })
+      )
+      expect(detector.onMessage(userToolResult('call_1'))).toEqual({
+        path: '/tmp/chart.svg',
+        contentType: 'svg'
+      })
+    })
+  })
 })

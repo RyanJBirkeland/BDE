@@ -9,6 +9,19 @@ import { JSDOM } from 'jsdom'
 const window = new JSDOM('').window
 const purify = DOMPurify(window)
 
+// Strip url() from inline styles to prevent CSS-based external resource loading.
+// Background-image, border-image, and similar properties can exfiltrate data or
+// load attacker-controlled content even without <script> tags.
+purify.addHook('afterSanitizeAttributes', (node) => {
+  const style = (node as HTMLElement).getAttribute?.('style')
+  if (style) {
+    const stripped = style.replace(/url\s*\([^)]*\)/gi, 'none')
+    if (stripped !== style) {
+      ;(node as HTMLElement).setAttribute('style', stripped)
+    }
+  }
+})
+
 /**
  * Explicit allowlist for playground HTML tags.
  *
@@ -23,8 +36,6 @@ const PLAYGROUND_ALLOWED_TAGS = [
   'head',
   'body',
   'title',
-  'meta',
-  'link',
   // Text / heading
   'p',
   'br',
@@ -188,7 +199,6 @@ const PLAYGROUND_ALLOWED_ATTR = [
   'selected',
   // Media
   'controls',
-  'autoplay',
   'loop',
   'muted',
   'preload',

@@ -2,24 +2,28 @@ import { describe, it, expect } from 'vitest'
 import { computeMaxTurns, PIPELINE_DISALLOWED_TOOLS } from '../turn-budget'
 
 describe('computeMaxTurns', () => {
-  it('returns the default budget for a short single-file spec', () => {
+  it('returns the default 75-turn budget for a short single-file spec', () => {
     const spec = '## Fix\nAdjust the header logo padding.'
-    expect(computeMaxTurns(spec)).toBe(30)
-  })
-
-  it('returns the multi-file budget when the explicit opt-in header is present', () => {
-    const spec = '## Multi-File: true\n## Refactor\nBroad refactor across services.'
     expect(computeMaxTurns(spec)).toBe(75)
   })
 
-  it('returns the mixed-stack budget when spec mentions both .tsx and .css', () => {
-    const spec = 'Update Header.tsx with a new className; styles in Header.css.'
-    expect(computeMaxTurns(spec)).toBe(50)
+  it('returns 100 when the explicit Multi-File header is present', () => {
+    const spec = '## Multi-File: true\n## Refactor\nBroad refactor across services.'
+    expect(computeMaxTurns(spec)).toBe(100)
   })
 
-  it('returns the mixed-stack budget when at least 3 src/ paths appear', () => {
+  it('returns 75 for a spec with mixed .tsx and .css mentions (no longer downgraded)', () => {
+    const spec = 'Update Header.tsx with a new className; styles in Header.css.'
+    expect(computeMaxTurns(spec)).toBe(75)
+  })
+
+  it('returns 75 for a spec with multiple src/ paths (no longer downgraded)', () => {
     const spec = 'Touch src/a.ts, src/b.ts, and src/c.ts to wire up the feature.'
-    expect(computeMaxTurns(spec)).toBe(50)
+    expect(computeMaxTurns(spec)).toBe(75)
+  })
+
+  it('returns 75 for an empty spec', () => {
+    expect(computeMaxTurns('')).toBe(75)
   })
 })
 

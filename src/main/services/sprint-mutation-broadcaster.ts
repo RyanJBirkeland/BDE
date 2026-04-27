@@ -14,7 +14,6 @@
  */
 import type { SprintTask } from '../../shared/types'
 import { createLogger } from '../logger'
-import { broadcast } from '../broadcast'
 import { createWebhookService, getWebhookEventName } from './webhook-service'
 import { getWebhooks } from '../data/webhook-queries'
 
@@ -32,13 +31,23 @@ const listeners: Set<SprintMutationListener> = new Set()
 // Initialize webhook service
 const webhookService = createWebhookService({ getWebhooks, logger })
 
+let _broadcastFn: (() => void) | null = null
 let externalChangeTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Inject the IPC broadcast function used to notify renderer windows.
+ * Called once at startup by the composition root before any mutations fire.
+ * Matches the established pattern of setSprintQueriesLogger.
+ */
+export function setSprintBroadcaster(fn: () => void): void {
+  _broadcastFn = fn
+}
 
 function scheduleExternalChangeBroadcast(): void {
   if (externalChangeTimer !== null) clearTimeout(externalChangeTimer)
   externalChangeTimer = setTimeout(() => {
     externalChangeTimer = null
-    broadcast('sprint:externalChange')
+    _broadcastFn?.()
   }, 200)
 }
 

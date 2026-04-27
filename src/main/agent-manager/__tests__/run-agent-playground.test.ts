@@ -165,11 +165,20 @@ describe('runAgent — playground prompt injection', () => {
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-      debug: vi.fn()
+      debug: vi.fn(),
+      event: vi.fn()
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
-    unitOfWork: { runInTransaction: (fn) => fn() }
+    unitOfWork: { runInTransaction: (fn) => fn() },
+    metrics: {
+      increment: vi.fn(),
+      recordWatchdogVerdict: vi.fn(),
+      setLastDrainDuration: vi.fn(),
+      recordAgentDuration: vi.fn(),
+      snapshot: vi.fn().mockReturnValue({}),
+      reset: vi.fn()
+    }
   })
 
   beforeEach(async () => {
@@ -362,7 +371,8 @@ describe('AgentRunClaim interface', () => {
 
 describe('runAgent — playground-before-cleanup ordering', () => {
   const mockRepo: IAgentTaskRepository = {
-    getTask: vi.fn(),
+    // Return a non-review task so cleanupOrPreserveWorktree proceeds to cleanup
+    getTask: vi.fn().mockReturnValue({ id: 'task-order-1', status: 'done' }),
     updateTask: vi.fn().mockResolvedValue(null),
     getQueuedTasks: vi.fn(),
     getTasksWithDependencies: vi.fn().mockResolvedValue([]),
@@ -382,11 +392,20 @@ describe('runAgent — playground-before-cleanup ordering', () => {
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-      debug: vi.fn()
+      debug: vi.fn(),
+      event: vi.fn()
     },
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     repo: mockRepo,
-    unitOfWork: { runInTransaction: (fn) => fn() }
+    unitOfWork: { runInTransaction: (fn) => fn() },
+    metrics: {
+      increment: vi.fn(),
+      recordWatchdogVerdict: vi.fn(),
+      setLastDrainDuration: vi.fn(),
+      recordAgentDuration: vi.fn(),
+      snapshot: vi.fn().mockReturnValue({}),
+      reset: vi.fn()
+    }
   })
 
   beforeEach(async () => {

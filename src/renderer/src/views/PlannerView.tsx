@@ -1,11 +1,10 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useTaskGroups } from '../stores/taskGroups'
-import { useTaskWorkbenchStore } from '../stores/taskWorkbench'
+import { useTaskWorkbenchModalStore } from '../stores/taskWorkbenchModal'
 import { EpicList } from '../components/planner/EpicList'
 import { EpicDetail } from '../components/planner/EpicDetail'
 import { CreateEpicModal } from '../components/planner/CreateEpicModal'
-import { WorkbenchPanel } from '../components/planner/WorkbenchPanel'
 import { PlannerAssistant } from '../components/planner/PlannerAssistant'
 import { toast } from '../stores/toasts'
 import { useConfirm, ConfirmModal } from '../components/ui/ConfirmModal'
@@ -34,7 +33,6 @@ export default function PlannerView(): React.JSX.Element {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [workbenchOpen, setWorkbenchOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
   const { confirm, confirmProps } = useConfirm()
 
@@ -64,19 +62,13 @@ export default function PlannerView(): React.JSX.Element {
   }
 
   const handleAddTask = useCallback((): void => {
-    const workbenchStore = useTaskWorkbenchStore.getState()
-    workbenchStore.resetForm()
-    workbenchStore.setField('pendingGroupId', selectedGroupId)
-    setWorkbenchOpen(true)
+    useTaskWorkbenchModalStore.getState().openForCreate({ groupId: selectedGroupId })
   }, [selectedGroupId])
 
   const handleEditTask = useCallback(
     (taskId: string): void => {
       const task = groupTasks.find((t) => t.id === taskId)
-      if (task) {
-        useTaskWorkbenchStore.getState().loadTask(task)
-        setWorkbenchOpen(true)
-      }
+      if (task) useTaskWorkbenchModalStore.getState().openForEdit(task)
     },
     [groupTasks]
   )
@@ -202,14 +194,13 @@ export default function PlannerView(): React.JSX.Element {
               onClose={() => setAssistantOpen(false)}
               epic={selectedGroup}
               tasks={groupTasks}
-              onOpenWorkbench={() => setWorkbenchOpen(true)}
+              onOpenWorkbench={handleAddTask}
             />
             {!selectedGroup && !loading && <EmptyState message="Select an epic to view details" />}
           </div>
         </div>
 
         <CreateEpicModal open={showCreateModal} onClose={() => setShowCreateModal(false)} />
-        <WorkbenchPanel open={workbenchOpen} onClose={() => setWorkbenchOpen(false)} />
         <ConfirmModal {...confirmProps} />
       </motion.div>
     </ErrorBoundary>

@@ -12,6 +12,8 @@ export interface ReviewActionsState {
     commitsBehind?: number | undefined
   }
   ghConfigured: boolean
+  worktreePath: string | null | undefined
+  revisionCount: number
 }
 
 export interface ReviewActions {
@@ -21,6 +23,7 @@ export interface ReviewActions {
   requestRevision: () => Promise<void>
   rebase: () => Promise<void>
   discard: () => Promise<void>
+  markShippedOutsideBde: () => Promise<void>
   getNextReviewTaskId: (currentTaskId: string) => string | null
   batchMergeLocally: (tasks: Array<{ id: string; title: string }>) => Promise<void>
   batchShipIt: (tasks: Array<{ id: string; title: string }>) => Promise<void>

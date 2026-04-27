@@ -8,6 +8,10 @@
  * No business logic lives here — this file is the public API surface.
  * All existing imports from other files pointing to completion.ts remain valid.
  */
+
+/** Hard timeout for all git subprocess calls in the completion path. */
+const GIT_EXEC_TIMEOUT_MS = 30_000
+
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
 import type { Logger } from '../logger'
@@ -15,6 +19,7 @@ import type { TaskStatus } from '../../shared/task-state-machine'
 import { buildAgentEnv } from '../env-utils'
 import { execFileAsync } from '../lib/async-utils'
 import { findOrCreatePR as findOrCreatePRUtil } from '../lib/git-operations'
+import type { TaskStateService } from '../services/task-state-service'
 import {
   verifyWorktreeExists,
   detectAgentBranch,
@@ -25,14 +30,19 @@ import {
   assertBranchTipMatches,
   BranchTipMismatchError
 } from './resolve-success-phases'
-import { resolveFailure as resolveFailurePhase } from './resolve-failure-phases'
+import { resolveFailure as resolveFailurePhase, type ResolveFailureResult } from './resolve-failure-phases'
 import { evaluateAutoMerge } from './auto-merge-coordinator'
 import { nowIso } from '../../shared/time'
 import { detectUntouchedTests, listChangedFiles, formatAdvisory } from './test-touch-check'
 import { detectNoOpRun } from './noop-detection'
 import { NOOP_RUN_NOTE } from './failure-messages'
+import { verifyWorktreeBuildsAndTests } from './verify-worktree'
+import { scanForUnverifiedFacts } from './unverified-facts-scanner'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { buildVerificationRevisionFeedback } from './revision-feedback-builder'
 
-export type { ResolveFailureContext } from './resolve-failure-phases'
+export type { ResolveFailureContext, ResolveFailureResult } from './resolve-failure-phases'
 
 export interface ResolveSuccessContext {
   taskId: string
@@ -44,6 +54,7 @@ export interface ResolveSuccessContext {
   retryCount: number
   repo: IAgentTaskRepository
   unitOfWork: IUnitOfWork
+  taskStateService: TaskStateService
   /**
    * Absolute path to the MAIN repo checkout (not the worktree). Required for
    * branch-tip verification — the tip check reads the branch ref via git log
@@ -80,7 +91,7 @@ export async function deleteAgentBranchBeforeRetry(
 ): Promise<void> {
   const env = buildAgentEnv()
   try {
-    await execFileAsync('git', ['branch', '-D', agentBranch], { cwd: repoPath, env })
+    await execFileAsync('git', ['branch', '-D', agentBranch], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
     logger.info(`[completion] deleted agent branch before retry: ${agentBranch}`)
   } catch (err) {
     // Branch may not exist (first-time retry, already cleaned, etc.) — non-fatal.
@@ -90,83 +101,302 @@ export async function deleteAgentBranchBeforeRetry(
   }
 }
 
+/**
+ * Thrown by a SuccessPhase when it has already handled the error and wants to
+ * abort the pipeline without further processing. The orchestrator catches this
+ * as a clean stop signal — not a bug.
+ */
+class PipelineAbortError extends Error {
+  constructor() {
+    super('pipeline aborted')
+    this.name = 'PipelineAbortError'
+  }
+}
+
+/**
+ * Mutable accumulator threaded through every SuccessPhase.
+ *
+ * Guard phases populate fields that later phases depend on. Each phase writes
+ * only the fields it owns; reads what prior phases wrote.
+ */
+interface SuccessPhaseContext extends ResolveSuccessContext {
+  logger: Logger
+  branch: string
+  rebaseOutcome: import('./resolve-success-phases').RebaseOutcome
+}
+
+/**
+ * A single named step in the agent success pipeline.
+ * Returns void on success; throws PipelineAbortError to halt the pipeline.
+ */
+interface SuccessPhase {
+  name: string
+  run(ctx: SuccessPhaseContext): Promise<void>
+}
+
+const verifyWorktreePhase: SuccessPhase = {
+  name: 'verifyWorktree',
+  async run(ctx) {
+    const exists = await verifyWorktreeExists(
+      ctx.taskId,
+      ctx.worktreePath,
+      ctx.repo,
+      ctx.logger,
+      ctx.onTaskTerminal,
+      ctx.taskStateService
+    )
+    if (!exists) throw new PipelineAbortError()
+  }
+}
+
+const detectBranchPhase: SuccessPhase = {
+  name: 'detectBranch',
+  async run(ctx) {
+    const branch = await detectAgentBranch(
+      ctx.taskId,
+      ctx.worktreePath,
+      ctx.repo,
+      ctx.logger,
+      ctx.onTaskTerminal,
+      ctx.taskStateService
+    )
+    if (!branch) throw new PipelineAbortError()
+    ctx.branch = branch
+  }
+}
+
+const autoCommitPhase: SuccessPhase = {
+  name: 'autoCommit',
+  async run(ctx) {
+    const task = ctx.repo.getTask(ctx.taskId)
+    if (!task) {
+      ctx.logger.error(`[completion] Task ${ctx.taskId} not found — skipping auto-commit`)
+      throw new PipelineAbortError()
+    }
+    await autoCommitPendingChanges(ctx.taskId, ctx.worktreePath, task, ctx.logger)
+  }
+}
+
+const rebasePhase: SuccessPhase = {
+  name: 'rebase',
+  async run(ctx) {
+    ctx.rebaseOutcome = await performRebaseOntoMain(ctx.taskId, ctx.worktreePath, ctx.logger)
+  }
+}
+
+const verifyCommitsPhase: SuccessPhase = {
+  name: 'verifyCommits',
+  async run(ctx) {
+    const hasCommits = await hasCommitsAheadOfMain({
+      taskId: ctx.taskId,
+      branch: ctx.branch,
+      worktreePath: ctx.worktreePath,
+      agentSummary: ctx.agentSummary,
+      retryCount: ctx.retryCount,
+      repo: ctx.repo,
+      logger: ctx.logger,
+      onTaskTerminal: ctx.onTaskTerminal,
+      taskStateService: ctx.taskStateService,
+      resolveFailure: resolveFailurePhase
+    })
+    if (!hasCommits) throw new PipelineAbortError()
+  }
+}
+
+const noOpGuardPhase: SuccessPhase = {
+  name: 'noOpGuard',
+  async run(ctx) {
+    const isNoOp = await detectNoOpAndFailIfSo(
+      ctx.taskId,
+      ctx.branch,
+      ctx.worktreePath,
+      ctx.retryCount,
+      ctx.repo,
+      ctx.logger,
+      ctx.onTaskTerminal
+    )
+    if (isNoOp) throw new PipelineAbortError()
+  }
+}
+
+const branchTipVerifyPhase: SuccessPhase = {
+  name: 'branchTipVerify',
+  async run(ctx) {
+    const verified = await verifyBranchTipOrFail(
+      ctx.taskId,
+      ctx.branch,
+      ctx.repoPath,
+      ctx.repo,
+      ctx.logger,
+      ctx.onTaskTerminal,
+      ctx.taskStateService
+    )
+    if (!verified) throw new PipelineAbortError()
+  }
+}
+
+/**
+ * Context passed to each PreReviewAdvisor. Advisory checks read these fields
+ * to produce their warnings; they never write to the repository directly.
+ */
+interface PreReviewAdvisorContext {
+  taskId: string
+  branch: string
+  worktreePath: string
+  repoPath: string | undefined
+  logger: Logger
+}
+
+/**
+ * A pluggable advisory check run before the review transition.
+ *
+ * Returns a warning string (appended to task.notes) or null when nothing to
+ * report. Errors are caught by the orchestrator so a flaky check cannot stall
+ * the success path.
+ */
+interface PreReviewAdvisor {
+  name: string
+  advise(ctx: PreReviewAdvisorContext): Promise<string | null>
+}
+
+const untouchedTestsAdvisor: PreReviewAdvisor = {
+  name: 'untouchedTests',
+  async advise(ctx) {
+    const env = buildAgentEnv()
+    const changedFiles = await listChangedFiles(ctx.branch, ctx.worktreePath, env, { logger: ctx.logger })
+    if (changedFiles.length === 0) return null
+
+    const testCheckRepoPath = ctx.repoPath ?? ctx.worktreePath
+    const untouched = detectUntouchedTests(changedFiles, testCheckRepoPath, { logger: ctx.logger })
+    if (untouched.length === 0) return null
+
+    return formatAdvisory(untouched)
+  }
+}
+
+const unverifiedFactsAdvisor: PreReviewAdvisor = {
+  name: 'unverifiedFacts',
+  async advise(ctx) {
+    const env = buildAgentEnv()
+    const { stdout: diff } = await execFileAsync('git', ['diff', 'HEAD~1', 'HEAD'], {
+      cwd: ctx.worktreePath,
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
+    })
+
+    const packageJsonPath = join(ctx.worktreePath, 'package.json')
+    const packageJsonContent = await readFile(packageJsonPath, 'utf8').catch(() => '{}')
+
+    const warnings = scanForUnverifiedFacts(diff, packageJsonContent)
+    return warnings.length > 0 ? warnings.join('\n') : null
+  }
+}
+
+/** Registered pre-review advisors — extend by appending to this array. */
+const preReviewAdvisors: PreReviewAdvisor[] = [untouchedTestsAdvisor, unverifiedFactsAdvisor]
+
+/**
+ * Runs each registered PreReviewAdvisor. Non-null warnings are appended to the
+ * task's notes. Errors in individual advisors are caught and logged so a
+ * single flaky check cannot stall the success path.
+ */
+async function runPreReviewAdvisors(
+  ctx: PreReviewAdvisorContext,
+  repo: IAgentTaskRepository
+): Promise<void> {
+  for (const advisor of preReviewAdvisors) {
+    try {
+      const warning = await advisor.advise(ctx)
+      if (warning) {
+        appendAdvisoryNote(ctx.taskId, warning, repo, ctx.logger)
+      }
+    } catch (err) {
+      ctx.logger.warn(
+        `[completion] Advisory check "${advisor.name}" skipped for task ${ctx.taskId}: ${err instanceof Error ? err.message : String(err)}`
+      )
+    }
+  }
+}
+
+const advisoryAnnotationsPhase: SuccessPhase = {
+  name: 'advisoryAnnotations',
+  async run(ctx) {
+    await runPreReviewAdvisors(
+      {
+        taskId: ctx.taskId,
+        branch: ctx.branch,
+        worktreePath: ctx.worktreePath,
+        repoPath: ctx.repoPath,
+        logger: ctx.logger
+      },
+      ctx.repo
+    )
+  }
+}
+
+const verifyWorktreeBuildPhase: SuccessPhase = {
+  name: 'verifyWorktreeBuild',
+  async run(ctx) {
+    const verified = await verifyWorktreeOrFail({
+      taskId: ctx.taskId,
+      worktreePath: ctx.worktreePath,
+      retryCount: ctx.retryCount,
+      repo: ctx.repo,
+      logger: ctx.logger,
+      onTaskTerminal: ctx.onTaskTerminal
+    })
+    if (!verified) throw new PipelineAbortError()
+  }
+}
+
+const reviewTransitionPhase: SuccessPhase = {
+  name: 'reviewTransition',
+  async run(ctx) {
+    await transitionTaskToReview(
+      ctx.taskId,
+      ctx.branch,
+      ctx.worktreePath,
+      ctx.title,
+      ctx.rebaseOutcome,
+      ctx.repo,
+      ctx.unitOfWork,
+      ctx.logger,
+      ctx.onTaskTerminal,
+      evaluateAutoMerge,
+      ctx.taskStateService
+    )
+  }
+}
+
+/** Ordered pipeline of named phases executed by resolveSuccess. */
+const successPhases: SuccessPhase[] = [
+  verifyWorktreePhase,
+  detectBranchPhase,
+  autoCommitPhase,
+  rebasePhase,
+  verifyCommitsPhase,
+  noOpGuardPhase,
+  branchTipVerifyPhase,
+  advisoryAnnotationsPhase,
+  verifyWorktreeBuildPhase,
+  reviewTransitionPhase
+]
+
 export async function resolveSuccess(opts: ResolveSuccessContext, logger: Logger): Promise<void> {
-  const {
-    taskId,
-    worktreePath,
-    title,
-    onTaskTerminal,
-    agentSummary,
-    retryCount,
-    repo,
-    unitOfWork,
-    repoPath
-  } = opts
-
-  const worktreeExists = await verifyWorktreeExists(
-    taskId,
-    worktreePath,
-    repo,
+  const ctx: SuccessPhaseContext = {
+    ...opts,
     logger,
-    onTaskTerminal
-  )
-  if (!worktreeExists) return
+    branch: '',
+    rebaseOutcome: { rebaseNote: undefined, rebaseBaseSha: undefined, rebaseSucceeded: false }
+  }
 
-  const branch = await detectAgentBranch(taskId, worktreePath, repo, logger, onTaskTerminal)
-  if (!branch) return
-
-  await autoCommitPendingChanges(taskId, worktreePath, title, logger)
-
-  const rebaseOutcome = await performRebaseOntoMain(taskId, worktreePath, logger)
-
-  const hasCommits = await hasCommitsAheadOfMain({
-    taskId,
-    branch,
-    worktreePath,
-    agentSummary,
-    retryCount,
-    repo,
-    logger,
-    onTaskTerminal,
-    resolveFailure: resolveFailurePhase
-  })
-  if (!hasCommits) return
-
-  const isNoOp = await detectNoOpAndFailIfSo(
-    taskId,
-    branch,
-    worktreePath,
-    retryCount,
-    repo,
-    logger,
-    onTaskTerminal
-  )
-  if (isNoOp) return
-
-  const tipVerified = await verifyBranchTipOrFail(
-    taskId,
-    branch,
-    repoPath,
-    repo,
-    logger,
-    onTaskTerminal
-  )
-  if (!tipVerified) return
-
-  await annotateIfTestsUntouched(taskId, branch, worktreePath, repoPath, repo, logger)
-
-  await transitionTaskToReview(
-    taskId,
-    branch,
-    worktreePath,
-    title,
-    rebaseOutcome,
-    repo,
-    unitOfWork,
-    logger,
-    onTaskTerminal,
-    evaluateAutoMerge
-  )
+  try {
+    for (const phase of successPhases) {
+      await phase.run(ctx)
+    }
+  } catch (err) {
+    if (!(err instanceof PipelineAbortError)) throw err
+  }
 }
 
 /**
@@ -192,47 +422,21 @@ async function detectNoOpAndFailIfSo(
   const changedFiles = await listChangedFiles(branch, worktreePath, env, { logger })
   if (!detectNoOpRun(changedFiles, worktreePath)) return false
 
+  logger.event('completion.noop', { taskId, changedFiles })
   logger.warn(
     `[completion] task ${taskId}: detected no-op run on branch ${branch} — failing instead of transitioning to review`
   )
-  const isTerminal = resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo }, logger)
-  await onTaskTerminal(taskId, isTerminal ? 'failed' : 'queued')
-  return true
-}
-
-/**
- * Pre-review advisory: checks whether the agent changed source files whose
- * sibling test files exist but were not also changed. Appends a single-line
- * warning to the task's `notes` so the human reviewer sees it in Code Review.
- *
- * Intentionally advisory-only — never blocks the review transition. Failures
- * in git diff or fs lookups are logged and swallowed so a flaky check cannot
- * stall the success path.
- */
-async function annotateIfTestsUntouched(
-  taskId: string,
-  agentBranch: string,
-  worktreePath: string,
-  repoPath: string | undefined,
-  repo: IAgentTaskRepository,
-  logger: Logger
-): Promise<void> {
-  const testCheckRepoPath = repoPath ?? worktreePath
-  const env = buildAgentEnv()
-
-  try {
-    const changedFiles = await listChangedFiles(agentBranch, worktreePath, env, { logger })
-    if (changedFiles.length === 0) return
-
-    const untouched = detectUntouchedTests(changedFiles, testCheckRepoPath, { logger })
-    if (untouched.length === 0) return
-
-    appendAdvisoryNote(taskId, formatAdvisory(untouched), repo, logger)
-  } catch (err) {
+  const result = await resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo }, logger)
+  if (result.writeFailed) {
     logger.warn(
-      `[completion] Untouched-test check skipped for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`
+      `[completion] task ${taskId}: noop failure DB write failed — skipping terminal notification to avoid corrupting dependency graph`
     )
+    return true
   }
+  const decision = result.isTerminal ? 'terminal' : 'requeue'
+  logger.event('completion.decision', { taskId, decision, reason: 'noop' })
+  await onTaskTerminal(taskId, result.isTerminal ? 'failed' : 'queued')
+  return true
 }
 
 /**
@@ -245,14 +449,14 @@ function appendAdvisoryNote(
   repo: IAgentTaskRepository,
   logger: Logger
 ): void {
-  try {
-    const existing = repo.getTask(taskId)?.notes ?? ''
-    const combined = existing ? `${existing}\n${advisory}` : advisory
-    repo.updateTask(taskId, { notes: combined })
+  const existing = repo.getTask(taskId)?.notes ?? ''
+  const combined = existing ? `${existing}\n${advisory}` : advisory
+  // fire-and-forget: advisory annotation is best-effort
+  void repo.updateTask(taskId, { notes: combined }).then(() => {
     logger.info(`[completion] Annotated task ${taskId} with test-touch advisory: ${advisory}`)
-  } catch (err) {
+  }).catch((err) => {
     logger.warn(`[completion] Failed to persist test-touch advisory for ${taskId}: ${err}`)
-  }
+  })
 }
 
 /**
@@ -267,7 +471,8 @@ async function verifyBranchTipOrFail(
   repoPath: string | undefined,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  _onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService: TaskStateService
 ): Promise<boolean> {
   if (!repoPath) return true
 
@@ -292,21 +497,16 @@ async function verifyBranchTipOrFail(
         `Expected one of: [${expectedSummary}]. Actual subject: "${err.actualSubject}". ` +
         `This usually means a stale branch or a cross-task leak — task will not be promoted to review.`
       logger.error(`[completion] ${failureNotes}`)
-      try {
-        repo.updateTask(taskId, {
-          status: 'failed',
+      await taskStateService.transition(taskId, 'failed', {
+        fields: {
           completed_at: nowIso(),
           claimed_by: null,
           needs_review: true,
           failure_reason: 'tip-mismatch',
           notes: failureNotes
-        })
-      } catch (updateErr) {
-        logger.error(
-          `[completion] Failed to persist tip-mismatch status for task ${taskId}: ${updateErr}`
-        )
-      }
-      await onTaskTerminal(taskId, 'failed')
+        },
+        caller: 'completion.tip-mismatch'
+      })
       return false
     }
     // Non-mismatch error (git missing, branch vanished, etc.) — log and let
@@ -318,7 +518,47 @@ async function verifyBranchTipOrFail(
   }
 }
 
-export function resolveFailure(
+/**
+ * Pre-review verification gate: runs `npm run typecheck` and `npm test` inside
+ * the worktree. On failure, requeues the task with the tool's stderr in notes
+ * so the retry agent sees the exact error. Returns `true` when verification
+ * passes (caller should proceed to transition); `false` when the task has been
+ * requeued or marked failed.
+ */
+async function verifyWorktreeOrFail(opts: {
+  taskId: string
+  worktreePath: string
+  retryCount: number
+  repo: IAgentTaskRepository
+  logger: Logger
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+}): Promise<boolean> {
+  const { taskId, worktreePath, retryCount, repo, logger, onTaskTerminal } = opts
+
+  const result = await verifyWorktreeBuildsAndTests(worktreePath, logger)
+  if (result.ok) return true
+
+  logger.warn(
+    `[completion] task ${taskId}: pre-review verification failed (${result.failure.kind}) — requeueing instead of transitioning to review`
+  )
+
+  const feedback = buildVerificationRevisionFeedback(result.failure.kind, result.failure.stderr)
+  const notes = JSON.stringify(feedback)
+
+  const failureResult = await resolveFailurePhase({ taskId, retryCount, notes, repo }, logger)
+  if (failureResult.writeFailed) {
+    logger.warn(
+      `[completion] task ${taskId}: verification failure DB write failed — skipping terminal notification to avoid corrupting dependency graph`
+    )
+    return false
+  }
+  const decision = failureResult.isTerminal ? 'terminal' : 'requeue'
+  logger.event('completion.decision', { taskId, decision, reason: result.failure.kind })
+  await onTaskTerminal(taskId, failureResult.isTerminal ? 'failed' : 'queued')
+  return false
+}
+
+export async function resolveFailure(
   opts: {
     taskId: string
     retryCount: number
@@ -326,6 +566,6 @@ export function resolveFailure(
     repo: IAgentTaskRepository
   },
   logger?: Logger
-): boolean {
+): Promise<ResolveFailureResult> {
   return resolveFailurePhase(opts, logger)
 }

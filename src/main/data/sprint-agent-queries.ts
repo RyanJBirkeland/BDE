@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { SprintTask, TaskDependency } from '../../shared/types'
+import type { SprintTask, SprintTaskCore, TaskDependency } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { getDb } from '../db'
 import { SPRINT_TASK_COLUMNS } from './sprint-query-constants'
@@ -8,6 +8,7 @@ import { getSprintQueriesLogger } from './sprint-query-logger'
 import { recordTaskChangesBulk } from './task-changes'
 import type { QueueStats } from './sprint-task-types'
 import { withDataLayerError } from './data-utils'
+import { MS_PER_HOUR } from '../../shared/time'
 
 const EMPTY_QUEUE_STATS: QueueStats = {
   backlog: 0,
@@ -21,6 +22,10 @@ const EMPTY_QUEUE_STATS: QueueStats = {
   blocked: 0
 }
 
+function isQueueStatsKey(status: string): status is keyof QueueStats {
+  return status in EMPTY_QUEUE_STATS
+}
+
 export function getQueueStats(db?: Database.Database): QueueStats {
   const conn = db ?? getDb()
   return withDataLayerError(
@@ -31,9 +36,10 @@ export function getQueueStats(db?: Database.Database): QueueStats {
         .all() as Array<{ status: string; count: number }>
 
       for (const row of rows) {
-        if (row.status in stats) {
-          stats[row.status as keyof QueueStats] = row.count
+        if (isQueueStatsKey(row.status)) {
+          stats[row.status] = row.count
         }
+        // Unknown status — skip to avoid corrupting dashboard metrics
       }
       return stats
     },
@@ -114,11 +120,11 @@ export function clearSprintTaskFk(agentRunId: string, db?: Database.Database): v
   )
 }
 
-export function getHealthCheckTasks(db?: Database.Database): SprintTask[] {
+export function getHealthCheckTasks(db?: Database.Database): SprintTaskCore[] {
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+      const oneHourAgo = new Date(Date.now() - MS_PER_HOUR).toISOString()
       const rows = conn
         .prepare(
           `SELECT ${SPRINT_TASK_COLUMNS}

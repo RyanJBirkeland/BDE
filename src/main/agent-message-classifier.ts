@@ -8,64 +8,70 @@ import { TOOL_RESULT_SUMMARY_MAX_CHARS } from './constants'
 
 const logger = createLogger('agent-message-classifier')
 
+function isSdkMessage(raw: unknown): raw is Record<string, unknown> {
+  return typeof raw === 'object' && raw !== null
+}
+
+function isContentBlock(block: unknown): block is Record<string, unknown> {
+  return typeof block === 'object' && block !== null
+}
+
+function extractToolInput(block: Record<string, unknown>): Record<string, unknown> | null {
+  const input = block.input
+  if (typeof input === 'object' && input !== null) return input as Record<string, unknown>
+  return null
+}
+
 /**
  * Maps a raw SDK wire-protocol message to zero or more typed AgentEvents.
  * Handles assistant messages (text + tool_use blocks) and tool_result messages.
  */
 export function mapRawMessage(raw: unknown): AgentEvent[] {
-  if (typeof raw !== 'object' || raw === null) return []
-  const msg = raw as Record<string, unknown>
+  if (!isSdkMessage(raw)) return []
   const now = Date.now()
   const events: AgentEvent[] = []
 
-  const msgType = msg.type as string | undefined
+  const msgType = typeof raw.type === 'string' ? raw.type : undefined
 
   if (msgType === 'assistant') {
-    const message = msg.message as Record<string, unknown> | undefined
+    const message = isContentBlock(raw.message) ? raw.message : undefined
     const content = message?.content
     if (Array.isArray(content)) {
       for (const block of content) {
-        if (typeof block === 'object' && block !== null) {
-          const contentBlock = block as Record<string, unknown>
-          if (contentBlock.type === 'text' && typeof contentBlock.text === 'string') {
-            events.push({ type: 'agent:text', text: contentBlock.text, timestamp: now })
-          } else if (contentBlock.type === 'tool_use') {
-            const toolName =
-              (typeof contentBlock.name === 'string' && contentBlock.name) ||
-              (typeof contentBlock.tool_name === 'string' && contentBlock.tool_name) ||
-              'unknown'
-            events.push({
-              type: 'agent:tool_call',
-              tool: toolName,
-              summary: toolName,
-              input: contentBlock.input,
-              timestamp: now
-            })
-          }
+        if (!isContentBlock(block)) continue
+        if (block.type === 'text' && typeof block.text === 'string') {
+          events.push({ type: 'agent:text', text: block.text, timestamp: now })
+        } else if (block.type === 'tool_use') {
+          const toolName =
+            (typeof block.name === 'string' && block.name) ||
+            (typeof block.tool_name === 'string' && block.tool_name) ||
+            'unknown'
+          events.push({
+            type: 'agent:tool_call',
+            tool: toolName,
+            summary: toolName,
+            input: extractToolInput(block),
+            timestamp: now
+          })
         }
       }
     }
   } else if (msgType === 'result') {
     // SDK end-of-turn signal — not a tool result. Skip it.
   } else if (msgType === 'tool_result') {
-    const content = msg.content ?? msg.output
+    const content = raw.content ?? raw.output
     events.push({
       type: 'agent:tool_result',
       tool:
-        (typeof msg.tool_name === 'string' && msg.tool_name) ||
-        (typeof msg.name === 'string' && msg.name) ||
+        (typeof raw.tool_name === 'string' && raw.tool_name) ||
+        (typeof raw.name === 'string' && raw.name) ||
         'unknown',
-      success: msg.is_error !== true,
+      success: raw.is_error !== true,
       summary: typeof content === 'string' ? content.slice(0, TOOL_RESULT_SUMMARY_MAX_CHARS) : '',
       output: content,
       timestamp: now
     })
-  } else if (
-    msgType &&
-    msgType !== 'assistant' &&
-    msgType !== 'tool_result' &&
-    msgType !== 'result'
-  ) {
+  } else if (msgType) {
     // Log unrecognized message types for debugging
     logger.info(`Unrecognized message type: ${msgType}`)
   }

@@ -18,6 +18,7 @@ interface RetryOptions {
   maxRetries?: number
   baseDelayMs?: number
   maxDelayMs?: number
+  logger?: { warn: (msg: string) => void }
 }
 
 function isBusyError(err: unknown): boolean {
@@ -36,8 +37,18 @@ function computeBackoff(attempt: number, baseDelayMs: number, maxDelayMs: number
 
 /**
  * Synchronous retry wrapper. Blocks the calling thread on backoff via
- * `Atomics.wait`. Prefer `withRetryAsync` from anywhere on the Electron
- * main thread that can tolerate yielding to the event loop.
+ * `Atomics.wait`.
+ *
+ * **COLD-PATH ONLY.** This function is reserved for migrations and startup
+ * reads where an async boundary is not available. It MUST NOT be called from:
+ * - The agent-manager drain loop
+ * - The watchdog loop
+ * - The agent completion pipeline
+ * - The Sprint PR poller
+ *
+ * On any of those paths, use `withRetryAsync` instead. Under WAL contention
+ * `Atomics.wait` can block the Electron main-thread event loop for up to ~5 s,
+ * freezing IPC, UI repaints, and watchdog ticks for the full backoff duration.
  */
 export function withRetry<T>(fn: () => T, opts: RetryOptions = {}): T {
   const { maxRetries = 5, baseDelayMs = 10, maxDelayMs = 1000 } = opts
@@ -75,6 +86,9 @@ export async function withRetryAsync<T>(
       lastError = err
       if (!isBusyError(err) || attempt === maxRetries) throw err
       const delay = computeBackoff(attempt, baseDelayMs, maxDelayMs)
+      opts.logger?.warn(
+        `[sqlite-retry] SQLITE_BUSY retry attempt=${attempt + 1} backoffMs=${delay}`
+      )
       await new Promise<void>((resolve) => setTimeout(resolve, delay))
     }
   }

@@ -8,7 +8,7 @@ import { SettingsCard } from './SettingsCard'
 import { CostSection } from './CostSection'
 
 const APP_VERSION = __APP_VERSION__
-const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE'
+const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE/releases'
 const LOG_PATH = '~/.bde/bde.log'
 
 export function AboutSection(): React.JSX.Element {

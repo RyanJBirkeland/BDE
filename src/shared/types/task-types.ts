@@ -53,6 +53,7 @@ export type FailureReason =
   | 'no_commits'
   | 'no-commits-exhausted'
   | 'tip-mismatch'
+  | 'incomplete_files'
   | 'environmental'
   | 'unknown'
 
@@ -124,6 +125,12 @@ export interface SprintTask {
    * so the Code Review nav badge can watermark "new since you last looked."
    */
   promoted_to_review_at?: string | null
+  /**
+   * Number of times this task has been rescued by orphan recovery.
+   * When this reaches MAX_ORPHAN_RECOVERY_COUNT the task is transitioned
+   * to `error` instead of being re-queued, preventing infinite crash loops.
+   */
+  orphan_recovery_count?: number
   updated_at: string
   created_at: string
 }
@@ -232,6 +239,35 @@ export interface TaskTemplate {
   name: string
   promptPrefix: string
   isBuiltIn?: boolean | undefined
+}
+
+/**
+ * Input shape for `sprint:batchImport`.
+ *
+ * Single source of truth — IPC channel definition, the IPC handler, the
+ * preload API, and the service-side `batchImportTasks` all import from
+ * here. Defining the shape four times invited drift; in particular,
+ * `dependsOnIndices?: number[]` and `dependsOnIndices?: number[] | undefined`
+ * are distinct types under `exactOptionalPropertyTypes: true`, and the
+ * mismatch caused subtle typecheck failures whose error messages didn't
+ * point at the divergence.
+ *
+ * Optionality style: bare `?:` (no `| undefined`). Callers should omit the
+ * property when not needed, not pass an explicit `undefined`.
+ */
+export interface BatchImportTask {
+  title: string
+  repo: string
+  prompt?: string
+  spec?: string
+  status?: string
+  dependsOnIndices?: number[]
+  depType?: 'hard' | 'soft'
+  playgroundEnabled?: boolean
+  model?: string
+  tags?: string[]
+  priority?: number
+  templateName?: string
 }
 
 /** A claimed task with an optional template prompt prefix. */

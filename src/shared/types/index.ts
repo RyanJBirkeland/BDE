@@ -52,6 +52,7 @@ export type {
   ReviseRequest,
   BatchOperation,
   BatchResult,
+  BatchImportTask,
   TaskOutputEventType,
   TaskOutputEvent,
   AutoReviewRule,
@@ -86,3 +87,6 @@ export type {
 
 // Agent prompt input
 export type { BuildPromptInput } from './agent-prompt'
+
+// Revision feedback
+export type { RevisionFeedback, RevisionDiagnostic } from './revision'

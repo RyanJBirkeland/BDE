@@ -117,7 +117,7 @@ vi.mock('node:fs', async (importOriginal) => {
 
 // Mock data/event-queries (used lazily in agent:history)
 vi.mock('../../data/event-queries', () => ({
-  getEventHistory: vi.fn(),
+  queryEvents: vi.fn(),
   appendEvent: vi.fn(),
   insertEventBatch: vi.fn()
 }))
@@ -141,7 +141,7 @@ import { safeHandle } from '../../ipc-utils'
 import { cleanupOldLogs } from '../../agent-log-manager'
 import { listAgents, readLog, pruneOldAgents, getAgentMeta } from '../../agent-history'
 import { spawnAdhocAgent, getAdhocHandle } from '../../adhoc-agent'
-import { getEventHistory } from '../../data/event-queries'
+import { queryEvents } from '../../data/event-queries'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
 import { createReviewTaskFromAdhoc } from '../../data/sprint-queries'
 import { nowIso } from '../../../shared/time'
@@ -328,13 +328,13 @@ describe('agent:history handler', () => {
     vi.mocked(flushAgentEventBatcher).mockImplementation(() => {
       callOrder.push('flush')
     })
-    vi.mocked(getEventHistory).mockImplementation(() => {
+    vi.mocked(queryEvents).mockImplementation(() => {
       callOrder.push('read')
-      return []
+      return { events: [], hasMore: false }
     })
 
     const handler = captureHandler('agent:history')
-    await handler(mockEvent, 'agent-race')
+    await handler(mockEvent, { agentId: 'agent-race' })
 
     expect(callOrder).toEqual(['flush', 'read'])
   })
@@ -354,33 +354,51 @@ describe('agent:history handler', () => {
       { payload: JSON.stringify(textEvent) },
       { payload: JSON.stringify(completedEvent) }
     ]
-    vi.mocked(getEventHistory).mockReturnValue(rows as any)
+    vi.mocked(queryEvents).mockReturnValue({ events: rows as any, hasMore: false })
 
     const handler = captureHandler('agent:history')
-    const result = await handler(mockEvent, 'agent-42')
+    const result = await handler(mockEvent, { agentId: 'agent-42' })
 
-    expect(getEventHistory).toHaveBeenCalledWith({}, 'agent-42')
+    expect(queryEvents).toHaveBeenCalledWith({}, { agentId: 'agent-42', limit: 500 })
     expect(result).toEqual([textEvent, completedEvent])
   })
 
-  it('returns empty array when no events exist', async () => {
-    vi.mocked(getEventHistory).mockReturnValue([])
+  it('uses default limit of 500 when no limit arg is provided', async () => {
+    vi.mocked(queryEvents).mockReturnValue({ events: [], hasMore: false })
 
     const handler = captureHandler('agent:history')
-    const result = await handler(mockEvent, 'agent-empty')
+    await handler(mockEvent, { agentId: 'agent-limit-check' })
+
+    expect(queryEvents).toHaveBeenCalledWith({}, { agentId: 'agent-limit-check', limit: 500 })
+  })
+
+  it('respects caller-supplied limit', async () => {
+    vi.mocked(queryEvents).mockReturnValue({ events: [], hasMore: false })
+
+    const handler = captureHandler('agent:history')
+    await handler(mockEvent, { agentId: 'agent-custom-limit', limit: 100 })
+
+    expect(queryEvents).toHaveBeenCalledWith({}, { agentId: 'agent-custom-limit', limit: 100 })
+  })
+
+  it('returns empty array when no events exist', async () => {
+    vi.mocked(queryEvents).mockReturnValue({ events: [], hasMore: false })
+
+    const handler = captureHandler('agent:history')
+    const result = await handler(mockEvent, { agentId: 'agent-empty' })
 
     expect(result).toEqual([])
   })
 
   it('drops rows whose payload is not valid JSON and warns', async () => {
     const validEvent = { type: 'agent:text', text: 'Hi', timestamp: 1 }
-    vi.mocked(getEventHistory).mockReturnValue([
-      { payload: '{not-json' },
-      { payload: JSON.stringify(validEvent) }
-    ] as any)
+    vi.mocked(queryEvents).mockReturnValue({
+      events: [{ payload: '{not-json' }, { payload: JSON.stringify(validEvent) }] as any,
+      hasMore: false
+    })
 
     const handler = captureHandler('agent:history')
-    const result = await handler(mockEvent, 'agent-42')
+    const result = await handler(mockEvent, { agentId: 'agent-42' })
 
     expect(result).toEqual([validEvent])
     expect(loggerInstance.warn).toHaveBeenCalledWith(expect.stringContaining('agent=agent-42'))
@@ -388,16 +406,19 @@ describe('agent:history handler', () => {
 
   it('drops rows whose parsed payload has the wrong shape and warns', async () => {
     const validEvent = { type: 'agent:text', text: 'Ok', timestamp: 99 }
-    vi.mocked(getEventHistory).mockReturnValue([
-      // Unknown discriminator
-      { payload: JSON.stringify({ type: 'bogus:event', timestamp: 1 }) },
-      // Known type but missing numeric timestamp
-      { payload: JSON.stringify({ type: 'agent:text', text: 'No ts' }) },
-      { payload: JSON.stringify(validEvent) }
-    ] as any)
+    vi.mocked(queryEvents).mockReturnValue({
+      events: [
+        // Unknown discriminator
+        { payload: JSON.stringify({ type: 'bogus:event', timestamp: 1 }) },
+        // Known type but missing numeric timestamp
+        { payload: JSON.stringify({ type: 'agent:text', text: 'No ts' }) },
+        { payload: JSON.stringify(validEvent) }
+      ] as any,
+      hasMore: false
+    })
 
     const handler = captureHandler('agent:history')
-    const result = await handler(mockEvent, 'agent-77')
+    const result = await handler(mockEvent, { agentId: 'agent-77' })
 
     expect(result).toEqual([validEvent])
     expect(loggerInstance.warn).toHaveBeenCalledWith(

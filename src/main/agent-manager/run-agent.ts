@@ -14,6 +14,7 @@ import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
+import type { MetricsCollector } from './metrics'
 import { FAST_FAIL_EXHAUSTED_NOTE } from './failure-messages'
 import { getGhRepo } from '../paths'
 import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
@@ -27,10 +28,13 @@ import { consumeMessages } from './message-consumer'
 import type { ConsumeMessagesResult } from './message-consumer'
 import { persistAgentRunTelemetry } from './agent-telemetry'
 import { spawnAndWireAgent } from './spawn-and-wire'
-import { MAX_TURNS } from './spawn-sdk'
+import { computeMaxTurns } from './turn-budget'
 import { sleep } from '../lib/async-utils'
 import { NOTES_MAX_LENGTH } from './types'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import { extractFilesToChange } from './spec-parser'
+import type { TaskStateService } from '../services/task-state-service'
+import { PipelineAbortError } from './pipeline-abort-error'
 
 export type { ConsumeMessagesResult }
 
@@ -39,6 +43,7 @@ export interface AgentRunClaim {
   title: string
   prompt: string | null
   spec: string | null
+  spec_type?: string | null
   repo: string
   retry_count: number
   fast_fail_count: number
@@ -66,15 +71,35 @@ export interface RunAgentSpawnDeps {
   worktreeBase: string
   /** Optional — called when agent process successfully spawns. */
   onSpawnSuccess?: () => void
-  /** Optional — called when spawnAgent throws. */
-  onSpawnFailure?: () => void
+  /**
+   * Optional — called when spawnAgent throws (spawn phase only, before the
+   * SDK stream starts). Receives the task ID and error reason so callers can
+   * scope circuit-breaker accounting to spawn-phase failures exclusively.
+   */
+  onSpawnFailure?: (taskId: string, reason: string) => void
+  /**
+   * Optional — called immediately after the agent is registered in activeAgents.
+   * Used by AgentManagerImpl to decrement _pendingSpawns once the agent has
+   * entered activeAgents so each running agent is counted exactly once.
+   */
+  onAgentRegistered?: () => void
+  /** Drain-tick correlation ID — threads from DrainLoopDeps to the spawn log. */
+  tickId?: string | undefined
+  /**
+   * Called with the in-flight Keychain refresh promise when an auth error
+   * triggers `handleOAuthRefresh`. The drain loop awaits this via
+   * `AgentManager.awaitOAuthRefresh` before the next spawn.
+   */
+  onOAuthRefreshStart?: (promise: Promise<unknown>) => void
 }
 
-/** Sprint task data access. */
+/** Sprint task data access and status transition service. */
 export interface RunAgentDataDeps {
   repo: IAgentTaskRepository
   unitOfWork: IUnitOfWork
   logger: Logger
+  metrics: MetricsCollector
+  taskStateService: TaskStateService
 }
 
 /** Terminal status notification. */
@@ -84,10 +109,33 @@ export interface RunAgentEventDeps {
 }
 
 /**
+ * Fast-fail sliding-window callbacks threaded into runAgent so the in-memory
+ * tracker in ErrorRegistry can be updated without coupling run-agent.ts
+ * directly to AgentManagerImpl.
+ *
+ * Both are optional so callers that don't need the sliding window (e.g. tests)
+ * don't have to supply them — the fallback is the legacy DB-count behaviour.
+ */
+export interface RunAgentFastFailDeps {
+  /**
+   * Record a fast-fail event in the sliding window for the given task.
+   * Called when a run qualifies as a fast-fail (exit within 30s, non-zero
+   * exit code) before the exhaustion check.
+   */
+  onFastFailRecorded?: (taskId: string, reason: string) => void
+  /**
+   * Returns true if the task has exhausted its fast-fail budget within the
+   * 30-second sliding window. When supplied, this supersedes the DB-backed
+   * `fast_fail_count` exhaustion check.
+   */
+  isFastFailExhausted?: (taskId: string) => boolean
+}
+
+/**
  * Full dependency bag for runAgent(). Composed via intersection so callers
  * that only consume a sub-set can depend on the narrower interface.
  */
-export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventDeps
+export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventDeps & RunAgentFastFailDeps
 
 // Re-export functions consumed by external callers and tests
 export {
@@ -212,8 +260,13 @@ function surfaceCleanupFailureToTaskNotes(
   const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktreePath}`
   const truncated =
     note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+  // fire-and-forget: best-effort note update for stale-worktree diagnostic
   try {
-    repo.updateTask(taskId, { notes: truncated })
+    void Promise.resolve(repo.updateTask(taskId, { notes: truncated })).catch((updateErr) => {
+      logger.error(
+        `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
+      )
+    })
   } catch (updateErr) {
     logger.error(
       `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
@@ -236,46 +289,67 @@ interface ResolveAgentExitContext {
   repo: IAgentTaskRepository
   unitOfWork: IUnitOfWork
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  taskStateService: TaskStateService
   logger: Logger
+  onFastFailRecorded?: (taskId: string, reason: string) => void
+  isFastFailExhausted?: (taskId: string) => boolean
 }
 
 async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
+  const legacyFastFailCount = ctx.task.fast_fail_count ?? 0
   const ffResult = classifyExit(
     ctx.agent.startedAt,
     ctx.exitedAt,
     ctx.exitCode ?? 1,
-    ctx.task.fast_fail_count ?? 0
+    legacyFastFailCount
   )
-  if (ffResult === 'fast-fail-exhausted') return handleFastFailExhausted(ctx)
-  if (ffResult === 'fast-fail-requeue') return handleFastFailRequeue(ctx)
-  return resolveNormalExit(ctx)
+  // classifyExit returns 'normal-exit' for exit code 0 or long-running runs.
+  // Only proceed with fast-fail logic when the run itself qualified as fast.
+  if (ffResult === 'normal-exit') return resolveNormalExit(ctx)
+
+  // Fast-fail candidate: record the event in the sliding window, then check
+  // whether the task has exceeded the budget within the 30-second window.
+  // Falls back to the DB-backed count when no sliding-window callbacks are
+  // injected (e.g. tests or callers that don't wire ErrorRegistry).
+  const reason = ctx.lastAgentOutput || `exit code ${ctx.exitCode ?? 1}`
+  ctx.onFastFailRecorded?.(ctx.task.id, reason)
+
+  const exhausted = ctx.isFastFailExhausted
+    ? ctx.isFastFailExhausted(ctx.task.id)
+    : ffResult === 'fast-fail-exhausted'
+
+  if (exhausted) return handleFastFailExhausted(ctx)
+  return handleFastFailRequeue(ctx)
 }
 
 async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<void> {
   flushAgentEventBatcher()
   try {
-    ctx.repo.updateTask(ctx.task.id, {
-      status: 'error',
-      failure_reason: 'spawn',
-      completed_at: nowIso(),
-      notes: FAST_FAIL_EXHAUSTED_NOTE,
-      claimed_by: null,
-      needs_review: true
+    await ctx.taskStateService.transition(ctx.task.id, 'error', {
+      fields: {
+        failure_reason: 'spawn',
+        completed_at: nowIso(),
+        notes: FAST_FAIL_EXHAUSTED_NOTE,
+        claimed_by: null,
+        needs_review: true
+      },
+      caller: 'run-agent:fast-fail-exhausted'
     })
   } catch (err) {
     ctx.logger.error(
-      `[agent-manager] Failed to update task ${ctx.task.id} after fast-fail exhausted: ${err}`
+      `[agent-manager] Failed to transition task ${ctx.task.id} after fast-fail exhausted: ${err}`
     )
   }
-  await ctx.onTaskTerminal(ctx.task.id, 'error')
 }
 
 async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void> {
   try {
-    ctx.repo.updateTask(ctx.task.id, {
-      status: 'queued',
-      fast_fail_count: (ctx.task.fast_fail_count ?? 0) + 1,
-      claimed_by: null
+    await ctx.taskStateService.transition(ctx.task.id, 'queued', {
+      fields: {
+        fast_fail_count: (ctx.task.fast_fail_count ?? 0) + 1,
+        claimed_by: null
+      },
+      caller: 'run-agent:fast-fail-requeue'
     })
   } catch (err) {
     ctx.logger.error(`[agent-manager] Failed to requeue fast-fail task ${ctx.task.id}: ${err}`)
@@ -288,7 +362,95 @@ async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void
   await ctx.onTaskTerminal(ctx.task.id, 'queued')
 }
 
+/**
+ * Checks that all files listed in the spec's `## Files to Change` section
+ * appear in the agent's commit diff.
+ *
+ * Returns `null` when no checklist is present (prompt-type tasks, missing
+ * section) — the caller should continue normally.
+ *
+ * Returns a non-empty array of missing paths when the commit diff is
+ * incomplete. The caller must re-queue the task with a note listing them.
+ */
+async function detectMissingSpecFiles(
+  task: AgentRunClaim,
+  worktreePath: string,
+  logger: Logger
+): Promise<string[] | null> {
+  if (task.spec_type === 'prompt' || !task.spec) return null
+
+  const requiredFiles = extractFilesToChange(task.spec)
+  if (requiredFiles.length === 0) return null
+
+  let diffOutput: string
+  try {
+    const env = buildAgentEnv()
+    const { stdout } = await execFileAsync('git', ['diff', '--name-only', 'main..HEAD'], {
+      cwd: worktreePath,
+      env
+    })
+    diffOutput = stdout
+  } catch (err) {
+    // If the diff command fails (e.g. no commits yet), let the existing
+    // commit-check guard handle it rather than re-queuing here.
+    logger.warn(`[run-agent] git diff failed during files-checklist check: ${err}`)
+    return null
+  }
+
+  const changedFiles = new Set(
+    diffOutput
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+  )
+
+  const missingFiles = requiredFiles.filter((required) => !changedFiles.has(required))
+  return missingFiles.length > 0 ? missingFiles : null
+}
+
+/**
+ * Re-queues the task with a note listing the spec files the agent missed.
+ * The retry agent will see the exact missing paths in its context.
+ */
+async function handleIncompleteFiles(
+  ctx: ResolveAgentExitContext,
+  missingFiles: string[]
+): Promise<void> {
+  const notes = `Files to Change checklist incomplete. Missing: ${missingFiles.join(', ')}`
+  ctx.logger.warn(`[run-agent] task ${ctx.task.id}: ${notes}`)
+
+  const result = await resolveFailure(
+    {
+      taskId: ctx.task.id,
+      retryCount: ctx.task.retry_count ?? 0,
+      notes,
+      repo: ctx.repo
+    },
+    ctx.logger
+  )
+  if (result.writeFailed) {
+    ctx.logger.warn(
+      `[run-agent] task ${ctx.task.id}: incomplete-files failure DB write failed — skipping terminal notification`
+    )
+    return
+  }
+  if (result.isTerminal) {
+    await ctx.onTaskTerminal(ctx.task.id, 'failed')
+    return
+  }
+  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, ctx.logger)
+}
+
 async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
+  const missingFiles = await detectMissingSpecFiles(
+    ctx.task,
+    ctx.worktree.worktreePath,
+    ctx.logger
+  )
+  if (missingFiles !== null) {
+    return handleIncompleteFiles(ctx, missingFiles)
+  }
+
   try {
     const ghRepo = getGhRepo(ctx.task.repo) ?? ctx.task.repo
     await resolveSuccess(
@@ -302,7 +464,8 @@ async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
         retryCount: ctx.task.retry_count ?? 0,
         repo: ctx.repo,
         unitOfWork: ctx.unitOfWork,
-        repoPath: ctx.repoPath
+        repoPath: ctx.repoPath,
+        taskStateService: ctx.taskStateService
       },
       ctx.logger
     )
@@ -318,7 +481,7 @@ async function handleResolveSuccessFailure(
   ctx.logger.warn(`[agent-manager] resolveSuccess failed for task ${ctx.task.id}: ${err}`)
   // Pass lastAgentOutput so the retry agent knows what failed and doesn't repeat blindly.
   const failureNotes = [ctx.lastAgentOutput, String(err)].filter(Boolean).join('\n---\n')
-  const isTerminal = resolveFailure(
+  const result = await resolveFailure(
     {
       taskId: ctx.task.id,
       retryCount: ctx.task.retry_count ?? 0,
@@ -327,7 +490,13 @@ async function handleResolveSuccessFailure(
     },
     ctx.logger
   )
-  if (isTerminal) {
+  if (result.writeFailed) {
+    ctx.logger.warn(
+      `[run-agent] task ${ctx.task.id}: resolve-success failure DB write failed — skipping terminal notification`
+    )
+    return
+  }
+  if (result.isTerminal) {
     await ctx.onTaskTerminal(ctx.task.id, 'failed')
     return
   }
@@ -339,16 +508,33 @@ async function handleResolveSuccessFailure(
 /**
  * Preserves the worktree if the task moved to 'review' status;
  * otherwise captures a partial diff and removes the worktree.
+ *
+ * Defaults to preserve when the DB read fails or returns null — deleting a
+ * worktree mid-review is irreversible, whereas a stale worktree is recoverable.
+ *
+ * Exported for unit testing.
  */
-async function cleanupOrPreserveWorktree(
+export async function cleanupOrPreserveWorktree(
   task: AgentRunClaim,
   worktree: { worktreePath: string; branch: string },
   repoPath: string,
   repo: IAgentTaskRepository,
   logger: Logger
 ): Promise<void> {
-  const currentTask = repo.getTask(task.id)
-  if (currentTask?.status !== 'review') {
+  let currentTask: ReturnType<typeof repo.getTask>
+  try {
+    currentTask = repo.getTask(task.id)
+  } catch (err) {
+    logger.warn(`[run-agent] could not read task status for ${task.id}, preserving worktree: ${err}`)
+    return
+  }
+
+  if (currentTask == null) {
+    logger.warn(`[run-agent] task ${task.id} not found in DB, preserving worktree`)
+    return
+  }
+
+  if (currentTask.status !== 'review') {
     await capturePartialDiff(task.id, worktree.worktreePath, repo, logger)
     await cleanupWorktreeWithRetry(task.id, worktree, repoPath, repo, logger)
   } else {
@@ -377,6 +563,7 @@ async function finalizeAgentRun(
   const durationMs = exitedAt - agent.startedAt
 
   emitCompletionEvent(agentRunId, agent, exitCode, exitedAt, durationMs)
+  deps.metrics.recordAgentDuration(durationMs)
 
   if (await handleSupersededRun(task, worktree, repoPath, agent, deps)) return
 
@@ -400,13 +587,23 @@ async function finalizeAgentRun(
     repo: deps.repo,
     unitOfWork: deps.unitOfWork,
     onTaskTerminal: deps.onTaskTerminal,
-    logger: deps.logger
+    taskStateService: deps.taskStateService,
+    logger: deps.logger,
+    ...(deps.onFastFailRecorded && { onFastFailRecorded: deps.onFastFailRecorded }),
+    ...(deps.isFastFailExhausted && { isFastFailExhausted: deps.isFastFailExhausted })
   })
 
+  const finalTask = deps.repo.getTask(task.id)
+  const finalStatus = finalTask?.status ?? 'unknown'
+
   await persistAndCleanupAfterRun(task, worktree, repoPath, agent, deps)
-  deps.logger.info(
-    `[agent-manager] Agent completed for task ${task.id} (exitCode=${exitCode ?? 'none'})`
-  )
+  deps.logger.event('agent.completed', {
+    taskId: task.id,
+    status: finalStatus,
+    durationMs,
+    model: agent.model || 'unknown',
+    costUsd: agent.costUsd ?? null
+  })
 }
 
 function emitCompletionEvent(
@@ -469,71 +666,61 @@ async function persistAndCleanupAfterRun(
   await cleanupOrPreserveWorktree(task, worktree, repoPath, deps.repo, deps.logger)
 }
 
-export async function runAgent(
-  task: AgentRunClaim,
-  worktree: { worktreePath: string; branch: string },
-  repoPath: string,
-  deps: RunAgentDeps
+/**
+ * Best-effort recovery for an unexpected (non-PipelineAbortError) exception
+ * escaping Phase 1 or Phase 2.
+ *
+ * Releases the claim and fires the terminal notification so the task is never
+ * left `active` with `claimed_by` set. Both steps are wrapped individually —
+ * a secondary DB failure is logged but never re-thrown.
+ */
+async function abortPhaseUnexpectedly(
+  taskId: string,
+  phase: string,
+  err: unknown,
+  deps: Pick<RunAgentDeps, 'repo' | 'onTaskTerminal' | 'logger' | 'taskStateService'>
 ): Promise<void> {
+  const message = err instanceof Error ? err.message : String(err)
+  deps.logger.error(`[run-agent] ${phase} aborted unexpectedly for ${taskId}: ${message}`)
+
+  try {
+    await deps.taskStateService.transition(taskId, 'error', {
+      fields: { claimed_by: null },
+      caller: `run-agent.${phase}.unexpected-abort`
+    })
+  } catch (updateErr) {
+    deps.logger.warn(`[run-agent] failed to release claim for ${taskId} after ${phase} abort: ${updateErr}`)
+  }
+}
+
+/** Result produced by the streaming phase — passed to the completion phase. */
+interface StreamResult {
+  exitCode: number | undefined
+  lastAgentOutput: string
+  streamError: Error | undefined
+}
+
+/** Context for the streaming phase — all data produced by setup and spawn. */
+interface StreamingContext {
+  task: AgentRunClaim
+  agent: ActiveAgent
+  agentRunId: string
+  turnTracker: TurnTracker
+  worktree: { worktreePath: string; branch: string }
+  deps: RunAgentDeps
+}
+
+/**
+ * Phase 3: Consume the SDK message stream, await playground file events,
+ * and log any stream error.
+ *
+ * Returns a `StreamResult` containing the exit code and the last agent output
+ * so the completion phase can classify and finalize the run.
+ */
+async function runStreamingPhase(ctx: StreamingContext): Promise<StreamResult> {
+  const { task, agent, agentRunId, turnTracker, worktree, deps } = ctx
   const { logger } = deps
-  const effectiveModel = task.model || deps.defaultModel
 
-  // Phase 1: Validate and prepare prompt
-  let prompt: string
-  try {
-    await validateTaskForRun(task, worktree, repoPath, deps)
-    prompt = await assembleRunContext(task, worktree, deps)
-  } catch {
-    return // Early exit — validation failed and cleaned up
-  }
-
-  // Pre-spawn tripwire — logs main/worktree porcelain status and fails fast
-  // if the main repo is dirty. This is the boundary where an agent-edit leak
-  // would first become visible.
-  try {
-    await assertPreSpawnRepoState(task.id, repoPath, worktree.worktreePath, logger)
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err)
-    logger.error(`[run-agent] ${errMsg}`)
-    try {
-      deps.repo.updateTask(task.id, {
-        status: 'error',
-        completed_at: nowIso(),
-        notes: errMsg,
-        claimed_by: null
-      })
-    } catch (updateErr) {
-      logger.error(
-        `[run-agent] Failed to persist pre-spawn failure for task ${task.id}: ${updateErr}`
-      )
-    }
-    await deps
-      .onTaskTerminal(task.id, 'error')
-      .catch((terminalErr) =>
-        logger.warn(`[run-agent] onTaskTerminal failed for ${task.id}: ${terminalErr}`)
-      )
-    return
-  }
-
-  // Phase 2: Spawn and wire agent
-  let agent: ActiveAgent, agentRunId: string, turnTracker: TurnTracker
-  try {
-    const spawnResult = await spawnAndWireAgent(
-      task,
-      prompt,
-      worktree,
-      repoPath,
-      effectiveModel,
-      deps
-    )
-    agent = spawnResult.agent
-    agentRunId = spawnResult.agentRunId
-    turnTracker = spawnResult.turnTracker
-  } catch {
-    return // Early exit — spawn failed and cleaned up
-  }
-
-  // Phase 3: Consume messages
   const { exitCode, lastAgentOutput, streamError, pendingPlaygroundPaths } = await consumeMessages(
     agent.handle,
     agent,
@@ -541,11 +728,12 @@ export async function runAgent(
     agentRunId,
     turnTracker,
     logger,
-    MAX_TURNS
+    computeMaxTurns(task.spec ?? task.prompt ?? task.title ?? ''),
+    deps.onOAuthRefreshStart
   )
 
-  // Await playground events before worktree cleanup.
-  // Previously fire-and-forget — worktree could be deleted before file I/O completed.
+  // Await playground events before worktree cleanup so the worktree isn't
+  // removed before file I/O from playground writes completes.
   for (const playgroundWrite of pendingPlaygroundPaths) {
     await tryEmitPlaygroundEvent({
       taskId: task.id,
@@ -567,7 +755,74 @@ export async function runAgent(
     // exitCode will be undefined; finalizeAgentRun's classifyExit treats undefined as exit code 1
   }
 
-  // Phase 4: Finalize — classify exit, resolve, cleanup
+  return { exitCode, lastAgentOutput, streamError }
+}
+
+export async function runAgent(
+  task: AgentRunClaim,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  deps: RunAgentDeps
+): Promise<void> {
+  const { logger } = deps
+  const effectiveModel = task.model || deps.defaultModel
+
+  // Phase 1: Validate and prepare prompt
+  let prompt: string
+  try {
+    await validateTaskForRun(task, worktree, repoPath, deps)
+    prompt = await assembleRunContext(task, worktree, deps)
+  } catch (err) {
+    if (err instanceof PipelineAbortError) return // Helper already recovered — no double cleanup
+    await abortPhaseUnexpectedly(task.id, 'phase 1', err, deps)
+    return
+  }
+
+  // Pre-spawn tripwire — logs main/worktree porcelain status and fails fast
+  // if the main repo is dirty. This is the boundary where an agent-edit leak
+  // would first become visible.
+  try {
+    await assertPreSpawnRepoState(task.id, repoPath, worktree.worktreePath, logger)
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err)
+    logger.error(`[run-agent] ${errMsg}`)
+    await deps.taskStateService
+      .transition(task.id, 'error', {
+        fields: { completed_at: nowIso(), notes: errMsg, claimed_by: null },
+        caller: 'run-agent:pre-spawn-failure'
+      })
+      .catch((terminalErr) =>
+        logger.warn(`[run-agent] pre-spawn transition failed for ${task.id}: ${terminalErr}`)
+      )
+    return
+  }
+
+  // Phase 2: Spawn and wire agent
+  let agent: ActiveAgent, agentRunId: string, turnTracker: TurnTracker
+  try {
+    const spawnResult = await spawnAndWireAgent(
+      task,
+      prompt,
+      worktree,
+      repoPath,
+      effectiveModel,
+      deps
+    )
+    agent = spawnResult.agent
+    agentRunId = spawnResult.agentRunId
+    turnTracker = spawnResult.turnTracker
+  } catch (err) {
+    if (err instanceof PipelineAbortError) return // Helper already recovered — no double cleanup
+    await abortPhaseUnexpectedly(task.id, 'phase 2', err, deps)
+    return
+  }
+
+  const streamingCtx: StreamingContext = { task, agent, agentRunId, turnTracker, worktree, deps }
+
+  // Phase 3: Consume the SDK message stream and await playground events
+  const streamResult = await runStreamingPhase(streamingCtx)
+
+  // Phase 4: Classify exit, resolve status, clean up
   await finalizeAgentRun(
     task,
     worktree,
@@ -575,8 +830,8 @@ export async function runAgent(
     agent,
     agentRunId,
     turnTracker,
-    exitCode,
-    lastAgentOutput,
+    streamResult.exitCode,
+    streamResult.lastAgentOutput,
     deps
   )
 }

@@ -45,13 +45,31 @@ export function createReviewRepository(db: Database.Database): IReviewRepository
       const row = getStmt.get(taskId, commitSha) as Row | undefined
       if (!row) return null
       try {
-        const findings = JSON.parse(row.findings_json)
+        const parsed: unknown = JSON.parse(row.findings_json)
+        const isValidFindings =
+          typeof parsed === 'object' &&
+          parsed !== null &&
+          Array.isArray((parsed as Record<string, unknown>).perFile)
+        if (!isValidFindings) {
+          log.error(
+            `findings_json for task=${taskId} sha=${commitSha} has unexpected shape; returning empty findings`
+          )
+          return {
+            qualityScore: row.quality_score,
+            issuesCount: row.issues_count,
+            filesCount: row.files_count,
+            openingMessage: row.opening_message,
+            findings: { perFile: [] },
+            model: row.model,
+            createdAt: row.created_at
+          }
+        }
         return {
           qualityScore: row.quality_score,
           issuesCount: row.issues_count,
           filesCount: row.files_count,
           openingMessage: row.opening_message,
-          findings,
+          findings: parsed as import('../../shared/types').ReviewFindings,
           model: row.model,
           createdAt: row.created_at
         }

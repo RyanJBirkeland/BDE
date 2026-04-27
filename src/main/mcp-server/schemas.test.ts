@@ -4,7 +4,16 @@ import {
   TaskWriteFieldsSchema,
   TaskListSchema,
   TaskHistorySchema,
-  EpicWriteFieldsSchema
+  TaskUpdateSchema,
+  TaskIdSchema,
+  TaskCancelSchema,
+  EpicWriteFieldsSchema,
+  EpicListSchema,
+  EpicIdSchema,
+  EpicUpdateSchema,
+  EpicAddTaskSchema,
+  EpicRemoveTaskSchema,
+  EpicSetDependenciesSchema
 } from './schemas'
 import { TASK_STATUSES } from '../../shared/task-state-machine'
 
@@ -362,5 +371,127 @@ describe('.describe() contract text', () => {
 
   it('pins EpicWriteFieldsSchema.accent_color describe string', () => {
     expect(EpicWriteFieldsSchema.shape.accent_color.description).toContain('hex')
+  })
+})
+
+/**
+ * Unknown-key rejection. Zod's default strips silently — a caller who mistypes
+ * a field name, or flattens a nested patch, gets a success response back with
+ * their input quietly dropped. These tests pin that EVERY tool-facing schema
+ * rejects unknowns, both at the top level and inside nested objects like
+ * `patch`. The bug this prevents: `tasks.update({id, depends_on: [...]})` —
+ * caller forgot the `patch` wrapper — silently succeeded as a no-op.
+ */
+describe('strict schemas — reject unknown top-level fields', () => {
+  function expectUnknownKeyError(result: { success: boolean; error?: unknown }, key: string): void {
+    expect(result.success).toBe(false)
+    const message = JSON.stringify(result.error)
+    expect(message).toContain(key)
+  }
+
+  it('TaskWriteFieldsSchema rejects unknown top-level field', () => {
+    const result = TaskWriteFieldsSchema.safeParse({
+      title: 't',
+      repo: 'bde',
+      bogus_field: 'x'
+    })
+    expectUnknownKeyError(result, 'bogus_field')
+  })
+
+  it('TaskUpdateSchema rejects flat depends_on (missing patch wrapper)', () => {
+    const result = TaskUpdateSchema.safeParse({
+      id: 't1',
+      depends_on: [{ id: 'dep-1', type: 'hard' }]
+    })
+    expectUnknownKeyError(result, 'depends_on')
+  })
+
+  it('TaskUpdateSchema rejects unknown field inside patch', () => {
+    const result = TaskUpdateSchema.safeParse({
+      id: 't1',
+      patch: { priority: 5, bogus_field: 1 }
+    })
+    expectUnknownKeyError(result, 'bogus_field')
+  })
+
+  it('TaskListSchema rejects unknown top-level field', () => {
+    const result = TaskListSchema.safeParse({ status: 'queued', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('TaskIdSchema rejects unknown top-level field', () => {
+    const result = TaskIdSchema.safeParse({ id: 't1', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('TaskCancelSchema rejects unknown top-level field', () => {
+    const result = TaskCancelSchema.safeParse({ id: 't1', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('TaskHistorySchema rejects unknown top-level field', () => {
+    const result = TaskHistorySchema.safeParse({ id: 't1', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicWriteFieldsSchema rejects unknown top-level field', () => {
+    const result = EpicWriteFieldsSchema.safeParse({ name: 'e', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicListSchema rejects unknown top-level field', () => {
+    const result = EpicListSchema.safeParse({ status: 'draft', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicIdSchema rejects unknown top-level field', () => {
+    const result = EpicIdSchema.safeParse({ id: 'e1', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicUpdateSchema rejects unknown top-level field', () => {
+    const result = EpicUpdateSchema.safeParse({ id: 'e1', patch: {}, bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicUpdateSchema rejects unknown field inside patch', () => {
+    const result = EpicUpdateSchema.safeParse({ id: 'e1', patch: { name: 'e', bogus_field: 1 } })
+    expectUnknownKeyError(result, 'bogus_field')
+  })
+
+  it('EpicAddTaskSchema rejects unknown top-level field', () => {
+    const result = EpicAddTaskSchema.safeParse({ epicId: 'e1', taskId: 't1', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicRemoveTaskSchema rejects unknown top-level field', () => {
+    const result = EpicRemoveTaskSchema.safeParse({ taskId: 't1', bogus: 1 })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicSetDependenciesSchema rejects unknown top-level field', () => {
+    const result = EpicSetDependenciesSchema.safeParse({
+      id: 'e1',
+      dependencies: [],
+      bogus: 1
+    })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('TaskDependency rejects unknown field inside a dependency entry', () => {
+    const result = TaskWriteFieldsSchema.safeParse({
+      title: 't',
+      repo: 'bde',
+      depends_on: [{ id: 'dep-1', type: 'hard', bogus: 1 }]
+    })
+    expectUnknownKeyError(result, 'bogus')
+  })
+
+  it('EpicDependency rejects unknown field inside a dependency entry', () => {
+    const result = EpicSetDependenciesSchema.safeParse({
+      id: 'e1',
+      dependencies: [{ id: 'ep', condition: 'on_success', bogus: 1 }]
+    })
+    expectUnknownKeyError(result, 'bogus')
   })
 })

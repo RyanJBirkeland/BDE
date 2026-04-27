@@ -21,6 +21,7 @@ export type MappedTask = {
   title: string
   prompt: string | null
   spec: string | null
+  spec_type: string | null
   repo: string
   retry_count: number
   fast_fail_count: number
@@ -61,6 +62,7 @@ export function mapQueuedTask(task: SprintTask, logger: Logger): MappedTask | nu
     title: task.title,
     prompt: task.prompt ?? null,
     spec: task.spec ?? null,
+    spec_type: task.spec_type ?? null,
     repo: task.repo,
     retry_count: task.retry_count ?? 0,
     fast_fail_count: task.fast_fail_count ?? 0,

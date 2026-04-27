@@ -72,4 +72,21 @@ describe('getSettingJson / setSettingJson', () => {
     setSetting(db, 'bad.json', 'not json {{{')
     expect(getSettingJson(db, 'bad.json')).toBeNull()
   })
+
+  it('valid value passes validator and is returned', () => {
+    const data = [{ name: 'bde', localPath: '/code/bde' }]
+    setSettingJson(db, 'repos', data)
+    function isRepoArray(v: unknown): v is typeof data {
+      return Array.isArray(v) && v.every((r) => typeof (r as Record<string, unknown>).name === 'string')
+    }
+    expect(getSettingJson(db, 'repos', isRepoArray)).toEqual(data)
+  })
+
+  it('invalid value logs warning and returns null when validator fails', () => {
+    setSettingJson(db, 'repos', [{ notARepo: true }])
+    function isRepoArray(v: unknown): v is { name: string }[] {
+      return Array.isArray(v) && v.every((r) => typeof (r as Record<string, unknown>).name === 'string')
+    }
+    expect(getSettingJson(db, 'repos', isRepoArray)).toBeNull()
+  })
 })

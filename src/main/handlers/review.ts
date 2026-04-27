@@ -9,13 +9,15 @@
  * call the service, and return results.
  */
 import { safeHandle } from '../ipc-utils'
+import type { IpcArgsParser } from '../ipc-utils'
+import type { IpcChannelMap } from '../../shared/ipc-channels'
 import { isValidTaskId } from '../lib/validation'
-import { createLogger } from '../logger'
+
 import { getSettingJson } from '../settings'
 import { buildAgentEnv } from '../env-utils'
-import { execFileAsync } from '../lib/async-utils'
 import { checkAutoReview } from '../services/auto-review-service'
 import { getTask } from '../services/sprint-service'
+import type { TaskStateService } from '../services/task-state-service'
 import type { AutoReviewRule } from '../../shared/types'
 import * as reviewOrchestration from '../services/review-orchestration-service'
 import {
@@ -23,26 +25,55 @@ import {
   getReviewCommits,
   getReviewFileDiff
 } from '../services/review-query-service'
+import {
+  validateWorktreePath,
+  validateFilePath,
+  validateGitRef
+} from '../lib/review-paths'
 import { shipBatch } from '../services/review-ship-batch'
 import type { TaskStatus } from '../../shared/task-state-machine'
 
-const logger = createLogger('review-handlers')
+export function parseReviewWorktreeArgs(
+  args: unknown[]
+): IpcChannelMap['review:getDiff']['args'] {
+  const [payload] = args
+  if (payload === null || typeof payload !== 'object') {
+    throw new Error('review payload must be an object')
+  }
+  const p = payload as Record<string, unknown>
+  if (typeof p.worktreePath !== 'string') {
+    throw new Error('payload.worktreePath must be a string')
+  }
+  validateWorktreePath(p.worktreePath)
+  return [p as IpcChannelMap['review:getDiff']['args'][0]]
+}
 
-interface RepoConfig {
-  name: string
-  localPath: string
-  githubOwner?: string
-  githubRepo?: string
+export function parseReviewFileDiffArgs(
+  args: unknown[]
+): IpcChannelMap['review:getFileDiff']['args'] {
+  const [payload] = args
+  if (payload === null || typeof payload !== 'object') {
+    throw new Error('review:getFileDiff payload must be an object')
+  }
+  const p = payload as Record<string, unknown>
+  if (typeof p.worktreePath !== 'string') {
+    throw new Error('payload.worktreePath must be a string')
+  }
+  if (typeof p.filePath !== 'string') {
+    throw new Error('payload.filePath must be a string')
+  }
+  if (typeof p.base !== 'string') {
+    throw new Error('payload.base must be a string')
+  }
+  validateWorktreePath(p.worktreePath)
+  validateFilePath(p.filePath)
+  validateGitRef(p.base)
+  return [p as IpcChannelMap['review:getFileDiff']['args'][0]]
 }
 
 export interface ReviewHandlersDeps {
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
-}
-
-function getRepoConfig(repoName: string): RepoConfig | null {
-  const repos = getSettingJson<RepoConfig[]>('repos')
-  const target = repoName.toLowerCase()
-  return repos?.find((r) => r.name.toLowerCase() === target) ?? null
+  taskStateService: TaskStateService
 }
 
 export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
@@ -52,65 +83,22 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
   // Query Handlers (delegate to review-query-service)
   // ============================================================================
 
-  safeHandle('review:getDiff', async (_e, payload) => {
-    return getReviewDiff(payload.worktreePath, payload.base, { env })
-  })
+  safeHandle('review:getDiff', async (_e, payload) => getReviewDiff(payload.worktreePath, payload.base, { env }),
+    parseReviewWorktreeArgs as IpcArgsParser<'review:getDiff'>)
 
-  safeHandle('review:getCommits', async (_e, payload) => {
-    return getReviewCommits(payload.worktreePath, payload.base, { env })
-  })
+  safeHandle('review:getCommits', async (_e, payload) => getReviewCommits(payload.worktreePath, payload.base, { env }),
+    parseReviewWorktreeArgs as IpcArgsParser<'review:getCommits'>)
 
-  safeHandle('review:getFileDiff', async (_e, payload) => {
-    return getReviewFileDiff(payload.worktreePath, payload.filePath, payload.base, { env })
-  })
+  safeHandle('review:getFileDiff', async (_e, payload) =>
+      getReviewFileDiff(payload.worktreePath, payload.filePath, payload.base, { env }),
+    parseReviewFileDiffArgs
+  )
 
   // review:checkFreshness — check if task's rebase is current with origin/main
   safeHandle('review:checkFreshness', async (_e, payload) => {
     const { taskId } = payload
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
-
-    const task = getTask(taskId)
-    if (!task) return { status: 'unknown' as const }
-    if (!task.rebase_base_sha) return { status: 'unknown' as const }
-
-    try {
-      const repoConfig = getRepoConfig(task.repo)
-      if (!repoConfig) return { status: 'unknown' as const }
-
-      await execFileAsync('git', ['fetch', 'origin', 'main'], {
-        cwd: repoConfig.localPath,
-        env
-      })
-
-      const { stdout: currentShaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
-        cwd: repoConfig.localPath,
-        env
-      })
-      const currentSha = currentShaOut.trim()
-
-      if (currentSha === task.rebase_base_sha) {
-        return { status: 'fresh' as const, commitsBehind: 0 }
-      }
-
-      // Count commits between task's base and current origin/main
-      const { stdout: countOut } = await execFileAsync(
-        'git',
-        ['rev-list', '--count', `${task.rebase_base_sha}..origin/main`],
-        { cwd: repoConfig.localPath, env }
-      )
-      const commitsBehind = parseInt(countOut.trim(), 10)
-
-      return { status: 'stale' as const, commitsBehind }
-    } catch (err: unknown) {
-      logger.warn(`[review:checkFreshness] Error for task ${taskId}: ${err}`)
-      return { status: 'unknown' as const }
-    }
-  })
-
-  // review:generateSummary — AI-generated review summary (stub, not implemented)
-  safeHandle('review:generateSummary', async (_e, _payload) => {
-    logger.warn('review:generateSummary called but not implemented — returning empty summary')
-    return { summary: '' }
+    return reviewOrchestration.checkReviewFreshness(taskId, env)
   })
 
   // review:checkAutoReview — check if task qualifies for auto-review
@@ -210,5 +198,11 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
       taskId: payload.taskId,
       env
     })
+  })
+
+  safeHandle('review:markShippedOutsideBde', async (_e, payload) => {
+    const { taskId } = payload
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
+    return reviewOrchestration.markShippedOutsideBde(taskId, { taskStateService: deps.taskStateService })
   })
 }

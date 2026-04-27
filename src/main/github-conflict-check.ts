@@ -40,7 +40,14 @@ export async function checkConflictFiles(input: ConflictFilesInput): Promise<Con
   // gracefully per its existing contract).
   const filesData = await fetchAllGitHubPages<{ filename: string }>(
     `https://api.github.com/repos/${input.owner}/${input.repo}/pulls/${input.prNumber}/files?per_page=100`,
-    { token, timeoutMs: 10_000 }
+    {
+      token,
+      timeoutMs: 10_000,
+      validate: (item): item is { filename: string } =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as Record<string, unknown>).filename === 'string'
+    }
   )
 
   return {

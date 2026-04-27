@@ -183,7 +183,7 @@ async function stageWithArtifactCleanup(
  */
 export async function autoCommitIfDirty(
   worktreePath: string,
-  title: string,
+  commitMessage: string,
   logger: Logger
 ): Promise<void> {
   const env = buildAgentEnv()
@@ -201,15 +201,10 @@ export async function autoCommitIfDirty(
     return
   }
 
-  const sanitizedTitle = sanitizeForGit(title)
-  await execFileAsync(
-    'git',
-    ['commit', '-m', `${sanitizedTitle}\n\nAutomated commit by BDE agent manager`],
-    {
-      cwd: worktreePath,
-      env
-    }
-  )
+  await execFileAsync('git', ['commit', '-m', commitMessage], {
+    cwd: worktreePath,
+    env
+  })
 }
 
 export interface SquashMergeOpts {

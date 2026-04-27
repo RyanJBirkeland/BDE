@@ -23,12 +23,14 @@ import {
   buildTaskStatusMap,
   drainQueuedTasks,
   runDrain,
+  DRAIN_TICK_TIMEOUT_MS,
   type DrainLoopDeps
 } from '../drain-loop'
 import { checkOAuthToken } from '../oauth-checker'
 import { refreshDependencyIndex } from '../dependency-refresher'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import { getConfiguredRepos } from '../../paths'
 
 const baseConfig: AgentManagerConfig = {
@@ -37,17 +39,17 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeRepo(): IAgentTaskRepository {
   return {
-    updateTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
     getTask: vi.fn(),
-    claimTask: vi.fn(),
+    claimTask: vi.fn().mockResolvedValue(null),
     getQueuedTasks: vi.fn().mockReturnValue([]),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
-    releaseTask: vi.fn(),
+    releaseTask: vi.fn().mockResolvedValue(null),
     listActiveAgentRuns: vi.fn().mockReturnValue([]),
     getQueueStats: vi.fn().mockReturnValue({
       queued: 0,
@@ -63,7 +65,7 @@ function makeRepo(): IAgentTaskRepository {
 }
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
 }
 
 function makeMetrics() {
@@ -82,11 +84,20 @@ function makeDepIndex(): DependencyIndex {
   } as unknown as DependencyIndex
 }
 
+function makeTaskStateService(repo: IAgentTaskRepository) {
+  return {
+    transition: vi.fn(async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+      repo.updateTask(taskId, { status, ...(ctx?.fields ?? {}) })
+    })
+  } as unknown as import('../../services/task-state-service').TaskStateService
+}
+
 function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
   const concurrency = makeConcurrencyState(2)
+  const repo = (overrides.repo as IAgentTaskRepository | undefined) ?? makeRepo()
   return {
     config: baseConfig,
-    repo: makeRepo(),
+    repo,
     depIndex: makeDepIndex(),
     metrics: makeMetrics() as any,
     logger: makeLogger(),
@@ -103,8 +114,10 @@ function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
     processQueuedTask: vi.fn().mockResolvedValue(undefined),
     drainFailureCounts: new Map<string, number>(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
+    taskStateService: makeTaskStateService(repo),
     emitDrainPaused: vi.fn(),
     drainPausedUntil: undefined,
+    recentlyProcessedTaskIds: new Set<string>(),
     ...overrides
   }
 }
@@ -272,6 +285,53 @@ describe('runDrain', () => {
     await runDrain(deps)
     expect(deps.metrics.increment).not.toHaveBeenCalled()
     expect(deps.processQueuedTask).not.toHaveBeenCalled()
+  })
+})
+
+describe('drain-loop: tick deadline', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(checkOAuthToken).mockResolvedValue(true)
+    vi.mocked(refreshDependencyIndex).mockReturnValue(new Map())
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('skips tick and logs drain.tick.timeout when getQueuedTasks hangs past the deadline', async () => {
+    vi.useFakeTimers()
+    const repo = makeRepo()
+    // getQueuedTasks never resolves — simulates a hung DB read
+    vi.mocked(repo.getQueuedTasks).mockImplementation(() => {
+      return new Promise<never>(() => {}) as unknown as ReturnType<
+        IAgentTaskRepository['getQueuedTasks']
+      >
+    })
+    const processQueuedTask = vi.fn()
+    const deps = makeDeps({ repo, processQueuedTask })
+
+    const drainPromise = drainQueuedTasks(2, new Map(), deps)
+    // Advance past the deadline
+    await vi.advanceTimersByTimeAsync(DRAIN_TICK_TIMEOUT_MS + 100)
+    await drainPromise
+
+    // Tick was skipped — no tasks processed
+    expect(processQueuedTask).not.toHaveBeenCalled()
+    // drain.tick.timeout event was logged
+    expect(deps.logger.event).toHaveBeenCalledWith('drain.tick.timeout', expect.objectContaining({ tickId: expect.anything() }))
+  })
+
+  it('processes tasks normally when getQueuedTasks returns within the deadline', async () => {
+    const repo = makeRepo()
+    vi.mocked(repo.getQueuedTasks).mockReturnValue([{ id: 'task-fast' }] as any)
+    const processQueuedTask = vi.fn().mockResolvedValue(undefined)
+    const deps = makeDeps({ repo, processQueuedTask })
+
+    await drainQueuedTasks(2, new Map(), deps)
+
+    expect(processQueuedTask).toHaveBeenCalledTimes(1)
+    expect(deps.logger.event).not.toHaveBeenCalledWith('drain.tick.timeout', expect.anything())
   })
 })
 

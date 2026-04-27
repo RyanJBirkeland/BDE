@@ -137,12 +137,12 @@ export function getOAuthToken(): string | null {
       // Use lstatSync (not statSync) to detect symlinks before following them.
       const lstats = lstatSync(tokenPath)
       if (lstats.isSymbolicLink()) {
-        console.warn('[env-utils] OAuth token file is a symlink — rejecting for security')
+        logger.warn('[env-utils] OAuth token file is a symlink — rejecting for security')
         _cachedOAuthToken = null
         return _cachedOAuthToken
       }
       if (lstats.size > MAX_TOKEN_BYTES) {
-        console.warn('[env-utils] OAuth token file exceeds maximum size — rejecting')
+        logger.warn('[env-utils] OAuth token file exceeds maximum size — rejecting')
         _cachedOAuthToken = null
         return _cachedOAuthToken
       }
@@ -217,6 +217,12 @@ interface RefreshResponse {
   expires_in: number
 }
 
+function isRefreshResponse(data: unknown): data is RefreshResponse {
+  if (typeof data !== 'object' || data === null) return false
+  const d = data as Record<string, unknown>
+  return typeof d.access_token === 'string' && typeof d.refresh_token === 'string'
+}
+
 /**
  * Parse the keychain `expiresAt` field into ms-since-epoch.
  * Handles both seconds-since-epoch and ms-since-epoch storage formats —
@@ -254,11 +260,14 @@ async function postOAuthRefresh(refreshToken: string): Promise<RefreshResponse> 
   if (!response.ok) {
     throw new Error(`OAuth refresh failed: HTTP ${response.status}`)
   }
-  const data = (await response.json()) as RefreshResponse
-  if (!data.access_token || !data.refresh_token) {
-    throw new Error('OAuth refresh response missing access_token or refresh_token')
+  const body: unknown = await response.json()
+  if (!isRefreshResponse(body)) {
+    const keys = typeof body === 'object' && body !== null ? Object.keys(body).join(', ') : String(body)
+    throw new Error(
+      `OAuth refresh response has unexpected shape (got keys: ${keys}); expected access_token and refresh_token as strings`
+    )
   }
-  return data
+  return body
 }
 
 /**

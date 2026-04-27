@@ -1,4 +1,5 @@
 import { resolveDependents } from '../lib/resolve-dependents'
+import type { TaskStateService } from './task-state-service'
 import {
   createDependencyIndex,
   type DependencyIndex,
@@ -7,10 +8,11 @@ import {
 import type { EpicDepsReader } from './epic-dependency-service'
 import type { SprintTask, TaskDependency, TaskGroup } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { broadcast } from '../broadcast'
 import { getErrorMessage } from '../../shared/errors'
 import { refreshDependencyIndex, type DepsFingerprint } from '../agent-manager/dependency-refresher'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import type { Logger } from '../logger'
+import type { TerminalDispatcher } from './task-state-service'
 
 type TaskSlice = Pick<SprintTask, 'id' | 'status' | 'notes' | 'title' | 'group_id'> & {
   depends_on: TaskDependency[] | null
@@ -30,12 +32,9 @@ export interface TaskTerminalServiceDeps {
   epicDepsReader: EpicDepsReader
   getSetting?: (key: string) => string | null
   runInTransaction?: (fn: () => void) => void
-  logger: {
-    info: (msg: string) => void
-    warn: (msg: string) => void
-    error: (msg: string) => void
-    debug: (msg: string) => void
-  }
+  taskStateService?: TaskStateService
+  broadcast?: (channel: string, payload?: Record<string, unknown>) => void
+  logger: Logger
 }
 
 export interface TaskTerminalService {
@@ -103,13 +102,18 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
               deps.epicDepsReader,
               deps.getGroup,
               deps.listGroupTasks,
-              deps.runInTransaction
+              deps.runInTransaction,
+              undefined,
+              deps.taskStateService
             )
           } catch (err) {
             failedTaskIds.push(id)
             deps.logger.error(`[task-terminal-service] resolveDependents failed for ${id}: ${err}`)
           }
         }
+        deps.logger.info(
+          `[task-terminal] resolved ${totalCount - failedTaskIds.length} dependents in ${totalCount} tasks`
+        )
         if (failedTaskIds.length > 0) {
           deps.logger.error(
             `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
@@ -117,7 +121,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
         }
       } catch (err) {
         deps.logger.error(`[task-terminal-service] refreshTaskDepIndex failed: ${err}`)
-        broadcast('task-terminal:resolution-error', { error: getErrorMessage(err) })
+        deps.broadcast?.('task-terminal:resolution-error', { error: getErrorMessage(err) })
       }
     })
   }
@@ -128,4 +132,17 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
   }
 
   return { onStatusTerminal }
+}
+
+/**
+ * Wraps `TaskTerminalService.onStatusTerminal` as a `TerminalDispatcher` so
+ * the PR-poller / manual terminal path plugs into `TaskStateService` via the
+ * port rather than being called directly.
+ */
+export function createPollerTerminalDispatcher(service: TaskTerminalService): TerminalDispatcher {
+  return {
+    dispatch(taskId: string, status: TaskStatus): void {
+      service.onStatusTerminal(taskId, status)
+    }
+  }
 }

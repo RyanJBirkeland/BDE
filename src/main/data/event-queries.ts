@@ -3,6 +3,7 @@
  * All functions take `db: Database.Database` as first parameter for testability.
  */
 import type Database from 'better-sqlite3'
+import { MS_PER_DAY } from '../../shared/time'
 
 export function appendEvent(
   db: Database.Database,
@@ -23,7 +24,7 @@ export function getEventHistory(db: Database.Database, agentId: string): { paylo
 }
 
 export function pruneOldEvents(db: Database.Database, retentionDays: number): void {
-  const cutoff = Date.now() - retentionDays * 24 * 60 * 60 * 1000
+  const cutoff = Date.now() - retentionDays * MS_PER_DAY
   db.prepare('DELETE FROM agent_events WHERE timestamp < ?').run(cutoff)
 }
 

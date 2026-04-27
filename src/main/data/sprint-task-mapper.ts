@@ -1,4 +1,4 @@
-import type { SprintTask } from '../../shared/types'
+import type { SprintTask, RevisionFeedbackEntry } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { sanitizeTags } from '../../shared/sanitize-tags'
 import { TASK_STATUSES } from '../../shared/task-state-machine'
@@ -59,7 +59,49 @@ function validateTitle(value: unknown): string {
   return value
 }
 
-function parseRevisionFeedback(value: unknown): unknown {
+const VALID_PR_STATUSES: ReadonlySet<string> = new Set([
+  'open',
+  'merged',
+  'closed',
+  'draft',
+  'branch_only'
+])
+const VALID_MERGEABLE_STATES: ReadonlySet<string> = new Set([
+  'clean',
+  'dirty',
+  'blocked',
+  'behind',
+  'unstable',
+  'unknown'
+])
+const VALID_FAILURE_REASONS: ReadonlySet<string> = new Set([
+  'auth',
+  'timeout',
+  'test_failure',
+  'compilation',
+  'spawn',
+  'unknown'
+])
+
+function optStr(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function optInt(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.trunc(value) : null
+}
+
+function optNum(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function nullableUnion<T extends string>(value: unknown, validSet: ReadonlySet<string>): T | null {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'string' && validSet.has(value)) return value as T
+  return null
+}
+
+function parseRevisionFeedback(value: unknown): RevisionFeedbackEntry[] | null {
   let parsed: unknown = value
   if (typeof parsed === 'string') {
     try {
@@ -79,18 +121,57 @@ function parseRevisionFeedback(value: unknown): unknown {
  */
 export function mapRowToTask(row: Record<string, unknown>): SprintTask {
   return {
-    ...row,
     id: validateId(row.id),
     title: validateTitle(row.title),
     repo: validateRepo(row.repo),
     status: validateStatus(row.status),
     priority: validatePriority(row.priority),
+    prompt: optStr(row.prompt),
+    notes: optStr(row.notes),
+    spec: optStr(row.spec),
+    retry_count: optInt(row.retry_count) ?? 0,
+    fast_fail_count: optInt(row.fast_fail_count) ?? 0,
+    agent_run_id: optStr(row.agent_run_id),
+    pr_number: optInt(row.pr_number),
+    pr_status: nullableUnion<NonNullable<SprintTask['pr_status']>>(row.pr_status, VALID_PR_STATUSES),
+    pr_mergeable_state: nullableUnion<NonNullable<SprintTask['pr_mergeable_state']>>(
+      row.pr_mergeable_state,
+      VALID_MERGEABLE_STATES
+    ),
+    pr_url: optStr(row.pr_url),
+    claimed_by: optStr(row.claimed_by),
+    started_at: optStr(row.started_at),
+    completed_at: optStr(row.completed_at),
+    template_name: optStr(row.template_name),
     depends_on: sanitizeDependsOn(row.depends_on),
-    tags: sanitizeTags(row.tags),
     playground_enabled: !!row.playground_enabled,
     needs_review: !!row.needs_review,
-    revision_feedback: parseRevisionFeedback(row.revision_feedback)
-  } as SprintTask
+    max_runtime_ms: optInt(row.max_runtime_ms),
+    duration_ms: optInt(row.duration_ms),
+    spec_type: optStr(row.spec_type),
+    worktree_path: optStr(row.worktree_path),
+    session_id: optStr(row.session_id),
+    next_eligible_at: optStr(row.next_eligible_at),
+    model: optStr(row.model),
+    retry_context: optStr(row.retry_context),
+    failure_reason: nullableUnion<NonNullable<SprintTask['failure_reason']>>(
+      row.failure_reason,
+      VALID_FAILURE_REASONS
+    ),
+    max_cost_usd: optNum(row.max_cost_usd),
+    partial_diff: optStr(row.partial_diff),
+    tags: sanitizeTags(row.tags),
+    group_id: optStr(row.group_id),
+    sprint_id: optStr(row.sprint_id),
+    cross_repo_contract: optStr(row.cross_repo_contract),
+    rebase_base_sha: optStr(row.rebase_base_sha),
+    rebased_at: optStr(row.rebased_at),
+    revision_feedback: parseRevisionFeedback(row.revision_feedback),
+    review_diff_snapshot: optStr(row.review_diff_snapshot),
+    orphan_recovery_count: optInt(row.orphan_recovery_count) ?? 0,
+    updated_at: optStr(row.updated_at) ?? '',
+    created_at: optStr(row.created_at) ?? ''
+  }
 }
 
 /**

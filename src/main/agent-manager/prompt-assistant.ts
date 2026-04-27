@@ -19,6 +19,7 @@ import {
   buildUpstreamContextSection,
   buildBranchAppendix,
   truncateSpec,
+  escapeXmlContent,
   buildCrossRepoContractSection
 } from './prompt-sections'
 import { PROMPT_TRUNCATION } from './prompt-constants'
@@ -75,7 +76,7 @@ function renderTaskSection(taskContent: string | undefined): string {
   if (!taskContent) return ''
   return (
     '\n\n## Task\n\n<user_task>\n' +
-    truncateSpec(taskContent, PROMPT_TRUNCATION.ASSISTANT_TASK_CHARS) +
+    escapeXmlContent(truncateSpec(taskContent, PROMPT_TRUNCATION.ASSISTANT_TASK_CHARS)) +
     '\n</user_task>'
   )
 }

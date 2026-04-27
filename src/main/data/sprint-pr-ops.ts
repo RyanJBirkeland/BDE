@@ -1,7 +1,14 @@
 import type Database from 'better-sqlite3'
-import type { SprintTask } from '../../shared/types'
+import type { SprintTaskPR } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { validateTransition } from '../../shared/task-state-machine'
+import { validateTransition, TASK_STATUSES } from '../../shared/task-state-machine'
+
+const VALID_TASK_STATUSES: ReadonlySet<string> = new Set(TASK_STATUSES)
+
+function isTaskStatus(value: unknown): value is TaskStatus {
+  return typeof value === 'string' && VALID_TASK_STATUSES.has(value)
+}
+import { withRetryAsync } from './sqlite-retry'
 import { getDb } from '../db'
 import { recordTaskChangesBulk } from './task-changes'
 import { nowIso } from '../../shared/time'
@@ -21,21 +28,33 @@ function transitionTasksByPrNumber(
   targetStatus: TaskStatus,
   changedBy: string
 ): string[] {
+  // Narrow projection: the function only needs `id` (for the audit row + log
+  // message) and `status` (for the state-machine guard); `completed_at` is
+  // included so the bulk audit comparison sees the prior value before the
+  // UPDATE overwrites it. The wide column list pulled hundreds of KB of
+  // `review_diff_snapshot` per active PR on every poller cycle.
   const affected = db
     .prepare(
-      `SELECT ${SPRINT_TASK_COLUMNS}
+      `SELECT id, status, completed_at
        FROM sprint_tasks WHERE pr_number = ? AND status = ?`
     )
     .all(prNumber, 'active') as Array<Record<string, unknown>>
 
   // Filter to only tasks whose transition is valid per the state machine.
-  // Skipped tasks are logged as warnings rather than silently dropped.
+  // Rows with an unrecognised status are logged and skipped rather than
+  // passed to validateTransition, which expects a narrowed TaskStatus.
   const eligible = affected.filter((row) => {
-    const currentStatus = row.status as TaskStatus
+    if (!isTaskStatus(row.status)) {
+      getSprintQueriesLogger().warn(
+        `[sprint-pr-ops] transitionTasksByPrNumber: skipping task ${String(row.id)}: unrecognised status "${String(row.status)}"`
+      )
+      return false
+    }
+    const currentStatus = row.status
     const validation = validateTransition(currentStatus, targetStatus)
     if (!validation.ok) {
       getSprintQueriesLogger().warn(
-        `[sprint-pr-ops] transitionTasksByPrNumber: skipping task ${row.id as string}: ${validation.reason}`
+        `[sprint-pr-ops] transitionTasksByPrNumber: skipping task ${String(row.id)}: ${validation.reason}`
       )
     }
     return validation.ok
@@ -77,11 +96,12 @@ function updatePrStatusBulk(
   db: Database.Database,
   statusFilter?: string
 ): void {
-  // Build query based on whether statusFilter is provided
+  // Narrow projection: the audit comparison only needs `id` and the prior
+  // `pr_status` value, since the bulk patch is `{ pr_status: newStatus }`.
   const selectQuery = statusFilter
-    ? `SELECT ${SPRINT_TASK_COLUMNS}
+    ? `SELECT id, pr_status
        FROM sprint_tasks WHERE pr_number = ? AND status = ? AND pr_status = 'open'`
-    : `SELECT ${SPRINT_TASK_COLUMNS}
+    : `SELECT id, pr_status
        FROM sprint_tasks WHERE pr_number = ? AND pr_status = 'open'`
 
   const updateQuery = statusFilter
@@ -113,37 +133,49 @@ function updatePrStatusBulk(
   }
 }
 
-export function markTaskDoneByPrNumber(prNumber: number, db?: Database.Database): string[] {
+export async function markTaskDoneByPrNumber(
+  prNumber: number,
+  db?: Database.Database
+): Promise<string[]> {
   const conn = db ?? getDb()
-  return withDataLayerError(
-    () =>
+  try {
+    return await withRetryAsync(() =>
       conn.transaction(() => {
         const affectedIds = transitionTasksByPrNumber(conn, prNumber, 'done', 'pr-poller')
         updatePrStatusBulk(prNumber, 'merged', 'pr-poller', conn, 'done')
         return affectedIds
-      })(),
-    `markTaskDoneByPrNumber(pr=${prNumber})`,
-    [],
-    getSprintQueriesLogger()
-  )
+      })()
+    )
+  } catch (err) {
+    getSprintQueriesLogger().warn(
+      `[sprint-pr-ops] markTaskDoneByPrNumber(pr=${prNumber}) failed: ${err instanceof Error ? err.message : String(err)}`
+    )
+    return []
+  }
 }
 
-export function markTaskCancelledByPrNumber(prNumber: number, db?: Database.Database): string[] {
+export async function markTaskCancelledByPrNumber(
+  prNumber: number,
+  db?: Database.Database
+): Promise<string[]> {
   const conn = db ?? getDb()
-  return withDataLayerError(
-    () =>
+  try {
+    return await withRetryAsync(() =>
       conn.transaction(() => {
         const affectedIds = transitionTasksByPrNumber(conn, prNumber, 'cancelled', 'pr-poller')
         updatePrStatusBulk(prNumber, 'closed', 'pr-poller', conn)
         return affectedIds
-      })(),
-    `markTaskCancelledByPrNumber(pr=${prNumber})`,
-    [],
-    getSprintQueriesLogger()
-  )
+      })()
+    )
+  } catch (err) {
+    getSprintQueriesLogger().warn(
+      `[sprint-pr-ops] markTaskCancelledByPrNumber(pr=${prNumber}) failed: ${err instanceof Error ? err.message : String(err)}`
+    )
+    return []
+  }
 }
 
-export function listTasksWithOpenPrs(db?: Database.Database): SprintTask[] {
+export function listTasksWithOpenPrs(db?: Database.Database): SprintTaskPR[] {
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {
@@ -161,19 +193,22 @@ export function listTasksWithOpenPrs(db?: Database.Database): SprintTask[] {
   )
 }
 
-export function updateTaskMergeableState(
+export async function updateTaskMergeableState(
   prNumber: number,
   mergeableState: string | null,
   db?: Database.Database
-): void {
+): Promise<void> {
   if (!mergeableState) return
   const conn = db ?? getDb()
-  withDataLayerError(
-    () => {
+  try {
+    await withRetryAsync(() =>
       conn.transaction(() => {
         // Record pr_mergeable_state changes in the audit trail.
-        // Read all affected tasks first so we can capture the old value per task.
-        const sql = `SELECT ${SPRINT_TASK_COLUMNS} FROM sprint_tasks WHERE pr_number = ?`
+        // Narrow projection: the audit comparison only needs `id` and the
+        // prior `pr_mergeable_state` value. The wide column list previously
+        // dragged the heavy `review_diff_snapshot` blob through the PR
+        // poller's 60s loop for every task with the matching pr_number.
+        const sql = `SELECT id, pr_mergeable_state FROM sprint_tasks WHERE pr_number = ?`
         const affected = conn.prepare(sql).all(prNumber) as Array<Record<string, unknown>>
 
         recordTaskChangesBulk(
@@ -190,9 +225,10 @@ export function updateTaskMergeableState(
           .prepare('UPDATE sprint_tasks SET pr_mergeable_state = ? WHERE pr_number = ?')
           .run(mergeableState, prNumber)
       })()
-    },
-    `updateTaskMergeableState(pr=${prNumber})`,
-    undefined,
-    getSprintQueriesLogger()
-  )
+    )
+  } catch (err) {
+    getSprintQueriesLogger().warn(
+      `[sprint-pr-ops] updateTaskMergeableState(pr=${prNumber}) failed: ${err instanceof Error ? err.message : String(err)}`
+    )
+  }
 }

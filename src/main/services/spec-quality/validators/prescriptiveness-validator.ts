@@ -1,6 +1,9 @@
 import { buildAgentEnv, getClaudeCliPath } from '../../../env-utils'
 import type { IAsyncSpecValidator } from '../../../../shared/spec-quality/interfaces'
 import type { ParsedSpec, SpecIssue } from '../../../../shared/spec-quality/types'
+import { createLogger } from '../../../logger'
+
+const log = createLogger('prescriptiveness-validator')
 
 const PROMPT_TEMPLATE = `You are reviewing implementation steps for a coding task. Your job is to determine if any step requires the agent to make a design decision, choose between multiple approaches, or reason about architecture — rather than execute a concrete, specific instruction.
 
@@ -93,7 +96,7 @@ export class PrescriptivenessValidator implements IAsyncSpecValidator {
       }
       return []
     } catch (err) {
-      console.warn('[PrescriptivenessValidator] AI check failed:', err)
+      log.warn(`[PrescriptivenessValidator] AI check failed: ${err}`)
       // Conservative fallback: surface a warning so the user knows the check didn't run,
       // rather than silently passing a spec that may contain exploration language.
       return [

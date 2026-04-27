@@ -35,6 +35,12 @@ vi.mock('../../../stores/sprintTasks', () => ({
   useSprintTasks: vi.fn((sel: (s: Record<string, unknown>) => unknown) => sel(sprintState))
 }))
 
+vi.mock('../../../stores/panelLayout', () => ({
+  usePanelLayoutStore: vi.fn((sel: (s: Record<string, unknown>) => unknown) =>
+    sel({ setView: vi.fn() })
+  )
+}))
+
 import { ReviewQueue } from '../ReviewQueue'
 import { useCodeReviewStore } from '../../../stores/codeReview'
 
@@ -56,9 +62,10 @@ describe('ReviewQueue', () => {
     render(<ReviewQueue />)
     expect(
       screen.getByText(
-        'No tasks awaiting review. Complete agent runs will appear here for inspection.'
+        'No tasks awaiting review. Tasks appear here when agents complete their work.'
       )
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Go to Pipeline' })).toBeInTheDocument()
     expect(screen.getByText('0')).toBeInTheDocument()
   })
 

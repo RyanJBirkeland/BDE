@@ -15,6 +15,9 @@ vi.mock('../dependency-service', async (importOriginal) => {
   }
 })
 
+// Shared mock logger used across checkTaskDependencies and checkEpicDependencies tests
+const mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
+
 describe('formatBlockedNote', () => {
   it('formats blocked-by list with prefix', () => {
     expect(formatBlockedNote(['task-1', 'task-2'])).toBe('[auto-block] Blocked by: task-1, task-2')
@@ -68,8 +71,6 @@ describe('buildBlockedNotes', () => {
 })
 
 describe('checkTaskDependencies', () => {
-  const mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() }
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -122,7 +123,7 @@ describe('checkTaskDependencies', () => {
     expect(result).toEqual({ shouldBlock: true, blockedBy: ['task-2'] })
   })
 
-  it('returns shouldBlock: false when listTasks fails (graceful degradation)', async () => {
+  it('returns shouldBlock: true with dep-check-failed reason when listTasks throws (fail-closed)', async () => {
     const { checkTaskDependencies } = await import('../dependency-service')
 
     const mockListTasks = vi.fn().mockImplementation(() => {
@@ -136,7 +137,33 @@ describe('checkTaskDependencies', () => {
       mockListTasks
     )
 
-    expect(result).toEqual({ shouldBlock: false, blockedBy: [] })
+    expect(result.shouldBlock).toBe(true)
+    expect(result.reason).toBeDefined()
+    expect(result.reason).toMatch(/^dep-check-failed: /)
+    expect(result.reason).toContain('DB error')
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('checkTaskDependencies failed for task-1')
+    )
+    expect(mockLogger.event).toHaveBeenCalledWith('dependency.check.error', expect.objectContaining({ taskId: 'task-1' }))
+  })
+
+  it('returns shouldBlock: true with dep-check-failed reason when listTasks throws', async () => {
+    const { checkTaskDependencies } = await import('../dependency-service')
+    const mockListTasks = vi.fn().mockImplementation(() => {
+      throw new Error('index corrupt')
+    })
+
+    const result = checkTaskDependencies(
+      'task-1',
+      [{ id: 'task-2', type: 'hard' }],
+      mockLogger,
+      mockListTasks
+    )
+
+    expect(result.shouldBlock).toBe(true)
+    expect(result.reason).toBeDefined()
+    expect(result.reason).toMatch(/^dep-check-failed: /)
+    expect(result.reason).toContain('index corrupt')
     expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('checkTaskDependencies failed for task-1')
     )
@@ -144,12 +171,6 @@ describe('checkTaskDependencies', () => {
 })
 
 describe('computeBlockState', () => {
-  const mockLogger = {
-    warn: vi.fn(),
-    info: vi.fn(),
-    error: vi.fn()
-  }
-
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -271,5 +292,85 @@ describe('computeBlockState', () => {
     const result = computeBlockState(task, ctx)
     expect(result.shouldBlock).toBe(true)
     expect(result.blockedBy).toEqual(['task-2', 'epic:epic-1'])
+  })
+
+  it('surfaces reason in result when checkTaskDependencies returns a fail-closed result', () => {
+    // listTasks throws so checkTaskDependencies enters its catch and returns shouldBlock: true + reason
+    const task = { id: 'task-1', depends_on: [{ id: 'task-2', type: 'hard' }], group_id: null }
+    const ctx = {
+      logger: mockLogger,
+      listTasks: () => { throw new Error('listTasks exploded') },
+      listGroups: () => []
+    }
+
+    const result = computeBlockState(task, ctx)
+
+    expect(result.shouldBlock).toBe(true)
+    expect(result.reason).toBeDefined()
+    expect(result.reason).toMatch(/^dep-check-failed: /)
+    expect(result.reason).toContain('listTasks exploded')
+  })
+})
+
+describe('checkEpicDependencies', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns shouldBlock: false with no reason when epicDeps is empty', async () => {
+    const { checkEpicDependencies } = await import('../dependency-service')
+
+    const result = checkEpicDependencies('epic-1', [], mockLogger, () => [], () => [])
+
+    expect(result.shouldBlock).toBe(false)
+    expect(result.blockedBy).toEqual([])
+    expect(result.reason).toBeUndefined()
+    expect(mockLogger.event).not.toHaveBeenCalled()
+  })
+
+  it('returns shouldBlock: true with dep-check-failed reason when listGroups throws', async () => {
+    const { checkEpicDependencies } = await import('../dependency-service')
+
+    const listGroups = vi.fn().mockImplementation(() => { throw new Error('groups DB down') })
+
+    const result = checkEpicDependencies(
+      'epic-2',
+      [{ id: 'epic-1', condition: 'on_success' }],
+      mockLogger,
+      () => [],
+      listGroups
+    )
+
+    expect(result.shouldBlock).toBe(true)
+    expect(result.reason).toBeDefined()
+    expect(result.reason).toMatch(/^dep-check-failed: /)
+    expect(result.reason).toContain('groups DB down')
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('checkEpicDependencies failed for epic epic-2')
+    )
+    expect(mockLogger.event).toHaveBeenCalledWith('dependency.check.error', expect.objectContaining({ groupId: 'epic-2' }))
+  })
+
+  it('returns shouldBlock: true with dep-check-failed reason when listTasks throws', async () => {
+    const { checkEpicDependencies } = await import('../dependency-service')
+
+    const listTasks = vi.fn().mockImplementation(() => { throw new Error('tasks DB down') })
+    const listGroups = vi.fn().mockReturnValue([
+      { id: 'epic-1', status: 'in-pipeline', depends_on: null }
+    ] as any)
+
+    const result = checkEpicDependencies(
+      'epic-2',
+      [{ id: 'epic-1', condition: 'on_success' }],
+      mockLogger,
+      listTasks,
+      listGroups
+    )
+
+    expect(result.shouldBlock).toBe(true)
+    expect(result.reason).toBeDefined()
+    expect(result.reason).toMatch(/^dep-check-failed: /)
+    expect(result.reason).toContain('tasks DB down')
+    expect(mockLogger.event).toHaveBeenCalledWith('dependency.check.error', expect.objectContaining({ groupId: 'epic-2' }))
   })
 })

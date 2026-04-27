@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { ActiveAgent } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
 vi.mock('../watchdog', () => ({
@@ -14,13 +15,24 @@ vi.mock('../../../shared/time', () => ({
 vi.mock('../../agent-event-mapper', () => ({
   flushAgentEventBatcher: vi.fn()
 }))
+vi.mock('../../data/sqlite-retry', () => ({
+  withRetryAsync: vi.fn(async (fn: () => unknown) => fn())
+}))
 
-import { killActiveAgent, runWatchdog, type WatchdogLoopDeps } from '../watchdog-loop'
+import {
+  killActiveAgent,
+  runWatchdog,
+  killAgentWithEscalation,
+  forceKillAgent,
+  FORCE_KILL_DELAY_MS,
+  type WatchdogLoopDeps
+} from '../watchdog-loop'
 import { checkAgent } from '../watchdog'
 import { handleWatchdogVerdict } from '../watchdog-handler'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
+import { DEFAULT_CONFIG } from '../types'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
@@ -28,7 +40,7 @@ const baseConfig: AgentManagerConfig = {
   maxRuntimeMs: 3_600_000,
   idleTimeoutMs: 900_000,
   pollIntervalMs: 30_000,
-  defaultModel: 'claude-sonnet-4-5'
+  defaultModel: DEFAULT_CONFIG.defaultModel
 }
 
 function makeAgent(taskId: string): ActiveAgent {
@@ -36,7 +48,7 @@ function makeAgent(taskId: string): ActiveAgent {
     taskId,
     agentRunId: `run-${taskId}`,
     handle: { abort: vi.fn(), messages: (async function* () {})(), sessionId: 's', steer: vi.fn() },
-    model: 'claude-sonnet-4-5',
+    model: DEFAULT_CONFIG.defaultModel,
     startedAt: 0,
     lastOutputAt: 0,
     rateLimitCount: 0,
@@ -52,18 +64,18 @@ function makeAgent(taskId: string): ActiveAgent {
 
 function makeRepo(): IAgentTaskRepository {
   return {
-    updateTask: vi.fn(),
+    updateTask: vi.fn().mockResolvedValue(null),
     getTask: vi.fn(),
-    claimTask: vi.fn(),
+    claimTask: vi.fn().mockResolvedValue(null),
     getQueuedTasks: vi.fn().mockReturnValue([]),
     getTasksWithDependencies: vi.fn().mockReturnValue([]),
-    releaseTask: vi.fn(),
+    releaseTask: vi.fn().mockResolvedValue(null),
     listActiveAgentRuns: vi.fn().mockReturnValue([])
   } as unknown as IAgentTaskRepository
 }
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
 }
 
 function makeMetrics() {
@@ -89,6 +101,89 @@ function makeDeps(overrides: Partial<WatchdogLoopDeps> = {}): WatchdogLoopDeps {
     ...overrides
   }
 }
+
+describe('forceKillAgent', () => {
+  it('logs the soft-kill-timeout escalation line and prefers handle.forceKill when available', () => {
+    const agent = makeAgent('task-fk')
+    const forceKill = vi.fn()
+    agent.handle.forceKill = forceKill
+    const logger = makeLogger()
+
+    forceKillAgent(agent, logger)
+
+    expect(forceKill).toHaveBeenCalledTimes(1)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('forceKill applied after soft kill timeout')
+    )
+  })
+
+  it('falls back to subprocess SIGKILL when handle.forceKill is not implemented', () => {
+    const agent = makeAgent('task-fk2')
+    const procKill = vi.fn()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(agent.handle as any).process = { kill: procKill }
+    const logger = makeLogger()
+
+    forceKillAgent(agent, logger)
+
+    expect(procKill).toHaveBeenCalledWith('SIGKILL')
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('forceKill applied after soft kill timeout')
+    )
+  })
+
+  it('falls back to abort() when neither forceKill nor a subprocess is exposed', () => {
+    const agent = makeAgent('task-fk3')
+    const logger = makeLogger()
+
+    forceKillAgent(agent, logger)
+
+    expect(agent.handle.abort).toHaveBeenCalled()
+  })
+})
+
+describe('killAgentWithEscalation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('soft-kills immediately and escalates to forceKill after the grace window', () => {
+    const agent = makeAgent('task-esc')
+    const forceKill = vi.fn()
+    agent.handle.forceKill = forceKill
+    const activeAgents = new Map([[agent.taskId, agent]])
+    const logger = makeLogger()
+
+    killAgentWithEscalation(agent, activeAgents, logger)
+
+    expect(agent.handle.abort).toHaveBeenCalledTimes(1)
+    expect(forceKill).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(FORCE_KILL_DELAY_MS)
+
+    expect(forceKill).toHaveBeenCalledTimes(1)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('forceKill applied after soft kill timeout')
+    )
+  })
+
+  it('skips the forced kill if the agent has already been removed from the active map', () => {
+    const agent = makeAgent('task-esc-gone')
+    const forceKill = vi.fn()
+    agent.handle.forceKill = forceKill
+    const activeAgents = new Map<string, ActiveAgent>()
+    const logger = makeLogger()
+
+    killAgentWithEscalation(agent, activeAgents, logger)
+
+    vi.advanceTimersByTime(FORCE_KILL_DELAY_MS)
+
+    expect(forceKill).not.toHaveBeenCalled()
+  })
+})
 
 describe('killActiveAgent', () => {
   it('aborts the agent handle and removes it from the map', () => {
@@ -309,5 +404,163 @@ describe('runWatchdog', () => {
 
     await expect(runWatchdog(deps)).resolves.not.toThrow()
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task'))
+  })
+
+  it('review status — cleanup skipped when task is in review', async () => {
+    const agent = makeAgent('task-review')
+    const concurrency = makeConcurrencyState(2)
+    const repo = makeRepo()
+    vi.mocked(repo.getTask).mockReturnValue({ status: 'review' } as never)
+    const cleanupAgentWorktree = vi.fn().mockResolvedValue(undefined)
+    const deps = makeDeps({
+      activeAgents: new Map([['task-review', agent]]),
+      repo,
+      getConcurrency: () => concurrency,
+      cleanupAgentWorktree
+    })
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
+      concurrency,
+      shouldNotifyTerminal: false,
+      terminalStatus: undefined
+    })
+
+    await runWatchdog(deps)
+
+    expect(cleanupAgentWorktree).not.toHaveBeenCalled()
+  })
+
+  it('active status — cleanup invoked with the agent when task is not in review', async () => {
+    const agent = makeAgent('task-active')
+    const concurrency = makeConcurrencyState(2)
+    const repo = makeRepo()
+    vi.mocked(repo.getTask).mockReturnValue({ status: 'active' } as never)
+    const cleanupAgentWorktree = vi.fn().mockResolvedValue(undefined)
+    const deps = makeDeps({
+      activeAgents: new Map([['task-active', agent]]),
+      repo,
+      getConcurrency: () => concurrency,
+      cleanupAgentWorktree
+    })
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
+      concurrency,
+      shouldNotifyTerminal: false,
+      terminalStatus: undefined
+    })
+
+    await runWatchdog(deps)
+
+    expect(cleanupAgentWorktree).toHaveBeenCalledWith(agent)
+  })
+
+  it('skips terminal notify and logs debug when orphan recovery wins the race (EP-5 T-29)', async () => {
+    const agent = makeAgent('task-orphan')
+    const concurrency = makeConcurrencyState(2)
+    const activeAgents = new Map<string, ActiveAgent>([['task-orphan', agent]])
+    const deps = makeDeps({ activeAgents, getConcurrency: () => concurrency })
+
+    // Simulate orphan recovery replacing the agent between the collection loop
+    // and the kill loop: checkAgent fires during collection (agent is still
+    // present with agentRunId 'run-task-orphan'), then during the kill loop
+    // the map entry has been replaced with a newer run.
+    vi.mocked(checkAgent).mockImplementation(() => {
+      // Replace the map entry with a newer run, as orphan recovery would do
+      activeAgents.set('task-orphan', { ...agent, agentRunId: 'run-newer' })
+      return 'idle'
+    })
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      concurrency,
+      shouldNotifyTerminal: true,
+      terminalStatus: 'error'
+    })
+
+    await runWatchdog(deps)
+
+    // Terminal notify must NOT be called — orphan recovery already owns this slot
+    expect(deps.onTaskTerminal).not.toHaveBeenCalled()
+    expect(deps.logger.debug).toHaveBeenCalledWith(
+      expect.stringContaining('already removed — skipping terminal notify')
+    )
+  })
+})
+
+// ── T-38: cleanupWorktreeIfNotInReview review-status guard ──────────────────
+
+describe('cleanupWorktreeIfNotInReview (T-38)', () => {
+  function makeVerdictReturn(concurrency = makeConcurrencyState(2)) {
+    return {
+      taskUpdate: { status: 'error' as const, completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      concurrency,
+      shouldNotifyTerminal: true,
+      terminalStatus: 'error' as const
+    }
+  }
+
+  it('skips cleanup when task is in review status', async () => {
+    const agent = makeAgent('task-review')
+    const cleanup = vi.fn().mockResolvedValue(undefined)
+    const repo = makeRepo()
+    vi.mocked(repo.getTask).mockReturnValue({ id: 'task-review', status: 'review' } as any)
+
+    const concurrency = makeConcurrencyState(2)
+    const deps = makeDeps({ repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
+    deps.activeAgents.set('task-review', agent)
+
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
+
+    await runWatchdog(deps)
+
+    // cleanup must not be called when task.status === 'review'
+    expect(cleanup).not.toHaveBeenCalled()
+  })
+
+  it('calls cleanup when task is NOT in review status after watchdog kill', async () => {
+    const agent = makeAgent('task-failed')
+    const cleanup = vi.fn().mockResolvedValue(undefined)
+    const repo = makeRepo()
+    vi.mocked(repo.getTask).mockReturnValue({ id: 'task-failed', status: 'failed' } as any)
+
+    const concurrency = makeConcurrencyState(2)
+    const deps = makeDeps({ repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
+    deps.activeAgents.set('task-failed', agent)
+
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
+
+    await runWatchdog(deps)
+
+    expect(cleanup).toHaveBeenCalledWith(agent)
+  })
+
+  it('does not throw when cleanupAgentWorktree dep is not injected', async () => {
+    const agent = makeAgent('task-no-cleanup')
+    const repo = makeRepo()
+    vi.mocked(repo.getTask).mockReturnValue({ id: 'task-no-cleanup', status: 'error' } as any)
+
+    const concurrency = makeConcurrencyState(2)
+    const deps = makeDeps({ repo, getConcurrency: () => concurrency }) // no cleanupAgentWorktree
+    deps.activeAgents.set('task-no-cleanup', agent)
+
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
+
+    await expect(runWatchdog(deps)).resolves.not.toThrow()
   })
 })
