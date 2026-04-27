@@ -24,7 +24,7 @@ function fakeTask() {
     id: 'task-1',
     title: 'Fix auth',
     spec: '# Spec',
-    repo: 'bde',
+    repo: 'fleet',
     branch: 'feat/auth',
     status: 'review' as const,
     worktree_path: '/tmp/wt'
@@ -264,7 +264,7 @@ describe('handleChatStream', () => {
   it('skips CLAUDE.md loading and enforces a budget cap', async () => {
     // Reviewer chat must not inherit the SDK's default settingSources
     // (['user','project','local']) — the Option-A debranding policy is that
-    // BDE agents receive conventions via the composed prompt, not by
+    // FLEET agents receive conventions via the composed prompt, not by
     // reading CLAUDE.md at spawn. An unbounded user-triggered chat session
     // also needs a hard spend ceiling so a prompt-injected tool-use loop
     // cannot accumulate cost indefinitely.

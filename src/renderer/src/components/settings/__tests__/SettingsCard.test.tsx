@@ -60,7 +60,7 @@ describe('SettingsCard', () => {
       </SettingsCard>
     )
     const card = container.querySelector('.stg-card')
-    expect(card).toHaveClass('bde-card--pad-none')
+    expect(card).toHaveClass('fleet-card--pad-none')
   })
 
   it('applies pad-md class when noPadding is false', () => {
@@ -70,6 +70,6 @@ describe('SettingsCard', () => {
       </SettingsCard>
     )
     const card = container.querySelector('.stg-card')
-    expect(card).toHaveClass('bde-card--pad-md')
+    expect(card).toHaveClass('fleet-card--pad-md')
   })
 })

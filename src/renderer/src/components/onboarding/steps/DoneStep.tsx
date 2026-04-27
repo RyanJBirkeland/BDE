@@ -21,7 +21,7 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
 
   const handleCreateFirstTask = (): void => {
     localStorage.setItem(
-      'bde:pending-first-task',
+      'fleet:pending-first-task',
       JSON.stringify({
         title: SAMPLE_FIRST_TASK.title,
         spec: SAMPLE_FIRST_TASK.spec,
@@ -82,26 +82,26 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--bde-space-1)',
-            marginTop: 'var(--bde-space-3)'
+            gap: 'var(--fleet-space-1)',
+            marginTop: 'var(--fleet-space-3)'
           }}
         >
           <label
             htmlFor="onboarding-done-repo-select"
-            style={{ fontSize: 'var(--bde-size-xs)', color: 'var(--bde-text-muted)' }}
+            style={{ fontSize: 'var(--fleet-size-xs)', color: 'var(--fleet-text-muted)' }}
           >
             Start in repository
           </label>
           <select
-            className="bde-select"
+            className="fleet-select"
             id="onboarding-done-repo-select"
             value={selectedRepoLabel}
             onChange={(e) => setRepoOverride(e.target.value)}
             style={{
               padding: '6px 10px',
               borderRadius: '4px',
-              border: '1px solid var(--bde-border)',
-              background: 'var(--bde-surface)'
+              border: '1px solid var(--fleet-border)',
+              background: 'var(--fleet-surface)'
             }}
           >
             {repoOptions.map((opt) => (
@@ -133,7 +133,7 @@ export function DoneStep({ onBack, onComplete, isFirst }: StepProps): React.JSX.
         ) : (
           <>
             <Button variant="ghost" onClick={onComplete}>
-              Explore BDE
+              Explore FLEET
             </Button>
             <Button variant="primary" onClick={handleOpenRepoSettings}>
               <SettingsIcon size={16} />

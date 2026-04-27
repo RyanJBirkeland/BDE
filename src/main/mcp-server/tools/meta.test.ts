@@ -41,10 +41,10 @@ describe('meta.repos', () => {
   it('returns the RepoConfig[] provided by getRepos', async () => {
     const repos: RepoConfig[] = [
       {
-        name: 'bde',
-        localPath: '/tmp/bde',
+        name: 'fleet',
+        localPath: '/tmp/fleet',
         githubOwner: 'example',
-        githubRepo: 'bde',
+        githubRepo: 'fleet',
         color: '#00ff88'
       }
     ]

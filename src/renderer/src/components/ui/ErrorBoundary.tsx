@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.props.name ? `${this.props.name} crashed` : 'Something went wrong'}
             </div>
             <div className="error-boundary__message">{this.state.error.message}</div>
-            <button className="bde-btn bde-btn--primary bde-btn--sm" onClick={this.handleReset}>
+            <button className="fleet-btn fleet-btn--primary fleet-btn--sm" onClick={this.handleReset}>
               Try Again
             </button>
           </div>

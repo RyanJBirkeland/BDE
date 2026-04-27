@@ -36,8 +36,8 @@ export function useAgentViewLifecycle({
 
   useEffect(() => {
     const handler = (): void => setShowLaunchpad(true)
-    window.addEventListener('bde:open-spawn-modal', handler)
-    return () => window.removeEventListener('bde:open-spawn-modal', handler)
+    window.addEventListener('fleet:open-spawn-modal', handler)
+    return () => window.removeEventListener('fleet:open-spawn-modal', handler)
   }, [setShowLaunchpad])
 
   useEffect(() => {

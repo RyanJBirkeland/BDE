@@ -136,14 +136,14 @@ Do first thing.
 
 Do second thing.
 `
-      const result = await importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'fleet', db })
 
       expect(result.epic).toBeDefined()
       expect(result.epic.name).toBe('Test: Import Integration')
       expect(result.tasks).toHaveLength(2)
       expect(result.tasks[0].title).toBe('Task 1: First')
       expect(result.tasks[0].group_id).toBe(result.epic.id)
-      expect(result.tasks[0].repo).toBe('bde')
+      expect(result.tasks[0].repo).toBe('fleet')
       expect(result.tasks[1].title).toBe('Task 2: Second')
       expect(result.tasks[1].group_id).toBe(result.epic.id)
 
@@ -166,7 +166,7 @@ Do second thing.
 
 Content.
 `
-      const result = await importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'fleet', db })
       expect(result.epic.status).toBe('draft')
     })
 
@@ -179,7 +179,7 @@ Content.
 
 Do it.
 `
-      const result = await importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'fleet', db })
       expect(result.tasks[0].status).toBe('backlog')
     })
 
@@ -188,7 +188,7 @@ Do it.
 
 Just some notes.
 `
-      const result = await importPlanFile(markdown, { repo: 'bde', db })
+      const result = await importPlanFile(markdown, { repo: 'fleet', db })
       expect(result.epic.name).toBe('Test: Empty Plan')
       expect(result.tasks).toHaveLength(0)
     })

@@ -153,7 +153,7 @@ vi.mock('../../components/ide/UnsavedDialog', () => ({
 vi.mock('../../components/ide/IDEEmptyState', () => ({
   IDEEmptyState: ({ onOpenFolder }: { onOpenFolder: () => void }) => (
     <div data-testid="ide-empty-state">
-      <h1>BDE IDE</h1>
+      <h1>FLEET IDE</h1>
       <p>Open a folder to start editing</p>
       <button onClick={onOpenFolder}>Open Folder</button>
     </div>
@@ -258,7 +258,7 @@ describe('IDEView', () => {
   describe('Empty states', () => {
     it('shows empty state when no rootPath is set', () => {
       render(<IDEView />)
-      expect(screen.getByText('BDE IDE')).toBeInTheDocument()
+      expect(screen.getByText('FLEET IDE')).toBeInTheDocument()
       expect(screen.getByText('Open a folder to start editing')).toBeInTheDocument()
     })
     it('shows open folder button in empty state', () => {
@@ -343,7 +343,7 @@ describe('IDEView', () => {
       render(<IDEView />)
 
       // Component should render without crashing
-      expect(screen.getByText('BDE IDE')).toBeInTheDocument()
+      expect(screen.getByText('FLEET IDE')).toBeInTheDocument()
       consoleErrorSpy.mockRestore()
     })
   })

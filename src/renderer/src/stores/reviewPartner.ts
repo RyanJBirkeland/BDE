@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import type { ReviewResult, PartnerMessage } from '../../../shared/types'
 
-const MESSAGES_STORAGE_KEY = 'bde:review-partner-messages'
-const PANEL_OPEN_KEY = 'bde:review-partner-open'
+const MESSAGES_STORAGE_KEY = 'fleet:review-partner-messages'
+const PANEL_OPEN_KEY = 'fleet:review-partner-open'
 const MAX_MESSAGES_PER_TASK = 100
 const MAX_TASKS_IN_LOCAL_STORAGE = 20
 

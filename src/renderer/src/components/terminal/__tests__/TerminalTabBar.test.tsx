@@ -245,13 +245,13 @@ describe('TerminalTabBar', () => {
       <TerminalTabBar {...defaultProps} tabs={[exitedTab]} activeTabId="tab-1" />
     )
     const dot = container.querySelector('.terminal-tab__status-dot') as HTMLElement
-    expect(dot?.style.backgroundColor).toBe('var(--bde-text-dim)')
+    expect(dot?.style.backgroundColor).toBe('var(--fleet-text-dim)')
   })
 
   it('shows green status dot for running shell tab', () => {
     const { container } = render(<TerminalTabBar {...defaultProps} />)
     const dot = container.querySelector('.terminal-tab__status-dot') as HTMLElement
-    expect(dot?.style.backgroundColor).toBe('var(--bde-accent)')
+    expect(dot?.style.backgroundColor).toBe('var(--fleet-accent)')
   })
 
   it('shows purple status dot for agent tab', () => {
@@ -260,6 +260,6 @@ describe('TerminalTabBar', () => {
       <TerminalTabBar {...defaultProps} tabs={[agentTab]} activeTabId="agent-1" />
     )
     const dot = container.querySelector('.terminal-tab__status-dot') as HTMLElement
-    expect(dot?.style.backgroundColor).toBe('var(--bde-subagent)')
+    expect(dot?.style.backgroundColor).toBe('var(--fleet-subagent)')
   })
 })

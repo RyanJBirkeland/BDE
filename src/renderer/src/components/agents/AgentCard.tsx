@@ -61,7 +61,7 @@ function StatusIndicator({ status, accent }: StatusIndicatorProps): React.JSX.El
           style={{
             width: 6,
             height: 6,
-            borderRadius: 'var(--bde-radius-full)',
+            borderRadius: 'var(--fleet-radius-full)',
             background: iconColor,
             flexShrink: 0
           }}
@@ -116,7 +116,7 @@ export function AgentCard({ agent, selected, onClick, onKill }: AgentCardProps):
           accent={accent}
           className="agent-card__card"
           style={{
-            padding: 'var(--bde-space-3)',
+            padding: 'var(--fleet-space-3)',
             boxShadow: selected ? `0 0 16px ${neonVar(accent, 'glow')}` : undefined,
             border: selected ? `1px solid ${neonVar(accent, 'color')}` : undefined,
             transform: selected ? 'scale(1.02)' : undefined

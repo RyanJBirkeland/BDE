@@ -22,12 +22,12 @@ describe('batchImportTasks', () => {
     const tasks = [
       {
         title: 'Task A',
-        repo: 'bde',
+        repo: 'fleet',
         spec: '## Intro\n\n## Details\n\nDo A'
       },
       {
         title: 'Task B',
-        repo: 'bde',
+        repo: 'fleet',
         spec: '## Intro\n\n## Details\n\nDo B',
         dependsOnIndices: [0]
       }
@@ -61,7 +61,7 @@ describe('batchImportTasks', () => {
     const tasks = [
       {
         title: 'Task A',
-        repo: 'bde',
+        repo: 'fleet',
         spec: '## Intro\n\n## Details\n\nDo A',
         dependsOnIndices: [5] // Out of range
       }
@@ -88,12 +88,12 @@ describe('batchImportTasks', () => {
     const tasks = [
       {
         title: 'Task A',
-        repo: 'bde',
+        repo: 'fleet',
         spec: '## Intro\n\n## Details\n\nDo A'
       },
       {
         title: 'Task B',
-        repo: 'bde',
+        repo: 'fleet',
         spec: '## Intro\n\n## Details\n\nDo B',
         dependsOnIndices: [0],
         depType: 'soft' as const
@@ -112,7 +112,7 @@ describe('batchImportTasks', () => {
     const tasks = [
       {
         title: 'Task A',
-        repo: 'bde',
+        repo: 'fleet',
         spec: '## Intro\n\n## Details\n\nDo A'
       }
     ]
@@ -130,8 +130,8 @@ describe('batchImportTasks', () => {
     beforeEach(() => vi.clearAllMocks())
 
     it('creates tasks when repo is valid', async () => {
-      const result = await batchImportTasks([{ title: 'Task A', repo: 'bde' }], mockRepo, [
-        'bde',
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'fleet' }], mockRepo, [
+        'fleet',
         'life-os'
       ])
       expect(result.errors).toHaveLength(0)
@@ -140,7 +140,7 @@ describe('batchImportTasks', () => {
 
     it('rejects tasks with unconfigured repo when configuredRepos provided', async () => {
       const result = await batchImportTasks([{ title: 'Task A', repo: 'unknown-repo' }], mockRepo, [
-        'bde',
+        'fleet',
         'life-os'
       ])
       expect(result.errors).toHaveLength(1)
@@ -150,7 +150,7 @@ describe('batchImportTasks', () => {
     })
 
     it('repo comparison is case-insensitive', async () => {
-      const result = await batchImportTasks([{ title: 'Task A', repo: 'BDE' }], mockRepo, ['bde'])
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'FLEET' }], mockRepo, ['fleet'])
       expect(result.errors).toHaveLength(0)
     })
 
@@ -160,7 +160,7 @@ describe('batchImportTasks', () => {
     })
 
     it('rejects all tasks when configuredRepos is empty array', async () => {
-      const result = await batchImportTasks([{ title: 'Task A', repo: 'bde' }], mockRepo, [])
+      const result = await batchImportTasks([{ title: 'Task A', repo: 'fleet' }], mockRepo, [])
       expect(result.errors).toHaveLength(1)
       expect(result.errors[0]).toMatch(/not configured.*No repos are configured/i)
       expect(result.created).toHaveLength(0)

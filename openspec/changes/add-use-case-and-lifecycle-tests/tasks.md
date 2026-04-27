@@ -21,7 +21,7 @@
   - `beforeEach`: `db = new Database(':memory:')` then `runMigrations(db)`
   - `afterEach`: `db.close()`
 - [x] 3.2 Implement the single test `'transitions a task through queued → active → review in the real data layer'`:
-  - `createTask({ title: 'Lifecycle test', repo: 'bde', status: 'queued', priority: 0, playground_enabled: false }, db)` — assert `task.status === 'queued'`
+  - `createTask({ title: 'Lifecycle test', repo: 'fleet', status: 'queued', priority: 0, playground_enabled: false }, db)` — assert `task.status === 'queued'`
   - `updateTask(task.id, { status: 'active', claimed_by: 'executor' }, undefined, db)` — assert `active.status === 'active'` and `active.claimed_by === 'executor'`
   - `updateTask(task.id, { status: 'review', claimed_by: null }, undefined, db)` — assert `reviewed.status === 'review'` and `reviewed.claimed_by === null`
   - `getTask(task.id, db)` — assert `final.status === 'review'` and `final.claimed_by === null`

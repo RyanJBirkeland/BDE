@@ -16,7 +16,7 @@ function makeTask(id: string, status: SprintTask['status'] = 'active'): SprintTa
   return {
     id,
     title: `Task ${id}`,
-    repo: 'bde',
+    repo: 'fleet',
     priority: 5,
     status,
     notes: null,

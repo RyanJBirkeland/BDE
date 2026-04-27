@@ -95,7 +95,7 @@ export function AssignEpicPopover({
         <div className="assign-epic-popover__dropdown">
           <div className="assign-epic-popover__header">Assign to Epic</div>
           <select
-            className="assign-epic-popover__select bde-select"
+            className="assign-epic-popover__select fleet-select"
             value={selectedGroupId}
             onChange={(e) => setSelectedGroupId(e.target.value)}
             disabled={loading}

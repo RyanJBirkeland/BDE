@@ -2,22 +2,22 @@
 .console-line {
   display: flex;
   align-items: flex-start;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-1) var(--bde-space-3);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-code);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-code);
   line-height: 1.5;
   transition: background 100ms ease;
 }
 
 .console-line:hover {
-  background: var(--bde-border);
+  background: var(--fleet-border);
 }
 
 /* Error line emphasis */
 .console-line--error {
-  background: var(--bde-danger-surface);
-  border-left: 3px solid var(--bde-danger);
+  background: var(--fleet-danger-surface);
+  border-left: 3px solid var(--fleet-danger);
   padding-left: 9px;
 }
 
@@ -38,55 +38,55 @@
 }
 
 .console-prefix--agent {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .console-prefix--user {
-  color: var(--bde-status-done);
+  color: var(--fleet-status-done);
 }
 
 .console-prefix--tool {
-  color: var(--bde-status-review);
+  color: var(--fleet-status-review);
 }
 
 .console-prefix--think {
-  color: var(--bde-status-active);
+  color: var(--fleet-status-active);
 }
 
 .console-prefix--error {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .console-prefix--rate {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
 }
 
 .console-prefix--done {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .console-prefix--play {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 /* ── Console Line Components ── */
 .console-line__timestamp {
   margin-left: auto;
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-2xs);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-2xs);
   flex-shrink: 0;
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
 }
 
 .console-line__content {
   flex: 1;
   overflow: hidden;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   word-break: break-word;
 }
 
 .console-line__tool-summary {
-  padding-left: var(--bde-space-6);
+  padding-left: var(--fleet-space-6);
   word-break: break-word;
 }
 
@@ -100,71 +100,71 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: var(--bde-radius-sm);
-  font-size: var(--bde-size-2xs);
+  border-radius: var(--fleet-radius-sm);
+  font-size: var(--fleet-size-2xs);
   flex-shrink: 0;
   font-weight: 700;
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
 }
 
 .console-tool-icon--bash {
-  background: var(--bde-warning-surface);
-  color: var(--bde-warning);
+  background: var(--fleet-warning-surface);
+  color: var(--fleet-warning);
 }
 .console-tool-icon--read {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-review);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-review);
 }
 .console-tool-icon--edit,
 .console-tool-icon--write {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
 }
 .console-tool-icon--grep {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-active);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-active);
 }
 .console-tool-icon--glob {
-  background: var(--bde-warning-surface);
-  color: var(--bde-warning);
+  background: var(--fleet-warning-surface);
+  color: var(--fleet-warning);
 }
 .console-tool-icon--agent {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-done);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-done);
 }
 .console-tool-icon--default {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-review);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-review);
 }
 
 /* ── Completion Summary Card ── */
 .console-completion-card {
-  margin: var(--bde-space-3);
-  padding: var(--bde-space-4);
-  border-radius: var(--bde-radius-lg);
-  background: linear-gradient(135deg, var(--bde-accent-surface) 0%, var(--bde-surface-high) 100%);
-  border: 1px solid var(--bde-accent-border);
-  font-family: var(--bde-font-code);
+  margin: var(--fleet-space-3);
+  padding: var(--fleet-space-4);
+  border-radius: var(--fleet-radius-lg);
+  background: linear-gradient(135deg, var(--fleet-accent-surface) 0%, var(--fleet-surface-high) 100%);
+  border: 1px solid var(--fleet-accent-border);
+  font-family: var(--fleet-font-code);
 }
 
 .console-completion-card--failed {
-  background: linear-gradient(135deg, var(--bde-danger-surface) 0%, var(--bde-surface-high) 100%);
-  border-color: var(--bde-danger-border);
+  background: linear-gradient(135deg, var(--fleet-danger-surface) 0%, var(--fleet-surface-high) 100%);
+  border-color: var(--fleet-danger-border);
 }
 
 .console-completion-card__header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  margin-bottom: var(--bde-space-3);
+  gap: var(--fleet-space-2);
+  margin-bottom: var(--fleet-space-3);
   font-weight: 700;
-  font-size: var(--bde-size-md);
+  font-size: var(--fleet-size-md);
 }
 
 .console-completion-card__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 .console-completion-card__stat {
@@ -172,43 +172,43 @@
 }
 
 .console-completion-card__stat-value {
-  font-size: var(--bde-size-xxl);
+  font-size: var(--fleet-size-xxl);
   font-weight: 700;
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
 }
 
 .console-completion-card__stat-value--cyan {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 .console-completion-card__stat-value--purple {
-  color: var(--bde-status-active);
+  color: var(--fleet-status-active);
 }
 .console-completion-card__stat-value--orange {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
 }
 .console-completion-card__stat-value--red {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .console-completion-card__stat-label {
-  font-size: var(--bde-size-2xs);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-2xs);
+  color: var(--fleet-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 2px;
 }
 
 .console-completion-card__header--success {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 .console-completion-card__header--failed {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 /* ── Tool Group ── */
 .console-tool-group__items {
   padding-left: 20px;
-  border-left: 2px solid var(--bde-accent-border);
+  border-left: 2px solid var(--fleet-accent-border);
   margin-left: 6px;
   margin-top: 4px;
   width: 100%;
@@ -217,89 +217,89 @@
 
 /* ── Stderr Content ── */
 .console-line__content--stderr {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
 }
 
 /* ── Grouped Text Blocks ── */
 .console-line__content--grouped {
-  border-left: 2px solid var(--bde-accent-border);
-  padding-left: var(--bde-space-2);
+  border-left: 2px solid var(--fleet-accent-border);
+  padding-left: var(--fleet-space-2);
 }
 
 /* ── Console Badge ── */
 .console-badge {
   display: inline-block;
   padding: 0 6px;
-  border-radius: var(--bde-radius-sm);
-  font-size: var(--bde-size-2xs);
+  border-radius: var(--fleet-radius-sm);
+  font-size: var(--fleet-size-2xs);
   flex-shrink: 0;
   font-weight: 600;
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
 }
 
 .console-badge--success {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
 }
 
 .console-badge--danger {
-  background: var(--bde-danger-surface);
-  color: var(--bde-danger);
+  background: var(--fleet-danger-surface);
+  color: var(--fleet-danger);
 }
 
 .console-badge--purple {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-active);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-active);
 }
 
 /* ── Thinking Block Components ── */
 .thinking-block__token-count {
-  color: var(--bde-text-muted);
-  background: var(--bde-surface-high);
+  color: var(--fleet-text-muted);
+  background: var(--fleet-surface-high);
 }
 
 .thinking-block__content {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 /* ── Chat Bubble Components ── */
 .chat-bubble {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .chat-bubble--agent {
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-accent-border);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-accent-border);
 }
 
 .chat-bubble--user {
-  background: var(--bde-accent-surface);
+  background: var(--fleet-accent-surface);
   border: 1px solid transparent;
 }
 
 .chat-bubble--error {
-  background: var(--bde-danger-surface);
-  border: 1px solid var(--bde-danger);
+  background: var(--fleet-danger-surface);
+  border: 1px solid var(--fleet-danger);
 }
 
 .chat-bubble__timestamp {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 
 /* ── Chat Renderer Components ── */
 .chat-renderer__started {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 
 .chat-renderer__completed--success {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .chat-renderer__completed--failed {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .chat-renderer__rate-limited {
-  color: var(--bde-warning);
-  background: var(--bde-warning-surface);
+  color: var(--fleet-warning);
+  background: var(--fleet-warning-surface);
 }

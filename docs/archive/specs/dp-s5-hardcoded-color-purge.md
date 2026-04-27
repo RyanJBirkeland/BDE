@@ -93,7 +93,7 @@ Replace each hardcoded hex with the appropriate CSS variable reference:
 }
 .toast--info {
   background: #2a2a2a;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 /* After */

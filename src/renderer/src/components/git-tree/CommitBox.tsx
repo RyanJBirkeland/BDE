@@ -86,7 +86,7 @@ export function CommitBox({
           className={`git-commit-box__commit-btn ${canCommit ? 'git-commit-box__commit-btn--enabled' : 'git-commit-box__commit-btn--disabled'}`}
         >
           {commitLoading ? (
-            <Loader2 size={14} className="bde-spin" />
+            <Loader2 size={14} className="fleet-spin" />
           ) : (
             <GitCommitHorizontal size={14} />
           )}
@@ -111,7 +111,7 @@ export function CommitBox({
           }
           className="git-commit-box__push-btn"
         >
-          {pushLoading ? <Loader2 size={14} className="bde-spin" /> : <Upload size={14} />}
+          {pushLoading ? <Loader2 size={14} className="fleet-spin" /> : <Upload size={14} />}
           {pushLoading ? 'Pushing...' : 'Push'}
         </button>
       </div>

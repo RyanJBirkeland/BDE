@@ -7,12 +7,12 @@
 .glass {
   position: relative;
   background: var(--glass-tint-dark);
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
 }
 
 .glass-modal {
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-border);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border);
   box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.3),
     0 0 0 0.5px rgba(78, 81, 87, 0.5) inset;
@@ -47,12 +47,12 @@
 .elevation-0 {
   background:
     radial-gradient(ellipse 60% 40% at 50% 0%, var(--glass-glow-subtle) 0%, transparent 100%),
-    var(--bde-void);
+    var(--fleet-void);
 }
 
 .elevation-3 {
   background: var(--glass-tint-light);
-  border: 1px solid var(--bde-border-glow);
+  border: 1px solid var(--fleet-border-glow);
   border-radius: 16px;
   box-shadow:
     0 24px 80px rgba(0, 0, 0, 0.55),
@@ -61,7 +61,7 @@
 }
 
 .elevation-3-backdrop {
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
 }
 
 /* ── 6. Glow Effects ─────────────────────────────────── */
@@ -74,7 +74,7 @@
 }
 
 /* 6.3 Pulsing glow */
-@keyframes bde-pulse-glow {
+@keyframes fleet-pulse-glow {
   0%,
   100% {
     box-shadow:
@@ -90,7 +90,7 @@
 }
 
 .glow-pulse {
-  animation: bde-pulse-glow 2.5s ease-in-out infinite;
+  animation: fleet-pulse-glow 2.5s ease-in-out infinite;
 }
 
 /* ── 2.3 Gradient Border ─────────────────────────────── */
@@ -98,7 +98,7 @@
 .gradient-border {
   position: relative;
   border-radius: 10px;
-  background: var(--bde-surface);
+  background: var(--fleet-surface);
 }
 
 .gradient-border::before {
@@ -148,7 +148,7 @@ html.theme-light .elevation-3 {
 }
 
 html.theme-light .elevation-3-backdrop {
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
 }
 
 /* ── Pro Dark theme overrides (zero glass/neon effects) ── */
@@ -163,20 +163,20 @@ html.theme-pro-dark .glass::after {
 }
 
 html.theme-pro-dark .elevation-3 {
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-border-hover);
-  box-shadow: var(--bde-shadow-lg);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border-hover);
+  box-shadow: var(--fleet-shadow-lg);
 }
 
 html.theme-pro-dark .elevation-3-backdrop {
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
 }
 
 /* ── Pro Light theme overrides ── */
 
 html.theme-pro-light .glass-modal {
-  background: var(--bde-surface);
-  box-shadow: var(--bde-shadow-lg);
+  background: var(--fleet-surface);
+  box-shadow: var(--fleet-shadow-lg);
 }
 
 html.theme-pro-light .glass-highlight {
@@ -188,12 +188,12 @@ html.theme-pro-light .glass::after {
 }
 
 html.theme-pro-light .elevation-3 {
-  background: var(--bde-surface);
-  box-shadow: var(--bde-shadow-lg);
+  background: var(--fleet-surface);
+  box-shadow: var(--fleet-shadow-lg);
 }
 
 html.theme-pro-light .elevation-3-backdrop {
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
 }
 
 /* ── Drawer resize handle (right-anchored overlay drawers) ───────────────── */
@@ -219,7 +219,7 @@ html.theme-pro-light .elevation-3-backdrop {
 
 .drawer-resize-handle:hover::after,
 .drawer-resize-handle:active::after {
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
   opacity: 0.6;
 }
 
@@ -228,7 +228,7 @@ html.theme-pro-light .elevation-3-backdrop {
 /* The Separator component from react-resizable-panels has no default dimensions, */
 /* so without explicit sizing the hit area is zero and panels cannot be dragged. */
 .panel-separator {
-  background: var(--bde-accent-border);
+  background: var(--fleet-accent-border);
   flex-shrink: 0;
   width: 4px;
   height: 100%;
@@ -237,5 +237,5 @@ html.theme-pro-light .elevation-3-backdrop {
 
 .panel-separator:hover,
 .panel-separator:active {
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
 }

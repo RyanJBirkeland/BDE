@@ -11,7 +11,7 @@ vi.mock('node:fs', () => ({
 }))
 
 // env-utils imports the logger (which touches the filesystem at module load
-// to ensure ~/.bde exists). Mock the only export auth-guard consumes — the
+// to ensure ~/.fleet exists). Mock the only export auth-guard consumes — the
 // file-based OAuth token reader — so the test stays hermetic.
 vi.mock('./env-utils', () => ({
   getOAuthToken: vi.fn().mockReturnValue(null)
@@ -19,7 +19,7 @@ vi.mock('./env-utils', () => ({
 
 // auth-guard now imports credential-service, which transitively loads
 // settings-queries.ts — and its module-scope `createLogger()` call writes to
-// ~/.bde at import time. Mock the logger module so the test stays hermetic
+// ~/.fleet at import time. Mock the logger module so the test stays hermetic
 // regardless of which path reaches it.
 vi.mock('./logger', () => ({
   createLogger: () => ({
@@ -87,7 +87,7 @@ function makeStore(
 }
 
 // Build an injected CredentialStore that returns null from Keychain.
-// `fileToken` simulates the `~/.bde/oauth-token` fallback.
+// `fileToken` simulates the `~/.fleet/oauth-token` fallback.
 function makeFailingStore(fileToken: string | null = null): CredentialStore {
   return {
     readToken: async () => null,

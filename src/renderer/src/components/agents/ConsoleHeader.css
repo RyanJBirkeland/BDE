@@ -3,10 +3,10 @@
   height: 56px;
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: 0 var(--bde-space-4);
-  background: linear-gradient(180deg, var(--bde-accent-surface) 0%, var(--bde-border) 100%);
-  border-bottom: 1px solid var(--bde-accent-border);
+  gap: var(--fleet-space-2);
+  padding: 0 var(--fleet-space-4);
+  background: linear-gradient(180deg, var(--fleet-accent-surface) 0%, var(--fleet-border) 100%);
+  border-bottom: 1px solid var(--fleet-accent-border);
   flex-shrink: 0;
 }
 
@@ -18,30 +18,30 @@
 }
 
 .console-header__status-dot--running {
-  background: var(--bde-accent);
-  box-shadow: 0 0 8px var(--bde-accent);
-  animation: bde-pulse 2s ease-in-out infinite;
+  background: var(--fleet-accent);
+  box-shadow: 0 0 8px var(--fleet-accent);
+  animation: fleet-pulse 2s ease-in-out infinite;
 }
 
 .console-header__status-dot--done {
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
   opacity: 0.4;
 }
 
 .console-header__status-dot--failed {
-  background: var(--bde-danger);
+  background: var(--fleet-danger);
   box-shadow: none;
 }
 
 .console-header__status-dot--cancelled {
-  background: var(--bde-warning);
+  background: var(--fleet-warning);
   opacity: 0.6;
 }
 
 .console-header__task-name {
   font-weight: 700;
   font-size: 15px;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -52,10 +52,10 @@
 .console-header__meta {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-dim);
-  font-family: var(--bde-font-code);
+  gap: var(--fleet-space-2);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-dim);
+  font-family: var(--fleet-font-code);
 }
 
 .console-header__phase {
@@ -65,17 +65,17 @@
 .console-header__actions {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
   margin-left: auto;
 }
 
 .console-header__action-btn {
   background: transparent;
   border: none;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: pointer;
-  padding: var(--bde-space-2);
-  border-radius: var(--bde-radius-sm);
+  padding: var(--fleet-space-2);
+  border-radius: var(--fleet-radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,15 +85,15 @@
 }
 
 .console-header__action-btn:hover:not(:disabled) {
-  background: var(--bde-border);
-  color: var(--bde-text-muted);
+  background: var(--fleet-border);
+  color: var(--fleet-text-muted);
 }
 
 .console-header__action-btn:active {
-  background: var(--bde-surface);
+  background: var(--fleet-surface);
 }
 
 .console-header__action-btn:focus-visible {
-  outline: 2px solid var(--bde-primary);
+  outline: 2px solid var(--fleet-primary);
   outline-offset: 2px;
 }

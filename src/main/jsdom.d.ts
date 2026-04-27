@@ -1,5 +1,5 @@
 /**
- * Ambient shim for `jsdom` — the package has no bundled types and BDE only
+ * Ambient shim for `jsdom` — the package has no bundled types and FLEET only
  * uses the `JSDOM` constructor + `.window` off the returned instance for
  * DOMPurify initialization in playground-sanitize.ts. Keeping the surface
  * minimal avoids pulling @types/jsdom (and its node-canvas peer types) into

@@ -37,15 +37,15 @@ function makeAgent(overrides: Record<string, unknown> = {}) {
     pid: 1234,
     bin: 'claude',
     model: 'opus',
-    repo: 'bde',
-    repoPath: '/tmp/bde',
+    repo: 'fleet',
+    repoPath: '/tmp/fleet',
     task: 'fix tests',
     startedAt: '2025-01-01T00:00:00Z',
     finishedAt: null,
     exitCode: null,
     status: 'running' as const,
     logPath: '/tmp/log.txt',
-    source: 'bde' as const,
+    source: 'fleet' as const,
     costUsd: null,
     tokensIn: null,
     tokensOut: null,
@@ -64,12 +64,12 @@ describe('insertAgentRecord + getAgentMeta', () => {
     expect(result!.pid).toBe(1234)
     expect(result!.bin).toBe('claude')
     expect(result!.model).toBe('opus')
-    expect(result!.repo).toBe('bde')
-    expect(result!.repoPath).toBe('/tmp/bde')
+    expect(result!.repo).toBe('fleet')
+    expect(result!.repoPath).toBe('/tmp/fleet')
     expect(result!.task).toBe('fix tests')
     expect(result!.status).toBe('running')
     expect(result!.logPath).toBe('/tmp/log.txt')
-    expect(result!.source).toBe('bde')
+    expect(result!.source).toBe('fleet')
   })
 
   it('returns null for a missing ID', () => {
@@ -384,7 +384,7 @@ function makeRow(overrides: Partial<AgentRunRow> = {}): AgentRunRow {
     started_at: '2025-01-01T00:00:00Z',
     finished_at: null,
     exit_code: null,
-    source: 'bde',
+    source: 'fleet',
     cost_usd: null,
     tokens_in: null,
     tokens_out: null,

@@ -1,7 +1,7 @@
 /**
- * BDE skill definition - structured guidance for interactive agents
+ * FLEET skill definition - structured guidance for interactive agents
  */
-export interface BDESkill {
+export interface FLEETSkill {
   id: string // Unique identifier (e.g., 'system-introspection')
   trigger: string // When to suggest this skill
   description: string // What it helps with

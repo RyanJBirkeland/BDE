@@ -23,10 +23,10 @@ describe('git service', () => {
   })
 
   it('getRepoPaths delegates to window.api.git.getRepoPaths', async () => {
-    vi.mocked(window.api.git.getRepoPaths).mockResolvedValue({ bde: '/Users/ryan/projects/BDE' })
+    vi.mocked(window.api.git.getRepoPaths).mockResolvedValue({ fleet: '/Users/ryan/projects/FLEET' })
     const result = await getRepoPaths()
     expect(window.api.git.getRepoPaths).toHaveBeenCalled()
-    expect(result).toEqual({ bde: '/Users/ryan/projects/BDE' })
+    expect(result).toEqual({ fleet: '/Users/ryan/projects/FLEET' })
   })
 
   it('getGitStatus delegates to window.api.git.status', async () => {

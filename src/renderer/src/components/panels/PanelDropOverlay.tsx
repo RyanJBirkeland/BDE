@@ -43,7 +43,7 @@ export function getDropZone(x: number, y: number, rect: Rect): DropZone {
 // Zone highlight styles
 // ---------------------------------------------------------------------------
 
-const HIGHLIGHT_COLOR = 'var(--bde-info-dim)'
+const HIGHLIGHT_COLOR = 'var(--fleet-info-dim)'
 
 function zoneStyle(zone: DropZone): React.CSSProperties {
   const base: React.CSSProperties = {
@@ -83,7 +83,7 @@ export function PanelDropOverlay({ panelId, onDrop }: PanelDropOverlayProps): Re
 
   function handleDrop(e: React.DragEvent<HTMLDivElement>): void {
     e.preventDefault()
-    const raw = e.dataTransfer.getData('application/bde-panel')
+    const raw = e.dataTransfer.getData('application/fleet-panel')
     if (!raw) return
 
     const rect = e.currentTarget.getBoundingClientRect()

@@ -6,7 +6,7 @@
  * adapter. Those rules belong to the proxy itself, not to the wire boundary,
  * so this service hosts them and the handler shrinks to a thin call site.
  *
- * Side-effect-free with respect to BDE state — the only escape is the outbound
+ * Side-effect-free with respect to FLEET state — the only escape is the outbound
  * HTTPS request via `githubFetch`.
  */
 

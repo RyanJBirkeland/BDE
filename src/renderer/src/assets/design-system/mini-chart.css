@@ -1,8 +1,8 @@
 /* ── MiniChart ─────────────────────────────────────── */
 
 .mini-chart-empty {
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,11 +12,11 @@
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  background: var(--bde-overlay);
+  background: var(--fleet-overlay);
   border: 1px solid;
   border-radius: 4px;
-  padding: 3px var(--bde-space-2);
-  font-size: var(--bde-size-xs);
+  padding: 3px var(--fleet-space-2);
+  font-size: var(--fleet-size-xs);
   max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;

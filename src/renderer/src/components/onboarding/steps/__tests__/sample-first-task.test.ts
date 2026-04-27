@@ -12,7 +12,7 @@ describe('SAMPLE_FIRST_TASK', () => {
   it('passes structural readiness validation for its declared specType', () => {
     const result = validateStructural({
       title: SAMPLE_FIRST_TASK.title,
-      repo: 'bde',
+      repo: 'fleet',
       spec: SAMPLE_FIRST_TASK.spec,
       specType: SAMPLE_FIRST_TASK.specType,
       status: 'queued'

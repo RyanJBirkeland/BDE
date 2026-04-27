@@ -1,6 +1,6 @@
 ## Why
 
-BDE's services, data layer, and pollers pass the full `SprintTask` type (43 fields) at almost every call site, even when callers only need 3–5 fields. This leaks unnecessary coupling across module boundaries and makes interfaces harder to understand. Separately, the data layer still contains inline magic literals — timeouts, limits, and status strings — scattered across modules rather than named constants, in violation of Clean Code's "no magic numbers" rule.
+FLEET's services, data layer, and pollers pass the full `SprintTask` type (43 fields) at almost every call site, even when callers only need 3–5 fields. This leaks unnecessary coupling across module boundaries and makes interfaces harder to understand. Separately, the data layer still contains inline magic literals — timeouts, limits, and status strings — scattered across modules rather than named constants, in violation of Clean Code's "no magic numbers" rule.
 
 ## What Changes
 

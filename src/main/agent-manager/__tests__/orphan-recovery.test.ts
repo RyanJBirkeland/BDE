@@ -37,7 +37,7 @@ function makeTask(id: string, title = `Task ${id}`): SprintTask {
     id,
     title,
     status: 'active',
-    claimed_by: 'bde-embedded',
+    claimed_by: 'fleet-embedded',
     depends_on: null,
     orphan_recovery_count: 0
   } as SprintTask

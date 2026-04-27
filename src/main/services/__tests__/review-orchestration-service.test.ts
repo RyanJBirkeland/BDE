@@ -77,7 +77,7 @@ describe('review-orchestration-service', () => {
     setReviewOrchestrationRepo(mockRepo)
 
     // Default mock for getSettingJson (returns repo config)
-    vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+    vi.mocked(getSettingJson).mockReturnValue([{ name: 'fleet', localPath: '/repo/fleet' }])
 
     // Default mock for promisified execFile
     getCustomMock()
@@ -100,7 +100,7 @@ describe('review-orchestration-service', () => {
     it('should merge agent branch into current branch and mark task done', async () => {
       const mockTask = {
         id: 'task1',
-        repo: 'bde',
+        repo: 'fleet',
         title: 'Test task',
         worktree_path: '/worktree/task1'
       }
@@ -121,7 +121,7 @@ describe('review-orchestration-service', () => {
       expect(reviewMerge.mergeAgentBranch).toHaveBeenCalledWith(
         expect.objectContaining({
           branch: 'agent/test-branch',
-          repoPath: '/repo/bde',
+          repoPath: '/repo/fleet',
           strategy: 'merge',
           taskId: 'task1'
         })
@@ -129,7 +129,7 @@ describe('review-orchestration-service', () => {
       expect(reviewMerge.cleanupWorktree).toHaveBeenCalledWith(
         '/worktree/task1',
         'agent/test-branch',
-        '/repo/bde',
+        '/repo/fleet',
         mockEnv
       )
       expect(mockOnStatusTerminal).toHaveBeenCalledWith('task1', 'done')
@@ -138,7 +138,7 @@ describe('review-orchestration-service', () => {
     it('should handle merge failure without marking task done', async () => {
       const mockTask = {
         id: 'task1',
-        repo: 'bde',
+        repo: 'fleet',
         title: 'Test task',
         worktree_path: '/worktree/task1'
       }
@@ -168,7 +168,7 @@ describe('review-orchestration-service', () => {
     it('should push branch, create PR, cleanup worktree, and keep task in review', async () => {
       const mockTask = {
         id: 'task2',
-        repo: 'bde',
+        repo: 'fleet',
         title: 'Test PR task',
         worktree_path: '/worktree/task2'
       }
@@ -211,7 +211,7 @@ describe('review-orchestration-service', () => {
 
         vi.mocked(sprintService.getTask).mockReturnValue({
           id: 'task-1',
-          repo: 'bde',
+          repo: 'fleet',
           worktree_path: '/wt/task-1',
           status: 'review',
           title: 'Test'
@@ -262,7 +262,7 @@ describe('review-orchestration-service', () => {
     it('should return task to queued with feedback appended to spec', async () => {
       const mockTask = {
         id: 'task3',
-        repo: 'bde',
+        repo: 'fleet',
         spec: '# Original spec\nContent here'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
@@ -281,7 +281,7 @@ describe('review-orchestration-service', () => {
     it('should clear agent_run_id in fresh mode', async () => {
       const mockTask = {
         id: 'task4',
-        repo: 'bde',
+        repo: 'fleet',
         spec: 'Original spec'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
@@ -301,7 +301,7 @@ describe('review-orchestration-service', () => {
     it('should cleanup worktree, scratchpad, and mark task cancelled', async () => {
       const mockTask = {
         id: 'task5',
-        repo: 'bde',
+        repo: 'fleet',
         worktree_path: '/worktree/task5'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
@@ -329,7 +329,7 @@ describe('review-orchestration-service', () => {
     it('should merge, push, cleanup, and mark done on success', async () => {
       const mockTask = {
         id: 'task6',
-        repo: 'bde',
+        repo: 'fleet',
         title: 'Ship task',
         worktree_path: '/worktree/task6'
       }
@@ -345,9 +345,9 @@ describe('review-orchestration-service', () => {
         async (_cmd: string, args: readonly string[], opts: any) => {
           if (opts.cwd === '/worktree/task6' && args.includes('--abbrev-ref')) {
             return { stdout: 'agent/ship-branch\n', stderr: '' }
-          } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
+          } else if (opts.cwd === '/repo/fleet' && args.includes('--porcelain')) {
             return { stdout: '', stderr: '' } // clean
-          } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+          } else if (opts.cwd === '/repo/fleet' && args.includes('--abbrev-ref')) {
             return { stdout: 'main\n', stderr: '' } // on main
           } else {
             return { stdout: '', stderr: '' }
@@ -373,7 +373,7 @@ describe('review-orchestration-service', () => {
     it('should NOT mark task done if merge fails', async () => {
       const mockTask = {
         id: 'task7',
-        repo: 'bde',
+        repo: 'fleet',
         title: 'Failed ship',
         worktree_path: '/worktree/task7'
       }
@@ -390,9 +390,9 @@ describe('review-orchestration-service', () => {
         async (_cmd: string, args: readonly string[], opts: any) => {
           if (opts.cwd === '/worktree/task7' && args.includes('--abbrev-ref')) {
             return { stdout: 'agent/fail-branch\n', stderr: '' }
-          } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
+          } else if (opts.cwd === '/repo/fleet' && args.includes('--porcelain')) {
             return { stdout: '', stderr: '' } // clean
-          } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+          } else if (opts.cwd === '/repo/fleet' && args.includes('--abbrev-ref')) {
             return { stdout: 'main\n', stderr: '' } // on main
           } else {
             return { stdout: '', stderr: '' }
@@ -421,7 +421,7 @@ describe('review-orchestration-service', () => {
       // no path to retry. Push failure must leave state intact for retry.
       const mockTask = {
         id: 'task-push-fail',
-        repo: 'bde',
+        repo: 'fleet',
         title: 'Push fails',
         worktree_path: '/worktree/task-push-fail'
       }
@@ -439,9 +439,9 @@ describe('review-orchestration-service', () => {
           }
           if (opts.cwd === '/worktree/task-push-fail' && args.includes('--abbrev-ref')) {
             return { stdout: 'agent/push-fail-branch\n', stderr: '' }
-          } else if (opts.cwd === '/repo/bde' && args.includes('--porcelain')) {
+          } else if (opts.cwd === '/repo/fleet' && args.includes('--porcelain')) {
             return { stdout: '', stderr: '' } // clean
-          } else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+          } else if (opts.cwd === '/repo/fleet' && args.includes('--abbrev-ref')) {
             return { stdout: 'main\n', stderr: '' } // on main
           } else {
             return { stdout: '', stderr: '' }
@@ -474,7 +474,7 @@ describe('review-orchestration-service', () => {
     it('should return error if working tree is dirty', async () => {
       const mockTask = {
         id: 'task8',
-        repo: 'bde',
+        repo: 'fleet',
         worktree_path: '/worktree/task8'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
@@ -505,7 +505,7 @@ describe('review-orchestration-service', () => {
     it('should return error if not on main branch', async () => {
       const mockTask = {
         id: 'task9',
-        repo: 'bde',
+        repo: 'fleet',
         worktree_path: '/worktree/task9'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
@@ -520,7 +520,7 @@ describe('review-orchestration-service', () => {
             return { stdout: '', stderr: '' } // clean
           }
           // Third call: get current branch in main repo
-          else if (opts.cwd === '/repo/bde' && args.includes('--abbrev-ref')) {
+          else if (opts.cwd === '/repo/fleet' && args.includes('--abbrev-ref')) {
             return { stdout: 'feature-branch\n', stderr: '' } // NOT main
           } else {
             return { stdout: '', stderr: '' }
@@ -544,7 +544,7 @@ describe('review-orchestration-service', () => {
     it('should rebase agent branch and update task metadata', async () => {
       const mockTask = {
         id: 'task10',
-        repo: 'bde',
+        repo: 'fleet',
         worktree_path: '/worktree/task10'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
@@ -573,7 +573,7 @@ describe('review-orchestration-service', () => {
     it('should return conflicts on rebase failure', async () => {
       const mockTask = {
         id: 'task11',
-        repo: 'bde',
+        repo: 'fleet',
         worktree_path: '/worktree/task11'
       }
       vi.mocked(sprintService.getTask).mockReturnValue(mockTask as any)
@@ -607,7 +607,7 @@ describe('review-orchestration-service', () => {
   describe('checkReviewFreshness', () => {
     const taskWithSha = {
       id: 'task-fresh',
-      repo: 'bde',
+      repo: 'fleet',
       rebase_base_sha: 'abc123stored'
     }
 
@@ -618,7 +618,7 @@ describe('review-orchestration-service', () => {
     })
 
     it('returns unknown when task has no rebase_base_sha', async () => {
-      vi.mocked(sprintService.getTask).mockReturnValue({ id: 'task-fresh', repo: 'bde' } as any)
+      vi.mocked(sprintService.getTask).mockReturnValue({ id: 'task-fresh', repo: 'fleet' } as any)
       const result = await orchestration.checkReviewFreshness('task-fresh', mockEnv)
       expect(result).toEqual({ status: 'unknown' })
     })
@@ -632,7 +632,7 @@ describe('review-orchestration-service', () => {
 
     it('returns fresh when origin/main SHA matches stored SHA', async () => {
       vi.mocked(sprintService.getTask).mockReturnValue(taskWithSha as any)
-      vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'fleet', localPath: '/repo/fleet' }])
       getCustomMock()
         .mockReset()
         .mockImplementation(async (_cmd: string, args: readonly string[]) => {
@@ -647,7 +647,7 @@ describe('review-orchestration-service', () => {
 
     it('returns stale with commitsBehind when origin/main has advanced', async () => {
       vi.mocked(sprintService.getTask).mockReturnValue(taskWithSha as any)
-      vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'fleet', localPath: '/repo/fleet' }])
       getCustomMock()
         .mockReset()
         .mockImplementation(async (_cmd: string, args: readonly string[]) => {
@@ -663,7 +663,7 @@ describe('review-orchestration-service', () => {
 
     it('returns unknown when git operations throw', async () => {
       vi.mocked(sprintService.getTask).mockReturnValue(taskWithSha as any)
-      vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+      vi.mocked(getSettingJson).mockReturnValue([{ name: 'fleet', localPath: '/repo/fleet' }])
       getCustomMock()
         .mockReset()
         .mockRejectedValue(new Error('git fetch failed'))
@@ -673,7 +673,7 @@ describe('review-orchestration-service', () => {
     })
   })
 
-  describe('markShippedOutsideBde', () => {
+  describe('markShippedOutsideFleet', () => {
     const mockTaskStateService = {
       transition: vi.fn().mockResolvedValue(undefined)
     }
@@ -688,7 +688,7 @@ describe('review-orchestration-service', () => {
         status: 'review'
       } as any)
 
-      const result = await orchestration.markShippedOutsideBde('task-ship', {
+      const result = await orchestration.markShippedOutsideFleet('task-ship', {
         taskStateService: mockTaskStateService as any
       })
 
@@ -696,7 +696,7 @@ describe('review-orchestration-service', () => {
       expect(mockTaskStateService.transition).toHaveBeenCalledWith(
         'task-ship',
         'done',
-        expect.objectContaining({ caller: 'review:markShippedOutsideBde' })
+        expect.objectContaining({ caller: 'review:markShippedOutsideFleet' })
       )
     })
 
@@ -704,7 +704,7 @@ describe('review-orchestration-service', () => {
       vi.mocked(sprintService.getTask).mockReturnValue(null as any)
 
       await expect(
-        orchestration.markShippedOutsideBde('task-missing', {
+        orchestration.markShippedOutsideFleet('task-missing', {
           taskStateService: mockTaskStateService as any
         })
       ).rejects.toThrow('Task task-missing not found')
@@ -717,7 +717,7 @@ describe('review-orchestration-service', () => {
       } as any)
 
       await expect(
-        orchestration.markShippedOutsideBde('task-active', {
+        orchestration.markShippedOutsideFleet('task-active', {
           taskStateService: mockTaskStateService as any
         })
       ).rejects.toThrow('is not in review status')

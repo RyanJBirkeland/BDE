@@ -218,7 +218,7 @@ describe('deleteGroup atomicity', () => {
     // Insert a task in the group
     db.prepare(
       `INSERT INTO sprint_tasks (title, repo, prompt, status, priority, group_id)
-       VALUES ('T', 'bde', 'p', 'backlog', 0, ?)`
+       VALUES ('T', 'fleet', 'p', 'backlog', 0, ?)`
     ).run(group!.id)
 
     // Normal delete should clear group_id and delete the group

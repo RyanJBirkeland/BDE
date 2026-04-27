@@ -1,10 +1,10 @@
 /* File Tree Container */
 .ide-file-tree {
-  padding: var(--bde-space-1) 0;
+  padding: var(--fleet-space-1) 0;
 }
 
 .ide-file-tree__error {
-  padding: var(--bde-space-2);
-  color: var(--bde-danger);
-  font-size: var(--bde-size-sm);
+  padding: var(--fleet-space-2);
+  color: var(--fleet-danger);
+  font-size: var(--fleet-size-sm);
 }

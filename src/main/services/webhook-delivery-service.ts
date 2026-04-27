@@ -45,12 +45,12 @@ async function buildDeliveryHeaders(
 ): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-BDE-Event': 'webhook.test',
-    'X-BDE-Delivery': crypto.randomUUID()
+    'X-FLEET-Event': 'webhook.test',
+    'X-FLEET-Delivery': crypto.randomUUID()
   }
 
   if (secret) {
-    headers['X-BDE-Signature'] = await computeSignature(body, secret)
+    headers['X-FLEET-Signature'] = await computeSignature(body, secret)
   }
 
   return headers

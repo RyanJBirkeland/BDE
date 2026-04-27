@@ -1,7 +1,7 @@
 # CredentialService — Unified credential resolution
 
 **Status:** Draft
-**Owner:** BDE main process
+**Owner:** FLEET main process
 **Scope:** Consolidate the three existing Claude/GitHub credential-check sites into a single injectable service with a discriminated return type.
 **Source:** PLAN.md T2.1 (Phase 2 — Credential Handoff Unification). Addresses findings F-t3-credentials-1, -2, -3, -4, -7, -8, -9, -11.
 
@@ -15,7 +15,7 @@ Three separate modules check the same credentials with subtly different semantic
 |---|---|---|---|---|
 | `src/main/auth-guard.ts` | `checkAuthStatus()` / `ensureSubscriptionAuth()` | `auth:status` IPC (Onboarding UI) | `AuthStatus { cliFound, tokenFound, tokenExpired, expiresAt? }` / throws `Error` | None |
 | `src/main/agent-manager/oauth-checker.ts` | `checkOAuthToken()` | Drain-loop precondition | `boolean` | Proactively refreshes Keychain if token file >45min old |
-| `src/main/env-utils.ts` | `getOAuthToken()` / `refreshOAuthTokenFromKeychain()` / `buildAgentEnvWithAuth()` | `adhoc-agent.ts`, `sdk-adapter.ts` | `string | null` token / boolean / env object | Writes rotated Keychain credentials; writes `~/.bde/oauth-token`; broadcasts `manager:warning` on repeated Keychain failures |
+| `src/main/env-utils.ts` | `getOAuthToken()` / `refreshOAuthTokenFromKeychain()` / `buildAgentEnvWithAuth()` | `adhoc-agent.ts`, `sdk-adapter.ts` | `string | null` token / boolean / env object | Writes rotated Keychain credentials; writes `~/.fleet/oauth-token`; broadcasts `manager:warning` on repeated Keychain failures |
 
 Each site caches independently (5min/30s, 30s, 1s Keychain rate-limit), formats error messages differently, and decides independently whether to refresh. None of them handle GitHub credentials — `GH_TOKEN` / `GITHUB_TOKEN` / `gh auth status` live in handlers and onboarding step components.
 
@@ -192,5 +192,5 @@ After verification, no old entry point deletes — the wrapper functions stay as
 
 ## Open questions (to resolve during T2.2)
 
-- Is there a real Linux / Windows credential path to design for now, or does BDE stay macOS-only through Phase 2? (Current answer from audit scope: macOS only.)
+- Is there a real Linux / Windows credential path to design for now, or does FLEET stay macOS-only through Phase 2? (Current answer from audit scope: macOS only.)
 - Does the `auth:status` IPC need to carry a new `kind: 'claude' | 'github'` field so one call reports both? Pragmatic: keep `auth:status` Claude-only and add `onboarding:checkGhCli` for the GitHub branch (already exists).

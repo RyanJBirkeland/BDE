@@ -42,7 +42,7 @@ export interface TaskClaimerDeps {
 
 /**
  * Look up the local filesystem path for `repoSlug`.
- * Returns null when the slug is not configured in BDE settings.
+ * Returns null when the slug is not configured in FLEET settings.
  */
 export function resolveRepoPath(repoSlug: string): string | null {
   const repoPaths = getRepoPaths()
@@ -100,7 +100,7 @@ export async function validateAndClaimTask(
     try {
       await deps.repo.updateTask(task.id, {
         status: 'error',
-        notes: `Repo "${task.repo}" is not configured in BDE settings. Add it in Settings > Repos, then reset this task to queued.`,
+        notes: `Repo "${task.repo}" is not configured in FLEET settings. Add it in Settings > Repos, then reset this task to queued.`,
         claimed_by: null
       })
     } catch (err) {

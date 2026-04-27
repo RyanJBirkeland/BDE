@@ -41,9 +41,9 @@ async function openSourceControlWithRepo(
 
 test.describe('Source Control view — repo status', () => {
   test('Cmd+6 navigates to Source Control, sets active repo, and shows staged + unstaged sections', async ({
-    bde
+    fleet
   }) => {
-    const { window } = bde
+    const { window } = fleet
     await waitForAppShell(window)
 
     await openSourceControlWithRepo(window, mockRepo.path)
@@ -72,8 +72,8 @@ test.describe('Source Control view — repo status', () => {
     await expect(changesGroup.getByText('unstaged.txt')).toBeVisible({ timeout: 3_000 })
   })
 
-  test('Commit message input is visible and accepts text', async ({ bde }) => {
-    const { window } = bde
+  test('Commit message input is visible and accepts text', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await openSourceControlWithRepo(window, mockRepo.path)

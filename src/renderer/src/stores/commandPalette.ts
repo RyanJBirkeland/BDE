@@ -34,7 +34,7 @@ interface CommandPaletteStore {
   trackCommandUsage: (commandId: string) => void
 }
 
-const RECENT_COMMANDS_KEY = 'bde:command-palette:recent'
+const RECENT_COMMANDS_KEY = 'fleet:command-palette:recent'
 const MAX_RECENT = 10
 
 // Fuzzy search with scoring

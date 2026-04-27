@@ -26,7 +26,7 @@ import {
   extractConflictFiles
 } from './review-merge-service'
 import { runPostMergeDedup } from '../lib/post-merge-dedup'
-import { BDE_TASK_MEMORY_DIR } from '../paths'
+import { FLEET_TASK_MEMORY_DIR } from '../paths'
 import { getErrorMessage } from '../../shared/errors'
 import type { TaskStatus } from '../../shared/task-state-machine'
 
@@ -264,7 +264,7 @@ async function executeGitOp(
     case 'scratchpadCleanup': {
       if (!op.taskId) throw new Error('taskId required for scratchpadCleanup')
       try {
-        rmSync(join(BDE_TASK_MEMORY_DIR, op.taskId), { recursive: true, force: true })
+        rmSync(join(FLEET_TASK_MEMORY_DIR, op.taskId), { recursive: true, force: true })
       } catch {
         /* best-effort */
       }

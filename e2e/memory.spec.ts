@@ -23,8 +23,8 @@ async function navigateToMemorySection(window: import('@playwright/test').Page):
 }
 
 test.describe('Memory Section', () => {
-  test('Navigate to Memory section and shows page header', async ({ bde }) => {
-    const { window } = bde
+  test('Navigate to Memory section and shows page header', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await navigateToMemorySection(window)
@@ -40,8 +40,8 @@ test.describe('Memory Section', () => {
     await expect(subtitle).toContainText('Agent memory files')
   })
 
-  test('File list sidebar renders', async ({ bde }) => {
-    const { window } = bde
+  test('File list sidebar renders', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await navigateToMemorySection(window)
@@ -60,8 +60,8 @@ test.describe('Memory Section', () => {
     await expect(fileList).toBeVisible({ timeout: 5_000 })
   })
 
-  test('Search input exists in sidebar', async ({ bde }) => {
-    const { window } = bde
+  test('Search input exists in sidebar', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await navigateToMemorySection(window)

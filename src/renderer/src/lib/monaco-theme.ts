@@ -1,7 +1,7 @@
 import type { editor } from 'monaco-editor'
 
 /**
- * Build a Monaco dark theme from the currently-active BDE CSS variables.
+ * Build a Monaco dark theme from the currently-active FLEET CSS variables.
  * Must be called after DOM is mounted (uses getComputedStyle).
  */
 export function getMonacoTheme(): editor.IStandaloneThemeData {
@@ -58,18 +58,18 @@ export function getMonacoTheme(): editor.IStandaloneThemeData {
       { token: 'support.class', foreground: purple },
 
       // Variables — default text (inherit)
-      { token: 'variable', foreground: get('--bde-text') },
-      { token: 'variable.parameter', foreground: get('--bde-text') },
+      { token: 'variable', foreground: get('--fleet-text') },
+      { token: 'variable.parameter', foreground: get('--fleet-text') },
 
       // Operators — text-muted
-      { token: 'keyword.operator.arithmetic', foreground: get('--bde-text-dim') || dimText },
-      { token: 'keyword.operator.assignment', foreground: get('--bde-text-dim') || dimText },
-      { token: 'keyword.operator.comparison', foreground: get('--bde-text-dim') || dimText },
-      { token: 'keyword.operator.logical', foreground: get('--bde-text-dim') || dimText },
+      { token: 'keyword.operator.arithmetic', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'keyword.operator.assignment', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'keyword.operator.comparison', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'keyword.operator.logical', foreground: get('--fleet-text-dim') || dimText },
 
       // Punctuation — subtle
-      { token: 'punctuation', foreground: get('--bde-text-dim') || dimText },
-      { token: 'punctuation.definition', foreground: get('--bde-text-dim') || dimText },
+      { token: 'punctuation', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'punctuation.definition', foreground: get('--fleet-text-dim') || dimText },
 
       // Tags (HTML/JSX) — cyan
       { token: 'entity.name.tag', foreground: cyan },
@@ -83,37 +83,37 @@ export function getMonacoTheme(): editor.IStandaloneThemeData {
       { token: 'invalid.deprecated', foreground: orange, fontStyle: 'strikethrough' }
     ],
     colors: {
-      'editor.background': get('--bde-bg'),
-      'editor.foreground': get('--bde-text'),
-      'editor.lineHighlightBackground': get('--bde-surface'),
-      'editor.selectionBackground': get('--bde-accent-dim') || get('--bde-accent'),
-      'editorCursor.foreground': get('--bde-accent'),
-      'editorLineNumber.foreground': get('--bde-text-dim') || get('--bde-text'),
-      'editorLineNumber.activeForeground': get('--bde-text'),
-      'editorIndentGuide.background': get('--bde-border'),
-      'editorIndentGuide.activeBackground': get('--bde-accent'),
-      'editorWidget.background': get('--bde-surface'),
-      'editorWidget.border': get('--bde-border'),
-      'editorSuggestWidget.background': get('--bde-surface'),
-      'editorSuggestWidget.border': get('--bde-border'),
-      'editorSuggestWidget.selectedBackground': get('--bde-accent'),
-      'editorHoverWidget.background': get('--bde-surface'),
-      'editorHoverWidget.border': get('--bde-border'),
-      'input.background': get('--bde-surface'),
-      'input.border': get('--bde-border'),
-      'input.foreground': get('--bde-text'),
-      focusBorder: get('--bde-accent'),
+      'editor.background': get('--fleet-bg'),
+      'editor.foreground': get('--fleet-text'),
+      'editor.lineHighlightBackground': get('--fleet-surface'),
+      'editor.selectionBackground': get('--fleet-accent-dim') || get('--fleet-accent'),
+      'editorCursor.foreground': get('--fleet-accent'),
+      'editorLineNumber.foreground': get('--fleet-text-dim') || get('--fleet-text'),
+      'editorLineNumber.activeForeground': get('--fleet-text'),
+      'editorIndentGuide.background': get('--fleet-border'),
+      'editorIndentGuide.activeBackground': get('--fleet-accent'),
+      'editorWidget.background': get('--fleet-surface'),
+      'editorWidget.border': get('--fleet-border'),
+      'editorSuggestWidget.background': get('--fleet-surface'),
+      'editorSuggestWidget.border': get('--fleet-border'),
+      'editorSuggestWidget.selectedBackground': get('--fleet-accent'),
+      'editorHoverWidget.background': get('--fleet-surface'),
+      'editorHoverWidget.border': get('--fleet-border'),
+      'input.background': get('--fleet-surface'),
+      'input.border': get('--fleet-border'),
+      'input.foreground': get('--fleet-text'),
+      focusBorder: get('--fleet-accent'),
       'scrollbar.shadow': 'transparent',
-      'scrollbarSlider.background': get('--bde-border'),
-      'scrollbarSlider.hoverBackground': get('--bde-text-dim') || get('--bde-text'),
-      'scrollbarSlider.activeBackground': get('--bde-accent'),
-      'minimap.background': get('--bde-bg')
+      'scrollbarSlider.background': get('--fleet-border'),
+      'scrollbarSlider.hoverBackground': get('--fleet-text-dim') || get('--fleet-text'),
+      'scrollbarSlider.activeBackground': get('--fleet-accent'),
+      'minimap.background': get('--fleet-bg')
     }
   }
 }
 
 /**
- * Build a Monaco light theme from the currently-active BDE CSS variables.
+ * Build a Monaco light theme from the currently-active FLEET CSS variables.
  * Must be called after DOM is mounted (uses getComputedStyle).
  */
 export function getLightMonacoTheme(): editor.IStandaloneThemeData {
@@ -170,18 +170,18 @@ export function getLightMonacoTheme(): editor.IStandaloneThemeData {
       { token: 'support.class', foreground: purple },
 
       // Variables — default text (inherit)
-      { token: 'variable', foreground: get('--bde-text') },
-      { token: 'variable.parameter', foreground: get('--bde-text') },
+      { token: 'variable', foreground: get('--fleet-text') },
+      { token: 'variable.parameter', foreground: get('--fleet-text') },
 
       // Operators — text-muted
-      { token: 'keyword.operator.arithmetic', foreground: get('--bde-text-dim') || dimText },
-      { token: 'keyword.operator.assignment', foreground: get('--bde-text-dim') || dimText },
-      { token: 'keyword.operator.comparison', foreground: get('--bde-text-dim') || dimText },
-      { token: 'keyword.operator.logical', foreground: get('--bde-text-dim') || dimText },
+      { token: 'keyword.operator.arithmetic', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'keyword.operator.assignment', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'keyword.operator.comparison', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'keyword.operator.logical', foreground: get('--fleet-text-dim') || dimText },
 
       // Punctuation — subtle
-      { token: 'punctuation', foreground: get('--bde-text-dim') || dimText },
-      { token: 'punctuation.definition', foreground: get('--bde-text-dim') || dimText },
+      { token: 'punctuation', foreground: get('--fleet-text-dim') || dimText },
+      { token: 'punctuation.definition', foreground: get('--fleet-text-dim') || dimText },
 
       // Tags (HTML/JSX) — cyan
       { token: 'entity.name.tag', foreground: cyan },
@@ -195,31 +195,31 @@ export function getLightMonacoTheme(): editor.IStandaloneThemeData {
       { token: 'invalid.deprecated', foreground: orange, fontStyle: 'strikethrough' }
     ],
     colors: {
-      'editor.background': get('--bde-bg'),
-      'editor.foreground': get('--bde-text'),
-      'editor.lineHighlightBackground': get('--bde-surface'),
-      'editor.selectionBackground': get('--bde-accent-dim') || get('--bde-accent'),
-      'editorCursor.foreground': get('--bde-accent'),
-      'editorLineNumber.foreground': get('--bde-text-dim') || get('--bde-text'),
-      'editorLineNumber.activeForeground': get('--bde-text'),
-      'editorIndentGuide.background': get('--bde-border'),
-      'editorIndentGuide.activeBackground': get('--bde-accent'),
-      'editorWidget.background': get('--bde-surface'),
-      'editorWidget.border': get('--bde-border'),
-      'editorSuggestWidget.background': get('--bde-surface'),
-      'editorSuggestWidget.border': get('--bde-border'),
-      'editorSuggestWidget.selectedBackground': get('--bde-accent'),
-      'editorHoverWidget.background': get('--bde-surface'),
-      'editorHoverWidget.border': get('--bde-border'),
-      'input.background': get('--bde-surface'),
-      'input.border': get('--bde-border'),
-      'input.foreground': get('--bde-text'),
-      focusBorder: get('--bde-accent'),
+      'editor.background': get('--fleet-bg'),
+      'editor.foreground': get('--fleet-text'),
+      'editor.lineHighlightBackground': get('--fleet-surface'),
+      'editor.selectionBackground': get('--fleet-accent-dim') || get('--fleet-accent'),
+      'editorCursor.foreground': get('--fleet-accent'),
+      'editorLineNumber.foreground': get('--fleet-text-dim') || get('--fleet-text'),
+      'editorLineNumber.activeForeground': get('--fleet-text'),
+      'editorIndentGuide.background': get('--fleet-border'),
+      'editorIndentGuide.activeBackground': get('--fleet-accent'),
+      'editorWidget.background': get('--fleet-surface'),
+      'editorWidget.border': get('--fleet-border'),
+      'editorSuggestWidget.background': get('--fleet-surface'),
+      'editorSuggestWidget.border': get('--fleet-border'),
+      'editorSuggestWidget.selectedBackground': get('--fleet-accent'),
+      'editorHoverWidget.background': get('--fleet-surface'),
+      'editorHoverWidget.border': get('--fleet-border'),
+      'input.background': get('--fleet-surface'),
+      'input.border': get('--fleet-border'),
+      'input.foreground': get('--fleet-text'),
+      focusBorder: get('--fleet-accent'),
       'scrollbar.shadow': 'transparent',
-      'scrollbarSlider.background': get('--bde-border'),
-      'scrollbarSlider.hoverBackground': get('--bde-text-dim') || get('--bde-text'),
-      'scrollbarSlider.activeBackground': get('--bde-accent'),
-      'minimap.background': get('--bde-bg')
+      'scrollbarSlider.background': get('--fleet-border'),
+      'scrollbarSlider.hoverBackground': get('--fleet-text-dim') || get('--fleet-text'),
+      'scrollbarSlider.activeBackground': get('--fleet-accent'),
+      'minimap.background': get('--fleet-bg')
     }
   }
 }

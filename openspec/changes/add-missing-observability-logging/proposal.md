@@ -1,6 +1,6 @@
 ## Why
 
-Operators debugging production issues have no visibility into SQLite retry contention, which task triggered a drain pause, or why a claim was rejected — they must guess from timing and context. These three targeted log additions make each failure mode self-describing in `~/.bde/bde.log` without any behavior change.
+Operators debugging production issues have no visibility into SQLite retry contention, which task triggered a drain pause, or why a claim was rejected — they must guess from timing and context. These three targeted log additions make each failure mode self-describing in `~/.fleet/fleet.log` without any behavior change.
 
 ## What Changes
 

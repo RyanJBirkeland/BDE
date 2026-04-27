@@ -1,18 +1,18 @@
 <div align="center">
 
-# BDE
+# FLEET
 
 **A steering system for Claude Code at scale.**
 
-Claude Code is a powerful coding agent. BDE is the desktop app that turns it into a managed engineering pipeline — orchestrating multiple Claude Code sessions in parallel, each working in isolated git worktrees, with human review gates before anything touches your codebase.
+Claude Code is a powerful coding agent. FLEET is the desktop app that turns it into a managed engineering pipeline — orchestrating multiple Claude Code sessions in parallel, each working in isolated git worktrees, with human review gates before anything touches your codebase.
 
-You write specs. BDE queues them, spawns Claude Code sessions, monitors progress, and presents finished work for review. You stay in control. Claude Code does the building.
+You write specs. FLEET queues them, spawns Claude Code sessions, monitors progress, and presents finished work for review. You stay in control. Claude Code does the building.
 
 [Getting Started](#getting-started) | [How It Works](#how-it-works) | [Features](#features) | [Architecture](#architecture) | [Contributing](#contributing)
 
 <br/>
 
-![BDE Dashboard — pipeline health, status counters, cost tracking, and live activity feed](docs/screenshots/dashboard.png)
+![FLEET Dashboard — pipeline health, status counters, cost tracking, and live activity feed](docs/screenshots/dashboard.png)
 
 _Dashboard: 6 active Claude Code sessions, 21 queued, 225 completed — all visible at a glance._
 
@@ -20,7 +20,7 @@ _Dashboard: 6 active Claude Code sessions, 21 queued, 225 completed — all visi
 
 ---
 
-## Why BDE?
+## Why FLEET?
 
 Claude Code is already great at writing code. What it doesn't have out of the box is:
 
@@ -32,7 +32,7 @@ Claude Code is already great at writing code. What it doesn't have out of the bo
 - **Observability** — real-time pipeline view, cost tracking, event streams across all sessions
 - **Retry and failure handling** — automatic retries, fast-fail detection, watchdog timers
 
-BDE adds all of this. It doesn't replace Claude Code — it wraps it in the infrastructure needed to run it as a development pipeline.
+FLEET adds all of this. It doesn't replace Claude Code — it wraps it in the infrastructure needed to run it as a development pipeline.
 
 ### The Cognitive Load Problem
 
@@ -40,11 +40,11 @@ Running AI agents manually is surprisingly exhausting. You're context-switching 
 
 That's the kind of invisible overhead that leads to burnout. Not from the work itself, but from juggling the meta-work around it.
 
-BDE externalizes all of that. The Dashboard shows you pipeline health at a glance — how many sessions are active, what's blocked, what just finished, what failed. The Sprint Pipeline gives you a single visual flow of every task through every stage. Cost charts show spend trends so you're not surprised. Activity feeds surface errors the moment they happen, not when you remember to check.
+FLEET externalizes all of that. The Dashboard shows you pipeline health at a glance — how many sessions are active, what's blocked, what just finished, what failed. The Sprint Pipeline gives you a single visual flow of every task through every stage. Cost charts show spend trends so you're not surprised. Activity feeds surface errors the moment they happen, not when you remember to check.
 
 The goal is simple: **you should be able to look at one screen and know exactly what's happening across all your concurrent work** — then make decisions (review, retry, reprioritize) without holding any of it in your head.
 
-|                      | Using Claude Code directly               | Using Claude Code via BDE                                        |
+|                      | Using Claude Code directly               | Using Claude Code via FLEET                                        |
 | -------------------- | ---------------------------------------- | ---------------------------------------------------------------- |
 | **Sessions**         | One at a time, manually started          | Fleet running in parallel, auto-claimed from queue               |
 | **Isolation**        | Works in your current checkout           | Each session gets its own git worktree                           |
@@ -67,7 +67,7 @@ Every piece of work flows through a structured pipeline. Tasks start as ideas an
 **The short version, in four steps:**
 
 1. **Define tasks and dependencies** — Draft specs in Task Workbench, set hard/soft dependencies so agents tackle prerequisites first.
-2. **BDE spawns Claude Code in isolation** — Each task gets its own Claude Code session in its own git worktree. Sessions run in parallel without stepping on each other.
+2. **FLEET spawns Claude Code in isolation** — Each task gets its own Claude Code session in its own git worktree. Sessions run in parallel without stepping on each other.
 3. **Sessions land in the Review queue** — When a session finishes, its worktree is preserved and the task moves to `review`. No auto-push, no surprise PRs.
 4. **You decide what ships** — Inspect diffs in Code Review Station, then merge locally, open a PR, request a revision, or discard.
 
@@ -113,17 +113,17 @@ flowchart TD
 
 ### What Happens When a Task Runs
 
-Each task becomes a Claude Code session. BDE handles everything around it:
+Each task becomes a Claude Code session. FLEET handles everything around it:
 
 ```mermaid
 sequenceDiagram
-    participant AM as BDE Agent Manager
+    participant AM as FLEET Agent Manager
     participant WT as Git Worktree
     participant CC as Claude Code Session
     participant CR as Code Review
 
     AM->>AM: Drain loop detects queued task
-    AM->>WT: Create isolated worktree<br/>~/.bde/worktrees/<repo-slug>/<task-id>
+    AM->>WT: Create isolated worktree<br/>~/.fleet/worktrees/<repo-slug>/<task-id>
     AM->>CC: Spawn Claude Code with task spec +<br/>CLAUDE.md project context
 
     loop Claude Code works autonomously
@@ -144,7 +144,7 @@ sequenceDiagram
     end
 ```
 
-> **BDE doesn't have its own AI.** Every agent is a Claude Code session spawned via the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/sdk). BDE's job is steering: what runs, where it runs, when it retries, and what happens with the output.
+> **FLEET doesn't have its own AI.** Every agent is a Claude Code session spawned via the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/sdk). FLEET's job is steering: what runs, where it runs, when it retries, and what happens with the output.
 
 ---
 
@@ -160,7 +160,7 @@ Real-time monitoring of tasks flowing through stages. Seven visual buckets (back
 
 ### Agent Manager — Orchestrating Claude Code Sessions
 
-The core of BDE. Watches the task queue, spawns Claude Code sessions in isolated git worktrees, monitors their health, and handles the full lifecycle from start to review.
+The core of FLEET. Watches the task queue, spawns Claude Code sessions in isolated git worktrees, monitors their health, and handles the full lifecycle from start to review.
 
 - **Parallel execution** — configurable WIP limit for concurrent Claude Code sessions
 - **Worktree isolation** — each session gets its own branch in its own directory
@@ -186,7 +186,7 @@ Cycle detection at creation time. Automatic resolution when tasks complete. No m
 
 ### Dev Playground — Visual Output in the IDE
 
-When agents write HTML files, BDE renders them inline — sandboxed with DOMPurify. Build CSS theme explorers, component playgrounds, data visualizations, and architecture diagrams without leaving the app.
+When agents write HTML files, FLEET renders them inline — sandboxed with DOMPurify. Build CSS theme explorers, component playgrounds, data visualizations, and architecture diagrams without leaving the app.
 
 ### Integrated IDE
 
@@ -198,7 +198,7 @@ Git staging, committing, and pushing across multiple repos. Inline diff previews
 
 ### Local MCP Server (opt-in)
 
-Expose BDE's task and epic CRUD to external MCP-speaking agents (Claude Code, Claude Desktop, Cursor). Runs inside the Electron main process on `127.0.0.1:18792` with a bearer token at `~/.bde/mcp-token`. Enable via Settings → Connections → Local MCP Server. All mutations route through the same services the UI uses — validation, auto-blocking, status transitions, audit trail, and broadcasts are preserved.
+Expose FLEET's task and epic CRUD to external MCP-speaking agents (Claude Code, Claude Desktop, Cursor). Runs inside the Electron main process on `127.0.0.1:18792` with a bearer token at `~/.fleet/mcp-token`. Enable via Settings → Connections → Local MCP Server. All mutations route through the same services the UI uses — validation, auto-blocking, status transitions, audit trail, and broadcasts are preserved.
 
 ### Cost Tracking — Know What Your Agents Cost
 
@@ -252,7 +252,7 @@ graph TB
         SDK["Claude Code
         (via Agent SDK)"]
         GH[GitHub API]
-        WT[Git Worktrees<br/>~/.bde/worktrees/]
+        WT[Git Worktrees<br/>~/.fleet/worktrees/]
     end
 
     Main <-->|IPC| Bridge
@@ -288,7 +288,7 @@ graph TB
 
 ### Data Model
 
-All state lives in a local SQLite database at `~/.bde/bde.db`. No cloud dependencies for core functionality.
+All state lives in a local SQLite database at `~/.fleet/fleet.db`. No cloud dependencies for core functionality.
 
 | Table          | Purpose                                                       |
 | -------------- | ------------------------------------------------------------- |
@@ -313,34 +313,34 @@ All state lives in a local SQLite database at `~/.bde/bde.db`. No cloud dependen
 ### Install
 
 ```bash
-git clone https://github.com/RyanJBirkeland/BDE.git
-cd BDE
+git clone https://github.com/RyanJBirkeland/FLEET.git
+cd FLEET
 npm install
 npm run dev
 ```
 
-On first launch, BDE checks for Claude Code authentication and guides you through setup.
+On first launch, FLEET checks for Claude Code authentication and guides you through setup.
 
 ### Build for Production
 
 ```bash
-npm run build:mac    # → release/BDE-*.dmg (unsigned)
+npm run build:mac    # → release/FLEET-*.dmg (unsigned)
 ```
 
 ### Install from DMG (macOS)
 
-BDE is currently distributed unsigned. macOS Gatekeeper will block the first launch until you explicitly allow it. See [INSTALL.md](./INSTALL.md) for screenshots and a troubleshooting walkthrough.
+FLEET is currently distributed unsigned. macOS Gatekeeper will block the first launch until you explicitly allow it. See [INSTALL.md](./INSTALL.md) for screenshots and a troubleshooting walkthrough.
 
-1. Double-click `BDE-*.dmg` to mount it.
-2. Drag `BDE.app` onto `Applications` in the mounted window.
+1. Double-click `FLEET-*.dmg` to mount it.
+2. Drag `FLEET.app` onto `Applications` in the mounted window.
 3. Open the `Applications` folder in Finder.
-4. **Right-click** (or Control-click) `BDE.app` and choose **Open**. *Do not double-click.*
-5. Gatekeeper will warn "BDE cannot be verified" — click **Open** in the dialog. The choice is remembered; subsequent launches open normally.
+4. **Right-click** (or Control-click) `FLEET.app` and choose **Open**. *Do not double-click.*
+5. Gatekeeper will warn "FLEET cannot be verified" — click **Open** in the dialog. The choice is remembered; subsequent launches open normally.
 
 **Power-user shortcut** — clear the quarantine attribute in one command, then double-click to launch:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/BDE.app
+xattr -dr com.apple.quarantine /Applications/FLEET.app
 ```
 
 ### Run Tests
@@ -373,7 +373,7 @@ Source Control is available as a dockable panel (no keyboard shortcut). The pane
 
 ## Session Types
 
-BDE spawns Claude Code in five different modes, depending on the context:
+FLEET spawns Claude Code in five different modes, depending on the context:
 
 | Type            | Interactive      | Worktree | What it does                                     |
 | --------------- | ---------------- | -------- | ------------------------------------------------ |
@@ -399,7 +399,7 @@ graph LR
         Y3 --> Y4["Merge / PR / Revise"]
     end
 
-    subgraph BDE["What BDE does"]
+    subgraph FLEET["What FLEET does"]
         B1["Claim tasks from queue"] --> B2["Create git worktree"]
         B2 --> B3["Spawn Claude Code session"]
         B3 --> B4["Monitor health + stream events"]
@@ -412,16 +412,16 @@ graph LR
         C3 --> C4["Commit to branch"]
     end
 
-    You -.->|specs| BDE
-    BDE -.->|sessions| CC
+    You -.->|specs| FLEET
+    FLEET -.->|sessions| CC
     CC -.->|finished work| You
 
     style You fill:#1a1a2e,stroke:#00ffcc,color:#00ffcc
-    style BDE fill:#1a1a2e,stroke:#ff9f43,color:#ff9f43
+    style FLEET fill:#1a1a2e,stroke:#ff9f43,color:#ff9f43
     style CC fill:#1a1a2e,stroke:#a855f7,color:#a855f7
 ```
 
-**Claude Code is the engine. BDE is the steering system.** You wouldn't manually start 8 terminal sessions, create worktrees, track which tasks depend on which, retry failures, and review diffs across branches. BDE does that so you can focus on specs and review.
+**Claude Code is the engine. FLEET is the steering system.** You wouldn't manually start 8 terminal sessions, create worktrees, track which tasks depend on which, retry failures, and review diffs across branches. FLEET does that so you can focus on specs and review.
 
 ---
 
@@ -447,7 +447,7 @@ src/
   shared/                # Types + IPC channel definitions
 docs/
   architecture.md        # Full architecture documentation
-  BDE_FEATURES.md        # Detailed feature reference
+  FLEET_FEATURES.md        # Detailed feature reference
   modules/               # Per-module reference docs (updated on every commit)
 ```
 
@@ -455,7 +455,7 @@ docs/
 
 ## Contributing
 
-BDE is in active development. If you're interested in contributing:
+FLEET is in active development. If you're interested in contributing:
 
 1. Fork the repo and create a feature branch (`feat/your-feature`)
 2. Run `npm run typecheck && npm test && npm run lint` before committing
@@ -474,6 +474,6 @@ MIT
 
 <div align="center">
 
-Built by [Ryan](https://github.com/RyanJBirkeland) — and yes, most of BDE was built by Claude Code sessions orchestrated through BDE itself.
+Built by [Ryan](https://github.com/RyanJBirkeland) — and yes, most of FLEET was built by Claude Code sessions orchestrated through FLEET itself.
 
 </div>

@@ -1,7 +1,7 @@
 /* ── Left Sidebar (Backlog + Failed) ── */
 .pipeline-sidebar {
   width: 200px;
-  border-right: 1px solid var(--bde-border);
+  border-right: 1px solid var(--fleet-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -13,7 +13,7 @@
 }
 
 .pipeline-sidebar__section {
-  padding: 10px var(--bde-space-3);
+  padding: 10px var(--fleet-space-3);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -24,7 +24,7 @@
 }
 
 .pipeline-sidebar__section + .pipeline-sidebar__section {
-  border-top: 1px solid var(--bde-border);
+  border-top: 1px solid var(--fleet-border);
 }
 
 .pipeline-sidebar__label {
@@ -32,29 +32,29 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
 .pipeline-sidebar__label--backlog {
-  color: var(--bde-status-review);
+  color: var(--fleet-status-review);
 }
 .pipeline-sidebar__label--failed {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .pipeline-sidebar__empty {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
-  padding: var(--bde-space-2) 0;
+  color: var(--fleet-text-dim);
+  padding: var(--fleet-space-2) 0;
 }
 
 .pipeline-sidebar__count {
-  background: var(--bde-surface);
+  background: var(--fleet-surface);
   padding: 1px 6px;
-  border-radius: var(--bde-radius-lg);
+  border-radius: var(--fleet-radius-lg);
   font-size: var(--font-2xs, 10px);
   font-weight: 600;
 }
@@ -63,29 +63,29 @@
 .pipeline-sidebar__actions {
   display: flex;
   gap: 6px;
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
 }
 
 .pipeline-sidebar__action-btn {
   font-size: var(--font-2xs, 10px);
   font-weight: 600;
-  background: var(--bde-border);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
-  padding: var(--bde-space-1) var(--bde-space-2);
+  background: var(--fleet-border);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
+  padding: var(--fleet-space-1) var(--fleet-space-2);
   cursor: pointer;
   transition:
     background 150ms ease,
     border-color 150ms ease,
     box-shadow 150ms ease;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   white-space: nowrap;
 }
 
 .pipeline-sidebar__action-btn:hover:not(:disabled) {
-  background: var(--bde-accent-surface);
-  border-color: var(--bde-accent-border);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  border-color: var(--fleet-accent-border);
+  color: var(--fleet-accent);
 }
 
 .pipeline-sidebar__action-btn:active:not(:disabled) {
@@ -93,9 +93,9 @@
 }
 
 .pipeline-sidebar__action-btn--danger:hover:not(:disabled) {
-  background: var(--bde-danger-surface);
-  border-color: var(--bde-danger-border);
-  color: var(--bde-danger);
+  background: var(--fleet-danger-surface);
+  border-color: var(--fleet-danger-border);
+  color: var(--fleet-danger);
 }
 
 .pipeline-sidebar__action-btn--danger:active:not(:disabled) {
@@ -104,11 +104,11 @@
 
 /* Backlog card */
 .backlog-card {
-  background: var(--bde-border);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  padding: var(--bde-space-2) 10px;
-  margin-bottom: var(--bde-space-1);
+  background: var(--fleet-border);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  padding: var(--fleet-space-2) 10px;
+  margin-bottom: var(--fleet-space-1);
   /* Grid: row 1 = checkbox + title block, row 2 = action button (full width).
      A flex-row layout squeezed the title to ~30px in the 200px sidebar. */
   display: grid;
@@ -116,7 +116,7 @@
   grid-template-areas:
     'checkbox select'
     'action   action';
-  gap: 6px var(--bde-space-2);
+  gap: 6px var(--fleet-space-2);
   align-items: start;
   transition:
     border-color 150ms ease,
@@ -124,8 +124,8 @@
 }
 
 .backlog-card--selected {
-  border-color: var(--bde-accent-border);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
 }
 
 .backlog-card__checkbox-wrapper {
@@ -139,7 +139,7 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
-  accent-color: var(--bde-status-active);
+  accent-color: var(--fleet-status-active);
 }
 
 .backlog-card__select {
@@ -152,18 +152,18 @@
 }
 
 .backlog-card:hover {
-  border-color: var(--bde-accent-border);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
 }
 
 .backlog-card--selected:hover {
-  border-color: var(--bde-accent-border);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
 }
 
 .backlog-card__title {
   font-size: var(--font-xs, 11px);
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   margin-bottom: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -172,20 +172,20 @@
 
 .backlog-card__meta {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
 .backlog-card__action {
   grid-area: action;
   font-size: var(--font-xs, 11px);
   font-weight: 600;
-  color: var(--bde-accent);
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-accent-border);
-  border-radius: var(--bde-radius-sm);
-  padding: 3px var(--bde-space-2);
+  color: var(--fleet-accent);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-sm);
+  padding: 3px var(--fleet-space-2);
   cursor: pointer;
   opacity: 0.5;
   transition:
@@ -197,7 +197,7 @@
 .backlog-card__action:hover:not(:disabled),
 .backlog-card__action:focus-visible {
   opacity: 1;
-  background: var(--bde-accent-border);
+  background: var(--fleet-accent-border);
 }
 
 .backlog-card:hover .backlog-card__action {
@@ -206,11 +206,11 @@
 
 /* Failed card */
 .failed-card {
-  background: var(--bde-danger-surface);
-  border: 1px solid var(--bde-danger-border);
-  border-radius: var(--bde-radius-md);
-  padding: var(--bde-space-2) 10px;
-  margin-bottom: var(--bde-space-1);
+  background: var(--fleet-danger-surface);
+  border: 1px solid var(--fleet-danger-border);
+  border-radius: var(--fleet-radius-md);
+  padding: var(--fleet-space-2) 10px;
+  margin-bottom: var(--fleet-space-1);
   transition: background 150ms ease;
 }
 
@@ -223,12 +223,12 @@
 }
 
 .failed-card:hover {
-  background: var(--bde-danger-surface);
+  background: var(--fleet-danger-surface);
 }
 
 .failed-card__title {
   font-size: var(--font-xs, 11px);
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -236,7 +236,7 @@
 
 .failed-card__meta {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   margin-top: 2px;
 }
 
@@ -247,22 +247,22 @@
 }
 
 .failed-card__action--rerun {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 /* Expand/collapse button */
 .pipeline-sidebar__expand {
   background: none;
   border: none;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-size: var(--font-2xs, 10px);
-  font-family: var(--bde-font-code);
-  padding: var(--bde-space-1) 0;
+  font-family: var(--fleet-font-code);
+  padding: var(--fleet-space-1) 0;
   cursor: pointer;
   width: 100%;
   text-align: left;
 }
 
 .pipeline-sidebar__expand:hover:not(:disabled) {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }

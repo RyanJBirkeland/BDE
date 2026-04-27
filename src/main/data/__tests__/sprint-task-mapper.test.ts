@@ -24,7 +24,7 @@ function row(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   const defaults: Record<string, unknown> = {
     id: 't-1',
     title: 'Example task',
-    repo: 'bde',
+    repo: 'fleet',
     status: 'queued',
     priority: 2,
     prompt: 'do it',
@@ -67,7 +67,7 @@ describe('mapRowToTask — happy path', () => {
 
     expect(task.id).toBe('t-1')
     expect(task.title).toBe('Example task')
-    expect(task.repo).toBe('bde')
+    expect(task.repo).toBe('fleet')
     expect(task.status).toBe('queued')
     expect(task.priority).toBe(2)
     expect(task.depends_on).toEqual([{ id: 't-0', type: 'hard' }])

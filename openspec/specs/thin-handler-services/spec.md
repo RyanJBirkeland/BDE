@@ -26,20 +26,20 @@ The `review:checkFreshness` IPC handler SHALL contain no git operations. All git
 
 ---
 
-### Requirement: review:markShippedOutsideBde delegates to a service
+### Requirement: review:markShippedOutsideFleet delegates to a service
 
-The `review:markShippedOutsideBde` IPC handler SHALL contain no status validation or state transition logic. Those SHALL live in `markShippedOutsideBde(taskId, deps)` in `review-orchestration-service.ts`. The handler SHALL validate the task ID, call the service, and return its result.
+The `review:markShippedOutsideFleet` IPC handler SHALL contain no status validation or state transition logic. Those SHALL live in `markShippedOutsideFleet(taskId, deps)` in `review-orchestration-service.ts`. The handler SHALL validate the task ID, call the service, and return its result.
 
 #### Scenario: Handler is thin
-- **WHEN** `review:markShippedOutsideBde` is invoked
-- **THEN** the handler body is ≤5 lines (validate ID → call `reviewOrchestration.markShippedOutsideBde` → return)
+- **WHEN** `review:markShippedOutsideFleet` is invoked
+- **THEN** the handler body is ≤5 lines (validate ID → call `reviewOrchestration.markShippedOutsideFleet` → return)
 
 #### Scenario: Service transitions task to done
-- **WHEN** `markShippedOutsideBde` is called for a task in `review` status
+- **WHEN** `markShippedOutsideFleet` is called for a task in `review` status
 - **THEN** the task transitions to `done` with `completed_at` set and the service returns `{ success: true }`
 
 #### Scenario: Service rejects non-review tasks
-- **WHEN** `markShippedOutsideBde` is called for a task not in `review` status
+- **WHEN** `markShippedOutsideFleet` is called for a task not in `review` status
 - **THEN** it throws an error identifying the task and its current status
 
 ---

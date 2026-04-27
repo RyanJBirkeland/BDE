@@ -3,27 +3,27 @@
 .toast-container {
   position: fixed;
   bottom: 40px;
-  right: var(--bde-space-4);
+  right: var(--fleet-space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   z-index: var(--z-notification);
   pointer-events: none;
 }
 
 .toast {
   display: block;
-  font-family: var(--bde-font-ui);
-  font-size: var(--bde-size-md);
+  font-family: var(--fleet-font-ui);
+  font-size: var(--fleet-size-md);
   font-weight: 500;
-  padding: var(--bde-space-2) var(--bde-space-4);
+  padding: var(--fleet-space-2) var(--fleet-space-4);
   border-radius: 20px;
   border: none;
   cursor: pointer;
   pointer-events: auto;
   max-width: min(480px, calc(100vw - 32px));
   overflow-wrap: anywhere;
-  box-shadow: var(--bde-shadow-md);
+  box-shadow: var(--fleet-shadow-md);
   text-align: left;
 }
 
@@ -32,25 +32,25 @@
 }
 
 .toast--success {
-  background: var(--bde-accent);
-  color: var(--bde-void);
+  background: var(--fleet-accent);
+  color: var(--fleet-void);
 }
 
 .toast--error {
-  background: var(--bde-danger);
-  color: var(--bde-text);
+  background: var(--fleet-danger);
+  color: var(--fleet-text);
 }
 
 .toast--info {
-  background: var(--bde-surface);
-  color: var(--bde-text);
-  border: 1px solid var(--bde-border);
+  background: var(--fleet-surface);
+  color: var(--fleet-text);
+  border: 1px solid var(--fleet-border);
 }
 
 .toast--has-action {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 .toast__message {
@@ -60,13 +60,13 @@
 .toast__action-btn {
   flex-shrink: 0;
   background: none;
-  border: 1px solid var(--bde-hover-strong);
-  color: var(--bde-accent);
-  font-size: var(--bde-size-sm);
+  border: 1px solid var(--fleet-hover-strong);
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-sm);
   font-weight: 600;
-  font-family: var(--bde-font-ui);
+  font-family: var(--fleet-font-ui);
   padding: 2px 10px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   cursor: pointer;
   transition:
     background 0.15s,
@@ -74,8 +74,8 @@
 }
 
 .toast__action-btn:hover:not(:disabled) {
-  background: var(--bde-selected);
-  border-color: var(--bde-accent);
+  background: var(--fleet-selected);
+  border-color: var(--fleet-accent);
 }
 
 .toast__action-btn:active:not(:disabled) {

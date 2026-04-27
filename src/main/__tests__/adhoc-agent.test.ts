@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const mockQuery = vi.fn()
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: (...args: unknown[]) => mockQuery(...args),
-  createSdkMcpServer: vi.fn(() => ({ name: 'bde', type: 'sdk' })),
+  createSdkMcpServer: vi.fn(() => ({ name: 'fleet', type: 'sdk' })),
   tool: (name: string, description: string, inputSchema: unknown, handler: unknown) => ({
     name,
     description,
@@ -30,8 +30,8 @@ vi.mock('../db', () => ({
 // while building the blocked-prefix list. Tests own the repo path value so
 // the isolation hook sees a deterministic main-repo set to refuse writes to.
 vi.mock('../paths', () => ({
-  ADHOC_WORKTREE_BASE: '/tmp/bde-adhoc',
-  getRepoPaths: vi.fn(() => ({ bde: '/tmp/fake-main-repo' })),
+  ADHOC_WORKTREE_BASE: '/tmp/fleet-adhoc',
+  getRepoPaths: vi.fn(() => ({ fleet: '/tmp/fake-main-repo' })),
   getConfiguredRepos: vi.fn(() => [])
 }))
 vi.mock('../broadcast', () => ({
@@ -53,7 +53,7 @@ vi.mock('../lib/prompt-composer', () => ({
 // The real implementation shells out to git — we mock it so unit tests don't
 // need an actual repo. The mock returns a deterministic worktree path so
 // assertions can inspect the cwd that gets passed to sdk.query.
-const TEST_WORKTREE_PATH = '/tmp/bde-adhoc/test-repo/worktree'
+const TEST_WORKTREE_PATH = '/tmp/fleet-adhoc/test-repo/worktree'
 const TEST_BRANCH = 'agent/test-branch-12345678'
 vi.mock('../agent-manager/worktree', () => ({
   setupWorktree: vi.fn(async () => ({
@@ -541,7 +541,7 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
         options: expect.objectContaining({
-          // BDE conventions injected via buildAgentPrompt() — 'project' source
+          // FLEET conventions injected via buildAgentPrompt() — 'project' source
           // would double-inject CLAUDE.md, costing ~5-10KB extra per turn.
           settingSources: [],
           // Safety ceiling for interactive multi-turn sessions.
@@ -552,7 +552,7 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
   })
 
   it('provides a canUseTool hook so in-process MCP tools can run', async () => {
-    // The in-process BDE MCP server (mcp__bde__tasks.create etc.) has no
+    // The in-process FLEET MCP server (mcp__fleet__tasks.create etc.) has no
     // interactive permission-granting UI — the adhoc agent runs in the main
     // process with only a renderer broadcast. Without a canUseTool hook the
     // SDK defaults to 'prompt' and every MCP tool call is permanently denied
@@ -569,9 +569,9 @@ describe('spawnAdhocAgent — prompt composer integration', () => {
 
     // The hook must allow MCP tool calls — they're validated server-side
     // by sprint-service / EpicGroupService, so the SDK should not block them.
-    const mcpDecision = await call.options.canUseTool('mcp__bde__tasks.create', {
+    const mcpDecision = await call.options.canUseTool('mcp__fleet__tasks.create', {
       title: 'x',
-      repo: 'bde'
+      repo: 'fleet'
     })
     expect(mcpDecision).toEqual(expect.objectContaining({ behavior: 'allow' }))
   })

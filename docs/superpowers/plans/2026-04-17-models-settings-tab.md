@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a new "Models" tab in BDE's Settings that lets a user configure, per agent type, whether to route to Claude or a local model and which model ID to use, plus the shared local endpoint URL.
+**Goal:** Build a new "Models" tab in FLEET's Settings that lets a user configure, per agent type, whether to route to Claude or a local model and which model ID to use, plus the shared local endpoint URL.
 
 **Architecture:** One new IPC channel (`agents:testLocalEndpoint`) for the reachability check. One new renderer component (`ModelsSection`) that loads `agents.backendConfig` on mount, renders a Local-endpoint card + 6 agent-type rows (Pipeline active, the other 5 disabled as "Not yet routed"), and saves the entire `BackendSettings` object in one atomic write. Persistence is entirely unchanged — the M8 schema in `src/main/agent-manager/backend-selector.ts` already stores everything we need. One entry added to the settings sidebar.
 
@@ -477,7 +477,7 @@ Create `src/renderer/src/components/settings/ModelsSection.css`:
 /* ModelsSection — segmented control for backend toggle. */
 .models-seg {
   display: inline-flex;
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -486,14 +486,14 @@ Create `src/renderer/src/components/settings/ModelsSection.css`:
   padding: 4px 12px;
   font-size: 12px;
   background: transparent;
-  color: var(--bde-text-2);
+  color: var(--fleet-text-2);
   border: none;
   cursor: pointer;
 }
 
 .models-seg__btn[aria-checked='true'] {
-  background: var(--bde-accent);
-  color: var(--bde-text-1);
+  background: var(--fleet-accent);
+  color: var(--fleet-text-1);
 }
 
 .models-seg__btn:disabled {
@@ -503,7 +503,7 @@ Create `src/renderer/src/components/settings/ModelsSection.css`:
 
 .models-row {
   padding: 10px 0;
-  border-top: 1px solid var(--bde-border-subtle, var(--bde-border));
+  border-top: 1px solid var(--fleet-border-subtle, var(--fleet-border));
 }
 
 .models-row:first-child {
@@ -522,7 +522,7 @@ Create `src/renderer/src/components/settings/ModelsSection.css`:
 
 .models-row__desc {
   font-size: 11px;
-  color: var(--bde-text-2);
+  color: var(--fleet-text-2);
   margin-bottom: 8px;
 }
 
@@ -546,11 +546,11 @@ Create `src/renderer/src/components/settings/ModelsSection.css`:
 }
 
 .models-status--ok {
-  color: var(--bde-success, #3ccf6a);
+  color: var(--fleet-success, #3ccf6a);
 }
 
 .models-status--err {
-  color: var(--bde-danger, #e06060);
+  color: var(--fleet-danger, #e06060);
 }
 
 .models-save-row {
@@ -1819,7 +1819,7 @@ git commit -m "feat(settings): wire Models tab into SettingsView sidebar"
 
 Quick human-in-the-loop check that the UI reads and writes correctly against a real SQLite store.
 
-- [ ] **Step 1: Build and start BDE**
+- [ ] **Step 1: Build and start FLEET**
 
 ```bash
 cd $REPO_ROOT && npm run dev
@@ -1845,7 +1845,7 @@ Confirm:
 - [ ] **Step 4: Inspect SQLite**
 
 ```bash
-sqlite3 ~/Library/Application\ Support/bde/bde.sqlite \
+sqlite3 ~/Library/Application\ Support/fleet/fleet.sqlite \
   "SELECT value FROM settings WHERE key = 'agents.backendConfig';"
 ```
 
@@ -1863,7 +1863,7 @@ If not:
 
 - [ ] **Step 6: Reload the app, confirm the saved values persist**
 
-Quit BDE, reopen, navigate back to Models. Confirm Pipeline still shows Local + the model ID you set.
+Quit FLEET, reopen, navigate back to Models. Confirm Pipeline still shows Local + the model ID you set.
 
 No commit at this step — manual verification only.
 

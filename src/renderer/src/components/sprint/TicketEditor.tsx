@@ -155,7 +155,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
             {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} created in backlog
           </span>
           <button
-            className="bde-btn bde-btn--sm btn-glass ticket-editor__btn-accent"
+            className="fleet-btn fleet-btn--sm btn-glass ticket-editor__btn-accent"
             onClick={() => usePanelLayoutStore.getState().setView('sprint')}
           >
             View Sprint Board
@@ -173,7 +173,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
           {tickets.length} ticket{tickets.length !== 1 ? 's' : ''}
         </span>
         <button
-          className="bde-btn bde-btn--sm btn-glass"
+          className="fleet-btn fleet-btn--sm btn-glass"
           onClick={dismiss}
           disabled={state === 'creating'}
         >
@@ -188,7 +188,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
               <span className="ticket-editor__card-number">#{idx + 1}</span>
               <div className="ticket-editor__card-actions">
                 <button
-                  className="bde-btn bde-btn--sm bde-btn--icon btn-glass"
+                  className="fleet-btn fleet-btn--sm fleet-btn--icon btn-glass"
                   onClick={() => moveTicket(idx, -1)}
                   disabled={idx === 0 || state === 'creating'}
                   title="Move up"
@@ -196,7 +196,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
                   &#9650;
                 </button>
                 <button
-                  className="bde-btn bde-btn--sm bde-btn--icon btn-glass"
+                  className="fleet-btn fleet-btn--sm fleet-btn--icon btn-glass"
                   onClick={() => moveTicket(idx, 1)}
                   disabled={idx === tickets.length - 1 || state === 'creating'}
                   title="Move down"
@@ -204,7 +204,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
                   &#9660;
                 </button>
                 <button
-                  className="bde-btn bde-btn--sm bde-btn--icon btn-glass ticket-editor__btn-danger"
+                  className="fleet-btn fleet-btn--sm fleet-btn--icon btn-glass ticket-editor__btn-danger"
                   onClick={() => removeTicket(idx)}
                   disabled={state === 'creating'}
                   title="Remove ticket"
@@ -217,7 +217,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
             <div className="ticket-editor__field">
               <label className="ticket-editor__label">Title</label>
               <input
-                className="bde-input__field ticket-editor__input"
+                className="fleet-input__field ticket-editor__input"
                 type="text"
                 value={ticket.title}
                 onChange={(e) => updateTicket(idx, { title: e.target.value })}
@@ -237,7 +237,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
               </label>
               {expandedPrompts.has(ticket._id) ? (
                 <textarea
-                  className="bde-textarea ticket-editor__textarea"
+                  className="fleet-textarea ticket-editor__textarea"
                   value={ticket.prompt}
                   onChange={(e) => updateTicket(idx, { prompt: e.target.value })}
                   placeholder="Detailed prompt for the coding agent"
@@ -258,7 +258,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
               <div className="ticket-editor__field-small">
                 <label className="ticket-editor__label">Repo</label>
                 <select
-                  className="bde-input__field ticket-editor__select"
+                  className="fleet-input__field ticket-editor__select"
                   value={ticket.repo}
                   onChange={(e) => updateTicket(idx, { repo: e.target.value })}
                   disabled={state === 'creating'}
@@ -274,7 +274,7 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
               <div className="ticket-editor__field-small">
                 <label className="ticket-editor__label">Priority</label>
                 <input
-                  className="bde-input__field ticket-editor__priority-input"
+                  className="fleet-input__field ticket-editor__priority-input"
                   type="number"
                   min={1}
                   max={10}
@@ -294,14 +294,14 @@ export function TicketEditor({ initialTickets }: TicketEditorProps): React.JSX.E
 
       <div className="ticket-editor__footer">
         <button
-          className="bde-btn bde-btn--sm btn-glass"
+          className="fleet-btn fleet-btn--sm btn-glass"
           onClick={addTicket}
           disabled={state === 'creating'}
         >
           + Add Ticket
         </button>
         <button
-          className="bde-btn bde-btn--md bde-btn--primary btn-primary"
+          className="fleet-btn fleet-btn--md fleet-btn--primary btn-primary"
           onClick={createAll}
           disabled={state === 'creating' || tickets.length === 0}
         >

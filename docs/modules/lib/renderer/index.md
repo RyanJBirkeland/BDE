@@ -5,7 +5,7 @@ Source: `src/renderer/src/lib/`
 
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
-| `copy-to-clipboard.ts` | Copy text to system clipboard with standard BDE toast feedback. Shows "Copied to clipboard" on success, "Could not copy — please copy manually" on failure. Shared helper extracted from onboarding steps. | `copyToClipboard` |
+| `copy-to-clipboard.ts` | Copy text to system clipboard with standard FLEET toast feedback. Shows "Copied to clipboard" on success, "Could not copy — please copy manually" on failure. Shared helper extracted from onboarding steps. | `copyToClipboard` |
 | `render-markdown.ts` | Convert markdown to sanitized HTML safe for dangerouslySetInnerHTML. Includes DOMPurify hook that validates href protocols (https/http/mailto only). | `renderMarkdown` |
 | `dashboard-types.ts` | Shared dashboard domain types used by stores and components. Owns `FeedEvent` to keep the store layer free of component imports. | `FeedEvent` |
 | `ringBuffer.ts` | Fixed-size circular buffer with O(1) push and no heap allocation after initialization. `createRingBuffer(size)` allocates once; `pushToRingBuffer(buf, item)` writes in place and advances the head pointer; `readRingBuffer(buf)` returns all stored items in insertion order. Used by `sprintEvents` store to cap per-agent event accumulation without array spreads. | `RingBuffer`, `createRingBuffer`, `pushToRingBuffer`, `readRingBuffer` |

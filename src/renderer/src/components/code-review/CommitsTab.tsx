@@ -14,9 +14,9 @@ export function CommitsTab(): React.JSX.Element {
         className="cr-commits"
         style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}
       >
-        <div className="bde-skeleton" style={{ height: 48 }} />
-        <div className="bde-skeleton" style={{ height: 48 }} />
-        <div className="bde-skeleton" style={{ height: 48 }} />
+        <div className="fleet-skeleton" style={{ height: 48 }} />
+        <div className="fleet-skeleton" style={{ height: 48 }} />
+        <div className="fleet-skeleton" style={{ height: 48 }} />
       </div>
     )
   }

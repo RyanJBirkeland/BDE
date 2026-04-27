@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   background: var(--glass-tint-dark);
-  border-right: 1px solid var(--bde-border);
+  border-right: 1px solid var(--fleet-border);
   overflow: hidden;
 }
 .diff-sidebar__header {
@@ -10,20 +10,20 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border-bottom: 1px solid var(--bde-border);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
 }
 .diff-sidebar__title {
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .diff-sidebar__count {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-muted);
-  background: var(--bde-border);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted);
+  background: var(--fleet-border);
   padding: 0 6px;
-  border-radius: var(--bde-radius-lg);
+  border-radius: var(--fleet-radius-lg);
 }
 .diff-sidebar__list {
   flex: 1;
@@ -31,34 +31,34 @@
   padding: 2px 0;
 }
 .diff-sidebar {
-  background: var(--bde-accent-surface);
-  border-right: 1px solid var(--bde-accent-border);
+  background: var(--fleet-accent-surface);
+  border-right: 1px solid var(--fleet-accent-border);
 }
 .diff-sidebar__header {
-  border-bottom: 1px solid var(--bde-accent-border);
+  border-bottom: 1px solid var(--fleet-accent-border);
 }
 .diff-sidebar__title {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .diff-sidebar__count {
-  color: var(--bde-text-muted);
-  background: var(--bde-accent-border);
+  color: var(--fleet-text-muted);
+  background: var(--fleet-accent-border);
 }
 .diff-file-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: var(--bde-space-1) 10px;
+  padding: var(--fleet-space-1) 10px;
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
-  color: var(--bde-text);
-  font-size: var(--bde-size-sm);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-sm);
 }
 .diff-file-item--active {
-  background: var(--bde-border);
+  background: var(--fleet-border);
 }
 .diff-file-item__name {
   white-space: nowrap;
@@ -69,26 +69,26 @@
 }
 .diff-file-item__badge {
   display: flex;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
   flex-shrink: 0;
   margin-left: 6px;
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-xs);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-xs);
 }
 .diff-file-item__add {
-  color: var(--bde-diff-add);
+  color: var(--fleet-diff-add);
 }
 .diff-file-item__del {
-  color: var(--bde-diff-del);
+  color: var(--fleet-diff-del);
 }
 .diff-file-item {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .diff-file-item:hover {
-  background: var(--bde-border);
+  background: var(--fleet-border);
 }
 .diff-file-item--active {
-  background: var(--bde-border);
+  background: var(--fleet-border);
   /* Neon enhancement: cyan left indicator */
-  box-shadow: inset 2px 0 0 var(--bde-accent);
+  box-shadow: inset 2px 0 0 var(--fleet-accent);
 }

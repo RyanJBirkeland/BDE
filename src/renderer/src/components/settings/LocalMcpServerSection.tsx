@@ -72,7 +72,7 @@ export function LocalMcpServerSection(): React.JSX.Element {
     const snippet = JSON.stringify(
       {
         mcpServers: {
-          bde: {
+          fleet: {
             url: `http://127.0.0.1:${port}/mcp`,
             headers: { Authorization: `Bearer ${token}` }
           }
@@ -90,7 +90,7 @@ export function LocalMcpServerSection(): React.JSX.Element {
   return (
     <SettingsCard
       title="Local MCP Server"
-      subtitle="Expose BDE tasks and epics to local MCP-speaking agents over http://127.0.0.1"
+      subtitle="Expose FLEET tasks and epics to local MCP-speaking agents over http://127.0.0.1"
     >
       <label className="settings-readonly-toggle">
         <input
@@ -102,7 +102,7 @@ export function LocalMcpServerSection(): React.JSX.Element {
         <div className="settings-readonly-toggle__body">
           <div className="settings-readonly-toggle__title">Enable MCP server</div>
           <div className="settings-readonly-toggle__desc">
-            When enabled, BDE listens on localhost for MCP tool calls from Claude Code, Cursor, and
+            When enabled, FLEET listens on localhost for MCP tool calls from Claude Code, Cursor, and
             compatible agents.
           </div>
         </div>

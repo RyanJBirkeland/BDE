@@ -207,7 +207,7 @@ describe('ValidationChecks', () => {
     const { container } = render(<ValidationChecks />)
 
     const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('bde-card')
+    expect(wrapper.className).toContain('fleet-card')
     expect(wrapper.className).toContain('wb-checks-card')
   })
 
@@ -221,7 +221,7 @@ describe('ValidationChecks', () => {
     const { container } = render(<ValidationChecks />)
 
     const wrapper = container.firstChild as HTMLElement
-    expect(wrapper.className).toContain('bde-card')
+    expect(wrapper.className).toContain('fleet-card')
     expect(wrapper.className).toContain('wb-checks-card')
   })
 

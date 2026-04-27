@@ -32,7 +32,7 @@ Each helper is a top-level function sitting at the abstraction level below `hand
 The SDK then applies DNS-rebinding (Host) validation and the explicit Origin allow-list (T-45) configured at transport construction.
 
 ## Observability (T-42 / T-48)
-Every non-2xx path writes a structured, greppable warn/error line. Messages carry consistent prefixes so they can be filtered from `~/.bde/bde.log`:
+Every non-2xx path writes a structured, greppable warn/error line. Messages carry consistent prefixes so they can be filtered from `~/.fleet/fleet.log`:
 
 | Prefix | Level | Emitted by |
 |---|---|---|

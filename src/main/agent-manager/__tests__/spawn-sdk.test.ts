@@ -7,8 +7,8 @@ vi.mock('../../env-utils', () => ({
 }))
 
 vi.mock('../../paths', () => ({
-  getRepoPaths: vi.fn(() => ({ bde: '/Users/test/projects/BDE' })),
-  BDE_MEMORY_DIR: '/Users/test/.bde/memory'
+  getRepoPaths: vi.fn(() => ({ fleet: '/Users/test/projects/FLEET' })),
+  FLEET_MEMORY_DIR: '/Users/test/.fleet/memory'
 }))
 
 let mockMessages: unknown[] = []
@@ -220,7 +220,7 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
       sdk,
       {
         prompt: 'test',
-        cwd: '/Users/test/worktrees/bde/abc',
+        cwd: '/Users/test/worktrees/fleet/abc',
         model: 'sonnet',
         pipelineTuning: { maxTurns: 20 }
       },
@@ -243,7 +243,7 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
 
     const result = await canUseTool!(
       'Write',
-      { file_path: '/Users/test/projects/BDE/src/main/foo.ts', content: 'y' },
+      { file_path: '/Users/test/projects/FLEET/src/main/foo.ts', content: 'y' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('deny')
@@ -265,7 +265,7 @@ describe('spawnViaSdk wires worktree-isolation hook for pipeline agents', () => 
 
     const result = await canUseTool!(
       'Write',
-      { file_path: '/Users/test/projects/BDE/src/main/foo.ts', content: 'y' },
+      { file_path: '/Users/test/projects/FLEET/src/main/foo.ts', content: 'y' },
       { signal: new AbortController().signal }
     )
     expect(result.behavior).toBe('allow')

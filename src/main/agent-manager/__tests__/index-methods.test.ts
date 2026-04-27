@@ -48,9 +48,9 @@ vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'myrepo', localPath: '/repos/myrepo' }]),
   getGhRepo: vi.fn(),
-  BDE_DIR: '/tmp/bde-test',
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log',
-  BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
+  FLEET_DIR: '/tmp/fleet-test',
+  FLEET_AGENT_LOG_PATH: '/tmp/fleet-agent-test.log',
+  FLEET_TASK_MEMORY_DIR: '/tmp/fleet-test/tasks'
 }))
 
 vi.mock('../sdk-adapter', () => ({
@@ -139,7 +139,7 @@ import { broadcast } from '../../broadcast'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 3,
-  worktreeBase: '/tmp/worktrees/bde',
+  worktreeBase: '/tmp/worktrees/fleet',
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,

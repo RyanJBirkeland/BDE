@@ -15,15 +15,15 @@ function makeAgentMeta(overrides: Partial<AgentMeta> = {}): AgentMeta {
     pid: 123,
     bin: 'claude',
     model: 'claude-sonnet',
-    repo: 'BDE',
-    repoPath: '/tmp/bde',
+    repo: 'FLEET',
+    repoPath: '/tmp/fleet',
     task: 'Fix the bug',
     startedAt: new Date('2024-01-01T10:00:00Z').toISOString(),
     finishedAt: null,
     exitCode: null,
     status: 'done',
     logPath: '/tmp/log',
-    source: 'bde',
+    source: 'fleet',
     costUsd: null,
     tokensIn: null,
     tokensOut: null,
@@ -84,8 +84,8 @@ describe('normalizeStatus', () => {
 })
 
 describe('normalizeSource', () => {
-  it('maps bde to local', () => {
-    expect(normalizeSource('bde')).toBe('local')
+  it('maps fleet to local', () => {
+    expect(normalizeSource('fleet')).toBe('local')
   })
 
   it('maps external to history', () => {
@@ -159,7 +159,7 @@ describe('buildUnifiedAgentList', () => {
   })
 
   it('adds local processes as LocalAgent with id=local:<pid>', () => {
-    const proc = makeProcess({ pid: 1234, cwd: '/projects/bde' })
+    const proc = makeProcess({ pid: 1234, cwd: '/projects/fleet' })
     const result = buildUnifiedAgentList([proc], [])
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('local:1234')
@@ -179,8 +179,8 @@ describe('buildUnifiedAgentList', () => {
     expect(result[0].label).toBe('claude')
   })
 
-  it('adds bde history agents as local source entries', () => {
-    const agent = makeAgentMeta({ id: 'hist-1', source: 'bde', status: 'done' })
+  it('adds fleet history agents as local source entries', () => {
+    const agent = makeAgentMeta({ id: 'hist-1', source: 'fleet', status: 'done' })
     const result = buildUnifiedAgentList([], [agent])
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('history:hist-1')
@@ -197,7 +197,7 @@ describe('buildUnifiedAgentList', () => {
 
   it('skips running history agents that already have a live process', () => {
     const proc = makeProcess({ pid: 999 })
-    const agent = makeAgentMeta({ id: 'running-1', pid: 999, status: 'running', source: 'bde' })
+    const agent = makeAgentMeta({ id: 'running-1', pid: 999, status: 'running', source: 'fleet' })
     const result = buildUnifiedAgentList([proc], [agent])
     // Should only have the local process, not a duplicate from history
     expect(result).toHaveLength(1)
@@ -206,7 +206,7 @@ describe('buildUnifiedAgentList', () => {
 
   it('does not skip running history agent when pid not in local processes', () => {
     const proc = makeProcess({ pid: 111 })
-    const agent = makeAgentMeta({ id: 'running-2', pid: 222, status: 'running', source: 'bde' })
+    const agent = makeAgentMeta({ id: 'running-2', pid: 222, status: 'running', source: 'fleet' })
     const result = buildUnifiedAgentList([proc], [agent])
     expect(result).toHaveLength(2)
   })
@@ -229,8 +229,8 @@ describe('buildUnifiedAgentList', () => {
     expect(result[0].label).toBe('h3')
   })
 
-  it('sets canKill=true for running bde history agents with pid', () => {
-    const agent = makeAgentMeta({ id: 'h4', source: 'bde', pid: 555, status: 'running' })
+  it('sets canKill=true for running fleet history agents with pid', () => {
+    const agent = makeAgentMeta({ id: 'h4', source: 'fleet', pid: 555, status: 'running' })
     const result = buildUnifiedAgentList([], [agent])
     const localAgent = result.find((a) => a.id === 'history:h4')
     expect(localAgent).toBeDefined()
@@ -239,8 +239,8 @@ describe('buildUnifiedAgentList', () => {
     }
   })
 
-  it('sets canKill=false for done bde history agents', () => {
-    const agent = makeAgentMeta({ id: 'h5', source: 'bde', pid: 555, status: 'done' })
+  it('sets canKill=false for done fleet history agents', () => {
+    const agent = makeAgentMeta({ id: 'h5', source: 'fleet', pid: 555, status: 'done' })
     const result = buildUnifiedAgentList([], [agent])
     const localAgent = result.find((a) => a.id === 'history:h5')
     if (localAgent && 'canKill' in localAgent) {
@@ -257,7 +257,7 @@ describe('buildUnifiedAgentList', () => {
   it('handles multiple processes and history agents', () => {
     const procs = [makeProcess({ pid: 1 }), makeProcess({ pid: 2, cwd: '/other' })]
     const agents = [
-      makeAgentMeta({ id: 'a1', source: 'bde', status: 'done' }),
+      makeAgentMeta({ id: 'a1', source: 'fleet', status: 'done' }),
       makeAgentMeta({ id: 'a2', source: 'external', status: 'failed' })
     ]
     const result = buildUnifiedAgentList(procs, agents)

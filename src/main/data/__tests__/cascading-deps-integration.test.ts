@@ -35,7 +35,7 @@ function insertTask(
 ): void {
   db.prepare(
     `INSERT INTO sprint_tasks (id, title, repo, status, priority, depends_on)
-     VALUES (?, ?, 'bde', ?, 1, ?)`
+     VALUES (?, ?, 'fleet', ?, 1, ?)`
   ).run(id, `Task ${id}`, status, dependsOn ? JSON.stringify(dependsOn) : null)
 }
 

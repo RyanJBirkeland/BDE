@@ -21,7 +21,7 @@ describe('AppearanceSection', () => {
     mockSetTheme.mockReset()
     mockTheme = 'dark'
     localStorage.clear()
-    document.documentElement.style.removeProperty('--bde-accent')
+    document.documentElement.style.removeProperty('--fleet-accent')
   })
 
   it('renders section heading', () => {
@@ -65,9 +65,9 @@ describe('AppearanceSection', () => {
   it('dark theme button has primary class when theme is dark', () => {
     render(<AppearanceSection />)
     const darkBtn = screen.getByRole('button', { name: 'Dark' })
-    expect(darkBtn.className).toContain('bde-btn--primary')
+    expect(darkBtn.className).toContain('fleet-btn--primary')
     const lightBtn = screen.getByRole('button', { name: 'Light' })
-    expect(lightBtn.className).toContain('bde-btn--ghost')
+    expect(lightBtn.className).toContain('fleet-btn--ghost')
   })
 
   it('light theme button has primary class when theme is light', async () => {
@@ -82,24 +82,24 @@ describe('AppearanceSection', () => {
     )
     render(<AppearanceSection />)
     const lightBtn = screen.getByRole('button', { name: 'Light' })
-    expect(lightBtn.className).toContain('bde-btn--primary')
+    expect(lightBtn.className).toContain('fleet-btn--primary')
     const darkBtn = screen.getByRole('button', { name: 'Dark' })
-    expect(darkBtn.className).toContain('bde-btn--ghost')
+    expect(darkBtn.className).toContain('fleet-btn--ghost')
   })
 
   it('clicking an accent color updates localStorage and CSS custom property', async () => {
     const user = userEvent.setup()
     render(<AppearanceSection />)
     await user.click(screen.getByTitle('Blue'))
-    expect(localStorage.getItem('bde-accent')).toBe('#3B82F6')
-    expect(document.documentElement.style.getPropertyValue('--bde-accent')).toBe('#3B82F6')
+    expect(localStorage.getItem('fleet-accent')).toBe('#3B82F6')
+    expect(document.documentElement.style.getPropertyValue('--fleet-accent')).toBe('#3B82F6')
   })
 
   it('clicking a different accent color updates to that color', async () => {
     const user = userEvent.setup()
     render(<AppearanceSection />)
     await user.click(screen.getByTitle('Purple'))
-    expect(localStorage.getItem('bde-accent')).toBe('#8B5CF6')
+    expect(localStorage.getItem('fleet-accent')).toBe('#8B5CF6')
   })
 
   it('default accent is Green when localStorage is empty', () => {
@@ -109,11 +109,11 @@ describe('AppearanceSection', () => {
   })
 
   it('loads saved accent from localStorage on mount', () => {
-    localStorage.setItem('bde-accent', '#EF4444')
+    localStorage.setItem('fleet-accent', '#EF4444')
     render(<AppearanceSection />)
     const redBtn = screen.getByTitle('Red')
     expect(redBtn.className).toContain('settings-color--active')
-    expect(document.documentElement.style.getPropertyValue('--bde-accent')).toBe('#EF4444')
+    expect(document.documentElement.style.getPropertyValue('--fleet-accent')).toBe('#EF4444')
   })
 
   it('active accent swatch has settings-color--active class, others do not', async () => {
@@ -166,6 +166,6 @@ describe('AppearanceSection', () => {
     )
     render(<AppearanceSection />)
     const systemBtn = screen.getByRole('button', { name: 'System' })
-    expect(systemBtn.className).toContain('bde-btn--primary')
+    expect(systemBtn.className).toContain('fleet-btn--primary')
   })
 })

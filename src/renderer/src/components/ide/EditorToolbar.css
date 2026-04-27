@@ -2,10 +2,10 @@
 .editor-toolbar {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
-  padding: 6px var(--bde-space-3);
-  background: var(--bde-surface-high);
-  border-bottom: 1px solid var(--bde-accent-border);
+  gap: var(--fleet-space-1);
+  padding: 6px var(--fleet-space-3);
+  background: var(--fleet-surface-high);
+  border-bottom: 1px solid var(--fleet-accent-border);
 }
 
 .editor-toolbar__btn {
@@ -16,9 +16,9 @@
   height: 24px;
   padding: 0;
   border: none;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   background: transparent;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   cursor: pointer;
   transition:
     color 0.15s ease,
@@ -26,17 +26,17 @@
 }
 
 .editor-toolbar__btn:hover:not(:disabled) {
-  color: var(--bde-text);
-  background: var(--bde-surface);
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
 }
 
 .editor-toolbar__btn--active {
-  color: var(--bde-accent);
-  background: var(--bde-accent-surface);
+  color: var(--fleet-accent);
+  background: var(--fleet-accent-surface);
 }
 
 .editor-toolbar__btn:disabled {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   cursor: not-allowed;
   opacity: 0.4;
 }
@@ -44,14 +44,14 @@
 .editor-toolbar__divider {
   width: 1px;
   height: 16px;
-  background: var(--bde-accent-border);
-  margin: 0 var(--bde-space-1);
+  background: var(--fleet-accent-border);
+  margin: 0 var(--fleet-space-1);
 }
 
 .editor-toolbar__font-size {
-  font-family: var(--bde-font-mono, monospace);
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-muted);
+  font-family: var(--fleet-font-mono, monospace);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted);
   min-width: 20px;
   text-align: center;
 }

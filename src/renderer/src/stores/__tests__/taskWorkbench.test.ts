@@ -78,7 +78,7 @@ describe('taskWorkbench store', () => {
     useTaskWorkbenchStore.getState().loadTask({
       id: 'task-456',
       title: 'New task',
-      repo: 'BDE',
+      repo: 'FLEET',
       priority: 3,
       spec: '',
       prompt: null,

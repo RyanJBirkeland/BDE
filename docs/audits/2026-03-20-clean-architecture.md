@@ -1,4 +1,4 @@
-# Clean Architecture Audit — BDE
+# Clean Architecture Audit — FLEET
 
 > **Snapshot: 2026-03-20 — PARTIALLY ADDRESSED. The Uncle Bob Wave 1 commits (`abe115eb`, `b8369fef`) and follow-up clean-arch commits target many P1 findings from this doc. Re-read against current code before acting — specific findings may or may not still be open.**
 
@@ -456,7 +456,7 @@ shared/ ──→ (self-contained, all types here)
 
 ---
 
-## What BDE Does Well
+## What FLEET Does Well
 
 1. **Process boundary discipline** — Zero direct cross-process references; all IPC typed end-to-end
 2. **AgentManager** — Textbook dependency injection; the integration test suite proves the pattern works

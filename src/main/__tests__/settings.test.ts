@@ -74,7 +74,7 @@ describe('settings.ts', () => {
 
   describe('JSON get/set', () => {
     it('setSettingJson stores JSON and getSettingJson retrieves it', () => {
-      const data = { name: 'BDE', path: '/tmp' }
+      const data = { name: 'FLEET', path: '/tmp' }
       setSettingJson('repos', data)
       expect(getSettingJson('repos')).toEqual(data)
     })
@@ -90,7 +90,7 @@ describe('settings.ts', () => {
 
     it('handles arrays', () => {
       const repos = [
-        { name: 'BDE', localPath: '/tmp/bde' },
+        { name: 'FLEET', localPath: '/tmp/fleet' },
         { name: 'life-os', localPath: '/tmp/life-os' }
       ]
       setSettingJson('repos', repos)

@@ -1,7 +1,7 @@
 import { toast } from '../stores/toasts'
 
 /**
- * Copy a string to the system clipboard with standard BDE toast feedback.
+ * Copy a string to the system clipboard with standard FLEET toast feedback.
  * Succeeds silently with a "Copied to clipboard" toast; on failure, shows
  * a "Could not copy — please copy manually" error toast so the user knows
  * to fall back.

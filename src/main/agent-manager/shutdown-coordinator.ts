@@ -88,7 +88,7 @@ export async function executeShutdown(
         status: 'queued',
         claimed_by: null,
         started_at: null,
-        notes: 'Task was re-queued due to BDE shutdown while agent was running.'
+        notes: 'Task was re-queued due to FLEET shutdown while agent was running.'
       })
       deps.logger.info(`[agent-manager] Re-queued task ${agent.taskId} during shutdown`)
     } catch (err) {

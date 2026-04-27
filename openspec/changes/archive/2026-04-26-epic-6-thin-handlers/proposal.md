@@ -5,7 +5,7 @@ Five IPC handlers contain business logic that belongs in services: inline git op
 ## What Changes
 
 - Extract `review:checkFreshness` inline git logic (fetch, SHA compare, commit count) into `review-orchestration-service.ts` as `checkReviewFreshness()`
-- Extract `review:markShippedOutsideBde` inline status validation + transition into `review-orchestration-service.ts` as `markShippedOutsideBde()`
+- Extract `review:markShippedOutsideFleet` inline status validation + transition into `review-orchestration-service.ts` as `markShippedOutsideFleet()`
 - Extract `sprint:claimTask` inline template lookup (settings read + match) into `sprint-service.ts` as `claimTask()`
 - Extract `sprint:forceReleaseClaim` inline multi-step orchestration (cancel agent → reset → transition → notify) into `sprint-service.ts` as `forceReleaseClaim()`
 - Extract `sprint:retry` entire body (status guard, repo lookup, git worktree prune, branch cleanup, state reset, transition) into `sprint-service.ts` as `retryTask()`
@@ -21,8 +21,8 @@ Five IPC handlers contain business logic that belongs in services: inline git op
 
 ## Impact
 
-- `src/main/handlers/review.ts` — `review:checkFreshness` and `review:markShippedOutsideBde` handlers slimmed to ≤5 lines each
-- `src/main/services/review-orchestration-service.ts` — gains `checkReviewFreshness()` and `markShippedOutsideBde()`
+- `src/main/handlers/review.ts` — `review:checkFreshness` and `review:markShippedOutsideFleet` handlers slimmed to ≤5 lines each
+- `src/main/services/review-orchestration-service.ts` — gains `checkReviewFreshness()` and `markShippedOutsideFleet()`
 - `src/main/handlers/sprint-local.ts` — `sprint:claimTask` and `sprint:forceReleaseClaim` handlers slimmed
 - `src/main/handlers/sprint-retry-handler.ts` — `sprint:retry` handler body replaced by single service call
 - `src/main/services/sprint-service.ts` — gains `claimTask()`, `forceReleaseClaim()`, `retryTask()`

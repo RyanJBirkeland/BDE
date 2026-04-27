@@ -55,7 +55,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: 'task-1',
     title: 'Sample task',
-    repo: 'bde',
+    repo: 'fleet',
     status: 'queued',
     pr_url: null,
     pr_number: null,

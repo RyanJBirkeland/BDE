@@ -68,7 +68,7 @@ function CheckRow({
   optional?: boolean | undefined
 }): React.JSX.Element {
   return (
-    <div className="onboarding-check" style={{ gap: 'var(--bde-space-1)' }}>
+    <div className="onboarding-check" style={{ gap: 'var(--fleet-space-1)' }}>
       <div className="onboarding-check__row">
         <StatusIcon state={state} />
         <span className="onboarding-check__label">{label}</span>
@@ -76,8 +76,8 @@ function CheckRow({
           <span
             className="onboarding-check__optional"
             style={{
-              fontSize: 'var(--bde-size-xs)',
-              marginLeft: 'var(--bde-space-1)'
+              fontSize: 'var(--fleet-size-xs)',
+              marginLeft: 'var(--fleet-space-1)'
             }}
           >
             (optional)
@@ -88,8 +88,8 @@ function CheckRow({
         <p
           className="onboarding-check__help onboarding-check__help--fail"
           style={{
-            margin: `0 0 0 ${'var(--bde-space-6)'}`,
-            fontSize: 'var(--bde-size-xs)'
+            margin: `0 0 0 ${'var(--fleet-space-6)'}`,
+            fontSize: 'var(--fleet-size-xs)'
           }}
         >
           {helpText}
@@ -99,8 +99,8 @@ function CheckRow({
         <p
           className="onboarding-check__help onboarding-check__help--warn"
           style={{
-            margin: `0 0 0 ${'var(--bde-space-6)'}`,
-            fontSize: 'var(--bde-size-xs)'
+            margin: `0 0 0 ${'var(--fleet-space-6)'}`,
+            fontSize: 'var(--fleet-size-xs)'
           }}
         >
           {helpText}
@@ -196,7 +196,7 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
 
         <p className="onboarding-subtitle">Verifying Claude Code CLI and environment</p>
 
-        <div className="onboarding-checks" style={{ gap: 'var(--bde-space-3)' }}>
+        <div className="onboarding-checks" style={{ gap: 'var(--fleet-space-3)' }}>
           <div className="onboarding-section-label">Required</div>
           <CheckRow
             state={cliState}
@@ -233,9 +233,9 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
             <code className="onboarding-instruction__code">{instruction}</code>
             <p
               style={{
-                margin: 'var(--bde-space-1) 0 0 0',
-                fontSize: 'var(--bde-size-xs)',
-                color: 'var(--bde-text-muted)'
+                margin: 'var(--fleet-space-1) 0 0 0',
+                fontSize: 'var(--fleet-size-xs)',
+                color: 'var(--fleet-text-muted)'
               }}
             >
               After running the command, click <strong>Re-check</strong> below to verify.
@@ -248,9 +248,9 @@ export function Onboarding({ onReady }: OnboardingProps): React.JSX.Element {
             className="onboarding-risk-callout"
             role="alert"
             style={{
-              margin: 'var(--bde-space-3) 0 0 0',
-              fontSize: 'var(--bde-size-xs)',
-              color: 'var(--bde-warning, #ff9f43)'
+              margin: 'var(--fleet-space-3) 0 0 0',
+              fontSize: 'var(--fleet-size-xs)',
+              color: 'var(--fleet-warning, #ff9f43)'
             }}
           >
             Continuing skips: {failedChecks.join(', ')}. Agents and related features will fail until

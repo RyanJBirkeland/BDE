@@ -3,7 +3,7 @@
  *
  * The controller owns four periodic setInterval handles for the agent manager
  * (drain, watchdog, orphan, prune). A regression that leaks a timer or fails
- * to start one in startTimers() would only manifest as "BDE didn't shut down
+ * to start one in startTimers() would only manifest as "FLEET didn't shut down
  * cleanly" in production — these tests guard the start/stop contract directly.
  *
  * Strategy: vi.useFakeTimers() lets us advance virtual time deterministically

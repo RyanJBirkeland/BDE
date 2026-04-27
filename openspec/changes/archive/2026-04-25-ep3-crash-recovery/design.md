@@ -1,6 +1,6 @@
 ## Context
 
-`recoverOrphans` in `orphan-recovery.ts` finds tasks stuck in `active` status and calls `resetTaskForRetry(id)` on each. There is no per-task recovery counter. A task that crashes BDE on every startup loops indefinitely. The recovery run is not broadcast to the renderer — users see no indication that tasks were rescued or that some are stuck in a crash loop. `review`-status tasks with an open PR are left in `review` on recovery even though the PR may have merged while BDE was down.
+`recoverOrphans` in `orphan-recovery.ts` finds tasks stuck in `active` status and calls `resetTaskForRetry(id)` on each. There is no per-task recovery counter. A task that crashes FLEET on every startup loops indefinitely. The recovery run is not broadcast to the renderer — users see no indication that tasks were rescued or that some are stuck in a crash loop. `review`-status tasks with an open PR are left in `review` on recovery even though the PR may have merged while FLEET was down.
 
 ## Goals / Non-Goals
 

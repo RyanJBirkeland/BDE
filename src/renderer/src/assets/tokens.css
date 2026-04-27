@@ -9,53 +9,53 @@
 
 :root {
   /* Typography */
-  --bde-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --bde-font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  --bde-font-mono: var(--bde-font-code);
+  --fleet-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fleet-font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --fleet-font-mono: var(--fleet-font-code);
 
   /* Font sizes */
-  --bde-size-2xs: 10px;
-  --bde-size-xs: 11px;
-  --bde-size-sm: 12px;
-  --bde-size-md: 13px;
-  --bde-size-lg: 14px;
-  --bde-size-xl: 16px;
-  --bde-size-xxl: 20px;
+  --fleet-size-2xs: 10px;
+  --fleet-size-xs: 11px;
+  --fleet-size-sm: 12px;
+  --fleet-size-md: 13px;
+  --fleet-size-lg: 14px;
+  --fleet-size-xl: 16px;
+  --fleet-size-xxl: 20px;
 
   /* Font size shorthand aliases (--font-*) */
-  --font-2xs: var(--bde-size-2xs);
-  --font-xs: var(--bde-size-xs);
-  --font-sm: var(--bde-size-sm);
-  --font-md: var(--bde-size-md);
-  --font-lg: var(--bde-size-lg);
-  --font-xl: var(--bde-size-xl);
-  --font-xxl: var(--bde-size-xxl);
+  --font-2xs: var(--fleet-size-2xs);
+  --font-xs: var(--fleet-size-xs);
+  --font-sm: var(--fleet-size-sm);
+  --font-md: var(--fleet-size-md);
+  --font-lg: var(--fleet-size-lg);
+  --font-xl: var(--fleet-size-xl);
+  --font-xxl: var(--fleet-size-xxl);
 
   /* Spacing */
-  --bde-space-1: 4px;
-  --bde-space-2: 8px;
-  --bde-space-3: 12px;
-  --bde-space-4: 16px;
-  --bde-space-5: 20px;
-  --bde-space-6: 24px;
-  --bde-space-8: 32px;
+  --fleet-space-1: 4px;
+  --fleet-space-2: 8px;
+  --fleet-space-3: 12px;
+  --fleet-space-4: 16px;
+  --fleet-space-5: 20px;
+  --fleet-space-6: 24px;
+  --fleet-space-8: 32px;
 
   /* Radii */
-  --bde-radius-sm: 4px;
-  --bde-radius-md: 6px;
-  --bde-radius-lg: 8px;
-  --bde-radius-xl: 12px;
-  --bde-radius-full: 9999px;
+  --fleet-radius-sm: 4px;
+  --fleet-radius-md: 6px;
+  --fleet-radius-lg: 8px;
+  --fleet-radius-xl: 12px;
+  --fleet-radius-full: 9999px;
 
   /* Shadows */
-  --bde-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --bde-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --bde-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --fleet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --fleet-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --fleet-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
 
   /* Transitions */
-  --bde-transition-fast: 100ms ease;
-  --bde-transition-base: 150ms ease;
-  --bde-transition-slow: 200ms ease;
+  --fleet-transition-fast: 100ms ease;
+  --fleet-transition-base: 150ms ease;
+  --fleet-transition-slow: 200ms ease;
 
   /* ── Named Gradient Palette ──────────────────────────── */
 
@@ -167,51 +167,51 @@
 
 html.theme-pro-dark {
   /* ── Core palette ───────────────────────────────────── */
-  --bde-bg: #141414;
-  --bde-surface: #1e1f22;
-  --bde-surface-high: #2b2d30;
-  --bde-border: #2b2d30;
-  --bde-border-hover: #393b40;
-  --bde-accent: #4a88c7;
-  --bde-accent-dim: rgba(74, 136, 199, 0.15);
-  --bde-text: #dfe1e5;
-  --bde-text-muted: #9da0a6;
-  --bde-text-dim: #6f737a;
-  --bde-accent-text: #6cb8ff;
-  --bde-text-dimmer: rgba(255, 255, 255, 0.35);
-  --bde-danger: #db5c5c;
-  --bde-danger-dim: rgba(219, 92, 92, 0.15);
-  --bde-void: #141414;
-  --bde-border-glow: #4a88c7;
-  --bde-queued: #4a88c7;
-  --bde-running: #4a88c7;
-  --bde-bg-hover: rgba(255, 255, 255, 0.04);
-  --bde-bg-subtle: rgba(255, 255, 255, 0.02);
-  --bde-surface-raised: #2b2d30;
+  --fleet-bg: #141414;
+  --fleet-surface: #1e1f22;
+  --fleet-surface-high: #2b2d30;
+  --fleet-border: #2b2d30;
+  --fleet-border-hover: #393b40;
+  --fleet-accent: #4a88c7;
+  --fleet-accent-dim: rgba(74, 136, 199, 0.15);
+  --fleet-text: #dfe1e5;
+  --fleet-text-muted: #9da0a6;
+  --fleet-text-dim: #6f737a;
+  --fleet-accent-text: #6cb8ff;
+  --fleet-text-dimmer: rgba(255, 255, 255, 0.35);
+  --fleet-danger: #db5c5c;
+  --fleet-danger-dim: rgba(219, 92, 92, 0.15);
+  --fleet-void: #141414;
+  --fleet-border-glow: #4a88c7;
+  --fleet-queued: #4a88c7;
+  --fleet-running: #4a88c7;
+  --fleet-bg-hover: rgba(255, 255, 255, 0.04);
+  --fleet-bg-subtle: rgba(255, 255, 255, 0.02);
+  --fleet-surface-raised: #2b2d30;
 
   /* ── Interaction states ─────────────────────────────── */
-  --bde-hover: rgba(255, 255, 255, 0.04);
-  --bde-hover-strong: rgba(255, 255, 255, 0.06);
-  --bde-selected: #2d4566;
-  --bde-hover-subtle: rgba(255, 255, 255, 0.03);
-  --bde-accent-hover: rgba(74, 136, 199, 0.1);
-  --bde-danger-hover: rgba(219, 92, 92, 0.1);
-  --bde-warning-hover: rgba(230, 162, 53, 0.12);
-  --bde-error-bg: rgba(219, 92, 92, 0.1);
-  --bde-overlay: rgba(0, 0, 0, 0.5);
-  --bde-header-gradient: linear-gradient(
+  --fleet-hover: rgba(255, 255, 255, 0.04);
+  --fleet-hover-strong: rgba(255, 255, 255, 0.06);
+  --fleet-selected: #2d4566;
+  --fleet-hover-subtle: rgba(255, 255, 255, 0.03);
+  --fleet-accent-hover: rgba(74, 136, 199, 0.1);
+  --fleet-danger-hover: rgba(219, 92, 92, 0.1);
+  --fleet-warning-hover: rgba(230, 162, 53, 0.12);
+  --fleet-error-bg: rgba(219, 92, 92, 0.1);
+  --fleet-overlay: rgba(0, 0, 0, 0.5);
+  --fleet-header-gradient: linear-gradient(
     90deg,
     rgba(74, 136, 199, 0.3) 0%,
     rgba(74, 136, 199, 0.1) 60%,
     transparent 100%
   );
-  --bde-danger-gradient: linear-gradient(
+  --fleet-danger-gradient: linear-gradient(
     90deg,
     rgba(219, 92, 92, 0.3) 0%,
     rgba(219, 92, 92, 0.1) 60%,
     transparent 100%
   );
-  --bde-warning-gradient: linear-gradient(
+  --fleet-warning-gradient: linear-gradient(
     90deg,
     rgba(230, 162, 53, 0.3) 0%,
     rgba(230, 162, 53, 0.1) 60%,
@@ -219,33 +219,33 @@ html.theme-pro-dark {
   );
 
   /* ── Semantic colors ────────────────────────────────── */
-  --bde-danger-text: #db5c5c;
-  --bde-warning: #e6a235;
-  --bde-warning-dim: rgba(230, 162, 53, 0.15);
-  --bde-info: #4a88c7;
-  --bde-info-dim: rgba(74, 136, 199, 0.15);
-  --bde-success: #5fad65;
-  --bde-subagent: #8a7cb5;
-  --bde-purple: #8a7cb5;
-  --bde-purple-dim: rgba(138, 124, 181, 0.15);
+  --fleet-danger-text: #db5c5c;
+  --fleet-warning: #e6a235;
+  --fleet-warning-dim: rgba(230, 162, 53, 0.15);
+  --fleet-info: #4a88c7;
+  --fleet-info-dim: rgba(74, 136, 199, 0.15);
+  --fleet-success: #5fad65;
+  --fleet-subagent: #8a7cb5;
+  --fleet-purple: #8a7cb5;
+  --fleet-purple-dim: rgba(138, 124, 181, 0.15);
 
   /* ── Diff colors ────────────────────────────────────── */
-  --bde-diff-add: #5fad65;
-  --bde-diff-del: #db5c5c;
-  --bde-diff-mod: #e6a235;
-  --bde-diff-add-bg: rgba(95, 173, 101, 0.15);
-  --bde-diff-del-bg: rgba(219, 92, 92, 0.12);
+  --fleet-diff-add: #5fad65;
+  --fleet-diff-del: #db5c5c;
+  --fleet-diff-mod: #e6a235;
+  --fleet-diff-add-bg: rgba(95, 173, 101, 0.15);
+  --fleet-diff-del-bg: rgba(219, 92, 92, 0.12);
 
   /* ── Shadows ────────────────────────────────────────── */
-  --bde-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --bde-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --bde-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --fleet-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --fleet-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --fleet-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
 
   /* ── Button & glass ───────────────────────────────────── */
-  --bde-btn-primary-text: #ffffff;
-  --bde-glass-bg: rgba(255, 255, 255, 0.04);
-  --bde-glass-bg-hover: rgba(255, 255, 255, 0.08);
-  --bde-glass-bg-active: rgba(255, 255, 255, 0.06);
+  --fleet-btn-primary-text: #ffffff;
+  --fleet-glass-bg: rgba(255, 255, 255, 0.04);
+  --fleet-glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --fleet-glass-bg-active: rgba(255, 255, 255, 0.06);
 
   /* ── v2 — Gradients ─────────────────────────────────── */
   --gradient-aurora: linear-gradient(135deg, #00d37f 0%, #00b4d8 100%);
@@ -295,105 +295,105 @@ html.theme-pro-dark {
   --glass-glow-pulse-3: rgba(0, 211, 127, 0.4);
 
   /* ── Compact density ────────────────────────────────── */
-  --bde-space-1: 3px;
-  --bde-space-2: 6px;
-  --bde-space-3: 8px;
-  --bde-space-4: 12px;
-  --bde-space-5: 14px;
-  --bde-space-6: 18px;
-  --bde-space-7: 22px;
-  --bde-space-8: 28px;
+  --fleet-space-1: 3px;
+  --fleet-space-2: 6px;
+  --fleet-space-3: 8px;
+  --fleet-space-4: 12px;
+  --fleet-space-5: 14px;
+  --fleet-space-6: 18px;
+  --fleet-space-7: 22px;
+  --fleet-space-8: 28px;
 
   /* ── Compact type scale ─────────────────────────────── */
-  --bde-size-2xs: 9px;
-  --bde-size-xs: 10px;
-  --bde-size-sm: 11px;
-  --bde-size-md: 12px;
-  --bde-size-lg: 13px;
-  --bde-size-xl: 15px;
-  --bde-size-xxl: 18px;
+  --fleet-size-2xs: 9px;
+  --fleet-size-xs: 10px;
+  --fleet-size-sm: 11px;
+  --fleet-size-md: 12px;
+  --fleet-size-lg: 13px;
+  --fleet-size-xl: 15px;
+  --fleet-size-xxl: 18px;
 
   /* ── Compact radii ──────────────────────────────────── */
-  --bde-radius-sm: 3px;
-  --bde-radius-md: 4px;
-  --bde-radius-lg: 6px;
-  --bde-radius-xl: 8px;
+  --fleet-radius-sm: 3px;
+  --fleet-radius-md: 4px;
+  --fleet-radius-lg: 6px;
+  --fleet-radius-xl: 8px;
 
   /* ── New unified tokens ── */
-  --bde-accent-surface: rgba(74, 136, 199, 0.1);
-  --bde-accent-border: rgba(74, 136, 199, 0.28);
-  --bde-warning-surface: rgba(204, 136, 51, 0.1);
-  --bde-warning-border: rgba(204, 136, 51, 0.3);
-  --bde-danger-surface: rgba(219, 92, 92, 0.1);
-  --bde-danger-border: rgba(219, 92, 92, 0.3);
-  --bde-status-active: #7c6af7;
-  --bde-status-review: var(--bde-accent);
-  --bde-status-blocked: var(--bde-warning);
-  --bde-status-done: #4caf82;
-  --bde-status-queued: var(--bde-accent);
+  --fleet-accent-surface: rgba(74, 136, 199, 0.1);
+  --fleet-accent-border: rgba(74, 136, 199, 0.28);
+  --fleet-warning-surface: rgba(204, 136, 51, 0.1);
+  --fleet-warning-border: rgba(204, 136, 51, 0.3);
+  --fleet-danger-surface: rgba(219, 92, 92, 0.1);
+  --fleet-danger-border: rgba(219, 92, 92, 0.3);
+  --fleet-status-active: #7c6af7;
+  --fleet-status-review: var(--fleet-accent);
+  --fleet-status-blocked: var(--fleet-warning);
+  --fleet-status-done: #4caf82;
+  --fleet-status-queued: var(--fleet-accent);
 
   /* ── Semantic aliases ───────────────────────────────── */
-  --bde-error: var(--bde-danger);
-  --bde-bg-elevated: var(--bde-surface-high);
-  --bde-bg-secondary: var(--bde-surface);
-  --bde-surface-hover: var(--bde-hover);
-  --bde-success-surface: rgba(95, 173, 101, 0.1);
+  --fleet-error: var(--fleet-danger);
+  --fleet-bg-elevated: var(--fleet-surface-high);
+  --fleet-bg-secondary: var(--fleet-surface);
+  --fleet-surface-hover: var(--fleet-hover);
+  --fleet-success-surface: rgba(95, 173, 101, 0.1);
 
   /* ── Surface elevation tiers ────────────────────────── */
-  --bde-surface-1: var(--bde-surface);
-  --bde-surface-2: var(--bde-surface-high);
-  --bde-surface-3: var(--bde-border-hover);
+  --fleet-surface-1: var(--fleet-surface);
+  --fleet-surface-2: var(--fleet-surface-high);
+  --fleet-surface-3: var(--fleet-border-hover);
 }
 
 /* ── Pro Light — IntelliJ-inspired professional light theme ── */
 
 html.theme-pro-light {
   /* ── Core palette ───────────────────────────────────── */
-  --bde-bg: #f7f8fa;
-  --bde-surface: #ffffff;
-  --bde-surface-high: #ebedf0;
-  --bde-border: #d4d5d8;
-  --bde-border-hover: #b8bac0;
-  --bde-accent: #2675bf;
-  --bde-accent-dim: rgba(38, 117, 191, 0.15);
-  --bde-text: #1e1f22;
-  --bde-text-muted: #5e6166;
-  --bde-text-dim: #818388;
-  --bde-accent-text: #1a6bb5;
-  --bde-text-dimmer: #9ca0a8;
-  --bde-danger: #cc4848;
-  --bde-danger-dim: rgba(204, 72, 72, 0.1);
-  --bde-void: #ebedf0;
-  --bde-border-glow: #9ca0a8;
-  --bde-queued: #2675bf;
-  --bde-running: #2675bf;
-  --bde-bg-hover: rgba(0, 0, 0, 0.03);
-  --bde-bg-subtle: rgba(0, 0, 0, 0.015);
-  --bde-surface-raised: #f0f1f3;
+  --fleet-bg: #f7f8fa;
+  --fleet-surface: #ffffff;
+  --fleet-surface-high: #ebedf0;
+  --fleet-border: #d4d5d8;
+  --fleet-border-hover: #b8bac0;
+  --fleet-accent: #2675bf;
+  --fleet-accent-dim: rgba(38, 117, 191, 0.15);
+  --fleet-text: #1e1f22;
+  --fleet-text-muted: #5e6166;
+  --fleet-text-dim: #818388;
+  --fleet-accent-text: #1a6bb5;
+  --fleet-text-dimmer: #9ca0a8;
+  --fleet-danger: #cc4848;
+  --fleet-danger-dim: rgba(204, 72, 72, 0.1);
+  --fleet-void: #ebedf0;
+  --fleet-border-glow: #9ca0a8;
+  --fleet-queued: #2675bf;
+  --fleet-running: #2675bf;
+  --fleet-bg-hover: rgba(0, 0, 0, 0.03);
+  --fleet-bg-subtle: rgba(0, 0, 0, 0.015);
+  --fleet-surface-raised: #f0f1f3;
 
   /* ── Interaction states ─────────────────────────────── */
-  --bde-hover: rgba(0, 0, 0, 0.04);
-  --bde-hover-strong: rgba(0, 0, 0, 0.06);
-  --bde-selected: #d4e4f5;
-  --bde-hover-subtle: rgba(0, 0, 0, 0.03);
-  --bde-accent-hover: rgba(38, 117, 191, 0.1);
-  --bde-danger-hover: rgba(204, 72, 72, 0.1);
-  --bde-warning-hover: rgba(201, 122, 26, 0.12);
-  --bde-error-bg: rgba(204, 72, 72, 0.08);
-  --bde-overlay: rgba(0, 0, 0, 0.3);
-  --bde-header-gradient: linear-gradient(
+  --fleet-hover: rgba(0, 0, 0, 0.04);
+  --fleet-hover-strong: rgba(0, 0, 0, 0.06);
+  --fleet-selected: #d4e4f5;
+  --fleet-hover-subtle: rgba(0, 0, 0, 0.03);
+  --fleet-accent-hover: rgba(38, 117, 191, 0.1);
+  --fleet-danger-hover: rgba(204, 72, 72, 0.1);
+  --fleet-warning-hover: rgba(201, 122, 26, 0.12);
+  --fleet-error-bg: rgba(204, 72, 72, 0.08);
+  --fleet-overlay: rgba(0, 0, 0, 0.3);
+  --fleet-header-gradient: linear-gradient(
     90deg,
     rgba(38, 117, 191, 0.3) 0%,
     rgba(38, 117, 191, 0.1) 60%,
     transparent 100%
   );
-  --bde-danger-gradient: linear-gradient(
+  --fleet-danger-gradient: linear-gradient(
     90deg,
     rgba(204, 72, 72, 0.3) 0%,
     rgba(204, 72, 72, 0.08) 60%,
     transparent 100%
   );
-  --bde-warning-gradient: linear-gradient(
+  --fleet-warning-gradient: linear-gradient(
     90deg,
     rgba(201, 122, 26, 0.3) 0%,
     rgba(201, 122, 26, 0.08) 60%,
@@ -401,33 +401,33 @@ html.theme-pro-light {
   );
 
   /* ── Semantic colors ────────────────────────────────── */
-  --bde-danger-text: #cc4848;
-  --bde-warning: #c97a1a;
-  --bde-info: #2675bf;
-  --bde-success: #49a04b;
-  --bde-subagent: #6b5fa0;
-  --bde-warning-dim: rgba(201, 122, 26, 0.15);
-  --bde-info-dim: rgba(38, 117, 191, 0.15);
-  --bde-purple: #6b5fa0;
-  --bde-purple-dim: rgba(107, 95, 160, 0.15);
+  --fleet-danger-text: #cc4848;
+  --fleet-warning: #c97a1a;
+  --fleet-info: #2675bf;
+  --fleet-success: #49a04b;
+  --fleet-subagent: #6b5fa0;
+  --fleet-warning-dim: rgba(201, 122, 26, 0.15);
+  --fleet-info-dim: rgba(38, 117, 191, 0.15);
+  --fleet-purple: #6b5fa0;
+  --fleet-purple-dim: rgba(107, 95, 160, 0.15);
 
   /* ── Diff colors ────────────────────────────────────── */
-  --bde-diff-add: #49a04b;
-  --bde-diff-del: #cc4848;
-  --bde-diff-mod: #c97a1a;
-  --bde-diff-add-bg: rgba(73, 160, 75, 0.15);
-  --bde-diff-del-bg: rgba(204, 72, 72, 0.12);
+  --fleet-diff-add: #49a04b;
+  --fleet-diff-del: #cc4848;
+  --fleet-diff-mod: #c97a1a;
+  --fleet-diff-add-bg: rgba(73, 160, 75, 0.15);
+  --fleet-diff-del-bg: rgba(204, 72, 72, 0.12);
 
   /* ── Shadows ────────────────────────────────────────── */
-  --bde-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --bde-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --bde-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --fleet-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --fleet-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --fleet-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
 
   /* ── Button & glass ───────────────────────────────────── */
-  --bde-btn-primary-text: #ffffff;
-  --bde-glass-bg: rgba(0, 0, 0, 0.04);
-  --bde-glass-bg-hover: rgba(0, 0, 0, 0.08);
-  --bde-glass-bg-active: rgba(0, 0, 0, 0.06);
+  --fleet-btn-primary-text: #ffffff;
+  --fleet-glass-bg: rgba(0, 0, 0, 0.04);
+  --fleet-glass-bg-hover: rgba(0, 0, 0, 0.08);
+  --fleet-glass-bg-active: rgba(0, 0, 0, 0.06);
 
   /* ── v2 — Gradients ─────────────────────────────────── */
   --gradient-aurora: none;
@@ -476,48 +476,48 @@ html.theme-pro-light {
   --glass-glow-pulse-3: rgba(38, 117, 191, 0.25);
 
   /* ── Compact density (same as pro-dark) ─────────────── */
-  --bde-space-1: 3px;
-  --bde-space-2: 6px;
-  --bde-space-3: 8px;
-  --bde-space-4: 12px;
-  --bde-space-5: 14px;
-  --bde-space-6: 18px;
-  --bde-space-7: 22px;
-  --bde-space-8: 28px;
-  --bde-size-2xs: 9px;
-  --bde-size-xs: 10px;
-  --bde-size-sm: 11px;
-  --bde-size-md: 12px;
-  --bde-size-lg: 13px;
-  --bde-size-xl: 15px;
-  --bde-size-xxl: 18px;
-  --bde-radius-sm: 3px;
-  --bde-radius-md: 4px;
-  --bde-radius-lg: 6px;
-  --bde-radius-xl: 8px;
+  --fleet-space-1: 3px;
+  --fleet-space-2: 6px;
+  --fleet-space-3: 8px;
+  --fleet-space-4: 12px;
+  --fleet-space-5: 14px;
+  --fleet-space-6: 18px;
+  --fleet-space-7: 22px;
+  --fleet-space-8: 28px;
+  --fleet-size-2xs: 9px;
+  --fleet-size-xs: 10px;
+  --fleet-size-sm: 11px;
+  --fleet-size-md: 12px;
+  --fleet-size-lg: 13px;
+  --fleet-size-xl: 15px;
+  --fleet-size-xxl: 18px;
+  --fleet-radius-sm: 3px;
+  --fleet-radius-md: 4px;
+  --fleet-radius-lg: 6px;
+  --fleet-radius-xl: 8px;
 
   /* ── New unified tokens ── */
-  --bde-accent-surface: rgba(38, 117, 191, 0.08);
-  --bde-accent-border: rgba(38, 117, 191, 0.25);
-  --bde-warning-surface: rgba(184, 115, 32, 0.08);
-  --bde-warning-border: rgba(184, 115, 32, 0.28);
-  --bde-danger-surface: rgba(201, 64, 64, 0.08);
-  --bde-danger-border: rgba(201, 64, 64, 0.28);
-  --bde-status-active: #6356e5;
-  --bde-status-review: var(--bde-accent);
-  --bde-status-blocked: var(--bde-warning);
-  --bde-status-done: #3a9b6f;
-  --bde-status-queued: var(--bde-accent);
+  --fleet-accent-surface: rgba(38, 117, 191, 0.08);
+  --fleet-accent-border: rgba(38, 117, 191, 0.25);
+  --fleet-warning-surface: rgba(184, 115, 32, 0.08);
+  --fleet-warning-border: rgba(184, 115, 32, 0.28);
+  --fleet-danger-surface: rgba(201, 64, 64, 0.08);
+  --fleet-danger-border: rgba(201, 64, 64, 0.28);
+  --fleet-status-active: #6356e5;
+  --fleet-status-review: var(--fleet-accent);
+  --fleet-status-blocked: var(--fleet-warning);
+  --fleet-status-done: #3a9b6f;
+  --fleet-status-queued: var(--fleet-accent);
 
   /* ── Semantic aliases ───────────────────────────────── */
-  --bde-error: var(--bde-danger);
-  --bde-bg-elevated: var(--bde-surface-high);
-  --bde-bg-secondary: var(--bde-surface);
-  --bde-surface-hover: var(--bde-hover);
-  --bde-success-surface: rgba(73, 160, 75, 0.08);
+  --fleet-error: var(--fleet-danger);
+  --fleet-bg-elevated: var(--fleet-surface-high);
+  --fleet-bg-secondary: var(--fleet-surface);
+  --fleet-surface-hover: var(--fleet-hover);
+  --fleet-success-surface: rgba(73, 160, 75, 0.08);
 
   /* ── Surface elevation tiers ────────────────────────── */
-  --bde-surface-1: var(--bde-surface);
-  --bde-surface-2: var(--bde-surface-raised);
-  --bde-surface-3: var(--bde-surface-high);
+  --fleet-surface-1: var(--fleet-surface);
+  --fleet-surface-2: var(--fleet-surface-raised);
+  --fleet-surface-3: var(--fleet-surface-high);
 }

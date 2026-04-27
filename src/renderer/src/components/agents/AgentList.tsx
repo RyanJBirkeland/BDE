@@ -290,10 +290,10 @@ export function AgentList({
 
         {loading && agents.length === 0 && !fetchError && (
           <div className="agent-list__loading-container">
-            <div className="bde-skeleton" style={{ height: 56 }} />
-            <div className="bde-skeleton" style={{ height: 56 }} />
-            <div className="bde-skeleton" style={{ height: 56 }} />
-            <div className="bde-skeleton" style={{ height: 56 }} />
+            <div className="fleet-skeleton" style={{ height: 56 }} />
+            <div className="fleet-skeleton" style={{ height: 56 }} />
+            <div className="fleet-skeleton" style={{ height: 56 }} />
+            <div className="fleet-skeleton" style={{ height: 56 }} />
           </div>
         )}
 
@@ -397,7 +397,7 @@ export function AgentList({
         {hasMore && onLoadMore && (
           <div
             style={{
-              padding: 'var(--bde-space-2)',
+              padding: 'var(--fleet-space-2)',
               display: 'flex',
               justifyContent: 'center'
             }}

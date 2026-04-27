@@ -1,8 +1,8 @@
-# BDE MCP Server — Design
+# FLEET MCP Server — Design
 
 **Date:** 2026-04-17
 **Status:** Approved scope + architecture + auth posture; pending user spec review.
-**Scope:** Expose BDE's task and epic domain to local MCP-speaking agents (Claude Code, Claude Desktop, Cursor) as a Streamable-HTTP MCP server running inside the Electron main process.
+**Scope:** Expose FLEET's task and epic domain to local MCP-speaking agents (Claude Code, Claude Desktop, Cursor) as a Streamable-HTTP MCP server running inside the Electron main process.
 **Non-goals:**
 - Agent orchestration controls (claim/cancel/retry) — deferred.
 - Review-station actions (merge, create-PR, discard) — deferred.
@@ -11,9 +11,9 @@
 
 ## Problem
 
-BDE stores the authoritative model of the user's dev workflow — tasks, epics, dependencies, status transitions, audit trail — in `~/.bde/bde.db`. Today that model is only reachable from inside the Electron app. An agent running elsewhere on the same machine (e.g., a Claude Code session in another repo) has no way to add a task, change priorities, or check what's in flight. The user has to alt-tab into BDE and click.
+FLEET stores the authoritative model of the user's dev workflow — tasks, epics, dependencies, status transitions, audit trail — in `~/.fleet/fleet.db`. Today that model is only reachable from inside the Electron app. An agent running elsewhere on the same machine (e.g., a Claude Code session in another repo) has no way to add a task, change priorities, or check what's in flight. The user has to alt-tab into FLEET and click.
 
-Writing to SQLite directly from outside BDE is not an option. CLAUDE.md calls it out: direct writes bypass validation, dependency auto-blocking, the audit trail, and renderer broadcasts. Any external access must funnel through the same service layer the UI uses.
+Writing to SQLite directly from outside FLEET is not an option. CLAUDE.md calls it out: direct writes bypass validation, dependency auto-blocking, the audit trail, and renderer broadcasts. Any external access must funnel through the same service layer the UI uses.
 
 ## Design
 
@@ -26,7 +26,7 @@ src/main/mcp-server/
   index.ts              — createMcpServer(deps, config) → { start, stop }
   transport.ts          — HTTP request handler (POST for JSON-RPC, GET for SSE stream)
   auth.ts               — bearer-token middleware, constant-time compare
-  token-store.ts        — read/generate ~/.bde/mcp-token (mode 0600)
+  token-store.ts        — read/generate ~/.fleet/mcp-token (mode 0600)
   tools/
     tasks.ts            — tasks.list / get / create / update / cancel / history
     epics.ts            — epics.list / get / create / update / delete
@@ -116,7 +116,7 @@ Because every mutation goes through `sprint-service` / `task-group-queries`, the
 
 ### 4. Auth & transport
 
-**Auth:** Bearer token. On first server start, `token-store.ts` generates a 32-byte random token (`crypto.randomBytes(32).toString('hex')`) and writes it to `~/.bde/mcp-token` with mode `0600`. Middleware in `auth.ts` compares the inbound `Authorization: Bearer <token>` header against the stored token using `crypto.timingSafeEqual`. Missing/malformed/mismatched → HTTP 401 with a JSON-RPC error body.
+**Auth:** Bearer token. On first server start, `token-store.ts` generates a 32-byte random token (`crypto.randomBytes(32).toString('hex')`) and writes it to `~/.fleet/mcp-token` with mode `0600`. Middleware in `auth.ts` compares the inbound `Authorization: Bearer <token>` header against the stored token using `crypto.timingSafeEqual`. Missing/malformed/mismatched → HTTP 401 with a JSON-RPC error body.
 
 **Transport:** MCP Streamable HTTP (`POST /mcp` for client→server requests, `GET /mcp` with `Accept: text/event-stream` for server→client streaming). The SDK provides the handler; we wrap it in auth middleware and bind with Node's `http.createServer`.
 
@@ -138,7 +138,7 @@ All service exceptions funnel through `errors.ts → toJsonRpcError(err)`. Mappi
 | Any other thrown error | `-32603` Internal error | 200 (stack logged via `createLogger('mcp-server')`, not returned) |
 | Missing/invalid bearer token | (none — 401 before JSON-RPC) | 401 |
 
-Per MCP convention, JSON-RPC errors carry `code`, `message`, and an `data` envelope with the task/epic ID when relevant. No stack traces leak to the client; they go to `~/.bde/bde.log` only.
+Per MCP convention, JSON-RPC errors carry `code`, `message`, and an `data` envelope with the task/epic ID when relevant. No stack traces leak to the client; they go to `~/.fleet/fleet.log` only.
 
 ### 6. Settings & lifecycle
 
@@ -162,7 +162,7 @@ Per MCP convention, JSON-RPC errors carry `code`, `message`, and an `data` envel
   ```json
   {
     "mcpServers": {
-      "bde": {
+      "fleet": {
         "url": "http://127.0.0.1:18792/mcp",
         "headers": { "Authorization": "Bearer <token>" }
       }
@@ -189,16 +189,16 @@ These are scoped to exactly what MCP needs — no drive-by refactor elsewhere.
 
 ### 9. Docs updates
 
-- `docs/BDE_FEATURES.md` — new section "Local MCP Server" under Development Tools, describing enable/disable, example agent config, and the exposed tool surface (link back to this spec for the full list).
+- `docs/FLEET_FEATURES.md` — new section "Local MCP Server" under Development Tools, describing enable/disable, example agent config, and the exposed tool surface (link back to this spec for the full list).
 - `docs/modules/services/index.md` — add row for `epic-group-service`, update row for `sprint-service` (new auto-block behavior).
 - `docs/modules/index.md` (or wherever main-process modules are indexed) — add `mcp-server/` directory.
 - CLAUDE.md — one-line pointer under "Key File Locations": `MCP server: src/main/mcp-server/ (opt-in via mcp.enabled setting)`.
 
 ### 10. Dependency policy
 
-One new dependency: `@modelcontextprotocol/sdk` (TypeScript, MIT, no runtime deps of substance — relies on Node stdlib + `zod`, which BDE already uses). No alternative in the existing dep set — this replaces building a Streamable-HTTP + JSON-RPC stack from scratch.
+One new dependency: `@modelcontextprotocol/sdk` (TypeScript, MIT, no runtime deps of substance — relies on Node stdlib + `zod`, which FLEET already uses). No alternative in the existing dep set — this replaces building a Streamable-HTTP + JSON-RPC stack from scratch.
 
-**Requires explicit user approval before adding** per the BDE dependency policy — see User Review Gate below.
+**Requires explicit user approval before adding** per the FLEET dependency policy — see User Review Gate below.
 
 ## Out of scope (explicitly)
 
@@ -212,7 +212,7 @@ One new dependency: `@modelcontextprotocol/sdk` (TypeScript, MIT, no runtime dep
 
 1. Ship the code with `mcp.enabled = false` by default.
 2. Settings UI exposes the toggle + token.
-3. Docs in `BDE_FEATURES.md` + example config snippet.
+3. Docs in `FLEET_FEATURES.md` + example config snippet.
 4. No migration needed — new settings rows default to `false`.
 
 ## Open questions

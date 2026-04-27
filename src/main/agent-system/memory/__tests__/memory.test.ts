@@ -8,8 +8,8 @@ describe('Memory System', () => {
     })
 
     it('returns empty string regardless of repoName', () => {
-      expect(getAllMemory({ repoName: 'bde' })).toBe('')
-      expect(getAllMemory({ repoName: 'BDE' })).toBe('')
+      expect(getAllMemory({ repoName: 'fleet' })).toBe('')
+      expect(getAllMemory({ repoName: 'FLEET' })).toBe('')
       expect(getAllMemory({ repoName: 'life-os' })).toBe('')
       expect(getAllMemory({ repoName: 'claude-task-runner' })).toBe('')
       expect(getAllMemory({ repoName: null })).toBe('')

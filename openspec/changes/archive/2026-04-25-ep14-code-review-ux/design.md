@@ -7,7 +7,7 @@
 **Goals:**
 - Conflict state: show "Open in IDE" (navigate to IDE view with the worktree path) and optionally a "Resolve with Agent" revision button
 - Connect GitHub CTA: when Ship It is disabled due to config, show a button that navigates to Settings → Connections tab
-- `review:markShippedOutsideBde` IPC: sets `status = 'done'`, `completed_at = now()`, clears `claimed_by` — matches what Merge Locally does minus the actual git operations
+- `review:markShippedOutsideFleet` IPC: sets `status = 'done'`, `completed_at = now()`, clears `claimed_by` — matches what Merge Locally does minus the actual git operations
 - Revision cap: read `revision_count` from task; when `>= MAX_REVISION_ATTEMPTS` (5), disable Request Revision and show "Max revisions reached (5/5)"
 - Discard modal: replace immediate `onDiscard` call with a `ConfirmModal` — "Discard this task? The worktree will be deleted. This cannot be undone."
 - Empty Code Review view: "No tasks awaiting review. Tasks will appear here when agents complete their work." + link to Pipeline
@@ -23,9 +23,9 @@
 
 `openInIDE(worktreePath)` is achievable via `useIdeStore` or the existing `ide:openFolder` IPC. The "Open in IDE" button calls this and switches to the IDE view. No new IPC needed.
 
-### D2: Mark Shipped Outside BDE is a thin IPC handler
+### D2: Mark Shipped Outside FLEET is a thin IPC handler
 
-`review:markShippedOutsideBde(taskId)` → `TaskStateService.transition(taskId, 'done', { fields: { completed_at: new Date().toISOString() } })`. Returns the updated task. The same dep-resolution cascade fires as with Merge Locally.
+`review:markShippedOutsideFleet(taskId)` → `TaskStateService.transition(taskId, 'done', { fields: { completed_at: new Date().toISOString() } })`. Returns the updated task. The same dep-resolution cascade fires as with Merge Locally.
 
 ### D3: Revision cap reads `revision_count` field
 

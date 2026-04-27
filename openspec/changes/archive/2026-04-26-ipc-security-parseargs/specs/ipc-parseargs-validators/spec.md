@@ -53,11 +53,11 @@ The `terminal:create` IPC channel SHALL validate the optional `cwd` argument, wh
 `workbench:researchRepo` SHALL validate that its `input` argument is an object with a non-empty string `query` and a non-empty string `repo` before proceeding. `workbench:chatStream` SHALL validate that `input` is an object with an `messages` array and a `formContext` object containing a non-empty string `repo`. Invalid inputs SHALL be rejected before any downstream calls.
 
 #### Scenario: researchRepo with valid input proceeds
-- **WHEN** the renderer calls `workbench:researchRepo` with `{ query: "findByTaskId", repo: "bde" }`
+- **WHEN** the renderer calls `workbench:researchRepo` with `{ query: "findByTaskId", repo: "fleet" }`
 - **THEN** the handler performs the search and returns results
 
 #### Scenario: researchRepo with missing query is rejected
-- **WHEN** the renderer calls `workbench:researchRepo` with `{ query: "", repo: "bde" }`
+- **WHEN** the renderer calls `workbench:researchRepo` with `{ query: "", repo: "fleet" }`
 - **THEN** the handler throws with a validation error mentioning "query"
 
 #### Scenario: chatStream with malformed input is rejected before SDK call

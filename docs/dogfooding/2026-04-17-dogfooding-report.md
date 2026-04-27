@@ -1,6 +1,6 @@
-# BDE Dogfooding Report — 2026-04-17
+# FLEET Dogfooding Report — 2026-04-17
 
-**What this is:** A handoff document for a fresh Claude Code session. Captures everything observed during a ~3-hour session that ran 118 CSS/UI audit tasks through the BDE agent pipeline as a stress test of dogfooding readiness. Each finding includes evidence, suspected root cause, and proposed fix scoped to the relevant BDE module so the next session can act on it without re-running the experiment.
+**What this is:** A handoff document for a fresh Claude Code session. Captures everything observed during a ~3-hour session that ran 118 CSS/UI audit tasks through the FLEET agent pipeline as a stress test of dogfooding readiness. Each finding includes evidence, suspected root cause, and proposed fix scoped to the relevant FLEET module so the next session can act on it without re-running the experiment.
 
 **Branch state at end:** `main` is 81+ commits ahead of where the session started. All 118 tasks shipped, all tests green at each push. The audit work itself succeeded; the report below is about the **agent infrastructure** that delivered it.
 
@@ -35,21 +35,21 @@ Findings are P0 (blocked the experiment), P1 (significant friction), P2 (cosmeti
 
 ---
 
-### F-1 · P0 · Packaged BDE.app can't find `node` on macOS
+### F-1 · P0 · Packaged FLEET.app can't find `node` on macOS
 
 **Evidence:**
-- Initial run after queueing produced 30+ identical agent-manager log errors: `Claude Code executable not found at /Applications/BDE.app/Contents/Resources/app.asar.unpacked/node_modules/@anthropic-ai/claude-agent-sdk/cli.js. Is options.pathToClaudeCodeExecutable set?`
+- Initial run after queueing produced 30+ identical agent-manager log errors: `Claude Code executable not found at /Applications/FLEET.app/Contents/Resources/app.asar.unpacked/node_modules/@anthropic-ai/claude-agent-sdk/cli.js. Is options.pathToClaudeCodeExecutable set?`
 - Verified: `cli.js` exists, has `#!/usr/bin/env node` shebang, is executable.
 - `PATH=/usr/bin:/bin which node` → not found. fnm-installed node lives at `~/.local/share/fnm/aliases/default/bin/node` which is not on a GUI-launched Electron app's PATH.
 - 2 tasks burned to permanent `error` state with `failure_reason='spawn'` before I caught it.
 
 **Root cause:** The SDK uses the shebang-resolved `node` interpreter to spawn `cli.js`. macOS GUI-launched apps inherit `/etc/paths` (`/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin`) — fnm's per-shell symlinks under `~/.local/state/fnm_multishells/.../bin/` are never on this list. Bun-managed and nvm-managed Node have the same issue.
 
-**Workaround used:** Killed BDE.app, ran `npm run dev` from a terminal where `node` was on PATH; Electron's main process inherited the shell PATH.
+**Workaround used:** Killed FLEET.app, ran `npm run dev` from a terminal where `node` was on PATH; Electron's main process inherited the shell PATH.
 
 **Proposed fix (scope: 1 task):**
 1. In `src/main/sdk-adapter.ts` (or wherever the SDK is constructed), set `options.pathToClaudeCodeExecutable` explicitly to a known-good Node path. Detect bundled Node via `process.execPath` — Electron ships with its own Node that the SDK can use directly. Or fall back to `which-fnm-node`-style probing of common installer paths (`~/.local/share/fnm/aliases/default/bin/node`, `~/.nvm/versions/node/*/bin/node`, `/opt/homebrew/bin/node`).
-2. Document in `docs/BDE_FEATURES.md` packaging section that fnm/nvm users currently must launch from a terminal until this lands.
+2. Document in `docs/FLEET_FEATURES.md` packaging section that fnm/nvm users currently must launch from a terminal until this lands.
 
 **Files to investigate:**
 - `src/main/agent-manager/sdk-adapter.ts`
@@ -110,7 +110,7 @@ agent:tool_call git log -1 --format=full 3727de2a
 agent:error max_turns_exceeded
 ```
 
-**Root cause:** There's no "is this work already done" check before spawning. When `auto-merge-policy.ts` merges a successful agent's commit to `main`, BDE doesn't update the task's status atomically — so the drain loop sees `status='queued', retry_count=N` and tries again.
+**Root cause:** There's no "is this work already done" check before spawning. When `auto-merge-policy.ts` merges a successful agent's commit to `main`, FLEET doesn't update the task's status atomically — so the drain loop sees `status='queued', retry_count=N` and tries again.
 
 **Proposed fix (scope: 1 task):**
 1. In `agent-manager/drain.ts` (or wherever tasks are claimed), before spawning add a check: `if (taskHasMatchingCommitOnMain(task)) { markDone(task); return }`. Heuristic for "matching commit": commit message contains `(T-N)` reference OR commit subject is the task title verbatim OR the `agent_run_id` is referenced anywhere in `git log`.
@@ -178,7 +178,7 @@ If I had cherry-picked these blindly, I would have **reverted other tasks' work*
 | Task | Change | Broken test |
 |---|---|---|
 | T-101 | `<span role="button">` → `<button>` | `closest('[role="button"]')` queries |
-| T-79 | placeholder `"Name"` → `"e.g. bde"` | `getByPlaceholderText('Name')` |
+| T-79 | placeholder `"Name"` → `"e.g. fleet"` | `getByPlaceholderText('Name')` |
 | T-119 | Widened `<Input>` API | (no tests existed; not broken but spec said "add tests") |
 | T-120 | Widened `<Textarea>` with `resize` prop | Variable name shadowed function — esbuild transform error |
 
@@ -210,7 +210,7 @@ Cleared with `rm -rf node_modules/better-sqlite3/{build,.deps} && node-gyp rebui
 1. The rebuild in `.husky/pre-push` should be idempotent. Either:
    - Always `rm -rf .deps` before rebuild (safe but slower), OR
    - Skip rebuild entirely when the `.node` artifact's mtime is newer than any `.cc/.h` source file in `node_modules/better-sqlite3/src/`.
-2. Even better: cache the rebuilt `.node` file by `(node version, electron version, package version)` triple in `~/.bde/native-cache/`. Skip rebuild when the cache key matches.
+2. Even better: cache the rebuilt `.node` file by `(node version, electron version, package version)` triple in `~/.fleet/native-cache/`. Skip rebuild when the cache key matches.
 
 **Files to investigate:**
 - `.husky/pre-push`
@@ -252,7 +252,7 @@ Cleared with `rm -rf node_modules/better-sqlite3/{build,.deps} && node-gyp rebui
 
 **Evidence:** My audit said T-116's hex drift was in `WorkbenchCopilot.css:132`. Wrong — the actual drift was 8 occurrences in `TaskWorkbench.css` + `DependencyPicker.css`, none in `WorkbenchCopilot.css`. The agent's scratchpad helped it find the right file, but it spent turns doing so. Same with T-78 (CSS line referenced wasn't where the rule actually was).
 
-**Proposed fix (scope: process change, not BDE code):**
+**Proposed fix (scope: process change, not FLEET code):**
 1. Audit specs (the kind I generated) should include a **verification step** in the audit script: for every `file:line` reference in the report, grep that line for the cited symbol and only emit the finding if it matches.
 2. The `/audit` command itself should run a final pass that grep-verifies each finding's location before writing the report.
 
@@ -263,9 +263,9 @@ Cleared with `rm -rf node_modules/better-sqlite3/{build,.deps} && node-gyp rebui
 
 ### F-11 · P2 · Worktree hooks suppress legit notifications
 
-**Evidence:** Every Bash output had `<system-reminder>` warnings about TaskCreate/TaskUpdate that were noise — they fired even when I was clearly mid-flow on the user's task. Not a BDE issue but worth noting since it added cognitive load.
+**Evidence:** Every Bash output had `<system-reminder>` warnings about TaskCreate/TaskUpdate that were noise — they fired even when I was clearly mid-flow on the user's task. Not a FLEET issue but worth noting since it added cognitive load.
 
-**Proposed fix:** N/A for BDE — but if you have a `Stop` hook in `~/.claude/settings.json`, consider adding a guard that suppresses these reminders when the conversation has used a tool in the last N seconds.
+**Proposed fix:** N/A for FLEET — but if you have a `Stop` hook in `~/.claude/settings.json`, consider adding a guard that suppresses these reminders when the conversation has used a tool in the last N seconds.
 
 ---
 
@@ -296,7 +296,7 @@ These are things I observed but couldn't root-cause with the time I had. A new s
 
 4. **Why does T-118 (and a few others) show as "failed" with retry_count=3 but the work IS in the codebase?** Possibly a race between the no_commits detector and the auto-merge path.
 
-5. **Is the SDK actually respecting `pathToClaudeCodeExecutable` in BDE's current spawn config?** It's the documented escape hatch for the F-1 PATH issue but I never confirmed BDE is using it.
+5. **Is the SDK actually respecting `pathToClaudeCodeExecutable` in FLEET's current spawn config?** It's the documented escape hatch for the F-1 PATH issue but I never confirmed FLEET is using it.
 
 ---
 
@@ -317,7 +317,7 @@ If you want to immediately turn this report into pipeline work, these are sized 
 
 | # | Title | Epic | Priority |
 |---|---|---|---|
-| 1 | Fix packaged BDE.app PATH lookup for fnm-managed Node (F-1) | Packaging | P0 |
+| 1 | Fix packaged FLEET.app PATH lookup for fnm-managed Node (F-1) | Packaging | P0 |
 | 2 | Investigate + plug agent edit leak into main checkout (F-2) | Agent Manager | P0 |
 | 3 | Auto-mark tasks done when matching commit lands on main (F-3) | Agent Manager | P0 |
 | 4 | Make `maxTurns` spec-aware (default 30, multi-file 50, large 75) (F-4) | Agent Manager | P1 |
@@ -336,6 +336,6 @@ If you want to immediately turn this report into pipeline work, these are sized 
 
 The audit work shipped. The **infrastructure to ship it** revealed real gaps but none were unrecoverable — every blocker had a workaround I could find within minutes. The pipeline is **70% production-ready** for unsupervised operation today. Fixing F-1 + F-2 + F-3 + F-4 alone would push that to ~90%.
 
-The most important thing this session demonstrated: **BDE can in fact ship its own audit work end-to-end via the agent pipeline.** That's the dogfooding test passing. The rough edges are real but every one of them is fixable.
+The most important thing this session demonstrated: **FLEET can in fact ship its own audit work end-to-end via the agent pipeline.** That's the dogfooding test passing. The rough edges are real but every one of them is fixable.
 
 — Session ran 2026-04-17 ~07:30–11:05 PDT

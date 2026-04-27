@@ -125,7 +125,7 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
     width: 6,
     height: 6,
     borderRadius: '50%',
-    background: on ? 'var(--bde-accent)' : 'var(--bde-text-muted)',
+    background: on ? 'var(--fleet-accent)' : 'var(--fleet-text-muted)',
     marginRight: 4
   })
   return (
@@ -140,7 +140,7 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
         alignItems: 'center',
         gap: 10,
         fontSize: '0.75rem',
-        color: 'var(--bde-text-muted)'
+        color: 'var(--fleet-text-muted)'
       }}
     >
       {belowQueueMinimum ? (
@@ -148,7 +148,7 @@ function SpecQualityHints({ spec }: { spec: string }): React.JSX.Element {
           className="wb-spec__quality-char-warning"
           title="Specs must be at least 50 characters to queue."
           data-testid="spec-quality-char-warning"
-          style={{ color: 'var(--bde-warning)', fontWeight: 600 }}
+          style={{ color: 'var(--fleet-warning)', fontWeight: 600 }}
         >
           {trimmedLength}/{SPEC_QUEUE_MIN_CHARS} chars to queue
         </span>

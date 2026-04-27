@@ -96,12 +96,12 @@ export function createWebhookService(deps: WebhookServiceDeps): WebhookService {
       const body = JSON.stringify(payload)
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'X-BDE-Event': event,
-        'X-BDE-Delivery': crypto.randomUUID()
+        'X-FLEET-Event': event,
+        'X-FLEET-Delivery': crypto.randomUUID()
       }
 
       if (secret) {
-        headers['X-BDE-Signature'] = signPayload(body, secret)
+        headers['X-FLEET-Signature'] = signPayload(body, secret)
       }
 
       const response = await fetchFn(url, {

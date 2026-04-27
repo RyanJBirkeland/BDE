@@ -1,6 +1,6 @@
 // src/renderer/src/lib/default-templates.ts
 //
-// Built-in prompt templates that ship with BDE.
+// Built-in prompt templates that ship with FLEET.
 // These are merged with user-created templates on load.
 // Users can hide but not delete built-in templates.
 

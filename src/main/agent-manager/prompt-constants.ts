@@ -54,7 +54,7 @@ export const PROMPT_TRUNCATION = {
  * An agent that exits without committing (either because it misunderstood the
  * spec or got stuck in an exploration loop) is not a transient failure — more
  * retries rarely change the outcome. Cap to 3 attempts and then transition the
- * task to `failed` so a human can inspect `~/.bde/bde.log` and decide whether
+ * task to `failed` so a human can inspect `~/.fleet/fleet.log` and decide whether
  * to re-queue, revise the spec, or cancel.
  */
 export const MAX_NO_COMMITS_RETRIES = 3

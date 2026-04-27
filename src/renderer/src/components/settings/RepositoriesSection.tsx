@@ -54,7 +54,7 @@ export function RepositoriesSection(): React.JSX.Element {
   const handleRemove = useCallback(
     async (name: string) => {
       const ok = await confirm({
-        message: `Remove repository "${name}" from BDE?`,
+        message: `Remove repository "${name}" from FLEET?`,
         confirmLabel: 'Remove',
         variant: 'danger'
       })
@@ -191,7 +191,7 @@ export function RepositoriesSection(): React.JSX.Element {
             icon={
               <span
                 className="settings-repo__dot"
-                style={{ background: r.color ?? 'var(--bde-text-dim)' }}
+                style={{ background: r.color ?? 'var(--fleet-text-dim)' }}
               />
             }
             footer={
@@ -226,7 +226,7 @@ export function RepositoriesSection(): React.JSX.Element {
                 <input
                   className="settings-field__input"
                   placeholder="Name"
-                  aria-label="Repository name (e.g. bde)"
+                  aria-label="Repository name (e.g. fleet)"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                 />

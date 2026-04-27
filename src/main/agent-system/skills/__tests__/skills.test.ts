@@ -12,7 +12,7 @@ describe('Skills System', () => {
       const skills = getAllSkills()
       expect(skills).toContain('System Introspection')
       expect(skills).toContain('Task Orchestration')
-      expect(skills).toContain('BDE Code Patterns')
+      expect(skills).toContain('FLEET Code Patterns')
       expect(skills).toContain('PR Review')
       expect(skills).toContain('Debugging')
     })

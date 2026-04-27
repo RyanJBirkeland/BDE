@@ -6,7 +6,7 @@ describe('workbench handlers', () => {
     it('includes constraint instructions in system prompt', () => {
       const prompt = buildChatPrompt([{ role: 'user', content: 'Hello' }], {
         title: 'Test',
-        repo: 'BDE',
+        repo: 'FLEET',
         spec: ''
       })
       // Copilot is now code-aware (Phase 2): read-only Read/Grep/Glob access
@@ -20,12 +20,12 @@ describe('workbench handlers', () => {
     it('includes spec-drafting mode framing and target repo when provided', () => {
       const prompt = buildChatPrompt(
         [{ role: 'user', content: 'Hello' }],
-        { title: 'Test', repo: 'BDE', spec: '' },
-        '/Users/test/projects/BDE'
+        { title: 'Test', repo: 'FLEET', spec: '' },
+        '/Users/test/projects/FLEET'
       )
       expect(prompt).toContain('## Mode: Spec Drafting')
       expect(prompt).toContain('## Target Repository')
-      expect(prompt).toContain('/Users/test/projects/BDE')
+      expect(prompt).toContain('/Users/test/projects/FLEET')
     })
 
     it('includes conversation history', () => {
@@ -35,7 +35,7 @@ describe('workbench handlers', () => {
           { role: 'assistant', content: 'Found 3 files' },
           { role: 'user', content: 'Show me' }
         ],
-        { title: 'Test', repo: 'BDE', spec: 'Do stuff' }
+        { title: 'Test', repo: 'FLEET', spec: 'Do stuff' }
       )
       expect(prompt).toContain('What files?')
       expect(prompt).toContain('Found 3 files')
@@ -46,7 +46,7 @@ describe('workbench handlers', () => {
     it('handles empty spec gracefully', () => {
       const prompt = buildChatPrompt([{ role: 'user', content: 'Hi' }], {
         title: 'Test',
-        repo: 'BDE',
+        repo: 'FLEET',
         spec: ''
       })
       expect(prompt).toContain('(no spec yet)')

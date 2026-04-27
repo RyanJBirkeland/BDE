@@ -47,7 +47,7 @@ describe('RepoStep', () => {
 
   it('enables Next when repos are already configured', async () => {
     const api = getApi()
-    api.settings.getJson = vi.fn().mockResolvedValue([{ name: 'bde', localPath: '/path/to/bde' }])
+    api.settings.getJson = vi.fn().mockResolvedValue([{ name: 'fleet', localPath: '/path/to/fleet' }])
     render(<RepoStep {...baseProps} />)
 
     await waitFor(() => {

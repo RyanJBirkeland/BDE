@@ -70,7 +70,7 @@ describe('generatePrBody', () => {
 
     const result = await generatePrBody('/tmp/worktree', 'feature/my-branch', {})
 
-    expect(result).toContain('🤖 Automated by BDE Agent Manager')
+    expect(result).toContain('🤖 Automated by FLEET Agent Manager')
   })
 
   it('should accept valid branch name with slashes and dashes', async () => {
@@ -78,7 +78,7 @@ describe('generatePrBody', () => {
 
     const result = await generatePrBody('/tmp/worktree', 'agent/fix-bug-123', {})
 
-    expect(result).toContain('🤖 Automated by BDE Agent Manager')
+    expect(result).toContain('🤖 Automated by FLEET Agent Manager')
   })
 
   it('should accept valid SHA-like branch name', async () => {
@@ -86,7 +86,7 @@ describe('generatePrBody', () => {
 
     const result = await generatePrBody('/tmp/worktree', 'abc123def456', {})
 
-    expect(result).toContain('🤖 Automated by BDE Agent Manager')
+    expect(result).toContain('🤖 Automated by FLEET Agent Manager')
   })
 })
 

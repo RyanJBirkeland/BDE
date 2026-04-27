@@ -1,4 +1,4 @@
-# BDE — Sessions Sidebar Redesign Spec
+# FLEET — Sessions Sidebar Redesign Spec
 
 > **Status: ABANDONED (verified 2026-04-21).** The Sessions feature was removed entirely — no `SessionsView`, no sessions sidebar, no AgentRow in this shape. Replaced by `AgentsView`. Retained for historical reference only; do not implement.
 
@@ -98,7 +98,7 @@ Running rows get a more vivid pulse:
 
 ```html
 <div class="session-list__header">
-  <span class="session-list__title bde-section-title">AGENTS</span>
+  <span class="session-list__title fleet-section-title">AGENTS</span>
   <button class="session-list__new-btn">+</button>
 </div>
 <div class="session-list__search">

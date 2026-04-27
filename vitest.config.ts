@@ -15,7 +15,7 @@ export default defineConfig({
   },
   test: {
     env: {
-      BDE_TEST_DB: ':memory:'
+      FLEET_TEST_DB: ':memory:'
     },
     environment: 'jsdom',
     globals: true,

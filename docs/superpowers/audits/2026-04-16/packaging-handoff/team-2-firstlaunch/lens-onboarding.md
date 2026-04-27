@@ -2,7 +2,7 @@
 
 ## Summary
 
-BDE uses a **two-layer onboarding system**: (1) an initial "Onboarding" component that performs blocking preflight checks (Claude CLI, auth token, git) and shows a persistent check/retry UI, and (2) an "OnboardingWizard" that runs only if `onboarding.completed` setting is false, walking users through a 6-step wizard (Welcome → Auth → Git → GitHub CLI → Repos → Done). The wizard is skippable at the Repos step (optional) and auto-completes when all required checks pass. The system persists completion via localStorage, preventing repeated wizard runs. However, there are several UX and accessibility concerns that could frustrate fresh Mac users.
+FLEET uses a **two-layer onboarding system**: (1) an initial "Onboarding" component that performs blocking preflight checks (Claude CLI, auth token, git) and shows a persistent check/retry UI, and (2) an "OnboardingWizard" that runs only if `onboarding.completed` setting is false, walking users through a 6-step wizard (Welcome → Auth → Git → GitHub CLI → Repos → Done). The wizard is skippable at the Repos step (optional) and auto-completes when all required checks pass. The system persists completion via localStorage, preventing repeated wizard runs. However, there are several UX and accessibility concerns that could frustrate fresh Mac users.
 
 ---
 
@@ -82,9 +82,9 @@ BDE uses a **two-layer onboarding system**: (1) an initial "Onboarding" componen
 ```
 - "Check Again" button is only rendered if checks are complete (`!checking`)
 - User is told "Run `claude login`" in a `<code>` block, but no clear link between that instruction and the "Check Again" button
-- User may run the command in terminal, come back to BDE, and not know to click "Check Again"
+- User may run the command in terminal, come back to FLEET, and not know to click "Check Again"
 
-**Impact:** User runs `claude login` in terminal, returns to BDE, sees the same failed check. Confusion: "Did it work?" Needs explicit CTA: "Ran the command? Check Again to verify."
+**Impact:** User runs `claude login` in terminal, returns to FLEET, sees the same failed check. Confusion: "Did it work?" Needs explicit CTA: "Ran the command? Check Again to verify."
 
 **Recommendation:**
 - Rename button to "Verify Setup" or "Check Again After Setup" to clarify intent
@@ -200,7 +200,7 @@ function getInstruction(status: AuthStatus | null): string | null {
 - GhStep has no equivalent skip option — user cannot proceed until `gh auth login` succeeds
 - User cannot bypass this step even if they don't intend to use GitHub PR features initially
 
-**Impact:** User without `gh` installed is blocked at step 4. If they don't use GitHub (e.g., Gitea, GitLab), they're still forced to install and auth with `gh`, even though it's optional for core BDE functionality.
+**Impact:** User without `gh` installed is blocked at step 4. If they don't use GitHub (e.g., Gitea, GitLab), they're still forced to install and auth with `gh`, even though it's optional for core FLEET functionality.
 
 **Recommendation:**
 - Add "Skip for now" button to GhStep (like RepoStep does)
@@ -242,7 +242,7 @@ function getInstruction(status: AuthStatus | null): string | null {
 **Location:** `src/renderer/src/components/Onboarding.tsx:59-111`  
 **Evidence:**
 ```tsx
-<div className="onboarding-check" style={{ gap: 'var(--bde-space-1)' }}>
+<div className="onboarding-check" style={{ gap: 'var(--fleet-space-1)' }}>
   <div className="onboarding-check__row">
     <StatusIcon state={state} />
     <span className="onboarding-check__label">{label}</span>
@@ -358,7 +358,7 @@ window.api.settings.get('onboarding.completed').then((val) => {
 ```
 - Shows gh version string as-is (e.g., "gh version 1.25.0 (2024-04-01)")
 - No check that version meets minimum requirements
-- User could have an ancient `gh` that lacks features BDE needs
+- User could have an ancient `gh` that lacks features FLEET needs
 
 **Impact:** User has outdated `gh` CLI, onboarding passes, but later PR creation fails silently.
 

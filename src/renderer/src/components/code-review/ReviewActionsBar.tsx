@@ -36,7 +36,7 @@ export interface ReviewActionCallbacks {
   requestRevision: () => Promise<void>
   rebase: () => Promise<void>
   discard: () => Promise<void>
-  markShippedOutsideBde: () => Promise<void>
+  markShippedOutsideFleet: () => Promise<void>
   renderFreshnessBadge: () => React.ReactNode
   renderRebaseButton: () => React.ReactNode
 }
@@ -61,7 +61,7 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
     requestRevision,
     rebase,
     discard,
-    markShippedOutsideBde,
+    markShippedOutsideFleet,
     confirmProps,
     promptProps
   } = useReviewActions()
@@ -128,7 +128,7 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
     requestRevision,
     rebase,
     discard,
-    markShippedOutsideBde,
+    markShippedOutsideFleet,
     renderFreshnessBadge,
     renderRebaseButton
   }
@@ -213,7 +213,7 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
                   Merge Locally
                 </button>
                 <select
-                  className="rab__strategy bde-select"
+                  className="rab__strategy fleet-select"
                   aria-label="Merge strategy"
                   title="Squash: single commit. Merge: preserve branch history. Rebase: linear history."
                   value={mergeStrategy}
@@ -245,16 +245,16 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
             <div className="rab__secondary">
               <button
                 className="rab__btn rab__btn--ghost"
-                onClick={markShippedOutsideBde}
+                onClick={markShippedOutsideFleet}
                 disabled={!!actionInFlight}
-                title="Mark as done when you shipped this work outside BDE"
+                title="Mark as done when you shipped this work outside FLEET"
               >
                 {actionInFlight === 'markShipped' ? (
                   <Loader2 size={14} className="spin" />
                 ) : (
                   <CheckCheck size={14} />
                 )}{' '}
-                Shipped Outside BDE
+                Shipped Outside FLEET
               </button>
               <button
                 className="rab__btn rab__btn--ghost"

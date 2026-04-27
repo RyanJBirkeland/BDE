@@ -19,7 +19,7 @@ const VALID_AGENT_STATUSES: ReadonlySet<string> = new Set([
   'cancelled',
   'unknown'
 ])
-const VALID_AGENT_SOURCES: ReadonlySet<string> = new Set(['bde', 'external', 'adhoc'])
+const VALID_AGENT_SOURCES: ReadonlySet<string> = new Set(['fleet', 'external', 'adhoc'])
 
 function isAgentStatus(value: unknown): value is AgentMeta['status'] {
   return typeof value === 'string' && VALID_AGENT_STATUSES.has(value)

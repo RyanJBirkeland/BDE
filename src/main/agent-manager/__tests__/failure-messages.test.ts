@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { FAST_FAIL_EXHAUSTED_NOTE, NO_COMMITS_NOTE, NOOP_RUN_NOTE } from '../failure-messages'
 
 describe('FAST_FAIL_EXHAUSTED_NOTE', () => {
-  it('points users at ~/.bde/bde.log, not the legacy agent-manager.log', () => {
-    expect(FAST_FAIL_EXHAUSTED_NOTE).toContain('~/.bde/bde.log')
+  it('points users at ~/.fleet/fleet.log, not the legacy agent-manager.log', () => {
+    expect(FAST_FAIL_EXHAUSTED_NOTE).toContain('~/.fleet/fleet.log')
     expect(FAST_FAIL_EXHAUSTED_NOTE).not.toContain('agent-manager.log')
   })
 
@@ -21,8 +21,8 @@ describe('FAST_FAIL_EXHAUSTED_NOTE', () => {
 })
 
 describe('NO_COMMITS_NOTE', () => {
-  it('points users at ~/.bde/bde.log, not the legacy agent-manager.log', () => {
-    expect(NO_COMMITS_NOTE).toContain('~/.bde/bde.log')
+  it('points users at ~/.fleet/fleet.log, not the legacy agent-manager.log', () => {
+    expect(NO_COMMITS_NOTE).toContain('~/.fleet/fleet.log')
     expect(NO_COMMITS_NOTE).not.toContain('agent-manager.log')
   })
 })

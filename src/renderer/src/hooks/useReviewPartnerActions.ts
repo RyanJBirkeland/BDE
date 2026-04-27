@@ -7,7 +7,7 @@ function newId(prefix: string): string {
 }
 
 function saveMessages(messagesByTask: Record<string, PartnerMessage[]>): void {
-  const MESSAGES_STORAGE_KEY = 'bde:review-partner-messages'
+  const MESSAGES_STORAGE_KEY = 'fleet:review-partner-messages'
   const MAX_MESSAGES_PER_TASK = 100
   const MAX_TASKS_IN_LOCAL_STORAGE = 20
 

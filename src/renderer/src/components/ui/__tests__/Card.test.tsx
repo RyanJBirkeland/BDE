@@ -10,27 +10,27 @@ describe('Card', () => {
 
   it('applies default medium padding class', () => {
     const { container } = render(<Card>Content</Card>)
-    expect(container.firstChild).toHaveClass('bde-card--pad-md')
+    expect(container.firstChild).toHaveClass('fleet-card--pad-md')
   })
 
   it('applies custom padding class', () => {
     const { container } = render(<Card padding="sm">Content</Card>)
-    expect(container.firstChild).toHaveClass('bde-card--pad-sm')
+    expect(container.firstChild).toHaveClass('fleet-card--pad-sm')
   })
 
   it('applies none padding class', () => {
     const { container } = render(<Card padding="none">Content</Card>)
-    expect(container.firstChild).toHaveClass('bde-card--pad-none')
+    expect(container.firstChild).toHaveClass('fleet-card--pad-none')
   })
 
   it('applies active class when active', () => {
     const { container } = render(<Card active>Content</Card>)
-    expect(container.firstChild).toHaveClass('bde-card--active')
+    expect(container.firstChild).toHaveClass('fleet-card--active')
   })
 
   it('applies clickable class when onClick provided', () => {
     const { container } = render(<Card onClick={() => {}}>Content</Card>)
-    expect(container.firstChild).toHaveClass('bde-card--clickable')
+    expect(container.firstChild).toHaveClass('fleet-card--clickable')
   })
 
   it('applies custom className', () => {

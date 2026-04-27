@@ -198,7 +198,7 @@ export function AgentConsole({
         <div
           style={{
             padding: '16px',
-            color: 'var(--bde-text-muted)',
+            color: 'var(--fleet-text-muted)',
             textAlign: 'center'
           }}
         >

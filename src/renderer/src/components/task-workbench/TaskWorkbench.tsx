@@ -7,7 +7,7 @@ import { WorkbenchCopilot } from './WorkbenchCopilot'
 import { CopilotDiscoveryPopover } from './CopilotDiscoveryPopover'
 import './TaskWorkbench.css'
 
-const COPILOT_POPOVER_SEEN_KEY = 'bde:workbench-copilot-popover-seen'
+const COPILOT_POPOVER_SEEN_KEY = 'fleet:workbench-copilot-popover-seen'
 
 interface TaskWorkbenchProps {
   onSubmitted?: (() => void) | undefined

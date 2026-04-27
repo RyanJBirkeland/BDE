@@ -78,7 +78,7 @@ const hoisted = vi.hoisted(() => {
   const mockReadOrCreateToken = vi.fn(async () => ({
     token: 'deadbeef'.repeat(8),
     created: false,
-    path: '/tmp/bde-mcp-token-test'
+    path: '/tmp/fleet-mcp-token-test'
   }))
   const mockTransportHandle = vi.fn(async () => {})
   const mockTransportClose = vi.fn(async () => {})
@@ -211,7 +211,7 @@ describe('summarizeListenError', () => {
     expect(summary).not.toMatch(/EACCES/)
     expect(summary).not.toMatch(/permission/)
     expect(summary).not.toMatch(/secret/)
-    expect(summary).toMatch(/See .*\.bde\/bde\.log/)
+    expect(summary).toMatch(/See .*\.fleet\/fleet\.log/)
   })
 
   it('produces the generic message when err is not an Error instance', () => {
@@ -285,7 +285,7 @@ describe('createMcpServer lifecycle', () => {
     mockReadOrCreateToken.mockResolvedValueOnce({
       token: 'cafebabe'.repeat(8),
       created: false,
-      path: '/tmp/bde-existing-token'
+      path: '/tmp/fleet-existing-token'
     })
     const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
 
@@ -294,7 +294,7 @@ describe('createMcpServer lifecycle', () => {
     const tokenLog = mockLogger.info.mock.calls
       .map((call) => call[0] as string)
       .find((msg) => msg.includes('MCP bearer token at'))
-    expect(tokenLog).toBe('MCP bearer token at /tmp/bde-existing-token')
+    expect(tokenLog).toBe('MCP bearer token at /tmp/fleet-existing-token')
     expect(mockBroadcast).not.toHaveBeenCalled()
   })
 
@@ -302,7 +302,7 @@ describe('createMcpServer lifecycle', () => {
     mockReadOrCreateToken.mockResolvedValueOnce({
       token: 'feedface'.repeat(8),
       created: true,
-      path: '/tmp/bde-fresh-token'
+      path: '/tmp/fleet-fresh-token'
     })
     const handle = createMcpServer({ epicService, onStatusTerminal }, { port: 0 })
 
@@ -311,11 +311,11 @@ describe('createMcpServer lifecycle', () => {
     const tokenLog = mockLogger.info.mock.calls
       .map((call) => call[0] as string)
       .find((msg) => msg.includes('MCP bearer token at'))
-    expect(tokenLog).toBe('MCP bearer token at /tmp/bde-fresh-token (newly minted)')
+    expect(tokenLog).toBe('MCP bearer token at /tmp/fleet-fresh-token (newly minted)')
     expect(mockBroadcast).toHaveBeenCalledWith(
       'manager:warning',
       expect.objectContaining({
-        message: expect.stringContaining('fresh token minted at /tmp/bde-fresh-token')
+        message: expect.stringContaining('fresh token minted at /tmp/fleet-fresh-token')
       })
     )
   })

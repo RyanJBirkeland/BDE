@@ -512,7 +512,7 @@
       "id": "ac535ed9e51ec55659df2f83cfe1c415",
       "short_id": "ac535ed9",
       "status": "cancelled",
-      "title": "PR-4 [P1] Replace generic auto-commit message with BDE convention",
+      "title": "PR-4 [P1] Replace generic auto-commit message with FLEET convention",
       "failure_mode": "user_cancelled_no_run",
       "spec_quality": {
         "word_count": 234,

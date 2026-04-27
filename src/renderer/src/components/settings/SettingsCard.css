@@ -1,65 +1,65 @@
-/* ─── Settings Card — uses .bde-card base ──────────────────────────────── */
+/* ─── Settings Card — uses .fleet-card base ──────────────────────────────── */
 
 .stg-card {
-  margin-bottom: var(--bde-space-3);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .stg-card__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--bde-space-3);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .stg-card__header-left {
   display: flex;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
   align-items: center;
 }
 
 .stg-card__header-text {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
 }
 
 .stg-card__title-row {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
 .stg-card__icon {
   width: 36px;
   height: 36px;
-  border-radius: var(--bde-space-2);
+  border-radius: var(--fleet-space-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--bde-space-4);
+  font-size: var(--fleet-space-4);
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .stg-card__icon--purple {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-active);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-active);
 }
 
 .stg-card__icon--neutral {
-  background: var(--bde-surface);
-  color: var(--bde-text-muted);
+  background: var(--fleet-surface);
+  color: var(--fleet-text-muted);
 }
 
 .stg-card__title {
-  font-size: var(--bde-size-md);
+  font-size: var(--fleet-size-md);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .stg-card__subtitle {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted);
   margin-top: 2px;
 }
 
@@ -73,24 +73,24 @@
 }
 
 .stg-card__footer {
-  border-top: 1px solid var(--bde-border);
-  padding-top: var(--bde-space-3);
+  border-top: 1px solid var(--fleet-border);
+  padding-top: var(--fleet-space-3);
   margin-top: 14px;
   display: flex;
   justify-content: flex-end;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
 /* ─── Form Fields (used in cards) ───────────────────────────────────────── */
 
 .stg-field {
-  margin-bottom: var(--bde-space-3);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .stg-field__label {
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
   text-transform: uppercase;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   letter-spacing: var(--tracking-wide);
   margin-bottom: 6px;
   display: block;
@@ -98,24 +98,24 @@
 
 .stg-field__input {
   width: 100%;
-  background: var(--bde-surface);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  padding: var(--bde-space-2) var(--bde-space-3);
-  color: var(--bde-text);
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-space-3);
+  background: var(--fleet-surface);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  color: var(--fleet-text);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-space-3);
   box-sizing: border-box;
 }
 
 .stg-field__input:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .stg-field__row {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   align-items: center;
 }
 
@@ -124,24 +124,24 @@
 
 .settings-field__input {
   width: 100%;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-overlay);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  color: var(--bde-text);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  background: var(--fleet-overlay);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  color: var(--fleet-text);
   font-family: inherit;
-  font-size: var(--bde-size-md);
+  font-size: var(--fleet-size-md);
   outline: none;
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .settings-field__input::placeholder {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .settings-field__input:focus-visible {
-  border-color: var(--bde-accent);
-  outline: 2px solid var(--bde-accent);
+  border-color: var(--fleet-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -151,7 +151,7 @@
 }
 
 .settings-field__input[aria-invalid='true'] {
-  border-color: var(--bde-danger);
+  border-color: var(--fleet-danger);
 }
 
 /* ── Inline checkbox field variant ── */
@@ -159,8 +159,8 @@
 .settings-field--inline {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  margin-bottom: var(--bde-space-3);
+  gap: var(--fleet-space-2);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .settings-field--inline .settings-field__label {
@@ -170,7 +170,7 @@
 /* ── Empty state inside a SettingsCard ── */
 
 .settings-empty-state {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   margin: 0;
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
 }

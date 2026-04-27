@@ -1,11 +1,11 @@
 # Dogfood Report — 2026-04-18 — M8 live integration with rbt-coding-agent
 
-First end-to-end dogfood of BDE's per-agent-type backend routing with the
+First end-to-end dogfood of FLEET's per-agent-type backend routing with the
 new `rbt-coding-agent` local backend (Qwen 3.6 35B-A3B via LM Studio).
 
 ## Outcome
 
-**3 of 3** Pipeline tasks completed through BDE → local Qwen with
+**3 of 3** Pipeline tasks completed through FLEET → local Qwen with
 correct semantic output. All artefacts below.
 
 | Task | Wall-clock | Prompt size | Qwen commit | Outcome |
@@ -21,7 +21,7 @@ Claude fallback fired. No manual intervention between tasks.
 
 | | |
 | --- | --- |
-| BDE | `70370118` + `9719a487` + `f39018c1` (M8 dogfood fixes + ide boot fix) on top of `f7060a1a` |
+| FLEET | `70370118` + `9719a487` + `f39018c1` (M8 dogfood fixes + ide boot fix) on top of `f7060a1a` |
 | rbt-coding-agent | `ef8b180` (v0.2.0 — F1 model metadata) |
 | Model | `openai/qwen/qwen3.6-35b-a3b` via LM Studio at `http://localhost:1234/v1` |
 | Aider | 0.86.2 (Homebrew) |
@@ -52,24 +52,24 @@ Qwen 3.6/3.5 35B-A3B (262k), Qwen2.5-Coder family (32k),
 DeepSeek-Coder-V2-Lite (128k), Codestral (32k), Gemma 4 (8k). Callers
 can override via `SpawnOptions.modelMetadata`.
 
-### B1 · Pipeline prompt assumed BDE's monorepo (BDE)
+### B1 · Pipeline prompt assumed FLEET's monorepo (FLEET)
 
 **Symptom:** First-run prompt was 9 231 chars — `npm run typecheck`,
 `npx vitest run`, `docs/modules/` update rules, pre-push hook
 guidance. All irrelevant to a Python scratch dir.
 
-**Root cause:** `buildPipelinePrompt` injected the full BDE-specific
+**Root cause:** `buildPipelinePrompt` injected the full FLEET-specific
 preamble unconditionally.
 
-**Fix:** `RepoConfig.promptProfile?: 'bde' | 'minimal'` (default
-`'bde'` — backward compatible). `buildPipelinePrompt` switches
+**Fix:** `RepoConfig.promptProfile?: 'fleet' | 'minimal'` (default
+`'fleet'` — backward compatible). `buildPipelinePrompt` switches
 preambles. Minimal profile is ~650 chars: style, scope, exact-names,
 conventional commit. Successful runs used ~2.2 k prompts — 76 %
-smaller than the BDE default.
+smaller than the FLEET default.
 
-### B2 · No-op runs were transitioning to `review` (BDE)
+### B2 · No-op runs were transitioning to `review` (FLEET)
 
-**Symptom:** Aider exited 0 after doing nothing. BDE
+**Symptom:** Aider exited 0 after doing nothing. FLEET
 auto-committed the `.gitignore` it creates for its own scratch
 files, saw commits on the branch, and moved the task to `review`.
 A reviewer would see an empty-work PR.
@@ -85,7 +85,7 @@ route through `resolveFailure` with notes
 Empty diffs defer to `hasCommitsAheadOfMain` so the existing path
 stays authoritative.
 
-### B3 · `meta.json` lied about which backend ran (BDE)
+### B3 · `meta.json` lied about which backend ran (FLEET)
 
 **Symptom:** First run's `meta.json` claimed `bin: "claude"` and
 `model: "claude-sonnet-4-5"` even though Aider was the actual
@@ -101,7 +101,7 @@ reads them into `agent_runs.bin` + `.model`. After the fix, the
 successful run's `meta.json` correctly reads
 `"bin": "rbt-coding-agent"`, `"model": "openai/qwen/qwen3.6-35b-a3b"`.
 
-### Drive-by · Boot-time IPC spam (BDE)
+### Drive-by · Boot-time IPC spam (FLEET)
 
 Log had `[ipc] [fs:stat] unhandled error: Error: No IDE root path
 set — call fs:watchDir first` on every boot.
@@ -121,7 +121,7 @@ the pre-stat entirely.
   (fixed the slice to `items[start:end]`, didn't touch the loop
   indices). Commit messages were conventional-commit style without
   being prompted to do so in the minimal preamble.
-- **Prompt size matters more than we assumed.** Cutting BDE's
+- **Prompt size matters more than we assumed.** Cutting FLEET's
   preamble from ~9 k → ~2.2 k had first-order effects on whether
   the model did useful work, even at Qwen's 262 k context — LiteLLM's
   hard gate was triggered by our *reported* context window, not the
@@ -139,13 +139,13 @@ the pre-stat entirely.
 
 ## Known gaps we chose not to close
 
-- **Observability of which backend ran isn't visible in BDE's UI
+- **Observability of which backend ran isn't visible in FLEET's UI
   yet.** `meta.json` is correct; the UI still reads `bin` as a
   literal string. A small UI pass to show `bin` + `model` next to
   a Pipeline run's history entry would close the loop.
-- **Prompt profiles beyond `bde` / `minimal`.** A `node` profile
-  (TypeScript hints, no BDE-specific docs/modules rule) would be
-  useful for non-BDE Node repos. Deferred until a concrete
+- **Prompt profiles beyond `fleet` / `minimal`.** A `node` profile
+  (TypeScript hints, no FLEET-specific docs/modules rule) would be
+  useful for non-FLEET Node repos. Deferred until a concrete
   consumer lands.
 - **Token visibility on longer runs.** `session.metrics` still
   drops for ~60 % of runs against LM Studio (surfaced in the
@@ -153,7 +153,7 @@ the pre-stat entirely.
   parser pass.
 - **Automatic validation of per-task assertions.** Today the user
   hand-runs `pytest`/equivalent after each task. A lightweight
-  "scenario" schema in BDE mapping a task to an assertion script
+  "scenario" schema in FLEET mapping a task to an assertion script
   would let the drain loop flag broken outputs without human
   review.
 

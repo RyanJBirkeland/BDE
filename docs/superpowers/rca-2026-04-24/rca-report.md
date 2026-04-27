@@ -1,6 +1,6 @@
 # Pipeline Painpoints — RCA on the 2026-04-22 → 2026-04-24 dogfood window
 
-**Audit data:** 31 terminal-state tasks, 170 agent runs, all from `~/.bde/bde.db`.
+**Audit data:** 31 terminal-state tasks, 170 agent runs, all from `~/.fleet/fleet.db`.
 **Method:** static spec scoring + agent-event-based failure classification.
 **Companion artifacts:** [`audit.json`](./audit.json), [`audit-raw.txt`](./audit-raw.txt), [`rca_audit.py`](./rca_audit.py).
 
@@ -15,7 +15,7 @@
 | 1 | Turn budget starvation — missing Multi-File header | **Confirmed, but smaller than claimed** | Only 7/31 specs had the header. 23 lacked it but had ≥3 file paths or `## Files to Change` (qualifies as "obviously multi-file"). T-12 hit max_turns once cleanly; the other "5 max-turn exhaustions" were mostly env-bug failures, not turn starvation. **Real impact: 1 confirmed out_of_turns death; many more "almost-deaths" where tasks succeeded only by hitting exactly 76 turns.** |
 | 2 | T-9 god class genuinely too large | **Disconfirmed at the head, but real risk in the tail** | T-9 succeeded on 6 of 7 runs (16, 76, [failed], 50, 47, 76, 45 turns). The "4 consecutive failures" claim isn't visible in `agent_runs` — what's visible is many `active→queued` cycles, suggesting watchdog resets or revision requests rather than fast-fails. The spec was 956 words, 10 sections, had the Multi-File header — it was within bounds. **However, the recovery pattern (multiple re-spawns, 6 of 7 hitting >=45 turns) means it was operating right at the edge.** |
 | 3 | `cancelled → done` is a state machine dead-end | **Confirmed — by design** | `src/shared/task-state-machine.ts:80-90` makes `cancelled` a true sink (empty allowed-set). `done → cancelled` is the only transition into that sink. There is no "I implemented this manually" recovery path. Only 1 task (T-9 manual SQL) hit this in the dogfood, but the *design* is the issue. |
-| 4 | Test expectations encode old behavior tightly | **Out of scope for data audit** | Code-review-pattern issue, not measurable in `bde.db`. Recent commits show this is real (T-12 broke tests on adding parseArgs). Worth a separate review, not an experiment. |
+| 4 | Test expectations encode old behavior tightly | **Out of scope for data audit** | Code-review-pattern issue, not measurable in `fleet.db`. Recent commits show this is real (T-12 broke tests on adding parseArgs). Worth a separate review, not an experiment. |
 | 5 | `_-prefixed` fields as de facto test API | **Out of scope for data audit** | Same as #4 — design observation, not measurable from runs. |
 | 6 | exactOptionalPropertyTypes friction | **Out of scope for data audit** | Same. |
 
@@ -36,7 +36,7 @@ user_cancelled_no_run:            8 tasks (queue cleanup; not a failure)
 user_cancelled_after_success:     7 tasks (review-stage discard; not a failure)
 ```
 
-The dominant "failure" class is **environmental**, not prompt-related: the packaged `BDE.app` couldn't find its bundled `node`, so the SDK threw `Stream interrupted: Claude Code executable not found at .../BDE.app/Contents/Resources/app.asar.unpacked/node...` before the agent ever read the prompt. CLAUDE.md already documents this in the Packaging section (the node-auto-detection mitigation), but the dogfood window apparently had ~22 runs that hit it before the mitigation took effect or while running an older build.
+The dominant "failure" class is **environmental**, not prompt-related: the packaged `FLEET.app` couldn't find its bundled `node`, so the SDK threw `Stream interrupted: Claude Code executable not found at .../FLEET.app/Contents/Resources/app.asar.unpacked/node...` before the agent ever read the prompt. CLAUDE.md already documents this in the Packaging section (the node-auto-detection mitigation), but the dogfood window apparently had ~22 runs that hit it before the mitigation took effect or while running an older build.
 
 ### 2.2 Turn distribution of *successful* runs
 
@@ -58,7 +58,7 @@ The bimodal distribution is the story. Small tasks finish in ~21 turns. Multi-fi
 | No header but obviously multi-file (≥3 file paths or `## Files to Change`) | 23 |
 | No header and truly small (1-2 files) | 1 |
 
-23 of 31 tasks lacked the header but probably needed it. The auto-detection in `computeMaxTurns` (`.tsx`+`.css` OR ≥3 `src/` substrings) caught **zero** of them — because most BDE specs use bare paths like `agent-manager/foo.ts` rather than `src/main/agent-manager/foo.ts`. **The heuristic is too literal**.
+23 of 31 tasks lacked the header but probably needed it. The auto-detection in `computeMaxTurns` (`.tsx`+`.css` OR ≥3 `src/` substrings) caught **zero** of them — because most FLEET specs use bare paths like `agent-manager/foo.ts` rather than `src/main/agent-manager/foo.ts`. **The heuristic is too literal**.
 
 ### 2.4 Cost
 
@@ -134,7 +134,7 @@ I'd **start with B1** because B2 only matters if the cap isn't the root cause.
 - `rca-report.md` — this file
 - `audit-raw.txt` — full stdout of the analyzer
 - `audit.json` — structured findings, suitable for re-querying
-- `rca_audit.py` — the analyzer script (read-only against `~/.bde/bde.db`); rerun with `python3 docs/superpowers/rca-2026-04-24/rca_audit.py /tmp/audit.json`
+- `rca_audit.py` — the analyzer script (read-only against `~/.fleet/fleet.db`); rerun with `python3 docs/superpowers/rca-2026-04-24/rca_audit.py /tmp/audit.json`
 - `phase-b-experiment-spec.md` — detailed B1 setup (next file)
 
 ---

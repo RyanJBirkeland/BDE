@@ -59,7 +59,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
 
   function buildMcp(): McpServer {
     const mcp = wrapServerWithSafeToolHandlers(
-      new McpServer({ name: 'bde', version: '1.0.0' }),
+      new McpServer({ name: 'fleet', version: '1.0.0' }),
       logger
     )
 
@@ -207,7 +207,7 @@ function announceReady(actualPort: number, tokenPath: string, freshlyMinted: boo
   logger.info(`MCP bearer token at ${tokenPath}${freshlyMinted ? ' (newly minted)' : ''}`)
   if (freshlyMinted) {
     broadcast('manager:warning', {
-      message: `BDE MCP: fresh token minted at ${tokenPath}. Re-copy into your MCP client config.`
+      message: `FLEET MCP: fresh token minted at ${tokenPath}. Re-copy into your MCP client config.`
     })
   }
 }
@@ -258,7 +258,7 @@ function formatRequestError(err: unknown): string {
 /**
  * Build a user-safe summary of an HTTP listener error for the renderer
  * `manager:warning` broadcast. Full detail (including stack) is written
- * to `~/.bde/bde.log` via `logError`; the broadcast body gets the minimum
+ * to `~/.fleet/fleet.log` via `logError`; the broadcast body gets the minimum
  * needed for an operator to act. Raw error messages and stack frames are
  * withheld to avoid leaking filesystem paths or internal error shapes
  * through a renderer surface.
@@ -268,7 +268,7 @@ export function summarizeListenError(err: unknown, configuredPort: number): stri
   if (code === 'EADDRINUSE') {
     return `MCP server could not bind to port ${configuredPort} — already in use.`
   }
-  return 'MCP server failed to start. See ~/.bde/bde.log for details.'
+  return 'MCP server failed to start. See ~/.fleet/fleet.log for details.'
 }
 
 /**

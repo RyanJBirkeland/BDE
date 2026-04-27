@@ -5,19 +5,19 @@ describe('getTerminalTheme', () => {
   beforeEach(() => {
     // Set CSS custom properties on documentElement so getComputedStyle returns them
     const root = document.documentElement
-    root.style.setProperty('--bde-bg', '#1a1a2e')
-    root.style.setProperty('--bde-text', '#eaeaea')
-    root.style.setProperty('--bde-accent', '#00d4ff')
-    root.style.setProperty('--bde-accent-dim', '#003344')
-    root.style.setProperty('--bde-surface', '#222240')
-    root.style.setProperty('--bde-text-dim', '#888888')
-    root.style.setProperty('--bde-danger', '#ff3366')
-    root.style.setProperty('--bde-danger-text', '#ff6688')
-    root.style.setProperty('--bde-success', '#00ff88')
-    root.style.setProperty('--bde-warning', '#ffaa00')
-    root.style.setProperty('--bde-info', '#3399ff')
-    root.style.setProperty('--bde-purple', '#aa66ff')
-    root.style.setProperty('--bde-subagent', '#cc88ff')
+    root.style.setProperty('--fleet-bg', '#1a1a2e')
+    root.style.setProperty('--fleet-text', '#eaeaea')
+    root.style.setProperty('--fleet-accent', '#00d4ff')
+    root.style.setProperty('--fleet-accent-dim', '#003344')
+    root.style.setProperty('--fleet-surface', '#222240')
+    root.style.setProperty('--fleet-text-dim', '#888888')
+    root.style.setProperty('--fleet-danger', '#ff3366')
+    root.style.setProperty('--fleet-danger-text', '#ff6688')
+    root.style.setProperty('--fleet-success', '#00ff88')
+    root.style.setProperty('--fleet-warning', '#ffaa00')
+    root.style.setProperty('--fleet-info', '#3399ff')
+    root.style.setProperty('--fleet-purple', '#aa66ff')
+    root.style.setProperty('--fleet-subagent', '#cc88ff')
   })
 
   it('returns a valid ITheme object with all required color keys', () => {

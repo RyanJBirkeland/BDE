@@ -4,19 +4,19 @@ import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { nowIso } from '../shared/time'
 
-const BDE_DIR = join(homedir(), '.bde')
-const LOG_PATH = join(BDE_DIR, 'bde.log')
+const FLEET_DIR = join(homedir(), '.fleet')
+const LOG_PATH = join(FLEET_DIR, 'fleet.log')
 const MAX_LOG_SIZE = 10 * 1024 * 1024 // 10MB
 
 /**
  * Mirror logger output to stdout/stderr only in development. In packaged
  * production builds console writes duplicate every file write (~397 per
  * startup) with no visible benefit — the user cannot see them, and
- * `~/.bde/bde.log` remains the authoritative source. `BDE_CONSOLE_LOG=1`
+ * `~/.fleet/fleet.log` remains the authoritative source. `FLEET_CONSOLE_LOG=1`
  * re-enables mirroring for targeted debugging of packaged builds.
  */
 const CONSOLE_LOG_ENABLED =
-  process.env.NODE_ENV !== 'production' || process.env.BDE_CONSOLE_LOG === '1'
+  process.env.NODE_ENV !== 'production' || process.env.FLEET_CONSOLE_LOG === '1'
 
 export interface Logger {
   info(msg: string): void
@@ -27,19 +27,19 @@ export interface Logger {
 }
 
 function ensureLogDir(): void {
-  if (!existsSync(BDE_DIR)) {
-    mkdirSync(BDE_DIR, { recursive: true, mode: 0o700 })
+  if (!existsSync(FLEET_DIR)) {
+    mkdirSync(FLEET_DIR, { recursive: true, mode: 0o700 })
   }
-  // Enforce restrictive permissions on the .bde directory on every startup.
+  // Enforce restrictive permissions on the .fleet directory on every startup.
   // mkdirSync mode is only respected on creation — chmod fixes existing installs
   // that were created without the mode parameter.
   try {
-    chmodSync(BDE_DIR, 0o700)
+    chmodSync(FLEET_DIR, 0o700)
   } catch (err) {
     // Non-fatal: log but continue — app can still function
-    console.warn('[logger] Failed to enforce .bde directory permissions:', err)
+    console.warn('[logger] Failed to enforce .fleet directory permissions:', err)
   }
-  // Tighten the log file permissions too. bde.log contains agent prompts,
+  // Tighten the log file permissions too. fleet.log contains agent prompts,
   // task specs, and SDK errors that may echo tokens; under the default
   // umask it is world-readable (0644). Apply 0600 every startup and ignore
   // "file not found" — the first appendFileSync will create it with 0600.
@@ -98,7 +98,7 @@ function fileLog(level: string, name: string, msg: string): void {
   scheduleRotationCheck()
 }
 
-/** Create a named logger that writes to ~/.bde/bde.log */
+/** Create a named logger that writes to ~/.fleet/fleet.log */
 export function createLogger(name: string): Logger {
   ensureLogDir()
   void rotateIfNeededAsync()

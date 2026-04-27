@@ -69,7 +69,7 @@ function makeAgent(): ActiveAgent {
 }
 
 function makeTask(): AgentRunClaim {
-  return { id: 't1', title: 'test', repo: 'bde', spec: null, prompt: null, status: 'active' } as never
+  return { id: 't1', title: 'test', repo: 'fleet', spec: null, prompt: null, status: 'active' } as never
 }
 
 describe('oauth-refresh-coordination (T-55)', () => {

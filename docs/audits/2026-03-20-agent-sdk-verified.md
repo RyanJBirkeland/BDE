@@ -24,7 +24,7 @@ This document confirms that the Agent SDK pipeline is functioning correctly. The
 
 ## Notes
 
-This verification was generated automatically as part of the BDE project's continuous validation of agent tooling and infrastructure.
+This verification was generated automatically as part of the FLEET project's continuous validation of agent tooling and infrastructure.
 
 ---
 

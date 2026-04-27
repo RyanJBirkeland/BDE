@@ -1,37 +1,37 @@
 /* ── Panel ────────────────────────────────────────────── */
 
-.bde-panel {
+.fleet-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
 
-.bde-panel__header {
+.fleet-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 40px;
-  padding: 0 var(--bde-space-4);
-  border-bottom: 1px solid var(--bde-border);
+  padding: 0 var(--fleet-space-4);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
 }
 
-.bde-panel__title {
-  font-size: var(--bde-size-sm);
+.fleet-panel__title {
+  font-size: var(--fleet-size-sm);
   font-weight: 600;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.bde-panel__actions {
+.fleet-panel__actions {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
 }
 
-.bde-panel__body {
+.fleet-panel__body {
   flex: 1;
   overflow: auto;
   min-height: 0;

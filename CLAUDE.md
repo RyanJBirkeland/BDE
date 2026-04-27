@@ -1,9 +1,9 @@
-# CLAUDE.md — BDE
+# CLAUDE.md — FLEET
 
 @../../ARCHITECTURE.md
-@docs/BDE_FEATURES.md
+@docs/FLEET_FEATURES.md
 
-Electron desktop app (electron-vite + React + TypeScript) — the Birkeland Development Environment.
+Electron desktop app (electron-vite + React + TypeScript) — the Agentic Development Environment.
 
 ## THE Standard — Clean Code & Clean Architecture (RULE, NOT GUIDELINE)
 
@@ -26,7 +26,7 @@ Electron desktop app (electron-vite + React + TypeScript) — the Birkeland Deve
 
 ## Build & Test
 
-**Node ≥22.12.0 required.** `@electron/rebuild` v4 needs it, and the native-module rebuild pipeline (`postinstall`, `predev`, `package`, `posttest:main`) silently fails on older Node versions. `package.json` still declares `^20.19.0 || >=22.12.0` for engine compatibility, but BDE development requires the 22.12+ branch.
+**Node ≥22.12.0 required.** `@electron/rebuild` v4 needs it, and the native-module rebuild pipeline (`postinstall`, `predev`, `package`, `posttest:main`) silently fails on older Node versions. `package.json` still declares `^20.19.0 || >=22.12.0` for engine compatibility, but FLEET development requires the 22.12+ branch.
 
 **Electron version pin.** The `electron-rebuild` invocations hardcode `-v 39.8.6` to match the `electron` devDependency locked in `package-lock.json`. When bumping Electron, update all four script sites in `package.json` (`postinstall`, `predev`, `package`, `posttest:main`).
 
@@ -145,7 +145,7 @@ Format: `{type}: {description}`
 - Shutdown/lifecycle: `src/main/agent-manager/index.ts`
 - Repository interface: `src/main/data/sprint-task-repository.ts` (ISprintTaskRepository + factory)
 - Audit trail: `src/main/data/task-changes.ts` (field-level change tracking in SQLite)
-- Shared logger: `src/main/logger.ts` (createLogger → `~/.bde/bde.log`)
+- Shared logger: `src/main/logger.ts` (createLogger → `~/.fleet/fleet.log`)
 - Polling hook: `src/renderer/src/hooks/useBackoffInterval.ts` (backoff + jitter)
 - Prompt composer: `src/main/lib/prompt-composer.ts` — `buildAgentPrompt()` dispatcher for all agent types. All spawn paths must use this instead of inline prompt assembly. Per-agent builders still live in `src/main/agent-manager/` (`prompt-pipeline.ts`, `prompt-assistant.ts`, `prompt-copilot.ts`, `prompt-synthesizer.ts`); shared section builders in `prompt-sections.ts`. User-controlled content is wrapped in XML boundary tags (`<user_spec>`, `<upstream_spec>`, `<failure_notes>`, etc.) to prevent prompt injection — always follow this pattern when adding new interpolation sites.
 - Prompt truncation constants: `src/main/agent-manager/prompt-constants.ts` — `PROMPT_TRUNCATION` object with `TASK_SPEC_CHARS` (8000), `UPSTREAM_SPEC_CHARS` (2000), `UPSTREAM_DIFF_CHARS` (2000). Import from here — never scatter magic numbers.
@@ -160,14 +160,14 @@ Format: `{type}: {description}`
 - Format utilities: `src/renderer/src/lib/format.ts` — `formatDuration()` and `formatDurationMs()` consolidated here
 - Textarea prompt modal: `src/renderer/src/components/ui/TextareaPromptModal.tsx` — multi-line input modal (used by Code Review revision requests)
 - Modal primitive: `src/renderer/src/components/ui/Modal.tsx` — shared shell for centered dialogs (backdrop, focus trap via `useFocusTrap`, portal to `document.body`, ESC + backdrop-click dismissal, size presets `sm`/`md`/`lg`/`fullscreen`). Use this for any new modal — don't roll a fresh backdrop/focus-trap. `ConfirmModal` and `TaskWorkbenchModal` already wrap it; `PromptModal`, `TextareaPromptModal`, `CreateEpicModal`, `FeatureGuideModal`, and `ShortcutsOverlay` are pending migration.
-- Pipeline agent worktrees: `~/.bde/worktrees/Users-ryanbirkeland-Projects-git-repos-BDE/<32-char-taskId>/` (derived from `agentManager.worktreeBase` setting, which defaults to `~/.bde/worktrees` — users who override this in Settings get their configured path instead)
+- Pipeline agent worktrees: `~/.fleet/worktrees/Users-ryanbirkeland-Projects-git-repos-FLEET/<32-char-taskId>/` (derived from `agentManager.worktreeBase` setting, which defaults to `~/.fleet/worktrees` — users who override this in Settings get their configured path instead)
 - ADR — store separation: `docs/architecture-decisions/costdata-agenthistory-separation.md`
 - Main process shared libs: `src/main/lib/async-utils.ts` (`sleep`, `execFileAsync`) · `src/main/lib/patch-validation.ts` (`validateAndFilterPatch`) — don't reimplement these inline
 - Renderer shared libs: `src/renderer/src/lib/createDebouncedPersister.ts` — debounced localStorage/settings writes, used by 5 stores
 - Repo search service: `src/main/services/repo-search-service.ts` — `searchRepo()` + `parseGrepOutput()`, used by `workbench:researchRepo` handler
 - Dependency index refresh: `src/main/agent-manager/dependency-refresher.ts` — `refreshDependencyIndex()`, `computeDepsFingerprint()`
 - Terminal status handler: `src/main/agent-manager/terminal-handler.ts` — `handleTaskTerminal()` (metrics + dep resolution + cleanup timer)
-- MCP server: `src/main/mcp-server/` — opt-in local MCP server for external agents; toggle via `mcp.enabled` setting. Token in `~/.bde/mcp-token`.
+- MCP server: `src/main/mcp-server/` — opt-in local MCP server for external agents; toggle via `mcp.enabled` setting. Token in `~/.fleet/mcp-token`.
 
 ## PR Rules
 
@@ -186,7 +186,7 @@ git rebase origin/main           # critical: local main must match origin
 git cherry-pick origin/agent/<branch>
 git push origin main             # pre-push hook runs the full suite
 git push origin --delete agent/<branch>
-git worktree remove ~/.bde/worktrees/Users-ryanbirkeland-Projects-git-repos-BDE/<taskId> --force
+git worktree remove ~/.fleet/worktrees/Users-ryanbirkeland-Projects-git-repos-FLEET/<taskId> --force
 ```
 
 The rebase step is mandatory — local main can diverge from origin if another session pushed in between. Skipping it causes the same bug the in-app Ship It fix was built to prevent.
@@ -198,7 +198,7 @@ The rebase step is mandatory — local main can diverge from origin if another s
 
 ## Code Quality
 
-See **THE Standard** section at the top of this file. Everything below is BDE-specific enforcement on top of that baseline.
+See **THE Standard** section at the top of this file. Everything below is FLEET-specific enforcement on top of that baseline.
 
 - **Clean Code (mandatory):** functions do one thing, names are vocabulary not labels, no magic numbers, files are chapters. If you need a comment to explain *what*, rewrite until you don't.
 - **Clean Architecture (mandatory):** respect process boundaries (main/preload/renderer), keep IPC surface minimal, shared types in `src/shared/`. Handlers delegate — they contain no business logic.
@@ -218,7 +218,7 @@ These files are edited frequently across branches. Take extra care when modifyin
 
 ## Architecture Notes
 
-- **Data layer**: SQLite at `~/.bde/bde.db` (WAL mode, schema in `src/main/db.ts`). Migrations live in `src/main/migrations/` as separate versioned files, loaded via `loader.ts`. Add new migrations with `version: last + 1`. Check the actual current version with `sqlite3 ~/.bde/bde.db "PRAGMA user_version"` rather than trusting any number in docs (they drift). Backup via `VACUUM INTO` to `bde.db.backup` runs on startup + every 24h. for all local tables: `agent_runs`, `settings`, `cost_events`, `agent_events`, `task_changes`, `sprint_tasks`. Sprint tasks live in local SQLite. `src/main/data/sprint-queries.ts` is now a barrel re-export — logic lives in focused modules: `sprint-task-crud.ts` (CRUD), `sprint-queue-ops.ts` (claim/release/WIP), `sprint-pr-ops.ts` (PR lifecycle), `sprint-agent-queries.ts` (health/dependency queries), `sprint-task-mapper.ts` (row mapping), `sprint-task-types.ts` (types/allowlists), `sprint-maintenance.ts` (snapshot pruning). Import from `sprint-queries.ts` for backward compat or directly from the focused module. On first launch, `importSprintTasksFromSupabase()` runs as a one-time fire-and-forget migration if credentials are present; it is a no-op once the table has rows. (Scheduled for removal before public release — no new users will hit this path.) Audit trail stored in `task_changes` table — field-level diffs logged on every `updateTask()` call.
+- **Data layer**: SQLite at `~/.fleet/fleet.db` (WAL mode, schema in `src/main/db.ts`). Migrations live in `src/main/migrations/` as separate versioned files, loaded via `loader.ts`. Add new migrations with `version: last + 1`. Check the actual current version with `sqlite3 ~/.fleet/fleet.db "PRAGMA user_version"` rather than trusting any number in docs (they drift). Backup via `VACUUM INTO` to `fleet.db.backup` runs on startup + every 24h. for all local tables: `agent_runs`, `settings`, `cost_events`, `agent_events`, `task_changes`, `sprint_tasks`. Sprint tasks live in local SQLite. `src/main/data/sprint-queries.ts` is now a barrel re-export — logic lives in focused modules: `sprint-task-crud.ts` (CRUD), `sprint-queue-ops.ts` (claim/release/WIP), `sprint-pr-ops.ts` (PR lifecycle), `sprint-agent-queries.ts` (health/dependency queries), `sprint-task-mapper.ts` (row mapping), `sprint-task-types.ts` (types/allowlists), `sprint-maintenance.ts` (snapshot pruning). Import from `sprint-queries.ts` for backward compat or directly from the focused module. On first launch, `importSprintTasksFromSupabase()` runs as a one-time fire-and-forget migration if credentials are present; it is a no-op once the table has rows. (Scheduled for removal before public release — no new users will hit this path.) Audit trail stored in `task_changes` table — field-level diffs logged on every `updateTask()` call.
 - **Repository pattern**: `src/main/data/sprint-task-repository.ts` defines `ISprintTaskRepository` interface. Agent manager receives the repository via constructor injection (`createAgentManager(config, repo, logger)`). Concrete implementation delegates to sprint-queries. IPC handlers (sprint-local.ts) import sprint-queries directly — they're thin enough not to need the abstraction. The composition root (`index.ts`) routes all data access through the `repo` instance; the only remaining `sprint-queries` import there is `setSprintQueriesLogger` (logging infrastructure, not a data bypass). `task-validation.ts` and `bootstrap.ts` use injected callbacks and do not import sprint-queries directly. Row mapping validates `id`/`status`/`priority`/`repo`/`title` and sanitizes `depends_on` via `sanitizeDependsOn` (T-2, T-61) — malformed DB rows throw at the boundary rather than propagating.
 - **SprintTask view types**: `src/shared/types/task-types.ts` exports four `Pick<SprintTask,...>` aliases for consumers that don't need all 43 fields: `SprintTaskCore` (11 universal fields), `SprintTaskSpec` (Core + spec/definition fields), `SprintTaskExecution` (Core + agent runtime fields), `SprintTaskPR` (Core + PR/review fields). `SprintTask` satisfies all four structurally. Use the narrowest type that covers your needs. `ISprintPollerRepository.listTasksWithOpenPrs()` already returns `SprintTaskPR[]`. Future narrowing: prefer narrower view types when editing functions that take `SprintTask`.
 - **AgentManager**: `src/main/agent-manager/` — in-process task orchestration. Drain loop watches for queued tasks, spawns agents in git worktrees via SDK, monitors with watchdogs, handles completion (transition to `review` status, preserve worktree, retry logic). All data access goes through `ISprintTaskRepository` (injected). Core agent lifecycle in `run-agent.ts` with explicit `RunAgentDeps` interface. Per-task `max_runtime_ms` overrides the global 1-hour watchdog limit.
@@ -228,9 +228,9 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **Sprint PR poller**: `src/main/sprint-pr-poller.ts` — runs every 60s in main process (not renderer-dependent), polls PR status for tasks with `pr_status='open'`. Auto-marks tasks done (merged) or cancelled (closed).
 - **State**: Zustand stores in `src/renderer/src/stores/`
 - **IPC**: 29 handler modules in `src/main/handlers/`, registered in `src/main/index.ts`, preload bridge in `src/preload/index.ts`. ~138 typed channels defined across domain-grouped modules in `src/shared/ipc-channels/` (re-exported via `ipc-channels.ts` shim for backward compatibility).
-- **Agent spawning**: `src/main/agent-manager/sdk-adapter.ts` spawns agents via `@anthropic-ai/claude-agent-sdk` (with CLI fallback). OAuth token read from `~/.bde/oauth-token` at startup — Keychain access hangs in Electron's main process, so the file-based approach is required. SDK options policy: `settingSources: []` for all agent types (pipeline, adhoc, review) so agents only see explicit prompt context, not Claude Code's own settings files; pipeline SDK calls additionally include `['user', 'local']` via `spawnViaSdk`. `maxTurns: 20` enforced for pipeline agents. `maxBudgetUsd` defaults: `2.0` for pipeline, `5.0` ceiling for adhoc.
-- **Native agent system**: `src/main/agent-system/` — custom BDE-specific agent infrastructure (personality, memory, skills) replaces third-party plugin scripts. Unconditional since migration v019 removed the `agentManager.useNativeSystem` toggle. Agents receive tailored personalities (pipeline = concise/action-oriented, assistant = conversational/proactive), BDE conventions (IPC patterns, testing standards, architecture rules), and interactive skills (system introspection, task orchestration, code patterns). Skills only injected for assistant/adhoc agents, not pipeline. Prompt assembly via `prompt-composer.ts` `buildAgentPrompt()` function. See `docs/agent-system-guide.md` for architecture, usage, and migration guide.
-- **DB sync**: File watcher on `bde.db` pushes `sprint:externalChange` IPC events to renderer (500ms debounce)
+- **Agent spawning**: `src/main/agent-manager/sdk-adapter.ts` spawns agents via `@anthropic-ai/claude-agent-sdk` (with CLI fallback). OAuth token read from `~/.fleet/oauth-token` at startup — Keychain access hangs in Electron's main process, so the file-based approach is required. SDK options policy: `settingSources: []` for all agent types (pipeline, adhoc, review) so agents only see explicit prompt context, not Claude Code's own settings files; pipeline SDK calls additionally include `['user', 'local']` via `spawnViaSdk`. `maxTurns: 20` enforced for pipeline agents. `maxBudgetUsd` defaults: `2.0` for pipeline, `5.0` ceiling for adhoc.
+- **Native agent system**: `src/main/agent-system/` — custom FLEET-specific agent infrastructure (personality, memory, skills) replaces third-party plugin scripts. Unconditional since migration v019 removed the `agentManager.useNativeSystem` toggle. Agents receive tailored personalities (pipeline = concise/action-oriented, assistant = conversational/proactive), FLEET conventions (IPC patterns, testing standards, architecture rules), and interactive skills (system introspection, task orchestration, code patterns). Skills only injected for assistant/adhoc agents, not pipeline. Prompt assembly via `prompt-composer.ts` `buildAgentPrompt()` function. See `docs/agent-system-guide.md` for architecture, usage, and migration guide.
+- **DB sync**: File watcher on `fleet.db` pushes `sprint:externalChange` IPC events to renderer (500ms debounce)
 - **Design tokens**: `src/renderer/src/assets/tokens.css` — use these instead of hardcoded values. Neon theme tokens in CSS custom properties (`neon.css`, `neon-shell.css`, `agents-neon.css`).
 - **Neon components**: `src/renderer/src/components/neon/` (11 primitives: NeonCard, StatCounter, NeonBadge, GlassPanel, ActivityFeed, NeonProgress, PipelineFlow, SankeyPipeline, MiniChart, StatusBar, NeonTooltip). Used by Dashboard + Agents views. Glass morphism, glow effects, terminal aesthetic.
 - **Component organization**: Additional component subdirectories include `help/` (help UI), `planner/` (task planning components), `onboarding/` (first-launch onboarding flow), `agents/`, `code-review/`, `dashboard/`, `diff/`, `git-tree/`, `ide/`, `panels/`, `settings/`, `sprint/`, `task-workbench/`, `terminal/`, and `ui/` (shared primitives).
@@ -244,7 +244,7 @@ These files are edited frequently across branches. Take extra care when modifyin
 - **Code Review**: `src/renderer/src/views/CodeReviewView.tsx` + `src/renderer/src/components/code-review/` (ReviewQueue, ReviewDetail, ReviewActions, ChangesTab, CommitsTab, ConversationTab). `codeReview` Zustand store. Agent completion stops at `review` status with worktree preserved. User reviews diffs/commits, then merges locally, creates PR, requests revision, or discards. Task statuses include `review` between `active` and `done`. Replaces the previous PR Station components.
 - **Source Control**: `src/renderer/src/views/GitTreeView.tsx` + `src/renderer/src/components/git-tree/` (5 components: GitFileRow, FileTreeSection, CommitBox, BranchSelector, InlineDiffDrawer). `gitTree` Zustand store in `src/renderer/src/stores/gitTree.ts`. Uses existing git IPC channels (`git:status`, `git:diff`, `git:stage`, `git:unstage`, `git:commit`, `git:push`, `git:branches`). Polls at `POLL_GIT_STATUS_INTERVAL` (30s). Store tracks `commitLoading`/`pushLoading`/`lastError` for operation feedback; CommitBox shows loading spinners, GitTreeView renders persistent error banner with Retry/Dismiss.
 - **Dashboard**: `src/renderer/src/views/DashboardView.tsx` + `src/renderer/src/components/dashboard/` (StatusRail, CenterColumn, ActivitySection, FiresStrip, LoadAverageChart, MorningBriefing, SuccessRateChart, ThroughputChart). Aggregates data from `sprintTasks`, `costData` stores and PR list IPC. Default landing view. Polls every 60s via `useBackoffInterval` (with jitter + exponential backoff on errors).
-- **Logging**: `src/main/logger.ts` — `createLogger(name)` writes to `~/.bde/bde.log` with `[LEVEL] [module]` format + ISO timestamps. Rotates at 10MB (renames to `.old`, keeps 1 generation). Checks rotation on creation + every 1000 writes. Sprint-queries uses injectable logger via `setSprintQueriesLogger()`. **For debugging, prefer `~/.bde/bde.log` — the live log for all main-process modules. `~/.bde/agent-manager.log` may exist but can be stale from prior builds; don't trust it as a source of current behavior.**
+- **Logging**: `src/main/logger.ts` — `createLogger(name)` writes to `~/.fleet/fleet.log` with `[LEVEL] [module]` format + ISO timestamps. Rotates at 10MB (renames to `.old`, keeps 1 generation). Checks rotation on creation + every 1000 writes. Sprint-queries uses injectable logger via `setSprintQueriesLogger()`. **For debugging, prefer `~/.fleet/fleet.log` — the live log for all main-process modules. `~/.fleet/agent-manager.log` may exist but can be stale from prior builds; don't trust it as a source of current behavior.**
 - **Optimistic updates**: `src/renderer/src/stores/sprintTasks.ts` — field-level tracking via `pendingUpdates: Record<string, { ts: number; fields: string[] }>`. On poll merge, only pending fields are preserved from local state; all other fields come from server. 2-second TTL. Full reload on failure (safest revert).
 - **Task Pipeline**: `src/renderer/src/components/sprint/SprintPipeline.tsx` — three-zone layout (PipelineBacklog | PipelineStage×5 | TaskDetailDrawer). Uses `partitionSprintTasks()` for stage mapping. Neon CSS in `sprint-pipeline-neon.css`. Task creation lives in the `TaskWorkbenchModal`, opened via `useTaskWorkbenchModalStore.openForCreate()`; clicking Edit on a task calls `openForEdit(task)` (no view jump).
 - **Task Workbench**: `src/renderer/src/components/task-workbench/` — form + AI copilot + readiness checks. Hosted in `TaskWorkbenchModal` (the canonical add/edit surface, mounted at app root). Modal shell (backdrop, focus trap, dismissal) is the shared `Modal` primitive in `components/ui/Modal.tsx`. Copilot uses Agent SDK streaming via `workbench:chatStream` IPC. Neon CSS in `task-workbench-neon.css` (`.wb-*` BEM classes).
@@ -260,7 +260,7 @@ These files are edited frequently across branches. Take extra care when modifyin
 ## Packaging
 
 ```bash
-npm run build:mac    # Build unsigned macOS arm64 DMG → release/BDE-*.dmg
+npm run build:mac    # Build unsigned macOS arm64 DMG → release/FLEET-*.dmg
 npm run package      # Alias for build:mac
 ```
 
@@ -281,7 +281,7 @@ npm run package      # Alias for build:mac
 - New main-process modules: use `createLogger(name)` from `src/main/logger.ts` — not raw `console.*`
 - Agent manager data access: should go through `ISprintTaskRepository` when possible; some paths still use sprint-queries directly (being addressed incrementally)
 - WIP limit: `agentManager.maxConcurrent` setting (code default `2`). Enforced at the drain loop, not in the UI. Values >3 on a typical laptop can oversaturate CPU — each pipeline agent spawns its own vitest workers during verification. The Settings → Agent Manager UI shows a live warning above the safe threshold.
-- **`sprint_tasks.repo` must be lowercase** to match settings convention (`repos: [{ name: 'bde', ... }]`). Historical rows with uppercase `'BDE'` are normalized by migration v38; new inserts (manual SQL or IPC) must use lowercase. `getRepoConfig` is case-insensitive as a safety net but don't rely on it.
+- **`sprint_tasks.repo` must be lowercase** to match settings convention (`repos: [{ name: 'fleet', ... }]`). Historical rows with uppercase `'FLEET'` are normalized by migration v38; new inserts (manual SQL or IPC) must use lowercase. `getRepoConfig` is case-insensitive as a safety net but don't rely on it.
 - Task dependency validation runs before creation — no create-then-rollback patterns
 - Audit trail is automatic — `updateTask()` records field-level diffs to `task_changes` table
 - Optimistic updates track fields, not just task IDs — only pending fields preserved on poll merge
@@ -301,8 +301,8 @@ When creating sprint tasks for pipeline agents:
 - **Include `## Files to Change` section.** List every file the agent should modify.
 - **Avoid exploration language.** "Explore," "investigate," "find issues" cause agents to thrash. Use explicit instructions.
 - **One feature per task.** Agents given multi-feature specs attempt everything and timeout.
-- **Agents create test task artifacts.** Running `npm test` in worktrees creates "Test task" records in `~/.bde/bde.db`. These are cleaned on app startup.
-- **Task linkage is derived from the branch name, not the commit subject.** BDE generates each pipeline agent's branch as `agent/t-<id>-<slug>-<hash>` — the completion guard (`assertBranchTipMatches` in `resolve-success-phases.ts`) extracts the task id from the branch name via `extractTaskIdFromBranch`. Agents follow the standard commit-message convention (`{type}({scope}): {what} — {why}`) and do not need to mention the task id in the subject. The guard retains a commit-message fallback for non-standard branch names.
+- **Agents create test task artifacts.** Running `npm test` in worktrees creates "Test task" records in `~/.fleet/fleet.db`. These are cleaned on app startup.
+- **Task linkage is derived from the branch name, not the commit subject.** FLEET generates each pipeline agent's branch as `agent/t-<id>-<slug>-<hash>` — the completion guard (`assertBranchTipMatches` in `resolve-success-phases.ts`) extracts the task id from the branch name via `extractTaskIdFromBranch`. Agents follow the standard commit-message convention (`{type}({scope}): {what} — {why}`) and do not need to mention the task id in the subject. The guard retains a commit-message fallback for non-standard branch names.
 
 ### Direct SQL queue pattern (bypass IPC)
 
@@ -310,7 +310,7 @@ For batch operations or pre-authored specs already on disk, insert directly:
 
 ```sql
 INSERT INTO sprint_tasks (title, status, repo, spec, spec_type, priority, needs_review, playground_enabled)
-VALUES (?, 'queued', 'bde', ?, 'feature', 1, 1, 0)
+VALUES (?, 'queued', 'fleet', ?, 'feature', 1, 1, 0)
 ```
 
 Bypasses the IPC readiness check (semantic + structural). Only use when the spec has been hand-validated. The drain loop picks up queued tasks within 30s. See `docs/superpowers/audits/2026-04-07/epic-*-tasks/` for example specs used this way, and `docs/superpowers/audits/2026-04-07/` for the Python queueing scripts (`/tmp/queue_epic*.py` pattern).

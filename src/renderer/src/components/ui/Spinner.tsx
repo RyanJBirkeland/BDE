@@ -6,7 +6,7 @@ type SpinnerProps = {
 export function Spinner({ size = 'md', color }: SpinnerProps): React.JSX.Element {
   return (
     <span
-      className={`bde-spinner bde-spinner--${size}`}
+      className={`fleet-spinner fleet-spinner--${size}`}
       style={color ? { borderTopColor: color } : undefined}
     />
   )

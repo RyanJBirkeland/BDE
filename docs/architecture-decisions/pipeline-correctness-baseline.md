@@ -6,7 +6,7 @@
 
 ## Context
 
-The 2026-04-25 audit of BDE's core pipeline (Sprint Pipeline + Agent Manager + Code Review handoff) returned 73 findings across 6 lenses. Five P0 and twenty-two P1 issues share a common trait: each one can leave a sprint task in a corrupted or unrecoverable state — dependents stranded `blocked`, zombie Claude processes after shutdown, half-terminal rows the UI cannot resolve, retry queues that grow without bound, or high-blast-radius logic with zero direct test coverage.
+The 2026-04-25 audit of FLEET's core pipeline (Sprint Pipeline + Agent Manager + Code Review handoff) returned 73 findings across 6 lenses. Five P0 and twenty-two P1 issues share a common trait: each one can leave a sprint task in a corrupted or unrecoverable state — dependents stranded `blocked`, zombie Claude processes after shutdown, half-terminal rows the UI cannot resolve, retry queues that grow without bound, or high-blast-radius logic with zero direct test coverage.
 
 These are correctness defects, not polish. They must land before any architectural refactor or performance work in this area. A faster god-class is still a god-class that loses tasks.
 

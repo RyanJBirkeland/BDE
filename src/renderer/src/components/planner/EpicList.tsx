@@ -60,14 +60,14 @@ export function EpicList({
   const getStatusColor = (status: TaskGroup['status']): string => {
     switch (status) {
       case 'completed':
-        return 'var(--bde-accent)'
+        return 'var(--fleet-accent)'
       case 'in-pipeline':
-        return 'var(--bde-status-review)'
+        return 'var(--fleet-status-review)'
       case 'ready':
-        return 'var(--bde-accent)'
+        return 'var(--fleet-accent)'
       case 'draft':
       default:
-        return 'var(--bde-text-muted)'
+        return 'var(--fleet-text-muted)'
     }
   }
 
@@ -92,10 +92,10 @@ export function EpicList({
   }
 
   const getProgressColor = (percent: number): string => {
-    if (percent === 100) return 'var(--bde-accent)'
-    if (percent >= 50) return 'var(--bde-status-review)'
-    if (percent > 0) return 'var(--bde-warning)'
-    return 'var(--bde-text-dim)'
+    if (percent === 100) return 'var(--fleet-accent)'
+    if (percent >= 50) return 'var(--fleet-status-review)'
+    if (percent > 0) return 'var(--fleet-warning)'
+    return 'var(--fleet-text-dim)'
   }
 
   const activeGroups = groups.filter((g) => g.status !== 'completed')
@@ -111,7 +111,7 @@ export function EpicList({
     return (
       <motion.button
         key={group.id}
-        className={`bde-card bde-card--clickable bde-card--pad-md planner-epic-item ${isSelected ? 'planner-epic-item--selected' : ''}`}
+        className={`fleet-card fleet-card--clickable fleet-card--pad-md planner-epic-item ${isSelected ? 'planner-epic-item--selected' : ''}`}
         onClick={() => onSelect(group.id)}
         type="button"
         variants={VARIANTS.staggerChild}
@@ -188,8 +188,8 @@ export function EpicList({
       </div>
 
       <div className="planner-epic-list__search">
-        <div className="bde-input bde-input--has-prefix">
-          <span className="bde-input__prefix">
+        <div className="fleet-input fleet-input--has-prefix">
+          <span className="fleet-input__prefix">
             <Search size={14} />
           </span>
           <input
@@ -198,7 +198,7 @@ export function EpicList({
             aria-label="Search epics"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="bde-input__field"
+            className="fleet-input__field"
           />
         </div>
       </div>

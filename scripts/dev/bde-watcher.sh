@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# bde-watcher.sh — polls origin/main every 60s and restarts the dev service on new commits
+# fleet-watcher.sh — polls origin/main every 60s and restarts the dev service on new commits
 #
-# DEV ONLY — NOT bundled in the BDE app DMG.
-# Before use, replace /Users/RBTECHBOT/Documents/Repositories/BDE with your actual repo path.
+# DEV ONLY — NOT bundled in the FLEET app DMG.
+# Before use, replace /Users/RBTECHBOT/Documents/Repositories/FLEET with your actual repo path.
 # See scripts/dev/README.md for full setup instructions.
 
 set -euo pipefail
 
-REPO_DIR="/Users/RBTECHBOT/Documents/Repositories/BDE"
-SERVICE_LABEL="com.rbtechbot.bde-dev"
-LOG="/tmp/bde-watcher.log"
+REPO_DIR="/Users/RBTECHBOT/Documents/Repositories/FLEET"
+SERVICE_LABEL="com.rbtechbot.fleet-dev"
+LOG="/tmp/fleet-watcher.log"
 INTERVAL=60
 
 log() {

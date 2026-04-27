@@ -51,7 +51,7 @@ vi.mock('../../credential-store', () => ({
 
 // Underlying repo map is keyed by lowercased name (mirrors paths.ts behavior)
 const mockRepoMap: Record<string, string> = {
-  bde: '/Users/test/projects/BDE',
+  fleet: '/Users/test/projects/FLEET',
   testrepo: '/Users/test/projects/TestRepo'
 }
 vi.mock('../../git', () => ({
@@ -251,7 +251,7 @@ describe('Workbench handlers', () => {
     expect(checkOperationalHandler).toBeDefined()
 
     const mockEvent = {} as IpcMainInvokeEvent
-    const result = await checkOperationalHandler(mockEvent, { repo: 'BDE' })
+    const result = await checkOperationalHandler(mockEvent, { repo: 'FLEET' })
 
     expect(result).toHaveProperty('auth')
     expect(result).toHaveProperty('repoPath')
@@ -261,7 +261,7 @@ describe('Workbench handlers', () => {
 
     expect(result.auth.status).toBe('pass')
     expect(result.repoPath.status).toBe('pass')
-    expect(result.repoPath.path).toBe('/Users/test/projects/BDE')
+    expect(result.repoPath.path).toBe('/Users/test/projects/FLEET')
   })
 
   it('researchRepo handler returns expected structure', async () => {
@@ -278,7 +278,7 @@ describe('Workbench handlers', () => {
     expect(researchRepoHandler).toBeDefined()
 
     const mockEvent = {} as IpcMainInvokeEvent
-    const result = await researchRepoHandler(mockEvent, { query: 'test', repo: 'BDE' })
+    const result = await researchRepoHandler(mockEvent, { query: 'test', repo: 'FLEET' })
 
     expect(result).toHaveProperty('content')
     expect(result).toHaveProperty('filesSearched')
@@ -312,7 +312,7 @@ describe('Workbench handlers', () => {
       await handler(mockEvent, {
         messages: [{ role: 'user', content: 'where is auth?' }],
         // Renderer sends uppercase — handler must look up case-insensitively.
-        formContext: { title: 'T', repo: 'BDE', spec: '' }
+        formContext: { title: 'T', repo: 'FLEET', spec: '' }
       })
 
       // Wait a microtask for the fire-and-forget runSdkStreaming to be invoked.
@@ -322,7 +322,7 @@ describe('Workbench handlers', () => {
       const opts = runSdkStreamingCalls[0].options as any
       expect(opts).toBeDefined()
       // C2: cwd is the configured repo path, not undefined
-      expect(opts.cwd).toBe('/Users/test/projects/BDE')
+      expect(opts.cwd).toBe('/Users/test/projects/FLEET')
       // C1: tool restrictions actually flow through
       expect(opts.tools).toEqual([...COPILOT_ALLOWED_TOOLS])
       expect(opts.disallowedTools).toEqual([...COPILOT_DISALLOWED_TOOLS])
@@ -341,7 +341,7 @@ describe('Workbench handlers', () => {
 
       await handler(mockEvent, {
         messages: [{ role: 'user', content: 'hi' }],
-        formContext: { title: 't', repo: 'bde', spec: '' }
+        formContext: { title: 't', repo: 'fleet', spec: '' }
       })
 
       await new Promise((r) => setTimeout(r, 0))
@@ -411,7 +411,7 @@ describe('Workbench handlers', () => {
     const mockEvent = {} as IpcMainInvokeEvent
     const result = await generateSpecHandler(mockEvent, {
       title: 'Test Task',
-      repo: 'BDE',
+      repo: 'FLEET',
       templateHint: 'bugfix'
     })
 
@@ -457,7 +457,7 @@ describe('Workbench handlers', () => {
     it('includes spec-drafting mode framing', () => {
       const prompt = buildChatPrompt([{ role: 'user', content: 'help' }], {
         title: 'T',
-        repo: 'BDE',
+        repo: 'FLEET',
         spec: ''
       })
       expect(prompt).toContain('## Mode: Spec Drafting')
@@ -467,17 +467,17 @@ describe('Workbench handlers', () => {
     it('includes target repository path when provided', () => {
       const prompt = buildChatPrompt(
         [{ role: 'user', content: 'where is auth?' }],
-        { title: 'T', repo: 'BDE', spec: '' },
-        '/Users/test/projects/BDE'
+        { title: 'T', repo: 'FLEET', spec: '' },
+        '/Users/test/projects/FLEET'
       )
       expect(prompt).toContain('## Target Repository')
-      expect(prompt).toContain('/Users/test/projects/BDE')
+      expect(prompt).toContain('/Users/test/projects/FLEET')
     })
 
     it('omits target repository section when repoPath is undefined', () => {
       const prompt = buildChatPrompt([{ role: 'user', content: 'hi' }], {
         title: 'T',
-        repo: 'BDE',
+        repo: 'FLEET',
         spec: ''
       })
       expect(prompt).not.toContain('## Target Repository')
@@ -502,7 +502,7 @@ describe('Workbench handlers', () => {
     // and the prescriptiveness AI check is skipped (only runs when structural passes).
     const result = await checkSpecHandler(mockEvent, {
       title: 'Test Task',
-      repo: 'BDE',
+      repo: 'FLEET',
       spec: 'test spec content'
     })
 
@@ -541,7 +541,7 @@ describe('Workbench handlers', () => {
 
     const result = await checkSpecHandler(mockEvent, {
       title: 'Test Task',
-      repo: 'BDE',
+      repo: 'FLEET',
       spec: wellFormedSpec
     })
 

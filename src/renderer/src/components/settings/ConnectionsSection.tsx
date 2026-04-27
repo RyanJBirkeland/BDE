@@ -180,7 +180,7 @@ export function ConnectionsSection(): React.JSX.Element {
 
   return (
     <section className="settings-section">
-      <h2 className="settings-section__title bde-section-title">Connections</h2>
+      <h2 className="settings-section__title fleet-section-title">Connections</h2>
 
       {/* Encryption status banner */}
       {encryptionStatus !== null && (
@@ -266,7 +266,7 @@ export function ConnectionsSection(): React.JSX.Element {
           <div className="settings-readonly-toggle__body">
             <div className="settings-readonly-toggle__title">Read-only mode (skip GitHub)</div>
             <div id="github-opt-out-description" className="settings-readonly-toggle__desc">
-              When enabled, BDE will not invoke <code>gh</code> for PR creation or status checks. A
+              When enabled, FLEET will not invoke <code>gh</code> for PR creation or status checks. A
               banner appears in Task Workbench and Code Review reminding you PR actions are
               disabled. Pipeline agents attempting PR actions will fail loudly with guidance.
             </div>

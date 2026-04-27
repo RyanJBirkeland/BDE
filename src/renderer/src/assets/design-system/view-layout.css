@@ -9,7 +9,7 @@
 .view-sidebar {
   flex-shrink: 0;
   overflow-y: auto;
-  border-right: 1px solid var(--bde-border);
+  border-right: 1px solid var(--fleet-border);
 }
 
 .view-content {

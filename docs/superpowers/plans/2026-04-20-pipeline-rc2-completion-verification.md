@@ -97,7 +97,7 @@ describe('extractTaskIdFromBranch', () => {
   })
 
   it('returns null when the group-hash suffix is missing', () => {
-    // The 8-char hex suffix is how BDE disambiguates same-name branches
+    // The 8-char hex suffix is how FLEET disambiguates same-name branches
     // across groups. Missing suffix = not an agent-generated branch.
     expect(extractTaskIdFromBranch('agent/t-11-pass-encoding-utf8-to-execfile')).toBeNull()
   })
@@ -115,9 +115,9 @@ Add to `src/main/agent-manager/completion.ts`:
 
 ```typescript
 /**
- * Extract the task-id slug from a BDE agent branch name.
+ * Extract the task-id slug from a FLEET agent branch name.
  *
- * BDE generates branches as `agent/t-<idSlug>-<titleSlug>-<groupHash>` where
+ * FLEET generates branches as `agent/t-<idSlug>-<titleSlug>-<groupHash>` where
  * `<groupHash>` is always 8 lowercase hex chars. Returns the `<idSlug>` part
  * (e.g. '11', 'abc123', '20260420') so callers can match it against the
  * task's full id by suffix.
@@ -485,7 +485,7 @@ If the prompt currently tells agents to include the task id in the commit subjec
 Open `CLAUDE.md` and find the "Pipeline Agent Spec Guidelines" section. Add a single bullet:
 
 ```markdown
-- **Task linkage is derived from the branch name, not the commit subject.** BDE generates each pipeline agent's branch as `agent/t-<id>-<slug>-<hash>` — the completion guard extracts the task id from the branch name. Agents follow the standard commit-message convention (`{type}({scope}): {what} — {why}`) and do not need to mention the task id in the subject. The guard retains a commit-subject fallback for non-standard branch names.
+- **Task linkage is derived from the branch name, not the commit subject.** FLEET generates each pipeline agent's branch as `agent/t-<id>-<slug>-<hash>` — the completion guard extracts the task id from the branch name. Agents follow the standard commit-message convention (`{type}({scope}): {what} — {why}`) and do not need to mention the task id in the subject. The guard retains a commit-subject fallback for non-standard branch names.
 ```
 
 - [ ] **Step 3: Commit**

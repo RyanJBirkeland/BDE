@@ -16,7 +16,7 @@ vi.mock('../../data/task-group-queries', () => ({
   listGroups: vi.fn().mockReturnValue([])
 }))
 vi.mock('../../paths', () => ({
-  getRepoPaths: vi.fn().mockReturnValue({ bde: '/repos/bde' })
+  getRepoPaths: vi.fn().mockReturnValue({ fleet: '/repos/fleet' })
 }))
 vi.mock('../dependency-service', () => ({
   computeBlockState: vi.fn().mockReturnValue({ shouldBlock: false, blockedBy: [] }),
@@ -26,7 +26,7 @@ vi.mock('../dependency-service', () => ({
 import { updateTaskFromUi, createTaskWithValidation } from '../sprint-use-cases'
 import { getTask, updateTask, createTask as mockCreateTask } from '../sprint-mutations'
 
-const TASK = { id: 't1', status: 'queued', title: 'Test', repo: 'bde', spec: '## Overview\n## Steps', depends_on: null }
+const TASK = { id: 't1', status: 'queued', title: 'Test', repo: 'fleet', spec: '## Overview\n## Steps', depends_on: null }
 
 const mockTransition = vi.fn().mockResolvedValue(undefined)
 const mockUpdateTask = vi.fn().mockReturnValue(TASK)
@@ -144,7 +144,7 @@ describe('createTaskWithValidation — auto-blocking (T-6)', () => {
   it('creates task as blocked when hard dep on non-done task', async () => {
     const depTask = { id: 'dep-1', status: 'queued', depends_on: null }
     const input = {
-      title: 'Downstream task', repo: 'bde', status: 'queued' as const,
+      title: 'Downstream task', repo: 'fleet', status: 'queued' as const,
       spec: '## Overview\nDo something\n## Steps\nStep 1',
       depends_on: [{ id: 'dep-1', type: 'hard' as const }],
       priority: 1, needs_review: true, playground_enabled: false

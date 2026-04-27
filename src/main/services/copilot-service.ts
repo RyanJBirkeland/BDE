@@ -78,7 +78,7 @@ export function getCopilotSdkOptions(
     maxTurns: COPILOT_MAX_TURNS,
     maxBudgetUsd: COPILOT_MAX_BUDGET_USD,
     model,
-    // Spec-drafting agents skip CLAUDE.md — they receive BDE conventions via
+    // Spec-drafting agents skip CLAUDE.md — they receive FLEET conventions via
     // their prompt (SPEC_DRAFTING_PREAMBLE) and loading the project settings
     // file costs tokens without adding value.
     settingSources: [],

@@ -19,10 +19,10 @@
 - **WHEN** `withRetryAsync` wraps a function that throws a non-`SQLITE_BUSY` error
 - **THEN** no warn is emitted and the error is rethrown immediately
 
-### Requirement: RetryOptions logger interface is a structural subtype of BDE Logger
-The `logger` field on `RetryOptions` SHALL use a minimal interface `{ warn: (msg: string) => void }` that is satisfied by the BDE `Logger` type, `console`, and test mocks without any adapter.
+### Requirement: RetryOptions logger interface is a structural subtype of FLEET Logger
+The `logger` field on `RetryOptions` SHALL use a minimal interface `{ warn: (msg: string) => void }` that is satisfied by the FLEET `Logger` type, `console`, and test mocks without any adapter.
 
-#### Scenario: BDE Logger assigned to RetryOptions.logger
+#### Scenario: FLEET Logger assigned to RetryOptions.logger
 - **WHEN** a caller passes a `Logger` instance (from `createLogger`) as `RetryOptions.logger`
 - **THEN** TypeScript accepts the assignment without a cast or adapter
 

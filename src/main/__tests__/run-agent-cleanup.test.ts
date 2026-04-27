@@ -61,7 +61,7 @@ vi.mock('../agent-manager/fast-fail', () => ({
 
 vi.mock('../paths', () => ({
   getGhRepo: vi.fn().mockReturnValue('owner/repo'),
-  getRepoPaths: vi.fn().mockReturnValue({ bde: '/repo' })
+  getRepoPaths: vi.fn().mockReturnValue({ fleet: '/repo' })
 }))
 
 vi.mock('../agent-manager/spawn-sdk', async () => {

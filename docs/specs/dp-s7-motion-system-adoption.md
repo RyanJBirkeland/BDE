@@ -24,8 +24,8 @@
 
 **Not using motion.ts:**
 
-- View transitions (`.view-enter` uses CSS `bde-slide-up-fade 120ms ease`)
-- Sprint cards (use CSS `bde-slide-up-fade` with `animation-delay`)
+- View transitions (`.view-enter` uses CSS `fleet-slide-up-fade 120ms ease`)
+- Sprint cards (use CSS `fleet-slide-up-fade` with `animation-delay`)
 - SpecDrawer (uses CSS `transform: translateX` transition)
 - Toast notifications (use CSS `toast-slide-in` keyframe)
 - Any drag-and-drop feedback
@@ -35,13 +35,13 @@
 
 | Animation           | Duration | Easing       | Used By                                |
 | ------------------- | -------- | ------------ | -------------------------------------- |
-| `bde-fade-in`       | unset    | linear       | Unused                                 |
-| `bde-slide-up-fade` | 200ms    | ease         | Sprint cards, view-enter (120ms)       |
-| `bde-scale-fade-in` | 150ms    | ease         | Command palette, PR confirm, shortcuts |
-| `bde-shimmer`       | 1.5s     | ease-in-out  | Skeleton loading                       |
+| `fleet-fade-in`       | unset    | linear       | Unused                                 |
+| `fleet-slide-up-fade` | 200ms    | ease         | Sprint cards, view-enter (120ms)       |
+| `fleet-scale-fade-in` | 150ms    | ease         | Command palette, PR confirm, shortcuts |
+| `fleet-shimmer`       | 1.5s     | ease-in-out  | Skeleton loading                       |
 | `toast-slide-in`    | 0.25s    | ease-out     | Toasts                                 |
 | `log-drawer-up`     | 250ms    | cubic-bezier | Log drawer                             |
-| `bde-pulse`         | 1.5s     | ease-in-out  | Agent running dot                      |
+| `fleet-pulse`         | 1.5s     | ease-in-out  | Agent running dot                      |
 | `pulse-glow`        | 2.5s     | ease-in-out  | Glow pulse effect                      |
 
 ---
@@ -130,7 +130,7 @@ Use it to disable spring animations when the user has reduced motion enabled (fa
 | `src/renderer/src/components/sprint/KanbanColumn.tsx`   | Stagger card list with motion variants                                       |
 | `src/renderer/src/components/sprint/SpecDrawer.tsx`     | Replace CSS transition with framer-motion                                    |
 | `src/renderer/src/components/layout/ToastContainer.tsx` | Replace CSS keyframe with framer-motion                                      |
-| `src/renderer/src/assets/base.css`                      | Remove `bde-slide-up-fade` from `.view-enter` (keep keyframe for other uses) |
+| `src/renderer/src/assets/base.css`                      | Remove `fleet-slide-up-fade` from `.view-enter` (keep keyframe for other uses) |
 | `src/renderer/src/assets/sprint.css`                    | Remove `animation` + `animation-delay` from `.sprint-card`, `.task-card`     |
 
 ## Acceptance Criteria

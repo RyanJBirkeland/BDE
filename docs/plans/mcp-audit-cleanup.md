@@ -109,7 +109,7 @@ Branch: `feat/phase4-mcp-security`. Disjoint files.
 - T-47: `res.on('close')` cleanup wrapped with `withTimeout` + `logError`.
 
 **Agent B — token-store + auth + audit**
-- T-62: `fs.open(filePath, 'wx', 0o600)` for exclusive create; chmod `~/.bde` to `0700`.
+- T-62: `fs.open(filePath, 'wx', 0o600)` for exclusive create; chmod `~/.fleet` to `0700`.
 - T-63: derive hex-regex from `TOKEN_BYTES * 2`; warn on file-mode drift.
 - T-60: log non-ENOENT + corrupt-token regeneration paths.
 - T-57: `readOrCreateToken` returns `{token, created, path}`; startup emits a one-time warn on regeneration.
@@ -164,7 +164,7 @@ Branch: `feat/phase6-mcp-polish`. Five disjoint file clusters.
 
 **Agent D — token-store + test-setup**
 - T-61: `path.dirname(filePath)` in place of `join(filePath, '..')`.
-- T-76: accept explicit `localPath` in `seedBdeRepo`.
+- T-76: accept explicit `localPath` in `seedFleetRepo`.
 
 **Agent E — test hygiene**
 - T-72: schema boundary tests (incl. `.describe()` text assertions — RC5-aware).

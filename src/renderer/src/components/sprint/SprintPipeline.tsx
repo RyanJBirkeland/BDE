@@ -325,12 +325,12 @@ export function SprintPipeline(): React.JSX.Element {
       {loading && tasks.length === 0 && (
         <div className="sprint-pipeline__body">
           <div className="pipeline-sidebar pipeline-sidebar--loading">
-            <div className="bde-skeleton pipeline-skeleton--sidebar" />
+            <div className="fleet-skeleton pipeline-skeleton--sidebar" />
           </div>
           <div className="pipeline-center pipeline-center--loading">
-            <div className="bde-skeleton pipeline-skeleton--stage" />
-            <div className="bde-skeleton pipeline-skeleton--stage" />
-            <div className="bde-skeleton pipeline-skeleton--stage" />
+            <div className="fleet-skeleton pipeline-skeleton--stage" />
+            <div className="fleet-skeleton pipeline-skeleton--stage" />
+            <div className="fleet-skeleton pipeline-skeleton--stage" />
           </div>
         </div>
       )}

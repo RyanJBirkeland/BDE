@@ -9,7 +9,7 @@ The sprint PR poller has no per-poll timeout and no single-flight guard — a sl
 - Auth/rate-limit failures broadcast a `manager:warning` toast to the renderer
 - Failed terminal notifications entered into a durable in-memory retry queue (cleared on next successful terminal for that task)
 - Legacy `startSprintPrPoller` / `stopSprintPrPoller` singleton removed; callers use the DI constructor
-- DEBUG-only heartbeat log so idle poll ticks don't flood `bde.log`
+- DEBUG-only heartbeat log so idle poll ticks don't flood `fleet.log`
 
 ## Capabilities
 

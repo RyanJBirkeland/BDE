@@ -3,7 +3,7 @@ import { buildPlannerTools, PLANNER_MCP_SERVER_NAME } from '../planner-mcp-serve
 import { createEpicGroupService } from '../epic-group-service'
 import { deleteTask } from '../sprint-service'
 import { deleteGroup } from '../../data/task-group-queries'
-import { seedBdeRepo } from '../../mcp-server/test-setup'
+import { seedFleetRepo } from '../../mcp-server/test-setup'
 import type { PlannerTool } from '../planner-mcp-server'
 import type { Logger } from '../../logger'
 
@@ -39,7 +39,7 @@ let createdTaskIds: string[]
 let createdEpicIds: string[]
 
 beforeAll(() => {
-  seedBdeRepo()
+  seedFleetRepo()
   const epicService = createEpicGroupService()
   tools = buildPlannerTools({ epicService, logger: silentLogger })
 })
@@ -67,8 +67,8 @@ afterEach(() => {
 })
 
 describe('planner MCP server — catalogue', () => {
-  it('uses the bde server name shared with the HTTP MCP server', () => {
-    expect(PLANNER_MCP_SERVER_NAME).toBe('bde')
+  it('uses the fleet server name shared with the HTTP MCP server', () => {
+    expect(PLANNER_MCP_SERVER_NAME).toBe('fleet')
   })
 
   it('exposes the planner-oriented tool surface', () => {
@@ -96,14 +96,14 @@ describe('tasks.create', () => {
   it('creates a backlog task against a configured repo', async () => {
     const { isError, body } = await callTool(tools, 'tasks.create', {
       title: 'planner tool create',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     })
     expect(isError).toBe(false)
     const task = body as { id: string; title: string; repo: string; status: string }
     createdTaskIds.push(task.id)
     expect(task.title).toBe('planner tool create')
-    expect(task.repo).toBe('bde')
+    expect(task.repo).toBe('fleet')
     expect(task.status).toBe('backlog')
   })
 
@@ -119,7 +119,7 @@ describe('tasks.create', () => {
 
   it('returns isError when the title is missing', async () => {
     const { isError } = await callTool(tools, 'tasks.create', {
-      repo: 'bde'
+      repo: 'fleet'
     })
     expect(isError).toBe(true)
   })
@@ -127,7 +127,7 @@ describe('tasks.create', () => {
   it('downgrades a queued request to backlog so auto-exec requires human approval', async () => {
     const { isError, body } = await callTool(tools, 'tasks.create', {
       title: 'queued from agent should become backlog',
-      repo: 'bde',
+      repo: 'fleet',
       spec: '# Spec\n\n## What\nNo-op.\n\n## How\nStill no-op.',
       status: 'queued'
     })
@@ -142,7 +142,7 @@ describe('tasks.update', () => {
   it('does not allow agents to transition a task to queued', async () => {
     const created = await callTool(tools, 'tasks.create', {
       title: 'agent tries to queue this later',
-      repo: 'bde',
+      repo: 'fleet',
       spec: '# Spec\n\n## What\nNo-op.\n\n## How\nStill no-op.',
       status: 'backlog'
     })
@@ -162,7 +162,7 @@ describe('tasks.update', () => {
   it('patches an existing task and records the change under caller "agent"', async () => {
     const created = await callTool(tools, 'tasks.create', {
       title: 'to be updated',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     })
     const taskId = (created.body as { id: string }).id
@@ -192,14 +192,14 @@ describe('tasks.list', () => {
   it('returns recently created tasks filtered by repo', async () => {
     const created = await callTool(tools, 'tasks.create', {
       title: 'listable task',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     })
     const taskId = (created.body as { id: string }).id
     createdTaskIds.push(taskId)
 
     const { isError, body } = await callTool(tools, 'tasks.list', {
-      repo: 'bde',
+      repo: 'fleet',
       limit: 50
     })
     expect(isError).toBe(false)
@@ -221,7 +221,7 @@ describe('epics.create + epics.addTask', () => {
 
     const taskResult = await callTool(tools, 'tasks.create', {
       title: 'epic-member task',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     })
     const taskId = (taskResult.body as { id: string }).id
@@ -239,7 +239,7 @@ describe('epics.create + epics.addTask', () => {
   it('returns isError when the target epic does not exist', async () => {
     const taskResult = await callTool(tools, 'tasks.create', {
       title: 'orphan task',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog'
     })
     const taskId = (taskResult.body as { id: string }).id
@@ -258,7 +258,7 @@ describe('meta tools', () => {
     const { isError, body } = await callTool(tools, 'meta.repos', {})
     expect(isError).toBe(false)
     const repos = body as Array<{ name: string }>
-    expect(repos.some((r) => r.name === 'bde')).toBe(true)
+    expect(repos.some((r) => r.name === 'fleet')).toBe(true)
   })
 
   it('meta.taskStatuses advertises the full status vocabulary', async () => {

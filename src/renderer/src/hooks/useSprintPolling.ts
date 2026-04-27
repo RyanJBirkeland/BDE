@@ -19,7 +19,7 @@ export function useSprintPolling(): void {
   }, [loadData])
   useBackoffInterval(loadData, sprintPollMs)
 
-  // Instant refresh when an external process writes to bde.db
+  // Instant refresh when an external process writes to fleet.db
   useEffect(() => {
     return window.api.sprint.onExternalChange(loadData)
   }, [loadData])

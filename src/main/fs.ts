@@ -4,20 +4,20 @@ import { basename, dirname, extname, join, resolve } from 'path'
 import { homedir, tmpdir } from 'os'
 import { dialog } from 'electron'
 import { safeHandle } from './ipc-utils'
-import { BDE_MEMORY_DIR, BDE_AGENT_LOGS_DIR as AGENT_LOGS_ROOT } from './paths'
+import { FLEET_MEMORY_DIR, FLEET_AGENT_LOGS_DIR as AGENT_LOGS_ROOT } from './paths'
 import { getSettingJson, setSettingJson } from './settings'
 import { getIdeRootPath } from './handlers/ide-fs-handlers'
 
 const OPENCLAW_MEMORY_DIR = resolve(homedir(), '.openclaw', 'workspace', 'memory')
 
 function ensureMemoryDir(): string {
-  if (!existsSync(BDE_MEMORY_DIR)) {
-    // One-time migration: copy OpenClaw memory files to BDE memory dir
+  if (!existsSync(FLEET_MEMORY_DIR)) {
+    // One-time migration: copy OpenClaw memory files to FLEET memory dir
     if (existsSync(OPENCLAW_MEMORY_DIR)) {
-      cpSync(OPENCLAW_MEMORY_DIR, BDE_MEMORY_DIR, { recursive: true })
+      cpSync(OPENCLAW_MEMORY_DIR, FLEET_MEMORY_DIR, { recursive: true })
     }
   }
-  return BDE_MEMORY_DIR
+  return FLEET_MEMORY_DIR
 }
 
 const MEMORY_ROOT = ensureMemoryDir()

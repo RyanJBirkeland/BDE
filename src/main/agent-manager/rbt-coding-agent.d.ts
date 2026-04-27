@@ -1,14 +1,14 @@
-declare module 'rbt-coding-agent/adapters/bde' {
-  export interface BdeSpawnOptions {
+declare module 'rbt-coding-agent/adapters/fleet' {
+  export interface FleetSpawnOptions {
     readonly prompt: string
     readonly cwd: string
     readonly model: string
   }
 
-  export interface BdeAgentHandle {
+  export interface FleetAgentHandle {
     readonly messages: AsyncIterable<unknown>
     close(): Promise<void>
   }
 
-  export function spawnBdeAgent(options: BdeSpawnOptions): Promise<BdeAgentHandle>
+  export function spawnFleetAgent(options: FleetSpawnOptions): Promise<FleetAgentHandle>
 }

@@ -83,7 +83,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
     const actions: Command[] = [
       {
         id: 'action-spawn-assistant',
-        label: 'Launch BDE Assistant',
+        label: 'Launch FLEET Assistant',
         category: 'action',
         hint: 'Interactive helper',
         keywords: ['assistant', 'help', 'agent', 'spawn'],
@@ -102,7 +102,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
               repoPath,
               assistant: true
             })
-            toast.success('BDE Assistant spawned')
+            toast.success('FLEET Assistant spawned')
             setView('agents')
           } catch (err) {
             toast.error(
@@ -122,7 +122,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
           onClose()
           // Trigger spawn modal after navigation renders
           requestAnimationFrame(() => {
-            window.dispatchEvent(new CustomEvent('bde:open-spawn-modal'))
+            window.dispatchEvent(new CustomEvent('fleet:open-spawn-modal'))
           })
         }
       }
@@ -189,7 +189,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         action: () => {
           onClose()
           requestAnimationFrame(() => {
-            window.dispatchEvent(new CustomEvent('bde:open-feature-guide'))
+            window.dispatchEvent(new CustomEvent('fleet:open-feature-guide'))
           })
         }
       }

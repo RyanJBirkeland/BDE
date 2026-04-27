@@ -13,7 +13,7 @@ import { SettingsCard } from './SettingsCard'
 import { AgentPermissionsSection } from './AgentPermissionsSection'
 
 const DEFAULT_MAX_CONCURRENT = 2
-const DEFAULT_WORKTREE_BASE = '~/.bde/worktrees'
+const DEFAULT_WORKTREE_BASE = '~/.fleet/worktrees'
 const DEFAULT_MAX_RUNTIME_MINUTES = 60
 const DEFAULT_AUTO_START = true
 
@@ -130,7 +130,7 @@ export function AgentManagerSection(): React.JSX.Element {
                 marginTop: '6px',
                 padding: '6px 10px',
                 fontSize: '11px',
-                color: 'var(--bde-warning)',
+                color: 'var(--fleet-warning)',
                 border: '1px solid rgba(255, 159, 64, 0.4)',
                 borderRadius: '4px',
                 background: 'rgba(255, 159, 64, 0.08)'
@@ -153,7 +153,7 @@ export function AgentManagerSection(): React.JSX.Element {
               setWorktreeBase(e.target.value)
               markDirty()
             }}
-            placeholder="~/.bde/worktrees"
+            placeholder="~/.fleet/worktrees"
           />
         </label>
 

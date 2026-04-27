@@ -1,9 +1,9 @@
 /**
  * claude-settings-bootstrap.ts — Ensures Claude Code has sensible default
- * permissions so BDE-spawned agents don't stall on permission prompts.
+ * permissions so FLEET-spawned agents don't stall on permission prompts.
  *
  * Checks ~/.claude/settings.json on startup. If permissions aren't configured,
- * applies BDE's recommended defaults (allow standard tools, deny destructive ops).
+ * applies FLEET's recommended defaults (allow standard tools, deny destructive ops).
  * Never overwrites existing user configuration.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
@@ -16,8 +16,8 @@ const log = createLogger('claude-settings')
 const CLAUDE_DIR = join(homedir(), '.claude')
 const SETTINGS_PATH = join(CLAUDE_DIR, 'settings.json')
 
-// Minimal permissions BDE agents need to function without stalling
-const BDE_DEFAULT_PERMISSIONS = {
+// Minimal permissions FLEET agents need to function without stalling
+const FLEET_DEFAULT_PERMISSIONS = {
   allow: [
     'Read',
     'Write',
@@ -80,20 +80,20 @@ export function ensureClaudeSettings(): boolean {
       return false
     }
 
-    // Apply BDE defaults — preserve any other settings
+    // Apply FLEET defaults — preserve any other settings
     settings.permissions = {
       ...settings.permissions,
-      allow: BDE_DEFAULT_PERMISSIONS.allow,
+      allow: FLEET_DEFAULT_PERMISSIONS.allow,
       deny: [
         ...(settings.permissions?.deny ?? []),
-        ...BDE_DEFAULT_PERMISSIONS.deny.filter(
+        ...FLEET_DEFAULT_PERMISSIONS.deny.filter(
           (rule) => !(settings.permissions?.deny ?? []).includes(rule)
         )
       ]
     }
 
     writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2) + '\n')
-    log.info(`[claude-settings] Applied BDE default permissions to ${SETTINGS_PATH}`)
+    log.info(`[claude-settings] Applied FLEET default permissions to ${SETTINGS_PATH}`)
     return true
   } catch (err) {
     log.error(`[claude-settings] Failed to bootstrap settings: ${err}`)

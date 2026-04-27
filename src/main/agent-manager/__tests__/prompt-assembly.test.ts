@@ -22,7 +22,7 @@ vi.mock('node:fs', async (importOriginal) => {
 })
 
 vi.mock('../../paths', () => ({
-  BDE_TASK_MEMORY_DIR: '/home/.bde/memory/tasks'
+  FLEET_TASK_MEMORY_DIR: '/home/.fleet/memory/tasks'
 }))
 
 import {
@@ -56,7 +56,7 @@ function makeTask(overrides: Partial<AgentRunClaim> = {}): AgentRunClaim {
     title: 'Test task',
     prompt: 'Do something',
     spec: null,
-    repo: 'bde',
+    repo: 'fleet',
     retry_count: 0,
     fast_fail_count: 0,
     ...overrides

@@ -1,4 +1,4 @@
-# IPC Surface Audit — BDE Application (2026-04-16)
+# IPC Surface Audit — FLEET Application (2026-04-16)
 
 **Audit Scope:** Cross-reference between preload-exposed channels, main-process handlers, and broadcast subscribers to detect wiring gaps that would cause renderer hangs, dead code, or silent event drops.
 
@@ -430,7 +430,7 @@ However, note: Agent manager initialization is **conditional** on `autoStart` se
 
 ## Conclusion
 
-The BDE IPC architecture demonstrates **strong structural discipline**:
+The FLEET IPC architecture demonstrates **strong structural discipline**:
 - ✓ 100% handler coverage (no orphan channels)
 - ✓ Type-safe wiring via IpcChannelMap and generic helpers
 - ✓ Proper safeHandle/safeOn wrapper adoption

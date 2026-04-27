@@ -43,7 +43,7 @@ describe('ChangesTab', () => {
       {
         id: 't1',
         title: 'Task',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'review',
         worktree_path: '/tmp/wt',
         updated_at: '2026-04-01'
@@ -63,7 +63,7 @@ describe('ChangesTab', () => {
   it('shows loading state', () => {
     useCodeReviewStore.setState({ loading: { diff: true } })
     const { container } = render(<ChangesTab />)
-    expect(container.querySelectorAll('.bde-skeleton').length).toBeGreaterThan(0)
+    expect(container.querySelectorAll('.fleet-skeleton').length).toBeGreaterThan(0)
   })
 
   it('shows empty state when no files', () => {
@@ -118,7 +118,7 @@ describe('ChangesTab', () => {
         {
           id: 't1',
           title: 'Task',
-          repo: 'bde',
+          repo: 'fleet',
           status: 'done',
           worktree_path: null,
           review_diff_snapshot: JSON.stringify(snapshot),
@@ -153,7 +153,7 @@ describe('ChangesTab', () => {
         {
           id: 't1',
           title: 'Task',
-          repo: 'bde',
+          repo: 'fleet',
           status: 'done',
           worktree_path: null,
           review_diff_snapshot: JSON.stringify(snapshot),

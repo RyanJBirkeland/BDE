@@ -142,7 +142,7 @@ async function rejectUnauthorized(res: ServerResponse, denial: AuthDenial): Prom
   if (denial.delayMs > 0) await sleep(denial.delayMs)
   res.writeHead(denial.auth.status, {
     'Content-Type': 'application/json',
-    'WWW-Authenticate': 'Bearer realm="bde-mcp"'
+    'WWW-Authenticate': 'Bearer realm="fleet-mcp"'
   })
   const body = {
     jsonrpc: '2.0' as const,

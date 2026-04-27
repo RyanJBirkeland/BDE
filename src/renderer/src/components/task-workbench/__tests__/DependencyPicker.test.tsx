@@ -5,9 +5,9 @@ import { DependencyPicker } from '../DependencyPicker'
 import type { TaskDependency, SprintTask } from '../../../../../shared/types'
 
 const mockTasks = [
-  { id: '1', title: 'Setup DB', status: 'done', repo: 'bde' },
-  { id: '2', title: 'Build API', status: 'queued', repo: 'bde' },
-  { id: '3', title: 'Write Tests', status: 'backlog', repo: 'bde' }
+  { id: '1', title: 'Setup DB', status: 'done', repo: 'fleet' },
+  { id: '2', title: 'Build API', status: 'queued', repo: 'fleet' },
+  { id: '3', title: 'Write Tests', status: 'backlog', repo: 'fleet' }
 ] as SprintTask[]
 
 describe('DependencyPicker', () => {
@@ -199,7 +199,7 @@ describe('DependencyPicker', () => {
     const makeTasks = (count: number): SprintTask[] =>
       Array.from(
         { length: count },
-        (_, i) => ({ id: `t${i}`, title: `Task ${i}`, status: 'queued', repo: 'bde' }) as SprintTask
+        (_, i) => ({ id: `t${i}`, title: `Task ${i}`, status: 'queued', repo: 'fleet' }) as SprintTask
       )
 
     it('shows footer when matches exceed window of 30', async () => {

@@ -32,7 +32,7 @@ vi.mock('../../stores/taskGroups', () => ({
         {
           id: 't1',
           title: 'Task A',
-          repo: 'bde',
+          repo: 'fleet',
           status: 'backlog',
           spec: '## Spec\nDo stuff',
           prompt: null,

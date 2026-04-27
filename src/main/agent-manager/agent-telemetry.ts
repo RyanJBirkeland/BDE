@@ -44,7 +44,7 @@ const MODEL_PRICING: Array<{
  * Computes cost in USD from token totals and model pricing.
  *
  * Pipeline agents often exit before the SDK subprocess can yield the
- * `result` message that carries `total_cost_usd` — either because BDE
+ * `result` message that carries `total_cost_usd` — either because FLEET
  * aborts the stream when maxTurns is reached, or because the subprocess
  * is killed by the OS. This function provides a local cost estimate so
  * `agent_runs.cost_usd` is never left at 0 when real token usage exists.

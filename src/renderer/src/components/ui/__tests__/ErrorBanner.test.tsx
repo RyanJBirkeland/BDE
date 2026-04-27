@@ -15,7 +15,7 @@ describe('ErrorBanner', () => {
 
   it('applies custom className', () => {
     const { container } = render(<ErrorBanner message="Error" className="custom" />)
-    expect(container.firstChild).toHaveClass('bde-error-banner')
+    expect(container.firstChild).toHaveClass('fleet-error-banner')
     expect(container.firstChild).toHaveClass('custom')
   })
 })

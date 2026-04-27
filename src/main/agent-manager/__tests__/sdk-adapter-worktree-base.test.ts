@@ -30,7 +30,7 @@ import { spawnAgent } from '../sdk-adapter'
 let scratchRoot: string
 
 beforeEach(() => {
-  scratchRoot = mkdtempSync(join(tmpdir(), 'bde-worktree-base-test-'))
+  scratchRoot = mkdtempSync(join(tmpdir(), 'fleet-worktree-base-test-'))
 })
 
 afterEach(() => {

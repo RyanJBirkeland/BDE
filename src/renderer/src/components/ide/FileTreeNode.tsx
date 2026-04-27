@@ -130,9 +130,9 @@ export function FileTreeNode({
         <span className="ide-file-node__icon">
           {type === 'directory' ? (
             isExpanded ? (
-              <FolderOpen size={14} color="var(--bde-accent)" />
+              <FolderOpen size={14} color="var(--fleet-accent)" />
             ) : (
-              <Folder size={14} color="var(--bde-accent)" />
+              <Folder size={14} color="var(--fleet-accent)" />
             )
           ) : (
             getFileIcon(name)

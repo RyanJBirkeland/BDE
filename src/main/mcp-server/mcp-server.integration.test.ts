@@ -5,7 +5,7 @@ import { createMcpServer, type McpServerHandle } from './index'
 import { createEpicGroupService } from '../services/epic-group-service'
 import { deleteTask } from '../services/sprint-service'
 import { readOrCreateToken } from './token-store'
-import { seedBdeRepo } from './test-setup'
+import { seedFleetRepo } from './test-setup'
 
 vi.mock('../broadcast', () => ({ broadcast: vi.fn() }))
 
@@ -32,7 +32,7 @@ let bearerToken: string
 let createdTaskIds: string[] = []
 
 beforeAll(async () => {
-  seedBdeRepo()
+  seedFleetRepo()
   const epicService = createEpicGroupService()
   serverHandle = createMcpServer({ epicService, onStatusTerminal: () => {} }, { port: 0 })
   serverPort = await serverHandle.start()
@@ -82,7 +82,7 @@ describe('MCP server integration', () => {
   it('create → list → update → history round-trip', async () => {
     const created = await mcpClient.callTool({
       name: 'tasks.create',
-      arguments: { title: 'mcp integration demo', repo: 'bde', status: 'backlog' }
+      arguments: { title: 'mcp integration demo', repo: 'fleet', status: 'backlog' }
     })
     const createdBody = JSON.parse((created.content[0] as { type: 'text'; text: string }).text)
     expect(createdBody.title).toBe('mcp integration demo')
@@ -165,7 +165,7 @@ describe('MCP server integration', () => {
     // quiet no-op.
     const created = await mcpClient.callTool({
       name: 'tasks.create',
-      arguments: { title: 'strict-mode smoke', repo: 'bde', status: 'backlog' }
+      arguments: { title: 'strict-mode smoke', repo: 'fleet', status: 'backlog' }
     })
     const createdBody = JSON.parse((created.content[0] as { type: 'text'; text: string }).text)
     const id = createdBody.id
@@ -183,7 +183,7 @@ describe('MCP server integration', () => {
   it('rejects tasks.update with an unknown field inside patch', async () => {
     const created = await mcpClient.callTool({
       name: 'tasks.create',
-      arguments: { title: 'strict-mode nested smoke', repo: 'bde', status: 'backlog' }
+      arguments: { title: 'strict-mode nested smoke', repo: 'fleet', status: 'backlog' }
     })
     const createdBody = JSON.parse((created.content[0] as { type: 'text'; text: string }).text)
     const id = createdBody.id

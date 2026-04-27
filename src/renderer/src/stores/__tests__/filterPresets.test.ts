@@ -5,7 +5,7 @@ import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest'
 import { useFilterPresets } from '../filterPresets'
 import { useSprintFilters } from '../sprintFilters'
 
-const STORAGE_KEY = 'bde:filterPresets'
+const STORAGE_KEY = 'fleet:filterPresets'
 
 describe('filterPresets store', () => {
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe('filterPresets store', () => {
 
   it('savePreset stores the provided filter state', () => {
     const filterState = {
-      repoFilter: 'bde' as string | null,
+      repoFilter: 'fleet' as string | null,
       searchQuery: 'bug',
       statusFilter: 'blocked' as const
     }
@@ -40,7 +40,7 @@ describe('filterPresets store', () => {
 
     const { presets } = useFilterPresets.getState()
     expect(presets['My Filters']).toEqual({
-      repoFilter: 'bde',
+      repoFilter: 'fleet',
       searchQuery: 'bug',
       statusFilter: 'blocked'
     })
@@ -77,7 +77,7 @@ describe('filterPresets store', () => {
     useFilterPresets.setState({
       presets: {
         'Preset A': { repoFilter: null, searchQuery: '', statusFilter: 'all' },
-        'Preset B': { repoFilter: 'bde', searchQuery: 'test', statusFilter: 'done' }
+        'Preset B': { repoFilter: 'fleet', searchQuery: 'test', statusFilter: 'done' }
       }
     })
 
@@ -103,7 +103,7 @@ describe('filterPresets store', () => {
     useFilterPresets.setState({
       presets: {
         Alpha: { repoFilter: null, searchQuery: '', statusFilter: 'all' },
-        Beta: { repoFilter: 'bde', searchQuery: '', statusFilter: 'done' }
+        Beta: { repoFilter: 'fleet', searchQuery: '', statusFilter: 'done' }
       }
     })
 
@@ -126,7 +126,7 @@ describe('filterPresets store', () => {
   it('restoreFromStorage loads presets from localStorage', () => {
     const data = {
       'Saved View': {
-        repoFilter: 'bde',
+        repoFilter: 'fleet',
         searchQuery: 'test',
         statusFilter: 'blocked'
       }
@@ -168,7 +168,7 @@ describe('filterPresets store', () => {
     useFilterPresets.setState({
       presets: {
         Keep: { repoFilter: null, searchQuery: '', statusFilter: 'all' },
-        Remove: { repoFilter: 'bde', searchQuery: '', statusFilter: 'done' }
+        Remove: { repoFilter: 'fleet', searchQuery: '', statusFilter: 'done' }
       }
     })
 
@@ -187,7 +187,7 @@ describe('filterPresets store', () => {
     })
 
     const filterState = {
-      repoFilter: 'bde' as string | null,
+      repoFilter: 'fleet' as string | null,
       searchQuery: 'test',
       statusFilter: 'all' as const
     }

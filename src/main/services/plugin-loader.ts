@@ -3,10 +3,10 @@ import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { createLogger } from '../logger'
 import type { Logger } from '../logger'
-import type { BdePlugin } from '../../shared/plugin-types'
+import type { FleetPlugin } from '../../shared/plugin-types'
 
 const defaultLogger = createLogger('plugin-loader')
-const DEFAULT_PLUGINS_DIR = join(homedir(), '.bde', 'plugins')
+const DEFAULT_PLUGINS_DIR = join(homedir(), '.fleet', 'plugins')
 
 /**
  * Encapsulates the in-process plugin registry. Replaces the previous
@@ -16,14 +16,14 @@ const DEFAULT_PLUGINS_DIR = join(homedir(), '.bde', 'plugins')
 export class PluginRegistry {
   private readonly logger: Logger
   private readonly pluginsDir: string
-  private plugins: BdePlugin[] = []
+  private plugins: FleetPlugin[] = []
 
   constructor(opts: { logger?: Logger; pluginsDir?: string } = {}) {
     this.logger = opts.logger ?? defaultLogger
     this.pluginsDir = opts.pluginsDir ?? DEFAULT_PLUGINS_DIR
   }
 
-  load(): BdePlugin[] {
+  load(): FleetPlugin[] {
     if (!existsSync(this.pluginsDir)) {
       this.logger.info(`[plugin-loader] No plugins directory at ${this.pluginsDir}`)
       this.plugins = []
@@ -40,13 +40,13 @@ export class PluginRegistry {
     return this.plugins
   }
 
-  list(): BdePlugin[] {
+  list(): FleetPlugin[] {
     return this.plugins
   }
 
-  async emit<K extends keyof BdePlugin>(
+  async emit<K extends keyof FleetPlugin>(
     event: K,
-    data: BdePlugin[K] extends (arg: infer A) => unknown ? A : never
+    data: FleetPlugin[K] extends (arg: infer A) => unknown ? A : never
   ): Promise<void> {
     for (const plugin of this.plugins) {
       const handler = plugin[event]
@@ -59,11 +59,11 @@ export class PluginRegistry {
     }
   }
 
-  private tryLoadPluginFile(file: string): BdePlugin | null {
+  private tryLoadPluginFile(file: string): FleetPlugin | null {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const mod = require(join(this.pluginsDir, file))
-      const plugin: BdePlugin = mod.default ?? mod
+      const plugin: FleetPlugin = mod.default ?? mod
       if (!plugin.name) {
         this.logger.warn(`[plugin-loader] Skipping ${file} — missing 'name' export`)
         return null
@@ -80,17 +80,17 @@ export class PluginRegistry {
 // Default registry preserved for callers that have not migrated to DI yet.
 const defaultRegistry = new PluginRegistry()
 
-export function loadPlugins(): BdePlugin[] {
+export function loadPlugins(): FleetPlugin[] {
   return defaultRegistry.load()
 }
 
-export function getPlugins(): BdePlugin[] {
+export function getPlugins(): FleetPlugin[] {
   return defaultRegistry.list()
 }
 
-export async function emitPluginEvent<K extends keyof BdePlugin>(
+export async function emitPluginEvent<K extends keyof FleetPlugin>(
   event: K,
-  data: BdePlugin[K] extends (arg: infer A) => unknown ? A : never
+  data: FleetPlugin[K] extends (arg: infer A) => unknown ? A : never
 ): Promise<void> {
   return defaultRegistry.emit(event, data)
 }

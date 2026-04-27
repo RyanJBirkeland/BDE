@@ -29,8 +29,8 @@ import { parseResearchRepoArgs, parseChatStreamArgs } from '../workbench'
 
 describe('parseResearchRepoArgs', () => {
   it('accepts valid query and repo', () => {
-    const result = parseResearchRepoArgs([{ query: 'findByTaskId', repo: 'bde' }])
-    expect(result[0]).toEqual({ query: 'findByTaskId', repo: 'bde' })
+    const result = parseResearchRepoArgs([{ query: 'findByTaskId', repo: 'fleet' }])
+    expect(result[0]).toEqual({ query: 'findByTaskId', repo: 'fleet' })
   })
 
   it('throws when input is not an object', () => {
@@ -39,15 +39,15 @@ describe('parseResearchRepoArgs', () => {
   })
 
   it('throws when query is empty string', () => {
-    expect(() => parseResearchRepoArgs([{ query: '', repo: 'bde' }])).toThrow('query')
+    expect(() => parseResearchRepoArgs([{ query: '', repo: 'fleet' }])).toThrow('query')
   })
 
   it('throws when query is whitespace-only', () => {
-    expect(() => parseResearchRepoArgs([{ query: '   ', repo: 'bde' }])).toThrow('query')
+    expect(() => parseResearchRepoArgs([{ query: '   ', repo: 'fleet' }])).toThrow('query')
   })
 
   it('throws when query is missing', () => {
-    expect(() => parseResearchRepoArgs([{ repo: 'bde' }])).toThrow('query')
+    expect(() => parseResearchRepoArgs([{ repo: 'fleet' }])).toThrow('query')
   })
 
   it('throws when repo is empty string', () => {
@@ -62,7 +62,7 @@ describe('parseResearchRepoArgs', () => {
 describe('parseChatStreamArgs', () => {
   const validInput = {
     messages: [{ role: 'user', content: 'Hello' }],
-    formContext: { title: 'My Task', repo: 'bde', spec: '## Spec\nDo the thing.' }
+    formContext: { title: 'My Task', repo: 'fleet', spec: '## Spec\nDo the thing.' }
   }
 
   it('accepts a valid input object', () => {

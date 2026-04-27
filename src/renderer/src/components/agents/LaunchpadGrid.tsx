@@ -17,46 +17,46 @@ const ACCENT_VARS: Record<
   { bg: string; border: string; color: string; glow: string; hover: string }
 > = {
   cyan: {
-    bg: 'var(--bde-accent-surface)',
-    border: 'var(--bde-accent-border)',
-    color: 'var(--bde-accent)',
+    bg: 'var(--fleet-accent-surface)',
+    border: 'var(--fleet-accent-border)',
+    color: 'var(--fleet-accent)',
     glow: 'transparent',
-    hover: 'var(--bde-accent-border)'
+    hover: 'var(--fleet-accent-border)'
   },
   pink: {
-    bg: 'var(--bde-accent-surface)',
-    border: 'var(--bde-accent-border)',
-    color: 'var(--bde-status-done)',
+    bg: 'var(--fleet-accent-surface)',
+    border: 'var(--fleet-accent-border)',
+    color: 'var(--fleet-status-done)',
     glow: 'transparent',
-    hover: 'var(--bde-accent-border)'
+    hover: 'var(--fleet-accent-border)'
   },
   blue: {
-    bg: 'var(--bde-accent-surface)',
-    border: 'var(--bde-accent-border)',
-    color: 'var(--bde-status-review)',
+    bg: 'var(--fleet-accent-surface)',
+    border: 'var(--fleet-accent-border)',
+    color: 'var(--fleet-status-review)',
     glow: 'transparent',
-    hover: 'var(--bde-accent-border)'
+    hover: 'var(--fleet-accent-border)'
   },
   purple: {
-    bg: 'var(--bde-accent-surface)',
-    border: 'var(--bde-accent-border)',
-    color: 'var(--bde-status-active)',
+    bg: 'var(--fleet-accent-surface)',
+    border: 'var(--fleet-accent-border)',
+    color: 'var(--fleet-status-active)',
     glow: 'transparent',
-    hover: 'var(--bde-accent-border)'
+    hover: 'var(--fleet-accent-border)'
   },
   orange: {
-    bg: 'var(--bde-warning-surface)',
-    border: 'var(--bde-warning-border)',
-    color: 'var(--bde-warning)',
+    bg: 'var(--fleet-warning-surface)',
+    border: 'var(--fleet-warning-border)',
+    color: 'var(--fleet-warning)',
     glow: 'transparent',
-    hover: 'var(--bde-warning-border)'
+    hover: 'var(--fleet-warning-border)'
   },
   red: {
-    bg: 'var(--bde-danger-surface)',
-    border: 'var(--bde-danger-border)',
-    color: 'var(--bde-danger)',
+    bg: 'var(--fleet-danger-surface)',
+    border: 'var(--fleet-danger-border)',
+    color: 'var(--fleet-danger)',
     glow: 'transparent',
-    hover: 'var(--bde-danger-border)'
+    hover: 'var(--fleet-danger-border)'
   }
 }
 

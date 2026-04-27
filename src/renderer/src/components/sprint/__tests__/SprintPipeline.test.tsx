@@ -346,7 +346,7 @@ vi.mock('../NewTicketModal', () => ({
       <button
         data-testid="ntm-create"
         onClick={() =>
-          onCreate({ title: 'New Task', repo: 'BDE', prompt: null, priority: 3, depends_on: null })
+          onCreate({ title: 'New Task', repo: 'FLEET', prompt: null, priority: 3, depends_on: null })
         }
       >
         Create
@@ -363,7 +363,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: crypto.randomUUID(),
     title: 'Test task',
-    repo: 'BDE',
+    repo: 'FLEET',
     prompt: null,
     priority: 1,
     status: 'backlog',

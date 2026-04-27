@@ -54,7 +54,7 @@ describe('ide-fs-handlers', () => {
   })
 
   describe('validateIdeRoot — approved-path confinement', () => {
-    const TEST_BASE = resolve(tmpdir(), 'bde-ide-root-test')
+    const TEST_BASE = resolve(tmpdir(), 'fleet-ide-root-test')
     const DIALOG_DIR = resolve(TEST_BASE, 'dialog-pick')
     const REPO_DIR = resolve(TEST_BASE, 'configured-repo')
     const ARBITRARY_DIR = resolve(TEST_BASE, 'arbitrary')

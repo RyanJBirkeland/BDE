@@ -50,7 +50,7 @@ Five files need touching to fully hide the `git` view:
 
 **File:** `src/renderer/src/components/planner/EpicList.css`
 
-`EpicList.tsx` already renders the status text and progress fraction. The only change is CSS: give `.planner-epic-item__status` a pill shape — add `border-radius`, padding, and a coloured background using existing `--bde-status-*` tokens matching each status value. No JSX changes.
+`EpicList.tsx` already renders the status text and progress fraction. The only change is CSS: give `.planner-epic-item__status` a pill shape — add `border-radius`, padding, and a coloured background using existing `--fleet-status-*` tokens matching each status value. No JSX changes.
 
 ### 2b. Epic detail header — thin progress stripe + Ask AI button
 
@@ -68,10 +68,10 @@ const doneCount = tasks.filter(t => t.status === 'done').length
 const totalCount = tasks.length
 ```
 
-The stripe fill = `doneCount / totalCount * 100%`, transitioning on change. Hidden (zero width) when `totalCount === 0`. Uses `--bde-accent-dim` for the track background and `--bde-accent` for the fill — no new tokens.
+The stripe fill = `doneCount / totalCount * 100%`, transitioning on change. Hidden (zero width) when `totalCount === 0`. Uses `--fleet-accent-dim` for the track background and `--fleet-accent` for the fill — no new tokens.
 
 **Ask AI button** — also added to `EpicHeader`:
-- Style: `background: var(--bde-accent-dim); border: 1px solid var(--bde-accent-border); color: var(--bde-accent-text)` — ambient, not primary gradient.
+- Style: `background: var(--fleet-accent-dim); border: 1px solid var(--fleet-accent-border); color: var(--fleet-accent-text)` — ambient, not primary gradient.
 - Fires a new `onOpenAssistant` callback prop on `EpicHeader`.
 - Does not render when `totalCount === 0` (no epic selected effectively).
 
@@ -173,7 +173,7 @@ When the assistant proposes a creation or update it emits a structured marker:
 | Epic creation | `window.api.groups.create` |
 | Spec update | `window.api.sprint.update(taskId, { spec })` |
 | Workbench pre-population | `useTaskWorkbenchStore.getState().resetForm()` + `setField(...)` |
-| Styles | `--bde-*` tokens; no new colour variables |
+| Styles | `--fleet-*` tokens; no new colour variables |
 
 ### What is NOT included
 

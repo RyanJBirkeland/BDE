@@ -1,14 +1,14 @@
 # Real-Time Sprint Board Architecture Evaluation
 
 > **Status: PARTIALLY IMPLEMENTED (2026-03-16)**
-> Phase 0 (file watcher on `bde.db`) shipped and is the current sync mechanism (`src/main/index.ts:19-47`).
-> Supabase has been fully replaced by local SQLite (`~/.bde/bde.db`).
+> Phase 0 (file watcher on `fleet.db`) shipped and is the current sync mechanism (`src/main/index.ts:19-47`).
+> Supabase has been fully replaced by local SQLite (`~/.fleet/fleet.db`).
 > SSE (Phases 1-4) remains a future optimization option — polling + file watcher is sufficient for current scale.
 > PR status polling interval is now 60s (was proposed as 15s in this doc).
 
 **Date:** 2026-03-16
 **Author:** Architecture Review (automated)
-**Scope:** BDE Sprint Board ↔ Task Runner data synchronization
+**Scope:** FLEET Sprint Board ↔ Task Runner data synchronization
 
 ---
 
@@ -16,10 +16,10 @@
 
 ### System Overview
 
-Two independent processes share a SQLite database (`~/.bde/bde.db`):
+Two independent processes share a SQLite database (`~/.fleet/fleet.db`):
 
 1. **Task Runner** (`life-os/scripts/task-runner.js`) — a Node.js daemon that polls the `sprint_tasks` table for queued work, spawns Claude Code agents in git worktrees, and writes status updates back to SQLite.
-2. **BDE Electron App** — reads `sprint_tasks` via IPC handlers in the main process, renders a Kanban board in the renderer, and polls for changes on intervals.
+2. **FLEET Electron App** — reads `sprint_tasks` via IPC handlers in the main process, renders a Kanban board in the renderer, and polls for changes on intervals.
 
 Neither process knows the other exists. SQLite WAL mode enables concurrent read/write access.
 
@@ -38,7 +38,7 @@ Neither process knows the other exists. SQLite WAL mode enables concurrent read/
 │                                       │                                 │
 │                                       ▼                                 │
 │                            ┌──────────────────┐                         │
-│                            │  ~/.bde/bde.db   │                         │
+│                            │  ~/.fleet/fleet.db   │                         │
 │                            │  (WAL mode)      │                         │
 │                            │                  │                         │
 │                            │  sprint_tasks    │                         │
@@ -53,7 +53,7 @@ Neither process knows the other exists. SQLite WAL mode enables concurrent read/
                           ════════════╪══════════════
                                       │
 ┌─────────────────────────────────────┼───────────────────────────────────┐
-│                        BDE ELECTRON APP                                 │
+│                        FLEET ELECTRON APP                                 │
 │                                     │                                   │
 │  ┌──────────────────────────────────┼─────────────────────────────┐     │
 │  │              MAIN PROCESS        │                             │     │
@@ -120,27 +120,27 @@ Neither process knows the other exists. SQLite WAL mode enables concurrent read/
 
 | #   | Pain Point                                                                                                                                                                                                                                                                              | Impact                            | Severity |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | -------- |
-| 1   | **Stale data window: up to 30s in idle mode** — when task runner changes a task from `queued` → `active`, BDE won't see it for up to 30s if no tasks were previously active. The adaptive polling helps once tasks are active (5s), but the transition from idle→active is the slowest. | User sees stale Kanban state      | Medium   |
-| 2   | **Missed state transitions** — if a task goes `queued` → `active` → `done` within a single 30s idle window (fast agent execution), BDE skips the `active` state entirely. User never sees the task move to Active column.                                                               | Confusing UX — task jumps columns | Medium   |
-| 3   | **SQLite concurrent write contention** — both processes open the same DB. WAL mode mitigates read/write concurrency, but simultaneous writes (e.g., user drags a task in BDE while task runner claims it) can produce `SQLITE_BUSY`. Neither process retries on busy.                   | Potential silent data loss        | High     |
+| 1   | **Stale data window: up to 30s in idle mode** — when task runner changes a task from `queued` → `active`, FLEET won't see it for up to 30s if no tasks were previously active. The adaptive polling helps once tasks are active (5s), but the transition from idle→active is the slowest. | User sees stale Kanban state      | Medium   |
+| 2   | **Missed state transitions** — if a task goes `queued` → `active` → `done` within a single 30s idle window (fast agent execution), FLEET skips the `active` state entirely. User never sees the task move to Active column.                                                               | Confusing UX — task jumps columns | Medium   |
+| 3   | **SQLite concurrent write contention** — both processes open the same DB. WAL mode mitigates read/write concurrency, but simultaneous writes (e.g., user drags a task in FLEET while task runner claims it) can produce `SQLITE_BUSY`. Neither process retries on busy.                   | Potential silent data loss        | High     |
 | 4   | **No write conflict detection** — if task runner sets `status = 'active'` at the same moment the user drags it to `done`, last write wins. No optimistic concurrency control (no version column, no `updated_at` check).                                                                | Data corruption (silent)          | High     |
-| 5   | **Task runner restart → BDE unaware** — when task runner restarts, it reconciles orphaned tasks (resetting dead ones to `queued`). BDE doesn't know about the restart and may show stale `active` status for up to 30s.                                                                 | Misleading status display         | Low      |
-| 6   | **Polling overhead on idle** — every 30s, BDE fetches the entire `sprint_tasks` table. With many tasks, this is wasteful bandwidth through IPC when nothing has changed.                                                                                                                | Minor perf waste                  | Low      |
+| 5   | **Task runner restart → FLEET unaware** — when task runner restarts, it reconciles orphaned tasks (resetting dead ones to `queued`). FLEET doesn't know about the restart and may show stale `active` status for up to 30s.                                                                 | Misleading status display         | Low      |
+| 6   | **Polling overhead on idle** — every 30s, FLEET fetches the entire `sprint_tasks` table. With many tasks, this is wasteful bandwidth through IPC when nothing has changed.                                                                                                                | Minor perf waste                  | Low      |
 | 7   | **Optimistic update divergence** — SprintCenter does optimistic updates (immediately mutates local state, then writes to DB). If the DB write fails or task runner concurrently changed the same row, the optimistic state diverges from truth until the next poll.                     | Temporary UI lie                  | Medium   |
-| 8   | **No change detection** — BDE fetches the full task list every poll, diffs nothing, and replaces the entire `tasks[]` array. This can cause unnecessary re-renders and flicker (e.g., selected task gets replaced with a new object reference).                                         | Minor UX flicker                  | Low      |
+| 8   | **No change detection** — FLEET fetches the full task list every poll, diffs nothing, and replaces the entire `tasks[]` array. This can cause unnecessary re-renders and flicker (e.g., selected task gets replaced with a new object reference).                                         | Minor UX flicker                  | Low      |
 
 ---
 
 ## 3. Alternative Approaches
 
-### 3a. File Watcher on `bde.db` (fs.watch / chokidar)
+### 3a. File Watcher on `fleet.db` (fs.watch / chokidar)
 
-**Mechanism:** Electron main process watches `~/.bde/bde.db` (and WAL/SHM files) for filesystem changes. On change, push an IPC event to renderer to trigger a refresh.
+**Mechanism:** Electron main process watches `~/.fleet/fleet.db` (and WAL/SHM files) for filesystem changes. On change, push an IPC event to renderer to trigger a refresh.
 
 | Aspect                     | Detail                                                                                                                                                                                                                                                                                                                                                     |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Pros**                   | Zero changes to task runner. Works with any process that writes to the DB. Simple to implement.                                                                                                                                                                                                                                                            |
-| **Cons**                   | Coarse-grained — fires on ANY table change, not just `sprint_tasks`. WAL mode complicates this: writes go to `-wal` file first, then checkpoint to main DB, so timing is unpredictable. `fs.watch` on macOS (FSEvents) can batch/delay notifications. No payload — still requires a full SELECT after notification. False positives from BDE's own writes. |
+| **Cons**                   | Coarse-grained — fires on ANY table change, not just `sprint_tasks`. WAL mode complicates this: writes go to `-wal` file first, then checkpoint to main DB, so timing is unpredictable. `fs.watch` on macOS (FSEvents) can batch/delay notifications. No payload — still requires a full SELECT after notification. False positives from FLEET's own writes. |
 | **Complexity**             | **S** — ~30 lines in main process                                                                                                                                                                                                                                                                                                                          |
 | **Correctness on restart** | Good — file watcher survives task runner restarts since it watches the file, not the process.                                                                                                                                                                                                                                                              |
 | **Verdict**                | Viable as a quick improvement over polling but unreliable for latency-sensitive updates due to WAL checkpointing behavior and lack of granularity.                                                                                                                                                                                                         |
@@ -152,21 +152,21 @@ Neither process knows the other exists. SQLite WAL mode enables concurrent read/
 | Aspect                     | Detail                                                                                                                                                                                                                                                                                            |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Pros**                   | Row-level granularity (table name, row ID, operation type). Zero latency for changes made by the same process.                                                                                                                                                                                    |
-| **Cons**                   | **Fundamental limitation: does NOT fire for changes made by OTHER processes.** Task runner writes are invisible to BDE's update_hook, and vice versa. This makes it useless for the cross-process notification problem. Would only help BDE detect its own writes (which it already knows about). |
+| **Cons**                   | **Fundamental limitation: does NOT fire for changes made by OTHER processes.** Task runner writes are invisible to FLEET's update_hook, and vice versa. This makes it useless for the cross-process notification problem. Would only help FLEET detect its own writes (which it already knows about). |
 | **Complexity**             | **S** — but solves the wrong problem                                                                                                                                                                                                                                                              |
 | **Correctness on restart** | N/A                                                                                                                                                                                                                                                                                               |
-| **Verdict**                | **Not viable.** SQLite update hooks are per-connection, not cross-process. This is a dead end for BDE↔task runner sync.                                                                                                                                                                           |
+| **Verdict**                | **Not viable.** SQLite update hooks are per-connection, not cross-process. This is a dead end for FLEET↔task runner sync.                                                                                                                                                                           |
 
 ### 3c. Unix Domain Socket (UDS)
 
-**Mechanism:** Task runner creates a UDS server (e.g., `/tmp/bde-task-runner.sock`). Electron main process connects as client. Task runner pushes JSON messages on every status change (`{ type: 'task:updated', taskId, status, ... }`).
+**Mechanism:** Task runner creates a UDS server (e.g., `/tmp/fleet-task-runner.sock`). Electron main process connects as client. Task runner pushes JSON messages on every status change (`{ type: 'task:updated', taskId, status, ... }`).
 
 | Aspect                     | Detail                                                                                                                                                                                                                                                                             |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pros**                   | Real-time push with zero latency. Structured payloads — can include the changed fields, avoiding a full DB re-read. Lightweight, no HTTP overhead. Well-suited for same-machine IPC. Can be bidirectional (BDE could send commands to task runner).                                |
-| **Cons**                   | Requires changes to BOTH processes. Must handle connection lifecycle: task runner not running, task runner restarts, socket file cleanup. Need a reconnect loop in BDE. Socket file can become stale (task runner crashes without cleanup). Slightly more complex protocol design. |
+| **Pros**                   | Real-time push with zero latency. Structured payloads — can include the changed fields, avoiding a full DB re-read. Lightweight, no HTTP overhead. Well-suited for same-machine IPC. Can be bidirectional (FLEET could send commands to task runner).                                |
+| **Cons**                   | Requires changes to BOTH processes. Must handle connection lifecycle: task runner not running, task runner restarts, socket file cleanup. Need a reconnect loop in FLEET. Socket file can become stale (task runner crashes without cleanup). Slightly more complex protocol design. |
 | **Complexity**             | **M** — ~100-150 lines per side (server + client), plus reconnect logic                                                                                                                                                                                                            |
-| **Correctness on restart** | Requires explicit handling. BDE must detect disconnection and reconnect. Task runner must clean up stale socket on startup. During disconnection, BDE falls back to polling or queues a full refresh on reconnect.                                                                 |
+| **Correctness on restart** | Requires explicit handling. FLEET must detect disconnection and reconnect. Task runner must clean up stale socket on startup. During disconnection, FLEET falls back to polling or queues a full refresh on reconnect.                                                                 |
 | **Verdict**                | Strong candidate. Clean, fast, purpose-built for local IPC. Main cost is connection lifecycle management.                                                                                                                                                                          |
 
 ### 3d. HTTP SSE (Server-Sent Events)
@@ -187,15 +187,15 @@ Neither process knows the other exists. SQLite WAL mode enables concurrent read/
 
 | Aspect                     | Detail                                                                                                                                                                                                                                                                                                                                              |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pros**                   | Bidirectional — BDE could send commands (e.g., cancel task) to task runner. Low latency. Well-supported in Node.js (`ws` package). Familiar protocol.                                                                                                                                                                                               |
-| **Cons**                   | Heavier than UDS or SSE for a one-directional push use case. Requires `ws` npm dependency in task runner (or use Node.js experimental WebSocket). No built-in reconnection semantics — must implement retry logic manually. Bidirectionality is unnecessary complexity if BDE only needs to receive updates (it already writes to SQLite directly). |
+| **Pros**                   | Bidirectional — FLEET could send commands (e.g., cancel task) to task runner. Low latency. Well-supported in Node.js (`ws` package). Familiar protocol.                                                                                                                                                                                               |
+| **Cons**                   | Heavier than UDS or SSE for a one-directional push use case. Requires `ws` npm dependency in task runner (or use Node.js experimental WebSocket). No built-in reconnection semantics — must implement retry logic manually. Bidirectionality is unnecessary complexity if FLEET only needs to receive updates (it already writes to SQLite directly). |
 | **Complexity**             | **M** — ~100 lines per side, plus reconnect logic                                                                                                                                                                                                                                                                                                   |
 | **Correctness on restart** | Must be manually handled. No protocol-level reconnection like SSE. Client needs exponential backoff retry.                                                                                                                                                                                                                                          |
-| **Verdict**                | Viable but over-engineered for this use case. The bidirectional capability isn't needed — BDE writes to SQLite, not to task runner.                                                                                                                                                                                                                 |
+| **Verdict**                | Viable but over-engineered for this use case. The bidirectional capability isn't needed — FLEET writes to SQLite, not to task runner.                                                                                                                                                                                                                 |
 
 ### 3f. Shared Memory / mmap
 
-**Mechanism:** Both processes map a shared memory region. Task runner writes status updates to shared memory; BDE reads from it.
+**Mechanism:** Both processes map a shared memory region. Task runner writes status updates to shared memory; FLEET reads from it.
 
 | Aspect                     | Detail                                                                                                                                                                                                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -216,7 +216,7 @@ Neither process knows the other exists. SQLite WAL mode enables concurrent read/
 | Payload with notification  |      No      |     N/A     |     Yes     |   Yes    |    Yes    |     Yes     |
 | Restart resilience         |     Good     |     N/A     |   Manual    | **Auto** |  Manual   |    Poor     |
 | Changes to task runner     |     None     |     N/A     |  ~100 LOC   | ~80 LOC  | ~100 LOC  |  ~500 LOC   |
-| Changes to BDE main        |   ~30 LOC    |     N/A     |  ~100 LOC   | ~50 LOC  | ~100 LOC  |  ~500 LOC   |
+| Changes to FLEET main        |   ~30 LOC    |     N/A     |  ~100 LOC   | ~50 LOC  | ~100 LOC  |  ~500 LOC   |
 | Dependencies added         |     None     |    None     |    None     |   None   |   `ws`    | N-API addon |
 | Bidirectional              |      No      |     No      |     Yes     |    No    |    Yes    |     Yes     |
 | Implementation size        |    **S**     |     N/A     |    **M**    |  **M**   |   **M**   |    **L**    |
@@ -230,17 +230,17 @@ Neither process knows the other exists. SQLite WAL mode enables concurrent read/
 
 **SSE is the right tool for this job.** Here's why:
 
-1. **Unidirectional push is exactly the right model.** Task runner produces status changes; BDE consumes them. BDE doesn't need to send commands back — it writes directly to SQLite. SSE's one-way push maps perfectly to this data flow.
+1. **Unidirectional push is exactly the right model.** Task runner produces status changes; FLEET consumes them. FLEET doesn't need to send commands back — it writes directly to SQLite. SSE's one-way push maps perfectly to this data flow.
 
-2. **Built-in reconnection is critical.** The task runner and BDE are independent processes with independent lifecycles. Task runner can restart, crash, or be stopped/started independently. SSE's `EventSource` protocol has native reconnect with `retry:` interval and `Last-Event-ID` for resumption. This eliminates an entire class of connection lifecycle bugs.
+2. **Built-in reconnection is critical.** The task runner and FLEET are independent processes with independent lifecycles. Task runner can restart, crash, or be stopped/started independently. SSE's `EventSource` protocol has native reconnect with `retry:` interval and `Last-Event-ID` for resumption. This eliminates an entire class of connection lifecycle bugs.
 
 3. **No new dependencies.** Node.js `http` module is sufficient for the SSE server. Electron main process can use `fetch` with streaming or the `undici` client already bundled with Node 22.
 
 4. **Debuggable.** `curl http://localhost:18799/events` instantly shows the event stream. No special tooling needed.
 
-5. **Graceful degradation.** If SSE connection is down, BDE falls back to existing polling. This means the migration is additive — SSE accelerates updates but polling remains as a safety net.
+5. **Graceful degradation.** If SSE connection is down, FLEET falls back to existing polling. This means the migration is additive — SSE accelerates updates but polling remains as a safety net.
 
-6. **Minimal blast radius.** Task runner gets a small HTTP server (~80 lines). BDE main process gets an SSE client (~50 lines) that pushes events to the renderer via existing IPC. Renderer just listens for a new IPC event and triggers `loadData()`.
+6. **Minimal blast radius.** Task runner gets a small HTTP server (~80 lines). FLEET main process gets an SSE client (~50 lines) that pushes events to the renderer via existing IPC. Renderer just listens for a new IPC event and triggers `loadData()`.
 
 ### Why not Unix Domain Socket?
 
@@ -267,13 +267,13 @@ That said, file watcher could be a **Phase 0** quick win before investing in SSE
 
 A low-risk improvement that can ship immediately while SSE is being built.
 
-**BDE main process (`src/main/index.ts`):**
+**FLEET main process (`src/main/index.ts`):**
 
 ```typescript
-// Watch bde.db and WAL file for changes from external processes
+// Watch fleet.db and WAL file for changes from external processes
 import { watch } from 'node:fs'
 
-const dbPath = join(homedir(), '.bde', 'bde.db')
+const dbPath = join(homedir(), '.fleet', 'fleet.db')
 const walPath = dbPath + '-wal'
 
 let debounceTimer: NodeJS.Timeout | null = null
@@ -292,7 +292,7 @@ watch(dbPath, onDbChange)
 watch(walPath, onDbChange)
 ```
 
-**BDE renderer (SprintCenter.tsx):**
+**FLEET renderer (SprintCenter.tsx):**
 
 ```typescript
 // Listen for external DB change notifications
@@ -372,7 +372,7 @@ broadcast('task:updated', { id: task.id, status: prUrl ? 'done' : 'queued' })
 
 3. Call `createSseServer()` at startup (after `loadEnv()`).
 
-### Phase 2: SSE Client in BDE Main Process (2-3 hours)
+### Phase 2: SSE Client in FLEET Main Process (2-3 hours)
 
 **New file: `src/main/sprint-sse.ts`:**
 
@@ -526,9 +526,9 @@ The polling remains as a consistency backstop, not the primary update mechanism.
 
 | Scenario                      | Current Behavior                                            | With SSE                                                                                                                               |
 | ----------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Task runner not running       | BDE works fine, just shows stale data from last known state | SSE client fails to connect, retries every 3s silently. Polling continues as fallback. No degradation.                                 |
-| Task runner restarts          | BDE unaware for up to 30s                                   | SSE connection drops, client reconnects in 3s. First reconnect triggers a full `loadData()` to catch any changes made during downtime. |
-| BDE restarts                  | Fresh start, loads from DB                                  | SSE client connects on startup. No special handling needed.                                                                            |
+| Task runner not running       | FLEET works fine, just shows stale data from last known state | SSE client fails to connect, retries every 3s silently. Polling continues as fallback. No degradation.                                 |
+| Task runner restarts          | FLEET unaware for up to 30s                                   | SSE connection drops, client reconnects in 3s. First reconnect triggers a full `loadData()` to catch any changes made during downtime. |
+| FLEET restarts                  | Fresh start, loads from DB                                  | SSE client connects on startup. No special handling needed.                                                                            |
 | Both restart simultaneously   | Both read from SQLite independently                         | SSE client retries until task runner's server is ready. SQLite is the source of truth throughout.                                      |
 | Task runner crashes (unclean) | Orphaned tasks recovered on next task runner start          | Same as restart — SSE reconnects. Task runner's `reconcileActiveTasks()` fires on restart, emits SSE events for each recovered task.   |
 | Network partition             | N/A (same machine)                                          | N/A (localhost only)                                                                                                                   |
@@ -539,7 +539,7 @@ The polling remains as a consistency backstop, not the primary update mechanism.
 
 ## 8. Concerns and Open Questions
 
-1. **Port collision:** SSE server on port 18799 could conflict with other local services. Consider making it configurable via env var and having BDE read it from a well-known location (e.g., a pidfile or the task runner's `.env`).
+1. **Port collision:** SSE server on port 18799 could conflict with other local services. Consider making it configurable via env var and having FLEET read it from a well-known location (e.g., a pidfile or the task runner's `.env`).
 
 2. **Agent log streaming:** SSE could also push agent log chunks in real time, eliminating the 2s LogDrawer polling. This is a natural Phase 5 extension but should be scoped separately — log payloads can be large.
 
@@ -551,6 +551,6 @@ The polling remains as a consistency backstop, not the primary update mechanism.
 
    If `changes === 0`, the row was modified concurrently — reload and re-apply.
 
-4. **Task runner as SSE dependency:** BDE now has a soft dependency on the task runner for real-time updates. This is acceptable because (a) polling remains as fallback, and (b) the task runner is already a de facto dependency for sprint automation.
+4. **Task runner as SSE dependency:** FLEET now has a soft dependency on the task runner for real-time updates. This is acceptable because (a) polling remains as fallback, and (b) the task runner is already a de facto dependency for sprint automation.
 
-5. **Multiple BDE instances:** If the user opens multiple BDE windows, each gets its own SSE subscription via the main process broadcast. This is correct — `BrowserWindow.getAllWindows()` handles it.
+5. **Multiple FLEET instances:** If the user opens multiple FLEET windows, each gets its own SSE subscription via the main process broadcast. This is correct — `BrowserWindow.getAllWindows()` handles it.

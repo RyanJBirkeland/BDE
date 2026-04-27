@@ -13,7 +13,7 @@ import { tmpdir } from 'os'
  * - One staged file (staged.txt)
  */
 export function createMockGitRepo(): { path: string; cleanup: () => void } {
-  const dir = mkdtempSync(join(tmpdir(), 'bde-e2e-'))
+  const dir = mkdtempSync(join(tmpdir(), 'fleet-e2e-'))
 
   execFileSync('git', ['init'], { cwd: dir })
   execFileSync('git', ['config', 'user.email', 'test@test.com'], { cwd: dir })

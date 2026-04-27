@@ -1,4 +1,4 @@
-# BDE Module Documentation
+# FLEET Module Documentation
 
 Codebase reference organized by architectural layer. Each layer index lists every module with its purpose and key exports. Modules with a detail file are linked.
 

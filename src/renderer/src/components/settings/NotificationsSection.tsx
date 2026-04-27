@@ -144,7 +144,7 @@ export function NotificationsSection(): React.JSX.Element {
       >
         <div className="settings-theme-buttons">
           <button
-            className={`bde-btn bde-btn--sm ${prefs.master ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+            className={`fleet-btn fleet-btn--sm ${prefs.master ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
             onClick={() => updateMaster(true)}
             type="button"
             aria-pressed={prefs.master}
@@ -152,7 +152,7 @@ export function NotificationsSection(): React.JSX.Element {
             Enabled
           </button>
           <button
-            className={`bde-btn bde-btn--sm ${!prefs.master ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+            className={`fleet-btn fleet-btn--sm ${!prefs.master ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
             onClick={() => updateMaster(false)}
             type="button"
             aria-pressed={!prefs.master}
@@ -179,7 +179,7 @@ export function NotificationsSection(): React.JSX.Element {
             </span>
           </div>
           <button
-            className="bde-btn bde-btn--sm bde-btn--primary"
+            className="fleet-btn fleet-btn--sm fleet-btn--primary"
             onClick={requestPermission}
             type="button"
             disabled={permissionStatus === 'granted'}
@@ -196,7 +196,7 @@ export function NotificationsSection(): React.JSX.Element {
               <span className="settings-event-label">{EVENT_LABELS[event]}</span>
               <div className="settings-theme-buttons">
                 <button
-                  className={`bde-btn bde-btn--sm ${prefs[event] === 'desktop' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+                  className={`fleet-btn fleet-btn--sm ${prefs[event] === 'desktop' ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
                   onClick={() => updateEventPreference(event, 'desktop')}
                   type="button"
                   aria-pressed={prefs[event] === 'desktop'}
@@ -205,7 +205,7 @@ export function NotificationsSection(): React.JSX.Element {
                   Desktop + In-App
                 </button>
                 <button
-                  className={`bde-btn bde-btn--sm ${prefs[event] === 'in-app' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+                  className={`fleet-btn fleet-btn--sm ${prefs[event] === 'in-app' ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
                   onClick={() => updateEventPreference(event, 'in-app')}
                   type="button"
                   aria-pressed={prefs[event] === 'in-app'}
@@ -214,7 +214,7 @@ export function NotificationsSection(): React.JSX.Element {
                   In-App Only
                 </button>
                 <button
-                  className={`bde-btn bde-btn--sm ${prefs[event] === 'off' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+                  className={`fleet-btn fleet-btn--sm ${prefs[event] === 'off' ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
                   onClick={() => updateEventPreference(event, 'off')}
                   type="button"
                   aria-pressed={prefs[event] === 'off'}

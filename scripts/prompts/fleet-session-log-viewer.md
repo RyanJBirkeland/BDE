@@ -1,6 +1,6 @@
-# BDE Session Log Viewer
+# FLEET Session Log Viewer
 
-You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
+You are working in the FLEET (Agentic Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/FLEET`.
 
 ## Context
 
@@ -44,6 +44,6 @@ Build a Session Log Viewer panel that shows the full message history for a selec
 
 - Work on a branch: `git checkout -b feat/session-log-viewer`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE session log viewer — full message history with tool call expansion" -f body="Session log viewer wired to sessions_history gateway tool" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/FLEET/pulls --method POST -f title="feat: FLEET session log viewer — full message history with tool call expansion" -f body="Session log viewer wired to sessions_history gateway tool" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/FLEET/pulls --method POST ...`

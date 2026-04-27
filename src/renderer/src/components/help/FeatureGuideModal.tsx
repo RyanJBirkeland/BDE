@@ -74,7 +74,7 @@ export function FeatureGuideModal({ open, onClose }: FeatureGuideModalProps): Re
             aria-label="Feature guide"
           >
             <div className="feature-guide__header">
-              <h2 className="feature-guide__title">BDE Feature Guide</h2>
+              <h2 className="feature-guide__title">FLEET Feature Guide</h2>
               <button
                 className="feature-guide__close"
                 onClick={onClose}

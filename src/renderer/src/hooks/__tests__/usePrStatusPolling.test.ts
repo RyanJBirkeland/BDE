@@ -74,7 +74,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: `task-${Math.random().toString(36).slice(2)}`,
     title: 'Test task',
-    repo: 'BDE',
+    repo: 'FLEET',
     prompt: null,
     priority: 1,
     status: 'active',

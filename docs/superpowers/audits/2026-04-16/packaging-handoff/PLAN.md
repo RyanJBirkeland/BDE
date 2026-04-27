@@ -43,7 +43,7 @@ All five tasks independent (different files / different subsystems). Should queu
 - New README section "Install from DMG (macOS)" with 5 numbered steps including right-click → Open.
 - New `INSTALL.md` with screenshots (Finder right-click menu, Gatekeeper dialog).
 - `.github/release.yml` template that surfaces the install instructions in every GitHub release body.
-- Optional `xattr -dr com.apple.quarantine /Applications/BDE.app` terminal recipe for power users.
+- Optional `xattr -dr com.apple.quarantine /Applications/FLEET.app` terminal recipe for power users.
 **How to test:** Render README, open INSTALL.md on GitHub preview, verify release template renders on a draft release.
 
 ### T1.2 — Native module rebuild pipeline fix
@@ -55,7 +55,7 @@ All five tasks independent (different files / different subsystems). Should queu
 - Update `postinstall`, `predev`, and `package` scripts to pass `-v 39.8.6 -f -w better-sqlite3,node-pty` to `electron-rebuild`.
 - Add `-a arm64` explicitly to the `package` script.
 - Document Node ≥22.12.0 requirement in CLAUDE.md (paperwork, not enforcement).
-**How to test:** `rm -rf node_modules && npm install && npm run package`, launch the DMG, verify app opens and `~/.bde/bde.db` is created (proves better-sqlite3 loaded), open terminal view (proves node-pty loaded).
+**How to test:** `rm -rf node_modules && npm install && npm run package`, launch the DMG, verify app opens and `~/.fleet/fleet.db` is created (proves better-sqlite3 loaded), open terminal view (proves node-pty loaded).
 
 ### T1.3 — electron-builder.yml consolidated edit
 
@@ -64,12 +64,12 @@ All five tasks independent (different files / different subsystems). Should queu
 **Closes:** F-t1-builder-1, F-t1-builder-3 (conditional on V0.5), F-t1-builder-4, F-t1-builder-5, F-t1-builder-6 (opt-out), F-t1-builder-10, F-t1-native-2.
 **What to do:**
 - Add `afterSign: scripts/after-sign.sh` under `mac:`.
-- Add root-level `copyright: "Copyright © 2026 BDE"`.
+- Add root-level `copyright: "Copyright © 2026 FLEET"`.
 - Add `name` fields to both `dmg.contents[]` entries.
 - Add `gatekeeperAssess: true` under `mac:` (single line flip).
 - Add `npmRebuild: true` at root level (explicit override of default).
 - If V0.5 confirms fragility: add explicit `asarUnpack` block.
-**How to test:** `npm run package`, inspect generated `release/mac-arm64/BDE.app/Contents/Info.plist` for copyright, inspect `app.asar.unpacked/` contents, run `codesign -dv BDE.app` to confirm ad-hoc signature persisted.
+**How to test:** `npm run package`, inspect generated `release/mac-arm64/FLEET.app/Contents/Info.plist` for copyright, inspect `app.asar.unpacked/` contents, run `codesign -dv FLEET.app` to confirm ad-hoc signature persisted.
 
 ### T1.4 — Fix "Continue Anyway" onboarding trap
 
@@ -115,7 +115,7 @@ Per synthesis theme 2, OAuth handling has three subtly-different checks. This is
 **Files:** `src/main/auth-guard.ts`, `src/main/oauth-checker.ts` (merge/delete), `src/main/env-utils.ts`, `src/main/agent-manager/sdk-adapter.ts`, `src/main/agent-manager/spawn-cli.ts`, `src/main/agent-manager/drain-loop.ts`.
 **Closes:** F-t3-credentials-1, F-t3-credentials-2, F-t3-credentials-3, F-t3-credentials-4, F-t3-credentials-9 (if V0.6 confirms the race matters), F-t3-credentials-8.
 **What to do:** per T2.1 spec. Must land as one PR — the three old check sites need to be removed together to avoid regression.
-**How to test:** Test matrix: (no file, no keychain) / (no file, keychain has token) / (file exists, expired) / (file exists, valid) / (file exists, corrupt). Automated unit tests for each. Manual: delete `~/.bde/oauth-token`, launch app, queue a task, confirm the error bubbles up to the UI with "run: claude login" guidance.
+**How to test:** Test matrix: (no file, no keychain) / (no file, keychain has token) / (file exists, expired) / (file exists, valid) / (file exists, corrupt). Automated unit tests for each. Manual: delete `~/.fleet/oauth-token`, launch app, queue a task, confirm the error bubbles up to the UI with "run: claude login" guidance.
 
 ### T2.3 — GitHub auth enforcement + onboarding integration (parallel with T2.2 after T2.1)
 
@@ -209,7 +209,7 @@ These all touch `components/onboarding/` but different files. Safe to paralleliz
 
 This is a project, not a task. Requires product decision before starting. Items below are prerequisites that must all be done together.
 
-**Prerequisite decision:** Is BDE being distributed beyond friends-and-family? If yes, commit to this. If no, defer indefinitely and lean harder on the Phase 1 docs story.
+**Prerequisite decision:** Is FLEET being distributed beyond friends-and-family? If yes, commit to this. If no, defer indefinitely and lean harder on the Phase 1 docs story.
 
 **S5.1 — Apple Developer Program membership** (~$99/yr, 1 day admin).
 

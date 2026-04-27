@@ -28,7 +28,7 @@ describe('spec-synthesizer — model routing', () => {
       {
         templateName: 'Feature',
         answers: { goal: 'ship it' },
-        repo: 'bde',
+        repo: 'fleet',
         repoPath: '/tmp/nonexistent-fake'
       } as never,
       () => {},
@@ -44,7 +44,7 @@ describe('spec-synthesizer — model routing', () => {
       {
         currentSpec: '## Current',
         instruction: 'add tests',
-        repo: 'bde'
+        repo: 'fleet'
       } as never,
       () => {},
       'stream-revise-1'

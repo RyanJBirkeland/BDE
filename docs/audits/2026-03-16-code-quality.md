@@ -4,7 +4,7 @@
 
 **Date**: 2026-03-16
 **Auditor**: Claude Opus 4.6
-**Scope**: BDE Electron app — src/main/, src/renderer/src/, src/preload/
+**Scope**: FLEET Electron app — src/main/, src/renderer/src/, src/preload/
 
 ---
 
@@ -456,7 +456,7 @@ src/main/
 
 ## Conclusion
 
-The BDE codebase is **well-structured** with clean separation of concerns and a solid IPC architecture. The main issues are:
+The FLEET codebase is **well-structured** with clean separation of concerns and a solid IPC architecture. The main issues are:
 
 1. **Silent failure proliferation** — makes debugging painful
 2. **Two files exceeding complexity limits** — need splitting

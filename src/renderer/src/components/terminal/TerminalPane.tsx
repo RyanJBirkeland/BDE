@@ -41,7 +41,7 @@ export function TerminalPane({ tabId, shell, cwd, visible }: TerminalPaneProps):
 
     const term = new Terminal({
       theme: getTerminalTheme(),
-      fontFamily: 'var(--bde-font-code)',
+      fontFamily: 'var(--fleet-font-code)',
       fontSize,
       lineHeight: 1.5,
       cursorBlink: true
@@ -132,7 +132,7 @@ export function TerminalPane({ tabId, shell, cwd, visible }: TerminalPaneProps):
       style={{
         width: '100%',
         height: '100%',
-        padding: 'var(--bde-space-2)',
+        padding: 'var(--fleet-space-2)',
         boxSizing: 'border-box',
         display: visible ? 'block' : 'none'
       }}

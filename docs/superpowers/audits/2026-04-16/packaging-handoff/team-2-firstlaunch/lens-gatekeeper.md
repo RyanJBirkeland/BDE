@@ -5,13 +5,13 @@
 
 ## Executive Summary
 
-A non-technical user downloading `BDE-0.1.0-arm64.dmg`, dragging the app to Applications, and double-clicking it on a fresh Mac (Sonoma/Sequoia) encounters a hard barrier:
+A non-technical user downloading `FLEET-0.1.0-arm64.dmg`, dragging the app to Applications, and double-clicking it on a fresh Mac (Sonoma/Sequoia) encounters a hard barrier:
 
 1. **Gatekeeper blocks the unsigned app with "Apple could not verify the developer" dialog** — no app launch button, no workaround shown in the dialog.
 2. **The documented workaround (right-click → Open) is only mentioned in the README**, not in release notes, install instructions, or inside the app's first-launch experience.
 3. **App lacks critical Info.plist usage-description strings** for APIs it attempts to use (dialogs, file access, shells), creating silent denials or crashes on permission requests.
-4. **No entitlements file for TCC-controlled APIs** (`shell.openPath`, spawning `gh`/`git`, accessing `~/worktrees`, writing to `~/.bde`) — these may fail silently on unsigned+unhardened builds.
-5. **Database and OAuth tokens written to `~/.bde/` without handling macOS sandbox/TCC restrictions** — signed future builds will face file-access permission prompts.
+4. **No entitlements file for TCC-controlled APIs** (`shell.openPath`, spawning `gh`/`git`, accessing `~/worktrees`, writing to `~/.fleet`) — these may fail silently on unsigned+unhardened builds.
+5. **Database and OAuth tokens written to `~/.fleet/` without handling macOS sandbox/TCC restrictions** — signed future builds will face file-access permission prompts.
 
 **Impact: Adoption blocker.** A first-time user sees a scary "damaged app" error and has no guidance on how to proceed. Even if they find the README workaround, they may not trust an app that requires "unsafe" steps.
 
@@ -26,13 +26,13 @@ A non-technical user downloading `BDE-0.1.0-arm64.dmg`, dragging the app to Appl
 - Line 14: `identity: null` — app is unsigned.
 - Line 15: `hardenedRuntime: false` — no hardened runtime either.
 - Line 16: `gatekeeperAssess: false` — electron-builder is configured to NOT even perform local Gatekeeper assessment during build.
-- Built app `/release/mac-arm64/BDE.app` has no codesign signature (`codesign -v` returns "code has no resources but signature indicates they must be present").
+- Built app `/release/mac-arm64/FLEET.app` has no codesign signature (`codesign -v` returns "code has no resources but signature indicates they must be present").
 
 **Impact:**
 On a fresh Mac with default Gatekeeper settings (enabled since Catalina), double-clicking the DMG-extracted app shows:
 ```
-"BDE" cannot be opened because the developer cannot be verified.
-macOS cannot verify the developer of "BDE".
+"FLEET" cannot be opened because the developer cannot be verified.
+macOS cannot verify the developer of "FLEET".
 [Cancel] [Move to Trash] [OK]
 ```
 No "Open" button. Clicking [OK] just closes the dialog. The app does NOT launch.
@@ -46,10 +46,10 @@ The workaround (right-click → Open) is **not documented anywhere a user will s
 1. **Add prominent install instructions** to README's Getting Started section:
    ```markdown
    ### Install from DMG (macOS)
-   1. Download BDE-*.dmg
+   1. Download FLEET-*.dmg
    2. Double-click to mount the DMG
-   3. Drag **BDE** to the **Applications** folder
-   4. In Applications, **right-click BDE → Open** (bypass Gatekeeper)
+   3. Drag **FLEET** to the **Applications** folder
+   4. In Applications, **right-click FLEET → Open** (bypass Gatekeeper)
    5. Click "Open" in the confirmation dialog
    ```
 
@@ -68,7 +68,7 @@ The workaround (right-click → Open) is **not documented anywhere a user will s
 
 **Severity:** Medium
 **Category:** plist
-**Location:** `/release/mac-arm64/BDE.app/Contents/Info.plist` (missing keys)
+**Location:** `/release/mac-arm64/FLEET.app/Contents/Info.plist` (missing keys)
 **Evidence:**
 - Info.plist **has** `NSMicrophoneUsageDescription`, `NSCameraUsageDescription`, `NSAudioCaptureUsageDescription`, `NSBluetoothAlwaysUsageDescription`.
 - Info.plist **does NOT have** `NSDocumentsFolderUsageDescription` or `NSDownloadsFolderUsageDescription`.
@@ -90,9 +90,9 @@ On **Sonoma/Sequoia**, if the user navigates to `~/Documents` or `~/Downloads` i
 Add to Info.plist via electron-builder extraInfo or an entitlements file:
 ```xml
 <key>NSDocumentsFolderUsageDescription</key>
-<string>BDE needs access to your Documents folder to save and import task files</string>
+<string>FLEET needs access to your Documents folder to save and import task files</string>
 <key>NSDownloadsFolderUsageDescription</key>
-<string>BDE needs access to your Downloads folder to export reports and import files</string>
+<string>FLEET needs access to your Downloads folder to export reports and import files</string>
 ```
 
 **Effort:** S (plist key addition)
@@ -186,7 +186,7 @@ User runs a task that invokes `gh auth status` or similar. If Keychain access is
 Add to Info.plist:
 ```xml
 <key>NSAppleEventsUsageDescription</key>
-<string>BDE needs access to Apple Events to authenticate with GitHub and manage credentials</string>
+<string>FLEET needs access to Apple Events to authenticate with GitHub and manage credentials</string>
 ```
 
 **Effort:** S
@@ -229,23 +229,23 @@ mac:
 
 ---
 
-## F-t2-gatekeeper-6: Database and OAuth Tokens Written to ~/.bde/ Without Sandbox/Home Directory Access Documentation
+## F-t2-gatekeeper-6: Database and OAuth Tokens Written to ~/.fleet/ Without Sandbox/Home Directory Access Documentation
 
 **Severity:** Low
 **Category:** tcc
-**Location:** `/src/main/paths.ts:81, 86` (BDE_DIR, BDE_DB_PATH)
+**Location:** `/src/main/paths.ts:81, 86` (FLEET_DIR, FLEET_DB_PATH)
 **Evidence:**
 ```typescript
-export const BDE_DIR = process.env.BDE_DATA_DIR ?? join(homedir(), '.bde')
-export const BDE_DB_PATH = ... ?? join(BDE_DIR, 'bde.db')
+export const FLEET_DIR = process.env.FLEET_DATA_DIR ?? join(homedir(), '.fleet')
+export const FLEET_DB_PATH = ... ?? join(FLEET_DIR, 'fleet.db')
 ```
 
-App writes: SQLite DB, OAuth token, agent logs, memory files all to `~/.bde/`.
+App writes: SQLite DB, OAuth token, agent logs, memory files all to `~/.fleet/`.
 
-On **unsigned builds**, home directory access is unrestricted. But if the app is signed + sandboxed in future, writing to `~/.bde/` requires entitlements or the app will fail on startup.
+On **unsigned builds**, home directory access is unrestricted. But if the app is signed + sandboxed in future, writing to `~/.fleet/` requires entitlements or the app will fail on startup.
 
 **Impact (now):** None.
-**Impact (when signed with sandbox):** App will fail to create/write `~/.bde/bde.db` without explicit entitlements.
+**Impact (when signed with sandbox):** App will fail to create/write `~/.fleet/fleet.db` without explicit entitlements.
 
 **Recommendation:**
 Ensure entitlements (from F-t2-gatekeeper-3) include home directory access. Electron apps typically need:
@@ -263,7 +263,7 @@ Ensure entitlements (from F-t2-gatekeeper-3) include home directory access. Elec
 
 **Severity:** Low
 **Category:** quarantine
-**Location:** DMG file `/release/BDE-0.1.0-arm64.dmg`
+**Location:** DMG file `/release/FLEET-0.1.0-arm64.dmg`
 **Evidence:**
 When a user downloads the DMG via Safari/Chrome, the browser sets `com.apple.quarantine` on the file. When mounted, the app inside also inherits quarantine. On first launch:
 - Unsigned app + quarantine + Gatekeeper = "damaged" or "developer cannot be verified" dialog (as in F-t2-gatekeeper-1).
@@ -271,7 +271,7 @@ When a user downloads the DMG via Safari/Chrome, the browser sets `com.apple.qua
 
 **Recommendation:**
 1. **Document in install instructions** that the right-click workaround also clears quarantine.
-2. **Optional:** `xattr -dr com.apple.quarantine /Applications/BDE.app` terminal workaround for power users.
+2. **Optional:** `xattr -dr com.apple.quarantine /Applications/FLEET.app` terminal workaround for power users.
 
 **Effort:** S (docs only)
 **Confidence:** High
@@ -320,10 +320,10 @@ A user successfully opens the app via right-click but may:
 **Recommendation:**
 Add one-time welcome panel:
 ```
-Welcome to BDE
+Welcome to FLEET
 
-BDE is an unsigned app. If you saw a Gatekeeper warning on first launch,
-that's normal. Right-click the BDE app → Open to bypass this in future.
+FLEET is an unsigned app. If you saw a Gatekeeper warning on first launch,
+that's normal. Right-click the FLEET app → Open to bypass this in future.
 
 Next steps:
  [ ] Claude Code CLI installed
@@ -345,7 +345,7 @@ Next steps:
 | F-t2-gatekeeper-3: No entitlements file for shell access | High | tcc | M |
 | F-t2-gatekeeper-4: Missing NSAppleEvents plist key | Medium | plist | S |
 | F-t2-gatekeeper-5: hardenedRuntime: false | High | signing | M |
-| F-t2-gatekeeper-6: ~/.bde/ access without sandbox docs | Low | tcc | S |
+| F-t2-gatekeeper-6: ~/.fleet/ access without sandbox docs | Low | tcc | S |
 | F-t2-gatekeeper-7: Quarantine xattr inheritance | Low | quarantine | S |
 | F-t2-gatekeeper-8: No release notes mentioning workaround | Medium | docs | S |
 | F-t2-gatekeeper-9: No first-launch guidance | Medium | docs | M |

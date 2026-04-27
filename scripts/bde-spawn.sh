@@ -1,9 +1,9 @@
 #!/bin/bash
-# bde-spawn.sh — run a claude agent and register it in BDE's AgentHistoryPanel
-# Usage: bde-spawn.sh --model <model> --repo <name> --repo-path <path> --task <task prompt>
+# fleet-spawn.sh — run a claude agent and register it in FLEET's AgentHistoryPanel
+# Usage: fleet-spawn.sh --model <model> --repo <name> --repo-path <path> --task <task prompt>
 #
-# Registers the agent in ~/.bde/agents.json and tees output to
-# ~/.bde/agent-logs/<date>/<id>/output.log so BDE can stream it live.
+# Registers the agent in ~/.fleet/agents.json and tees output to
+# ~/.fleet/agent-logs/<date>/<id>/output.log so FLEET can stream it live.
 
 set -euo pipefail
 
@@ -22,11 +22,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-BDE_DIR="$HOME/.bde"
-AGENTS_INDEX="$BDE_DIR/agents.json"
+FLEET_DIR="$HOME/.fleet"
+AGENTS_INDEX="$FLEET_DIR/agents.json"
 DATE="$(date -u +%Y-%m-%d)"
 ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-LOG_DIR="$BDE_DIR/agent-logs/$DATE/$ID"
+LOG_DIR="$FLEET_DIR/agent-logs/$DATE/$ID"
 LOG_FILE="$LOG_DIR/output.log"
 META_FILE="$LOG_DIR/meta.json"
 STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
@@ -70,15 +70,15 @@ index.insert(0, meta)
 with open(index_path, "w") as f:
     json.dump(index, f, indent=2)
 
-print(f"[bde-spawn] Registered agent {agent_id}")
+print(f"[fleet-spawn] Registered agent {agent_id}")
 PYEOF
 
 # Augment PATH for claude binary
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$HOME/.nvm/versions/node/v22.22.0/bin:$PATH"
 
-echo "[bde-spawn] Starting: $ID" >> "$LOG_FILE"
+echo "[fleet-spawn] Starting: $ID" >> "$LOG_FILE"
 
-# Run claude, tee output to log file so BDE can read it
+# Run claude, tee output to log file so FLEET can read it
 # stdout+stderr both go to log
 set +e
 claude \
@@ -123,4 +123,4 @@ except Exception as e:
     print(f"warn: index update failed: {e}", file=sys.stderr)
 PYEOF
 
-echo "[bde-spawn] Done: $ID (exit=$EXIT_CODE status=$STATUS)"
+echo "[fleet-spawn] Done: $ID (exit=$EXIT_CODE status=$STATUS)"

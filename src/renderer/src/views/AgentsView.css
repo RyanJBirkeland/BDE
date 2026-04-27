@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--bde-accent-border);
+  border-bottom: 1px solid var(--fleet-accent-border);
 }
 
 .agents-view__title-wrapper {
@@ -15,7 +15,7 @@
 }
 
 .agents-view__title {
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 600;
@@ -28,13 +28,13 @@
 }
 
 .agents-view__info-icon {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   cursor: help;
   transition: color 0.2s;
 }
 
 .agents-view__info-icon:hover {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .agents-view__tooltip {
@@ -43,27 +43,27 @@
   left: 0;
   width: 240px;
   padding: 8px 10px;
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-accent-border);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent-border);
   border-radius: 6px;
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
   line-height: 1.4;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   z-index: var(--z-tooltip);
-  box-shadow: var(--bde-shadow-md);
+  box-shadow: var(--fleet-shadow-md);
 }
 
 .agents-view__tooltip-strong {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 .agents-view__spawn-btn {
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  border: 1px solid var(--bde-accent-border);
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
+  border: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,12 +72,12 @@
 }
 
 .agents-view__scratchpad-banner {
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
   line-height: 1.4;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--bde-accent-border);
-  background: var(--bde-accent-surface);
-  color: var(--bde-text-muted);
+  border-bottom: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-text-muted);
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -90,7 +90,7 @@
 .agents-view__scratchpad-banner-dismiss {
   background: transparent;
   border: none;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   cursor: pointer;
   padding: 0;
   display: flex;
@@ -101,7 +101,7 @@
 }
 
 .agents-view__scratchpad-banner-dismiss:hover {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 
 /* ── Agents View Container ── */
@@ -115,12 +115,12 @@
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
 }
 
 /* ── Agents Sidebar ── */
 .agents-sidebar {
-  border-right: 1px solid var(--bde-accent-border);
+  border-right: 1px solid var(--fleet-accent-border);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -128,8 +128,8 @@
   flex-shrink: 0;
   background: linear-gradient(
     180deg,
-    var(--bde-accent-surface),
-    var(--bde-surface-high, rgba(10, 0, 21, 0.4))
+    var(--fleet-accent-surface),
+    var(--fleet-surface-high, rgba(10, 0, 21, 0.4))
   );
   overflow-y: auto;
 }

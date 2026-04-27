@@ -2,32 +2,32 @@
 
 export type NeonAccent = 'cyan' | 'pink' | 'blue' | 'purple' | 'orange' | 'red'
 
-/** Maps a NeonAccent to its --bde-* CSS custom property */
+/** Maps a NeonAccent to its --fleet-* CSS custom property */
 const ACCENT_COLOR_MAP: Record<NeonAccent, string> = {
-  cyan: 'var(--bde-accent)',
-  pink: 'var(--bde-status-done)',
-  blue: 'var(--bde-status-review)',
-  purple: 'var(--bde-status-active)',
-  orange: 'var(--bde-warning)',
-  red: 'var(--bde-danger)'
+  cyan: 'var(--fleet-accent)',
+  pink: 'var(--fleet-status-done)',
+  blue: 'var(--fleet-status-review)',
+  purple: 'var(--fleet-status-active)',
+  orange: 'var(--fleet-warning)',
+  red: 'var(--fleet-danger)'
 }
 
 const ACCENT_SURFACE_MAP: Record<NeonAccent, string> = {
-  cyan: 'var(--bde-accent-surface)',
-  pink: 'var(--bde-accent-surface)',
-  blue: 'var(--bde-accent-surface)',
-  purple: 'var(--bde-accent-surface)',
-  orange: 'var(--bde-warning-surface)',
-  red: 'var(--bde-danger-surface)'
+  cyan: 'var(--fleet-accent-surface)',
+  pink: 'var(--fleet-accent-surface)',
+  blue: 'var(--fleet-accent-surface)',
+  purple: 'var(--fleet-accent-surface)',
+  orange: 'var(--fleet-warning-surface)',
+  red: 'var(--fleet-danger-surface)'
 }
 
 const ACCENT_BORDER_MAP: Record<NeonAccent, string> = {
-  cyan: 'var(--bde-accent-border)',
-  pink: 'var(--bde-accent-border)',
-  blue: 'var(--bde-accent-border)',
-  purple: 'var(--bde-accent-border)',
-  orange: 'var(--bde-warning-border)',
-  red: 'var(--bde-danger-border)'
+  cyan: 'var(--fleet-accent-border)',
+  pink: 'var(--fleet-accent-border)',
+  blue: 'var(--fleet-accent-border)',
+  purple: 'var(--fleet-accent-border)',
+  orange: 'var(--fleet-warning-border)',
+  red: 'var(--fleet-danger-border)'
 }
 
 /** Maps a NeonAccent name to its CSS custom property values */

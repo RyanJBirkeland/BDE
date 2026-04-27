@@ -229,7 +229,7 @@ export default function GitTreeView(): React.ReactElement {
               value={activeRepo ?? ''}
               onChange={handleRepoChange}
               aria-label="Select repository"
-              className="git-tree-view__repo-select bde-select"
+              className="git-tree-view__repo-select fleet-select"
             >
               {repoPaths.map((p) => (
                 <option key={p} value={p}>
@@ -281,7 +281,7 @@ export default function GitTreeView(): React.ReactElement {
             <RefreshCw
               size={14}
               style={{
-                animation: loading ? 'bde-spin 1s linear infinite' : 'none'
+                animation: loading ? 'fleet-spin 1s linear infinite' : 'none'
               }}
             />
           </button>
@@ -371,10 +371,10 @@ export default function GitTreeView(): React.ReactElement {
           {/* Loading skeleton */}
           {loading && staged.length === 0 && unstaged.length === 0 && untracked.length === 0 && (
             <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div className="bde-skeleton" style={{ height: 24, width: '60%' }} />
-              <div className="bde-skeleton" style={{ height: 32 }} />
-              <div className="bde-skeleton" style={{ height: 32 }} />
-              <div className="bde-skeleton" style={{ height: 32 }} />
+              <div className="fleet-skeleton" style={{ height: 24, width: '60%' }} />
+              <div className="fleet-skeleton" style={{ height: 32 }} />
+              <div className="fleet-skeleton" style={{ height: 32 }} />
+              <div className="fleet-skeleton" style={{ height: 32 }} />
             </div>
           )}
 

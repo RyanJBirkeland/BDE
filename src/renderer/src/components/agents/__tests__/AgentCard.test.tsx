@@ -19,15 +19,15 @@ function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
     pid: 123,
     bin: 'claude',
     model: 'claude-sonnet',
-    repo: 'BDE',
-    repoPath: '/tmp/bde',
+    repo: 'FLEET',
+    repoPath: '/tmp/fleet',
     task: 'Fix the login bug',
     startedAt: new Date('2024-01-01T10:00:00Z').toISOString(),
     finishedAt: null,
     exitCode: null,
     status: 'running',
     logPath: '/tmp/log',
-    source: 'bde',
+    source: 'fleet',
     costUsd: null,
     tokensIn: null,
     tokensOut: null,
@@ -92,7 +92,7 @@ describe('AgentCard', () => {
   it('applies selected style when selected=true', () => {
     const agent = makeAgent()
     const { container } = render(<AgentCard {...defaultProps} agent={agent} selected={true} />)
-    const neonCard = container.querySelector('.bde-card')
+    const neonCard = container.querySelector('.fleet-card')
     expect(neonCard).toBeInTheDocument()
     // Selected card has enhanced glow and border
     const cardStyle = (neonCard as HTMLElement)?.style
@@ -102,7 +102,7 @@ describe('AgentCard', () => {
   it('applies default style when not selected', () => {
     const agent = makeAgent()
     const { container } = render(<AgentCard {...defaultProps} agent={agent} selected={false} />)
-    const neonCard = container.querySelector('.bde-card')
+    const neonCard = container.querySelector('.fleet-card')
     expect(neonCard).toBeInTheDocument()
     // Non-selected card doesn't have enhanced styling
     const cardStyle = (neonCard as HTMLElement)?.style
@@ -149,8 +149,8 @@ describe('AgentCard', () => {
     expect(screen.getByText('2h 30m')).toBeInTheDocument()
   })
 
-  it('uses Bot icon for bde source agents', () => {
-    const agent = makeAgent({ source: 'bde' })
+  it('uses Bot icon for fleet source agents', () => {
+    const agent = makeAgent({ source: 'fleet' })
     const { container } = render(<AgentCard {...defaultProps} agent={agent} />)
     // Bot icon renders an SVG
     const svgs = container.querySelectorAll('svg')

@@ -1,10 +1,10 @@
 .edit-diff-card {
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-xs);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-xs);
   line-height: 1.5;
-  margin-top: var(--bde-space-2);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
+  margin-top: var(--fleet-space-2);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
   overflow: hidden;
   max-height: 400px;
   overflow-y: auto;
@@ -17,17 +17,17 @@
 }
 
 .edit-diff-card__row:hover {
-  background-color: var(--bde-surface-hover, rgba(255, 255, 255, 0.02));
+  background-color: var(--fleet-surface-hover, rgba(255, 255, 255, 0.02));
 }
 
 .edit-diff-card__row--add {
-  background-color: var(--bde-diff-add-bg);
-  border-left: 2px solid var(--bde-status-done, #22c55e);
+  background-color: var(--fleet-diff-add-bg);
+  border-left: 2px solid var(--fleet-status-done, #22c55e);
 }
 
 .edit-diff-card__row--del {
-  background-color: var(--bde-diff-del-bg);
-  border-left: 2px solid var(--bde-danger, #ef4444);
+  background-color: var(--fleet-diff-del-bg);
+  border-left: 2px solid var(--fleet-danger, #ef4444);
 }
 
 .edit-diff-card__row--ctx {
@@ -38,7 +38,7 @@
   display: inline-block;
   width: 40px;
   text-align: right;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   user-select: none;
   margin-right: 12px;
   flex-shrink: 0;

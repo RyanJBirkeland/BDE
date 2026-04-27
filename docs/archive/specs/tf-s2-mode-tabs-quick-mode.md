@@ -40,7 +40,7 @@ interface GeneratePromptResponse {
 }
 ```
 
-**Transport:** Main process makes HTTP POST directly to OpenClaw gateway `/tools/invoke`. Uses `sessions_send` tool with `sessionKey: 'bde-spec-gen'` (ephemeral session, NOT 'main'). This runs entirely in the main process — no round-trip through the renderer for background generation.
+**Transport:** Main process makes HTTP POST directly to OpenClaw gateway `/tools/invoke`. Uses `sessions_send` tool with `sessionKey: 'fleet-spec-gen'` (ephemeral session, NOT 'main'). This runs entirely in the main process — no round-trip through the renderer for background generation.
 
 **Gateway call shape:**
 
@@ -48,7 +48,7 @@ interface GeneratePromptResponse {
 const body = {
   tool: 'sessions_send',
   args: {
-    sessionKey: 'bde-spec-gen',
+    sessionKey: 'fleet-spec-gen',
     message: buildQuickSpecPrompt(title, repo, templateHint),
     timeoutSeconds: 45
   }
@@ -155,7 +155,7 @@ ipcMain.handle(
         },
         body: JSON.stringify({
           tool: 'sessions_send',
-          args: { sessionKey: 'bde-spec-gen', message, timeoutSeconds: 45 }
+          args: { sessionKey: 'fleet-spec-gen', message, timeoutSeconds: 45 }
         })
       })
 
@@ -313,7 +313,7 @@ Add a new Quick Mode body that shows when `mode === 'quick'`:
           value={repo}
           onChange={(e) => setRepo(e.target.value)}
         >
-          <option value="bde">BDE</option>
+          <option value="fleet">FLEET</option>
           <option value="life-os">life-os</option>
           <option value="feast">feast</option>
         </select>
@@ -476,7 +476,7 @@ Add CSS for this badge in sprint.css:
 ```css
 .task-card__spec-badge--generating {
   font-size: 10px;
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
   opacity: 0.7;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -502,7 +502,7 @@ Append to `sprint.css`:
   display: flex;
   gap: 4px;
   padding: 16px 24px 0;
-  border-bottom: 1px solid var(--bde-border);
+  border-bottom: 1px solid var(--fleet-border);
   margin-bottom: 4px;
 }
 
@@ -510,7 +510,7 @@ Append to `sprint.css`:
   padding: 8px 16px;
   border: none;
   background: transparent;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-size: 13px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
@@ -519,12 +519,12 @@ Append to `sprint.css`:
 }
 
 .new-ticket-modal__tab:hover {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .new-ticket-modal__tab--active {
-  color: var(--bde-text);
-  border-bottom-color: var(--bde-accent);
+  color: var(--fleet-text);
+  border-bottom-color: var(--fleet-accent);
 }
 
 .new-ticket-modal__quick {
@@ -535,14 +535,14 @@ Append to `sprint.css`:
 
 .new-ticket-modal__quick-hint {
   font-size: 11px;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   margin: 0;
 }
 
 .new-ticket-modal__design-placeholder {
   text-align: center;
   padding: 40px 24px;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-size: 14px;
 }
 
@@ -577,5 +577,5 @@ Append to `sprint.css`:
 ## PR Command
 
 ```bash
-git add -A && git commit -m "feat: Quick Mode ticket creation — mode tabs, background spec gen, generating badge" && git push origin HEAD && gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: Quick Mode — capture tickets in seconds, Paul writes spec in background" -f body="Adds 3-tab mode switcher to NewTicketModal. Quick Mode (default): title + repo only, task saved instantly, Paul auto-generates spec in background using title keyword detection. Template Mode: existing form. Design Mode: placeholder (coming next). Also: sprint.delete() preload gap fixed." -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
+git add -A && git commit -m "feat: Quick Mode ticket creation — mode tabs, background spec gen, generating badge" && git push origin HEAD && gh api repos/RyanJBirkeland/FLEET/pulls --method POST -f title="feat: Quick Mode — capture tickets in seconds, Paul writes spec in background" -f body="Adds 3-tab mode switcher to NewTicketModal. Quick Mode (default): title + repo only, task saved instantly, Paul auto-generates spec in background using title keyword detection. Template Mode: existing form. Design Mode: placeholder (coming next). Also: sprint.delete() preload gap fixed." -f head="\$(git branch --show-current)" -f base=main --jq ".html_url"
 ```

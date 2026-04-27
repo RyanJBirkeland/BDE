@@ -33,7 +33,7 @@ describe('validateTaskCreation', () => {
 
   it('accepts a valid backlog task with title and repo only', () => {
     const result = validateTaskCreation(
-      { title: 'Fix bug', repo: 'bde', status: 'backlog' } as any,
+      { title: 'Fix bug', repo: 'fleet', status: 'backlog' } as any,
       { logger: mockLogger, listTasks: mockListTasks, listGroups: mockListGroups }
     )
     expect(result.valid).toBe(true)
@@ -41,7 +41,7 @@ describe('validateTaskCreation', () => {
   })
 
   it('rejects task with empty title', () => {
-    const result = validateTaskCreation({ title: '', repo: 'bde', status: 'backlog' } as any, {
+    const result = validateTaskCreation({ title: '', repo: 'fleet', status: 'backlog' } as any, {
       logger: mockLogger,
       listTasks: mockListTasks
     })
@@ -59,7 +59,7 @@ describe('validateTaskCreation', () => {
   })
 
   it('rejects queued task without spec', () => {
-    const result = validateTaskCreation({ title: 'Fix', repo: 'bde', status: 'queued' } as any, {
+    const result = validateTaskCreation({ title: 'Fix', repo: 'fleet', status: 'queued' } as any, {
       logger: mockLogger,
       listTasks: mockListTasks
     })
@@ -68,7 +68,7 @@ describe('validateTaskCreation', () => {
   })
 
   it('returns the original task when no blocking needed', () => {
-    const input = { title: 'Fix', repo: 'bde', status: 'backlog' }
+    const input = { title: 'Fix', repo: 'fleet', status: 'backlog' }
     const result = validateTaskCreation(input as any, {
       logger: mockLogger,
       listTasks: mockListTasks
@@ -85,7 +85,7 @@ describe('validateTaskCreation', () => {
     const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const input = {
       title: 'Fix',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'queued',
       spec: validSpec,
       depends_on: [{ id: 'dep-1', type: 'hard' }]
@@ -109,7 +109,7 @@ describe('validateTaskCreation', () => {
     const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const input = {
       title: 'Fix',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'queued',
       spec: validSpec,
       depends_on: [{ id: 'dep-1', type: 'hard' }]
@@ -126,7 +126,7 @@ describe('validateTaskCreation', () => {
   it('skips dependency check for backlog tasks', () => {
     const input = {
       title: 'Fix',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog',
       depends_on: [{ id: 'dep-1', type: 'hard' }]
     }
@@ -149,7 +149,7 @@ describe('validateTaskCreation', () => {
     const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
     const input = {
       title: 'Fix',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'queued',
       spec: validSpec,
       depends_on: [{ id: 'dep-1', type: 'hard' }]

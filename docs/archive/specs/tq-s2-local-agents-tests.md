@@ -11,7 +11,7 @@
 
 ## Problem
 
-`src/main/local-agents.ts` (316 LOC) is the highest-risk untested file in BDE. It:
+`src/main/local-agents.ts` (316 LOC) is the highest-risk untested file in FLEET. It:
 
 1. **Spawns child processes** (`spawn('claude', [...])` with `detached: true`) that outlive the parent
 2. **Parses raw `ps` output** to detect running agent binaries (claude, codex, aider, etc.)
@@ -31,7 +31,7 @@ A bug in any of these paths could cause zombie processes, lost agent output, cor
 | `spawnClaudeAgent(args)`    | 186-251 | High   | Spawns detached child process, pipes stdout/stderr to log file      |
 | `sendToAgent(pid, message)` | 255-266 | Medium | Writes JSON message to child process stdin                          |
 | `tailAgentLog(args)`        | 280-289 | Medium | Reads log file from byte offset                                     |
-| `cleanupOldLogs()`          | 293-309 | Medium | Deletes .log files older than 7 days from /tmp/bde-agents           |
+| `cleanupOldLogs()`          | 293-309 | Medium | Deletes .log files older than 7 days from /tmp/fleet-agents           |
 | `isAgentInteractive(pid)`   | 313-316 | Low    | Checks if PID has active stdin handle                               |
 
 ### Internal Functions (3)
@@ -152,7 +152,7 @@ vi.mock('../agent-history', () => ({
 ✓ deletes .log files older than 7 days
 ✓ preserves .log files newer than 7 days
 ✓ ignores non-.log files
-✓ does not throw when /tmp/bde-agents directory doesn't exist
+✓ does not throw when /tmp/fleet-agents directory doesn't exist
 ```
 
 #### isAgentInteractive

@@ -1,6 +1,6 @@
 ## Context
 
-BDE runs SQLite in WAL mode on the Electron main thread. `withRetry` (sync) backs off on `SQLITE_BUSY` via `Atomics.wait`, which blocks the OS thread — including Electron's main-thread event loop — for the full backoff duration (up to ~5 s under heavy contention). `withRetryAsync` (already in `sqlite-retry.ts`) performs identical retry logic but yields between attempts via `setTimeout`, so the event loop keeps spinning.
+FLEET runs SQLite in WAL mode on the Electron main thread. `withRetry` (sync) backs off on `SQLITE_BUSY` via `Atomics.wait`, which blocks the OS thread — including Electron's main-thread event loop — for the full backoff duration (up to ~5 s under heavy contention). `withRetryAsync` (already in `sqlite-retry.ts`) performs identical retry logic but yields between attempts via `setTimeout`, so the event loop keeps spinning.
 
 The three hot-path data modules all import `withRetry`:
 

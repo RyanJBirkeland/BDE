@@ -30,7 +30,7 @@ const TASK_1: SprintTask = {
   id: 'task-1',
   title: 'Test Task 1',
   status: 'review',
-  repo: 'bde',
+  repo: 'fleet',
   spec: 'Test spec',
   spec_type: 'spec',
   updated_at: '2026-04-11T00:00:00Z',

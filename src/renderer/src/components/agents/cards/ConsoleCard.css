@@ -1,26 +1,26 @@
 /* ── Console Card Base ── */
 .console-card {
-  padding: var(--bde-space-3);
-  margin-bottom: var(--bde-space-3);
-  border-radius: var(--bde-radius-md);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-code);
+  padding: var(--fleet-space-3);
+  margin-bottom: var(--fleet-space-3);
+  border-radius: var(--fleet-radius-md);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-code);
   line-height: 1.5;
   transition: all 100ms ease;
 }
 
 .console-card:hover {
-  box-shadow: 0 0 12px var(--bde-accent-glow, rgba(0, 255, 255, 0.1));
-  border: 1px solid var(--bde-accent-border, var(--bde-border));
+  box-shadow: 0 0 12px var(--fleet-accent-glow, rgba(0, 255, 255, 0.1));
+  border: 1px solid var(--fleet-accent-border, var(--fleet-border));
 }
 
 /* ── Card Header ── */
 .console-card__header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-dim);
+  gap: var(--fleet-space-2);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-dim);
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -42,14 +42,14 @@
 }
 
 .console-tool-group__count {
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-2xs);
-  font-family: var(--bde-font-code);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-2xs);
+  font-family: var(--fleet-font-code);
 }
 
 /* ── Card Content ── */
 .console-card__content {
-  margin-top: var(--bde-space-2);
+  margin-top: var(--fleet-space-2);
 }
 
 /* ── Per-Type Accent Styles ── */
@@ -58,8 +58,8 @@
 .console-card--user {
   max-width: 70%;
   margin-left: auto;
-  background: var(--bde-accent-surface, rgba(0, 255, 255, 0.05));
-  border-left: 3px solid var(--bde-accent);
+  background: var(--fleet-accent-surface, rgba(0, 255, 255, 0.05));
+  border-left: 3px solid var(--fleet-accent);
 }
 
 .console-card--user.console-card--pending {
@@ -68,47 +68,47 @@
 
 /* Text: agent response */
 .console-card--text {
-  background: var(--bde-surface);
-  border-left: 3px solid var(--bde-accent);
+  background: var(--fleet-surface);
+  border-left: 3px solid var(--fleet-accent);
 }
 
 /* Reasoning: thinking/reasoning block */
 .console-card--reasoning {
-  background: var(--bde-surface);
-  border-left: 3px solid var(--bde-status-active, #a78bfa);
+  background: var(--fleet-surface);
+  border-left: 3px solid var(--fleet-status-active, #a78bfa);
 }
 
 .console-card--reasoning .console-card__preview {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   font-style: italic;
-  margin-top: var(--bde-space-2);
+  margin-top: var(--fleet-space-2);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 /* Error: full-width red border */
 .console-card--error {
-  background: var(--bde-danger-surface);
-  border-left: 3px solid var(--bde-danger);
+  background: var(--fleet-danger-surface);
+  border-left: 3px solid var(--fleet-danger);
 }
 
 /* Stderr: yellow border, smaller text */
 .console-card--stderr {
-  background: var(--bde-surface);
-  border-left: 3px solid var(--bde-warning);
-  font-size: var(--bde-size-xs);
+  background: var(--fleet-surface);
+  border-left: 3px solid var(--fleet-warning);
+  font-size: var(--fleet-size-xs);
 }
 
 /* Rate limited: yellow/orange accent */
 .console-card--rate {
-  background: var(--bde-surface);
-  border-left: 3px solid var(--bde-warning);
+  background: var(--fleet-surface);
+  border-left: 3px solid var(--fleet-warning);
 }
 
 /* Started: small one-line dim card */
 .console-card--started {
-  background: var(--bde-surface);
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-xs);
-  padding: var(--bde-space-2) var(--bde-space-3);
+  background: var(--fleet-surface);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-xs);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
 }

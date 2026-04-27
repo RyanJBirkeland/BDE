@@ -89,7 +89,7 @@ vi.mock('../../components/neon', () => ({
 // Mock window.api
 Object.defineProperty(window, 'api', {
   value: {
-    getRepoPaths: vi.fn().mockResolvedValue({ BDE: '/repo/bde' }),
+    getRepoPaths: vi.fn().mockResolvedValue({ FLEET: '/repo/fleet' }),
     spawnLocalAgent: vi.fn().mockResolvedValue({ pid: 1, logPath: '/tmp/log', id: 'agent-1' }),
     steerAgent: vi.fn().mockResolvedValue({ ok: true }),
     killAgent: vi.fn().mockResolvedValue(undefined),
@@ -187,14 +187,14 @@ describe('AgentsView', () => {
     expect(mockAgentHistoryState.fetchAgents).toHaveBeenCalled()
   })
 
-  // ---------- Branch coverage: bde:open-spawn-modal event ----------
+  // ---------- Branch coverage: fleet:open-spawn-modal event ----------
 
-  it('opens launchpad when bde:open-spawn-modal event fires', () => {
+  it('opens launchpad when fleet:open-spawn-modal event fires', () => {
     mockAgentHistoryState.agents = [{ id: 'agent-1', startedAt: nowIso(), status: 'complete' }]
     render(<AgentsView />)
     expect(screen.getByTestId('agent-console')).toBeInTheDocument()
     act(() => {
-      window.dispatchEvent(new Event('bde:open-spawn-modal'))
+      window.dispatchEvent(new Event('fleet:open-spawn-modal'))
     })
     expect(screen.getByTestId('agent-launchpad')).toBeInTheDocument()
   })

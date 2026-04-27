@@ -1,4 +1,4 @@
-# React Performance Audit — BDE
+# React Performance Audit — FLEET
 
 > **Status: MOSTLY ADDRESSED (2026-03-16)**
 > The following issues from this audit have been fixed:
@@ -19,7 +19,7 @@
 
 ## Executive Summary
 
-BDE has **23 material performance issues** across 5 categories. The three highest-impact problems are:
+FLEET has **23 material performance issues** across 5 categories. The three highest-impact problems are:
 
 1. **TerminalView destructures the entire terminal store** — every tab keystroke re-renders the entire view
 2. **ChatThread renders all messages without virtualization** — sessions with 100+ messages create hundreds of DOM nodes

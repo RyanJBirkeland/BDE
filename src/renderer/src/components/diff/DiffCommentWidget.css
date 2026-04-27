@@ -1,106 +1,106 @@
 .diff-comment-widget {
   margin: 0 0 0 96px;
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  background: var(--bde-bg);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  background: var(--fleet-bg);
   overflow: hidden;
 }
 .diff-comment-widget__toggle {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: var(--bde-space-1) 10px;
+  padding: var(--fleet-space-1) 10px;
   width: 100%;
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   font-family: inherit;
-  color: var(--bde-text-muted);
-  background: var(--bde-surface);
+  color: var(--fleet-text-muted);
+  background: var(--fleet-surface);
   border: none;
   cursor: pointer;
-  transition: background var(--bde-transition-fast);
+  transition: background var(--fleet-transition-fast);
 }
 .diff-comment-widget__toggle:hover {
-  background: var(--bde-surface-high);
+  background: var(--fleet-surface-high);
 }
 .diff-comment-widget__thread {
   display: flex;
   flex-direction: column;
 }
 .diff-comment-widget__comment {
-  padding: var(--bde-space-2) var(--bde-space-3);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-1);
-  border-top: 1px solid var(--bde-border);
+  gap: var(--fleet-space-1);
+  border-top: 1px solid var(--fleet-border);
 }
 .diff-comment-widget__header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  font-size: var(--bde-size-xs);
+  gap: var(--fleet-space-2);
+  font-size: var(--fleet-size-xs);
 }
 .diff-comment-widget__author {
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .diff-comment-widget__time {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   margin-left: auto;
 }
 .diff-comment-widget__body {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text);
   line-height: 1.5;
 }
 .diff-comment-widget__body p {
   margin: 2px 0;
 }
 .diff-comment-widget__body code {
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-xs);
-  background: var(--bde-surface);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-xs);
+  background: var(--fleet-surface);
   padding: 1px 3px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
 }
 .diff-comment-widget__pending-badge {
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
   font-weight: 600;
-  color: var(--bde-warning);
-  background: color-mix(in srgb, var(--bde-warning) 15%, transparent);
+  color: var(--fleet-warning);
+  background: color-mix(in srgb, var(--fleet-warning) 15%, transparent);
   padding: 0 6px;
-  border-radius: var(--bde-radius-full);
+  border-radius: var(--fleet-radius-full);
   margin-left: auto;
 }
 .diff-comment-widget {
-  border: 1px solid var(--bde-accent-border);
-  background: var(--bde-bg);
+  border: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-bg);
 }
 .diff-comment-widget__toggle {
-  color: var(--bde-text-muted);
-  background: var(--bde-accent-surface);
+  color: var(--fleet-text-muted);
+  background: var(--fleet-accent-surface);
 }
 .diff-comment-widget__toggle:hover {
-  background: var(--bde-surface);
+  background: var(--fleet-surface);
 }
 .diff-comment-widget__comment {
-  border-top: 1px solid var(--bde-accent-border);
+  border-top: 1px solid var(--fleet-accent-border);
 }
 .diff-comment-widget__author {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .diff-comment-widget__time {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 .diff-comment-widget__body {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .diff-comment-widget__body code {
-  background: var(--bde-accent-surface);
+  background: var(--fleet-accent-surface);
 }
 .diff-comment-widget--pending {
-  border-color: var(--bde-warning);
+  border-color: var(--fleet-warning);
 }
 .diff-comment-widget__pending-badge {
-  color: var(--bde-warning);
-  background: var(--bde-warning-surface);
+  color: var(--fleet-warning);
+  background: var(--fleet-warning-surface);
 }

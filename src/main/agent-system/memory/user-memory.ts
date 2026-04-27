@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from 'fs'
 import { join } from 'path'
-import { BDE_MEMORY_DIR } from '../../paths'
+import { FLEET_MEMORY_DIR } from '../../paths'
 import { getSettingJson, setSettingJson } from '../../settings'
 
 const SETTING_KEY = 'memory.activeFiles'
@@ -26,7 +26,7 @@ export interface UserMemoryResult {
  *
  * Active files are tracked in the `memory.activeFiles` setting as a
  * `Record<string, boolean>` where keys are relative paths within
- * `~/.bde/memory/`.
+ * `~/.fleet/memory/`.
  *
  * Missing files are pruned from the setting automatically.
  *
@@ -47,7 +47,7 @@ export function getUserMemory(): UserMemoryResult {
   for (const [relativePath, active] of Object.entries(activeFiles)) {
     if (!active) continue
 
-    const fullPath = join(BDE_MEMORY_DIR, relativePath)
+    const fullPath = join(FLEET_MEMORY_DIR, relativePath)
     if (!existsSync(fullPath)) {
       pruned = true
       continue

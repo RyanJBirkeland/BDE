@@ -1,18 +1,18 @@
-# BDE Terminal Redesign — Implementation Spec
+# FLEET Terminal Redesign — Implementation Spec
 
 > **Status: SHIPPED (verified 2026-04-21).** Terminal UI is now split across `src/renderer/src/components/terminal/` (`TerminalTabBar`, `TerminalPane`, `TerminalContent`, `FindBar`) and the IDE `TerminalPanel`. Retained for historical reference.
 
-**Project:** bde  
+**Project:** fleet  
 **Branch:** `feat/terminal-redesign`  
 **Status (historical):** Ready to build  
 **Date:** 2026-03-15  
-**Sources:** bde-terminal-ux-spec.md + bde-terminal-product-spec.md
+**Sources:** fleet-terminal-ux-spec.md + fleet-terminal-product-spec.md
 
 ---
 
 ## The Point
 
-BDE's terminal isn't a generic xterm embed — it's an **execution monitor for AI agents**. Every command an agent runs should be visible, navigable, and actionable. The human is the orchestrator. The terminal is where agent intent meets machine execution.
+FLEET's terminal isn't a generic xterm embed — it's an **execution monitor for AI agents**. Every command an agent runs should be visible, navigable, and actionable. The human is the orchestrator. The terminal is where agent intent meets machine execution.
 
 Current state: functional prototype. Missing table-stakes features (search, keyboard shortcuts, split panes) and the agent-aware layer entirely.
 
@@ -39,18 +39,18 @@ Current state: functional prototype. Missing table-stakes features (search, keyb
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │ Tab Bar (36px)                                               [+ ▾]  │
-│ [🟢 zsh ~/BDE ×] [  node ~/feast ×] [⚪ exited ×] [🔵 feat/auth →] │
+│ [🟢 zsh ~/FLEET ×] [  node ~/feast ×] [⚪ exited ×] [🔵 feat/auth →] │
 ├─────────────────────────────────────────────────────────────────────┤
 │ Toolbar (32px, compact — full actions on hover)                     │
 │                             [⌕] [⊞ Split ▾] [Clear] [Copy] [Kill] │
 ├──────────────────────────────────┬──────────────────────────────────┤
 │  Terminal Pane A                 │  Terminal Pane B (if split)      │
 │                                  │                                  │
-│  $ npm run dev                   │  $ tail -f /tmp/bde-agents/*.log │
+│  $ npm run dev                   │  $ tail -f /tmp/fleet-agents/*.log │
 │  ▋                               │  ▋                               │
 │                                  │                                  │
 ├──────────────────────────────────┴──────────────────────────────────┤
-│ Pane Status Bar (24px): zsh • ~/BDE • 80×24                        │
+│ Pane Status Bar (24px): zsh • ~/FLEET • 80×24                        │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 

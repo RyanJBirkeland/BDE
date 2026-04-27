@@ -10,13 +10,13 @@
 
 **Related docs:**
 - Design spec: `docs/superpowers/specs/2026-04-22-adhoc-auto-promote-code-review-design.md`
-- BDE conventions: `CLAUDE.md`, `docs/BDE_FEATURES.md`
+- FLEET conventions: `CLAUDE.md`, `docs/FLEET_FEATURES.md`
 
 ---
 
 ## Ground rules
 
-- Work in this worktree: `~/worktrees/BDE/chore-spec-adhoc-auto-promote-review`. The branch is `chore/spec-adhoc-auto-promote-review`. Do NOT switch branches, do NOT touch `~/projects/BDE` directly.
+- Work in this worktree: `~/worktrees/FLEET/chore-spec-adhoc-auto-promote-review`. The branch is `chore/spec-adhoc-auto-promote-review`. Do NOT switch branches, do NOT touch `~/projects/FLEET` directly.
 - TDD: red → green → refactor → commit. One logical change per commit.
 - Before EVERY commit: `npm run typecheck` zero errors, `npm test` all pass, `npm run lint` zero errors (warnings OK). Plus update `docs/modules/` per the table in CLAUDE.md.
 - Use `safeHandle()` for all new IPC handlers. Pass `parseArgs` validators on channels that accept user-controlled JSON.
@@ -30,7 +30,7 @@
 
 **Why first:** If the installed `@anthropic-ai/claude-agent-sdk` version doesn't support in-process MCP servers at the `query()` call used by `adhoc-agent.ts`, Trigger 3 (the `promote_to_review` agent tool) is descoped per §Dependencies of the spec. Tasks 2–16 ship without it. We need to know up front.
 
-**Task 1 outcome (2026-04-22):** SDK SUPPORTS: proceed with Task 17. Version: 0.2.81. `mcpServers` is declared on the `Options` type at `node_modules/@anthropic-ai/claude-agent-sdk/sdk.d.ts:1020` as `mcpServers?: Record<string, McpServerConfig>`, and `McpServerConfig` (sdk.d.ts:607) includes the in-process variant `McpSdkServerConfigWithInstance` (sdk.d.ts:600) — i.e. in-process (not just HTTP/stdio) servers are first-class. In-process server factory: `createSdkMcpServer` (exported at `sdk.d.ts:324`). The call site in `src/main/adhoc-agent.ts` is `sdk.query({ prompt, options })` at `src/main/adhoc-agent.ts:293`, where `options` is built from `baseOptions` (defined at `src/main/adhoc-agent.ts:155`) which already passes `mcpServers: { bde: plannerServer }` (line 164) — confirming both that the `Options` object accepts `mcpServers` and that the adhoc path is already wired for in-process MCP servers. Task 17 can register the `promote_to_review` tool under the same `mcpServers` field, either by adding a second server or by extending `plannerServer`.
+**Task 1 outcome (2026-04-22):** SDK SUPPORTS: proceed with Task 17. Version: 0.2.81. `mcpServers` is declared on the `Options` type at `node_modules/@anthropic-ai/claude-agent-sdk/sdk.d.ts:1020` as `mcpServers?: Record<string, McpServerConfig>`, and `McpServerConfig` (sdk.d.ts:607) includes the in-process variant `McpSdkServerConfigWithInstance` (sdk.d.ts:600) — i.e. in-process (not just HTTP/stdio) servers are first-class. In-process server factory: `createSdkMcpServer` (exported at `sdk.d.ts:324`). The call site in `src/main/adhoc-agent.ts` is `sdk.query({ prompt, options })` at `src/main/adhoc-agent.ts:293`, where `options` is built from `baseOptions` (defined at `src/main/adhoc-agent.ts:155`) which already passes `mcpServers: { fleet: plannerServer }` (line 164) — confirming both that the `Options` object accepts `mcpServers` and that the adhoc path is already wired for in-process MCP servers. Task 17 can register the `promote_to_review` tool under the same `mcpServers` field, either by adding a second server or by extending `plannerServer`.
 
 **Files:**
 - Read: `package.json` (root)
@@ -58,7 +58,7 @@ No code changes beyond that annotation.
 - [ ] **Step 2: Run the test — expect FAIL** with `no such column: promoted_to_review_at`:
 
 ```bash
-cd ~/worktrees/BDE/chore-spec-adhoc-auto-promote-review
+cd ~/worktrees/FLEET/chore-spec-adhoc-auto-promote-review
 npx vitest run src/main/migrations/__tests__/v053.test.ts
 ```
 

@@ -9,7 +9,7 @@
 
 ## Problem
 
-`TerminalView.tsx` is the only view in BDE that uses **inline styles and JS token objects** instead of CSS classes. This creates three problems:
+`TerminalView.tsx` is the only view in FLEET that uses **inline styles and JS token objects** instead of CSS classes. This creates three problems:
 
 1. **Visual disconnection**: No glass morphism, no gradients, different color feel from the rest of the app
 2. **Dual styling system**: Uses `tokens.ts` (JS) while everything else uses CSS custom properties

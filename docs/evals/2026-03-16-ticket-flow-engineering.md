@@ -222,7 +222,7 @@ interface GeneratePromptResult {
 - Main process handler receives the request
 - Reads gateway config, POSTs to `/tools/invoke` with tool `sessions_send`
 - System prompt includes: title, repo, detected template structure (from heuristic), instruction to output spec markdown
-- Uses a **dedicated ephemeral message** (not `sessionKey: 'main'`) — sends with `sessionKey: 'bde-spec-gen'` or uses `sessions_spawn` with `mode: 'run'` to avoid polluting the main session
+- Uses a **dedicated ephemeral message** (not `sessionKey: 'main'`) — sends with `sessionKey: 'fleet-spec-gen'` or uses `sessions_spawn` with `mode: 'run'` to avoid polluting the main session
 - Returns the generated spec text
 - On failure, returns `{ taskId, spec: '', prompt: title }` — the task remains with `prompt = title`, no data loss
 
@@ -410,7 +410,7 @@ const sendDesignMessage = async (userText: string) => {
 
   try {
     const result = await window.api.invokeTool('sessions_send', {
-      sessionKey: 'bde-design-mode', // dedicated session, not 'main'
+      sessionKey: 'fleet-design-mode', // dedicated session, not 'main'
       message: fullMessage,
       timeoutSeconds: 30
     })
@@ -431,7 +431,7 @@ const sendDesignMessage = async (userText: string) => {
 
 `sessions_send` is the existing one-shot IPC path used by both NewTicketModal and SpecDrawer today. It requires no new infrastructure. The WebSocket `chat.send` path is used by `MessageInput` for live streaming in SessionsView, but Design Mode doesn't need streaming for v1 — the responses are short (2-3 paragraphs). If streaming is desired later, we can switch to `chat.send` via `GatewayClient`.
 
-**Dedicated session key:** Using `sessionKey: 'bde-design-mode'` instead of `'main'` prevents polluting the main agent conversation. The gateway treats this as a separate ephemeral session. If the session doesn't exist, the gateway creates it on first message.
+**Dedicated session key:** Using `sessionKey: 'fleet-design-mode'` instead of `'main'` prevents polluting the main agent conversation. The gateway treats this as a separate ephemeral session. If the session doesn't exist, the gateway creates it on first message.
 
 #### Spec Extraction
 
@@ -472,7 +472,7 @@ Not recommended for v1. Adds complexity without clear benefit. The fenced block 
 
 ```typescript
 function buildDesignSystemPrompt(repo: string): string {
-  return `You are Paul, a senior product engineer helping design a coding task for BDE (Birkeland Development Environment).
+  return `You are Paul, a senior product engineer helping design a coding task for FLEET (Agentic Development Environment).
 
 Your job: understand what the user wants to build, ask 2-3 clarifying questions, then propose a spec. Be concise.
 
@@ -546,7 +546,7 @@ onClose()
 | ----------------------- | ----------------------------- | ---------------------------------------- | -------------------------- | ----------------------------------------- |
 | `sprint:generatePrompt` | `src/main/handlers/sprint.ts` | `{ taskId, title, repo, templateHint? }` | `{ taskId, spec, prompt }` | Background spec generation for Quick Mode |
 
-Implementation: The handler calls the gateway `/tools/invoke` endpoint directly from the main process (same pattern as `gateway:invoke`), using `sessions_send` with `sessionKey: 'bde-spec-gen'`. This avoids round-tripping through the renderer for background generation.
+Implementation: The handler calls the gateway `/tools/invoke` endpoint directly from the main process (same pattern as `gateway:invoke`), using `sessions_send` with `sessionKey: 'fleet-spec-gen'`. This avoids round-tripping through the renderer for background generation.
 
 ### 4.2 New Preload Exposures
 
@@ -723,7 +723,7 @@ The `TEMPLATES` const stays in `NewTicketModal.tsx` — it's only used there and
 | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | **Local state, not Zustand** for mode + conversation               | Matches existing sprint architecture (all local state). Avoids premature abstraction.                                        | Zustand sprint store — deferred to future PR.                                 |
 | **`sessions_send` for Design Mode AI** (not WebSocket `chat.send`) | Zero new infrastructure. One-shot is sufficient for 2-3 paragraph responses.                                                 | `chat.send` via GatewayClient — needed only if streaming is required.         |
-| **Dedicated session keys** (`bde-spec-gen`, `bde-design-mode`)     | Prevents polluting main agent session history. Gateway creates sessions lazily.                                              | Reuse `main` session — rejected due to history pollution.                     |
+| **Dedicated session keys** (`fleet-spec-gen`, `fleet-design-mode`)     | Prevents polluting main agent session history. Gateway creates sessions lazily.                                              | Reuse `main` session — rejected due to history pollution.                     |
 | **`sprint:generatePrompt` in main process**                        | Background generation should not depend on the renderer staying open. Main process can complete the HTTP call independently. | Renderer-side `invokeTool` — works but ties generation to renderer lifecycle. |
 | **Fenced block spec extraction** (not structured JSON)             | Simpler, more robust with current LLM output. JSON parsing from LLM output is fragile.                                       | Structured JSON with schema — over-engineered for v1.                         |
 | **Single new component file** (`DesignModeContent.tsx`)            | Under 300 LOC estimate. Split only if it grows.                                                                              | Separate files for chat/preview — premature decomposition.                    |

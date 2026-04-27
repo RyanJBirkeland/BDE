@@ -45,14 +45,14 @@ export function PlaygroundCard({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 'var(--bde-space-3)',
+        gap: 'var(--fleet-space-3)',
         width: '100%',
         maxWidth: '500px',
-        padding: 'var(--bde-space-3)',
-        borderRadius: 'var(--bde-radius-md)',
+        padding: 'var(--fleet-space-3)',
+        borderRadius: 'var(--fleet-radius-md)',
         cursor: 'pointer',
-        transition: 'var(--bde-transition-fast)',
-        fontFamily: 'var(--bde-font-ui)',
+        transition: 'var(--fleet-transition-fast)',
+        fontFamily: 'var(--fleet-font-ui)',
         textAlign: 'left'
       }}
     >
@@ -65,7 +65,7 @@ export function PlaygroundCard({
           justifyContent: 'center',
           width: '40px',
           height: '40px',
-          borderRadius: 'var(--bde-radius-sm)',
+          borderRadius: 'var(--fleet-radius-sm)',
           flexShrink: 0
         }}
       >
@@ -78,15 +78,15 @@ export function PlaygroundCard({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--bde-space-2)',
+            gap: 'var(--fleet-space-2)',
             overflow: 'hidden'
           }}
         >
           <div
             className="playground-card__filename"
             style={{
-              fontFamily: 'var(--bde-font-code)',
-              fontSize: 'var(--bde-size-sm)',
+              fontFamily: 'var(--fleet-font-code)',
+              fontSize: 'var(--fleet-size-sm)',
               fontWeight: 500,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -98,7 +98,7 @@ export function PlaygroundCard({
           <span
             className="playground-card__content-type-badge"
             style={{
-              fontSize: 'var(--bde-size-xs)',
+              fontSize: 'var(--fleet-size-xs)',
               flexShrink: 0
             }}
           >
@@ -108,8 +108,8 @@ export function PlaygroundCard({
         <div
           className="playground-card__filesize"
           style={{
-            fontSize: 'var(--bde-size-xs)',
-            marginTop: 'var(--bde-space-1)'
+            fontSize: 'var(--fleet-size-xs)',
+            marginTop: 'var(--fleet-space-1)'
           }}
         >
           {formatFileSize(sizeBytes)}
@@ -122,10 +122,10 @@ export function PlaygroundCard({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 'var(--bde-space-1)',
-          padding: `${'var(--bde-space-1)'} ${'var(--bde-space-2)'}`,
-          borderRadius: 'var(--bde-radius-sm)',
-          fontSize: 'var(--bde-size-xs)',
+          gap: 'var(--fleet-space-1)',
+          padding: `${'var(--fleet-space-1)'} ${'var(--fleet-space-2)'}`,
+          borderRadius: 'var(--fleet-radius-sm)',
+          fontSize: 'var(--fleet-size-xs)',
           flexShrink: 0
         }}
       >

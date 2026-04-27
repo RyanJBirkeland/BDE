@@ -42,12 +42,12 @@ export function AgentOutputTab({
       <div className="terminal-agent-tab">
         <div
           style={{
-            padding: 'var(--bde-space-4)',
-            color: 'var(--bde-text-dim)',
-            fontFamily: 'var(--bde-font-ui)',
-            fontSize: 'var(--bde-size-md)',
+            padding: 'var(--fleet-space-4)',
+            color: 'var(--fleet-text-dim)',
+            fontFamily: 'var(--fleet-font-ui)',
+            fontSize: 'var(--fleet-size-md)',
             textAlign: 'center',
-            marginTop: 'var(--bde-space-8)'
+            marginTop: 'var(--fleet-space-8)'
           }}
         >
           Waiting for agent output…
@@ -62,10 +62,10 @@ export function AgentOutputTab({
       <div className="terminal-agent-tab">
         <div
           style={{
-            padding: 'var(--bde-space-3)',
-            fontFamily: 'var(--bde-font-code)',
-            fontSize: 'var(--bde-size-md)',
-            color: 'var(--bde-text)',
+            padding: 'var(--fleet-space-3)',
+            fontFamily: 'var(--fleet-font-code)',
+            fontSize: 'var(--fleet-size-md)',
+            color: 'var(--fleet-text)',
             whiteSpace: 'pre-wrap',
             lineHeight: 1.5
           }}
@@ -74,9 +74,9 @@ export function AgentOutputTab({
             <div
               key={i}
               style={{
-                borderBottom: `1px solid ${'var(--bde-border)'}`,
-                paddingBottom: 'var(--bde-space-2)',
-                marginBottom: 'var(--bde-space-2)'
+                borderBottom: `1px solid ${'var(--fleet-border)'}`,
+                paddingBottom: 'var(--fleet-space-2)',
+                marginBottom: 'var(--fleet-space-2)'
               }}
             >
               {chunk}
@@ -92,12 +92,12 @@ export function AgentOutputTab({
     <div className="terminal-agent-tab">
       <div
         style={{
-          padding: 'var(--bde-space-4)',
-          color: 'var(--bde-text-dim)',
-          fontFamily: 'var(--bde-font-ui)',
-          fontSize: 'var(--bde-size-md)',
+          padding: 'var(--fleet-space-4)',
+          color: 'var(--fleet-text-dim)',
+          fontFamily: 'var(--fleet-font-ui)',
+          fontSize: 'var(--fleet-size-md)',
           textAlign: 'center',
-          marginTop: 'var(--bde-space-8)'
+          marginTop: 'var(--fleet-space-8)'
         }}
       >
         Waiting for agent output…

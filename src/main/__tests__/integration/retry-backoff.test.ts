@@ -83,7 +83,7 @@ function insertTask(
   ).run(
     id,
     'Test task',
-    'bde',
+    'fleet',
     'Test prompt',
     overrides.status ?? 'queued',
     overrides.claimed_by ?? null,
@@ -137,7 +137,7 @@ describe('retry backoff: getQueuedTasks filtering', () => {
   })
 
   it('only returns unclaimed queued tasks (pre-existing behavior)', () => {
-    insertTask({ claimed_by: 'bde-embedded' })
+    insertTask({ claimed_by: 'fleet-embedded' })
     expect(getQueuedTasks(10)).toHaveLength(0)
   })
 

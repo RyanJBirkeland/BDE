@@ -1,31 +1,31 @@
 /* ── Task Row (Compact View) ── */
 .task-row {
-  background: var(--bde-border);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
-  padding: var(--bde-space-1) 10px;
+  background: var(--fleet-border);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
+  padding: var(--fleet-space-1) 10px;
   cursor: pointer;
   transition: all 150ms ease;
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   max-width: 300px;
   margin-bottom: 2px;
 }
 
 .task-row:hover {
-  background: var(--bde-surface);
-  border-color: var(--bde-border-hover);
+  background: var(--fleet-surface);
+  border-color: var(--fleet-border-hover);
 }
 
 .task-row:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .task-row--selected {
-  border-color: var(--bde-accent-border);
-  background: var(--bde-accent-surface);
+  border-color: var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
 }
 
 .task-row__dot {
@@ -37,7 +37,7 @@
 
 .task-row__title {
   font-size: var(--font-xs, 11px);
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -47,39 +47,39 @@
 
 .task-row__repo {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-accent);
-  background: var(--bde-accent-surface);
+  color: var(--fleet-accent);
+  background: var(--fleet-accent-surface);
   padding: 1px 5px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   flex-shrink: 0;
   font-weight: 600;
 }
 
 .task-row__time {
   font-size: var(--font-2xs, 10px);
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   flex-shrink: 0;
 }
 
 .task-row__priority {
   font-size: var(--font-2xs, 10px);
-  padding: 1px var(--bde-space-1);
-  border-radius: var(--bde-radius-sm);
+  padding: 1px var(--fleet-space-1);
+  border-radius: var(--fleet-radius-sm);
   flex-shrink: 0;
   font-weight: 600;
 }
 
 .task-row__priority[data-priority='1'] {
-  color: var(--bde-danger);
-  background: var(--bde-danger-surface);
+  color: var(--fleet-danger);
+  background: var(--fleet-danger-surface);
 }
 
 .task-row__priority[data-priority='2'] {
-  color: var(--bde-warning);
-  background: var(--bde-warning-surface);
+  color: var(--fleet-warning);
+  background: var(--fleet-warning-surface);
 }
 
 .task-row__priority[data-priority='3'] {
-  color: var(--bde-warning);
-  background: var(--bde-warning-surface);
+  color: var(--fleet-warning);
+  background: var(--fleet-warning-surface);
 }

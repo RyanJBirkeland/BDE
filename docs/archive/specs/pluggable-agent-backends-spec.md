@@ -11,7 +11,7 @@
 
 ## 1. Problem
 
-BDE hardcodes Claude Code (via `@anthropic-ai/claude-agent-sdk`) as the sole execution engine for all five agent types: Pipeline, Synthesizer, Copilot, Assistant, Adhoc. This is the right default — Claude Code is the strongest agent in the market — but it's also architecturally limiting:
+FLEET hardcodes Claude Code (via `@anthropic-ai/claude-agent-sdk`) as the sole execution engine for all five agent types: Pipeline, Synthesizer, Copilot, Assistant, Adhoc. This is the right default — Claude Code is the strongest agent in the market — but it's also architecturally limiting:
 
 - **Cost.** Pipeline is the highest-volume agent by a wide margin; every Pipeline run pays Anthropic prices, regardless of task complexity.
 - **Lock-in.** A single-backend architecture prevents experimentation with local models, alternative frameworks (Aider, OpenHands), or future competitors.
@@ -22,7 +22,7 @@ The cognitive requirements of the five agent types are not uniform. Reasoning-he
 
 ## 2. Proposal
 
-Introduce a **pluggable agent backend system** so each of BDE's five agent types can be routed to a different execution engine, selected by the user via settings. Default behavior is unchanged: all five types route to Claude Code.
+Introduce a **pluggable agent backend system** so each of FLEET's five agent types can be routed to a different execution engine, selected by the user via settings. Default behavior is unchanged: all five types route to Claude Code.
 
 The core idea is "Claude plans, local executes":
 
@@ -34,12 +34,12 @@ The core idea is "Claude plans, local executes":
 
 - **Not** replacing Claude Code wholesale. Claude Code remains the default and the only path to feature parity.
 - **Not** building a new local agent framework from scratch. Backends wrap existing, battle-tested runtimes.
-- **Not** changing BDE's external behavior, UX, or data model. All new functionality is opt-in.
+- **Not** changing FLEET's external behavior, UX, or data model. All new functionality is opt-in.
 - **Not** introducing framework dependencies that leak into business logic. Backends live at the edge of the architecture.
 
 ## 4. Architectural Seam
 
-BDE is already well-positioned for this change. The entire agent execution surface funnels through one file:
+FLEET is already well-positioned for this change. The entire agent execution surface funnels through one file:
 
 - `src/main/agent-manager/sdk-adapter.ts` — `spawnAgent()` is the single chokepoint.
 - `src/main/agent-manager/types.ts:64` — `AgentHandle` is the abstraction the rest of the system depends on.
@@ -81,7 +81,7 @@ export interface BackendHealth {
 }
 ```
 
-**Contract requirement:** every backend must produce an `AgentHandle` whose `messages` iterable emits objects matching `SDKWireMessage` for the five message shapes BDE consumes today (`system`, `assistant`, `user`/`tool_result`, `result`, error frames). Backends that don't speak this protocol natively (Aider, local tool-use loops) implement a translation layer internally — that translation is the backend's problem, not BDE's.
+**Contract requirement:** every backend must produce an `AgentHandle` whose `messages` iterable emits objects matching `SDKWireMessage` for the five message shapes FLEET consumes today (`system`, `assistant`, `user`/`tool_result`, `result`, error frames). Backends that don't speak this protocol natively (Aider, local tool-use loops) implement a translation layer internally — that translation is the backend's problem, not FLEET's.
 
 ### 5.2 Backend Registry
 
@@ -225,7 +225,7 @@ Only revisit once local models (Qwen 3, Llama 4, DeepSeek V3 or successors) demo
 
 - `cost_events` table entries from non-Claude backends should record `cost_usd = 0` and `model` = the configured local model name (e.g. `local:qwen2.5-coder-32b`). This keeps the dashboard honest: the cost chart visibly shows which agent runs were free.
 - A new derived metric ("% of runs on local backends") becomes interesting for the Dashboard. Not required for initial ship.
-- `agent_runs.executor_id` remains `bde-embedded`. No schema change needed — the backend identity is implicit in the model string.
+- `agent_runs.executor_id` remains `fleet-embedded`. No schema change needed — the backend identity is implicit in the model string.
 
 ## 8. Failure Modes & Mitigations
 
@@ -242,7 +242,7 @@ Only revisit once local models (Qwen 3, Llama 4, DeepSeek V3 or successors) demo
 
 - **Unit tests per backend.** Each backend gets its own test suite. Mock the underlying runtime (SDK, Aider subprocess, LM Studio HTTP).
 - **Contract conformance tests.** A shared test fixture verifies every registered backend emits `SDKWireMessage`-shaped events for a canonical "read a file, write a file, exit" scenario.
-- **Integration tests against real local models.** Optional, opt-in (env var `BDE_TEST_LOCAL=1`). Skipped in CI by default — local-backend tests need a running LM Studio.
+- **Integration tests against real local models.** Optional, opt-in (env var `FLEET_TEST_LOCAL=1`). Skipped in CI by default — local-backend tests need a running LM Studio.
 - **Existing test coverage is preserved.** Phase 1 is a pure refactor and must not change any assertion.
 
 ## 10. Risks
@@ -258,11 +258,11 @@ Only revisit once local models (Qwen 3, Llama 4, DeepSeek V3 or successors) demo
 1. Should the backend selection be per-task override (task row has a `backend_override` column) or strictly per-agent-type? **Recommendation:** per-agent-type only for v1. Per-task adds UX complexity without clear demand. Revisit if users ask.
 2. How should Copilot streaming work if/when routed to local? Copilot uses `workbench:chatStream` IPC — the backend interface needs a streaming variant. **Recommendation:** defer. Copilot stays on Claude for the foreseeable future.
 3. Should we expose a plugin API so third parties can register backends? **Recommendation:** no, not for v1. Built-in backends only. Plugin API is a much larger scope and a separate proposal.
-4. Should the MCP tool set be user-configurable (add/remove tools per backend)? **Recommendation:** no, not for v1. Ship with a fixed BDE-curated tool set mirroring Claude Code's defaults (Read, Write, Edit, Bash). Configurability is a follow-up.
+4. Should the MCP tool set be user-configurable (add/remove tools per backend)? **Recommendation:** no, not for v1. Ship with a fixed FLEET-curated tool set mirroring Claude Code's defaults (Read, Write, Edit, Bash). Configurability is a follow-up.
 
 ## 12. Success Criteria
 
-- Phase 1 merged with zero behavior change; all existing tests pass; code quality matches BDE standards (Clean Code + Clean Architecture).
+- Phase 1 merged with zero behavior change; all existing tests pass; code quality matches FLEET standards (Clean Code + Clean Architecture).
 - Phase 2 ships a working Aider backend that can complete a canonical Pipeline task against a local model (e.g. Qwen 2.5-Coder 32B in LM Studio) and have the result appear in Code Review Station indistinguishable from a Claude run.
 - Documented quality expectations: user-facing copy explains when local is appropriate (well-scoped edits, doc updates, scaffolding) and when it isn't (exploratory refactors, debugging, cross-file reasoning).
 - Cost dashboard accurately reflects local runs as `$0`.
@@ -272,14 +272,14 @@ Only revisit once local models (Qwen 3, Llama 4, DeepSeek V3 or successors) demo
 
 - **Phase 1** (refactor): single feature branch, standard PR review, merge behind no flag — pure refactor.
 - **Phase 2+** (new backends): each behind the `agentBackends` setting, default off. No migration required — users opt in explicitly via Settings UI.
-- **Documentation:** update `docs/architecture.md`, `docs/BDE_FEATURES.md` (new Agent Backends section), and add an ADR in `docs/architecture-decisions/`.
+- **Documentation:** update `docs/architecture.md`, `docs/FLEET_FEATURES.md` (new Agent Backends section), and add an ADR in `docs/architecture-decisions/`.
 - **Feature announcement:** README + release notes when Phase 2 ships. Emphasize opt-in, experimental status.
 
 ## 14. Alternatives Considered
 
 - **Per-task backend override.** Rejected for v1 (see Open Question 1).
 - **Replace Claude Code entirely with a local backend.** Rejected outright — Claude Code is the product's strongest dependency and the reason it works.
-- **Fork OpenHands as the full replacement.** Rejected — inherits their sandbox opinions, their tool set, and their agent loop; fights BDE's existing worktree + review model. Better to own a thin backend than inherit a fat one.
+- **Fork OpenHands as the full replacement.** Rejected — inherits their sandbox opinions, their tool set, and their agent loop; fights FLEET's existing worktree + review model. Better to own a thin backend than inherit a fat one.
 - **Let the model itself route (prompt Claude to decide when to delegate to local).** Rejected — too much unpredictability; users should control cost and privacy, not the model.
 
 ---
@@ -302,7 +302,7 @@ Only revisit once local models (Qwen 3, Llama 4, DeepSeek V3 or successors) demo
 - `src/shared/types/settings-types.ts` — new `agentBackends` setting shape
 - `src/renderer/src/views/SettingsView.tsx` — register new tab
 - `docs/architecture.md` — update agent-manager section
-- `docs/BDE_FEATURES.md` — new Agent Backends section
+- `docs/FLEET_FEATURES.md` — new Agent Backends section
 
 **Unchanged:**
 - Drain loop, watchdog, completion flow, retry logic, worktree management, cost tracking, event persistence, playground detection, Code Review Station. None of these know or care which backend produced the `AgentHandle`.

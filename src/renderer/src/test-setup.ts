@@ -57,7 +57,7 @@ vi.stubGlobal('api', {
   git: {
     checkInstalled: vi.fn().mockResolvedValue(true),
     getRepoPaths: vi.fn().mockResolvedValue({
-      bde: '/Users/test/projects/BDE',
+      fleet: '/Users/test/projects/FLEET',
       'life-os': '/Users/test/projects/life-os',
       feast: '/Users/test/projects/feast'
     }),
@@ -118,7 +118,7 @@ vi.stubGlobal('api', {
   window: {
     readClipboardImage: vi.fn().mockResolvedValue(null),
     openExternal: vi.fn().mockResolvedValue(undefined),
-    openPlaygroundInBrowser: vi.fn().mockResolvedValue('/tmp/bde-playground-123.html'),
+    openPlaygroundInBrowser: vi.fn().mockResolvedValue('/tmp/fleet-playground-123.html'),
     sanitizePlayground: vi.fn().mockImplementation((html: string) => Promise.resolve(html)),
     setTitle: vi.fn()
   },

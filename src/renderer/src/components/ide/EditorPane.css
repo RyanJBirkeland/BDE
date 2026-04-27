@@ -18,10 +18,10 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
-  background: var(--bde-bg);
-  font-family: var(--bde-font-ui);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
+  background: var(--fleet-bg);
+  font-family: var(--fleet-font-ui);
 }
 /* IDE Empty State */
 .ide-empty-state {
@@ -31,42 +31,42 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  gap: var(--bde-space-4);
-  background: var(--bde-bg);
-  font-family: var(--bde-font-ui);
+  gap: var(--fleet-space-4);
+  background: var(--fleet-bg);
+  font-family: var(--fleet-font-ui);
 }
 .ide-empty-state__icon {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   opacity: 0.4;
 }
 .ide-empty-state__title {
-  font-size: var(--bde-size-xl);
+  font-size: var(--fleet-size-xl);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   margin: 0;
 }
 .ide-empty-state__subtitle {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
   margin: 0;
 }
 .ide-empty-state__actions {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 .ide-empty-state__open-btn {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-4);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-ui);
-  color: var(--bde-bg);
-  background: var(--bde-accent);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-4);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-ui);
+  color: var(--fleet-bg);
+  background: var(--fleet-accent);
   border: none;
-  border-radius: var(--bde-radius-md);
+  border-radius: var(--fleet-radius-md);
   cursor: pointer;
   font-weight: 500;
   transition: opacity 0.15s ease;
@@ -77,73 +77,73 @@
 .ide-empty-state__recent {
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
   align-items: center;
-  margin-top: var(--bde-space-2);
+  margin-top: var(--fleet-space-2);
 }
 .ide-empty-state__recent-label {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-dim);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 .ide-empty-state__recent-item {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-accent);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-accent);
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 2px var(--bde-space-2);
-  border-radius: var(--bde-radius-sm);
+  padding: 2px var(--fleet-space-2);
+  border-radius: var(--fleet-radius-sm);
   max-width: 400px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: background 0.12s ease;
-  font-family: var(--bde-font-ui);
+  font-family: var(--fleet-font-ui);
 }
 .ide-empty-state__recent-item:hover {
-  background: var(--bde-accent-hover);
+  background: var(--fleet-accent-hover);
 }
 /* Neon Theme Overrides */
 .ide-editor-empty {
-  color: var(--bde-text-dim);
-  background: var(--bde-bg);
+  color: var(--fleet-text-dim);
+  background: var(--fleet-bg);
 }
 .ide-file-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-sm);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-sm);
 }
 .ide-empty-state {
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
 }
 .ide-empty-state__icon {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 .ide-empty-state__title {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .ide-empty-state__subtitle {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 .ide-empty-state__open-btn {
-  color: var(--bde-bg);
-  background: var(--bde-accent);
+  color: var(--fleet-bg);
+  background: var(--fleet-accent);
   transition: opacity 0.15s ease;
 }
 .ide-empty-state__open-btn:active:not(:disabled) {
   transform: scale(0.97);
 }
 .ide-empty-state__recent-label {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 .ide-empty-state__recent-item {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }
 .ide-empty-state__recent-item:hover {
-  background: var(--bde-accent-surface);
+  background: var(--fleet-accent-surface);
 }

@@ -1,6 +1,6 @@
 ## Context
 
-`createLogger(name)` in `src/main/logger.ts` returns `{ info, warn, error, debug }` — all accepting a plain string. There is no structured field support. Every log line is `[LEVEL] [module] free text`, which makes programmatic querying impossible. The drain loop emits an info-level heartbeat every tick (~30s), drowning `~/.bde/bde.log` under idle noise. Several main-process modules still fall back to `console.warn` (worktree, file-lock — partially fixed in waves 1-2 but not uniformly).
+`createLogger(name)` in `src/main/logger.ts` returns `{ info, warn, error, debug }` — all accepting a plain string. There is no structured field support. Every log line is `[LEVEL] [module] free text`, which makes programmatic querying impossible. The drain loop emits an info-level heartbeat every tick (~30s), drowning `~/.fleet/fleet.log` under idle noise. Several main-process modules still fall back to `console.warn` (worktree, file-lock — partially fixed in waves 1-2 but not uniformly).
 
 ## Goals / Non-Goals
 
@@ -47,6 +47,6 @@ A grep pass identifies remaining `console.warn/log/error` in `src/main/`. Each i
 
 ## Risks / Trade-offs
 
-- **Risk**: Mixed NDJSON + string lines in bde.log confuse `tail -f` readers → Mitigation: document the format; existing string lines are unchanged and still human-readable
+- **Risk**: Mixed NDJSON + string lines in fleet.log confuse `tail -f` readers → Mitigation: document the format; existing string lines are unchanged and still human-readable
 - **Risk**: `tickId` thread-through increases function arities → Mitigation: add `tickId` to the existing `DrainContext` / deps objects rather than as an extra parameter
 - **Trade-off**: `logger.event()` is fire-and-forget (no awaiting slow writes) — consistent with current logger behavior; slow-write sentinel (T-145, done) will surface disk pressure

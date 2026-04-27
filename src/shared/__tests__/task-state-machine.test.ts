@@ -282,7 +282,7 @@ describe('task-state-machine', () => {
     it('should use CSS variable format for color tokens', () => {
       for (const status of TASK_STATUSES) {
         const token = STATUS_METADATA[status].colorToken
-        expect(token.startsWith('--bde-')).toBe(true)
+        expect(token.startsWith('--fleet-')).toBe(true)
       }
     })
   })

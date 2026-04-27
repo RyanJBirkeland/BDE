@@ -1,46 +1,46 @@
 .git-file-row {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-1) var(--bde-space-3);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
   cursor: pointer;
   background-color: transparent;
-  border-radius: var(--bde-radius-sm);
-  font-size: var(--bde-size-sm);
-  font-family: var(--bde-font-ui);
+  border-radius: var(--fleet-radius-sm);
+  font-size: var(--fleet-size-sm);
+  font-family: var(--fleet-font-ui);
 }
 
 .git-file-row--selected {
-  background-color: var(--bde-accent-dim);
+  background-color: var(--fleet-accent-dim);
 }
 
 .git-file-row:not(.git-file-row--selected):hover {
-  background-color: var(--bde-surface-high);
+  background-color: var(--fleet-surface-high);
 }
 
 .git-file-row__status {
   font-weight: 600;
-  font-family: var(--bde-font-code);
-  font-size: var(--bde-size-xs);
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-xs);
   width: 12px;
   flex-shrink: 0;
   text-align: center;
 }
 
 .git-file-row__status--modified {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
 }
 
 .git-file-row__status--added {
-  color: var(--bde-success);
+  color: var(--fleet-success);
 }
 
 .git-file-row__status--deleted {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .git-file-row__status--untracked {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 
 .git-file-row__path {
@@ -52,11 +52,11 @@
 }
 
 .git-file-row__path-dir {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 
 .git-file-row__path-name {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .git-file-row__stage-btn {
@@ -65,16 +65,16 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   border: none;
   background: none;
   cursor: pointer;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   flex-shrink: 0;
   padding: 0;
 }
 
 .git-file-row__stage-btn:hover {
-  color: var(--bde-text);
-  background-color: var(--bde-surface-high);
+  color: var(--fleet-text);
+  background-color: var(--fleet-surface-high);
 }

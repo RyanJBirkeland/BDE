@@ -5,7 +5,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
   position: relative;
   overflow: hidden;
   container-type: inline-size;
@@ -16,7 +16,7 @@
 .dashboard-bg-gradient {
   position: absolute;
   inset: 0;
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
   pointer-events: none;
   z-index: 0;
 }
@@ -46,8 +46,8 @@
   flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--bde-space-3);
-  padding: var(--bde-space-3);
+  gap: var(--fleet-space-3);
+  padding: var(--fleet-space-3);
   overflow: hidden;
   min-height: 0;
 }
@@ -67,24 +67,24 @@
 }
 
 .dashboard-col--center {
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 /* Status Bar Freshness Indicator */
 .dashboard-status-ok {
   display: inline-flex;
   align-items: center;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
 }
 
 .dashboard-status-freshness {
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-xs);
   opacity: 0.6;
 }
 
 .dashboard-status-freshness--stale {
-  color: var(--bde-warning);
+  color: var(--fleet-warning);
   opacity: 1;
 }
 
@@ -94,12 +94,12 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  border: 1px dashed var(--bde-accent-border);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  border: 1px dashed var(--fleet-accent-border);
   border-radius: 8px;
   background: none;
-  color: var(--bde-accent);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-xs);
   font-weight: 600;
   cursor: pointer;
   opacity: 0.6;
@@ -130,13 +130,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--bde-space-4);
+  gap: var(--fleet-space-4);
   text-align: center;
 }
 
 .dashboard-onboarding__text {
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-lg);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-lg);
   line-height: 1.5;
   max-width: 300px;
 }
@@ -144,20 +144,20 @@
 .dashboard-onboarding__cta {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: 10px var(--bde-space-5);
-  border: 1px solid var(--bde-accent-border);
+  gap: var(--fleet-space-2);
+  padding: 10px var(--fleet-space-5);
+  border: 1px solid var(--fleet-accent-border);
   border-radius: 8px;
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
-  font-size: var(--bde-size-lg);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-lg);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .dashboard-onboarding__cta:hover:not(:disabled) {
-  background: var(--bde-accent-border);
+  background: var(--fleet-accent-border);
 }
 
 .dashboard-onboarding__cta:active:not(:disabled) {
@@ -170,31 +170,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-4);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-4);
   min-height: 120px;
 }
 
 .dashboard-card-error__message {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-danger);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-danger);
   text-align: center;
 }
 
 .dashboard-card-error__retry {
-  padding: var(--bde-space-1) var(--bde-space-3);
-  border-radius: var(--bde-radius-sm);
-  background: var(--bde-danger-surface);
-  border: 1px solid var(--bde-danger);
-  color: var(--bde-danger);
-  font-size: var(--bde-size-xs);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
+  border-radius: var(--fleet-radius-sm);
+  background: var(--fleet-danger-surface);
+  border: 1px solid var(--fleet-danger);
+  color: var(--fleet-danger);
+  font-size: var(--fleet-size-xs);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--bde-transition-fast);
+  transition: background var(--fleet-transition-fast);
 }
 
 .dashboard-card-error__retry:hover:not(:disabled) {
-  background: var(--bde-danger-border);
+  background: var(--fleet-danger-border);
 }
 
 .dashboard-card-error__retry:active:not(:disabled) {
@@ -212,7 +212,7 @@
     grid-column: 1 / -1;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: var(--bde-space-3);
+    gap: var(--fleet-space-3);
   }
 }
 

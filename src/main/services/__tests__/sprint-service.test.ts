@@ -189,7 +189,7 @@ describe('sprint-service', () => {
 
   describe('createTask', () => {
     it('creates task and fires created notification', async () => {
-      const input: Partial<CreateTaskInput> = { title: 'New', repo: 'bde' }
+      const input: Partial<CreateTaskInput> = { title: 'New', repo: 'fleet' }
       const created: Partial<SprintTask> = { id: 'abc', ...input }
       vi.mocked(_createTask).mockResolvedValue(created as SprintTask)
 
@@ -202,7 +202,7 @@ describe('sprint-service', () => {
 
     it('does not notify when createTask returns null', async () => {
       vi.mocked(_createTask).mockResolvedValue(null)
-      const result = await createTask({ title: 'Bad', repo: 'bde' } as CreateTaskInput)
+      const result = await createTask({ title: 'Bad', repo: 'fleet' } as CreateTaskInput)
       expect(result).toBeNull()
       expect(mockBroadcastFn).not.toHaveBeenCalled()
     })

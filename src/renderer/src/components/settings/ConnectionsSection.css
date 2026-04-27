@@ -7,15 +7,15 @@
 }
 
 .settings-connection__label {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 
 .settings-required-marker {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
   margin-left: 2px;
 }
 
@@ -29,27 +29,27 @@
 
 .settings-secret-input__toggle {
   position: absolute;
-  right: var(--bde-space-2);
+  right: var(--fleet-space-2);
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--bde-text-muted);
-  padding: var(--bde-space-1);
+  color: var(--fleet-text-muted);
+  padding: var(--fleet-space-1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--bde-space-1);
+  border-radius: var(--fleet-space-1);
 }
 
 .settings-secret-input__toggle:hover {
-  color: var(--bde-text);
-  background: var(--bde-surface);
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
 }
 
 .settings-secret-input__toggle:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -64,55 +64,55 @@
 .encryption-status-banner {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-3);
-  border-radius: var(--bde-radius);
-  font-size: var(--bde-size-sm);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  border-radius: var(--fleet-radius);
+  font-size: var(--fleet-size-sm);
   font-weight: 500;
-  margin-bottom: var(--bde-space-3);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .encryption-status-banner--active {
-  background: color-mix(in srgb, var(--bde-success) 12%, transparent);
-  color: var(--bde-success);
-  border: 1px solid color-mix(in srgb, var(--bde-success) 30%, transparent);
+  background: color-mix(in srgb, var(--fleet-success) 12%, transparent);
+  color: var(--fleet-success);
+  border: 1px solid color-mix(in srgb, var(--fleet-success) 30%, transparent);
 }
 
 .encryption-status-banner--unavailable {
-  background: color-mix(in srgb, var(--bde-danger) 12%, transparent);
-  color: var(--bde-danger);
-  border: 1px solid color-mix(in srgb, var(--bde-danger) 30%, transparent);
+  background: color-mix(in srgb, var(--fleet-danger) 12%, transparent);
+  color: var(--fleet-danger);
+  border: 1px solid color-mix(in srgb, var(--fleet-danger) 30%, transparent);
 }
 
 /* ─── Auth Status Row ─────────────────────────────────────────────────────── */
 
 .settings-field__row {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   align-items: center;
   margin-top: 0;
-  margin-bottom: var(--bde-space-3);
+  margin-bottom: var(--fleet-space-3);
 }
 
 .settings-field__status {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   align-items: center;
   flex: 1;
 }
 
 .settings-field__actions {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
 .settings-field__expiry {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
 }
 
 .settings-field__refresh-icon {
-  margin-right: var(--bde-space-1);
+  margin-right: var(--fleet-space-1);
 }
 
 
@@ -121,11 +121,11 @@
 .settings-readonly-toggle {
   display: flex;
   align-items: flex-start;
-  gap: var(--bde-space-2);
-  margin-top: var(--bde-space-3);
-  padding: var(--bde-space-2);
-  border-radius: var(--bde-radius-md);
-  background: var(--bde-surface);
+  gap: var(--fleet-space-2);
+  margin-top: var(--fleet-space-3);
+  padding: var(--fleet-space-2);
+  border-radius: var(--fleet-radius-md);
+  background: var(--fleet-surface);
   cursor: pointer;
 }
 
@@ -142,7 +142,7 @@
 }
 
 .settings-readonly-toggle__desc {
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted);
   margin-top: 2px;
 }

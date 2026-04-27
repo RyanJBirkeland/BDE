@@ -21,7 +21,7 @@ function createV019SprintTasks(db: Database.Database): void {
       id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       title               TEXT NOT NULL,
       prompt              TEXT NOT NULL DEFAULT '',
-      repo                TEXT NOT NULL DEFAULT 'bde',
+      repo                TEXT NOT NULL DEFAULT 'fleet',
       status              TEXT NOT NULL DEFAULT 'backlog'
                             CHECK(status IN ('backlog','queued','active','done','cancelled','failed','error','blocked')),
       priority            INTEGER NOT NULL DEFAULT 1,

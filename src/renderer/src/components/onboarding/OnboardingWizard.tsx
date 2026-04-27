@@ -50,7 +50,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.J
       className="onboarding-wizard-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-label="BDE setup wizard"
+      aria-label="FLEET setup wizard"
     >
       <div className="onboarding-wizard">
         <ol

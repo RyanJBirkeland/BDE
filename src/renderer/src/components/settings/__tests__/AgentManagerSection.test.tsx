@@ -143,7 +143,7 @@ describe('AgentManagerSection', () => {
     })
 
     // Mark dirty by changing worktree base so Save is enabled.
-    const worktreeInput = screen.getByPlaceholderText('~/.bde/worktrees') as HTMLInputElement
+    const worktreeInput = screen.getByPlaceholderText('~/.fleet/worktrees') as HTMLInputElement
     await user.clear(worktreeInput)
     await user.type(worktreeInput, '/tmp/worktrees/custom')
 

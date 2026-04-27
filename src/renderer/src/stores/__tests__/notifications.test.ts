@@ -143,7 +143,7 @@ describe('notifications store', () => {
       .notifications.find((n) => n.title === 'Drop')!.id
     clearOne(targetId)
 
-    const stored = JSON.parse(localStorage.getItem('bde:notifications')!)
+    const stored = JSON.parse(localStorage.getItem('fleet:notifications')!)
     expect(stored).toHaveLength(1)
     expect(stored[0].title).toBe('Stay')
   })
@@ -160,7 +160,7 @@ describe('notifications store', () => {
   it('persists notifications to localStorage', () => {
     const { addNotification } = useNotificationsStore.getState()
     addNotification({ type: 'agent_completed', title: 'Persist Test', message: 'msg' })
-    const stored = localStorage.getItem('bde:notifications')
+    const stored = localStorage.getItem('fleet:notifications')
     expect(stored).not.toBeNull()
     const parsed = JSON.parse(stored!)
     expect(parsed).toHaveLength(1)
@@ -171,7 +171,7 @@ describe('notifications store', () => {
     const { addNotification, clearAll } = useNotificationsStore.getState()
     addNotification({ type: 'agent_completed', title: 'Test', message: 'msg' })
     clearAll()
-    const stored = localStorage.getItem('bde:notifications')
+    const stored = localStorage.getItem('fleet:notifications')
     expect(stored).toBe('[]')
   })
 

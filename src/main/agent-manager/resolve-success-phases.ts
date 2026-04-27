@@ -58,7 +58,7 @@ export class BranchTipMismatchError extends Error {
 
 /**
  * Extracts a `(T-N)` token (e.g. `(T-42)`) from a task title, if present.
- * BDE convention: sprint task titles often carry a `(T-N)` suffix so that
+ * FLEET convention: sprint task titles often carry a `(T-N)` suffix so that
  * commit messages written by the agent can reference the task number.
  */
 function extractTaskNumberToken(title: string): string | null {
@@ -92,9 +92,9 @@ function buildExpectedTipTokens(task: {
 }
 
 /**
- * Extract the task-id slug from a BDE agent branch name.
+ * Extract the task-id slug from a FLEET agent branch name.
  *
- * BDE generates branches as `agent/t-<idSlug>-<titleSlug>-<groupHash>` where
+ * FLEET generates branches as `agent/t-<idSlug>-<titleSlug>-<groupHash>` where
  * `<groupHash>` is always 8 lowercase hex chars. Returns the `<idSlug>` part
  * (e.g. '11', 'abc123', '20260420') so callers can match it against the
  * task's full id by suffix.
@@ -114,7 +114,7 @@ export function extractTaskIdFromBranch(branch: string): string | null {
  * Two signals checked in order:
  * 1. The `<idSlug>` segment (e.g. '13') matches the task id tail via
  *    `endsWith('t-13')` — covers legacy-style ids like 'audit-20260420-t-13'.
- * 2. The 8-char hex hash at the end of the branch (BDE appends the first 8
+ * 2. The 8-char hex hash at the end of the branch (FLEET appends the first 8
  *    chars of the task UUID) matches the task id prefix — covers UUID task ids
  *    like '9f04f0d089a0f3e3a45ff13ab2887a02'.
  */
@@ -123,7 +123,7 @@ export function branchMatchesTask(branch: string, taskId: string): boolean {
   if (!slug) return false
   if (taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)) return true
   // UUID task IDs: the trailing 8 hex chars of the branch name are the first
-  // 8 chars of the task UUID (BDE's branch generation convention).
+  // 8 chars of the task UUID (FLEET's branch generation convention).
   const hashMatch = /-([a-f0-9]{8})$/.exec(branch)
   return !!hashMatch?.[1] && taskId.toLowerCase().startsWith(hashMatch[1])
 }
@@ -151,7 +151,7 @@ const defaultReadTipCommit: ReadTipCommit = async (branch, repoPath) => {
  * Verifies that the agent's branch tip legitimately belongs to this task.
  *
  * Primary signal: the branch name itself (e.g. `agent/t-11-...-<hash>`) —
- * BDE generates branches deterministically from the task id, so a name match
+ * FLEET generates branches deterministically from the task id, so a name match
  * is strong evidence of linkage and short-circuits before any subprocess.
  *
  * Fallback signal: the commit message references a task identifier
@@ -502,7 +502,7 @@ async function failTaskExhaustedNoCommits(
     claimed_by: null,
     needs_review: true,
     failure_reason: 'no-commits-exhausted',
-    notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.bde/bde.log`,
+    notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.fleet/fleet.log`,
     ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
   }
 

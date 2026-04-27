@@ -216,7 +216,7 @@ describe('retryTask', () => {
   })
 
   it('re-queues a failed task', async () => {
-    const failedTask = { id: 't1', status: 'failed', title: 'My task', repo: 'bde' }
+    const failedTask = { id: 't1', status: 'failed', title: 'My task', repo: 'fleet' }
     const queuedTask = { id: 't1', status: 'queued' }
     vi.mocked(mutations.getTask).mockReturnValue(failedTask as any)
     vi.mocked(mutations.updateTask).mockResolvedValue(queuedTask as any)
@@ -238,7 +238,7 @@ describe('retryTask', () => {
       vi.clearAllMocks()
       setSprintBroadcaster(mockBroadcastFn)
       vi.mocked(_resetTaskForRetry).mockResolvedValue(null as any)
-      vi.mocked(mutations.getTask).mockReturnValue({ id: 't1', status, title: 'T', repo: 'bde' } as any)
+      vi.mocked(mutations.getTask).mockReturnValue({ id: 't1', status, title: 'T', repo: 'fleet' } as any)
       vi.mocked(mutations.updateTask).mockResolvedValue({ id: 't1', status: 'queued' } as any)
 
       await expect(retryTask('t1')).resolves.toMatchObject({ status: 'queued' })
@@ -246,7 +246,7 @@ describe('retryTask', () => {
   })
 
   it('skips git cleanup when repo path is not configured', async () => {
-    vi.mocked(mutations.getTask).mockReturnValue({ id: 't1', status: 'failed', title: 'T', repo: 'bde' } as any)
+    vi.mocked(mutations.getTask).mockReturnValue({ id: 't1', status: 'failed', title: 'T', repo: 'fleet' } as any)
     vi.mocked(getSettingJson).mockReturnValue(null)
     vi.mocked(mutations.updateTask).mockResolvedValue({ id: 't1', status: 'queued' } as any)
 
@@ -257,9 +257,9 @@ describe('retryTask', () => {
 
   it('git cleanup failure does not block retry', async () => {
     vi.mocked(mutations.getTask).mockReturnValue({
-      id: 't1', status: 'failed', title: 'My task', repo: 'bde'
+      id: 't1', status: 'failed', title: 'My task', repo: 'fleet'
     } as any)
-    vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])
+    vi.mocked(getSettingJson).mockReturnValue([{ name: 'fleet', localPath: '/repo/fleet' }])
     vi.mocked(execFileAsync as any).mockRejectedValue(new Error('git worktree prune failed'))
     vi.mocked(mutations.updateTask).mockResolvedValue({ id: 't1', status: 'queued' } as any)
 

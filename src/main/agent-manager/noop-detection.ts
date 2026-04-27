@@ -2,7 +2,7 @@
  * Detects when an agent "succeeded" (exited cleanly, produced commits) but
  * in fact did no semantic work. Observed during M8 dogfood: Aider hit a
  * token-limit wall, exited 0, and the only artefact was a `.gitignore`
- * auto-added by Aider to ignore its own `.aider.*` scratch files. BDE
+ * auto-added by Aider to ignore its own `.aider.*` scratch files. FLEET
  * then auto-committed that single file and transitioned the task to
  * `review` as if the agent had delivered.
  *

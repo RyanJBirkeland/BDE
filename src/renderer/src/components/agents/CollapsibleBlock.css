@@ -5,20 +5,20 @@
 }
 
 .console-line--collapsible:hover {
-  background: var(--bde-border);
+  background: var(--fleet-border);
 }
 
 .console-line__chevron {
   flex-shrink: 0;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   transition:
     transform 150ms ease,
     color 150ms ease;
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
 }
 
 .console-line--collapsible:hover .console-line__chevron {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 
 .console-line--expanded .console-line__chevron {
@@ -28,7 +28,7 @@
 .console-collapsible-button {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   background: none;
   border: none;
   cursor: pointer;
@@ -39,41 +39,41 @@
 
 /* ── Tool Call Block Components ── */
 .tool-block {
-  border-left: 3px solid var(--bde-accent-border);
+  border-left: 3px solid var(--fleet-accent-border);
 }
 
 .tool-block__chevron {
-  color: var(--bde-status-review);
+  color: var(--fleet-status-review);
 }
 
 .tool-block__badge {
-  background: var(--bde-accent-surface);
-  color: var(--bde-status-review);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-review);
 }
 
 .tool-block__summary {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .tool-block__status-badge--success {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
 }
 
 .tool-block__status-badge--danger {
-  background: var(--bde-danger-surface);
-  color: var(--bde-danger);
+  background: var(--fleet-danger-surface);
+  color: var(--fleet-danger);
 }
 
 .tool-block__timestamp {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .tool-block__label {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .tool-block__json-block {
-  background: var(--bde-border);
-  color: var(--bde-text-muted);
+  background: var(--fleet-border);
+  color: var(--fleet-text-muted);
 }

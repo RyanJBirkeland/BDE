@@ -28,14 +28,14 @@ export interface AgentManagerConfig {
 
 export const DEFAULT_CONFIG: AgentManagerConfig = {
   maxConcurrent: 2,
-  worktreeBase: join(homedir(), 'worktrees', 'bde'),
+  worktreeBase: join(homedir(), 'worktrees', 'fleet'),
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 30_000,
   defaultModel: 'claude-sonnet-4-5'
 }
 
-export const EXECUTOR_ID = 'bde-embedded'
+export const EXECUTOR_ID = 'fleet-embedded'
 export const MAX_RETRIES = 3
 export const MAX_FAST_FAILS = 3
 export const FAST_FAIL_THRESHOLD_MS = 30_000

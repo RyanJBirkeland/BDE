@@ -45,7 +45,7 @@ Removes Source Control from sidebar, keyboard shortcuts, keybindings settings, a
 - [ ] **Step 1: Run existing sidebar tests to confirm baseline**
 
 ```bash
-cd ~/projects/BDE && npm test -- src/renderer/src/stores/__tests__/sidebar.test.ts --reporter=verbose
+cd ~/projects/FLEET && npm test -- src/renderer/src/stores/__tests__/sidebar.test.ts --reporter=verbose
 ```
 
 Expected: all pass.
@@ -164,7 +164,7 @@ const ACTION_ORDER: ActionId[] = [
 - [ ] **Step 7: Type-check to confirm no type errors**
 
 ```bash
-cd ~/projects/BDE && npm run typecheck
+cd ~/projects/FLEET && npm run typecheck
 ```
 
 Expected: zero errors. If `'view.git'` is referenced anywhere else the compiler will tell you.
@@ -172,7 +172,7 @@ Expected: zero errors. If `'view.git'` is referenced anywhere else the compiler 
 - [ ] **Step 8: Run tests**
 
 ```bash
-cd ~/projects/BDE && npm test
+cd ~/projects/FLEET && npm test
 ```
 
 Expected: all pass.
@@ -283,7 +283,7 @@ describe('EpicHeader — progress stripe', () => {
 - [ ] **Step 2: Run the test to confirm it fails**
 
 ```bash
-cd ~/projects/BDE && npm test -- src/renderer/src/components/planner/__tests__/EpicHeader.test.tsx --reporter=verbose
+cd ~/projects/FLEET && npm test -- src/renderer/src/components/planner/__tests__/EpicHeader.test.tsx --reporter=verbose
 ```
 
 Expected: FAIL — `doneCount`, `totalCount`, `onOpenAssistant` props don't exist yet.
@@ -339,31 +339,31 @@ Note: the stripe is a sibling of `epic-detail__header`, rendered just after it i
 /* Progress stripe — thin accent bar below the header */
 .epic-detail__header-stripe {
   height: 3px;
-  background: var(--bde-accent-dim);
+  background: var(--fleet-accent-dim);
   overflow: hidden;
   flex-shrink: 0;
 }
 
 .epic-detail__header-stripe-fill {
   height: 100%;
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
   transition: width 200ms ease;
 }
 
 /* Ask AI button variant */
 .epic-detail__header-btn--ai {
-  background: var(--bde-accent-dim);
-  border: 1px solid var(--bde-accent-border);
-  color: var(--bde-accent-text);
+  background: var(--fleet-accent-dim);
+  border: 1px solid var(--fleet-accent-border);
+  color: var(--fleet-accent-text);
   font-size: 12px;
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   gap: 4px;
 }
 
 .epic-detail__header-btn--ai:hover:not(:disabled) {
-  background: var(--bde-accent-hover);
+  background: var(--fleet-accent-hover);
 }
 ```
 
@@ -455,7 +455,7 @@ The `.planner-epic-item__status` element already exists and renders the status t
 - [ ] **Step 9: Run the tests**
 
 ```bash
-cd ~/projects/BDE && npm test -- src/renderer/src/components/planner/__tests__/EpicHeader.test.tsx --reporter=verbose
+cd ~/projects/FLEET && npm test -- src/renderer/src/components/planner/__tests__/EpicHeader.test.tsx --reporter=verbose
 ```
 
 Expected: all three tests pass.
@@ -463,7 +463,7 @@ Expected: all three tests pass.
 - [ ] **Step 10: Run full test suite and typecheck**
 
 ```bash
-cd ~/projects/BDE && npm run typecheck && npm test
+cd ~/projects/FLEET && npm run typecheck && npm test
 ```
 
 Expected: zero type errors, all tests pass.
@@ -559,7 +559,7 @@ describe('parseActionMarkers', () => {
 - [ ] **Step 2: Run tests to confirm they fail**
 
 ```bash
-cd ~/projects/BDE && npm test -- src/renderer/src/components/planner/__tests__/PlannerAssistant.test.tsx --reporter=verbose
+cd ~/projects/FLEET && npm test -- src/renderer/src/components/planner/__tests__/PlannerAssistant.test.tsx --reporter=verbose
 ```
 
 Expected: FAIL — `parseActionMarkers` is not exported yet.
@@ -968,23 +968,23 @@ Create `src/renderer/src/components/planner/PlannerAssistant.css`:
   right: 0;
   bottom: 0;
   width: min(560px, 60%);
-  background: var(--bde-bg);
-  border-left: 1px solid var(--bde-border);
+  background: var(--fleet-bg);
+  border-left: 1px solid var(--fleet-border);
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   z-index: 10;
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
 }
 
 /* Header */
 .planner-assistant__header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-3) var(--bde-space-4);
-  background: var(--bde-surface);
-  border-bottom: 1px solid var(--bde-border);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-3) var(--fleet-space-4);
+  background: var(--fleet-surface);
+  border-bottom: 1px solid var(--fleet-border);
   flex-shrink: 0;
 }
 
@@ -992,73 +992,73 @@ Create `src/renderer/src/components/planner/PlannerAssistant.css`:
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--bde-status-active);
+  background: var(--fleet-status-active);
   flex-shrink: 0;
 }
 
 .planner-assistant__title {
   font-size: 12px;
   font-weight: 700;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .planner-assistant__context {
   font-size: 11px;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   flex: 1;
 }
 
 .planner-assistant__close {
   background: none;
   border: none;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   cursor: pointer;
   font-size: 14px;
-  padding: var(--bde-space-1);
-  border-radius: var(--bde-radius-sm);
+  padding: var(--fleet-space-1);
+  border-radius: var(--fleet-radius-sm);
   line-height: 1;
   transition: color 100ms ease;
 }
 
-.planner-assistant__close:hover { color: var(--bde-text); }
+.planner-assistant__close:hover { color: var(--fleet-text); }
 
 /* Messages */
 .planner-assistant__messages {
   flex: 1;
   overflow-y: auto;
-  padding: var(--bde-space-4);
+  padding: var(--fleet-space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 .planner-assistant__empty {
   font-size: 12px;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   line-height: 1.6;
 }
 
-.planner-assistant__msg { display: flex; flex-direction: column; gap: var(--bde-space-2); }
+.planner-assistant__msg { display: flex; flex-direction: column; gap: var(--fleet-space-2); }
 
 .planner-assistant__msg-text {
   font-size: 12px;
   line-height: 1.6;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   white-space: pre-wrap;
 }
 
 .planner-assistant__msg--user .planner-assistant__msg-text {
-  color: var(--bde-accent-text);
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-accent-border);
-  border-radius: var(--bde-radius-md);
+  color: var(--fleet-accent-text);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-md);
   align-self: flex-end;
 }
 
 .planner-assistant__thinking {
   font-size: 10px;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   letter-spacing: 3px;
   animation: blink 1.2s ease-in-out infinite;
 }
@@ -1070,28 +1070,28 @@ Create `src/renderer/src/components/planner/PlannerAssistant.css`:
 
 /* Action cards */
 .planner-assistant__action-card {
-  background: var(--bde-surface);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
+  background: var(--fleet-surface);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
   overflow: hidden;
 }
 
 .planner-assistant__action-card--confirmed {
-  border-color: var(--bde-status-done);
+  border-color: var(--fleet-status-done);
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-3);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
   opacity: 0.7;
 }
 
 .planner-assistant__action-header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-surface-high);
-  border-bottom: 1px solid var(--bde-border);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  background: var(--fleet-surface-high);
+  border-bottom: 1px solid var(--fleet-border);
 }
 
 .planner-assistant__action-type {
@@ -1099,44 +1099,44 @@ Create `src/renderer/src/components/planner/PlannerAssistant.css`:
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--bde-accent-text);
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-accent-border);
+  color: var(--fleet-accent-text);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent-border);
   padding: 1px 5px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   flex-shrink: 0;
 }
 
 .planner-assistant__action-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .planner-assistant__action-spec {
   font-size: 11px;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   line-height: 1.5;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  border-bottom: 1px solid var(--bde-border);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  border-bottom: 1px solid var(--fleet-border);
 }
 
 .planner-assistant__action-confirmed {
   font-size: 11px;
   font-weight: 700;
-  color: var(--bde-status-done);
+  color: var(--fleet-status-done);
   margin-left: auto;
 }
 
 .planner-assistant__action-buttons {
   display: flex;
-  gap: var(--bde-space-2);
-  padding: var(--bde-space-2) var(--bde-space-3);
+  gap: var(--fleet-space-2);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
 }
 
 .planner-assistant__btn {
-  padding: var(--bde-space-1) var(--bde-space-3);
-  border-radius: var(--bde-radius-sm);
+  padding: var(--fleet-space-1) var(--fleet-space-3);
+  border-radius: var(--fleet-radius-sm);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -1147,56 +1147,56 @@ Create `src/renderer/src/components/planner/PlannerAssistant.css`:
 .planner-assistant__btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .planner-assistant__btn--confirm {
-  background: var(--bde-accent);
-  color: var(--bde-bg);
+  background: var(--fleet-accent);
+  color: var(--fleet-bg);
 }
 
 .planner-assistant__btn--edit {
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-border);
-  color: var(--bde-text-muted);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border);
+  color: var(--fleet-text-muted);
 }
 
 .planner-assistant__btn--skip {
   background: transparent;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 /* Input bar */
 .planner-assistant__input-bar {
-  padding: var(--bde-space-3) var(--bde-space-4);
-  border-top: 1px solid var(--bde-border);
-  background: var(--bde-surface);
+  padding: var(--fleet-space-3) var(--fleet-space-4);
+  border-top: 1px solid var(--fleet-border);
+  background: var(--fleet-surface);
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   align-items: flex-end;
   flex-shrink: 0;
 }
 
 .planner-assistant__input {
   flex: 1;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  background: var(--bde-bg);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  color: var(--bde-text);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  background: var(--fleet-bg);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  color: var(--fleet-text);
   font-size: 12px;
-  font-family: var(--bde-font-code);
+  font-family: var(--fleet-font-code);
   resize: none;
   outline: none;
   transition: border-color 150ms ease;
   line-height: 1.5;
 }
 
-.planner-assistant__input:focus-visible { border-color: var(--bde-accent); }
+.planner-assistant__input:focus-visible { border-color: var(--fleet-accent); }
 
 .planner-assistant__send {
   width: 30px;
   height: 30px;
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
   border: none;
-  border-radius: var(--bde-radius-sm);
-  color: var(--bde-bg);
+  border-radius: var(--fleet-radius-sm);
+  color: var(--fleet-bg);
   font-size: 14px;
   cursor: pointer;
   display: flex;
@@ -1210,7 +1210,7 @@ Create `src/renderer/src/components/planner/PlannerAssistant.css`:
 
 .planner-assistant__no-repo {
   font-size: 11px;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
   line-height: 1.5;
 }
 ```
@@ -1218,7 +1218,7 @@ Create `src/renderer/src/components/planner/PlannerAssistant.css`:
 - [ ] **Step 5: Run the parser tests to confirm they pass**
 
 ```bash
-cd ~/projects/BDE && npm test -- src/renderer/src/components/planner/__tests__/PlannerAssistant.test.tsx --reporter=verbose
+cd ~/projects/FLEET && npm test -- src/renderer/src/components/planner/__tests__/PlannerAssistant.test.tsx --reporter=verbose
 ```
 
 Expected: all `parseActionMarkers` tests pass.
@@ -1250,7 +1250,7 @@ const defaultProps = {
 
 // Mock useRepoOptions so the component sees a configured repo and enables the input
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => [{ label: 'bde', owner: '', color: '' }]
+  useRepoOptions: () => [{ label: 'fleet', owner: '', color: '' }]
 }))
 
 beforeEach(() => {
@@ -1303,7 +1303,7 @@ describe('PlannerAssistant', () => {
 - [ ] **Step 7: Run component tests**
 
 ```bash
-cd ~/projects/BDE && npm test -- src/renderer/src/components/planner/__tests__/PlannerAssistant.test.tsx --reporter=verbose
+cd ~/projects/FLEET && npm test -- src/renderer/src/components/planner/__tests__/PlannerAssistant.test.tsx --reporter=verbose
 ```
 
 Expected: all tests pass. Fix any `window.api` mock gaps if tests fail.
@@ -1332,7 +1332,7 @@ Note: `PlannerView` wraps its body in a `<div className="planner-body view-layou
 - [ ] **Step 9: Run full test suite and typecheck**
 
 ```bash
-cd ~/projects/BDE && npm run typecheck && npm test
+cd ~/projects/FLEET && npm run typecheck && npm test
 ```
 
 Expected: zero type errors, all tests pass.
@@ -1359,7 +1359,7 @@ git commit -m "feat: add PlannerAssistant drawer with AI task and epic creation"
 After all tasks are complete:
 
 ```bash
-cd ~/projects/BDE && npm run typecheck && npm test && npm run lint
+cd ~/projects/FLEET && npm run typecheck && npm test && npm run lint
 ```
 
 All three must pass cleanly before the branch is ready for review.

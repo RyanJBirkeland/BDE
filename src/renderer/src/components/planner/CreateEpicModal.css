@@ -3,23 +3,23 @@
 .planner-template-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--bde-space-3);
-  margin-bottom: var(--bde-space-5);
+  gap: var(--fleet-space-3);
+  margin-bottom: var(--fleet-space-5);
 }
 
 .planner-template-card {
-  padding: var(--bde-space-3);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  background: var(--bde-surface);
+  padding: var(--fleet-space-3);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  background: var(--fleet-surface);
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
 }
 
 .planner-template-card:hover:not(:disabled) {
-  border-color: var(--bde-accent);
-  background: var(--bde-hover);
+  border-color: var(--fleet-accent);
+  background: var(--fleet-hover);
 }
 
 .planner-template-card:active:not(:disabled) {
@@ -33,27 +33,27 @@
 
 .planner-template-card__name {
   font-weight: 600;
-  margin-bottom: var(--bde-space-1);
+  margin-bottom: var(--fleet-space-1);
 }
 
 .planner-template-card__description {
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
   opacity: 0.7;
   line-height: 1.4;
 }
 
 .planner-template-card__meta {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   opacity: 0.5;
   margin-top: 6px;
 }
 
 .planner-selected-template-banner {
-  padding: var(--bde-space-3);
-  background: var(--bde-surface);
-  border: 1px solid var(--bde-accent);
-  border-radius: var(--bde-radius-md);
-  margin-bottom: var(--bde-space-4);
+  padding: var(--fleet-space-3);
+  background: var(--fleet-surface);
+  border: 1px solid var(--fleet-accent);
+  border-radius: var(--fleet-radius-md);
+  margin-bottom: var(--fleet-space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -62,7 +62,7 @@
 .planner-selected-template {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-3);
+  gap: var(--fleet-space-3);
 }
 
 .planner-selected-template__icon {
@@ -78,12 +78,12 @@
 }
 
 .planner-selected-template__description {
-  font-size: var(--bde-size-sm);
+  font-size: var(--fleet-size-sm);
   opacity: 0.7;
 }
 
 .planner-epic-form__required {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .planner-epic-form__icon-input {
@@ -98,15 +98,15 @@
 
 .planner-color-picker {
   display: flex;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   flex-wrap: wrap;
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
 }
 
 .planner-color-swatch {
   width: 32px;
   height: 32px;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   box-shadow: none;
   cursor: pointer;
   transition: all 150ms ease;
@@ -118,5 +118,5 @@
 }
 
 .prompt-modal__label--spaced {
-  margin-top: var(--bde-space-4);
+  margin-top: var(--fleet-space-4);
 }

@@ -71,7 +71,7 @@ export function TaskRow({
       onDragEnd={onDragEnd}
       style={{
         opacity: isDragging ? 0.5 : 1,
-        borderTop: isDragOver ? `2px solid ${'var(--bde-accent)'}` : undefined,
+        borderTop: isDragOver ? `2px solid ${'var(--fleet-accent)'}` : undefined,
         cursor: 'grab'
       }}
     >
@@ -143,9 +143,9 @@ export function TaskRow({
               style={{
                 padding: '6px 12px',
                 background: 'transparent',
-                border: `1px solid ${'var(--bde-text-dim)'}`,
+                border: `1px solid ${'var(--fleet-text-dim)'}`,
                 borderRadius: '4px',
-                color: 'var(--bde-text)',
+                color: 'var(--fleet-text)',
                 cursor: saving ? 'not-allowed' : 'pointer',
                 fontSize: '13px'
               }}
@@ -158,10 +158,10 @@ export function TaskRow({
               disabled={saving}
               style={{
                 padding: '6px 12px',
-                background: 'var(--bde-accent)',
+                background: 'var(--fleet-accent)',
                 border: 'none',
                 borderRadius: '4px',
-                color: 'var(--bde-bg)',
+                color: 'var(--fleet-bg)',
                 cursor: saving ? 'not-allowed' : 'pointer',
                 fontSize: '13px',
                 fontWeight: 500

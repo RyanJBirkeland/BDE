@@ -30,7 +30,7 @@ The frontend sends `{ agent_session_id: result.id }` but the handler only permit
 
 - This is a rename-only fix — no schema migration needed since the DB column already uses `agent_run_id`.
 - The `sprint:update` allowlist already includes `agent_run_id`, so the backend needs zero changes.
-- After the rename, verify the `bde:navigate` event in LogDrawer still sends the correct value as `sessionId` in the event detail — the event detail key `sessionId` does NOT need to match the DB column name, it just needs to carry the right value.
+- After the rename, verify the `fleet:navigate` event in LogDrawer still sends the correct value as `sessionId` in the event detail — the event detail key `sessionId` does NOT need to match the DB column name, it just needs to carry the right value.
 - Search the entire renderer for any other references to `agent_session_id` to ensure nothing is missed.
 
 ## Success Criteria

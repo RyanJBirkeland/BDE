@@ -51,7 +51,7 @@ const mockTask = {
   id: 'task-1',
   title: 'Test Task',
   status: 'review' as const,
-  repo: 'bde',
+  repo: 'fleet',
   spec: 'Test spec',
   prompt: '',
   revision_feedback: [] as RevisionFeedbackEntry[],

@@ -64,7 +64,7 @@ describe('createTaskWithValidation — skipReadinessCheck', () => {
       createTaskWithValidation(
         {
           title: 'missing sections',
-          repo: 'bde',
+          repo: 'fleet',
           status: 'queued',
           spec: '## Only one section\nbody'
         },
@@ -80,7 +80,7 @@ describe('createTaskWithValidation — skipReadinessCheck', () => {
     const row = createTaskWithValidation(
       {
         title: 'missing sections',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued',
         spec: '## Only one section\nbody'
       },
@@ -94,7 +94,7 @@ describe('createTaskWithValidation — skipReadinessCheck', () => {
   it('still enforces required fields even with skipReadinessCheck', () => {
     expect(() =>
       createTaskWithValidation(
-        { title: '', repo: 'bde' },
+        { title: '', repo: 'fleet' },
         { logger },
         { skipReadinessCheck: true }
       )
@@ -183,7 +183,7 @@ it('tasks.create forwards skipReadinessCheck to the delegate', async () => {
   registerTaskTools(server, deps)
   await call('tasks.create', {
     title: 'batch task',
-    repo: 'bde',
+    repo: 'fleet',
     status: 'queued',
     spec: '## Only one section\nbody',
     skipReadinessCheck: true
@@ -197,7 +197,7 @@ it('tasks.create defaults skipReadinessCheck to false', async () => {
   const deps = fakeDeps()
   const { server, call } = mockServer()
   registerTaskTools(server, deps)
-  await call('tasks.create', { title: 't', repo: 'bde' })
+  await call('tasks.create', { title: 't', repo: 'fleet' })
   const call0 = (deps.createTaskWithValidation as any).mock.calls[0]
   const opts = call0[2] ?? {}
   expect(opts.skipReadinessCheck ?? false).toBe(false)
@@ -256,7 +256,7 @@ git commit -m "feat(mcp): expose skipReadinessCheck on tasks.create for batch/ad
 ```typescript
 it('validation errors carry a machine-readable code', () => {
   try {
-    createTaskWithValidation({ title: '', repo: 'bde' }, { logger })
+    createTaskWithValidation({ title: '', repo: 'fleet' }, { logger })
     expect.fail('should have thrown')
   } catch (err) {
     expect(err).toMatchObject({
@@ -269,7 +269,7 @@ it('validation errors carry a machine-readable code', () => {
 it('readiness failures carry code spec-readiness', () => {
   try {
     createTaskWithValidation(
-      { title: 't', repo: 'bde', status: 'queued', spec: '## Only one section' },
+      { title: 't', repo: 'fleet', status: 'queued', spec: '## Only one section' },
       { logger }
     )
     expect.fail('should have thrown')

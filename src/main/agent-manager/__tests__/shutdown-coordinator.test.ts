@@ -139,7 +139,7 @@ describe('executeShutdown', () => {
       expect.objectContaining({
         status: 'queued',
         claimed_by: null,
-        notes: expect.stringContaining('re-queued due to BDE shutdown')
+        notes: expect.stringContaining('re-queued due to FLEET shutdown')
       })
     )
     expect(deps.logger.info).toHaveBeenCalledWith(expect.stringContaining('Re-queued task task-1'))

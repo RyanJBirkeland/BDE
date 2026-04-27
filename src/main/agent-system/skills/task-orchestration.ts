@@ -1,6 +1,6 @@
-import type { BDESkill } from './types'
+import type { FLEETSkill } from './types'
 
-export const taskOrchestrationSkill: BDESkill = {
+export const taskOrchestrationSkill: FLEETSkill = {
   id: 'task-orchestration',
   trigger: 'User wants to create tasks, set dependencies, or manage queue',
   description: 'Create and manage sprint tasks with dependencies',
@@ -16,7 +16,7 @@ Use the sprint:create IPC channel:
 // Example: Create task via IPC
 await window.api.sprint.create({
   title: 'Fix bug in IPC handler',
-  repo: 'bde',
+  repo: 'fleet',
   spec: '## Goal\\nFix the race condition...\\n\\n## Approach\\n...',
   status: 'queued'
 })
@@ -32,7 +32,7 @@ await window.api.sprint.create({
 // Example: Create task with dependencies
 await window.api.sprint.create({
   title: 'Add tests for feature',
-  repo: 'bde',
+  repo: 'fleet',
   spec: '## Goal\\nAdd unit tests...',
   depends_on: [{ id: 'parent-task-id', type: 'hard' }]
 })

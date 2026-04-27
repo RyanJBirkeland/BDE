@@ -137,7 +137,7 @@ function TaskPillInner({
         style={{
           background:
             task.pr_status === 'open' || task.pr_status === 'branch_only'
-              ? 'var(--bde-status-review)'
+              ? 'var(--fleet-status-review)'
               : `var(${STATUS_METADATA[task.status].colorToken})`
         }}
       />
@@ -178,7 +178,7 @@ function TaskPillInner({
       </span>
       <span
         className="task-pill__badge"
-        style={{ background: 'var(--bde-accent-surface)', color: 'var(--bde-accent)' }}
+        style={{ background: 'var(--fleet-accent-surface)', color: 'var(--fleet-accent)' }}
       >
         {task.repo}
       </span>

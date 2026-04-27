@@ -19,7 +19,7 @@ export const FEATURE_GUIDES: Record<View, FeatureGuide> = {
     icon: VIEW_REGISTRY.dashboard.icon,
     shortcut: VIEW_REGISTRY.dashboard.shortcut,
     description:
-      'Overview of task pipeline health, agent execution metrics, and recent activity. Your command center for monitoring BDE.',
+      'Overview of task pipeline health, agent execution metrics, and recent activity. Your command center for monitoring FLEET.',
     features: [
       'Status counters showing active, queued, blocked, and completed tasks',
       'Pipeline flow visualization across all task stages',
@@ -35,7 +35,7 @@ export const FEATURE_GUIDES: Record<View, FeatureGuide> = {
     icon: VIEW_REGISTRY.agents.icon,
     shortcut: VIEW_REGISTRY.agents.shortcut,
     description:
-      'Interactive agent sessions. Spawn adhoc agents for one-off tasks or launch the BDE Assistant for conversational help.',
+      'Interactive agent sessions. Spawn adhoc agents for one-off tasks or launch the FLEET Assistant for conversational help.',
     features: [
       'Multi-turn conversations with agent sessions',
       'Dev Playground for HTML rendering (visual prototyping, UI tools)',
@@ -52,7 +52,7 @@ export const FEATURE_GUIDES: Record<View, FeatureGuide> = {
     icon: VIEW_REGISTRY.ide.icon,
     shortcut: VIEW_REGISTRY.ide.shortcut,
     description:
-      'Integrated code editor with Monaco, file explorer, and terminal. Full-featured development environment inside BDE.',
+      'Integrated code editor with Monaco, file explorer, and terminal. Full-featured development environment inside FLEET.',
     features: [
       'Monaco editor with syntax highlighting and multi-tab interface',
       'File explorer tree with expand/collapse state persistence',
@@ -61,7 +61,7 @@ export const FEATURE_GUIDES: Record<View, FeatureGuide> = {
       'State persistence for open tabs and active file'
     ],
     usage:
-      'Use IDE for code editing, terminal commands, and file management without leaving BDE. Cmd+B toggles sidebar, Cmd+J toggles terminal.'
+      'Use IDE for code editing, terminal commands, and file management without leaving FLEET. Cmd+B toggles sidebar, Cmd+J toggles terminal.'
   },
   sprint: {
     view: 'sprint',
@@ -128,7 +128,7 @@ export const FEATURE_GUIDES: Record<View, FeatureGuide> = {
       'Appearance: Theme toggle, motion preferences'
     ],
     usage:
-      'Configure BDE here. Most settings persist to SQLite. Agent Manager changes require app restart.'
+      'Configure FLEET here. Most settings persist to SQLite. Agent Manager changes require app restart.'
   },
   planner: {
     view: 'planner',

@@ -17,7 +17,7 @@ import {
 import { getTaskChanges } from '../data/task-changes'
 import { readOrCreateToken } from './token-store'
 import { createLogger } from '../logger'
-import { seedBdeRepo } from './test-setup'
+import { seedFleetRepo } from './test-setup'
 import type { SprintTask, TaskGroup } from '../../shared/types/task-types'
 
 vi.mock('../broadcast', () => ({ broadcast: vi.fn() }))
@@ -81,7 +81,7 @@ let createdTaskIds: string[] = []
 let createdEpicIds: string[] = []
 
 beforeAll(async () => {
-  seedBdeRepo()
+  seedFleetRepo()
   epicService = createEpicGroupService()
   serverHandle = createMcpServer({ epicService, onStatusTerminal: () => {} }, { port: 0 })
   serverPort = await serverHandle.start()
@@ -141,7 +141,7 @@ function projectEpicParity(epic: TaskGroup): Record<string, unknown> {
 describe('IPC vs MCP parity', () => {
   it('creates identical tasks and produces identical audit trails', async () => {
     const logger = createLogger('parity-test')
-    const input = { title: 'parity-test', repo: 'bde', status: 'backlog' as const, priority: 3 }
+    const input = { title: 'parity-test', repo: 'fleet', status: 'backlog' as const, priority: 3 }
 
     const ipcTask = await createTaskWithValidation(input, { logger })
     createdTaskIds.push(ipcTask.id)
@@ -173,7 +173,7 @@ describe('IPC vs MCP parity', () => {
     const logger = createLogger('parity-test')
     const baseInput = {
       title: 'parity-cancel',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'backlog' as const,
       priority: 2
     }

@@ -2,13 +2,13 @@
  * In-process MCP server for adhoc + assistant agents.
  *
  * Before this existed, interactive agents had no way to create or modify
- * BDE tasks and epics — they resorted to shelling out with `sqlite3` to
- * edit `~/.bde/bde.db` directly, bypassing validation, the audit trail,
+ * FLEET tasks and epics — they resorted to shelling out with `sqlite3` to
+ * edit `~/.fleet/fleet.db` directly, bypassing validation, the audit trail,
  * dependency auto-blocking, and the renderer broadcast. This module
  * exposes the same vocabulary the UI uses as first-class agent tools,
  * routed through sprint-service and EpicGroupService.
  *
- * External MCP clients (Claude Desktop, Cursor, the BDE CLI) still talk
+ * External MCP clients (Claude Desktop, Cursor, the FLEET CLI) still talk
  * to the opt-in HTTP server at src/main/mcp-server/. This is the same
  * domain but in-process: no HTTP, no auth token, no round-trip.
  */
@@ -118,7 +118,7 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
 
   const tasksCreate = tool(
     'tasks.create',
-    'Create a sprint task in BDE. Runs the same validation as the Task Workbench (title, configured repo, spec structure). Returns the created task row. Note: in-process agent calls cannot queue a task for autonomous execution — requests with status=queued are downgraded to backlog so a human approves the queue transition in the UI. Prefer this over any direct SQL against ~/.bde/bde.db — that path bypasses validation, the audit trail, and the UI broadcast.',
+    'Create a sprint task in FLEET. Runs the same validation as the Task Workbench (title, configured repo, spec structure). Returns the created task row. Note: in-process agent calls cannot queue a task for autonomous execution — requests with status=queued are downgraded to backlog so a human approves the queue transition in the UI. Prefer this over any direct SQL against ~/.fleet/fleet.db — that path bypasses validation, the audit trail, and the UI broadcast.',
     TaskCreateSchema.shape,
     async (rawInput) => {
       const parsed = TaskCreateSchema.safeParse(rawInput)
@@ -239,7 +239,7 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
 
   const metaRepos = tool(
     'meta.repos',
-    'List the repositories configured in BDE Settings. Use this before tasks.create to discover valid repo slugs.',
+    'List the repositories configured in FLEET Settings. Use this before tasks.create to discover valid repo slugs.',
     {},
     async () => jsonResult(listRepos())
   )
@@ -266,10 +266,10 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
 
 /**
  * MCP server name — forms part of the tool identifier the agent sees as
- * `mcp__bde__<tool-name>`. Matches the HTTP MCP server name so internal
+ * `mcp__fleet__<tool-name>`. Matches the HTTP MCP server name so internal
  * and external callers share a vocabulary.
  */
-export const PLANNER_MCP_SERVER_NAME = 'bde'
+export const PLANNER_MCP_SERVER_NAME = 'fleet'
 
 /**
  * Construct an in-process SDK MCP server suitable for passing to the

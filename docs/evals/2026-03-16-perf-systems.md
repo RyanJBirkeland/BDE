@@ -1,4 +1,4 @@
-# BDE Systems Performance Evaluation
+# FLEET Systems Performance Evaluation
 
 > **Status: PRE-FIX AUDIT (2026-03-16)**
 > Several issues identified here have been partially addressed:
@@ -140,7 +140,7 @@ ChatThread already uses this pattern correctly (recursive setTimeout). Apply it 
 **Good practices already in place**:
 
 - `child.unref()` — won't keep Electron alive
-- `detached: true` — agent survives if BDE quits
+- `detached: true` — agent survives if FLEET quits
 - Tracked in `activeAgentProcesses` Map and cleaned up on exit
 - Reconcile stale agents every 30 seconds via `maybeReconcileStaleAgents()`
 
@@ -238,8 +238,8 @@ All transactions are short (`agent-history.ts:83` migration, `agent-history.ts:2
 
 Only two `fs.watch()` instances:
 
-1. `~/.bde/bde.db` — the SQLite database file
-2. `~/.bde/bde.db-wal` — the WAL file
+1. `~/.fleet/fleet.db` — the SQLite database file
+2. `~/.fleet/fleet.db-wal` — the WAL file
 
 Both fire a debounced (500ms) `sprint:external-change` event to the renderer. This is a clean, efficient implementation. No watching of large directories.
 
@@ -298,7 +298,7 @@ export async function tailAgentLog(args: TailLogArgs): Promise<TailLogResult> {
 
 ### Log cleanup is adequate
 
-- `cleanupOldLogs()` removes files >7 days old from `/tmp/bde-agents/` at startup
+- `cleanupOldLogs()` removes files >7 days old from `/tmp/fleet-agents/` at startup
 - `pruneOldAgents(500)` caps SQLite rows and deletes corresponding log directories
 - No unbounded accumulation detected
 

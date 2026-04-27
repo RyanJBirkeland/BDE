@@ -16,16 +16,16 @@ export function GlassPanel({
   className = '',
   style
 }: GlassPanelProps): React.JSX.Element {
-  const borderVal = accent ? neonVar(accent, 'border') : 'var(--bde-border)'
+  const borderVal = accent ? neonVar(accent, 'border') : 'var(--fleet-border)'
   return (
     <div
       className={`glass-panel ${className}`.trim()}
       style={{
         background: accent
-          ? `linear-gradient(135deg, ${neonVar(accent, 'surface')}, ${'var(--bde-bg)'})`
-          : 'var(--bde-bg)',
+          ? `linear-gradient(135deg, ${neonVar(accent, 'surface')}, ${'var(--fleet-bg)'})`
+          : 'var(--fleet-bg)',
         border: `1px solid ${borderVal}`,
-        borderRadius: 'var(--bde-radius-xl)',
+        borderRadius: 'var(--fleet-radius-xl)',
         ...style
       }}
     >

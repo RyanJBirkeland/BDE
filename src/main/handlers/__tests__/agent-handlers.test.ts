@@ -481,7 +481,7 @@ describe('local:spawnClaudeAgent handler', () => {
     const handler = captureHandler('local:spawnClaudeAgent')
     const result = await handler(mockEvent, {
       task: 'Build the feature',
-      repoPath: '/Users/test/projects/BDE'
+      repoPath: '/Users/test/projects/FLEET'
     })
 
     // Model is resolved inside spawnAdhocAgent via agents.backendConfig —
@@ -489,7 +489,7 @@ describe('local:spawnClaudeAgent handler', () => {
     expect(spawnAdhocAgent).toHaveBeenCalledWith(
       expect.objectContaining({
         task: 'Build the feature',
-        repoPath: '/Users/test/projects/BDE',
+        repoPath: '/Users/test/projects/FLEET',
         assistant: undefined
       })
     )
@@ -510,8 +510,8 @@ describe('agents:promoteToReview handler', () => {
       pid: null,
       bin: 'claude',
       model: 'sonnet',
-      repo: 'bde',
-      repoPath: '/Users/test/bde',
+      repo: 'fleet',
+      repoPath: '/Users/test/fleet',
       task: 'Add clipboard image paste\n\nMore details follow.',
       startedAt: nowIso(),
       finishedAt: nowIso(),
@@ -523,7 +523,7 @@ describe('agents:promoteToReview handler', () => {
       tokensIn: null,
       tokensOut: null,
       sprintTaskId: null,
-      worktreePath: '/tmp/bde-adhoc/bde/adhoc-1',
+      worktreePath: '/tmp/fleet-adhoc/fleet/adhoc-1',
       branch: 'agent/add-clipboard-image-paste-adhoc-1',
       ...overrides
     }
@@ -601,8 +601,8 @@ describe('agents:promoteToReview handler', () => {
     // full task message as the spec — that's what Code Review reads.
     expect(createReviewTaskFromAdhoc).toHaveBeenCalledWith(
       expect.objectContaining({
-        repo: 'bde',
-        worktreePath: '/tmp/bde-adhoc/bde/adhoc-1',
+        repo: 'fleet',
+        worktreePath: '/tmp/fleet-adhoc/fleet/adhoc-1',
         branch: 'agent/add-clipboard-image-paste-adhoc-1',
         spec: 'Add clipboard image paste\n\nMore details follow.'
       })

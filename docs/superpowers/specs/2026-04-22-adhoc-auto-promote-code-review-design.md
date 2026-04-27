@@ -6,11 +6,11 @@
 
 ## Motivation
 
-Pipeline agents auto-escalate to the Code Review Station on completion. Adhoc and Assistant agents — both user-spawned, both running in `~/.bde/worktrees-adhoc/`, both capable of committing code — do not. They are intentionally treated as "scratchpads" that never enter the sprint task lifecycle unless the user takes an explicit action.
+Pipeline agents auto-escalate to the Code Review Station on completion. Adhoc and Assistant agents — both user-spawned, both running in `~/.fleet/worktrees-adhoc/`, both capable of committing code — do not. They are intentionally treated as "scratchpads" that never enter the sprint task lifecycle unless the user takes an explicit action.
 
 Three things are broken with the current UX:
 
-1. **The Promote button is present in `ConsoleHeader.tsx` but undiscoverable.** The existing button at lines 255-265 renders as a small icon-only `GitPullRequest` glyph (size 14) tucked among Terminal / Stop / Copy Log icons in a dense header row, with only a `title` tooltip and `aria-label`. In real-world use (see the session transcript that motivated this spec) the user did not realize the glyph was the promote action and resorted to prompting the agent with *"push the changes to code review."* The agent interpreted this as `git push`, pushed to GitHub, and told the user to "open Code Review" — but the task never entered BDE's review queue because `agents:promoteToReview` was never called. The button isn't missing; it's invisible.
+1. **The Promote button is present in `ConsoleHeader.tsx` but undiscoverable.** The existing button at lines 255-265 renders as a small icon-only `GitPullRequest` glyph (size 14) tucked among Terminal / Stop / Copy Log icons in a dense header row, with only a `title` tooltip and `aria-label`. In real-world use (see the session transcript that motivated this spec) the user did not realize the glyph was the promote action and resorted to prompting the agent with *"push the changes to code review."* The agent interpreted this as `git push`, pushed to GitHub, and told the user to "open Code Review" — but the task never entered FLEET's review queue because `agents:promoteToReview` was never called. The button isn't missing; it's invisible.
 2. **Even when the button is used, it is silent at the session boundary.** There is no auto-promotion when the user stops the session, no system message in the agent transcript once a promotion happens, and no badge on the Code Review nav entry. An adhoc agent that finishes committing work and goes idle just sits there with its worktree; the user has to remember to come back. Pipeline agents don't have this failure mode because the task flips to `review` automatically and Code Review polls for updates.
 3. **The Stop confirm dialog actively discourages the right behavior for adhoc/assistant.** `handleStop` in `ConsoleHeader.tsx:121` warns *"Killing it will leave those changes on disk but will not commit or push them."* For a worktree-running scratchpad with uncommitted edits, that's exactly the outcome users complain about — work stranded on disk, no review entry. The current warning reflects the old scratchpad-only model.
 
@@ -20,16 +20,16 @@ The fix is to make user-spawned agents (Adhoc + Assistant) behave like pipeline 
 
 **In scope**
 
-- BDE Adhoc agents (role: `adhoc`)
-- BDE Assistant agents (role: `assistant`)
+- FLEET Adhoc agents (role: `adhoc`)
+- FLEET Assistant agents (role: `assistant`)
 
-Both share the `~/.bde/worktrees-adhoc/` base and have identical tool access; no valid reason exists for them to diverge at the review boundary.
+Both share the `~/.fleet/worktrees-adhoc/` base and have identical tool access; no valid reason exists for them to diverge at the review boundary.
 
 **Out of scope**
 
 - Pipeline agents — already auto-transition via `transitionToReview()`; unchanged.
 - Reviewer / Copilot / Synthesizer — no worktree, or no commits produced.
-- Claude Code subagents spawned via the Agent tool with `isolation: "worktree"` — those are orchestrated by Claude Code, not BDE; outside BDE's lifecycle.
+- Claude Code subagents spawned via the Agent tool with `isolation: "worktree"` — those are orchestrated by Claude Code, not FLEET; outside FLEET's lifecycle.
 - Pure research / chat adhoc sessions that never commit — preserved as scratchpads; no promotion occurs.
 
 ## Design
@@ -42,7 +42,7 @@ All three triggers flow through the existing `promoteAdhocToTask()` service in `
 
 The existing `handleStop` confirm dialog (`ConsoleHeader.tsx:98-145`) is updated for agents where the promote predicate (`canPromote`, already defined at line 160) holds. The dialog copy for these agents replaces the current *"will leave those changes on disk but will not commit or push them"* warning with: *"Stopping this session will auto-commit any pending changes and promote the work to Code Review as task #T-N."* Two confirmation buttons: **Stop and promote** (default) and **Cancel**. A secondary link *"Stop without promoting"* preserves the old behavior for users who explicitly want the scratchpad path.
 
-On confirmed **Stop and promote**, BDE:
+On confirmed **Stop and promote**, FLEET:
 
 1. If the agent is mid-turn, waits for the turn to finish (or abort to land) before proceeding.
 2. Inspects the worktree: commits beyond `origin/main` exist? If yes → promotes directly.
@@ -58,7 +58,7 @@ The existing `canPromote` predicate (`(agent.status === 'done' || agent.status =
 The discoverability problem is solved by:
 
 - Replacing the icon-only button with an icon + label pair: `GitPullRequest` glyph + the text *"Promote to Code Review"*.
-- Giving it its own styling distinct from the neutral icon buttons (e.g., the existing accent color `var(--bde-accent)` is retained, but the button becomes primary-shaped rather than a 28px square icon).
+- Giving it its own styling distinct from the neutral icon buttons (e.g., the existing accent color `var(--fleet-accent)` is retained, but the button becomes primary-shaped rather than a 28px square icon).
 - Moving it to the left of the icon cluster — visually adjacent to the task name and model badge, not hidden in the action-icon row.
 
 Click path is unchanged in shape — `window.api.agents.promoteToReview(agent.id)` — but the IPC handler now passes `{autoCommitIfDirty: true}` into the service so the button honors the same auto-commit semantics as the close path.
@@ -117,7 +117,7 @@ All failures are non-destructive; the worktree is never deleted on a failure pat
 
 ## Implementation
 
-Changes grouped by BDE process boundary.
+Changes grouped by FLEET process boundary.
 
 ### Main process
 
@@ -218,9 +218,9 @@ Changes grouped by BDE process boundary.
 
 ## Dependencies / risks
 
-- **SDK custom-tool support must be confirmed before the implementation plan lands**, not deferred to implementation. The plan author inspects the `@anthropic-ai/claude-agent-sdk` version in BDE's `package.json` and confirms that `query()` (or the call used by `adhoc-agent.ts`) accepts an `mcpServers` option with in-process servers. If not supported, **Trigger 3 (agent tool) is descoped to a follow-up** and this spec ships with Triggers 1 and 2 only. The user message-scanning fallback mentioned in earlier drafts is explicitly rejected as a substitute — it's a different UX surface and would not land under this spec's banner.
+- **SDK custom-tool support must be confirmed before the implementation plan lands**, not deferred to implementation. The plan author inspects the `@anthropic-ai/claude-agent-sdk` version in FLEET's `package.json` and confirms that `query()` (or the call used by `adhoc-agent.ts`) accepts an `mcpServers` option with in-process servers. If not supported, **Trigger 3 (agent tool) is descoped to a follow-up** and this spec ships with Triggers 1 and 2 only. The user message-scanning fallback mentioned in earlier drafts is explicitly rejected as a substitute — it's a different UX surface and would not land under this spec's banner.
 - **No behavior change for pipeline agents** beyond `transitionToReview()` gaining a single `promoted_to_review_at` write. The pipeline completion flow, worktree teardown, and review transition are otherwise untouched.
-- **Discoverability button redesign** — moving the button out of the icon cluster is a visible UX change on an established surface. Screenshot / ASCII in the PR body per BDE's UX PR rule.
+- **Discoverability button redesign** — moving the button out of the icon cluster is a visible UX change on an established surface. Screenshot / ASCII in the PR body per FLEET's UX PR rule.
 
 ## Open questions (none blocking design)
 

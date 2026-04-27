@@ -35,10 +35,10 @@ export function EpicProgress({ tasks, tasksNeedingSpecs }: EpicProgressProps): R
   }, [counts.done, tasks.length])
 
   const progressColor = useMemo(() => {
-    if (progressPercent === 100) return 'var(--bde-accent)'
-    if (progressPercent >= 50) return 'var(--bde-status-review)'
-    if (progressPercent > 0) return 'var(--bde-warning)'
-    return 'var(--bde-text-dim)'
+    if (progressPercent === 100) return 'var(--fleet-accent)'
+    if (progressPercent >= 50) return 'var(--fleet-status-review)'
+    if (progressPercent > 0) return 'var(--fleet-warning)'
+    return 'var(--fleet-text-dim)'
   }, [progressPercent])
 
   return (

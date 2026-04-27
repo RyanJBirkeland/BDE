@@ -21,19 +21,19 @@ const ACCENT_PRESETS = [
 
 function useAccentColor(): [string, (color: string) => void] {
   const [accent, setAccentState] = useState(
-    () => localStorage.getItem('bde-accent') ?? '#00D37F' /* intentional: default accent */
+    () => localStorage.getItem('fleet-accent') ?? '#00D37F' /* intentional: default accent */
   )
 
   const setAccent = useCallback((color: string) => {
-    localStorage.setItem('bde-accent', color)
-    document.documentElement.style.setProperty('--bde-accent', color)
+    localStorage.setItem('fleet-accent', color)
+    document.documentElement.style.setProperty('--fleet-accent', color)
     setAccentState(color)
   }, [])
 
   useEffect(() => {
-    const saved = localStorage.getItem('bde-accent')
+    const saved = localStorage.getItem('fleet-accent')
     if (saved) {
-      document.documentElement.style.setProperty('--bde-accent', saved)
+      document.documentElement.style.setProperty('--fleet-accent', saved)
     }
   }, [])
 
@@ -80,7 +80,7 @@ export function AppearanceSection(): React.JSX.Element {
       <SettingsCard title="Theme" subtitle="Choose your visual theme">
         <div className="settings-theme-buttons">
           <button
-            className={`bde-btn bde-btn--sm ${theme === 'system' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+            className={`fleet-btn fleet-btn--sm ${theme === 'system' ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
             onClick={() => setTheme('system')}
             type="button"
             aria-pressed={theme === 'system'}
@@ -89,7 +89,7 @@ export function AppearanceSection(): React.JSX.Element {
             System
           </button>
           <button
-            className={`bde-btn bde-btn--sm ${theme === 'dark' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+            className={`fleet-btn fleet-btn--sm ${theme === 'dark' ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
             onClick={() => setTheme('dark')}
             type="button"
             aria-pressed={theme === 'dark'}
@@ -97,7 +97,7 @@ export function AppearanceSection(): React.JSX.Element {
             Dark
           </button>
           <button
-            className={`bde-btn bde-btn--sm ${theme === 'light' ? 'bde-btn--primary' : 'bde-btn--ghost'}`}
+            className={`fleet-btn fleet-btn--sm ${theme === 'light' ? 'fleet-btn--primary' : 'fleet-btn--ghost'}`}
             onClick={() => setTheme('light')}
             type="button"
             aria-pressed={theme === 'light'}
@@ -132,7 +132,7 @@ export function AppearanceSection(): React.JSX.Element {
                 Always {tearoffPref === 'return' ? 'return to main' : 'close'}
               </span>
               <button
-                className="bde-btn bde-btn--sm bde-btn--ghost"
+                className="fleet-btn fleet-btn--sm fleet-btn--ghost"
                 onClick={resetTearoffPref}
                 type="button"
               >

@@ -5,7 +5,7 @@
 
 ## Summary
 
-The BDE macOS packaging configuration is **functional but contains several configuration gaps** that create risks for distribution and user experience on fresh Macs. The app successfully builds a 507MB arm64 DMG with proper ASAR bundling, automatic unpacking of native modules (better-sqlite3, node-pty, @anthropic-ai/claude-agent-sdk), and a valid ad-hoc signature. However, the configuration lacks proper signing entitlements, missing explicit ASAR unpacking rules, no copyright statement in the config, absent DMG background image specification, and incomplete macOS permission declarations. The build outputs correctly to `release/` with proper artifact naming, but several production-readiness issues would prevent successful distribution outside a single developer's machine.
+The FLEET macOS packaging configuration is **functional but contains several configuration gaps** that create risks for distribution and user experience on fresh Macs. The app successfully builds a 507MB arm64 DMG with proper ASAR bundling, automatic unpacking of native modules (better-sqlite3, node-pty, @anthropic-ai/claude-agent-sdk), and a valid ad-hoc signature. However, the configuration lacks proper signing entitlements, missing explicit ASAR unpacking rules, no copyright statement in the config, absent DMG background image specification, and incomplete macOS permission declarations. The build outputs correctly to `release/` with proper artifact naming, but several production-readiness issues would prevent successful distribution outside a single developer's machine.
 
 ---
 
@@ -13,10 +13,10 @@ The BDE macOS packaging configuration is **functional but contains several confi
 
 **Severity:** High
 **Category:** signing
-**Location:** `electron-builder.yml` (entire file); `/Users/ryan/projects/BDE/scripts/after-sign.sh` exists but unused
-**Evidence:** The script `/Users/ryan/projects/BDE/scripts/after-sign.sh` performs ad-hoc re-signing (`codesign --deep --force --sign -`) to handle Team ID mismatches on macOS 26. However, electron-builder.yml contains no `afterSign` hook configuration. The app is currently signed with `adhoc` signature and `Identifier=Electron` (default), not the expected `com.rbtechbot.bde` bundle identifier.
+**Location:** `electron-builder.yml` (entire file); `/Users/ryan/projects/FLEET/scripts/after-sign.sh` exists but unused
+**Evidence:** The script `/Users/ryan/projects/FLEET/scripts/after-sign.sh` performs ad-hoc re-signing (`codesign --deep --force --sign -`) to handle Team ID mismatches on macOS 26. However, electron-builder.yml contains no `afterSign` hook configuration. The app is currently signed with `adhoc` signature and `Identifier=Electron` (default), not the expected `com.rbtechbot.fleet` bundle identifier.
 
-**Impact:** On a fresh Mac with Gatekeeper enabled (macOS 12+), the unsigned app will prompt users with "BDE cannot be opened because the developer cannot be verified" and will not run without user intervention (Right-click > Open). Distribution via DMG becomes problematic.
+**Impact:** On a fresh Mac with Gatekeeper enabled (macOS 12+), the unsigned app will prompt users with "FLEET cannot be opened because the developer cannot be verified" and will not run without user intervention (Right-click > Open). Distribution via DMG becomes problematic.
 
 **Recommendation:** Add to `electron-builder.yml` under the `mac:` section:
 ```yaml
@@ -37,12 +37,12 @@ Or alternatively, configure proper code signing if certificates are available.
 
 **Severity:** High
 **Category:** plist
-**Location:** `/Users/ryan/projects/BDE/release/mac-arm64/BDE.app/Contents/Info.plist` lines 1-114
+**Location:** `/Users/ryan/projects/FLEET/release/mac-arm64/FLEET.app/Contents/Info.plist` lines 1-114
 **Evidence:** The app declares permission descriptions (NSMicrophoneUsageDescription, NSCameraUsageDescription, NSAudioCaptureUsageDescription, NSBluetoothAlwaysUsageDescription) in Info.plist, but the app binary has **no entitlements embedded** (`codesign -d --entitlements` returns empty). The ad-hoc signature includes `flags=0x20002(adhoc,linker-signed)` with sealed resources set to `none`.
 
 **Impact:** Permission prompts will be silently suppressed on first launch. Users granting microphone/camera/Bluetooth access via System Preferences will see no effect in the app, leading to feature failures (terminal I/O, agent audio capture) without user awareness.
 
-**Recommendation:** Create `/Users/ryan/projects/BDE/build/entitlements.mac.plist` with:
+**Recommendation:** Create `/Users/ryan/projects/FLEET/build/entitlements.mac.plist` with:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -72,7 +72,7 @@ mac:
 
 **Severity:** Medium
 **Category:** config
-**Location:** `electron-builder.yml` (no `asarUnpack` key); actual unpacking verified in `/Users/ryan/projects/BDE/release/mac-arm64/BDE.app/Contents/Resources/app.asar.unpacked/`
+**Location:** `electron-builder.yml` (no `asarUnpack` key); actual unpacking verified in `/Users/ryan/projects/FLEET/release/mac-arm64/FLEET.app/Contents/Resources/app.asar.unpacked/`
 **Evidence:** The app.asar (162M) is built with automatic unpacking of native modules (better-sqlite3: 21M, node-pty: 2.8M, @anthropic-ai/claude-agent-sdk: 49M totaling 89M unpacked). This unpacking is **implicit and not declared** in electron-builder.yml. electron-builder auto-detects binary modules, but the configuration lacks explicit intent and documentation.
 
 **Impact:** Future builds may fail silently if asarUnpack rules change. On a fresh Mac without the auto-detection heuristic working correctly (edge case), the ASAR would load modules from inside the archive, causing native module load failures (cannot find better-sqlite3 for ARM64 architecture).
@@ -96,13 +96,13 @@ asarUnpack:
 **Severity:** Medium
 **Category:** metadata
 **Location:** `electron-builder.yml` (missing `copyright` key)
-**Evidence:** The Info.plist contains `NSHumanReadableCopyright = "Copyright © 2026 BDE"` but this is auto-generated. The electron-builder.yml has no `copyright` key at the root or `mac:` level. The copyright will revert to Electron's default if the build process changes.
+**Evidence:** The Info.plist contains `NSHumanReadableCopyright = "Copyright © 2026 FLEET"` but this is auto-generated. The electron-builder.yml has no `copyright` key at the root or `mac:` level. The copyright will revert to Electron's default if the build process changes.
 
 **Impact:** Incorrect copyright attribution in About dialog and legal metadata on a fresh Mac running the app.
 
 **Recommendation:** Add to `electron-builder.yml`:
 ```yaml
-copyright: "Copyright © 2026 BDE"
+copyright: "Copyright © 2026 FLEET"
 ```
 
 **Effort:** S
@@ -122,11 +122,11 @@ copyright: "Copyright © 2026 BDE"
 **Recommendation:** Add explicit `name` fields:
 ```yaml
 dmg:
-  title: 'BDE ${version}'
+  title: 'FLEET ${version}'
   contents:
     - x: 130
       y: 220
-      name: 'BDE'
+      name: 'FLEET'
     - x: 410
       y: 220
       type: link
@@ -195,7 +195,7 @@ Currently, the app will require user workaround on every launch.
 
 **Severity:** Low
 **Category:** packaging
-**Location:** `/Users/ryan/projects/BDE/release/mac-arm64/BDE.app/Contents/Resources/app.asar` (162M)
+**Location:** `/Users/ryan/projects/FLEET/release/mac-arm64/FLEET.app/Contents/Resources/app.asar` (162M)
 **Evidence:** The ASAR archive is 162M, with app.asar.unpacked consuming 89M (35% of total). The `files` rule includes `- out/**/*` with no excludes beyond source maps (`- '!out/**/*.map'`). The out/ directory contains built JS but likely includes locale files from Electron framework (.lproj directories total 62 entries in Resources/).
 
 **Impact:** Slower DMG download, mount, and extraction on a fresh Mac with poor network connectivity. DMG is 170M total.
@@ -220,7 +220,7 @@ files:
 **Location:** `electron-builder.yml` line 15
 **Evidence:** `hardenedRuntime: false` disables Apple's Runtime Hardening requirements. Combined with `identity: null`, the app is built without hardened runtime protections. On macOS 13+, unsigned apps with disabled hardening will trigger additional Gatekeeper warnings.
 
-**Impact:** Users on a fresh Mac will see a more aggressive warning: "BDE cannot be opened because Apple cannot check it for malicious software." Even after user approval, the app lacks runtime protections against code injection and memory corruption exploits.
+**Impact:** Users on a fresh Mac will see a more aggressive warning: "FLEET cannot be opened because Apple cannot check it for malicious software." Even after user approval, the app lacks runtime protections against code injection and memory corruption exploits.
 
 **Recommendation:** Enable hardened runtime:
 ```yaml

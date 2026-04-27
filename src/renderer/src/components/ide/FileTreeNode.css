@@ -5,12 +5,12 @@
 .ide-file-node {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
   height: 24px;
-  padding-right: var(--bde-space-2);
+  padding-right: var(--fleet-space-2);
   cursor: pointer;
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
   white-space: nowrap;
   user-select: none;
   transition:
@@ -18,12 +18,12 @@
     color 0.08s ease;
 }
 .ide-file-node:hover {
-  background: var(--bde-hover);
-  color: var(--bde-text);
+  background: var(--fleet-hover);
+  color: var(--fleet-text);
 }
 .ide-file-node--active {
-  background: var(--bde-selected);
-  color: var(--bde-text);
+  background: var(--fleet-selected);
+  color: var(--fleet-text);
 }
 .ide-file-node__chevron {
   flex-shrink: 0;
@@ -31,13 +31,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 .ide-file-node__icon {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 .ide-file-node__name {
   overflow: hidden;
@@ -48,81 +48,81 @@
   position: fixed;
   z-index: var(--z-fullscreen);
   min-width: 160px;
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-md);
-  box-shadow: var(--bde-shadow-md);
-  padding: var(--bde-space-1) 0;
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  box-shadow: var(--fleet-shadow-md);
+  padding: var(--fleet-space-1) 0;
   overflow: hidden;
 }
 .ide-context-menu__item {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: 6px var(--bde-space-3);
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text);
+  gap: var(--fleet-space-2);
+  padding: 6px var(--fleet-space-3);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text);
   cursor: pointer;
   border: none;
   background: transparent;
   width: 100%;
   text-align: left;
   transition: background 0.08s ease;
-  font-family: var(--bde-font-ui);
+  font-family: var(--fleet-font-ui);
 }
 .ide-context-menu__item:hover {
-  background: var(--bde-hover);
+  background: var(--fleet-hover);
 }
 .ide-context-menu__item--danger:hover {
-  background: var(--bde-danger-hover);
+  background: var(--fleet-danger-hover);
 }
 .ide-context-menu__separator {
   height: 1px;
-  background: var(--bde-border);
-  margin: var(--bde-space-1) 0;
+  background: var(--fleet-border);
+  margin: var(--fleet-space-1) 0;
 }
 /* Neon Theme Overrides */
 .ide-file-node {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 .ide-file-node:hover {
-  background: var(--bde-border);
-  color: var(--bde-text);
+  background: var(--fleet-border);
+  color: var(--fleet-text);
 }
 .ide-file-node--active {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
-  border-left: 2px solid var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
+  border-left: 2px solid var(--fleet-accent);
 }
 .ide-file-node__chevron {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 .ide-file-node__icon {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 /* Folder names: primary white, file names: muted */
 .ide-file-node[data-type='folder'] .ide-file-node__name {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .ide-file-node[data-type='file'] .ide-file-node__name {
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
 }
 .ide-context-menu {
-  background: var(--bde-surface-high);
-  border: 1px solid var(--bde-accent-border);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-accent-border);
 }
 .ide-context-menu__item {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 .ide-context-menu__item:hover {
-  background: var(--bde-border);
+  background: var(--fleet-border);
 }
 .ide-context-menu__item--danger {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 .ide-context-menu__item--danger:hover {
-  background: var(--bde-danger-surface);
+  background: var(--fleet-danger-surface);
 }
 .ide-context-menu__separator {
-  background: var(--bde-accent-border);
+  background: var(--fleet-accent-border);
 }

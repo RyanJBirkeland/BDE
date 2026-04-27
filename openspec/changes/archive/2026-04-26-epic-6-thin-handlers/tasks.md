@@ -4,11 +4,11 @@
 - [x] 1.2 Slim `review:checkFreshness` handler in `src/main/handlers/review.ts` to: validate task ID → `return reviewOrchestration.checkReviewFreshness(taskId, env)` (≤5 lines)
 - [x] 1.3 Write unit tests for `checkReviewFreshness` covering: fresh (matching SHA), stale (count > 0), unknown (no `rebase_base_sha`), unknown (git throws)
 
-## 2. review:markShippedOutsideBde → service
+## 2. review:markShippedOutsideFleet → service
 
-- [x] 2.1 Add `markShippedOutsideBde(taskId: string, deps: { taskStateService: TaskStateService }): Promise<{ success: true }>` to `src/main/services/review-orchestration-service.ts` — move the task fetch, status guard, transition call, and log from the handler
-- [x] 2.2 Slim `review:markShippedOutsideBde` handler in `src/main/handlers/review.ts` to: validate task ID → `return reviewOrchestration.markShippedOutsideBde(taskId, { taskStateService: deps.taskStateService })` (≤5 lines)
-- [x] 2.3 Write unit tests for `markShippedOutsideBde` covering: successful transition from `review` → `done`, throws for non-review task, throws for missing task
+- [x] 2.1 Add `markShippedOutsideFleet(taskId: string, deps: { taskStateService: TaskStateService }): Promise<{ success: true }>` to `src/main/services/review-orchestration-service.ts` — move the task fetch, status guard, transition call, and log from the handler
+- [x] 2.2 Slim `review:markShippedOutsideFleet` handler in `src/main/handlers/review.ts` to: validate task ID → `return reviewOrchestration.markShippedOutsideFleet(taskId, { taskStateService: deps.taskStateService })` (≤5 lines)
+- [x] 2.3 Write unit tests for `markShippedOutsideFleet` covering: successful transition from `review` → `done`, throws for non-review task, throws for missing task
 
 ## 3. sprint:claimTask → service
 

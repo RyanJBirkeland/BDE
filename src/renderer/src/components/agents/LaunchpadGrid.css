@@ -1,7 +1,7 @@
 /* src/renderer/src/assets/agent-launchpad-neon.css */
 /* ═══════════════════════════════════════════════════════
    Agent Launchpad — Single-screen session launcher
-   Uses var(--bde-*) design tokens from base.css
+   Uses var(--fleet-*) design tokens from base.css
    ═══════════════════════════════════════════════════════ */
 
 /* ── Launchpad Container ── */
@@ -9,18 +9,18 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: var(--bde-space-6);
+  padding: var(--fleet-space-6);
   overflow-y: auto;
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
 }
 
 .launchpad__header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  margin-bottom: var(--bde-space-6);
-  padding-bottom: var(--bde-space-3);
-  border-bottom: 1px solid var(--bde-accent-border);
+  gap: var(--fleet-space-2);
+  margin-bottom: var(--fleet-space-6);
+  padding-bottom: var(--fleet-space-3);
+  border-bottom: 1px solid var(--fleet-accent-border);
 }
 
 .launchpad__header .launchpad__repo-selector {
@@ -31,13 +31,13 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--bde-accent);
-  animation: bde-breathe 2s ease-in-out infinite;
+  background: var(--fleet-accent);
+  animation: fleet-breathe 2s ease-in-out infinite;
 }
 
 .launchpad__header-title {
-  color: var(--bde-accent);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-xs);
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 600;
@@ -45,41 +45,41 @@
 
 /* ── Section Labels ── */
 .launchpad__section-label {
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-2xs);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-2xs);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 600;
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
 }
 
 /* ── Tile Grid ── */
 .launchpad__tile-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--bde-space-3);
-  margin-bottom: var(--bde-space-6);
+  gap: var(--fleet-space-3);
+  margin-bottom: var(--fleet-space-6);
 }
 
 .launchpad__tile {
-  background: linear-gradient(135deg, var(--bde-surface), transparent);
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-xl);
+  background: linear-gradient(135deg, var(--fleet-surface), transparent);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-xl);
   padding: 18px 14px;
   text-align: center;
   cursor: pointer;
   transition:
-    transform var(--bde-transition-base) ease,
-    box-shadow var(--bde-transition-base) ease,
-    border-color var(--bde-transition-base) ease;
+    transform var(--fleet-transition-base) ease,
+    box-shadow var(--fleet-transition-base) ease,
+    border-color var(--fleet-transition-base) ease;
   position: relative;
   overflow: hidden;
 }
 
 .launchpad__tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px var(--bde-accent-dim);
-  border-color: var(--bde-border-hover);
+  box-shadow: 0 4px 20px var(--fleet-accent-dim);
+  border-color: var(--fleet-border-hover);
 }
 
 .launchpad__tile:active {
@@ -87,8 +87,8 @@
 }
 
 .launchpad__tile:focus-visible {
-  background: var(--bde-surface);
-  color: var(--bde-text);
+  background: var(--fleet-surface);
+  color: var(--fleet-text);
   outline: none;
 }
 
@@ -101,38 +101,38 @@
 
 .launchpad__tile-icon {
   font-size: 28px;
-  margin-bottom: var(--bde-space-2);
+  margin-bottom: var(--fleet-space-2);
 }
 
 .launchpad__tile-name {
-  color: var(--bde-text);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .launchpad__tile-desc {
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-2xs);
-  margin-top: var(--bde-space-1);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-2xs);
+  margin-top: var(--fleet-space-1);
 }
 
 .launchpad__tile--add {
   border-style: dashed;
-  border-color: var(--bde-surface);
+  border-color: var(--fleet-surface);
 }
 
 .launchpad__tile--add:hover {
-  border-color: var(--bde-text-dim);
+  border-color: var(--fleet-text-dim);
 }
 
 .launchpad__tile--add .launchpad__tile-icon {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .launchpad__tile--add .launchpad__tile-name {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 /* ── Bottom Prompt Bar ── */
@@ -140,36 +140,36 @@
   margin-top: auto;
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   padding-top: 14px;
-  border-top: 1px solid var(--bde-border);
+  border-top: 1px solid var(--fleet-border);
 }
 
 .launchpad__prompt-input {
   flex: 1;
-  background: var(--bde-border);
-  border: 1px solid var(--bde-surface);
-  border-radius: var(--bde-radius-xl);
-  padding: var(--bde-space-3) var(--bde-space-4);
-  color: var(--bde-text);
-  font-size: var(--bde-size-md);
+  background: var(--fleet-border);
+  border: 1px solid var(--fleet-surface);
+  border-radius: var(--fleet-radius-xl);
+  padding: var(--fleet-space-3) var(--fleet-space-4);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-md);
   outline: none;
-  transition: border-color var(--bde-transition-slow) ease;
+  transition: border-color var(--fleet-transition-slow) ease;
   font-family: inherit;
   resize: none;
   min-height: 48px;
 }
 
 .launchpad__prompt-input::placeholder {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .launchpad__prompt-input:focus-visible {
-  border-color: var(--bde-accent-border);
+  border-color: var(--fleet-accent-border);
 }
 
 .launchpad__prompt-input:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -182,21 +182,21 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-accent-border);
-  border-radius: var(--bde-radius-xl);
-  padding: var(--bde-space-3) 18px;
-  color: var(--bde-accent);
-  font-size: var(--bde-size-sm);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-xl);
+  padding: var(--fleet-space-3) 18px;
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--bde-transition-base) ease;
+  transition: all var(--fleet-transition-base) ease;
   white-space: nowrap;
 }
 
 .launchpad__submit-btn:hover:not(:disabled) {
-  background: var(--bde-accent);
-  color: var(--bde-bg);
+  background: var(--fleet-accent);
+  color: var(--fleet-bg);
   transform: translateY(-1px);
 }
 
@@ -205,8 +205,8 @@
 }
 
 .launchpad__submit-btn:focus-visible {
-  background: var(--bde-surface);
-  color: var(--bde-text);
+  background: var(--fleet-surface);
+  color: var(--fleet-text);
   outline: none;
 }
 
@@ -226,15 +226,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--bde-accent);
-  font-size: var(--bde-size-xs);
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-xs);
   font-weight: 600;
   padding: 6px 12px;
-  border: 1px solid var(--bde-accent-border);
-  border-radius: var(--bde-radius-lg);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-lg);
   cursor: pointer;
   white-space: nowrap;
-  background: var(--bde-accent-surface);
+  background: var(--fleet-accent-surface);
   transition:
     background-color 150ms ease,
     border-color 150ms ease,
@@ -242,18 +242,18 @@
 }
 
 .launchpad__repo-chip:hover {
-  background: var(--bde-accent);
-  border-color: var(--bde-accent);
-  color: var(--bde-bg);
+  background: var(--fleet-accent);
+  border-color: var(--fleet-accent);
+  color: var(--fleet-bg);
 }
 
 .launchpad__repo-chip:hover .launchpad__repo-dot {
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
   opacity: 1;
 }
 
 .launchpad__repo-chip:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -261,7 +261,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--bde-accent);
+  background: var(--fleet-accent);
 }
 
 .launchpad__repo-dropdown-backdrop {
@@ -278,17 +278,17 @@
   min-width: 160px;
   max-height: 240px;
   overflow-y: auto;
-  background: var(--bde-border);
-  border: 1px solid var(--bde-surface);
-  border-radius: var(--bde-radius-xl);
+  background: var(--fleet-border);
+  border: 1px solid var(--fleet-surface);
+  border-radius: var(--fleet-radius-xl);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  margin-top: var(--bde-space-1);
+  margin-top: var(--fleet-space-1);
 }
 
 .launchpad__repo-dropdown-empty {
-  padding: var(--bde-space-3);
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-xs);
+  padding: var(--fleet-space-3);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-xs);
   text-align: center;
 }
 
@@ -298,24 +298,24 @@
   gap: 6px;
   width: 100%;
   text-align: left;
-  padding: var(--bde-space-2) var(--bde-space-3);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
   background: none;
   border: none;
-  font-size: var(--bde-size-xs);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-dim);
   cursor: pointer;
   transition: background-color 150ms ease;
 }
 
 .launchpad__repo-dropdown-option--current {
-  background: var(--bde-accent-surface);
-  color: var(--bde-accent);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
 }
 
 .launchpad__repo-dropdown-option:not(.launchpad__repo-dropdown-option--current):hover,
 .launchpad__repo-dropdown-option:focus-visible {
-  background: var(--bde-surface);
-  color: var(--bde-text);
+  background: var(--fleet-surface);
+  color: var(--fleet-text);
   outline: none;
 }
 

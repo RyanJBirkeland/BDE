@@ -146,7 +146,7 @@ function PlaygroundPreview({
           sandbox="allow-scripts"
           srcDoc={content}
           className="playground-modal__iframe"
-          style={{ background: 'var(--bde-surface)' }}
+          style={{ background: 'var(--fleet-surface)' }}
         />
       )
     case 'svg':
@@ -158,7 +158,7 @@ function PlaygroundPreview({
           sandbox=""
           srcDoc={content}
           className="playground-modal__iframe playground-modal__iframe--svg"
-          style={{ background: 'var(--bde-surface)' }}
+          style={{ background: 'var(--fleet-surface)' }}
         />
       )
     case 'markdown':

@@ -50,7 +50,7 @@ const noopLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn(
 const stubTask = {
   id: 'task-timeout',
   title: 'Timeout test task',
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 1,
   status: 'queued' as const,

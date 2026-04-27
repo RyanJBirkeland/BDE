@@ -11,7 +11,7 @@
 
 ## Problem
 
-BDE has 8 handler registration files that wire 30+ IPC channels between the renderer and main process. **None have tests.** The `safeHandle()` wrapper (`ipc-utils.ts:4-16`) is the only error boundary — if a handler registration is misconfigured, the IPC call silently fails or crashes the main process.
+FLEET has 8 handler registration files that wire 30+ IPC channels between the renderer and main process. **None have tests.** The `safeHandle()` wrapper (`ipc-utils.ts:4-16`) is the only error boundary — if a handler registration is misconfigured, the IPC call silently fails or crashes the main process.
 
 ### Handler Inventory
 

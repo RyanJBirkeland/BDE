@@ -15,7 +15,7 @@ import { broadcast } from './broadcast'
 
 const logger = createLogger('env-utils')
 
-const customPaths = process.env.BDE_EXTRA_PATHS?.split(':').filter(Boolean) ?? []
+const customPaths = process.env.FLEET_EXTRA_PATHS?.split(':').filter(Boolean) ?? []
 const EXTRA_PATHS = [
   ...customPaths,
   '/usr/local/bin',
@@ -114,7 +114,7 @@ export function buildAgentEnv(): Record<string, string | undefined> {
   // Cap vitest worker parallelism for agent-spawned test runs. Each agent runs
   // its own test:coverage; at MAX_ACTIVE_TASKS > 1 the default (CPU-count) causes
   // CPU oversubscription. Users can override by setting VITEST_MAX_WORKERS
-  // before launching BDE.
+  // before launching FLEET.
   env.VITEST_MAX_WORKERS = env.VITEST_MAX_WORKERS ?? '2'
 
   _cachedEnv = env
@@ -126,12 +126,12 @@ let _tokenLoadedAt = 0
 const TOKEN_TTL_MS = 30 * 1000 // 30 seconds — short enough to respect token rotation
 const MAX_TOKEN_BYTES = 64 * 1024 // 64 KB — any valid token is well under this
 
-/** Reads OAuth token from ~/.bde/oauth-token. Cached for 30 seconds to respect token rotation. */
+/** Reads OAuth token from ~/.fleet/oauth-token. Cached for 30 seconds to respect token rotation. */
 export function getOAuthToken(): string | null {
   const now = Date.now()
   if (_tokenLoadedAt > 0 && now - _tokenLoadedAt < TOKEN_TTL_MS) return _cachedOAuthToken
   _tokenLoadedAt = now
-  const tokenPath = join(homedir(), '.bde', 'oauth-token')
+  const tokenPath = join(homedir(), '.fleet', 'oauth-token')
   try {
     if (existsSync(tokenPath)) {
       // Use lstatSync (not statSync) to detect symlinks before following them.
@@ -293,7 +293,7 @@ async function writeKeychainCreds(account: string, creds: ClaudeCreds): Promise<
 }
 
 /**
- * Attempts to refresh ~/.bde/oauth-token using the macOS Keychain as the
+ * Attempts to refresh ~/.fleet/oauth-token using the macOS Keychain as the
  * source of truth for credentials.
  *
  * Flow:
@@ -304,7 +304,7 @@ async function writeKeychainCreds(account: string, creds: ClaudeCreds): Promise<
  *      Anthropic OAuth endpoint to mint a fresh accessToken (and rotated
  *      refreshToken). Persist the rotated credentials back to the keychain
  *      so subsequent refreshes don't reuse a stale refreshToken.
- *   4. Write the (possibly fresh) accessToken to ~/.bde/oauth-token.
+ *   4. Write the (possibly fresh) accessToken to ~/.fleet/oauth-token.
  *
  * Always uses `execFile` (never `execSync`) so the main thread is never
  * blocked. Returns true if a token was written to disk; false only on hard
@@ -368,7 +368,7 @@ function isValidKeychainPayload(parsed: unknown): parsed is ClaudeCreds {
  * If the current `oauth.expiresAt` says the access token is due for refresh
  * (and we have a refresh token), run the OAuth refresh flow and persist the
  * rotated credentials back into the Keychain. Returns the token that should
- * be written to `~/.bde/oauth-token`: the refreshed one on success, the
+ * be written to `~/.fleet/oauth-token`: the refreshed one on success, the
  * existing (possibly expired) one on a refresh failure.
  */
 async function refreshIfDue(
@@ -419,7 +419,7 @@ async function persistRotatedKeychainCreds(updatedCreds: ClaudeCreds): Promise<v
 
 function persistToken(tokenToWrite: string): boolean {
   try {
-    const tokenPath = join(homedir(), '.bde', 'oauth-token')
+    const tokenPath = join(homedir(), '.fleet', 'oauth-token')
     // DL-7: Enforce restrictive permissions (user-only read/write).
     writeFileSync(tokenPath, tokenToWrite, { encoding: 'utf8', mode: 0o600 })
     invalidateOAuthToken() // Force re-read on next call.

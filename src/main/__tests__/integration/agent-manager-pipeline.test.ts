@@ -41,8 +41,8 @@ vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(),
   getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'myrepo', localPath: '/repos/myrepo' }]),
   getGhRepo: vi.fn(),
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-integration-test.log',
-  BDE_TASK_MEMORY_DIR: '/tmp/bde-test/tasks'
+  FLEET_AGENT_LOG_PATH: '/tmp/fleet-agent-integration-test.log',
+  FLEET_TASK_MEMORY_DIR: '/tmp/fleet-test/tasks'
 }))
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -176,7 +176,7 @@ import { recoverOrphans } from '../../agent-manager/orphan-recovery'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
-  worktreeBase: '/tmp/worktrees/bde-integration',
+  worktreeBase: '/tmp/worktrees/fleet-integration',
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,
@@ -317,7 +317,7 @@ describe('AgentManager pipeline integration', () => {
 
     expect(vi.mocked(claimTask)).toHaveBeenCalledWith(
       'task-pipeline-1',
-      'bde-embedded',
+      'fleet-embedded',
       expect.any(Number)
     )
     expect(vi.mocked(spawnAgent)).toHaveBeenCalledWith(

@@ -32,7 +32,7 @@ interface AddNotificationInput {
 }
 
 const MAX_NOTIFICATIONS = 50
-const STORAGE_KEY = 'bde:notifications'
+const STORAGE_KEY = 'fleet:notifications'
 
 interface NotificationsStore {
   notifications: Notification[]

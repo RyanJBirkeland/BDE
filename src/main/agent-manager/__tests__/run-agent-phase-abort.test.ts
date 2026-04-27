@@ -59,7 +59,7 @@ vi.mock('../../data/sprint-queries', () => ({
 
 vi.mock('../../paths', () => ({
   getGhRepo: vi.fn().mockReturnValue('owner/repo'),
-  BDE_TASK_MEMORY_DIR: '/home/user/.bde/memory/tasks'
+  FLEET_TASK_MEMORY_DIR: '/home/user/.fleet/memory/tasks'
 }))
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -146,7 +146,7 @@ function makeTask(overrides: Partial<AgentRunClaim> = {}): AgentRunClaim {
     title: 'Test task',
     prompt: 'Do something',
     spec: null,
-    repo: 'bde',
+    repo: 'fleet',
     retry_count: 0,
     fast_fail_count: 0,
     ...overrides

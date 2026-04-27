@@ -44,7 +44,7 @@ function makeAgent(overrides: Partial<AgentMeta> = {}): AgentMeta {
     status: 'done',
     worktreePath: '/tmp/worktree',
     branch: 'adhoc/feature-x',
-    repo: 'bde',
+    repo: 'fleet',
     logPath: '/tmp/agent.log',
     sprintTaskId: null,
     agentType: 'adhoc',
@@ -130,7 +130,7 @@ describe('promoteAdhocToTask', () => {
       const result = await promoteAdhocToTask('agent-1')
 
       expect(mockCreateReviewTask).toHaveBeenCalledWith(
-        expect.objectContaining({ branch: 'adhoc/feature-x', repo: 'bde' })
+        expect.objectContaining({ branch: 'adhoc/feature-x', repo: 'fleet' })
       )
       expect(result).toEqual({ ok: true, taskId: 'task-abc' })
     })

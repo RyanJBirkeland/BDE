@@ -4,12 +4,12 @@
 **Source:** `src/main/mcp-server/token-store.ts`
 
 ## Purpose
-Persistent bearer token storage for MCP server authentication. Generates a 32-byte random token (64 hex characters) on first read and stores it at `~/.bde/mcp-token` with mode `0600`; the parent `~/.bde/` directory is locked to `0700`. Subsequent reads return the existing token and flag whether the caller just minted a new one.
+Persistent bearer token storage for MCP server authentication. Generates a 32-byte random token (64 hex characters) on first read and stores it at `~/.fleet/mcp-token` with mode `0600`; the parent `~/.fleet/` directory is locked to `0700`. Subsequent reads return the existing token and flag whether the caller just minted a new one.
 
 ## Public API
 - `readOrCreateToken(filePath?, options?): Promise<TokenReadResult>` — reads the token from disk, regenerating if it is missing, corrupt, or unparseable. Accepts an optional logger in `options` to warn on corrupt content or file-mode drift and to record non-ENOENT read errors before rethrowing.
 - `regenerateToken(filePath?): Promise<TokenReadResult>` — unconditionally writes a new token. The returned `created` flag is always `true`.
-- `tokenFilePath(): string` — default token path (`~/.bde/mcp-token`).
+- `tokenFilePath(): string` — default token path (`~/.fleet/mcp-token`).
 - `TokenReadResult` — `{ token: string; created: boolean; path: string }`. `created` is `true` when a fresh token was written this call (missing file or corrupt contents); `false` when a valid existing token was returned as-is.
 - `TokenStoreOptions` — `{ logger?: TokenStoreLogger }`; `TokenStoreLogger` needs `warn` and `error`.
 

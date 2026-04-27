@@ -5,11 +5,11 @@ import { Divider } from '../Divider'
 describe('Divider', () => {
   it('renders horizontal divider by default', () => {
     const { container } = render(<Divider />)
-    expect(container.firstChild).toHaveClass('bde-divider--horizontal')
+    expect(container.firstChild).toHaveClass('fleet-divider--horizontal')
   })
 
   it('renders vertical divider', () => {
     const { container } = render(<Divider direction="vertical" />)
-    expect(container.firstChild).toHaveClass('bde-divider--vertical')
+    expect(container.firstChild).toHaveClass('fleet-divider--vertical')
   })
 })

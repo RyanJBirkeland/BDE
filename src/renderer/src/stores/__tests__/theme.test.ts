@@ -25,7 +25,7 @@ describe('theme store', () => {
 
   it('setTheme persists to localStorage', () => {
     useThemeStore.getState().setTheme('light')
-    expect(localStorage.getItem('bde-theme')).toBe('light')
+    expect(localStorage.getItem('fleet-theme')).toBe('light')
   })
 
   it('setTheme dark applies the pro-dark class (default Dark = pro-dark)', () => {
@@ -71,7 +71,7 @@ describe('theme store', () => {
 
   it('responds to storage events for cross-window sync (dark)', () => {
     const event = new StorageEvent('storage', {
-      key: 'bde-theme',
+      key: 'fleet-theme',
       newValue: 'dark'
     })
     window.dispatchEvent(event)
@@ -81,7 +81,7 @@ describe('theme store', () => {
 
   it('storage event with legacy warm value migrates to dark', () => {
     const event = new StorageEvent('storage', {
-      key: 'bde-theme',
+      key: 'fleet-theme',
       newValue: 'warm'
     })
     window.dispatchEvent(event)
@@ -91,7 +91,7 @@ describe('theme store', () => {
 
   it('storage event with legacy pro-dark value migrates to dark', () => {
     const event = new StorageEvent('storage', {
-      key: 'bde-theme',
+      key: 'fleet-theme',
       newValue: 'pro-dark'
     })
     window.dispatchEvent(event)
@@ -101,7 +101,7 @@ describe('theme store', () => {
 
   it('storage event with legacy pro-light value migrates to light', () => {
     const event = new StorageEvent('storage', {
-      key: 'bde-theme',
+      key: 'fleet-theme',
       newValue: 'pro-light'
     })
     window.dispatchEvent(event)
@@ -122,7 +122,7 @@ describe('theme store', () => {
   it('ignores storage events with null value', () => {
     useThemeStore.setState({ theme: 'dark' })
     const event = new StorageEvent('storage', {
-      key: 'bde-theme',
+      key: 'fleet-theme',
       newValue: null
     })
     window.dispatchEvent(event)
@@ -212,6 +212,6 @@ describe('theme store — system preference', () => {
 
   it('setTheme system persists "system" to localStorage (not the resolved value)', () => {
     useThemeStore.getState().setTheme('system')
-    expect(localStorage.getItem('bde-theme')).toBe('system')
+    expect(localStorage.getItem('fleet-theme')).toBe('system')
   })
 })

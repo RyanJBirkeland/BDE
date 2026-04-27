@@ -72,7 +72,7 @@ window.api = {
   getSupabaseConfig: vi
     .fn()
     .mockResolvedValue({ url: 'https://example.supabase.co', anonKey: 'key' }),
-  getRepoPaths: vi.fn().mockResolvedValue({ BDE: '/path/to/bde' })
+  getRepoPaths: vi.fn().mockResolvedValue({ FLEET: '/path/to/fleet' })
 }
 
 // Mock data factories

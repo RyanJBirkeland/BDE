@@ -42,23 +42,23 @@ export function failureCategoryForReason(reason: string | null | undefined): Fai
 }
 
 export function getDotColor(status: string, prStatus?: string | null): string {
-  if (prStatus === 'open' || prStatus === 'branch_only') return 'var(--bde-status-review)'
+  if (prStatus === 'open' || prStatus === 'branch_only') return 'var(--fleet-status-review)'
   switch (status) {
     case 'queued':
-      return 'var(--bde-accent)'
+      return 'var(--fleet-accent)'
     case 'blocked':
-      return 'var(--bde-warning)'
+      return 'var(--fleet-warning)'
     case 'active':
-      return 'var(--bde-status-active)'
+      return 'var(--fleet-status-active)'
     case 'review':
-      return 'var(--bde-status-review)'
+      return 'var(--fleet-status-review)'
     case 'done':
-      return 'var(--bde-status-done)'
+      return 'var(--fleet-status-done)'
     case 'failed':
     case 'error':
     case 'cancelled':
-      return 'var(--bde-danger)'
+      return 'var(--fleet-danger)'
     default:
-      return 'var(--bde-accent)'
+      return 'var(--fleet-accent)'
   }
 }

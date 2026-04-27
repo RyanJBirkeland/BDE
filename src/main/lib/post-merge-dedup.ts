@@ -99,7 +99,7 @@ export async function runPostMergeDedup(repoPath: string): Promise<DedupReport |
       await execFileAsync('git', ['add', ...filesModified], { cwd: repoPath, env })
 
       // Commit the dedup changes
-      const commitMessage = 'chore: deduplicate CSS from merge\n\nAutomated by BDE post-merge dedup'
+      const commitMessage = 'chore: deduplicate CSS from merge\n\nAutomated by FLEET post-merge dedup'
       await execFileAsync('git', ['commit', '-m', commitMessage], { cwd: repoPath, env })
 
       committed = true

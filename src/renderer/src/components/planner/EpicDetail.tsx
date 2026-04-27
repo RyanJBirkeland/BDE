@@ -144,7 +144,7 @@ export function EpicDetail({
   const isReady = group.status === 'ready'
 
   return (
-    <div className="bde-panel epic-detail">
+    <div className="fleet-panel epic-detail">
       {/* Header */}
       <EpicHeader
         group={group}

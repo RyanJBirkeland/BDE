@@ -1,12 +1,12 @@
 # Packaging & Handoff Audit Synthesis — 2026-04-16
 
-**Scope:** Synthesis of 9 lens reports on BDE's macOS packaging, first-launch UX, and production runtime readiness.
+**Scope:** Synthesis of 9 lens reports on FLEET's macOS packaging, first-launch UX, and production runtime readiness.
 
 ---
 
 ## 1. Executive Summary
 
-BDE's packaging foundation is **structurally sound but not distribution-ready**. The build pipeline correctly produces an arm64 DMG with properly-unpacked native modules, ASAR paths resolve cleanly in production, migrations are statically bundled via `import.meta.glob()`, the startup sequence is defensive (chmod 0o700 enforcement, migration version validation, graceful fallbacks), and the IPC surface has 100% handler coverage. The ASAR-paths lens found zero real issues and the bootstrap lens found only 1 medium and 14 informational items. The app does the hard things right.
+FLEET's packaging foundation is **structurally sound but not distribution-ready**. The build pipeline correctly produces an arm64 DMG with properly-unpacked native modules, ASAR paths resolve cleanly in production, migrations are statically bundled via `import.meta.glob()`, the startup sequence is defensive (chmod 0o700 enforcement, migration version validation, graceful fallbacks), and the IPC surface has 100% handler coverage. The ASAR-paths lens found zero real issues and the bootstrap lens found only 1 medium and 14 informational items. The app does the hard things right.
 
 However, the **distribution story collapses at the first-launch boundary**. The app ships unsigned with `identity: null`, `hardenedRuntime: false`, and `gatekeeperAssess: false` — a fresh Mac user gets a "developer cannot be verified" dialog with no workaround shown in-app, and the right-click→Open guidance is buried in the README. Compounding this, the onboarding UI has a critical "Continue Anyway" trap (button is disabled exactly when the user needs to override), two parallel onboarding layers confuse the path, and the OAuth token handling has at least three chances for silent spawn failure (missing token bypasses Keychain refresh, null tokens pass through to SDK/CLI, no pre-spawn re-check). The production build script also lacks `electron-rebuild`, creating latent ABI-141-vs-140 mismatch risk that only bites when the build machine's Node version drifts.
 
@@ -43,7 +43,7 @@ However, the **distribution story collapses at the first-launch boundary**. The 
 
 4. **Broadcast channels declared but not wired.** L3.1 (F-t3-ipc-surface-001, -002, -003) identified 3 of 18 broadcast channels with no preload listener. `sprint:mutation`, `agent-manager:circuit-breaker-open`, and `task-terminal:resolution-error` are all defined in `broadcast-channels.ts` and sent by the main process, but the renderer never subscribes — so the associated UX (fine-grained task updates, circuit-breaker warnings, terminal errors) never surfaces.
 
-5. **Hidden failures that log-only-to-file.** L3.2 (F-t3-prod-paths-2) and L3.3 (F-t3-credentials-1, -4) share a pattern: error paths write to `~/.bde/bde.log` but don't broadcast to the renderer. For a packaged macOS app with no console window, this means support diagnostics live in a file end-users don't know exists. The `manager:warning` broadcast pattern already exists and should be the default for user-impacting errors.
+5. **Hidden failures that log-only-to-file.** L3.2 (F-t3-prod-paths-2) and L3.3 (F-t3-credentials-1, -4) share a pattern: error paths write to `~/.fleet/fleet.log` but don't broadcast to the renderer. For a packaged macOS app with no console window, this means support diagnostics live in a file end-users don't know exists. The `manager:warning` broadcast pattern already exists and should be the default for user-impacting errors.
 
 ---
 
@@ -86,7 +86,7 @@ Per `feedback_audit_false_positives.md` — lensed audit findings need code veri
 - **F-t3-prod-paths-1** (CSP missing `wasm-unsafe-eval` breaks Monaco) — Speculative. The auditor says "*may* require WASM" and recommends testing before adding the directive. Current `worker-src 'self' blob:` is already sufficient for most Monaco features. **Verify:** launch the packaged DMG, open IDE view, and exercise syntax highlighting + Cmd+P search before changing CSP.
 - **F-t2-gatekeeper-4** (missing NSAppleEventsUsageDescription) — Lens admits "only relevant if spawned tools use Apple Events" and the confidence is Medium. `gh` doesn't appear to use Apple Events on macOS — it uses Keychain directly via `security`. **Verify:** check `gh auth login` behavior on a signed build before adding the plist key.
 - **F-t2-onboarding-1** (two onboarding layers) — Design critique rather than a bug. The "fix" (unify the two systems) is an M-effort refactor that may destabilize a working flow. **Verify:** confirm on a fresh Mac that the flow actually breaks in practice, not just reads confusingly.
-- **F-t1-builder-2** (missing entitlements for permission prompts) — Claims microphone/camera/Bluetooth prompts will be silently suppressed. BDE has no audio/camera/Bluetooth features that I'm aware of — the plist keys may be inherited from electron-builder defaults and are effectively dead. **Verify:** search for actual usage of these APIs before spending effort on entitlements.
+- **F-t1-builder-2** (missing entitlements for permission prompts) — Claims microphone/camera/Bluetooth prompts will be silently suppressed. FLEET has no audio/camera/Bluetooth features that I'm aware of — the plist keys may be inherited from electron-builder defaults and are effectively dead. **Verify:** search for actual usage of these APIs before spending effort on entitlements.
 - **F-t3-credentials-9** (token expires between precondition and spawn) — Theoretical race over a 30-second window during which tokens don't expire in practice. Low-confidence mitigation; revisit only if observed.
 
 Where lenses disagreed:
@@ -156,7 +156,7 @@ Where lenses disagreed:
 - F-t2-gatekeeper-3: No entitlements file for shell access APIs (High/M)
 - F-t2-gatekeeper-4: Missing NSAppleEventsUsageDescription (Medium/S)
 - F-t2-gatekeeper-5: No hardened runtime (High/M)
-- F-t2-gatekeeper-6: `~/.bde/` access without sandbox documentation (Low/S)
+- F-t2-gatekeeper-6: `~/.fleet/` access without sandbox documentation (Low/S)
 - F-t2-gatekeeper-7: Quarantine xattr propagates through DMG mount (Low/S)
 - F-t2-gatekeeper-8: Right-click → Open workaround not in release notes/CHANGELOG (Medium/S)
 - F-t2-gatekeeper-9: No first-launch guidance inside the app (Medium/M)
@@ -180,7 +180,7 @@ Where lenses disagreed:
 - F-t3-credentials-2: OAuth token refresh from Keychain skipped when file missing (High/S)
 - F-t3-credentials-3: `getOAuthToken()` returns null when missing — silent spawn failure (Critical/M)
 - F-t3-credentials-4: Agent spawn failure with missing token — task silently errors (High/M)
-- F-t3-credentials-5: Missing `.bde/oauth-token` not pre-created (Low/S) — correct design
+- F-t3-credentials-5: Missing `.fleet/oauth-token` not pre-created (Low/S) — correct design
 - F-t3-credentials-6: CLI detection via `which` — no error message if Claude not found (Medium/M)
 - F-t3-credentials-7: GitHub token missing on fresh machine — no gh auth fallback (Medium/M)
 - F-t3-credentials-8: `safeStorage.isEncryptionAvailable()` unclear feedback (Medium/M)
@@ -193,4 +193,4 @@ Where lenses disagreed:
 ---
 
 **Audit compiled:** 2026-04-16
-**Lens reports:** `/Users/ryan/worktrees/BDE/audit-packaging-handoff/docs/superpowers/audits/2026-04-16/packaging-handoff/{team-1-build,team-2-firstlaunch,team-3-runtime}/`
+**Lens reports:** `/Users/ryan/worktrees/FLEET/audit-packaging-handoff/docs/superpowers/audits/2026-04-16/packaging-handoff/{team-1-build,team-2-firstlaunch,team-3-runtime}/`

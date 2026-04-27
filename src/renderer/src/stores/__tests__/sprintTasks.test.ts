@@ -23,7 +23,7 @@ import { nowIso } from '../../../../shared/time'
 const makeTask = (id: string, overrides: Partial<SprintTask> = {}): SprintTask => ({
   id,
   title: `Task ${id}`,
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 1,
   status: 'backlog',
@@ -262,7 +262,7 @@ describe('sprintTasks store', () => {
 
       const createPromise = useSprintTasks.getState().createTask({
         title: 'New task',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1
       })
 
@@ -278,7 +278,7 @@ describe('sprintTasks store', () => {
     it('replaces temp task with server task on success', async () => {
       await useSprintTasks.getState().createTask({
         title: 'My task',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 2
       })
 
@@ -291,7 +291,7 @@ describe('sprintTasks store', () => {
     it('calls toast.success after successful create', async () => {
       await useSprintTasks.getState().createTask({
         title: 'My task',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1
       })
 
@@ -301,13 +301,13 @@ describe('sprintTasks store', () => {
     it('normalises repo to lowercase', async () => {
       await useSprintTasks.getState().createTask({
         title: 'Repo case test',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1
       })
 
       // The IPC was called with the lowercased repo
       expect(window.api.sprint.create).toHaveBeenCalledWith(
-        expect.objectContaining({ repo: 'bde' })
+        expect.objectContaining({ repo: 'fleet' })
       )
     })
 
@@ -318,7 +318,7 @@ describe('sprintTasks store', () => {
 
       await useSprintTasks.getState().createTask({
         title: 'Failed task',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1
       })
 
@@ -331,7 +331,7 @@ describe('sprintTasks store', () => {
       const deps = [{ id: 'dep-1', type: 'hard' as const }]
       await useSprintTasks.getState().createTask({
         title: 'Task with deps',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1,
         depends_on: deps
       })
@@ -344,7 +344,7 @@ describe('sprintTasks store', () => {
     it('omits depends_on from IPC call when not provided', async () => {
       await useSprintTasks.getState().createTask({
         title: 'Task without deps',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1
       })
 
@@ -355,7 +355,7 @@ describe('sprintTasks store', () => {
     it('skips spec generation when spec is already provided', async () => {
       await useSprintTasks.getState().createTask({
         title: 'Task with spec',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1,
         spec: 'existing spec'
       })
@@ -367,7 +367,7 @@ describe('sprintTasks store', () => {
       // Store's createTask no longer triggers spec generation - that's in the hook wrapper
       await useSprintTasks.getState().createTask({
         title: 'Quick task',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1
       })
 
@@ -379,7 +379,7 @@ describe('sprintTasks store', () => {
       // Store's createTask no longer shows spec-ready toast - that's in the hook wrapper
       await useSprintTasks.getState().createTask({
         title: 'Quick task',
-        repo: 'BDE',
+        repo: 'FLEET',
         priority: 1
       })
 
@@ -403,18 +403,18 @@ describe('sprintTasks store', () => {
     })
 
     it('calls generatePrompt with correct params', async () => {
-      await useSprintTasks.getState().generateSpec('t1', 'Task 1', 'bde', 'feature')
+      await useSprintTasks.getState().generateSpec('t1', 'Task 1', 'fleet', 'feature')
 
       expect(window.api.sprint.generatePrompt).toHaveBeenCalledWith({
         taskId: 't1',
         title: 'Task 1',
-        repo: 'bde',
+        repo: 'fleet',
         templateHint: 'feature'
       })
     })
 
     it('updates task with generated spec', async () => {
-      await useSprintTasks.getState().generateSpec('t1', 'Task 1', 'bde', 'feature')
+      await useSprintTasks.getState().generateSpec('t1', 'Task 1', 'fleet', 'feature')
 
       const task = useSprintTasks.getState().tasks.find((t) => t.id === 't1')
       expect(task?.spec).toBe('generated spec')
@@ -423,12 +423,12 @@ describe('sprintTasks store', () => {
   })
 
   describe('launchTask', () => {
-    const task = makeTask('t1', { status: 'backlog', repo: 'bde' })
+    const task = makeTask('t1', { status: 'backlog', repo: 'fleet' })
 
     beforeEach(() => {
       useSprintTasks.setState({ tasks: [task], pendingUpdates: {}, pendingCreates: [] })
       ;(window.api.git.getRepoPaths as ReturnType<typeof vi.fn>).mockResolvedValue({
-        bde: '/repos/bde'
+        fleet: '/repos/fleet'
       })
       ;(window.api.agents.spawnLocal as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'agent-99',
@@ -444,7 +444,7 @@ describe('sprintTasks store', () => {
 
       expect(window.api.agents.spawnLocal).toHaveBeenCalledWith({
         task: task.title,
-        repoPath: '/repos/bde'
+        repoPath: '/repos/fleet'
       })
       const updated = useSprintTasks.getState().tasks[0]
       expect(updated.status).toBe('active')
@@ -453,7 +453,7 @@ describe('sprintTasks store', () => {
     })
 
     it('uses task.spec as agent task when spec is set', async () => {
-      const taskWithSpec = makeTask('t2', { status: 'backlog', repo: 'bde', spec: 'do the thing' })
+      const taskWithSpec = makeTask('t2', { status: 'backlog', repo: 'fleet', spec: 'do the thing' })
       useSprintTasks.setState({ tasks: [taskWithSpec], pendingUpdates: {}, pendingCreates: [] })
 
       await useSprintTasks.getState().launchTask(taskWithSpec)
@@ -469,13 +469,13 @@ describe('sprintTasks store', () => {
       await useSprintTasks.getState().launchTask(task)
 
       expect(window.api.agents.spawnLocal).not.toHaveBeenCalled()
-      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('"bde"'))
+      expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('"fleet"'))
     })
 
     it('blocks launch and shows toast when WIP limit is reached', async () => {
       // Fill WIP_LIMIT_IN_PROGRESS (5) active tasks
       const activeTasks = Array.from({ length: 5 }, (_, i) =>
-        makeTask(`active-${i}`, { status: 'active', repo: 'bde' })
+        makeTask(`active-${i}`, { status: 'active', repo: 'fleet' })
       )
       useSprintTasks.setState({
         tasks: [...activeTasks, task],
@@ -490,9 +490,9 @@ describe('sprintTasks store', () => {
     })
 
     it('does not apply WIP limit when task is already active', async () => {
-      const alreadyActive = makeTask('t-active', { status: 'active', repo: 'bde' })
+      const alreadyActive = makeTask('t-active', { status: 'active', repo: 'fleet' })
       const otherActiveTasks = Array.from({ length: 5 }, (_, i) =>
-        makeTask(`active-${i}`, { status: 'active', repo: 'bde' })
+        makeTask(`active-${i}`, { status: 'active', repo: 'fleet' })
       )
       useSprintTasks.setState({
         tasks: [...otherActiveTasks, alreadyActive],

@@ -163,7 +163,7 @@ export function useDesktopNotifications(): void {
         if (!delivery.desktop && !delivery.inApp) continue
         if (delivery.desktop && windowNotFocused) continue
 
-        const title = 'BDE: Task Ready for Review'
+        const title = 'FLEET: Task Ready for Review'
         const message = `${task.title}`
 
         if (delivery.inApp) {
@@ -187,7 +187,7 @@ export function useDesktopNotifications(): void {
         const delivery = shouldDeliverNotification('agent_completed', prefs)
         if (!delivery.desktop && !delivery.inApp) continue
 
-        const title = 'BDE: Task Completed'
+        const title = 'FLEET: Task Completed'
         const message = task.pr_url ? `${task.title} — PR ready` : `${task.title}`
 
         // Always show in-app notifications
@@ -213,7 +213,7 @@ export function useDesktopNotifications(): void {
         const delivery = shouldDeliverNotification('agent_failed', prefs)
         if (!delivery.desktop && !delivery.inApp) continue
 
-        const title = 'BDE: Task Failed'
+        const title = 'FLEET: Task Failed'
         const message = `${task.title}`
 
         // Always show in-app notifications
@@ -241,7 +241,7 @@ export function useDesktopNotifications(): void {
         if (!delivery.desktop && !delivery.inApp) continue
         if (delivery.desktop && windowNotFocused) continue
 
-        const title = 'BDE: Task Error'
+        const title = 'FLEET: Task Error'
         const message = `${task.title}`
 
         if (delivery.inApp) {
@@ -291,7 +291,7 @@ export function useDesktopNotifications(): void {
       if (!delivery.desktop && !delivery.inApp) continue
       if (delivery.desktop && windowNotFocused) continue
 
-      const title = 'BDE: PR Merged'
+      const title = 'FLEET: PR Merged'
       const message = `${task.title} — PR #${task.pr_number || 'unknown'} merged`
 
       if (delivery.inApp) {

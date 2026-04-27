@@ -35,7 +35,7 @@ describe('TaskWorkbench', () => {
     // Mark the copilot discovery popover as already-seen by default so it
     // doesn't show up in unrelated tests. Tests that want to exercise the
     // popover should call localStorage.removeItem() explicitly.
-    window.localStorage.setItem('bde:workbench-copilot-popover-seen', '1')
+    window.localStorage.setItem('fleet:workbench-copilot-popover-seen', '1')
 
     // Mock workbench API — now uses chatStream instead of chat
     ;(window.api as any).workbench = {
@@ -96,7 +96,7 @@ describe('TaskWorkbench', () => {
     useTaskWorkbenchStore.setState({
       visible: true,
       title: 'Test Task',
-      repo: 'BDE',
+      repo: 'FLEET',
       spec: 'Test spec'
     })
 
@@ -108,7 +108,7 @@ describe('TaskWorkbench', () => {
     await waitFor(() => {
       expect((window.api as any).workbench.chatStream).toHaveBeenCalledWith({
         messages: [{ role: 'user', content: 'test message' }],
-        formContext: { title: 'Test Task', repo: 'BDE', spec: 'Test spec' }
+        formContext: { title: 'Test Task', repo: 'FLEET', spec: 'Test spec' }
       })
     })
   })
@@ -249,7 +249,7 @@ describe('TaskWorkbench', () => {
   })
 
   describe('first-run copilot discovery popover', () => {
-    const POPOVER_KEY = 'bde:workbench-copilot-popover-seen'
+    const POPOVER_KEY = 'fleet:workbench-copilot-popover-seen'
 
     it('shows the popover on first visit when copilot is hidden', () => {
       window.localStorage.removeItem(POPOVER_KEY)

@@ -85,10 +85,10 @@ export function TaskTemplatesSection(): React.JSX.Element {
 
   if (!loaded) {
     return (
-      <div className="bde-loading-skeleton">
-        <div className="bde-loading-skeleton__row" />
-        <div className="bde-loading-skeleton__row" />
-        <div className="bde-loading-skeleton__row" />
+      <div className="fleet-loading-skeleton">
+        <div className="fleet-loading-skeleton__row" />
+        <div className="fleet-loading-skeleton__row" />
+        <div className="fleet-loading-skeleton__row" />
       </div>
     )
   }

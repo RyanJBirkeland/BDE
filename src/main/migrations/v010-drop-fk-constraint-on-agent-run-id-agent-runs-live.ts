@@ -2,7 +2,7 @@ import type Database from 'better-sqlite3'
 
 export const version = 10
 export const description =
-  'Drop FK constraint on agent_run_id (agent runs live in task runner DB, not BDE DB)'
+  'Drop FK constraint on agent_run_id (agent runs live in task runner DB, not FLEET DB)'
 
 export const up: (db: Database.Database) => void = (db) => {
   db.exec(`
@@ -12,7 +12,7 @@ export const up: (db: Database.Database) => void = (db) => {
           id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
           title           TEXT NOT NULL,
           prompt          TEXT NOT NULL DEFAULT '',
-          repo            TEXT NOT NULL DEFAULT 'bde',
+          repo            TEXT NOT NULL DEFAULT 'fleet',
           status          TEXT NOT NULL DEFAULT 'backlog'
                             CHECK(status IN ('backlog','queued','active','done','cancelled','failed','error')),
           priority        INTEGER NOT NULL DEFAULT 1,

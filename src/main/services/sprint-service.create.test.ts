@@ -35,7 +35,7 @@ vi.mock('../data/task-group-queries', () => ({
   listGroups: vi.fn(() => [] as TaskGroup[])
 }))
 vi.mock('../git', () => ({
-  getRepoPaths: vi.fn(() => ({ bde: '/fake/path' }))
+  getRepoPaths: vi.fn(() => ({ fleet: '/fake/path' }))
 }))
 // Phase-5 audit: createTaskWithValidation now imports getRepoPaths from ../paths
 // (the canonical owner). The legacy ../git mock stays for any consumer that
@@ -44,7 +44,7 @@ vi.mock('../paths', async () => {
   const actual = await vi.importActual<typeof import('../paths')>('../paths')
   return {
     ...actual,
-    getRepoPaths: vi.fn(() => ({ bde: '/fake/path' }))
+    getRepoPaths: vi.fn(() => ({ fleet: '/fake/path' }))
   }
 })
 
@@ -68,7 +68,7 @@ describe('createTaskWithValidation', () => {
   it('rejects a queued task whose spec is missing required sections', async () => {
     const input: CreateTaskInput = {
       title: 't',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'queued',
       spec: 'plain text with no headings'
     }
@@ -77,15 +77,15 @@ describe('createTaskWithValidation', () => {
   })
 
   it('delegates to sprint-mutations.createTask on valid input and returns the row', async () => {
-    const fakeRow = { id: 'abc', title: 't', repo: 'bde', status: 'backlog' } as SprintTask
+    const fakeRow = { id: 'abc', title: 't', repo: 'fleet', status: 'backlog' } as SprintTask
     ;(mutations.createTask as ReturnType<typeof vi.fn>).mockResolvedValue(fakeRow)
 
-    const input: CreateTaskInput = { title: 't', repo: 'bde', status: 'backlog' }
+    const input: CreateTaskInput = { title: 't', repo: 'fleet', status: 'backlog' }
     const result = await createTaskWithValidation(input, { logger })
 
     expect(result).toBe(fakeRow)
     expect(mutations.createTask).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 't', repo: 'bde' })
+      expect.objectContaining({ title: 't', repo: 'fleet' })
     )
   })
 
@@ -93,7 +93,7 @@ describe('createTaskWithValidation', () => {
     it('rejects a queued task with insufficient headings by default', async () => {
       const input: CreateTaskInput = {
         title: 'no sections',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued',
         spec: '## Only one\nbody'
       }
@@ -101,13 +101,13 @@ describe('createTaskWithValidation', () => {
     })
 
     it('accepts the same task when skipReadinessCheck is true', async () => {
-      const fakeRow = { id: 'bypass', title: 'no sections', repo: 'bde' } as SprintTask
+      const fakeRow = { id: 'bypass', title: 'no sections', repo: 'fleet' } as SprintTask
       ;(mutations.createTask as ReturnType<typeof vi.fn>).mockResolvedValue(fakeRow)
 
       const warn = vi.fn()
       const input: CreateTaskInput = {
         title: 'no sections',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued',
         spec: '## Only one\nbody'
       }
@@ -121,7 +121,7 @@ describe('createTaskWithValidation', () => {
     })
 
     it('still enforces required fields even with skipReadinessCheck', async () => {
-      const input = { title: '', repo: 'bde' } as CreateTaskInput
+      const input = { title: '', repo: 'fleet' } as CreateTaskInput
       await expect(() =>
         createTaskWithValidation(input, { logger }, { skipReadinessCheck: true })
       ).rejects.toThrow(/title/i)
@@ -137,7 +137,7 @@ describe('createTaskWithValidation', () => {
 
   describe('error codes', () => {
     it('structural validation failures throw TaskValidationError with code spec-structural', async () => {
-      const input = { title: '', repo: 'bde' } as CreateTaskInput
+      const input = { title: '', repo: 'fleet' } as CreateTaskInput
       try {
         await createTaskWithValidation(input, { logger })
         expect.fail('should have thrown')
@@ -153,7 +153,7 @@ describe('createTaskWithValidation', () => {
       // Steps, How to Test) are present.
       const input: CreateTaskInput = {
         title: 't',
-        repo: 'bde',
+        repo: 'fleet',
         status: 'queued',
         spec: [
           '## Background',
@@ -174,7 +174,7 @@ describe('createTaskWithValidation', () => {
     it('missing-repo failures throw TaskValidationError with code repo-not-configured', async () => {
       ;(git.getRepoPaths as ReturnType<typeof vi.fn>).mockReturnValueOnce({})
       ;(paths.getRepoPaths as ReturnType<typeof vi.fn>).mockReturnValueOnce({})
-      const input: CreateTaskInput = { title: 't', repo: 'bde' }
+      const input: CreateTaskInput = { title: 't', repo: 'fleet' }
       try {
         await createTaskWithValidation(input, { logger })
         expect.fail('should have thrown')
@@ -195,7 +195,7 @@ describe('createTaskWithValidation', () => {
 
     const input: CreateTaskInput = {
       title: 't',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'queued',
       spec: [
         '## Overview',

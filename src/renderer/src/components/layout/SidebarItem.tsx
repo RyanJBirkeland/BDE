@@ -144,7 +144,7 @@ export function SidebarItem({
           draggable
           onDragStart={(e) => {
             e.dataTransfer.effectAllowed = 'move'
-            e.dataTransfer.setData('application/bde-panel', JSON.stringify({ viewKey: view }))
+            e.dataTransfer.setData('application/fleet-panel', JSON.stringify({ viewKey: view }))
             e.dataTransfer.setData('text/plain', label)
           }}
           className={`sidebar-item${isActive ? ' sidebar-item--active' : ''}`}

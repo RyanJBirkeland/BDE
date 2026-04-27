@@ -8,11 +8,11 @@
 
 ## Goal
 
-Make the `rbt-coding-agent` framework one of BDE's spawnable agent backends, selectable **per agent type** via settings, with silent per-call fallback to the existing Claude SDK path when the local backend is unreachable. The framework ships a pre-built adapter at `rbt-coding-agent/adapters/bde` whose `spawnBdeAgent(opts)` returns an `AgentHandle` that is structurally compatible with BDE's own `AgentHandle`.
+Make the `rbt-coding-agent` framework one of FLEET's spawnable agent backends, selectable **per agent type** via settings, with silent per-call fallback to the existing Claude SDK path when the local backend is unreachable. The framework ships a pre-built adapter at `rbt-coding-agent/adapters/fleet` whose `spawnFleetAgent(opts)` returns an `AgentHandle` that is structurally compatible with FLEET's own `AgentHandle`.
 
 After this work, a user can:
 
-1. Open BDE settings.
+1. Open FLEET settings.
 2. Flip "Pipeline backend" from `claude` to `local`, set a local model (e.g. `openai/qwen/qwen3.6-35b-a3b`).
 3. Submit a Pipeline task — it runs against their local LM Studio instead of Claude.
 4. Everything else (Synthesizer, Copilot, Assistant, Adhoc, Reviewer) continues to use Claude exactly as today.
@@ -21,21 +21,21 @@ The integration is built per-agent-type from day one, so future expansion (e.g. 
 
 ## Success criteria
 
-1. `rbt-coding-agent` is added as a `file:` dependency. `pnpm install` resolves it. BDE builds clean.
+1. `rbt-coding-agent` is added as a `file:` dependency. `pnpm install` resolves it. FLEET builds clean.
 2. A `backend-selector` resolves `(agentType, settings) → { backend: 'claude' | 'local', model: string }`. Settings key is per-agent-type.
-3. `spawnAgent()` consults the selector; when `backend === 'local'`, routes through a new `spawnLocalAgent` that wraps `spawnBdeAgent` from rbt-coding-agent.
+3. `spawnAgent()` consults the selector; when `backend === 'local'`, routes through a new `spawnLocalAgent` that wraps `spawnFleetAgent` from rbt-coding-agent.
 4. On local-spawn failure (preflight throws, LM Studio unreachable, Aider missing), `spawnAgent` logs the reason, emits a visible "fell back to Claude" marker on the event stream, and completes the spawn via the existing Claude path. The setting stays `local` for future calls — one failure does not auto-disable.
-5. Downstream consumers (drain loop, event mapper, cost tracker, watchdog, playground detection) are **unchanged**. The M3 adapter emits `SDKWireMessage`-shaped objects that BDE's existing code already handles.
-6. Unit tests cover: the selector's per-agent-type routing table, the local adapter's opt forwarding, the fallback-on-failure path. Colocated in `__tests__/` folders per BDE convention.
-7. Manual end-to-end run: Pipeline task routes to local Qwen, events persist correctly in BDE's agent-event storage, UI shows the run completing.
+5. Downstream consumers (drain loop, event mapper, cost tracker, watchdog, playground detection) are **unchanged**. The M3 adapter emits `SDKWireMessage`-shaped objects that FLEET's existing code already handles.
+6. Unit tests cover: the selector's per-agent-type routing table, the local adapter's opt forwarding, the fallback-on-failure path. Colocated in `__tests__/` folders per FLEET convention.
+7. Manual end-to-end run: Pipeline task routes to local Qwen, events persist correctly in FLEET's agent-event storage, UI shows the run completing.
 
 ## Out of scope
 
 - **Non-Pipeline routing.** The selector supports any agent type returning `local`, but only Pipeline currently flows through `spawnAgent`. Other types (Adhoc, Copilot, etc.) have their own dedicated spawn paths and will continue going to Claude. Consolidating all spawn paths through `spawnAgent` is a later refactor.
 - **Settings UI.** Schema extension + SQLite persistence only. The UI row gets added when the developer settings panel is next updated, or via a separate follow-up.
 - **Automatic model discovery.** User picks the local model string manually. No "scan LM Studio and populate a dropdown" — that's future.
-- **Cost tracking beyond `$0`.** Local runs carry `cost_usd = 0`. BDE's existing cost pipeline handles that without special cases.
-- **Steering through the local backend.** Aider's `--message` mode is one-shot; `AgentHandle.steer()` on the rbt-coding-agent side already returns `{ delivered: false, error: ... }` as documented. Same behavior in BDE.
+- **Cost tracking beyond `$0`.** Local runs carry `cost_usd = 0`. FLEET's existing cost pipeline handles that without special cases.
+- **Steering through the local backend.** Aider's `--message` mode is one-shot; `AgentHandle.steer()` on the rbt-coding-agent side already returns `{ delivered: false, error: ... }` as documented. Same behavior in FLEET.
 
 ## Architecture
 
@@ -48,7 +48,7 @@ run-agent.ts
           ├─ resolveBackend('pipeline', settings)       // new
           │   └─ { backend: 'local', model: 'openai/...' }
           ├─ spawnLocalAgent(opts)                      // new
-          │   └─ spawnBdeAgent(opts) from rbt-coding-agent
+          │   └─ spawnFleetAgent(opts) from rbt-coding-agent
           │       └─ spawn() → spawnAiderSession()
           │           └─ AgentHandle with SDKWireMessage stream
           └─ (returns AgentHandle; drain loop consumes as today)
@@ -107,9 +107,9 @@ export function resolveBackend(
 }
 ```
 
-Shape reason: BDE's settings store is SQLite-backed with JSON-serialized values (see `src/main/settings.ts`). One key, one JSON blob, typed getter. Matches the existing `SETTING_SUPABASE_URL`-style pattern.
+Shape reason: FLEET's settings store is SQLite-backed with JSON-serialized values (see `src/main/settings.ts`). One key, one JSON blob, typed getter. Matches the existing `SETTING_SUPABASE_URL`-style pattern.
 
-The exact default Claude model string should be whatever BDE's current default is — I'll read it from the existing config rather than hard-coding during implementation.
+The exact default Claude model string should be whatever FLEET's current default is — I'll read it from the existing config rather than hard-coding during implementation.
 
 ### New file: `src/main/agent-manager/local-adapter.ts`
 
@@ -118,9 +118,9 @@ import type { AgentHandle } from './types'
 import type { Logger } from '../logger'
 
 /**
- * Thin pass-through: BDE's spawnAgent opts map 1:1 onto rbt-coding-agent's
+ * Thin pass-through: FLEET's spawnAgent opts map 1:1 onto rbt-coding-agent's
  * SpawnOptions. The framework's adapter already emits SDKWireMessage-shaped
- * handles, so BDE's drain loop consumes them transparently.
+ * handles, so FLEET's drain loop consumes them transparently.
  */
 export async function spawnLocalAgent(opts: {
   prompt: string
@@ -129,12 +129,12 @@ export async function spawnLocalAgent(opts: {
   endpoint: string
   logger?: Logger
 }): Promise<AgentHandle> {
-  const { spawnBdeAgent } = await import('rbt-coding-agent/adapters/bde')
+  const { spawnFleetAgent } = await import('rbt-coding-agent/adapters/fleet')
 
   const previousBase = process.env.OPENAI_API_BASE
   process.env.OPENAI_API_BASE = opts.endpoint
   try {
-    return await spawnBdeAgent({
+    return await spawnFleetAgent({
       prompt: opts.prompt,
       cwd: opts.cwd,
       model: opts.model
@@ -149,7 +149,7 @@ export async function spawnLocalAgent(opts: {
 Notes:
 - Dynamic `import()` so the Electron main bundler treats `rbt-coding-agent` as a runtime dependency without eager-loading (keeps cold-start fast and avoids bundler quirks if the dep is temporarily missing during dev).
 - `OPENAI_API_BASE` is scoped around the spawn — rbt-coding-agent's preflight reads it. Restoring after the call avoids polluting global env for Claude spawns in the same process.
-- The `as unknown as AgentHandle` cast acknowledges that the framework's `AgentHandle` and BDE's `AgentHandle` are structurally identical but nominally distinct types across the package boundary. If TypeScript's structural matching accepts it without the cast, drop the cast.
+- The `as unknown as AgentHandle` cast acknowledges that the framework's `AgentHandle` and FLEET's `AgentHandle` are structurally identical but nominally distinct types across the package boundary. If TypeScript's structural matching accepts it without the cast, drop the cast.
 
 ### Modified file: `src/main/agent-manager/sdk-adapter.ts`
 
@@ -238,7 +238,7 @@ Requires finding the exact callsite. Grep for `spawnAgent(` under `src/main/agen
   }
 ```
 
-Then `pnpm install` at BDE's root. Verify TypeScript resolves `rbt-coding-agent/adapters/bde` (subpath export), no bundler complaints.
+Then `pnpm install` at FLEET's root. Verify TypeScript resolves `rbt-coding-agent/adapters/fleet` (subpath export), no bundler complaints.
 
 ## Fallback semantics
 
@@ -247,10 +247,10 @@ When `spawnLocalAgent` throws — either synchronously during preflight (`Invali
 Things we do *not* do on fallback:
 
 - We don't flip the setting. One failure isn't evidence the user's local setup is broken; it might be a transient LM Studio restart.
-- We don't surface a modal dialog. The log line + (optional) a toast notification from BDE's existing notification layer is enough.
+- We don't surface a modal dialog. The log line + (optional) a toast notification from FLEET's existing notification layer is enough.
 - We don't retry the local path. If it failed, move on.
 
-If BDE has an existing "agent event" ribbon where we could surface "ran on Claude (local unavailable)", that's a good place. If not, the logger line is the MVP.
+If FLEET has an existing "agent event" ribbon where we could surface "ran on Claude (local unavailable)", that's a good place. If not, the logger line is the MVP.
 
 ## Tests — `__tests__/` colocated, vitest, `vi.mock()`
 
@@ -270,13 +270,13 @@ Mock `../settings` via `vi.mock`. Six cases × two branches ≈ 8–10 test case
 
 ```ts
 describe('spawnLocalAgent', () => {
-  it('forwards prompt/cwd/model to spawnBdeAgent', () => { ... })
+  it('forwards prompt/cwd/model to spawnFleetAgent', () => { ... })
   it('scopes OPENAI_API_BASE to the spawn and restores the previous value', () => { ... })
-  it('propagates spawnBdeAgent errors', () => { ... })
+  it('propagates spawnFleetAgent errors', () => { ... })
 })
 ```
 
-Mock `rbt-coding-agent/adapters/bde` via `vi.mock`. Return a fake `AgentHandle` for success paths; throw for the error case.
+Mock `rbt-coding-agent/adapters/fleet` via `vi.mock`. Return a fake `AgentHandle` for success paths; throw for the error case.
 
 ### `src/main/agent-manager/__tests__/sdk-adapter.test.ts` (extend existing)
 
@@ -290,7 +290,7 @@ describe('spawnAgent — backend selection', () => {
 
 ## Downstream — zero changes, verified
 
-BDE's downstream code (drain loop, event mapper, cost tracker, watchdog, playground detection) consumes `SDKWireMessage` objects. The rbt-coding-agent adapter emits them in the flat top-level shape BDE expects:
+FLEET's downstream code (drain loop, event mapper, cost tracker, watchdog, playground detection) consumes `SDKWireMessage` objects. The rbt-coding-agent adapter emits them in the flat top-level shape FLEET expects:
 
 - `{ type: 'system', session_id }` on start.
 - `{ type: 'assistant', message: { role, content: [...] } }` for assistant text + tool use.
@@ -311,7 +311,7 @@ M3's live-integration test (`tests/integration/framework-behavior.test.ts` in rb
 | Risk | Mitigation |
 |---|---|
 | `file:` dependency + Electron bundler surprises | Use dynamic `import()` inside `spawnLocalAgent` so the dep loads at runtime, not during bundling. Verify after `pnpm install` |
-| rbt-coding-agent's `AgentHandle` and BDE's `AgentHandle` are nominally distinct types | Structural typing + a `as unknown as AgentHandle` cast at the boundary. If structural match holds without cast, drop it |
+| rbt-coding-agent's `AgentHandle` and FLEET's `AgentHandle` are nominally distinct types | Structural typing + a `as unknown as AgentHandle` cast at the boundary. If structural match holds without cast, drop it |
 | `OPENAI_API_BASE` leaks across concurrent spawns | Scope it around the spawn via `try/finally`. If concurrent local spawns become a thing, pass per-call env via a different mechanism |
 | Claude-path fallback produces a confusingly different result than a local run | Log + event marker; user sees which backend actually handled the run |
 | Adding `agentType` as a required field breaks existing `spawnAgent` callers | Only one real call site (pipeline) + some test mocks. Update all in the same commit |
@@ -322,21 +322,21 @@ M3's live-integration test (`tests/integration/framework-behavior.test.ts` in rb
 1. **Per-agent-type or global?** Per-agent-type. Settings keys `pipeline / synthesizer / copilot / assistant / adhoc / reviewer`, each with its own `backend + model`.
 2. **Only Pipeline wired in M8?** Yes. Other types' spawn paths aren't consolidated yet; their rows in settings are for future expansion.
 3. **Fallback on local failure?** Silent Claude fallback per call, logged. Setting stays `local`.
-4. **Defaults?** Every type starts `claude` with BDE's existing default model. Zero behavior change at ship.
+4. **Defaults?** Every type starts `claude` with FLEET's existing default model. Zero behavior change at ship.
 5. **Dependency mechanism?** `file:../rbt-coding-agent`. Dynamic `import()` at call time to sidestep bundler quirks.
 6. **Settings UI?** Not in M8. Schema + SQLite persistence; UI lands later.
 
 ## Completion checklist
 
-- [ ] `BDE/package.json` adds `"rbt-coding-agent": "file:../rbt-coding-agent"`, `pnpm install` succeeds
+- [ ] `FLEET/package.json` adds `"rbt-coding-agent": "file:../rbt-coding-agent"`, `pnpm install` succeeds
 - [ ] `src/main/agent-manager/backend-selector.ts` created with `resolveBackend`, `loadBackendSettings`, `saveBackendSettings`, typed exports
 - [ ] `src/main/agent-manager/local-adapter.ts` created with `spawnLocalAgent`
 - [ ] `src/main/agent-manager/sdk-adapter.ts` modified: extract existing body into `spawnClaudeAgent`, add `agentType` to `spawnAgent` opts, route through selector + fallback
 - [ ] `spawnWithTimeout` + pipeline call site(s) pass `agentType: 'pipeline'`
 - [ ] Three `__tests__/` files for selector / local-adapter / sdk-adapter backend routing
-- [ ] `pnpm test` green in BDE
+- [ ] `pnpm test` green in FLEET
 - [ ] Manual end-to-end: Pipeline task routes to local Qwen with LM Studio running; events reach event mapper; UI shows completion
 - [ ] Manual fallback test: LM Studio off, task routes to Claude with a "fell back" log
-- [ ] Single BDE commit: `feat: route Pipeline through rbt-coding-agent when configured (M8)` (or matching BDE convention)
+- [ ] Single FLEET commit: `feat: route Pipeline through rbt-coding-agent when configured (M8)` (or matching FLEET convention)
 - [ ] rbt-coding-agent side: `package.json` version 0.1.0, README note; one commit there
 - [ ] Neither pushed until user confirms

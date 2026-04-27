@@ -5,7 +5,7 @@ import { PlannerAssistant, parseActionMarkers } from '../PlannerAssistant'
 
 // Mock useRepoOptions to return a single repo by default
 vi.mock('../../../hooks/useRepoOptions', () => ({
-  useRepoOptions: () => [{ label: 'bde', owner: '', color: '' }]
+  useRepoOptions: () => [{ label: 'fleet', owner: '', color: '' }]
 }))
 
 // Mock useTaskWorkbenchStore — only needs getState for ActionCard's handleEditFirst

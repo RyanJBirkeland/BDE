@@ -83,7 +83,7 @@ export function useSprintKeyboardShortcuts({
 
       if (e.key === '?') {
         e.preventDefault()
-        window.dispatchEvent(new CustomEvent('bde:toggle-shortcuts-help'))
+        window.dispatchEvent(new CustomEvent('fleet:toggle-shortcuts-help'))
       }
     }
 

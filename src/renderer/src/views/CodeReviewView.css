@@ -8,8 +8,8 @@
   min-width: 620px;
   min-height: 0;
   overflow: hidden;
-  background: var(--bde-bg);
-  font-family: var(--bde-font-code);
+  background: var(--fleet-bg);
+  font-family: var(--fleet-font-code);
 }
 
 .cr-panels {
@@ -25,9 +25,9 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--bde-surface);
-  border-right: 1px solid var(--bde-border);
-  transition: width 180ms var(--bde-transition-base);
+  background: var(--fleet-surface);
+  border-right: 1px solid var(--fleet-border);
+  transition: width 180ms var(--fleet-transition-base);
 }
 
 .cr-diffviewer {
@@ -41,9 +41,9 @@
 .cr-assistant {
   width: 384px;
   flex-shrink: 0;
-  background: var(--bde-surface);
-  border-left: 1px solid var(--bde-border);
-  transition: width 180ms var(--bde-transition-base);
+  background: var(--fleet-surface);
+  border-left: 1px solid var(--fleet-border);
+  transition: width 180ms var(--fleet-transition-base);
 }
 
 @media (max-width: 1120px) {
@@ -57,7 +57,7 @@
     top: 44px;
     bottom: 0;
     width: 384px;
-    box-shadow: var(--bde-shadow-lg);
+    box-shadow: var(--fleet-shadow-lg);
   }
 }
 
@@ -72,6 +72,6 @@
     top: 44px;
     bottom: 0;
     width: 256px;
-    box-shadow: var(--bde-shadow-lg);
+    box-shadow: var(--fleet-shadow-lg);
   }
 }

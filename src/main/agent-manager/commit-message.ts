@@ -13,7 +13,7 @@ const SPEC_TYPE_TO_COMMIT_TYPE: Record<string, string> = {
 const TASK_TITLE_PREFIX_PATTERN = /^(T|PR)-\d+\s*\[P\d\]\s*/
 
 /**
- * Build a BDE-convention commit message for an auto-commit.
+ * Build a FLEET-convention commit message for an auto-commit.
  *
  * Format: `${type}(${scope}): ${subject}\n\nTask-Id: ${task.id}`
  *

@@ -1,6 +1,6 @@
-# BDE Settings View
+# FLEET Settings View
 
-You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
+You are working in the FLEET (Agentic Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/FLEET`.
 
 ## Context
 
@@ -23,16 +23,16 @@ Build a Settings view so users can configure the app without editing files.
    - "Test connection" button — attempts to connect and shows result
 
    **Repositories**
-   - List of repo paths (life-os, feast, BDE) from `getRepoPaths()` IPC
+   - List of repo paths (life-os, feast, FLEET) from `getRepoPaths()` IPC
    - Read-only display for now (just show the paths)
 
    **Appearance**
    - Accent color picker (6 presets: `#00D37F` default green, blue, purple, orange, red, white)
-   - Store in localStorage, apply as `--bde-accent` CSS variable on `:root`
+   - Store in localStorage, apply as `--fleet-accent` CSS variable on `:root`
 
    **About**
    - App version from `package.json`
-   - Link to GitHub repo (`https://github.com/RyanJBirkeland/BDE`)
+   - Link to GitHub repo (`https://github.com/RyanJBirkeland/FLEET`)
 
 3. **Persistence** — Save gateway URL/token changes to `~/.openclaw/openclaw.json` via a new `saveGatewayConfig` IPC handler in `src/main/config.ts`. Reconnect after save.
 
@@ -42,6 +42,6 @@ Build a Settings view so users can configure the app without editing files.
 
 - Work on a branch: `git checkout -b feat/settings-view`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE settings view — gateway config, repo paths, accent color" -f body="Settings screen for gateway config and appearance" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/FLEET/pulls --method POST -f title="feat: FLEET settings view — gateway config, repo paths, accent color" -f body="Settings screen for gateway config and appearance" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/FLEET/pulls --method POST ...`

@@ -8,18 +8,19 @@ import { SettingsCard } from './SettingsCard'
 import { CostSection } from './CostSection'
 
 const APP_VERSION = __APP_VERSION__
-const GITHUB_URL = 'https://github.com/RyanJBirkeland/BDE/releases'
-const LOG_PATH = '~/.bde/bde.log'
+// TODO: update URL when GitHub repo is renamed from BDE to FLEET
+const GITHUB_URL = 'https://github.com/RyanJBirkeland/FLEET/releases'
+const LOG_PATH = '~/.fleet/fleet.log'
 
 export function AboutSection(): React.JSX.Element {
   const handleShowShortcuts = (): void => {
-    window.dispatchEvent(new CustomEvent('bde:show-shortcuts'))
+    window.dispatchEvent(new CustomEvent('fleet:show-shortcuts'))
   }
 
   return (
     <section className="settings-section">
-      <h2 className="settings-section__title bde-section-title">About</h2>
-      <SettingsCard title="About BDE">
+      <h2 className="settings-section__title fleet-section-title">About</h2>
+      <SettingsCard title="About FLEET">
         <div className="settings-about">
           <div className="settings-about__row">
             <span className="settings-about__label">Version</span>

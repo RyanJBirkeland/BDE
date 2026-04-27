@@ -4,5 +4,5 @@
 }
 
 .panel-resize-handle:hover {
-  background: var(--bde-border);
+  background: var(--fleet-border);
 }

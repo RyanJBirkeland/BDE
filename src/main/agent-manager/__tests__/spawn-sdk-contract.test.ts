@@ -28,7 +28,7 @@ vi.mock('../resolve-node', () => ({
 
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn(() => ({})),
-  BDE_MEMORY_DIR: '/mock/.bde/memory'
+  FLEET_MEMORY_DIR: '/mock/.fleet/memory'
 }))
 
 vi.mock('../worktree-isolation-hook', () => ({

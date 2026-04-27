@@ -79,7 +79,7 @@ function makeTask() {
     id: 'task-1',
     title: 'Fix auth',
     spec: '# Spec\nFix auth.',
-    repo: 'bde',
+    repo: 'fleet',
     branch: 'feat/auth',
     status: 'review' as const
   }

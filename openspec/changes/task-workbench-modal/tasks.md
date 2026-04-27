@@ -68,7 +68,7 @@ rm src/renderer/src/components/planner/WorkbenchPanel.css
 
 **File:** `src/renderer/src/assets/tokens.css` (or wherever overlay z-indexes live)
 
-- Add `--bde-z-modal: 200;` and `--bde-z-overlay: 150;` if not already defined.
+- Add `--fleet-z-modal: 200;` and `--fleet-z-overlay: 150;` if not already defined.
 - Verify `PipelineOverlays`, `DagOverlay`, `PlaygroundModal`, and `TaskDetailDrawer` use ≤ 150. Bump them to use the token if they hardcode values.
 
 ## 9. Module documentation ✅

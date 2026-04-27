@@ -81,7 +81,7 @@ describe('DashboardView', () => {
 
   it('renders the Ops Deck command center', () => {
     render(<DashboardView />)
-    expect(screen.getByText('BDE Command Center')).toBeInTheDocument()
+    expect(screen.getByText('FLEET Command Center')).toBeInTheDocument()
   })
 
   it('renders stat rail for key metrics', () => {
@@ -284,7 +284,7 @@ describe('DashboardView', () => {
       })
     )
     render(<DashboardView />)
-    expect(screen.getByText('Welcome to BDE')).toBeInTheDocument()
+    expect(screen.getByText('Welcome to FLEET')).toBeInTheDocument()
     expect(screen.getByText('Create First Task')).toBeInTheDocument()
   })
 

@@ -39,7 +39,7 @@ describe('sprint service', () => {
   })
 
   it('createTask delegates to window.api.sprint.create', async () => {
-    const input = { title: 'New task', repo: 'bde', status: 'backlog' as const }
+    const input = { title: 'New task', repo: 'fleet', status: 'backlog' as const }
     await createTask(input as Parameters<typeof window.api.sprint.create>[0])
     expect(window.api.sprint.create).toHaveBeenCalledWith(input)
   })
@@ -51,7 +51,7 @@ describe('sprint service', () => {
   })
 
   it('generatePrompt delegates to window.api.sprint.generatePrompt', async () => {
-    const params = { taskId: 't1', title: 'task', repo: 'bde', templateHint: 'feature' }
+    const params = { taskId: 't1', title: 'task', repo: 'fleet', templateHint: 'feature' }
     await generatePrompt(params)
     expect(window.api.sprint.generatePrompt).toHaveBeenCalledWith(params)
   })

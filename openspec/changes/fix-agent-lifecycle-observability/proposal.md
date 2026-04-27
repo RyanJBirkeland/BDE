@@ -1,6 +1,6 @@
 ## Why
 
-Five logging gaps in the agent lifecycle make it impossible to reconstruct what happened to a task from `bde.log` alone: the `agent.completed` event always claims `status: 'review'` regardless of actual outcome, two hard-abort paths omit `taskId` from their `agent:error` events, every status transition is silent on success, and there is no structured record of task claim or auto-complete.
+Five logging gaps in the agent lifecycle make it impossible to reconstruct what happened to a task from `fleet.log` alone: the `agent.completed` event always claims `status: 'review'` regardless of actual outcome, two hard-abort paths omit `taskId` from their `agent:error` events, every status transition is silent on success, and there is no structured record of task claim or auto-complete.
 
 ## What Changes
 

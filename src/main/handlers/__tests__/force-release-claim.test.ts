@@ -26,8 +26,8 @@ vi.mock('../../data/task-group-queries', () => ({
 }))
 vi.mock('../../paths', () => ({
   getSpecsRoot: vi.fn().mockReturnValue('/tmp/specs'),
-  getRepoPaths: vi.fn().mockReturnValue({ bde: '/tmp/bde' }),
-  getRepoPath: vi.fn().mockReturnValue('/tmp/bde')
+  getRepoPaths: vi.fn().mockReturnValue({ fleet: '/tmp/fleet' }),
+  getRepoPath: vi.fn().mockReturnValue('/tmp/fleet')
 }))
 vi.mock('../../broadcast', () => ({ broadcast: vi.fn(), broadcastCoalesced: vi.fn() }))
 vi.mock('../../services/webhook-service', () => ({
@@ -40,7 +40,7 @@ vi.mock('../../db', () => ({ getDb: vi.fn().mockReturnValue({}) }))
 vi.mock('../../data/agent-queries', () => ({ getAgentLogInfo: vi.fn() }))
 vi.mock('../../agent-history', () => ({ readLog: vi.fn(), initAgentHistory: vi.fn() }))
 vi.mock('fs/promises', () => ({ readFile: vi.fn() }))
-vi.mock('../../git', () => ({ getRepoPaths: vi.fn().mockReturnValue({ bde: '/tmp/bde' }) }))
+vi.mock('../../git', () => ({ getRepoPaths: vi.fn().mockReturnValue({ fleet: '/tmp/fleet' }) }))
 vi.mock('../../services/dependency-service', async (orig) => {
   const actual = await orig()
   return {

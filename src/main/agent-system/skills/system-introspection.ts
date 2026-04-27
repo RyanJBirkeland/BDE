@@ -1,12 +1,12 @@
-import type { BDESkill } from './types'
+import type { FLEETSkill } from './types'
 
-export const systemIntrospectionSkill: BDESkill = {
+export const systemIntrospectionSkill: FLEETSkill = {
   id: 'system-introspection',
   trigger: 'User asks about queue health, active agents, task status, or logs',
-  description: 'Query BDE system state (queue, agents, logs, dependencies)',
+  description: 'Query FLEET system state (queue, agents, logs, dependencies)',
   guidance: `# System Introspection
 
-You can directly inspect BDE's internal state:
+You can directly inspect FLEET's internal state:
 
 ## Check Queue Health
 Query SQLite:
@@ -25,7 +25,7 @@ FROM agent_runs
 WHERE status='running';
 \`\`\`
 
-Cross-reference with ~/.bde/bde.log for detailed output.
+Cross-reference with ~/.fleet/fleet.log for detailed output.
 
 ## Inspect Task Status
 \`\`\`sql
@@ -36,16 +36,16 @@ Check depends_on field for dependency chains.
 
 ## Diagnose Pipeline Stalls
 - Tasks stuck in 'active' for >1hr (check started_at)
-- Check ~/.bde/bde.log for watchdog timeouts
-- Verify worktrees exist: ls ~/.bde/worktrees/
+- Check ~/.fleet/fleet.log for watchdog timeouts
+- Verify worktrees exist: ls ~/.fleet/worktrees/
 
 ## Example Usage
 \`\`\`bash
 # Check queue health
-sqlite3 ~/.bde/bde.db "SELECT status, COUNT(*) FROM sprint_tasks GROUP BY status"
+sqlite3 ~/.fleet/fleet.db "SELECT status, COUNT(*) FROM sprint_tasks GROUP BY status"
 
 # Read recent agent logs
-tail -100 ~/.bde/bde.log
+tail -100 ~/.fleet/fleet.log
 \`\`\`
 `,
   capabilities: ['sqlite-query', 'file-read-logs']

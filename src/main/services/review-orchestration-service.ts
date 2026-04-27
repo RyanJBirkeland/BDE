@@ -388,7 +388,7 @@ export async function checkReviewFreshness(
   }
 }
 
-export async function markShippedOutsideBde(
+export async function markShippedOutsideFleet(
   taskId: string,
   deps: { taskStateService: TaskStateService }
 ): Promise<{ success: true }> {
@@ -398,10 +398,10 @@ export async function markShippedOutsideBde(
     throw new Error(`Task ${taskId} is not in review status (status: ${task.status})`)
   }
 
-  logger.info(`markShippedOutsideBde task=${taskId}`)
+  logger.info(`markShippedOutsideFleet task=${taskId}`)
   await deps.taskStateService.transition(taskId, 'done', {
     fields: { completed_at: nowIso() },
-    caller: 'review:markShippedOutsideBde'
+    caller: 'review:markShippedOutsideFleet'
   })
   return { success: true }
 }

@@ -85,7 +85,7 @@ export function assertPathWithin(untrusted: string, allowedRoot: string): string
 ```typescript
 import { assertPathWithin } from './validation'
 
-const LOGS_DIR = join(homedir(), '.bde', 'agent-logs')
+const LOGS_DIR = join(homedir(), '.fleet', 'agent-logs')
 
 export async function tailAgentLog(args: TailLogArgs): Promise<TailLogResult> {
   const safePath = assertPathWithin(args.logPath, LOGS_DIR)
@@ -159,7 +159,7 @@ function assertValidShell(shell?: string): void {
 
 ## Acceptance Criteria
 
-- [ ] `tailAgentLog` rejects paths outside `~/.bde/agent-logs/`
+- [ ] `tailAgentLog` rejects paths outside `~/.fleet/agent-logs/`
 - [ ] All `git:*` handlers reject CWDs outside known repo paths
 - [ ] `readMemoryFile` / `writeMemoryFile` reject paths outside `~/.openclaw/workspace/memory/`
 - [ ] `terminal:create` rejects non-whitelisted shell paths

@@ -4,34 +4,34 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bde-bg);
-  border-right: 1px solid var(--bde-border);
+  background: var(--fleet-bg);
+  border-right: 1px solid var(--fleet-border);
 }
 
 .planner-epic-list__header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
-  padding: 10px var(--bde-space-3);
-  border-bottom: 1px solid var(--bde-border);
-  background: var(--bde-surface);
+  gap: var(--fleet-space-2);
+  padding: 10px var(--fleet-space-3);
+  border-bottom: 1px solid var(--fleet-border);
+  background: var(--fleet-surface);
 }
 
 .planner-epic-list__title {
-  font-size: var(--bde-size-2xs);
+  font-size: var(--fleet-size-2xs);
   font-weight: 700;
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
   text-transform: uppercase;
   letter-spacing: 1.5px;
 }
 
 .planner-epic-list__count {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   font-weight: 600;
-  color: var(--bde-text-dim);
-  background: var(--bde-border);
+  color: var(--fleet-text-dim);
+  background: var(--fleet-border);
   padding: 1px 6px;
-  border-radius: var(--bde-radius-xl);
+  border-radius: var(--fleet-radius-xl);
 }
 
 .planner-epic-list__import-btn {
@@ -42,50 +42,50 @@
   width: 26px;
   height: 26px;
   background: none;
-  border: 1px solid var(--bde-border);
-  border-radius: var(--bde-radius-sm);
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
   cursor: pointer;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   transition:
     color 0.12s ease,
     border-color 0.12s ease;
 }
 
 .planner-epic-list__import-btn:hover:not(:disabled) {
-  color: var(--bde-text);
-  border-color: var(--bde-text-muted);
+  color: var(--fleet-text);
+  border-color: var(--fleet-text-muted);
 }
 
 .planner-epic-list__import-btn:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
 .planner-epic-list__search {
   position: relative;
-  padding: var(--bde-space-2) var(--bde-space-3);
-  border-bottom: 1px solid var(--bde-border);
+  padding: var(--fleet-space-2) var(--fleet-space-3);
+  border-bottom: 1px solid var(--fleet-border);
 }
 
 .planner-epic-list__scroll {
   flex: 1;
   overflow-y: auto;
-  padding: var(--bde-space-2);
+  padding: var(--fleet-space-2);
 }
 
 .planner-epic-list__footer {
-  padding: var(--bde-space-3);
-  border-top: 1px solid var(--bde-border);
+  padding: var(--fleet-space-3);
+  border-top: 1px solid var(--fleet-border);
 }
 
 .planner-epic-list__new-button {
   width: 100%;
   padding: 10px;
-  background: var(--bde-accent-surface);
-  border: 1px solid var(--bde-accent);
-  border-radius: var(--bde-radius-md);
-  color: var(--bde-accent);
-  font-size: var(--bde-size-md);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent);
+  border-radius: var(--fleet-radius-md);
+  color: var(--fleet-accent);
+  font-size: var(--fleet-size-md);
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -94,7 +94,7 @@
 }
 
 .planner-epic-list__new-button:hover:not(:disabled) {
-  background: var(--bde-accent-surface);
+  background: var(--fleet-accent-surface);
   box-shadow: none;
 }
 
@@ -103,28 +103,28 @@
 }
 
 .planner-epic-list__new-button:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
-/* Epic Item — uses .bde-card base */
+/* Epic Item — uses .fleet-card base */
 .planner-epic-item {
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: var(--bde-space-3);
-  margin-bottom: var(--bde-space-2);
+  gap: var(--fleet-space-3);
+  margin-bottom: var(--fleet-space-2);
   position: relative;
   text-align: left;
 }
 
 .planner-epic-item--selected {
-  background: var(--bde-surface-high);
-  border-color: var(--bde-accent);
+  background: var(--fleet-surface-high);
+  border-color: var(--fleet-accent);
 }
 
 .planner-epic-item:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -134,7 +134,7 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  border-radius: var(--bde-radius-lg) 0 0 var(--bde-radius-lg);
+  border-radius: var(--fleet-radius-lg) 0 0 var(--fleet-radius-lg);
 }
 
 .planner-epic-item__icon {
@@ -145,8 +145,8 @@
   align-items: center;
   justify-content: center;
   border: 1px solid;
-  border-radius: var(--bde-radius-md);
-  font-size: var(--bde-size-lg);
+  border-radius: var(--fleet-radius-md);
+  font-size: var(--fleet-size-lg);
   font-weight: 700;
 }
 
@@ -162,47 +162,47 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
 }
 
 .planner-epic-item__name {
   flex: 1;
   min-width: 0;
-  font-size: var(--bde-size-md);
+  font-size: var(--fleet-size-md);
   font-weight: 600;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .planner-epic-item__status {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
   padding: 1px 6px;
-  border-radius: var(--bde-radius-full);
+  border-radius: var(--fleet-radius-full);
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .planner-epic-item__tasks {
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-muted);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
 }
 
 .planner-epic-item__progress-track {
   height: 3px;
-  background: var(--bde-border);
-  border-radius: var(--bde-radius-sm);
+  background: var(--fleet-border);
+  border-radius: var(--fleet-radius-sm);
   overflow: hidden;
 }
 
 .planner-epic-item__progress-fill {
   height: 100%;
   transition: width 200ms ease;
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
 }
 
 /* Completed section toggle */
@@ -211,24 +211,24 @@
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: var(--bde-space-2) 14px;
+  padding: var(--fleet-space-2) 14px;
   background: none;
   border: none;
-  border-top: 1px solid var(--bde-border);
-  color: var(--bde-text-dim);
-  font-size: var(--bde-size-xs);
+  border-top: 1px solid var(--fleet-border);
+  color: var(--fleet-text-dim);
+  font-size: var(--fleet-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
-  margin-top: var(--bde-space-1);
+  margin-top: var(--fleet-space-1);
 }
 
 .planner-epic-list__section-toggle:hover {
-  color: var(--bde-text);
+  color: var(--fleet-text);
 }
 
 .planner-epic-list__section-toggle:focus-visible {
-  outline: 2px solid var(--bde-accent);
+  outline: 2px solid var(--fleet-accent);
   outline-offset: 2px;
 }
 
@@ -243,9 +243,9 @@
 }
 
 .planner-epic-list__empty {
-  padding: var(--bde-space-4) 14px;
-  font-size: var(--bde-size-sm);
-  color: var(--bde-text-dim);
+  padding: var(--fleet-space-4) 14px;
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-dim);
   text-align: center;
   font-style: italic;
 }

@@ -11,7 +11,7 @@ const NEXT_HEADING = /^##\s+/
 /**
  * Extracts the list of paths declared in a spec's `## Files to Change` section.
  *
- * Handles the four bullet variants found in BDE specs:
+ * Handles the four bullet variants found in FLEET specs:
  *   - `- \`src/foo/bar.ts\``                  (backtick-quoted path)
  *   - `- src/foo/bar.ts`                      (bare path)
  *   - `- src/foo/bar.ts (new file)`           (parenthetical suffix)

@@ -39,7 +39,7 @@ export interface UseSingleTaskReviewActionsResult {
   requestRevision: () => Promise<void>
   rebase: () => Promise<void>
   discard: () => Promise<void>
-  markShippedOutsideBde: () => Promise<void>
+  markShippedOutsideFleet: () => Promise<void>
   getNextReviewTaskId: (currentTaskId: string) => string | null
   confirmProps: ReturnType<typeof useConfirm>['confirmProps']
   promptProps: ReturnType<typeof useTextareaPrompt>['promptProps']
@@ -239,18 +239,18 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
     }
   }
 
-  const markShippedOutsideBde = async (): Promise<void> => {
+  const markShippedOutsideFleet = async (): Promise<void> => {
     if (!task) return
     const ok = await confirm({
-      title: 'Mark Shipped Outside BDE',
-      message: `Mark "${task.title.slice(0, 50)}" as done? Use this when you merged or deployed the work outside of BDE.`,
+      title: 'Mark Shipped Outside FLEET',
+      message: `Mark "${task.title.slice(0, 50)}" as done? Use this when you merged or deployed the work outside of FLEET.`,
       confirmLabel: 'Mark Done',
       variant: 'default'
     })
     if (!ok) return
     setActionInFlight('markShipped')
     try {
-      await window.api.review.markShippedOutsideBde({ taskId: task.id })
+      await window.api.review.markShippedOutsideFleet({ taskId: task.id })
       toast.success('Task marked as shipped')
       const nextTaskId = getNextReviewTaskId(task.id, tasks)
       selectTask(nextTaskId)
@@ -277,7 +277,7 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
     requestRevision,
     rebase,
     discard,
-    markShippedOutsideBde,
+    markShippedOutsideFleet,
     getNextReviewTaskId: (currentTaskId: string) => getNextReviewTaskId(currentTaskId, tasks),
     confirmProps,
     promptProps

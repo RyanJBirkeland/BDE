@@ -6,19 +6,19 @@ import { tmpdir } from 'os'
 import { runMigrations, migrations } from '../db'
 
 // Use a fixed (non-pid) temp path for the vi.mock factory, which is hoisted before variable init
-const BACKUP_TEST_DIR = join(tmpdir(), 'bde-db-backup-test')
-const BACKUP_TEST_DB_PATH = join(tmpdir(), 'bde-db-backup-test', 'bde.db')
+const BACKUP_TEST_DIR = join(tmpdir(), 'fleet-db-backup-test')
+const BACKUP_TEST_DB_PATH = join(tmpdir(), 'fleet-db-backup-test', 'fleet.db')
 
 vi.mock('../paths', async (importOriginal) => {
   const { join: pathJoin } = await import('path')
   const { tmpdir: osTmpdir } = await import('os')
   const original = await importOriginal<typeof import('../paths')>()
-  const testDir = pathJoin(osTmpdir(), 'bde-db-backup-test')
+  const testDir = pathJoin(osTmpdir(), 'fleet-db-backup-test')
   return {
     ...original,
-    BDE_DIR: testDir,
-    BDE_DB_PATH: pathJoin(testDir, 'bde.db'),
-    BDE_TASK_MEMORY_DIR: pathJoin(testDir, 'memory', 'tasks')
+    FLEET_DIR: testDir,
+    FLEET_DB_PATH: pathJoin(testDir, 'fleet.db'),
+    FLEET_TASK_MEMORY_DIR: pathJoin(testDir, 'memory', 'tasks')
   }
 })
 
@@ -269,7 +269,7 @@ describe('db schema migrations', () => {
     db.prepare(`INSERT INTO sprint_tasks (id, title, repo, status) VALUES (?, ?, ?, ?)`).run(
       'test-task-1',
       'Test Task',
-      'BDE',
+      'FLEET',
       'backlog'
     )
 
@@ -277,7 +277,7 @@ describe('db schema migrations', () => {
     const before = db.prepare('SELECT repo FROM sprint_tasks WHERE id = ?').get('test-task-1') as {
       repo: string
     }
-    expect(before.repo).toBe('BDE')
+    expect(before.repo).toBe('FLEET')
 
     // Run migration v38
     runMigrations(db)
@@ -286,7 +286,7 @@ describe('db schema migrations', () => {
     const after = db.prepare('SELECT repo FROM sprint_tasks WHERE id = ?').get('test-task-1') as {
       repo: string
     }
-    expect(after.repo).toBe('bde')
+    expect(after.repo).toBe('fleet')
 
     db.close()
   })
@@ -348,7 +348,7 @@ describe('backupDatabase', () => {
 })
 
 describe('getDb', () => {
-  const TASK_MEMORY_TEST_DIR = join(tmpdir(), 'bde-db-backup-test', 'memory', 'tasks')
+  const TASK_MEMORY_TEST_DIR = join(tmpdir(), 'fleet-db-backup-test', 'memory', 'tasks')
 
   beforeEach(() => {
     mkdirSync(BACKUP_TEST_DIR, { recursive: true })

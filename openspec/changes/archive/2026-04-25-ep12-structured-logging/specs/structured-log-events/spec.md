@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Structured event logger method
-The system SHALL provide a `logger.event(name, fields)` method on the object returned by `createLogger()`. Calling it SHALL write a single NDJSON line to `~/.bde/bde.log` with at minimum `ts`, `level`, `module`, and `event` fields plus all provided `fields`.
+The system SHALL provide a `logger.event(name, fields)` method on the object returned by `createLogger()`. Calling it SHALL write a single NDJSON line to `~/.fleet/fleet.log` with at minimum `ts`, `level`, `module`, and `event` fields plus all provided `fields`.
 
 #### Scenario: Event line is valid JSON
 - **WHEN** `logger.event('agent.spawn', { taskId: 'abc', model: 'claude-opus-4-7' })` is called
-- **THEN** a line is appended to bde.log that parses as JSON and contains `event: 'agent.spawn'`, `taskId: 'abc'`, `model: 'claude-opus-4-7'`, `ts`, `level`, and `module`
+- **THEN** a line is appended to fleet.log that parses as JSON and contains `event: 'agent.spawn'`, `taskId: 'abc'`, `model: 'claude-opus-4-7'`, `ts`, `level`, and `module`
 
 #### Scenario: Missing optional fields do not appear
 - **WHEN** `logger.event('drain.tick', { tickId: 'x1' })` is called without `taskId`
@@ -38,4 +38,4 @@ The system SHALL have zero `console.warn`, `console.log`, or `console.error` cal
 
 #### Scenario: Packaged build surfaces warnings
 - **WHEN** the app runs as a packaged `.app` (no terminal attached)
-- **THEN** all warnings from main-process modules reach `~/.bde/bde.log` (not lost to a disconnected console)
+- **THEN** all warnings from main-process modules reach `~/.fleet/fleet.log` (not lost to a disconnected console)

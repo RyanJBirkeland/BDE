@@ -18,7 +18,7 @@ export function DiffSizeWarning({
   onLoadAnyway
 }: DiffSizeWarningProps): React.JSX.Element {
   return (
-    <div className="bde-warning-banner">
+    <div className="fleet-warning-banner">
       <AlertTriangle size={16} />
       <span>
         Large diff ({formatBytes(sizeBytes)}) may slow down the editor. Line commenting will be

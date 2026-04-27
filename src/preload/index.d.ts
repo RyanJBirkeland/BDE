@@ -514,9 +514,9 @@ declare global {
         checkAutoReview: (payload: {
           taskId: string
         }) => Promise<IpcResult<'review:checkAutoReview'>>
-        markShippedOutsideBde: (payload: {
+        markShippedOutsideFleet: (payload: {
           taskId: string
-        }) => Promise<IpcResult<'review:markShippedOutsideBde'>>
+        }) => Promise<IpcResult<'review:markShippedOutsideFleet'>>
         // AI Review Partner
         autoReview: (taskId: string, force?: boolean) => Promise<ReviewResult>
         chatStream: (params: {

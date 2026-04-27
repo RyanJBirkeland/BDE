@@ -95,7 +95,7 @@ export function StatusRail({
           >
             <div
               style={{
-                color: t.accent === 'active' ? 'var(--bde-accent)' : 'var(--bde-text)',
+                color: t.accent === 'active' ? 'var(--fleet-accent)' : 'var(--fleet-text)',
                 fontSize: 16,
                 fontWeight: 700,
                 lineHeight: 1
@@ -106,7 +106,7 @@ export function StatusRail({
             <div
               style={{
                 fontSize: 8,
-                color: 'var(--bde-text-dim)',
+                color: 'var(--fleet-text-dim)',
                 letterSpacing: '0.08em',
                 marginTop: 3,
                 textTransform: 'uppercase'
@@ -129,7 +129,7 @@ export function StatusRail({
         style={{
           background: 'rgba(56, 189, 248, 0.12)',
           border: '1px dashed #38bdf8',
-          color: 'var(--bde-accent)',
+          color: 'var(--fleet-accent)',
           padding: 8,
           borderRadius: 5,
           fontSize: 10,

@@ -45,7 +45,7 @@ export function PanelLeaf({ node }: PanelLeafProps): React.ReactElement {
   }
 
   function handleDragEnter(e: React.DragEvent<HTMLDivElement>): void {
-    if (e.dataTransfer.types.includes('application/bde-panel')) {
+    if (e.dataTransfer.types.includes('application/fleet-panel')) {
       setIsDragOver(true)
     }
   }

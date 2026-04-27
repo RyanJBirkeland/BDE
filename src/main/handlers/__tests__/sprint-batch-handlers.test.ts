@@ -52,7 +52,7 @@ describe('sprint:batchImport handler', () => {
   it('rejects tasks with unconfigured repo when repos are set', async () => {
     // Configure repos
     vi.mocked(getSettingJson).mockReturnValue([
-      { name: 'bde', localPath: '/path/to/bde' },
+      { name: 'fleet', localPath: '/path/to/fleet' },
       { name: 'life-os', localPath: '/path/to/life-os' }
     ])
 
@@ -61,7 +61,7 @@ describe('sprint:batchImport handler', () => {
     expect(handler).toBeDefined()
 
     const result = await handler(null, [
-      { title: 'Valid Task', repo: 'bde', spec: 'Do something' },
+      { title: 'Valid Task', repo: 'fleet', spec: 'Do something' },
       { title: 'Invalid Task', repo: 'unknown-repo', spec: 'Do something else' }
     ])
 
@@ -78,7 +78,7 @@ describe('sprint:batchImport handler', () => {
     const handler = global.__handlers.get('sprint:batchImport')
     expect(handler).toBeDefined()
 
-    const result = await handler(null, [{ title: 'Task A', repo: 'bde', spec: 'Do something' }])
+    const result = await handler(null, [{ title: 'Task A', repo: 'fleet', spec: 'Do something' }])
 
     expect(result.created).toHaveLength(0)
     expect(result.errors).toHaveLength(1)
@@ -86,16 +86,16 @@ describe('sprint:batchImport handler', () => {
   })
 
   it('validates repo case-insensitively', async () => {
-    vi.mocked(getSettingJson).mockReturnValue([{ name: 'BDE', localPath: '/path/to/bde' }])
+    vi.mocked(getSettingJson).mockReturnValue([{ name: 'FLEET', localPath: '/path/to/fleet' }])
 
     registerSprintBatchHandlers(mockDeps)
     const handler = global.__handlers.get('sprint:batchImport')
     expect(handler).toBeDefined()
 
     const result = await handler(null, [
-      { title: 'Task A', repo: 'bde', spec: 'Do something' },
-      { title: 'Task B', repo: 'BDE', spec: 'Do something' },
-      { title: 'Task C', repo: 'Bde', spec: 'Do something' }
+      { title: 'Task A', repo: 'fleet', spec: 'Do something' },
+      { title: 'Task B', repo: 'FLEET', spec: 'Do something' },
+      { title: 'Task C', repo: 'Fleet', spec: 'Do something' }
     ])
 
     expect(result.created).toHaveLength(3)
@@ -104,7 +104,7 @@ describe('sprint:batchImport handler', () => {
 
   it('accepts valid repos from configured list', async () => {
     vi.mocked(getSettingJson).mockReturnValue([
-      { name: 'bde', localPath: '/path/to/bde' },
+      { name: 'fleet', localPath: '/path/to/fleet' },
       { name: 'life-os', localPath: '/path/to/life-os' }
     ])
 
@@ -113,7 +113,7 @@ describe('sprint:batchImport handler', () => {
     expect(handler).toBeDefined()
 
     const result = await handler(null, [
-      { title: 'Task A', repo: 'bde', spec: 'Do something' },
+      { title: 'Task A', repo: 'fleet', spec: 'Do something' },
       { title: 'Task B', repo: 'life-os', spec: 'Do something else' }
     ])
 

@@ -35,7 +35,7 @@ export function normalizeStatus(raw: string | undefined): UnifiedAgentStatus {
 
 export function normalizeSource(raw: string): UnifiedAgentSource {
   switch (raw) {
-    case 'bde':
+    case 'fleet':
       return 'local'
     default:
       return 'history'
@@ -93,7 +93,7 @@ export function buildUnifiedAgentList(
 
     const source = normalizeSource(a.source)
     if (source === 'local') {
-      // History entry from a BDE-spawned agent — treat as local
+      // History entry from a FLEET-spawned agent — treat as local
       const local: LocalAgent = {
         id: `history:${a.id}`,
         label: a.repo || a.bin || a.id,

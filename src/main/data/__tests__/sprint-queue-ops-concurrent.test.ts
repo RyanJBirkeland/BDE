@@ -28,14 +28,14 @@ afterEach(() => {
 function insertQueuedTask(id: string, title = 'Test task'): void {
   db.prepare(
     `INSERT INTO sprint_tasks (id, title, repo, status, priority)
-     VALUES (?, ?, 'bde', 'queued', 1)`
+     VALUES (?, ?, 'fleet', 'queued', 1)`
   ).run(id, title)
 }
 
 function insertActiveTask(id: string, claimedBy: string): void {
   db.prepare(
     `INSERT INTO sprint_tasks (id, title, repo, status, priority, claimed_by)
-     VALUES (?, ?, 'bde', 'active', 1, ?)`
+     VALUES (?, ?, 'fleet', 'active', 1, ?)`
   ).run(id, `Task ${id}`, claimedBy)
 }
 
@@ -97,9 +97,9 @@ describe('claimTask concurrent-claim race', () => {
 describe('getOrphanedTasks orphan recovery round-trip', () => {
   it('returns an active task claimed by the given executor', () => {
     const taskId = 'orphan-task-1'
-    insertActiveTask(taskId, 'bde-embedded')
+    insertActiveTask(taskId, 'fleet-embedded')
 
-    const orphans = getOrphanedTasks('bde-embedded', db)
+    const orphans = getOrphanedTasks('fleet-embedded', db)
 
     expect(orphans).toHaveLength(1)
     expect(orphans[0].id).toBe(taskId)
@@ -109,22 +109,22 @@ describe('getOrphanedTasks orphan recovery round-trip', () => {
   it('does not return tasks claimed by a different executor', () => {
     insertActiveTask('task-other', 'other-executor')
 
-    const orphans = getOrphanedTasks('bde-embedded', db)
+    const orphans = getOrphanedTasks('fleet-embedded', db)
     expect(orphans).toHaveLength(0)
   })
 
   it('does not return queued tasks — only active ones are orphans', () => {
     insertQueuedTask('queued-task')
 
-    const orphans = getOrphanedTasks('bde-embedded', db)
+    const orphans = getOrphanedTasks('fleet-embedded', db)
     expect(orphans).toHaveLength(0)
   })
 
   it('round-trip: seed active task, re-queue it, assert status=queued and orphan_recovery_count=1', () => {
     const taskId = 'orphan-round-trip'
-    insertActiveTask(taskId, 'bde-embedded')
+    insertActiveTask(taskId, 'fleet-embedded')
 
-    const orphansBefore = getOrphanedTasks('bde-embedded', db)
+    const orphansBefore = getOrphanedTasks('fleet-embedded', db)
     expect(orphansBefore).toHaveLength(1)
     expect(orphansBefore[0].orphan_recovery_count).toBe(0)
 
@@ -135,7 +135,7 @@ describe('getOrphanedTasks orphan recovery round-trip', () => {
        WHERE id = ?`
     ).run(taskId)
 
-    const orphansAfter = getOrphanedTasks('bde-embedded', db)
+    const orphansAfter = getOrphanedTasks('fleet-embedded', db)
     expect(orphansAfter).toHaveLength(0)
 
     const stored = db

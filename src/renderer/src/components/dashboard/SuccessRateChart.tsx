@@ -45,9 +45,9 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
       <div
         style={{
           position: 'relative',
-          fontFamily: 'var(--bde-font-code)',
+          fontFamily: 'var(--fleet-font-code)',
           fontSize: 10,
-          color: 'var(--bde-text-muted)',
+          color: 'var(--fleet-text-muted)',
           height,
           display: 'flex',
           alignItems: 'center',
@@ -128,24 +128,24 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
   // Delta display
   let deltaEl: React.ReactNode
   if (delta == null) {
-    deltaEl = <span style={{ color: 'var(--bde-text-dim)' }}>— steady</span>
+    deltaEl = <span style={{ color: 'var(--fleet-text-dim)' }}>— steady</span>
   } else if (Math.abs(delta) < 0.5) {
-    deltaEl = <span style={{ color: 'var(--bde-text-dim)' }}>— steady</span>
+    deltaEl = <span style={{ color: 'var(--fleet-text-dim)' }}>— steady</span>
   } else if (delta > 0) {
     deltaEl = (
-      <span style={{ color: 'var(--bde-success)' }}>▲ +{delta.toFixed(1)}% vs prior wk</span>
+      <span style={{ color: 'var(--fleet-success)' }}>▲ +{delta.toFixed(1)}% vs prior wk</span>
     )
   } else {
-    deltaEl = <span style={{ color: 'var(--bde-danger)' }}>▼ {delta.toFixed(1)}% vs prior wk</span>
+    deltaEl = <span style={{ color: 'var(--fleet-danger)' }}>▼ {delta.toFixed(1)}% vs prior wk</span>
   }
 
   return (
     <div
       style={{
         position: 'relative',
-        fontFamily: 'var(--bde-font-code)',
+        fontFamily: 'var(--fleet-font-code)',
         fontSize: 10,
-        color: 'var(--bde-text-muted)'
+        color: 'var(--fleet-text-muted)'
       }}
     >
       {/* Header */}
@@ -158,10 +158,10 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
         }}
       >
         <div>
-          <strong style={{ color: 'var(--bde-success)', fontSize: 20, fontWeight: 700 }}>
+          <strong style={{ color: 'var(--fleet-success)', fontSize: 20, fontWeight: 700 }}>
             {successRate7dAvg != null ? successRate7dAvg.toFixed(1) : '—'}%
           </strong>
-          <span style={{ color: 'var(--bde-text-dim)', marginLeft: 6 }}>7d avg</span>
+          <span style={{ color: 'var(--fleet-text-dim)', marginLeft: 6 }}>7d avg</span>
         </div>
         <div>{deltaEl}</div>
       </div>
@@ -175,8 +175,8 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
       >
         <defs>
           <linearGradient id="success-rate-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--bde-success)" stopOpacity={0.25} />
-            <stop offset="100%" stopColor="var(--bde-success)" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="var(--fleet-success)" stopOpacity={0.25} />
+            <stop offset="100%" stopColor="var(--fleet-success)" stopOpacity={0.02} />
           </linearGradient>
         </defs>
 
@@ -186,14 +186,14 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
           y1={PAD.top}
           x2={PAD.left}
           y2={height - PAD.bottom}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
         />
         <line
           x1={PAD.left}
           y1={height - PAD.bottom}
           x2={SVG_W - PAD.right}
           y2={height - PAD.bottom}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
         />
 
         {/* Gridlines at 100% and 75% */}
@@ -202,7 +202,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
           y1={y(100)}
           x2={SVG_W - PAD.right}
           y2={y(100)}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
           strokeDasharray="2 3"
         />
         <line
@@ -210,7 +210,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
           y1={y(75)}
           x2={SVG_W - PAD.right}
           y2={y(75)}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
           strokeDasharray="2 3"
         />
 
@@ -220,7 +220,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
           y={y(100) + 3}
           textAnchor="end"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           100%
         </text>
@@ -229,7 +229,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
           y={y(75) + 3}
           textAnchor="end"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           75%
         </text>
@@ -238,7 +238,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
           y={height - PAD.bottom + 3}
           textAnchor="end"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           0%
         </text>
@@ -251,7 +251,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
           data-role="trend-line"
           d={trendPath.trim()}
           fill="none"
-          stroke="var(--bde-success)"
+          stroke="var(--fleet-success)"
           strokeWidth={1.5}
         />
 
@@ -267,8 +267,8 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
               cx={cx}
               cy={cy}
               r={2.5}
-              fill="var(--bde-success)"
-              stroke="var(--bde-bg)"
+              fill="var(--fleet-success)"
+              stroke="var(--fleet-bg)"
               strokeWidth={1}
             />
           )
@@ -284,7 +284,7 @@ export function SuccessRateChart({ data, height = 140 }: SuccessRateChartProps):
               y={height - 4}
               textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}
               fontSize="9"
-              fill="var(--bde-text-dim)"
+              fill="var(--fleet-text-dim)"
             >
               {label}
             </text>

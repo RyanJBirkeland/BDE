@@ -1,6 +1,6 @@
-# BDE Command Palette — Wire to Real Actions
+# FLEET Command Palette — Wire to Real Actions
 
-You are working in the BDE (Birkeland Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/BDE`.
+You are working in the FLEET (Agentic Development Environment) Electron app repo at `/Users/RBTECHBOT/Documents/Repositories/FLEET`.
 
 ## Context
 
@@ -25,9 +25,9 @@ Make the Command Palette actually do things.
 **Actions**
 
 - `Reconnect Gateway` → call `connect()` from gateway store
-- `Refresh` → dispatch a custom event `bde:refresh` that each view listens for
+- `Refresh` → dispatch a custom event `fleet:refresh` that each view listens for
 - `New Agent Task` → open AgentDirector task input (dispatch custom event or navigate to sessions)
-- `Open GitHub` → `shell.openExternal('https://github.com/RyanJBirkeland/BDE')`
+- `Open GitHub` → `shell.openExternal('https://github.com/RyanJBirkeland/FLEET')`
 
 **Recent sessions** (dynamic)
 
@@ -46,6 +46,6 @@ Make the Command Palette actually do things.
 
 - Work on a branch: `git checkout -b feat/command-palette-wired`
 - Build must pass: `npm run build`
-- Open a PR when done: `gh api repos/RyanJBirkeland/BDE/pulls --method POST -f title="feat: BDE command palette wired — navigation, actions, recent sessions" -f body="Wires Cmd+K palette to real navigation and gateway actions" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
+- Open a PR when done: `gh api repos/RyanJBirkeland/FLEET/pulls --method POST -f title="feat: FLEET command palette wired — navigation, actions, recent sessions" -f body="Wires Cmd+K palette to real navigation and gateway actions" -f head="$(git branch --show-current)" -f base=main --jq ".html_url"`
 - Never commit directly to main
-- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/BDE/pulls --method POST ...`
+- Use `GH_TOKEN=$(git credential fill <<< $'protocol=https\nhost=github.com\n' 2>/dev/null | grep password | cut -d= -f2) gh api repos/RyanJBirkeland/FLEET/pulls --method POST ...`

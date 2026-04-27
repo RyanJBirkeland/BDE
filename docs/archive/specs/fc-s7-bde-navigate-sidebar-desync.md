@@ -1,14 +1,14 @@
-# FC-S7: bde:navigate from Sprint causes sidebar selection desync
+# FC-S7: fleet:navigate from Sprint causes sidebar selection desync
 
 > **Status: ABANDONED (verified 2026-04-21). SessionsView + `selectedUnifiedId` state no longer exist. Retained for historical reference only.**
 
 ## Problem Statement
 
-When the user clicks "Open in Sessions" in LogDrawer (Sprint view), the `bde:navigate` event fires and correctly navigates to SessionsView and loads the agent's log. However, the AgentList sidebar shows no item highlighted — the user sees the log content but can't tell which agent is selected in the list.
+When the user clicks "Open in Sessions" in LogDrawer (Sprint view), the `fleet:navigate` event fires and correctly navigates to SessionsView and loads the agent's log. However, the AgentList sidebar shows no item highlighted — the user sees the log content but can't tell which agent is selected in the list.
 
 ## Root Cause
 
-The `bde:navigate` handler in `App.tsx:175-187` calls `useAgentHistoryStore.getState().selectAgent(sessionId)`, which sets `agentHistoryStore.selectedId`. But `SessionsView` maintains a separate local state `selectedUnifiedId` (line 86) that is used by `AgentList` to determine which item is highlighted (`isSelected={a.id === selectedId}`). The navigation event bypasses `handleUnifiedSelect` (which keeps both states in sync), so `selectedUnifiedId` remains stale.
+The `fleet:navigate` handler in `App.tsx:175-187` calls `useAgentHistoryStore.getState().selectAgent(sessionId)`, which sets `agentHistoryStore.selectedId`. But `SessionsView` maintains a separate local state `selectedUnifiedId` (line 86) that is used by `AgentList` to determine which item is highlighted (`isSelected={a.id === selectedId}`). The navigation event bypasses `handleUnifiedSelect` (which keeps both states in sync), so `selectedUnifiedId` remains stale.
 
 The log viewer renders correctly because `SessionsView.renderMainContent()` checks `selectedHistoryId` (from the agent history store) before `selectedUnifiedId` — so the store-driven selection wins for content rendering. But `AgentList` only checks `selectedUnifiedId` for highlighting.
 
@@ -16,7 +16,7 @@ The log viewer renders correctly because `SessionsView.renderMainContent()` chec
 
 | File                                      | Change                                                                                                               |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `src/renderer/src/views/SessionsView.tsx` | Add a `useEffect` that listens for `bde:navigate` events and syncs `selectedUnifiedId` with the incoming `sessionId` |
+| `src/renderer/src/views/SessionsView.tsx` | Add a `useEffect` that listens for `fleet:navigate` events and syncs `selectedUnifiedId` with the incoming `sessionId` |
 
 **OR (alternative approach):**
 
@@ -26,7 +26,7 @@ The log viewer renders correctly because `SessionsView.renderMainContent()` chec
 
 ## Implementation Notes
 
-### Approach 1: Listen for bde:navigate in SessionsView (simpler)
+### Approach 1: Listen for fleet:navigate in SessionsView (simpler)
 
 ```typescript
 useEffect(() => {
@@ -36,8 +36,8 @@ useEffect(() => {
       setSelectedUnifiedId(`history:${sessionId}`)
     }
   }
-  window.addEventListener('bde:navigate', handler as EventListener)
-  return () => window.removeEventListener('bde:navigate', handler as EventListener)
+  window.addEventListener('fleet:navigate', handler as EventListener)
+  return () => window.removeEventListener('fleet:navigate', handler as EventListener)
 }, [])
 ```
 
@@ -55,7 +55,7 @@ useEffect(() => {
 }, [selectedHistoryId])
 ```
 
-This approach is more robust because it handles any external change to `selectedHistoryId`, not just `bde:navigate`. Approach 2 is recommended.
+This approach is more robust because it handles any external change to `selectedHistoryId`, not just `fleet:navigate`. Approach 2 is recommended.
 
 ## Success Criteria
 

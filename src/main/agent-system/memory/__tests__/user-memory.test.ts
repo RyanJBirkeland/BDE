@@ -8,7 +8,7 @@ vi.mock('../../../settings', () => ({
 
 // Mock paths to use a temp directory
 vi.mock('../../../paths', () => ({
-  BDE_MEMORY_DIR: '/tmp/bde-test-memory'
+  FLEET_MEMORY_DIR: '/tmp/fleet-test-memory'
 }))
 
 // Mock fs — we control existsSync, readFileSync, and statSync

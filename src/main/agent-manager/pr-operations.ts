@@ -87,7 +87,7 @@ export async function generatePrBody(
     /* non-fatal */
   }
 
-  sections.push('🤖 Automated by BDE Agent Manager')
+  sections.push('🤖 Automated by FLEET Agent Manager')
 
   return sections.join('\n\n')
 }
@@ -216,7 +216,7 @@ export async function createNewPr(
 
   const failureMsg =
     `PR creation failed after ${PR_CREATE_MAX_ATTEMPTS} attempts for branch ${branch}. ` +
-    `Run \`gh auth status\` to verify GitHub CLI authentication. Check ~/.bde/bde.log for details.`
+    `Run \`gh auth status\` to verify GitHub CLI authentication. Check ~/.fleet/fleet.log for details.`
   logger.warn(`[git-ops] ${failureMsg}: ${lastError}`)
   broadcast?.('manager:warning', { message: failureMsg })
   return { prUrl: null, prNumber: null }

@@ -20,7 +20,7 @@ vi.mock('../../logger', () => ({
 // encrypt/decrypt. The shape of the stub matches the Electron API that
 // `secure-storage.ts` uses.
 vi.mock('electron', () => {
-  const key = Buffer.from('bde-test-stub-key')
+  const key = Buffer.from('fleet-test-stub-key')
   function xor(buf: Buffer): Buffer {
     const out = Buffer.alloc(buf.length)
     for (let i = 0; i < buf.length; i++) out[i] = buf[i] ^ key[i % key.length]

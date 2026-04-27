@@ -29,7 +29,7 @@ User clicks **"+ New Ticket"** button in the SprintCenter header bar (top-right,
 |  [ e.g. "Add recipe search to Feast onboarding" ]|
 |                                                    |
 |  Repo             Priority                        |
-|  [BDE      v]     [Medium   v]                    |
+|  [FLEET      v]     [Medium   v]                    |
 |                                                    |
 |  Template                                         |
 |  [Feature] [Bug Fix] [Refactor] [Audit]           |
@@ -55,7 +55,7 @@ User clicks **"+ New Ticket"** button in the SprintCenter header bar (top-right,
 ### Step 3 — User Fills Form
 
 1. **Title** (required) — free text input
-2. **Repo** — dropdown: BDE, life-os, feast (defaults to first option)
+2. **Repo** — dropdown: FLEET, life-os, feast (defaults to first option)
 3. **Priority** — dropdown: Low / Medium / High (defaults to Medium)
 4. **Template** (optional) — 6 chips that populate the spec textarea with a structured markdown skeleton
 5. **Spec** (optional) — raw markdown textarea, 10 rows
@@ -128,7 +128,7 @@ The `NewTicketModal` uses class names `.new-ticket-overlay`, `.new-ticket-modal_
 
 ### 3.5 No Smart Defaults
 
-- Repo always defaults to the first option (BDE) regardless of context
+- Repo always defaults to the first option (FLEET) regardless of context
 - Priority always defaults to Medium
 - No suggestion based on title keywords (e.g., "fix" -> Bug Fix template, "perf" -> priority High)
 
@@ -181,7 +181,7 @@ The `NewTicketModal` uses class names `.new-ticket-overlay`, `.new-ticket-modal_
 | Issue                                                  | Risk                                                                 | Severity |
 | ------------------------------------------------------ | -------------------------------------------------------------------- | -------- |
 | **No markdown preview** — user writes blind            | Specs may have formatting errors that are only visible in SpecDrawer | Medium   |
-| **No smart defaults** — repo/priority always same      | User has to manually change every time for non-BDE repos             | Medium   |
+| **No smart defaults** — repo/priority always same      | User has to manually change every time for non-FLEET repos             | Medium   |
 | **Modal is one-shot** — no draft saving                | If user accidentally closes, all work is lost                        | Medium   |
 | **Spec textarea is small** (10 rows) for complex specs | Awkward scrolling for detailed features                              | Low      |
 
@@ -286,13 +286,13 @@ A conversational flow for complex features that aren't ready for a spec yet:
 |                                                           |
 |  Title *                                                  |
 |  +------------------------------------------------------+|
-|  | Add cost tracking dashboard to BDE                    ||
+|  | Add cost tracking dashboard to FLEET                    ||
 |  +------------------------------------------------------+|
 |  Suggested: [Feature]  (based on "Add")                   |
 |                                                           |
 |  +------------------+  +------------------+               |
 |  | Repo             |  | Priority         |               |
-|  | [BDE         v]  |  | [Medium      v]  |               |
+|  | [FLEET         v]  |  | [Medium      v]  |               |
 |  +------------------+  +------------------+               |
 |                                                           |
 |  Template                                                 |
@@ -427,4 +427,4 @@ The ticket creation flow is **functional but unfinished**. The happy path works:
 
 The highest-impact improvements are in the **P0 and P1** tiers: fix the CSS, add error feedback, add a preview toggle, and stream the AI response. These changes would transform the modal from "functional prototype" to "polished tool" with roughly 1-2 days of focused work.
 
-The **P2 conversational design mode** is the most ambitious UX improvement — it would make BDE unique as an AI IDE where you co-design features with your agent before coding begins. But it depends on the foundation being solid first.
+The **P2 conversational design mode** is the most ambitious UX improvement — it would make FLEET unique as an AI IDE where you co-design features with your agent before coding begins. But it depends on the foundation being solid first.

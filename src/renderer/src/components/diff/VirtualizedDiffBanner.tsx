@@ -13,7 +13,7 @@ export function VirtualizedDiffBanner({
         Large diff — commenting disabled in virtualized mode.
       </span>
       <button
-        className="diff-virtualized-banner__button bde-btn bde-btn--sm"
+        className="diff-virtualized-banner__button fleet-btn fleet-btn--sm"
         onClick={onForceFullDiff}
       >
         Load full diff to enable comments

@@ -9,7 +9,7 @@ describe('prompt-pipeline boundary-tag escaping', () => {
       taskContent: maliciousSpec,
       branch: 'agent/test',
       taskId: 't-1',
-      repoName: 'bde'
+      repoName: 'fleet'
     })
 
     // The spec content must not reproduce a literal `</user_spec>` sequence;

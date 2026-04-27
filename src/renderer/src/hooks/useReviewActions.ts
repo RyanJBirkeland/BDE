@@ -23,7 +23,7 @@ export interface ReviewActions {
   requestRevision: () => Promise<void>
   rebase: () => Promise<void>
   discard: () => Promise<void>
-  markShippedOutsideBde: () => Promise<void>
+  markShippedOutsideFleet: () => Promise<void>
   getNextReviewTaskId: (currentTaskId: string) => string | null
   batchMergeLocally: (tasks: Array<{ id: string; title: string }>) => Promise<void>
   batchShipIt: (tasks: Array<{ id: string; title: string }>) => Promise<void>

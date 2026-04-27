@@ -11,7 +11,7 @@ export async function seedTask(
   return window.evaluate(async (opts) => {
     return (window as any).api.sprint.create({
       title: opts.title ?? `E2E Test Task ${Date.now()}`,
-      repo: opts.repo ?? 'BDE',
+      repo: opts.repo ?? 'FLEET',
       status: opts.status ?? 'backlog',
       priority: opts.priority ?? 0,
       ...opts

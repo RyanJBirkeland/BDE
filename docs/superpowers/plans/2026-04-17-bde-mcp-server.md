@@ -1,14 +1,14 @@
-# BDE MCP Server Implementation Plan
+# FLEET MCP Server Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Expose BDE's task and epic CRUD to local MCP-speaking agents (Claude Code, Cursor, etc.) as a Streamable-HTTP MCP server running inside the Electron main process, opt-in via a Settings toggle.
+**Goal:** Expose FLEET's task and epic CRUD to local MCP-speaking agents (Claude Code, Cursor, etc.) as a Streamable-HTTP MCP server running inside the Electron main process, opt-in via a Settings toggle.
 
-**Architecture:** New `src/main/mcp-server/` module. Transport: `@modelcontextprotocol/sdk`'s Streamable HTTP, bound to `127.0.0.1:<port>`. Auth: bearer token stored in `~/.bde/mcp-token` mode 0600. All mutations routed through existing services (`sprint-service`, new `EpicGroupService`) so validation, status-transition checks, audit trail in `task_changes`, and renderer broadcast via `notifySprintMutation` are preserved. Two in-scope refactors (extract `createTaskWithValidation` into `sprint-service`; extract `EpicGroupService` from `group-handlers.ts`) ensure IPC and MCP paths are bit-for-bit identical.
+**Architecture:** New `src/main/mcp-server/` module. Transport: `@modelcontextprotocol/sdk`'s Streamable HTTP, bound to `127.0.0.1:<port>`. Auth: bearer token stored in `~/.fleet/mcp-token` mode 0600. All mutations routed through existing services (`sprint-service`, new `EpicGroupService`) so validation, status-transition checks, audit trail in `task_changes`, and renderer broadcast via `notifySprintMutation` are preserved. Two in-scope refactors (extract `createTaskWithValidation` into `sprint-service`; extract `EpicGroupService` from `group-handlers.ts`) ensure IPC and MCP paths are bit-for-bit identical.
 
 **Tech Stack:** TypeScript, Electron 39 main process, Node `http`, `@modelcontextprotocol/sdk`, `zod` (already a dep), vitest, better-sqlite3 (already a dep), React + TypeScript for Settings UI.
 
-**Spec:** `docs/superpowers/specs/2026-04-17-bde-mcp-server-design.md`
+**Spec:** `docs/superpowers/specs/2026-04-17-fleet-mcp-server-design.md`
 
 ---
 
@@ -19,7 +19,7 @@
 - `src/main/mcp-server/index.ts` — `createMcpServer(deps, config)` factory.
 - `src/main/mcp-server/transport.ts` — HTTP request handler wiring the MCP SDK's Streamable HTTP transport.
 - `src/main/mcp-server/auth.ts` — bearer-token middleware with `timingSafeEqual`.
-- `src/main/mcp-server/token-store.ts` — read/generate `~/.bde/mcp-token`.
+- `src/main/mcp-server/token-store.ts` — read/generate `~/.fleet/mcp-token`.
 - `src/main/mcp-server/schemas.ts` — shared zod schemas for tool inputs.
 - `src/main/mcp-server/errors.ts` — map service errors to MCP JSON-RPC errors.
 - `src/main/mcp-server/tools/meta.ts` — `meta.repos`, `meta.taskStatuses`, `meta.dependencyConditions`.
@@ -48,7 +48,7 @@
 - `src/main/index.ts` — start/stop MCP server in whenReady; subscribe to settings events for hot-toggle.
 - `src/renderer/src/components/settings/ConnectionsSection.tsx` — render the new `LocalMcpServerSection`.
 - `package.json` — add `@modelcontextprotocol/sdk` dependency.
-- `docs/BDE_FEATURES.md` — new "Local MCP Server" section.
+- `docs/FLEET_FEATURES.md` — new "Local MCP Server" section.
 - `CLAUDE.md` — one-line pointer under "Key File Locations".
 
 **Module docs — 5:**
@@ -94,7 +94,7 @@ vi.mock('../data/task-group-queries', () => ({
   listGroups: vi.fn(() => [] as TaskGroup[])
 }))
 vi.mock('../git', () => ({
-  getRepoPaths: vi.fn(() => ({ bde: '/fake/path' }))
+  getRepoPaths: vi.fn(() => ({ fleet: '/fake/path' }))
 }))
 
 import * as mutations from './sprint-mutations'
@@ -115,7 +115,7 @@ describe('createTaskWithValidation', () => {
   it('rejects a queued task whose spec is missing required sections', () => {
     const input: CreateTaskInput = {
       title: 't',
-      repo: 'bde',
+      repo: 'fleet',
       status: 'queued',
       spec: 'plain text with no headings'
     }
@@ -124,15 +124,15 @@ describe('createTaskWithValidation', () => {
   })
 
   it('delegates to sprint-mutations.createTask on valid input and returns the row', () => {
-    const fakeRow = { id: 'abc', title: 't', repo: 'bde', status: 'backlog' } as SprintTask
+    const fakeRow = { id: 'abc', title: 't', repo: 'fleet', status: 'backlog' } as SprintTask
     ;(mutations.createTask as ReturnType<typeof vi.fn>).mockReturnValue(fakeRow)
 
-    const input: CreateTaskInput = { title: 't', repo: 'bde', status: 'backlog' }
+    const input: CreateTaskInput = { title: 't', repo: 'fleet', status: 'backlog' }
     const result = createTaskWithValidation(input, { logger })
 
     expect(result).toBe(fakeRow)
     expect(mutations.createTask).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 't', repo: 'bde' })
+      expect.objectContaining({ title: 't', repo: 'fleet' })
     )
   })
 })
@@ -718,7 +718,7 @@ describe('token-store', () => {
   let filePath: string
 
   beforeEach(async () => {
-    dir = await fs.mkdtemp(join(tmpdir(), 'bde-mcp-token-'))
+    dir = await fs.mkdtemp(join(tmpdir(), 'fleet-mcp-token-'))
     filePath = join(dir, 'mcp-token')
   })
 
@@ -749,9 +749,9 @@ describe('token-store', () => {
     expect(onDisk).toBe(second)
   })
 
-  it('tokenFilePath returns ~/.bde/mcp-token', () => {
+  it('tokenFilePath returns ~/.fleet/mcp-token', () => {
     const p = tokenFilePath()
-    expect(p.endsWith('/.bde/mcp-token')).toBe(true)
+    expect(p.endsWith('/.fleet/mcp-token')).toBe(true)
   })
 })
 ```
@@ -775,7 +775,7 @@ const TOKEN_BYTES = 32
 const FILE_MODE = 0o600
 
 export function tokenFilePath(): string {
-  return join(homedir(), '.bde', 'mcp-token')
+  return join(homedir(), '.fleet', 'mcp-token')
 }
 
 async function generateAndWrite(filePath: string): Promise<string> {
@@ -1217,7 +1217,7 @@ export interface MetaToolsDeps {
 export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void {
   server.tool(
     'meta.repos',
-    'List repositories configured in BDE Settings.',
+    'List repositories configured in FLEET Settings.',
     {},
     async () => ({
       content: [
@@ -1329,7 +1329,7 @@ function mockServer() {
 const fakeTask = (overrides: Partial<SprintTask> = {}): SprintTask => ({
   id: 't1',
   title: 'demo',
-  repo: 'bde',
+  repo: 'fleet',
   status: 'backlog',
   priority: 0,
   created_at: '2026-04-17T00:00:00.000Z',
@@ -1536,9 +1536,9 @@ describe('tasks.* write tools', () => {
     const deps = fakeDeps()
     const { server, call } = mockServer()
     registerTaskTools(server, deps)
-    const res = await call('tasks.create', { title: 't', repo: 'bde' })
+    const res = await call('tasks.create', { title: 't', repo: 'fleet' })
     expect(deps.createTaskWithValidation).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 't', repo: 'bde' }),
+      expect.objectContaining({ title: 't', repo: 'fleet' }),
       expect.any(Object)
     )
     expect(JSON.parse(res.content[0].text).id).toBe('t1')
@@ -1551,7 +1551,7 @@ describe('tasks.* write tools', () => {
     // claimed_by is system-managed; zod strips unknown keys on .parse, so
     // a forbidden field that survives is a schema bug. Assert the schema
     // strips it by ensuring the delegate was not asked to set it.
-    await call('tasks.create', { title: 't', repo: 'bde', claimed_by: 'x' } as any)
+    await call('tasks.create', { title: 't', repo: 'fleet', claimed_by: 'x' } as any)
     const call0 = (deps.createTaskWithValidation as any).mock.calls[0][0]
     expect(call0.claimed_by).toBeUndefined()
   })
@@ -2045,7 +2045,7 @@ export function createTransportHandler(
       if (!auth.ok) {
         res.writeHead(auth.status, {
           'Content-Type': 'application/json',
-          'WWW-Authenticate': 'Bearer realm="bde-mcp"'
+          'WWW-Authenticate': 'Bearer realm="fleet-mcp"'
         })
         res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32001, message: auth.message } }))
         return
@@ -2110,7 +2110,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
   let transportHandler: Awaited<ReturnType<typeof createTransportHandler>> | null = null
 
   function buildMcp(token: string) {
-    const mcp = new McpServer({ name: 'bde', version: '1.0.0' })
+    const mcp = new McpServer({ name: 'fleet', version: '1.0.0' })
 
     registerMetaTools(mcp, {
       getRepos: () => getSettingJson<RepoConfig[]>('repos') ?? []
@@ -2384,7 +2384,7 @@ export function LocalMcpServerSection({ enabled, port, onChangeEnabled, onChange
     const snippet = JSON.stringify(
       {
         mcpServers: {
-          bde: {
+          fleet: {
             url: `http://127.0.0.1:${port}/mcp`,
             headers: { Authorization: `Bearer ${token}` }
           }
@@ -2397,7 +2397,7 @@ export function LocalMcpServerSection({ enabled, port, onChangeEnabled, onChange
   }
 
   return (
-    <SettingsCard title="Local MCP Server" description="Expose BDE's tasks and epics to local MCP-speaking agents (Claude Code, Cursor) over http://127.0.0.1.">
+    <SettingsCard title="Local MCP Server" description="Expose FLEET's tasks and epics to local MCP-speaking agents (Claude Code, Cursor) over http://127.0.0.1.">
       <label className="settings-field settings-field--inline">
         <input
           type="checkbox"
@@ -2459,16 +2459,16 @@ Create `src/renderer/src/components/settings/LocalMcpServerSection.css`:
 .mcp-token-row {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-2);
+  gap: var(--fleet-space-2);
   flex-wrap: wrap;
 }
 
 .mcp-token {
-  font-family: var(--bde-font-mono, monospace);
+  font-family: var(--fleet-font-mono, monospace);
   font-size: 12px;
-  padding: var(--bde-space-1) var(--bde-space-2);
-  background: var(--bde-color-surface-muted);
-  border-radius: var(--bde-radius-sm);
+  padding: var(--fleet-space-1) var(--fleet-space-2);
+  background: var(--fleet-color-surface-muted);
+  border-radius: var(--fleet-radius-sm);
   overflow-wrap: anywhere;
   flex: 1 1 280px;
 }
@@ -2503,7 +2503,7 @@ Run: `npm run dev`. Open Settings → Connections. Toggle "Enable MCP server", o
 Run an MCP client against it — the simplest check is `curl`:
 
 ```bash
-TOKEN=$(cat ~/.bde/mcp-token)
+TOKEN=$(cat ~/.fleet/mcp-token)
 curl -s -X POST http://127.0.0.1:18792/mcp \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -2593,7 +2593,7 @@ describe('MCP server integration', () => {
     // create
     const created = await client.callTool({
       name: 'tasks.create',
-      arguments: { title: 'mcp integration demo', repo: 'bde', status: 'backlog' }
+      arguments: { title: 'mcp integration demo', repo: 'fleet', status: 'backlog' }
     })
     const createdBody = JSON.parse((created.content[0] as any).text)
     expect(createdBody.title).toBe('mcp integration demo')
@@ -2705,7 +2705,7 @@ function onlyFields(changes: ReturnType<typeof getTaskChanges>) {
 describe('IPC vs MCP parity', () => {
   it('creates identical tasks and identical audit trails', async () => {
     const logger = createLogger('parity-test')
-    const input = { title: 'parity', repo: 'bde', status: 'backlog' as const, priority: 3 }
+    const input = { title: 'parity', repo: 'fleet', status: 'backlog' as const, priority: 3 }
 
     const ipcTask = createTaskWithValidation(input, { logger })
 
@@ -2752,21 +2752,21 @@ git commit -m "test(mcp): parity test — IPC vs MCP produce identical rows and 
 ### Task 19: Documentation updates
 
 **Files:**
-- Modify: `docs/BDE_FEATURES.md`
+- Modify: `docs/FLEET_FEATURES.md`
 - Modify: `CLAUDE.md`
 - Modify / Create: `docs/modules/services/index.md`, `docs/modules/services/epic-group-service.md`, `docs/modules/components/index.md`
 
-- [ ] **Step 1: Add the Local MCP Server section to BDE_FEATURES.md**
+- [ ] **Step 1: Add the Local MCP Server section to FLEET_FEATURES.md**
 
-In `docs/BDE_FEATURES.md`, under "Development Tools" (after "Source Control"), append:
+In `docs/FLEET_FEATURES.md`, under "Development Tools" (after "Source Control"), append:
 
 ```markdown
 ### Local MCP Server
 
-Opt-in HTTP server that exposes BDE's task and epic CRUD to local MCP-speaking agents (Claude Code, Claude Desktop, Cursor). Runs inside the Electron main process; all mutations go through the same services the UI uses, so validation, dependency auto-blocking, status-transition checks, audit trail, and renderer broadcast are preserved.
+Opt-in HTTP server that exposes FLEET's task and epic CRUD to local MCP-speaking agents (Claude Code, Claude Desktop, Cursor). Runs inside the Electron main process; all mutations go through the same services the UI uses, so validation, dependency auto-blocking, status-transition checks, audit trail, and renderer broadcast are preserved.
 
 - **Transport**: MCP Streamable HTTP at `http://127.0.0.1:<port>/mcp`. Default port `18792`.
-- **Auth**: bearer token stored in `~/.bde/mcp-token` (mode `0600`). Set `Authorization: Bearer <token>` on every request.
+- **Auth**: bearer token stored in `~/.fleet/mcp-token` (mode `0600`). Set `Authorization: Bearer <token>` on every request.
 - **Enable**: Settings → Connections → Local MCP Server → toggle "Enable MCP server".
 - **Tools**:
   - `tasks.list` / `tasks.get` / `tasks.create` / `tasks.update` / `tasks.cancel` / `tasks.history`
@@ -2778,7 +2778,7 @@ Opt-in HTTP server that exposes BDE's task and epic CRUD to local MCP-speaking a
   ```json
   {
     "mcpServers": {
-      "bde": {
+      "fleet": {
         "url": "http://127.0.0.1:18792/mcp",
         "headers": { "Authorization": "Bearer <paste-from-settings>" }
       }
@@ -2794,7 +2794,7 @@ Related: Task Workbench, Sprint Pipeline, Task Dependencies.
 In `CLAUDE.md`, under "Key File Locations", add:
 
 ```markdown
-- MCP server: `src/main/mcp-server/` — opt-in local MCP server for external agents; toggle via `mcp.enabled` setting. Token in `~/.bde/mcp-token`.
+- MCP server: `src/main/mcp-server/` — opt-in local MCP server for external agents; toggle via `mcp.enabled` setting. Token in `~/.fleet/mcp-token`.
 ```
 
 Also add under "Architecture Notes" a one-line item:
@@ -2852,7 +2852,7 @@ Expected: all pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/BDE_FEATURES.md CLAUDE.md docs/modules/services/index.md docs/modules/services/epic-group-service.md docs/modules/components/index.md
+git add docs/FLEET_FEATURES.md CLAUDE.md docs/modules/services/index.md docs/modules/services/epic-group-service.md docs/modules/components/index.md
 git commit -m "docs(mcp): document Local MCP Server + epic-group-service"
 ```
 
@@ -2877,7 +2877,7 @@ Expected: all green. Coverage thresholds respected. Build produces `out/` artifa
 1. `npm run dev`
 2. Settings → Connections → toggle "Enable MCP server".
 3. Copy the Claude Code config, paste it into a Claude Code MCP config for another project.
-4. From that other session ask Claude to "create a BDE task titled 'hello from outside' in repo bde". Verify the task appears in the Sprint Pipeline in real time (no reload).
+4. From that other session ask Claude to "create a FLEET task titled 'hello from outside' in repo fleet". Verify the task appears in the Sprint Pipeline in real time (no reload).
 5. Toggle the server off; observe the log line `[mcp-server] Stopped`. Repeat step 4 and verify the agent's request fails cleanly.
 
 - [ ] **Update `docs/modules/` last-pass**

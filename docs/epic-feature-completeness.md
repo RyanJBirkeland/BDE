@@ -36,7 +36,7 @@ All 8 feature-completeness issues identified in the original audit have been fix
 
 **Status:** fixed
 **Area:** CommandPalette / SessionsView
-**Problem:** The "Spawn Agent" command dispatches a `bde:open-spawn-modal` custom event, but no component listens for it. The command navigates to Sessions but the SpawnModal never opens.
+**Problem:** The "Spawn Agent" command dispatches a `fleet:open-spawn-modal` custom event, but no component listens for it. The command navigates to Sessions but the SpawnModal never opens.
 **Acceptance Criteria:**
 
 - [ ] "Spawn Agent" from CommandPalette opens the SpawnModal in SessionsView
@@ -79,14 +79,14 @@ All 8 feature-completeness issues identified in the original audit have been fix
 - [ ] Toast or inline error if repo paths fail to load
       **Estimated size:** S
 
-### FC-S7: bde:navigate from Sprint causes sidebar selection desync
+### FC-S7: fleet:navigate from Sprint causes sidebar selection desync
 
 **Status:** fixed
 **Area:** App.tsx / SessionsView / AgentList
-**Problem:** When `bde:navigate` fires from LogDrawer, it sets `agentHistoryStore.selectedId` directly — but `SessionsView`'s local `selectedUnifiedId` state is not updated. The correct log viewer renders, but AgentList shows no item highlighted because it compares against `selectedUnifiedId`.
+**Problem:** When `fleet:navigate` fires from LogDrawer, it sets `agentHistoryStore.selectedId` directly — but `SessionsView`'s local `selectedUnifiedId` state is not updated. The correct log viewer renders, but AgentList shows no item highlighted because it compares against `selectedUnifiedId`.
 **Acceptance Criteria:**
 
-- [ ] After navigating from Sprint → Sessions via `bde:navigate`, the correct agent is highlighted in the sidebar
+- [ ] After navigating from Sprint → Sessions via `fleet:navigate`, the correct agent is highlighted in the sidebar
 - [ ] The log viewer and sidebar selection are always in sync
       **Estimated size:** S
 

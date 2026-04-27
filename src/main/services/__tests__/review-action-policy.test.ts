@@ -301,7 +301,7 @@ describe('classifyReviewAction', () => {
       task: {
         id: 'task-1',
         title: 'Test Task',
-        repo: 'bde',
+        repo: 'fleet',
         worktree_path: null,
         spec: null,
         notes: null,
@@ -334,7 +334,7 @@ describe('classifyReviewAction', () => {
       const plan = classifyReviewAction({
         ...baseInput,
         task: { ...baseInput.task, worktree_path: '/worktrees/test' },
-        repoConfig: { localPath: '/projects/bde' }
+        repoConfig: { localPath: '/projects/fleet' }
       })
       expect(plan.gitOps.some((op) => op.type === 'cleanup')).toBe(true)
     })

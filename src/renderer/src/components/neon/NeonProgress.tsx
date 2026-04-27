@@ -15,10 +15,10 @@ export function NeonProgress({ value, accent, label }: NeonProgressProps): React
         <div
           style={{
             color: neonVar(accent, 'color'),
-            fontSize: 'var(--bde-size-xs)',
+            fontSize: 'var(--fleet-size-xs)',
             textTransform: 'uppercase',
             letterSpacing: '1px',
-            marginBottom: 'var(--bde-space-1)',
+            marginBottom: 'var(--fleet-space-1)',
             fontWeight: 600
           }}
         >
@@ -28,7 +28,7 @@ export function NeonProgress({ value, accent, label }: NeonProgressProps): React
       <div
         style={{
           height: '4px',
-          background: 'var(--bde-surface)',
+          background: 'var(--fleet-surface)',
           borderRadius: '2px',
           overflow: 'hidden'
         }}
@@ -38,7 +38,7 @@ export function NeonProgress({ value, accent, label }: NeonProgressProps): React
           style={{
             height: '100%',
             width: `${clamped}%`,
-            background: `linear-gradient(90deg, ${neonVar(accent, 'color')}, var(--bde-status-review))`,
+            background: `linear-gradient(90deg, ${neonVar(accent, 'color')}, var(--fleet-status-review))`,
             borderRadius: '2px',
             transition: 'width 300ms ease'
           }}

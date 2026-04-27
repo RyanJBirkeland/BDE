@@ -22,7 +22,7 @@ if (result.status !== 0 || result.error) {
     '╔══════════════════════════════════════════════════════════════╗\n' +
     '║  Xcode Command Line Tools required                          ║\n' +
     '║                                                              ║\n' +
-    '║  BDE requires a C++ compiler to build better-sqlite3.        ║\n' +
+    '║  FLEET requires a C++ compiler to build better-sqlite3.        ║\n' +
     '║  Install the Xcode CLT, then re-run npm install:             ║\n' +
     '║                                                              ║\n' +
     '║    xcode-select --install                                    ║\n' +

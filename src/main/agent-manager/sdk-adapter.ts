@@ -25,7 +25,7 @@ import {
 import { createEpicGroupService } from '../services/epic-group-service'
 
 /**
- * Pipeline agents must only spawn with a `cwd` inside a BDE-managed worktree
+ * Pipeline agents must only spawn with a `cwd` inside a FLEET-managed worktree
  * base. Any other cwd — the main repo, /tmp, or the user's home — means the
  * agent would write directly to a location that should be isolated from the
  * main checkout. This is the last-chance check before the SDK / CLI actually

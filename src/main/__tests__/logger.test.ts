@@ -29,7 +29,7 @@ describe('logger.event()', () => {
     vi.clearAllMocks()
   })
 
-  it('writes a parseable JSON line to bde.log', () => {
+  it('writes a parseable JSON line to fleet.log', () => {
     const logger = createLogger('test-module')
     logger.event('agent.spawn', { taskId: 'abc123', model: 'claude-opus-4-7' })
 
@@ -87,14 +87,14 @@ describe('createLogger', () => {
 
   it('applies 0600 mode to the log file on createLogger so tokens are not world-readable', () => {
     createLogger('test')
-    expect(chmodSync).toHaveBeenCalledWith(expect.stringContaining('bde.log'), 0o600)
+    expect(chmodSync).toHaveBeenCalledWith(expect.stringContaining('fleet.log'), 0o600)
   })
 
   it('writes new log lines with mode:0o600 so any rotation-created file is tightened', () => {
     const logger = createLogger('test')
     logger.info('hello')
     expect(appendFile).toHaveBeenCalledWith(
-      expect.stringContaining('bde.log'),
+      expect.stringContaining('fleet.log'),
       expect.any(String),
       expect.objectContaining({ mode: 0o600 }),
       expect.any(Function)
@@ -105,7 +105,7 @@ describe('createLogger', () => {
     const logger = createLogger('my-module')
     logger.info('hello world')
     expect(appendFile).toHaveBeenCalledWith(
-      expect.stringContaining('bde.log'),
+      expect.stringContaining('fleet.log'),
       expect.stringMatching(/\[INFO\] \[my-module\] hello world/),
       expect.any(Object),
       expect.any(Function)
@@ -125,8 +125,8 @@ describe('createLogger', () => {
     createLogger('test')
     await flushPromises()
     expect(rename).toHaveBeenCalledWith(
-      expect.stringContaining('bde.log'),
-      expect.stringContaining('bde.log.old')
+      expect.stringContaining('fleet.log'),
+      expect.stringContaining('fleet.log.old')
     )
   })
 

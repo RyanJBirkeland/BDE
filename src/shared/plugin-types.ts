@@ -1,4 +1,4 @@
-export interface BdePlugin {
+export interface FleetPlugin {
   name: string
   version?: string
   onTaskCreated?: (task: { id: string; title: string; repo: string }) => void | Promise<void>

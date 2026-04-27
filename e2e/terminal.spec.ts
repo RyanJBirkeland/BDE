@@ -11,8 +11,8 @@
 import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Terminal — IDE integration', () => {
-  test('IDE view renders and terminal panel can be toggled', async ({ bde }) => {
-    const { window } = bde
+  test('IDE view renders and terminal panel can be toggled', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to IDE via Cmd+3
@@ -30,15 +30,15 @@ test.describe('Terminal — IDE integration', () => {
     // but the view itself should still be rendering
     if (hasEmpty) {
       // Verify the empty state has the expected content
-      await expect(window.locator('.ide-empty-state__title')).toContainText('BDE IDE')
+      await expect(window.locator('.ide-empty-state__title')).toContainText('FLEET IDE')
       await expect(window.locator('.ide-empty-state__open-btn')).toBeVisible({ timeout: 3_000 })
     }
   })
 })
 
 test.describe('Terminal — tab management', () => {
-  test('tab bar visible when terminal is open and new tab button works', async ({ bde }) => {
-    const { window } = bde
+  test('tab bar visible when terminal is open and new tab button works', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to IDE

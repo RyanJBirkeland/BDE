@@ -20,7 +20,7 @@ describe('acquireLock — TOCTOU verify-after-rename', () => {
   let tmpDir: string
 
   beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `bde-filelock-test-${Date.now()}`)
+    tmpDir = path.join(os.tmpdir(), `fleet-filelock-test-${Date.now()}`)
     mkdirSync(tmpDir, { recursive: true })
     const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
     vi.mocked(fsPromises.readFile).mockImplementation(actual.readFile)
@@ -93,7 +93,7 @@ describe('releaseLock — non-throwing on ENOENT', () => {
   let tmpDir: string
 
   beforeEach(async () => {
-    tmpDir = path.join(os.tmpdir(), `bde-filelock-release-test-${Date.now()}`)
+    tmpDir = path.join(os.tmpdir(), `fleet-filelock-release-test-${Date.now()}`)
     mkdirSync(tmpDir, { recursive: true })
     const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
     vi.mocked(fsPromises.rm).mockImplementation(actual.rm)

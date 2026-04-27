@@ -11,7 +11,7 @@ export interface PendingComment {
   body: string
 }
 
-const STORAGE_KEY = 'bde:pendingReviewComments'
+const STORAGE_KEY = 'fleet:pendingReviewComments'
 
 interface PendingReviewStore {
   pendingComments: Record<string, PendingComment[]>

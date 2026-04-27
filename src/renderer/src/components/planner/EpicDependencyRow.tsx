@@ -55,7 +55,7 @@ export function EpicDependencyRow({
     }
   }
 
-  const accentColor = upstreamEpic?.accent_color ?? 'var(--bde-text-dim)'
+  const accentColor = upstreamEpic?.accent_color ?? 'var(--fleet-text-dim)'
   const epicName = upstreamEpic?.name ?? `Unknown (${dependency.id.slice(0, 8)})`
 
   return (

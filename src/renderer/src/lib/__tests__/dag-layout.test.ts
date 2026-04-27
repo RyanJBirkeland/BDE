@@ -6,7 +6,7 @@ import { nowIso } from '../../../../shared/time'
 const makeTask = (id: string, overrides: Partial<SprintTask> = {}): SprintTask => ({
   id,
   title: `Task ${id}`,
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 1,
   status: 'backlog',
@@ -119,28 +119,28 @@ describe('computeDagLayout', () => {
 
 describe('getNodeColor', () => {
   it('returns appropriate colors for each status', () => {
-    expect(getNodeColor('backlog')).toContain('bde-text-muted')
-    expect(getNodeColor('queued')).toContain('bde-accent')
-    expect(getNodeColor('blocked')).toContain('bde-warning')
-    expect(getNodeColor('active')).toContain('bde-status-active')
-    expect(getNodeColor('review')).toContain('bde-status-review')
-    expect(getNodeColor('done')).toContain('bde-status-done')
-    expect(getNodeColor('cancelled')).toContain('bde-danger')
-    expect(getNodeColor('failed')).toContain('bde-danger')
-    expect(getNodeColor('error')).toContain('bde-danger')
+    expect(getNodeColor('backlog')).toContain('fleet-text-muted')
+    expect(getNodeColor('queued')).toContain('fleet-accent')
+    expect(getNodeColor('blocked')).toContain('fleet-warning')
+    expect(getNodeColor('active')).toContain('fleet-status-active')
+    expect(getNodeColor('review')).toContain('fleet-status-review')
+    expect(getNodeColor('done')).toContain('fleet-status-done')
+    expect(getNodeColor('cancelled')).toContain('fleet-danger')
+    expect(getNodeColor('failed')).toContain('fleet-danger')
+    expect(getNodeColor('error')).toContain('fleet-danger')
   })
 
   it('returns dim color for unknown status', () => {
-    expect(getNodeColor('unknown' as any)).toContain('bde-text-muted')
+    expect(getNodeColor('unknown' as any)).toContain('fleet-text-muted')
   })
 })
 
 describe('getEdgeColor', () => {
   it('returns purple for hard edges', () => {
-    expect(getEdgeColor('hard')).toContain('bde-status-active')
+    expect(getEdgeColor('hard')).toContain('fleet-status-active')
   })
 
   it('returns dim for soft edges', () => {
-    expect(getEdgeColor('soft')).toContain('bde-text-muted')
+    expect(getEdgeColor('soft')).toContain('fleet-text-muted')
   })
 })

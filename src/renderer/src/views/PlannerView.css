@@ -4,24 +4,24 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  font-family: var(--bde-font-code);
-  background: var(--bde-bg);
+  font-family: var(--fleet-font-code);
+  background: var(--fleet-bg);
   overflow: hidden;
 }
 
 .planner-header {
   display: flex;
   align-items: center;
-  gap: var(--bde-space-4);
-  padding: var(--bde-space-4) var(--bde-space-5);
-  border-bottom: 1px solid var(--bde-border);
-  background: var(--bde-surface-high);
+  gap: var(--fleet-space-4);
+  padding: var(--fleet-space-4) var(--fleet-space-5);
+  border-bottom: 1px solid var(--fleet-border);
+  background: var(--fleet-surface-high);
 }
 
 .planner-header__title {
-  font-size: var(--bde-size-xxl);
+  font-size: var(--fleet-size-xxl);
   font-weight: 600;
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
   margin: 0;
 }
 
@@ -36,19 +36,19 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   pointer-events: none;
 }
 
 .planner-header__search-input {
   width: 100%;
-  padding: var(--bde-space-2) var(--bde-space-3) var(--bde-space-2) 36px;
-  background: var(--bde-surface);
-  border: 1px solid var(--bde-border);
+  padding: var(--fleet-space-2) var(--fleet-space-3) var(--fleet-space-2) 36px;
+  background: var(--fleet-surface);
+  border: 1px solid var(--fleet-border);
   border-radius: 6px;
-  color: var(--bde-text);
-  font-size: var(--bde-size-md);
-  font-family: var(--bde-font-code);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-md);
+  font-family: var(--fleet-font-code);
   outline: none;
   transition:
     border-color 150ms ease,
@@ -56,12 +56,12 @@
 }
 
 .planner-header__search-input:focus-visible {
-  border-color: var(--bde-accent);
+  border-color: var(--fleet-accent);
   box-shadow: none;
 }
 
 .planner-header__search-input::placeholder {
-  color: var(--bde-text-dim);
+  color: var(--fleet-text-dim);
 }
 
 .planner-body {
@@ -82,11 +82,11 @@
   justify-content: center;
   height: 100%;
   padding: 40px;
-  background: var(--bde-bg);
+  background: var(--fleet-bg);
 }
 
 .planner-empty__text {
-  font-size: var(--bde-size-lg);
-  color: var(--bde-text-dim);
+  font-size: var(--fleet-size-lg);
+  color: var(--fleet-text-dim);
   margin: 0;
 }

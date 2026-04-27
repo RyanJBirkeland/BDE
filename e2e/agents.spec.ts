@@ -9,8 +9,8 @@
 import { test, expect, waitForAppShell } from './fixtures'
 
 test.describe('Agents view loads', () => {
-  test('Agents view renders with fleet sidebar', async ({ bde }) => {
-    const { window } = bde
+  test('Agents view renders with fleet sidebar', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Navigate to Agents via Cmd+2
@@ -28,8 +28,8 @@ test.describe('Agents view loads', () => {
     await expect(newAgentBtn).toBeVisible({ timeout: 3_000 })
   })
 
-  test('Empty state or launchpad shown when no agents exist', async ({ bde }) => {
-    const { window } = bde
+  test('Empty state or launchpad shown when no agents exist', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+2')
@@ -54,8 +54,8 @@ test.describe('Agents view loads', () => {
 })
 
 test.describe('New agent flow', () => {
-  test('Clicking New Agent button shows the launchpad', async ({ bde }) => {
-    const { window } = bde
+  test('Clicking New Agent button shows the launchpad', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await window.keyboard.press('Meta+2')
@@ -73,8 +73,8 @@ test.describe('New agent flow', () => {
     })
   })
 
-  test('opens agent launchpad via command palette Spawn Agent command', async ({ bde }) => {
-    const { window } = bde
+  test('opens agent launchpad via command palette Spawn Agent command', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     // Open command palette with Cmd+P

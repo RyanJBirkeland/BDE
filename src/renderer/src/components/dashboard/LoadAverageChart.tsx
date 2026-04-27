@@ -33,15 +33,15 @@ function trendOf(load1: number, load5: number): Trend {
 }
 
 function severityColor(sev: Severity): string {
-  if (sev === 'green') return 'var(--bde-success)'
-  if (sev === 'amber') return 'var(--bde-warning)'
-  return 'var(--bde-danger)'
+  if (sev === 'green') return 'var(--fleet-success)'
+  if (sev === 'amber') return 'var(--fleet-warning)'
+  return 'var(--fleet-danger)'
 }
 
-const LINE1_COLOR = 'var(--bde-danger)'
-const LINE5_COLOR = 'var(--bde-accent)'
-const LINE15_COLOR = 'var(--bde-text-dim)'
-const SATURATION_COLOR = 'var(--bde-warning)'
+const LINE1_COLOR = 'var(--fleet-danger)'
+const LINE5_COLOR = 'var(--fleet-accent)'
+const LINE15_COLOR = 'var(--fleet-text-dim)'
+const SATURATION_COLOR = 'var(--fleet-warning)'
 
 export function LoadAverageChart({
   samples,
@@ -89,10 +89,10 @@ export function LoadAverageChart({
     trend === 'cooling' ? '▼ cooling' : trend === 'climbing' ? '▲ climbing' : '— steady'
   const trendColor =
     trend === 'cooling'
-      ? 'var(--bde-success)'
+      ? 'var(--fleet-success)'
       : trend === 'climbing'
-        ? 'var(--bde-danger)'
-        : 'var(--bde-text-dim)'
+        ? 'var(--fleet-danger)'
+        : 'var(--fleet-text-dim)'
 
   return (
     <div
@@ -100,7 +100,7 @@ export function LoadAverageChart({
         position: 'relative',
         fontFamily: 'ui-monospace, Menlo, monospace',
         fontSize: 10,
-        color: 'var(--bde-text-muted)'
+        color: 'var(--fleet-text-muted)'
       }}
     >
       <div
@@ -119,11 +119,11 @@ export function LoadAverageChart({
           >
             {latest.load1.toFixed(2)}
           </strong>
-          <span style={{ color: 'var(--bde-text-dim)', marginLeft: 6 }}>1-min</span>
+          <span style={{ color: 'var(--fleet-text-dim)', marginLeft: 6 }}>1-min</span>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ color: trendColor, fontSize: 10 }}>{trendLabel}</div>
-          <div style={{ color: 'var(--bde-text-dim)', fontSize: 9 }}>
+          <div style={{ color: 'var(--fleet-text-dim)', fontSize: 9 }}>
             {latest.load5.toFixed(2)} · {latest.load15.toFixed(2)} (5m · 15m)
           </div>
         </div>
@@ -140,14 +140,14 @@ export function LoadAverageChart({
           y1={PAD.top}
           x2={PAD.left}
           y2={height - PAD.bottom}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
         />
         <line
           x1={PAD.left}
           y1={height - PAD.bottom}
           x2={SVG_W - PAD.right}
           y2={height - PAD.bottom}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
         />
         {/* gridlines */}
         <line
@@ -155,7 +155,7 @@ export function LoadAverageChart({
           y1={yOf(yMax)}
           x2={SVG_W - PAD.right}
           y2={yOf(yMax)}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
           strokeDasharray="2 3"
         />
         <line
@@ -163,7 +163,7 @@ export function LoadAverageChart({
           y1={yOf(yMax / 2)}
           x2={SVG_W - PAD.right}
           y2={yOf(yMax / 2)}
-          stroke="var(--bde-border)"
+          stroke="var(--fleet-border)"
           strokeDasharray="2 3"
         />
         {/* Y tick labels */}
@@ -172,7 +172,7 @@ export function LoadAverageChart({
           y={yOf(yMax) + 3}
           textAnchor="end"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
           data-testid="y-max-value"
         >
           {yMax}
@@ -182,7 +182,7 @@ export function LoadAverageChart({
           y={yOf(yMax / 2) + 3}
           textAnchor="end"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           {yMax / 2}
         </text>
@@ -191,7 +191,7 @@ export function LoadAverageChart({
           y={height - PAD.bottom + 3}
           textAnchor="end"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           0
         </text>
@@ -245,7 +245,7 @@ export function LoadAverageChart({
           y={height - 4}
           textAnchor="start"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           -10m
         </text>
@@ -254,7 +254,7 @@ export function LoadAverageChart({
           y={height - 4}
           textAnchor="middle"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           -5m
         </text>
@@ -263,12 +263,12 @@ export function LoadAverageChart({
           y={height - 4}
           textAnchor="end"
           fontSize="9"
-          fill="var(--bde-text-dim)"
+          fill="var(--fleet-text-dim)"
         >
           now
         </text>
       </svg>
-      <div style={{ marginTop: 6, fontSize: 9, color: 'var(--bde-text-dim)' }}>
+      <div style={{ marginTop: 6, fontSize: 9, color: 'var(--fleet-text-dim)' }}>
         <span style={{ color: LINE1_COLOR }}>▪ 1-min</span>
         {'   '}
         <span style={{ color: LINE5_COLOR }}>▪ 5-min</span>

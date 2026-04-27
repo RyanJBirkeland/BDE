@@ -15,7 +15,7 @@ const TTL_MS = 5000
 const makeTask = (id: string, overrides: Partial<SprintTask> = {}): SprintTask => ({
   id,
   title: `Task ${id}`,
-  repo: 'bde',
+  repo: 'fleet',
   prompt: null,
   priority: 1,
   status: 'backlog',

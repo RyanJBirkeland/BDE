@@ -6,7 +6,7 @@
 
 Two related UX issues in the agent spawn flow:
 
-1. **No loading guard on submit:** `SpawnModal` fetches `repoPaths` asynchronously on mount (`useEffect` at line 34), but the submit button is enabled immediately. If the user fills in the form and clicks "Spawn" before the fetch resolves, `repoPaths` is `{}`, and the submit handler shows a confusing error toast: `Repo path not found for "BDE" — check git.ts REPO_PATHS`.
+1. **No loading guard on submit:** `SpawnModal` fetches `repoPaths` asynchronously on mount (`useEffect` at line 34), but the submit button is enabled immediately. If the user fills in the form and clicks "Spawn" before the fetch resolves, `repoPaths` is `{}`, and the submit handler shows a confusing error toast: `Repo path not found for "FLEET" — check git.ts REPO_PATHS`.
 
 2. **Spawned agent doesn't appear immediately:** After a successful spawn, the new agent process doesn't appear in `AgentList` until the next `getAgentProcesses` poll cycle (every 5 seconds). There is no immediate `fetchProcesses()` call after spawn, creating a jarring delay where the user spawns an agent and sees nothing happen in the sidebar.
 

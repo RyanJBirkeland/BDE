@@ -17,26 +17,26 @@ describe('GlassPanel', () => {
   it('applies accent border when provided', () => {
     const { container } = render(<GlassPanel accent="purple">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.border).toContain('var(--bde-accent-border)')
+    expect(panel.style.border).toContain('var(--fleet-accent-border)')
   })
 
   it('uses CSS custom property for borderRadius', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.borderRadius).toBe('var(--bde-radius-xl)')
+    expect(panel.style.borderRadius).toBe('var(--fleet-radius-xl)')
   })
 
   it('uses surfaceDeep background without accent', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.background).toBe('var(--bde-bg)')
+    expect(panel.style.background).toBe('var(--fleet-bg)')
   })
 
   it('uses gradient background with accent', () => {
     const { container } = render(<GlassPanel accent="cyan">X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
     expect(panel.style.background).toContain('linear-gradient')
-    expect(panel.style.background).toContain('var(--bde-accent-surface)')
+    expect(panel.style.background).toContain('var(--fleet-accent-surface)')
   })
 
   it('accepts blur prop without applying it (ignored)', () => {
@@ -59,6 +59,6 @@ describe('GlassPanel', () => {
   it('uses border token when no accent', () => {
     const { container } = render(<GlassPanel>X</GlassPanel>)
     const panel = container.firstChild as HTMLElement
-    expect(panel.style.border).toContain('var(--bde-border)')
+    expect(panel.style.border).toContain('var(--fleet-border)')
   })
 })

@@ -113,7 +113,7 @@ export function UnifiedHeader(): React.JSX.Element {
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.setData(
-                  'application/bde-panel',
+                  'application/fleet-panel',
                   JSON.stringify({ sourcePanelId: focusedPanelId ?? '', sourceTabIndex: index })
                 )
                 startDrag({
@@ -140,7 +140,7 @@ export function UnifiedHeader(): React.JSX.Element {
         <NeonBadge accent="cyan" label={`${formatTokens(totalTokens)} tokens`} />
         <NotificationBell />
         <button
-          className="bde-btn bde-btn--icon bde-btn--sm"
+          className="fleet-btn fleet-btn--icon fleet-btn--sm"
           onClick={toggleTheme}
           title="Toggle theme"
           aria-label="Toggle theme"

@@ -21,8 +21,8 @@ async function navigateToCostSection(window: import('@playwright/test').Page): P
 }
 
 test.describe('Cost & Usage Section', () => {
-  test('navigates to Cost section and shows page header', async ({ bde }) => {
-    const { window } = bde
+  test('navigates to Cost section and shows page header', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await navigateToCostSection(window)
@@ -33,8 +33,8 @@ test.describe('Cost & Usage Section', () => {
     await expect(title).toContainText('Cost & Usage')
   })
 
-  test('cost panels container is visible', async ({ bde }) => {
-    const { window } = bde
+  test('cost panels container is visible', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await navigateToCostSection(window)
@@ -52,8 +52,8 @@ test.describe('Cost & Usage Section', () => {
 })
 
 test.describe('Cost & Usage — export', () => {
-  test('Export CSV button exists and shows "Copied!" feedback on click', async ({ bde }) => {
-    const { window } = bde
+  test('Export CSV button exists and shows "Copied!" feedback on click', async ({ fleet }) => {
+    const { window } = fleet
     await waitForAppShell(window)
 
     await navigateToCostSection(window)

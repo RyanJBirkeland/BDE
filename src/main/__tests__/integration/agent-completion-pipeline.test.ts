@@ -117,7 +117,7 @@ function makeTaskRecord(overrides: Record<string, unknown> = {}) {
     pr_number: null,
     pr_status: null,
     pr_url: null,
-    claimed_by: 'bde-embedded',
+    claimed_by: 'fleet-embedded',
     started_at: '2026-01-01T00:00:00Z',
     completed_at: null,
     template_name: null,

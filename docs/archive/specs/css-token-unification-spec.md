@@ -10,43 +10,43 @@
 
 ## Problem
 
-BDE has two coexisting token systems:
+FLEET has two coexisting token systems:
 
 | System                                           | Defined In          | Used By                           |
 | ------------------------------------------------ | ------------------- | --------------------------------- |
-| `--bde-*`                                        | `design-system.css` | Sessions, Sprint, modals, buttons |
+| `--fleet-*`                                        | `design-system.css` | Sessions, Sprint, modals, buttons |
 | `--bg-*`, `--accent-*`, `--text-*`, `--border-*` | `base.css`          | Terminal, Memory, Settings, Cost  |
 
 Result: Terminal/Memory/Settings/Cost look like a different app. Same product, two visual identities.
 
 ---
 
-## Canonical Token Set (keep `--bde-*`, remove duplicates)
+## Canonical Token Set (keep `--fleet-*`, remove duplicates)
 
-The `--bde-*` tokens in `design-system.css` are the canonical system. The `--bg-*` etc. in `base.css` are the legacy system.
+The `--fleet-*` tokens in `design-system.css` are the canonical system. The `--bg-*` etc. in `base.css` are the legacy system.
 
 ### Mapping (old → canonical)
 
 ```
---bg                  → --bde-bg
---bg-secondary        → --bde-surface
---bg-hover            → --bde-surface-hover
---border              → --bde-border
---border-light        → --bde-border-light
---text                → --bde-text
---text-muted          → --bde-text-muted
---text-dim            → --bde-text-dim
---accent              → --bde-accent
---accent-dim          → --bde-accent-dim
---color-error         → --bde-error
---color-warning       → --bde-warning
---color-ai            → --bde-color-ai
---radius-sm           → --bde-radius-sm
---radius-md           → --bde-radius-md
---size-sm             → --bde-size-sm
---size-xs             → --bde-size-xs
---font-ui             → --bde-font-ui
---font-mono           → --bde-font-mono
+--bg                  → --fleet-bg
+--bg-secondary        → --fleet-surface
+--bg-hover            → --fleet-surface-hover
+--border              → --fleet-border
+--border-light        → --fleet-border-light
+--text                → --fleet-text
+--text-muted          → --fleet-text-muted
+--text-dim            → --fleet-text-dim
+--accent              → --fleet-accent
+--accent-dim          → --fleet-accent-dim
+--color-error         → --fleet-error
+--color-warning       → --fleet-warning
+--color-ai            → --fleet-color-ai
+--radius-sm           → --fleet-radius-sm
+--radius-md           → --fleet-radius-md
+--size-sm             → --fleet-size-sm
+--size-xs             → --fleet-size-xs
+--font-ui             → --fleet-font-ui
+--font-mono           → --fleet-font-mono
 ```
 
 **Strategy:** Keep both names temporarily by aliasing in `base.css`:
@@ -54,9 +54,9 @@ The `--bde-*` tokens in `design-system.css` are the canonical system. The `--bg-
 ```css
 :root {
   /* Legacy aliases — point to canonical tokens */
-  --bg: var(--bde-bg);
-  --bg-secondary: var(--bde-surface);
-  --border: var(--bde-border);
+  --bg: var(--fleet-bg);
+  --bg-secondary: var(--fleet-surface);
+  --border: var(--fleet-border);
   /* etc. */
 }
 ```
@@ -78,7 +78,7 @@ Target: glass header bar with aurora "MEMORY" title, glass sidebar panel, glass 
   display: flex;
   align-items: center;
   padding: 0 16px;
-  border-bottom: 1px solid var(--bde-border);
+  border-bottom: 1px solid var(--fleet-border);
   background: var(--glass-tint-dark);
   backdrop-filter: var(--glass-blur-md) var(--glass-saturate);
   flex-shrink: 0;
@@ -111,18 +111,18 @@ Target: glass header bar with aurora "MEMORY" title, glass sidebar panel, glass 
 .memory-view__sidebar {
   background: var(--glass-tint-dark);
   backdrop-filter: var(--glass-blur-sm);
-  border-right: 1px solid var(--bde-border);
+  border-right: 1px solid var(--fleet-border);
 }
 .memory-file-item {
-  border-radius: var(--bde-radius-sm);
+  border-radius: var(--fleet-radius-sm);
   transition: background 0.12s;
 }
 .memory-file-item:hover {
-  background: var(--bde-surface-hover);
+  background: var(--fleet-surface-hover);
 }
 .memory-file-item--active {
   background: var(--glass-tint);
-  border-left: 2px solid var(--bde-accent);
+  border-left: 2px solid var(--fleet-accent);
 }
 ```
 
@@ -148,7 +148,7 @@ Target: glass header, glass card sections per setting group.
 .settings-section {
   background: var(--glass-tint-dark);
   backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
@@ -156,7 +156,7 @@ Target: glass header, glass card sections per setting group.
 .settings-section__title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 12px;
@@ -179,23 +179,23 @@ Target: glass header, glass stat cards at top, glass table.
 .cost-stat-card {
   background: var(--glass-tint-dark);
   backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid var(--bde-border);
+  border: 1px solid var(--fleet-border);
   border-radius: 8px;
   padding: 12px 16px;
   transition: border-color 0.15s;
 }
 .cost-stat-card:hover {
-  border-color: var(--bde-border-light);
+  border-color: var(--fleet-border-light);
 }
 .cost-stat-card__value {
   font-size: 22px;
   font-weight: 700;
-  color: var(--bde-text);
+  color: var(--fleet-text);
   font-variant-numeric: tabular-nums;
 }
 .cost-stat-card__label {
   font-size: 11px;
-  color: var(--bde-text-muted);
+  color: var(--fleet-text-muted);
   margin-top: 2px;
 }
 ```
@@ -206,7 +206,7 @@ Target: glass header, glass stat cards at top, glass table.
 
 | File                                      | Action            | What                                                                |
 | ----------------------------------------- | ----------------- | ------------------------------------------------------------------- |
-| `src/renderer/src/assets/base.css`        | **MODIFY**        | Add legacy token aliases (--bg → --bde-bg etc.) at top of :root     |
+| `src/renderer/src/assets/base.css`        | **MODIFY**        | Add legacy token aliases (--bg → --fleet-bg etc.) at top of :root     |
 | `src/renderer/src/views/MemoryView.tsx`   | **MODIFY**        | Replace old token class names; add header section with aurora title |
 | `src/renderer/src/views/SettingsView.tsx` | **MODIFY**        | Wrap settings in glass section cards; add glass header              |
 | `src/renderer/src/views/CostView.tsx`     | **MODIFY**        | Add glass header + glass stat cards above the table                 |

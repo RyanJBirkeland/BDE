@@ -8,7 +8,7 @@ function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: crypto.randomUUID(),
     title: 'Test task',
-    repo: 'BDE',
+    repo: 'FLEET',
     prompt: null,
     priority: 1,
     status: 'backlog',

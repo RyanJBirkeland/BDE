@@ -18,7 +18,7 @@ describe('WelcomeStep', () => {
 
   it('renders the welcome copy', () => {
     render(<WelcomeStep {...baseProps} />)
-    expect(screen.getByRole('heading', { name: /welcome to bde/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /welcome to fleet/i })).toBeInTheDocument()
     expect(screen.getByText(/autonomous ai-powered development/i)).toBeInTheDocument()
   })
 

@@ -1,6 +1,6 @@
-# Installing BDE on macOS
+# Installing FLEET on macOS
 
-BDE is distributed as an unsigned DMG. macOS Gatekeeper blocks unsigned apps on first launch — the workaround is a one-time right-click → Open. After that, the app launches normally.
+FLEET is distributed as an unsigned DMG. macOS Gatekeeper blocks unsigned apps on first launch — the workaround is a one-time right-click → Open. After that, the app launches normally.
 
 This document walks through the full install with the exact prompts you will see.
 
@@ -8,20 +8,20 @@ This document walks through the full install with the exact prompts you will see
 
 ## Prerequisites
 
-Before running BDE, make sure you have:
+Before running FLEET, make sure you have:
 
 - **macOS** 12 (Monterey) or later on Apple Silicon (arm64).
 - **Claude Code CLI** installed and authenticated — run `claude login` at least once.
 - **git** on `PATH`.
 - **GitHub CLI (`gh`)** on `PATH` — optional but required for PR features.
 
-BDE checks all four on first launch and surfaces an actionable error for any that are missing.
+FLEET checks all four on first launch and surfaces an actionable error for any that are missing.
 
 ---
 
 ## Step 1 — Download and mount the DMG
 
-Grab the latest `BDE-<version>-arm64.dmg` from the [Releases page](https://github.com/RyanJBirkeland/BDE/releases). Double-click the downloaded file to mount it.
+Grab the latest `FLEET-<version>-arm64.dmg` from the [Releases page](https://github.com/RyanJBirkeland/FLEET/releases). Double-click the downloaded file to mount it.
 
 A Finder window opens showing two icons side by side:
 
@@ -32,16 +32,16 @@ A Finder window opens showing two icons side by side:
    │     ║  B   ║              ║  📁  ║          │
    │     ║ D E  ║    ───▶      ║      ║          │
    │     ╚══════╝              ╚══════╝          │
-   │      BDE                Applications        │
+   │      FLEET                Applications        │
    │                                             │
    └─────────────────────────────────────────────┘
 ```
 
 ---
 
-## Step 2 — Copy BDE to Applications
+## Step 2 — Copy FLEET to Applications
 
-Drag `BDE` onto the `Applications` shortcut. The OS copies it into `/Applications`.
+Drag `FLEET` onto the `Applications` shortcut. The OS copies it into `/Applications`.
 
 Eject the DMG by dragging the mounted volume to the Trash (or pressing **Cmd+E** in Finder).
 
@@ -51,7 +51,7 @@ Eject the DMG by dragging the mounted volume to the Trash (or pressing **Cmd+E**
 
 **This is the one step where unsigned builds differ from the App Store experience.**
 
-Open the `Applications` folder in Finder. Locate `BDE`. **Right-click** (or hold Control and click) the icon, then select **Open** from the context menu:
+Open the `Applications` folder in Finder. Locate `FLEET`. **Right-click** (or hold Control and click) the icon, then select **Open** from the context menu:
 
 ```
    ┌─────────────── Right-click menu ────────────┐
@@ -70,7 +70,7 @@ macOS will display a warning dialog:
 ```
    ┌─────────────────────────────────────────────┐
    │  ⚠   macOS cannot verify the developer      │
-   │      of "BDE".                              │
+   │      of "FLEET".                              │
    │                                             │
    │      Are you sure you want to open it?      │
    │                                             │
@@ -89,7 +89,7 @@ Click **Open**. The app launches. macOS records your decision, so every subseque
 If you prefer a terminal-only workflow, you can clear the quarantine attribute before double-clicking:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/BDE.app
+xattr -dr com.apple.quarantine /Applications/FLEET.app
 ```
 
 After this command, the app launches from a plain double-click with no warning dialog. The `-r` flag handles the entire bundle.
@@ -98,17 +98,17 @@ After this command, the app launches from a plain double-click with no warning d
 
 ## Troubleshooting
 
-### "BDE is damaged and can't be opened. You should move it to the Trash."
+### "FLEET is damaged and can't be opened. You should move it to the Trash."
 
 This means quarantine is still set and you double-clicked instead of right-clicking. Use the power-user shortcut above, or re-run the right-click → Open flow from Step 3.
 
-### "BDE cannot be opened because the developer cannot be verified" (no **Open** button)
+### "FLEET cannot be opened because the developer cannot be verified" (no **Open** button)
 
 You double-clicked on first launch. Close the dialog and return to Step 3 — right-click → Open has an **Open** button that plain double-click does not.
 
 ### First launch opens a setup wizard asking for Claude CLI, token, git, and repos
 
-That is expected. BDE runs a readiness check on first launch and walks you through any missing prerequisites. Running `claude login` in a terminal before launching BDE skips the auth portion of the wizard.
+That is expected. FLEET runs a readiness check on first launch and walks you through any missing prerequisites. Running `claude login` in a terminal before launching FLEET skips the auth portion of the wizard.
 
 ### The app opens but the Terminal panel is empty or errors on launch
 
@@ -116,21 +116,21 @@ This is a native-module rebuild problem — usually only hit by developers runni
 
 ---
 
-## What BDE does on first launch
+## What FLEET does on first launch
 
-- Creates `~/.bde/` (SQLite DB, logs, OAuth token cache, agent worktrees under `~/.bde/worktrees/`, MCP token at `~/.bde/mcp-token` when MCP server is enabled).
+- Creates `~/.fleet/` (SQLite DB, logs, OAuth token cache, agent worktrees under `~/.fleet/worktrees/`, MCP token at `~/.fleet/mcp-token` when MCP server is enabled).
 - Runs readiness checks for Claude CLI, `git`, `gh`, and configured repositories.
 - Shows the onboarding wizard once; subsequent launches skip to the main UI.
 
-All state is local. BDE does not send telemetry or phone home.
+All state is local. FLEET does not send telemetry or phone home.
 
 ---
 
 ## Uninstall
 
 ```bash
-rm -rf /Applications/BDE.app
-rm -rf ~/.bde         # deletes database, logs, OAuth token cache, and agent worktrees
+rm -rf /Applications/FLEET.app
+rm -rf ~/.fleet         # deletes database, logs, OAuth token cache, and agent worktrees
 ```
 
-That fully removes the app. Agent worktrees live under `~/.bde/worktrees/` and are removed by the second command above.
+That fully removes the app. Agent worktrees live under `~/.fleet/worktrees/` and are removed by the second command above.

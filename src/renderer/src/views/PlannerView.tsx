@@ -133,7 +133,7 @@ export default function PlannerView(): React.JSX.Element {
 
   const handleImportPlan = async (): Promise<void> => {
     try {
-      const result = await window.api.planner.import('bde')
+      const result = await window.api.planner.import('fleet')
       toast.success(`Imported "${result.epicName}" with ${result.taskCount} tasks`)
       await loadGroups()
       selectGroup(result.epicId)

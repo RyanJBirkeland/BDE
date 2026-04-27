@@ -26,7 +26,7 @@ vi.mock('../../broadcast', () => ({
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn().mockReturnValue({}),
   getGhRepo: vi.fn(),
-  BDE_AGENT_LOG_PATH: '/tmp/bde-agent-test.log'
+  FLEET_AGENT_LOG_PATH: '/tmp/fleet-agent-test.log'
 }))
 
 import { AgentManagerImpl } from '../index'
@@ -38,7 +38,7 @@ import { broadcast } from '../../broadcast'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 3,
-  worktreeBase: '/tmp/worktrees/bde',
+  worktreeBase: '/tmp/worktrees/fleet',
   maxRuntimeMs: 60 * 60 * 1000,
   idleTimeoutMs: 15 * 60 * 1000,
   pollIntervalMs: 600_000,

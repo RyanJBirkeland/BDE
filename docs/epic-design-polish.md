@@ -4,7 +4,7 @@
 
 **Date:** 2026-03-16
 **Owner:** UI/UX Engineering
-**Goal:** Eliminate every visual inconsistency, missing glass treatment, broken empty state, and orphaned token reference so BDE looks like a single designer built every pixel in the same weekend.
+**Goal:** Eliminate every visual inconsistency, missing glass treatment, broken empty state, and orphaned token reference so FLEET looks like a single designer built every pixel in the same weekend.
 
 ---
 
@@ -16,7 +16,7 @@ The audit report (`docs/audits/2026-03-16-design-report.md`) identified two para
 
 | Area                | Finding                                                                                                                                                                 | Severity |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| CSS Variables       | Two parallel systems: `--bde-*` (old) and `--bg-*`/`--accent-*`/`--text-*` (v2). Body still uses `--bde-bg`, `--bde-text`.                                              | Critical |
+| CSS Variables       | Two parallel systems: `--fleet-*` (old) and `--bg-*`/`--accent-*`/`--text-*` (v2). Body still uses `--fleet-bg`, `--fleet-text`.                                              | Critical |
 | Glass Morphism      | Applied to modals, TitleBar, ActivityBar, Sessions sidebar, AgentRow. Missing from DiffView, MemoryView, CostView, SettingsView, Sprint columns, SpecDrawer, StatusBar. | High     |
 | View Headers        | `text-gradient-aurora` only on "SPRINT CENTER" and "NEW TICKET". CostView, SettingsView, MemoryView, DiffView, Sessions sidebar all use plain text headers.             | High     |
 | Terminal View       | 23 `style={{}}` blocks, 63 `tokens.*` references. Zero CSS classes. No glass, no gradients, visually disconnected.                                                      | High     |
@@ -25,7 +25,7 @@ The audit report (`docs/audits/2026-03-16-design-report.md`) identified two para
 | Empty States        | DiffView sidebar uses raw `<div>` not `<EmptyState>`. Sessions "Select a session" is generic. No action CTAs on most empty states.                                      | Medium   |
 | Motion              | `motion.ts` defines 5 springs + 7 variants. Only used in 5 files. View transitions use CSS `120ms ease` instead of spring physics.                                      | Low      |
 | Heading Classes     | `heading-page`, `heading-hero`, `heading-section` defined in CSS, used in 0 TSX files.                                                                                  | Low      |
-| Dual Button Systems | Old `bde-btn--*` classes coexist with new `btn-primary`/`btn-glass`. SettingsView bypasses `<Button>` component.                                                        | Low      |
+| Dual Button Systems | Old `fleet-btn--*` classes coexist with new `btn-primary`/`btn-glass`. SettingsView bypasses `<Button>` component.                                                        | Low      |
 
 ---
 
@@ -62,4 +62,4 @@ DP-S1 and DP-S4 are prerequisites — they eliminate the dual token system and t
 - `grep -r 'style={{' src/renderer/src/views/TerminalView.tsx` returns 0 results
 - Every view has: glass sidebar or panel, aurora gradient title, skeleton loading state, and `<EmptyState>` with action CTA
 - `motion.ts` SPRINGS/VARIANTS are used in all view transitions and list stagger animations
-- All `--bde-*` CSS variables are deprecated with `/* DEPRECATED */` comments and forwarded to v2 equivalents
+- All `--fleet-*` CSS variables are deprecated with `/* DEPRECATED */` comments and forwarded to v2 equivalents

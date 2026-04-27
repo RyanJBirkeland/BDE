@@ -170,11 +170,11 @@ describe('repoColor', () => {
   })
 
   it('returns fallback for unknown repos', () => {
-    expect(repoColor('unknown', mockRepos)).toBe('var(--bde-text-dim)')
+    expect(repoColor('unknown', mockRepos)).toBe('var(--fleet-text-dim)')
   })
 
   it('returns fallback when repo list is empty', () => {
-    expect(repoColor('my-project', [])).toBe('var(--bde-text-dim)')
+    expect(repoColor('my-project', [])).toBe('var(--fleet-text-dim)')
   })
 })
 

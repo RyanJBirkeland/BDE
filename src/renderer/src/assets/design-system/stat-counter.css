@@ -1,8 +1,8 @@
 /* ── StatCounter ────────────────────────────────────── */
 
 .stat-counter {
-  border-radius: var(--bde-radius-lg);
-  padding: var(--bde-space-3);
+  border-radius: var(--fleet-radius-lg);
+  padding: var(--fleet-space-3);
   transition:
     opacity 0.15s ease,
     transform 0.15s ease;
@@ -18,43 +18,43 @@
 }
 
 .stat-counter__label {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: var(--bde-space-1);
+  gap: var(--fleet-space-1);
 }
 
 .stat-counter__value-row {
   display: flex;
   align-items: baseline;
-  gap: var(--bde-space-1);
-  margin-top: var(--bde-space-1);
+  gap: var(--fleet-space-1);
+  margin-top: var(--fleet-space-1);
 }
 
 .stat-counter__value {
-  color: var(--bde-text);
-  font-size: var(--bde-size-xxl);
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-xxl);
   font-weight: 800;
 }
 
 .stat-counter__suffix {
-  font-size: var(--bde-size-xs);
+  font-size: var(--fleet-size-xs);
   opacity: 0.6;
 }
 
 .stat-counter__trend {
-  font-size: var(--bde-size-xs);
-  margin-top: var(--bde-space-1);
+  font-size: var(--fleet-size-xs);
+  margin-top: var(--fleet-space-1);
   opacity: 0.7;
 }
 
 .stat-counter__trend--up {
-  color: var(--bde-danger);
+  color: var(--fleet-danger);
 }
 
 .stat-counter__trend--down {
-  color: var(--bde-accent);
+  color: var(--fleet-accent);
 }

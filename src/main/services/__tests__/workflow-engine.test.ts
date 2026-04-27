@@ -46,8 +46,8 @@ describe('workflow-engine', () => {
       name: 'Test Workflow',
       description: 'A simple workflow',
       steps: [
-        { title: 'Step 1', repo: 'BDE', spec: 'Do task 1' },
-        { title: 'Step 2', repo: 'BDE', prompt: 'Do task 2' }
+        { title: 'Step 1', repo: 'FLEET', spec: 'Do task 1' },
+        { title: 'Step 2', repo: 'FLEET', prompt: 'Do task 2' }
       ]
     }
 
@@ -69,8 +69,8 @@ describe('workflow-engine', () => {
       name: 'Dependency Test',
       description: 'Test hard dependencies',
       steps: [
-        { title: 'Base Task', repo: 'BDE', spec: 'Base' },
-        { title: 'Dependent Task', repo: 'BDE', spec: 'Depends on 0', dependsOnSteps: [0] }
+        { title: 'Base Task', repo: 'FLEET', spec: 'Base' },
+        { title: 'Dependent Task', repo: 'FLEET', spec: 'Depends on 0', dependsOnSteps: [0] }
       ]
     }
 
@@ -88,10 +88,10 @@ describe('workflow-engine', () => {
       name: 'Soft Dep Test',
       description: 'Test soft dependencies',
       steps: [
-        { title: 'Base Task', repo: 'BDE', spec: 'Base' },
+        { title: 'Base Task', repo: 'FLEET', spec: 'Base' },
         {
           title: 'Soft Dependent',
-          repo: 'BDE',
+          repo: 'FLEET',
           spec: 'Soft depends on 0',
           dependsOnSteps: [0],
           depType: 'soft'
@@ -113,11 +113,11 @@ describe('workflow-engine', () => {
       name: 'Multi Dep',
       description: 'Multiple dependencies',
       steps: [
-        { title: 'Task A', repo: 'BDE', spec: 'A' },
-        { title: 'Task B', repo: 'BDE', spec: 'B' },
+        { title: 'Task A', repo: 'FLEET', spec: 'A' },
+        { title: 'Task B', repo: 'FLEET', spec: 'B' },
         {
           title: 'Task C',
-          repo: 'BDE',
+          repo: 'FLEET',
           spec: 'C depends on A and B',
           dependsOnSteps: [0, 1]
         }
@@ -140,10 +140,10 @@ describe('workflow-engine', () => {
       name: 'Invalid Dep',
       description: 'Out of range dependency',
       steps: [
-        { title: 'Task A', repo: 'BDE', spec: 'A' },
+        { title: 'Task A', repo: 'FLEET', spec: 'A' },
         {
           title: 'Task B',
-          repo: 'BDE',
+          repo: 'FLEET',
           spec: 'B depends on non-existent task',
           dependsOnSteps: [5] // Out of range
         }
@@ -164,10 +164,10 @@ describe('workflow-engine', () => {
       name: 'Negative Dep',
       description: 'Negative dependency index',
       steps: [
-        { title: 'Task A', repo: 'BDE', spec: 'A' },
+        { title: 'Task A', repo: 'FLEET', spec: 'A' },
         {
           title: 'Task B',
-          repo: 'BDE',
+          repo: 'FLEET',
           spec: 'B',
           dependsOnSteps: [-1]
         }
@@ -185,9 +185,9 @@ describe('workflow-engine', () => {
       name: 'Fail Test',
       description: 'Test createTask failure',
       steps: [
-        { title: 'Task A', repo: 'BDE', spec: 'A' },
-        { title: 'Task B', repo: 'BDE', spec: 'B' },
-        { title: 'Task C', repo: 'BDE', spec: 'C' }
+        { title: 'Task A', repo: 'FLEET', spec: 'A' },
+        { title: 'Task B', repo: 'FLEET', spec: 'B' },
+        { title: 'Task C', repo: 'FLEET', spec: 'C' }
       ]
     }
 
@@ -233,7 +233,7 @@ describe('workflow-engine', () => {
     const template: WorkflowTemplate = {
       name: 'Playground Test',
       description: 'Test playground flag',
-      steps: [{ title: 'Task A', repo: 'BDE', spec: 'A', playgroundEnabled: true }]
+      steps: [{ title: 'Task A', repo: 'FLEET', spec: 'A', playgroundEnabled: true }]
     }
 
     const repo = createMockRepo()
@@ -247,7 +247,7 @@ describe('workflow-engine', () => {
     const template: WorkflowTemplate = {
       name: 'Model Test',
       description: 'Test model field',
-      steps: [{ title: 'Task A', repo: 'BDE', spec: 'A', model: 'opus' }]
+      steps: [{ title: 'Task A', repo: 'FLEET', spec: 'A', model: 'opus' }]
     }
 
     const repo = createMockRepo()

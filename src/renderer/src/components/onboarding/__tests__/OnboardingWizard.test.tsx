@@ -6,7 +6,7 @@ import { OnboardingWizard } from '../OnboardingWizard'
 describe('OnboardingWizard', () => {
   it('renders Welcome step initially', () => {
     render(<OnboardingWizard onComplete={vi.fn()} />)
-    expect(screen.getByText(/welcome to bde/i)).toBeInTheDocument()
+    expect(screen.getByText(/welcome to fleet/i)).toBeInTheDocument()
   })
 
   it('navigates through steps with Next button', async () => {
@@ -14,7 +14,7 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard onComplete={vi.fn()} />)
 
     // Step 1: Welcome
-    expect(screen.getByText(/welcome to bde/i)).toBeInTheDocument()
+    expect(screen.getByText(/welcome to fleet/i)).toBeInTheDocument()
 
     // Navigate to step 2
     await user.click(screen.getByRole('button', { name: /next/i }))
@@ -66,10 +66,10 @@ describe('OnboardingWizard', () => {
     // Step 5 (Repositories): inline add form means Next is disabled; use Skip for now.
     await user.click(screen.getByRole('button', { name: /skip for now/i }))
 
-    // Final step — "Explore BDE" when no repos configured (we skipped the repo step).
+    // Final step — "Explore FLEET" when no repos configured (we skipped the repo step).
     // Otherwise the label is "Get Started". Accept either to keep the assertion focused on onComplete.
     const completeBtn = await waitFor(() =>
-      screen.getByRole('button', { name: /explore bde|get started/i })
+      screen.getByRole('button', { name: /explore fleet|get started/i })
     )
     await user.click(completeBtn)
     expect(onComplete).toHaveBeenCalled()
@@ -85,7 +85,7 @@ describe('OnboardingWizard', () => {
 
     // Go back to step 1
     await user.click(screen.getByRole('button', { name: /back/i }))
-    expect(screen.getByText(/welcome to bde/i)).toBeInTheDocument()
+    expect(screen.getByText(/welcome to fleet/i)).toBeInTheDocument()
   })
 
   it('shows progress indicators for all steps', () => {
