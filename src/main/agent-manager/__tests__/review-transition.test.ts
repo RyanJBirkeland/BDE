@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../diff-snapshot', () => ({ captureDiffSnapshot: vi.fn() }))
-vi.mock('../../shared/time', () => ({ nowIso: vi.fn(() => '2026-04-25T18:00:00.000Z') }))
+vi.mock('../../../shared/time', () => ({ nowIso: vi.fn(() => '2026-04-25T18:00:00.000Z') }))
 vi.mock('../../lib/async-utils', () => ({ execFileAsync: vi.fn() }))
 vi.mock('../../env-utils', () => ({ buildAgentEnv: vi.fn(() => ({})) }))
 

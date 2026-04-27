@@ -1140,8 +1140,8 @@ describe('updateTask — transition enforcement', () => {
 describe('createReviewTaskFromAdhoc', () => {
   const ISO8601_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
 
-  it('creates a task in review status with the adhoc worktree metadata', () => {
-    const task = createReviewTaskFromAdhoc({
+  it('creates a task in review status with the adhoc worktree metadata', async () => {
+    const task = await createReviewTaskFromAdhoc({
       title: 'Promoted adhoc work',
       repo: 'bde',
       spec: 'An adhoc agent wrote this',
@@ -1155,8 +1155,8 @@ describe('createReviewTaskFromAdhoc', () => {
     expect(task!.started_at).toMatch(ISO8601_RE)
   })
 
-  it('stamps promoted_to_review_at with an ISO8601 timestamp', () => {
-    const task = createReviewTaskFromAdhoc({
+  it('stamps promoted_to_review_at with an ISO8601 timestamp', async () => {
+    const task = await createReviewTaskFromAdhoc({
       title: 'Promoted adhoc work',
       repo: 'bde',
       spec: 'An adhoc agent wrote this',

@@ -63,7 +63,8 @@ vi.mock('../../agent-history', () => ({
   readLog: vi.fn(),
   importAgent: vi.fn(),
   pruneOldAgents: vi.fn(),
-  getAgentMeta: vi.fn()
+  getAgentMeta: vi.fn(),
+  setAgentSprintTaskId: vi.fn()
 }))
 
 // Mock adhoc-agent
@@ -107,6 +108,16 @@ vi.mock('../../env-utils', () => ({
   buildAgentEnv: vi.fn(() => ({ HOME: '/tmp' }))
 }))
 
+// Mock lib/async-utils (execFileAsync used by promoteToReview for git rev-list)
+vi.mock('../../lib/async-utils', () => ({
+  execFileAsync: vi.fn()
+}))
+
+// Mock sprint-service (createReviewTaskFromAdhoc used by adhoc-promotion-service)
+vi.mock('../../services/sprint-service', () => ({
+  createReviewTaskFromAdhoc: vi.fn()
+}))
+
 // Mock node:fs existsSync used by promoteToReview to validate worktree path.
 // Tests override this per-case via vi.mocked(existsSync).mockReturnValue(...)
 // when they need to assert "worktree gone" behavior.
@@ -143,7 +154,8 @@ import { listAgents, readLog, pruneOldAgents, getAgentMeta } from '../../agent-h
 import { spawnAdhocAgent, getAdhocHandle } from '../../adhoc-agent'
 import { queryEvents } from '../../data/event-queries'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
-import { createReviewTaskFromAdhoc } from '../../data/sprint-queries'
+import { execFileAsync } from '../../lib/async-utils'
+import { createReviewTaskFromAdhoc } from '../../services/sprint-service'
 import { nowIso } from '../../../shared/time'
 
 const mockEvent = {} as IpcMainInvokeEvent
@@ -490,8 +502,9 @@ describe('agents:promoteToReview handler', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    // Default: worktree directory exists. Tests that need it missing override.
     vi.mocked(existsSync).mockReturnValue(true)
+    // Default: agent has 2 commits ahead of main
+    vi.mocked(execFileAsync).mockResolvedValue({ stdout: '2\n', stderr: '' })
   })
 
   it('returns error when agent is not found', async () => {
