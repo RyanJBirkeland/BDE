@@ -57,6 +57,7 @@ import {
 } from './tearoff-manager'
 import { clearAnthropicEnvVars } from './auth-guard'
 import { broadcast } from './broadcast'
+import { migrateRuntimeDir } from './startup-migration'
 
 // Side-effecting startup steps run before any whenReady-time work touches
 // process.env, the network, or the singleton lock. Order matters: PATH first,
@@ -553,7 +554,9 @@ function buildReviewWiring(repo: ReturnType<typeof createSprintTaskRepository>):
   return { reviewService, reviewChatStreamDeps }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await migrateRuntimeDir()
+
   electronApp.setAppUserModelId('com.fleet')
 
   initDatabaseOrExit()
