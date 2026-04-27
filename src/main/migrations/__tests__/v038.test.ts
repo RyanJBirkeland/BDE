@@ -187,7 +187,7 @@ describe('migration v038', () => {
     })
     const mixedCaseRow = buildFullySeededRow({
       id: 'task-mixed',
-      repo: 'bDE',
+      repo: 'fLEEt',
       status: 'review',
       completed_at: null,
       pr_status: 'draft'
