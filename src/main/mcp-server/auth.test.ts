@@ -120,4 +120,14 @@ describe('parseBearerToken', () => {
   it('returns null for the empty string', () => {
     expect(parseBearerToken('')).toBeNull()
   })
+
+  // Short-token contract tests — make the trim behaviour visually obvious
+  // (the tests above use the 64-char production-length token).
+  it('trims trailing space after a short token', () => {
+    expect(parseBearerToken('Bearer token123 ')).toBe('token123')
+  })
+
+  it('returns null for a scheme-only header with no token (Bearer + space only)', () => {
+    expect(parseBearerToken('Bearer ')).toBeNull()
+  })
 })

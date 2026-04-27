@@ -22,6 +22,10 @@ export function getSetting(key: string, db?: Database.Database): string | null {
   if (raw === null) return null
   if (SENSITIVE_SETTING_KEYS.has(key)) {
     const plaintext = decryptSetting(raw)
+    if (plaintext === undefined) {
+      // Decryption failed — the stored blob is unreadable. Treat as absent.
+      return null
+    }
     // Lazy migration: re-encrypt any legacy plaintext values found in the DB.
     // Skip silently if encryption is unavailable — we cannot upgrade now.
     if (!raw.startsWith(ENCRYPTED_PREFIX)) {

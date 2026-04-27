@@ -126,33 +126,51 @@ let _tokenLoadedAt = 0
 const TOKEN_TTL_MS = 30 * 1000 // 30 seconds — short enough to respect token rotation
 const MAX_TOKEN_BYTES = 64 * 1024 // 64 KB — any valid token is well under this
 
+/**
+ * Returns `true` only when the file at `tokenPath` exists, is not a symlink,
+ * and has exactly mode 0o600 (user read+write only). Called on every
+ * `getOAuthToken()` invocation so that a `chmod 644` applied after the first
+ * good read invalidates the cache immediately, without waiting for the TTL.
+ */
+function tokenFilePermissionsAreSecure(tokenPath: string): boolean {
+  try {
+    const lstats = lstatSync(tokenPath)
+    if (lstats.isSymbolicLink()) return false
+    return (lstats.mode & 0o777) === 0o600
+  } catch {
+    return false
+  }
+}
+
 /** Reads OAuth token from ~/.fleet/oauth-token. Cached for 30 seconds to respect token rotation. */
 export function getOAuthToken(): string | null {
+  const tokenPath = join(homedir(), '.fleet', 'oauth-token')
+
+  // Re-stat on every call — lstatSync is cheap (<1ms) and closes the window
+  // where permissions could drift between TTL refreshes.
+  if (!tokenFilePermissionsAreSecure(tokenPath)) {
+    if (_cachedOAuthToken !== null || _tokenLoadedAt > 0) {
+      logger.error(
+        `[env-utils] OAuth token rejected: insecure or missing file at ${tokenPath}. ` +
+          `Run: chmod 600 ${tokenPath}`
+      )
+    }
+    _cachedOAuthToken = null
+    _tokenLoadedAt = 0
+    return null
+  }
+
   const now = Date.now()
   if (_tokenLoadedAt > 0 && now - _tokenLoadedAt < TOKEN_TTL_MS) return _cachedOAuthToken
   _tokenLoadedAt = now
-  const tokenPath = join(homedir(), '.fleet', 'oauth-token')
+
   try {
     if (existsSync(tokenPath)) {
-      // Use lstatSync (not statSync) to detect symlinks before following them.
       const lstats = lstatSync(tokenPath)
-      if (lstats.isSymbolicLink()) {
-        logger.warn('[env-utils] OAuth token file is a symlink — rejecting for security')
-        _cachedOAuthToken = null
-        return _cachedOAuthToken
-      }
       if (lstats.size > MAX_TOKEN_BYTES) {
         logger.warn('[env-utils] OAuth token file exceeds maximum size — rejecting')
         _cachedOAuthToken = null
         return _cachedOAuthToken
-      }
-      const mode = lstats.mode & 0o777
-      if (mode !== 0o600) {
-        logger.error(
-          `[env-utils] OAuth token rejected: insecure permissions ${mode.toString(8)}. ` +
-            `Run: chmod 600 ${tokenPath}`
-        )
-        return null
       }
       _cachedOAuthToken = readFileSync(tokenPath, 'utf8').trim()
       // Validate token format: reject empty strings or tokens too short to be valid

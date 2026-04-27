@@ -57,13 +57,37 @@ async function overwriteWithMode(filePath: string, contents: string): Promise<vo
   await fs.chmod(filePath, FILE_MODE)
 }
 
-async function generateAndWrite(filePath: string): Promise<string> {
+interface GenerateAndWriteResult {
+  token: string
+  created: boolean
+}
+
+/**
+ * Generates a random token and writes it to `filePath`. When `writeExclusive`
+ * returns false (EEXIST — another process wrote the file concurrently), attempts
+ * to read and validate the existing content. A valid race-written token is
+ * returned as-is with `created: false`; corrupt or unreadable content falls
+ * through to `overwriteWithMode` with `created: true`.
+ */
+async function generateAndWrite(filePath: string): Promise<GenerateAndWriteResult> {
   const token = randomBytes(TOKEN_BYTES).toString('hex')
   const payload = token + '\n'
   await lockParentDirectoryPermissions(filePath)
   const createdFresh = await writeExclusive(filePath, payload)
-  if (!createdFresh) await overwriteWithMode(filePath, payload)
-  return token
+  if (createdFresh) return { token, created: true }
+
+  // EEXIST: a concurrent process wrote the file. Try to honour its token.
+  try {
+    const existing = (await fs.readFile(filePath, 'utf8')).trim()
+    if (isWellFormedToken(existing)) {
+      return { token: existing, created: false }
+    }
+  } catch {
+    // Unreadable — fall through to overwrite below
+  }
+
+  await overwriteWithMode(filePath, payload)
+  return { token, created: true }
 }
 
 async function warnIfModeDrifted(
@@ -105,13 +129,15 @@ export async function readOrCreateToken(
       throw err
     }
   }
-  const token = await generateAndWrite(filePath)
-  return { token, created: true, path: filePath }
+  const result = await generateAndWrite(filePath)
+  return { token: result.token, created: result.created, path: filePath }
 }
 
 export async function regenerateToken(
   filePath: string = tokenFilePath()
 ): Promise<TokenReadResult> {
-  const token = await generateAndWrite(filePath)
+  const token = randomBytes(TOKEN_BYTES).toString('hex')
+  await lockParentDirectoryPermissions(filePath)
+  await overwriteWithMode(filePath, token + '\n')
   return { token, created: true, path: filePath }
 }

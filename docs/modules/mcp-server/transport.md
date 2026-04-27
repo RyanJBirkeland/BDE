@@ -45,8 +45,8 @@ Every non-2xx path writes a structured, greppable warn/error line. Messages carr
 
 The 500 log line includes `method=<m> url=<u> remote=<addr>` plus the full stack (or `String(err)` for non-`Error` throws). Auth failures distinguish `"missing bearer token"` from `"invalid bearer token"` so log review can spot misconfigured clients vs. probing attackers.
 
-## Origin allow-list (T-45)
-The handler passes an explicit `allowedOrigins` list to every transport instance — `['null', 'http://127.0.0.1:<port>', 'http://localhost:<port>']` — instead of relying on the SDK's disabled-when-empty default. MCP clients typically send no Origin header and the SDK only enforces when one is present, so absent-Origin requests are still accepted.
+## Origin allow-list (T-45 / T-31)
+The handler passes an explicit `allowedOrigins` list to every transport instance — `['http://127.0.0.1:<port>', 'http://localhost:<port>', 'http://[::1]:<port>']` — instead of relying on the SDK's disabled-when-empty default. `allowedHosts` is extended to `['127.0.0.1', 'localhost', '127.0.0.1:<port>', 'localhost:<port>', '[::1]', '[::1]:<port>']`. MCP clients typically send no Origin header and the SDK only enforces when one is present, so absent-Origin requests are still accepted. IPv6 loopback clients connecting over `::1` no longer receive a `Host` rejection.
 
 ## Response close cleanup (T-47)
 On `res.on('close')`, both `transport.close()` and `server.close()` are invoked through a local `closeWithTimeout` helper that races them against `CLOSE_TIMEOUT_MS = 5s`. Timeouts and close failures log a structured `logger.warn` that preserves the stack for non-Error throws.

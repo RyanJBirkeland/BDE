@@ -15,6 +15,8 @@ Persistent bearer token storage for MCP server authentication. Generates a 32-by
 
 ## Hardening
 - Exclusive create (`fs.open(path, 'wx', 0o600)`) eliminates the umask race on first write; existing-file rewrites fall back to `writeFile` + explicit `chmod`.
+- **EEXIST race safety (T-30):** when `writeExclusive` returns `false` (a concurrent process beat us to the exclusive create), `generateAndWrite` attempts to read and validate the existing file. A valid race-written token is returned with `created: false` instead of being silently overwritten. Corrupt or unreadable content falls through to `overwriteWithMode`.
+- `regenerateToken` bypasses the EEXIST-safe path and calls `overwriteWithMode` directly — an intentional overwrite always produces a new token.
 - Parent directory is forced to mode `0700` on every read path via `mkdir({ mode })` plus an idempotent `chmod`, tightening installs that were created without the mode flag.
 - The hex-validation regex is derived from `TOKEN_BYTES * 2`, so bumping `TOKEN_BYTES` updates the length check automatically.
 - A valid token at the wrong file mode (for example `0o644`) is returned as-is but logged at `warn` — an operator signal without locking the user out.

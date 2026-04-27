@@ -117,6 +117,29 @@ describe('OAuth token cache', () => {
 
     expect(result).toBe(validToken)
   })
+
+  it('invalidates cache immediately when file permissions drift to 0o644 mid-TTL', () => {
+    // Prime the cache with a valid token (secure permissions)
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100600,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+    vi.mocked(readFileSync).mockReturnValue('this_is_a_valid_oauth_token_that_is_long')
+    const first = getOAuthToken()
+    expect(first).toBe('this_is_a_valid_oauth_token_that_is_long')
+
+    // Simulate permission drift WITHOUT expiring the TTL — change mode to 0o644
+    vi.mocked(lstatSync).mockReturnValue({
+      mode: 0o100644,
+      isSymbolicLink: () => false,
+      size: 100
+    } as any)
+
+    // Must return null immediately; the cache should NOT be used
+    const second = getOAuthToken()
+    expect(second).toBeNull()
+  })
 })
 
 describe('refreshOAuthTokenFromKeychain', () => {

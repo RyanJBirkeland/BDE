@@ -41,13 +41,13 @@ const KeychainOAuthSchema = z
     accessToken: z.string().optional(),
     expiresAt: z.string().optional()
   })
-  .passthrough()
+  .strict()
 
 const KeychainPayloadSchema = z
   .object({
     claudeAiOauth: KeychainOAuthSchema.optional()
   })
-  .passthrough()
+  .strict()
 
 export type KeychainOAuth = z.infer<typeof KeychainOAuthSchema>
 export type KeychainPayload = z.infer<typeof KeychainPayloadSchema>

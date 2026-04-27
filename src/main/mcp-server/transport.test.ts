@@ -333,7 +333,7 @@ describe('transport handler Origin allow-list (T-45)', () => {
     transportInstances.length = 0
   })
 
-  it('constructs the SDK transport with an explicit loopback Origin allow-list', async () => {
+  it('constructs the SDK transport with an explicit loopback Origin allow-list including IPv6', async () => {
     const mockServer = createMockMcpServer()
     const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
 
@@ -350,7 +350,8 @@ describe('transport handler Origin allow-list (T-45)', () => {
     const transport = latestMockTransport()
     expect(transport.constructorOptions.allowedOrigins).toEqual([
       `http://127.0.0.1:${port}`,
-      `http://localhost:${port}`
+      `http://localhost:${port}`,
+      `http://[::1]:${port}`
     ])
     expect(transport.constructorOptions.allowedOrigins).not.toContain('null')
   })

@@ -189,7 +189,7 @@ function buildRequestScope(buildMcpServer: () => McpServer, port: number): Reque
   const transportOptions = {
     sessionIdGenerator: undefined,
     enableDnsRebindingProtection: true,
-    allowedHosts: ['127.0.0.1', 'localhost', `127.0.0.1:${port}`, `localhost:${port}`],
+    allowedHosts: ['127.0.0.1', 'localhost', `127.0.0.1:${port}`, `localhost:${port}`, '[::1]', `[::1]:${port}`],
     allowedOrigins: allowedOriginsFor(port)
   } as unknown as ConstructorParameters<typeof StreamableHTTPServerTransport>[0]
   const transport = new StreamableHTTPServerTransport(transportOptions)
@@ -241,7 +241,8 @@ function scheduleCleanup(res: ServerResponse, scope: RequestScope, logger: Logge
 function allowedOriginsFor(port: number): string[] {
   return [
     `http://127.0.0.1:${port}`,
-    `http://localhost:${port}`
+    `http://localhost:${port}`,
+    `http://[::1]:${port}`
   ]
 }
 

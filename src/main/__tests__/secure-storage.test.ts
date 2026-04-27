@@ -110,12 +110,23 @@ describe('decryptSetting', () => {
     expect(mockDecryptString).toHaveBeenCalledWith(fakeBuffer)
   })
 
-  it('returns stored value and logs error when decryptString throws', () => {
+  it('returns undefined and logs error when decryptString throws', () => {
     mockDecryptString.mockImplementationOnce(() => {
       throw new Error('keychain unavailable')
     })
     const fakeEncrypted = 'ENC:' + Buffer.from('some_data').toString('base64')
     const result = decryptSetting(fakeEncrypted)
-    expect(result).toBe(fakeEncrypted)
+    expect(result).toBeUndefined()
+  })
+
+  it('returns undefined when decryptString throws (does not return the raw encrypted blob)', () => {
+    mockDecryptString.mockImplementationOnce(() => {
+      throw new Error('decryption error')
+    })
+    const fakeEncrypted = 'ENC:' + Buffer.from('sensitive').toString('base64')
+    const result = decryptSetting(fakeEncrypted)
+    expect(result).toBeUndefined()
+    // The raw encrypted blob must never be returned as if it were plaintext
+    expect(result).not.toBe(fakeEncrypted)
   })
 })

@@ -196,4 +196,45 @@ describe('token-store', () => {
     expect(p.startsWith(os.homedir())).toBe(true)
     expect(path.basename(p)).toBe('mcp-token')
   })
+
+  it('returns existing valid token when EEXIST race occurs during generation', async () => {
+    const existingToken = 'a'.repeat(64)
+
+    // Simulate the EEXIST race: the file does not exist when readOrCreateToken
+    // first checks (ENOENT on readFile), but another process writes a valid
+    // token between that check and our writeExclusive call. We model this by
+    // mocking fs.open to inject EEXIST, then writing the valid token to disk
+    // so the subsequent readFile in generateAndWrite finds it.
+    const realOpen = fs.open.bind(fs)
+    let interceptedExclusive = false
+    vi.spyOn(fs, 'open').mockImplementation(async (p, flag, ...rest) => {
+      if (!interceptedExclusive && flag === 'wx') {
+        interceptedExclusive = true
+        // Write the "race winner" token before throwing EEXIST
+        await fs.writeFile(filePath, existingToken + '\n', { mode: 0o600 })
+        const err = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
+        throw err
+      }
+      return realOpen(p as string, flag as string, ...(rest as []))
+    })
+
+    const result = await readOrCreateToken(filePath)
+
+    expect(result.token).toBe(existingToken)
+    expect(result.created).toBe(false)
+  })
+
+  it('overwrites when EEXIST occurs but existing content is corrupt', async () => {
+    // Write corrupt content to simulate a file that exists but is invalid.
+    // readOrCreateToken will detect the bad content, fall through to
+    // generateAndWrite, which hits EEXIST (the file is already on disk),
+    // reads the corrupt content again, and falls back to overwriteWithMode.
+    await fs.writeFile(filePath, 'bad-token\n', { mode: 0o600 })
+
+    const result = await readOrCreateToken(filePath)
+
+    expect(result.token).toMatch(HEX_TOKEN)
+    expect(result.token).not.toBe('bad-token')
+    expect(result.created).toBe(true)
+  })
 })

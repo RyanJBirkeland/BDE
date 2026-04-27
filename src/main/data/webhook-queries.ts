@@ -11,31 +11,36 @@ import type { WebhookConfig } from '../../shared/types/webhook'
 const log = createLogger('webhook-queries')
 
 /**
- * Encrypts the HMAC secret at rest when platform encryption is available.
- * Falls through to plaintext if safeStorage is unavailable (keychain locked,
- * or a rare dev environment) — an explicit warning fires so an operator can
- * tell the difference. Reads use `decryptSetting`, which transparently
- * handles both ENC: and plaintext forms so legacy rows keep working.
+ * Thrown when a caller attempts to store a webhook secret but the platform
+ * encryption layer (`safeStorage`) is unavailable. Storing the secret in
+ * cleartext would be a security regression — callers must surface this to
+ * the user rather than silently persisting unencrypted secrets.
+ */
+export class EncryptionUnavailableError extends Error {
+  constructor(message = 'Cannot store webhook secret: safeStorage encryption is unavailable on this host') {
+    super(message)
+    this.name = 'EncryptionUnavailableError'
+  }
+}
+
+/**
+ * Encrypts the HMAC secret at rest. Throws `EncryptionUnavailableError` when
+ * the platform encryption layer is unavailable — storing secrets in cleartext
+ * is not an acceptable fallback. Legacy rows that were stored in cleartext
+ * before this policy are still readable via `decryptSetting`, which
+ * transparently handles both ENC: and plaintext forms.
  */
 function encryptWebhookSecret(secret: string | null | undefined): string | null {
   if (secret == null) return null
-  try {
-    if (!isEncryptionAvailable()) {
-      log.warn('Storing webhook secret in cleartext: safeStorage is unavailable on this host')
-      return secret
-    }
-    return encryptSetting(secret)
-  } catch (err) {
-    log.warn(
-      `safeStorage.encrypt failed; falling back to cleartext: ${err instanceof Error ? err.message : String(err)}`
-    )
-    return secret
+  if (!isEncryptionAvailable()) {
+    throw new EncryptionUnavailableError()
   }
+  return encryptSetting(secret)
 }
 
 function decryptWebhookSecret(stored: string | null): string | null {
   if (stored == null) return null
-  return decryptSetting(stored)
+  return decryptSetting(stored) ?? null
 }
 
 /**

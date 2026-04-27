@@ -40,9 +40,12 @@ import {
   parseWebhookEvents,
   listWebhooks,
   createWebhook,
+  updateWebhook,
   getWebhookById,
-  getWebhooks
+  getWebhooks,
+  EncryptionUnavailableError
 } from '../webhook-queries'
+import * as secureStorage from '../../secure-storage'
 
 let db: Database.Database
 
@@ -185,6 +188,25 @@ describe('webhook-queries integration', () => {
       ).run()
       const fetched = getWebhookById('legacy-1', db)
       expect(fetched?.secret).toBe('plain-legacy')
+    })
+  })
+
+  describe('EncryptionUnavailableError', () => {
+    it('createWebhook throws EncryptionUnavailableError when safeStorage is unavailable', () => {
+      vi.spyOn(secureStorage, 'isEncryptionAvailable').mockReturnValueOnce(false)
+      expect(() =>
+        createWebhook({ url: 'https://example.com/hook', events: [], secret: 'my-secret' }, db)
+      ).toThrow(EncryptionUnavailableError)
+    })
+
+    it('updateWebhook throws EncryptionUnavailableError when secret is updated and safeStorage is unavailable', () => {
+      // First create a webhook without a secret (no encryption needed)
+      const webhook = createWebhook({ url: 'https://example.com/hook', events: [] }, db)
+
+      vi.spyOn(secureStorage, 'isEncryptionAvailable').mockReturnValueOnce(false)
+      expect(() =>
+        updateWebhook({ id: webhook.id, secret: 'new-secret' }, db)
+      ).toThrow(EncryptionUnavailableError)
     })
   })
 })
