@@ -87,7 +87,7 @@ export interface DrainLoopDeps {
   logger: Logger
   isShuttingDown: () => boolean
   isCircuitOpen: (now?: number) => boolean
-  activeAgents: Map<string, ActiveAgent>
+  activeAgents: ReadonlyMap<string, ActiveAgent>
   /** Returns the count of spawned agents not yet registered in activeAgents. */
   getPendingSpawns: () => number
   /** Returns true when a terminal event has fired since the last dep-index rebuild. */

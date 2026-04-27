@@ -17,7 +17,7 @@ import type {
   ListTasksOptions,
   UpdateTaskOptions
 } from '../data/sprint-task-repository'
-import type { SprintTask, SprintTaskCore, SprintTaskExecution, SprintTaskPR } from '../../shared/types'
+import type { SprintTask, SprintTaskPR } from '../../shared/types'
 import { STUCK_TASK_THRESHOLD_MS } from '../constants'
 
 export type {
@@ -82,11 +82,11 @@ export function createSprintMutations(repo: ISprintTaskRepository): SprintMutati
     getQueueStats: () => repo.getQueueStats(),
     getDoneTodayCount: () => repo.getDoneTodayCount(),
     listTasksWithOpenPrs: () => repo.listTasksWithOpenPrs(),
-    getHealthCheckTasks: () => repo.getHealthCheckTasks(),
+    getHealthCheckTasks: () => repo.getHealthCheckTasks() as SprintTask[],
     getSuccessRateBySpecType: () => repo.getSuccessRateBySpecType(),
     getDailySuccessRate: (days) => repo.getDailySuccessRate(days),
     createTask: (input) => repo.createTask(input),
-    claimTask: (id, claimedBy) => repo.claimTask(id, claimedBy),
+    claimTask: (id, claimedBy) => repo.claimTask(id, claimedBy) as Promise<SprintTask | null>,
     updateTask: (id, patch, options) => repo.updateTask(id, patch, options),
     forceUpdateTask: (id, patch) => repo.forceUpdateTask(id, patch),
     deleteTask: (id) => repo.deleteTask(id),
@@ -97,7 +97,7 @@ export function createSprintMutations(repo: ISprintTaskRepository): SprintMutati
     flagStuckTasks: () => flagStuckTasksUsing(repo),
     createReviewTaskFromAdhoc: (input) => repo.createReviewTaskFromAdhoc(input)
   }
-  return _bound
+  return _bound!
 }
 
 // ---------------------------------------------------------------------------

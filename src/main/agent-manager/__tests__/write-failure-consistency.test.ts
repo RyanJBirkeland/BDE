@@ -16,6 +16,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ActiveAgent } from '../types'
 import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
+import { SpawnRegistry } from '../spawn-registry'
 
 // ---------------------------------------------------------------------------
 // Module mocks (must come before imports that transitively use these modules)
@@ -184,7 +185,7 @@ describe('T-21 — claim-only fallback when status write is rejected', () => {
 
 describe('T-35 — watchdog does not call onTaskTerminal when DB write fails', () => {
   let agent: ActiveAgent
-  let activeAgents: Map<string, ActiveAgent>
+  let spawnRegistry: SpawnRegistry
   let onTaskTerminal: ReturnType<typeof vi.fn>
   let broadcastToRenderer: ReturnType<typeof vi.fn>
   let logger: ReturnType<typeof makeLogger>
@@ -193,7 +194,8 @@ describe('T-35 — watchdog does not call onTaskTerminal when DB write fails', (
   beforeEach(() => {
     vi.clearAllMocks()
     agent = makeAgent('t-35')
-    activeAgents = new Map([['t-35', agent]])
+    spawnRegistry = new SpawnRegistry()
+    spawnRegistry.registerAgent(agent)
     onTaskTerminal = vi.fn().mockResolvedValue(undefined)
     broadcastToRenderer = vi.fn()
     logger = makeLogger()
@@ -218,8 +220,7 @@ describe('T-35 — watchdog does not call onTaskTerminal when DB write fails', (
       repo,
       metrics: makeMetrics(),
       logger,
-      activeAgents,
-      processingTasks: new Set(),
+      spawnRegistry,
       getConcurrency: () => makeConcurrencyState(1, 2),
       setConcurrency: vi.fn(),
       onTaskTerminal,
@@ -242,8 +243,7 @@ describe('T-35 — watchdog does not call onTaskTerminal when DB write fails', (
       repo,
       metrics: makeMetrics(),
       logger,
-      activeAgents,
-      processingTasks: new Set(),
+      spawnRegistry,
       getConcurrency: () => makeConcurrencyState(1, 2),
       setConcurrency: vi.fn(),
       onTaskTerminal,

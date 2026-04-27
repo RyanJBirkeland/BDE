@@ -1,4 +1,4 @@
-import type { AgentManagerConfig, ActiveAgent, SteerResult } from './types'
+import type { AgentManagerConfig, SteerResult } from './types'
 import type { Logger } from '../logger'
 import type { SprintTask } from '../../shared/types/task-types'
 import type { TaskStatus } from '../../shared/task-state-machine'
@@ -38,6 +38,8 @@ import { ErrorRegistry } from './error-registry'
 import { createLogger } from '../logger'
 import { broadcast } from '../broadcast'
 import { sleep } from '../lib/async-utils'
+import { SpawnRegistry } from './spawn-registry'
+import { TerminalGuard } from './terminal-guard'
 
 const defaultLogger: Logger = createLogger('agent-manager')
 
@@ -108,17 +110,14 @@ import type { DependencyIndex } from '../services/dependency-service'
 
 export class AgentManagerImpl implements AgentManager {
   // ---- Lifecycle flags ----
-  // Fields prefixed with `_` are exposed for tests (private by convention,
-  // not keyword). Real privacy will land in T-2 once the class split removes
-  // the test-access need.
-  _running = false
-  _shuttingDown = false
+  private _running = false
+  private _shuttingDown = false
   /**
    * Guards against duplicate `start()` calls. A second call while the manager
    * is already started logs a WARN and returns immediately — no new timers are
    * created and no startup side-effects are repeated.
    */
-  _started = false
+  private _started = false
 
   // ---- Drain runtime ----
   /** The DrainLoop instance owns all mutable drain state (concurrency, failure counts, pause gate, dep fingerprints). */
@@ -129,7 +128,7 @@ export class AgentManagerImpl implements AgentManager {
   _depIndexDirty = false
   // Drain-tick-level error counter. Reset on any successful tick. Emits
   // `manager:warning` after 3 consecutive failures.
-  _consecutiveDrainErrors = 0
+  private _consecutiveDrainErrors = 0
 
   // Concurrency state is owned by _drainLoopInstance.
   // These accessors delegate for backward compat with test internals and watchdog deps.
@@ -137,13 +136,7 @@ export class AgentManagerImpl implements AgentManager {
   set _concurrency(state: ConcurrencyState) { this._drainLoopInstance.setConcurrency(state) }
 
   // ---- Spawn tracking ----
-  readonly _activeAgents = new Map<string, ActiveAgent>()
-  readonly _processingTasks = new Set<string>()
-  readonly _agentPromises = new Set<Promise<void>>()
-  // Counts agents fired via _spawnAgent but not yet present in _activeAgents.
-  // Drain loop reads this to avoid over-claiming slots during the async spawn
-  // window.
-  _pendingSpawns = 0
+  private readonly spawnRegistry = new SpawnRegistry()
 
   // ---- Dependency tracking ----
   readonly _depIndex: DependencyIndex
@@ -155,10 +148,7 @@ export class AgentManagerImpl implements AgentManager {
   readonly _circuitBreaker: CircuitBreaker
   readonly _wipTracker: WipTracker
   readonly _errorRegistry: ErrorRegistry
-  // Idempotency guard for handleTaskTerminal — maps taskId to the in-flight
-  // terminal promise. Duplicate callers receive the same promise; the entry is
-  // deleted in finally.
-  private readonly _terminalCalled = new Map<string, Promise<void>>()
+  private readonly terminalGuard = new TerminalGuard()
   // Set by onOAuthRefreshStart when message-consumer detects an auth error and
   // fires refreshOAuthTokenFromKeychain. Cleared in .finally(). Drain loop
   // awaits this before each spawn (awaitOAuthRefresh) so new agents don't start
@@ -193,7 +183,7 @@ export class AgentManagerImpl implements AgentManager {
     }
     this._circuitBreaker = new CircuitBreaker(logger, circuitObserver)
     this._errorRegistry = new ErrorRegistry(logger)
-    this._wipTracker = new WipTracker(() => this._activeAgents.size)
+    this._wipTracker = new WipTracker(() => this.spawnRegistry.activeAgentCount())
     this.unitOfWork = unitOfWork
 
     // Build the agent-manager TaskStateService.
@@ -210,7 +200,7 @@ export class AgentManagerImpl implements AgentManager {
 
     // Build runAgentDeps with bound onTaskTerminal and taskStateService
     this.runAgentDeps = {
-      activeAgents: this._activeAgents,
+      spawnRegistry: this.spawnRegistry,
       defaultModel: config.defaultModel,
       logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
@@ -249,8 +239,8 @@ export class AgentManagerImpl implements AgentManager {
       logger,
       isShuttingDown: () => this._shuttingDown,
       isCircuitOpen: (now?: number) => this._circuitBreaker.isOpen(now),
-      activeAgents: this._activeAgents,
-      getPendingSpawns: () => this._pendingSpawns,
+      activeAgents: this.spawnRegistry.asActiveAgentsMap(),
+      getPendingSpawns: () => this.spawnRegistry.pendingSpawnCount(),
       isDepIndexDirty: () => this._depIndexDirty,
       setDepIndexDirty: (dirty) => { this._depIndexDirty = dirty },
       processQueuedTask: (raw, map) => this._processQueuedTask(raw, map),
@@ -287,7 +277,7 @@ export class AgentManagerImpl implements AgentManager {
    * On repo error, logs a warning and returns an empty map so the drain loop
    * continues with a stale-but-safe state.
    *
-   * Exposed via _ prefix convention (not private keyword) for testability.
+   * Exposed to tests via `__testInternals.refreshDependencyIndex()`.
    */
   _refreshDependencyIndex(): Map<string, string> {
     // Delegate to the DrainLoop's dep-status map builder, which manages the
@@ -300,16 +290,18 @@ export class AgentManagerImpl implements AgentManager {
     // handleTaskTerminal is awaited will see the flag and do a full rebuild,
     // rather than reading a stale dependency index.
     this._depIndexDirty = true
-    await handleTaskTerminal(taskId, status, this.onTaskTerminal.bind(this), {
-      metrics: this._metrics,
-      depIndex: this._depIndex,
-      epicIndex: this._epicIndex,
-      repo: this.repo,
-      unitOfWork: this.unitOfWork,
-      config: this.config,
-      terminalCalled: this._terminalCalled,
-      logger: this.logger
-    })
+    return this.terminalGuard.guardedCall(taskId, () =>
+      handleTaskTerminal(taskId, status, this.onTaskTerminal.bind(this), {
+        metrics: this._metrics,
+        depIndex: this._depIndex,
+        epicIndex: this._epicIndex,
+        repo: this.repo,
+        unitOfWork: this.unitOfWork,
+        config: this.config,
+        terminalCalled: new Map(), // TerminalGuard owns outer dedup; fresh Map per call is safe
+        logger: this.logger
+      })
+    )
   }
 
   /**
@@ -326,17 +318,8 @@ export class AgentManagerImpl implements AgentManager {
     repoPath: string,
     tickId?: string
   ): Promise<void> {
-    this._metrics.increment('agentsSpawned')
-    this._pendingSpawns++
-    // Decrement exactly once: when the agent enters activeAgents (onAgentRegistered),
-    // or on early failure before registration (decrementPendingOnce in .finally).
-    let pendingDecremented = false
-    const decrementPendingOnce = (): void => {
-      if (!pendingDecremented) {
-        pendingDecremented = true
-        this._pendingSpawns = Math.max(0, this._pendingSpawns - 1)
-      }
-    }
+    const { decrementPendingOnce } = this.incrementSpawnAccounting()
+
     // Track whether the spawn phase reported an outcome via its callbacks so the
     // catch below can distinguish "spawn never attempted" (unexpected early error)
     // from "spawn failed and onSpawnFailure already counted it" vs "spawn
@@ -359,54 +342,82 @@ export class AgentManagerImpl implements AgentManager {
     const agentPromise = _runAgent(task, worktree, repoPath, spawnDeps)
       .catch((err) => {
         this.logger.error(`[agent-manager] runAgent failed for task ${task.id}: ${err}`)
-        // Only increment the circuit breaker when the spawn phase never reported an
-        // outcome — meaning an unexpected error fired before spawnAndWireAgent could
-        // call onSpawnSuccess or onSpawnFailure. Stream errors and post-spawn
-        // failures must NOT trip the circuit breaker (they indicate a task-level
-        // issue, not a systemic spawn infrastructure failure).
-        if (!spawnPhaseReported) {
-          this._circuitBreaker.recordFailure(task.id, String(err))
-        }
-        // Release the claim so the task does not remain stuck 'active'.
-        // validateTaskForRun and handleSpawnFailure already do this on their
-        // own code paths — this catch handles any remaining gap (e.g. an
-        // unexpected throw before either of those paths is reached).
-        // phase-a-bypass: last-resort safety net before spawn phase — using
-        // repo.updateTask directly avoids circular-service dependency and
-        // test-environment issues (TaskStateService uses module-level sprint-mutations,
-        // not the injected repo). See T-36 for the full fix path.
-        const errorNotes = String(err)
-        try {
-          this.repo.updateTask(task.id, { status: 'error', claimed_by: null, notes: errorNotes }) // phase-a-bypass: T-36
-        } catch (statusWriteErr) {
-          // The transition guard rejected the status write (e.g. another path already moved the
-          // task to a terminal state). Fall back to a claim-only patch so `claimed_by` is always
-          // cleared even when the status field cannot be written.
-          this.logger.warn(
-            `[agent-manager] Status write rejected for task ${task.id} — retrying with claim-only patch: ${statusWriteErr}`
-          )
-          try {
-            this.repo.updateTask(task.id, { claimed_by: null, notes: errorNotes })
-          } catch (claimReleaseErr) {
-            this.logger.error(
-              `[agent-manager] Failed to release claim for task ${task.id}: ${claimReleaseErr}`
-            )
-          }
-        }
+        this.recordCircuitBreakerFailure(task.id, err, spawnPhaseReported)
+        this.releaseClaimAsLastResort(task.id, err)
       })
       .finally(() => {
         decrementPendingOnce() // no-op if onAgentRegistered already fired
-        this._agentPromises.delete(agentPromise)
+        this.spawnRegistry.forgetPromise(agentPromise)
       })
-    this._agentPromises.add(agentPromise)
+    this.spawnRegistry.trackPromise(agentPromise)
     return Promise.resolve()
+  }
+
+  /**
+   * Increments spawn metrics and the pending-spawn counter.
+   * Returns a guard that decrements pending-spawns exactly once, used either
+   * when the agent registers (onAgentRegistered) or when the spawn errors early.
+   */
+  private incrementSpawnAccounting(): { decrementPendingOnce: () => void } {
+    this._metrics.increment('agentsSpawned')
+    this.spawnRegistry.incrementPendingSpawns()
+
+    let decremented = false
+    const decrementPendingOnce = (): void => {
+      if (!decremented) {
+        decremented = true
+        this.spawnRegistry.decrementPendingSpawns()
+      }
+    }
+    return { decrementPendingOnce }
+  }
+
+  /**
+   * Trips the circuit breaker only when the spawn phase never reported an
+   * outcome — meaning an unexpected error fired before spawnAndWireAgent
+   * could call onSpawnSuccess or onSpawnFailure.
+   */
+  private recordCircuitBreakerFailure(
+    taskId: string,
+    err: unknown,
+    spawnPhaseReported: boolean
+  ): void {
+    if (!spawnPhaseReported) {
+      this._circuitBreaker.recordFailure(taskId, String(err))
+    }
+  }
+
+  /**
+   * Last-resort claim release — attempts to write status='error', falls back
+   * to a claimed_by=null-only patch if the status write is rejected.
+   * Mirrors the phase-a-bypass pattern; see T-36 for the full fix path.
+   */
+  private releaseClaimAsLastResort(taskId: string, err: unknown): void {
+    const errorNotes = String(err)
+    try {
+      this.repo.updateTask(taskId, { status: 'error', claimed_by: null, notes: errorNotes }) // phase-a-bypass: T-36
+    } catch (statusWriteErr) {
+      // The transition guard rejected the status write (e.g. another path already moved the
+      // task to a terminal state). Fall back to a claim-only patch so `claimed_by` is always
+      // cleared even when the status field cannot be written.
+      this.logger.warn(
+        `[agent-manager] Status write rejected for task ${taskId} — retrying with claim-only patch: ${statusWriteErr}`
+      )
+      try {
+        this.repo.updateTask(taskId, { claimed_by: null, notes: errorNotes })
+      } catch (claimReleaseErr) {
+        this.logger.error(
+          `[agent-manager] Failed to release claim for task ${taskId}: ${claimReleaseErr}`
+        )
+      }
+    }
   }
 
   // ---- Task processing delegates ----
 
   /**
    * Validate and claim a task. Delegates to task-claimer.ts.
-   * Exposed via _ prefix for testability.
+   * Exposed to tests via `__testInternals`.
    */
   async _validateAndClaimTask(
     rawTask: SprintTask,
@@ -424,7 +435,7 @@ export class AgentManagerImpl implements AgentManager {
 
   /**
    * Prepare the git worktree for a task. Delegates to task-claimer.ts.
-   * Exposed via _ prefix for testability.
+   * Exposed to tests via `__testInternals`.
    */
   async _prepareWorktreeForTask(
     task: MappedTask,
@@ -442,7 +453,7 @@ export class AgentManagerImpl implements AgentManager {
 
   /**
    * Full pipeline for one queued task row. Delegates to task-claimer.ts.
-   * Exposed via _ prefix for testability.
+   * Exposed to tests via `__testInternals`.
    */
   async _processQueuedTask(
     rawTask: SprintTask,
@@ -456,8 +467,7 @@ export class AgentManagerImpl implements AgentManager {
       logger: this.logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
       taskStateService: this._taskStateService,
-      processingTasks: this._processingTasks,
-      activeAgents: this._activeAgents,
+      spawnRegistry: this.spawnRegistry,
       spawnAgent: (task, wt, repoPath) => this._spawnAgent(task, wt, repoPath, tickId),
       recentlyProcessedTaskIds: this._drainLoopInstance.recentlyProcessedTaskIds
     })
@@ -467,13 +477,13 @@ export class AgentManagerImpl implements AgentManager {
 
   /**
    * Fetch queued tasks and process each one. Delegates to drain-loop.ts.
-   * Exposed via _ prefix for testability.
+   * Exposed to tests via `__testInternals`.
    */
   async _drainQueuedTasks(available: number, taskStatusMap: Map<string, string>): Promise<void> {
     const queued = this.repo.getQueuedTasks(available)
     for (const rawTask of queued) {
       if (this._shuttingDown) break
-      if (availableSlots(this._concurrency, this._activeAgents.size + this._pendingSpawns) <= 0) {
+      if (availableSlots(this._concurrency, this.spawnRegistry.activeAgentCount() + this.spawnRegistry.pendingSpawnCount()) <= 0) {
         this.logger.info('[agent-manager] No slots available — stopping drain iteration')
         break
       }
@@ -497,7 +507,7 @@ export class AgentManagerImpl implements AgentManager {
 
   /**
    * Execute one watchdog tick. Delegates to watchdog-loop.ts.
-   * Exposed via _ prefix for testability.
+   * Exposed to tests via `__testInternals`.
    */
   async _watchdogLoop(): Promise<void> {
     const watchdogDeps: WatchdogLoopDeps = {
@@ -505,8 +515,7 @@ export class AgentManagerImpl implements AgentManager {
       repo: this.repo,
       metrics: this._metrics,
       logger: this.logger,
-      activeAgents: this._activeAgents,
-      processingTasks: this._processingTasks,
+      spawnRegistry: this.spawnRegistry,
       getConcurrency: () => this._drainLoopInstance.getConcurrency(),
       setConcurrency: (state) => {
         this._drainLoopInstance.setConcurrency(state)
@@ -533,7 +542,7 @@ export class AgentManagerImpl implements AgentManager {
   private async _orphanLoop(): Promise<void> {
     try {
       const result = await recoverOrphans(
-        (id: string) => this._activeAgents.has(id),
+        (id: string) => this.spawnRegistry.hasActiveAgent(id),
         this.repo,
         this.logger,
         this._taskStateService
@@ -552,7 +561,7 @@ export class AgentManagerImpl implements AgentManager {
         worktreeBase: this.config.worktreeBase,
         repo: this.repo,
         logger: this.logger,
-        isActiveAgent: (id) => this._activeAgents.has(id),
+        isActiveAgent: (id) => this.spawnRegistry.hasActiveAgent(id),
         isReviewTask: (id) => checkIsReviewTask(id, this.repo)
       })
     } catch (err) {
@@ -582,7 +591,6 @@ export class AgentManagerImpl implements AgentManager {
     this._running = true
     this._shuttingDown = false
     this._concurrency = makeConcurrencyState(this.config.maxConcurrent)
-    this.kickOffOrphanRecovery()
     this.clearStaleClaims()
     this.initDependencyIndex()
     this.kickOffInitialWorktreePrune()
@@ -636,19 +644,6 @@ export class AgentManagerImpl implements AgentManager {
     }
   }
 
-  private kickOffOrphanRecovery(): void {
-    recoverOrphans(
-      (id: string) => this._activeAgents.has(id),
-      this.repo,
-      this.logger,
-      this._taskStateService
-    )
-      .then((result) => this._broadcastOrphanResultIfNonEmpty(result))
-      .catch((err) => {
-        this.logger.error(`[agent-manager] Initial orphan recovery error: ${err}`)
-      })
-  }
-
   // The epic graph is owned by EpicGroupService — this.repo does not rebuild it.
   private initDependencyIndex(): void {
     try {
@@ -667,7 +662,7 @@ export class AgentManagerImpl implements AgentManager {
   private kickOffInitialWorktreePrune(): void {
     pruneStaleWorktrees(
       this.config.worktreeBase,
-      (id: string) => this._activeAgents.has(id),
+      (id: string) => this.spawnRegistry.hasActiveAgent(id),
       this.logger,
       (id: string) => checkIsReviewTask(id, this.repo)
     ).catch((err) => {
@@ -706,7 +701,7 @@ export class AgentManagerImpl implements AgentManager {
       this._drainInFlight = (async () => {
         try {
           const result = await recoverOrphans(
-            (id: string) => this._activeAgents.has(id),
+            (id: string) => this.spawnRegistry.hasActiveAgent(id),
             this.repo,
             this.logger,
             this._taskStateService
@@ -733,7 +728,7 @@ export class AgentManagerImpl implements AgentManager {
    */
   async waitForAgentsToSettle(gracePeriodMs: number): Promise<void> {
     const deadline = Date.now() + gracePeriodMs
-    while (this._activeAgents.size > 0 && Date.now() < deadline) {
+    while (this.spawnRegistry.activeAgentCount() > 0 && Date.now() < deadline) {
       await sleep(100)
     }
   }
@@ -747,8 +742,7 @@ export class AgentManagerImpl implements AgentManager {
       {
         repo: this.repo,
         logger: this.logger,
-        activeAgents: this._activeAgents,
-        agentPromises: this._agentPromises,
+        spawnRegistry: this.spawnRegistry,
         drainInFlight: this._drainInFlight
       },
       timeoutMs
@@ -768,8 +762,8 @@ export class AgentManagerImpl implements AgentManager {
     return {
       running: this._running,
       shuttingDown: this._shuttingDown,
-      concurrency: { ...this._concurrency, activeCount: this._activeAgents.size },
-      activeAgents: [...this._activeAgents.values()].map((a) => ({
+      concurrency: { ...this._concurrency, activeCount: this.spawnRegistry.activeAgentCount() },
+      activeAgents: [...this.spawnRegistry.allAgents()].map((a) => ({
         taskId: a.taskId,
         agentRunId: a.agentRunId,
         model: a.model,
@@ -789,7 +783,7 @@ export class AgentManagerImpl implements AgentManager {
       return { delivered: false, error: 'Message exceeds 10KB limit' }
     }
 
-    const agent = this._activeAgents.get(taskId)
+    const agent = this.spawnRegistry.getAgent(taskId)
     if (!agent) return { delivered: false, error: 'Agent not found' }
     return agent.handle.steer(message)
   }
@@ -804,7 +798,7 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   killAgent(taskId: string): { killed: boolean; error?: string } {
-    const agent = this._activeAgents.get(taskId)
+    const agent = this.spawnRegistry.getAgent(taskId)
     if (!agent) {
       return { killed: false, error: `No active agent for task ${taskId}` }
     }

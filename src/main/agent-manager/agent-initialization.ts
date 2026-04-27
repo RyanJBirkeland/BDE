@@ -9,6 +9,7 @@ import type { ActiveAgent, AgentHandle } from './types'
 import type { Logger } from '../logger'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { AgentRunClaim } from './run-agent'
+import type { SpawnRegistry } from './spawn-registry'
 import { randomUUID } from 'node:crypto'
 import { createAgentRecord } from '../agent-history'
 import { emitAgentEvent } from '../agent-event-mapper'
@@ -34,7 +35,7 @@ export function initializeAgentTracking(
   effectiveModel: string,
   worktree: { worktreePath: string; branch: string },
   prompt: string,
-  activeAgents: Map<string, ActiveAgent>,
+  spawnRegistry: SpawnRegistry,
   repo: IAgentTaskRepository,
   logger: Logger
 ): { agent: ActiveAgent; agentRunId: string; turnTracker: TurnTracker } {
@@ -63,7 +64,7 @@ export function initializeAgentTracking(
     worktreePath: worktree.worktreePath,
     branch: worktree.branch
   }
-  activeAgents.set(task.id, agent)
+  spawnRegistry.registerAgent(agent)
   const turnTracker = new TurnTracker(agentRunId)
 
   // fire-and-forget: agent_run_id persistence is best-effort; the agent is already registered
