@@ -5,6 +5,7 @@
 import type {
   SprintTask,
   SprintTaskCore,
+  SprintTaskPatch,
   ClaimedTask,
   TaskTemplate,
   TaskGroup,
@@ -51,7 +52,7 @@ export interface SprintChannels {
     }
   }
   'sprint:update': {
-    args: [id: string, patch: Record<string, unknown>]
+    args: [id: string, patch: SprintTaskPatch]
     result: SprintTask | null
   }
   'sprint:delete': {

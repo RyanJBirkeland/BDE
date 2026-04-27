@@ -56,11 +56,13 @@ export function HealthCheckDrawer({
   const handleRescue = useCallback(async (task: SprintTask) => {
     setRescuing(task.id)
     try {
+      // System-managed fields (status, agent_run_id, claimed_by) are outside the
+      // public SprintTaskPatch surface but are accepted by UPDATE_ALLOWLIST at runtime.
       await window.api.sprint.update(task.id, {
         status: TASK_STATUS.QUEUED,
         agent_run_id: null,
         claimed_by: null
-      })
+      } as Parameters<typeof window.api.sprint.update>[1])
       toast.success(`"${task.title}" reset to queued`)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to rescue task')

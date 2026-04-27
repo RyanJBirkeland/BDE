@@ -249,6 +249,5 @@ if (process.contextIsolated) {
     console.error('[preload] Failed to expose api to main world:', error)
   }
 } else {
-  // @ts-ignore (define in dts)
-  window.api = api
+  ;(window as unknown as { api: typeof api }).api = api
 }

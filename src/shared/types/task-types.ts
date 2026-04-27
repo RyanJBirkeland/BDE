@@ -309,6 +309,28 @@ export interface BatchResult {
   error?: string | undefined
 }
 
+/**
+ * Narrows the `sprint:update` patch argument to the fields an IPC caller may
+ * set. Mirrors `GENERAL_PATCH_FIELDS` but expressed as a type so channel
+ * definitions and call sites get static checking instead of a runtime filter.
+ */
+export type SprintTaskPatch = Partial<
+  Pick<
+    SprintTask,
+    | 'title'
+    | 'prompt'
+    | 'repo'
+    | 'spec'
+    | 'notes'
+    | 'priority'
+    | 'template_name'
+    | 'playground_enabled'
+    | 'max_runtime_ms'
+    | 'model'
+    | 'max_cost_usd'
+  >
+>
+
 // Field allowlist for general task updates
 export const GENERAL_PATCH_FIELDS = new Set([
   'title',

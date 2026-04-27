@@ -177,7 +177,8 @@ export function useSingleTaskReviewActions(): UseSingleTaskReviewActionsResult {
           attempt: priorEntries.length + 1
         }
       ]
-      await window.api.sprint.update(task.id, { revision_feedback: nextEntries })
+      // revision_feedback is an internal field outside SprintTaskPatch but accepted by UPDATE_ALLOWLIST at runtime.
+      await window.api.sprint.update(task.id, { revision_feedback: nextEntries } as Parameters<typeof window.api.sprint.update>[1])
       await window.api.review.requestRevision({
         taskId: task.id,
         feedback,

@@ -9,6 +9,7 @@ import type { SprintTask } from '../../shared/types'
 import type { WorkflowTemplate } from '../../shared/workflow-types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { validateDependencyGraph } from '../services/dependency-service'
+import { CreateTaskInputSchema, WorkflowTemplateSchema } from './sprint-ipc-schemas'
 import {
   generatePrompt,
   validateSpecPath,
@@ -66,30 +67,12 @@ function parseSprintCreateArgs(args: unknown[]): [CreateTaskInput] {
     throw new Error(`expected [task]; got ${args.length} args`)
   }
   const [task] = args
-  if (!isPlainObject(task)) {
-    throw new Error(`task must be a plain object; got ${describeValue(task)}`)
-  }
-  if (typeof task.title !== 'string' || task.title.trim() === '') {
-    throw new Error('task.title must be a non-empty string')
-  }
-  if (typeof task.repo !== 'string' || task.repo.trim() === '') {
-    throw new Error('task.repo must be a non-empty string')
-  }
-  return [task as unknown as CreateTaskInput]
+  return [CreateTaskInputSchema.parse(task) as CreateTaskInput]
 }
 
 export function parseCreateWorkflowArgs(args: unknown[]): [WorkflowTemplate] {
   const [template] = args
-  if (!isPlainObject(template)) {
-    throw new Error(`sprint:createWorkflow template must be a plain object; got ${describeValue(template)}`)
-  }
-  if (typeof template.name !== 'string' || template.name.trim() === '') {
-    throw new Error('sprint:createWorkflow template.name must be a non-empty string')
-  }
-  if (!Array.isArray(template.tasks)) {
-    throw new Error('sprint:createWorkflow template.tasks must be an array')
-  }
-  return [template as unknown as WorkflowTemplate]
+  return [WorkflowTemplateSchema.parse(template) as WorkflowTemplate]
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

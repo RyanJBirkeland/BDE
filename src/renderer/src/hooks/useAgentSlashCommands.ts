@@ -31,7 +31,8 @@ export function useAgentSlashCommands({
         case '/retry':
           if (selectedAgent.sprintTaskId) {
             try {
-              await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' })
+              // status is a system-managed field outside SprintTaskPatch but accepted by UPDATE_ALLOWLIST at runtime.
+              await window.api.sprint.update(selectedAgent.sprintTaskId, { status: 'queued' } as Parameters<typeof window.api.sprint.update>[1])
               toast.success('Task re-queued')
             } catch (err) {
               toast.error(`Retry failed: ${err instanceof Error ? err.message : 'Unknown error'}`)

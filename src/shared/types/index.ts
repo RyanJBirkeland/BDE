@@ -44,6 +44,7 @@ export type {
   SprintTaskSpec,
   SprintTaskExecution,
   SprintTaskPR,
+  SprintTaskPatch,
   ReviewDiffSnapshot,
   Sprint,
   TaskTemplate,

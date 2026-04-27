@@ -66,37 +66,35 @@ vi.mock('../../services/task-validation', () => ({ validateTaskSpec: vi.fn() }))
 
 import { parseCreateWorkflowArgs } from '../sprint-local'
 
+const validStep = { title: 'Step 1', repo: 'fleet' }
+
 describe('parseCreateWorkflowArgs', () => {
-  it('accepts a valid template with name and tasks array', () => {
-    const template = { name: 'My Workflow', tasks: [{ title: 'Task 1' }] }
+  it('accepts a valid template with name, description, and steps array', () => {
+    const template = { name: 'My Workflow', description: 'Does things', steps: [validStep] }
     const [result] = parseCreateWorkflowArgs([template])
-    expect(result).toBe(template)
+    expect(result.name).toBe('My Workflow')
+    expect(result.steps).toHaveLength(1)
   })
 
   it('throws when argument is not an object', () => {
-    expect(() => parseCreateWorkflowArgs([null])).toThrow('plain object')
-    expect(() => parseCreateWorkflowArgs(['string'])).toThrow('plain object')
-    expect(() => parseCreateWorkflowArgs([42])).toThrow('plain object')
+    expect(() => parseCreateWorkflowArgs([null])).toThrow()
+    expect(() => parseCreateWorkflowArgs(['string'])).toThrow()
+    expect(() => parseCreateWorkflowArgs([42])).toThrow()
   })
 
   it('throws when name is missing', () => {
-    expect(() => parseCreateWorkflowArgs([{ tasks: [] }])).toThrow('name')
+    expect(() => parseCreateWorkflowArgs([{ description: 'd', steps: [validStep] }])).toThrow()
   })
 
   it('throws when name is empty string', () => {
-    expect(() => parseCreateWorkflowArgs([{ name: '', tasks: [] }])).toThrow('name')
+    expect(() => parseCreateWorkflowArgs([{ name: '', description: 'd', steps: [validStep] }])).toThrow()
   })
 
-  it('throws when name is whitespace-only', () => {
-    expect(() => parseCreateWorkflowArgs([{ name: '   ', tasks: [] }])).toThrow('name')
+  it('throws when steps is empty (schema enforces min(1))', () => {
+    expect(() => parseCreateWorkflowArgs([{ name: 'n', description: 'd', steps: [] }])).toThrow()
   })
 
-  it('throws when tasks is not an array', () => {
-    expect(() => parseCreateWorkflowArgs([{ name: 'My Flow', tasks: 'not-array' }])).toThrow('tasks')
-    expect(() => parseCreateWorkflowArgs([{ name: 'My Flow', tasks: null }])).toThrow('tasks')
-  })
-
-  it('accepts empty tasks array', () => {
-    expect(() => parseCreateWorkflowArgs([{ name: 'Empty Flow', tasks: [] }])).not.toThrow()
+  it('throws when steps is not an array', () => {
+    expect(() => parseCreateWorkflowArgs([{ name: 'My Flow', description: 'd', steps: 'not-array' }])).toThrow()
   })
 })

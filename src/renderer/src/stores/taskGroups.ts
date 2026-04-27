@@ -304,8 +304,8 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
             status: 'backlog'
           })
           if (task) {
-            // Set spec_type via update since create doesn't support it
-            await updateTask(task.id, { spec_type: taskStub.spec_type })
+            // spec_type is an internal field outside SprintTaskPatch but accepted by UPDATE_ALLOWLIST at runtime.
+            await updateTask(task.id, { spec_type: taskStub.spec_type } as Parameters<typeof window.api.sprint.update>[1])
             await addTask(task.id, newGroup.id)
           }
         } catch (taskError) {

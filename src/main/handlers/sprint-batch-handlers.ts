@@ -13,19 +13,11 @@ import type { TaskStatus } from '../../shared/task-state-machine'
 import type { BatchImportTask } from '../../shared/types'
 import { getSettingJson } from '../settings'
 import { validateAndFilterPatch } from '../lib/patch-validation'
+import { BatchImportTaskSchema } from './sprint-ipc-schemas'
 
 export interface BatchHandlersDeps {
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
   repo?: ISprintTaskRepository
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  )
 }
 
 function parseBatchImportArgs(args: unknown[]): [BatchImportTask[]] {
@@ -36,18 +28,15 @@ function parseBatchImportArgs(args: unknown[]): [BatchImportTask[]] {
   if (!Array.isArray(tasks)) {
     throw new Error(`tasks must be an array; got ${typeof tasks}`)
   }
-  tasks.forEach((item, i) => {
-    if (!isPlainObject(item)) {
-      throw new Error(`tasks[${i}] must be a plain object`)
-    }
-    if (typeof item.title !== 'string' || (item.title as string).trim() === '') {
-      throw new Error(`tasks[${i}].title must be a non-empty string`)
-    }
-    if (typeof item.repo !== 'string' || (item.repo as string).trim() === '') {
-      throw new Error(`tasks[${i}].repo must be a non-empty string`)
-    }
-  })
-  return [tasks as unknown as BatchImportTask[]]
+  return [
+    tasks.map((item, i) => {
+      try {
+        return BatchImportTaskSchema.parse(item) as BatchImportTask
+      } catch (err) {
+        throw new Error(`tasks[${i}]: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    })
+  ]
 }
 
 export function registerSprintBatchHandlers(deps: BatchHandlersDeps): void {
