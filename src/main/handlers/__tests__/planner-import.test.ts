@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import type Database from 'better-sqlite3'
 import { parsePlanMarkdown, importPlanFile } from '../planner-import'
 import { getDb } from '../../db'
+import { createSprintMutations } from '../../services/sprint-mutations'
+import { createSprintTaskRepository } from '../../data/sprint-task-repository'
 
 // Mock Electron BrowserWindow
 vi.mock('electron', () => ({
@@ -18,6 +20,8 @@ describe('planner-import', () => {
 
   beforeEach(() => {
     db = getDb()
+    // Initialise the sprint-mutations factory so createTask calls reach the DB.
+    createSprintMutations(createSprintTaskRepository())
     // Clean up test data
     // Delete tasks, then nullify group_id references, then delete groups
     db.prepare('DELETE FROM sprint_tasks WHERE title LIKE ?').run('Test:%')

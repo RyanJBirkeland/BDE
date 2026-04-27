@@ -1,8 +1,13 @@
 import { setSettingJson } from '../settings'
 import type { RepoConfig } from '../paths'
+import { createSprintTaskRepository } from '../data/sprint-task-repository'
+import { createSprintMutations } from '../services/sprint-mutations'
 
 /**
  * Seeds a test bde repo config so integration tests don't silently skip.
+ * Also initialises the sprint-mutations factory so calls to `getTask`,
+ * `createTask`, etc. work without a full composition-root bootstrap.
+ *
  * Call from beforeAll in integration test files.
  *
  * @param localPath - Path used as the repo's `localPath` in settings.
@@ -19,4 +24,5 @@ export function seedBdeRepo(localPath: string = process.cwd()): void {
       color: '#00ff88'
     }
   ])
+  createSprintMutations(createSprintTaskRepository())
 }

@@ -135,7 +135,7 @@ Format: `{type}: {description}`
 - Sprint task dependency management: `src/main/handlers/sprint-local.ts` (auto-blocking on create/transition)
 - Dependency resolution after completion: `src/main/lib/resolve-dependents.ts`
 - Shared sanitization: `src/shared/sanitize-depends-on.ts` (task deps), `src/shared/sanitize-epic-depends-on.ts` (epic deps, T-44). Apply on every hydration of `depends_on` JSON columns.
-- Agent auto-commit: `src/main/agent-manager/completion.ts` (uses `git add -A` to capture new files; `.gitignore` excludes node_modules etc.). Failure classification in `src/main/agent-manager/failure-classifier.ts`; auto-merge policy evaluation in `src/main/agent-manager/auto-merge-policy.ts`
+- Agent auto-commit: `src/main/agent-manager/completion.ts` (barrel re-export — implementation split across `success-pipeline.ts`, `pre-review-advisors.ts`, `verification-gate.ts`). Success pipeline phases: `success-pipeline.ts`. Pre-review advisory checks (untouched tests, unverified facts): `pre-review-advisors.ts`. Branch-tip verification + worktree verification gate: `verification-gate.ts`. Failure classification in `src/main/agent-manager/failure-classifier.ts`; auto-merge policy evaluation in `src/main/agent-manager/auto-merge-policy.ts`
 - Workbench operational checks: `src/main/services/operational-checks-service.ts` — `runOperationalChecks()` + individual check fns; `workbench:checkOperational` handler is a thin wrapper
 - Review path validators: `src/main/lib/review-paths.ts` — `validateGitRef`, `validateWorktreePath`, `validateFilePath`, `getWorktreeBase`; import from here, don't redefine inline
 - Auto-review service: `src/main/services/auto-review-service.ts` — rule evaluation for `review:checkAutoReview`; handler is a thin wrapper

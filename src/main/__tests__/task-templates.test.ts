@@ -32,6 +32,40 @@ vi.mock('electron', () => ({
   }
 }))
 
+// sprint-mutations is the factory-injected layer above sprint-queries.
+// This test initialises the DB directly, so we bypass the factory by making
+// sprint-mutations delegate to the mocked sprint-queries.
+vi.mock('../services/sprint-mutations', async () => {
+  const sq = await import('../data/sprint-queries')
+  return {
+    getTask: (id: string) => sq.getTask(id),
+    listTasks: (opts?: unknown) => sq.listTasks(opts as any),
+    listTasksRecent: () => sq.listTasksRecent(),
+    updateTask: (id: string, patch: Record<string, unknown>, opts?: unknown) =>
+      sq.updateTask(id, patch, opts as any),
+    forceUpdateTask: (id: string, patch: Record<string, unknown>) =>
+      sq.forceUpdateTask(id, patch),
+    createTask: (input: unknown) => sq.createTask(input as any),
+    deleteTask: (id: string) => sq.deleteTask(id),
+    claimTask: (id: string, claimedBy: string) => sq.claimTask(id, claimedBy),
+    releaseTask: (id: string, claimedBy: string) => sq.releaseTask(id, claimedBy),
+    getQueueStats: () => sq.getQueueStats(),
+    getDoneTodayCount: () => sq.getDoneTodayCount(),
+    listTasksWithOpenPrs: () => sq.listTasksWithOpenPrs(),
+    getHealthCheckTasks: () => sq.getHealthCheckTasks(),
+    getSuccessRateBySpecType: () => sq.getSuccessRateBySpecType(),
+    getDailySuccessRate: (days?: number) => sq.getDailySuccessRate(days),
+    markTaskDoneByPrNumber: (n: number) => sq.markTaskDoneByPrNumber(n),
+    markTaskCancelledByPrNumber: (n: number) => sq.markTaskCancelledByPrNumber(n),
+    updateTaskMergeableState: (n: number, s: string | null) =>
+      sq.updateTaskMergeableState(n, s),
+    flagStuckTasks: () => sq.flagStuckTasks(),
+    createReviewTaskFromAdhoc: (input: unknown) =>
+      sq.createReviewTaskFromAdhoc(input as any),
+    createSprintMutations: vi.fn()
+  }
+})
+
 vi.mock('../data/sprint-queries', () => ({
   getTask: vi.fn((id: string) => {
     const row = db.prepare('SELECT * FROM sprint_tasks WHERE id = ?').get(id) as

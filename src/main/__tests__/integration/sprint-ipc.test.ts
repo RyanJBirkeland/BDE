@@ -27,6 +27,33 @@ const mockListTasksWithOpenPrs = vi.fn()
 const mockUpdateTaskMergeableState = vi.fn()
 const mockGetHealthCheckTasks = vi.fn()
 
+// sprint-mutations wraps sprint-queries via the factory pattern (T-133).
+// Bypass the factory initialisation guard by delegating directly to the
+// sprint-queries mocks that this test already owns.
+vi.mock('../../services/sprint-mutations', () => ({
+  getTask: (...args: unknown[]) => mockGetTask(...args),
+  listTasks: (...args: unknown[]) => mockListTasks(...args),
+  listTasksRecent: (...args: unknown[]) => mockListTasksRecent(...args),
+  createTask: (...args: unknown[]) => mockCreateTask(...args),
+  updateTask: (...args: unknown[]) => mockUpdateTask(...args),
+  forceUpdateTask: vi.fn(),
+  deleteTask: (...args: unknown[]) => mockDeleteTask(...args),
+  claimTask: (...args: unknown[]) => mockClaimTask(...args),
+  releaseTask: (...args: unknown[]) => mockReleaseTask(...args),
+  getQueueStats: (...args: unknown[]) => mockGetQueueStats(...args),
+  getDoneTodayCount: (...args: unknown[]) => mockGetDoneTodayCount(...args),
+  markTaskDoneByPrNumber: (...args: unknown[]) => mockMarkTaskDoneByPrNumber(...args),
+  markTaskCancelledByPrNumber: (...args: unknown[]) => mockMarkTaskCancelledByPrNumber(...args),
+  listTasksWithOpenPrs: (...args: unknown[]) => mockListTasksWithOpenPrs(...args),
+  updateTaskMergeableState: (...args: unknown[]) => mockUpdateTaskMergeableState(...args),
+  getHealthCheckTasks: (...args: unknown[]) => mockGetHealthCheckTasks(...args),
+  flagStuckTasks: vi.fn(),
+  createReviewTaskFromAdhoc: vi.fn(),
+  getSuccessRateBySpecType: vi.fn(),
+  getDailySuccessRate: vi.fn(),
+  createSprintMutations: vi.fn()
+}))
+
 vi.mock('../../data/sprint-queries', () => ({
   listTasks: (...args: unknown[]) => mockListTasks(...args),
   listTasksRecent: (...args: unknown[]) => mockListTasksRecent(...args),
@@ -367,10 +394,10 @@ describe('Sprint IPC handlers — integration', () => {
       })
 
       expect(result).toEqual(updated)
+      // sprint-mutations re-exports updateTask without an explicit undefined third arg
       expect(mockUpdateTask).toHaveBeenCalledWith(
         'task-001',
-        expect.objectContaining({ title: 'Updated title', notes: 'New notes' }),
-        undefined
+        expect.objectContaining({ title: 'Updated title', notes: 'New notes' })
       )
     })
   })

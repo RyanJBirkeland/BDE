@@ -97,7 +97,7 @@ describe('optimisticUpdateManager', () => {
       const now = Date.now()
       const updates: PendingUpdates = {
         t1: { ts: now, fields: ['status'] },
-        t2: { ts: now - TTL_MS, fields: ['priority'] }
+        t2: { ts: now - TTL_MS + 500, fields: ['priority'] }
       }
 
       const result = expirePendingUpdates(updates, TTL_MS)

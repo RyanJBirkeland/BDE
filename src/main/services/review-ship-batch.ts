@@ -19,8 +19,23 @@ import type { GitOpDescriptor } from './review-action-policy'
 import { executeReviewAction } from './review-action-executor'
 import { getTask, notifySprintMutation } from './sprint-service'
 import { getErrorMessage } from '../../shared/errors'
-import { getSharedSprintTaskRepository } from '../data/sprint-task-repository'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { type RepoConfig, getRepoConfig } from '../paths'
+
+/**
+ * Injected repository instance — set once at startup by the composition root
+ * via `setShipBatchRepo(repo)`. All call sites use `getRepo()`.
+ */
+let _repo: ISprintTaskRepository | null = null
+
+export function setShipBatchRepo(repo: ISprintTaskRepository): void {
+  _repo = repo
+}
+
+function getRepo(): ISprintTaskRepository {
+  if (!_repo) throw new Error('[review-ship-batch] Repository not initialised — call setShipBatchRepo(repo) before use')
+  return _repo
+}
 import type { ShipBatchInput, ShipBatchResult } from './review-orchestration-types'
 import type { SprintTask } from '../../shared/types/task-types'
 
@@ -118,7 +133,7 @@ export async function shipBatch(input: ShipBatchInput): Promise<ShipBatchResult>
     try {
       const plan = buildShipPlanWithoutPush(task, repoConfig, strategy)
       await executeReviewAction(plan, task.id, {
-        repo: getSharedSprintTaskRepository(),
+        repo: getRepo(),
         broadcast: broadcastMutation,
         onStatusTerminal,
         env,

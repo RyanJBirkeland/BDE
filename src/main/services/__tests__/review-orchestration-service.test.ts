@@ -49,6 +49,8 @@ import * as reviewPr from '../review-pr-service'
 import * as sprintService from '../sprint-service'
 import * as postMergeDedup from '../../lib/post-merge-dedup'
 import * as gitOps from '../../lib/git-operations'
+import { setReviewOrchestrationRepo } from '../review-orchestration-service'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 
 const execFileMock = vi.mocked(execFile)
 
@@ -63,6 +65,16 @@ describe('review-orchestration-service', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // Initialise the repo singleton introduced by T-133 so module-level getRepo()
+    // calls don't throw. The test mocks sprint-service, so a minimal stub suffices.
+    const mockRepo = {
+      getTask: vi.fn(),
+      updateTask: vi.fn(),
+      forceUpdateTask: vi.fn(),
+      listTasks: vi.fn(),
+    } as unknown as ISprintTaskRepository
+    setReviewOrchestrationRepo(mockRepo)
 
     // Default mock for getSettingJson (returns repo config)
     vi.mocked(getSettingJson).mockReturnValue([{ name: 'bde', localPath: '/repo/bde' }])

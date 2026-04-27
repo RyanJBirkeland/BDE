@@ -101,6 +101,35 @@ vi.mock('../../logger', () => ({
   }))
 }))
 
+// sprint-mutations is the factory-injected layer (T-133). Bypass the factory
+// guard so tests that mock sprint-queries work without calling createSprintMutations.
+vi.mock('../../services/sprint-mutations', async () => {
+  const sq = await import('../../data/sprint-queries')
+  return {
+    getTask: (...a: unknown[]) => (sq.getTask as Function)(...a),
+    updateTask: (...a: unknown[]) => (sq.updateTask as Function)(...a),
+    forceUpdateTask: (...a: unknown[]) => (sq.forceUpdateTask as Function)(...a),
+    listTasks: (...a: unknown[]) => (sq.listTasks as Function)(...a),
+    listTasksRecent: (...a: unknown[]) => (sq.listTasksRecent as Function)(...a),
+    createTask: (...a: unknown[]) => (sq.createTask as Function)(...a),
+    deleteTask: (...a: unknown[]) => (sq.deleteTask as Function)(...a),
+    claimTask: (...a: unknown[]) => (sq.claimTask as Function)(...a),
+    releaseTask: (...a: unknown[]) => (sq.releaseTask as Function)(...a),
+    getQueueStats: (...a: unknown[]) => (sq.getQueueStats as Function)(...a),
+    getDoneTodayCount: (...a: unknown[]) => (sq.getDoneTodayCount as Function)(...a),
+    listTasksWithOpenPrs: (...a: unknown[]) => (sq.listTasksWithOpenPrs as Function)(...a),
+    getHealthCheckTasks: (...a: unknown[]) => (sq.getHealthCheckTasks as Function)(...a),
+    getSuccessRateBySpecType: (...a: unknown[]) => (sq.getSuccessRateBySpecType as Function)(...a),
+    getDailySuccessRate: (...a: unknown[]) => (sq.getDailySuccessRate as Function)(...a),
+    markTaskDoneByPrNumber: (...a: unknown[]) => (sq.markTaskDoneByPrNumber as Function)(...a),
+    markTaskCancelledByPrNumber: (...a: unknown[]) => (sq.markTaskCancelledByPrNumber as Function)(...a),
+    updateTaskMergeableState: (...a: unknown[]) => (sq.updateTaskMergeableState as Function)(...a),
+    flagStuckTasks: (...a: unknown[]) => (sq.flagStuckTasks as Function)(...a),
+    createReviewTaskFromAdhoc: (...a: unknown[]) => (sq.createReviewTaskFromAdhoc as Function)(...a),
+    createSprintMutations: vi.fn()
+  }
+})
+
 vi.mock('../../data/sprint-queries', () => ({
   getTask: vi.fn(),
   updateTask: vi.fn(),
@@ -160,6 +189,12 @@ import { homedir } from 'os'
 import { registerReviewHandlers } from '../review'
 import { safeHandle } from '../../ipc-utils'
 import { nowIso } from '../../../shared/time'
+import { setReviewOrchestrationRepo } from '../../services/review-orchestration-service'
+import {
+  getTask as _getTask,
+  updateTask as _updateTask
+} from '../../data/sprint-queries'
+import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
 
 describe('Review handlers', () => {
   beforeEach(() => {
@@ -172,6 +207,14 @@ describe('Review handlers', () => {
     // Default to "worktree exists" — individual tests override via
     // mockExistsSync.mockReturnValueOnce(false) to simulate cleanup.
     mockExistsSync.mockReturnValue(true)
+    // Initialise the review-orchestration-service repo singleton introduced by T-133.
+    const mockRepo = {
+      getTask: (...a: unknown[]) => (_getTask as Function)(...a),
+      updateTask: (...a: unknown[]) => (_updateTask as Function)(...a),
+      forceUpdateTask: vi.fn(),
+      listTasks: vi.fn(),
+    } as unknown as ISprintTaskRepository
+    setReviewOrchestrationRepo(mockRepo)
   })
 
   it('registers all 13 review channels', () => {
@@ -369,8 +412,7 @@ describe('Review handlers', () => {
         expect.objectContaining({
           agent_run_id: null,
           status: 'queued'
-        }),
-        undefined
+        })
       )
     })
 
@@ -411,7 +453,7 @@ describe('Review handlers', () => {
       })
 
       // Verify agent_run_id is NOT in the patch (keeps existing value)
-      expect(updateTask).toHaveBeenCalledWith('task-1', expect.any(Object), undefined)
+      expect(updateTask).toHaveBeenCalledWith('task-1', expect.any(Object))
       const patchArg = vi.mocked(updateTask).mock.calls[0][1]
       expect(patchArg).not.toHaveProperty('agent_run_id')
     })
@@ -456,8 +498,7 @@ describe('Review handlers', () => {
         'task-1',
         expect.objectContaining({
           spec: '## Original Spec\n\nSome content\n\n## Revision Feedback\n\nPlease add more tests'
-        }),
-        undefined
+        })
       )
     })
 
@@ -513,8 +554,7 @@ describe('Review handlers', () => {
           status: 'done',
           completed_at: expect.any(String),
           worktree_path: null
-        }),
-        undefined
+        })
       )
 
       // Verify onStatusTerminal callback fired for dependency resolution

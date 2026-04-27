@@ -10,7 +10,7 @@ import { tryEmitPlaygroundEvent } from '../playground-handler'
 import { cleanupWorktree } from '../worktree'
 import type { AgentRunClaim, RunAgentDeps } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
-import type { ActiveAgent } from '../types'
+import { SpawnRegistry } from '../spawn-registry'
 
 // ---------------------------------------------------------------------------
 // Mock external dependencies
@@ -159,7 +159,7 @@ describe('runAgent — playground prompt injection', () => {
   }
 
   const createDeps = (): RunAgentDeps => ({
-    activeAgents: new Map<string, ActiveAgent>(),
+    spawnRegistry: new SpawnRegistry(),
     defaultModel: 'claude-sonnet-4-20250514',
     logger: {
       info: vi.fn(),
@@ -386,7 +386,7 @@ describe('runAgent — playground-before-cleanup ordering', () => {
   }
 
   const createDeps = (): RunAgentDeps => ({
-    activeAgents: new Map<string, ActiveAgent>(),
+    spawnRegistry: new SpawnRegistry(),
     defaultModel: 'claude-sonnet-4-20250514',
     logger: {
       info: vi.fn(),

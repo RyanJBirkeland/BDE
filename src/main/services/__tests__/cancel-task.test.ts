@@ -5,6 +5,32 @@ vi.mock('../../lib/async-utils', () => ({
   sleep: vi.fn().mockResolvedValue(undefined)
 }))
 
+// sprint-mutations is the factory-injected layer (T-133). Stub it so
+// cancelTask's getTask() fallback in the error path does not throw.
+vi.mock('../sprint-mutations', () => ({
+  getTask: vi.fn().mockReturnValue(null),
+  updateTask: vi.fn(),
+  forceUpdateTask: vi.fn(),
+  listTasks: vi.fn(),
+  listTasksRecent: vi.fn(),
+  createTask: vi.fn(),
+  deleteTask: vi.fn(),
+  claimTask: vi.fn(),
+  releaseTask: vi.fn(),
+  getQueueStats: vi.fn(),
+  getDoneTodayCount: vi.fn(),
+  listTasksWithOpenPrs: vi.fn(),
+  getHealthCheckTasks: vi.fn(),
+  getSuccessRateBySpecType: vi.fn(),
+  getDailySuccessRate: vi.fn(),
+  markTaskDoneByPrNumber: vi.fn(),
+  markTaskCancelledByPrNumber: vi.fn(),
+  updateTaskMergeableState: vi.fn(),
+  flagStuckTasks: vi.fn(),
+  createReviewTaskFromAdhoc: vi.fn(),
+  createSprintMutations: vi.fn()
+}))
+
 const fakeLogger = {
   info: vi.fn(),
   warn: vi.fn(),

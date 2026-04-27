@@ -21,6 +21,35 @@ vi.mock('node:child_process', () => ({
   ) => mockExecFile(cmd, args, opts, cb)
 }))
 
+// sprint-mutations is the factory-injected layer (T-133). Bypass the factory
+// guard by delegating to the sprint-queries mock below.
+vi.mock('../../services/sprint-mutations', async () => {
+  const sq = await import('../../data/sprint-queries')
+  return {
+    getTask: (...a: unknown[]) => (sq.getTask as Function)(...a),
+    updateTask: (...a: unknown[]) => (sq.updateTask as Function)(...a),
+    forceUpdateTask: (...a: unknown[]) => (sq.forceUpdateTask as Function)(...a),
+    listTasks: (...a: unknown[]) => (sq.listTasks as Function)(...a),
+    listTasksRecent: (...a: unknown[]) => (sq.listTasksRecent as Function)(...a),
+    createTask: (...a: unknown[]) => (sq.createTask as Function)(...a),
+    deleteTask: (...a: unknown[]) => (sq.deleteTask as Function)(...a),
+    claimTask: (...a: unknown[]) => (sq.claimTask as Function)(...a),
+    releaseTask: (...a: unknown[]) => (sq.releaseTask as Function)(...a),
+    getQueueStats: (...a: unknown[]) => (sq.getQueueStats as Function)(...a),
+    getDoneTodayCount: (...a: unknown[]) => (sq.getDoneTodayCount as Function)(...a),
+    listTasksWithOpenPrs: (...a: unknown[]) => (sq.listTasksWithOpenPrs as Function)(...a),
+    getHealthCheckTasks: (...a: unknown[]) => (sq.getHealthCheckTasks as Function)(...a),
+    getSuccessRateBySpecType: (...a: unknown[]) => (sq.getSuccessRateBySpecType as Function)(...a),
+    getDailySuccessRate: (...a: unknown[]) => (sq.getDailySuccessRate as Function)(...a),
+    markTaskDoneByPrNumber: (...a: unknown[]) => (sq.markTaskDoneByPrNumber as Function)(...a),
+    markTaskCancelledByPrNumber: (...a: unknown[]) => (sq.markTaskCancelledByPrNumber as Function)(...a),
+    updateTaskMergeableState: (...a: unknown[]) => (sq.updateTaskMergeableState as Function)(...a),
+    flagStuckTasks: (...a: unknown[]) => (sq.flagStuckTasks as Function)(...a),
+    createReviewTaskFromAdhoc: (...a: unknown[]) => (sq.createReviewTaskFromAdhoc as Function)(...a),
+    createSprintMutations: vi.fn()
+  }
+})
+
 vi.mock('../../data/sprint-queries', () => ({
   getTask: vi.fn(),
   updateTask: vi.fn(),

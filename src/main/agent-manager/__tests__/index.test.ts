@@ -299,18 +299,28 @@ describe('createAgentManager', () => {
 
   describe('start()', () => {
     it('sets running = true and runs orphan recovery + prune', async () => {
-      const logger = makeLogger()
-      const mgr = createAgentManager(baseConfig, mockRepo, logger)
+      vi.useFakeTimers()
+      try {
+        const logger = makeLogger()
+        setupDefaultMocks()
+        const mgr = createAgentManager(baseConfig, mockRepo, logger)
 
-      mgr.start()
+        mgr.start()
 
-      expect(mgr.getStatus().running).toBe(true)
-      expect(mgr.getStatus().shuttingDown).toBe(false)
-      expect(vi.mocked(recoverOrphans)).toHaveBeenCalled()
-      expect(vi.mocked(pruneStaleWorktrees)).toHaveBeenCalled()
+        expect(mgr.getStatus().running).toBe(true)
+        expect(mgr.getStatus().shuttingDown).toBe(false)
 
-      await mgr.stop(100)
-      await flush()
+        // Orphan recovery is serialized into _scheduleInitialDrain — advance past the defer window
+        await vi.advanceTimersByTimeAsync(6_000)
+        for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+
+        expect(vi.mocked(recoverOrphans)).toHaveBeenCalled()
+        expect(vi.mocked(pruneStaleWorktrees)).toHaveBeenCalled()
+
+        mgr.stop(0).catch(() => {})
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('is idempotent — calling start() twice does not create duplicate loops', async () => {
@@ -990,12 +1000,12 @@ describe('createAgentManager', () => {
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
 
-      // Manually put an agent into the active map to simulate an in-flight agent
+      // Manually register an agent to simulate an in-flight agent
       const fakeAgent = { taskId: 'task-settle', agentRunId: 'r1' } as import('../types').ActiveAgent
-      mgr._activeAgents.set('task-settle', fakeAgent)
+      mgr.__testInternals.spawnRegistry.registerAgent(fakeAgent)
 
       // Remove the agent after 150ms (within the 1000ms grace period)
-      setTimeout(() => mgr._activeAgents.delete('task-settle'), 150)
+      setTimeout(() => mgr.__testInternals.spawnRegistry.removeAgent('task-settle'), 150)
 
       const start = Date.now()
       await mgr.waitForAgentsToSettle(1_000)
@@ -1003,16 +1013,16 @@ describe('createAgentManager', () => {
 
       // Should have settled in well under the full grace period
       expect(elapsed).toBeLessThan(800)
-      expect(mgr._activeAgents.size).toBe(0)
+      expect(mgr.__testInternals.spawnRegistry.activeAgentCount()).toBe(0)
     })
 
     it('returns after grace period even when agents remain active', async () => {
       const logger = makeLogger()
       const mgr = createAgentManager(baseConfig, mockRepo, logger) as import('../index').AgentManagerImpl
 
-      // Put an agent in the active map that never leaves
+      // Register an agent that never leaves
       const fakeAgent = { taskId: 'task-stuck', agentRunId: 'r1' } as import('../types').ActiveAgent
-      mgr._activeAgents.set('task-stuck', fakeAgent)
+      mgr.__testInternals.spawnRegistry.registerAgent(fakeAgent)
 
       const start = Date.now()
       await mgr.waitForAgentsToSettle(200) // short grace period
@@ -1021,7 +1031,7 @@ describe('createAgentManager', () => {
       // Returned after grace period even though agent remains
       expect(elapsed).toBeGreaterThanOrEqual(200)
       // Clean up
-      mgr._activeAgents.delete('task-stuck')
+      mgr.__testInternals.spawnRegistry.removeAgent('task-stuck')
     })
   })
 
@@ -1244,11 +1254,9 @@ describe('createAgentManager', () => {
       // Start first call without awaiting
       const p1 = mgr.onTaskTerminal('task-1', 'done')
 
-      // Second call while first is in-flight should be a no-op
+      // Second call while first is in-flight — TerminalGuard silently returns
+      // the in-flight promise without invoking the handler a second time.
       const p2 = mgr.onTaskTerminal('task-1', 'done')
-      expect(logger.warn).toHaveBeenCalledWith(
-        '[agent-manager] onTaskTerminal duplicate for task-1 — returning in-flight promise'
-      )
 
       resolveFirst()
       await Promise.all([p1, p2])
@@ -1384,17 +1392,22 @@ describe('createAgentManager', () => {
 
   describe('start() error handlers', () => {
     it('logs error when initial orphan recovery fails', async () => {
-      const logger = makeLogger()
-      setupDefaultMocks()
-      vi.mocked(recoverOrphans).mockRejectedValueOnce(new Error('orphan error'))
-      const mgr = createAgentManager(baseConfig, mockRepo, logger)
-      mgr.start()
-      await flush(20)
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Initial orphan recovery error')
-      )
-      await mgr.stop(100)
-      await flush()
+      vi.useFakeTimers()
+      try {
+        const logger = makeLogger()
+        setupDefaultMocks()
+        vi.mocked(recoverOrphans).mockRejectedValueOnce(new Error('orphan error'))
+        const mgr = createAgentManager(baseConfig, mockRepo, logger)
+        mgr.start()
+        await vi.advanceTimersByTimeAsync(6_000)
+        for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(1)
+        expect(logger.error).toHaveBeenCalledWith(
+          expect.stringContaining('Orphan recovery before initial drain error')
+        )
+        mgr.stop(0).catch(() => {})
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('logs error when initial worktree prune fails', async () => {
@@ -1576,9 +1589,7 @@ describe('createAgentManager', () => {
 
     it('triggers defaultLogger.warn and .error paths when operations fail', async () => {
       setupDefaultMocks()
-      // Make initial orphan recovery reject to trigger error logging
-      vi.mocked(recoverOrphans).mockRejectedValueOnce(new Error('test orphan error'))
-      // Make initial prune reject to trigger error logging
+      // Make initial prune reject to trigger error logging (orphan recovery is delayed 5s — tested separately)
       vi.mocked(pruneStaleWorktrees).mockRejectedValueOnce(new Error('test prune error'))
       const mgr = createAgentManager(baseConfig, mockRepo)
       mgr.start()

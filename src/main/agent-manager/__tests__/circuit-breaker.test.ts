@@ -30,7 +30,7 @@ vi.mock('../../paths', () => ({
 }))
 
 import { AgentManagerImpl } from '../index'
-import { CircuitBreaker, SPAWN_CIRCUIT_FAILURE_THRESHOLD, SPAWN_CIRCUIT_PAUSE_MS } from '../circuit-breaker'
+import { CircuitBreaker, SPAWN_CIRCUIT_FAILURE_THRESHOLD, SPAWN_CIRCUIT_PAUSE_MS, type CircuitObserver } from '../circuit-breaker'
 import type { AgentManagerConfig } from '../types'
 import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
@@ -218,10 +218,11 @@ describe('spawn-phase circuit breaker scope (EP-5 T-55)', () => {
     )
   })
 
-  it('calls injected onCircuitOpen when breaker trips', () => {
+  it('calls injected CircuitObserver.onCircuitOpen when breaker trips', () => {
     const logger = makeLogger()
     const onCircuitOpen = vi.fn()
-    const breaker = new CircuitBreaker(logger, onCircuitOpen)
+    const observer: CircuitObserver = { onCircuitOpen }
+    const breaker = new CircuitBreaker(logger, observer)
     for (let i = 0; i < SPAWN_CIRCUIT_FAILURE_THRESHOLD; i++) {
       breaker.recordFailure('task-x', 'spawn error')
     }
@@ -231,7 +232,7 @@ describe('spawn-phase circuit breaker scope (EP-5 T-55)', () => {
     )
   })
 
-  it('does not throw when onCircuitOpen is absent', () => {
+  it('does not throw when observer is absent', () => {
     const logger = makeLogger()
     const breaker = new CircuitBreaker(logger)
     expect(() => {

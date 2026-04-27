@@ -38,6 +38,35 @@ vi.mock('../../logger', () => ({
   }))
 }))
 
+// sprint-mutations is the factory-injected layer (T-133). Bypass the factory
+// guard by delegating to the sprint-queries mock below.
+vi.mock('../sprint-mutations', async () => {
+  const sq = await import('../../data/sprint-queries')
+  return {
+    getTask: (...a: unknown[]) => (sq.getTask as Function)(...a),
+    updateTask: (...a: unknown[]) => (sq.updateTask as Function)(...a),
+    forceUpdateTask: (...a: unknown[]) => (sq.forceUpdateTask as Function)(...a),
+    listTasks: (...a: unknown[]) => (sq.listTasks as Function)(...a),
+    listTasksRecent: (...a: unknown[]) => (sq.listTasksRecent as Function)(...a),
+    createTask: (...a: unknown[]) => (sq.createTask as Function)(...a),
+    deleteTask: (...a: unknown[]) => (sq.deleteTask as Function)(...a),
+    claimTask: (...a: unknown[]) => (sq.claimTask as Function)(...a),
+    releaseTask: (...a: unknown[]) => (sq.releaseTask as Function)(...a),
+    getQueueStats: (...a: unknown[]) => (sq.getQueueStats as Function)(...a),
+    getDoneTodayCount: (...a: unknown[]) => (sq.getDoneTodayCount as Function)(...a),
+    listTasksWithOpenPrs: (...a: unknown[]) => (sq.listTasksWithOpenPrs as Function)(...a),
+    getHealthCheckTasks: (...a: unknown[]) => (sq.getHealthCheckTasks as Function)(...a),
+    getSuccessRateBySpecType: (...a: unknown[]) => (sq.getSuccessRateBySpecType as Function)(...a),
+    getDailySuccessRate: (...a: unknown[]) => (sq.getDailySuccessRate as Function)(...a),
+    markTaskDoneByPrNumber: (...a: unknown[]) => (sq.markTaskDoneByPrNumber as Function)(...a),
+    markTaskCancelledByPrNumber: (...a: unknown[]) => (sq.markTaskCancelledByPrNumber as Function)(...a),
+    updateTaskMergeableState: (...a: unknown[]) => (sq.updateTaskMergeableState as Function)(...a),
+    flagStuckTasks: (...a: unknown[]) => (sq.flagStuckTasks as Function)(...a),
+    createReviewTaskFromAdhoc: (...a: unknown[]) => (sq.createReviewTaskFromAdhoc as Function)(...a),
+    createSprintMutations: vi.fn()
+  }
+})
+
 // Mock sprint-queries (data layer)
 vi.mock('../../data/sprint-queries', () => ({
   UPDATE_ALLOWLIST: new Set(['title', 'status', 'prompt', 'spec', 'notes']),
@@ -51,6 +80,7 @@ vi.mock('../../data/sprint-queries', () => ({
   claimTask: vi.fn(),
   releaseTask: vi.fn(),
   getQueueStats: vi.fn(),
+  getDoneTodayCount: vi.fn(),
   markTaskDoneByPrNumber: vi.fn(),
   markTaskCancelledByPrNumber: vi.fn(),
   listTasksWithOpenPrs: vi.fn(),
@@ -107,7 +137,8 @@ import {
   getHealthCheckTasks as _getHealthCheckTasks
 } from '../../data/sprint-queries'
 
-import { getDoneTodayCount as _getDoneTodayCount } from '../../data/reporting-queries'
+// getDoneTodayCount now routes through sprint-mutations → sprint-queries (T-133)
+import { getDoneTodayCount as _getDoneTodayCount } from '../../data/sprint-queries'
 
 import { setSprintBroadcaster } from '../sprint-mutation-broadcaster'
 
@@ -147,10 +178,12 @@ describe('sprint-service', () => {
       expect(_listTasks).toHaveBeenCalledWith('queued')
     })
 
-    it('passes undefined when no status filter', () => {
+    it('passes no args when no status filter', () => {
       vi.mocked(_listTasks).mockReturnValue([])
       listTasks()
-      expect(_listTasks).toHaveBeenCalledWith(undefined)
+      // sprint-service re-exports mutations.listTasks which calls sprint-queries
+      // directly — no explicit undefined argument is added
+      expect(_listTasks).toHaveBeenCalledWith()
     })
   })
 
@@ -229,7 +262,8 @@ describe('sprint-service', () => {
 
       const result = await claimTask('1', 'agent-1')
       expect(result).toEqual(claimed)
-      expect(_claimTask).toHaveBeenCalledWith('1', 'agent-1', undefined)
+      // sprint-service re-exports mutations.claimTask which does not pass a third arg
+      expect(_claimTask).toHaveBeenCalledWith('1', 'agent-1')
       vi.runAllTimers()
       expect(mockBroadcastFn).toHaveBeenCalled()
     })

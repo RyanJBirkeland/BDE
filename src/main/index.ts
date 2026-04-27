@@ -45,8 +45,10 @@ import { createTaskStateService } from './services/task-state-service'
 import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
 import { getTask, updateTask } from './services/sprint-service'
-import { setSprintMutationsRepo } from './services/sprint-mutations'
+import { createSprintMutations } from './services/sprint-mutations'
 import { setSprintBroadcaster } from './services/sprint-mutation-broadcaster'
+import { setReviewOrchestrationRepo } from './services/review-orchestration-service'
+import { setShipBatchRepo } from './services/review-ship-batch'
 import {
   closeTearoffWindows,
   setQuitting,
@@ -327,9 +329,12 @@ function initCoreServices(): CoreStartupServices {
   startBackgroundServices()
 
   const repo = createSprintTaskRepository()
-  // Install the repo into sprint-mutations so all mutation functions route
-  // through the composition-root instance instead of the lazy singleton.
-  setSprintMutationsRepo(repo)
+  // Bind all sprint mutation functions to the composition-root repo instance.
+  // The free-function exports in sprint-mutations.ts delegate to this bound object.
+  createSprintMutations(repo)
+  // Wire the repo into review services that previously called getSharedSprintTaskRepository().
+  setReviewOrchestrationRepo(repo)
+  setShipBatchRepo(repo)
   // Wire the IPC broadcast function into sprint-mutation-broadcaster so it
   // can notify renderer windows without importing the framework adapter directly.
   setSprintBroadcaster(() => broadcast('sprint:externalChange'))

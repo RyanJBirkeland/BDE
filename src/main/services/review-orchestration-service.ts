@@ -19,8 +19,24 @@ export { parseNumstat }
 import { getTask, updateTask, notifySprintMutation } from './sprint-service'
 import { getErrorMessage } from '../../shared/errors'
 import { nowIso } from '../../shared/time'
-import { getSharedSprintTaskRepository } from '../data/sprint-task-repository'
+import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getRepoConfig } from '../paths'
+
+/**
+ * Injected repository instance — set once at startup by the composition root
+ * via `setReviewOrchestrationRepo(repo)`. All call sites in this module use
+ * `getRepo()` so they always read the current instance.
+ */
+let _repo: ISprintTaskRepository | null = null
+
+export function setReviewOrchestrationRepo(repo: ISprintTaskRepository): void {
+  _repo = repo
+}
+
+function getRepo(): ISprintTaskRepository {
+  if (!_repo) throw new Error('[review-orchestration] Repository not initialised — call setReviewOrchestrationRepo(repo) before use')
+  return _repo
+}
 import type {
   MergeLocallyInput,
   MergeLocallyResult,
@@ -191,7 +207,7 @@ async function runActionPlan(
   onTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
 ): Promise<ReturnType<typeof executeReviewAction>> {
   return executeReviewAction(classifyReviewAction(input), taskId, {
-    repo: getSharedSprintTaskRepository(),
+    repo: getRepo(),
     broadcast: makeBroadcast(),
     onStatusTerminal: onTerminal,
     env,
@@ -248,7 +264,7 @@ async function executeRebaseAction(
     classifyReviewAction({ action: 'rebase', taskId, task, repoConfig: null }),
     taskId,
     {
-      repo: getSharedSprintTaskRepository(),
+      repo: getRepo(),
       broadcast: makeBroadcast(),
       onStatusTerminal: () => {},
       env,

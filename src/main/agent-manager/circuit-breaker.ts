@@ -29,6 +29,16 @@ interface SpawnFailureEntry {
   reason: string
 }
 
+/**
+ * Observer interface for circuit-breaker open events.
+ * Implement this to receive a structured notification when the breaker trips.
+ * The composition root wires the concrete observer (broadcast call) via the
+ * constructor so circuit-breaker.ts stays free of framework adapter imports.
+ */
+export interface CircuitObserver {
+  onCircuitOpen(payload: { consecutiveFailures: number; openUntil: number }): void
+}
+
 export class CircuitBreaker {
   private consecutiveFailures = 0
   private openUntil = 0
@@ -36,10 +46,7 @@ export class CircuitBreaker {
 
   constructor(
     private readonly logger: Logger,
-    private readonly onCircuitOpen?: (payload: {
-      consecutiveFailures: number
-      openUntil: number
-    }) => void
+    private readonly observer?: CircuitObserver
   ) {}
 
   /**
@@ -84,7 +91,7 @@ export class CircuitBreaker {
         recentFailures: this.recentFailures.map((f) => ({ taskId: f.taskId, reason: f.reason }))
       })
       try {
-        this.onCircuitOpen?.({
+        this.observer?.onCircuitOpen({
           consecutiveFailures: this.consecutiveFailures,
           openUntil: this.openUntil
         })

@@ -8,8 +8,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { runAgent } from '../run-agent'
 import type { AgentRunClaim, RunAgentDeps } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
-import type { ActiveAgent } from '../types'
 import { DEFAULT_CONFIG } from '../types'
+import { SpawnRegistry } from '../spawn-registry'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -177,7 +177,7 @@ const mockRepo: IAgentTaskRepository = {
 
 function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
   return {
-    activeAgents: new Map<string, ActiveAgent>(),
+    spawnRegistry: new SpawnRegistry(),
     defaultModel: DEFAULT_CONFIG.defaultModel,
     logger: {
       info: vi.fn(),

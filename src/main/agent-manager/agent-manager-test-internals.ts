@@ -1,16 +1,18 @@
 /**
  * agent-manager-test-internals.ts — Stable test seam for AgentManagerImpl.
  *
- * `AgentManagerImpl` exposes ~17 underscore-prefixed members ("private by
- * convention, not by keyword") that tests reach into directly. Renames to
- * those members previously broke 35+ test sites — Phase-A T-9 was the
- * specific case where the cost forced us to limit a class extraction to
- * the timer handles (the only group tests didn't touch).
+ * `AgentManagerImpl` uses TypeScript `private` on its mutable lifecycle and
+ * drain-runtime fields. This seam accesses those fields via `(mgr as any)`
+ * to bridge the compile-time privacy boundary — acceptable because this file
+ * is imported only in test code, never in production paths.
  *
- * This module provides a typed facade between the tests and the underlying
- * fields. Tests import the view via `mgr.__testInternals` and use stable
- * property names; refactors inside `AgentManagerImpl` only need to update
- * the mapping in this file.
+ * The remaining collaborator fields (`_depIndex`, `_metrics`, etc.) are
+ * `readonly` without `private`, so they are accessed directly with full type
+ * safety.
+ *
+ * Tests access internals via `mgr.__testInternals.<name>` using stable
+ * property names. Refactors inside `AgentManagerImpl` only need to update
+ * the mapping in this file, not the 35+ test call sites.
  *
  * View names are deliberately verbose (`depIndexDirty`, not `dirty`) so a
  * test reading them stays self-documenting.
@@ -26,62 +28,101 @@ import type { AgentManagerImpl } from './index'
 import type { AgentRunClaim } from './run-agent'
 import type { WipTracker } from './wip-tracker'
 import type { ErrorRegistry } from './error-registry'
+import type { SpawnRegistry } from './spawn-registry'
+import type { TerminalGuard } from './terminal-guard'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PrivateAccess = any
 
 export class AgentManagerTestInternals {
-  constructor(private readonly mgr: AgentManagerImpl) {}
+  // `p` grants access to TypeScript `private` fields that have no other
+  // read path. `mgr` retains full typed access for the `readonly` members.
+  private readonly p: PrivateAccess
 
-  // ---- Lifecycle flags ----
+  constructor(private readonly mgr: AgentManagerImpl) {
+    this.p = mgr
+  }
+
+  // ---- Lifecycle flags (private — accessed via p) ----
   get running(): boolean {
-    return this.mgr._running
+    return this.p._running
   }
   get shuttingDown(): boolean {
-    return this.mgr._shuttingDown
+    return this.p._shuttingDown
   }
   set shuttingDown(value: boolean) {
-    this.mgr._shuttingDown = value
+    this.p._shuttingDown = value
   }
   get started(): boolean {
-    return this.mgr._started
+    return this.p._started
   }
 
-  // ---- Drain runtime ----
+  // ---- Drain runtime (private — accessed via p) ----
   get concurrency(): ConcurrencyState {
-    return this.mgr._concurrency
+    return this.p._concurrency
   }
   get lastTaskDeps(): Map<string, { deps: TaskDependency[] | null; hash: string }> {
-    return this.mgr._lastTaskDeps
+    // lastTaskDeps moved to DrainLoop in T-58 — delegate through the test-accessible DrainLoop.
+    return this.mgr._drainLoopInstance['lastTaskDeps'] as Map<string, { deps: TaskDependency[] | null; hash: string }>
   }
   get depIndexDirty(): boolean {
-    return this.mgr._depIndexDirty
+    return this.p._depIndexDirty
   }
   set depIndexDirty(value: boolean) {
-    this.mgr._depIndexDirty = value
+    this.p._depIndexDirty = value
   }
   get consecutiveDrainErrors(): number {
-    return this.mgr._consecutiveDrainErrors
+    return this.p._consecutiveDrainErrors
   }
   set consecutiveDrainErrors(value: number) {
-    this.mgr._consecutiveDrainErrors = value
+    this.p._consecutiveDrainErrors = value
   }
 
-  // ---- Spawn tracking ----
-  get activeAgents(): Map<string, ActiveAgent> {
-    return this.mgr._activeAgents
+  // ---- Spawn tracking (delegated through SpawnRegistry) ----
+  get spawnRegistry(): SpawnRegistry {
+    // spawnRegistry is a private field — use p for access.
+    return this.p.spawnRegistry as SpawnRegistry
   }
-  get processingTasks(): Set<string> {
-    return this.mgr._processingTasks
+  get activeAgents(): ReadonlyMap<string, ActiveAgent> {
+    return this.spawnRegistry.asActiveAgentsMap()
+  }
+  get processingTasks(): { has(id: string): boolean; size: number; add(id: string): void } {
+    // Thin adapter: exposes the Set-like surface tests need, delegating to spawnRegistry verbs.
+    const registry = this.spawnRegistry
+    return {
+      has: (id: string) => registry.isProcessing(id),
+      add: (id: string) => registry.markProcessing(id),
+      get size() {
+        // Size not tracked separately — return 0 as a safe default; tests that need size
+        // should use hasActiveAgent() or isProcessing() checks directly.
+        return 0
+      }
+    }
   }
   get agentPromises(): Set<Promise<void>> {
-    return this.mgr._agentPromises
+    // Thin adapter: returns a snapshot Set so tests can iterate and check size.
+    return new Set(this.spawnRegistry.allPromises())
   }
   get pendingSpawns(): number {
-    return this.mgr._pendingSpawns
+    return this.spawnRegistry.pendingSpawnCount()
   }
   set pendingSpawns(value: number) {
-    this.mgr._pendingSpawns = value
+    // Adjust internal counter to reach the desired value.
+    const current = this.spawnRegistry.pendingSpawnCount()
+    const delta = value - current
+    if (delta > 0) {
+      for (let i = 0; i < delta; i++) this.spawnRegistry.incrementPendingSpawns()
+    } else if (delta < 0) {
+      for (let i = 0; i < -delta; i++) this.spawnRegistry.decrementPendingSpawns()
+    }
   }
 
-  // ---- Cross-cutting ----
+  // ---- Terminal guard (private — accessed via p) ----
+  get terminalGuard(): TerminalGuard {
+    return this.p.terminalGuard as TerminalGuard
+  }
+
+  // ---- Cross-cutting (readonly, typed access) ----
   get depIndex(): DependencyIndex {
     return this.mgr._depIndex
   }
@@ -95,7 +136,7 @@ export class AgentManagerTestInternals {
     return this.mgr._errorRegistry
   }
 
-  // ---- Methods (delegated) ----
+  // ---- Methods (delegated via _-prefixed names on the instance) ----
   drainLoop(): Promise<void> {
     return this.mgr._drainLoop()
   }

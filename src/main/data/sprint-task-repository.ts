@@ -124,31 +124,6 @@ export interface ISprintTaskRepository
   extends IAgentTaskRepository, ISprintPollerRepository, IDashboardRepository {}
 
 /**
- * Lazily-cached `ISprintTaskRepository` shared by every consumer that does not
- * have one wired in via constructor injection. Centralises object identity so
- * the audit's "DI seam defeated by per-module singletons" finding stays fixed.
- *
- * The composition root may install a custom instance via
- * `setSharedSprintTaskRepository()`; tests can reset it via the underscored
- * helper.
- */
-let _sharedRepo: ISprintTaskRepository | null = null
-
-export function getSharedSprintTaskRepository(): ISprintTaskRepository {
-  if (!_sharedRepo) _sharedRepo = createSprintTaskRepository()
-  return _sharedRepo
-}
-
-export function setSharedSprintTaskRepository(repo: ISprintTaskRepository): void {
-  _sharedRepo = repo
-}
-
-/** Test-only — drop the shared instance so the next access lazily rebuilds it. */
-export function _resetSharedSprintTaskRepository(): void {
-  _sharedRepo = null
-}
-
-/**
  * Concrete implementation that delegates to sprint-queries functions.
  * This is the only place that imports sprint-queries directly.
  */

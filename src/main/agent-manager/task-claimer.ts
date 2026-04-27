@@ -8,7 +8,7 @@
 
 import type { Logger } from '../logger'
 import { logError } from '../logger'
-import type { AgentManagerConfig, ActiveAgent } from './types'
+import type { AgentManagerConfig } from './types'
 import { EXECUTOR_ID, NOTES_MAX_LENGTH } from './types'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { DependencyIndex } from '../services/dependency-service'
@@ -21,6 +21,7 @@ import type { AgentRunClaim } from './run-agent'
 import { taskHasMatchingCommitOnMain } from './already-done-check'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import type { TaskStateService } from '../services/task-state-service'
+import type { SpawnRegistry } from './spawn-registry'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -238,8 +239,7 @@ export async function prepareWorktreeForTask(
 // ---------------------------------------------------------------------------
 
 export interface ProcessQueuedTaskDeps extends TaskClaimerDeps {
-  processingTasks: Set<string>
-  activeAgents: Map<string, ActiveAgent>
+  spawnRegistry: SpawnRegistry
   spawnAgent: (
     task: AgentRunClaim,
     worktree: { worktreePath: string; branch: string },
@@ -265,8 +265,8 @@ export async function processQueuedTask(
   deps: ProcessQueuedTaskDeps
 ): Promise<void> {
   const taskId = rawTask.id
-  if (deps.processingTasks.has(taskId)) return
-  deps.processingTasks.add(taskId)
+  if (deps.spawnRegistry.isProcessing(taskId)) return
+  deps.spawnRegistry.markProcessing(taskId)
   try {
     const claimed = await validateAndClaimTask(rawTask, taskStatusMap, deps)
     if (!claimed) return
@@ -290,6 +290,6 @@ export async function processQueuedTask(
     deps.logger.info(`[agent-manager] Task ${task.id} claimed — spawning agent in ${wt.worktreePath}`)
     await deps.spawnAgent(task, wt, repoPath)
   } finally {
-    deps.processingTasks.delete(taskId)
+    deps.spawnRegistry.unmarkProcessing(taskId)
   }
 }
