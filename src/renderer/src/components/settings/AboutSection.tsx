@@ -8,6 +8,7 @@ import { SettingsCard } from './SettingsCard'
 import { CostSection } from './CostSection'
 
 const APP_VERSION = __APP_VERSION__
+// TODO: update URL when GitHub repo is renamed from BDE to FLEET
 const GITHUB_URL = 'https://github.com/RyanJBirkeland/FLEET/releases'
 const LOG_PATH = '~/.fleet/fleet.log'
 
