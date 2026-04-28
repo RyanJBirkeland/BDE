@@ -212,6 +212,47 @@ import { getAgentLogInfo } from '../../data/agent-queries'
 import { readLog } from '../../agent-history'
 import { getRepoPaths as _getRepoPaths } from '../../git'
 import { getRepoPaths as _getRepoPathsFromPaths } from '../../paths'
+import { initSprintService } from '../../services/sprint-service'
+import { initSprintUseCases } from '../../services/sprint-use-cases'
+import { initTaskStateService } from '../../services/task-state-service'
+import type { SprintMutations } from '../../services/sprint-mutations'
+
+// Stub SprintMutations that delegates to the mocked sprint-queries functions.
+// Passed to the init functions so sprint-service, sprint-use-cases, and
+// task-state-service satisfy their guard checks without calling the real DB.
+function buildStubMutations(): SprintMutations {
+  return {
+    getTask: (...a) => (_getTask as Function)(...a),
+    listTasks: (...a) => (_listTasks as Function)(...a),
+    listTasksRecent: (...a) => (_listTasksRecent as Function)(...a),
+    createTask: (...a) => (_createTask as Function)(...a),
+    updateTask: (...a) => (_updateTask as Function)(...a),
+    forceUpdateTask: vi.fn(),
+    deleteTask: (...a) => (_deleteTask as Function)(...a),
+    claimTask: (...a) => (_claimTask as Function)(...a),
+    releaseTask: vi.fn(),
+    getQueueStats: vi.fn(),
+    getDoneTodayCount: vi.fn(),
+    listTasksWithOpenPrs: vi.fn(),
+    getHealthCheckTasks: (...a) => (_getHealthCheckTasks as Function)(...a),
+    getSuccessRateBySpecType: vi.fn(),
+    getDailySuccessRate: vi.fn(),
+    markTaskDoneByPrNumber: vi.fn(),
+    markTaskCancelledByPrNumber: vi.fn(),
+    updateTaskMergeableState: vi.fn(),
+    flagStuckTasks: vi.fn(),
+    createReviewTaskFromAdhoc: vi.fn()
+  } as unknown as SprintMutations
+}
+
+// Initialise service modules once before any test runs.
+// clearAllMocks() does not reset module-level state, so one-time init is enough.
+beforeEach(() => {
+  const stubMutations = buildStubMutations()
+  initSprintService(stubMutations)
+  initSprintUseCases(stubMutations)
+  initTaskStateService(stubMutations)
+})
 
 const mockEvent = {} as IpcMainInvokeEvent
 

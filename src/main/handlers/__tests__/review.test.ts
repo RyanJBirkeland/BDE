@@ -159,6 +159,20 @@ vi.mock('../../data/sprint-queries', () => ({
   UPDATE_ALLOWLIST: new Set(['title', 'status'])
 }))
 
+// sprint-service wraps sprint-mutations but has its own init guard. Mock it
+// to delegate straight to sprint-queries so review-orchestration-service can
+// call getTask/updateTask without requiring initSprintService in tests.
+vi.mock('../../services/sprint-service', async () => {
+  const sq = await import('../../data/sprint-queries')
+  return {
+    getTask: (...a: unknown[]) => (sq.getTask as Function)(...a),
+    updateTask: (...a: unknown[]) => (sq.updateTask as Function)(...a),
+    notifySprintMutation: vi.fn(),
+    onSprintMutation: vi.fn(),
+    initSprintService: vi.fn()
+  }
+})
+
 vi.mock('../../settings', () => ({
   getSettingJson: vi.fn(),
   getSetting: vi.fn().mockReturnValue(null) // null → uses default ~/.fleet/worktrees
@@ -189,12 +203,16 @@ import { homedir } from 'os'
 import { registerReviewHandlers } from '../review'
 import { safeHandle } from '../../ipc-utils'
 import { nowIso } from '../../../shared/time'
-import { setReviewOrchestrationRepo } from '../../services/review-orchestration-service'
+import { createReviewOrchestrationService } from '../../services/review-orchestration-service'
+import type { ReviewOrchestrationService } from '../../services/review-orchestration-service'
 import {
   getTask as _getTask,
   updateTask as _updateTask
 } from '../../data/sprint-queries'
 import type { ISprintTaskRepository } from '../../data/sprint-task-repository'
+
+let reviewOrchestration: ReviewOrchestrationService
+const mockTaskStateService = { transition: vi.fn() }
 
 describe('Review handlers', () => {
   beforeEach(() => {
@@ -207,18 +225,18 @@ describe('Review handlers', () => {
     // Default to "worktree exists" — individual tests override via
     // mockExistsSync.mockReturnValueOnce(false) to simulate cleanup.
     mockExistsSync.mockReturnValue(true)
-    // Initialise the review-orchestration-service repo singleton introduced by T-133.
+    // Build a ReviewOrchestrationService bound to the mocked repository.
     const mockRepo = {
       getTask: (...a: unknown[]) => (_getTask as Function)(...a),
       updateTask: (...a: unknown[]) => (_updateTask as Function)(...a),
       forceUpdateTask: vi.fn(),
       listTasks: vi.fn(),
     } as unknown as ISprintTaskRepository
-    setReviewOrchestrationRepo(mockRepo)
+    reviewOrchestration = createReviewOrchestrationService(mockRepo)
   })
 
   it('registers all 13 review channels', () => {
-    const mockDeps = { onStatusTerminal: vi.fn() }
+    const mockDeps = { onStatusTerminal: vi.fn(), reviewOrchestration, taskStateService: mockTaskStateService }
     registerReviewHandlers(mockDeps)
 
     expect(safeHandle).toHaveBeenCalledTimes(13)
@@ -239,7 +257,7 @@ describe('Review handlers', () => {
 
   it('deps.onStatusTerminal is called on terminal transitions', () => {
     const mockOnStatusTerminal = vi.fn()
-    const mockDeps = { onStatusTerminal: mockOnStatusTerminal }
+    const mockDeps = { onStatusTerminal: mockOnStatusTerminal, reviewOrchestration, taskStateService: mockTaskStateService }
     registerReviewHandlers(mockDeps)
     // The callback should be wired up but not called during registration
     expect(mockOnStatusTerminal).not.toHaveBeenCalled()
@@ -251,7 +269,7 @@ describe('Review handlers', () => {
       vi.mocked(safeHandle).mockImplementation((channel: string, handler: unknown) => {
         handlers[channel] = handler as (...args: unknown[]) => unknown
       })
-      const mockDeps = { onStatusTerminal: vi.fn() }
+      const mockDeps = { onStatusTerminal: vi.fn(), reviewOrchestration, taskStateService: mockTaskStateService }
       registerReviewHandlers(mockDeps)
       return handlers
     }
@@ -541,7 +559,7 @@ describe('Review handlers', () => {
       vi.mocked(safeHandle).mockImplementation((channel: string, handler: unknown) => {
         handlers[channel] = handler as (...args: unknown[]) => unknown
       })
-      registerReviewHandlers({ onStatusTerminal: mockOnStatusTerminal })
+      registerReviewHandlers({ onStatusTerminal: mockOnStatusTerminal, reviewOrchestration, taskStateService: mockTaskStateService })
       const result = await handlers['review:mergeLocally'](_mockEvent, {
         taskId: 'task-1',
         strategy: 'merge'
@@ -986,7 +1004,7 @@ describe('Review handlers', () => {
       vi.mocked(safeHandle).mockImplementation((channel: string, handler: unknown) => {
         handlers[channel] = handler as (...args: unknown[]) => unknown
       })
-      registerReviewHandlers({ onStatusTerminal: vi.fn() })
+      registerReviewHandlers({ onStatusTerminal: vi.fn(), reviewOrchestration, taskStateService: mockTaskStateService })
       return handlers
     }
 
@@ -1071,7 +1089,7 @@ describe('Review handlers', () => {
       vi.mocked(safeHandle).mockImplementation((channel: string, handler: unknown) => {
         handlers[channel] = handler as (...args: unknown[]) => unknown
       })
-      registerReviewHandlers({ onStatusTerminal: vi.fn() })
+      registerReviewHandlers({ onStatusTerminal: vi.fn(), reviewOrchestration, taskStateService: mockTaskStateService })
       return handlers
     }
 
@@ -1167,7 +1185,7 @@ describe('Review handlers', () => {
       vi.mocked(safeHandle).mockImplementation((channel: string, handler: unknown) => {
         handlers[channel] = handler as (...args: unknown[]) => unknown
       })
-      registerReviewHandlers({ onStatusTerminal: vi.fn() })
+      registerReviewHandlers({ onStatusTerminal: vi.fn(), reviewOrchestration, taskStateService: mockTaskStateService })
       return handlers
     }
 
@@ -1211,7 +1229,7 @@ describe('Review handlers', () => {
       vi.mocked(safeHandle).mockImplementation((channel: string, handler: unknown) => {
         handlers[channel] = handler as (...args: unknown[]) => unknown
       })
-      registerReviewHandlers({ onStatusTerminal: vi.fn() })
+      registerReviewHandlers({ onStatusTerminal: vi.fn(), reviewOrchestration, taskStateService: mockTaskStateService })
       return handlers
     }
 
