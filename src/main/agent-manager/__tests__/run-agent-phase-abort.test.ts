@@ -267,14 +267,14 @@ describe('runAgent — Phase 1 unexpected error', () => {
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 
-  it('logs the unexpected Phase 1 error with task ID and phase label', async () => {
+  it('logs the unexpected setup error with task ID and phase label', async () => {
     vi.mocked(assembleRunContext).mockRejectedValue(new Error('disk full'))
 
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
 
     expect(deps.logger.error).toHaveBeenCalledWith(
-      expect.stringMatching(/phase 1.*task-1|task-1.*phase 1/i)
+      expect.stringMatching(/setup.*task-1|task-1.*setup/i)
     )
   })
 

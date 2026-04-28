@@ -387,26 +387,24 @@ export class DrainLoop {
       `[agent-manager] Task ${taskId} failed ${count} consecutive times — quarantining to prevent drain churn`
     )
     const note = formatQuarantineNote(count, err)
-    this.applyQuarantine(taskId, note)
+    void this.applyQuarantine(taskId, note).catch((quarantineErr) =>
+      this.deps.logger.error(`[agent-manager] Failed to quarantine task ${taskId}: ${quarantineErr}`)
+    )
   }
 
-  private applyQuarantine(taskId: string, note: string): void {
+  private async applyQuarantine(taskId: string, note: string): Promise<void> {
+    const currentTask = this.deps.repo.getTask(taskId)
+    const status = quarantineStatusFor(currentTask?.status)
     try {
-      const currentTask = this.deps.repo.getTask(taskId)
-      const status = quarantineStatusFor(currentTask?.status)
-      this.deps.taskStateService
-        .transition(taskId, status, {
-          fields: { notes: note, claimed_by: null },
-          caller: 'drain-loop:quarantine'
-        })
-        .then(() => {
-          this.drainFailureCounts.delete(taskId)
-        })
-        .catch((termErr) =>
-          this.deps.logger.warn(`[agent-manager] transition failed for quarantined task ${taskId}: ${termErr}`)
-        )
-    } catch (quarantineErr) {
-      this.deps.logger.error(`[agent-manager] Failed to quarantine task ${taskId}: ${quarantineErr}`)
+      await this.deps.taskStateService.transition(taskId, status, {
+        fields: { notes: note, claimed_by: null },
+        caller: 'drain-loop:quarantine'
+      })
+      // Decrement only after the transition resolves — avoids a race where the
+      // next drain tick's failure increment fires before this decrement lands.
+      this.drainFailureCounts.delete(taskId)
+    } catch (termErr) {
+      this.deps.logger.warn(`[agent-manager] transition failed for quarantined task ${taskId}: ${termErr}`)
     }
   }
 }

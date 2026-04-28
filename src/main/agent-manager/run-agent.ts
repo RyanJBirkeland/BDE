@@ -247,6 +247,12 @@ async function runFinalCleanupAttempt(
   }
 }
 
+export function buildCleanupFailureNote(worktreePath: string, err: unknown): string {
+  const detail = err instanceof Error ? err.message : String(err)
+  const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktreePath}`
+  return note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+}
+
 function surfaceCleanupFailureToTaskNotes(
   taskId: string,
   worktreePath: string,
@@ -258,21 +264,13 @@ function surfaceCleanupFailureToTaskNotes(
   logger.warn(
     `[agent-manager] Stale worktree for task ${taskId} at ${worktreePath} — manual cleanup needed: ${detail}`
   )
-  const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktreePath}`
-  const truncated =
-    note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+  const note = buildCleanupFailureNote(worktreePath, err)
   // fire-and-forget: best-effort note update for stale-worktree diagnostic
-  try {
-    void Promise.resolve(repo.updateTask(taskId, { notes: truncated })).catch((updateErr) => {
-      logger.error(
-        `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
-      )
-    })
-  } catch (updateErr) {
+  void Promise.resolve(repo.updateTask(taskId, { notes: note })).catch((updateErr) => {
     logger.error(
       `[agent-manager] Failed to surface cleanup failure for task ${taskId}: ${updateErr}`
     )
-  }
+  })
 }
 
 /**
@@ -363,25 +361,34 @@ async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void
   await ctx.onTaskTerminal(ctx.task.id, 'queued')
 }
 
+type SpecFileCheckResult =
+  | { kind: 'skip' }
+  | { kind: 'ok' }
+  | { kind: 'missing'; files: string[] }
+
 /**
  * Checks that all files listed in the spec's `## Files to Change` section
  * appear in the agent's commit diff.
  *
- * Returns `null` when no checklist is present (prompt-type tasks, missing
- * section) — the caller should continue normally.
+ * Returns `{ kind: 'skip' }` when the check does not apply (prompt-type task,
+ * no spec, or no `## Files to Change` section).
  *
- * Returns a non-empty array of missing paths when the commit diff is
- * incomplete. The caller must re-queue the task with a note listing them.
+ * Returns `{ kind: 'ok' }` when all required files appear in the diff, or when
+ * the git diff command fails — the existing commit-check guard handles that
+ * case and we should not re-queue here.
+ *
+ * Returns `{ kind: 'missing', files }` when one or more required files are
+ * absent from the diff. The caller must re-queue the task with a note.
  */
 async function detectMissingSpecFiles(
   task: AgentRunClaim,
   worktreePath: string,
   logger: Logger
-): Promise<string[] | null> {
-  if (task.spec_type === 'prompt' || !task.spec) return null
+): Promise<SpecFileCheckResult> {
+  if (task.spec_type === 'prompt' || !task.spec) return { kind: 'skip' }
 
   const requiredFiles = extractFilesToChange(task.spec)
-  if (requiredFiles.length === 0) return null
+  if (requiredFiles.length === 0) return { kind: 'skip' }
 
   let diffOutput: string
   try {
@@ -395,7 +402,7 @@ async function detectMissingSpecFiles(
     // If the diff command fails (e.g. no commits yet), let the existing
     // commit-check guard handle it rather than re-queuing here.
     logger.warn(`[run-agent] git diff failed during files-checklist check: ${err}`)
-    return null
+    return { kind: 'ok' }
   }
 
   const changedFiles = new Set(
@@ -406,7 +413,7 @@ async function detectMissingSpecFiles(
   )
 
   const missingFiles = requiredFiles.filter((required) => !changedFiles.has(required))
-  return missingFiles.length > 0 ? missingFiles : null
+  return missingFiles.length > 0 ? { kind: 'missing', files: missingFiles } : { kind: 'ok' }
 }
 
 /**
@@ -443,13 +450,13 @@ async function handleIncompleteFiles(
 }
 
 async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
-  const missingFiles = await detectMissingSpecFiles(
+  const specFileCheck = await detectMissingSpecFiles(
     ctx.task,
     ctx.worktree.worktreePath,
     ctx.logger
   )
-  if (missingFiles !== null) {
-    return handleIncompleteFiles(ctx, missingFiles)
+  if (specFileCheck.kind === 'missing') {
+    return handleIncompleteFiles(ctx, specFileCheck.files)
   }
 
   try {
@@ -759,31 +766,60 @@ async function runStreamingPhase(ctx: StreamingContext): Promise<StreamResult> {
   return { exitCode, lastAgentOutput, streamError }
 }
 
-export async function runAgent(
+/**
+ * Runs a pipeline phase that may throw `PipelineAbortError` (already
+ * recovered by the helper that threw) or an unexpected error (recovered
+ * by `abortPhaseUnexpectedly`).
+ *
+ * Returns the phase's result on success, or `null` when the run is aborted
+ * and the caller should return immediately.
+ */
+async function runPhaseOrAbort<T>(
+  taskId: string,
+  phaseName: string,
+  phase: () => Promise<T>,
+  deps: Pick<RunAgentDeps, 'repo' | 'onTaskTerminal' | 'logger' | 'taskStateService'>
+): Promise<T | null> {
+  try {
+    return await phase()
+  } catch (err) {
+    if (err instanceof PipelineAbortError) return null // Helper already recovered — no double cleanup
+    await abortPhaseUnexpectedly(taskId, phaseName, err, deps)
+    return null
+  }
+}
+
+async function runSetupPhase(
   task: AgentRunClaim,
   worktree: { worktreePath: string; branch: string },
   repoPath: string,
   deps: RunAgentDeps
-): Promise<void> {
-  const { logger } = deps
-  const effectiveModel = task.model || deps.defaultModel
-
-  // Phase 1: Validate and prepare prompt
-  let prompt: string
-  try {
+): Promise<string | null> {
+  return runPhaseOrAbort(task.id, 'setup', async () => {
     await validateTaskForRun(task, worktree, repoPath, deps)
-    prompt = await assembleRunContext(task, worktree, deps)
-  } catch (err) {
-    if (err instanceof PipelineAbortError) return // Helper already recovered — no double cleanup
-    await abortPhaseUnexpectedly(task.id, 'phase 1', err, deps)
-    return
-  }
+    return assembleRunContext(task, worktree, deps)
+  }, deps)
+}
 
-  // Pre-spawn tripwire — logs main/worktree porcelain status and fails fast
-  // if the main repo is dirty. This is the boundary where an agent-edit leak
-  // would first become visible.
+/**
+ * Pre-spawn tripwire: logs porcelain status of both the main repo and the
+ * worktree, then fails fast if the main repo is dirty. A dirty main at this
+ * boundary means a prior operation leaked out of the worktree.
+ *
+ * Returns `false` and transitions the task to `error` when the main repo is
+ * dirty. Returns `true` when the repo state is clean (or the status check
+ * itself fails — we log but do not block the spawn in that case).
+ */
+async function runPreSpawnTripwire(
+  task: AgentRunClaim,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  deps: RunAgentDeps
+): Promise<boolean> {
+  const { logger } = deps
   try {
     await assertPreSpawnRepoState(task.id, repoPath, worktree.worktreePath, logger)
+    return true
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err)
     logger.error(`[run-agent] ${errMsg}`)
@@ -795,35 +831,50 @@ export async function runAgent(
       .catch((terminalErr) =>
         logger.warn(`[run-agent] pre-spawn transition failed for ${task.id}: ${terminalErr}`)
       )
-    return
+    return false
   }
+}
 
-  // Phase 2: Spawn and wire agent
-  let agent: ActiveAgent, agentRunId: string, turnTracker: TurnTracker
-  try {
-    const spawnResult = await spawnAndWireAgent(
-      task,
-      prompt,
-      worktree,
-      repoPath,
-      effectiveModel,
-      deps
-    )
-    agent = spawnResult.agent
-    agentRunId = spawnResult.agentRunId
-    turnTracker = spawnResult.turnTracker
-  } catch (err) {
-    if (err instanceof PipelineAbortError) return // Helper already recovered — no double cleanup
-    await abortPhaseUnexpectedly(task.id, 'phase 2', err, deps)
-    return
-  }
+interface SpawnPhaseResult {
+  agent: ActiveAgent
+  agentRunId: string
+  turnTracker: TurnTracker
+}
 
+async function runSpawnPhase(
+  task: AgentRunClaim,
+  prompt: string,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  effectiveModel: string,
+  deps: RunAgentDeps
+): Promise<SpawnPhaseResult | null> {
+  return runPhaseOrAbort(task.id, 'spawn', () =>
+    spawnAndWireAgent(task, prompt, worktree, repoPath, effectiveModel, deps), deps)
+}
+
+export async function runAgent(
+  task: AgentRunClaim,
+  worktree: { worktreePath: string; branch: string },
+  repoPath: string,
+  deps: RunAgentDeps
+): Promise<void> {
+  const effectiveModel = task.model || deps.defaultModel
+
+  const prompt = await runSetupPhase(task, worktree, repoPath, deps)
+  if (prompt === null) return
+
+  const tripwirePassed = await runPreSpawnTripwire(task, worktree, repoPath, deps)
+  if (!tripwirePassed) return
+
+  const spawnResult = await runSpawnPhase(task, prompt, worktree, repoPath, effectiveModel, deps)
+  if (spawnResult === null) return
+
+  const { agent, agentRunId, turnTracker } = spawnResult
   const streamingCtx: StreamingContext = { task, agent, agentRunId, turnTracker, worktree, deps }
 
-  // Phase 3: Consume the SDK message stream and await playground events
   const streamResult = await runStreamingPhase(streamingCtx)
 
-  // Phase 4: Classify exit, resolve status, clean up
   await finalizeAgentRun(
     task,
     worktree,
