@@ -15,12 +15,11 @@
 /** Hard timeout for all git subprocess calls in the completion path. */
 const GIT_EXEC_TIMEOUT_MS = 30_000
 
-import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { Logger } from '../logger'
 import { buildAgentEnv } from '../env-utils'
 import { execFileAsync } from '../lib/async-utils'
 import { findOrCreatePR as findOrCreatePRUtil } from '../lib/git-operations'
-import { resolveFailure as resolveFailurePhase, type ResolveFailureResult } from './resolve-failure-phases'
+import { resolveFailure as resolveFailurePhase, type ResolveFailureResult, type ResolveFailureContext } from './resolve-failure-phases'
 
 export type { ResolveFailureContext, ResolveFailureResult } from './resolve-failure-phases'
 
@@ -71,12 +70,7 @@ export async function deleteAgentBranchBeforeRetry(
 }
 
 export async function resolveFailure(
-  opts: {
-    taskId: string
-    retryCount: number
-    notes?: string | undefined
-    repo: IAgentTaskRepository
-  },
+  opts: ResolveFailureContext,
   logger?: Logger
 ): Promise<ResolveFailureResult> {
   return resolveFailurePhase(opts, logger)

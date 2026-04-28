@@ -728,14 +728,14 @@ describe('runAgent — updateTask.catch error handlers', () => {
       expect.stringContaining('Failed to requeue fast-fail task task-1')
     )
   })
-  it('logs warning when updateTask rejects in spawn failure .catch path', async () => {
+  it('logs warning when taskStateService.transition rejects in spawn failure .catch path', async () => {
     const { spawnAgent } = await import('../sdk-adapter')
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Spawn failed'))
     ;(mockRepo.updateTask as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('DB error'))
     const deps = makeDeps()
     await runAgent(makeTask(), worktree, repoPath, deps)
     expect(deps.logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Failed to update task task-1 after spawn failure')
+      expect.stringContaining('Failed to transition task task-1 to error after spawn failure')
     )
   })
 })

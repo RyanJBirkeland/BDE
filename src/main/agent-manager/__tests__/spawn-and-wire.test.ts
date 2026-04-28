@@ -51,6 +51,7 @@ import type { RunAgentDeps, AgentRunClaim } from '../run-agent'
 import type { ActiveAgent, AgentHandle } from '../types'
 import { DEFAULT_CONFIG } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
+import type { TaskStateService } from '../../services/task-state-service'
 
 const mockRepo: IAgentTaskRepository = {
   getTask: vi.fn(),
@@ -84,6 +85,15 @@ function makeLogger() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }
 
+function makeTaskStateService(): TaskStateService {
+  return {
+    transition: vi.fn(async (taskId: string, status: string, ctx: { fields?: Record<string, unknown> } = {}) => {
+      await mockRepo.updateTask(taskId, { status, ...(ctx.fields ?? {}) })
+      return { committed: true, dependentsResolved: true }
+    })
+  } as unknown as TaskStateService
+}
+
 function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
   return {
     activeAgents: new Map(),
@@ -93,6 +103,7 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
     repo: mockRepo,
     unitOfWork: { runInTransaction: (fn) => fn() },
     metrics: { increment: vi.fn(), recordWatchdogVerdict: vi.fn(), setLastDrainDuration: vi.fn(), recordAgentDuration: vi.fn(), snapshot: vi.fn().mockReturnValue({}), reset: vi.fn() },
+    taskStateService: makeTaskStateService(),
     ...overrides
   }
 }
@@ -170,19 +181,20 @@ describe('spawnAndWireAgent', () => {
     await expect(
       spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)
     ).rejects.toThrow(PipelineAbortError)
+    // TaskStateService.transition routes through to repo.updateTask in our test mock
     expect(mockRepo.updateTask).toHaveBeenCalledWith(
       'task-1',
       expect.objectContaining({ status: 'error' })
     )
   })
 
-  it('calls onTaskTerminal when spawn fails', async () => {
+  it('calls taskStateService.transition to error when spawn fails', async () => {
     vi.mocked(spawnWithTimeout).mockRejectedValue(new Error('Timeout'))
     const deps = makeDeps()
     await expect(
       spawnAndWireAgent(makeTask(), 'prompt', worktree, repoPath, 'sonnet', deps)
     ).rejects.toThrow()
-    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
+    expect(deps.taskStateService.transition).toHaveBeenCalledWith('task-1', 'error', expect.objectContaining({ caller: 'spawn-failure' }))
   })
 
   it('calls onSpawnFailure with taskId and reason when spawn fails', async () => {

@@ -13,6 +13,7 @@ import { logError } from '../logger'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { flushAgentEventBatcher } from '../agent-event-mapper'
 import type { SpawnRegistry } from './spawn-registry'
+import type { TaskStateService } from '../services/task-state-service'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -23,6 +24,12 @@ export interface ShutdownCoordinatorDeps {
   logger: Logger
   spawnRegistry: SpawnRegistry
   drainInFlight: Promise<void> | null
+  /**
+   * Optional — when supplied, re-queue writes on shutdown go through
+   * `TaskStateService.transition` so the audit trail is preserved.
+   * Falls back to `repo.updateTask` when absent (legacy tests).
+   */
+  taskStateService?: TaskStateService
 }
 
 // ---------------------------------------------------------------------------
@@ -84,12 +91,22 @@ export async function executeShutdown(
         )
         continue
       }
-      await deps.repo.updateTask(agent.taskId, {
-        status: 'queued',
+      const requeueFields = {
         claimed_by: null,
         started_at: null,
+        retry_count: 0,
+        fast_fail_count: 0,
+        failure_reason: null,
         notes: 'Task was re-queued due to FLEET shutdown while agent was running.'
-      })
+      }
+      if (deps.taskStateService) {
+        await deps.taskStateService.transition(agent.taskId, 'queued', {
+          fields: requeueFields,
+          caller: 'shutdown-requeue'
+        })
+      } else {
+        await deps.repo.updateTask(agent.taskId, { status: 'queued', ...requeueFields })
+      }
       deps.logger.info(`[agent-manager] Re-queued task ${agent.taskId} during shutdown`)
     } catch (err) {
       deps.logger.warn(`[agent-manager] Failed to re-queue task ${agent.taskId}: ${err}`)

@@ -165,7 +165,8 @@ const noOpGuardPhase: SuccessPhase = {
       ctx.retryCount,
       ctx.repo,
       ctx.logger,
-      ctx.onTaskTerminal
+      ctx.onTaskTerminal,
+      ctx.taskStateService
     )
     if (isNoOp) throw new PipelineAbortError()
   }
@@ -212,7 +213,8 @@ const verifyWorktreeBuildPhase: SuccessPhase = {
       retryCount: ctx.retryCount,
       repo: ctx.repo,
       logger: ctx.logger,
-      onTaskTerminal: ctx.onTaskTerminal
+      onTaskTerminal: ctx.onTaskTerminal,
+      taskStateService: ctx.taskStateService
     })
     if (!verified) throw new PipelineAbortError()
   }
@@ -285,7 +287,8 @@ async function detectNoOpAndFailIfSo(
   retryCount: number,
   repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService: TaskStateService
 ): Promise<boolean> {
   const env = buildAgentEnv()
   const changedFiles = await listChangedFiles(branch, worktreePath, env, { logger })
@@ -295,7 +298,7 @@ async function detectNoOpAndFailIfSo(
   logger.warn(
     `[completion] task ${taskId}: detected no-op run on branch ${branch} — failing instead of transitioning to review`
   )
-  const result = await resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo }, logger)
+  const result = await resolveFailurePhase({ taskId, retryCount, notes: NOOP_RUN_NOTE, repo, taskStateService }, logger)
   if (result.writeFailed) {
     logger.warn(
       `[completion] task ${taskId}: noop failure DB write failed — skipping terminal notification to avoid corrupting dependency graph`

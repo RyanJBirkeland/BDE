@@ -4,6 +4,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mocks — must be declared before imports
 // ---------------------------------------------------------------------------
 
+vi.mock('../../services/task-state-service', () => ({
+  createTaskStateService: vi.fn(() => ({
+    transition: vi.fn().mockImplementation(() => Promise.resolve({ committed: true, dependentsResolved: true }))
+  }))
+}))
+
 vi.mock('../run-agent', () => ({
   runAgent: vi.fn().mockResolvedValue(undefined)
 }))
@@ -988,7 +994,7 @@ describe('AgentManagerImpl — class internals', () => {
       expect(manager.__testInternals.pendingSpawns).toBe(0)
     })
 
-    it('releases task claim (status=error, claimed_by=null) when runAgent throws unexpectedly', async () => {
+    it('transitions task to error when runAgent throws unexpectedly', async () => {
       const spawnError = new Error('unexpected spawn crash')
       vi.mocked(runAgent).mockRejectedValue(spawnError)
 
@@ -998,10 +1004,19 @@ describe('AgentManagerImpl — class internals', () => {
 
       manager.__testInternals.spawnAgent(task, mockWorktree, mockRepoPath)
       await Promise.allSettled(Array.from(manager.__testInternals.agentPromises))
+      // releaseClaimAsLastResort fires a floating Promise (no await at call site).
+      // Flush the microtask queue so the async taskStateService.transition completes.
+      await Promise.resolve()
+      await Promise.resolve()
 
-      expect(updateTask).toHaveBeenCalledWith(
+      // TaskStateService.transition replaces the direct repo.updateTask call —
+      // the claim release goes through the state machine now.
+      const { createTaskStateService } = await import('../../services/task-state-service')
+      const mockService = vi.mocked(createTaskStateService).mock.results[0]?.value as { transition: ReturnType<typeof vi.fn> }
+      expect(mockService.transition).toHaveBeenCalledWith(
         task.id,
-        expect.objectContaining({ status: 'error', claimed_by: null })
+        'error',
+        expect.objectContaining({ fields: expect.objectContaining({ claimed_by: null }) })
       )
     })
 

@@ -150,8 +150,22 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
     logger.error.mockClear()
   })
 
+  /**
+   * Builds a TaskStateService mock that delegates writes to `mockRepo.updateTask`.
+   * This mirrors the pattern in index.test.ts so tests remain repo-observable.
+   */
+  function makeTaskStateService() {
+    return {
+      transition: vi.fn(async (taskId: string, status: string, ctx: { fields?: Record<string, unknown> } = {}) => {
+        await mockRepo.updateTask(taskId, { status, ...(ctx.fields ?? {}) })
+        return { committed: true, dependentsResolved: true }
+      })
+    }
+  }
+
   it('returns { isTerminal: false } when retries not exhausted (DB success)', async () => {
-    const result = await resolveFailure({ taskId: 'task-1', retryCount: 0, repo: mockRepo }, logger)
+    const taskStateService = makeTaskStateService() as any
+    const result = await resolveFailure({ taskId: 'task-1', retryCount: 0, repo: mockRepo, taskStateService }, logger)
 
     expect(result).toMatchObject({ isTerminal: false })
     expect(result.writeFailed).toBeFalsy()
@@ -166,8 +180,9 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
   })
 
   it('returns { isTerminal: true } when retries exhausted (DB success)', async () => {
+    const taskStateService = makeTaskStateService() as any
     const result = await resolveFailure(
-      { taskId: 'task-2', retryCount: MAX_RETRIES, repo: mockRepo },
+      { taskId: 'task-2', retryCount: MAX_RETRIES, repo: mockRepo, taskStateService },
       logger
     )
 
@@ -183,32 +198,34 @@ describe('resolveFailure terminal status on DB error (AM-5)', () => {
     )
   })
 
-  it('returns { writeFailed: true } when DB error (retries not exhausted)', async () => {
-    vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
-      throw new Error('DB connection lost')
-    })
+  it('returns { writeFailed: true } when taskStateService throws (retries not exhausted)', async () => {
+    const taskStateService = {
+      transition: vi.fn().mockImplementation(() => { throw new Error('DB connection lost') })
+    } as any
 
-    const result = await resolveFailure({ taskId: 'task-3', retryCount: 1, repo: mockRepo }, logger)
+    const result = await resolveFailure({ taskId: 'task-3', retryCount: 1, repo: mockRepo, taskStateService }, logger)
     expect(result).toMatchObject({ writeFailed: true })
     expect(result).toHaveProperty('error')
   })
 
-  it('returns { writeFailed: true, isTerminal: true } when retries exhausted and DB error', async () => {
-    vi.mocked(mockRepo.updateTask).mockImplementationOnce(() => {
-      throw new Error('DB connection lost')
-    })
+  it('returns { writeFailed: true, isTerminal: true } when retries exhausted and taskStateService throws', async () => {
+    const taskStateService = {
+      transition: vi.fn().mockImplementation(() => { throw new Error('DB connection lost') })
+    } as any
 
-    const result = await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES, repo: mockRepo }, logger)
+    const result = await resolveFailure({ taskId: 'task-4', retryCount: MAX_RETRIES, repo: mockRepo, taskStateService }, logger)
     expect(result).toMatchObject({ writeFailed: true, isTerminal: true })
   })
 
   it('includes notes when provided', async () => {
+    const taskStateService = makeTaskStateService() as any
     await resolveFailure(
       {
         taskId: 'task-5',
         retryCount: 0,
         notes: 'Agent produced no commits',
-        repo: mockRepo
+        repo: mockRepo,
+        taskStateService
       },
       logger
     )

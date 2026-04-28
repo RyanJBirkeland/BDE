@@ -18,7 +18,7 @@ export interface ResolveFailureContext {
   retryCount: number
   notes?: string | undefined
   repo: IAgentTaskRepository
-  taskStateService?: TaskStateService
+  taskStateService: TaskStateService
 }
 
 /**
@@ -61,10 +61,8 @@ function truncateNotesTail(notes: string | undefined): string | undefined {
  * succeeded. Callers must check `writeFailed` before calling `onTaskTerminal` — firing
  * dependency resolution against a task still `active` in SQLite would corrupt the graph.
  *
- * When `opts.taskStateService` is supplied, all status writes go through
- * `TaskStateService.transition()` so the audit trail and terminal dispatch fire uniformly.
- * When absent (legacy callers or tests), the function falls back to `repo.updateTask` and
- * the caller is responsible for invoking `onTaskTerminal` on the terminal branch.
+ * All status writes go through `TaskStateService.transition()` so the audit trail and
+ * terminal dispatch fire uniformly for every failure path.
  */
 export async function resolveFailure(
   opts: ResolveFailureContext,
@@ -94,39 +92,29 @@ export async function resolveFailure(
       // Exponential backoff: 30s, 60s, 120s, capped at 5 minutes
       const backoffMs = calculateRetryBackoff(retryCount)
       const nextEligibleAt = new Date(Date.now() + backoffMs).toISOString()
-      const requeueFields = {
-        retry_count: retryCount + 1,
-        claimed_by: null,
-        next_eligible_at: nextEligibleAt,
-        failure_reason: failureReason,
-        ...(notes ? { notes } : {})
-      }
-      if (taskStateService) {
-        await taskStateService.transition(taskId, 'queued', {
-          fields: requeueFields,
-          caller: 'resolve-failure:requeue'
-        })
-      } else {
-        await repo.updateTask(taskId, { status: 'queued', ...requeueFields })
-      }
+      await taskStateService.transition(taskId, 'queued', {
+        fields: {
+          retry_count: retryCount + 1,
+          claimed_by: null,
+          next_eligible_at: nextEligibleAt,
+          failure_reason: failureReason,
+          ...(notes ? { notes } : {})
+        },
+        caller: 'resolve-failure:requeue'
+      })
       return { isTerminal: false }
     } else {
-      const failFields = {
-        completed_at: nowIso(),
-        claimed_by: null,
-        needs_review: true,
-        failure_reason: failureReason,
-        ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
-        ...(notes ? { notes } : {})
-      }
-      if (taskStateService) {
-        await taskStateService.transition(taskId, 'failed', {
-          fields: failFields,
-          caller: 'resolve-failure:terminal'
-        })
-      } else {
-        await repo.updateTask(taskId, { status: 'failed', ...failFields }) // phase-a-bypass
-      }
+      await taskStateService.transition(taskId, 'failed', {
+        fields: {
+          completed_at: nowIso(),
+          claimed_by: null,
+          needs_review: true,
+          failure_reason: failureReason,
+          ...(durationMs !== undefined ? { duration_ms: durationMs } : {}),
+          ...(notes ? { notes } : {})
+        },
+        caller: 'resolve-failure:terminal'
+      })
       return { isTerminal: true }
     }
   } catch (err) {

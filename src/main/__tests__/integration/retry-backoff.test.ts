@@ -98,7 +98,11 @@ function clearTasks(): void {
   getDb().exec('DELETE FROM task_changes')
 }
 
-function makeMockRepo(): { repo: IAgentTaskRepository; updateTaskMock: ReturnType<typeof vi.fn> } {
+function makeMockRepo(): {
+  repo: IAgentTaskRepository
+  updateTaskMock: ReturnType<typeof vi.fn>
+  taskStateService: { transition: ReturnType<typeof vi.fn> }
+} {
   const updateTaskMock = vi.fn().mockReturnValue(null)
   const repo: IAgentTaskRepository = {
     getTask: vi.fn(),
@@ -113,7 +117,14 @@ function makeMockRepo(): { repo: IAgentTaskRepository; updateTaskMock: ReturnTyp
     getGroupTasks: vi.fn().mockReturnValue([]),
     getGroupsWithDependencies: vi.fn().mockReturnValue([])
   }
-  return { repo, updateTaskMock }
+  // Delegates transition writes to repo.updateTask so test assertions remain repo-observable.
+  const taskStateService = {
+    transition: vi.fn(async (taskId: string, status: string, ctx: { fields?: Record<string, unknown> } = {}) => {
+      await updateTaskMock(taskId, { status, ...(ctx.fields ?? {}) })
+      return { committed: true, dependentsResolved: true }
+    })
+  }
+  return { repo, updateTaskMock, taskStateService }
 }
 
 describe('retry backoff: getQueuedTasks filtering', () => {
@@ -157,10 +168,10 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
     vi.clearAllMocks()
   })
 
-  it('sets next_eligible_at when requeuing on first retry (retry_count=0, 30s backoff)', () => {
-    const { repo, updateTaskMock } = makeMockRepo()
+  it('sets next_eligible_at when requeuing on first retry (retry_count=0, 30s backoff)', async () => {
+    const { repo, updateTaskMock, taskStateService } = makeMockRepo()
     const before = Date.now()
-    resolveFailure({ taskId: 'task-1', retryCount: 0, repo })
+    await resolveFailure({ taskId: 'task-1', retryCount: 0, repo, taskStateService: taskStateService as any })
     const after = Date.now()
 
     expect(updateTaskMock).toHaveBeenCalledWith(
@@ -180,10 +191,10 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
     expect(eligibleAt).toBeLessThanOrEqual(after + 36000)
   })
 
-  it('doubles backoff on second retry (retry_count=1, 60s backoff)', () => {
-    const { repo, updateTaskMock } = makeMockRepo()
+  it('doubles backoff on second retry (retry_count=1, 60s backoff)', async () => {
+    const { repo, updateTaskMock, taskStateService } = makeMockRepo()
     const before = Date.now()
-    resolveFailure({ taskId: 'task-1', retryCount: 1, repo })
+    await resolveFailure({ taskId: 'task-1', retryCount: 1, repo, taskStateService: taskStateService as any })
     const after = Date.now()
 
     const patch = updateTaskMock.mock.calls[0][1] as Record<string, unknown>
@@ -193,10 +204,10 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
     expect(eligibleAt).toBeLessThanOrEqual(after + 72000)
   })
 
-  it('third retry uses 120s backoff (max before terminal)', () => {
-    const { repo, updateTaskMock } = makeMockRepo()
+  it('third retry uses 120s backoff (max before terminal)', async () => {
+    const { repo, updateTaskMock, taskStateService } = makeMockRepo()
     const before = Date.now()
-    resolveFailure({ taskId: 'task-1', retryCount: 2, repo })
+    await resolveFailure({ taskId: 'task-1', retryCount: 2, repo, taskStateService: taskStateService as any })
     const after = Date.now()
 
     expect(updateTaskMock).toHaveBeenCalledWith(
@@ -214,10 +225,10 @@ describe('retry backoff: resolveFailure sets next_eligible_at', () => {
     expect(eligibleAt).toBeLessThanOrEqual(after + 144000)
   })
 
-  it('does NOT set next_eligible_at when task is terminal (retries exhausted)', () => {
-    const { repo, updateTaskMock } = makeMockRepo()
+  it('does NOT set next_eligible_at when task is terminal (retries exhausted)', async () => {
+    const { repo, updateTaskMock, taskStateService } = makeMockRepo()
     // MAX_RETRIES is 3
-    resolveFailure({ taskId: 'task-1', retryCount: 3, repo })
+    await resolveFailure({ taskId: 'task-1', retryCount: 3, repo, taskStateService: taskStateService as any })
 
     expect(updateTaskMock).toHaveBeenCalledWith(
       'task-1',

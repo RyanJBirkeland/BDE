@@ -410,7 +410,7 @@ describe('Agent completion pipeline integration', () => {
   describe('agent exits non-zero (resolveFailure)', () => {
     it('re-queues task with incremented retry count when under max retries', async () => {
       const result = await resolveFailure(
-        { repo: mockRepo, taskId: 'task-3', retryCount: 0 },
+        { repo: mockRepo, taskId: 'task-3', retryCount: 0, taskStateService: mockTaskStateService },
         logger
       )
 
@@ -430,7 +430,7 @@ describe('Agent completion pipeline integration', () => {
       for (let i = 0; i < MAX_RETRIES; i++) {
         updateTaskMock.mockClear()
         const result = await resolveFailure(
-          { repo: mockRepo, taskId: 'task-3', retryCount: i },
+          { repo: mockRepo, taskId: 'task-3', retryCount: i, taskStateService: mockTaskStateService },
           logger
         )
         expect(updateTaskMock).toHaveBeenCalledWith(
@@ -448,7 +448,7 @@ describe('Agent completion pipeline integration', () => {
 
     it('marks task permanently failed when retry count reaches MAX_RETRIES', async () => {
       const result = await resolveFailure(
-        { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES },
+        { repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES, taskStateService: mockTaskStateService },
         logger
       )
 
@@ -463,14 +463,14 @@ describe('Agent completion pipeline integration', () => {
       expect(result.writeFailed).toBeFalsy()
     })
 
-    it('returns { writeFailed: true } when updateTask throws during failure resolution', async () => {
-      updateTaskMock.mockImplementationOnce(() => {
+    it('returns { writeFailed: true } when taskStateService throws during failure resolution', async () => {
+      vi.mocked(mockTaskStateService.transition as ReturnType<typeof vi.fn>).mockImplementationOnce(() => {
         throw new Error('DB error')
       })
 
       // T-92: returns tagged result so caller can skip onTaskTerminal without
       // relying on exception propagation.
-      const result = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES }, logger)
+      const result = await resolveFailure({ repo: mockRepo, taskId: 'task-3', retryCount: MAX_RETRIES, taskStateService: mockTaskStateService }, logger)
       expect(result).toMatchObject({ writeFailed: true })
       expect(result).toHaveProperty('error')
     })

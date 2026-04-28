@@ -13,7 +13,7 @@ import type { TaskStatus } from '../../shared/task-state-machine'
 import type { TaskStateService } from '../services/task-state-service'
 import { nowIso } from '../../shared/time'
 import { assertBranchTipMatches, BranchTipMismatchError } from './resolve-success-phases'
-import { resolveFailure as resolveFailurePhase } from './resolve-failure-phases'
+import { resolveFailure as resolveFailurePhase, type ResolveFailureContext } from './resolve-failure-phases'
 import { verifyWorktreeBuildsAndTests } from './verify-worktree'
 import { buildVerificationRevisionFeedback } from './revision-feedback-builder'
 
@@ -110,8 +110,9 @@ export async function verifyWorktreeOrFail(opts: {
   repo: IAgentTaskRepository
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  taskStateService: TaskStateService
 }): Promise<boolean> {
-  const { taskId, worktreePath, retryCount, repo, logger, onTaskTerminal } = opts
+  const { taskId, worktreePath, retryCount, repo, logger, onTaskTerminal, taskStateService } = opts
 
   const result = await verifyWorktreeBuildsAndTests(worktreePath, logger)
   if (result.ok) return true
@@ -123,7 +124,8 @@ export async function verifyWorktreeOrFail(opts: {
   const feedback = buildVerificationRevisionFeedback(result.failure.kind, result.failure.stderr)
   const notes = JSON.stringify(feedback)
 
-  const failureResult = await resolveFailurePhase({ taskId, retryCount, notes, repo }, logger)
+  const failureOpts: ResolveFailureContext = { taskId, retryCount, notes, repo, taskStateService }
+  const failureResult = await resolveFailurePhase(failureOpts, logger)
   if (failureResult.writeFailed) {
     logger.warn(
       `[completion] task ${taskId}: verification failure DB write failed — skipping terminal notification to avoid corrupting dependency graph`

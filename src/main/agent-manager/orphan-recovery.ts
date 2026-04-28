@@ -86,8 +86,7 @@ export async function recoverOrphans(
         `(count=${recoveryCount + 1}/${MAX_ORPHAN_RECOVERY_COUNT}, priorStatus=${task.status}, retryCount=${task.retry_count ?? 0}, startedAt=${task.started_at ?? 'null'})`
     )
 
-    await repo.updateTask(task.id, {
-      status: 'queued',
+    const requeueFields = {
       claimed_by: null,
       orphan_recovery_count: recoveryCount + 1,
       completed_at: null,
@@ -97,7 +96,22 @@ export async function recoverOrphans(
       fast_fail_count: 0,
       next_eligible_at: null,
       notes: `Task was re-queued by orphan recovery (attempt ${recoveryCount + 1}/${MAX_ORPHAN_RECOVERY_COUNT}). Agent process terminated without completing the task.`
-    })
+    }
+
+    if (taskStateService) {
+      try {
+        await taskStateService.transition(task.id, 'queued', {
+          fields: requeueFields,
+          caller: 'orphan-recovery:requeue'
+        })
+      } catch (err) {
+        logger.warn(
+          `[agent-manager] TaskStateService.transition failed for orphan requeue ${task.id}: ${err}`
+        )
+      }
+    } else {
+      await repo.updateTask(task.id, { status: 'queued', ...requeueFields })
+    }
     recovered.push(task.id)
   }
 

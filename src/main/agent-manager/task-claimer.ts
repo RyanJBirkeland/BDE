@@ -207,17 +207,14 @@ export async function prepareWorktreeForTask(
         ? '...' + fullNote.slice(-(NOTES_MAX_LENGTH - 3))
         : fullNote
     try {
-      await deps.repo.updateTask(task.id, {
-        status: 'error',
-        completed_at: nowIso(),
-        notes,
-        claimed_by: null
+      await deps.taskStateService.transition(task.id, 'error', {
+        fields: { completed_at: nowIso(), notes, claimed_by: null },
+        caller: 'worktree-setup-failure'
       })
-    } catch (updateErr) {
-      // If setting error status fails (e.g. DB full), at least release the claim
-      // so the drain loop does not leave the task stuck active with claimed_by set.
+    } catch (transitionErr) {
+      // Transition rejected — release the claim so the task is not stuck as claimed.
       deps.logger.error(
-        `[task-claimer] Failed to set task ${task.id} to error status: ${updateErr}`
+        `[task-claimer] Failed to transition task ${task.id} to error after worktree failure: ${transitionErr}`
       )
       try {
         await deps.repo.updateTask(task.id, { claimed_by: null })
@@ -227,9 +224,6 @@ export async function prepareWorktreeForTask(
         )
       }
     }
-    await deps
-      .onTaskTerminal(task.id, 'error')
-      .catch((err) => deps.logger.warn(`[agent-manager] onTerminal failed for ${task.id}: ${err}`))
     return null
   }
 }

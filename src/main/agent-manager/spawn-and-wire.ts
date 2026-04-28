@@ -36,8 +36,8 @@ function logCleanupWarning(
 
 /**
  * Handles a spawn failure: runs optional callback, emits error event,
- * updates task to error, triggers terminal handler, cleans up worktree,
- * then re-throws the original error.
+ * transitions task to error via TaskStateService (which fires onTaskTerminal
+ * internally), cleans up worktree, then re-throws the original error.
  */
 export async function handleSpawnFailure(
   err: unknown,
@@ -46,7 +46,7 @@ export async function handleSpawnFailure(
   repoPath: string,
   deps: RunAgentDeps
 ): Promise<never> {
-  const { logger, repo, onTaskTerminal, onSpawnFailure } = deps
+  const { logger, onSpawnFailure, taskStateService } = deps
   const errReason = err instanceof Error ? err.message : String(err)
   try {
     onSpawnFailure?.(task.id, errReason)
@@ -64,18 +64,15 @@ export async function handleSpawnFailure(
   // persisted to SQLite before the task appears as 'error' in the UI.
   flushAgentEventBatcher()
   try {
-    await repo.updateTask(task.id, {
-      status: 'error',
-      completed_at: nowIso(),
-      notes: `Spawn failed: ${errMsg}`,
-      claimed_by: null
+    await taskStateService.transition(task.id, 'error', {
+      fields: { completed_at: nowIso(), notes: `Spawn failed: ${errMsg}`, claimed_by: null },
+      caller: 'spawn-failure'
     })
-  } catch (updateErr) {
+  } catch (transitionErr) {
     logger.warn(
-      `[agent-manager] Failed to update task ${task.id} after spawn failure: ${updateErr}`
+      `[agent-manager] Failed to transition task ${task.id} to error after spawn failure: ${transitionErr}`
     )
   }
-  await onTaskTerminal(task.id, 'error')
   try {
     await cleanupWorktree({
       repoPath,

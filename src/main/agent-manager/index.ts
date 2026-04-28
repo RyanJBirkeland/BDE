@@ -393,29 +393,31 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   /**
-   * Last-resort claim release — attempts to write status='error', falls back
-   * to a claimed_by=null-only patch if the status write is rejected.
-   * Mirrors the phase-a-bypass pattern; see T-36 for the full fix path.
+   * Last-resort claim release — transitions the task to error via TaskStateService.
+   * Falls back to a claimed_by=null-only patch if the transition is rejected
+   * (e.g. the task is already in a terminal state from another path).
    */
   private releaseClaimAsLastResort(taskId: string, err: unknown): void {
     const errorNotes = String(err)
-    try {
-      this.repo.updateTask(taskId, { status: 'error', claimed_by: null, notes: errorNotes }) // phase-a-bypass: T-36
-    } catch (statusWriteErr) {
-      // The transition guard rejected the status write (e.g. another path already moved the
-      // task to a terminal state). Fall back to a claim-only patch so `claimed_by` is always
-      // cleared even when the status field cannot be written.
-      this.logger.warn(
-        `[agent-manager] Status write rejected for task ${taskId} — retrying with claim-only patch: ${statusWriteErr}`
-      )
-      try {
-        this.repo.updateTask(taskId, { claimed_by: null, notes: errorNotes })
-      } catch (claimReleaseErr) {
-        this.logger.error(
-          `[agent-manager] Failed to release claim for task ${taskId}: ${claimReleaseErr}`
+    this._taskStateService
+      .transition(taskId, 'error', {
+        fields: { claimed_by: null, notes: errorNotes },
+        caller: 'last-resort'
+      })
+      .catch((transitionErr) => {
+        // Transition rejected — another path already moved the task to a terminal state.
+        // Fall back to a claim-only patch so `claimed_by` is always cleared.
+        this.logger.warn(
+          `[agent-manager] Transition rejected for task ${taskId} — retrying with claim-only patch: ${transitionErr}`
         )
-      }
-    }
+        this.repo.updateTask(taskId, { claimed_by: null, notes: errorNotes }).catch(
+          (claimReleaseErr) => {
+            this.logger.error(
+              `[agent-manager] Failed to release claim for task ${taskId}: ${claimReleaseErr}`
+            )
+          }
+        )
+      })
   }
 
   // ---- Task processing delegates ----
@@ -749,7 +751,8 @@ export class AgentManagerImpl implements AgentManager {
         repo: this.repo,
         logger: this.logger,
         spawnRegistry: this.spawnRegistry,
-        drainInFlight: this._drainInFlight
+        drainInFlight: this._drainInFlight,
+        taskStateService: this._taskStateService
       },
       timeoutMs
     )

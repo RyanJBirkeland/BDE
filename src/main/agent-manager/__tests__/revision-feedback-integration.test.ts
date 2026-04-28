@@ -78,6 +78,16 @@ const mockRepo: IAgentTaskRepository = {
   getGroupsWithDependencies: vi.fn().mockReturnValue([])
 }
 
+const mockTaskStateService = {
+  transition: vi.fn(async (_taskId: string, _status: string, ctx?: { fields?: Record<string, unknown> }) => {
+    // Delegate notes writes to mockRepo so capturedNotes is populated via the repo mock.
+    if (ctx?.fields?.notes) {
+      mockRepo.updateTask(_taskId, ctx.fields)
+    }
+    return { committed: true, dependentsResolved: true }
+  })
+}
+
 const baseOpts = {
   taskId: 'task-1',
   worktreePath: '/tmp/worktrees/task-1',
@@ -86,7 +96,8 @@ const baseOpts = {
   onTaskTerminal: vi.fn().mockResolvedValue(undefined),
   retryCount: 0,
   repo: mockRepo,
-  unitOfWork: { runInTransaction: (fn: () => void) => fn() }
+  unitOfWork: { runInTransaction: (fn: () => void) => fn() },
+  taskStateService: mockTaskStateService as any
 }
 
 beforeEach(() => {
@@ -101,6 +112,15 @@ beforeEach(() => {
     }
   )
   vi.mocked(baseOpts.onTaskTerminal).mockReset().mockResolvedValue(undefined)
+  mockTaskStateService.transition.mockReset()
+  mockTaskStateService.transition.mockImplementation(
+    async (_taskId: string, _status: string, ctx?: { fields?: Record<string, unknown> }) => {
+      if (ctx?.fields?.notes) {
+        mockRepo.updateTask(_taskId, ctx.fields)
+      }
+      return { committed: true, dependentsResolved: true }
+    }
+  )
 })
 
 // ---------------------------------------------------------------------------

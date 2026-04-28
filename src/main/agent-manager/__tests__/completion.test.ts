@@ -727,13 +727,33 @@ describe('resolveSuccess — catch handler coverage', () => {
 })
 
 describe('resolveFailure', () => {
+  // Delegates transition writes to the mocked updateTask so existing assertions remain valid.
+  const mockTaskStateServiceForFailure = {
+    transition: vi.fn(async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+      updateTaskMock(taskId, { status, ...(ctx?.fields ?? {}) })
+      return { committed: true, dependentsResolved: true }
+    })
+  }
+
   beforeEach(() => {
     updateTaskMock.mockReset()
     updateTaskMock.mockReturnValue(null)
+    mockTaskStateServiceForFailure.transition.mockReset()
+    mockTaskStateServiceForFailure.transition.mockImplementation(
+      async (taskId: string, status: string, ctx?: { fields?: Record<string, unknown> }) => {
+        updateTaskMock(taskId, { status, ...(ctx?.fields ?? {}) })
+        return { committed: true, dependentsResolved: true }
+      }
+    )
   })
 
   it('re-queues task with incremented retry count when retries remain', async () => {
-    const result = await resolveFailure({ taskId: 'task-2', retryCount: 1, repo: mockRepo })
+    const result = await resolveFailure({
+      taskId: 'task-2',
+      retryCount: 1,
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
+    })
 
     expect(updateTaskMock).toHaveBeenCalledWith(
       'task-2',
@@ -752,7 +772,8 @@ describe('resolveFailure', () => {
     const result = await resolveFailure({
       taskId: 'task-3',
       retryCount: MAX_RETRIES,
-      repo: mockRepo
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
     })
 
     expect(updateTaskMock).toHaveBeenCalledOnce()
@@ -767,7 +788,8 @@ describe('resolveFailure', () => {
     const result = await resolveFailure({
       taskId: 'task-4',
       retryCount: MAX_RETRIES - 1,
-      repo: mockRepo
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
     })
 
     expect(updateTaskMock).toHaveBeenCalledWith(
@@ -788,7 +810,8 @@ describe('resolveFailure', () => {
       taskId: 'task-6',
       retryCount: 0,
       notes: 'Agent produced no commits',
-      repo: mockRepo
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
     })
 
     expect(updateTaskMock).toHaveBeenCalledWith(
@@ -809,7 +832,8 @@ describe('resolveFailure', () => {
       taskId: 'task-7',
       retryCount: MAX_RETRIES,
       notes: 'Agent produced no commits',
-      repo: mockRepo
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
     })
 
     expect(updateTaskMock).toHaveBeenCalledWith(
@@ -829,7 +853,8 @@ describe('resolveFailure', () => {
       taskId: 'task-8',
       retryCount: 0,
       notes: 'Invalid API key',
-      repo: mockRepo
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
     })
 
     expect(updateTaskMock).toHaveBeenCalledWith(
@@ -850,7 +875,8 @@ describe('resolveFailure', () => {
       taskId: 'task-9',
       retryCount: MAX_RETRIES,
       notes: 'npm test failed',
-      repo: mockRepo
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
     })
 
     expect(updateTaskMock).toHaveBeenCalledWith(
@@ -865,12 +891,17 @@ describe('resolveFailure', () => {
     expect(result.writeFailed).toBeFalsy()
   })
 
-  it('returns { writeFailed: true } when updateTask throws — caller must NOT invoke onTaskTerminal', async () => {
-    updateTaskMock.mockImplementationOnce(() => {
+  it('returns { writeFailed: true } when taskStateService throws — caller must NOT invoke onTaskTerminal', async () => {
+    mockTaskStateServiceForFailure.transition.mockImplementationOnce(() => {
       throw new Error('DB error')
     })
 
-    const result = await resolveFailure({ taskId: 'task-5', retryCount: MAX_RETRIES, repo: mockRepo })
+    const result = await resolveFailure({
+      taskId: 'task-5',
+      retryCount: MAX_RETRIES,
+      repo: mockRepo,
+      taskStateService: mockTaskStateServiceForFailure as any
+    })
     expect(result).toMatchObject({ writeFailed: true })
     expect(result).toHaveProperty('error')
   })

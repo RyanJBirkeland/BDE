@@ -11,6 +11,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mocks — must be declared before imports
 // ---------------------------------------------------------------------------
 
+vi.mock('../../services/task-state-service', () => ({
+  createTaskStateService: vi.fn(() => ({
+    transition: vi.fn(async (taskId: string, status: string, ctx: { fields?: Record<string, unknown> } = {}) => {
+      const { updateTask } = await import('../../data/sprint-queries')
+      await updateTask(taskId, { status, ...(ctx.fields ?? {}) })
+      return { committed: true, dependentsResolved: true }
+    })
+  }))
+}))
+
 vi.mock('../../data/sprint-queries', () => ({
   getQueuedTasks: vi.fn(),
   claimTask: vi.fn(),

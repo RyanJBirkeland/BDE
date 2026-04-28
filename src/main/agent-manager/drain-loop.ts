@@ -351,11 +351,9 @@ export class DrainLoop {
 
     const reason = (message.split('\n')[0] ?? '').slice(0, 200)
     try {
-      await this.deps.repo.updateTask(taskId, {
-        status: 'queued',
-        failure_reason: 'environmental',
-        claimed_by: null,
-        notes: reason
+      await this.deps.taskStateService.transition(taskId, 'queued', {
+        fields: { failure_reason: 'environmental', claimed_by: null, notes: reason },
+        caller: 'environmental-failure'
       })
     } catch (writeErr) {
       this.deps.logger.warn(

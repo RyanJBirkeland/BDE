@@ -30,7 +30,7 @@ import type { SprintTask } from '../../shared/types/task-types'
 import { buildCommitMessage } from './commit-message'
 import { NO_COMMITS_NOTE } from './failure-messages'
 import type { TaskStateService } from '../services/task-state-service'
-import type { ResolveFailureResult } from './resolve-failure-phases'
+import type { ResolveFailureResult, ResolveFailureContext } from './resolve-failure-phases'
 
 export interface RebaseOutcome {
   rebaseNote: string | undefined
@@ -188,10 +188,10 @@ export async function failTaskWithError(
   taskId: string,
   message: string,
   notes: string,
-  repo: IAgentTaskRepository,
+  _repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
-  taskStateService?: TaskStateService,
+  _onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
+  taskStateService: TaskStateService,
   broadcastCoalesced?: (channel: string, payload: unknown) => void
 ): Promise<void> {
   logger.error(`[completion] ${message}`)
@@ -204,22 +204,10 @@ export async function failTaskWithError(
   broadcastCoalesced?.('agent:event', { agentId: taskId, event })
 
   try {
-    if (taskStateService) {
-      await taskStateService.transition(taskId, 'error', {
-        fields: { completed_at: nowIso(), notes, claimed_by: null },
-        caller: 'completion:failTaskWithError'
-      })
-    } else {
-      // Fallback: direct write + manual terminal notification for callers that have
-      // not yet been migrated to inject TaskStateService.
-      await repo.updateTask(taskId, {
-        status: 'error',
-        completed_at: nowIso(),
-        notes,
-        claimed_by: null
-      })
-      await onTaskTerminal(taskId, 'error')
-    }
+    await taskStateService.transition(taskId, 'error', {
+      fields: { completed_at: nowIso(), notes, claimed_by: null },
+      caller: 'completion:failTaskWithError'
+    })
   } catch (e) {
     // DB failure after an already-error path: log as error but do not re-throw —
     // so dependency resolution and metrics always run.
@@ -243,7 +231,7 @@ export async function verifyWorktreeExists(
   repo: IAgentTaskRepository,
   logger: Logger,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
-  taskStateService?: TaskStateService
+  taskStateService: TaskStateService
 ): Promise<boolean> {
   if (existsSync(worktreePath)) {
     return true
@@ -266,7 +254,7 @@ export async function detectAgentBranch(
   repo: IAgentTaskRepository,
   logger: Logger,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
-  taskStateService?: TaskStateService
+  taskStateService: TaskStateService
 ): Promise<string | null> {
   let branch: string
   try {
@@ -348,14 +336,9 @@ interface CommitCheckContext {
   repo: IAgentTaskRepository
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
-  taskStateService?: TaskStateService
+  taskStateService: TaskStateService
   resolveFailure: (
-    opts: {
-      taskId: string
-      retryCount: number
-      notes?: string | undefined
-      repo: IAgentTaskRepository
-    },
+    opts: ResolveFailureContext,
     logger?: Logger
   ) => Promise<ResolveFailureResult>
 }
@@ -426,7 +409,7 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
         return false
       }
 
-      const failureResult = await resolveFailure({ taskId, retryCount, notes: summaryNote, repo }, logger)
+      const failureResult = await resolveFailure({ taskId, retryCount, notes: summaryNote, repo, taskStateService }, logger)
       if (failureResult.writeFailed) {
         logger.warn(
           `[completion] Task ${taskId}: no-commits failure DB write failed — skipping terminal notification`
@@ -449,21 +432,15 @@ export async function hasCommitsAheadOfMain(opts: CommitCheckContext): Promise<b
     // rev-list failure is a hard failure: promoting a task to review without
     // confirming commits exist risks empty reviews and false dependency unblocking.
     logger.error(`[completion] git rev-list check failed for task ${taskId}: ${err}`)
-    if (taskStateService) {
-      await taskStateService.transition(taskId, 'failed', {
-        fields: {
-          failure_reason: 'git-precondition-failed',
-          notes: `git rev-list failed: ${String(err)}`,
-          claimed_by: null
-        },
-        caller: 'resolve-success.rev-list'
-      })
-      await onTaskTerminal(taskId, 'failed')
-    } else {
-      // No TaskStateService injected — fall back to resolveFailure path
-      const fallbackResult = await resolveFailure({ taskId, retryCount, notes: `git rev-list failed: ${String(err)}`, repo }, logger)
-      if (!fallbackResult.writeFailed && fallbackResult.isTerminal) await onTaskTerminal(taskId, 'failed')
-    }
+    await taskStateService.transition(taskId, 'failed', {
+      fields: {
+        failure_reason: 'git-precondition-failed',
+        notes: `git rev-list failed: ${String(err)}`,
+        claimed_by: null
+      },
+      caller: 'resolve-success.rev-list'
+    })
+    await onTaskTerminal(taskId, 'failed')
     return false
   }
   return true
@@ -485,7 +462,7 @@ async function failTaskExhaustedNoCommits(
   repo: IAgentTaskRepository,
   logger: Logger,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
-  taskStateService?: TaskStateService
+  taskStateService: TaskStateService
 ): Promise<void> {
   logger.warn(
     `[completion] Task ${taskId}: no commits on branch ${branch} after ${MAX_NO_COMMITS_RETRIES} attempts — marking failed`
@@ -497,24 +474,18 @@ async function failTaskExhaustedNoCommits(
       ? Date.now() - new Date(task.started_at).getTime()
       : undefined
 
-  const failFields = {
-    completed_at: nowIso(),
-    claimed_by: null,
-    needs_review: true,
-    failure_reason: 'no-commits-exhausted',
-    notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.fleet/fleet.log`,
-    ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
-  }
-
   try {
-    if (taskStateService) {
-      await taskStateService.transition(taskId, 'failed', {
-        fields: failFields,
-        caller: 'resolve-success:no-commits-exhausted'
-      })
-    } else {
-      await repo.updateTask(taskId, { status: 'failed', ...failFields }) // phase-a-bypass
-    }
+    await taskStateService.transition(taskId, 'failed', {
+      fields: {
+        completed_at: nowIso(),
+        claimed_by: null,
+        needs_review: true,
+        failure_reason: 'no-commits-exhausted',
+        notes: `Agent exited without commits ${MAX_NO_COMMITS_RETRIES} times; marked failed. Investigate logs at ~/.fleet/fleet.log`,
+        ...(durationMs !== undefined ? { duration_ms: durationMs } : {})
+      },
+      caller: 'resolve-success:no-commits-exhausted'
+    })
   } catch (err) {
     logger.error(`[completion] Failed to mark task ${taskId} no-commits-exhausted: ${err}`)
   }

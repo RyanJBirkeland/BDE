@@ -432,7 +432,8 @@ async function handleIncompleteFiles(
       taskId: ctx.task.id,
       retryCount: ctx.task.retry_count ?? 0,
       notes,
-      repo: ctx.repo
+      repo: ctx.repo,
+      taskStateService: ctx.taskStateService
     },
     ctx.logger
   )
@@ -494,7 +495,8 @@ async function handleResolveSuccessFailure(
       taskId: ctx.task.id,
       retryCount: ctx.task.retry_count ?? 0,
       notes: failureNotes || undefined,
-      repo: ctx.repo
+      repo: ctx.repo,
+      taskStateService: ctx.taskStateService
     },
     ctx.logger
   )

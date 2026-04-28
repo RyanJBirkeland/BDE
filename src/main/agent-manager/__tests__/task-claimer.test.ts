@@ -30,6 +30,7 @@ import { getRepoPaths } from '../../paths'
 import { setupWorktree } from '../worktree'
 import type { MappedTask } from '../task-mapper'
 import { SpawnRegistry } from '../spawn-registry'
+import type { TaskStateService } from '../../services/task-state-service'
 
 function makeTask(overrides: Partial<MappedTask> = {}): MappedTask {
   return {
@@ -78,7 +79,17 @@ function makeLogger() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }
 
+function makeTaskStateService(repo: ReturnType<typeof makeRepo>): TaskStateService {
+  return {
+    transition: vi.fn(async (taskId: string, status: string, ctx: { fields?: Record<string, unknown> } = {}) => {
+      await repo.updateTask(taskId, { status, ...(ctx.fields ?? {}) })
+      return { committed: true, dependentsResolved: true }
+    })
+  } as unknown as TaskStateService
+}
+
 function makeClaimerDeps(overrides: Partial<TaskClaimerDeps> = {}): TaskClaimerDeps {
+  const repo = overrides.repo ?? makeRepo()
   return {
     config: {
       maxConcurrent: 2,
@@ -88,10 +99,11 @@ function makeClaimerDeps(overrides: Partial<TaskClaimerDeps> = {}): TaskClaimerD
       pollIntervalMs: 30_000,
       defaultModel: DEFAULT_CONFIG.defaultModel
     },
-    repo: makeRepo(),
+    repo,
     depIndex: makeDepIndex(),
     logger: makeLogger(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
+    taskStateService: makeTaskStateService(repo),
     ...overrides
   }
 }
@@ -204,11 +216,17 @@ describe('prepareWorktreeForTask', () => {
     const deps = makeClaimerDeps()
     const result = await prepareWorktreeForTask(makeTask(), '/repo', deps)
     expect(result).toBeNull()
+    // TaskStateService.transition routes the error write through repo.updateTask in our test mock
     expect(deps.repo.updateTask).toHaveBeenCalledWith(
       'task-1',
       expect.objectContaining({ status: 'error' })
     )
-    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
+    // TaskStateService.transition fires the terminal dispatcher (onTaskTerminal) internally
+    expect(deps.taskStateService.transition).toHaveBeenCalledWith(
+      'task-1',
+      'error',
+      expect.objectContaining({ caller: 'worktree-setup-failure' })
+    )
   })
 })
 
