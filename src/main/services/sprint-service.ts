@@ -13,19 +13,51 @@
  * treat as a single operation. They may be moved to `sprint-use-cases.ts`
  * in a future cleanup.
  */
-import * as mutations from './sprint-mutations'
 import * as broadcaster from './sprint-mutation-broadcaster'
-import type { SprintTask, SprintTaskExecution, ClaimedTask, TaskTemplate } from '../../shared/types'
+import type {
+  SprintMutations,
+  CreateTaskInput,
+  QueueStats,
+  SpecTypeSuccessRate,
+  DailySuccessRate,
+  ListTasksOptions,
+  UpdateTaskOptions
+} from './sprint-mutations'
+import type { SprintTask, SprintTaskExecution, SprintTaskPR, ClaimedTask, TaskTemplate } from '../../shared/types'
 import { getSettingJson } from '../settings'
 import { DEFAULT_TASK_TEMPLATES } from '../../shared/constants'
 import type { TaskStateService } from './task-state-service'
 import { execFileAsync } from '../lib/async-utils'
 import { getErrorMessage } from '../../shared/errors'
 import { createLogger } from '../logger'
+import { pruneWorktrees, deleteBranch } from '../agent-manager/worktree-lifecycle'
+import { buildAgentEnv } from '../env-utils'
 
 const logger = createLogger('sprint-service')
 
+// ---------------------------------------------------------------------------
+// Module-level SprintMutations binding — set once at startup by the
+// composition root via initSprintService(mutations). All free-function
+// re-exports below delegate to this bound object.
+// ---------------------------------------------------------------------------
+
+let _mutations: SprintMutations | null = null
+
+function getMutations(): SprintMutations {
+  if (!_mutations) throw new Error('[sprint-service] Not initialised — call initSprintService(mutations) before use')
+  return _mutations
+}
+
+/**
+ * Bind the composition-root SprintMutations object to this module.
+ * Called once after createSprintMutations(repo) in index.ts.
+ */
+export function initSprintService(mutations: SprintMutations): void {
+  _mutations = mutations
+}
+
 export type {
+  SprintMutations,
   CreateTaskInput,
   QueueStats,
   SpecTypeSuccessRate,
@@ -40,34 +72,34 @@ export type { SprintMutationEvent, SprintMutationListener } from './sprint-mutat
 export const onSprintMutation = broadcaster.onSprintMutation
 export const notifySprintMutation = broadcaster.notifySprintMutation
 
-// Re-export read-only operations
-export const getTask = mutations.getTask
-export const listTasks = mutations.listTasks
+// Re-export read-only operations (delegate to bound mutations object)
+export function getTask(id: string): SprintTask | null { return getMutations().getTask(id) }
+export function listTasks(options?: string | ListTasksOptions): SprintTask[] { return getMutations().listTasks(options) }
 // Audit trail read — exposed through the service layer so adapters (MCP,
 // handlers) never reach past it into the data layer directly.
 export { getTaskChanges } from '../data/task-changes'
 export type { TaskChange, GetTaskChangesOptions } from '../data/task-changes'
-export const listTasksRecent = mutations.listTasksRecent
-export const getQueueStats = mutations.getQueueStats
-export const getDoneTodayCount = mutations.getDoneTodayCount
-export const listTasksWithOpenPrs = mutations.listTasksWithOpenPrs
-export const getHealthCheckTasks = mutations.getHealthCheckTasks
-export const getSuccessRateBySpecType = mutations.getSuccessRateBySpecType
-export const getDailySuccessRate = mutations.getDailySuccessRate
-export const markTaskDoneByPrNumber = mutations.markTaskDoneByPrNumber
-export const markTaskCancelledByPrNumber = mutations.markTaskCancelledByPrNumber
-export const updateTaskMergeableState = mutations.updateTaskMergeableState
-export const flagStuckTasks = mutations.flagStuckTasks
+export function listTasksRecent(): SprintTask[] { return getMutations().listTasksRecent() }
+export function getQueueStats(): QueueStats { return getMutations().getQueueStats() }
+export function getDoneTodayCount(): number { return getMutations().getDoneTodayCount() }
+export function listTasksWithOpenPrs(): SprintTaskPR[] { return getMutations().listTasksWithOpenPrs() }
+export function getHealthCheckTasks(): SprintTask[] { return getMutations().getHealthCheckTasks() }
+export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] { return getMutations().getSuccessRateBySpecType() }
+export function getDailySuccessRate(days?: number): DailySuccessRate[] { return getMutations().getDailySuccessRate(days) }
+export function markTaskDoneByPrNumber(prNumber: number): Promise<string[]> { return getMutations().markTaskDoneByPrNumber(prNumber) }
+export function markTaskCancelledByPrNumber(prNumber: number): Promise<string[]> { return getMutations().markTaskCancelledByPrNumber(prNumber) }
+export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): Promise<void> { return getMutations().updateTaskMergeableState(prNumber, mergeableState) }
+export function flagStuckTasks(): void { getMutations().flagStuckTasks() }
 
 // Wrap mutation operations to auto-notify
-export async function createTask(input: mutations.CreateTaskInput): Promise<SprintTask | null> {
-  const row = await mutations.createTask(input)
+export async function createTask(input: CreateTaskInput): Promise<SprintTask | null> {
+  const row = await getMutations().createTask(input)
   if (row) broadcaster.notifySprintMutation('created', row)
   return row
 }
 
 export async function claimTask(id: string, claimedBy: string): Promise<SprintTaskExecution | null> {
-  const result = await mutations.claimTask(id, claimedBy)
+  const result = await getMutations().claimTask(id, claimedBy)
   // Broadcaster expects SprintTask (full shape) — the value IS a full task at runtime;
   // the narrowed declared type is a contract hint, not a runtime shape change.
   if (result) broadcaster.notifySprintMutation('updated', result as SprintTask)
@@ -77,9 +109,9 @@ export async function claimTask(id: string, claimedBy: string): Promise<SprintTa
 export async function updateTask(
   id: string,
   patch: Record<string, unknown>,
-  options?: mutations.UpdateTaskOptions
+  options?: UpdateTaskOptions
 ): Promise<SprintTask | null> {
-  const result = await mutations.updateTask(id, patch, options)
+  const result = await getMutations().updateTask(id, patch, options)
   if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
@@ -92,19 +124,19 @@ export async function forceUpdateTask(
   id: string,
   patch: Record<string, unknown>
 ): Promise<SprintTask | null> {
-  const result = await mutations.forceUpdateTask(id, patch)
+  const result = await getMutations().forceUpdateTask(id, patch)
   if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
 
 export function deleteTask(id: string): void {
-  const task = mutations.getTask(id)
-  mutations.deleteTask(id)
+  const task = getMutations().getTask(id)
+  getMutations().deleteTask(id)
   if (task) broadcaster.notifySprintMutation('deleted', task)
 }
 
 export async function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  const result = await mutations.releaseTask(id, claimedBy)
+  const result = await getMutations().releaseTask(id, claimedBy)
   if (result) broadcaster.notifySprintMutation('updated', result)
   return result
 }
@@ -116,7 +148,7 @@ export async function createReviewTaskFromAdhoc(input: {
   worktreePath: string
   branch: string
 }): Promise<SprintTask | null> {
-  const row = await mutations.createReviewTaskFromAdhoc(input)
+  const row = await getMutations().createReviewTaskFromAdhoc(input)
   if (row) broadcaster.notifySprintMutation('created', row)
   return row
 }
@@ -154,7 +186,7 @@ import {
  * `sprint-use-cases.createTaskWithValidation` directly with an explicit dep.
  */
 export function createTaskWithValidation(
-  input: mutations.CreateTaskInput,
+  input: CreateTaskInput,
   deps: CreateTaskWithValidationDeps,
   opts?: CreateTaskWithValidationOpts
 ): Promise<SprintTask> {
@@ -162,7 +194,7 @@ export function createTaskWithValidation(
 }
 
 export function buildClaimedTask(taskId: string): ClaimedTask | null {
-  const task = mutations.getTask(taskId)
+  const task = getMutations().getTask(taskId)
   if (!task) return null
 
   let templatePromptPrefix: string | null = null
@@ -184,7 +216,7 @@ export async function forceReleaseClaim(
   taskId: string,
   deps: ForceReleaseClaimDeps
 ): Promise<SprintTask> {
-  const task = mutations.getTask(taskId)
+  const task = getMutations().getTask(taskId)
   if (!task) throw new Error(`Task ${taskId} not found`)
   if (task.status !== 'active') {
     throw new Error(
@@ -197,14 +229,14 @@ export async function forceReleaseClaim(
     fields: { notes: null, agent_run_id: null },
     caller: 'sprint:forceReleaseClaim'
   })
-  const released = mutations.getTask(taskId)
+  const released = getMutations().getTask(taskId)
   if (!released) throw new Error(`Failed to release task ${taskId}`)
   broadcaster.notifySprintMutation('updated', released)
   return released
 }
 
 export async function retryTask(taskId: string): Promise<SprintTask> {
-  const task = mutations.getTask(taskId)
+  const task = getMutations().getTask(taskId)
   if (!task) throw new Error(`Task ${taskId} not found`)
   if (task.status !== 'failed' && task.status !== 'error' && task.status !== 'cancelled') {
     throw new Error(`Cannot retry task with status ${task.status}`)
@@ -219,28 +251,26 @@ export async function retryTask(taskId: string): Promise<SprintTask> {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .slice(0, 40)
-    try {
-      await execFileAsync('git', ['worktree', 'prune'], { cwd: repoPath })
-      const { stdout: branches } = await execFileAsync(
-        'git',
-        ['branch', '--list', `agent/${slug}*`],
-        { cwd: repoPath }
-      )
-      for (const branch of branches
-        .split('\n')
-        .map((b) => b.trim())
-        .filter(Boolean)) {
-        await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath }).catch((err) => {
-          logger.warn(`retryTask: failed to delete branch ${branch}: ${getErrorMessage(err)}`)
-        })
-      }
-    } catch {
-      /* cleanup is best-effort */
+    const env = buildAgentEnv()
+    await pruneWorktrees(repoPath, env).catch(() => { /* best-effort */ })
+    // Branch-listing has no equivalent in worktree-lifecycle — stays inline.
+    const { stdout: branches } = await execFileAsync(
+      'git',
+      ['branch', '--list', `agent/${slug}*`],
+      { cwd: repoPath }
+    ).catch(() => ({ stdout: '' }))
+    for (const branch of branches
+      .split('\n')
+      .map((b) => b.trim())
+      .filter(Boolean)) {
+      await deleteBranch(repoPath, branch, env).catch((err) => {
+        logger.warn(`retryTask: failed to delete branch ${branch}: ${getErrorMessage(err)}`)
+      })
     }
   }
 
   await _resetTaskForRetry(taskId)
-  const updated = await mutations.updateTask(taskId, {
+  const updated = await getMutations().updateTask(taskId, {
     status: 'queued',
     notes: null,
     agent_run_id: null

@@ -19,7 +19,8 @@ import { checkAutoReview } from '../services/auto-review-service'
 import { getTask } from '../services/sprint-service'
 import type { TaskStateService } from '../services/task-state-service'
 import type { AutoReviewRule } from '../../shared/types'
-import * as reviewOrchestration from '../services/review-orchestration-service'
+import type { ReviewOrchestrationService } from '../services/review-orchestration-service'
+import type { ReviewShipBatchService } from '../services/review-ship-batch'
 import {
   getReviewDiff,
   getReviewCommits,
@@ -30,7 +31,6 @@ import {
   validateFilePath,
   validateGitRef
 } from '../lib/review-paths'
-import { shipBatch } from '../services/review-ship-batch'
 import type { TaskStatus } from '../../shared/task-state-machine'
 
 export function parseReviewWorktreeArgs(
@@ -74,9 +74,12 @@ export function parseReviewFileDiffArgs(
 export interface ReviewHandlersDeps {
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
   taskStateService: TaskStateService
+  reviewOrchestration: ReviewOrchestrationService
+  reviewShipBatch?: ReviewShipBatchService | undefined
 }
 
 export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
+  const { reviewOrchestration, reviewShipBatch } = deps
   const env = buildAgentEnv()
 
   // ============================================================================
@@ -184,7 +187,8 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     for (const id of payload.taskIds) {
       if (!isValidTaskId(id)) throw new Error(`Invalid task ID format: ${id}`)
     }
-    return shipBatch({
+    if (!reviewShipBatch) throw new Error('ReviewShipBatchService not available')
+    return reviewShipBatch.shipBatch({
       taskIds: payload.taskIds,
       strategy: payload.strategy,
       env,

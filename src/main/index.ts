@@ -46,9 +46,16 @@ import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
 import { getTask, updateTask } from './services/sprint-service'
 import { createSprintMutations } from './services/sprint-mutations'
-import { setSprintBroadcaster } from './services/sprint-mutation-broadcaster'
-import { setReviewOrchestrationRepo } from './services/review-orchestration-service'
-import { setShipBatchRepo } from './services/review-ship-batch'
+import { initSprintService } from './services/sprint-service'
+import { initSprintUseCases } from './services/sprint-use-cases'
+import { initTaskStateService } from './services/task-state-service'
+import { setSprintBroadcaster, registerWebhookCallback } from './services/sprint-mutation-broadcaster'
+import { createWebhookService } from './services/webhook-service'
+import { getWebhooks } from './data/webhook-queries'
+import { createReviewOrchestrationService } from './services/review-orchestration-service'
+import type { ReviewOrchestrationService } from './services/review-orchestration-service'
+import { createReviewShipBatchService } from './services/review-ship-batch'
+import type { ReviewShipBatchService } from './services/review-ship-batch'
 import {
   closeTearoffWindows,
   setQuitting,
@@ -313,11 +320,28 @@ interface CoreStartupServices {
   terminalService: ReturnType<typeof createTaskTerminalService>
   /** TaskStateService wired with the poller/manual terminal dispatcher. */
   pollerTaskStateService: ReturnType<typeof createTaskStateService>
+  reviewOrchestration: ReviewOrchestrationService
+  reviewShipBatch: ReviewShipBatchService
   terminalDeps: {
     onStatusTerminal: ReturnType<typeof createTaskTerminalService>['onStatusTerminal']
     dialog: ReturnType<typeof createElectronDialogService>
     taskStateService: ReturnType<typeof createTaskStateService>
   }
+}
+
+/**
+ * Encapsulates all review-service wiring so the composition root has a single
+ * place to add new review services.
+ *
+ * Add any new review service wired at startup to this function only.
+ */
+function wireReviewServices(repo: ReturnType<typeof createSprintTaskRepository>): {
+  reviewOrchestration: ReviewOrchestrationService
+  reviewShipBatch: ReviewShipBatchService
+} {
+  const reviewOrchestration = createReviewOrchestrationService(repo)
+  const reviewShipBatch = createReviewShipBatchService(repo)
+  return { reviewOrchestration, reviewShipBatch }
 }
 
 /**
@@ -331,14 +355,21 @@ function initCoreServices(): CoreStartupServices {
 
   const repo = createSprintTaskRepository()
   // Bind all sprint mutation functions to the composition-root repo instance.
-  // The free-function exports in sprint-mutations.ts delegate to this bound object.
-  createSprintMutations(repo)
-  // Wire the repo into review services that previously called getSharedSprintTaskRepository().
-  setReviewOrchestrationRepo(repo)
-  setShipBatchRepo(repo)
-  // Wire the IPC broadcast function into sprint-mutation-broadcaster so it
-  // can notify renderer windows without importing the framework adapter directly.
+  // The returned SprintMutations object is distributed to all consumers that
+  // need data access without the broadcaster side effects.
+  const sprintMutations = createSprintMutations(repo)
+  initSprintService(sprintMutations)
+  initSprintUseCases(sprintMutations)
+  initTaskStateService(sprintMutations)
+
+  // Wire the IPC broadcast function and webhook service into the broadcaster.
   setSprintBroadcaster(() => broadcast('sprint:externalChange'))
+  const webhookLogger = createLogger('webhook-service')
+  const webhookService = createWebhookService({ getWebhooks, logger: webhookLogger })
+  registerWebhookCallback((event, task) => webhookService.fireWebhook(event, task))
+
+  // Wire all review services in one place — see wireReviewServices.
+  const { reviewOrchestration, reviewShipBatch } = wireReviewServices(repo)
 
   // The epic dependency graph has one owner — EpicGroupService, constructed
   // at the composition root and injected to every consumer (task-terminal-
@@ -377,7 +408,7 @@ function initCoreServices(): CoreStartupServices {
   startPrPollers(terminalDeps)
   setupCleanupTasks()
 
-  return { repo, epicGroupService, terminalService, pollerTaskStateService, terminalDeps }
+  return { repo, epicGroupService, terminalService, pollerTaskStateService, reviewOrchestration, reviewShipBatch, terminalDeps }
 }
 
 /**
@@ -574,7 +605,9 @@ app.whenReady().then(async () => {
     reviewService: review.reviewService,
     reviewChatStreamDeps: review.reviewChatStreamDeps,
     repo: core.repo,
-    epicGroupService: core.epicGroupService
+    epicGroupService: core.epicGroupService,
+    reviewOrchestration: core.reviewOrchestration,
+    reviewShipBatch: core.reviewShipBatch
   }
   registerAllHandlers(handlerDeps)
 

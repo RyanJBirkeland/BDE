@@ -19,31 +19,42 @@ export function broadcast<K extends keyof BroadcastChannels>(
  * Coalesced broadcast — batches rapid events into a single IPC send per window.
  * Uses a 16ms timer to collect events from the same tick and broadcasts them
  * as an array to reduce IPC overhead when multiple agents emit terminal events.
+ *
+ * Exported as a class so tests can construct isolated instances without
+ * module-reload tricks. The module-level `_coalesced` singleton preserves all
+ * existing call sites.
  */
+export class CoalescedBroadcaster {
+  private readonly pending = new Map<string, unknown[]>()
+  private flushTimer: ReturnType<typeof setTimeout> | null = null
 
-const _pending = new Map<string, unknown[]>()
-let _flushTimer: ReturnType<typeof setTimeout> | null = null
+  send<K extends keyof BroadcastChannels>(channel: K, payload: BroadcastChannels[K]): void {
+    const arr = this.pending.get(channel) ?? []
+    arr.push(payload)
+    this.pending.set(channel, arr)
+    if (!this.flushTimer) {
+      this.flushTimer = setTimeout(() => this.flush(), 16)
+    }
+  }
 
-function flush(): void {
-  _flushTimer = null
-  for (const [channel, payloads] of _pending) {
-    _pending.delete(channel)
-    for (const win of BrowserWindow.getAllWindows()) {
-      if (!win.isDestroyed()) {
-        win.webContents.send(channel + ':batch', payloads)
+  private flush(): void {
+    this.flushTimer = null
+    for (const [channel, payloads] of this.pending) {
+      this.pending.delete(channel)
+      for (const win of BrowserWindow.getAllWindows()) {
+        if (!win.isDestroyed()) {
+          win.webContents.send(channel + ':batch', payloads)
+        }
       }
     }
   }
 }
 
+const _coalesced = new CoalescedBroadcaster()
+
 export function broadcastCoalesced<K extends keyof BroadcastChannels>(
   channel: K,
   payload: BroadcastChannels[K]
 ): void {
-  const arr = _pending.get(channel) ?? []
-  arr.push(payload)
-  _pending.set(channel, arr)
-  if (!_flushTimer) {
-    _flushTimer = setTimeout(flush, 16)
-  }
+  _coalesced.send(channel, payload)
 }

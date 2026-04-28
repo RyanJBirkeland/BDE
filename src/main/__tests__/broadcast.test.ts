@@ -10,7 +10,7 @@ vi.mock('electron', () => ({
   }
 }))
 
-import { broadcast, broadcastCoalesced } from '../broadcast'
+import { broadcast, broadcastCoalesced, CoalescedBroadcaster } from '../broadcast'
 import { BrowserWindow } from 'electron'
 
 const mockGetAllWindows = vi.mocked(BrowserWindow.getAllWindows)
@@ -128,5 +128,59 @@ describe('broadcastCoalesced', () => {
 
     vi.advanceTimersByTime(1)
     expect(mockSend).toHaveBeenCalled()
+  })
+})
+
+describe('CoalescedBroadcaster class (T-19)', () => {
+  let broadcaster: CoalescedBroadcaster
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    mockGetAllWindows.mockReturnValue([
+      { webContents: { send: mockSend }, isDestroyed: mockIsDestroyed },
+      { webContents: { send: mockSend }, isDestroyed: mockIsDestroyed }
+    ] as any)
+    broadcaster = new CoalescedBroadcaster()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('send() batches multiple events into a single flush', () => {
+    broadcaster.send('agent:event', { agentId: 'a1', event: { type: 'log', message: 'one' } })
+    broadcaster.send('agent:event', { agentId: 'a2', event: { type: 'log', message: 'two' } })
+
+    expect(mockSend).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(16)
+
+    expect(mockSend).toHaveBeenCalledTimes(2)
+    expect(mockSend).toHaveBeenCalledWith('agent:event:batch', [
+      { agentId: 'a1', event: { type: 'log', message: 'one' } },
+      { agentId: 'a2', event: { type: 'log', message: 'two' } }
+    ])
+  })
+
+  it('send() on different channels flushes them as separate batch events', () => {
+    broadcaster.send('channel:one' as any, { val: 1 })
+    broadcaster.send('channel:two' as any, { val: 2 })
+
+    vi.advanceTimersByTime(16)
+
+    expect(mockSend).toHaveBeenCalledWith('channel:one:batch', [{ val: 1 }])
+    expect(mockSend).toHaveBeenCalledWith('channel:two:batch', [{ val: 2 }])
+  })
+
+  it('sets the flush timer only once across multiple send() calls before timer fires', () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+
+    broadcaster.send('agent:event', { agentId: 'a1', event: { type: 'log', message: 'one' } })
+    broadcaster.send('agent:event', { agentId: 'a2', event: { type: 'log', message: 'two' } })
+    broadcaster.send('agent:event', { agentId: 'a3', event: { type: 'log', message: 'three' } })
+
+    // Only one timer should be set for the batch
+    expect(setTimeoutSpy).toHaveBeenCalledTimes(1)
   })
 })

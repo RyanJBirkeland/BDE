@@ -16,8 +16,33 @@
  * `createTask` / `updateTask` dep so callers can wire broadcaster-wrapped
  * versions; the base defaults go to `sprint-mutations` directly.
  */
-import * as mutations from './sprint-mutations'
+import type { SprintMutations, UpdateTaskOptions, CreateTaskInput } from './sprint-mutations'
 import type { SprintTask } from '../../shared/types'
+
+// ---------------------------------------------------------------------------
+// Module-level SprintMutations binding — set by composition root via
+// initSprintUseCases(mutations). Avoids circular import with sprint-service.ts.
+// ---------------------------------------------------------------------------
+
+let _mutations: SprintMutations | null = null
+
+function getMutations(): SprintMutations {
+  if (!_mutations) throw new Error('[sprint-use-cases] Not initialised — call initSprintUseCases(mutations) before use')
+  return _mutations
+}
+
+/** Bind the composition-root SprintMutations object to this module. */
+export function initSprintUseCases(mutations: SprintMutations): void {
+  _mutations = mutations
+}
+
+// Convenience alias so existing code that references `mutations.*` continues
+// to work without a full rename across the file.
+const mutations = new Proxy({} as SprintMutations, {
+  get(_target, prop: string) {
+    return (getMutations() as unknown as Record<string, unknown>)[prop]
+  }
+})
 import { validateTaskCreation } from './task-validation'
 import { SpecParser } from './spec-quality/spec-parser'
 import { RequiredSectionsValidator } from './spec-quality/validators/sync-validators'
@@ -67,7 +92,7 @@ export interface CancelTaskDeps {
   updateTask?: (
     id: string,
     patch: Record<string, unknown>,
-    options?: mutations.UpdateTaskOptions
+    options?: UpdateTaskOptions
   ) => Promise<SprintTask | null>
 }
 
@@ -185,7 +210,7 @@ function appendCancelFailureAnnotation(
   id: string,
   row: SprintTask,
   timestamp: string,
-  doUpdate: (id: string, patch: Record<string, unknown>, options?: mutations.UpdateTaskOptions) => Promise<SprintTask | null>
+  doUpdate: (id: string, patch: Record<string, unknown>, options?: UpdateTaskOptions) => Promise<SprintTask | null>
 ): void {
   const existingNotes = typeof row.notes === 'string' ? row.notes : null
   const annotation = `[terminal-dispatch-failed ${timestamp}] Dependency resolution may not have run. Dependents may need manual unblock.`
@@ -250,7 +275,7 @@ export interface CreateTaskWithValidationDeps {
    * mutations layer; production callers inject the broadcaster-wrapped version
    * from `sprint-service.ts` so the renderer gets notified.
    */
-  createTask?: (input: mutations.CreateTaskInput) => Promise<SprintTask | null>
+  createTask?: (input: CreateTaskInput) => Promise<SprintTask | null>
 }
 
 export interface CreateTaskWithValidationOpts {
@@ -265,7 +290,7 @@ export interface CreateTaskWithValidationOpts {
 
 /** Shared task-creation entry point for the sprint:create IPC handler and the MCP server. */
 export async function createTaskWithValidation(
-  input: mutations.CreateTaskInput,
+  input: CreateTaskInput,
   deps: CreateTaskWithValidationDeps,
   opts: CreateTaskWithValidationOpts = {}
 ): Promise<SprintTask> {
@@ -333,7 +358,7 @@ export interface UpdateTaskFromUiDeps {
   updateTask?: (
     id: string,
     patch: Record<string, unknown>,
-    options?: mutations.UpdateTaskOptions
+    options?: UpdateTaskOptions
   ) => Promise<SprintTask | null>
 }
 

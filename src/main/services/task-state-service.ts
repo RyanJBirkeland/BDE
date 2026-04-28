@@ -16,8 +16,31 @@
 import type { Logger } from '../logger'
 import { buildBlockedNotes, computeBlockState } from './dependency-service'
 import { validateTaskSpec } from './spec-quality/index'
-import { getTask, listTasks, updateTask, forceUpdateTask } from './sprint-mutations'
+import type { SprintMutations, UpdateTaskOptions } from './sprint-mutations'
+import type { SprintTask } from '../../shared/types'
 import { listGroups } from '../data/task-group-queries'
+
+// ---------------------------------------------------------------------------
+// Module-level SprintMutations binding — set by composition root.
+// ---------------------------------------------------------------------------
+
+let _mutations: SprintMutations | null = null
+
+function getMutations(): SprintMutations {
+  if (!_mutations) throw new Error('[task-state-service] Not initialised — call initTaskStateService(mutations) before use')
+  return _mutations
+}
+
+/** Bind the composition-root SprintMutations object to this module. */
+export function initTaskStateService(mutations: SprintMutations): void {
+  _mutations = mutations
+}
+
+// Convenience aliases for existing code in this module.
+function getTask(id: string): SprintTask | null { return getMutations().getTask(id) }
+function listTasks(options?: Parameters<SprintMutations['listTasks']>[0]): SprintTask[] { return getMutations().listTasks(options) }
+function updateTask(id: string, patch: Record<string, unknown>, options?: UpdateTaskOptions): Promise<SprintTask | null> { return getMutations().updateTask(id, patch, options) }
+function forceUpdateTask(id: string, patch: Record<string, unknown>): Promise<SprintTask | null> { return getMutations().forceUpdateTask(id, patch) }
 import {
   isValidTransition,
   isTerminal,

@@ -11,6 +11,8 @@
  * batch button in Code Review Station. The per-task merge reuses the same
  * `executeReviewAction` pipeline as single-task shipIt — only the push is
  * deferred and batched.
+ *
+ * Use `createReviewShipBatchService(repo)` at the composition root.
  */
 import { execFileAsync } from '../lib/async-utils'
 import { createLogger } from '../logger'
@@ -21,25 +23,30 @@ import { getTask, notifySprintMutation } from './sprint-service'
 import { getErrorMessage } from '../../shared/errors'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { type RepoConfig, getRepoConfig } from '../paths'
-
-/**
- * Injected repository instance — set once at startup by the composition root
- * via `setShipBatchRepo(repo)`. All call sites use `getRepo()`.
- */
-let _repo: ISprintTaskRepository | null = null
-
-export function setShipBatchRepo(repo: ISprintTaskRepository): void {
-  _repo = repo
-}
-
-function getRepo(): ISprintTaskRepository {
-  if (!_repo) throw new Error('[review-ship-batch] Repository not initialised — call setShipBatchRepo(repo) before use')
-  return _repo
-}
 import type { ShipBatchInput, ShipBatchResult } from './review-orchestration-types'
 import type { SprintTask } from '../../shared/types/task-types'
 
 const logger = createLogger('review-ship-batch')
+
+// ============================================================================
+// Service interface
+// ============================================================================
+
+export interface ReviewShipBatchService {
+  shipBatch(input: ShipBatchInput): Promise<ShipBatchResult>
+}
+
+/**
+ * Create the ship-batch service bound to the given repository.
+ * Call once at the composition root; pass the returned object to handler deps.
+ */
+export function createReviewShipBatchService(repo: ISprintTaskRepository): ReviewShipBatchService {
+  return { shipBatch: (input) => shipBatchWithRepo(input, repo) }
+}
+
+// ============================================================================
+// Internal helpers
+// ============================================================================
 
 /**
  * Builds a shipIt plan with the `push` operation stripped so the caller can
@@ -109,7 +116,7 @@ function loadTasksOrThrow(
   })
 }
 
-export async function shipBatch(input: ShipBatchInput): Promise<ShipBatchResult> {
+async function shipBatchWithRepo(input: ShipBatchInput, repo: ISprintTaskRepository): Promise<ShipBatchResult> {
   const { taskIds, strategy, env, onStatusTerminal } = input
   const shippedTaskIds: string[] = []
 
@@ -133,7 +140,7 @@ export async function shipBatch(input: ShipBatchInput): Promise<ShipBatchResult>
     try {
       const plan = buildShipPlanWithoutPush(task, repoConfig, strategy)
       await executeReviewAction(plan, task.id, {
-        repo: getRepo(),
+        repo,
         broadcast: broadcastMutation,
         onStatusTerminal,
         env,

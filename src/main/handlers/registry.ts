@@ -6,6 +6,8 @@ import type { ChatStreamDeps } from './review-assistant'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import type { EpicGroupService } from '../services/epic-group-service'
 import type { TaskStateService } from '../services/task-state-service'
+import type { ReviewOrchestrationService } from '../services/review-orchestration-service'
+import type { ReviewShipBatchService } from '../services/review-ship-batch'
 
 import { registerAgentHandlers } from './agent-handlers'
 import { registerGitHandlers } from './git-handlers'
@@ -48,6 +50,8 @@ export interface AppHandlerDeps {
   reviewChatStreamDeps?: ChatStreamDeps | undefined
   repo: ISprintTaskRepository
   epicGroupService: EpicGroupService
+  reviewOrchestration: ReviewOrchestrationService
+  reviewShipBatch?: ReviewShipBatchService | undefined
 }
 
 /**
@@ -61,7 +65,9 @@ export function registerAllHandlers(deps: AppHandlerDeps): void {
     reviewService,
     reviewChatStreamDeps,
     repo,
-    epicGroupService
+    epicGroupService,
+    reviewOrchestration,
+    reviewShipBatch
   } = deps
 
   // Agent-related handlers (conditional on agentManager presence)
@@ -105,7 +111,7 @@ export function registerAllHandlers(deps: AppHandlerDeps): void {
   registerClaudeConfigHandlers()
 
   // Review handlers
-  registerReviewHandlers(terminalDeps)
+  registerReviewHandlers({ ...terminalDeps, reviewOrchestration, reviewShipBatch })
   if (reviewService && reviewChatStreamDeps) {
     registerReviewAssistantHandlers({
       reviewService,

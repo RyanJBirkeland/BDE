@@ -2,8 +2,9 @@
  * Sprint mutations — pure data layer operations without side effects.
  *
  * The composition root calls `createSprintMutations(repo)` once at startup.
- * That call binds every exported function to the provided repository instance.
- * There is no module-scope repo singleton; the bound object is the authority.
+ * That call binds every exported function to the provided repository instance
+ * and returns the bound object. The caller is responsible for distributing the
+ * returned object to consumers; there is no module-scope singleton here.
  *
  * For mutation + notification, see sprint-mutation-broadcaster.ts.
  * For the legacy unified interface, see sprint-service.ts.
@@ -30,15 +31,8 @@ export type {
 }
 
 // ---------------------------------------------------------------------------
-// Bound mutations object — set by createSprintMutations at startup
+// SprintMutations interface
 // ---------------------------------------------------------------------------
-
-let _bound: SprintMutations | null = null
-
-function getBound(): SprintMutations {
-  if (!_bound) throw new Error('[sprint-mutations] Not initialised — call createSprintMutations(repo) before use')
-  return _bound
-}
 
 export interface SprintMutations {
   getTask(id: string): SprintTask | null
@@ -71,11 +65,12 @@ export interface SprintMutations {
 
 /**
  * Composition-root entry point — binds every sprint mutation to the given
- * repository instance and installs it as the module-level authority.
+ * repository instance and returns the bound object.
  * Call once after `createSprintTaskRepository()` in `index.ts`.
+ * The returned object is the sole authority — do not discard it.
  */
 export function createSprintMutations(repo: ISprintTaskRepository): SprintMutations {
-  _bound = {
+  return {
     getTask: (id) => repo.getTask(id),
     listTasks: (options) => repo.listTasks(options),
     listTasksRecent: () => repo.listTasksRecent(),
@@ -97,102 +92,6 @@ export function createSprintMutations(repo: ISprintTaskRepository): SprintMutati
     flagStuckTasks: () => flagStuckTasksUsing(repo),
     createReviewTaskFromAdhoc: (input) => repo.createReviewTaskFromAdhoc(input)
   }
-  return _bound!
-}
-
-// ---------------------------------------------------------------------------
-// Free-function exports — delegate to the bound SprintMutations object.
-// Consumed by sprint-service.ts (barrel re-export) and legacy call sites.
-// ---------------------------------------------------------------------------
-
-export function getTask(id: string): SprintTask | null {
-  return getBound().getTask(id)
-}
-
-export function listTasks(options?: string | ListTasksOptions): SprintTask[] {
-  return getBound().listTasks(options)
-}
-
-export function listTasksRecent(): SprintTask[] {
-  return getBound().listTasksRecent()
-}
-
-export function getQueueStats(): QueueStats {
-  return getBound().getQueueStats()
-}
-
-export function getDoneTodayCount(): number {
-  return getBound().getDoneTodayCount()
-}
-
-export function listTasksWithOpenPrs(): SprintTaskPR[] {
-  return getBound().listTasksWithOpenPrs()
-}
-
-export function getHealthCheckTasks(): SprintTask[] {
-  return getBound().getHealthCheckTasks()
-}
-
-export function getSuccessRateBySpecType(): SpecTypeSuccessRate[] {
-  return getBound().getSuccessRateBySpecType()
-}
-
-export function getDailySuccessRate(days?: number): DailySuccessRate[] {
-  return getBound().getDailySuccessRate(days)
-}
-
-export function createTask(input: CreateTaskInput): Promise<SprintTask | null> {
-  return getBound().createTask(input)
-}
-
-export function claimTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  return getBound().claimTask(id, claimedBy)
-}
-
-export function updateTask(
-  id: string,
-  patch: Record<string, unknown>,
-  options?: UpdateTaskOptions
-): Promise<SprintTask | null> {
-  return getBound().updateTask(id, patch, options)
-}
-
-export function forceUpdateTask(id: string, patch: Record<string, unknown>): Promise<SprintTask | null> {
-  return getBound().forceUpdateTask(id, patch)
-}
-
-export function deleteTask(id: string): void {
-  getBound().deleteTask(id)
-}
-
-export function releaseTask(id: string, claimedBy: string): Promise<SprintTask | null> {
-  return getBound().releaseTask(id, claimedBy)
-}
-
-export function markTaskDoneByPrNumber(prNumber: number): Promise<string[]> {
-  return getBound().markTaskDoneByPrNumber(prNumber)
-}
-
-export function markTaskCancelledByPrNumber(prNumber: number): Promise<string[]> {
-  return getBound().markTaskCancelledByPrNumber(prNumber)
-}
-
-export function updateTaskMergeableState(prNumber: number, mergeableState: string | null): Promise<void> {
-  return getBound().updateTaskMergeableState(prNumber, mergeableState)
-}
-
-export function flagStuckTasks(): void {
-  getBound().flagStuckTasks()
-}
-
-export function createReviewTaskFromAdhoc(input: {
-  title: string
-  repo: string
-  spec: string
-  worktreePath: string
-  branch: string
-}): Promise<SprintTask | null> {
-  return getBound().createReviewTaskFromAdhoc(input)
 }
 
 // ---------------------------------------------------------------------------

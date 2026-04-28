@@ -7,6 +7,9 @@
  * - Webhook dispatch for external integrations
  *
  * Does NOT perform data mutations — see sprint-mutations.ts for that.
+ * Does NOT import framework (IPC) or integration (webhook) modules directly —
+ * callers register callbacks at startup via registerBroadcastCallback and
+ * registerWebhookCallback so service code never depends on transport layers.
  *
  * Usage pattern:
  *   const task = sprintMutations.createTask(input)
@@ -14,8 +17,7 @@
  */
 import type { SprintTask } from '../../shared/types'
 import { createLogger } from '../logger'
-import { createWebhookService, getWebhookEventName } from './webhook-service'
-import { getWebhooks } from '../data/webhook-queries'
+import { getWebhookEventName } from './webhook-service'
 
 const logger = createLogger('sprint-broadcaster')
 
@@ -28,10 +30,9 @@ export type SprintMutationListener = (event: SprintMutationEvent) => void
 
 const listeners: Set<SprintMutationListener> = new Set()
 
-// Initialize webhook service
-const webhookService = createWebhookService({ getWebhooks, logger })
-
 let _broadcastFn: (() => void) | null = null
+let _onBroadcast: (() => void) | null = null
+let _onWebhook: ((event: string, task: SprintTask) => void) | null = null
 let externalChangeTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
@@ -43,11 +44,30 @@ export function setSprintBroadcaster(fn: () => void): void {
   _broadcastFn = fn
 }
 
+/**
+ * Register the callback that fires the IPC external-change broadcast.
+ * Called once at startup by the composition root after the IPC adapter is ready.
+ * Decouples this module from importing broadcast() (an Electron framework concern).
+ */
+export function registerBroadcastCallback(fn: () => void): void {
+  _onBroadcast = fn
+}
+
+/**
+ * Register the callback that fires webhooks for external integrations.
+ * Called once at startup by the composition root after webhookService is created.
+ * Decouples this module from the webhookService singleton.
+ */
+export function registerWebhookCallback(fn: (event: string, task: SprintTask) => void): void {
+  _onWebhook = fn
+}
+
 function scheduleExternalChangeBroadcast(): void {
   if (externalChangeTimer !== null) clearTimeout(externalChangeTimer)
   externalChangeTimer = setTimeout(() => {
     externalChangeTimer = null
     _broadcastFn?.()
+    _onBroadcast?.()
   }, 200)
 }
 
@@ -64,7 +84,7 @@ export function onSprintMutation(cb: SprintMutationListener): () => void {
 
 /**
  * Notify all registered listeners of a sprint task mutation.
- * Also broadcasts to renderer windows and fires webhooks.
+ * Also schedules a broadcast to renderer windows and fires webhooks via callbacks.
  */
 export function notifySprintMutation(type: SprintMutationEvent['type'], task: SprintTask): void {
   const event = { type, task }
@@ -80,11 +100,13 @@ export function notifySprintMutation(type: SprintMutationEvent['type'], task: Sp
   // collapse rapid bursts (e.g. batch creates/updates) into a single round-trip
   scheduleExternalChangeBroadcast()
 
-  // Fire webhooks for external integrations
-  try {
-    const webhookEvent = getWebhookEventName(type, task)
-    webhookService.fireWebhook(webhookEvent, task)
-  } catch (err) {
-    logger.error(`[webhook] ${err}`)
+  // Fire webhooks for external integrations via registered callback
+  if (_onWebhook) {
+    try {
+      const webhookEvent = getWebhookEventName(type, task)
+      _onWebhook(webhookEvent, task)
+    } catch (err) {
+      logger.error(`[webhook] ${err}`)
+    }
   }
 }
