@@ -26,7 +26,7 @@ vi.mock('../../env-utils', () => ({
 }))
 
 import { execFile } from 'node:child_process'
-import { hasCommitsAheadOfMain } from '../resolve-success-phases'
+import { failTaskIfNoCommitsAheadOfMain } from '../resolve-success-phases'
 import { NO_COMMITS_NOTE } from '../failure-messages'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 
@@ -64,7 +64,7 @@ function makeLogger() {
   return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), event: vi.fn() }
 }
 
-describe('hasCommitsAheadOfMain — no-commits path', () => {
+describe('failTaskIfNoCommitsAheadOfMain — no-commits path', () => {
   beforeEach(() => {
     getCustomMock().mockReset()
     vi.mocked(mockRepo.updateTask).mockReset()
@@ -82,7 +82,7 @@ describe('hasCommitsAheadOfMain — no-commits path', () => {
       { stdout: 'M  src/foo.ts\n' } // git status --porcelain
     ])
 
-    const result = await hasCommitsAheadOfMain({
+    const result = await failTaskIfNoCommitsAheadOfMain({
       taskId: 'task-1',
       branch: 'agent/t-1-test-abcdef12',
       worktreePath: '/tmp/wt',
@@ -94,7 +94,7 @@ describe('hasCommitsAheadOfMain — no-commits path', () => {
       resolveFailure: vi.fn().mockReturnValue(false)
     })
 
-    expect(result).toBe(false)
+    expect(result.committed).toBe(false)
 
     const warnCalls: string[] = logger.warn.mock.calls.map((c: unknown[]) => String(c[0]))
     expect(warnCalls.some((msg) => msg.includes('no-commits — uncommitted status'))).toBe(true)
@@ -112,7 +112,7 @@ describe('hasCommitsAheadOfMain — no-commits path', () => {
       { stdout: '' } // git status --porcelain (empty)
     ])
 
-    await hasCommitsAheadOfMain({
+    await failTaskIfNoCommitsAheadOfMain({
       taskId: 'task-2',
       branch: 'agent/t-2-test-abcdef12',
       worktreePath: '/tmp/wt',
@@ -138,7 +138,7 @@ describe('hasCommitsAheadOfMain — no-commits path', () => {
       { stdout: '' } // git status --porcelain
     ])
 
-    await hasCommitsAheadOfMain({
+    await failTaskIfNoCommitsAheadOfMain({
       taskId: 'task-3',
       branch: 'agent/t-3-test-abcdef12',
       worktreePath: '/tmp/wt',
@@ -162,7 +162,7 @@ describe('hasCommitsAheadOfMain — no-commits path', () => {
       { stdout: '3\n' } // git rev-list --count (3 commits ahead)
     ])
 
-    const result = await hasCommitsAheadOfMain({
+    const result = await failTaskIfNoCommitsAheadOfMain({
       taskId: 'task-4',
       branch: 'agent/t-4-test-abcdef12',
       worktreePath: '/tmp/wt',
@@ -174,7 +174,7 @@ describe('hasCommitsAheadOfMain — no-commits path', () => {
       resolveFailure: vi.fn().mockReturnValue(false)
     })
 
-    expect(result).toBe(true)
+    expect(result.committed).toBe(true)
     expect(logger.warn).not.toHaveBeenCalled()
   })
 })

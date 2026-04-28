@@ -27,7 +27,7 @@ vi.mock('../resolve-success-phases', async (importOriginal) => {
       rebaseBaseSha: undefined,
       rebaseSucceeded: true
     }),
-    hasCommitsAheadOfMain: vi.fn().mockResolvedValue(true),
+    failTaskIfNoCommitsAheadOfMain: vi.fn().mockResolvedValue({ committed: true }),
     transitionTaskToReview: vi.fn()
   }
 })
@@ -88,7 +88,7 @@ import {
   detectAgentBranch,
   autoCommitPendingChanges,
   performRebaseOntoMain,
-  hasCommitsAheadOfMain,
+  failTaskIfNoCommitsAheadOfMain,
   transitionTaskToReview
 } from '../resolve-success-phases'
 import { resolveFailure } from '../resolve-failure-phases'
@@ -174,7 +174,7 @@ describe('resolveSuccess', () => {
       rebaseBaseSha: undefined,
       rebaseSucceeded: true
     })
-    vi.mocked(hasCommitsAheadOfMain).mockResolvedValue(true)
+    vi.mocked(failTaskIfNoCommitsAheadOfMain).mockResolvedValue({ committed: true })
     vi.mocked(detectNoOpRun).mockReturnValue(false)
     vi.mocked(listChangedFiles).mockResolvedValue(['src/foo.ts'])
     vi.mocked(verifyBranchTipOrFail).mockResolvedValue(true)
@@ -197,7 +197,7 @@ describe('resolveSuccess', () => {
     // Phase 3: rebase
     expect(performRebaseOntoMain).toHaveBeenCalledTimes(1)
     // Phase 4: verifyCommits
-    expect(hasCommitsAheadOfMain).toHaveBeenCalledTimes(1)
+    expect(failTaskIfNoCommitsAheadOfMain).toHaveBeenCalledTimes(1)
     // Phase 5: noOpGuard — via detectNoOpRun
     expect(detectNoOpRun).toHaveBeenCalledTimes(1)
     // Phase 6: branchTipVerify
@@ -221,7 +221,7 @@ describe('resolveSuccess', () => {
     expect(verifyWorktreeExists).toHaveBeenCalledTimes(1)
     expect(detectAgentBranch).toHaveBeenCalledTimes(1)
     expect(performRebaseOntoMain).not.toHaveBeenCalled()
-    expect(hasCommitsAheadOfMain).not.toHaveBeenCalled()
+    expect(failTaskIfNoCommitsAheadOfMain).not.toHaveBeenCalled()
     expect(verifyBranchTipOrFail).not.toHaveBeenCalled()
     expect(transitionTaskToReview).not.toHaveBeenCalled()
   })
