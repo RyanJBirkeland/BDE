@@ -74,7 +74,7 @@ describe('TurnTracker', () => {
     expect(tracker.totals()).toMatchObject({ tokensIn: 300, tokensOut: 130 })
   })
 
-  it('accumulates cache tokens from msg.message.usage', () => {
+  it('accumulates cache tokens from msg.message.usage', async () => {
     const tracker = new TurnTracker('run-1', makeTrackerDeps(db))
     tracker.processMessage({
       type: 'assistant',
@@ -100,6 +100,7 @@ describe('TurnTracker', () => {
         content: []
       }
     })
+    await Promise.resolve()
 
     const rows = db
       .prepare('SELECT cache_tokens_created, cache_tokens_read FROM agent_run_turns ORDER BY turn')
@@ -111,12 +112,13 @@ describe('TurnTracker', () => {
     expect(rows[1]).toMatchObject({ cache_tokens_created: 80000, cache_tokens_read: 80000 })
   })
 
-  it('stores zero cache tokens when cache fields absent from usage', () => {
+  it('stores zero cache tokens when cache fields absent from usage', async () => {
     const tracker = new TurnTracker('run-1', makeTrackerDeps(db))
     tracker.processMessage({
       type: 'assistant',
       message: { usage: { input_tokens: 100, output_tokens: 50 }, content: [] }
     })
+    await Promise.resolve()
 
     const row = db
       .prepare('SELECT cache_tokens_created, cache_tokens_read FROM agent_run_turns')
@@ -145,7 +147,7 @@ describe('TurnTracker', () => {
     expect(tracker.totals()).toMatchObject({ tokensIn: 100, tokensOut: 50 })
   })
 
-  it('writes one turn row per assistant message with cumulative totals', () => {
+  it('writes one turn row per assistant message with cumulative totals', async () => {
     const tracker = new TurnTracker('run-1', makeTrackerDeps(db))
 
     tracker.processMessage({
@@ -159,6 +161,7 @@ describe('TurnTracker', () => {
       type: 'assistant',
       message: { usage: { input_tokens: 200, output_tokens: 80 }, content: [] }
     })
+    await Promise.resolve()
 
     const rows = db
       .prepare('SELECT turn, tokens_in, tokens_out, tool_calls FROM agent_run_turns ORDER BY turn')
@@ -169,7 +172,7 @@ describe('TurnTracker', () => {
     expect(rows[1]).toMatchObject({ turn: 2, tokens_in: 300, tokens_out: 130, tool_calls: 0 })
   })
 
-  it('resets tool_calls per turn but keeps cumulative tokens', () => {
+  it('resets tool_calls per turn but keeps cumulative tokens', async () => {
     const tracker = new TurnTracker('run-1', makeTrackerDeps(db))
     tracker.processMessage({
       type: 'assistant',
@@ -185,6 +188,7 @@ describe('TurnTracker', () => {
       type: 'assistant',
       message: { usage: { input_tokens: 50, output_tokens: 20 }, content: [] }
     })
+    await Promise.resolve()
 
     const rows = db
       .prepare('SELECT tool_calls, tokens_in FROM agent_run_turns ORDER BY turn')
