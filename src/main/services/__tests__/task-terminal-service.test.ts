@@ -368,7 +368,9 @@ describe('createTaskTerminalService', () => {
     )
   })
 
-  it('does not emit the batch success log when refreshTaskDepIndex throws', () => {
+  it('still emits the batch success log and runs the for loop when refreshTaskDepIndex throws', () => {
+    // T-50: refreshTaskDepIndex failure is now isolated in its own try/catch so the
+    // for loop runs regardless. The batch success log is always emitted after the loop.
     mockRefreshDependencyIndex.mockImplementationOnce(() => {
       throw new Error('index boom')
     })
@@ -378,10 +380,14 @@ describe('createTaskTerminalService', () => {
 
     vi.runAllTimers()
 
+    // The refresh error is still logged
+    expect(deps.logger.error).toHaveBeenCalledWith(expect.stringContaining('refreshTaskDepIndex failed'))
+
+    // The for loop ran and the batch success log was emitted
     const infoCalls = (deps.logger.info as ReturnType<typeof vi.fn>).mock.calls
     const hasBatchSuccessLog = infoCalls.some((args: unknown[]) =>
       String(args[0]).includes('[task-terminal] resolved')
     )
-    expect(hasBatchSuccessLog).toBe(false)
+    expect(hasBatchSuccessLog).toBe(true)
   })
 })

@@ -1,4 +1,4 @@
-import type { AgentManagerConfig, SteerResult } from './types'
+import type { AgentManagerConfig, TerminalResolutionStrategy, SteerResult } from './types'
 import type { Logger } from '../logger'
 import type { SprintTask } from '../../shared/types/task-types'
 import type { TaskStatus } from '../../shared/task-state-machine'
@@ -162,6 +162,8 @@ export class AgentManagerImpl implements AgentManager {
   private readonly runAgentDeps: RunAgentDeps
   private readonly unitOfWork: IUnitOfWork
   private readonly _taskStateService: TaskStateService
+  /** Optional external hook that replaces the default dep-resolution path when set. */
+  private readonly _terminalResolution: TerminalResolutionStrategy | undefined
 
   // `config` is mutable so `reloadConfig()` can hot-update runtime-safe fields.
   // `worktreeBase` is never mutated after construction.
@@ -172,9 +174,11 @@ export class AgentManagerImpl implements AgentManager {
     readonly repo: IAgentTaskRepository,
     readonly logger: Logger = defaultLogger,
     epicDepsReader: EpicDepsReader = createEpicDependencyIndex(),
-    unitOfWork: IUnitOfWork = createUnitOfWork()
+    unitOfWork: IUnitOfWork = createUnitOfWork(),
+    terminalResolution?: TerminalResolutionStrategy
   ) {
     this.config = config
+    this._terminalResolution = terminalResolution
     this._depIndex = createDependencyIndex()
     this._epicIndex = epicDepsReader
     this._metrics = createMetricsCollector()
@@ -279,7 +283,7 @@ export class AgentManagerImpl implements AgentManager {
    *
    * Exposed to tests via `__testInternals.refreshDependencyIndex()`.
    */
-  _refreshDependencyIndex(): Map<string, string> {
+  _refreshDependencyIndex(): Map<string, TaskStatus> {
     // Delegate to the DrainLoop's dep-status map builder, which manages the
     // lastTaskDeps fingerprint cache internally.
     return this._drainLoopInstance.buildTaskStatusMap()
@@ -298,6 +302,7 @@ export class AgentManagerImpl implements AgentManager {
         repo: this.repo,
         unitOfWork: this.unitOfWork,
         config: this.config,
+        ...(this._terminalResolution && { terminalResolution: this._terminalResolution }),
         terminalCalled: new Map(), // TerminalGuard owns outer dedup; fresh Map per call is safe
         logger: this.logger
       })
@@ -421,7 +426,7 @@ export class AgentManagerImpl implements AgentManager {
    */
   async _validateAndClaimTask(
     rawTask: SprintTask,
-    taskStatusMap: Map<string, string>
+    taskStatusMap: Map<string, TaskStatus>
   ): Promise<{ task: MappedTask; repoPath: string } | null> {
     return validateAndClaimTask(rawTask, taskStatusMap, {
       config: this.config,
@@ -457,7 +462,7 @@ export class AgentManagerImpl implements AgentManager {
    */
   async _processQueuedTask(
     rawTask: SprintTask,
-    taskStatusMap: Map<string, string>,
+    taskStatusMap: Map<string, TaskStatus>,
     tickId?: string
   ): Promise<void> {
     return processQueuedTask(rawTask, taskStatusMap, {
@@ -479,7 +484,7 @@ export class AgentManagerImpl implements AgentManager {
    * Fetch queued tasks and process each one. Delegates to drain-loop.ts.
    * Exposed to tests via `__testInternals`.
    */
-  async _drainQueuedTasks(available: number, taskStatusMap: Map<string, string>): Promise<void> {
+  async _drainQueuedTasks(available: number, taskStatusMap: Map<string, TaskStatus>): Promise<void> {
     const queued = this.repo.getQueuedTasks(available)
     for (const rawTask of queued) {
       if (this._shuttingDown) break
@@ -836,9 +841,10 @@ export function createAgentManager(
   repo: IAgentTaskRepository,
   logger: Logger = defaultLogger,
   epicDepsReader?: EpicDepsReader,
-  unitOfWork?: IUnitOfWork
+  unitOfWork?: IUnitOfWork,
+  terminalResolution?: TerminalResolutionStrategy
 ): AgentManager {
-  return new AgentManagerImpl(config, repo, logger, epicDepsReader, unitOfWork)
+  return new AgentManagerImpl(config, repo, logger, epicDepsReader, unitOfWork, terminalResolution)
 }
 
 // Re-export killActiveAgent for callers that need to kill agents directly

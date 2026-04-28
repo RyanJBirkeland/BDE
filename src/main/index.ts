@@ -443,10 +443,12 @@ function wireAgentManagerAndMcp(
   setSettingsQueriesLogger(createLogger('settings-queries'))
 
   const agentManager = createAgentManager(
-    { ...amConfig, onStatusTerminal: core.terminalService.onStatusTerminal },
+    amConfig,
     core.repo,
     amLogger,
-    core.epicGroupService
+    core.epicGroupService,
+    undefined,
+    { onStatusTerminal: core.terminalService.onStatusTerminal }
   )
   agentManager.start()
 

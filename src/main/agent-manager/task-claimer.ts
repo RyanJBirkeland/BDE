@@ -62,7 +62,7 @@ export function resolveRepoPath(repoSlug: string): string | null {
  */
 export async function validateAndClaimTask(
   rawTask: SprintTask,
-  taskStatusMap: Map<string, string>,
+  taskStatusMap: Map<string, TaskStatus>,
   deps: TaskClaimerDeps
 ): Promise<{ task: MappedTask; repoPath: string } | null> {
   const task = mapQueuedTask(rawTask, deps.logger)
@@ -261,7 +261,7 @@ export interface ProcessQueuedTaskDeps extends TaskClaimerDeps {
  */
 export async function processQueuedTask(
   rawTask: SprintTask,
-  taskStatusMap: Map<string, string>,
+  taskStatusMap: Map<string, TaskStatus>,
   deps: ProcessQueuedTaskDeps
 ): Promise<void> {
   const taskId = rawTask.id

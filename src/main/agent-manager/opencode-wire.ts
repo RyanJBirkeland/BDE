@@ -129,11 +129,30 @@ function translateErrorEvent(error: OpencodeError): SDKWireMessage[] {
   return [buildAssistantTextMessage(`Error: ${message}`)]
 }
 
+function isOpencodeTextPart(part: unknown): part is OpencodeTextPart {
+  return typeof (part as OpencodeTextPart | undefined)?.text === 'string'
+}
+
+function isOpencodeToolPart(part: unknown): part is OpencodeToolPart {
+  const p = part as OpencodeToolPart | undefined
+  return (
+    typeof p?.tool === 'string' &&
+    typeof p?.callID === 'string' &&
+    p?.state !== null &&
+    typeof p?.state === 'object'
+  )
+}
+
+function isOpencodeStepFinishPart(part: unknown): part is OpencodeStepFinishPart {
+  return typeof (part as OpencodeStepFinishPart | undefined)?.reason === 'string'
+}
+
 /**
  * Translates one line of `opencode run --format json` stdout into zero or more
  * Anthropic SDK wire message objects that `agent-event-mapper.mapRawMessage()` can consume.
  *
- * Returns an empty array for unrecognized event types, invalid JSON, and empty lines.
+ * Returns an empty array for unrecognized event types, invalid JSON, empty lines, and
+ * events whose `part` field does not have the required structural shape.
  */
 export function translateOpencodeEvent(line: string): SDKWireMessage[] {
   const event = parseOpencodeEvent(line)
@@ -141,11 +160,11 @@ export function translateOpencodeEvent(line: string): SDKWireMessage[] {
 
   switch (event.type) {
     case 'text':
-      return translateTextEvent(event.part as OpencodeTextPart)
+      return isOpencodeTextPart(event.part) ? translateTextEvent(event.part) : []
     case 'tool':
-      return translateToolUseEvent(event.part as OpencodeToolPart)
+      return isOpencodeToolPart(event.part) ? translateToolUseEvent(event.part) : []
     case 'step_finish':
-      return translateStepFinishEvent(event.part as OpencodeStepFinishPart)
+      return isOpencodeStepFinishPart(event.part) ? translateStepFinishEvent(event.part) : []
     case 'error':
       return event.error !== undefined ? translateErrorEvent(event.error) : []
     default:

@@ -22,6 +22,32 @@ export interface LocalSpawnOptions {
   readonly logger?: Logger | undefined
 }
 
+/**
+ * Verifies that the handle returned by the local framework has the required
+ * members before the cast to `AgentHandle`. A missing `messages` iterable,
+ * `steer`, or `abort` would cause a runtime crash the first time the drain
+ * loop consumes the handle — better to fail here with a clear error.
+ */
+function assertValidAgentHandle(handle: unknown): void {
+  if (handle === null || typeof handle !== 'object') {
+    throw new Error(
+      'Local agent backend returned a non-object handle — expected an object with messages, steer, and abort.'
+    )
+  }
+  const h = handle as Record<string, unknown>
+  if (h.messages === null || typeof h.messages !== 'object' || !(Symbol.asyncIterator in (h.messages as object))) {
+    throw new Error(
+      'Local agent backend returned a handle with no async-iterable messages property.'
+    )
+  }
+  if (typeof h.steer !== 'function') {
+    throw new Error('Local agent backend returned a handle missing the required steer() method.')
+  }
+  if (typeof h.abort !== 'function') {
+    throw new Error('Local agent backend returned a handle missing the required abort() method.')
+  }
+}
+
 export async function spawnLocalAgent(opts: LocalSpawnOptions): Promise<AgentHandle> {
   let spawnBdeAgent: (typeof import('rbt-coding-agent/adapters/bde'))['spawnBdeAgent']
   try {
@@ -43,7 +69,7 @@ export async function spawnLocalAgent(opts: LocalSpawnOptions): Promise<AgentHan
       cwd: opts.cwd,
       model: opts.model
     })
-    // spawnBdeAgent returns a structurally compatible handle — messages iterable, abort(), steer() all present.
+    assertValidAgentHandle(handle)
     return handle as AgentHandle
   } finally {
     if (previousBase === undefined) {

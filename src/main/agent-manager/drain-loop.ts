@@ -94,7 +94,7 @@ export interface DrainLoopDeps {
   isDepIndexDirty: () => boolean
   /** Clears the dirty flag on the owner after a successful dep-index rebuild. */
   setDepIndexDirty: (dirty: boolean) => void
-  processQueuedTask: (rawTask: SprintTask, taskStatusMap: Map<string, string>) => Promise<void>
+  processQueuedTask: (rawTask: SprintTask, taskStatusMap: Map<string, TaskStatus>) => Promise<void>
   /** Called when a task is quarantined so dependency resolution runs. */
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   /** Central status-transition service — used by applyQuarantine. */
@@ -246,7 +246,7 @@ export class DrainLoop {
     return true
   }
 
-  buildTaskStatusMap(): Map<string, string> {
+  buildTaskStatusMap(): Map<string, TaskStatus> {
     if (this.deps.isDepIndexDirty()) {
       try {
         const hint =
@@ -265,7 +265,8 @@ export class DrainLoop {
         }
         this.deps.setDepIndexDirty(false)
         this._recentlyProcessedTaskIds.clear()
-        return new Map(allTasks.map((task) => [task.id, task.status]))
+        // DB mapper validates status before this point — cast is safe.
+        return new Map(allTasks.map((task) => [task.id, task.status])) as Map<string, TaskStatus>
       } catch (err) {
         this.deps.logger.error(
           `[agent-manager] Dep-index full rebuild failed — falling back to incremental refresh: ${err}`
@@ -276,18 +277,20 @@ export class DrainLoop {
     }
     const dirty = new Set(this._recentlyProcessedTaskIds)
     this._recentlyProcessedTaskIds.clear()
+    // DB mapper validates status; refreshDependencyIndex returns raw string values.
+    // The cast is safe: all statuses flowing through this path are validated at the boundary.
     return refreshDependencyIndex(
       this.deps.depIndex,
       this.lastTaskDeps,
       this.deps.repo,
       this.deps.logger,
       dirty
-    )
+    ) as Map<string, TaskStatus>
   }
 
   async drainQueuedTasksWithMap(
     available: number,
-    taskStatusMap: Map<string, string>
+    taskStatusMap: Map<string, TaskStatus>
   ): Promise<void> {
     return this.drainQueuedTasksInternal(available, taskStatusMap, 'unknown')
   }
@@ -296,7 +299,7 @@ export class DrainLoop {
 
   private async drainQueuedTasksInternal(
     available: number,
-    taskStatusMap: Map<string, string>,
+    taskStatusMap: Map<string, TaskStatus>,
     tickId: string
   ): Promise<void> {
     const freshSlots = availableSlots(this._concurrency, this.deps.activeAgents.size)
@@ -337,7 +340,7 @@ export class DrainLoop {
         this.deps.logger.error(`[agent-manager] Failed to process task ${taskId}: ${err}`)
         if (!taskId) continue
         if (await this.handleEnvironmentalFailure(taskId, err)) return
-        this.handleSpecLevelFailure(taskId, err)
+        await this.handleSpecLevelFailure(taskId, err)
       }
     }
   }
@@ -378,7 +381,7 @@ export class DrainLoop {
     }
   }
 
-  private handleSpecLevelFailure(taskId: string, err: unknown): void {
+  private async handleSpecLevelFailure(taskId: string, err: unknown): Promise<void> {
     const count = (this.drainFailureCounts.get(taskId) ?? 0) + 1
     this.drainFailureCounts.set(taskId, count)
     if (!shouldQuarantine(count)) return
@@ -387,9 +390,7 @@ export class DrainLoop {
       `[agent-manager] Task ${taskId} failed ${count} consecutive times — quarantining to prevent drain churn`
     )
     const note = formatQuarantineNote(count, err)
-    void this.applyQuarantine(taskId, note).catch((quarantineErr) =>
-      this.deps.logger.error(`[agent-manager] Failed to quarantine task ${taskId}: ${quarantineErr}`)
-    )
+    await this.applyQuarantine(taskId, note)
   }
 
   private async applyQuarantine(taskId: string, note: string): Promise<void> {
@@ -403,8 +404,8 @@ export class DrainLoop {
       // Decrement only after the transition resolves — avoids a race where the
       // next drain tick's failure increment fires before this decrement lands.
       this.drainFailureCounts.delete(taskId)
-    } catch (termErr) {
-      this.deps.logger.warn(`[agent-manager] transition failed for quarantined task ${taskId}: ${termErr}`)
+    } catch (quarantineErr) {
+      this.deps.logger.warn(`[agent-manager] transition failed for quarantined task ${taskId}: ${quarantineErr}`)
     }
   }
 }
@@ -425,7 +426,7 @@ export async function validateDrainPreconditions(deps: DrainLoopDeps): Promise<b
 /**
  * @deprecated Use `new DrainLoop(deps).buildTaskStatusMap()`.
  */
-export function buildTaskStatusMap(deps: DrainLoopDeps): Map<string, string> {
+export function buildTaskStatusMap(deps: DrainLoopDeps): Map<string, TaskStatus> {
   return new DrainLoop(deps).buildTaskStatusMap()
 }
 
@@ -434,7 +435,7 @@ export function buildTaskStatusMap(deps: DrainLoopDeps): Map<string, string> {
  */
 export async function drainQueuedTasks(
   available: number,
-  taskStatusMap: Map<string, string>,
+  taskStatusMap: Map<string, TaskStatus>,
   deps: DrainLoopDeps
 ): Promise<void> {
   return new DrainLoop(deps).drainQueuedTasksWithMap(available, taskStatusMap)

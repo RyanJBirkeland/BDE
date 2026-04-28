@@ -23,7 +23,18 @@ export interface AgentManagerConfig {
   idleTimeoutMs: number
   pollIntervalMs: number
   defaultModel: string
-  onStatusTerminal?: (taskId: string, status: TaskStatus) => void
+}
+
+/**
+ * Behavior hook for routing terminal status events outside the agent manager's
+ * own dep-resolution path. Extracted from `AgentManagerConfig` so that config
+ * remains a pure data struct and behavior injection is explicit at the call site.
+ *
+ * When provided, `onStatusTerminal` is invoked instead of the agent manager's
+ * default `resolveTerminalDependents` logic in `terminal-handler.ts`.
+ */
+export interface TerminalResolutionStrategy {
+  onStatusTerminal: (taskId: string, status: TaskStatus) => void
 }
 
 export const DEFAULT_CONFIG: AgentManagerConfig = {

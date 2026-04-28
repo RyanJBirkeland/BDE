@@ -11,6 +11,7 @@ import type { DependencyIndex } from '../services/dependency-service'
 import { formatBlockedNote } from '../services/dependency-service'
 import type { SprintTask } from '../../shared/types/task-types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
+import type { TaskStatus } from '../../shared/task-state-machine'
 
 // ---------------------------------------------------------------------------
 // MappedTask type
@@ -88,7 +89,7 @@ export function mapQueuedTask(task: SprintTask, logger: Logger): MappedTask | nu
 export function checkAndBlockDeps(
   taskId: string,
   rawDeps: unknown,
-  taskStatusMap: Map<string, string>,
+  taskStatusMap: Map<string, TaskStatus>,
   repo: IAgentTaskRepository,
   depIndex: DependencyIndex,
   logger: Logger

@@ -1,10 +1,21 @@
 import type { DependencyIndex } from '../services/dependency-service'
 import type { TaskDependency } from '../../shared/types'
-import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { Logger } from '../logger'
 import { isTerminal, isTaskStatus } from '../../shared/task-state-machine'
 
 export type DepsFingerprint = Map<string, { deps: TaskDependency[] | null; hash: string }>
+
+/**
+ * The minimum repository surface that `refreshDependencyIndex` needs.
+ * Callers holding a full `IAgentTaskRepository` satisfy this structurally;
+ * callers that only have `getTasksWithDependencies` can pass a plain object
+ * without a double-cast.
+ */
+export interface DependencyTaskReader {
+  getTasksWithDependencies(
+    hint?: Set<string>
+  ): Array<{ id: string; depends_on: TaskDependency[] | null; status: string }>
+}
 
 /**
  * F-t1-sysprof-1: Compute a stable fingerprint of a dependency array.
@@ -46,7 +57,7 @@ export function computeDepsFingerprint(deps: TaskDependency[] | null): string {
 export function refreshDependencyIndex(
   depIndex: DependencyIndex,
   fingerprints: DepsFingerprint,
-  repo: IAgentTaskRepository,
+  repo: DependencyTaskReader,
   logger: Logger,
   dirtyTaskIds?: Set<string>
 ): Map<string, string> {

@@ -9,8 +9,11 @@ import type { EpicDepsReader } from './epic-dependency-service'
 import type { SprintTask, TaskDependency, TaskGroup } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { getErrorMessage } from '../../shared/errors'
-import { refreshDependencyIndex, type DepsFingerprint } from '../agent-manager/dependency-refresher'
-import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import {
+  refreshDependencyIndex,
+  type DepsFingerprint,
+  type DependencyTaskReader
+} from '../agent-manager/dependency-refresher'
 import type { Logger } from '../logger'
 import type { TerminalDispatcher } from './task-state-service'
 
@@ -70,11 +73,8 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
   function refreshTaskDepIndex(): void {
     // Use incremental refresher for task dependencies (same as agent-manager drain loop)
     // to avoid stale index issues when tasks are created after last refresh.
-    const repo = { getTasksWithDependencies: deps.getTasksWithDependencies } as Pick<
-      IAgentTaskRepository,
-      'getTasksWithDependencies'
-    >
-    refreshDependencyIndex(depIndex, fingerprints, repo as IAgentTaskRepository, deps.logger)
+    const taskReader: DependencyTaskReader = { getTasksWithDependencies: deps.getTasksWithDependencies }
+    refreshDependencyIndex(depIndex, fingerprints, taskReader, deps.logger)
     // Epic dependency graph is owned by EpicGroupService — read via deps.epicDepsReader.
   }
 
@@ -87,41 +87,41 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
     resolver.schedule(taskId, status, (pending) => {
       try {
         refreshTaskDepIndex() // Refresh task graph once for the batch; epic graph is always live.
-        const failedTaskIds: string[] = []
-        const totalCount = pending.size
-        for (const [id, terminalStatus] of pending) {
-          try {
-            resolveDependents(
-              id,
-              terminalStatus,
-              depIndex,
-              deps.getTask,
-              deps.updateTask,
-              deps.logger,
-              deps.getSetting,
-              deps.epicDepsReader,
-              deps.getGroup,
-              deps.listGroupTasks,
-              deps.runInTransaction,
-              undefined,
-              deps.taskStateService
-            )
-          } catch (err) {
-            failedTaskIds.push(id)
-            deps.logger.error(`[task-terminal-service] resolveDependents failed for ${id}: ${err}`)
-          }
-        }
-        deps.logger.info(
-          `[task-terminal] resolved ${totalCount - failedTaskIds.length} dependents in ${totalCount} tasks`
-        )
-        if (failedTaskIds.length > 0) {
-          deps.logger.error(
-            `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
-          )
-        }
       } catch (err) {
         deps.logger.error(`[task-terminal-service] refreshTaskDepIndex failed: ${err}`)
         deps.broadcast?.('task-terminal:resolution-error', { error: getErrorMessage(err) })
+      }
+      const failedTaskIds: string[] = []
+      const totalCount = pending.size
+      for (const [id, terminalStatus] of pending) {
+        try {
+          resolveDependents(
+            id,
+            terminalStatus,
+            depIndex,
+            deps.getTask,
+            deps.updateTask,
+            deps.logger,
+            deps.getSetting,
+            deps.epicDepsReader,
+            deps.getGroup,
+            deps.listGroupTasks,
+            deps.runInTransaction,
+            undefined,
+            deps.taskStateService
+          )
+        } catch (err) {
+          failedTaskIds.push(id)
+          deps.logger.error(`[task-terminal-service] resolveDependents failed for ${id}: ${err}`)
+        }
+      }
+      deps.logger.info(
+        `[task-terminal] resolved ${totalCount - failedTaskIds.length} dependents in ${totalCount} tasks`
+      )
+      if (failedTaskIds.length > 0) {
+        deps.logger.error(
+          `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
+        )
       }
     })
   }

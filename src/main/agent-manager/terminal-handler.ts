@@ -4,7 +4,7 @@ import type { EpicDepsReader } from '../services/epic-dependency-service'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
 import { NOTES_MAX_LENGTH } from './types'
-import type { AgentManagerConfig } from './types'
+import type { AgentManagerConfig, TerminalResolutionStrategy } from './types'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { resolveDependents } from '../lib/resolve-dependents'
@@ -106,6 +106,8 @@ export interface TerminalHandlerDeps {
   repo: IAgentTaskRepository
   unitOfWork: IUnitOfWork
   config: AgentManagerConfig
+  /** Optional external hook that replaces the default dep-resolution path. */
+  terminalResolution?: TerminalResolutionStrategy
   terminalCalled: Map<string, Promise<void>>
   logger: Logger
   taskStateService?: TaskStateService
@@ -117,10 +119,10 @@ async function executeTerminal(
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   deps: TerminalHandlerDeps
 ): Promise<void> {
-  const { metrics, depIndex, epicIndex, repo, unitOfWork, config, logger } = deps
+  const { metrics, depIndex, epicIndex, repo, unitOfWork, logger } = deps
   recordTerminalMetrics(taskId, status, metrics, logger)
-  if (config.onStatusTerminal) {
-    config.onStatusTerminal(taskId, status)
+  if (deps.terminalResolution) {
+    deps.terminalResolution.onStatusTerminal(taskId, status)
   } else {
     await resolveTerminalDependents(
       taskId,

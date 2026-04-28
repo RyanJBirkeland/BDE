@@ -161,6 +161,40 @@ describe('translateOpencodeEvent', () => {
     it('returns empty array for a whitespace-only string', () => {
       expect(translateOpencodeEvent('   \t\n  ')).toEqual([])
     })
+
+    it('returns empty array for a text event when part.text is not a string', () => {
+      const malformedTextLine = '{"type":"text","sessionID":"ses_abc","part":{"type":"text","text":42}}'
+      expect(translateOpencodeEvent(malformedTextLine)).toEqual([])
+    })
+
+    it('returns empty array for a text event when part is missing entirely', () => {
+      const noPartLine = '{"type":"text","sessionID":"ses_abc"}'
+      expect(translateOpencodeEvent(noPartLine)).toEqual([])
+    })
+
+    it('returns empty array for a tool event when part.tool is missing', () => {
+      const malformedToolLine =
+        '{"type":"tool","sessionID":"ses_abc","part":{"type":"tool","callID":"call_1","state":{"status":"completed"}}}'
+      expect(translateOpencodeEvent(malformedToolLine)).toEqual([])
+    })
+
+    it('returns empty array for a tool event when part.callID is missing', () => {
+      const malformedToolLine =
+        '{"type":"tool","sessionID":"ses_abc","part":{"type":"tool","tool":"bash","state":{"status":"completed"}}}'
+      expect(translateOpencodeEvent(malformedToolLine)).toEqual([])
+    })
+
+    it('returns empty array for a tool event when part.state is missing', () => {
+      const malformedToolLine =
+        '{"type":"tool","sessionID":"ses_abc","part":{"type":"tool","tool":"bash","callID":"call_1"}}'
+      expect(translateOpencodeEvent(malformedToolLine)).toEqual([])
+    })
+
+    it('returns empty array for a step_finish event when part.reason is missing', () => {
+      const malformedStepFinishLine =
+        '{"type":"step_finish","sessionID":"ses_abc","part":{"cost":0.01}}'
+      expect(translateOpencodeEvent(malformedStepFinishLine)).toEqual([])
+    })
   })
 })
 

@@ -60,7 +60,7 @@ function resolvePhysicalPath(path: string, logger?: Logger): string | null {
     return realpathSync(lexicalPath)
   } catch (err) {
     ;(logger ?? console).warn(
-      `[agent-manager] realpath failed for "${lexicalPath}": ${(err as Error).message}`
+      `[agent-manager] realpath failed for "${lexicalPath}": ${err instanceof Error ? err.message : String(err)}`
     )
     return null
   }
@@ -165,7 +165,7 @@ export async function spawnAgent(opts: {
       return annotateHandle(handle, 'local', resolved.model)
     } catch (err) {
       opts.logger?.warn(
-        `[agent-manager] local backend for ${agentType} failed; falling back to Claude: ${(err as Error).message}`
+        `[agent-manager] local backend for ${agentType} failed; falling back to Claude: ${err instanceof Error ? err.message : String(err)}`
       )
       // Fall through to Claude path below.
     }

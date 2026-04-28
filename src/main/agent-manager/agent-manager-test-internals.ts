@@ -19,6 +19,7 @@
  */
 
 import type { ActiveAgent } from './types'
+import type { TaskStatus } from '../../shared/task-state-machine'
 import type { ConcurrencyState } from './concurrency'
 import type { TaskDependency } from '../../shared/types'
 import type { SprintTask } from '../../shared/types/task-types'
@@ -140,13 +141,13 @@ export class AgentManagerTestInternals {
   drainLoop(): Promise<void> {
     return this.mgr._drainLoop()
   }
-  drainQueuedTasks(available: number, taskStatusMap: Map<string, string>): Promise<void> {
+  drainQueuedTasks(available: number, taskStatusMap: Map<string, TaskStatus>): Promise<void> {
     return this.mgr._drainQueuedTasks(available, taskStatusMap)
   }
-  processQueuedTask(rawTask: SprintTask, taskStatusMap: Map<string, string>): Promise<void> {
+  processQueuedTask(rawTask: SprintTask, taskStatusMap: Map<string, TaskStatus>): Promise<void> {
     return this.mgr._processQueuedTask(rawTask, taskStatusMap)
   }
-  refreshDependencyIndex(): Map<string, string> {
+  refreshDependencyIndex(): Map<string, TaskStatus> {
     return this.mgr._refreshDependencyIndex()
   }
   spawnAgent(
