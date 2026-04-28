@@ -147,23 +147,44 @@ export function getAllTaskIds(db?: Database.Database): Set<string> {
   return new Set(rows.map((r) => r.id))
 }
 
-export function getTasksWithDependencies(db?: Database.Database): Array<{
+export function getTasksWithDependencies(
+  db?: Database.Database,
+  changedTaskIds?: Set<string>
+): Array<{
   id: string
   depends_on: TaskDependency[] | null
   status: string
 }> {
   // No try/catch: DB errors must propagate (same rationale as getAllTaskIds).
-  // Query ALL tasks, not just those with depends_on — cycle detection needs
-  // the full graph to catch cycles involving tasks receiving their first dependency.
+  // Query ALL tasks by default — cycle detection needs the full graph to catch
+  // cycles involving tasks receiving their first dependency.
+  // When changedTaskIds is non-empty, scope the query to those IDs only as a
+  // performance hint (incremental refresh path).
   const conn = db ?? getDb()
-  const rows = conn.prepare('SELECT id, depends_on, status FROM sprint_tasks').all() as Array<{
-    id: string
-    depends_on: string | null
-    status: string
-  }>
+
+  const rows =
+    changedTaskIds && changedTaskIds.size > 0
+      ? queryTasksByIds(conn, changedTaskIds)
+      : (conn.prepare('SELECT id, depends_on, status FROM sprint_tasks').all() as Array<{
+          id: string
+          depends_on: string | null
+          status: string
+        }>)
 
   return rows.map((row) => ({
     ...row,
     depends_on: row.depends_on ? sanitizeDependsOn(row.depends_on) : null
   }))
+}
+
+function queryTasksByIds(
+  conn: Database.Database,
+  ids: Set<string>
+): Array<{ id: string; depends_on: string | null; status: string }> {
+  const placeholders = Array.from(ids)
+    .map(() => '?')
+    .join(', ')
+  return conn
+    .prepare(`SELECT id, depends_on, status FROM sprint_tasks WHERE id IN (${placeholders})`)
+    .all(...Array.from(ids)) as Array<{ id: string; depends_on: string | null; status: string }>
 }

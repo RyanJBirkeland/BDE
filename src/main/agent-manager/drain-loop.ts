@@ -249,7 +249,11 @@ export class DrainLoop {
   buildTaskStatusMap(): Map<string, string> {
     if (this.deps.isDepIndexDirty()) {
       try {
-        const allTasks = this.deps.repo.getTasksWithDependencies()
+        const hint =
+          this._recentlyProcessedTaskIds.size > 0
+            ? new Set(this._recentlyProcessedTaskIds)
+            : undefined
+        const allTasks = this.deps.repo.getTasksWithDependencies(hint)
         this.deps.depIndex.rebuild(allTasks)
         this.lastTaskDeps.clear()
         for (const task of allTasks) {
@@ -260,6 +264,7 @@ export class DrainLoop {
           })
         }
         this.deps.setDepIndexDirty(false)
+        this._recentlyProcessedTaskIds.clear()
         return new Map(allTasks.map((task) => [task.id, task.status]))
       } catch (err) {
         this.deps.logger.error(

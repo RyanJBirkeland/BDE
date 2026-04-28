@@ -956,6 +956,35 @@ describe('getTasksWithDependencies', () => {
     expect(withDeps.depends_on).toEqual([{ id: 'dep-1', type: 'hard' }])
     expect(noDeps.depends_on).toBeNull()
   })
+
+  it('returns all tasks when changedTaskIds is undefined (full scan)', async () => {
+    insertTask({ id: 'task-a', status: 'queued' })
+    insertTask({ id: 'task-b', status: 'active' })
+
+    const result = getTasksWithDependencies(undefined, undefined)
+    expect(result.length).toBe(2)
+  })
+
+  it('returns all tasks when changedTaskIds is an empty set (full scan)', async () => {
+    insertTask({ id: 'task-c', status: 'queued' })
+    insertTask({ id: 'task-d', status: 'active' })
+
+    const result = getTasksWithDependencies(undefined, new Set())
+    expect(result.length).toBe(2)
+  })
+
+  it('returns only the specified tasks when changedTaskIds is non-empty (scoped scan)', async () => {
+    const deps = JSON.stringify([{ id: 'task-x', type: 'hard' }])
+    insertTask({ id: 'task-x', status: 'done' })
+    insertTask({ id: 'task-y', depends_on: deps, status: 'blocked' })
+    insertTask({ id: 'task-z', status: 'queued' })
+
+    const result = getTasksWithDependencies(undefined, new Set(['task-x', 'task-y']))
+    expect(result.length).toBe(2)
+    expect(result.map((t) => t.id).sort()).toEqual(['task-x', 'task-y'])
+    const taskY = result.find((t) => t.id === 'task-y')!
+    expect(taskY.depends_on).toEqual([{ id: 'task-x', type: 'hard' }])
+  })
 })
 
 describe('clearSprintTaskFk', () => {

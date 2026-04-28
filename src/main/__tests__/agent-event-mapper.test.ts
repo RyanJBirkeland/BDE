@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
+const broadcastMock = vi.fn()
 const broadcastCoalescedMock = vi.fn()
 const insertEventBatchMock = vi.fn()
 const getDbMock = vi.fn(() => ({}) as unknown)
@@ -16,6 +17,7 @@ const loggerErrorMock = vi.fn()
 const loggerDebugMock = vi.fn()
 
 vi.mock('../broadcast', () => ({
+  broadcast: (...args: unknown[]) => broadcastMock(...args),
   broadcastCoalesced: (...args: unknown[]) => broadcastCoalescedMock(...args)
 }))
 
@@ -39,6 +41,7 @@ vi.mock('../logger', () => ({
 beforeEach(() => {
   vi.useFakeTimers()
   vi.resetModules() // Reset module state between tests
+  broadcastMock.mockReset()
   broadcastCoalescedMock.mockReset()
   insertEventBatchMock.mockReset()
   loggerInfoMock.mockReset()
@@ -391,7 +394,7 @@ describe('mapRawMessage tool_result from user content blocks', () => {
 })
 
 describe('EP-15: DLQ sentinel on permanent batch failure', () => {
-  it('logs WARN with droppedCount and sampleAgentIds, clears pending, resets counter', async () => {
+  it('logs ERROR with droppedCount and sampleAgentIds, clears pending, resets counter', async () => {
     const {
       emitAgentEvent,
       flushAgentEventBatcher,
@@ -415,16 +418,23 @@ describe('EP-15: DLQ sentinel on permanent batch failure', () => {
       flushAgentEventBatcher()
     }
 
-    // The 5th flush should have triggered the DLQ sentinel WARN
-    const dlqWarn = loggerWarnMock.mock.calls.find((call) =>
+    // The 5th flush should have triggered the DLQ sentinel as ERROR
+    const dlqError = loggerErrorMock.mock.calls.find((call) =>
       String(call[0]).includes('event-batcher: permanent failure — dropping events')
     )
-    expect(dlqWarn).toBeDefined()
-    const payload = String(dlqWarn?.[0])
+    expect(dlqError).toBeDefined()
+    const payload = String(dlqError?.[0])
     expect(payload).toContain('"droppedCount":3')
     expect(payload).toContain('agent-A')
     expect(payload).toContain('agent-B')
     expect(payload).toContain('SQLITE_LOCKED')
+
+    // broadcast('manager:warning', ...) must have been called
+    const warningBroadcast = broadcastMock.mock.calls.find(
+      (call) => call[0] === 'manager:warning'
+    )
+    expect(warningBroadcast).toBeDefined()
+    expect(String(warningBroadcast?.[1]?.message)).toContain('permanent failure')
 
     // The dropped counter should reflect the loss
     expect(getDroppedEventCount()).toBe(3)
@@ -443,6 +453,40 @@ describe('EP-15: DLQ sentinel on permanent batch failure', () => {
     flushAgentEventBatcher()
     // One attempt, event re-queued — circuit breaker not tripped.
     expect(insertEventBatchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('logs ERROR and broadcasts manager:warning when queue overflows the cap', async () => {
+    const { emitAgentEvent, flushAgentEventBatcher } = await import('../agent-event-mapper')
+
+    insertEventBatchMock.mockImplementation(() => {
+      throw new Error('SQLITE_BUSY')
+    })
+
+    // Fill the queue past MAX_PENDING_EVENTS (10000) by triggering re-queues.
+    // Emit 50 events to trigger the first auto-flush (fails, re-queues 50).
+    for (let i = 0; i < 50; i++) {
+      emitAgentEvent('agent-overflow', { type: 'agent:text', text: `m${i}`, timestamp: i })
+    }
+
+    // Emit 10000 more events — eventual auto-flushes fail and re-queue,
+    // causing the pending queue to exceed MAX_PENDING_EVENTS. The overflow
+    // path should fire on one of these batches.
+    for (let i = 50; i < 10050; i++) {
+      emitAgentEvent('agent-overflow', { type: 'agent:text', text: `m${i}`, timestamp: i })
+    }
+    flushAgentEventBatcher()
+
+    // logger.error must have been called with an overflow message
+    const overflowError = loggerErrorMock.mock.calls.find((call) =>
+      String(call[0]).includes('Event queue overflow')
+    )
+    expect(overflowError).toBeDefined()
+
+    // broadcast('manager:warning', ...) must have been called for the overflow
+    const overflowBroadcast = broadcastMock.mock.calls.find(
+      (call) => call[0] === 'manager:warning' && String(call[1]?.message).includes('overflow')
+    )
+    expect(overflowBroadcast).toBeDefined()
   })
 })
 

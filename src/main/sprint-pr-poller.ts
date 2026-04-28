@@ -239,9 +239,9 @@ export class SprintPrPoller implements SprintPrPollerInstance {
       return
     }
 
-    const inputs: PrStatusInput[] = tasks
-      .map((t) => ({ taskId: t.id, prUrl: t.pr_url! }))
-      .filter((t) => t.prUrl)
+    const inputs: PrStatusInput[] = tasks.flatMap((t) =>
+      t.pr_url ? [{ taskId: t.id, prUrl: t.pr_url }] : []
+    )
 
     if (inputs.length === 0) return
 

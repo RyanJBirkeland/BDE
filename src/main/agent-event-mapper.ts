@@ -3,7 +3,7 @@
  * Used by both adhoc-agent.ts (user-spawned) and run-agent.ts (AgentManager pipeline).
  */
 import type Database from 'better-sqlite3'
-import { broadcastCoalesced } from './broadcast'
+import { broadcast, broadcastCoalesced } from './broadcast'
 import { insertEventBatch, type EventBatchItem } from './data/event-queries'
 import { getDb } from './db'
 import { createLogger } from './logger'
@@ -294,23 +294,24 @@ export function flushAgentEventBatcher(db?: Database.Database): void {
       if (_pending.length > MAX_PENDING_EVENTS) {
         const dropped = _pending.splice(0, _pending.length - MAX_PENDING_EVENTS)
         const droppedAgentIds = Array.from(new Set(dropped.map((r) => r.agentId)))
-        logger.warn(
-          `Dropped ${dropped.length} oldest events (cap) — agentIds=${droppedAgentIds.join(',')}`
-        )
+        const overflowMessage = `Event queue overflow: dropped ${dropped.length} events — agentIds=${droppedAgentIds.join(',')}`
+        logger.error(overflowMessage)
+        broadcast('manager:warning', { message: overflowMessage })
       }
     } else {
       // EP-15 DLQ sentinel: at the consecutive-failure ceiling we cannot keep
-      // re-queuing forever. Log a structured WARN with sample agent IDs so
+      // re-queuing forever. Log a structured ERROR with sample agent IDs so
       // operators can find affected runs in `~/.fleet/fleet.log`, bump the dropped
       // counter (for future metrics), and reset the failure counter so a
       // subsequent recovery does not stay tripped indefinitely.
       const droppedCount = rows.length
       const sampleAgentIds = Array.from(new Set(rows.slice(0, 5).map((r) => r.agentId)))
       const reason = err instanceof Error ? err.message : String(err)
-      logger.warn(
+      const permanentFailureMessage =
         `event-batcher: permanent failure — dropping events ` +
-          JSON.stringify({ droppedCount, sampleAgentIds, reason })
-      )
+        JSON.stringify({ droppedCount, sampleAgentIds, reason })
+      logger.error(permanentFailureMessage)
+      broadcast('manager:warning', { message: permanentFailureMessage })
       _droppedEventCount += droppedCount
       _consecutiveFailures = 0
     }
@@ -346,12 +347,18 @@ export function emitAgentEvent(agentId: string, event: AgentEvent): void {
   _pending.push({ agentId, event })
 
   if (_pending.length >= BATCH_SIZE) {
-    // Batch full — flush immediately
+    // Batch full — cancel any pending timer then flush immediately.
+    // The guard avoids a redundant clearTimeout call on the hot path when no
+    // timer is scheduled (common case when events arrive in quick bursts).
     if (_flushTimer) {
       clearTimeout(_flushTimer)
       _flushTimer = null
     }
     flushAgentEventBatcher()
+    // Re-arm only after the flush so back-to-back bursts do not accumulate timers.
+    if (_pending.length > 0 && !_flushTimer) {
+      _flushTimer = setTimeout(scheduledFlush, BATCH_INTERVAL_MS)
+    }
   } else if (!_flushTimer) {
     // Schedule a flush if not already scheduled
     _flushTimer = setTimeout(scheduledFlush, BATCH_INTERVAL_MS)

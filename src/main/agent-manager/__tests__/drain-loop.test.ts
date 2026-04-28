@@ -194,6 +194,39 @@ describe('buildTaskStatusMap', () => {
     expect(setDepIndexDirty).toHaveBeenCalledWith(false)
     expect(result.get('task-1')).toBe('queued')
   })
+
+  it('passes a hint set when dep index is dirty and recently processed task IDs are non-empty', () => {
+    const repo = makeRepo()
+    vi.mocked(repo.getTasksWithDependencies).mockReturnValue([
+      { id: 'task-hint', status: 'done', depends_on: null } as any
+    ])
+    const setDepIndexDirty = vi.fn()
+    const deps = makeDeps({ repo, isDepIndexDirty: () => true, setDepIndexDirty })
+    const loop = new DrainLoop(deps)
+    loop.notifyRecentlyProcessedTask('task-hint')
+
+    loop.buildTaskStatusMap()
+
+    const [hint] = vi.mocked(repo.getTasksWithDependencies).mock.calls[0]
+    expect(hint).toBeInstanceOf(Set)
+    expect((hint as Set<string>).has('task-hint')).toBe(true)
+  })
+
+  it('performs a full scan when dep index is dirty but no recently processed task IDs', () => {
+    const repo = makeRepo()
+    vi.mocked(repo.getTasksWithDependencies).mockReturnValue([
+      { id: 'task-full', status: 'queued', depends_on: null } as any
+    ])
+    const setDepIndexDirty = vi.fn()
+    const deps = makeDeps({ repo, isDepIndexDirty: () => true, setDepIndexDirty })
+    const loop = new DrainLoop(deps)
+    // Do not call notifyRecentlyProcessedTask — set is empty
+
+    loop.buildTaskStatusMap()
+
+    const [hint] = vi.mocked(repo.getTasksWithDependencies).mock.calls[0]
+    expect(hint).toBeUndefined()
+  })
 })
 
 describe('drainQueuedTasks', () => {

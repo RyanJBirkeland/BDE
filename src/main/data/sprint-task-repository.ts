@@ -54,7 +54,7 @@ export interface IAgentTaskRepository {
     options?: UpdateTaskOptions
   ): Promise<SprintTask | null>
   getQueuedTasks(limit: number): SprintTask[]
-  getTasksWithDependencies(): Array<{
+  getTasksWithDependencies(changedTaskIds?: Set<string>): Array<{
     id: string
     depends_on: TaskDependency[] | null
     status: string
@@ -132,7 +132,7 @@ export function createSprintTaskRepository(): ISprintTaskRepository {
     getTask: queries.getTask,
     updateTask: (id, patch, options) => queries.updateTask(id, patch, options),
     getQueuedTasks: queries.getQueuedTasks,
-    getTasksWithDependencies: queries.getTasksWithDependencies,
+    getTasksWithDependencies: (changedTaskIds) => queries.getTasksWithDependencies(undefined, changedTaskIds),
     getOrphanedTasks: queries.getOrphanedTasks,
     clearStaleClaimedBy: queries.clearStaleClaimedBy,
     getActiveTaskCount: queries.getActiveTaskCount,

@@ -35,7 +35,10 @@ export function getDb(): Database.Database {
       }
     }
     _db.pragma('journal_mode = WAL')
-    _db.pragma('wal_autocheckpoint=200')
+    // 1000 pages × 4 KB/page ≈ 4 MB WAL before auto-checkpoint.
+    // Raised from 200 to reduce checkpoint frequency on write-heavy runs
+    // (agents committing test results / event batches).
+    _db.pragma('wal_autocheckpoint=1000')
     _db.pragma('foreign_keys = ON')
     _db.pragma('synchronous = NORMAL')
     _db.pragma('cache_size = -8000')
