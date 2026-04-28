@@ -26,11 +26,11 @@ import {
   refreshDependencyIndex,
   type DepsFingerprint
 } from './dependency-refresher'
-import { getConfiguredRepos } from '../paths'
 import type { SprintTask } from '../../shared/types/task-types'
 import { classifyFailureReason } from './failure-classifier'
 import type { AgentManagerDrainPausedEvent } from '../../shared/ipc-channels/broadcast-channels'
 import { sleep } from '../lib/async-utils'
+import type { RepoConfig } from '../paths'
 
 // ---------------------------------------------------------------------------
 // Drain tick deadline
@@ -106,6 +106,8 @@ export interface DrainLoopDeps {
    * The drain loop awaits this before each spawn. Optional — tests omit it.
    */
   awaitOAuthRefresh?: () => Promise<void>
+  /** Returns all configured repositories. Used to gate drain when no repos exist. */
+  getConfiguredRepos: () => RepoConfig[]
 }
 
 // ---------------------------------------------------------------------------
@@ -230,7 +232,7 @@ export class DrainLoop {
       return false
     }
 
-    const repos = getConfiguredRepos()
+    const repos = this.deps.getConfiguredRepos()
     if (repos.length === 0) {
       this.deps.logger.warn(
         '[drain] No repositories configured — skipping drain cycle. Configure repos in Settings.'

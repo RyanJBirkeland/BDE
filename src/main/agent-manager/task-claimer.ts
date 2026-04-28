@@ -14,7 +14,6 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { DependencyIndex } from '../services/dependency-service'
 import { mapQueuedTask, checkAndBlockDeps, type MappedTask } from './task-mapper'
 import type { SprintTask } from '../../shared/types/task-types'
-import { getRepoPaths } from '../paths'
 import { setupWorktree } from './worktree'
 import { nowIso } from '../../shared/time'
 import type { AgentRunClaim } from './run-agent'
@@ -34,19 +33,7 @@ export interface TaskClaimerDeps {
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   taskStateService: TaskStateService
-}
-
-// ---------------------------------------------------------------------------
-// Repo path resolution
-// ---------------------------------------------------------------------------
-
-/**
- * Look up the local filesystem path for `repoSlug`.
- * Returns null when the slug is not configured in FLEET settings.
- */
-export function resolveRepoPath(repoSlug: string): string | null {
-  const repoPaths = getRepoPaths()
-  return repoPaths[repoSlug.toLowerCase()] ?? null
+  resolveRepoPath: (slug: string) => string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -82,7 +69,7 @@ export async function validateAndClaimTask(
     return null
   }
 
-  const repoPath = resolveRepoPath(task.repo)
+  const repoPath = deps.resolveRepoPath(task.repo)
   if (!repoPath) {
     deps.logger.warn(
       `[agent-manager] No repo path for "${task.repo}" — setting task ${task.id} to error`

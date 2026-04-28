@@ -121,6 +121,7 @@ function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
     emitDrainPaused: vi.fn(),
     drainPausedUntil: undefined,
     recentlyProcessedTaskIds: new Set<string>(),
+    getConfiguredRepos,
     ...overrides
   }
 }

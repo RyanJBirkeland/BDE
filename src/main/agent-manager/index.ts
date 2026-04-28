@@ -23,7 +23,9 @@ import { runWatchdog, killActiveAgent, type WatchdogLoopDeps } from './watchdog-
 import { validateAndClaimTask, prepareWorktreeForTask, processQueuedTask } from './task-claimer'
 import { checkIsReviewTask, runPruneLoop } from './worktree-manager'
 import { pruneStaleWorktrees, cleanupWorktree } from './worktree'
-import { resolveRepoPath } from './task-claimer'
+import { getRepoPaths, getConfiguredRepos, getGhRepo } from '../paths'
+import { getSetting, getSettingJson } from '../settings'
+import type { AutoReviewRule } from '../../shared/types/task-types'
 import { executeShutdown } from './shutdown-coordinator'
 import { reloadConfiguration } from './config-manager'
 import { LifecycleController } from './lifecycle-controller'
@@ -213,6 +215,15 @@ export class AgentManagerImpl implements AgentManager {
       metrics: this._metrics,
       taskStateService: this._taskStateService,
       worktreeBase: config.worktreeBase,
+      resolveGhRepo: getGhRepo,
+      getAutoReviewRules: () => {
+        const isAutoReviewRulesArray = (u: unknown): u is AutoReviewRule[] => Array.isArray(u)
+        return getSettingJson<AutoReviewRule[]>('autoReview.rules', isAutoReviewRulesArray)
+      },
+      resolveRepoLocalPath: (slug) => {
+        const repos = getConfiguredRepos()
+        return repos.find((r) => r.name.toLowerCase() === slug.toLowerCase())?.localPath ?? null
+      },
       onSpawnSuccess: () => {
         this._circuitBreaker.recordSuccess()
         this._errorRegistry.recordSpawnSuccess()
@@ -251,7 +262,8 @@ export class AgentManagerImpl implements AgentManager {
       onTaskTerminal: this.onTaskTerminal.bind(this),
       taskStateService: this._taskStateService,
       emitDrainPaused: (event) => broadcast('agentManager:drainPaused', event),
-      awaitOAuthRefresh: () => this.awaitOAuthRefresh()
+      awaitOAuthRefresh: () => this.awaitOAuthRefresh(),
+      getConfiguredRepos
     }
     this._drainLoopInstance = new DrainLoop(drainLoopDeps, makeConcurrencyState(config.maxConcurrent))
   }
@@ -304,7 +316,8 @@ export class AgentManagerImpl implements AgentManager {
         config: this.config,
         ...(this._terminalResolution && { terminalResolution: this._terminalResolution }),
         terminalCalled: new Map(), // TerminalGuard owns outer dedup; fresh Map per call is safe
-        logger: this.logger
+        logger: this.logger,
+        getSetting
       })
     )
   }
@@ -436,7 +449,8 @@ export class AgentManagerImpl implements AgentManager {
       depIndex: this._depIndex,
       logger: this.logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
-      taskStateService: this._taskStateService
+      taskStateService: this._taskStateService,
+      resolveRepoPath: (slug) => getRepoPaths()[slug.toLowerCase()] ?? null
     })
   }
 
@@ -454,7 +468,8 @@ export class AgentManagerImpl implements AgentManager {
       depIndex: this._depIndex,
       logger: this.logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
-      taskStateService: this._taskStateService
+      taskStateService: this._taskStateService,
+      resolveRepoPath: (slug) => getRepoPaths()[slug.toLowerCase()] ?? null
     })
   }
 
@@ -474,6 +489,7 @@ export class AgentManagerImpl implements AgentManager {
       logger: this.logger,
       onTaskTerminal: this.onTaskTerminal.bind(this),
       taskStateService: this._taskStateService,
+      resolveRepoPath: (slug) => getRepoPaths()[slug.toLowerCase()] ?? null,
       spawnRegistry: this.spawnRegistry,
       spawnAgent: (task, wt, repoPath) => this._spawnAgent(task, wt, repoPath, tickId),
       recentlyProcessedTaskIds: this._drainLoopInstance.recentlyProcessedTaskIds
@@ -531,7 +547,7 @@ export class AgentManagerImpl implements AgentManager {
       taskStateService: this._taskStateService,
       cleanupAgentWorktree: async (agent) => {
         const task = this.repo.getTask(agent.taskId)
-        const repoPath = task ? resolveRepoPath(task.repo) : null
+        const repoPath = task ? (getRepoPaths()[task.repo.toLowerCase()] ?? null) : null
         if (!repoPath) return
         await cleanupWorktree({
           repoPath,

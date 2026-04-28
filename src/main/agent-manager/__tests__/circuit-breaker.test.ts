@@ -26,6 +26,7 @@ vi.mock('../../broadcast', () => ({
 vi.mock('../../paths', () => ({
   getRepoPaths: vi.fn().mockReturnValue({}),
   getGhRepo: vi.fn(),
+  getConfiguredRepos: vi.fn().mockReturnValue([]),
   FLEET_AGENT_LOG_PATH: '/tmp/fleet-agent-test.log'
 }))
 

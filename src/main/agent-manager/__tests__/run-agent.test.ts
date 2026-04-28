@@ -219,6 +219,7 @@ function makeDeps(overrides: Partial<RunAgentDeps> = {}): RunAgentDeps {
     unitOfWork: { runInTransaction: (fn) => fn() },
     metrics: { increment: vi.fn(), recordWatchdogVerdict: vi.fn(), setLastDrainDuration: vi.fn(), recordAgentDuration: vi.fn(), snapshot: vi.fn().mockReturnValue({}), reset: vi.fn() },
     taskStateService,
+    resolveGhRepo: vi.fn().mockReturnValue('owner/repo'),
     ...overrides
   }
 }

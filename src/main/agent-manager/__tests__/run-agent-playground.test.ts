@@ -178,7 +178,8 @@ describe('runAgent — playground prompt injection', () => {
       recordAgentDuration: vi.fn(),
       snapshot: vi.fn().mockReturnValue({}),
       reset: vi.fn()
-    }
+    },
+    resolveGhRepo: vi.fn().mockReturnValue('owner/repo')
   })
 
   beforeEach(async () => {
@@ -405,7 +406,8 @@ describe('runAgent — playground-before-cleanup ordering', () => {
       recordAgentDuration: vi.fn(),
       snapshot: vi.fn().mockReturnValue({}),
       reset: vi.fn()
-    }
+    },
+    resolveGhRepo: vi.fn().mockReturnValue('owner/repo')
   })
 
   beforeEach(async () => {

@@ -22,7 +22,7 @@ import {
   writeOpencodeWorktreeConfig,
   buildOpencodeFirstTurnPrompt
 } from './opencode-worktree-config'
-import { createEpicGroupService } from '../services/epic-group-service'
+import { createEpicGroupService, type EpicGroupService } from '../services/epic-group-service'
 
 /**
  * Pipeline agents must only spawn with a `cwd` inside a FLEET-managed worktree
@@ -139,6 +139,13 @@ export async function spawnAgent(opts: {
   taskId?: string | undefined
   /** Drain-tick correlation ID for cross-event log joins. */
   tickId?: string | undefined
+  /**
+   * Optional pre-built EpicGroupService for opencode agents. When omitted,
+   * `spawnAgent` constructs one via `createEpicGroupService()`. Callers that
+   * already hold a shared service instance should pass it here to avoid
+   * creating an extra index.
+   */
+  epicGroupService?: EpicGroupService | undefined
 }): Promise<AgentHandle> {
   // Worktree-base cwd assertion applies only to pipeline agents — adhoc,
   // assistant, copilot, and synthesizer agents run in the user's repo or
@@ -172,7 +179,7 @@ export async function spawnAgent(opts: {
   }
 
   if (resolved.backend === 'opencode') {
-    return spawnOpencodeWithMcp(opts, resolved.model, settings.opencodeExecutable)
+    return spawnOpencodeWithMcp(opts, resolved.model, settings.opencodeExecutable, opts.epicGroupService)
   }
 
   const modelForClaude = resolved.backend === 'claude' ? resolved.model : opts.model
@@ -190,10 +197,11 @@ async function spawnOpencodeWithMcp(
     branch?: string | undefined
   },
   resolvedModel: string,
-  executable?: string
+  executable?: string,
+  epicGroupService?: EpicGroupService
 ): Promise<AgentHandle> {
   const logger = opts.logger ?? nullLogger()
-  const sessionMcp = await startOpencodeSessionMcp(createEpicGroupService(), logger)
+  const sessionMcp = await startOpencodeSessionMcp(epicGroupService ?? createEpicGroupService(), logger)
   await writeOpencodeWorktreeConfig(opts.cwd, sessionMcp.url, sessionMcp.token)
 
   const prompt =
@@ -293,7 +301,8 @@ export async function spawnWithTimeout(
   pipelineTuning?: PipelineSpawnTuning,
   worktreeBase?: string,
   branch?: string,
-  tickId?: string
+  tickId?: string,
+  epicGroupService?: EpicGroupService
 ): Promise<AgentHandle> {
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -303,7 +312,7 @@ export async function spawnWithTimeout(
     )
   })
   return await Promise.race([
-    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId }),
+    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId, epicGroupService }),
     timeoutPromise
   ]).finally(() => clearTimeout(timer!))
 }

@@ -12,6 +12,7 @@ import type { IUnitOfWork } from '../data/unit-of-work'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import type { TaskStateService } from '../services/task-state-service'
+import type { AutoReviewRule } from '../../shared/types/task-types'
 import {
   verifyWorktreeExists,
   detectAgentBranch,
@@ -51,6 +52,18 @@ export interface ResolveSuccessContext {
    * verification is skipped.
    */
   repoPath?: string
+  /**
+   * Returns the configured auto-review rules from settings.
+   * Returns null when no rules are configured.
+   * Optional — when omitted, auto-merge is skipped.
+   */
+  getAutoReviewRules?: () => AutoReviewRule[] | null
+  /**
+   * Resolves the local filesystem path for a configured repo slug.
+   * Returns null when the slug is not configured.
+   * Optional — when omitted, auto-merge is skipped.
+   */
+  resolveRepoLocalPath?: (repoSlug: string) => string | null
 }
 
 /**
@@ -223,6 +236,12 @@ const verifyWorktreeBuildPhase: SuccessPhase = {
 const reviewTransitionPhase: SuccessPhase = {
   name: 'reviewTransition',
   async run(ctx) {
+    const { getAutoReviewRules, resolveRepoLocalPath } = ctx
+    const attemptAutoMerge =
+      getAutoReviewRules && resolveRepoLocalPath
+        ? (opts: Omit<import('./auto-merge-coordinator').AutoMergeContext, 'getAutoReviewRules' | 'resolveRepoLocalPath'>) =>
+            evaluateAutoMerge({ ...opts, getAutoReviewRules, resolveRepoLocalPath })
+        : () => Promise.resolve()
     await transitionTaskToReview(
       ctx.taskId,
       ctx.branch,
@@ -233,7 +252,7 @@ const reviewTransitionPhase: SuccessPhase = {
       ctx.unitOfWork,
       ctx.logger,
       ctx.onTaskTerminal,
-      evaluateAutoMerge,
+      attemptAutoMerge,
       ctx.taskStateService
     )
   }

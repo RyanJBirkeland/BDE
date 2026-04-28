@@ -8,7 +8,6 @@ import type { AgentManagerConfig, TerminalResolutionStrategy } from './types'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { resolveDependents } from '../lib/resolve-dependents'
-import { getSetting } from '../settings'
 import type { TerminalDispatcher, TaskStateService } from '../services/task-state-service'
 
 function wrapTransactionWithLogging(
@@ -48,6 +47,7 @@ async function resolveTerminalDependents(
   unitOfWork: IUnitOfWork,
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   logger: Logger,
+  getSetting: (key: string) => string | null,
   taskStateService?: TaskStateService
 ): Promise<void> {
   // DESIGN: Inline resolution for immediate drain loop feedback.
@@ -111,6 +111,12 @@ export interface TerminalHandlerDeps {
   terminalCalled: Map<string, Promise<void>>
   logger: Logger
   taskStateService?: TaskStateService
+  /**
+   * Reads a persisted setting by key. Forwarded to `resolveDependents` so
+   * cascade-cancellation policy is read from settings without the handler
+   * importing the settings infrastructure directly.
+   */
+  getSetting: (key: string) => string | null
 }
 
 async function executeTerminal(
@@ -133,6 +139,7 @@ async function executeTerminal(
       unitOfWork,
       onTaskTerminal,
       logger,
+      deps.getSetting,
       deps.taskStateService
     )
   }

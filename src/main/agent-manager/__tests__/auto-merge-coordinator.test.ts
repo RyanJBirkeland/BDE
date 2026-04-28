@@ -76,6 +76,11 @@ function makeContext(overrides: Partial<AutoMergeContext> = {}): AutoMergeContex
     logger: makeLogger() as unknown as AutoMergeContext['logger'],
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     taskStateService: makeMockTaskStateService(repo) as unknown as AutoMergeContext['taskStateService'],
+    getAutoReviewRules: () => getSettingJson('autoReview.rules') as import('../../../shared/types/task-types').AutoReviewRule[] | null,
+    resolveRepoLocalPath: (slug: string) => {
+      const repos = getSettingJson('repos') as Array<{ name: string; localPath: string }> | null
+      return repos?.find((r) => r.name.toLowerCase() === slug.toLowerCase())?.localPath ?? null
+    },
     ...overrides
   }
 }

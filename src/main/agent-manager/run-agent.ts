@@ -17,7 +17,6 @@ import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
 import type { MetricsCollector } from './metrics'
 import { FAST_FAIL_EXHAUSTED_NOTE } from './failure-messages'
-import { getGhRepo } from '../paths'
 import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
 import type { TaskDependency } from '../../shared/types'
 import { TurnTracker } from './turn-tracker'
@@ -101,6 +100,23 @@ export interface RunAgentDataDeps {
   logger: Logger
   metrics: MetricsCollector
   taskStateService: TaskStateService
+  /**
+   * Resolves the GitHub `owner/repo` string for a configured repo slug.
+   * Returns null when the repo is not configured or has no GitHub credentials.
+   */
+  resolveGhRepo: (repoSlug: string) => string | null
+  /**
+   * Returns the configured auto-review rules from settings.
+   * Returns null when no rules are configured.
+   * Optional — when omitted, auto-merge is skipped.
+   */
+  getAutoReviewRules?: () => import('../../shared/types/task-types').AutoReviewRule[] | null
+  /**
+   * Resolves the local filesystem path for a configured repo slug.
+   * Returns null when the slug is not configured.
+   * Optional — when omitted, auto-merge is skipped.
+   */
+  resolveRepoLocalPath?: (repoSlug: string) => string | null
 }
 
 /** Terminal status notification. */
@@ -290,6 +306,9 @@ interface ResolveAgentExitContext {
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   taskStateService: TaskStateService
   logger: Logger
+  resolveGhRepo: (repoSlug: string) => string | null
+  getAutoReviewRules?: () => import('../../shared/types/task-types').AutoReviewRule[] | null
+  resolveRepoLocalPath?: (repoSlug: string) => string | null
   onFastFailRecorded?: (taskId: string, reason: string) => void
   isFastFailExhausted?: (taskId: string) => boolean
 }
@@ -461,7 +480,7 @@ async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
   }
 
   try {
-    const ghRepo = getGhRepo(ctx.task.repo) ?? ctx.task.repo
+    const ghRepo = ctx.resolveGhRepo(ctx.task.repo) ?? ctx.task.repo
     await resolveSuccess(
       {
         taskId: ctx.task.id,
@@ -474,7 +493,9 @@ async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
         repo: ctx.repo,
         unitOfWork: ctx.unitOfWork,
         repoPath: ctx.repoPath,
-        taskStateService: ctx.taskStateService
+        taskStateService: ctx.taskStateService,
+        ...(ctx.getAutoReviewRules && { getAutoReviewRules: ctx.getAutoReviewRules }),
+        ...(ctx.resolveRepoLocalPath && { resolveRepoLocalPath: ctx.resolveRepoLocalPath })
       },
       ctx.logger
     )
@@ -599,6 +620,9 @@ async function finalizeAgentRun(
     onTaskTerminal: deps.onTaskTerminal,
     taskStateService: deps.taskStateService,
     logger: deps.logger,
+    resolveGhRepo: deps.resolveGhRepo,
+    ...(deps.getAutoReviewRules && { getAutoReviewRules: deps.getAutoReviewRules }),
+    ...(deps.resolveRepoLocalPath && { resolveRepoLocalPath: deps.resolveRepoLocalPath }),
     ...(deps.onFastFailRecorded && { onFastFailRecorded: deps.onFastFailRecorded }),
     ...(deps.isFastFailExhausted && { isFastFailExhausted: deps.isFastFailExhausted })
   })

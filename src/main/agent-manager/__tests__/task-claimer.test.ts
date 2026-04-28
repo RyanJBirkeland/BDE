@@ -18,7 +18,6 @@ vi.mock('../../../shared/time', () => ({
 }))
 
 import {
-  resolveRepoPath,
   validateAndClaimTask,
   prepareWorktreeForTask,
   processQueuedTask,
@@ -104,28 +103,35 @@ function makeClaimerDeps(overrides: Partial<TaskClaimerDeps> = {}): TaskClaimerD
     logger: makeLogger(),
     onTaskTerminal: vi.fn().mockResolvedValue(undefined),
     taskStateService: makeTaskStateService(repo),
+    resolveRepoPath: (slug) => {
+      const paths = getRepoPaths()
+      return paths[slug.toLowerCase()] ?? null
+    },
     ...overrides
   }
 }
 
-describe('resolveRepoPath', () => {
+describe('resolveRepoPath callback (via makeClaimerDeps)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('returns path for known repo slug', () => {
     vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
-    expect(resolveRepoPath('fleet')).toBe('/Users/ryan/projects/FLEET')
+    const deps = makeClaimerDeps()
+    expect(deps.resolveRepoPath('fleet')).toBe('/Users/ryan/projects/FLEET')
   })
 
   it('returns null for unknown repo slug', () => {
     vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
-    expect(resolveRepoPath('unknown-repo')).toBeNull()
+    const deps = makeClaimerDeps()
+    expect(deps.resolveRepoPath('unknown-repo')).toBeNull()
   })
 
   it('is case-insensitive (lowercases slug)', () => {
     vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
-    expect(resolveRepoPath('FLEET')).toBe('/Users/ryan/projects/FLEET')
+    const deps = makeClaimerDeps()
+    expect(deps.resolveRepoPath('FLEET')).toBe('/Users/ryan/projects/FLEET')
   })
 })
 

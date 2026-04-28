@@ -14,13 +14,7 @@ import type { AutoReviewRule } from '../../shared/types/task-types'
 import { nowIso } from '../../shared/time'
 import { evaluateAutoMergePolicy } from './auto-merge-policy'
 import { executeSquashMerge } from '../lib/git-operations'
-import { getSettingJson } from '../settings'
-import { getRepoConfig } from '../paths'
 import type { TaskStateService } from '../services/task-state-service'
-
-function isAutoReviewRulesArray(u: unknown): u is AutoReviewRule[] {
-  return Array.isArray(u)
-}
 
 export interface AutoMergeContext {
   taskId: string
@@ -32,11 +26,24 @@ export interface AutoMergeContext {
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   taskStateService: TaskStateService
+  /**
+   * Returns the auto-review rules from settings.
+   * Returns null when no rules are configured.
+   */
+  getAutoReviewRules: () => AutoReviewRule[] | null
+  /**
+   * Returns the local filesystem path for a configured repo slug.
+   * Returns null when the slug is not configured.
+   */
+  resolveRepoLocalPath: (repoSlug: string) => string | null
 }
 
 export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
-  const { taskId, title, branch, worktreePath, repo, unitOfWork, logger, taskStateService } = opts
-  const rules = getSettingJson<AutoReviewRule[]>('autoReview.rules', isAutoReviewRulesArray)
+  const {
+    taskId, title, branch, worktreePath, repo, unitOfWork, logger, taskStateService,
+    getAutoReviewRules, resolveRepoLocalPath
+  } = opts
+  const rules = getAutoReviewRules()
 
   if (!rules || rules.length === 0) {
     return
@@ -58,8 +65,8 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
       logger.error(`[completion] Task ${taskId} not found`)
       return
     }
-    const repoConfig = getRepoConfig(task.repo)
-    if (!repoConfig) {
+    const repoLocalPath = resolveRepoLocalPath(task.repo)
+    if (!repoLocalPath) {
       logger.error(`[completion] Repo "${task.repo}" not found in settings`)
       return
     }
@@ -68,7 +75,7 @@ export async function evaluateAutoMerge(opts: AutoMergeContext): Promise<void> {
       taskId,
       branch,
       worktreePath,
-      repoPath: repoConfig.localPath,
+      repoPath: repoLocalPath,
       title,
       logger
     })
