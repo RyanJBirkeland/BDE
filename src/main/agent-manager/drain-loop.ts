@@ -185,7 +185,7 @@ export class DrainLoop {
   // ---- Main entry point ----
 
   async runDrain(): Promise<void> {
-    const tickId = Math.random().toString(16).slice(2, 10)
+    const tickId = generateTickId()
 
     this.deps.logger.info(
       `[agent-manager] Drain loop starting (shuttingDown=${this.deps.isShuttingDown()}, slots=${availableSlots(this._concurrency, this.deps.activeAgents.size)})`
@@ -451,6 +451,11 @@ export async function runDrain(deps: DrainLoopDeps): Promise<void> {
 // ---------------------------------------------------------------------------
 // Private pure helpers
 // ---------------------------------------------------------------------------
+
+/** Generates an 8-character hex string used as a drain tick correlation ID. */
+function generateTickId(): string {
+  return Math.random().toString(16).slice(2, 10)
+}
 
 function shouldQuarantine(consecutiveFailures: number): boolean {
   return consecutiveFailures >= DRAIN_QUARANTINE_THRESHOLD

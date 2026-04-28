@@ -142,7 +142,7 @@ export class AgentManagerTestInternals {
     return this.mgr._drainLoop()
   }
   drainQueuedTasks(available: number, taskStatusMap: Map<string, TaskStatus>): Promise<void> {
-    return this.mgr._drainQueuedTasks(available, taskStatusMap)
+    return this.mgr._drainLoopInstance.drainQueuedTasksWithMap(available, taskStatusMap)
   }
   processQueuedTask(rawTask: SprintTask, taskStatusMap: Map<string, TaskStatus>): Promise<void> {
     return this.mgr._processQueuedTask(rawTask, taskStatusMap)

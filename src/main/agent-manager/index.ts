@@ -5,7 +5,7 @@ import type { TaskStatus } from '../../shared/task-state-machine'
 import { handleTaskTerminal } from './terminal-handler'
 import { createTaskStateService, type TaskStateService } from '../services/task-state-service'
 import { EXECUTOR_ID, INITIAL_DRAIN_DEFER_MS } from './types'
-import { makeConcurrencyState, availableSlots, type ConcurrencyState } from './concurrency'
+import { makeConcurrencyState, type ConcurrencyState } from './concurrency'
 import { recoverOrphans } from './orphan-recovery'
 import { createDependencyIndex } from '../services/dependency-service'
 import { createEpicDependencyIndex, type EpicDepsReader } from '../services/epic-dependency-service'
@@ -497,26 +497,6 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   // ---- Drain loop delegates ----
-
-  /**
-   * Fetch queued tasks and process each one. Delegates to drain-loop.ts.
-   * Exposed to tests via `__testInternals`.
-   */
-  async _drainQueuedTasks(available: number, taskStatusMap: Map<string, TaskStatus>): Promise<void> {
-    const queued = this.repo.getQueuedTasks(available)
-    for (const rawTask of queued) {
-      if (this._shuttingDown) break
-      if (availableSlots(this._concurrency, this.spawnRegistry.activeAgentCount() + this.spawnRegistry.pendingSpawnCount()) <= 0) {
-        this.logger.info('[agent-manager] No slots available — stopping drain iteration')
-        break
-      }
-      try {
-        await this._processQueuedTask(rawTask, taskStatusMap)
-      } catch (err) {
-        this.logger.error(`[agent-manager] Failed to process task ${rawTask.id}: ${err}`)
-      }
-    }
-  }
 
   /**
    * Execute one full drain tick. Delegates to the DrainLoop instance.
