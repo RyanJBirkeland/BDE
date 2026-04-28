@@ -17,6 +17,7 @@ import { nowIso } from '../../shared/time'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { withRetryAsync } from '../data/sqlite-retry'
 import type { SpawnRegistry } from './spawn-registry'
+import type { TaskStateService } from '../services/task-state-service'
 
 // ---------------------------------------------------------------------------
 // Deps interface
@@ -32,6 +33,12 @@ export interface WatchdogLoopDeps {
   getConcurrency: () => ConcurrencyState
   setConcurrency: (state: ConcurrencyState) => void
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
+  /**
+   * Routes terminal status writes through the state machine, ensuring
+   * isValidTransition, audit trail, and dependency resolution all fire.
+   * When absent, falls back to raw repo.updateTask (legacy path).
+   */
+  taskStateService?: TaskStateService
   /**
    * Optional hook to clean up the agent's git worktree after a watchdog kill.
    * Called only when the task is NOT in `review` status (review worktrees are
@@ -123,18 +130,18 @@ export function killAgentWithEscalation(
 }
 
 /**
- * Backward-compatible wrapper. Callers that don't track the active-agents
- * map (e.g. tests, manual cleanup paths) still get the soft + force behavior
- * without the escalation timer — they invoke both signals immediately.
+ * Immediately sends both the soft-abort signal and a SIGKILL to an agent.
+ * Used by callers that need unconditional termination without the escalation
+ * grace window (e.g. manual kill paths, backwards-compat wrappers).
  */
-export function abortAgent(agent: ActiveAgent, logger: Logger): void {
+export function killAgentImmediately(agent: ActiveAgent, logger: Logger): void {
   softKillAgent(agent, logger)
   const proc = agent.handle.process
   if (proc && typeof proc.kill === 'function') {
     try {
       proc.kill('SIGKILL')
     } catch (err) {
-      logger.warn(`[agent-manager] Failed to abort agent ${agent.taskId}: ${err}`)
+      logger.warn(`[agent-manager] Failed to SIGKILL agent ${agent.taskId}: ${err}`)
     }
   }
 }
@@ -175,7 +182,7 @@ export function killActiveAgent(
   activeAgentsOrRegistry: Map<string, ActiveAgent> | SpawnRegistry,
   logger: Logger
 ): void {
-  abortAgent(agent, logger)
+  killAgentImmediately(agent, logger)
   if (activeAgentsOrRegistry instanceof Map) {
     removeAgentFromMap(agent, activeAgentsOrRegistry)
   } else {
@@ -236,7 +243,6 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
     // SIGKILL (or the SDK abort fallback) so a stuck process never pins the
     // active-agents slot indefinitely.
     killAgentWithEscalation(agent, deps.spawnRegistry, deps.logger)
-    cleanupWorktreeIfNotInReview(agent, deps)
 
     const now = nowIso()
     const maxRuntimeMs = agent.maxRuntimeMs ?? deps.config.maxRuntimeMs
@@ -248,17 +254,23 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
     flushAgentEventBatcher()
 
     // Step 3: Persist the status change to DB before removing from map.
+    // Routes through TaskStateService when available so isValidTransition,
+    // the audit trail, and dependency resolution all fire correctly.
     // Retries SQLITE_BUSY transparently. If all retries are exhausted, broadcast
     // a warning and return early — never call onTaskTerminal when the DB write
     // did not land, as that would unblock dependents against a task still `active`.
     if (result.taskUpdate) {
-      let writeSucceeded = false
+      const targetStatus = result.taskUpdate.status as TaskStatus | undefined
       try {
-        // EP-1 note: result.taskUpdate may include a `status` field from watchdog-handler.ts.
-        // Migrating to TaskStateService.transition() here requires async handling and
-        // threading taskStateService through WatchdogLoopDeps. Deferred to EP-2.
-        await withRetryAsync(() => deps.repo.updateTask(agent.taskId, result.taskUpdate!))
-        writeSucceeded = true
+        if (deps.taskStateService && targetStatus) {
+          const { status: _status, ...remainingFields } = result.taskUpdate
+          await deps.taskStateService.transition(agent.taskId, targetStatus, {
+            fields: remainingFields as Record<string, unknown>,
+            caller: 'watchdog'
+          })
+        } else {
+          await withRetryAsync(() => deps.repo.updateTask(agent.taskId, result.taskUpdate!))
+        }
       } catch (err) {
         deps.logger.warn(
           `[agent-manager] Failed to update task ${agent.taskId} after ${verdict}: ${err}`
@@ -268,13 +280,16 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
         removeAgentFromRegistry(agent, deps.spawnRegistry)
         return
       }
-
-      if (!writeSucceeded) return
     }
 
-    // Step 4: Remove from registry only after DB write attempt so the watchdog does
-    // not re-kill the same agent on the next tick before the status lands.
+    // Step 4: Remove from registry only after DB write succeeds so the watchdog
+    // does not re-kill the same agent on the next tick before the status lands.
+    // Worktree cleanup runs here — after the DB write — so a write failure never
+    // leaves the task stuck active with no worktree to recover from.
     removeAgentFromRegistry(agent, deps.spawnRegistry)
+
+    const targetStatus = result.taskUpdate?.status as TaskStatus | undefined
+    cleanupWorktreeIfNotInReview(agent, targetStatus, deps)
 
     // Step 5: Notify terminal handler after map removal so downstream logic
     // (dep resolution, metrics) sees a consistent state.
@@ -296,15 +311,20 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /**
- * Fires worktree cleanup for a just-killed agent unless the task is already in
- * `review` status — review worktrees are preserved for human inspection.
+ * Fires worktree cleanup for a just-killed agent unless the watchdog is
+ * transitioning the task to `review` status — review worktrees are preserved
+ * for human inspection.
+ *
+ * Receives the known target status so no extra DB read is needed.
  * Errors are caught and logged so cleanup failure never blocks the watchdog.
  */
-function cleanupWorktreeIfNotInReview(agent: ActiveAgent, deps: Pick<WatchdogLoopDeps, 'repo' | 'logger' | 'cleanupAgentWorktree'>): void {
+function cleanupWorktreeIfNotInReview(
+  agent: ActiveAgent,
+  targetStatus: TaskStatus | undefined,
+  deps: Pick<WatchdogLoopDeps, 'logger' | 'cleanupAgentWorktree'>
+): void {
   if (!deps.cleanupAgentWorktree) return
-
-  const task = deps.repo.getTask(agent.taskId)
-  if (task?.status === 'review') return
+  if (targetStatus === 'review') return
 
   deps.cleanupAgentWorktree(agent).catch((err) => {
     deps.logger.warn(

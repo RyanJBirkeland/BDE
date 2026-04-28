@@ -521,6 +521,7 @@ export class AgentManagerImpl implements AgentManager {
         this._drainLoopInstance.setConcurrency(state)
       },
       onTaskTerminal: this.onTaskTerminal.bind(this),
+      taskStateService: this._taskStateService,
       cleanupAgentWorktree: async (agent) => {
         const task = this.repo.getTask(agent.taskId)
         const repoPath = task ? resolveRepoPath(task.repo) : null

@@ -33,7 +33,6 @@ import { handleWatchdogVerdict } from '../watchdog-handler'
 import { flushAgentEventBatcher } from '../../agent-event-mapper'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
-import { DEFAULT_CONFIG } from '../types'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,
@@ -277,6 +276,40 @@ describe('runWatchdog', () => {
     expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'error')
   })
 
+  it('routes status write through taskStateService.transition when provided', async () => {
+    const agent = makeAgent('task-ts')
+    const concurrency = makeConcurrencyState(2)
+    const taskStateService = { transition: vi.fn().mockResolvedValue({ committed: true, dependentsResolved: true }) }
+    const deps = makeDepsWithRegistry(registryWith(agent), {
+      getConcurrency: () => concurrency,
+      taskStateService: taskStateService as any
+    })
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
+      concurrency,
+      shouldNotifyTerminal: true,
+      terminalStatus: 'error'
+    })
+
+    await runWatchdog(deps)
+
+    expect(taskStateService.transition).toHaveBeenCalledWith(
+      'task-ts',
+      'error',
+      expect.objectContaining({ caller: 'watchdog' })
+    )
+    // raw repo.updateTask must NOT be called when taskStateService is present
+    expect(deps.repo.updateTask).not.toHaveBeenCalled()
+    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-ts', 'error')
+  })
+
   it('records rate-limit-loop verdict and increments retriesQueued', async () => {
     const agent = makeAgent('task-1')
     const concurrency = makeConcurrencyState(2)
@@ -412,12 +445,19 @@ describe('runWatchdog', () => {
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to update task'))
   })
 
-  it('review status — cleanup skipped when task is in review', async () => {
-    const agent = makeAgent('task-review')
+  it('worktree cleanup runs AFTER the DB write succeeds (T-1: no orphan window)', async () => {
+    const agent = makeAgent('task-order')
     const concurrency = makeConcurrencyState(2)
+    const callOrder: string[] = []
     const repo = makeRepo()
-    vi.mocked(repo.getTask).mockReturnValue({ status: 'review' } as never)
-    const cleanupAgentWorktree = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(repo.updateTask).mockImplementation(() => {
+      callOrder.push('updateTask')
+      return undefined as any
+    })
+    const cleanupAgentWorktree = vi.fn().mockImplementation(() => {
+      callOrder.push('cleanup')
+      return Promise.resolve()
+    })
     const deps = makeDepsWithRegistry(registryWith(agent), {
       repo,
       getConcurrency: () => concurrency,
@@ -430,7 +470,7 @@ describe('runWatchdog', () => {
         completed_at: '2026-01-01T00:00:00.000Z',
         claimed_by: null,
         notes: 'idle',
-        needs_review: true
+        needs_review: false
       },
       concurrency,
       shouldNotifyTerminal: false,
@@ -439,14 +479,16 @@ describe('runWatchdog', () => {
 
     await runWatchdog(deps)
 
-    expect(cleanupAgentWorktree).not.toHaveBeenCalled()
+    expect(callOrder.indexOf('updateTask')).toBeLessThan(callOrder.indexOf('cleanup'))
   })
 
-  it('active status — cleanup invoked with the agent when task is not in review', async () => {
-    const agent = makeAgent('task-active')
+  it('worktree cleanup is skipped when the DB write fails (T-1: no orphan window)', async () => {
+    const agent = makeAgent('task-dbfail')
     const concurrency = makeConcurrencyState(2)
     const repo = makeRepo()
-    vi.mocked(repo.getTask).mockReturnValue({ status: 'active' } as never)
+    vi.mocked(repo.updateTask).mockImplementation(() => {
+      throw new Error('DB error')
+    })
     const cleanupAgentWorktree = vi.fn().mockResolvedValue(undefined)
     const deps = makeDepsWithRegistry(registryWith(agent), {
       repo,
@@ -460,7 +502,7 @@ describe('runWatchdog', () => {
         completed_at: '2026-01-01T00:00:00.000Z',
         claimed_by: null,
         notes: 'idle',
-        needs_review: true
+        needs_review: false
       },
       concurrency,
       shouldNotifyTerminal: false,
@@ -469,7 +511,8 @@ describe('runWatchdog', () => {
 
     await runWatchdog(deps)
 
-    expect(cleanupAgentWorktree).toHaveBeenCalledWith(agent)
+    // Worktree must be left intact when the DB write fails so the task can be recovered
+    expect(cleanupAgentWorktree).not.toHaveBeenCalled()
   })
 
   it('skips terminal notify and logs debug when orphan recovery wins the race (EP-5 T-29)', async () => {
@@ -507,44 +550,60 @@ describe('runWatchdog', () => {
 // ── T-38: cleanupWorktreeIfNotInReview review-status guard ──────────────────
 
 describe('cleanupWorktreeIfNotInReview (T-38)', () => {
-  function makeVerdictReturn(concurrency = makeConcurrencyState(2)) {
-    return {
-      taskUpdate: { status: 'error' as const, completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
-      concurrency,
-      shouldNotifyTerminal: true,
-      terminalStatus: 'error' as const
-    }
-  }
+  // With T-5, the review-status check uses the known targetStatus from
+  // result.taskUpdate.status — no DB read. Tests control behavior by
+  // setting status in the handleWatchdogVerdict mock return value.
 
-  it('skips cleanup when task is in review status', async () => {
+  it('skips cleanup when targetStatus is review', async () => {
     const agent = makeAgent('task-review')
     const cleanup = vi.fn().mockResolvedValue(undefined)
-    const repo = makeRepo()
-    vi.mocked(repo.getTask).mockReturnValue({ id: 'task-review', status: 'review' } as any)
-
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDepsWithRegistry(registryWith(agent), { repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
+    const deps = makeDepsWithRegistry(registryWith(agent), {
+      cleanupAgentWorktree: cleanup,
+      getConcurrency: () => concurrency
+    })
 
     vi.mocked(checkAgent).mockReturnValue('idle')
-    vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: {
+        status: 'review',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
+      concurrency,
+      shouldNotifyTerminal: false,
+      terminalStatus: undefined
+    })
 
     await runWatchdog(deps)
 
-    // cleanup must not be called when task.status === 'review'
     expect(cleanup).not.toHaveBeenCalled()
   })
 
-  it('calls cleanup when task is NOT in review status after watchdog kill', async () => {
+  it('calls cleanup when targetStatus is NOT review', async () => {
     const agent = makeAgent('task-failed')
     const cleanup = vi.fn().mockResolvedValue(undefined)
-    const repo = makeRepo()
-    vi.mocked(repo.getTask).mockReturnValue({ id: 'task-failed', status: 'failed' } as any)
-
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDepsWithRegistry(registryWith(agent), { repo, cleanupAgentWorktree: cleanup, getConcurrency: () => concurrency })
+    const deps = makeDepsWithRegistry(registryWith(agent), {
+      cleanupAgentWorktree: cleanup,
+      getConcurrency: () => concurrency
+    })
 
     vi.mocked(checkAgent).mockReturnValue('idle')
-    vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
+      concurrency,
+      shouldNotifyTerminal: false,
+      terminalStatus: undefined
+    })
 
     await runWatchdog(deps)
 
@@ -553,14 +612,16 @@ describe('cleanupWorktreeIfNotInReview (T-38)', () => {
 
   it('does not throw when cleanupAgentWorktree dep is not injected', async () => {
     const agent = makeAgent('task-no-cleanup')
-    const repo = makeRepo()
-    vi.mocked(repo.getTask).mockReturnValue({ id: 'task-no-cleanup', status: 'error' } as any)
-
     const concurrency = makeConcurrencyState(2)
-    const deps = makeDepsWithRegistry(registryWith(agent), { repo, getConcurrency: () => concurrency }) // no cleanupAgentWorktree
+    const deps = makeDepsWithRegistry(registryWith(agent), { getConcurrency: () => concurrency }) // no cleanupAgentWorktree
 
     vi.mocked(checkAgent).mockReturnValue('idle')
-    vi.mocked(handleWatchdogVerdict).mockReturnValue(makeVerdictReturn(concurrency))
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: { status: 'error', completed_at: '2026-01-01T00:00:00.000Z', claimed_by: null, notes: 'idle', needs_review: true },
+      concurrency,
+      shouldNotifyTerminal: false,
+      terminalStatus: undefined
+    })
 
     await expect(runWatchdog(deps)).resolves.not.toThrow()
   })
