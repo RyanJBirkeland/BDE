@@ -804,7 +804,7 @@ describe('buildAgentPrompt', () => {
 
       expect(prompt).toContain('## Upstream Task Context')
       expect(prompt).toContain('This task depends on the following completed tasks')
-      expect(prompt).toContain('### Feature A Implementation')
+      expect(prompt).toContain('<upstream_title>Feature A Implementation</upstream_title>')
       expect(prompt).toContain('base authentication system with JWT tokens')
     })
 
@@ -841,7 +841,7 @@ describe('buildAgentPrompt', () => {
       })
 
       expect(prompt).toContain('## Upstream Task Context')
-      expect(prompt).toContain('### Long Spec Task')
+      expect(prompt).toContain('<upstream_title>Long Spec Task</upstream_title>')
       // Should be capped at 2000 chars + '...'
       expect(prompt).toContain('A'.repeat(2000) + '...')
       // Should not contain the full 2100 chars
@@ -862,7 +862,7 @@ describe('buildAgentPrompt', () => {
       })
 
       expect(prompt).toContain('## Upstream Task Context')
-      expect(prompt).toContain('### Short Spec Task')
+      expect(prompt).toContain('<upstream_title>Short Spec Task</upstream_title>')
       expect(prompt).toContain(shortSpec)
       expect(prompt).not.toContain('...')
     })
@@ -884,9 +884,9 @@ describe('buildAgentPrompt', () => {
       })
 
       expect(prompt).toContain('## Upstream Task Context')
-      expect(prompt).toContain('### Feature A')
+      expect(prompt).toContain('<upstream_title>Feature A</upstream_title>')
       expect(prompt).toContain('Implemented auth system')
-      expect(prompt).toContain('### Feature B')
+      expect(prompt).toContain('<upstream_title>Feature B</upstream_title>')
       expect(prompt).toContain('Implemented user profile endpoints')
     })
 

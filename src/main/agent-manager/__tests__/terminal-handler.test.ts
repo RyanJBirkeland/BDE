@@ -31,7 +31,7 @@ import { resolveDependents } from '../../lib/resolve-dependents'
 import { makeLogger, makeMetrics } from './test-helpers'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { IUnitOfWork } from '../../data/unit-of-work'
-import type { AgentManagerConfig } from '../types'
+import type { AgentManagerConfig, TerminalResolutionStrategy } from '../types'
 import { createDependencyIndex } from '../../services/dependency-service'
 import { createEpicDependencyIndex } from '../../services/epic-dependency-service'
 
@@ -166,11 +166,10 @@ describe('handleTaskTerminal — deduplication', () => {
 
   it('clears the in-flight entry after resolution so a subsequent call fires a new execution', async () => {
     let executionCount = 0
-    const deps = makeTerminalHandlerDeps({
-      config: makeConfig({
-        onStatusTerminal: () => { executionCount++ }
-      })
-    })
+    const terminalResolution: TerminalResolutionStrategy = {
+      onStatusTerminal: () => { executionCount++ }
+    }
+    const deps = makeTerminalHandlerDeps({ terminalResolution })
     const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
 
     // First call completes
@@ -195,11 +194,10 @@ describe('handleTaskTerminal — onStatusTerminal routing', () => {
     vi.clearAllMocks()
   })
 
-  it('calls config.onStatusTerminal with taskId and status when configured', async () => {
+  it('calls terminalResolution.onStatusTerminal with taskId and status when configured', async () => {
     const onStatusTerminal = vi.fn()
-    const deps = makeTerminalHandlerDeps({
-      config: makeConfig({ onStatusTerminal })
-    })
+    const terminalResolution: TerminalResolutionStrategy = { onStatusTerminal }
+    const deps = makeTerminalHandlerDeps({ terminalResolution })
     const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
 
     await handleTaskTerminal('task-1', 'done', onTaskTerminal, deps)

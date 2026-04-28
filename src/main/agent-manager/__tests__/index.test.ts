@@ -4,6 +4,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mocks — must be declared before imports
 // ---------------------------------------------------------------------------
 
+// Mock TaskStateService so integration tests are not blocked by state-machine
+// transition guards (getTask returns 'queued' in test setup but transitions
+// need 'active' as the source status). The integration test asserts on the
+// downstream repo.updateTask call, not on the state machine logic itself.
+vi.mock('../../services/task-state-service', () => ({
+  createTaskStateService: vi.fn(() => ({
+    transition: vi.fn(async (taskId: string, status: string, ctx: { fields?: Record<string, unknown> } = {}) => {
+      const { updateTask } = await import('../../data/sprint-queries')
+      await updateTask(taskId, { status, ...(ctx.fields ?? {}) })
+      return { committed: true, dependentsResolved: true }
+    })
+  }))
+}))
+
 vi.mock('../../data/sprint-queries', () => ({
   getQueuedTasks: vi.fn(),
   claimTask: vi.fn().mockResolvedValue(null),
@@ -43,6 +57,7 @@ vi.mock('../../paths', () => ({
   getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'myrepo', localPath: '/repos/myrepo' }]),
   getGhRepo: vi.fn(),
   FLEET_DIR: '/tmp/fleet-test',
+  FLEET_DB_PATH: '/tmp/fleet-test/fleet.db',
   FLEET_AGENT_LOG_PATH: '/tmp/fleet-agent-test.log',
   FLEET_TASK_MEMORY_DIR: '/tmp/fleet-test/tasks'
 }))
@@ -80,7 +95,8 @@ vi.mock('../worktree', () => ({
 
 vi.mock('../completion', () => ({
   resolveSuccess: vi.fn(),
-  resolveFailure: vi.fn()
+  resolveFailure: vi.fn(),
+  deleteAgentBranchBeforeRetry: vi.fn().mockResolvedValue(undefined)
 }))
 
 vi.mock('../orphan-recovery', () => ({
