@@ -167,7 +167,7 @@ describe('consumeMessages', () => {
   it('emits agent:error event on stream error', async () => {
     const handle = makeErrorHandle(new Error('Connection reset'))
     const agent = makeAgent()
-    await consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger())
+    await consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger(), 100)
     expect(emitAgentEvent).toHaveBeenCalledWith(
       'run-1',
       expect.objectContaining({
@@ -180,7 +180,7 @@ describe('consumeMessages', () => {
   it('flushes event batcher on stream error', async () => {
     const handle = makeErrorHandle(new Error('Broken'))
     const agent = makeAgent()
-    await consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger())
+    await consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger(), 100)
     expect(flushAgentEventBatcher).toHaveBeenCalled()
   })
 
@@ -313,7 +313,7 @@ describe('consumeMessages', () => {
   it('increments rateLimitCount on rate_limit messages', async () => {
     const handle = makeHandle([{ type: 'system', subtype: 'rate_limit' }])
     const agent = makeAgent()
-    await consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger())
+    await consumeMessages(handle, agent, makeTask(), 'run-1', makeTurnTracker(), makeLogger(), 100)
     expect(agent.rateLimitCount).toBe(1)
   })
 
