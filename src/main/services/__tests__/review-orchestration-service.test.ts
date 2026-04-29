@@ -3,7 +3,6 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { promisify } from 'util'
-import * as orchestration from '../review-orchestration-service'
 
 // Mock all dependencies
 vi.mock('node:child_process', () => {

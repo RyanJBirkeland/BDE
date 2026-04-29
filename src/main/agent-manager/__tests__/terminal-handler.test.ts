@@ -127,7 +127,6 @@ describe('handleTaskTerminal — deduplication', () => {
 
   it('concurrent calls for the same taskId execute the underlying work exactly once', async () => {
     let executionCount = 0
-    let hangResolve: (() => void) | undefined
 
     // Use resolveDependents (async path) to control execution timing.
     // resolveDependents is called via resolveTerminalDependents which is awaited,
