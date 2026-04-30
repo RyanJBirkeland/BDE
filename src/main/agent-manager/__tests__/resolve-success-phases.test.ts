@@ -107,6 +107,27 @@ describe('branchMatchesTask', () => {
       )
     ).toBe(false)
   })
+
+  it('matches UUID task ids when branch slug does not start with t-', () => {
+    // Regression: branchMatchesTask was returning false for branches whose slug
+    // doesn't begin with "t-" (e.g. "agent/fe-1-...") because extractTaskIdFromBranch
+    // returned null and the early return fired before the UUID hash check.
+    expect(
+      branchMatchesTask(
+        'agent/fe-1-promote-payments-to-top-level-route-682d45af',
+        '682d45af3c1b2e4f5a6b7c8d9e0f1a2b'
+      )
+    ).toBe(true)
+  })
+
+  it('does not match a UUID whose prefix differs from the non-t- branch hash', () => {
+    expect(
+      branchMatchesTask(
+        'agent/fe-1-promote-payments-to-top-level-route-682d45af',
+        'deadbeef3c1b2e4f5a6b7c8d9e0f1a2b'
+      )
+    ).toBe(false)
+  })
 })
 
 describe('assertBranchTipMatches — branch-name path (primary)', () => {

@@ -111,20 +111,21 @@ export function extractTaskIdFromBranch(branch: string): string | null {
  * Check whether a branch name identifies a given task.
  *
  * Two signals checked in order:
- * 1. The `<idSlug>` segment (e.g. '13') matches the task id tail via
- *    `endsWith('t-13')` — covers legacy-style ids like 'audit-20260420-t-13'.
- * 2. The 8-char hex hash at the end of the branch (FLEET appends the first 8
+ * 1. The 8-char hex hash at the end of the branch (FLEET appends the first 8
  *    chars of the task UUID) matches the task id prefix — covers UUID task ids
  *    like '9f04f0d089a0f3e3a45ff13ab2887a02'.
+ * 2. The `<idSlug>` segment (e.g. '13') matches the task id tail via
+ *    `endsWith('t-13')` — covers legacy-style ids like 'audit-20260420-t-13'.
  */
 export function branchMatchesTask(branch: string, taskId: string): boolean {
-  const slug = extractTaskIdFromBranch(branch)
-  if (!slug) return false
-  if (taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)) return true
   // UUID task IDs: the trailing 8 hex chars of the branch name are the first
   // 8 chars of the task UUID (FLEET's branch generation convention).
   const hashMatch = /-([a-f0-9]{8})$/.exec(branch)
-  return !!hashMatch?.[1] && taskId.toLowerCase().startsWith(hashMatch[1])
+  if (hashMatch?.[1] && taskId.toLowerCase().startsWith(hashMatch[1])) return true
+  // Legacy T-N style task IDs: agent/t-<idSlug>-...-<8hex>
+  const slug = extractTaskIdFromBranch(branch)
+  if (!slug) return false
+  return taskId.toLowerCase().endsWith(`t-${slug.toLowerCase()}`)
 }
 
 /**
