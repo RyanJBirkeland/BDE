@@ -24,6 +24,7 @@ const CLAUDE_INSTALL_DOCS_URL = 'https://docs.claude.com/en/docs/claude-code'
 const CLAUDE_INSTALL_COMMAND = 'curl -fsSL https://claude.ai/install.sh | bash'
 const CLAUDE_LOGIN_COMMAND = 'claude login'
 const CLAUDE_AUTH_STATUS_COMMAND = 'claude auth status'
+const CLAUDE_KEYCHAIN_BOOTSTRAP_COMMAND = 'mkdir -p ~/.fleet && security find-generic-password -s "Claude Code-credentials" -w > ~/.fleet/oauth-token && chmod 600 ~/.fleet/oauth-token'
 const TROUBLESHOOTING_DOCS_URL = 'https://docs.claude.com/en/docs/troubleshooting'
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -317,6 +318,29 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
             If you&apos;ve previously logged in and this is unexpected, your macOS Keychain may be
             locked — lock and unlock your screen, then click &quot;Check Again&quot;.
           </p>
+          <p style={{ marginTop: 'var(--fleet-space-3)', fontWeight: 600 }}>
+            Already logged in? If FLEET still cannot find your token, copy it from Keychain manually:
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--fleet-space-2)' }}>
+            <code
+              style={{
+                padding: '4px 10px',
+                background: 'var(--fleet-surface, rgba(0,0,0,0.08))',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+                fontSize: 'var(--fleet-size-sm)'
+              }}
+            >
+              {CLAUDE_KEYCHAIN_BOOTSTRAP_COMMAND}
+            </code>
+            <Button
+              variant="ghost"
+              onClick={() => copyToClipboard(CLAUDE_KEYCHAIN_BOOTSTRAP_COMMAND)}
+              aria-label="Copy Keychain bootstrap command"
+            >
+              <Copy size={14} />
+            </Button>
+          </div>
         </div>
       )}
 

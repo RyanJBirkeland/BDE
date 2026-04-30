@@ -52,6 +52,21 @@ describe('AuthStep', () => {
     expect(copyButton).toBeInTheDocument()
   })
 
+  it('displays Keychain bootstrap fallback command when token is missing', async () => {
+    mockAuth({ cliFound: true, tokenFound: false, tokenExpired: false })
+    render(<AuthStep {...stepProps} />)
+
+    const fallbackText = await screen.findByText(/already logged in\?/i)
+    expect(fallbackText).toBeInTheDocument()
+
+    const bootstrapButton = await screen.findByRole('button', {
+      name: /copy keychain bootstrap command/i
+    })
+    expect(bootstrapButton).toBeInTheDocument()
+
+    expect(screen.getByText(/mkdir -p ~\/.fleet/i)).toBeInTheDocument()
+  })
+
   it('writes the command to the clipboard when the copy button is clicked', async () => {
     mockAuth({ cliFound: true, tokenFound: false, tokenExpired: false })
     const writeText = vi.fn().mockResolvedValue(undefined)
