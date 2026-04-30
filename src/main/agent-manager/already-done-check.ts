@@ -27,6 +27,7 @@
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import type { Logger } from '../logger'
+import { GIT_FETCH_TIMEOUT_MS } from './types'
 
 const COMMIT_SCAN_DEPTH = 200
 const COMMIT_FIELD_SEPARATOR = '\x1e'
@@ -119,7 +120,7 @@ async function loadRecentCommits(repoPath: string, logger: Logger): Promise<Comm
     const { stdout } = await execFileAsync(
       'git',
       ['log', 'origin/main', `--format=${format}`, '-n', String(COMMIT_SCAN_DEPTH)],
-      { cwd: repoPath, env: buildAgentEnv(), maxBuffer: GIT_LOG_MAX_BUFFER_BYTES }
+      { cwd: repoPath, env: buildAgentEnv(), maxBuffer: GIT_LOG_MAX_BUFFER_BYTES, timeout: GIT_FETCH_TIMEOUT_MS }
     )
     const commits = parseCommitRecords(stdout)
     writeToCache(repoPath, commits)
