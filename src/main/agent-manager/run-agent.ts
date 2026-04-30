@@ -13,6 +13,7 @@ import { resolveSuccess, resolveFailure, deleteAgentBranchBeforeRetry } from './
 import { getMainRepoPorcelainStatus } from '../lib/main-repo-guards'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
+import { GIT_EXEC_TIMEOUT_MS } from './worktree-lifecycle'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
 import type { MetricsCollector } from './metrics'
@@ -193,7 +194,8 @@ async function assertPreSpawnRepoState(
   try {
     const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
       cwd: worktreePath,
-      env
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
     })
     worktreeStatus = stdout.trim()
   } catch (err) {
@@ -412,9 +414,11 @@ async function detectMissingSpecFiles(
   let diffOutput: string
   try {
     const env = buildAgentEnv()
+    // TODO: use configured default branch instead of hardcoded 'main' (T-10)
     const { stdout } = await execFileAsync('git', ['diff', '--name-only', 'main..HEAD'], {
       cwd: worktreePath,
-      env
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
     })
     diffOutput = stdout
   } catch (err) {

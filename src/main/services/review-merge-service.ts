@@ -10,6 +10,7 @@ import { runPostMergeDedup } from '../lib/post-merge-dedup'
 import { rebaseOntoMain } from '../lib/git-operations'
 
 const logger = createLogger('review-merge-service')
+const GIT_EXEC_TIMEOUT_MS = 30_000
 
 export interface MergeOptions {
   worktreePath: string
@@ -39,7 +40,8 @@ export async function extractConflictFiles(
   try {
     const { stdout } = await execFileAsync('git', ['diff', '--name-only', '--diff-filter=U'], {
       cwd,
-      env
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
     })
     return stdout.trim().split('\n').filter(Boolean)
   } catch (err: unknown) {
@@ -69,7 +71,8 @@ export async function executeMergeStrategy(
       // and unapplied ones with `+`; if there are no `+` lines, we're done.
       const { stdout: cherryOut } = await execFileAsync('git', ['cherry', 'HEAD', branch], {
         cwd: repoPath,
-        env
+        env,
+        timeout: GIT_EXEC_TIMEOUT_MS
       })
       const hasNewCommits = cherryOut.split('\n').some((line) => line.trim().startsWith('+'))
       if (!hasNewCommits) {
@@ -79,29 +82,30 @@ export async function executeMergeStrategy(
         return { success: true }
       }
 
-      await execFileAsync('git', ['merge', '--squash', branch], { cwd: repoPath, env })
+      await execFileAsync('git', ['merge', '--squash', branch], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
       try {
         await execFileAsync('git', ['commit', '-m', `${taskTitle} (#${taskId})`], {
           cwd: repoPath,
-          env
+          env,
+          timeout: GIT_EXEC_TIMEOUT_MS
         })
       } catch (commitErr: unknown) {
         logger.error(`[executeMergeStrategy] Squash commit failed, unstaging`)
         try {
-          await execFileAsync('git', ['reset', 'HEAD'], { cwd: repoPath, env })
+          await execFileAsync('git', ['reset', 'HEAD'], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
         } catch {
           logger.warn(`[executeMergeStrategy] git reset HEAD failed — manual cleanup required`)
         }
         throw commitErr
       }
     } else if (strategy === 'rebase') {
-      await execFileAsync('git', ['rebase', 'HEAD', branch], { cwd: repoPath, env })
-      await execFileAsync('git', ['merge', '--ff-only', branch], { cwd: repoPath, env })
+      await execFileAsync('git', ['rebase', 'HEAD', branch], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
+      await execFileAsync('git', ['merge', '--ff-only', branch], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
     } else {
       await execFileAsync(
         'git',
         ['merge', '--no-ff', branch, '-m', `Merge: ${taskTitle} (#${taskId})`],
-        { cwd: repoPath, env }
+        { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS }
       )
     }
     return { success: true }
@@ -111,9 +115,9 @@ export async function executeMergeStrategy(
     // Abort the failed merge/rebase
     try {
       if (strategy === 'rebase') {
-        await execFileAsync('git', ['rebase', '--abort'], { cwd: repoPath, env })
+        await execFileAsync('git', ['rebase', '--abort'], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
       } else {
-        await execFileAsync('git', ['merge', '--abort'], { cwd: repoPath, env })
+        await execFileAsync('git', ['merge', '--abort'], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
       }
     } catch {
       /* abort is best-effort */
@@ -136,7 +140,8 @@ export async function mergeAgentBranch(options: MergeOptions): Promise<MergeResu
   try {
     const { stdout: statusOut } = await execFileAsync('git', ['status', '--porcelain'], {
       cwd: repoPath,
-      env
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
     })
     if (statusOut.trim()) {
       return {
@@ -185,14 +190,15 @@ export async function cleanupWorktree(
   try {
     await execFileAsync('git', ['worktree', 'remove', worktreePath, '--force'], {
       cwd: repoPath,
-      env
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
     })
   } catch {
     /* best-effort cleanup */
   }
 
   try {
-    await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env })
+    await execFileAsync('git', ['branch', '-D', branch], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
   } catch {
     /* best-effort cleanup */
   }

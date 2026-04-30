@@ -13,6 +13,8 @@ import path from 'node:path'
 import { execFileAsync } from './async-utils'
 import type { Logger } from '../logger'
 
+const GIT_EXEC_TIMEOUT_MS = 30_000
+
 /**
  * Parse `git status --porcelain=v1` output and decide whether the worktree
  * should be considered dirty for the main-repo-guard check. Returns false
@@ -41,7 +43,8 @@ export async function getMainRepoPorcelainStatus(
 ): Promise<string> {
   const { stdout } = await execFileAsync('git', ['status', '--porcelain'], {
     cwd: repoPath,
-    env
+    env,
+    timeout: GIT_EXEC_TIMEOUT_MS
   })
   return stdout.trim()
 }
@@ -63,7 +66,7 @@ async function bestEffortMergeAbort(
   env: Record<string, string | undefined>
 ): Promise<void> {
   try {
-    await execFileAsync('git', ['merge', '--abort'], { cwd: repoPath, env })
+    await execFileAsync('git', ['merge', '--abort'], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
   } catch {
     /* best effort */
   }
@@ -78,7 +81,7 @@ async function bestEffortCheckoutHead(
   env: Record<string, string | undefined>
 ): Promise<void> {
   try {
-    await execFileAsync('git', ['checkout', '--', '.'], { cwd: repoPath, env })
+    await execFileAsync('git', ['checkout', '--', '.'], { cwd: repoPath, env, timeout: GIT_EXEC_TIMEOUT_MS })
   } catch {
     /* best effort */
   }
