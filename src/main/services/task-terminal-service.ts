@@ -1,4 +1,5 @@
 import { resolveDependents } from '../lib/resolve-dependents'
+import { sleep } from '../lib/async-utils'
 import type { TaskStateService } from './task-state-service'
 import {
   createDependencyIndex,
@@ -51,7 +52,7 @@ class BatchedTaskResolver {
   schedule(
     taskId: string,
     status: TaskStatus,
-    execute: (pending: Map<string, TaskStatus>) => void
+    execute: (pending: Map<string, TaskStatus>) => void | Promise<void>
   ): void {
     this.pending.set(taskId, status)
     if (!this.timer) {
@@ -84,7 +85,7 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
     // we rebuild the dependency index once and process all resolutions together.
     // This differs from agent-manager's inline synchronous approach.
     // See ResolveDependentsParams in agent-manager/types.ts for the conceptual contract.
-    resolver.schedule(taskId, status, (pending) => {
+    resolver.schedule(taskId, status, async (pending) => {
       try {
         refreshTaskDepIndex() // Refresh task graph once for the batch; epic graph is always live.
       } catch (err) {
@@ -118,10 +119,35 @@ export function createTaskTerminalService(deps: TaskTerminalServiceDeps): TaskTe
       deps.logger.info(
         `[task-terminal] resolved ${totalCount - failedTaskIds.length} dependents in ${totalCount} tasks`
       )
-      if (failedTaskIds.length > 0) {
-        deps.logger.error(
-          `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — failed task IDs: ${failedTaskIds.join(', ')}`
-        )
+      if (failedTaskIds.length === 0) return
+
+      deps.logger.error(
+        `[task-terminal-service] ${failedTaskIds.length} of ${totalCount} dependency resolutions failed — retrying after 500ms`
+      )
+      await sleep(500)
+      for (const id of failedTaskIds) {
+        const terminalStatus = pending.get(id)!
+        try {
+          resolveDependents(
+            id,
+            terminalStatus,
+            depIndex,
+            deps.getTask,
+            deps.updateTask,
+            deps.logger,
+            deps.getSetting,
+            deps.epicDepsReader,
+            deps.getGroup,
+            deps.listGroupTasks,
+            deps.runInTransaction,
+            undefined,
+            deps.taskStateService
+          )
+        } catch (retryErr) {
+          deps.logger.error(
+            `[task-terminal-service] resolveDependents retry failed for ${id} — dependents may need manual unblock: ${retryErr}`
+          )
+        }
       }
     })
   }
