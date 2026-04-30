@@ -110,13 +110,12 @@ export function initializeAgentTracking(
     timestamp: Date.now()
   })
 
-  logger.info(JSON.stringify({
-    event: 'agent.spawned',
+  logger.event('agent.spawned', {
     taskId: task.id,
     agentRunId,
     model: recordedModel,
     timestamp: new Date().toISOString()
-  }))
+  })
 
   return { agent, agentRunId, turnTracker }
 }
