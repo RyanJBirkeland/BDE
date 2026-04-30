@@ -23,6 +23,7 @@ import {
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { createEpicDependencyIndex } from './epic-dependency-service'
 import { createDependencyIndex } from './dependency-graph'
+import type { DependencyIndex } from './dependency-graph'
 
 // Re-export graph primitives so existing callers keep working without import-path changes.
 export {
@@ -68,19 +69,26 @@ export function buildBlockedNotes(blockedBy: string[], existingNotes?: string | 
 
 /**
  * Check whether a task's dependencies are satisfied.
- * Creates a temporary dependency index from the current task list.
+ *
+ * When `depIndex` is provided, it is used directly — skipping the
+ * `createDependencyIndex()` allocation. The caller is responsible for ensuring
+ * the index was built from current task data. `listTasks` is still called to
+ * build the status map; pass a cached result via closure to avoid repeated
+ * table scans across multiple `checkTaskDependencies` calls.
+ *
  * Returns { shouldBlock: true, blockedBy: [...] } if deps are unsatisfied.
  */
 export function checkTaskDependencies(
   taskId: string,
   deps: TaskDependency[],
   logger: Logger,
-  listTasks: () => SprintTask[]
+  listTasks: () => SprintTask[],
+  depIndex?: DependencyIndex
 ): { shouldBlock: boolean; blockedBy: string[]; reason?: string } {
   try {
     const allTasks = listTasks()
     const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
-    const idx = createDependencyIndex()
+    const idx = depIndex ?? createDependencyIndex()
     const { satisfied, blockedBy } = idx.areDependenciesSatisfied(taskId, deps, (depId: string) =>
       statusMap.get(depId)
     )
@@ -153,6 +161,8 @@ export interface ComputeBlockStateContext {
   logger: Logger
   listTasks: () => SprintTask[]
   listGroups: () => TaskGroup[]
+  /** Pre-built dependency graph. When provided, threads through to `checkTaskDependencies` to skip `createDependencyIndex()`. */
+  depIndex?: DependencyIndex
 }
 
 export function computeBlockState(
@@ -160,7 +170,7 @@ export function computeBlockState(
   ctx: ComputeBlockStateContext
 ): { shouldBlock: boolean; blockedBy: string[]; reason?: string } {
   const taskDeps = task.depends_on ?? []
-  const taskResult = checkTaskDependencies(task.id, taskDeps, ctx.logger, ctx.listTasks)
+  const taskResult = checkTaskDependencies(task.id, taskDeps, ctx.logger, ctx.listTasks, ctx.depIndex)
 
   // Get epic deps from the task's group (if any)
   let epicDeps: EpicDependency[] = []
