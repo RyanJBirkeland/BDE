@@ -51,6 +51,17 @@ export interface WatchdogLoopDeps {
 // ---------------------------------------------------------------------------
 
 /**
+ * Extract the underlying child process from an agent handle, if exposed.
+ * Some handle implementations (CLI, subprocess-backed SDK paths) attach the
+ * raw ChildProcess on `.process`. SDK-only handles that lack it return null.
+ */
+function getUnderlyingProcess(handle: ActiveAgent['handle']): { kill: (signal: string) => void } | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- handle.process is not in the public AgentHandle interface
+  const proc = (handle as any).process
+  return proc && typeof proc.kill === 'function' ? proc : null
+}
+
+/**
  * Grace window between the soft `abort()` signal and the SIGKILL escalation.
  * Five seconds is long enough for the SDK / CLI to flush in-flight output and
  * exit cleanly, but short enough that an unresponsive agent does not pin the
@@ -88,9 +99,8 @@ export function forceKillAgent(agent: ActiveAgent, logger: Logger): void {
       agent.handle.forceKill()
       return
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const proc = (agent.handle as any).process
-    if (proc && typeof proc.kill === 'function') {
+    const proc = getUnderlyingProcess(agent.handle)
+    if (proc) {
       proc.kill('SIGKILL')
       return
     }
@@ -130,9 +140,8 @@ export function killAgentWithEscalation(
  */
 export function abortAgent(agent: ActiveAgent, logger: Logger): void {
   softKillAgent(agent, logger)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const proc = (agent.handle as any).process
-  if (proc && typeof proc.kill === 'function') {
+  const proc = getUnderlyingProcess(agent.handle)
+  if (proc) {
     try {
       proc.kill('SIGKILL')
     } catch (err) {

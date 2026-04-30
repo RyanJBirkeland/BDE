@@ -58,6 +58,15 @@ const log = createLogger('adhoc-agent')
 // ADHOC_WORKTREE_BASE is defined in src/main/paths.ts so the review handlers'
 // worktree validator can recognize adhoc worktree paths.
 
+/** Maximum characters for the branch slug derived from the user's first message. */
+const ADHOC_SLUG_MAX_CHARS = 80
+
+/** Hard spend cap per interactive adhoc session — safety ceiling, not a target. */
+const ADHOC_MAX_BUDGET_USD = 5.0
+
+/** Maximum characters for the auto-promote sprint task title. */
+const ADHOC_PROMOTE_TITLE_MAX_CHARS = 120
+
 /**
  * Derive a short, branch-safe slug from the user's first task message.
  * Used by `setupWorktree` to name the agent's branch — keeps the branch
@@ -69,8 +78,8 @@ function deriveAdhocTitle(task: string): string {
       .split('\n')
       .find((l) => l.trim())
       ?.trim() ?? 'adhoc session'
-  // Cap at ~80 chars so the resulting branch slug stays short
-  return firstLine.length > 80 ? firstLine.slice(0, 80) : firstLine
+  // Cap so the resulting branch slug stays short
+  return firstLine.length > ADHOC_SLUG_MAX_CHARS ? firstLine.slice(0, ADHOC_SLUG_MAX_CHARS) : firstLine
 }
 
 export interface ImageAttachment {
@@ -182,14 +191,12 @@ export async function spawnAdhocAgent(args: {
       logger: log
     }),
     disallowedTools: [...PIPELINE_DISALLOWED_TOOLS],
-    // Hard cap on spend per interactive session. User-controlled agents can
-    // rack up cost across many turns. This is a safety ceiling, not a target.
-    maxBudgetUsd: 5.0
+    maxBudgetUsd: ADHOC_MAX_BUDGET_USD
   }
 
   // Record in agent_runs (with worktree path + branch persisted so the
   // Promote handler can find them later)
-  const repo = basename(args.repoPath).toLowerCase()
+  const repo = repoName
   const meta = await importAgent(
     {
       id: agentId,
@@ -542,7 +549,10 @@ export async function spawnAdhocAgent(args: {
         .split('\n')
         .find((l) => l.trim())
         ?.trim() ?? 'Adhoc agent session'
-    const title = firstLine.length > 120 ? firstLine.slice(0, 117) + '...' : firstLine
+    const title =
+      firstLine.length > ADHOC_PROMOTE_TITLE_MAX_CHARS
+        ? firstLine.slice(0, ADHOC_PROMOTE_TITLE_MAX_CHARS - 3) + '...'
+        : firstLine
 
     const task = await args.repo.createReviewTaskFromAdhoc({
       title,
