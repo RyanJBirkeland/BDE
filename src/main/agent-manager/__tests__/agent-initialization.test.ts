@@ -78,7 +78,7 @@ const mockRepo: IAgentTaskRepository = {
 }
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
 }
 
 const worktree = { worktreePath: '/tmp/wt', branch: 'agent/test-1' }
