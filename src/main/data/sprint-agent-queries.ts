@@ -139,11 +139,14 @@ export function getHealthCheckTasks(db?: Database.Database): SprintTaskCore[] {
   )
 }
 
-export function getAllTaskIds(db?: Database.Database): Set<string> {
+export function getAllTaskIds(candidateIds: string[], db?: Database.Database): Set<string> {
   // No try/catch: DB errors must propagate so callers get a 500,
   // not a misleading 400 "task IDs do not exist" from an empty Set.
+  if (candidateIds.length === 0) return new Set()
   const conn = db ?? getDb()
-  const rows = conn.prepare('SELECT id FROM sprint_tasks').all() as Array<{ id: string }>
+  const placeholders = candidateIds.map(() => '?').join(', ')
+  const sql = `SELECT id FROM sprint_tasks WHERE id IN (${placeholders}) AND status NOT IN ('done', 'cancelled', 'failed', 'error')`
+  const rows = conn.prepare(sql).all(...candidateIds) as Array<{ id: string }>
   return new Set(rows.map((r) => r.id))
 }
 
