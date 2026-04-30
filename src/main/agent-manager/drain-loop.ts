@@ -318,6 +318,9 @@ export class DrainLoop {
       ])
     } catch (err) {
       if (err instanceof DrainTimeoutError) {
+        this.deps.logger.warn(
+          `[drain-loop] tick ${tickId} timed out after ${DRAIN_TICK_TIMEOUT_MS}ms — DB may be under pressure`
+        )
         this.deps.logger.event('drain.tick.timeout', { tickId })
         return
       }
