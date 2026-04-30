@@ -293,15 +293,18 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
 
     // Step 5: Notify terminal handler after map removal so downstream logic
     // (dep resolution, metrics) sees a consistent state.
+    // Awaited so dependency resolution completes before the watchdog moves on —
+    // a fire-and-forget here would leave blocked downstream tasks permanently stuck
+    // if onTaskTerminal throws (e.g. SQLite busy during dep resolution).
     if (result.shouldNotifyTerminal && result.terminalStatus) {
       flushAgentEventBatcher()
-      deps
-        .onTaskTerminal(agent.taskId, result.terminalStatus)
-        .catch((err) =>
-          deps.logger.warn(
-            `[agent-manager] Failed onTerminal for task ${agent.taskId} after ${verdict}: ${err}`
-          )
+      try {
+        await deps.onTaskTerminal(agent.taskId, result.terminalStatus)
+      } catch (err) {
+        deps.logger.warn(
+          `[agent-manager] Failed onTerminal for task ${agent.taskId} after ${verdict}: ${err}`
         )
+      }
     }
   }
 }
