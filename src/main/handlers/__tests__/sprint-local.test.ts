@@ -168,7 +168,8 @@ vi.mock('../../services/dependency-service', async (importOriginal) => {
     createDependencyIndex: vi.fn().mockReturnValue({
       areDependenciesSatisfied: vi.fn().mockReturnValue({ satisfied: true })
     }),
-    detectCycle: vi.fn().mockReturnValue(null)
+    detectCycle: vi.fn().mockReturnValue(null),
+    validateDependencyGraph: vi.fn().mockReturnValue({ valid: true })
   }
 })
 
@@ -193,6 +194,7 @@ vi.mock('../../services/spec-quality/factory', () => ({
   })
 }))
 
+
 import { registerSprintLocalHandlers } from '../sprint-local'
 import { safeHandle } from '../../ipc-utils'
 import {
@@ -216,6 +218,7 @@ import { initSprintService } from '../../services/sprint-service'
 import { initSprintUseCases } from '../../services/sprint-use-cases'
 import { initTaskStateService } from '../../services/task-state-service'
 import type { SprintMutations } from '../../services/sprint-mutations'
+import { validateDependencyGraph as _validateDependencyGraph } from '../../services/dependency-service'
 
 // Stub SprintMutations that delegates to the mocked sprint-queries functions.
 // Passed to the init functions so sprint-service, sprint-use-cases, and
@@ -277,14 +280,21 @@ function makeMockDeps() {
 
 /** Helper: capture handler registered for a given channel */
 function captureHandler(channel: string): (...args: any[]) => any {
+  return captureHandlerWithDeps(channel, makeMockDeps())
+}
+
+/** Helper: capture handler registered for a given channel using explicit deps */
+function captureHandlerWithDeps(
+  channel: string,
+  deps: ReturnType<typeof makeMockDeps>
+): (...args: any[]) => any {
   let captured: ((...args: any[]) => any) | undefined
 
   vi.mocked(safeHandle).mockImplementation((ch, handler) => {
     if (ch === channel) captured = handler as (...args: any[]) => any
   })
 
-  const mockDeps = makeMockDeps()
-  registerSprintLocalHandlers(mockDeps)
+  registerSprintLocalHandlers(deps)
 
   if (!captured) throw new Error(`No handler captured for channel "${channel}"`)
   return captured
@@ -950,5 +960,88 @@ describe('task ID format validation', () => {
   it.each(INVALID_IDS)('sprint:getChanges rejects invalid task ID "%s"', async (badId) => {
     const handler = captureHandler('sprint:getChanges')
     await expect(handler(mockEvent, badId)).rejects.toThrow('Invalid task ID format')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-16 — sprint-local dependency edge cases
+// ---------------------------------------------------------------------------
+
+describe('sprint:validateDependencies — dep on non-existent task', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('reports invalid when a proposed dep id does not exist', async () => {
+    vi.mocked(_validateDependencyGraph).mockReturnValue({
+      valid: false,
+      error: 'Task ghost-id not found'
+    } as any)
+
+    const handler = captureHandler('sprint:validateDependencies')
+    const result = await handler(mockEvent, '01HXXXXXXXXXXXXXXXXXXXXXXX', [
+      { id: 'ghost-id', type: 'hard' }
+    ])
+
+    expect(result).toMatchObject({ valid: false, error: expect.stringContaining('not found') })
+  })
+})
+
+describe('sprint:validateDependencies — cycle detection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('reports invalid with a cycle path when A→B and B→A are proposed', async () => {
+    vi.mocked(_validateDependencyGraph).mockReturnValue({
+      valid: false,
+      cycle: ['task-a', 'task-b', 'task-a']
+    } as any)
+
+    const handler = captureHandler('sprint:validateDependencies')
+    const result = await handler(mockEvent, 'task-a', [{ id: 'task-b', type: 'hard' }])
+
+    expect(result).toMatchObject({
+      valid: false,
+      cycle: expect.arrayContaining(['task-a', 'task-b'])
+    })
+  })
+})
+
+describe('sprint:unblockTask — transition to queued', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // validateTaskSpec calls mockValidateFull via the factory mock — ensure it
+    // returns valid so prepareUnblockTransition doesn't throw a semantic error.
+    mockValidateFull.mockResolvedValue({
+      valid: true,
+      issues: [],
+      errors: [],
+      warnings: [],
+      prescriptivenessChecked: true
+    })
+  })
+
+  it('calls taskStateService.transition with queued for the given task id', async () => {
+    // The task must have a valid spec so prepareUnblockTransition's validateTaskSpec passes
+    const validSpec = `${'x'.repeat(60)}\n## Problem\nBroken\n## Solution\nFix it`
+    const taskStub = {
+      id: 'task-blocked',
+      title: 'Blocked task',
+      repo: 'fleet',
+      spec: validSpec,
+      status: 'blocked',
+      depends_on: [{ id: 'upstream', type: 'hard' }]
+    }
+    vi.mocked(_getTask).mockReturnValue(taskStub as any)
+
+    const transitionSpy = vi.fn().mockResolvedValue(undefined)
+    const mockDeps = makeMockDeps()
+    mockDeps.taskStateService.transition = transitionSpy
+
+    const handler = captureHandlerWithDeps('sprint:unblockTask', mockDeps)
+    await handler(mockEvent, 'task-blocked')
+
+    expect(transitionSpy).toHaveBeenCalledWith('task-blocked', 'queued', expect.anything())
   })
 })
