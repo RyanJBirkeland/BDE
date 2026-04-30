@@ -116,16 +116,14 @@ export function EpicHeader({
         {group.goal && <p className="epic-detail__goal">{group.goal}</p>}
       </div>
       <div className="epic-detail__header-actions" style={{ position: 'relative' }} ref={menuRef}>
-        {totalCount > 0 && (
-          <button
-            type="button"
-            className="epic-detail__header-btn epic-detail__header-btn--ai"
-            onClick={onOpenAssistant}
-            aria-label="Ask AI"
-          >
-            ✦ Ask AI
-          </button>
-        )}
+        <button
+          type="button"
+          className="epic-detail__header-btn epic-detail__header-btn--ai"
+          onClick={onOpenAssistant}
+          aria-label="Ask AI"
+        >
+          ✦ Ask AI
+        </button>
         <button
           type="button"
           className="epic-detail__header-btn"

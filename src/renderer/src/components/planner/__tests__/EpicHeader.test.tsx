@@ -18,15 +18,15 @@ const mockEpic = {
 }
 
 describe('EpicHeader', () => {
-  it('renders Ask AI button when totalCount > 0', () => {
+  it('renders Ask AI button regardless of task count', () => {
     const onOpenAssistant = vi.fn()
     render(
       <EpicHeader
         group={mockEpic}
         isReady={false}
         isCompleted={false}
-        doneCount={1}
-        totalCount={3}
+        doneCount={0}
+        totalCount={0}
         onOpenAssistant={onOpenAssistant}
         onEdit={vi.fn()}
         onToggleReady={vi.fn()}
@@ -35,24 +35,6 @@ describe('EpicHeader', () => {
       />
     )
     expect(screen.getByRole('button', { name: /ask ai/i })).toBeInTheDocument()
-  })
-
-  it('does not render Ask AI button when totalCount is 0', () => {
-    render(
-      <EpicHeader
-        group={mockEpic}
-        isReady={false}
-        isCompleted={false}
-        doneCount={0}
-        totalCount={0}
-        onOpenAssistant={vi.fn()}
-        onEdit={vi.fn()}
-        onToggleReady={vi.fn()}
-        onMarkCompleted={vi.fn()}
-        onDelete={vi.fn()}
-      />
-    )
-    expect(screen.queryByRole('button', { name: /ask ai/i })).not.toBeInTheDocument()
   })
 
   it('calls onOpenAssistant when Ask AI button clicked', async () => {
