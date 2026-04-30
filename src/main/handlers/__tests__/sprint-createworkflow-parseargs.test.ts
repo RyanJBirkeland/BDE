@@ -61,7 +61,6 @@ vi.mock('../../data/sprint-planning-queries', () => ({
   updateSprint: vi.fn(),
   deleteSprint: vi.fn()
 }))
-vi.mock('../../services/force-override-service', () => ({ forceTerminalOverride: vi.fn() }))
 vi.mock('../../services/task-validation', () => ({ validateTaskSpec: vi.fn() }))
 
 import { parseCreateWorkflowArgs } from '../sprint-local'

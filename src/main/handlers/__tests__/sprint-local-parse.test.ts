@@ -75,7 +75,6 @@ vi.mock('../../data/sprint-planning-queries', () => ({
   updateSprint: vi.fn(),
   deleteSprint: vi.fn()
 }))
-vi.mock('../../services/force-override-service', () => ({ forceTerminalOverride: vi.fn() }))
 vi.mock('../../services/task-validation', () => ({ validateTaskSpec: vi.fn() }))
 vi.mock('../../db', () => ({ getDb: vi.fn() }))
 vi.mock('../../data/task-changes', () => ({ getTaskChanges: vi.fn() }))
