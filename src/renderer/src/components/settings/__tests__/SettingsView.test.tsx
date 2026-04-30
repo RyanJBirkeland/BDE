@@ -78,7 +78,7 @@ describe('SettingsView', () => {
     render(<SettingsView />)
     const modelsLinks = screen.getAllByText('Models')
     await user.click(modelsLinks[0])
-    expect(screen.getByText('Local backend')).toBeInTheDocument()
+    expect(screen.getByText('Opencode backend')).toBeInTheDocument()
     expect(screen.getByText('Active routing')).toBeInTheDocument()
   })
 })

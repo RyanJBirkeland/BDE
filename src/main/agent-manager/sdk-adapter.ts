@@ -15,7 +15,6 @@ import { buildAgentEnv, getOAuthToken, getClaudeCliPath } from '../env-utils'
 import { spawnViaSdk, type PipelineSpawnTuning } from './spawn-sdk'
 import { spawnViaCli } from './spawn-cli'
 import { loadBackendSettings, resolveAgentRuntime } from './backend-selector'
-import { spawnLocalAgent } from './local-adapter'
 import { spawnOpencode } from './spawn-opencode'
 import { startOpencodeSessionMcp, type OpencodeSessionMcpHandle } from './opencode-session-mcp'
 import {
@@ -113,7 +112,7 @@ export async function spawnAgent(opts: {
   logger?: Logger | undefined
   /**
    * Which agent type is being spawned. Routes through the backend-selector to
-   * pick Claude vs. the local `rbt-coding-agent` backend based on settings.
+   * pick Claude vs. the opencode backend based on settings.
    * Defaults to `'pipeline'` because today only the Pipeline path flows
    * through this function — other agent types (adhoc, copilot, synthesizer,
    * assistant, reviewer) have their own dedicated spawn paths.
@@ -162,31 +161,12 @@ export async function spawnAgent(opts: {
   const settings = loadBackendSettings()
   const resolved = resolveAgentRuntime(agentType, settings)
 
-  if (resolved.backend === 'local') {
-    try {
-      const handle = await spawnLocalAgent({
-        prompt: opts.prompt,
-        cwd: opts.cwd,
-        model: resolved.model,
-        endpoint: settings.localEndpoint,
-        logger: opts.logger
-      })
-      return annotateHandle(handle, 'local', resolved.model)
-    } catch (err) {
-      opts.logger?.warn(
-        `[agent-manager] local backend for ${agentType} failed; falling back to Claude: ${err instanceof Error ? err.message : String(err)}`
-      )
-      // Fall through to Claude path below.
-    }
-  }
-
   if (resolved.backend === 'opencode') {
     return spawnOpencodeWithMcp(opts, resolved.model, settings.opencodeExecutable, opts.epicGroupService)
   }
 
-  const modelForClaude = resolved.backend === 'claude' ? resolved.model : opts.model
-  const claudeHandle = await spawnClaudeAgent({ ...opts, model: modelForClaude })
-  return annotateHandle(claudeHandle, 'claude', modelForClaude)
+  const claudeHandle = await spawnClaudeAgent({ ...opts, model: resolved.model })
+  return annotateHandle(claudeHandle, resolved.model)
 }
 
 async function spawnOpencodeWithMcp(
@@ -253,12 +233,8 @@ function nullLogger(): Logger {
   return { info: noop, warn: noop, error: noop, debug: noop, event: noop }
 }
 
-function annotateHandle(
-  handle: AgentHandle,
-  backend: 'claude' | 'local' | 'opencode',
-  resolvedModel: string
-): AgentHandle {
-  return Object.assign(handle, { backend, resolvedModel })
+function annotateHandle(handle: AgentHandle, resolvedModel: string): AgentHandle {
+  return Object.assign(handle, { resolvedModel })
 }
 
 async function spawnClaudeAgent(opts: {

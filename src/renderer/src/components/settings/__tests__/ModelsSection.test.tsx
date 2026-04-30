@@ -20,31 +20,14 @@ beforeEach(() => {
 import { ModelsSection } from '../ModelsSection'
 
 describe('ModelsSection — scaffold', () => {
-  it('renders the Local backend heading', () => {
+  it('renders the Opencode backend heading', () => {
     render(<ModelsSection />)
-    expect(screen.getByText('Local backend')).toBeInTheDocument()
+    expect(screen.getByText('Opencode backend')).toBeInTheDocument()
   })
 
-  it('renders the endpoint text input with the default placeholder', () => {
+  it('does not render a Local backend card', () => {
     render(<ModelsSection />)
-    const input = screen.getByPlaceholderText('http://localhost:1234/v1')
-    expect(input).toBeInTheDocument()
-  })
-
-  it('populates the endpoint from loaded settings', async () => {
-    vi.mocked(window.api.settings.getJson).mockResolvedValue({
-      pipeline: { backend: 'claude', model: 'claude-sonnet-4-5' },
-      synthesizer: { backend: 'claude', model: 'claude-sonnet-4-5' },
-      copilot: { backend: 'claude', model: 'claude-sonnet-4-5' },
-      assistant: { backend: 'claude', model: 'claude-sonnet-4-5' },
-      adhoc: { backend: 'claude', model: 'claude-sonnet-4-5' },
-      reviewer: { backend: 'claude', model: 'claude-sonnet-4-5' },
-      localEndpoint: 'http://localhost:9999/v1'
-    })
-    render(<ModelsSection />)
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('http://localhost:9999/v1')).toBeInTheDocument()
-    })
+    expect(screen.queryByText('Local backend')).not.toBeInTheDocument()
   })
 })
 
@@ -78,13 +61,15 @@ describe('ModelsSection — agent type rows', () => {
 })
 
 describe('ModelsSection — backend toggle + model picker', () => {
-  it('renders a Claude/Local segmented control on the Pipeline row', () => {
+  it('renders Claude and Opencode radio buttons on the Pipeline row but no Local button', () => {
     render(<ModelsSection />)
     const pipelineRow = screen.getByTestId('models-row-pipeline')
     const claudeBtn = pipelineRow.querySelector('button[role="radio"][data-value="claude"]')
+    const opencodeBtn = pipelineRow.querySelector('button[role="radio"][data-value="opencode"]')
     const localBtn = pipelineRow.querySelector('button[role="radio"][data-value="local"]')
     expect(claudeBtn).toBeInTheDocument()
-    expect(localBtn).toBeInTheDocument()
+    expect(opencodeBtn).toBeInTheDocument()
+    expect(localBtn).not.toBeInTheDocument()
   })
 
   it('renders a Claude model select with the three known IDs by default', () => {
@@ -96,33 +81,33 @@ describe('ModelsSection — backend toggle + model picker', () => {
     expect(options).toEqual(['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6'])
   })
 
-  it('switches to a free-text input when Local is selected and resets model to empty', async () => {
+  it('switches to an Opencode model input when Opencode is selected and resets model to empty', async () => {
     const user = userEvent.setup()
     render(<ModelsSection />)
     const pipelineRow = screen.getByTestId('models-row-pipeline')
-    const localBtn = pipelineRow.querySelector(
-      'button[role="radio"][data-value="local"]'
+    const opencodeBtn = pipelineRow.querySelector(
+      'button[role="radio"][data-value="opencode"]'
     ) as HTMLButtonElement
-    await user.click(localBtn)
+    await user.click(opencodeBtn)
 
     await waitFor(() => {
       const input = pipelineRow.querySelector(
-        'input[placeholder="openai/qwen/qwen3.6-35b-a3b"]'
+        'input[placeholder="opencode/gpt-5-nano"]'
       ) as HTMLInputElement
       expect(input).toBeInTheDocument()
       expect(input.value).toBe('')
     })
   })
 
-  it('switches back to Claude resets model to claude-sonnet-4-6', async () => {
+  it('switches back to Claude and resets model to the default Claude model', async () => {
     const user = userEvent.setup()
     render(<ModelsSection />)
     const pipelineRow = screen.getByTestId('models-row-pipeline')
 
-    const localBtn = pipelineRow.querySelector(
-      'button[role="radio"][data-value="local"]'
+    const opencodeBtn = pipelineRow.querySelector(
+      'button[role="radio"][data-value="opencode"]'
     ) as HTMLButtonElement
-    await user.click(localBtn)
+    await user.click(opencodeBtn)
 
     const claudeBtn = pipelineRow.querySelector(
       'button[role="radio"][data-value="claude"]'
@@ -143,19 +128,6 @@ describe('ModelsSection — backend toggle + model picker', () => {
       expect(select).not.toBeNull()
       expect(select!).not.toBeDisabled()
     }
-  })
-
-  it('disables only the Local radio on non-pipeline rows, and leaves Claude enabled', () => {
-    render(<ModelsSection />)
-    for (const id of ['synthesizer', 'copilot', 'assistant', 'adhoc', 'reviewer']) {
-      const row = screen.getByTestId(`models-row-${id}`)
-      const claudeBtn = row.querySelector('button[data-value="claude"]') as HTMLButtonElement
-      const localBtn = row.querySelector('button[data-value="local"]') as HTMLButtonElement
-      expect(claudeBtn).not.toBeDisabled()
-      expect(localBtn).toBeDisabled()
-    }
-    const pipelineRow = screen.getByTestId('models-row-pipeline')
-    expect(pipelineRow.querySelector('button[data-value="local"]')).not.toBeDisabled()
   })
 
   it('renders an Opencode radio button on the Pipeline row', () => {
@@ -212,12 +184,12 @@ describe('ModelsSection — save orchestration', () => {
     expect(btn).toBeDisabled()
   })
 
-  it('enables Save after the user edits the endpoint', async () => {
+  it('enables Save after the user edits the opencode executable', async () => {
     const user = userEvent.setup()
     render(<ModelsSection />)
-    const endpoint = screen.getByPlaceholderText('http://localhost:1234/v1') as HTMLInputElement
-    await user.clear(endpoint)
-    await user.type(endpoint, 'http://localhost:4321/v1')
+    const executable = screen.getByPlaceholderText('opencode') as HTMLInputElement
+    await user.clear(executable)
+    await user.type(executable, '/usr/local/bin/opencode')
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /save changes/i })).not.toBeDisabled()
     })
@@ -227,15 +199,15 @@ describe('ModelsSection — save orchestration', () => {
     const user = userEvent.setup()
     render(<ModelsSection />)
     const pipelineRow = screen.getByTestId('models-row-pipeline')
-    const localBtn = pipelineRow.querySelector(
-      'button[role="radio"][data-value="local"]'
+    const opencodeBtn = pipelineRow.querySelector(
+      'button[role="radio"][data-value="opencode"]'
     ) as HTMLButtonElement
-    await user.click(localBtn)
+    await user.click(opencodeBtn)
 
-    const localInput = pipelineRow.querySelector(
-      'input[placeholder="openai/qwen/qwen3.6-35b-a3b"]'
+    const opencodeInput = pipelineRow.querySelector(
+      'input[placeholder="opencode/gpt-5-nano"]'
     ) as HTMLInputElement
-    await user.type(localInput, 'openai/qwen/qwen3.6-35b-a3b')
+    await user.type(opencodeInput, 'opencode/claude-sonnet-4-5')
 
     await user.click(screen.getByRole('button', { name: /save changes/i }))
 
@@ -244,89 +216,14 @@ describe('ModelsSection — save orchestration', () => {
       expect(window.api.settings.setJson).toHaveBeenCalledWith(
         'agents.backendConfig',
         expect.objectContaining({
-          pipeline: { backend: 'local', model: 'openai/qwen/qwen3.6-35b-a3b' },
-          synthesizer: { backend: 'claude', model: 'claude-sonnet-4-6' },
-          localEndpoint: 'http://localhost:1234/v1'
+          pipeline: { backend: 'opencode', model: 'opencode/claude-sonnet-4-5' },
+          synthesizer: { backend: 'claude', model: 'claude-sonnet-4-6' }
         })
       )
     })
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /save changes/i })).toBeDisabled()
-    })
-  })
-})
-
-describe('ModelsSection — test connection', () => {
-  it('shows success state after a reachable endpoint returns', async () => {
-    const user = userEvent.setup()
-    vi.mocked(window.api.agents.testLocalEndpoint).mockResolvedValue({
-      ok: true,
-      latencyMs: 18,
-      modelCount: 4
-    })
-
-    render(<ModelsSection />)
-    await user.click(screen.getByRole('button', { name: /test connection/i }))
-
-    await waitFor(() => {
-      expect(screen.getByText(/Reachable — 4 models loaded/i)).toBeInTheDocument()
-    })
-  })
-
-  it('shows error state when the endpoint is unreachable', async () => {
-    const user = userEvent.setup()
-    vi.mocked(window.api.agents.testLocalEndpoint).mockResolvedValue({
-      ok: false,
-      error: 'ECONNREFUSED'
-    })
-
-    render(<ModelsSection />)
-    await user.click(screen.getByRole('button', { name: /test connection/i }))
-
-    await waitFor(() => {
-      expect(screen.getByText(/ECONNREFUSED/i)).toBeInTheDocument()
-    })
-  })
-
-  it('disables the Test button while the check is in flight', async () => {
-    const user = userEvent.setup()
-    let resolve: (v: { ok: true; latencyMs: number; modelCount: number }) => void = () => {}
-    const pending = new Promise<{ ok: true; latencyMs: number; modelCount: number }>(
-      (r) => (resolve = r)
-    )
-    vi.mocked(window.api.agents.testLocalEndpoint).mockReturnValue(pending)
-
-    render(<ModelsSection />)
-    const btn = screen.getByRole('button', { name: /test connection/i })
-    await user.click(btn)
-
-    await waitFor(() => {
-      expect(btn).toBeDisabled()
-    })
-
-    resolve({ ok: true, latencyMs: 1, modelCount: 1 })
-  })
-
-  it('clears any stale result when the endpoint is edited', async () => {
-    const user = userEvent.setup()
-    vi.mocked(window.api.agents.testLocalEndpoint).mockResolvedValue({
-      ok: true,
-      latencyMs: 5,
-      modelCount: 2
-    })
-
-    render(<ModelsSection />)
-    await user.click(screen.getByRole('button', { name: /test connection/i }))
-    await waitFor(() => {
-      expect(screen.getByText(/Reachable — 2 models loaded/i)).toBeInTheDocument()
-    })
-
-    const endpoint = screen.getByPlaceholderText('http://localhost:1234/v1') as HTMLInputElement
-    await user.type(endpoint, 'X')
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Reachable — 2 models loaded/i)).toBeNull()
     })
   })
 })

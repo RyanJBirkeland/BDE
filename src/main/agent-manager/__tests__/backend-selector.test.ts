@@ -34,22 +34,15 @@ describe('loadBackendSettings', () => {
 
   it('merges partial stored settings on top of defaults', () => {
     vi.mocked(settings.getSettingJson).mockReturnValue({
-      pipeline: { backend: 'local', model: 'openai/qwen/qwen3.6-35b-a3b' }
+      pipeline: { backend: 'opencode', model: 'opencode/claude-sonnet-4-5' }
     })
     const result = loadBackendSettings()
     expect(result.pipeline).toEqual({
-      backend: 'local',
-      model: 'openai/qwen/qwen3.6-35b-a3b'
+      backend: 'opencode',
+      model: 'opencode/claude-sonnet-4-5'
     })
     expect(result.synthesizer).toEqual(DEFAULT_SETTINGS.synthesizer)
-    expect(result.localEndpoint).toBe(DEFAULT_SETTINGS.localEndpoint)
-  })
-
-  it('honours a caller-specified localEndpoint override', () => {
-    vi.mocked(settings.getSettingJson).mockReturnValue({
-      localEndpoint: 'http://remote:9999/v1'
-    })
-    expect(loadBackendSettings().localEndpoint).toBe('http://remote:9999/v1')
+    expect(result.opencodeExecutable).toBe(DEFAULT_SETTINGS.opencodeExecutable)
   })
 })
 
@@ -61,7 +54,7 @@ describe('saveBackendSettings', () => {
   it('writes to the expected key with the full settings object', () => {
     const next: BackendSettings = {
       ...DEFAULT_SETTINGS,
-      pipeline: { backend: 'local', model: 'openai/qwen/foo' }
+      pipeline: { backend: 'opencode', model: 'opencode/foo' }
     }
     saveBackendSettings(next)
     expect(settings.setSettingJson).toHaveBeenCalledWith(SETTING_BACKEND_CONFIG, next)
@@ -69,24 +62,24 @@ describe('saveBackendSettings', () => {
 })
 
 describe('resolveAgentRuntime', () => {
-  const settingsWithPipelineLocal: BackendSettings = {
+  const settingsWithPipelineOpencode: BackendSettings = {
     ...DEFAULT_SETTINGS,
-    pipeline: { backend: 'local', model: 'openai/qwen/qwen3.6-35b-a3b' }
+    pipeline: { backend: 'opencode', model: 'opencode/claude-sonnet-4-5' }
   }
 
   it('returns the per-agent-type config from the provided settings', () => {
-    expect(resolveAgentRuntime('pipeline', settingsWithPipelineLocal)).toEqual({
-      backend: 'local',
-      model: 'openai/qwen/qwen3.6-35b-a3b'
+    expect(resolveAgentRuntime('pipeline', settingsWithPipelineOpencode)).toEqual({
+      backend: 'opencode',
+      model: 'opencode/claude-sonnet-4-5'
     })
   })
 
-  it('leaves other agent types on claude when pipeline is flipped to local', () => {
-    expect(resolveAgentRuntime('synthesizer', settingsWithPipelineLocal).backend).toBe('claude')
-    expect(resolveAgentRuntime('copilot', settingsWithPipelineLocal).backend).toBe('claude')
-    expect(resolveAgentRuntime('assistant', settingsWithPipelineLocal).backend).toBe('claude')
-    expect(resolveAgentRuntime('adhoc', settingsWithPipelineLocal).backend).toBe('claude')
-    expect(resolveAgentRuntime('reviewer', settingsWithPipelineLocal).backend).toBe('claude')
+  it('leaves other agent types on claude when pipeline is flipped to opencode', () => {
+    expect(resolveAgentRuntime('synthesizer', settingsWithPipelineOpencode).backend).toBe('claude')
+    expect(resolveAgentRuntime('copilot', settingsWithPipelineOpencode).backend).toBe('claude')
+    expect(resolveAgentRuntime('assistant', settingsWithPipelineOpencode).backend).toBe('claude')
+    expect(resolveAgentRuntime('adhoc', settingsWithPipelineOpencode).backend).toBe('claude')
+    expect(resolveAgentRuntime('reviewer', settingsWithPipelineOpencode).backend).toBe('claude')
   })
 
   it('falls back to loadBackendSettings when no settings argument is passed', () => {

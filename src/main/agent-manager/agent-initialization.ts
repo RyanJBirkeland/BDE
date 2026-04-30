@@ -46,7 +46,7 @@ export function initializeAgentTracking(
   }
 
   const recordedModel = handle.resolvedModel ?? effectiveModel
-  const recordedBin = handle.backend === 'local' ? 'rbt-coding-agent' : 'claude'
+  const recordedBin = 'claude'
 
   const agent: ActiveAgent = {
     taskId: task.id,

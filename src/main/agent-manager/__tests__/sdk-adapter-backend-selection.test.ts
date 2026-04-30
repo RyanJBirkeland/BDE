@@ -5,7 +5,6 @@ import { DEFAULT_CONFIG } from '../types'
 
 const mockLoadBackendSettings = vi.fn()
 const mockResolveBackend = vi.fn()
-const mockSpawnLocalAgent = vi.fn()
 const mockSpawnViaSdk = vi.fn()
 const mockSpawnViaCli = vi.fn()
 const mockSpawnOpencode = vi.fn()
@@ -16,10 +15,6 @@ const mockCreateEpicGroupService = vi.fn()
 vi.mock('../backend-selector', () => ({
   loadBackendSettings: () => mockLoadBackendSettings(),
   resolveAgentRuntime: (...args: unknown[]) => mockResolveBackend(...args)
-}))
-
-vi.mock('../local-adapter', () => ({
-  spawnLocalAgent: (...args: unknown[]) => mockSpawnLocalAgent(...args)
 }))
 
 vi.mock('../spawn-sdk', () => ({
@@ -71,13 +66,7 @@ const CLAUDE_SETTINGS = {
   assistant: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
   adhoc: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
   reviewer: { backend: 'claude' as const, model: DEFAULT_CONFIG.defaultModel },
-  localEndpoint: 'http://localhost:1234/v1',
   opencodeExecutable: 'opencode'
-}
-
-const LOCAL_PIPELINE_SETTINGS = {
-  ...CLAUDE_SETTINGS,
-  pipeline: { backend: 'local' as const, model: 'openai/qwen/qwen3.6-35b-a3b' }
 }
 
 const OPENCODE_PIPELINE_SETTINGS = {
@@ -103,7 +92,6 @@ describe('spawnAgent — backend selection', () => {
     vi.clearAllMocks()
     mockSpawnViaSdk.mockResolvedValue(fakeHandle('claude-session'))
     mockSpawnViaCli.mockResolvedValue(fakeHandle('claude-cli-session'))
-    mockSpawnLocalAgent.mockResolvedValue(fakeHandle('local-session'))
     mockSpawnOpencode.mockResolvedValue(fakeHandle('opencode-session'))
     mockStartOpencodeSessionMcp.mockResolvedValue({
       url: 'http://127.0.0.1:12345/mcp',
@@ -114,33 +102,9 @@ describe('spawnAgent — backend selection', () => {
     mockCreateEpicGroupService.mockReturnValue({})
   })
 
-  it('routes to the local adapter when settings say local for the agent type', async () => {
-    mockLoadBackendSettings.mockReturnValue(LOCAL_PIPELINE_SETTINGS)
-    mockResolveBackend.mockReturnValue(LOCAL_PIPELINE_SETTINGS.pipeline)
-
-    const handle = await spawnAgent({
-      prompt: 'task',
-      cwd: '/tmp/work',
-      model: 'caller-supplied-model',
-      agentType: 'pipeline'
-    })
-
-    expect(mockSpawnLocalAgent).toHaveBeenCalledTimes(1)
-    expect(mockSpawnLocalAgent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        prompt: 'task',
-        cwd: '/tmp/work',
-        model: 'openai/qwen/qwen3.6-35b-a3b',
-        endpoint: 'http://localhost:1234/v1'
-      })
-    )
-    expect(mockSpawnViaSdk).not.toHaveBeenCalled()
-    expect(handle.sessionId).toBe('local-session')
-  })
-
   it('defaults to pipeline when no agentType is supplied', async () => {
-    mockLoadBackendSettings.mockReturnValue(LOCAL_PIPELINE_SETTINGS)
-    mockResolveBackend.mockReturnValue(LOCAL_PIPELINE_SETTINGS.pipeline)
+    mockLoadBackendSettings.mockReturnValue(CLAUDE_SETTINGS)
+    mockResolveBackend.mockReturnValue(CLAUDE_SETTINGS.pipeline)
 
     await spawnAgent({
       prompt: 'task',
@@ -148,7 +112,7 @@ describe('spawnAgent — backend selection', () => {
       model: DEFAULT_CONFIG.defaultModel
     })
 
-    expect(mockResolveBackend).toHaveBeenCalledWith('pipeline', LOCAL_PIPELINE_SETTINGS)
+    expect(mockResolveBackend).toHaveBeenCalledWith('pipeline', CLAUDE_SETTINGS)
   })
 
   it('routes to the Claude SDK path when settings say claude', async () => {
@@ -161,7 +125,6 @@ describe('spawnAgent — backend selection', () => {
       model: 'whatever'
     })
 
-    expect(mockSpawnLocalAgent).not.toHaveBeenCalled()
     expect(mockSpawnViaSdk).toHaveBeenCalledTimes(1)
   })
 
@@ -178,56 +141,6 @@ describe('spawnAgent — backend selection', () => {
     const sdkCall = mockSpawnViaSdk.mock.calls[0]
     const optsArg = sdkCall?.[1] as { model: string } | undefined
     expect(optsArg?.model).toBe('claude-opus-4-7')
-  })
-
-  it('falls back to the Claude path when the local adapter throws', async () => {
-    mockLoadBackendSettings.mockReturnValue(LOCAL_PIPELINE_SETTINGS)
-    mockResolveBackend.mockReturnValue(LOCAL_PIPELINE_SETTINGS.pipeline)
-    mockSpawnLocalAgent.mockRejectedValue(new Error('LM Studio unreachable'))
-
-    const handle = await spawnAgent({
-      prompt: 'task',
-      cwd: '/tmp/work',
-      model: 'caller-supplied-model'
-    })
-
-    expect(mockSpawnLocalAgent).toHaveBeenCalledTimes(1)
-    expect(mockSpawnViaSdk).toHaveBeenCalledTimes(1)
-    expect(handle.sessionId).toBe('claude-session')
-  })
-
-  it('logs the reason via the caller-provided logger when it falls back', async () => {
-    mockLoadBackendSettings.mockReturnValue(LOCAL_PIPELINE_SETTINGS)
-    mockResolveBackend.mockReturnValue(LOCAL_PIPELINE_SETTINGS.pipeline)
-    mockSpawnLocalAgent.mockRejectedValue(new Error('preflight failed'))
-
-    const logger = { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
-    await spawnAgent({
-      prompt: 'task',
-      cwd: '/tmp/work',
-      model: 'caller',
-      logger: logger as unknown as Parameters<typeof spawnAgent>[0]['logger']
-    })
-
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('local backend for pipeline failed')
-    )
-  })
-
-  it('uses the caller-supplied model when falling back from a local failure with a non-claude resolved model', async () => {
-    mockLoadBackendSettings.mockReturnValue(LOCAL_PIPELINE_SETTINGS)
-    mockResolveBackend.mockReturnValue(LOCAL_PIPELINE_SETTINGS.pipeline)
-    mockSpawnLocalAgent.mockRejectedValue(new Error('down'))
-
-    await spawnAgent({
-      prompt: 'task',
-      cwd: '/tmp/work',
-      model: DEFAULT_CONFIG.defaultModel
-    })
-
-    const sdkCall = mockSpawnViaSdk.mock.calls[0]
-    const optsArg = sdkCall?.[1] as { model: string } | undefined
-    expect(optsArg?.model).toBe(DEFAULT_CONFIG.defaultModel)
   })
 })
 
@@ -293,12 +206,11 @@ describe('spawnAgent — opencode backend', () => {
     expect(opts?.prompt).toContain('implement feature X')
   })
 
-  it('routes to opencode and not to the SDK or local adapter', async () => {
+  it('routes to opencode and not to the SDK', async () => {
     await spawnAgent({ prompt: 'task', cwd: '/tmp/wt/task-1', model: 'devstral:latest' })
 
     expect(mockSpawnOpencode).toHaveBeenCalledTimes(1)
     expect(mockSpawnViaSdk).not.toHaveBeenCalled()
-    expect(mockSpawnLocalAgent).not.toHaveBeenCalled()
   })
 
   it('closes the MCP server when spawnOpencode throws before returning a handle', async () => {

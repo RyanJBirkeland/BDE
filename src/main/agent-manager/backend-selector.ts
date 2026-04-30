@@ -3,9 +3,8 @@
  *
  * Every agent type — Pipeline, Synthesizer, Copilot, Assistant, Adhoc, Reviewer —
  * resolves its model and backend from the user's stored `agents.backendConfig`
- * record. Three backends are supported: `claude` (Anthropic SDK), `local`
- * (rbt-coding-agent via OpenAI-compatible endpoint), and `opencode` (opencode CLI).
- * `opencodeExecutable` defaults to `'opencode'` (PATH lookup).
+ * record. Two backends are supported: `claude` (Anthropic SDK) and `opencode`
+ * (opencode CLI). `opencodeExecutable` defaults to `'opencode'` (PATH lookup).
  *
  * Settings live in FLEET's SQLite-backed JSON store under `SETTING_BACKEND_CONFIG`.
  * A missing value resolves to `DEFAULT_SETTINGS` (every type on `claude` with
@@ -24,8 +23,6 @@ export type { BackendKind, AgentBackendConfig, BackendSettings }
 
 export const SETTING_BACKEND_CONFIG = 'agents.backendConfig'
 
-const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1'
-
 export const DEFAULT_SETTINGS: BackendSettings = {
   pipeline: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
   synthesizer: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
@@ -33,7 +30,6 @@ export const DEFAULT_SETTINGS: BackendSettings = {
   assistant: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
   adhoc: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
   reviewer: { backend: 'claude', model: DEFAULT_CONFIG.defaultModel },
-  localEndpoint: DEFAULT_LOCAL_ENDPOINT,
   opencodeExecutable: 'opencode'
 }
 
@@ -62,7 +58,6 @@ function mergeWithDefaults(stored: Partial<BackendSettings>): BackendSettings {
     assistant: stored.assistant ?? DEFAULT_SETTINGS.assistant,
     adhoc: stored.adhoc ?? DEFAULT_SETTINGS.adhoc,
     reviewer: stored.reviewer ?? DEFAULT_SETTINGS.reviewer,
-    localEndpoint: stored.localEndpoint ?? DEFAULT_SETTINGS.localEndpoint,
     opencodeExecutable: stored.opencodeExecutable ?? DEFAULT_SETTINGS.opencodeExecutable
   }
 }
