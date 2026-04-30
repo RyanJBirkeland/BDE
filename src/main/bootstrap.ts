@@ -4,7 +4,7 @@
 import { watch, existsSync, type FSWatcher } from 'fs'
 import { app, BrowserWindow, session } from 'electron'
 import { is } from '@electron-toolkit/utils'
-import { FLEET_DB_PATH } from './paths'
+import { FLEET_DB_PATH, getConfiguredRepos } from './paths'
 import { getDb, backupDatabase } from './db'
 import { startPrPoller, stopPrPoller } from './pr-poller'
 import { SprintPrPoller } from './sprint-pr-poller'
@@ -31,7 +31,6 @@ import type { TaskTerminalService } from './services/task-terminal-service'
 import type { DialogService } from './dialog-service'
 import { BACKUP_INTERVAL_MS, PRUNE_CHANGES_DAYS } from './constants'
 import { getSetting as _getRawSetting, setSetting as _setSetting } from './data/settings-queries'
-import { getConfiguredRepos } from './paths'
 import {
   SENSITIVE_SETTING_KEYS,
   ENCRYPTED_PREFIX,

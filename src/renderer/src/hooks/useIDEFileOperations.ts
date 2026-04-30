@@ -1,5 +1,4 @@
-import { useCallback, useRef } from 'react'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { toast } from '../stores/toasts'
 
 interface IDETab {
