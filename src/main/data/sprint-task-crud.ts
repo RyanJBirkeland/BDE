@@ -132,6 +132,10 @@ function appendTagClause(clauses: string[], params: unknown[], tag: string | und
   params.push(tag)
 }
 
+function escapeLikePattern(raw: string): string {
+  return raw.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+}
+
 function appendSearchClause(
   clauses: string[],
   params: unknown[],
@@ -141,8 +145,9 @@ function appendSearchClause(
   // SQLite `LIKE` is case-insensitive on ASCII by default; being explicit
   // with LOWER() matches filterInMemory's prior behavior across non-ASCII.
   // `LIKE` on NULL returns NULL (falsy) — NULL specs naturally drop out.
-  const pattern = `%${search.toLowerCase()}%`
-  clauses.push('(LOWER(title) LIKE ? OR LOWER(spec) LIKE ?)')
+  // ESCAPE '\' prevents raw % and _ in user input from acting as wildcards.
+  const pattern = `%${escapeLikePattern(search.toLowerCase())}%`
+  clauses.push("(LOWER(title) LIKE ? ESCAPE '\\' OR LOWER(spec) LIKE ? ESCAPE '\\')")
   params.push(pattern, pattern)
 }
 
