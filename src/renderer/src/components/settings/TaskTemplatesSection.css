@@ -1,0 +1,32 @@
+/* ─── Task Templates section ──────────────────────────────────────────────
+ * Templates carry multi-paragraph markdown prompts, so the textarea needs
+ * room to breathe. The list also opts into the wide settings layout
+ * (`stg-content__inner--wide`) — see SettingsView.tsx — but cards still
+ * cap at a comfortable reading measure on very wide monitors.
+ */
+
+.settings-template-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fleet-space-2);
+}
+
+/* Built-in templates show their name in the card title + badge, so we hide
+ * the redundant name input. Custom templates keep the input for editing. */
+.settings-template-row__prefix {
+  width: 100%;
+  min-height: 280px;
+  resize: vertical;
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-sm);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Cap the templates list at a comfortable reading measure even when the
+ * surrounding panel is much wider — long markdown stays scannable, and
+ * the cards don't stretch to fill a 4K monitor edge-to-edge. */
+.settings-templates-list {
+  max-width: 1100px;
+}

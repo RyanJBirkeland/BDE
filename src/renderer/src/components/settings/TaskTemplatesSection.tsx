@@ -7,6 +7,7 @@ import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import type { TaskTemplate } from '../../../../shared/types'
 import { SettingsCard } from './SettingsCard'
+import './TaskTemplatesSection.css'
 
 export function TaskTemplatesSection(): React.JSX.Element {
   const [templates, setTemplates] = useState<TaskTemplate[]>([])
@@ -94,7 +95,7 @@ export function TaskTemplatesSection(): React.JSX.Element {
   }
 
   return (
-    <div className="settings-cards-list">
+    <div className="settings-cards-list settings-templates-list">
       {templates.length === 0 && (
         <span className="settings-repos__empty">No templates configured</span>
       )}
@@ -121,21 +122,24 @@ export function TaskTemplatesSection(): React.JSX.Element {
           }
         >
           <div className="settings-template-row">
-            <input
-              className="settings-field__input"
-              placeholder="Template name"
-              aria-label="Template name"
-              value={t.name}
-              disabled={!!t.isBuiltIn}
-              onChange={(e) => handleNameChange(i, e.target.value)}
-            />
+            {/* Built-in templates already show their name as the card title +
+             * badge — a disabled name input below would be redundant noise. */}
+            {!t.isBuiltIn && (
+              <input
+                className="settings-field__input"
+                placeholder="Template name"
+                aria-label="Template name"
+                value={t.name}
+                onChange={(e) => handleNameChange(i, e.target.value)}
+              />
+            )}
             <textarea
               className="settings-field__input settings-template-row__prefix"
               placeholder="Prompt prefix..."
               aria-label="Prompt prefix"
               value={t.promptPrefix}
               onChange={(e) => handlePrefixChange(i, e.target.value)}
-              rows={3}
+              rows={12}
             />
           </div>
         </SettingsCard>

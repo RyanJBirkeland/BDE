@@ -49,7 +49,7 @@ const SECTION_META: Record<string, { title: string; subtitle: string; wide: bool
     wide: false
   },
   repositories: { title: 'Repositories', subtitle: 'Configure project repositories', wide: false },
-  templates: { title: 'Templates', subtitle: 'Task prompt templates', wide: false },
+  templates: { title: 'Templates', subtitle: 'Task prompt templates', wide: true },
   agents: {
     title: 'Agents',
     subtitle: 'Pipeline execution settings and agent permissions',

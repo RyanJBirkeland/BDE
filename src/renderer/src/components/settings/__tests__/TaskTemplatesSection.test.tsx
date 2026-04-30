@@ -61,6 +61,23 @@ describe('TaskTemplatesSection', () => {
     })
   })
 
+  it('hides the redundant name input on built-in cards', async () => {
+    // Built-in template name already appears as the card title + "Built-in"
+    // badge. Showing a disabled name input below adds visual noise without
+    // any editing affordance, so the input is suppressed for built-ins.
+    vi.mocked(window.api.templates.list).mockResolvedValue([
+      { name: 'Bug Fix', promptPrefix: '## Bug Description', isBuiltIn: true },
+      { name: 'My Custom', promptPrefix: 'Always use TS.', isBuiltIn: false }
+    ])
+    render(<TaskTemplatesSection />)
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('My Custom')).toBeInTheDocument()
+    })
+    const nameInputs = screen.queryAllByLabelText('Template name')
+    expect(nameInputs).toHaveLength(1)
+    expect(nameInputs[0]).toHaveValue('My Custom')
+  })
+
   it('calls templates.save when Add Template is clicked', async () => {
     const user = userEvent.setup()
     render(<TaskTemplatesSection />)
