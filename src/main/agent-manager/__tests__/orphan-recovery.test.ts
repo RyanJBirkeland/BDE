@@ -63,7 +63,12 @@ describe('recoverOrphans', () => {
     expect(updateTaskMock).toHaveBeenCalledOnce()
     expect(updateTaskMock).toHaveBeenCalledWith(
       'task-1',
-      expect.objectContaining({ status: 'queued', claimed_by: null, orphan_recovery_count: 1 })
+      expect.objectContaining({
+        status: 'queued',
+        claimed_by: null,
+        orphan_recovery_count: 1,
+        next_eligible_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
+      })
     )
     expect(result.recovered).toEqual(['task-1'])
     expect(result.exhausted).toEqual([])
@@ -148,7 +153,11 @@ describe('recoverOrphans', () => {
 
       expect(updateTaskMock).toHaveBeenCalledWith(
         'task-under-cap',
-        expect.objectContaining({ status: 'queued', orphan_recovery_count: 2 })
+        expect.objectContaining({
+          status: 'queued',
+          orphan_recovery_count: 2,
+          next_eligible_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/)
+        })
       )
       expect(result.recovered).toEqual(['task-under-cap'])
       expect(result.exhausted).toEqual([])

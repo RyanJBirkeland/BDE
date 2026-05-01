@@ -12,10 +12,12 @@ export function ChangesTab(): React.JSX.Element {
   const {
     files: diffFiles,
     loading,
+    error,
     isSnapshot,
     snapshotCapturedAt,
     snapshotTruncated,
-    fileDiff
+    fileDiff,
+    retryDiff
   } = useReviewChanges(selectedTaskId)
 
   // Parse the raw diff text into structured format for DiffViewer
@@ -36,9 +38,20 @@ export function ChangesTab(): React.JSX.Element {
   }
 
   if (diffFiles.length === 0) {
+    const isWorktreeMissing =
+      error !== null &&
+      (error.includes('WorktreeMissingError') || error.includes('Worktree directory'))
     return (
       <div className="cr-changes">
-        <EmptyState message="No changes found in this branch." />
+        {isWorktreeMissing ? (
+          <EmptyState
+            title="Worktree not found"
+            description="The agent worktree was removed. Restore it with git worktree add, then retry."
+            action={{ label: 'Retry', onClick: retryDiff }}
+          />
+        ) : (
+          <EmptyState message="No changes found in this branch." />
+        )}
       </div>
     )
   }

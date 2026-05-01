@@ -30,6 +30,8 @@ interface CodeReviewState {
   reviewSummary: string | null
   summaryLoading: boolean
   selectedDiffFile: string | null
+  /** Monotonic counter — increment to force useReviewChanges to re-fetch the diff. */
+  diffRefreshKey: number
 
   selectTask: (taskId: string | null) => void
   setActiveTab: (tab: ReviewTab) => void
@@ -46,6 +48,8 @@ interface CodeReviewState {
   setReviewSummary: (summary: string | null) => void
   setSummaryLoading: (loading: boolean) => void
   setSelectedDiffFile: (path: string | null) => void
+  /** Force a diff re-fetch (e.g. after manually restoring a missing worktree). */
+  retryDiff: () => void
   reset: () => void
 }
 
@@ -60,7 +64,8 @@ const initialState = {
   selectedBatchIds: new Set<string>(),
   reviewSummary: null as string | null,
   summaryLoading: false,
-  selectedDiffFile: null as string | null
+  selectedDiffFile: null as string | null,
+  diffRefreshKey: 0
 }
 
 export const useCodeReviewStore = create<CodeReviewState>((set) => ({
@@ -100,5 +105,6 @@ export const useCodeReviewStore = create<CodeReviewState>((set) => ({
   setReviewSummary: (summary): void => set({ reviewSummary: summary }),
   setSummaryLoading: (loading): void => set({ summaryLoading: loading }),
   setSelectedDiffFile: (path): void => set({ selectedDiffFile: path }),
+  retryDiff: (): void => set((s) => ({ diffRefreshKey: s.diffRefreshKey + 1, error: null })),
   reset: (): void => set(initialState)
 }))

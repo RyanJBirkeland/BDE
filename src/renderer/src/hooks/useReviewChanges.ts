@@ -23,11 +23,14 @@ export interface ReviewChangesResult {
   fileDiff: string
   fileDiffLoading: boolean
   selectFile: (filePath: string) => void
+  retryDiff: () => void
 }
 
 export function useReviewChanges(taskId: string | null): ReviewChangesResult {
   const tasks = useSprintTasks((s) => s.tasks)
   const setDiffFiles = useCodeReviewStore((s) => s.setDiffFiles)
+  const diffRefreshKey = useCodeReviewStore((s) => s.diffRefreshKey)
+  const retryDiff = useCodeReviewStore((s) => s.retryDiff)
   const setLoading = useCodeReviewStore((s) => s.setLoading)
   const selectedDiffFile = useCodeReviewStore((s) => s.selectedDiffFile)
   const setSelectedDiffFile = useCodeReviewStore((s) => s.setSelectedDiffFile)
@@ -121,7 +124,7 @@ export function useReviewChanges(taskId: string | null): ReviewChangesResult {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task?.worktree_path, task?.id, snapshot])
+  }, [task?.worktree_path, task?.id, snapshot, diffRefreshKey])
 
   // Load file diff when selection changes
   useEffect(() => {
@@ -162,6 +165,7 @@ export function useReviewChanges(taskId: string | null): ReviewChangesResult {
     snapshotTruncated: isSnapshot ? (snapshot?.truncated ?? false) : false,
     fileDiff,
     fileDiffLoading: false, // Not tracking separate loading state for file diff
-    selectFile: setSelectedDiffFile
+    selectFile: setSelectedDiffFile,
+    retryDiff
   }
 }

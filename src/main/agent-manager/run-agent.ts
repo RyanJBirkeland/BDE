@@ -417,10 +417,11 @@ async function detectMissingSpecFiles(
   const requiredFiles = extractFilesToChange(task.spec)
   if (requiredFiles.length === 0) return { kind: 'skip' }
 
+  const env = buildAgentEnv()
   let diffOutput: string
+  let defaultBranch: string
   try {
-    const env = buildAgentEnv()
-    const defaultBranch = await resolveDefaultBranch(worktreePath)
+    defaultBranch = await resolveDefaultBranch(worktreePath)
     const { stdout } = await execFileAsync(
       'git',
       ['diff', '--name-only', `${defaultBranch}..HEAD`],
@@ -445,8 +446,47 @@ async function detectMissingSpecFiles(
       .filter(Boolean)
   )
 
-  const missingFiles = requiredFiles.filter((required) => !changedFiles.has(required))
+  const candidateMissing = requiredFiles.filter((required) => !changedFiles.has(required))
+  if (candidateMissing.length === 0) return { kind: 'ok' }
+
+  // Only enforce files that already exist on the base branch. Files the spec
+  // lists as "new" (not present on origin/main) are created by the agent —
+  // we can't dictate the exact naming convention the agent will choose.
+  const missingFiles = await filterToExistingBaseFiles(
+    candidateMissing,
+    worktreePath,
+    defaultBranch,
+    env
+  )
   return missingFiles.length > 0 ? { kind: 'missing', files: missingFiles } : { kind: 'ok' }
+}
+
+/**
+ * Filters a list of file paths to only those that exist on origin/<defaultBranch>.
+ * Files absent from the base branch are new files the agent is creating —
+ * we cannot enforce their exact names since the agent picks the convention.
+ */
+async function filterToExistingBaseFiles(
+  files: string[],
+  worktreePath: string,
+  defaultBranch: string,
+  env: NodeJS.ProcessEnv
+): Promise<string[]> {
+  const results = await Promise.all(
+    files.map(async (file) => {
+      try {
+        await execFileAsync('git', ['cat-file', '-e', `origin/${defaultBranch}:${file}`], {
+          cwd: worktreePath,
+          env,
+          timeout: GIT_EXEC_TIMEOUT_MS
+        })
+        return file
+      } catch {
+        return null
+      }
+    })
+  )
+  return results.filter((f): f is string => f !== null)
 }
 
 /**
