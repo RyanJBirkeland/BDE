@@ -134,14 +134,14 @@ describe('sdk-streaming', () => {
     )
   })
 
-  it('should default maxTurns to 1', async () => {
+  it('should default maxTurns to 1000', async () => {
     await runSdkStreaming('Test', onChunkMock, activeStreams, 'stream-1', 180_000, {
       model: 'claude-sonnet-4-5'
     })
 
     expect(sdk.query).toHaveBeenCalledWith(
       expect.objectContaining({
-        options: expect.objectContaining({ maxTurns: 1 })
+        options: expect.objectContaining({ maxTurns: 1000 })
       })
     )
   })

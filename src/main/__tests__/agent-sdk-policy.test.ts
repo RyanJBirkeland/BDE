@@ -69,7 +69,7 @@ describe('agent SDK options policy', () => {
       // Without caps, an open-ended chat with Read+Grep+Glob could chain
       // indefinitely and rack up real cost if the model gets stuck in a
       // tool-use loop. These are safety ceilings, not targets.
-      expect(COPILOT_MAX_TURNS).toBe(8)
+      expect(COPILOT_MAX_TURNS).toBe(1000)
       expect(COPILOT_MAX_BUDGET_USD).toBe(0.5)
     })
 

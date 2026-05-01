@@ -100,7 +100,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
       try {
         raw = await runSdkOnce(prompt, {
           model: reviewerModel,
-          maxTurns: 1,
+          maxTurns: 1000,
           tools: [],
           // Reviewer generates opinions, not code. CLAUDE.md implementation
           // guidelines are irrelevant and waste ~5-10KB per review call.

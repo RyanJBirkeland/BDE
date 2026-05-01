@@ -98,7 +98,7 @@ export async function runSdkStreaming(
     prompt,
     options: {
       model: options.model,
-      maxTurns: options.maxTurns ?? 1,
+      maxTurns: options.maxTurns ?? 1000,
       env: env as Record<string, string>,
       pathToClaudeCodeExecutable: getClaudeCliPath(),
       ...(options.permissionMode !== undefined

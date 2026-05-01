@@ -40,7 +40,7 @@ export const COPILOT_DISALLOWED_TOOLS = [
 export const COPILOT_MAX_BUDGET_USD = 0.5
 
 /** Maximum turns for the copilot — enough to chain Grep → Read → answer. */
-export const COPILOT_MAX_TURNS = 8
+export const COPILOT_MAX_TURNS = 1000
 
 /**
  * Build the chat prompt for copilot sessions with form context.

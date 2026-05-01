@@ -31,7 +31,7 @@ async function runSdkQuery(prompt: string): Promise<string> {
     prompt,
     options: {
       model: 'claude-haiku-4-5-20251001',
-      maxTurns: 1,
+      maxTurns: 1000,
       env: env as Record<string, string>,
       pathToClaudeCodeExecutable: getClaudeCliPath(),
       permissionMode: 'bypassPermissions' as const,
