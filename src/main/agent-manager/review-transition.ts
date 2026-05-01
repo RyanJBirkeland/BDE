@@ -11,6 +11,7 @@ import { nowIso } from '../../shared/time'
 import type { TaskStateService } from '../services/task-state-service'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
+import { notifySprintMutation } from '../services/sprint-mutation-broadcaster'
 
 /** Hard timeout for git subprocess calls in the review transition. */
 const GIT_EXEC_TIMEOUT_MS = 30_000
@@ -109,6 +110,8 @@ export async function transitionToReview(opts: TransitionToReviewOpts): Promise<
       },
       caller: 'review-transition'
     })
+    const updated = repo.getTask(taskId)
+    if (updated) notifySprintMutation('updated', updated)
   } catch (err) {
     logger.event('review-transition.fallback', { taskId, error: String(err) })
     logger.error(`[completion] Failed to transition task ${taskId} to review status: ${err}`)
