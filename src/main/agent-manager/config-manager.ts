@@ -16,7 +16,7 @@ import { getSetting, getSettingJson } from '../settings'
 import { setMaxSlots } from './concurrency'
 
 function isValidMaxConcurrent(u: unknown): u is number {
-  return typeof u === 'number' && u > 0 && u <= 10
+  return typeof u === 'number' && u > 0 && u <= 16
 }
 
 // ---------------------------------------------------------------------------

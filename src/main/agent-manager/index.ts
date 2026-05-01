@@ -795,12 +795,19 @@ export class AgentManagerImpl implements AgentManager {
   }
 
   reloadConfig(): { updated: string[]; requiresRestart: string[] } {
-    return reloadConfiguration({
+    const result = reloadConfiguration({
       config: this.config,
       concurrency: this._concurrency,
       runAgentDeps: this.runAgentDeps,
       logger: this.logger
     })
+    // When maxConcurrent was raised, new slots are available immediately.
+    // Poke the drain loop so queued tasks start without waiting for the next
+    // 30-second poll — otherwise the user saves the setting and sees no change.
+    if (result.updated.includes('maxConcurrent') && this._running) {
+      this.tickDrain()
+    }
+    return result
   }
 
   killAgent(taskId: string): { killed: boolean; error?: string } {

@@ -70,6 +70,29 @@ describe('reloadConfiguration', () => {
     expect(result.updated).not.toContain('maxConcurrent')
   })
 
+  it('hot-reloads maxConcurrent for values up to 16 (matches UI max)', () => {
+    const deps = makeDeps()
+    vi.mocked(getSettingJson).mockImplementation((key) =>
+      key === 'agentManager.maxConcurrent' ? 16 : undefined
+    )
+    const result = reloadConfiguration(deps)
+    expect(result.updated).toContain('maxConcurrent')
+    expect(deps.config.maxConcurrent).toBe(16)
+    expect(deps.concurrency.maxSlots).toBe(16)
+  })
+
+  it('does not update maxConcurrent when getSettingJson returns null (validator rejected value)', () => {
+    const deps = makeDeps()
+    // getSettingJson returns null when its validator rejects the value (e.g. >16).
+    // The mock does not invoke the validator, so we simulate a rejection directly.
+    vi.mocked(getSettingJson).mockImplementation((key) =>
+      key === 'agentManager.maxConcurrent' ? null : undefined
+    )
+    const result = reloadConfiguration(deps)
+    expect(result.updated).not.toContain('maxConcurrent')
+    expect(deps.config.maxConcurrent).toBe(2)
+  })
+
   it('hot-reloads maxRuntimeMs when changed', () => {
     const deps = makeDeps()
     vi.mocked(getSettingJson).mockImplementation((key) =>
