@@ -31,6 +31,8 @@ import type { GitHubFetchInit } from '../../shared/ipc-channels'
 import { createLogger } from '../logger'
 import { validateGitRef, validateFilePath } from '../lib/review-paths'
 import { execFileAsync } from '../lib/async-utils'
+import { buildAgentEnv } from '../env-utils'
+import { resolveGitExecutable } from '../agent-manager/resolve-git'
 
 const logger = createLogger('git-handlers')
 
@@ -51,7 +53,8 @@ export function registerGitHandlers(deps: GitHandlersDeps): void {
 
   safeHandle('git:checkInstalled', async () => {
     try {
-      await execFileAsync('git', ['--version'])
+      const gitBin = resolveGitExecutable() ?? 'git'
+      await execFileAsync(gitBin, ['--version'], { env: buildAgentEnv() })
       return true
     } catch {
       return false

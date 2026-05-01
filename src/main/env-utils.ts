@@ -13,6 +13,7 @@ import { getErrorMessage } from '../shared/errors'
 import { createLogger } from './logger'
 import { broadcast } from './broadcast'
 import { resolveNodeExecutable } from './agent-manager/resolve-node'
+import { resolveGitExecutable } from './agent-manager/resolve-git'
 
 const logger = createLogger('env-utils')
 
@@ -108,14 +109,17 @@ export function buildAgentEnv(): Record<string, string | undefined> {
     }
   }
 
-  // Prepend extra paths to PATH, including the resolved node binary's directory
-  // so that cli.js's #!/usr/bin/env node shebang resolves in all spawn paths
-  // (adhoc, pipeline, workbench). Without this, packaged Electron apps launched
-  // from Finder inherit only /etc/paths and miss fnm/nvm node locations.
+  // Prepend extra paths to PATH, including the resolved node and git binary
+  // directories so that cli.js's #!/usr/bin/env node shebang and all git
+  // invocations resolve in all spawn paths (adhoc, pipeline, workbench).
+  // Without this, packaged Electron apps launched from Finder inherit only
+  // /etc/paths and miss fnm/nvm node locations and Homebrew git.
   const resolvedNode = resolveNodeExecutable()
   const resolvedNodeDir = resolvedNode ? [dirname(resolvedNode)] : []
+  const resolvedGit = resolveGitExecutable()
+  const resolvedGitDir = resolvedGit ? [dirname(resolvedGit)] : []
   const currentPath = env.PATH ?? ''
-  env.PATH = [...resolvedNodeDir, ...EXTRA_PATHS, ...currentPath.split(':')]
+  env.PATH = [...resolvedNodeDir, ...resolvedGitDir, ...EXTRA_PATHS, ...currentPath.split(':')]
     .filter(Boolean)
     .join(':')
 

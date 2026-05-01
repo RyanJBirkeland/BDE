@@ -1,5 +1,6 @@
 import { stat } from 'node:fs/promises'
 import { execFileAsync } from './lib/async-utils'
+import { resolveGitExecutable } from './agent-manager/resolve-git'
 
 import type { Result } from '../shared/types'
 import { getErrorMessage } from '../shared/errors'
@@ -18,11 +19,15 @@ export interface GitFileStatus {
   staged: boolean
 }
 
+function git(): string {
+  return resolveGitExecutable() ?? 'git'
+}
+
 export async function gitStatus(
   cwd: string
 ): Promise<Result<{ files: GitFileStatus[]; branch: string }>> {
   try {
-    const { stdout } = await execFileAsync('git', ['status', '--porcelain', '--branch'], {
+    const { stdout } = await execFileAsync(git(), ['status', '--porcelain', '--branch'], {
       cwd,
       encoding: 'utf-8' as const,
       maxBuffer: MAX_BUFFER
@@ -81,7 +86,7 @@ export async function detectGitRemote(cwd: string): Promise<{
       return { isGitRepo: false, remoteUrl: null, owner: null, repo: null }
     }
 
-    const { stdout } = await execFileAsync('git', ['remote', 'get-url', 'origin'], {
+    const { stdout } = await execFileAsync(git(), ['remote', 'get-url', 'origin'], {
       cwd,
       encoding: 'utf-8' as const,
       maxBuffer: MAX_BUFFER
@@ -105,8 +110,8 @@ export async function gitDiffFile(cwd: string, file?: string): Promise<Result<st
     const unstagedArgs = file ? ['diff', '--', file] : ['diff']
     const stagedArgs = file ? ['diff', '--cached', '--', file] : ['diff', '--cached']
     const opts = { cwd, encoding: 'utf-8' as const, maxBuffer: MAX_BUFFER }
-    const { stdout: unstaged } = await execFileAsync('git', unstagedArgs, opts)
-    const { stdout: staged } = await execFileAsync('git', stagedArgs, opts)
+    const { stdout: unstaged } = await execFileAsync(git(), unstagedArgs, opts)
+    const { stdout: staged } = await execFileAsync(git(), stagedArgs, opts)
     return { ok: true, data: staged + unstaged }
   } catch (err) {
     return {
@@ -118,7 +123,7 @@ export async function gitDiffFile(cwd: string, file?: string): Promise<Result<st
 
 export async function gitStage(cwd: string, files: string[]): Promise<void> {
   if (files.length === 0) return
-  await execFileAsync('git', ['add', '--', ...files], {
+  await execFileAsync(git(), ['add', '--', ...files], {
     cwd,
     encoding: 'utf-8' as const,
     maxBuffer: MAX_BUFFER
@@ -127,7 +132,7 @@ export async function gitStage(cwd: string, files: string[]): Promise<void> {
 
 export async function gitUnstage(cwd: string, files: string[]): Promise<void> {
   if (files.length === 0) return
-  await execFileAsync('git', ['reset', 'HEAD', '--', ...files], {
+  await execFileAsync(git(), ['reset', 'HEAD', '--', ...files], {
     cwd,
     encoding: 'utf-8' as const,
     maxBuffer: MAX_BUFFER
@@ -135,7 +140,7 @@ export async function gitUnstage(cwd: string, files: string[]): Promise<void> {
 }
 
 export async function gitCommit(cwd: string, message: string): Promise<void> {
-  await execFileAsync('git', ['commit', '-m', message], {
+  await execFileAsync(git(), ['commit', '-m', message], {
     cwd,
     encoding: 'utf-8' as const,
     maxBuffer: MAX_BUFFER
@@ -144,7 +149,7 @@ export async function gitCommit(cwd: string, message: string): Promise<void> {
 
 export async function gitPush(cwd: string): Promise<string> {
   try {
-    const { stdout, stderr } = await execFileAsync('git', ['push'], {
+    const { stdout, stderr } = await execFileAsync(git(), ['push'], {
       cwd,
       encoding: 'utf-8' as const,
       maxBuffer: MAX_BUFFER
@@ -158,7 +163,7 @@ export async function gitPush(cwd: string): Promise<string> {
 
 export async function gitBranches(cwd: string): Promise<{ current: string; branches: string[] }> {
   try {
-    const { stdout } = await execFileAsync('git', ['branch'], {
+    const { stdout } = await execFileAsync(git(), ['branch'], {
       cwd,
       encoding: 'utf-8' as const,
       maxBuffer: MAX_BUFFER
@@ -182,7 +187,7 @@ export async function gitBranches(cwd: string): Promise<{ current: string; branc
 }
 
 export async function gitCheckout(cwd: string, branch: string): Promise<void> {
-  await execFileAsync('git', ['checkout', branch], {
+  await execFileAsync(git(), ['checkout', branch], {
     cwd,
     encoding: 'utf-8' as const,
     maxBuffer: MAX_BUFFER
@@ -193,7 +198,7 @@ export async function gitFetch(
   cwd: string
 ): Promise<{ success: boolean; error?: string; stdout?: string }> {
   try {
-    const { stdout, stderr } = await execFileAsync('git', ['fetch', 'origin'], {
+    const { stdout, stderr } = await execFileAsync(git(), ['fetch', 'origin'], {
       cwd,
       encoding: 'utf-8' as const,
       maxBuffer: MAX_BUFFER
@@ -211,7 +216,7 @@ export async function gitPull(
 ): Promise<{ success: boolean; error?: string; stdout?: string }> {
   try {
     const { stdout, stderr } = await execFileAsync(
-      'git',
+      git(),
       ['pull', '--ff-only', 'origin', currentBranch],
       {
         cwd,

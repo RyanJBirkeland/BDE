@@ -24,7 +24,8 @@ import { flushAgentEventBatcher } from './agent-event-mapper'
 import { createAgentManager } from './agent-manager'
 import { createSprintTaskRepository } from './data/sprint-task-repository'
 import { execFileAsync } from './lib/async-utils'
-import { getOAuthToken, ensureExtraPathsOnProcessEnv } from './env-utils'
+import { getOAuthToken, ensureExtraPathsOnProcessEnv, buildAgentEnv } from './env-utils'
+import { resolveGitExecutable } from './agent-manager/resolve-git'
 import { createLogger, logError } from './logger'
 import { setSprintQueriesLogger } from './data/sprint-queries'
 import { setTaskGroupQueriesLogger } from './data/task-group-queries'
@@ -560,25 +561,30 @@ function buildReviewWiring(repo: ReturnType<typeof createSprintTaskRepository>):
   }
 
   const getHeadCommitSha = async (worktreePath: string): Promise<string> => {
-    const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'rev-parse', 'HEAD'])
+    const gitBin = resolveGitExecutable() ?? 'git'
+    const { stdout } = await execFileAsync(gitBin, ['-C', worktreePath, 'rev-parse', 'HEAD'], {
+      env: buildAgentEnv()
+    })
     return stdout.trim()
   }
 
   const getBranch = async (worktreePath: string): Promise<string> => {
-    const { stdout } = await execFileAsync('git', [
-      '-C',
-      worktreePath,
-      'rev-parse',
-      '--abbrev-ref',
-      'HEAD'
-    ])
+    const gitBin = resolveGitExecutable() ?? 'git'
+    const { stdout } = await execFileAsync(
+      gitBin,
+      ['-C', worktreePath, 'rev-parse', '--abbrev-ref', 'HEAD'],
+      { env: buildAgentEnv() }
+    )
     return stdout.trim()
   }
 
   const getDiff = async (worktreePath: string): Promise<string> => {
-    const { stdout } = await execFileAsync('git', ['-C', worktreePath, 'diff', 'main...HEAD'], {
-      maxBuffer: 10 * 1024 * 1024
-    })
+    const gitBin = resolveGitExecutable() ?? 'git'
+    const { stdout } = await execFileAsync(
+      gitBin,
+      ['-C', worktreePath, 'diff', 'main...HEAD'],
+      { maxBuffer: 10 * 1024 * 1024, env: buildAgentEnv() }
+    )
     return stdout
   }
 

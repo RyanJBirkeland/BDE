@@ -1,6 +1,7 @@
 import type { Logger } from '../logger'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import { execFileAsync } from '../lib/async-utils'
+import { resolveGitExecutable } from './resolve-git'
 
 const MAX_PARTIAL_DIFF_SIZE = 50 * 1024 // 50KB
 
@@ -33,7 +34,8 @@ export async function capturePartialDiff(
   logger: Logger
 ): Promise<void> {
   try {
-    const { stdout } = await execFileAsync('git', ['diff', 'HEAD'], {
+    const git = resolveGitExecutable() ?? 'git'
+    const { stdout } = await execFileAsync(git, ['diff', 'HEAD'], {
       cwd: worktreePath,
       maxBuffer: MAX_PARTIAL_DIFF_SIZE
     })
