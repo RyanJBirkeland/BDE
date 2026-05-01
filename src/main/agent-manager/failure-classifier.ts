@@ -47,7 +47,10 @@ export const BUILTIN_FAILURE_PATTERNS: readonly FailurePattern[] = Object.freeze
       'invalid_api_key',
       'token_expired',
       'invalid_token',
-      'authentication_failed'
+      'authentication_failed',
+      'not logged in',
+      'please run /login',
+      'claude code returned an error result: not logged'
     ]
   },
   {

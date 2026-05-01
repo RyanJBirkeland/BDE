@@ -360,7 +360,9 @@ async function handleStreamError(
   const isAuthError =
     errMsg.includes('Invalid API key') ||
     errMsg.includes('invalid_api_key') ||
-    errMsg.includes('authentication')
+    errMsg.includes('authentication') ||
+    errMsg.includes('Not logged in') ||
+    errMsg.includes('Please run /login')
 
   if (isAuthError) {
     return handleAuthError(ctx, onOAuthRefreshStart)

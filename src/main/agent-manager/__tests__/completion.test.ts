@@ -273,7 +273,7 @@ describe('resolveSuccess', () => {
     expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'error')
   })
 
-  it('marks error with "Worktree evicted" when worktree path does not exist', async () => {
+  it('marks error when worktree path does not exist, with actionable message', async () => {
     vi.mocked(existsSync).mockReturnValueOnce(false)
 
     await resolveSuccess(opts, noopLogger)
@@ -282,7 +282,7 @@ describe('resolveSuccess', () => {
       opts.taskId,
       expect.objectContaining({
         status: 'error',
-        notes: expect.stringContaining('Worktree evicted')
+        notes: expect.stringContaining('Worktree no longer exists')
       })
     )
     expect(mockOnTaskTerminal).toHaveBeenCalledWith(opts.taskId, 'error')

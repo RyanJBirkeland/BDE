@@ -246,7 +246,7 @@ export async function verifyWorktreeExists(
   await failTaskWithError(
     taskId,
     `Worktree path no longer exists for task ${taskId}: ${worktreePath}`,
-    `Worktree evicted before completion (${worktreePath}). Use ~/worktrees/ instead of /tmp/.`,
+    `Worktree no longer exists at completion (${worktreePath}). This usually means the agent exited with an auth error or the worktree was cleaned up externally — check ~/.fleet/fleet.log for details.`,
     repo,
     logger,
     onTaskTerminal,
