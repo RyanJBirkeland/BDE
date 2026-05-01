@@ -130,7 +130,7 @@ export class TaskStateService {
 
     const patch: Record<string, unknown> = { status: targetStatus, ...ctx.fields }
     const callerAttribution = ctx.caller ?? 'task-state-service'
-    updateTask(taskId, patch, { caller: callerAttribution })
+    await updateTask(taskId, patch, { caller: callerAttribution })
     this.logger.info(
       `[task-state] task ${taskId}: ${currentStatus} → ${targetStatus} (caller=${callerAttribution})`
     )
