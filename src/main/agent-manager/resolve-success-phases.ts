@@ -111,17 +111,23 @@ export function extractTaskIdFromBranch(branch: string): string | null {
  * Check whether a branch name identifies a given task.
  *
  * Two signals checked in order:
- * 1. The 8-char hex hash at the end of the branch (FLEET appends the first 8
- *    chars of the task UUID) matches the task id prefix — covers UUID task ids
- *    like '9f04f0d089a0f3e3a45ff13ab2887a02'.
+ * 1. The 8-char hex hash at the end of the branch matches the task id prefix
+ *    (UUID tasks) OR the group id prefix (epic-grouped tasks — branch is named
+ *    from groupId.slice(0,8) when a task belongs to an epic).
  * 2. The `<idSlug>` segment (e.g. '13') matches the task id tail via
  *    `endsWith('t-13')` — covers legacy-style ids like 'audit-20260420-t-13'.
  */
-export function branchMatchesTask(branch: string, taskId: string): boolean {
-  // UUID task IDs: the trailing 8 hex chars of the branch name are the first
-  // 8 chars of the task UUID (FLEET's branch generation convention).
+export function branchMatchesTask(
+  branch: string,
+  taskId: string,
+  groupId?: string | null
+): boolean {
   const hashMatch = /-([a-f0-9]{8})$/.exec(branch)
-  if (hashMatch?.[1] && taskId.toLowerCase().startsWith(hashMatch[1])) return true
+  if (hashMatch?.[1]) {
+    if (taskId.toLowerCase().startsWith(hashMatch[1])) return true
+    // Epic-grouped tasks: branch suffix comes from groupId, not taskId.
+    if (groupId && groupId.toLowerCase().startsWith(hashMatch[1])) return true
+  }
   // Legacy T-N style task IDs: agent/t-<idSlug>-...-<8hex>
   const slug = extractTaskIdFromBranch(branch)
   if (!slug) return false
@@ -162,12 +168,12 @@ const defaultReadTipCommit: ReadTipCommit = async (branch, repoPath) => {
  * a stale branch tip or a cross-task leak that survived worktree setup.
  */
 export async function assertBranchTipMatches(
-  task: { id: string; title: string; agent_run_id?: string | null },
+  task: { id: string; title: string; agent_run_id?: string | null; group_id?: string | null },
   agentBranch: string,
   repoPath: string,
   readTipCommit: ReadTipCommit = defaultReadTipCommit
 ): Promise<void> {
-  if (branchMatchesTask(agentBranch, task.id)) return
+  if (branchMatchesTask(agentBranch, task.id, task.group_id)) return
 
   const commitMessage = await readTipCommit(agentBranch, repoPath)
   const expectedTokens = buildExpectedTipTokens(task)

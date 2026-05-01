@@ -128,6 +128,28 @@ describe('branchMatchesTask', () => {
       )
     ).toBe(false)
   })
+
+  it('matches an epic-grouped task when the branch hash is from groupId', () => {
+    // Branch suffix comes from groupId.slice(0,8), not taskId.slice(0,8)
+    const taskId = 'aabbccdd11223344aabbccdd11223344'
+    const groupId = 'ff001122334455667788990011223344'
+    const branch = 'agent/add-oauth-ff001122'
+    expect(branchMatchesTask(branch, taskId, groupId)).toBe(true)
+  })
+
+  it('does not match when hash matches neither taskId nor groupId', () => {
+    const taskId = 'aabbccdd11223344aabbccdd11223344'
+    const groupId = 'ff001122334455667788990011223344'
+    const branch = 'agent/add-oauth-deadbeef'
+    expect(branchMatchesTask(branch, taskId, groupId)).toBe(false)
+  })
+
+  it('matches via taskId even when groupId is present', () => {
+    const taskId = 'aabbccdd11223344aabbccdd11223344'
+    const groupId = 'ff001122334455667788990011223344'
+    const branch = 'agent/add-oauth-aabbccdd'
+    expect(branchMatchesTask(branch, taskId, groupId)).toBe(true)
+  })
 })
 
 describe('assertBranchTipMatches — branch-name path (primary)', () => {

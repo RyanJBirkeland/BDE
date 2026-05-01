@@ -64,7 +64,7 @@ export async function verifyBranchTipOrFail(
 
   try {
     await assertBranchTipMatches(
-      { id: task.id, title: task.title, agent_run_id: task.agent_run_id },
+      { id: task.id, title: task.title, agent_run_id: task.agent_run_id, group_id: task.group_id ?? null },
       branch,
       repoPath
     )

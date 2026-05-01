@@ -5,7 +5,14 @@
  * A broken commit never makes it in front of a human reviewer: if either
  * check fails, the task is requeued with the tool's stderr in the notes so
  * the retry agent sees exactly what went wrong.
+ *
+ * Test runner detection: reads `package.json` from the worktree to determine
+ * the correct test flags. Vitest requires `--run` to exit after one pass;
+ * other runners (Jest, Mocha, etc.) use plain `npm test`. If no `scripts.test`
+ * exists, the test step is skipped entirely.
  */
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { Logger } from '../logger'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
@@ -25,6 +32,8 @@ export type VerificationResult = { ok: true } | { ok: false; failure: Verificati
 
 export interface VerificationDeps {
   runCommand: RunCommand
+  /** Override filesystem read for testing. Defaults to `fs.readFileSync`. */
+  readFile?: (path: string) => string | null
 }
 
 export type RunCommand = (
@@ -35,6 +44,9 @@ export type RunCommand = (
 ) => Promise<CommandResult>
 
 export type CommandResult = { ok: true } | { ok: false; output: string }
+
+/** Which test runner is present in the project, or 'none' when absent/undetectable. */
+type TestRunner = 'vitest' | 'other' | 'none'
 
 interface CommandAttempt {
   command: string
@@ -52,12 +64,34 @@ const TYPECHECK_ATTEMPT: CommandAttempt = {
   keywordHint: 'typescript error'
 }
 
-const TEST_ATTEMPT: CommandAttempt = {
-  command: 'npm',
-  args: ['test', '--', '--run'],
-  timeoutMs: TEST_TIMEOUT_MS,
-  failureKind: 'test_failure',
-  keywordHint: 'vitest failed'
+/**
+ * Reads `package.json` from the worktree and determines which test runner is
+ * configured. Returns:
+ * - `'vitest'`  — `vitest` found in dependencies/devDependencies
+ * - `'other'`   — a `scripts.test` exists but vitest is not in deps
+ * - `'none'`    — no `scripts.test`, unreadable file, or parse failure
+ */
+function detectTestRunner(
+  worktreePath: string,
+  readFile: (path: string) => string | null
+): TestRunner {
+  const pkgPath = join(worktreePath, 'package.json')
+  let pkg: Record<string, unknown>
+  try {
+    const raw = readFile(pkgPath)
+    if (!raw) return 'none'
+    pkg = JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    return 'none'
+  }
+  const scripts = pkg.scripts as Record<string, string> | undefined
+  if (!scripts?.test) return 'none'
+  const allDeps = {
+    ...(pkg.dependencies as object | undefined),
+    ...(pkg.devDependencies as object | undefined)
+  }
+  if ('vitest' in allDeps) return 'vitest'
+  return 'other'
 }
 
 export async function verifyWorktreeBuildsAndTests(
@@ -68,7 +102,23 @@ export async function verifyWorktreeBuildsAndTests(
   const typecheck = await runVerificationAttempt(TYPECHECK_ATTEMPT, worktreePath, logger, deps)
   if (!typecheck.ok) return typecheck
 
-  const tests = await runVerificationAttempt(TEST_ATTEMPT, worktreePath, logger, deps)
+  const readFile = deps.readFile ?? defaultReadFile
+  const runner = detectTestRunner(worktreePath, readFile)
+
+  if (runner === 'none') {
+    logger.info(`[verify-worktree] no test script detected at ${worktreePath} — skipping test step`)
+    return { ok: true }
+  }
+
+  const testAttempt: CommandAttempt = {
+    command: 'npm',
+    args: runner === 'vitest' ? ['test', '--', '--run'] : ['test'],
+    timeoutMs: TEST_TIMEOUT_MS,
+    failureKind: 'test_failure',
+    keywordHint: 'test run failed'
+  }
+
+  const tests = await runVerificationAttempt(testAttempt, worktreePath, logger, deps)
   if (!tests.ok) return tests
 
   return { ok: true }
@@ -106,6 +156,14 @@ function tailTruncate(text: string, limit: number): string {
 
 function defaultDeps(): VerificationDeps {
   return { runCommand: execFileRunCommand }
+}
+
+function defaultReadFile(path: string): string | null {
+  try {
+    return readFileSync(path, 'utf-8')
+  } catch {
+    return null
+  }
 }
 
 async function execFileRunCommand(
