@@ -329,7 +329,7 @@ describe('Files-to-Change checklist enforcement', () => {
 
     ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle())
 
-    // None of the 3 files are in the diff
+    // None of the 3 files are in the diff; all exist on base branch → all enforced
     ;(execFileAsync as ReturnType<typeof vi.fn>).mockImplementation(
       (cmd: string, args: string[]) => {
         if (args.includes('--name-only')) {
@@ -348,6 +348,44 @@ describe('Files-to-Change checklist enforcement', () => {
           /src\/main\/agent-manager\/spec-parser\.ts.*src\/main\/agent-manager\/run-agent\.ts.*src\/shared\/types\/task-types\.ts/s
         )
       }),
+      deps.logger
+    )
+  })
+
+  it('does not re-queue when the only missing files are new (not on base branch)', async () => {
+    const { spawnAgent } = await import('../sdk-adapter')
+    const { resolveSuccess, resolveFailure } = await import('../completion')
+    const { execFileAsync } = await import('../../lib/async-utils')
+
+    ;(spawnAgent as ReturnType<typeof vi.fn>).mockResolvedValue(makeHandle())
+
+    // Spec lists src/shared/types/task-types.ts as required but it's absent from the diff.
+    // However, git cat-file -e reports it does NOT exist on origin/main → new file → skip enforcement.
+    ;(execFileAsync as ReturnType<typeof vi.fn>).mockImplementation(
+      (_cmd: string, args: string[]) => {
+        if (args.includes('--name-only')) {
+          // agent only changed 2 of 3 spec files
+          return Promise.resolve({
+            stdout:
+              'src/main/agent-manager/spec-parser.ts\nsrc/main/agent-manager/run-agent.ts\n',
+            stderr: ''
+          })
+        }
+        if (args.includes('-e') && args.some((a) => a.includes('task-types.ts'))) {
+          // task-types.ts does NOT exist on origin/main → new file
+          return Promise.reject(new Error('fatal: Not a valid object name'))
+        }
+        // other cat-file checks (for the two already-changed files) succeed
+        return Promise.resolve({ stdout: '', stderr: '' })
+      }
+    )
+
+    const deps = makeDeps()
+    await runAgent(makeTask(), worktree, repoPath, deps)
+
+    expect(resolveFailure).not.toHaveBeenCalled()
+    expect(resolveSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({ taskId: 'task-checklist-1' }),
       deps.logger
     )
   })

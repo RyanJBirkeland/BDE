@@ -92,6 +92,13 @@ export function startDbWatcher(): () => void {
   const notify = (): void => {
     if (debounceTimer) clearTimeout(debounceTimer)
     debounceTimer = setTimeout(() => {
+      // Merge any external WAL writes (e.g. sqlite3 CLI) into the main DB
+      // before broadcasting so the drain loop sees the updated rows immediately.
+      try {
+        getDb().pragma('wal_checkpoint(TRUNCATE)')
+      } catch {
+        // Non-fatal — external writes may have already been merged; continue.
+      }
       for (const win of BrowserWindow.getAllWindows()) {
         win.webContents.send('sprint:externalChange')
       }

@@ -246,6 +246,15 @@ export async function processQueuedTask(
 ): Promise<void> {
   const taskId = rawTask.id
   if (deps.spawnRegistry.isProcessing(taskId)) return
+  // Guard: if an agent is already running for this task (e.g. orphan recovery
+  // re-queued while the original agent's finally-block is still executing),
+  // skip the spawn to prevent concurrent agents on the same worktree path.
+  if (deps.spawnRegistry.hasActiveAgent(taskId)) {
+    deps.logger.warn(
+      `[task-claimer] task ${taskId} already has an active agent — skipping spawn to avoid worktree race`
+    )
+    return
+  }
   deps.spawnRegistry.markProcessing(taskId)
   try {
     const claimed = await validateAndClaimTask(rawTask, taskStatusMap, deps)

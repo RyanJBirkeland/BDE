@@ -275,4 +275,16 @@ describe('processQueuedTask', () => {
     await processQueuedTask({ id: 'task-1' }, new Map(), deps)
     expect(deps.spawnAgent).not.toHaveBeenCalled()
   })
+
+  it('skips spawn when an agent is already active for the task', async () => {
+    const spawnRegistry = new SpawnRegistry()
+    // Register a running agent for the task before processQueuedTask runs
+    spawnRegistry.registerAgent({ taskId: 'task-1', agentRunId: 'run-existing' } as import('../types').ActiveAgent)
+    const deps = makeProcessDeps({ spawnRegistry })
+    await processQueuedTask({ id: 'task-1' }, new Map(), deps)
+    expect(deps.spawnAgent).not.toHaveBeenCalled()
+    expect(deps.logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('already has an active agent')
+    )
+  })
 })

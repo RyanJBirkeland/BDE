@@ -7,6 +7,13 @@ import { reconcileRunningAgentRuns } from '../agent-history'
 export const MAX_ORPHAN_RECOVERY_COUNT = 3
 
 /**
+ * Grace period before the drain loop can re-claim an orphan-recovered task.
+ * Gives the original agent's finally-block (worktree cleanup) time to finish
+ * before a new agent tries to set up the same worktree path.
+ */
+const ORPHAN_REQUEUE_GRACE_MS = 30_000
+
+/**
  * Summarises the outcome of a single orphan recovery run.
  * `recovered` = task IDs successfully re-queued.
  * `exhausted` = task IDs that reached the cap and were moved to `error`.
@@ -85,7 +92,7 @@ export async function recoverOrphans(
       started_at: null,
       retry_count: 0,
       fast_fail_count: 0,
-      next_eligible_at: null,
+      next_eligible_at: new Date(Date.now() + ORPHAN_REQUEUE_GRACE_MS).toISOString(),
       notes: `Task was re-queued by orphan recovery (attempt ${recoveryCount + 1}/${MAX_ORPHAN_RECOVERY_COUNT}). Agent process terminated without completing the task.`
     }
 
