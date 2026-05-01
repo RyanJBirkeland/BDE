@@ -289,6 +289,14 @@
   background-clip: text;
 }
 
+/* Light mode: --gradient-aurora is none, so the background-clip trick produces
+   invisible text. Fall back to a solid accent color instead. */
+html.theme-pro-light .text-gradient-aurora {
+  background: none;
+  -webkit-text-fill-color: var(--fleet-accent);
+  color: var(--fleet-accent);
+}
+
 /* ── 4.4 Logotype ────────────────────────────────────── */
 
 .logotype {
@@ -300,6 +308,12 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+html.theme-pro-light .logotype {
+  background: none;
+  -webkit-text-fill-color: var(--fleet-accent);
+  color: var(--fleet-accent);
 }
 
 .logotype-glow {
