@@ -128,7 +128,7 @@ export function getTaskChanges(
   return conn
     .prepare(
       `SELECT id, task_id, field, old_value, new_value, changed_by, changed_at
-       FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC LIMIT ? OFFSET ?`
+       FROM task_changes WHERE task_id = ? ORDER BY changed_at DESC, id DESC LIMIT ? OFFSET ?`
     )
     .all(taskId, limit, offset) as TaskChange[]
 }

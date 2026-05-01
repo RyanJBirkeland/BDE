@@ -10,6 +10,7 @@
  * old setter-based API (`setReviewOrchestrationRepo`) has been removed.
  */
 import { execFileAsync } from '../lib/async-utils'
+import { buildAgentEnv } from '../env-utils'
 import { createLogger } from '../logger'
 import { classifyReviewAction } from './review-action-policy'
 import { executeReviewAction } from './review-action-executor'
@@ -351,7 +352,7 @@ export function createReviewOrchestrationService(
 
   async function requestRevision(i: RequestRevisionInput): Promise<RequestRevisionResult> {
     const op = buildReviewGitOpPlan({ action: 'requestRevision', feedback: i.feedback, mode: i.mode })
-    await executeReviewGitOp(op, { taskId: i.taskId, env: process.env, onStatusTerminal: () => {} })
+    await executeReviewGitOp(op, { taskId: i.taskId, env: i.env ?? buildAgentEnv(), onStatusTerminal: () => {} })
     return { success: true }
   }
 

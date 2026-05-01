@@ -75,6 +75,7 @@ export interface RequestRevisionInput {
   taskId: string
   feedback: string
   mode: 'resume' | 'fresh'
+  env?: NodeJS.ProcessEnv
 }
 
 export interface DiscardInput {

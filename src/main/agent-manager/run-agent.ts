@@ -356,6 +356,7 @@ async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<vo
       },
       caller: 'run-agent:fast-fail-exhausted'
     })
+    await ctx.onTaskTerminal(ctx.task.id, 'error')
   } catch (err) {
     ctx.logger.error(
       `[agent-manager] Failed to transition task ${ctx.task.id} after fast-fail exhausted: ${err}`
@@ -472,6 +473,7 @@ async function handleIncompleteFiles(
     return
   }
   await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, ctx.logger)
+  await ctx.onTaskTerminal(ctx.task.id, 'queued')
 }
 
 async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {

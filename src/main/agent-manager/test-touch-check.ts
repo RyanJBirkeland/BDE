@@ -59,9 +59,11 @@ export function detectUntouchedTests(
   return untouched
 }
 
+const GIT_EXEC_TIMEOUT_MS = 30_000
+
 /**
- * Runs `git diff --name-only <agentBranch>..origin/main` inside the worktree
- * and returns the list of changed files relative to the repo root.
+ * Runs `git diff --name-only origin/main..<agentBranch>` inside the worktree
+ * and returns the list of files the agent changed relative to origin/main.
  */
 export async function listChangedFiles(
   agentBranch: string,
@@ -71,9 +73,10 @@ export async function listChangedFiles(
 ): Promise<string[]> {
   const exec = deps.execFile ?? execFileAsync
   try {
-    const { stdout } = await exec('git', ['diff', '--name-only', `${agentBranch}..origin/main`], {
+    const { stdout } = await exec('git', ['diff', '--name-only', `origin/main..${agentBranch}`], {
       cwd: worktreePath,
-      env
+      env,
+      timeout: GIT_EXEC_TIMEOUT_MS
     })
     return stdout
       .split('\n')

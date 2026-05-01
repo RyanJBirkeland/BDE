@@ -20,8 +20,9 @@ export const SPRINT_TASK_COLUMNS = `id, title, prompt, repo, status, priority, d
   template_name, playground_enabled, needs_review, max_runtime_ms,
   spec_type, created_at, updated_at, worktree_path, session_id,
   next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-  partial_diff, assigned_reviewer, tags, sprint_id, group_id,
-  revision_feedback, review_diff_snapshot, promoted_to_review_at, orphan_recovery_count`
+  partial_diff, assigned_reviewer, tags, sprint_id, group_id, duration_ms,
+  revision_feedback, review_diff_snapshot, promoted_to_review_at,
+  rebase_base_sha, rebased_at, orphan_recovery_count`
 
 /**
  * Column list for list/poll-path SELECT queries.
@@ -37,5 +38,5 @@ export const SPRINT_TASK_LIST_COLUMNS = `id, title, prompt, repo, status, priori
   template_name, playground_enabled, needs_review, max_runtime_ms,
   spec_type, created_at, updated_at, worktree_path, session_id,
   next_eligible_at, model, retry_context, failure_reason, max_cost_usd,
-  partial_diff, assigned_reviewer, tags, sprint_id, group_id,
-  revision_feedback, promoted_to_review_at, orphan_recovery_count`
+  partial_diff, assigned_reviewer, tags, sprint_id, group_id, duration_ms,
+  revision_feedback, promoted_to_review_at, rebase_base_sha, rebased_at, orphan_recovery_count`

@@ -54,10 +54,14 @@ export const MUTABLE_TASK_FIELDS = [
   'pr_number',
   'pr_mergeable_state',
   'retry_count',
+  'fast_fail_count',
   'revision_feedback',
   'notes',
   'title',
   'spec',
+  'worktree_path',
+  'duration_ms',
+  'promoted_to_review_at',
   'updated_at'
 ] as const satisfies ReadonlyArray<keyof SprintTask>
 
