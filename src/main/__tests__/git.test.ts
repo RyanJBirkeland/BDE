@@ -10,6 +10,12 @@ vi.mock('child_process', () => {
   return { execFile }
 })
 
+// Return undefined so resolveGitExecutable() ?? 'git' falls back to the bare
+// 'git' string — keeps tests path-independent (the real path varies by machine).
+vi.mock('../agent-manager/resolve-git', () => ({
+  resolveGitExecutable: () => undefined
+}))
+
 vi.mock('electron', () => ({
   BrowserWindow: { getAllWindows: () => [] },
   app: { getPath: () => '/tmp' }
