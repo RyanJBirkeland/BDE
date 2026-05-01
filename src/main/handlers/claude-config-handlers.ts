@@ -7,16 +7,18 @@ const CLAUDE_DIR = join(homedir(), '.claude')
 const SETTINGS_PATH = join(CLAUDE_DIR, 'settings.json')
 
 const PERMISSION_RULE_PREFIXES = [
+  'Agent',
   'Bash',
-  'Read',
-  'Write',
   'Edit',
-  'MultiEdit',
-  'NotebookEdit',
   'Glob',
   'Grep',
+  'mcp__',
+  'MultiEdit',
+  'NotebookEdit',
+  'Read',
   'WebFetch',
-  'WebSearch'
+  'WebSearch',
+  'Write'
 ] as const
 const PERMISSION_RULE_MAX_CHARS = 500
 const VALID_RULE_PATTERN = new RegExp(
