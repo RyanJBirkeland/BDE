@@ -49,7 +49,7 @@ import { cleanupWorktree } from '../worktree'
 import { PipelineAbortError } from '../pipeline-abort-error'
 import type { RunAgentDeps, AgentRunClaim } from '../run-agent'
 import type { ActiveAgent, AgentHandle } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { TaskStateService } from '../../services/task-state-service'
 

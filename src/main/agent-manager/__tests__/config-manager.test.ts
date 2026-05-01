@@ -9,7 +9,7 @@ import { reloadConfiguration, type ConfigManagerDeps } from '../config-manager'
 import { getSetting, getSettingJson } from '../../settings'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
-import { DEFAULT_CONFIG } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG } from '../types'
 
 function makeConfig(overrides: Partial<AgentManagerConfig> = {}): AgentManagerConfig {
   return {

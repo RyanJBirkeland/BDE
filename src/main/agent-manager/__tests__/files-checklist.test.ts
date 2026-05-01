@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { runAgent } from '../run-agent'
 import type { AgentRunClaim, RunAgentDeps } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import { SpawnRegistry } from '../spawn-registry'
 
 // ---------------------------------------------------------------------------

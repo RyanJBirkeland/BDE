@@ -14,7 +14,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ActiveAgent } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { SpawnRegistry } from '../spawn-registry'
 

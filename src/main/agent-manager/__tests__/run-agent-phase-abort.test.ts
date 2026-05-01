@@ -132,7 +132,7 @@ import { runAgent, cleanupOrPreserveWorktree } from '../run-agent'
 import type { AgentRunClaim, RunAgentDeps } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import { validateTaskForRun, assembleRunContext } from '../prompt-assembly'
 import { spawnAndWireAgent } from '../spawn-and-wire'
 

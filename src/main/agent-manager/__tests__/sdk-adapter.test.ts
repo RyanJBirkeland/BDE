@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import { withMaxOldSpaceOption, AGENT_PROCESS_MAX_OLD_SPACE_MB } from '../sdk-adapter'
 
 vi.mock('../../env-utils', () => ({

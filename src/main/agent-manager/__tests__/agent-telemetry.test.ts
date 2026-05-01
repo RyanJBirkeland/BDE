@@ -18,7 +18,7 @@ vi.mock('../../db', () => ({
 
 import { trackAgentCosts, persistAgentRunTelemetry, computeTokenCost } from '../agent-telemetry'
 import type { ActiveAgent, AgentHandle } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import type { TurnTracker } from '../turn-tracker'
 import { updateAgentMeta } from '../../agent-history'
 import { updateAgentRunCost } from '../../data/agent-queries'

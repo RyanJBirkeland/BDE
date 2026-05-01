@@ -160,7 +160,7 @@ vi.mock('../../services/credential-service', () => ({
 
 import { createAgentManager } from '../index'
 import type { AgentManagerConfig, AgentHandle } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { createAgentRecord } from '../../agent-history'
 import {

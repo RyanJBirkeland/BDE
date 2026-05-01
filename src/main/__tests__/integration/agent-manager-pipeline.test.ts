@@ -165,7 +165,7 @@ vi.mock('../../services/credential-service', () => ({
 
 import { createAgentManager } from '../../agent-manager/index'
 import type { AgentManagerConfig, AgentHandle } from '../../agent-manager/types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../../agent-manager/types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../../agent-manager/types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import {
   getQueuedTasks,

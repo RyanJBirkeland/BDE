@@ -25,7 +25,7 @@ import type {
 } from '../run-agent'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { ActiveAgent } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { buildAgentPrompt } from '../../lib/prompt-composer'
 import { TurnTracker } from '../turn-tracker'

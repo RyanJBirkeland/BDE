@@ -120,7 +120,7 @@ vi.mock('../oauth-checker', () => ({
 
 import { AgentManagerImpl } from '../index'
 import type { AgentManagerConfig, ActiveAgent, AgentHandle } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import { getRepoPaths } from '../../paths'
 import { setupWorktree, pruneStaleWorktrees } from '../worktree'

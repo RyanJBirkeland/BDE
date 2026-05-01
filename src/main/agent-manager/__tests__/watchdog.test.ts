@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { checkAgent } from '../watchdog'
 import type { ActiveAgent, AgentManagerConfig } from '../types'
-import { RATE_LIMIT_LOOP_THRESHOLD, DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { RATE_LIMIT_LOOP_THRESHOLD, DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 
 const baseConfig: AgentManagerConfig = {
   maxConcurrent: 2,

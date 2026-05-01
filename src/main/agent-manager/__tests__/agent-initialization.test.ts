@@ -14,7 +14,7 @@ vi.mock('../../agent-event-mapper', () => ({
 
 import { initializeAgentTracking } from '../agent-initialization'
 import type { AgentHandle } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
 import type { AgentRunClaim } from '../run-agent'
 import type { TurnTracker } from '../turn-tracker'

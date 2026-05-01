@@ -31,7 +31,7 @@ import { checkOAuthToken } from '../oauth-checker'
 import { refreshDependencyIndex } from '../dependency-refresher'
 import { makeConcurrencyState } from '../concurrency'
 import type { AgentManagerConfig } from '../types'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../types'
 import { getConfiguredRepos } from '../../paths'
 
 const baseConfig: AgentManagerConfig = {

@@ -23,7 +23,7 @@ import {
 } from '../services/copilot-service'
 import { PIPELINE_DISALLOWED_TOOLS } from '../agent-manager/turn-budget'
 import { REVIEWER_CHAT_MAX_BUDGET_USD } from '../handlers/review-assistant'
-import { DEFAULT_CONFIG, DEFAULT_MODEL } from '../agent-manager/types'
+import { DEFAULT_CONFIG as _DEFAULT_CONFIG, DEFAULT_MODEL } from '../agent-manager/types'
 
 describe('agent SDK options policy', () => {
   describe('pipeline', () => {
