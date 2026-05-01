@@ -85,6 +85,16 @@ vi.mock('../../settings', () => ({
   })
 }))
 
+// Return undefined so resolveGitExecutable() ?? 'git' falls back to bare 'git' — path-independent tests.
+vi.mock('../../agent-manager/resolve-git', () => ({
+  resolveGitExecutable: () => undefined
+}))
+
+// Stub buildAgentEnv so git:checkInstalled doesn't need full env-utils wiring.
+vi.mock('../../env-utils', () => ({
+  buildAgentEnv: () => ({})
+}))
+
 // Mock review-paths validateGitRef and validateFilePath
 vi.mock('../../lib/review-paths', () => ({
   validateGitRef: vi.fn((ref: string) => {
@@ -769,7 +779,7 @@ describe('git:checkInstalled handler', () => {
     const handler = captureHandler('git:checkInstalled')
     const result = await handler(mockEvent)
 
-    expect(execFileAsync).toHaveBeenCalledWith('git', ['--version'])
+    expect(execFileAsync).toHaveBeenCalledWith('git', ['--version'], expect.objectContaining({ env: expect.any(Object) }))
     expect(result).toBe(true)
   })
 
