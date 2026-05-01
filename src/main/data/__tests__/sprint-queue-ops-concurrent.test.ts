@@ -32,11 +32,12 @@ function insertQueuedTask(id: string, title = 'Test task'): void {
   ).run(id, title)
 }
 
-function insertActiveTask(id: string, claimedBy: string): void {
+function insertActiveTask(id: string, claimedBy: string, startedAt?: string): void {
+  const age = startedAt ?? new Date(Date.now() - 60_000).toISOString()
   db.prepare(
-    `INSERT INTO sprint_tasks (id, title, repo, status, priority, claimed_by)
-     VALUES (?, ?, 'fleet', 'active', 1, ?)`
-  ).run(id, `Task ${id}`, claimedBy)
+    `INSERT INTO sprint_tasks (id, title, repo, status, priority, claimed_by, started_at)
+     VALUES (?, ?, 'fleet', 'active', 1, ?, ?)`
+  ).run(id, `Task ${id}`, claimedBy, age)
 }
 
 function getTaskRow(id: string): { status: string; claimed_by: string | null } {
@@ -115,6 +116,16 @@ describe('getOrphanedTasks orphan recovery round-trip', () => {
 
   it('does not return queued tasks — only active ones are orphans', () => {
     insertQueuedTask('queued-task')
+
+    const orphans = getOrphanedTasks('fleet-embedded', db)
+    expect(orphans).toHaveLength(0)
+  })
+
+  it('does not return a task claimed within the last 30 seconds (spawn grace period)', () => {
+    // Pins the fix for the claim→spawn race: a task claimed but not yet spawned
+    // has started_at = NOW and must not appear as an orphan candidate.
+    const recentStartedAt = new Date(Date.now() - 5_000).toISOString() // 5s ago
+    insertActiveTask('just-claimed', 'fleet-embedded', recentStartedAt)
 
     const orphans = getOrphanedTasks('fleet-embedded', db)
     expect(orphans).toHaveLength(0)

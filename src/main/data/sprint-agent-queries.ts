@@ -49,16 +49,30 @@ export function getQueueStats(db?: Database.Database): QueueStats {
   )
 }
 
+/**
+ * How long a task must have been in 'active' state before it is eligible for
+ * orphan recovery. The claim→spawn pipeline takes ~100–800ms (fetch, prompt
+ * build, credential refresh, SDK spawn). Without this guard the orphan loop
+ * can fire during that window, see hasActiveAgent()=false, and wrongly requeue
+ * a task that is actively being spawned. 30 s matches ORPHAN_REQUEUE_GRACE_MS
+ * in orphan-recovery.ts and is far longer than any legitimate spawn sequence.
+ */
+const ORPHAN_SPAWN_GRACE_SECONDS = 30
+
 export function getOrphanedTasks(claimedBy: string, db?: Database.Database): SprintTask[] {
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {
+      const cutoff = new Date(Date.now() - ORPHAN_SPAWN_GRACE_SECONDS * 1000).toISOString()
       const rows = conn
         .prepare(
           `SELECT ${SPRINT_TASK_COLUMNS}
-           FROM sprint_tasks WHERE status = 'active' AND claimed_by = ?`
+           FROM sprint_tasks
+           WHERE status = 'active'
+             AND claimed_by = ?
+             AND started_at < ?`
         )
-        .all(claimedBy) as Record<string, unknown>[]
+        .all(claimedBy, cutoff) as Record<string, unknown>[]
       return mapRowsToTasks(rows)
     },
     `getOrphanedTasks(claimedBy=${claimedBy})`,

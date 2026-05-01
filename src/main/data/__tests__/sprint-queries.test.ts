@@ -918,14 +918,24 @@ describe('getQueuedTasks', () => {
 })
 
 describe('getOrphanedTasks', () => {
-  it('returns active tasks claimed by the given executor', async () => {
-    insertTask({ id: 'o1', status: 'active', claimed_by: 'exec-1' })
-    insertTask({ id: 'o2', status: 'active', claimed_by: 'exec-2' })
+  const staleStartedAt = new Date(Date.now() - 60_000).toISOString()
+
+  it('returns active tasks claimed by the given executor when older than the grace period', async () => {
+    insertTask({ id: 'o1', status: 'active', claimed_by: 'exec-1', started_at: staleStartedAt })
+    insertTask({ id: 'o2', status: 'active', claimed_by: 'exec-2', started_at: staleStartedAt })
     insertTask({ id: 'o3', status: 'queued', claimed_by: 'exec-1' })
 
     const result = getOrphanedTasks('exec-1')
     expect(result.length).toBe(1)
     expect(result[0].id).toBe('o1')
+  })
+
+  it('does not return a recently-claimed task (spawn grace period)', async () => {
+    const recentStartedAt = new Date(Date.now() - 5_000).toISOString()
+    insertTask({ id: 'fresh', status: 'active', claimed_by: 'exec-1', started_at: recentStartedAt })
+
+    const result = getOrphanedTasks('exec-1')
+    expect(result.length).toBe(0)
   })
 })
 
