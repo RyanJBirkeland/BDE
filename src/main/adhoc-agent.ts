@@ -30,6 +30,7 @@ import { ADHOC_WORKTREE_BASE, getRepoPaths } from './paths'
 import { updateAgentRunCost } from './data/agent-queries'
 import { execFileAsync } from './lib/async-utils'
 import { buildAgentEnvWithAuth, getClaudeCliPath, refreshOAuthTokenFromKeychain } from './env-utils'
+import { getSettingJson } from './settings'
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
 import type { SpawnLocalAgentResult } from '../shared/types'
 import { buildAgentPrompt } from './lib/prompt-composer'
@@ -187,6 +188,7 @@ export async function spawnAdhocAgent(args: {
       logger: log
     }),
     disallowedTools: [...PIPELINE_DISALLOWED_TOOLS],
+    maxTurns: getSettingJson<number>('agentManager.maxTurnsAdhoc') ?? 1000,
     // Hard cap on spend per interactive session. User-controlled agents can
     // rack up cost across many turns. This is a safety ceiling, not a target.
     maxBudgetUsd: 5.0

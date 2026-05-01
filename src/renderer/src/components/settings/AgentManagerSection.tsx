@@ -23,23 +23,32 @@ export function AgentManagerSection(): React.JSX.Element {
   const [worktreeBase, setWorktreeBase] = useState(DEFAULT_WORKTREE_BASE)
   const [maxRuntimeMinutes, setMaxRuntimeMinutes] = useState(DEFAULT_MAX_RUNTIME_MINUTES)
   const [maxTurns, setMaxTurns] = useState(DEFAULT_MAX_TURNS)
+  const [maxTurnsAdhoc, setMaxTurnsAdhoc] = useState(DEFAULT_MAX_TURNS)
+  const [maxTurnsReviewer, setMaxTurnsReviewer] = useState(DEFAULT_MAX_TURNS)
+  const [maxTurnsCopilot, setMaxTurnsCopilot] = useState(DEFAULT_MAX_TURNS)
   const [autoStart, setAutoStart] = useState(DEFAULT_AUTO_START)
   const [dirty, setDirty] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function loadSettings(): Promise<void> {
-      const [maxC, wtBase, maxRtMs, maxT, autoS] = await Promise.all([
+      const [maxC, wtBase, maxRtMs, maxT, maxTA, maxTR, maxTC, autoS] = await Promise.all([
         window.api.settings.getJson('agentManager.maxConcurrent'),
         window.api.settings.get('agentManager.worktreeBase'),
         window.api.settings.getJson('agentManager.maxRuntimeMs'),
         window.api.settings.getJson('agentManager.maxTurns'),
+        window.api.settings.getJson('agentManager.maxTurnsAdhoc'),
+        window.api.settings.getJson('agentManager.maxTurnsReviewer'),
+        window.api.settings.getJson('agentManager.maxTurnsCopilot'),
         window.api.settings.getJson('agentManager.autoStart')
       ])
       if (typeof maxC === 'number') setMaxConcurrent(maxC)
       if (typeof wtBase === 'string' && wtBase) setWorktreeBase(wtBase)
       if (typeof maxRtMs === 'number') setMaxRuntimeMinutes(maxRtMs / 60_000)
       if (typeof maxT === 'number') setMaxTurns(maxT)
+      if (typeof maxTA === 'number') setMaxTurnsAdhoc(maxTA)
+      if (typeof maxTR === 'number') setMaxTurnsReviewer(maxTR)
+      if (typeof maxTC === 'number') setMaxTurnsCopilot(maxTC)
       if (typeof autoS === 'boolean') setAutoStart(autoS)
     }
     void loadSettings()
@@ -53,6 +62,9 @@ export function AgentManagerSection(): React.JSX.Element {
         window.api.settings.set('agentManager.worktreeBase', worktreeBase),
         window.api.settings.setJson('agentManager.maxRuntimeMs', maxRuntimeMinutes * 60_000),
         window.api.settings.setJson('agentManager.maxTurns', maxTurns),
+        window.api.settings.setJson('agentManager.maxTurnsAdhoc', maxTurnsAdhoc),
+        window.api.settings.setJson('agentManager.maxTurnsReviewer', maxTurnsReviewer),
+        window.api.settings.setJson('agentManager.maxTurnsCopilot', maxTurnsCopilot),
         window.api.settings.setJson('agentManager.autoStart', autoStart)
       ])
       setDirty(false)
@@ -75,7 +87,7 @@ export function AgentManagerSection(): React.JSX.Element {
     } finally {
       setSaving(false)
     }
-  }, [maxConcurrent, worktreeBase, maxRuntimeMinutes, maxTurns, autoStart])
+  }, [maxConcurrent, worktreeBase, maxRuntimeMinutes, maxTurns, maxTurnsAdhoc, maxTurnsReviewer, maxTurnsCopilot, autoStart])
 
   function markDirty(): void {
     setDirty(true)
@@ -184,24 +196,56 @@ export function AgentManagerSection(): React.JSX.Element {
         </label>
 
         <label className="settings-field">
-          <span className="settings-field__label">Max turns per agent</span>
+          <span className="settings-field__label">Max turns — Pipeline</span>
           <input
             className="settings-field__input"
             type="number"
             min={1}
             max={10000}
             value={maxTurns}
-            onChange={(e) => {
-              setMaxTurns(Number(e.target.value))
-              markDirty()
-            }}
+            onChange={(e) => { setMaxTurns(Number(e.target.value)); markDirty() }}
+          />
+        </label>
+
+        <label className="settings-field">
+          <span className="settings-field__label">Max turns — Adhoc / Assistant</span>
+          <input
+            className="settings-field__input"
+            type="number"
+            min={1}
+            max={10000}
+            value={maxTurnsAdhoc}
+            onChange={(e) => { setMaxTurnsAdhoc(Number(e.target.value)); markDirty() }}
+          />
+        </label>
+
+        <label className="settings-field">
+          <span className="settings-field__label">Max turns — Reviewer</span>
+          <input
+            className="settings-field__input"
+            type="number"
+            min={1}
+            max={10000}
+            value={maxTurnsReviewer}
+            onChange={(e) => { setMaxTurnsReviewer(Number(e.target.value)); markDirty() }}
+          />
+        </label>
+
+        <label className="settings-field">
+          <span className="settings-field__label">Max turns — Copilot</span>
+          <input
+            className="settings-field__input"
+            type="number"
+            min={1}
+            max={10000}
+            value={maxTurnsCopilot}
+            onChange={(e) => { setMaxTurnsCopilot(Number(e.target.value)); markDirty() }}
           />
           <span
             className="settings-field__hint"
             style={{ fontSize: '11px', opacity: 0.7, marginTop: '4px', display: 'block', lineHeight: 1.4 }}
           >
-            Maximum SDK turns a pipeline agent may use before being aborted. Default: 1000. Applies
-            to newly spawned agents — in-flight agents are not affected.
+            Turn limits per agent type. Default: 1000. Changes apply to newly spawned agents.
           </span>
         </label>
 

@@ -26,6 +26,10 @@ vi.mock('../data/agent-queries', () => ({
 vi.mock('../db', () => ({
   getDb: vi.fn(() => ({}))
 }))
+vi.mock('../settings', () => ({
+  getSettingJson: vi.fn(() => undefined),
+  getSetting: vi.fn(() => undefined)
+}))
 // Mock `paths` so the worktree-isolation hook doesn't hit the settings DB
 // while building the blocked-prefix list. Tests own the repo path value so
 // the isolation hook sees a deterministic main-repo set to refuse writes to.

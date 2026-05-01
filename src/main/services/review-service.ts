@@ -5,6 +5,7 @@ import type { Logger } from '../logger'
 import type { SdkStreamingOptions } from '../sdk-streaming'
 import type { AgentBackendConfig } from '../agent-manager/backend-selector'
 import { buildAgentPrompt } from '../lib/prompt-composer'
+import { getSettingJson } from '../settings'
 import { parseReviewResponse, MalformedReviewError } from './review-response-parser'
 import type { ParsedReview } from './review-response-parser'
 
@@ -100,7 +101,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
       try {
         raw = await runSdkOnce(prompt, {
           model: reviewerModel,
-          maxTurns: 1000,
+          maxTurns: getSettingJson<number>('agentManager.maxTurnsReviewer') ?? 1000,
           tools: [],
           // Reviewer generates opinions, not code. CLAUDE.md implementation
           // guidelines are irrelevant and waste ~5-10KB per review call.

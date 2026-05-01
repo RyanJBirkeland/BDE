@@ -3,6 +3,7 @@
  */
 import { buildAgentPrompt } from '../lib/prompt-composer'
 import type { SdkStreamingOptions } from '../sdk-streaming'
+import { getSettingJson } from '../settings'
 
 /**
  * Read-only tools the copilot may use against the target repo.
@@ -75,7 +76,7 @@ export function getCopilotSdkOptions(
     cwd: repoPath,
     tools: [...COPILOT_ALLOWED_TOOLS],
     disallowedTools: [...COPILOT_DISALLOWED_TOOLS],
-    maxTurns: COPILOT_MAX_TURNS,
+    maxTurns: getSettingJson<number>('agentManager.maxTurnsCopilot') ?? COPILOT_MAX_TURNS,
     maxBudgetUsd: COPILOT_MAX_BUDGET_USD,
     model,
     // Spec-drafting agents skip CLAUDE.md — they receive FLEET conventions via
