@@ -25,6 +25,10 @@ vi.mock('../../env-utils', () => ({
   buildAgentEnv: vi.fn().mockReturnValue({})
 }))
 
+vi.mock('../../lib/default-branch', () => ({
+  resolveDefaultBranch: vi.fn().mockResolvedValue('main')
+}))
+
 import { execFile } from 'node:child_process'
 import { failTaskIfNoCommitsAheadOfMain } from '../resolve-success-phases'
 import { NO_COMMITS_NOTE } from '../failure-messages'

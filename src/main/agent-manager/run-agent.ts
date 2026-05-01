@@ -12,6 +12,7 @@ import { cleanupWorktree } from './worktree'
 import { resolveSuccess, resolveFailure, deleteAgentBranchBeforeRetry } from './completion'
 import { getMainRepoPorcelainStatus } from '../lib/main-repo-guards'
 import { execFileAsync } from '../lib/async-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { buildAgentEnv } from '../env-utils'
 import { GIT_EXEC_TIMEOUT_MS } from './worktree-lifecycle'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
@@ -154,7 +155,10 @@ export interface RunAgentFastFailDeps {
  * Full dependency bag for runAgent(). Composed via intersection so callers
  * that only consume a sub-set can depend on the narrower interface.
  */
-export type RunAgentDeps = RunAgentSpawnDeps & RunAgentDataDeps & RunAgentEventDeps & RunAgentFastFailDeps
+export type RunAgentDeps = RunAgentSpawnDeps &
+  RunAgentDataDeps &
+  RunAgentEventDeps &
+  RunAgentFastFailDeps
 
 // Re-export functions consumed by external callers and tests
 export {
@@ -387,10 +391,7 @@ async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void
   await ctx.onTaskTerminal(ctx.task.id, 'queued')
 }
 
-type SpecFileCheckResult =
-  | { kind: 'skip' }
-  | { kind: 'ok' }
-  | { kind: 'missing'; files: string[] }
+type SpecFileCheckResult = { kind: 'skip' } | { kind: 'ok' } | { kind: 'missing'; files: string[] }
 
 /**
  * Checks that all files listed in the spec's `## Files to Change` section
@@ -419,12 +420,16 @@ async function detectMissingSpecFiles(
   let diffOutput: string
   try {
     const env = buildAgentEnv()
-    // TODO: use configured default branch instead of hardcoded 'main' (T-10)
-    const { stdout } = await execFileAsync('git', ['diff', '--name-only', 'main..HEAD'], {
-      cwd: worktreePath,
-      env,
-      timeout: GIT_EXEC_TIMEOUT_MS
-    })
+    const defaultBranch = await resolveDefaultBranch(worktreePath)
+    const { stdout } = await execFileAsync(
+      'git',
+      ['diff', '--name-only', `${defaultBranch}..HEAD`],
+      {
+        cwd: worktreePath,
+        env,
+        timeout: GIT_EXEC_TIMEOUT_MS
+      }
+    )
     diffOutput = stdout
   } catch (err) {
     // If the diff command fails (e.g. no commits yet), let the existing
@@ -566,7 +571,9 @@ export async function cleanupOrPreserveWorktree(
   try {
     currentTask = repo.getTask(task.id)
   } catch (err) {
-    logger.warn(`[run-agent] could not read task status for ${task.id}, preserving worktree: ${err}`)
+    logger.warn(
+      `[run-agent] could not read task status for ${task.id}, preserving worktree: ${err}`
+    )
     return
   }
 
@@ -733,7 +740,9 @@ async function abortPhaseUnexpectedly(
       caller: `run-agent.${phase}.unexpected-abort`
     })
   } catch (updateErr) {
-    deps.logger.warn(`[run-agent] failed to release claim for ${taskId} after ${phase} abort: ${updateErr}`)
+    deps.logger.warn(
+      `[run-agent] failed to release claim for ${taskId} after ${phase} abort: ${updateErr}`
+    )
   }
 }
 
@@ -831,10 +840,15 @@ async function runSetupPhase(
   repoPath: string,
   deps: RunAgentDeps
 ): Promise<string | null> {
-  return runPhaseOrAbort(task.id, 'setup', async () => {
-    await validateTaskForRun(task, worktree, repoPath, deps)
-    return assembleRunContext(task, worktree, deps)
-  }, deps)
+  return runPhaseOrAbort(
+    task.id,
+    'setup',
+    async () => {
+      await validateTaskForRun(task, worktree, repoPath, deps)
+      return assembleRunContext(task, worktree, deps)
+    },
+    deps
+  )
 }
 
 /**
@@ -885,8 +899,12 @@ async function runSpawnPhase(
   effectiveModel: string,
   deps: RunAgentDeps
 ): Promise<SpawnPhaseResult | null> {
-  return runPhaseOrAbort(task.id, 'spawn', () =>
-    spawnAndWireAgent(task, prompt, worktree, repoPath, effectiveModel, deps), deps)
+  return runPhaseOrAbort(
+    task.id,
+    'spawn',
+    () => spawnAndWireAgent(task, prompt, worktree, repoPath, effectiveModel, deps),
+    deps
+  )
 }
 
 export async function runAgent(

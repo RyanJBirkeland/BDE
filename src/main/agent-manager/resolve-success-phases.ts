@@ -23,6 +23,7 @@ import type { AgentEvent } from '../../shared/types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { nowIso } from '../../shared/time'
 import { rebaseOntoMain, autoCommitIfDirty } from '../lib/git-operations'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { GIT_EXEC_TIMEOUT_MS } from './worktree-lifecycle'
 import { transitionToReview } from './review-transition'
 import type { SprintTask } from '../../shared/types/task-types'
@@ -343,10 +344,7 @@ interface CommitCheckContext {
   logger: Logger
   onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
   taskStateService: TaskStateService
-  resolveFailure: (
-    opts: ResolveFailureContext,
-    logger?: Logger
-  ) => Promise<ResolveFailureResult>
+  resolveFailure: (opts: ResolveFailureContext, logger?: Logger) => Promise<ResolveFailureResult>
 }
 
 /**
@@ -362,8 +360,16 @@ async function logUncommittedWorktreeState(
   const env = buildAgentEnv()
   try {
     const [{ stdout: diff }, { stdout: status }] = await Promise.all([
-      execFileAsync('git', ['diff', 'HEAD'], { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }),
-      execFileAsync('git', ['status', '--porcelain'], { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS })
+      execFileAsync('git', ['diff', 'HEAD'], {
+        cwd: worktreePath,
+        env,
+        timeout: GIT_EXEC_TIMEOUT_MS
+      }),
+      execFileAsync('git', ['status', '--porcelain'], {
+        cwd: worktreePath,
+        env,
+        timeout: GIT_EXEC_TIMEOUT_MS
+      })
     ])
     logger.warn(
       `[completion] Task ${taskId}: no-commits — uncommitted status:\n${status.trim() || '(empty)'}`
@@ -379,14 +385,16 @@ async function logUncommittedWorktreeState(
 }
 
 /**
- * Verify the agent branch has commits ahead of origin/main.
+ * Verify the agent branch has commits ahead of the repo's default branch.
  * When zero commits exist: logs the worktree state, emits structured events,
  * and routes the task to failure or retry. When commits exist: returns normally.
  *
  * Returns `{ committed: true }` when commits are present (pipeline continues).
  * Returns `{ committed: false }` when no commits exist and failure handling ran.
  */
-export async function failTaskIfNoCommitsAheadOfMain(opts: CommitCheckContext): Promise<{ committed: boolean }> {
+export async function failTaskIfNoCommitsAheadOfMain(
+  opts: CommitCheckContext
+): Promise<{ committed: boolean }> {
   const {
     taskId,
     branch,
@@ -400,10 +408,11 @@ export async function failTaskIfNoCommitsAheadOfMain(opts: CommitCheckContext): 
     resolveFailure
   } = opts
   const env = buildAgentEnv()
+  const defaultBranch = await resolveDefaultBranch(worktreePath)
   try {
     const { stdout: diffOut } = await execFileAsync(
       'git',
-      ['rev-list', '--count', `origin/main..${branch}`],
+      ['rev-list', '--count', `origin/${defaultBranch}..${branch}`],
       { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }
     )
     if (parseInt(diffOut.trim(), 10) === 0) {
@@ -415,11 +424,21 @@ export async function failTaskIfNoCommitsAheadOfMain(opts: CommitCheckContext): 
         : NO_COMMITS_NOTE
 
       if (retryCount >= MAX_NO_COMMITS_RETRIES) {
-        await failTaskExhaustedNoCommits(taskId, branch, repo, logger, onTaskTerminal, taskStateService)
+        await failTaskExhaustedNoCommits(
+          taskId,
+          branch,
+          repo,
+          logger,
+          onTaskTerminal,
+          taskStateService
+        )
         return { committed: false }
       }
 
-      const failureResult = await resolveFailure({ taskId, retryCount, notes: summaryNote, repo, taskStateService }, logger)
+      const failureResult = await resolveFailure(
+        { taskId, retryCount, notes: summaryNote, repo, taskStateService },
+        logger
+      )
       if (failureResult.writeFailed) {
         logger.warn(
           `[completion] Task ${taskId}: no-commits failure DB write failed — skipping terminal notification`

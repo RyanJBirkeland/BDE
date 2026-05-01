@@ -15,6 +15,7 @@
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileAsync } from '../lib/async-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import type { Logger } from '../logger'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import type { ReviewActionPlan, GitOpDescriptor } from './review-action-policy'
@@ -105,14 +106,15 @@ async function executeGitOp(
     // ========================================================================
     case 'checkBranch': {
       if (!op.repoPath) throw new Error('repoPath required for checkBranch')
+      const defaultBranch = await resolveDefaultBranch(op.repoPath)
       const { stdout } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
         cwd: op.repoPath,
         env
       })
       const currentBranch = stdout.trim()
-      if (currentBranch !== 'main') {
+      if (currentBranch !== defaultBranch) {
         throw new Error(
-          `Main repo checkout is on branch "${currentBranch}", not "main". Switch to main before shipping.`
+          `Main repo checkout is on branch "${currentBranch}", not "${defaultBranch}". Switch to ${defaultBranch} before shipping.`
         )
       }
       return state
@@ -123,8 +125,9 @@ async function executeGitOp(
     // ========================================================================
     case 'fetch': {
       if (!op.repoPath) throw new Error('repoPath required for fetch')
-      logger.info('[executor] Fetching origin/main')
-      await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: op.repoPath, env })
+      const defaultBranch = await resolveDefaultBranch(op.repoPath)
+      logger.info(`[executor] Fetching origin/${defaultBranch}`)
+      await execFileAsync('git', ['fetch', 'origin', defaultBranch], { cwd: op.repoPath, env })
       return state
     }
 
@@ -133,11 +136,15 @@ async function executeGitOp(
     // ========================================================================
     case 'fastForward': {
       if (!op.repoPath) throw new Error('repoPath required for fastForward')
-      logger.info('[executor] Fast-forwarding local main to origin/main')
+      const defaultBranch = await resolveDefaultBranch(op.repoPath)
+      const upstream = `origin/${defaultBranch}`
+      logger.info(`[executor] Fast-forwarding local ${defaultBranch} to ${upstream}`)
       try {
-        await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], { cwd: op.repoPath, env })
+        await execFileAsync('git', ['merge', '--ff-only', upstream], { cwd: op.repoPath, env })
       } catch (err: unknown) {
-        throw new Error(`Failed to sync local main with origin: ${getErrorMessage(err)}`)
+        throw new Error(
+          `Failed to sync local ${defaultBranch} with origin: ${getErrorMessage(err)}`
+        )
       }
       return state
     }

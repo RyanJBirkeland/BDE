@@ -14,6 +14,7 @@
 import { existsSync } from 'node:fs'
 import { basename, dirname, extname, join } from 'node:path'
 import { execFileAsync } from '../lib/async-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import type { Logger } from '../logger'
 
 /** File extensions whose changed files warrant a sibling-test lookup. */
@@ -62,8 +63,9 @@ export function detectUntouchedTests(
 const GIT_EXEC_TIMEOUT_MS = 30_000
 
 /**
- * Runs `git diff --name-only origin/main..<agentBranch>` inside the worktree
- * and returns the list of files the agent changed relative to origin/main.
+ * Runs `git diff --name-only origin/<default>..<agentBranch>` inside the worktree
+ * and returns the list of files the agent changed relative to the repo's default
+ * branch.
  */
 export async function listChangedFiles(
   agentBranch: string,
@@ -71,13 +73,18 @@ export async function listChangedFiles(
   env: NodeJS.ProcessEnv,
   deps: TestTouchCheckDeps = {}
 ): Promise<string[]> {
-  const exec = deps.execFile ?? execFileAsync
+  const runCommand = deps.execFile ?? execFileAsync
+  const defaultBranch = await resolveDefaultBranch(worktreePath)
   try {
-    const { stdout } = await exec('git', ['diff', '--name-only', `origin/main..${agentBranch}`], {
-      cwd: worktreePath,
-      env,
-      timeout: GIT_EXEC_TIMEOUT_MS
-    })
+    const { stdout } = await runCommand(
+      'git',
+      ['diff', '--name-only', `origin/${defaultBranch}..${agentBranch}`],
+      {
+        cwd: worktreePath,
+        env,
+        timeout: GIT_EXEC_TIMEOUT_MS
+      }
+    )
     return stdout
       .split('\n')
       .map((line) => line.trim())

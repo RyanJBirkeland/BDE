@@ -4,6 +4,7 @@ import path from 'node:path'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { assertRepoCleanOrAbort } from '../lib/main-repo-guards'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { BRANCH_SLUG_MAX_LENGTH, GIT_FETCH_TIMEOUT_MS, GIT_FF_MERGE_TIMEOUT_MS } from './types'
 import { createLogger, type Logger } from '../logger'
 
@@ -260,13 +261,14 @@ export async function setupWorktree(
     // handles locking on its own packed-refs / fetch-head writes. Holding our
     // own lock through 30s of network I/O fully serialized worktree setup
     // for multiple agents on the same repo (10 tasks → 5+ minute startup).
+    const defaultBranch = await resolveDefaultBranch(repoPath)
     try {
       await fetchMain(repoPath, env, log, GIT_FETCH_TIMEOUT_MS)
-      log.info(`[worktree] Fetched origin/main for task ${taskId}`)
+      log.info(`[worktree] Fetched origin/${defaultBranch} for task ${taskId}`)
     } catch (err) {
       // Non-fatal — proceed with whatever local HEAD we have
       const stderr = err instanceof Error ? err.message : String(err)
-      log.warn(`[worktree] Failed to fetch origin/main (proceeding anyway): ${stderr}`)
+      log.warn(`[worktree] Failed to fetch origin/${defaultBranch} (proceeding anyway): ${stderr}`)
       appendToNotes?.(`[worktree] fetchMain failed: ${stderr}`)
     }
 
@@ -297,15 +299,17 @@ export async function setupWorktree(
           { cwd: repoPath, env }
         )
         const currentBranch = branchOut.trim()
-        if (currentBranch !== 'main') {
+        if (currentBranch !== defaultBranch) {
           log.warn(
-            `[worktree] Main repo is on branch "${currentBranch}", not "main" — skipping ff-merge to avoid corrupting unrelated branch`
+            `[worktree] Main repo is on branch "${currentBranch}", not "${defaultBranch}" — skipping ff-merge to avoid corrupting unrelated branch`
           )
         } else {
           await ffMergeMain(repoPath, env, log, GIT_FF_MERGE_TIMEOUT_MS)
         }
       } catch (err) {
-        log.warn(`[worktree] Failed to ff-merge origin/main (proceeding anyway): ${err}`)
+        log.warn(
+          `[worktree] Failed to ff-merge origin/${defaultBranch} (proceeding anyway): ${err}`
+        )
       }
       await assertRepoCleanOrAbort(repoPath, env, log, 'post-ffMergeMain')
 

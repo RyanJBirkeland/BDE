@@ -1,4 +1,5 @@
 import { execFileAsync } from '../lib/async-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { evaluateAutoReviewRules } from './auto-review'
 import type { AutoReviewRule } from '../../shared/types'
 
@@ -36,10 +37,11 @@ export async function checkAutoReview(
   params: CheckAutoReviewParams
 ): Promise<CheckAutoReviewResult> {
   const { worktreePath, rules, env } = params
+  const defaultBranch = await resolveDefaultBranch(worktreePath)
 
   const { stdout: numstatOut } = await execFileAsync(
     'git',
-    ['diff', '--numstat', 'origin/main...HEAD'],
+    ['diff', '--numstat', `origin/${defaultBranch}...HEAD`],
     { cwd: worktreePath, env }
   )
 

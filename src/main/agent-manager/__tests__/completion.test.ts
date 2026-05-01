@@ -30,6 +30,12 @@ vi.mock('../../broadcast', () => ({
   broadcastCoalesced: vi.fn()
 }))
 
+// Stub default-branch detection so tests don't need to mock the additional
+// `git symbolic-ref` call that resolveDefaultBranch now performs.
+vi.mock('../../lib/default-branch', () => ({
+  resolveDefaultBranch: vi.fn().mockResolvedValue('main')
+}))
+
 import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'

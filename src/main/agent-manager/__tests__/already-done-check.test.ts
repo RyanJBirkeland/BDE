@@ -26,6 +26,10 @@ vi.mock('../../lib/async-utils', async (importOriginal) => {
   }
 })
 
+vi.mock('../../lib/default-branch', () => ({
+  resolveDefaultBranch: vi.fn().mockResolvedValue('main')
+}))
+
 vi.mock('../../env-utils', () => ({
   buildAgentEnv: vi.fn().mockReturnValue({})
 }))

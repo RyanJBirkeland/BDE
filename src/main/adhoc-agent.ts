@@ -29,6 +29,7 @@ import { importAgent, updateAgentMeta, getAgentMeta } from './agent-history'
 import { ADHOC_WORKTREE_BASE, getRepoPaths } from './paths'
 import { updateAgentRunCost } from './data/agent-queries'
 import { execFileAsync } from './lib/async-utils'
+import { resolveDefaultBranch } from './lib/default-branch'
 import { buildAgentEnvWithAuth, getClaudeCliPath, refreshOAuthTokenFromKeychain } from './env-utils'
 import { getSettingJson } from './settings'
 import { mapRawMessage, emitAgentEvent } from './agent-event-mapper'
@@ -232,10 +233,7 @@ export async function spawnAdhocAgent(args: {
     // opencode is an external process so it can only reach MCP tools over HTTP;
     // this ephemeral server gives it the same mcp__fleet__tasks/epics/meta tools
     // without routing through the persistent external server (port 18792).
-    const sessionMcp = await startOpencodeSessionMcp(
-      createEpicGroupService(),
-      log
-    )
+    const sessionMcp = await startOpencodeSessionMcp(createEpicGroupService(), log)
     await writeOpencodeWorktreeConfig(worktreePath, sessionMcp.url, sessionMcp.token)
 
     adhocSessions.set(meta.id, {
@@ -284,12 +282,18 @@ export async function spawnAdhocAgent(args: {
           (err) => log.warn(`[adhoc] ${meta.id} failed to update meta: ${getErrorMessage(err)}`)
         )
         adhocSessions.delete(meta.id)
-        sessionMcp.close().catch(
-          (err) => log.warn(`[adhoc] ${meta.id} failed to stop session MCP server: ${getErrorMessage(err)}`)
+        sessionMcp
+          .close()
+          .catch((err) =>
+            log.warn(
+              `[adhoc] ${meta.id} failed to stop session MCP server: ${getErrorMessage(err)}`
+            )
+          )
+        log.info(
+          `[adhoc] ${meta.id} opencode session completed after ${Math.round(durationMs / 1000)}s`
         )
-        log.info(`[adhoc] ${meta.id} opencode session completed after ${Math.round(durationMs / 1000)}s`)
-        autoPromoteToReview().catch(
-          (err) => log.warn(`[adhoc] ${meta.id} auto-promote failed: ${getErrorMessage(err)}`)
+        autoPromoteToReview().catch((err) =>
+          log.warn(`[adhoc] ${meta.id} auto-promote failed: ${getErrorMessage(err)}`)
         )
       }
     })
@@ -319,7 +323,8 @@ export async function spawnAdhocAgent(args: {
           timestamp: Date.now()
         })
         updateAgentMeta(meta.id, { status: 'done', finishedAt: nowIso(), exitCode: 1 }).catch(
-          (updateErr) => log.warn(`[adhoc] ${meta.id} failed to update meta: ${getErrorMessage(updateErr)}`)
+          (updateErr) =>
+            log.warn(`[adhoc] ${meta.id} failed to update meta: ${getErrorMessage(updateErr)}`)
         )
         adhocSessions.delete(meta.id)
       })
@@ -529,14 +534,15 @@ export async function spawnAdhocAgent(args: {
 
     const env = buildAgentEnvWithAuth()
     try {
+      const defaultBranch = await resolveDefaultBranch(worktreePath)
       const { stdout } = await execFileAsync(
         'git',
-        ['rev-list', '--count', `origin/main..${branch}`],
+        ['rev-list', '--count', `origin/${defaultBranch}..${branch}`],
         { cwd: worktreePath, env: env as Record<string, string> }
       )
       const commitCount = parseInt(stdout.trim(), 10)
       if (!Number.isFinite(commitCount) || commitCount === 0) {
-        log.info(`[adhoc] ${meta.id} no commits beyond main — skipping auto-promote`)
+        log.info(`[adhoc] ${meta.id} no commits beyond ${defaultBranch} — skipping auto-promote`)
         return
       }
     } catch (err) {

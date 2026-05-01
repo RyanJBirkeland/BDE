@@ -11,15 +11,16 @@ import { nowIso } from '../../shared/time'
 import type { TaskStateService } from '../services/task-state-service'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { notifySprintMutation } from '../services/sprint-mutation-broadcaster'
 
 /** Hard timeout for git subprocess calls in the review transition. */
 const GIT_EXEC_TIMEOUT_MS = 30_000
 
 /**
- * Counts commits on the agent's branch ahead of `origin/main`. Returns
- * `undefined` when the count cannot be obtained — the caller should treat
- * that as "diagnostic-only data missing" and proceed.
+ * Counts commits on the agent's branch ahead of the repo's default branch.
+ * Returns `undefined` when the count cannot be obtained — the caller should
+ * treat that as "diagnostic-only data missing" and proceed.
  */
 async function countCommitsAheadOfMain(
   worktreePath: string,
@@ -27,9 +28,10 @@ async function countCommitsAheadOfMain(
 ): Promise<number | undefined> {
   try {
     const env = buildAgentEnv()
+    const defaultBranch = await resolveDefaultBranch(worktreePath)
     const { stdout } = await execFileAsync(
       'git',
-      ['rev-list', '--count', 'origin/main..HEAD'],
+      ['rev-list', '--count', `origin/${defaultBranch}..HEAD`],
       { cwd: worktreePath, env, timeout: GIT_EXEC_TIMEOUT_MS }
     )
     const parsed = parseInt(stdout.trim(), 10)
@@ -87,7 +89,8 @@ export async function transitionToReview(opts: TransitionToReviewOpts): Promise<
 
   let diffSnapshotJson: string | null = null
   try {
-    const snapshot = await captureDiffSnapshot(worktreePath, 'origin/main', logger)
+    const defaultBranch = await resolveDefaultBranch(worktreePath)
+    const snapshot = await captureDiffSnapshot(worktreePath, `origin/${defaultBranch}`, logger)
     if (snapshot) {
       diffSnapshotJson = JSON.stringify(snapshot)
     }
@@ -122,7 +125,9 @@ export async function transitionToReview(opts: TransitionToReviewOpts): Promise<
         caller: 'review-transition.fallback'
       })
     } catch (fallbackErr) {
-      logger.error(`[completion] Fallback failed transition also failed for task ${taskId}: ${fallbackErr}`)
+      logger.error(
+        `[completion] Fallback failed transition also failed for task ${taskId}: ${fallbackErr}`
+      )
     }
   }
 }

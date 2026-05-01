@@ -8,6 +8,10 @@ vi.mock('../../lib/async-utils', () => ({
   execFileAsync: vi.fn()
 }))
 
+vi.mock('../../lib/default-branch', () => ({
+  resolveDefaultBranch: vi.fn().mockResolvedValue('main')
+}))
+
 vi.mock('../../env-utils', () => ({
   buildAgentEnv: vi.fn().mockReturnValue({})
 }))

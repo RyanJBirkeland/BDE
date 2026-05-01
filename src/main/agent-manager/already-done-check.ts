@@ -26,6 +26,7 @@
  */
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import type { Logger } from '../logger'
 import { GIT_FETCH_TIMEOUT_MS } from './types'
 
@@ -103,9 +104,10 @@ export async function taskHasMatchingCommitOnMain(
 }
 
 /**
- * Reads the last COMMIT_SCAN_DEPTH commits on origin/main as structured records.
- * Results are cached per `repoPath` for `ALREADY_DONE_CACHE_TTL_MS` to collapse
- * back-to-back per-task lookups within a single drain tick into one git call.
+ * Reads the last COMMIT_SCAN_DEPTH commits on the repo's default branch as
+ * structured records. Results are cached per `repoPath` for
+ * `ALREADY_DONE_CACHE_TTL_MS` to collapse back-to-back per-task lookups within
+ * a single drain tick into one git call.
  *
  * Returns an empty list (not null) on any git failure so the drain loop can
  * proceed rather than block on a transient repo problem. Failures are not
@@ -116,11 +118,17 @@ async function loadRecentCommits(repoPath: string, logger: Logger): Promise<Comm
   if (cached) return cached
 
   try {
+    const defaultBranch = await resolveDefaultBranch(repoPath)
     const format = `%H${COMMIT_FIELD_SEPARATOR}%s${COMMIT_FIELD_SEPARATOR}%b${COMMIT_RECORD_SEPARATOR}`
     const { stdout } = await execFileAsync(
       'git',
-      ['log', 'origin/main', `--format=${format}`, '-n', String(COMMIT_SCAN_DEPTH)],
-      { cwd: repoPath, env: buildAgentEnv(), maxBuffer: GIT_LOG_MAX_BUFFER_BYTES, timeout: GIT_FETCH_TIMEOUT_MS }
+      ['log', `origin/${defaultBranch}`, `--format=${format}`, '-n', String(COMMIT_SCAN_DEPTH)],
+      {
+        cwd: repoPath,
+        env: buildAgentEnv(),
+        maxBuffer: GIT_LOG_MAX_BUFFER_BYTES,
+        timeout: GIT_FETCH_TIMEOUT_MS
+      }
     )
     const commits = parseCommitRecords(stdout)
     writeToCache(repoPath, commits)

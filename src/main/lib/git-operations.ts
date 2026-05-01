@@ -12,6 +12,7 @@ import { getErrorMessage } from '../../shared/errors'
 import { sanitizeForGit } from '../agent-manager/pr-operations'
 import { cleanupWorktreeAndBranch } from '../agent-manager/worktree-lifecycle'
 import { getMainRepoPorcelainStatus } from './main-repo-guards'
+import { resolveDefaultBranch } from './default-branch'
 
 // Re-export PR operations for backward compatibility
 export {
@@ -40,36 +41,39 @@ export {
 const GIT_ARTIFACT_PATTERNS = ['test-results/', 'coverage/', '*.log', 'playwright-report/'] as const
 
 /**
- * Rebase the agent's branch onto origin/main to ensure it's up-to-date.
- * Returns { success: true, baseSha } if rebase succeeds, { success: false, notes: string } if it fails.
+ * Rebase the agent's branch onto the repo's default branch (origin/<default>) to
+ * ensure it's up-to-date. Returns { success: true, baseSha } on success,
+ * { success: false, notes } on failure.
  */
 export async function rebaseOntoMain(
   worktreePath: string,
   env: NodeJS.ProcessEnv,
   logger: Logger
 ): Promise<{ success: boolean; notes?: string; baseSha?: string }> {
+  const defaultBranch = await resolveDefaultBranch(worktreePath)
+  const upstream = `origin/${defaultBranch}`
   try {
-    logger.info(`[git-ops] fetching origin/main for rebase`)
-    await execFileAsync('git', ['fetch', 'origin', 'main'], {
+    logger.info(`[git-ops] fetching ${upstream} for rebase`)
+    await execFileAsync('git', ['fetch', 'origin', defaultBranch], {
       cwd: worktreePath,
       env
     })
 
-    logger.info(`[git-ops] rebasing onto origin/main`)
-    await execFileAsync('git', ['rebase', 'origin/main'], {
+    logger.info(`[git-ops] rebasing onto ${upstream}`)
+    await execFileAsync('git', ['rebase', upstream], {
       cwd: worktreePath,
       env
     })
 
-    const { stdout: shaOut } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
+    const { stdout: shaOut } = await execFileAsync('git', ['rev-parse', upstream], {
       cwd: worktreePath,
       env
     })
 
-    logger.info(`[git-ops] rebase onto main succeeded`)
+    logger.info(`[git-ops] rebase onto ${defaultBranch} succeeded`)
     return { success: true, baseSha: shaOut.trim() }
   } catch (err) {
-    logger.warn(`[git-ops] rebase onto main failed: ${err}`)
+    logger.warn(`[git-ops] rebase onto ${defaultBranch} failed: ${err}`)
     try {
       await execFileAsync('git', ['rebase', '--abort'], {
         cwd: worktreePath,
@@ -82,7 +86,7 @@ export async function rebaseOntoMain(
 
     return {
       success: false,
-      notes: 'Rebase onto main failed — manual conflict resolution needed.'
+      notes: `Rebase onto ${defaultBranch} failed — manual conflict resolution needed.`
     }
   }
 }
@@ -109,7 +113,7 @@ export async function pushBranch(
 }
 
 /**
- * Fetch origin/main with optional timeout.
+ * Fetch the repo's default branch (origin/<default>) with optional timeout.
  */
 export async function fetchMain(
   repoPath: string,
@@ -117,16 +121,17 @@ export async function fetchMain(
   logger: Logger,
   timeoutMs = 30000
 ): Promise<void> {
-  await execFileAsync('git', ['fetch', 'origin', 'main', '--no-tags'], {
+  const defaultBranch = await resolveDefaultBranch(repoPath)
+  await execFileAsync('git', ['fetch', 'origin', defaultBranch, '--no-tags'], {
     cwd: repoPath,
     env,
     timeout: timeoutMs
   })
-  logger.info(`[git-ops] Fetched origin/main`)
+  logger.info(`[git-ops] Fetched origin/${defaultBranch}`)
 }
 
 /**
- * Fast-forward merge origin/main into current branch.
+ * Fast-forward merge origin/<default-branch> into current branch.
  */
 export async function ffMergeMain(
   repoPath: string,
@@ -134,12 +139,13 @@ export async function ffMergeMain(
   logger: Logger,
   timeoutMs = 10000
 ): Promise<void> {
-  await execFileAsync('git', ['merge', '--ff-only', 'origin/main'], {
+  const defaultBranch = await resolveDefaultBranch(repoPath)
+  await execFileAsync('git', ['merge', '--ff-only', `origin/${defaultBranch}`], {
     cwd: repoPath,
     env,
     timeout: timeoutMs
   })
-  logger.info(`[git-ops] Fast-forward merged origin/main`)
+  logger.info(`[git-ops] Fast-forward merged origin/${defaultBranch}`)
 }
 
 /**

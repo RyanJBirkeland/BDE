@@ -7,6 +7,7 @@
 import type { Logger } from '../logger'
 import { execFileAsync, sleep } from '../lib/async-utils'
 import { validateGitRef } from '../lib/review-paths'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { getDefaultCredentialService } from '../services/credential-service'
 
 /**
@@ -47,11 +48,13 @@ export async function generatePrBody(
 ): Promise<string> {
   validateGitRef(branch)
   const sections: string[] = []
+  const defaultBranch = await resolveDefaultBranch(worktreePath)
+  const baseRef = `origin/${defaultBranch}`
 
   try {
     const { stdout: log } = await execFileAsync(
       'git',
-      ['log', '--oneline', `origin/main..${branch}`],
+      ['log', '--oneline', `${baseRef}..${branch}`],
       {
         cwd: worktreePath,
         env
@@ -74,7 +77,7 @@ export async function generatePrBody(
   try {
     const { stdout: stat } = await execFileAsync(
       'git',
-      ['diff', '--stat', `origin/main..${branch}`],
+      ['diff', '--stat', `${baseRef}..${branch}`],
       {
         cwd: worktreePath,
         env

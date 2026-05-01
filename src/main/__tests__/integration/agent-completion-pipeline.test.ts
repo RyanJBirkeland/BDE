@@ -45,6 +45,10 @@ vi.mock('../../env-utils', () => ({
   buildAgentEnv: vi.fn(() => ({ ...process.env }))
 }))
 
+vi.mock('../../lib/default-branch', () => ({
+  resolveDefaultBranch: vi.fn().mockResolvedValue('main')
+}))
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------

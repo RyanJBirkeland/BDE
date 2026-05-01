@@ -1,6 +1,7 @@
 import type { AutoReviewRule } from '../../shared/types/task-types'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { evaluateAutoReviewRules } from '../services/auto-review'
 
 /**
@@ -36,9 +37,10 @@ async function getDiffFileStats(
   worktreePath: string
 ): Promise<Array<{ path: string; additions: number; deletions: number }> | null> {
   const env = buildAgentEnv()
+  const defaultBranch = await resolveDefaultBranch(worktreePath)
   const { stdout: numstatOut } = await execFileAsync(
     'git',
-    ['diff', '--numstat', 'origin/main...HEAD'],
+    ['diff', '--numstat', `origin/${defaultBranch}...HEAD`],
     { cwd: worktreePath, env }
   )
 

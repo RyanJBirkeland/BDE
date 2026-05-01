@@ -10,6 +10,7 @@
  * old setter-based API (`setReviewOrchestrationRepo`) has been removed.
  */
 import { execFileAsync } from '../lib/async-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { buildAgentEnv } from '../env-utils'
 import { createLogger } from '../logger'
 import { classifyReviewAction } from './review-action-policy'
@@ -166,7 +167,10 @@ export function createReviewOrchestrationService(
   function makeBroadcast(): (event: string, payload: unknown) => void {
     return (event, payload) => {
       if (event !== 'sprint:mutation' || typeof payload !== 'object' || payload === null) return
-      const { type, task } = payload as { type: 'created' | 'updated' | 'deleted'; task: SprintTask }
+      const { type, task } = payload as {
+        type: 'created' | 'updated' | 'deleted'
+        task: SprintTask
+      }
       notifySprintMutation(type, task)
     }
   }
@@ -188,7 +192,10 @@ export function createReviewOrchestrationService(
 
   async function executePrCreation(
     taskId: string,
-    task: Pick<SprintTask, 'id' | 'title' | 'repo' | 'worktree_path' | 'spec' | 'notes' | 'agent_run_id'>,
+    task: Pick<
+      SprintTask,
+      'id' | 'title' | 'repo' | 'worktree_path' | 'spec' | 'notes' | 'agent_run_id'
+    >,
     title: string,
     body: string,
     env: NodeJS.ProcessEnv
@@ -231,7 +238,10 @@ export function createReviewOrchestrationService(
 
   async function executeRebaseAction(
     taskId: string,
-    task: Pick<SprintTask, 'id' | 'title' | 'repo' | 'worktree_path' | 'spec' | 'notes' | 'agent_run_id'>,
+    task: Pick<
+      SprintTask,
+      'id' | 'title' | 'repo' | 'worktree_path' | 'spec' | 'notes' | 'agent_run_id'
+    >,
     env: NodeJS.ProcessEnv
   ): Promise<ReturnType<typeof executeReviewAction>> {
     const state = await executeReviewAction(
@@ -330,7 +340,11 @@ export function createReviewOrchestrationService(
   async function mergeLocally(i: MergeLocallyInput): Promise<MergeLocallyResult> {
     const op = buildReviewGitOpPlan({ action: 'mergeLocally', strategy: i.strategy })
     try {
-      await executeReviewGitOp(op, { taskId: i.taskId, env: i.env, onStatusTerminal: i.onStatusTerminal })
+      await executeReviewGitOp(op, {
+        taskId: i.taskId,
+        env: i.env,
+        onStatusTerminal: i.onStatusTerminal
+      })
       return { success: true }
     } catch (err: unknown) {
       const e = err as Error & { conflicts?: string[] }
@@ -354,21 +368,37 @@ export function createReviewOrchestrationService(
   }
 
   async function requestRevision(i: RequestRevisionInput): Promise<RequestRevisionResult> {
-    const op = buildReviewGitOpPlan({ action: 'requestRevision', feedback: i.feedback, mode: i.mode })
-    await executeReviewGitOp(op, { taskId: i.taskId, env: i.env ?? buildAgentEnv(), onStatusTerminal: () => {} })
+    const op = buildReviewGitOpPlan({
+      action: 'requestRevision',
+      feedback: i.feedback,
+      mode: i.mode
+    })
+    await executeReviewGitOp(op, {
+      taskId: i.taskId,
+      env: i.env ?? buildAgentEnv(),
+      onStatusTerminal: () => {}
+    })
     return { success: true }
   }
 
   async function discard(i: DiscardInput): Promise<DiscardResult> {
     const op = buildReviewGitOpPlan({ action: 'discard' })
-    await executeReviewGitOp(op, { taskId: i.taskId, env: i.env, onStatusTerminal: i.onStatusTerminal })
+    await executeReviewGitOp(op, {
+      taskId: i.taskId,
+      env: i.env,
+      onStatusTerminal: i.onStatusTerminal
+    })
     return { success: true }
   }
 
   async function shipIt(i: ShipItInput): Promise<ShipItResult> {
     const op = buildReviewGitOpPlan({ action: 'shipIt', strategy: i.strategy })
     try {
-      await executeReviewGitOp(op, { taskId: i.taskId, env: i.env, onStatusTerminal: i.onStatusTerminal })
+      await executeReviewGitOp(op, {
+        taskId: i.taskId,
+        env: i.env,
+        onStatusTerminal: i.onStatusTerminal
+      })
       return { success: true, pushed: true }
     } catch (err: unknown) {
       const e = err as Error & { conflicts?: string[] }
@@ -403,13 +433,18 @@ export function createReviewOrchestrationService(
       const repoConfig = getRepoConfig(task.repo)
       if (!repoConfig) return { status: 'unknown' }
 
-      await execFileAsync('git', ['fetch', 'origin', 'main'], { cwd: repoConfig.localPath, env })
+      const defaultBranch = await resolveDefaultBranch(repoConfig.localPath)
+      const upstream = `origin/${defaultBranch}`
 
-      const { stdout: currentShaOut } = await execFileAsync(
-        'git',
-        ['rev-parse', 'origin/main'],
-        { cwd: repoConfig.localPath, env }
-      )
+      await execFileAsync('git', ['fetch', 'origin', defaultBranch], {
+        cwd: repoConfig.localPath,
+        env
+      })
+
+      const { stdout: currentShaOut } = await execFileAsync('git', ['rev-parse', upstream], {
+        cwd: repoConfig.localPath,
+        env
+      })
       const currentSha = currentShaOut.trim()
 
       if (currentSha === task.rebase_base_sha) {
@@ -418,7 +453,7 @@ export function createReviewOrchestrationService(
 
       const { stdout: countOut } = await execFileAsync(
         'git',
-        ['rev-list', '--count', `${task.rebase_base_sha}..origin/main`],
+        ['rev-list', '--count', `${task.rebase_base_sha}..${upstream}`],
         { cwd: repoConfig.localPath, env }
       )
       return { status: 'stale', commitsBehind: parseInt(countOut.trim(), 10) }

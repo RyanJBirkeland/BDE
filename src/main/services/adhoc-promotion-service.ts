@@ -4,6 +4,7 @@
  */
 import { existsSync } from 'node:fs'
 import { execFileAsync } from '../lib/async-utils'
+import { resolveDefaultBranch } from '../lib/default-branch'
 import { buildAgentEnv } from '../env-utils'
 import { createLogger } from '../logger'
 import { createReviewTaskFromAdhoc } from './sprint-service'
@@ -36,16 +37,17 @@ function deriveTitleFromTask(taskText: string): string {
 }
 
 /**
- * Verify the worktree has at least one commit beyond main.
+ * Verify the worktree has at least one commit beyond the repo's default branch.
  * Returns false if there are no commits to review; returns true on error
  * so the review UI can handle empty diffs itself.
  */
 async function hasCommitsBeyondMain(worktreePath: string, branch: string): Promise<boolean> {
   const env = buildAgentEnv()
   try {
+    const defaultBranch = await resolveDefaultBranch(worktreePath)
     const { stdout } = await execFileAsync(
       'git',
-      ['rev-list', '--count', `origin/main..${branch}`],
+      ['rev-list', '--count', `origin/${defaultBranch}..${branch}`],
       { cwd: worktreePath, env }
     )
     const commitCount = parseInt(stdout.trim(), 10)
@@ -69,11 +71,10 @@ async function isWorktreeDirty(worktreePath: string): Promise<boolean> {
 async function commitAllChanges(worktreePath: string): Promise<void> {
   const env = buildAgentEnv()
   await execFileAsync('git', ['add', '-A'], { cwd: worktreePath, env })
-  await execFileAsync(
-    'git',
-    ['commit', '-m', 'chore: capture uncommitted work on session close'],
-    { cwd: worktreePath, env }
-  )
+  await execFileAsync('git', ['commit', '-m', 'chore: capture uncommitted work on session close'], {
+    cwd: worktreePath,
+    env
+  })
 }
 
 /**
@@ -122,7 +123,10 @@ export async function promoteAdhocToTask(
       await commitAllChanges(agent.worktreePath)
       hasWork = await hasCommitsBeyondMain(agent.worktreePath, agent.branch)
     } catch (err) {
-      return { ok: false, error: `Auto-commit failed: ${err instanceof Error ? err.message : String(err)}` }
+      return {
+        ok: false,
+        error: `Auto-commit failed: ${err instanceof Error ? err.message : String(err)}`
+      }
     }
   }
   if (!hasWork) {
