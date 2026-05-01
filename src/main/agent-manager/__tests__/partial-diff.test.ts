@@ -14,6 +14,11 @@ vi.mock('node:child_process', () => {
   return { execFile }
 })
 
+// Return undefined so resolveGitExecutable() ?? 'git' falls back to bare 'git' — path-independent tests.
+vi.mock('../resolve-git', () => ({
+  resolveGitExecutable: () => undefined
+}))
+
 // Mock broadcast (required by run-agent imports)
 vi.mock('../../broadcast', () => ({
   broadcast: vi.fn(),
