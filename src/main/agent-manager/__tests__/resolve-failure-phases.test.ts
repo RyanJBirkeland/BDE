@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { resolveFailure, calculateRetryBackoff } from '../resolve-failure-phases'
 import { MAX_RETRIES, RETRY_BACKOFF_BASE_MS, RETRY_BACKOFF_CAP_MS } from '../types'
+import { InvalidTransitionError } from '../../services/task-state-service'
 import type { TaskStateService } from '../../services/task-state-service'
 
 function makeRepo(overrides: { updateTask?: ReturnType<typeof vi.fn>; getTask?: ReturnType<typeof vi.fn> } = {}) {
@@ -101,6 +102,48 @@ describe('resolveFailure — taskStateService.transition throws', () => {
 
     expect(result).toMatchObject({ writeFailed: true, isTerminal: true })
     expect(logger.event).toHaveBeenCalledWith('failure.persist_failed', expect.objectContaining({ taskId: 't-5' }))
+  })
+})
+
+describe('resolveFailure — queued→queued race (orphan recovery already requeued)', () => {
+  it('writes retry fields directly and returns { isTerminal: false } without writeFailed', async () => {
+    // Simulate the orphan-recovery race: transition() throws InvalidTransitionError
+    // because the task is already 'queued' when the failure handler runs.
+    const repo = makeRepo()
+    const taskStateService: TaskStateService = {
+      transition: vi.fn().mockImplementation((_id: string, toStatus: string) => {
+        throw new InvalidTransitionError(_id, 'queued', toStatus as never)
+      })
+    } as unknown as TaskStateService
+
+    const result = await resolveFailure(
+      { taskId: 't-race', retryCount: 1, notes: 'typecheck failed', repo: repo as never, taskStateService },
+    )
+
+    expect(result.writeFailed).toBeFalsy()
+    expect(result.isTerminal).toBe(false)
+    const [id, patch] = (repo.updateTask as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(id).toBe('t-race')
+    expect(patch.retry_count).toBe(2)
+    expect(patch.claimed_by).toBeNull()
+    expect(patch.next_eligible_at).toBeTruthy()
+    expect(patch.notes).toBe('typecheck failed')
+  })
+
+  it('returns writeFailed:true if the direct updateTask also fails', async () => {
+    const repo = makeRepo({ updateTask: vi.fn().mockRejectedValue(new Error('disk full')) })
+    const taskStateService: TaskStateService = {
+      transition: vi.fn().mockImplementation((_id: string) => {
+        throw new InvalidTransitionError(_id, 'queued', 'queued' as never)
+      })
+    } as unknown as TaskStateService
+
+    const result = await resolveFailure(
+      { taskId: 't-race-fail', retryCount: 0, repo: repo as never, taskStateService },
+    )
+
+    expect(result.writeFailed).toBe(true)
+    expect(result.isTerminal).toBe(false)
   })
 })
 

@@ -11,6 +11,7 @@ import type { Logger } from '../logger'
 import { nowIso } from '../../shared/time'
 import { classifyFailureReason } from './failure-classifier'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
+import { InvalidTransitionError } from '../services/task-state-service'
 import type { TaskStateService } from '../services/task-state-service'
 
 export interface ResolveFailureContext {
@@ -118,6 +119,34 @@ export async function resolveFailure(
       return { isTerminal: true }
     }
   } catch (err) {
+    // Special case: queued→queued is rejected by the state machine because a same-status
+    // transition is never valid. This happens when the orphan-recovery loop raced the
+    // claim→spawn window and already set the task back to 'queued' before the spawned
+    // agent's failure handler ran. The desired outcome (task in 'queued' with updated retry
+    // fields) is still achievable — just update the fields directly without a status change.
+    if (
+      err instanceof InvalidTransitionError &&
+      err.fromStatus === 'queued' &&
+      err.toStatus === 'queued'
+    ) {
+      try {
+        const backoffMs = calculateRetryBackoff(retryCount)
+        await repo.updateTask(taskId, {
+          retry_count: retryCount + 1,
+          claimed_by: null,
+          next_eligible_at: new Date(Date.now() + backoffMs).toISOString(),
+          failure_reason: failureReason,
+          ...(notes ? { notes } : {})
+        })
+        logger?.event?.('failure.already_queued_updated', { taskId })
+        return { isTerminal: false }
+      } catch (updateErr) {
+        const writeError = updateErr instanceof Error ? updateErr : new Error(String(updateErr))
+        logger?.error(`[completion] Failed to update already-queued task ${taskId}: ${updateErr}`)
+        return { isTerminal: false, writeFailed: true, error: writeError }
+      }
+    }
+
     const writeError = err instanceof Error ? err : new Error(String(err))
     logger?.event?.('failure.persist_failed', { taskId, error: String(err) })
     logger?.error(`[completion] Failed to update task ${taskId} during failure resolution: ${err}`)

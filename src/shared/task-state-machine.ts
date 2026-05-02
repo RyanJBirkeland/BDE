@@ -89,7 +89,11 @@ export const VALID_TRANSITIONS: Record<TaskStatus, ReadonlySet<TaskStatus>> = {
   // matching work already landed on origin/main out-of-band (prior run, manual
   // commit, cherry-pick). This is not the normal pipeline completion path —
   // TerminalDispatcher still fires so dependency resolution and metrics run.
-  queued: new Set<TaskStatus>(['active', 'blocked', 'cancelled', 'done']),
+  // 'failed' and 'error' added for two edge cases:
+  // 1. Terminal retry exhaustion while the task is in 'queued' (orphan race set it back before
+  //    the spawned agent finished) — resolveFailure needs queued→failed to land.
+  // 2. Orphan recovery at cap (orphan_recovery_count=3) on a queued task — needs queued→error.
+  queued: new Set<TaskStatus>(['active', 'blocked', 'cancelled', 'done', 'failed', 'error']),
   blocked: new Set<TaskStatus>(['queued', 'cancelled']),
   active: new Set<TaskStatus>(['review', 'done', 'failed', 'error', 'cancelled', 'queued']),
   review: new Set<TaskStatus>(['queued', 'done', 'cancelled', 'failed']),

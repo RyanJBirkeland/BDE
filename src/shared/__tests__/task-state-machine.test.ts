@@ -149,6 +149,19 @@ describe('task-state-machine', () => {
       expect(isValidTransition('queued', 'done')).toBe(true)
     })
 
+    it('should return true for queued → failed (terminal retry while orphan-raced)', () => {
+      // When the orphan-recovery loop races the claim→spawn window, it resets the task
+      // to 'queued' before the spawned agent finishes. If retries are exhausted, the
+      // failure handler needs queued→failed to land.
+      expect(isValidTransition('queued', 'failed')).toBe(true)
+    })
+
+    it('should return true for queued → error (orphan recovery at cap)', () => {
+      // When orphan_recovery_count reaches MAX_ORPHAN_RECOVERY_COUNT and the task is
+      // still in 'queued' state, orphan recovery must be able to mark it error.
+      expect(isValidTransition('queued', 'error')).toBe(true)
+    })
+
     it('should return false for invalid transitions', () => {
       expect(isValidTransition('done', 'active')).toBe(false)
       expect(isValidTransition('cancelled', 'queued')).toBe(false)
