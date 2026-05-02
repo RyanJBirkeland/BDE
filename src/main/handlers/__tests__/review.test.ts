@@ -238,11 +238,11 @@ describe('Review handlers', () => {
     reviewOrchestration = createReviewOrchestrationService(mockRepo)
   })
 
-  it('registers all 13 review channels', () => {
+  it('registers all 14 review channels', () => {
     const mockDeps = { onStatusTerminal: vi.fn(), reviewOrchestration, taskStateService: mockTaskStateService }
     registerReviewHandlers(mockDeps)
 
-    expect(safeHandle).toHaveBeenCalledTimes(13)
+    expect(safeHandle).toHaveBeenCalledTimes(14)
     expect(safeHandle).toHaveBeenCalledWith('review:getDiff', expect.any(Function), expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getCommits', expect.any(Function), expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:getFileDiff', expect.any(Function), expect.any(Function))
@@ -256,6 +256,7 @@ describe('Review handlers', () => {
     expect(safeHandle).toHaveBeenCalledWith('review:checkFreshness', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:checkAutoReview', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('review:markShippedOutsideFleet', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('review:buildRollupPr', expect.any(Function))
   })
 
   it('deps.onStatusTerminal is called on terminal transitions', () => {

@@ -237,6 +237,27 @@ export interface ReviewChannels {
     args: [payload: { taskId: string }]
     result: { success: boolean }
   }
+  /**
+   * Bundle multiple review tasks into a single rollup PR.
+   *
+   * Creates a temp worktree from origin/main, squash-merges each task branch
+   * in topological dep order, pushes the rollup branch, and opens one PR.
+   * All bundled tasks get their pr_number/pr_url/pr_status updated so the
+   * Sprint PR Poller can transition them all to done when the PR merges.
+   */
+  'review:buildRollupPr': {
+    args: [
+      payload: {
+        taskIds: string[]
+        branchName: string
+        prTitle: string
+        prBody?: string | undefined
+      }
+    ]
+    result:
+      | { success: true; prUrl: string; prNumber: number }
+      | { success: false; error: string; conflictingFiles?: string[] | undefined }
+  }
 }
 
 /** Task template CRUD */

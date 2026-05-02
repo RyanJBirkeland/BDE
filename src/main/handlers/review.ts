@@ -21,6 +21,7 @@ import type { TaskStateService } from '../services/task-state-service'
 import type { AutoReviewRule } from '../../shared/types'
 import type { ReviewOrchestrationService } from '../services/review-orchestration-service'
 import type { ReviewShipBatchService } from '../services/review-ship-batch'
+import type { ReviewRollupService } from '../services/review-rollup-service'
 import {
   getReviewDiff,
   getReviewCommits,
@@ -72,10 +73,11 @@ export interface ReviewHandlersDeps {
   taskStateService: TaskStateService
   reviewOrchestration: ReviewOrchestrationService
   reviewShipBatch?: ReviewShipBatchService | undefined
+  reviewRollup?: ReviewRollupService | undefined
 }
 
 export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
-  const { reviewOrchestration, reviewShipBatch } = deps
+  const { reviewOrchestration, reviewShipBatch, reviewRollup } = deps
   const env = buildAgentEnv()
 
   // ============================================================================
@@ -209,5 +211,22 @@ export function registerReviewHandlers(deps: ReviewHandlersDeps): void {
     const { taskId } = payload
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
     return reviewOrchestration.markShippedOutsideFleet(taskId, { taskStateService: deps.taskStateService })
+  })
+
+  safeHandle('review:buildRollupPr', async (_e, payload) => {
+    if (!Array.isArray(payload.taskIds) || payload.taskIds.length === 0) {
+      throw new Error('taskIds must be a non-empty array')
+    }
+    for (const id of payload.taskIds) {
+      if (!isValidTaskId(id)) throw new Error(`Invalid task ID format: ${id}`)
+    }
+    if (!reviewRollup) throw new Error('ReviewRollupService not available')
+    return reviewRollup.buildRollupPr({
+      taskIds: payload.taskIds,
+      branchName: payload.branchName,
+      prTitle: payload.prTitle,
+      prBody: payload.prBody,
+      env
+    })
   })
 }

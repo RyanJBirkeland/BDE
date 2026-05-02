@@ -3,15 +3,23 @@ import { useConfirm } from '../components/ui/ConfirmModal'
 import { useBatchReviewActions } from './useBatchReviewActions'
 import type { SprintTask } from '../../../shared/types'
 
-export type BatchActionKey = 'batchMerge' | 'batchShip' | 'batchPr' | 'batchDiscard'
+export type BatchActionKey = 'batchMerge' | 'batchShip' | 'batchPr' | 'batchDiscard' | 'batchRollup'
 
 export interface UseBatchActionsResult {
   batchActionInFlight: BatchActionKey | null
   confirmProps: ReturnType<typeof useConfirm>['confirmProps']
+  rollupModalOpen: boolean
   handleBatchMergeAll: (tasks: SprintTask[]) => Promise<void>
   handleBatchShipAll: (tasks: SprintTask[], ghConfigured: boolean) => Promise<void>
   handleBatchCreatePr: (tasks: SprintTask[], ghConfigured: boolean) => Promise<void>
   handleBatchDiscard: (tasks: SprintTask[]) => Promise<void>
+  handleOpenRollupModal: (tasks: SprintTask[], ghConfigured: boolean) => void
+  handleCloseRollupModal: () => void
+  handleSubmitRollupPr: (
+    tasks: SprintTask[],
+    branchName: string,
+    prTitle: string
+  ) => Promise<void>
 }
 
 function taskBulletList(tasks: SprintTask[]): string {
@@ -20,6 +28,7 @@ function taskBulletList(tasks: SprintTask[]): string {
 
 export function useBatchActions(): UseBatchActionsResult {
   const [batchActionInFlight, setBatchActionInFlight] = useState<BatchActionKey | null>(null)
+  const [rollupModalOpen, setRollupModalOpen] = useState(false)
   const { confirm, confirmProps } = useConfirm()
   const { batchMergeLocally, batchShipIt, batchCreatePr, batchDiscard } = useBatchReviewActions()
 
@@ -83,12 +92,52 @@ export function useBatchActions(): UseBatchActionsResult {
     setBatchActionInFlight(null)
   }
 
+  const handleOpenRollupModal = (_tasks: SprintTask[], ghConfigured: boolean): void => {
+    if (!ghConfigured) return
+    setRollupModalOpen(true)
+  }
+
+  const handleCloseRollupModal = (): void => {
+    setRollupModalOpen(false)
+  }
+
+  const handleSubmitRollupPr = async (
+    tasks: SprintTask[],
+    branchName: string,
+    prTitle: string
+  ): Promise<void> => {
+    setBatchActionInFlight('batchRollup')
+    try {
+      const result = await window.api.review.buildRollupPr({
+        taskIds: tasks.map((t) => t.id),
+        branchName,
+        prTitle
+      })
+      if (result.success) {
+        setRollupModalOpen(false)
+        const { toast } = await import('../stores/toasts')
+        toast.success(`Rollup PR created — ${result.prUrl}`)
+      } else {
+        // Surface error inside the modal (caller handles display)
+        throw Object.assign(new Error(result.error), {
+          conflictingFiles: result.conflictingFiles
+        })
+      }
+    } finally {
+      setBatchActionInFlight(null)
+    }
+  }
+
   return {
     batchActionInFlight,
     confirmProps,
+    rollupModalOpen,
     handleBatchMergeAll,
     handleBatchShipAll,
     handleBatchCreatePr,
-    handleBatchDiscard
+    handleBatchDiscard,
+    handleOpenRollupModal,
+    handleCloseRollupModal,
+    handleSubmitRollupPr
   }
 }

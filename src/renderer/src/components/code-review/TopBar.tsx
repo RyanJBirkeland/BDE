@@ -15,6 +15,7 @@ import { ApproveDropdown } from './ApproveDropdown'
 import { useReviewPartnerStore } from '../../stores/reviewPartner'
 import { ReviewActionsBar } from './ReviewActionsBar'
 import { BatchActionsToolbar } from './BatchActionsToolbar'
+import { RollupPrModal } from './RollupPrModal'
 
 export function TopBar(): React.JSX.Element {
   const selectedTaskId = useCodeReviewStore((s) => s.selectedTaskId)
@@ -41,10 +42,14 @@ export function TopBar(): React.JSX.Element {
   const {
     batchActionInFlight,
     confirmProps: batchConfirmProps,
+    rollupModalOpen,
     handleBatchMergeAll,
     handleBatchShipAll,
     handleBatchCreatePr,
-    handleBatchDiscard
+    handleBatchDiscard,
+    handleOpenRollupModal,
+    handleCloseRollupModal,
+    handleSubmitRollupPr
   } = useBatchActions()
 
   // Auto-select review tasks when current selection becomes invalid
@@ -91,6 +96,7 @@ export function TopBar(): React.JSX.Element {
                 onCreatePrs={() => handleBatchCreatePr(selectedTasks, ghConfigured)}
                 onDiscard={() => handleBatchDiscard(selectedTasks)}
                 onClear={clearBatch}
+                onBuildRollupPr={() => handleOpenRollupModal(selectedTasks, ghConfigured)}
               />
             </motion.div>
           ) : (
@@ -108,6 +114,14 @@ export function TopBar(): React.JSX.Element {
           )}
         </AnimatePresence>
         <ConfirmModal {...batchConfirmProps} />
+        <RollupPrModal
+          open={rollupModalOpen}
+          tasks={selectedTasks}
+          onClose={handleCloseRollupModal}
+          onSubmit={(branchName, prTitle) =>
+            handleSubmitRollupPr(selectedTasks, branchName, prTitle)
+          }
+        />
       </div>
     )
   }
@@ -134,6 +148,7 @@ export function TopBar(): React.JSX.Element {
               onCreatePrs={() => handleBatchCreatePr(selectedTasks, ghConfigured)}
               onDiscard={() => handleBatchDiscard(selectedTasks)}
               onClear={clearBatch}
+              onBuildRollupPr={() => handleOpenRollupModal(selectedTasks, ghConfigured)}
             />
           </motion.div>
         ) : (
@@ -202,6 +217,14 @@ export function TopBar(): React.JSX.Element {
         )}
       </AnimatePresence>
       <ConfirmModal {...batchConfirmProps} />
+      <RollupPrModal
+        open={rollupModalOpen}
+        tasks={selectedTasks}
+        onClose={handleCloseRollupModal}
+        onSubmit={(branchName, prTitle) =>
+          handleSubmitRollupPr(selectedTasks, branchName, prTitle)
+        }
+      />
     </div>
   )
 }

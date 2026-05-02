@@ -515,6 +515,12 @@ declare global {
         markShippedOutsideFleet: (payload: {
           taskId: string
         }) => Promise<IpcResult<'review:markShippedOutsideFleet'>>
+        buildRollupPr: (payload: {
+          taskIds: string[]
+          branchName: string
+          prTitle: string
+          prBody?: string | undefined
+        }) => Promise<IpcResult<'review:buildRollupPr'>>
         // AI Review Partner
         autoReview: (taskId: string, force?: boolean) => Promise<ReviewResult>
         chatStream: (params: {

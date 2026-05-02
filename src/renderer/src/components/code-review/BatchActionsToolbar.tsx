@@ -1,4 +1,4 @@
-import { GitMerge, GitPullRequest, Loader2, Rocket, Trash2, X } from 'lucide-react'
+import { GitFork, GitMerge, GitPullRequest, Loader2, Rocket, Trash2, X } from 'lucide-react'
 import type { BatchActionKey } from '../../hooks/useBatchActions'
 
 interface BatchActionsToolbarProps {
@@ -10,6 +10,7 @@ interface BatchActionsToolbarProps {
   onCreatePrs: () => void
   onDiscard: () => void
   onClear: () => void
+  onBuildRollupPr: () => void
 }
 
 function ActionIcon({
@@ -32,7 +33,8 @@ export function BatchActionsToolbar({
   onShipAll,
   onCreatePrs,
   onDiscard,
-  onClear
+  onClear,
+  onBuildRollupPr
 }: BatchActionsToolbarProps): React.JSX.Element {
   return (
     <>
@@ -77,6 +79,20 @@ export function BatchActionsToolbar({
           icon={<GitPullRequest size={14} />}
         />{' '}
         Create PRs
+      </button>
+      <button
+        className="cr-topbar__btn cr-topbar__btn--secondary"
+        onClick={onBuildRollupPr}
+        disabled={!!batchActionInFlight || !ghConfigured || selectedCount < 2}
+        aria-label={`Bundle ${selectedCount} selected tasks into one rollup PR`}
+        title={selectedCount < 2 ? 'Select 2 or more tasks to build a rollup PR' : undefined}
+      >
+        <ActionIcon
+          inFlight={batchActionInFlight}
+          actionKey="batchRollup"
+          icon={<GitFork size={14} />}
+        />{' '}
+        Rollup PR
       </button>
       <button
         className="cr-topbar__btn cr-topbar__btn--ghost"

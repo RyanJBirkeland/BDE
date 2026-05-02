@@ -251,6 +251,12 @@ export const review = {
   checkFreshness: (payload: { taskId: string }) => typedInvoke('review:checkFreshness', payload),
   markShippedOutsideFleet: (payload: { taskId: string }) =>
     typedInvoke('review:markShippedOutsideFleet', payload),
+  buildRollupPr: (payload: {
+    taskIds: string[]
+    branchName: string
+    prTitle: string
+    prBody?: string | undefined
+  }) => typedInvoke('review:buildRollupPr', payload),
   autoReview: (taskId: string, force?: boolean) =>
     typedInvoke('review:autoReview', taskId, force ?? false),
   chatStream: (params: { taskId: string; messages: PartnerMessage[] }) =>

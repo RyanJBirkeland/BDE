@@ -57,6 +57,8 @@ import { createReviewOrchestrationService } from './services/review-orchestratio
 import type { ReviewOrchestrationService } from './services/review-orchestration-service'
 import { createReviewShipBatchService } from './services/review-ship-batch'
 import type { ReviewShipBatchService } from './services/review-ship-batch'
+import { createReviewRollupService } from './services/review-rollup-service'
+import type { ReviewRollupService } from './services/review-rollup-service'
 import {
   closeTearoffWindows,
   setQuitting,
@@ -323,6 +325,7 @@ interface CoreStartupServices {
   pollerTaskStateService: ReturnType<typeof createTaskStateService>
   reviewOrchestration: ReviewOrchestrationService
   reviewShipBatch: ReviewShipBatchService
+  reviewRollup: ReviewRollupService
   terminalDeps: {
     onStatusTerminal: ReturnType<typeof createTaskTerminalService>['onStatusTerminal']
     dialog: ReturnType<typeof createElectronDialogService>
@@ -339,10 +342,12 @@ interface CoreStartupServices {
 function wireReviewServices(repo: ReturnType<typeof createSprintTaskRepository>): {
   reviewOrchestration: ReviewOrchestrationService
   reviewShipBatch: ReviewShipBatchService
+  reviewRollup: ReviewRollupService
 } {
   const reviewOrchestration = createReviewOrchestrationService(repo)
   const reviewShipBatch = createReviewShipBatchService(repo)
-  return { reviewOrchestration, reviewShipBatch }
+  const reviewRollup = createReviewRollupService(repo)
+  return { reviewOrchestration, reviewShipBatch, reviewRollup }
 }
 
 /**
@@ -370,7 +375,7 @@ function initCoreServices(): CoreStartupServices {
   registerWebhookCallback((event, task) => webhookService.fireWebhook(event, task))
 
   // Wire all review services in one place — see wireReviewServices.
-  const { reviewOrchestration, reviewShipBatch } = wireReviewServices(repo)
+  const { reviewOrchestration, reviewShipBatch, reviewRollup } = wireReviewServices(repo)
 
   // The epic dependency graph has one owner — EpicGroupService, constructed
   // at the composition root and injected to every consumer (task-terminal-
@@ -409,7 +414,7 @@ function initCoreServices(): CoreStartupServices {
   startPrPollers(terminalDeps)
   setupCleanupTasks()
 
-  return { repo, epicGroupService, terminalService, pollerTaskStateService, reviewOrchestration, reviewShipBatch, terminalDeps }
+  return { repo, epicGroupService, terminalService, pollerTaskStateService, reviewOrchestration, reviewShipBatch, reviewRollup, terminalDeps }
 }
 
 /**
@@ -638,7 +643,8 @@ app.whenReady().then(async () => {
     repo: core.repo,
     epicGroupService: core.epicGroupService,
     reviewOrchestration: core.reviewOrchestration,
-    reviewShipBatch: core.reviewShipBatch
+    reviewShipBatch: core.reviewShipBatch,
+    reviewRollup: core.reviewRollup
   }
   registerAllHandlers(handlerDeps)
 
