@@ -63,16 +63,15 @@ export function getOrphanedTasks(claimedBy: string, db?: Database.Database): Spr
   const conn = db ?? getDb()
   return withDataLayerError(
     () => {
-      const cutoff = new Date(Date.now() - ORPHAN_SPAWN_GRACE_SECONDS * 1000).toISOString()
       const rows = conn
         .prepare(
           `SELECT ${SPRINT_TASK_COLUMNS}
            FROM sprint_tasks
            WHERE status = 'active'
              AND claimed_by = ?
-             AND started_at < ?`
+             AND started_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-${ORPHAN_SPAWN_GRACE_SECONDS} seconds')`
         )
-        .all(claimedBy, cutoff) as Record<string, unknown>[]
+        .all(claimedBy) as Record<string, unknown>[]
       return mapRowsToTasks(rows)
     },
     `getOrphanedTasks(claimedBy=${claimedBy})`,
