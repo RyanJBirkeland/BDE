@@ -8,6 +8,12 @@ interface Props {
   loading?: boolean | undefined
 }
 
+function qualityScoreTitle(score: number): string {
+  if (score < 50) return '0–49: Significant issues — recommend requesting revision'
+  if (score < 75) return '50–74: Minor issues — review carefully before merging'
+  return '75–100: Good quality — generally safe to merge'
+}
+
 export function ReviewMetricsRow({
   qualityScore,
   issuesCount,
@@ -25,6 +31,7 @@ export function ReviewMetricsRow({
             ? `Quality score ${qualityScore} out of 100`
             : 'Quality score pending'
         }
+        title={qualityScore !== undefined ? qualityScoreTitle(qualityScore) : undefined}
         variant="success"
       />
       <MetricCard
@@ -52,16 +59,23 @@ function MetricCard({
   value,
   label,
   ariaLabel,
-  variant
+  variant,
+  title
 }: {
   icon: ReactNode
   value: number | string
   label: string
   ariaLabel: string
   variant: 'success' | 'warning' | 'info'
+  title?: string | undefined
 }): JSX.Element {
   return (
-    <div className={`cr-metric cr-metric--${variant}`} role="status" aria-label={ariaLabel}>
+    <div
+      className={`cr-metric cr-metric--${variant}`}
+      role="status"
+      aria-label={ariaLabel}
+      title={title}
+    >
       <div className="cr-metric__icon">{icon}</div>
       <div className="cr-metric__value">{value}</div>
       <div className="cr-metric__label">{label}</div>
