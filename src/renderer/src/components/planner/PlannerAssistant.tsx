@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../shared/types'
 import { useRepoOptions } from '../../hooks/useRepoOptions'
 import { useTaskWorkbenchStore } from '../../stores/taskWorkbench'
+import { SpecDiffViewer } from './SpecDiffViewer'
 import './PlannerAssistant.css'
 
 // ---------------------------------------------------------------------------
@@ -96,6 +97,7 @@ interface ActionCardProps {
   onClose: () => void
   epic: TaskGroup
   firstRepo: string
+  oldSpec: string | null
 }
 
 function ActionCard({
@@ -108,7 +110,8 @@ function ActionCard({
   onOpenWorkbench,
   onClose,
   epic,
-  firstRepo
+  firstRepo,
+  oldSpec
 }: ActionCardProps): React.JSX.Element | null {
   const key = `${messageId}-${index}`
   const state = cardStates[key] ?? { dismissed: false, confirmed: null }
@@ -171,6 +174,9 @@ function ActionCard({
       <div className="planner-assistant__action-card-title">
         {action.payload.title ?? action.payload.name ?? action.payload.taskId ?? '—'}
       </div>
+      {action.type === 'update-spec' && !state.confirmed && (
+        <SpecDiffViewer oldSpec={oldSpec} newSpec={action.payload.spec ?? ''} />
+      )}
       {state.confirmed ? (
         <div className="planner-assistant__action-confirm">{state.confirmed}</div>
       ) : (
@@ -373,8 +379,55 @@ function PlannerAssistantInner({
                 onClose={onClose}
                 epic={epic}
                 firstRepo={firstRepo}
+                oldSpec={
+                  action.type === 'update-spec' && action.payload.taskId
+                    ? (tasks.find((t) => t.id === action.payload.taskId)?.spec ?? null)
+                    : null
+                }
               />
             ))}
+            {(() => {
+              const pendingSpecActions = (msg.actions ?? [])
+                .map((action, i) => ({ action, key: `${msg.id}-${i}` }))
+                .filter(
+                  ({ action: a, key }) =>
+                    a.type === 'update-spec' &&
+                    !(cardStates[key]?.confirmed) &&
+                    !(cardStates[key]?.dismissed)
+                )
+
+              if (pendingSpecActions.length < 2) return null
+
+              const handleApplyAll = async (): Promise<void> => {
+                for (const { action: a, key } of pendingSpecActions) {
+                  if (!a.payload.taskId) continue
+                  try {
+                    await window.api.sprint.update(a.payload.taskId, { spec: a.payload.spec ?? '' })
+                    setCardStates((prev) => ({
+                      ...prev,
+                      [key]: { dismissed: false, confirmed: '✓ Done' }
+                    }))
+                  } catch {
+                    setCardStates((prev) => ({
+                      ...prev,
+                      [key]: { dismissed: false, confirmed: '✗ Failed' }
+                    }))
+                  }
+                }
+              }
+
+              return (
+                <div className="planner-assistant__apply-all-bar">
+                  <button
+                    type="button"
+                    className="planner-assistant__action-btn planner-assistant__action-btn--primary"
+                    onClick={() => void handleApplyAll()}
+                  >
+                    Apply All ({pendingSpecActions.length})
+                  </button>
+                </div>
+              )
+            })()}
           </React.Fragment>
         ))}
         <div ref={messagesEndRef} />
