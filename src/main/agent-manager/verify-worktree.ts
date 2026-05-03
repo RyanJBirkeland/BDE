@@ -21,7 +21,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Logger } from '../logger'
 import { execFileAsync } from '../lib/async-utils'
-import { buildAgentEnv } from '../env-utils'
+import { buildWorktreeEnv } from '../env-utils'
 
 export const VERIFICATION_STDERR_LIMIT = 2000
 const TYPECHECK_TIMEOUT_MS = 120_000
@@ -193,7 +193,7 @@ async function execFileRunCommand(
   try {
     await execFileAsync(command, [...args], {
       cwd,
-      env: buildAgentEnv(),
+      env: buildWorktreeEnv(cwd),
       timeout: timeoutMs,
       maxBuffer: 10 * 1024 * 1024
     })

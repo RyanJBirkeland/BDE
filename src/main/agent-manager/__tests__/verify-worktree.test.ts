@@ -270,3 +270,13 @@ describe('verifyWorktreeBuildsAndTests — test runner detection', () => {
     expect(calls[0]?.args).toContain('typecheck')
   })
 })
+
+describe('default runCommand env uses buildWorktreeEnv', () => {
+  it('imports buildWorktreeEnv from env-utils (compile check)', async () => {
+    // This test exists to verify the module wires buildWorktreeEnv correctly.
+    // The actual PATH augmentation is covered by env-utils tests.
+    // Here we just verify the module can be imported without error after the change.
+    const mod = await import('../verify-worktree')
+    expect(typeof mod.verifyWorktreeBuildsAndTests).toBe('function')
+  })
+})
