@@ -5,6 +5,7 @@ Source: `src/main/handlers/`
 
 | Module | Purpose | Key Exports |
 |--------|---------|-------------|
+| `agent-manager-handlers.ts` | Agent manager orchestration IPC handlers — status, kill, metrics, reloadConfig, checkpoint, and triggerDrain. `agent-manager:triggerDrain` immediately runs one drain tick, used by the "Check now" pipeline header button. All handlers are no-ops when the agent manager is not available. | `registerAgentManagerHandlers` |
 | `git-handlers.ts` | Git and GitHub IPC handlers — source control, PR polling, GitHub API proxy. Includes `git:checkInstalled` which runs `git --version` to verify the CLI is present (returns `true`/`false`). | `registerGitHandlers`, `GitHandlersDeps` |
 | `window-handlers.ts` | Window and playground IPC handlers — external URL gating, window title, open-in-browser for playground HTML, re-sanitize user-edited HTML (`playground:sanitize`) | `registerWindowHandlers` |
 | `synthesizer-handlers.ts` | IPC handlers for AI spec generation and revision (`synthesizer:generate`, `synthesizer:revise`, `synthesizer:cancel`). Validates request payloads before delegating to `spec-synthesizer` service. | `registerSynthesizerHandlers` |
