@@ -1,29 +1,9 @@
 import { parseDiff, type DiffFile } from '../../../lib/diff-parser'
+import { buildSyntheticDiff } from '../../../lib/spec-diff'
 import './EditDiffCard.css'
 
 interface EditDiffCardProps {
   input: unknown
-}
-
-function buildSyntheticDiff(filePath: string, oldStr: string, newStr: string): string {
-  const oldLines = oldStr.split('\n')
-  const newLines = newStr.split('\n')
-  const oldCount = oldLines.length
-  const newCount = newLines.length
-
-  let diff = `diff --git a/${filePath} b/${filePath}\n`
-  diff += `--- a/${filePath}\n`
-  diff += `+++ b/${filePath}\n`
-  diff += `@@ -1,${oldCount} +1,${newCount} @@\n`
-
-  for (const line of oldLines) {
-    diff += `-${line}\n`
-  }
-  for (const line of newLines) {
-    diff += `+${line}\n`
-  }
-
-  return diff
 }
 
 function renderDiffLines(files: DiffFile[]): React.JSX.Element {
