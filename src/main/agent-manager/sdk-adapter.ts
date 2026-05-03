@@ -11,7 +11,7 @@ import type { AgentType } from '../agent-system/personality/types'
 import { resolve as resolvePath } from 'node:path'
 import { realpathSync } from 'node:fs'
 import { DEFAULT_CONFIG, SPAWN_TIMEOUT_MS } from './types'
-import { buildAgentEnv, getOAuthToken, getClaudeCliPath } from '../env-utils'
+import { buildAgentEnv, buildWorktreeEnv, getOAuthToken, getClaudeCliPath } from '../env-utils'
 import { spawnViaSdk, type PipelineSpawnTuning } from './spawn-sdk'
 import { spawnViaCli } from './spawn-cli'
 import { loadBackendSettings, resolveAgentRuntime } from './backend-selector'
@@ -147,6 +147,7 @@ export async function spawnAgent(opts: {
    * creating an extra index.
    */
   epicGroupService?: EpicGroupService | undefined
+  worktreePath?: string | undefined
 }): Promise<AgentHandle> {
   // Worktree-base cwd assertion applies only to pipeline agents — adhoc,
   // assistant, copilot, and synthesizer agents run in the user's repo or
@@ -247,8 +248,9 @@ async function spawnClaudeAgent(opts: {
   taskId?: string | undefined
   agentType?: string | undefined
   tickId?: string | undefined
+  worktreePath?: string | undefined
 }): Promise<AgentHandle> {
-  const env = { ...buildAgentEnv() }
+  const env = opts.worktreePath ? buildWorktreeEnv(opts.worktreePath) : { ...buildAgentEnv() }
 
   const token = getOAuthToken()
   const strategy = await resolveSpawnStrategy()
@@ -279,7 +281,8 @@ export async function spawnWithTimeout(
   worktreeBase?: string,
   branch?: string,
   tickId?: string,
-  epicGroupService?: EpicGroupService
+  epicGroupService?: EpicGroupService,
+  worktreePath?: string
 ): Promise<AgentHandle> {
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -289,7 +292,7 @@ export async function spawnWithTimeout(
     )
   })
   return await Promise.race([
-    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId, epicGroupService }),
+    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId, epicGroupService, worktreePath }),
     timeoutPromise
   ]).finally(() => clearTimeout(timer!))
 }
