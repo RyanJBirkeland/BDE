@@ -222,6 +222,7 @@ function PlannerAssistantInner({
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [cardStates, setCardStates] = useState<Record<string, ActionCardState>>({})
+  const [isApplyingAll, setIsApplyingAll] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -399,20 +400,25 @@ function PlannerAssistantInner({
               if (pendingSpecActions.length < 2) return null
 
               const handleApplyAll = async (): Promise<void> => {
-                for (const { action: a, key } of pendingSpecActions) {
-                  if (!a.payload.taskId) continue
-                  try {
-                    await window.api.sprint.update(a.payload.taskId, { spec: a.payload.spec ?? '' })
-                    setCardStates((prev) => ({
-                      ...prev,
-                      [key]: { dismissed: false, confirmed: '✓ Done' }
-                    }))
-                  } catch {
-                    setCardStates((prev) => ({
-                      ...prev,
-                      [key]: { dismissed: false, confirmed: '✗ Failed' }
-                    }))
+                setIsApplyingAll(true)
+                try {
+                  for (const { action: a, key } of pendingSpecActions) {
+                    if (!a.payload.taskId) continue
+                    try {
+                      await window.api.sprint.update(a.payload.taskId, { spec: a.payload.spec ?? '' })
+                      setCardStates((prev) => ({
+                        ...prev,
+                        [key]: { dismissed: false, confirmed: '✓ Done' }
+                      }))
+                    } catch {
+                      setCardStates((prev) => ({
+                        ...prev,
+                        [key]: { dismissed: false, confirmed: '✗ Failed' }
+                      }))
+                    }
                   }
+                } finally {
+                  setIsApplyingAll(false)
                 }
               }
 
@@ -422,6 +428,7 @@ function PlannerAssistantInner({
                     type="button"
                     className="planner-assistant__action-btn planner-assistant__action-btn--primary"
                     onClick={() => void handleApplyAll()}
+                    disabled={isApplyingAll}
                   >
                     Apply All ({pendingSpecActions.length})
                   </button>
