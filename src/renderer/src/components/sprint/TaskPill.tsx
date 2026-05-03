@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, Clock, Zap, GitBranch, Slash, XCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -9,6 +9,7 @@ import { STATUS_METADATA } from '../../lib/task-status-ui'
 import { useBackoffInterval } from '../../hooks/useBackoffInterval'
 import { useNow } from '../../hooks/useNow'
 import { useSprintSelection } from '../../stores/sprintSelection'
+import { useSprintTasks } from '../../stores/sprintTasks'
 import { formatDuration } from '../../lib/format'
 import { useTaskCost } from '../../hooks/useTaskCost'
 import { TagBadge } from '../ui/TagBadge'
@@ -56,6 +57,18 @@ function TaskPillInner({
   const prevStatusRef = useRef(task.status)
   const now = useNow()
   const { costUsd } = useTaskCost(task.agent_run_id)
+
+  const blockingTitles = useSprintTasks(
+    useCallback(
+      (s) => {
+        if (task.status !== 'blocked' || !task.depends_on?.length) return null
+        return task.depends_on
+          .map((d) => s.tasks.find((t) => t.id === d.id)?.title ?? d.id)
+          .join(', ')
+      },
+      [task.status, task.depends_on]
+    )
+  )
 
   useEffect(() => {
     if (task.status !== prevStatusRef.current) {
@@ -119,6 +132,7 @@ function TaskPillInner({
       role="button"
       tabIndex={0}
       aria-label={`Task: ${task.title}, status: ${task.status}`}
+      title={blockingTitles ? `Blocked by: ${blockingTitles}` : undefined}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
@@ -150,14 +164,19 @@ function TaskPillInner({
           />
         </span>
       )}
-      {failureInfo && task.failure_reason && (() => {
-        const chip = failureCategoryForReason(task.failure_reason)
-        return (
-          <span className={`task-pill__failure-chip ${chip.colorClass}`} aria-label={`Failure category: ${chip.label}`}>
-            {chip.label}
-          </span>
-        )
-      })()}
+      {failureInfo &&
+        task.failure_reason &&
+        (() => {
+          const chip = failureCategoryForReason(task.failure_reason)
+          return (
+            <span
+              className={`task-pill__failure-chip ${chip.colorClass}`}
+              aria-label={`Failure category: ${chip.label}`}
+            >
+              {chip.label}
+            </span>
+          )
+        })()}
       {isZombie && (
         <span title="Agent finished but task not marked done">
           <AlertTriangle size={12} className="task-pill__zombie-icon" aria-label="Zombie task" />

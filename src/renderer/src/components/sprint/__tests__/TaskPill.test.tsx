@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { SprintTask } from '../../../../../shared/types'
+import { useSprintTasks } from '../../../stores/sprintTasks'
 
 vi.mock('framer-motion', () => ({
   motion: {
@@ -39,6 +40,7 @@ const baseTask: SprintTask = {
 describe('TaskPill', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    useSprintTasks.setState({ tasks: [] })
   })
 
   afterEach(() => {
@@ -131,11 +133,30 @@ describe('TaskPill', () => {
     const pill = screen.getByTestId('task-pill')
     expect(pill.querySelector('.task-pill__time')).toBeNull()
   })
+
+  it('shows blocked-by tooltip on the pill when task is blocked with depends_on', async () => {
+    const { TaskPill } = await import('../TaskPill')
+    useSprintTasks.setState({
+      tasks: [
+        { ...baseTask, id: 'blocker-1', title: 'Build Auth Service', status: 'active' }
+      ]
+    })
+    const blockedTask: SprintTask = {
+      ...baseTask,
+      status: 'blocked',
+      depends_on: [{ id: 'blocker-1', type: 'hard' }]
+    }
+    render(<TaskPill task={blockedTask} selected={false} onClick={vi.fn()} />)
+    const pill = screen.getByTestId('task-pill')
+    expect(pill.getAttribute('title')).toContain('Blocked by:')
+    expect(pill.getAttribute('title')).toContain('Build Auth Service')
+  })
 })
 
 describe('TaskPill - additional status classes', () => {
   beforeEach(() => {
     vi.useFakeTimers()
+    useSprintTasks.setState({ tasks: [] })
   })
 
   afterEach(() => {
