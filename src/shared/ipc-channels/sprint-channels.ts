@@ -326,6 +326,7 @@ export interface GroupChannels {
         accent_color?: string | undefined
         goal?: string | undefined
         status?: 'draft' | 'ready' | 'in-pipeline' | 'completed' | undefined
+        is_paused?: boolean | undefined
       }
     ]
     result: TaskGroup

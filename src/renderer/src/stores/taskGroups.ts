@@ -40,8 +40,10 @@ interface TaskGroupsState {
       accent_color?: string | undefined
       goal?: string | undefined
       status?: 'draft' | 'ready' | 'in-pipeline' | 'completed' | undefined
+      is_paused?: boolean | undefined
     }
   ) => Promise<void>
+  togglePause: (id: string) => Promise<void>
   deleteGroup: (id: string) => Promise<void>
   addTaskToGroup: (taskId: string, groupId: string) => Promise<void>
   removeTaskFromGroup: (taskId: string) => Promise<void>
@@ -141,6 +143,23 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
     } catch (e) {
       toast.error('Failed to update group — ' + (e instanceof Error ? e.message : String(e)))
       // Revert optimistic update by reloading
+      await get().loadGroups()
+    }
+  },
+
+  togglePause: async (id): Promise<void> => {
+    const group = get().groups.find((g) => g.id === id)
+    if (!group) return
+    const newPaused = !group.is_paused
+    set((s) => ({
+      groups: s.groups.map((g) => (g.id === id ? { ...g, is_paused: newPaused } : g))
+    }))
+    try {
+      const updated = await updateGroup(id, { is_paused: newPaused })
+      set((s) => ({ groups: s.groups.map((g) => (g.id === id ? updated : g)) }))
+      toast.success(newPaused ? 'Epic paused — queued tasks will not be claimed' : 'Epic resumed')
+    } catch (e) {
+      toast.error('Failed to toggle pause — ' + (e instanceof Error ? e.message : String(e)))
       await get().loadGroups()
     }
   },
