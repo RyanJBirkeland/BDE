@@ -1,4 +1,4 @@
-import { GitMerge, HeartPulse, LayoutGrid, List, Network, Download } from 'lucide-react'
+import { GitMerge, HeartPulse, LayoutGrid, List, Network, Download, RefreshCw } from 'lucide-react'
 import { useSprintUI } from '../../stores/sprintUI'
 import type { SprintTask } from '../../../../shared/types'
 import { useState, useEffect, useCallback } from 'react'
@@ -39,6 +39,7 @@ export function PipelineHeader({
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [wipSlots, setWipSlots] = useState<{ active: number; max: number } | null>(null)
+  const [triggering, setTriggering] = useState(false)
 
   const handleExport = async (format: 'json' | 'csv'): Promise<void> => {
     setShowExportMenu(false)
@@ -79,9 +80,27 @@ export function PipelineHeader({
 
   useBackoffInterval(fetchStatus, 5000)
 
+  const handleTriggerDrain = useCallback(async (): Promise<void> => {
+    setTriggering(true)
+    try {
+      await window.api.agentManager.triggerDrain()
+    } finally {
+      setTimeout(() => setTriggering(false), 1500)
+    }
+  }, [])
+
   return (
     <header className="sprint-pipeline__header">
       <h1 className="sprint-pipeline__title text-gradient-aurora">Task Pipeline</h1>
+      <button
+        className={`sprint-pipeline__badge pipeline-header__trigger-btn${triggering ? ' pipeline-header__trigger-btn--spinning' : ''}`}
+        onClick={handleTriggerDrain}
+        disabled={triggering}
+        title="Trigger drain loop now — check for queued tasks immediately"
+        aria-label="Check now"
+      >
+        <RefreshCw size={12} />
+      </button>
       <div className="sprint-pipeline__stats">
         {stats.map((stat) => (
           <button

@@ -95,15 +95,16 @@ describe('Agent manager handlers', () => {
     initSprintService(sprintMutationsMock as any)
   })
 
-  it('registers all 5 agent-manager channels', () => {
+  it('registers all 6 agent-manager channels', () => {
     registerAgentManagerHandlers(undefined)
 
-    expect(safeHandle).toHaveBeenCalledTimes(5)
+    expect(safeHandle).toHaveBeenCalledTimes(6)
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:status', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:kill', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:metrics', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:reloadConfig', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('agent-manager:checkpoint', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('agent-manager:triggerDrain', expect.any(Function))
   })
 
   describe('handler functions', () => {

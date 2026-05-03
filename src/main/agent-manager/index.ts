@@ -104,6 +104,8 @@ export interface AgentManager {
     updated: string[]
     requiresRestart: string[]
   }
+  /** Immediately runs one drain tick. Used by the "Check now" pipeline button. */
+  triggerDrain(): void
 }
 
 // ---------------------------------------------------------------------------
@@ -817,6 +819,10 @@ export class AgentManagerImpl implements AgentManager {
       this.tickDrain()
     }
     return result
+  }
+
+  triggerDrain(): void {
+    this.tickDrain()
   }
 
   killAgent(taskId: string): { killed: boolean; error?: string } {

@@ -341,6 +341,7 @@ declare global {
         kill: (taskId: string) => Promise<IpcResult<'agent-manager:kill'>>
         getMetrics: () => Promise<MetricsSnapshot | null>
         reloadConfig: () => Promise<IpcResult<'agent-manager:reloadConfig'>>
+        triggerDrain: () => Promise<void>
         checkpoint: (
           taskId: string,
           message?: string

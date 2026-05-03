@@ -110,6 +110,10 @@ export interface AgentManagerChannels {
     args: [taskId: string, message?: string]
     result: { ok: boolean; committed: boolean; error?: string | undefined }
   }
+  'agent-manager:triggerDrain': {
+    args: []
+    result: void
+  }
 }
 
 /** Cost tracking */

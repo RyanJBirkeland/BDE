@@ -67,6 +67,8 @@ export const agentManager = {
     typedInvoke('agent-manager:metrics'),
   reloadConfig: (): Promise<IpcChannelMap['agent-manager:reloadConfig']['result']> =>
     typedInvoke('agent-manager:reloadConfig'),
+  triggerDrain: (): Promise<void> =>
+    typedInvoke('agent-manager:triggerDrain'),
   checkpoint: (
     taskId: string,
     message?: string

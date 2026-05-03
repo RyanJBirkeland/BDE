@@ -52,6 +52,10 @@ export function registerAgentManagerHandlers(am: AgentManager | undefined): void
     return am.reloadConfig()
   })
 
+  safeHandle('agent-manager:triggerDrain', async () => {
+    am?.triggerDrain()
+  })
+
   // /checkpoint — snapshot current worktree state without stopping the agent.
   // Runs `git add -A && git commit -m "<message>"` in the agent's worktree.
   type CheckpointResult = { ok: boolean; committed: boolean; error?: string | undefined }
