@@ -534,3 +534,57 @@
   background: rgba(var(--fleet-warning-rgb, 255 170 0) / 0.08);
   border-radius: var(--fleet-radius-sm);
 }
+
+/* Structured verification diagnostics */
+.task-drawer__verification-diagnostics {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-drawer__diag-summary {
+  margin: 0;
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text, rgba(255,255,255,0.85));
+  font-style: italic;
+}
+
+.task-drawer__diag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-drawer__diag-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--fleet-overlay, rgba(0,0,0,0.2));
+  border-radius: 4px;
+  border-left: 2px solid var(--fleet-danger, #ff5555);
+}
+
+.task-drawer__diag-location {
+  font-family: var(--fleet-font-code, monospace);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-danger, #ff5555);
+  font-weight: 600;
+}
+
+.task-drawer__diag-message {
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text, rgba(255,255,255,0.85));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.task-drawer__diag-fix {
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted, rgba(255,255,255,0.55));
+  padding-top: 2px;
+}

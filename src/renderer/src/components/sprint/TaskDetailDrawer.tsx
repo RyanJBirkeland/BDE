@@ -41,6 +41,27 @@ export interface TaskDetailDrawerProps {
   onExport?: ((task: SprintTask) => void) | undefined
 }
 
+function renderFailureNotes(notes: string | null | undefined): React.JSX.Element {
+  if (!notes) {
+    return (
+      <div className="task-drawer__status-text">
+        No diagnostic notes captured. Check the Agents view for details.
+      </div>
+    )
+  }
+  const feedback = parseRevisionFeedback(notes)
+  if (feedback) return <VerificationDiagnostics feedback={feedback} />
+  return (
+    <pre
+      className="task-drawer__failure-notes"
+      data-testid="task-drawer-failure-notes"
+      style={{ color: 'var(--fleet-text, rgba(255,255,255,0.85))' }}
+    >
+      {notes}
+    </pre>
+  )
+}
+
 function VerificationDiagnostics({ feedback }: { feedback: RevisionFeedback }): React.JSX.Element {
   return (
     <div
@@ -364,28 +385,7 @@ export function TaskDetailDrawer({
                   <strong>max runtime</strong> or split the work into smaller tasks.
                 </div>
               )}
-            {task.notes ? (
-              (() => {
-                const feedback = parseRevisionFeedback(task.notes)
-                return feedback ? (
-                  <VerificationDiagnostics feedback={feedback} />
-                ) : (
-                  <pre
-                    className="task-drawer__failure-notes"
-                    data-testid="task-drawer-failure-notes"
-                    style={{
-                      color: 'var(--fleet-text, rgba(255,255,255,0.85))'
-                    }}
-                  >
-                    {task.notes}
-                  </pre>
-                )
-              })()
-            ) : (
-              <div className="task-drawer__status-text">
-                No diagnostic notes captured. Check the Agents view for details.
-              </div>
-            )}
+            {renderFailureNotes(task.notes)}
             {agentEvents &&
               agentEvents.length > 0 &&
               (() => {
