@@ -5,10 +5,10 @@
 
 ## Scope
 
-Three low-effort UX fixes:
+Three UX fixes:
 
 1. Quality score rubric tooltip in Code Review
-2. "Review" pipeline chip tooltip clarifying its mixed contents
+2. Split `awaitingReview` partition into `pendingReview` + `openPrs` — two distinct pipeline buckets
 3. "Check now" drain loop trigger button in Task Pipeline
 
 ---
@@ -43,32 +43,64 @@ to its container `<div>`. The tooltip applies only to the quality card, not issu
 
 ---
 
-## Fix 2 — "Review" Pipeline Chip Tooltip
+## Fix 2 — Split `awaitingReview` into Two Distinct Buckets
 
 ### Problem
 
-The pipeline header's `review` chip counts tasks in the `awaitingReview` partition.
-That partition contains two distinct groups:
-- Tasks with `status: 'review'` (agent completed, awaiting human code review)
-- Tasks with `status: 'active' | 'done'` AND `pr_status: 'open'` (open PRs needing
-  attention)
+`partitionSprintTasks` routes two semantically different groups into a single `awaitingReview`
+bucket:
 
-Users expected `review` to mean only "agent-completed" tasks, so open-PR tasks appearing
-in the count was surprising.
+1. `status: 'review'` — agent finished, worktree preserved, **human action needed in Code
+   Review Station**
+2. `status: 'active'` with `pr_status: 'open' | 'branch_only'` — agent still running or PR
+   pushed, **human action needed on GitHub**
+
+These require different human responses and live in different parts of the UI (Code Review
+Station vs GitHub). Combining them under "review" misleads users into thinking the count
+reflects only agent-completed work ready for in-app review.
 
 ### Solution
 
-Add a `title` attribute to the "review" chip in the pipeline header. The `PipelineHeader`
-component renders the filter chips; each chip is a button. Adding a `title` to the review
-chip reads: `"Agent-completed tasks awaiting your review, plus tasks with open PRs"`.
+Split `awaitingReview` into two separate partition keys:
 
-No label rename (it's already "review"). No data model change.
+- **`pendingReview`**: tasks with `status: 'review'` — agent done, needs Code Review Station
+- **`openPrs`**: tasks with `status: 'active'` AND `pr_status: 'open' | 'branch_only'` —
+  PR on GitHub needs attention
+
+**`SprintPartition` interface** gains `pendingReview` and `openPrs`, replacing `awaitingReview`.
+
+**`partitionSprintTasks`** routes accordingly:
+```ts
+// active + open PR → openPrs
+if (task.status === 'active' && (task.pr_status === PR_STATUS.OPEN || task.pr_status === PR_STATUS.BRANCH_ONLY)) {
+  openPrs.push(task)
+  continue
+}
+// bucketKey 'awaitingReview' (status: 'review') → pendingReview
+case 'awaitingReview':
+  pendingReview.push(task)
+```
+
+**`SprintPipeline.tsx`** renders two `PipelineStage` sections (where one `awaitingReview`
+stage previously appeared):
+- "review" stage — `filteredPartition.pendingReview`
+- "PRs" stage — `filteredPartition.openPrs`
+
+**`PipelineHeader.tsx`** gets two chips in place of one:
+- `{ label: 'review', count: partition.pendingReview.length, filter: 'review' }`
+- `{ label: 'PRs', count: partition.openPrs.length, filter: 'open-prs' }`
+
+The filter type in `PipelineHeader` is widened to include `'review'` and `'open-prs'`.
+The existing `'awaiting-review'` filter type is retired.
 
 ### Files
 
 | File | Change |
 |---|---|
-| `src/renderer/src/components/sprint/PipelineHeader.tsx` | Add `title` to the review chip button |
+| `src/renderer/src/lib/partitionSprintTasks.ts` | Replace `awaitingReview` with `pendingReview` + `openPrs` |
+| `src/renderer/src/lib/__tests__/partitionSprintTasks.test.ts` | Update tests for new partition keys |
+| `src/renderer/src/components/sprint/SprintPipeline.tsx` | Render two stages; update chip array |
+| `src/renderer/src/components/sprint/PipelineHeader.tsx` | Update filter type union |
 
 ---
 
@@ -121,8 +153,10 @@ alongside `agentManager.reloadConfig` and other manager methods.
 - With `qualityScore={80}` — expect `title` to contain "Good quality"
 
 ### Fix 2
-- Render `PipelineHeader` with a review chip — expect the review button to have a `title`
-  attribute containing "open PRs"
+- `partitionSprintTasks` with `status: 'review'` task → lands in `pendingReview`, not `openPrs`
+- `partitionSprintTasks` with `status: 'active'` + `pr_status: 'open'` task → lands in `openPrs`, not `pendingReview`
+- Both groups no longer appear in `awaitingReview` (field removed)
+- `SprintPipeline` renders a "PRs" stage distinct from the "review" stage
 
 ### Fix 3
 - Unit test: `AgentManagerImpl.triggerDrain()` calls `tickDrain` (spy/mock)
