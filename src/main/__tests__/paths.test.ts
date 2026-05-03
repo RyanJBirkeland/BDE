@@ -7,11 +7,16 @@
  * Env vars: FLEET_DATA_DIR overrides FLEET_DIR; FLEET_DB_PATH overrides the DB location
  * (lower priority than FLEET_TEST_DB which is used by the test suite itself).
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest'
 import { homedir } from 'os'
 import { join } from 'path'
 
-import { validateWorktreeBase, validateTestDbPath } from '../paths'
+import { validateWorktreeBase, validateTestDbPath, getRepoEnvVars } from '../paths'
+
+vi.mock('../settings', () => ({
+  getSettingJson: vi.fn()
+}))
+import { getSettingJson } from '../settings'
 
 // ---------------------------------------------------------------------------
 // Env var overrides — FLEET_DATA_DIR, FLEET_DB_PATH
@@ -130,5 +135,50 @@ describe('validateTestDbPath', () => {
 
   it('rejects a root-level path', () => {
     expect(() => validateTestDbPath('/fleet.db')).toThrow(/tmp/i)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getRepoEnvVars
+// ---------------------------------------------------------------------------
+
+describe('getRepoEnvVars', () => {
+  beforeEach(() => {
+    vi.mocked(getSettingJson).mockReturnValue(undefined)
+  })
+
+  it('returns empty object for null slug', () => {
+    expect(getRepoEnvVars(null)).toEqual({})
+  })
+
+  it('returns empty object for undefined slug', () => {
+    expect(getRepoEnvVars(undefined)).toEqual({})
+  })
+
+  it('returns empty object when repo list is empty', () => {
+    vi.mocked(getSettingJson).mockReturnValue([])
+    expect(getRepoEnvVars('myrepo')).toEqual({})
+  })
+
+  it('returns empty object when repo has no envVars field', () => {
+    vi.mocked(getSettingJson).mockReturnValue([
+      { name: 'myrepo', localPath: '/repos/myrepo' }
+    ])
+    expect(getRepoEnvVars('myrepo')).toEqual({})
+  })
+
+  it('returns envVars for a matching repo slug', () => {
+    vi.mocked(getSettingJson).mockReturnValue([
+      { name: 'myrepo', localPath: '/repos/myrepo', envVars: { NODE_AUTH_TOKEN: 'tok123' } }
+    ])
+    expect(getRepoEnvVars('myrepo')).toEqual({ NODE_AUTH_TOKEN: 'tok123' })
+  })
+
+  it('is case-insensitive, matching getRepoConfig semantics', () => {
+    vi.mocked(getSettingJson).mockReturnValue([
+      { name: 'MyRepo', localPath: '/repos/myrepo', envVars: { KEY: 'val' } }
+    ])
+    expect(getRepoEnvVars('myrepo')).toEqual({ KEY: 'val' })
+    expect(getRepoEnvVars('MYREPO')).toEqual({ KEY: 'val' })
   })
 })

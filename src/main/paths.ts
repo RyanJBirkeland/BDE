@@ -171,6 +171,16 @@ export function getRepoPromptProfile(repoName: string | null | undefined): 'flee
   return repo?.promptProfile ?? 'fleet'
 }
 
+/**
+ * Look up per-repo environment variables for a configured repo.
+ * Case-insensitive — callers may pass 'FLEET', 'fleet', etc.
+ * Returns an empty object if the repo is not configured or has no envVars field.
+ */
+export function getRepoEnvVars(repoSlug: string | null | undefined): Record<string, string> {
+  if (!repoSlug) return {}
+  return getRepoConfig(repoSlug)?.envVars ?? {}
+}
+
 export function getRepoPaths(): Record<string, string> {
   const repos = getConfiguredRepos()
   const result: Record<string, string> = {}
