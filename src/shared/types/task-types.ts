@@ -36,6 +36,8 @@ export interface TaskGroup {
   created_at: string
   updated_at: string
   depends_on: EpicDependency[] | null
+  /** When true, the drain loop will not claim any of this epic's queued tasks. */
+  is_paused: boolean
 }
 
 export interface RevisionFeedbackEntry {
