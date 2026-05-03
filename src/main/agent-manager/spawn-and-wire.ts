@@ -10,13 +10,13 @@ import type { Logger } from '../logger'
 import { logError } from '../logger'
 import type { AgentRunClaim, RunAgentDeps } from './run-agent'
 import { spawnWithTimeout } from './sdk-adapter'
-import { getRepoConfig } from '../paths'
 import { initializeAgentTracking } from './agent-initialization'
 import { cleanupWorktree } from './worktree'
 import { emitAgentEvent, flushAgentEventBatcher } from '../agent-event-mapper'
 import { nowIso } from '../../shared/time'
 import { TurnTracker } from './turn-tracker'
 import { getDefaultCredentialService } from '../services/credential-service'
+import { getRepoEnvVars } from '../paths'
 import { PIPELINE_DISALLOWED_TOOLS } from './turn-budget'
 import { PipelineAbortError } from './pipeline-abort-error'
 
@@ -120,6 +120,8 @@ export async function spawnAndWireAgent(
     disallowedTools: PIPELINE_DISALLOWED_TOOLS
   }
 
+  const extraEnv = getRepoEnvVars(task.repo)
+
   let handle: AgentHandle
   try {
     handle = await spawnWithTimeout(
@@ -134,7 +136,7 @@ export async function spawnAndWireAgent(
       deps.tickId,
       undefined,             // epicGroupService — not used by pipeline agents here
       worktree.worktreePath, // worktreePath — for buildWorktreeEnv in spawnClaudeAgent
-      getRepoConfig(task.repo)?.envVars
+      extraEnv
     )
     try {
       onSpawnSuccess?.()

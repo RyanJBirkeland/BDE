@@ -49,6 +49,23 @@ describe('pipeline agent SDK options', () => {
     const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
     expect(callArgs?.options?.maxBudgetUsd).toBe(5.0)
   })
+
+  it('merges extraEnv into the agent spawn environment', async () => {
+    await spawnAgent({
+      prompt: 'test',
+      cwd: '/tmp',
+      model: DEFAULT_MODEL,
+      extraEnv: { NODE_AUTH_TOKEN: 'test-token-123' }
+    })
+    const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
+    expect(callArgs?.options?.env?.NODE_AUTH_TOKEN).toBe('test-token-123')
+  })
+
+  it('spawns normally when extraEnv is absent', async () => {
+    await spawnAgent({ prompt: 'test', cwd: '/tmp', model: DEFAULT_MODEL })
+    const callArgs = vi.mocked(sdk.query).mock.calls[0]?.[0]
+    expect(callArgs?.options?.env?.NODE_AUTH_TOKEN).toBeUndefined()
+  })
 })
 
 describe('sdk-adapter', () => {

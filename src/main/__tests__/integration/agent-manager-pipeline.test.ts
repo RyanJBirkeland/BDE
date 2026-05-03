@@ -52,6 +52,7 @@ vi.mock('../../paths', () => ({
   getConfiguredRepos: vi.fn().mockReturnValue([{ name: 'myrepo', localPath: '/repos/myrepo' }]),
   getRepoConfig: vi.fn().mockReturnValue(null),
   getGhRepo: vi.fn(),
+  getRepoEnvVars: vi.fn().mockReturnValue({}),
   FLEET_AGENT_LOG_PATH: '/tmp/fleet-agent-integration-test.log',
   FLEET_TASK_MEMORY_DIR: '/tmp/fleet-test/tasks'
 }))

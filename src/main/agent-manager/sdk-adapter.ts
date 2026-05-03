@@ -149,7 +149,7 @@ export async function spawnAgent(opts: {
   epicGroupService?: EpicGroupService | undefined
   worktreePath?: string | undefined
   /** Per-repo env vars to merge after buildWorktreeEnv (e.g. NODE_AUTH_TOKEN for private npm registries). */
-  repoEnvVars?: Record<string, string> | undefined
+  extraEnv?: Record<string, string> | undefined
 }): Promise<AgentHandle> {
   // Worktree-base cwd assertion applies only to pipeline agents — adhoc,
   // assistant, copilot, and synthesizer agents run in the user's repo or
@@ -251,10 +251,10 @@ async function spawnClaudeAgent(opts: {
   agentType?: string | undefined
   tickId?: string | undefined
   worktreePath?: string | undefined
-  repoEnvVars?: Record<string, string> | undefined
+  extraEnv?: Record<string, string> | undefined
 }): Promise<AgentHandle> {
   const baseEnv = opts.worktreePath ? buildWorktreeEnv(opts.worktreePath) : { ...buildAgentEnv() }
-  const env = opts.repoEnvVars ? { ...baseEnv, ...opts.repoEnvVars } : baseEnv
+  const env = opts.extraEnv ? { ...baseEnv, ...opts.extraEnv } : baseEnv
 
   const token = getOAuthToken()
   const strategy = await resolveSpawnStrategy()
@@ -287,7 +287,7 @@ export async function spawnWithTimeout(
   tickId?: string,
   epicGroupService?: EpicGroupService,
   worktreePath?: string,
-  repoEnvVars?: Record<string, string>
+  extraEnv?: Record<string, string>
 ): Promise<AgentHandle> {
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -297,7 +297,7 @@ export async function spawnWithTimeout(
     )
   })
   return await Promise.race([
-    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId, epicGroupService, worktreePath, repoEnvVars }),
+    spawnAgent({ prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId, epicGroupService, worktreePath, extraEnv }),
     timeoutPromise
   ]).finally(() => clearTimeout(timer!))
 }
