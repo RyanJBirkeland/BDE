@@ -3,7 +3,7 @@
  */
 import './RepositoriesSection.css'
 import { useCallback, useEffect, useState } from 'react'
-import { Trash2, Plus, FolderOpen, KeyRound } from 'lucide-react'
+import { Trash2, Plus, FolderOpen } from 'lucide-react'
 import { toast } from '../../stores/toasts'
 import { Button } from '../ui/Button'
 import { ConfirmModal, useConfirm } from '../ui/ConfirmModal'
@@ -20,20 +20,16 @@ interface RepoConfig {
   envVars?: Record<string, string> | undefined
 }
 
-interface EnvVarDraftRow {
-  key: string
-  value: string
+function envVarsToArray(envVars: Record<string, string> | undefined): Array<{ key: string; value: string }> {
+  return Object.entries(envVars ?? {}).map(([key, value]) => ({ key, value }))
 }
 
-function envVarsToRows(envVars: Record<string, string> | undefined): EnvVarDraftRow[] {
-  if (!envVars) return []
-  return Object.entries(envVars).map(([key, value]) => ({ key, value }))
-}
-
-function rowsToEnvVars(rows: EnvVarDraftRow[]): Record<string, string> | undefined {
-  const valid = rows.filter((r) => r.key.trim())
-  if (valid.length === 0) return undefined
-  return Object.fromEntries(valid.map((r) => [r.key.trim(), r.value]))
+function arrayToEnvVars(pairs: Array<{ key: string; value: string }>): Record<string, string> | undefined {
+  const result: Record<string, string> = {}
+  for (const { key, value } of pairs) {
+    if (key.trim()) result[key.trim()] = value
+  }
+  return Object.keys(result).length > 0 ? result : undefined
 }
 
 export function RepositoriesSection(): React.JSX.Element {
@@ -50,11 +46,8 @@ export function RepositoriesSection(): React.JSX.Element {
   const [newOwner, setNewOwner] = useState('')
   const [newRepo, setNewRepo] = useState('')
   const [newColor, setNewColor] = useState(REPO_COLOR_PALETTE[0])
-
-  // Env var editor state — null means no repo is being edited
-  const [editingEnvVarsFor, setEditingEnvVarsFor] = useState<string | null>(null)
-  const [envVarDraft, setEnvVarDraft] = useState<EnvVarDraftRow[]>([])
-  const [savingEnvVars, setSavingEnvVars] = useState(false)
+  const [expandedEnvRepo, setExpandedEnvRepo] = useState<string | null>(null)
+  const [editingEnvPairs, setEditingEnvPairs] = useState<Array<{ key: string; value: string }>>([])
 
   useEffect(() => {
     window.api.settings.getJson('repos').then((raw) => {
@@ -85,13 +78,13 @@ export function RepositoriesSection(): React.JSX.Element {
       try {
         const updated = repos.filter((r) => r.name !== name)
         await saveRepos(updated)
-        if (editingEnvVarsFor === name) setEditingEnvVarsFor(null)
+        if (expandedEnvRepo === name) setExpandedEnvRepo(null)
         toast.success(`Removed "${name}"`)
       } finally {
         setDeletingName(null)
       }
     },
-    [repos, saveRepos, confirm, editingEnvVarsFor]
+    [repos, saveRepos, confirm, expandedEnvRepo]
   )
 
   const handleManualAdd = useCallback(async () => {
@@ -164,45 +157,27 @@ export function RepositoriesSection(): React.JSX.Element {
     }
   }, [newName, newOwner, newRepo])
 
-  const openEnvVarEditor = useCallback(
-    (repoName: string) => {
-      const repo = repos.find((r) => r.name === repoName)
-      setEnvVarDraft([...envVarsToRows(repo?.envVars), { key: '', value: '' }])
-      setEditingEnvVarsFor(repoName)
+  const handleToggleEnvVars = useCallback(
+    (repoName: string, currentEnvVars: Record<string, string> | undefined) => {
+      if (expandedEnvRepo === repoName) {
+        setExpandedEnvRepo(null)
+      } else {
+        setExpandedEnvRepo(repoName)
+        setEditingEnvPairs(envVarsToArray(currentEnvVars))
+      }
     },
-    [repos]
+    [expandedEnvRepo]
   )
 
-  const handleSaveEnvVars = useCallback(async () => {
-    if (!editingEnvVarsFor) return
-    setSavingEnvVars(true)
-    try {
-      const updated = repos.map((r) =>
-        r.name === editingEnvVarsFor
-          ? { ...r, envVars: rowsToEnvVars(envVarDraft) }
-          : r
-      )
+  const handleSaveEnvVars = useCallback(
+    async (repoName: string) => {
+      const envVars = arrayToEnvVars(editingEnvPairs)
+      const updated = repos.map((r) => (r.name === repoName ? { ...r, envVars } : r))
       await saveRepos(updated)
-      setEditingEnvVarsFor(null)
-      toast.success('Environment variables saved')
-    } finally {
-      setSavingEnvVars(false)
-    }
-  }, [editingEnvVarsFor, envVarDraft, repos, saveRepos])
-
-  const updateDraftRow = useCallback((index: number, field: 'key' | 'value', value: string) => {
-    setEnvVarDraft((prev) => {
-      const next = prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
-      // Auto-append a new empty row when the last row's key is filled
-      const last = next[next.length - 1]
-      if (last && last.key.trim()) next.push({ key: '', value: '' })
-      return next
-    })
-  }, [])
-
-  const removeDraftRow = useCallback((index: number) => {
-    setEnvVarDraft((prev) => prev.filter((_, i) => i !== index))
-  }, [])
+      setExpandedEnvRepo(null)
+    },
+    [repos, editingEnvPairs, saveRepos]
+  )
 
   return (
     <>
@@ -246,119 +221,116 @@ export function RepositoriesSection(): React.JSX.Element {
           <span className="settings-repos__empty">No repositories configured</span>
         )}
 
-        {repos.map((r) => (
-          <SettingsCard
-            key={r.name}
-            title={r.name}
-            subtitle={r.localPath}
-            icon={
-              <span
-                className="settings-repo__dot"
-                style={{ background: r.color ?? 'var(--fleet-text-dim)' }}
-              />
-            }
-            footer={
-              <div className="settings-card-footer-actions">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEnvVarEditor(r.name)}
-                  title="Configure environment variables"
-                  aria-label="Configure environment variables"
-                  type="button"
-                >
-                  <KeyRound size={14} />
-                  {r.envVars && Object.keys(r.envVars).length > 0
-                    ? `Env vars (${Object.keys(r.envVars).length})`
-                    : 'Env vars'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemove(r.name)}
-                  disabled={deletingName === r.name}
-                  loading={deletingName === r.name}
-                  title="Remove repository"
-                  aria-label="Remove repository"
-                  type="button"
-                >
-                  <Trash2 size={14} /> {deletingName === r.name ? 'Deleting...' : 'Delete'}
-                </Button>
-              </div>
-            }
-          >
-            {r.githubOwner && r.githubRepo && (
-              <span className="settings-repo__github">
-                {r.githubOwner}/{r.githubRepo}
-              </span>
-            )}
-          </SettingsCard>
-        ))}
+        {repos.map((r) => {
+          const envCount = Object.keys(r.envVars ?? {}).length
+          const isExpanded = expandedEnvRepo === r.name
 
-        {editingEnvVarsFor && (
-          <SettingsCard title={`Environment Variables — ${editingEnvVarsFor}`}>
-            <div className="settings-env-vars">
-              <p className="settings-env-vars__hint">
-                Injected into the agent&apos;s spawn environment. Use for credentials like{' '}
-                <code>NODE_AUTH_TOKEN</code> for private npm registries.
-              </p>
-              <p className="settings-env-vars__warning">
-                Stored in plain text in the local database (~/.fleet/fleet.db).
-              </p>
-              <div className="settings-env-vars__rows">
-                {envVarDraft.map((row, i) => (
-                  <div key={i} className="settings-env-vars__row">
-                    <input
-                      className="settings-field__input settings-env-vars__key"
-                      placeholder="KEY"
-                      value={row.key}
-                      onChange={(e) => updateDraftRow(i, 'key', e.target.value)}
-                      aria-label={`Environment variable key ${i + 1}`}
-                    />
-                    <input
-                      className="settings-field__input settings-env-vars__value"
-                      placeholder="value"
-                      value={row.value}
-                      onChange={(e) => updateDraftRow(i, 'value', e.target.value)}
-                      aria-label={`Environment variable value ${i + 1}`}
-                    />
-                    {envVarDraft.length > 1 && (
+          return (
+            <SettingsCard
+              key={r.name}
+              title={r.name}
+              subtitle={r.localPath}
+              icon={
+                <span
+                  className="settings-repo__dot"
+                  style={{ background: r.color ?? 'var(--fleet-text-dim)' }}
+                />
+              }
+              footer={
+                <div className="settings-card-footer-actions">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleEnvVars(r.name, r.envVars)}
+                    type="button"
+                    aria-expanded={isExpanded}
+                  >
+                    {`Env vars${envCount > 0 ? ` (${envCount})` : ''}`}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemove(r.name)}
+                    disabled={deletingName === r.name}
+                    loading={deletingName === r.name}
+                    title="Remove repository"
+                    aria-label="Remove repository"
+                    type="button"
+                  >
+                    <Trash2 size={14} /> {deletingName === r.name ? 'Deleting...' : 'Delete'}
+                  </Button>
+                </div>
+              }
+            >
+              {r.githubOwner && r.githubRepo && (
+                <span className="settings-repo__github">
+                  {r.githubOwner}/{r.githubRepo}
+                </span>
+              )}
+              {isExpanded && (
+                <div className="settings-repo__env-editor">
+                  <p className="settings-repo__env-warning">
+                    Values are stored unencrypted in the app database. Do not store secrets you
+                    would not write to <code>.npmrc</code> or a <code>.env</code> file.
+                  </p>
+                  {editingEnvPairs.map((pair, i) => (
+                    <div key={i} className="settings-repo__env-row">
+                      <input
+                        className="settings-field__input"
+                        placeholder="KEY"
+                        aria-label={`Environment variable key ${i + 1}`}
+                        value={pair.key}
+                        onChange={(e) => {
+                          const updated = [...editingEnvPairs]
+                          updated[i] = { key: e.target.value, value: pair.value }
+                          setEditingEnvPairs(updated)
+                        }}
+                      />
+                      <input
+                        className="settings-field__input"
+                        placeholder="value"
+                        aria-label={`Environment variable value ${i + 1}`}
+                        value={pair.value}
+                        onChange={(e) => {
+                          const updated = [...editingEnvPairs]
+                          updated[i] = { key: pair.key, value: e.target.value }
+                          setEditingEnvPairs(updated)
+                        }}
+                      />
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeDraftRow(i)}
-                        title="Remove row"
                         type="button"
+                        aria-label="Remove variable"
+                        onClick={() => setEditingEnvPairs(editingEnvPairs.filter((_, j) => j !== i))}
                       >
-                        <Trash2 size={12} />
+                        ×
                       </Button>
-                    )}
+                    </div>
+                  ))}
+                  <div className="settings-repo__env-actions">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      onClick={() => setEditingEnvPairs([...editingEnvPairs, { key: '', value: '' }])}
+                    >
+                      + Add variable
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      type="button"
+                      onClick={() => handleSaveEnvVars(r.name)}
+                    >
+                      Save
+                    </Button>
                   </div>
-                ))}
-              </div>
-              <div className="settings-env-vars__actions">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingEnvVarsFor(null)}
-                  type="button"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSaveEnvVars}
-                  disabled={savingEnvVars}
-                  loading={savingEnvVars}
-                  type="button"
-                >
-                  {savingEnvVars ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-            </div>
-          </SettingsCard>
-        )}
+                </div>
+              )}
+            </SettingsCard>
+          )
+        })}
 
         {showManual && (
           <SettingsCard title="Add Repository (Manual)">

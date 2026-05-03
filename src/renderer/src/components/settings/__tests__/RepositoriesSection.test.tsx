@@ -160,4 +160,33 @@ describe('RepositoriesSection', () => {
       )
     })
   })
+
+  it('renders env vars count badge when repo has envVars', async () => {
+    vi.mocked(window.api.settings.getJson).mockResolvedValue([
+      {
+        name: 'my-repo',
+        localPath: '/home/user/my-repo',
+        envVars: { NODE_AUTH_TOKEN: 'tok', REGISTRY: 'https://npm.pkg.github.com' }
+      }
+    ])
+    render(<RepositoriesSection />)
+    await waitFor(() => {
+      expect(screen.getByText(/Env vars \(2\)/)).toBeInTheDocument()
+    })
+  })
+
+  it('expands env var editor when Env vars button is clicked', async () => {
+    vi.mocked(window.api.settings.getJson).mockResolvedValue([
+      {
+        name: 'my-repo',
+        localPath: '/home/user/my-repo',
+        envVars: { NODE_AUTH_TOKEN: 'tok123' }
+      }
+    ])
+    render(<RepositoriesSection />)
+    await waitFor(() => screen.getByText(/Env vars/))
+    await userEvent.click(screen.getByText(/Env vars/))
+    expect(screen.getByDisplayValue('NODE_AUTH_TOKEN')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('tok123')).toBeInTheDocument()
+  })
 })

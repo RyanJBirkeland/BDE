@@ -316,3 +316,44 @@
   display: flex;
   gap: var(--fleet-space-2);
 }
+
+/* --- Per-repo env vars editor --- */
+
+.settings-repo__env-editor {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-repo__env-warning {
+  font-size: 11px;
+  color: var(--fleet-text-dim);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+
+.settings-repo__env-warning code {
+  font-family: var(--fleet-font-mono, monospace);
+  background: var(--fleet-bg-subtle, rgba(255,255,255,0.06));
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.settings-repo__env-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.settings-repo__env-row .settings-field__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-repo__env-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
