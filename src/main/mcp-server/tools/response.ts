@@ -28,6 +28,10 @@ export function jsonContent(value: unknown): JsonToolResponse {
   return { content: [{ type: 'text' as const, text: JSON.stringify(value) }] }
 }
 
+export function textContent(text: string): JsonToolResponse {
+  return { content: [{ type: 'text' as const, text }] }
+}
+
 /**
  * Build a structured error envelope carrying the JSON-RPC error body (code,
  * message, data) so MCP clients can programmatically distinguish error

@@ -2,7 +2,8 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { TASK_STATUSES, VALID_TRANSITIONS } from '../../../shared/task-state-machine'
 import type { RepoConfig } from '../../paths'
-import { jsonContent } from './response'
+import { jsonContent, textContent } from './response'
+import { buildSpecGuidelinesMarkdown } from '../spec-guidelines'
 
 export interface MetaToolsDeps {
   getRepos: () => RepoConfig[]
@@ -64,5 +65,17 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
       inputSchema: NoArgsSchema
     },
     async () => jsonContent(DEPENDENCY_CONDITIONS_PAYLOAD)
+  )
+
+  server.registerTool(
+    'meta.specGuidelines',
+    {
+      description:
+        'Returns FLEET spec-writing guidelines as markdown. Call this before drafting a task spec. ' +
+        'Covers required section headings, structural rules, the prescriptiveness rule, the idiom-first ' +
+        'principle, prompt envelope context, revision pathway notes, and a complete worked example.',
+      inputSchema: NoArgsSchema
+    },
+    async () => textContent(buildSpecGuidelinesMarkdown())
   )
 }

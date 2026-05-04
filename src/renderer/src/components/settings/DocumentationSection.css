@@ -1,0 +1,210 @@
+.doc-layout {
+  display: flex;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Left topic nav */
+.doc-nav {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: var(--space-4);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+}
+
+.doc-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s, color 0.15s;
+}
+
+.doc-nav__item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.doc-nav__item--active {
+  background: var(--surface-hover);
+  color: var(--accent);
+}
+
+/* Right scrollable content */
+.doc-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding-left: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+/* Per-topic section */
+.doc-topic__heading {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.doc-topic__description {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin: 0 0 var(--space-5) 0;
+  line-height: 1.6;
+}
+
+/* Individual section cards within a topic */
+.doc-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.doc-section__heading {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.doc-section__body {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* Code blocks */
+.doc-code-block {
+  margin-top: var(--space-3);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.doc-code-block__label {
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-1) var(--space-3);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.doc-code-block__pre {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre;
+}
+
+/* Tables */
+.doc-table-wrapper {
+  margin-top: var(--space-3);
+  overflow-x: auto;
+}
+
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+}
+
+.doc-table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-table td {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+}
+
+.doc-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Pass/fail badges */
+.doc-badges {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.doc-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
+  font-family: var(--font-mono);
+  line-height: 1.5;
+}
+
+.doc-badge--pass {
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
+}
+
+.doc-badge--fail {
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 25%, transparent);
+}
+
+.doc-badge__indicator {
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  line-height: 1.4;
+}
+
+.doc-badge--pass .doc-badge__indicator {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+}
+
+.doc-badge--fail .doc-badge__indicator {
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 15%, transparent);
+}
+
+.doc-badge__label {
+  color: var(--text-secondary);
+}

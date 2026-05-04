@@ -368,9 +368,15 @@ function toListTasksOptions(args: ReturnType<typeof TaskListSchema.parse>): List
  * MCP clients see a structured `code` + machine-readable subcode (`spec-structural`,
  * `spec-readiness`, `repo-not-configured`). Unknown throws propagate.
  */
+const SPEC_VALIDATION_GUIDANCE =
+  'Call meta.specGuidelines for the complete rule set. Use tasks.validateSpec to pre-flight before tasks.create.'
+
 function rewrapTaskValidationError(err: unknown): unknown {
   if (err instanceof TaskValidationError) {
-    return new McpDomainError(err.message, McpErrorCode.ValidationFailed, { code: err.code })
+    return new McpDomainError(err.message, McpErrorCode.ValidationFailed, {
+      code: err.code,
+      guidance: SPEC_VALIDATION_GUIDANCE
+    })
   }
   return err
 }

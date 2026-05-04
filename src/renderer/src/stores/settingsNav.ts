@@ -14,6 +14,7 @@ export type SettingsSectionId =
   | 'memory'
   | 'appearance'
   | 'about'
+  | 'documentation'
 
 interface SettingsNavStore {
   activeSection: SettingsSectionId

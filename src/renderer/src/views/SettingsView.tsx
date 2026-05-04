@@ -4,7 +4,7 @@
  */
 import './SettingsView.css'
 import { motion } from 'framer-motion'
-import { Palette, Link, GitBranch, FileText, Cpu, Brain, Info, Network } from 'lucide-react'
+import { Palette, Link, GitBranch, FileText, Cpu, Brain, Info, Network, BookOpen } from 'lucide-react'
 import { SettingsSidebar } from '../components/settings/SettingsSidebar'
 import type { SettingsSection } from '../components/settings/SettingsSidebar'
 import { SettingsPageHeader } from '../components/settings/SettingsPageHeader'
@@ -16,6 +16,7 @@ import { AgentManagerSection } from '../components/settings/AgentManagerSection'
 import { ModelsSection } from '../components/settings/ModelsSection'
 import { MemorySection } from '../components/settings/MemorySection'
 import { AboutSection } from '../components/settings/AboutSection'
+import { DocumentationSection } from '../components/settings/DocumentationSection'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import { useSettingsNavStore } from '../stores/settingsNav'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
@@ -28,7 +29,8 @@ const SECTIONS: SettingsSection[] = [
   { id: 'models', label: 'Models', icon: Network, category: 'Pipeline' },
   { id: 'memory', label: 'Memory', icon: Brain, category: 'App' },
   { id: 'appearance', label: 'Appearance & Shortcuts', icon: Palette, category: 'App' },
-  { id: 'about', label: 'About & Usage', icon: Info, category: 'App' }
+  { id: 'about', label: 'About & Usage', icon: Info, category: 'App' },
+  { id: 'documentation', label: 'Documentation', icon: BookOpen, category: 'App' }
 ]
 
 const SECTION_MAP: Record<string, () => React.JSX.Element> = {
@@ -39,7 +41,8 @@ const SECTION_MAP: Record<string, () => React.JSX.Element> = {
   models: ModelsSection,
   memory: MemorySection,
   appearance: AppearanceSection,
-  about: AboutSection
+  about: AboutSection,
+  documentation: DocumentationSection
 }
 
 const SECTION_META: Record<string, { title: string; subtitle: string }> = {
@@ -62,7 +65,11 @@ const SECTION_META: Record<string, { title: string; subtitle: string }> = {
     title: 'Appearance & Shortcuts',
     subtitle: 'Theme, notifications, and keyboard shortcuts'
   },
-  about: { title: 'About & Usage', subtitle: 'Version info and API usage history' }
+  about: { title: 'About & Usage', subtitle: 'Version info and API usage history' },
+  documentation: {
+    title: 'Documentation',
+    subtitle: 'Spec guidelines, Epic concepts, agent reference, and MCP integration'
+  }
 }
 
 export default function SettingsView(): React.JSX.Element {
