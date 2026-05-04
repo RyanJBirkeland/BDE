@@ -8,7 +8,7 @@ Claude Code is a powerful coding agent. FLEET is the desktop app that turns it i
 
 You write specs. FLEET queues them, spawns Claude Code sessions, monitors progress, and presents finished work for review. You stay in control. Claude Code does the building.
 
-[Getting Started](#getting-started) | [How It Works](#how-it-works) | [Features](#features) | [Architecture](#architecture) | [Contributing](#contributing)
+[Getting Started](#getting-started) | [How It Works](#how-it-works) | [Core Concepts](#core-concepts) | [Features](#features) | [Architecture](#architecture) | [Contributing](#contributing)
 
 <br/>
 
@@ -145,6 +145,39 @@ sequenceDiagram
 ```
 
 > **FLEET doesn't have its own AI.** Every agent is a Claude Code session spawned via the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/sdk). FLEET's job is steering: what runs, where it runs, when it retries, and what happens with the output.
+
+---
+
+## Core Concepts
+
+Understanding four concepts is enough to be productive with FLEET.
+
+### Task
+
+A unit of work for a pipeline agent. Each task has a **spec** (the written instructions), a **status** (`backlog → queued → active → review → done`), and optional **dependencies** on other tasks. One task becomes one Claude Code session in one isolated git worktree.
+
+### Spec
+
+The instructions a pipeline agent executes. The pipeline agent reads your spec once and follows it literally — **spec quality is code quality**.
+
+Every spec must have four `##` sections:
+
+| Section | Purpose |
+|---|---|
+| `## Context` | Why the change is needed; what the agent must understand before starting |
+| `## Files to Change` | Exact paths to every file that will be modified |
+| `## Implementation Steps` | Numbered, prescriptive steps — no alternatives, one approach, specified |
+| `## How to Test` | Exact commands to verify the work is complete |
+
+A good spec is 200–500 words, covers one feature, and includes exact file paths. Steps must not present options ("X or Y" fails validation). → [Full spec writing guide](docs/concepts.md#writing-a-task-spec)
+
+### Epic
+
+A named group of related tasks organised around a shared goal. Epics exist to track progress across phases, express dependencies between task groups, and batch-queue an entire plan in one click. An Epic moves through `draft → ready → in-pipeline → completed` as its tasks progress. → [Epic reference](docs/concepts.md#epics)
+
+### Dependency
+
+A declared relationship between tasks. **Hard** dependencies block the downstream task until the upstream task reaches `done`. **Soft** dependencies unblock regardless of outcome. Both are set declaratively — FLEET handles blocking and resolution automatically, including cycle detection. → [Dependency reference](docs/concepts.md#task-dependencies)
 
 ---
 
@@ -449,8 +482,9 @@ src/
     lib/                 # Utilities, constants, GitHub cache
   shared/                # Types + IPC channel definitions
 docs/
+  concepts.md            # Core concepts: Tasks, Specs, Epics, Dependencies, Agent Types
   architecture.md        # Full architecture documentation
-  FLEET_FEATURES.md        # Detailed feature reference
+  FLEET_FEATURES.md      # Detailed feature reference (loaded by all agents)
   modules/               # Per-module reference docs (updated on every commit)
 ```
 
