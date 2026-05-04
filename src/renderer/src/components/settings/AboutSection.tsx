@@ -21,10 +21,11 @@ type UpdateStatus = {
 
 function updateButtonLabel(status: UpdateStatus['status']): string {
   switch (status) {
-    case 'checking': return 'Checking…'
+    case 'checking':    return 'Checking…'
+    case 'available':
     case 'downloading': return 'Downloading…'
-    case 'ready': return 'Restart to Update'
-    default: return 'Check for Updates'
+    case 'ready':       return 'Restart to Update'
+    default:            return 'Check for Updates'
   }
 }
 
@@ -72,7 +73,10 @@ export function AboutSection(): React.JSX.Element {
     }
   }
 
-  const isUpdateBusy = updateStatus?.status === 'checking' || updateStatus?.status === 'downloading'
+  const isUpdateBusy =
+    updateStatus?.status === 'checking' ||
+    updateStatus?.status === 'available' ||
+    updateStatus?.status === 'downloading'
   const buttonLabel = updateStatus ? updateButtonLabel(updateStatus.status) : 'Check for Updates'
   const statusText = updateStatusText(updateStatus)
 
