@@ -14,9 +14,15 @@ interface WindowSession {
  * Reads and writes `fleet:last-window-close` in localStorage so the persistence
  * concern lives here, not in the view.
  */
+interface BriefingState {
+  showBriefing: boolean
+  briefingTasks: SprintTask[]
+}
+
+const INITIAL_BRIEFING: BriefingState = { showBriefing: false, briefingTasks: [] }
+
 export function useWindowSession(tasks: SprintTask[]): WindowSession {
-  const [showBriefing, setShowBriefing] = useState(false)
-  const [briefingTasks, setBriefingTasks] = useState<SprintTask[]>([])
+  const [briefing, setBriefing] = useState<BriefingState>(INITIAL_BRIEFING)
   const checked = useRef(false)
 
   useEffect(() => {
@@ -35,15 +41,14 @@ export function useWindowSession(tasks: SprintTask[]): WindowSession {
     })
 
     if (newCompletions.length > 0) {
-      setBriefingTasks(newCompletions)
-      setShowBriefing(true)
+      setBriefing({ showBriefing: true, briefingTasks: newCompletions })
     }
   }, [tasks])
 
   const dismissBriefing = useCallback(() => {
     localStorage.setItem(LAST_CLOSE_KEY, Date.now().toString())
-    setShowBriefing(false)
+    setBriefing(INITIAL_BRIEFING)
   }, [])
 
-  return { showBriefing, briefingTasks, dismissBriefing }
+  return { showBriefing: briefing.showBriefing, briefingTasks: briefing.briefingTasks, dismissBriefing }
 }
