@@ -29,7 +29,7 @@ import {
 import { proxyGitHubRequest } from '../services/github-proxy-service'
 import type { GitHubFetchInit } from '../../shared/ipc-channels'
 import { createLogger } from '../logger'
-import { validateGitRef, validateFilePath } from '../lib/review-paths'
+import { validateGitRef, validateFilePath, validateWorktreePath } from '../lib/review-paths'
 import { execFileAsync } from '../lib/async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { resolveGitExecutable } from '../agent-manager/resolve-git'
@@ -139,6 +139,18 @@ export function registerGitHandlers(deps: GitHandlersDeps): void {
       await updateTaskMergeableState(prNumber, result.mergeableState)
     }
     return results
+  })
+
+  safeHandle('git:diffBetweenRefs', async (_e, { repoPath, fromRef, toRef }: { repoPath: string; fromRef: string; toRef: string }) => {
+    validateWorktreePath(repoPath)
+    validateGitRef(fromRef)
+    validateGitRef(toRef)
+    const { stdout } = await execFileAsync('git', ['diff', `${fromRef}..${toRef}`], {
+      cwd: repoPath,
+      env: buildAgentEnv(),
+      maxBuffer: 50 * 1024 * 1024
+    })
+    return stdout
   })
 
   // --- Conflict file detection ---

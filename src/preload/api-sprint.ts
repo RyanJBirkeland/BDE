@@ -41,7 +41,8 @@ export const sprint = {
     typedInvoke('sprint:forceFailTask', payload),
   forceDoneTask: (payload: { taskId: string; reason?: string; force?: boolean }) =>
     typedInvoke('sprint:forceDoneTask', payload),
-  forceReleaseClaim: (taskId: string) => typedInvoke('sprint:forceReleaseClaim', taskId)
+  forceReleaseClaim: (taskId: string) => typedInvoke('sprint:forceReleaseClaim', taskId),
+  getLastPrompt: (taskId: string) => typedInvoke('tasks:getLastPrompt', taskId)
 }
 
 export const groups = {

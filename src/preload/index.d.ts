@@ -52,6 +52,7 @@ declare global {
           ...args: IpcArgs<'settings:deleteProfile'>
         ) => Promise<IpcResult<'settings:deleteProfile'>>
         getEncryptionStatus: () => Promise<IpcResult<'settings:getEncryptionStatus'>>
+        onExternalChange: (cb: () => void) => () => void
       }
 
       // Claude CLI config (~/.claude/settings.json)
@@ -105,6 +106,9 @@ declare global {
         ) => Promise<IpcResult<'git:detectRemote'>>
         fetch: (...args: IpcArgs<'git:fetch'>) => Promise<IpcResult<'git:fetch'>>
         pull: (...args: IpcArgs<'git:pull'>) => Promise<IpcResult<'git:pull'>>
+        diffBetweenRefs: (
+          ...args: IpcArgs<'git:diffBetweenRefs'>
+        ) => Promise<IpcResult<'git:diffBetweenRefs'>>
       }
 
       // Memory
@@ -263,6 +267,9 @@ declare global {
         forceReleaseClaim: (
           ...args: IpcArgs<'sprint:forceReleaseClaim'>
         ) => Promise<IpcResult<'sprint:forceReleaseClaim'>>
+        getLastPrompt: (
+          ...args: IpcArgs<'tasks:getLastPrompt'>
+        ) => Promise<IpcResult<'tasks:getLastPrompt'>>
         onExternalChange: (cb: () => void) => () => void
         onMutation: (
           cb: (payload: { type: 'created' | 'updated' | 'deleted'; task: SprintTask }) => void

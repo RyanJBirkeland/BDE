@@ -4,9 +4,12 @@ import { TASK_STATUSES, VALID_TRANSITIONS } from '../../../shared/task-state-mac
 import type { RepoConfig } from '../../paths'
 import { jsonContent, textContent } from './response'
 import { buildSpecGuidelinesMarkdown } from '../spec-guidelines'
+import { safeToolResponse } from './response'
 
 export interface MetaToolsDeps {
   getRepos: () => RepoConfig[]
+  /** Broadcasts settings:externalChange to all renderer windows. */
+  broadcastSettingsChange: () => void
 }
 
 /**
@@ -77,5 +80,19 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
       inputSchema: NoArgsSchema
     },
     async () => textContent(buildSpecGuidelinesMarkdown())
+  )
+
+  server.registerTool(
+    'meta.reloadSettings',
+    {
+      description:
+        'Invalidate the in-process settings cache. Use after making out-of-band edits to the settings table via SQLite CLI or scripts.',
+      inputSchema: NoArgsSchema
+    },
+    async () =>
+      safeToolResponse(async () => {
+        deps.broadcastSettingsChange()
+        return jsonContent({ ok: true })
+      })
   )
 }

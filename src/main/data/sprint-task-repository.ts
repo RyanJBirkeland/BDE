@@ -27,6 +27,7 @@ import type {
   DailySuccessRate,
   FailureReasonBreakdown
 } from './reporting-queries'
+import { persistRenderedPrompt as persistRenderedPromptQuery } from './sprint-task-crud'
 
 export type {
   CreateTaskInput,
@@ -68,6 +69,12 @@ export interface IAgentTaskRepository {
   getGroupsWithDependencies(): Array<{ id: string; depends_on: EpicDependency[] | null }>
   /** Used by the drain loop to report queue depth in drain-paused broadcasts. */
   getQueueStats(): QueueStats
+  /**
+   * Persist the exact prompt text rendered for the agent's most recent run.
+   * Called fire-and-forget immediately before spawn — failures are swallowed
+   * so a DB write error never blocks the agent.
+   */
+  persistRenderedPrompt(taskId: string, prompt: string): Promise<void>
 }
 
 /**
@@ -140,6 +147,7 @@ export function createSprintTaskRepository(): ISprintTaskRepository {
     getGroup: groupQueries.getGroup,
     getGroupTasks: groupQueries.getGroupTasks,
     getGroupsWithDependencies: groupQueries.getGroupsWithDependencies,
+    persistRenderedPrompt: persistRenderedPromptQuery,
     listTasks: (options) => queries.listTasks(options),
     listTasksRecent: queries.listTasksRecent,
     createTask: queries.createTask,

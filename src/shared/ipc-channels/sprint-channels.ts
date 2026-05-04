@@ -143,6 +143,10 @@ export interface SprintChannels {
     args: [taskId: string]
     result: SprintTask
   }
+  'tasks:getLastPrompt': {
+    args: [taskId: string]
+    result: { prompt: string | null }
+  }
 }
 
 export interface ReviewChannels {

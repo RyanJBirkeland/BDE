@@ -116,6 +116,10 @@ export const refreshPrList = (): Promise<IpcChannelMap['pr:refreshList']['result
 export const onExternalSprintChange =
   onBroadcast<BroadcastChannels['sprint:externalChange']>('sprint:externalChange')
 
+// Settings DB file-watcher broadcast
+export const onExternalSettingsChange =
+  onBroadcast<BroadcastChannels['settings:externalChange']>('settings:externalChange')
+
 // Sprint task mutation broadcast (granular — carries the changed task payload)
 export const onSprintMutation = onBroadcast<BroadcastChannels['sprint:mutation']>('sprint:mutation')
 

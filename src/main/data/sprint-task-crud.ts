@@ -526,6 +526,23 @@ function handleUpdateError(taskId: string, err: unknown): null {
   return null
 }
 
+/**
+ * Persists the exact prompt text rendered for the agent's most recent run.
+ * Uses a direct UPDATE instead of `updateTask` to bypass the audit trail —
+ * last_rendered_prompt is operational metadata, not a user-visible field.
+ */
+export async function persistRenderedPrompt(
+  taskId: string,
+  prompt: string,
+  db?: Database.Database
+): Promise<void> {
+  const conn = db ?? getDb()
+  return withRetryAsync(() => {
+    const sql = `UPDATE sprint_tasks SET last_rendered_prompt = ? WHERE id = ?`
+    conn.prepare(sql).run(prompt, taskId)
+  })
+}
+
 export function deleteTask(
   id: string,
   deletedBy: string = 'unknown',

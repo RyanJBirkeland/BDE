@@ -117,7 +117,8 @@ export interface SprintTask {
   /**
    * Serialized JSON snapshot of the diff captured at review transition,
    * so Code Review can still show changes after the worktree is cleaned up.
-   * Shape: { capturedAt: string; totals: { additions, deletions, files };
+   * Shape: { capturedAt: string; branchTip?: string;
+   *          totals: { additions, deletions, files };
    *          files: Array<{ path; status; additions; deletions; patch? }>;
    *          truncated?: boolean }
    */
@@ -134,6 +135,12 @@ export interface SprintTask {
    * to `error` instead of being re-queued, preventing infinite crash loops.
    */
   orphan_recovery_count?: number
+  /**
+   * The exact prompt text rendered and passed to the SDK on the task's most
+   * recent run. Persisted immediately before spawn so spec authors can inspect
+   * what the agent actually received.
+   */
+  last_rendered_prompt?: string | null
   updated_at: string
   created_at: string
 }
@@ -213,6 +220,12 @@ export type SprintTaskPR = SprintTaskCore &
 /** Shape of the `review_diff_snapshot` JSON blob. */
 export interface ReviewDiffSnapshot {
   capturedAt: string
+  /**
+   * Git SHA of HEAD in the agent worktree when the snapshot was captured.
+   * Used by Code Review to compute an incremental "since last review" diff
+   * by calling `git diff <branchTip>..HEAD` after a revision cycle.
+   */
+  branchTip?: string
   totals: { additions: number; deletions: number; files: number }
   files: Array<{
     path: string

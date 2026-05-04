@@ -243,6 +243,12 @@ export function registerSprintLocalHandlers(
     if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
     return forceReleaseClaim(taskId, deps)
   })
+
+  safeHandle('tasks:getLastPrompt', async (_e, taskId: string) => {
+    if (!isValidTaskId(taskId)) throw new Error('Invalid task ID format')
+    const task = getTask(taskId)
+    return { prompt: task?.last_rendered_prompt ?? null }
+  })
 }
 
 interface ForceOverrideArgs {

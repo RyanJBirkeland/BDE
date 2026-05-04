@@ -50,3 +50,10 @@ export const gitPull = (
   cwd: string,
   currentBranch: string
 ): Promise<IpcChannelMap['git:pull']['result']> => typedInvoke('git:pull', cwd, currentBranch)
+
+export const gitDiffBetweenRefs = (payload: {
+  repoPath: string
+  fromRef: string
+  toRef: string
+}): Promise<IpcChannelMap['git:diffBetweenRefs']['result']> =>
+  typedInvoke('git:diffBetweenRefs', payload)
