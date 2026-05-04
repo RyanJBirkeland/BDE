@@ -43,7 +43,7 @@ import { createTaskTerminalService, createPollerTerminalDispatcher } from './ser
 import { createTaskStateService } from './services/task-state-service'
 import { createStatusServer } from './services/status-server'
 import { createElectronDialogService } from './dialog-service'
-import { getTask, updateTask, notifySprintMutation } from './services/sprint-service'
+import { getTask, updateTask } from './services/sprint-service'
 import { createSprintMutations } from './services/sprint-mutations'
 import { initSprintService } from './services/sprint-service'
 import { initSprintUseCases } from './services/sprint-use-cases'
