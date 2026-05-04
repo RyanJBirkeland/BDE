@@ -63,15 +63,9 @@ describe('validateTransition', () => {
       expect(result.ok).toBe(true)
     })
 
-    it('should reject cancelled → queued (re-queueing a cancelled task is not allowed)', () => {
+    it('should allow cancelled → queued (revival path so cancelled tasks can be retried, issue #708)', () => {
       const result = validateTransition('cancelled', 'queued')
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.reason).toContain('cancelled → queued')
-        // cancelled now permits → done as a manual recovery escape; only that
-        // single transition is allowed, so the error message should list it.
-        expect(result.reason).toContain('Allowed: done')
-      }
+      expect(result.ok).toBe(true)
     })
 
     it('should reject done → active (terminal except cancel)', () => {

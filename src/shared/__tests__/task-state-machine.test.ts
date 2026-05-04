@@ -119,8 +119,11 @@ describe('task-state-machine', () => {
       expect(VALID_TRANSITIONS.done).not.toContain('active')
     })
 
-    it('should not allow cancelled → queued (cancelled is terminal)', () => {
-      expect(VALID_TRANSITIONS.cancelled).not.toContain('queued')
+    it('should allow cancelled → queued and cancelled → backlog (revival paths)', () => {
+      // Cancelled tasks can be revived in place; MCP TERMINAL_STATE_RESET_PATCH
+      // clears stale runtime fields on any terminal→queued/backlog transition (issue #708).
+      expect(VALID_TRANSITIONS.cancelled).toContain('queued')
+      expect(VALID_TRANSITIONS.cancelled).toContain('backlog')
     })
 
     it('should allow cancelled → done (manual recovery escape hatch)', () => {
@@ -162,9 +165,16 @@ describe('task-state-machine', () => {
       expect(isValidTransition('queued', 'error')).toBe(true)
     })
 
+    it('should return true for revival transitions (terminal → queued/backlog)', () => {
+      // Pre-flight "move back to holding": queued→backlog (issue #708)
+      expect(isValidTransition('queued', 'backlog')).toBe(true)
+      // Cancelled task revival: cancelled→queued and cancelled→backlog (issue #708)
+      expect(isValidTransition('cancelled', 'queued')).toBe(true)
+      expect(isValidTransition('cancelled', 'backlog')).toBe(true)
+    })
+
     it('should return false for invalid transitions', () => {
       expect(isValidTransition('done', 'active')).toBe(false)
-      expect(isValidTransition('cancelled', 'queued')).toBe(false)
       expect(isValidTransition('backlog', 'done')).toBe(false)
     })
   })

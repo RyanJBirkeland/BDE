@@ -1165,9 +1165,11 @@ describe('updateTask — transition enforcement', () => {
     await expect(updateTask(id, { status: 'active' })).rejects.toThrow(/Invalid transition/)
   })
 
-  it('throws on invalid transition: cancelled → queued', async () => {
+  it('succeeds on valid transition: cancelled → queued (revival path, issue #708)', async () => {
     const id = seedTaskAtStatus('cancelled')
-    await expect(updateTask(id, { status: 'queued' })).rejects.toThrow(/Invalid transition/)
+    const result = await updateTask(id, { status: 'queued' })
+    expect(result).not.toBeNull()
+    expect(result?.status).toBe('queued')
   })
 
   it('succeeds on valid transition: queued → active', async () => {

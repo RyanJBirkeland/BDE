@@ -334,15 +334,17 @@ describe('processQueuedTask — pre-flight', () => {
     expect(deps.spawnAgent).toHaveBeenCalled()
   })
 
-  it('moves task to backlog when pre-flight fails and user cancels', async () => {
+  it('moves task to backlog via taskStateService when pre-flight fails and user cancels', async () => {
     vi.mocked(runPreflightChecks).mockResolvedValue({ ok: false, missing: ['turbo'], missingEnvVars: [] })
     const gate = makeGate(false)
     const deps = makeProcessDeps({ preflightGate: gate })
     await processQueuedTask({ id: 'task-1', title: 'T', repo: 'fleet' } as import('../types').SprintTask, new Map(), deps)
     expect(deps.spawnAgent).not.toHaveBeenCalled()
-    expect(deps.repo.updateTask).toHaveBeenCalledWith(
+    // Must route through TaskStateService, not repo.updateTask directly (issue #708)
+    expect(deps.taskStateService.transition).toHaveBeenCalledWith(
       'task-1',
-      expect.objectContaining({ status: 'backlog' })
+      'backlog',
+      expect.objectContaining({ caller: 'preflight:move-to-backlog' })
     )
   })
 

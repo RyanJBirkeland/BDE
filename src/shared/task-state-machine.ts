@@ -93,14 +93,19 @@ export const VALID_TRANSITIONS: Record<TaskStatus, ReadonlySet<TaskStatus>> = {
   // 1. Terminal retry exhaustion while the task is in 'queued' (orphan race set it back before
   //    the spawned agent finished) — resolveFailure needs queued→failed to land.
   // 2. Orphan recovery at cap (orphan_recovery_count=3) on a queued task — needs queued→error.
-  queued: new Set<TaskStatus>(['active', 'blocked', 'cancelled', 'done', 'failed', 'error']),
+  // 'backlog' is the pre-flight "move back to holding" path: drain-loop showed the user a
+  // missing-toolchain/env-var dialog and they chose not to proceed yet (issue #708).
+  queued: new Set<TaskStatus>(['active', 'blocked', 'backlog', 'cancelled', 'done', 'failed', 'error']),
   blocked: new Set<TaskStatus>(['queued', 'cancelled']),
   active: new Set<TaskStatus>(['review', 'done', 'failed', 'error', 'cancelled', 'queued']),
   review: new Set<TaskStatus>(['queued', 'done', 'cancelled', 'failed']),
   done: new Set<TaskStatus>(['cancelled']),
   failed: new Set<TaskStatus>(['queued', 'cancelled', 'done']),
   error: new Set<TaskStatus>(['queued', 'cancelled', 'done']),
-  cancelled: new Set<TaskStatus>(['done'])
+  // 'backlog' and 'queued' allow cancelled tasks to be revived in place — the MCP
+  // TERMINAL_STATE_RESET_PATCH clears stale runtime fields on any terminal→queued/backlog
+  // transition. Without these, the only escape from cancelled is marking done (issue #708).
+  cancelled: new Set<TaskStatus>(['done', 'backlog', 'queued'])
 }
 
 /**

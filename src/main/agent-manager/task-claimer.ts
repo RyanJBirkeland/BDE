@@ -292,9 +292,9 @@ export async function processQueuedTask(
               ...preflightResult.missing.map((b) => `binary:${b}`),
               ...preflightResult.missingEnvVars.map((v) => `env:${v}`)
             ]
-            await deps.repo.updateTask(taskId, {
-              status: 'backlog',
-              notes: `Moved to backlog: pre-flight detected missing items: ${allMissing.join(', ')}.`
+            await deps.taskStateService.transition(taskId, 'backlog', {
+              fields: { notes: `Moved to backlog: pre-flight detected missing items: ${allMissing.join(', ')}.` },
+              caller: 'preflight:move-to-backlog'
             })
             return
           }

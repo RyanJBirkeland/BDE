@@ -54,8 +54,9 @@ describe('task-transitions', () => {
     expect(isValidTransition('unknown-status' as TaskStatus, 'queued')).toBe(false)
   })
 
-  it('cancelled cannot return to queued or active', () => {
-    expect(isValidTransition('cancelled', 'queued')).toBe(false)
+  it('cancelled can return to queued or backlog (revival paths, issue #708), but not active', () => {
+    expect(isValidTransition('cancelled', 'queued')).toBe(true)
+    expect(isValidTransition('cancelled', 'backlog')).toBe(true)
     expect(isValidTransition('cancelled', 'active')).toBe(false)
   })
 
