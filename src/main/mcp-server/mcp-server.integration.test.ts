@@ -34,7 +34,16 @@ let createdTaskIds: string[] = []
 beforeAll(async () => {
   seedFleetRepo()
   const epicService = createEpicGroupService()
-  serverHandle = createMcpServer({ epicService, onStatusTerminal: () => {} }, { port: 0 })
+  serverHandle = createMcpServer(
+    {
+      epicService,
+      onStatusTerminal: () => {},
+      reviewOrchestration: {
+        requestRevision: vi.fn().mockResolvedValue({ success: true })
+      } as any
+    },
+    { port: 0 }
+  )
   serverPort = await serverHandle.start()
   bearerToken = (await readOrCreateToken()).token
 
@@ -74,6 +83,7 @@ describe('MCP server integration', () => {
     expect(names).toContain('tasks.update')
     expect(names).toContain('tasks.cancel')
     expect(names).toContain('tasks.history')
+    expect(names).toContain('tasks.requestRevision')
     expect(names).toContain('epics.list')
     expect(names).toContain('epics.create')
     expect(names).toContain('meta.taskStatuses')

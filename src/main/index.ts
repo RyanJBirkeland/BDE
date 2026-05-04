@@ -512,7 +512,8 @@ function wireAgentManagerAndMcp(
       {
         epicService: core.epicGroupService,
         onStatusTerminal: core.terminalService.onStatusTerminal,
-        taskStateService: core.pollerTaskStateService
+        taskStateService: core.pollerTaskStateService,
+        reviewOrchestration: core.reviewOrchestration
       },
       { port }
     )

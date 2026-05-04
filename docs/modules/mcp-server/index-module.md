@@ -9,7 +9,7 @@ Factory that assembles the full MCP server: registers all tool groups, creates t
 ## Public API
 - `createMcpServer(deps, config)` — returns `McpServerHandle`
 - `McpServerHandle` — `start(): Promise<number>` (resolves to actual port), `stop(): Promise<void>`
-- `McpServerDeps` — `epicService: EpicGroupService`, `onStatusTerminal: (taskId, status) => void | Promise<void>`
+- `McpServerDeps` — `epicService: EpicGroupService`, `onStatusTerminal: (taskId, status) => void | Promise<void>`, `taskStateService: TaskStateService`, `reviewOrchestration: ReviewOrchestrationService`
 - `McpServerConfig` — `port: number`
 - `translateCancelError(err)` — maps `TaskTransitionError` throws from `cancelTask` into `McpDomainError(McpErrorCode.InvalidTransition)` with `{ taskId, fromStatus, toStatus }` data; passes unknown errors through unchanged. Exported for unit testing of the cancel-tool error-translation contract.
 - Internal `cancelTaskForMcp(id, reason?, options?)` closure accepts `{ caller? }` in the optional third argument and forwards it through `cancelTask` so MCP-originated cancels land in the `task_changes` audit trail as `changed_by='mcp'`.

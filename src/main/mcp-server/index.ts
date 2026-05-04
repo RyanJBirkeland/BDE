@@ -45,6 +45,7 @@ export interface McpServerDeps {
   epicService: EpicGroupService
   onStatusTerminal: (taskId: string, status: TaskStatus) => void | Promise<void>
   taskStateService: import('../services/task-state-service').TaskStateService
+  reviewOrchestration: import('../services/review-orchestration-service').ReviewOrchestrationService
 }
 
 export interface McpServerHandle {
@@ -76,6 +77,7 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
       getTaskChanges: (id, options) => getTaskChanges(id, options),
       onStatusTerminal: deps.onStatusTerminal,
       taskStateService: deps.taskStateService,
+      reviewOrchestration: deps.reviewOrchestration,
       logger
     })
 

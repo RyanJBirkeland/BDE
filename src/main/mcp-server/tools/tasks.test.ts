@@ -94,6 +94,9 @@ function fakeDeps(overrides: Partial<TaskToolsDeps> = {}): TaskToolsDeps {
     getTaskChanges: vi.fn(() => []),
     onStatusTerminal: vi.fn(() => Promise.resolve()),
     taskStateService: null as unknown as TaskToolsDeps['taskStateService'],
+    reviewOrchestration: {
+      requestRevision: vi.fn(() => Promise.resolve({ success: true }))
+    } as unknown as TaskToolsDeps['reviewOrchestration'],
     logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
     ...overrides
   }
@@ -706,3 +709,111 @@ describe('tasks.history — pagination pushed into the data layer (T-3)', () => 
     expect(body.data).toMatchObject({ limit: 100, offset: 401, cap: 500 })
   })
 })
+
+describe('tasks.requestRevision', () => {
+    it('returns NotFound when task does not exist', async () => {
+      const deps = fakeDeps({ getTask: vi.fn(() => null) })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      const res = await call('tasks.requestRevision', { id: 'missing', feedback: 'fix it' })
+      const body = parseErrorBody(res)
+      expect(body.code).toBe(-32001)
+      expect(body.message).toMatch(/not found/i)
+    })
+
+    it('returns InvalidTransition when task status is not review', async () => {
+      const deps = fakeDeps({ getTask: vi.fn(() => fakeTask({ status: 'active' })) })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      const res = await call('tasks.requestRevision', { id: 't1', feedback: 'fix it' })
+      const body = parseErrorBody(res)
+      expect(body.code).toBe(-32002)
+      expect(body.message).toMatch(/review/i)
+    })
+
+    it('calls reviewOrchestration.requestRevision with taskId, feedback, and mode', async () => {
+      const requestRevision = vi.fn(() => Promise.resolve({ success: true }))
+      const deps = fakeDeps({
+        getTask: vi.fn(() => fakeTask({ status: 'review', revision_feedback: null })),
+        reviewOrchestration: { requestRevision } as any
+      })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      await call('tasks.requestRevision', { id: 't1', feedback: 'fix the variable name', mode: 'resume' })
+      expect(requestRevision).toHaveBeenCalledWith(
+        expect.objectContaining({ taskId: 't1', feedback: 'fix the variable name', mode: 'resume' })
+      )
+    })
+
+    it('builds a revisionFeedback entry with attempt:1 when no prior entries exist', async () => {
+      const requestRevision = vi.fn(() => Promise.resolve({ success: true }))
+      const deps = fakeDeps({
+        getTask: vi.fn(() => fakeTask({ status: 'review', revision_feedback: null })),
+        reviewOrchestration: { requestRevision } as any
+      })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      await call('tasks.requestRevision', { id: 't1', feedback: 'use const not let' })
+      const { revisionFeedback } = requestRevision.mock.calls[0][0]
+      expect(revisionFeedback).toHaveLength(1)
+      expect(revisionFeedback[0]).toMatchObject({ feedback: 'use const not let', attempt: 1 })
+      expect(typeof revisionFeedback[0].timestamp).toBe('string')
+    })
+
+    it('appends a new entry with incremented attempt when prior revision_feedback exists', async () => {
+      const prior = [{ feedback: 'first request', attempt: 1, timestamp: '2026-01-01T00:00:00.000Z' }]
+      const requestRevision = vi.fn(() => Promise.resolve({ success: true }))
+      const deps = fakeDeps({
+        getTask: vi.fn(() => fakeTask({ status: 'review', revision_feedback: prior as any })),
+        reviewOrchestration: { requestRevision } as any
+      })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      await call('tasks.requestRevision', { id: 't1', feedback: 'second request' })
+      const { revisionFeedback } = requestRevision.mock.calls[0][0]
+      expect(revisionFeedback).toHaveLength(2)
+      expect(revisionFeedback[0]).toMatchObject({ feedback: 'first request', attempt: 1 })
+      expect(revisionFeedback[1]).toMatchObject({ feedback: 'second request', attempt: 2 })
+    })
+
+    it('defaults mode to fresh when not provided', async () => {
+      const requestRevision = vi.fn(() => Promise.resolve({ success: true }))
+      const deps = fakeDeps({
+        getTask: vi.fn(() => fakeTask({ status: 'review', revision_feedback: null })),
+        reviewOrchestration: { requestRevision } as any
+      })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      await call('tasks.requestRevision', { id: 't1', feedback: 'redo it' })
+      expect(requestRevision).toHaveBeenCalledWith(expect.objectContaining({ mode: 'fresh' }))
+    })
+
+    it('returns the updated task after revision request', async () => {
+      const updated = fakeTask({ status: 'queued', id: 't1' })
+      const getTask = vi.fn()
+        .mockReturnValueOnce(fakeTask({ status: 'review', revision_feedback: null }))
+        .mockReturnValueOnce(updated)
+      const deps = fakeDeps({
+        getTask,
+        reviewOrchestration: { requestRevision: vi.fn(() => Promise.resolve({ success: true })) } as any
+      })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      const res = await call('tasks.requestRevision', { id: 't1', feedback: 'redo it' })
+      expect(res.isError).toBeUndefined()
+      const body = JSON.parse(res.content[0].text)
+      expect(body.status).toBe('queued')
+    })
+
+    it('rejects unknown fields', async () => {
+      const deps = fakeDeps({
+        getTask: vi.fn(() => fakeTask({ status: 'review' })),
+        reviewOrchestration: { requestRevision: vi.fn() } as any
+      })
+      const { server, call } = mockServer()
+      registerTaskTools(server, deps)
+      const res = await call('tasks.requestRevision', { id: 't1', feedback: 'fix it', unknownField: true })
+      const body = parseErrorBody(res)
+      expect(body.code).toBe(-32602)
+    })
+  })

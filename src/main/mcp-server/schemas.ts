@@ -109,6 +109,23 @@ export const TaskUpdateSchema = z
   })
   .strict()
 
+export const TaskRequestRevisionSchema = z
+  .object({
+    id: z.string().min(1).describe('Task id — must be in "review" status'),
+    feedback: z
+      .string()
+      .min(1)
+      .max(10_000)
+      .describe(
+        'Human revision instructions — injected directly into the agent prompt as a <revision_feedback> block'
+      ),
+    mode: z
+      .enum(['fresh', 'resume'])
+      .default('fresh')
+      .describe('"fresh" starts a new agent session (default); "resume" continues the prior session')
+  })
+  .strict()
+
 /**
  * Default pagination window for `tasks.list` when the caller omits
  * `limit`/`offset`. Mirrors the previous in-memory `slice` default so

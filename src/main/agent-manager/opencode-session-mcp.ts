@@ -31,6 +31,7 @@ import {
   getTask,
   getTaskChanges,
   listTasks,
+  notifySprintMutation,
   updateTask
 } from '../services/sprint-service'
 import { registerTaskTools } from '../mcp-server/tools/tasks'
@@ -39,6 +40,8 @@ import { registerMetaTools } from '../mcp-server/tools/meta'
 import { wrapServerWithSafeToolHandlers } from '../mcp-server/safe-tool-handler'
 import { getConfiguredRepos } from '../paths'
 import { createTaskStateService } from '../services/task-state-service'
+import { createSprintTaskRepository } from '../data/sprint-task-repository'
+import { createReviewOrchestrationService } from '../services/review-orchestration-service'
 import type { EpicGroupService } from '../services/epic-group-service'
 import type { Logger } from '../logger'
 
@@ -151,6 +154,12 @@ function buildMcpServer(epicService: EpicGroupService, logger: Logger): McpServe
     logger
   })
 
+  const reviewOrchestration = createReviewOrchestrationService(createSprintTaskRepository(), {
+    getTask,
+    updateTask,
+    notifySprintMutation
+  })
+
   registerTaskTools(mcp, {
     listTasks,
     getTask,
@@ -165,6 +174,7 @@ function buildMcpServer(epicService: EpicGroupService, logger: Logger): McpServe
     getTaskChanges: (id, options) => getTaskChanges(id, options),
     onStatusTerminal: () => {},
     taskStateService,
+    reviewOrchestration,
     logger
   })
 

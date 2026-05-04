@@ -16,6 +16,7 @@ import {
   TaskHistorySchema,
   TaskIdSchema,
   TaskListSchema,
+  TaskRequestRevisionSchema,
   TaskUpdateSchema,
   TaskValidateSpecSchema,
   TASK_HISTORY_DEFAULT_LIMIT,
@@ -125,6 +126,7 @@ export interface TaskHistoryPort {
  */
 export interface TaskToolsDeps extends TaskCommandPort, TaskQueryPort, TaskHistoryPort {
   logger: CreateTaskWithValidationDeps['logger']
+  reviewOrchestration: import('../../services/review-orchestration-service').ReviewOrchestrationService
 }
 
 /**
@@ -294,6 +296,47 @@ function registerTaskWriteTools(server: McpServer, deps: TaskToolsDeps): void {
           return jsonContent(updated)
         },
         { schema: TaskUpdateSchema, logger: deps.logger }
+      )
+  )
+
+  server.registerTool(
+    'tasks.requestRevision',
+    {
+      description:
+        'Request the agent to revise its completed work. Only valid for tasks in "review" status. ' +
+        'Identical to clicking the in-app "Request Revision" button — the agent\'s next run receives ' +
+        'your feedback in a <revision_feedback> prompt block so it treats this as a human correction, ' +
+        'not a fresh spec.',
+      inputSchema: TaskRequestRevisionSchema
+    },
+    async (rawArgs) =>
+      safeToolResponse(
+        async () => {
+          const { id, feedback, mode } = parseToolArgs(TaskRequestRevisionSchema, rawArgs)
+          const task = await deps.getTask(id)
+          if (!task) throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
+          if (task.status !== 'review')
+            throw new McpDomainError(
+              `tasks.requestRevision requires status "review"; task ${id} has status "${task.status}"`,
+              McpErrorCode.InvalidTransition,
+              { id, currentStatus: task.status }
+            )
+          const prior = task.revision_feedback ?? []
+          const revisionFeedback = [
+            ...prior,
+            { timestamp: new Date().toISOString(), feedback, attempt: prior.length + 1 }
+          ]
+          await deps.reviewOrchestration.requestRevision({
+            taskId: id,
+            feedback,
+            mode,
+            revisionFeedback: revisionFeedback as unknown as import('../../services/review-orchestration-types').RevisionFeedbackEntry[]
+          })
+          const updated = await deps.getTask(id)
+          if (!updated) throw new McpDomainError(`Task ${id} not found after revision request`, McpErrorCode.NotFound, { id })
+          return jsonContent(updated)
+        },
+        { schema: TaskRequestRevisionSchema, logger: deps.logger }
       )
   )
 
