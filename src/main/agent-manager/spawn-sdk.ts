@@ -5,6 +5,7 @@
  * extraction, abort controller wiring, and a steer() stub.
  */
 import type { AgentHandle, SteerResult, SpawnStrategy } from './types'
+import type { SDKWireMessage } from './sdk-message-protocol'
 import type { Logger } from '../logger'
 import { randomUUID } from 'node:crypto'
 import { getClaudeCliPath } from '../env-utils'
@@ -130,7 +131,8 @@ export function spawnViaSdk(
   }
 
   return {
-    messages: wrapMessages(),
+    // wrapMessages() yields unknown values narrowed at consumption time via asSDKMessage().
+    messages: wrapMessages() as AsyncIterable<SDKWireMessage>,
     get sessionId() {
       return resolvedSessionId
     },

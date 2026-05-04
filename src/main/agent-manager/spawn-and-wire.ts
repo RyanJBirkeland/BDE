@@ -112,7 +112,6 @@ export async function spawnAndWireAgent(
       ? `Pre-spawn credential check failed: ${credResult.actionable}`
       : `Pre-spawn credential check failed (${credResult.status})`
     await handleSpawnFailure(new Error(message), task, worktree, repoPath, deps)
-    throw new Error(message) // unreachable
   }
 
   const pipelineTuning = {
@@ -139,14 +138,14 @@ export async function spawnAndWireAgent(
       extraEnv,
       ...(deps.resolveMainRepoPaths && { mainRepoPaths: deps.resolveMainRepoPaths() })
     })
-    try {
-      onSpawnSuccess?.()
-    } catch (cbErr) {
-      logger.warn(`[agent-manager] onSpawnSuccess hook threw: ${cbErr}`)
-    }
   } catch (err) {
-    await handleSpawnFailure(err, task, worktree, repoPath, deps)
-    throw err // unreachable — handleSpawnFailure throws PipelineAbortError; satisfies TypeScript
+    // handleSpawnFailure always throws PipelineAbortError — return type is Promise<never>.
+    return await handleSpawnFailure(err, task, worktree, repoPath, deps)
+  }
+  try {
+    onSpawnSuccess?.()
+  } catch (cbErr) {
+    logger.warn(`[agent-manager] onSpawnSuccess hook threw: ${cbErr}`)
   }
 
   const result = initializeAgentTracking(

@@ -24,6 +24,7 @@ import {
 } from './resolve-success-phases'
 import { resolveFailure as resolveFailurePhase } from './resolve-failure-phases'
 import { evaluateAutoMerge } from './auto-merge-coordinator'
+import type { AutoMergeContext } from './auto-merge-coordinator'
 import { listChangedFiles } from './test-touch-check'
 import { detectNoOpRun } from './noop-detection'
 import { NOOP_RUN_NOTE } from './failure-messages'
@@ -234,9 +235,16 @@ const verifyWorktreeBuildPhase: SuccessPhase = {
   }
 }
 
-function buildAutoMergeStrategy(
-  ctx: SuccessPhaseContext
-): (opts: Omit<import('./auto-merge-coordinator').AutoMergeContext, 'getAutoReviewRules' | 'resolveRepoLocalPath'>) => Promise<void> {
+/**
+ * A function that attempts to auto-merge a task after review transition.
+ * Receives all required context except the rule-fetcher and path-resolver,
+ * which are captured from the `SuccessPhaseContext` at construction time.
+ */
+type AutoMergeStrategy = (
+  opts: Omit<AutoMergeContext, 'getAutoReviewRules' | 'resolveRepoLocalPath'>
+) => Promise<void>
+
+function buildAutoMergeStrategy(ctx: SuccessPhaseContext): AutoMergeStrategy {
   const { getAutoReviewRules, resolveRepoLocalPath } = ctx
   if (getAutoReviewRules && resolveRepoLocalPath) {
     return (opts) => evaluateAutoMerge({ ...opts, getAutoReviewRules, resolveRepoLocalPath })

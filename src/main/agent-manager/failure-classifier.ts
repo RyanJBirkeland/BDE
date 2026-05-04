@@ -16,7 +16,7 @@ export type FailurePattern = {
  */
 export const BUILTIN_FAILURE_PATTERNS: readonly FailurePattern[] = Object.freeze([
   {
-    type: 'environmental' as FailureReason,
+    type: 'environmental',
     keywords: [
       'main repo has uncommitted changes',
       'refusing to proceed',
@@ -37,7 +37,7 @@ export const BUILTIN_FAILURE_PATTERNS: readonly FailurePattern[] = Object.freeze
     ]
   },
   {
-    type: 'auth' as FailureReason,
+    type: 'auth',
     keywords: [
       'invalid api key',
       'authentication failed',
@@ -56,7 +56,7 @@ export const BUILTIN_FAILURE_PATTERNS: readonly FailurePattern[] = Object.freeze
     ]
   },
   {
-    type: 'no_commits' as FailureReason,
+    type: 'no_commits',
     keywords: [
       'no commits',
       'produced no commits',
@@ -66,15 +66,15 @@ export const BUILTIN_FAILURE_PATTERNS: readonly FailurePattern[] = Object.freeze
     ]
   },
   {
-    type: 'timeout' as FailureReason,
+    type: 'timeout',
     keywords: ['exceeded maximum runtime', 'timeout', 'timed out', 'watchdog', 'max_turns_exceeded']
   },
   {
-    type: 'test_failure' as FailureReason,
+    type: 'test_failure',
     keywords: ['npm test failed', 'test failed', 'vitest failed', 'jest failed', 'tests failed']
   },
   {
-    type: 'compilation' as FailureReason,
+    type: 'compilation',
     keywords: [
       'compilation error',
       'compilation failed',
@@ -85,11 +85,11 @@ export const BUILTIN_FAILURE_PATTERNS: readonly FailurePattern[] = Object.freeze
     ]
   },
   {
-    type: 'spawn' as FailureReason,
+    type: 'spawn',
     keywords: ['spawn failed', 'failed to spawn', 'enoent', 'command not found']
   },
   {
-    type: 'incomplete_files' as FailureReason,
+    type: 'incomplete_files',
     keywords: ['missing:', 'incomplete files', 'files to change checklist']
   }
 ])

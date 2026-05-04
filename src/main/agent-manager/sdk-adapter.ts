@@ -96,6 +96,8 @@ export {
   isRateLimitMessage
 } from './sdk-message-protocol'
 
+import type { SDKWireMessage } from './sdk-message-protocol'
+
 // Re-export CLI constants so existing imports don't break
 export { AGENT_PROCESS_MAX_OLD_SPACE_MB, withMaxOldSpaceOption } from './spawn-cli'
 
@@ -219,10 +221,10 @@ async function spawnOpencodeWithMcp(
 }
 
 async function* withMcpCleanup(
-  messages: AsyncIterable<unknown>,
+  messages: AsyncIterable<SDKWireMessage>,
   sessionMcp: OpencodeSessionMcpHandle,
   logger?: Logger
-): AsyncGenerator<unknown> {
+): AsyncGenerator<SDKWireMessage> {
   try {
     yield* messages
   } finally {
@@ -294,7 +296,21 @@ export interface SpawnWithTimeoutOpts {
  * Spawns an agent with a timeout. Rejects if spawn takes longer than SPAWN_TIMEOUT_MS.
  */
 export async function spawnWithTimeout(opts: SpawnWithTimeoutOpts): Promise<AgentHandle> {
-  const { prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId, epicGroupService, worktreePath, extraEnv, mainRepoPaths } = opts
+  const {
+    prompt,
+    cwd,
+    model,
+    logger,
+    maxBudgetUsd,
+    pipelineTuning,
+    worktreeBase,
+    branch,
+    tickId,
+    epicGroupService,
+    worktreePath,
+    extraEnv,
+    mainRepoPaths
+  } = opts
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(

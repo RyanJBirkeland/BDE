@@ -11,7 +11,7 @@ import { classifyExit } from './fast-fail'
 import { cleanupWorktree } from './worktree'
 import { resolveSuccess, resolveFailure, deleteAgentBranchBeforeRetry } from './completion'
 import { getMainRepoPorcelainStatus } from '../lib/main-repo-guards'
-import { execFileAsync } from '../lib/async-utils'
+import { execFileAsync, truncateToNoteLimit } from '../lib/async-utils'
 import { resolveDefaultBranch } from '../lib/default-branch'
 import { buildAgentEnv } from '../env-utils'
 import { GIT_EXEC_TIMEOUT_MS } from './worktree-lifecycle'
@@ -31,8 +31,8 @@ import type { ConsumeMessagesResult } from './message-consumer'
 import { persistAgentRunTelemetry } from './agent-telemetry'
 import { spawnAndWireAgent } from './spawn-and-wire'
 import { sleep } from '../lib/async-utils'
-import { NOTES_MAX_LENGTH } from './types'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import { isTaskStatus } from '../../shared/task-state-machine'
 import { extractFilesToChange } from './spec-parser'
 import type { TaskStateService } from '../services/task-state-service'
 import { PipelineAbortError } from './pipeline-abort-error'
@@ -286,7 +286,7 @@ async function runFinalCleanupAttempt(
 export function buildCleanupFailureNote(worktreePath: string, err: unknown): string {
   const detail = err instanceof Error ? err.message : String(err)
   const note = `Worktree cleanup failed after ${CLEANUP_RETRY_DELAYS_MS.length + 1} attempts: ${detail}. Manual cleanup: git worktree remove --force ${worktreePath}`
-  return note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+  return truncateToNoteLimit(note)
 }
 
 function surfaceCleanupFailureToTaskNotes(
@@ -324,6 +324,10 @@ interface ResolveAgentExitContext {
   deps: RunAgentDeps
 }
 
+function agentExitedNormally(result: ReturnType<typeof classifyExit>): boolean {
+  return result === 'normal-exit'
+}
+
 async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<TaskStatus> {
   const { deps } = ctx
   const legacyFastFailCount = ctx.task.fast_fail_count ?? 0
@@ -333,9 +337,7 @@ async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<TaskStatu
     ctx.exitCode ?? 1,
     legacyFastFailCount
   )
-  // classifyExit returns 'normal-exit' for exit code 0 or long-running runs.
-  // Only proceed with fast-fail logic when the run itself qualified as fast.
-  if (ffResult === 'normal-exit') return resolveNormalExit(ctx)
+  if (agentExitedNormally(ffResult)) return resolveNormalExit(ctx)
 
   // Fast-fail candidate: record the event in the sliding window, then check
   // whether the task has exceeded the budget within the 30-second window.
@@ -472,7 +474,6 @@ async function detectMissingSpecFiles(
     logger
   )
   logger.debug(`detectMissingSpecFiles: existing base files = [${existingBaseFiles.join(', ')}], dropped = [${candidateMissing.filter((f) => !existingBaseFiles.includes(f)).join(', ')}]`)
-  logger.debug(`detectMissingSpecFiles: missing files = [${existingBaseFiles.join(', ')}]`)
   return existingBaseFiles.length > 0 ? { kind: 'missing', files: existingBaseFiles } : { kind: 'ok' }
 }
 
@@ -595,7 +596,14 @@ async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<TaskStat
     // The pipeline may have aborted mid-run (PipelineAbortError caught internally) and
     // transitioned to failed/queued instead of review. Read the actual status rather than
     // assuming the success path always lands on review.
-    return deps.repo.getTask(ctx.task.id)?.status ?? 'error'
+    const rawStatus = deps.repo.getTask(ctx.task.id)?.status
+    if (rawStatus == null) {
+      deps.logger.warn(
+        `[run-agent] Could not read task status for ${ctx.task.id} — defaulting to 'error'`
+      )
+      return 'error'
+    }
+    return isTaskStatus(rawStatus) ? rawStatus : 'error'
   } catch (err) {
     return handleResolveSuccessFailure(ctx, err)
   }

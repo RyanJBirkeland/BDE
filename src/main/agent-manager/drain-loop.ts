@@ -6,15 +6,16 @@
  * services and stable callbacks. No mutable fields appear in `DrainLoopDeps`.
  *
  * The exported pure-function wrappers (`validateDrainPreconditions`,
- * `buildTaskStatusMap`, `drainQueuedTasks`, `runDrain`) are retained for
- * backward compatibility with existing unit tests and external callers.
+ * `rebuildTaskStatusMap`, `refreshTaskStatusMapIncrementally`, `drainQueuedTasks`,
+ * `runDrain`) are retained for backward compatibility with existing unit tests
+ * and external callers.
  */
 
 import type { Logger } from '../logger'
 import type { AgentManagerConfig } from './types'
 import type { TaskStatus } from '../../shared/task-state-machine'
-import { isTaskStatus } from '../../shared/task-state-machine'
-import { NOTES_MAX_LENGTH, DRAIN_PAUSE_ON_ENV_ERROR_MS } from './types'
+import { isTaskStatus, TERMINAL_STATUSES } from '../../shared/task-state-machine'
+import { DRAIN_PAUSE_ON_ENV_ERROR_MS } from './types'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { TaskStateService } from '../services/task-state-service'
 import type { DependencyIndex } from '../services/dependency-service'
@@ -30,7 +31,7 @@ import {
 import type { SprintTask } from '../../shared/types/task-types'
 import { classifyFailureReason } from './failure-classifier'
 import type { AgentManagerDrainPausedEvent } from '../../shared/ipc-channels/broadcast-channels'
-import { sleep } from '../lib/async-utils'
+import { sleep, truncateToNoteLimit } from '../lib/async-utils'
 import type { RepoConfig } from '../paths'
 
 // ---------------------------------------------------------------------------
@@ -281,33 +282,56 @@ export class DrainLoop {
 
   buildTaskStatusMap(): Map<string, TaskStatus> {
     if (this.deps.isDepIndexDirty()) {
-      try {
-        const hint =
-          this._recentlyProcessedTaskIds.size > 0
-            ? new Set(this._recentlyProcessedTaskIds)
-            : undefined
-        const allTasks = this.deps.repo.getTasksWithDependencies(hint)
-        this.deps.depIndex.rebuild(allTasks)
-        this.lastTaskDeps.clear()
-        for (const task of allTasks) {
-          const taskDeps = task.depends_on ?? null
-          this.lastTaskDeps.set(task.id, {
-            deps: taskDeps,
-            hash: computeDepsFingerprint(taskDeps)
-          })
-        }
-        this.deps.setDepIndexDirty(false)
-        this._recentlyProcessedTaskIds.clear()
-        const rawMap = new Map(allTasks.map((task) => [task.id, task.status]))
-        return filterToValidTaskStatuses(rawMap, this.deps.logger)
-      } catch (err) {
-        this.deps.logger.error(
-          `[agent-manager] Dep-index full rebuild failed — falling back to incremental refresh: ${err}`
-        )
-        // Clear dirty so we don't retry the full rebuild every tick while the repo is unavailable.
-        this.deps.setDepIndexDirty(false)
-      }
+      const rebuilt = this.rebuildTaskStatusMap()
+      if (rebuilt !== null) return rebuilt
     }
+    return this.refreshTaskStatusMapIncrementally()
+  }
+
+  /**
+   * Full rebuild path: queries all non-terminal tasks, rebuilds the dep index,
+   * and resets the fingerprint cache. Called when the dep index is dirty.
+   *
+   * Returns null when the rebuild fails (repo unavailable), allowing the caller
+   * to fall back to the incremental refresh path.
+   */
+  rebuildTaskStatusMap(): Map<string, TaskStatus> | null {
+    const hint =
+      this._recentlyProcessedTaskIds.size > 0
+        ? new Set(this._recentlyProcessedTaskIds)
+        : undefined
+    try {
+      const allTasks = this.deps.repo.getTasksWithDependencies(hint).filter(
+        (task) => !TERMINAL_STATUSES.has(task.status as TaskStatus)
+      )
+      this.deps.depIndex.rebuild(allTasks)
+      this.lastTaskDeps.clear()
+      for (const task of allTasks) {
+        const taskDeps = task.depends_on ?? null
+        this.lastTaskDeps.set(task.id, {
+          deps: taskDeps,
+          hash: computeDepsFingerprint(taskDeps)
+        })
+      }
+      this.deps.setDepIndexDirty(false)
+      this._recentlyProcessedTaskIds.clear()
+      const rawMap = new Map(allTasks.map((task) => [task.id, task.status]))
+      return filterToValidTaskStatuses(rawMap, this.deps.logger)
+    } catch (err) {
+      this.deps.logger.error(
+        `[agent-manager] Dep-index full rebuild failed — falling back to incremental refresh: ${err}`
+      )
+      // Clear dirty so we don't retry the full rebuild every tick while the repo is unavailable.
+      this.deps.setDepIndexDirty(false)
+      return null
+    }
+  }
+
+  /**
+   * Incremental refresh path: updates only tasks whose fingerprints changed,
+   * using the recently-processed dirty set as a hint. Called on most drain ticks.
+   */
+  refreshTaskStatusMapIncrementally(): Map<string, TaskStatus> {
     const dirty = new Set(this._recentlyProcessedTaskIds)
     this._recentlyProcessedTaskIds.clear()
     const rawMap = refreshDependencyIndex(
@@ -464,7 +488,7 @@ function shouldQuarantine(consecutiveFailures: number): boolean {
 function formatQuarantineNote(count: number, err: unknown): string {
   const errMsg = err instanceof Error ? err.message : String(err)
   const note = `Task processing failed ${count} consecutive times in the drain loop: ${errMsg}. Check ~/.fleet/fleet.log for details.`
-  return note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+  return truncateToNoteLimit(note)
 }
 
 function quarantineStatusFor(currentStatus: string | undefined): 'cancelled' | 'error' {

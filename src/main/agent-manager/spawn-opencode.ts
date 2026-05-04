@@ -6,6 +6,7 @@
  * and returns an AgentHandle whose `messages` iterable yields SDKWireMessage objects.
  */
 import type { AgentHandle, SteerResult } from './types'
+import type { SDKWireMessage } from './sdk-message-protocol'
 import type { Logger } from '../logger'
 import { spawn } from 'node:child_process'
 import { translateOpencodeEvent, extractOpencodeSessionId } from './opencode-wire'
@@ -35,9 +36,10 @@ export async function spawnOpencode(opts: OpencodeSpawnOptions): Promise<AgentHa
   wireStderr(child, opts.logger, () => handle)
 
   const handle: AgentHandle = {
+    // streamTranslatedMessages() yields unknown values narrowed at consumption time via asSDKMessage().
     messages: streamTranslatedMessages(child, opts.logger, (sessionId) => {
       if (!capturedSessionId) capturedSessionId = sessionId
-    }),
+    }) as AsyncIterable<SDKWireMessage>,
     get sessionId() {
       return capturedSessionId
     },

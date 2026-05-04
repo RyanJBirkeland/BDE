@@ -20,11 +20,47 @@ function computeGlobalFingerprintHash(fingerprints: DepsFingerprint): string {
 }
 
 /**
- * Per-fingerprint-map cache of the last global hash seen.
- * WeakMap keyed on the `DepsFingerprint` instance so each drain-loop instance
- * gets its own cache without sharing state across tests or instances.
+ * Per-fingerprint-map cache of the last global hash and a validity flag.
+ *
+ * `hash` is the sorted join of all id=hash pairs computed after the last
+ * mutation. `valid` tracks whether the cache is still current — it is
+ * invalidated whenever any entry is added, removed, or updated, and
+ * re-validated at the end of each successful `refreshDependencyIndex` run.
+ *
+ * This avoids re-running the sort on every quiet drain tick when nothing
+ * in the fingerprint map has changed.
  */
-const lastGlobalHash = new WeakMap<DepsFingerprint, string>()
+interface GlobalHashEntry {
+  hash: string
+  valid: boolean
+}
+
+const globalHashCache = new WeakMap<DepsFingerprint, GlobalHashEntry>()
+
+/**
+ * Returns the global fingerprint hash for `fingerprints`, recomputing only
+ * when the cache has been invalidated by a prior mutation.
+ */
+function readGlobalFingerprintHash(fingerprints: DepsFingerprint): string {
+  const entry = globalHashCache.get(fingerprints)
+  if (entry?.valid) return entry.hash
+  const hash = computeGlobalFingerprintHash(fingerprints)
+  globalHashCache.set(fingerprints, { hash, valid: true })
+  return hash
+}
+
+/**
+ * Invalidates the global hash cache for `fingerprints` after any mutation.
+ * The next call to `readGlobalFingerprintHash` will recompute the hash.
+ */
+function invalidateGlobalFingerprintHash(fingerprints: DepsFingerprint): void {
+  const entry = globalHashCache.get(fingerprints)
+  if (entry) {
+    entry.valid = false
+  } else {
+    globalHashCache.set(fingerprints, { hash: '', valid: false })
+  }
+}
 
 /**
  * The minimum repository surface that `refreshDependencyIndex` needs.
@@ -83,12 +119,11 @@ export function refreshDependencyIndex(
   dirtyTaskIds?: Set<string>
 ): Map<string, string> {
   // Skip the DB read entirely when the caller signals an empty dirty set AND
-  // the global fingerprint hasn't changed since the last full scan. This is the
-  // common path on quiet drain ticks where no tasks were claimed or mutated.
+  // the global fingerprint cache is valid (no mutations since the last scan).
+  // This is the common path on quiet drain ticks where no tasks were claimed or mutated.
   if (dirtyTaskIds !== undefined && dirtyTaskIds.size === 0) {
-    const currentHash = computeGlobalFingerprintHash(fingerprints)
-    const knownHash = lastGlobalHash.get(fingerprints)
-    if (currentHash === knownHash) {
+    const entry = globalHashCache.get(fingerprints)
+    if (entry?.valid) {
       return new Map()
     }
   }
@@ -102,6 +137,7 @@ export function refreshDependencyIndex(
       if (!currentTaskIds.has(oldId)) {
         depIndex.remove(oldId)
         fingerprints.delete(oldId)
+        invalidateGlobalFingerprintHash(fingerprints)
       }
     }
 
@@ -119,6 +155,7 @@ export function refreshDependencyIndex(
         // the map doesn't grow without bound. The dep-index retains the task's
         // edges for dependency-satisfaction checks.
         fingerprints.delete(task.id)
+        invalidateGlobalFingerprintHash(fingerprints)
         continue
       }
       const cached = fingerprints.get(task.id)
@@ -133,16 +170,16 @@ export function refreshDependencyIndex(
       if (!cached || cached.hash !== newHash) {
         depIndex.update(task.id, newDeps)
         fingerprints.set(task.id, { deps: newDeps, hash: newHash })
+        invalidateGlobalFingerprintHash(fingerprints)
       }
     }
 
     const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
 
-    // Compute the post-update hash exactly once and cache it for the next clean tick.
-    // Computing it here (after all fingerprint mutations are complete) means the
-    // dirty-path also pays at most one hash computation per invocation.
-    const postUpdateHash = computeGlobalFingerprintHash(fingerprints)
-    lastGlobalHash.set(fingerprints, postUpdateHash)
+    // Validate the global hash cache after all mutations are complete.
+    // On quiet ticks with no changes, the cache was already valid and this is a no-op.
+    // On dirty ticks, the hash is recomputed once here and marked valid for the next clean tick.
+    readGlobalFingerprintHash(fingerprints)
 
     return statusMap
   } catch (err) {

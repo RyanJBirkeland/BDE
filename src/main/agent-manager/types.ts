@@ -3,6 +3,7 @@ import { homedir } from 'node:os'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
+import type { SDKWireMessage } from './sdk-message-protocol'
 
 /**
  * Conceptual parameters for resolveDependents() orchestration.
@@ -84,7 +85,12 @@ export interface SteerResult {
 }
 
 export interface AgentHandle {
-  messages: AsyncIterable<unknown>
+  /**
+   * SDK wire message stream. Each yielded value is a structured SDK protocol
+   * message; callers narrow further via `asSDKMessage()` in sdk-message-protocol.ts.
+   * The stream ends when the agent exits or is aborted.
+   */
+  messages: AsyncIterable<SDKWireMessage>
   sessionId: string
   abort(): void
   /**

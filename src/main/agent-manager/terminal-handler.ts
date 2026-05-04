@@ -3,7 +3,7 @@ import type { DependencyIndex } from '../services/dependency-service'
 import type { EpicDepsReader } from '../services/epic-dependency-service'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { IUnitOfWork } from '../data/unit-of-work'
-import { NOTES_MAX_LENGTH } from './types'
+import { truncateToNoteLimit } from '../lib/async-utils'
 import type { AgentManagerConfig, TerminalResolutionStrategy } from './types'
 import type { Logger } from '../logger'
 import type { TaskStatus } from '../../shared/task-state-machine'
@@ -92,8 +92,7 @@ async function resolveTerminalDependents(
     const errMsg = err instanceof Error ? err.message : String(err)
     logger.error(`[agent-manager] resolveDependents failed for ${taskId}: ${errMsg}`)
     const note = `Dependency resolution failed: ${errMsg}. Downstream tasks may remain blocked — check and manually re-queue them.`
-    const truncated =
-      note.length > NOTES_MAX_LENGTH ? note.slice(0, NOTES_MAX_LENGTH - 3) + '...' : note
+    const truncated = truncateToNoteLimit(note)
     // fire-and-forget: best-effort note update for dep-resolution failure
     void repo.updateTask(taskId, { notes: truncated }).catch((updateErr) => {
       logger.error(

@@ -173,6 +173,18 @@ export function killActiveAgent(
 }
 
 // ---------------------------------------------------------------------------
+// Status narrowing helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Narrows an unknown value to `TaskStatus` using the runtime guard.
+ * Returns `undefined` for any value that does not match the union.
+ */
+function narrowToTaskStatus(raw: unknown): TaskStatus | undefined {
+  return typeof raw === 'string' && isTaskStatus(raw) ? raw : undefined
+}
+
+// ---------------------------------------------------------------------------
 // Main watchdog tick
 // ---------------------------------------------------------------------------
 
@@ -243,13 +255,12 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
     // did not land, as that would unblock dependents against a task still `active`.
     if (result.taskUpdate) {
       const rawStatus = result.taskUpdate.status
-      if (rawStatus !== undefined && !isTaskStatus(String(rawStatus))) {
+      const targetStatus = narrowToTaskStatus(rawStatus)
+      if (rawStatus !== undefined && targetStatus === undefined) {
         deps.logger.warn(
           `[agent-manager] taskUpdate for task ${agent.taskId} carries unrecognised status "${rawStatus}" — skipping transition`
         )
       }
-      const targetStatus: TaskStatus | undefined =
-        typeof rawStatus === 'string' && isTaskStatus(rawStatus) ? rawStatus : undefined
       try {
         if (deps.taskStateService && targetStatus) {
           const { status: _status, ...remainingFields } = result.taskUpdate
@@ -277,10 +288,7 @@ export async function runWatchdog(deps: WatchdogLoopDeps): Promise<void> {
     // leaves the task stuck active with no worktree to recover from.
     removeAgentFromRegistry(agent, deps.spawnRegistry)
 
-    const rawStatus2 = result.taskUpdate?.status
-    const targetStatus2: TaskStatus | undefined =
-      typeof rawStatus2 === 'string' && isTaskStatus(rawStatus2) ? rawStatus2 : undefined
-    cleanupWorktreeIfNotInReview(agent, targetStatus2, deps)
+    cleanupWorktreeIfNotInReview(agent, narrowToTaskStatus(result.taskUpdate?.status), deps)
 
     // Step 5: Notify terminal handler after map removal so downstream logic
     // (dep resolution, metrics) sees a consistent state.

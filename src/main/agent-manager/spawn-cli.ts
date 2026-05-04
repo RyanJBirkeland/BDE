@@ -5,6 +5,7 @@
  * stdin/stdout stream-json protocol, and caps V8 old-space heap.
  */
 import type { AgentHandle, SteerResult } from './types'
+import type { SDKWireMessage } from './sdk-message-protocol'
 import type { Logger } from '../logger'
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
@@ -155,7 +156,8 @@ export function spawnViaCli(
   }
 
   const handle: AgentHandle = {
-    messages: parseMessages(),
+    // parseMessages() yields unknown values narrowed at consumption time via asSDKMessage().
+    messages: parseMessages() as AsyncIterable<SDKWireMessage>,
     sessionId,
     abort() {
       child.kill('SIGTERM')
