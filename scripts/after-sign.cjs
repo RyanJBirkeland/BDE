@@ -1,14 +1,15 @@
-// electron-builder afterSign hook — ad-hoc re-signs the bundle to normalize the
-// Team ID on macOS 26. Runs after electron-builder finishes its own signing step
-// (which, with identity: null, produces a linker-signed adhoc signature that
-// macOS may still warn about on first launch for certain binaries).
+// electron-builder afterSign hook — notarizes the signed .app with Apple.
+// Credentials are stored in Keychain under the profile "FLEET-notarize"
+// (set up via: xcrun notarytool store-credentials "FLEET-notarize" ...)
 //
-// Must be a JS module — electron-builder require()s this file. Runs synchronously
-// per the hook contract; a non-zero exit from codesign fails the build.
+// Skips notarization when:
+//   - CSC_IDENTITY_AUTO_DISCOVERY=false (CI without signing)
+//   - No FLEET_NOTARIZE env var set to "1" (opt-in for local builds)
+//   - Running on non-macOS
 
-const { execFileSync } = require('node:child_process')
-const { existsSync } = require('node:fs')
+const { notarize } = require('@electron/notarize')
 const path = require('node:path')
+const { existsSync } = require('node:fs')
 
 function resolveAppPath(context) {
   const fromContext =
@@ -16,22 +17,29 @@ function resolveAppPath(context) {
       ? path.join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`)
       : null
   if (fromContext && existsSync(fromContext)) return fromContext
-  const fallback = path.resolve(__dirname, '..', 'release', 'mac-arm64', 'BDE.app')
-  return existsSync(fallback) ? fallback : null
+  return null
 }
 
 module.exports = async function afterSign(context) {
-  const appPath = resolveAppPath(context)
-  if (!appPath) {
-    console.warn('[after-sign] No built .app found — skipping ad-hoc re-sign')
+  const { electronPlatformName } = context
+  if (electronPlatformName !== 'darwin') return
+
+  if (process.env.FLEET_NOTARIZE !== '1') {
+    console.log('[after-sign] Skipping notarization (set FLEET_NOTARIZE=1 to enable)')
     return
   }
-  console.log(`[after-sign] Ad-hoc re-signing ${appPath}`)
-  try {
-    execFileSync('codesign', ['--deep', '--force', '--sign', '-', appPath], {
-      stdio: 'inherit'
-    })
-  } catch (err) {
-    console.warn(`[after-sign] codesign failed (continuing): ${err.message}`)
+
+  const appPath = resolveAppPath(context)
+  if (!appPath) {
+    console.warn('[after-sign] No built .app found — skipping notarization')
+    return
   }
+
+  console.log(`[after-sign] Notarizing ${appPath} ...`)
+  await notarize({
+    tool: 'notarytool',
+    appPath,
+    keychainProfile: 'FLEET-notarize'
+  })
+  console.log('[after-sign] Notarization complete')
 }
