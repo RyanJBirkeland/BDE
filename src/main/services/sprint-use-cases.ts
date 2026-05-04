@@ -299,6 +299,13 @@ export interface CreateTaskWithValidationDeps {
    * from `sprint-service.ts` so the renderer gets notified.
    */
   createTask?: (input: CreateTaskInput) => Promise<SprintTask | null>
+  /**
+   * Optional state service — threaded through so callers have access to
+   * state-machine transitions without changing creation behavior today.
+   * Unused in the current implementation; reserved for future use when
+   * auto-blocking is migrated from direct SQLite writes to the state service.
+   */
+  taskStateService?: TaskStateService
 }
 
 export interface CreateTaskWithValidationOpts {

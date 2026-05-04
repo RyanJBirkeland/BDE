@@ -17,7 +17,7 @@ failed auth attempts per remote address and returns a delay (0 ≤ N ≤
 - `AuthRateLimit.recordAuthSuccess(remoteAddress)` — clears the counter for a remote address (recovering client isn't permanently penalized).
 - `AuthRateLimit.size()` — introspection hook; number of tracked remote addresses.
 - `computeDelayMs(failureCount)` — pure delay schedule; exported for tests.
-- Constants: `BRUTE_FORCE_THRESHOLD` (10), `WINDOW_MS` (60_000), `INITIAL_DELAY_MS` (200), `MAX_DELAY_MS` (5_000).
+- Constants: `BRUTE_FORCE_THRESHOLD` (3), `WINDOW_MS` (60_000), `INITIAL_DELAY_MS` (200), `MAX_DELAY_MS` (5_000).
 
 ## Key Dependencies
 - `../logger` — `Logger` type for the optional warn hook.

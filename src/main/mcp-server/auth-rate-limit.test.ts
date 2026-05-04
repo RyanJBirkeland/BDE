@@ -43,21 +43,21 @@ describe('computeDelayMs', () => {
   })
 
   it('caps the delay at MAX_DELAY_MS', () => {
-    // 200 * 2^5 = 6400 which exceeds the 5000ms cap
+    // 200 * 2^5 = 6400 which exceeds the 5000ms cap (true regardless of threshold value)
     expect(computeDelayMs(BRUTE_FORCE_THRESHOLD + 5)).toBe(MAX_DELAY_MS)
     expect(computeDelayMs(BRUTE_FORCE_THRESHOLD + 20)).toBe(MAX_DELAY_MS)
   })
 })
 
 describe('createAuthRateLimit', () => {
-  it('does not delay the first 9 failures from a single remote', () => {
+  it('does not delay the first 2 failures from a single remote', () => {
     const rateLimit = createAuthRateLimit({ now: makeFakeClock() })
     for (let i = 0; i < BRUTE_FORCE_THRESHOLD - 1; i += 1) {
       expect(rateLimit.recordAuthFailure('10.0.0.1')).toBe(0)
     }
   })
 
-  it('applies INITIAL_DELAY_MS on the 10th consecutive failure', () => {
+  it('applies INITIAL_DELAY_MS on the 3rd consecutive failure', () => {
     const rateLimit = createAuthRateLimit({ now: makeFakeClock() })
     for (let i = 0; i < BRUTE_FORCE_THRESHOLD - 1; i += 1) {
       rateLimit.recordAuthFailure('10.0.0.1')

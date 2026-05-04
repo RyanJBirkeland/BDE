@@ -265,12 +265,23 @@ const PLAYGROUND_ALLOWED_ATTR = [
  * Throws if DOMPurify encounters a fatal error — callers should catch and drop
  * the playground event rather than broadcasting unsanitized HTML.
  */
+/**
+ * URI allowlist for `src` and `href` attributes.
+ * Permits safe schemes (https, http, mailto, data URIs, relative paths) while
+ * blocking dangerous execution schemes such as `javascript:` and `vbscript:`.
+ * The sandbox attribute on the playground iframe already prevents navigation
+ * to external URLs from taking effect.
+ */
+const PLAYGROUND_ALLOWED_URI_REGEXP =
+  /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+
 export function sanitizePlaygroundHtml(rawHtml: string): string {
   return purify.sanitize(rawHtml, {
     ALLOWED_TAGS: PLAYGROUND_ALLOWED_TAGS,
     ALLOWED_ATTR: PLAYGROUND_ALLOWED_ATTR,
     ALLOW_DATA_ATTR: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
+    ALLOWED_URI_REGEXP: PLAYGROUND_ALLOWED_URI_REGEXP,
     RETURN_DOM: false
   }) as string
 }

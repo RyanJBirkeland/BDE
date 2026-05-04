@@ -9,7 +9,7 @@ import { searchRepo } from '../services/repo-search-service'
 import type { AgentManager } from '../agent-manager'
 import { createSpecQualityService } from '../services/spec-quality/factory'
 import type { SpecQualityService } from '../services/spec-quality/spec-quality-service'
-import type { SpecQualityResult } from '../../shared/spec-quality/types'
+import type { SpecQualityResult, SpecIssue } from '../../shared/spec-quality/types'
 import { runSdkStreaming } from '../sdk-streaming'
 import { extractTasksFromPlan } from '../services/plan-extractor'
 import { buildChatPrompt, getCopilotSdkOptions } from '../services/copilot-service'
@@ -32,16 +32,32 @@ interface CheckField {
   message: string
 }
 
+/**
+ * Folds a list of spec issues into a single CheckField.
+ * Fails on any error (joining all messages), warns on the first warning,
+ * passes with the given `passMessage` when no issues exist.
+ */
+function classifyIssues(issues: SpecIssue[], passMessage: string): CheckField {
+  const errors = issues.filter((i) => i.severity === 'error')
+  const warnings = issues.filter((i) => i.severity === 'warning')
+  if (errors.length > 0) {
+    return { status: 'fail', message: errors.map((i) => i.message).join('; ') }
+  }
+  if (warnings.length > 0) {
+    return { status: 'warn', message: warnings[0]?.message ?? '' }
+  }
+  return { status: 'pass', message: passMessage }
+}
+
+const SCOPE_CODES = new Set(['TOO_MANY_FILES', 'TOO_MANY_STEPS', 'SPEC_TOO_LONG'] as const)
+const FILES_CODES = new Set(['FILES_SECTION_NO_PATHS'] as const)
+
 /** Maps a SpecQualityResult to the { clarity, scope, filesExist } shape the renderer expects. */
 function mapQualityResult(result: SpecQualityResult): {
   clarity: CheckField
   scope: CheckField
   filesExist: CheckField
 } {
-  // clarity — blocked by any error; warned by prescriptiveness issue; otherwise pass
-  const SCOPE_CODES = new Set(['TOO_MANY_FILES', 'TOO_MANY_STEPS', 'SPEC_TOO_LONG'] as const)
-  const FILES_CODES = new Set(['FILES_SECTION_NO_PATHS'] as const)
-
   const scopeIssues = result.issues.filter((i) => SCOPE_CODES.has(i.code as 'TOO_MANY_FILES'))
   const filesIssues = result.issues.filter((i) =>
     FILES_CODES.has(i.code as 'FILES_SECTION_NO_PATHS')
@@ -52,42 +68,11 @@ function mapQualityResult(result: SpecQualityResult): {
       !FILES_CODES.has(i.code as 'FILES_SECTION_NO_PATHS')
   )
 
-  const clarityErrors = clarityIssues.filter((i) => i.severity === 'error')
-  const clarityWarnings = clarityIssues.filter((i) => i.severity === 'warning')
-
-  let clarity: CheckField
-  if (clarityErrors.length > 0) {
-    const messages = clarityErrors.map((i) => i.message).join('; ')
-    clarity = { status: 'fail', message: messages }
-  } else if (clarityWarnings.length > 0) {
-    clarity = { status: 'warn', message: clarityWarnings[0]?.message ?? '' }
-  } else {
-    clarity = { status: 'pass', message: 'Spec is clear and actionable' }
+  return {
+    clarity: classifyIssues(clarityIssues, 'Spec is clear and actionable'),
+    scope: classifyIssues(scopeIssues, 'Scope looks achievable in one session'),
+    filesExist: classifyIssues(filesIssues, 'File paths look specific and plausible')
   }
-
-  const scopeErrors = scopeIssues.filter((i) => i.severity === 'error')
-  const scopeWarnings = scopeIssues.filter((i) => i.severity === 'warning')
-  let scope: CheckField
-  if (scopeErrors.length > 0) {
-    scope = { status: 'fail', message: scopeErrors.map((i) => i.message).join('; ') }
-  } else if (scopeWarnings.length > 0) {
-    scope = { status: 'warn', message: scopeWarnings[0]?.message ?? '' }
-  } else {
-    scope = { status: 'pass', message: 'Scope looks achievable in one session' }
-  }
-
-  const filesErrors = filesIssues.filter((i) => i.severity === 'error')
-  const filesWarnings = filesIssues.filter((i) => i.severity === 'warning')
-  let filesExist: CheckField
-  if (filesErrors.length > 0) {
-    filesExist = { status: 'fail', message: filesErrors.map((i) => i.message).join('; ') }
-  } else if (filesWarnings.length > 0) {
-    filesExist = { status: 'warn', message: filesWarnings[0]?.message ?? '' }
-  } else {
-    filesExist = { status: 'pass', message: 'File paths look specific and plausible' }
-  }
-
-  return { clarity, scope, filesExist }
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -160,18 +145,47 @@ export function parseChatStreamArgs(args: unknown[]): IpcChannelMap['workbench:c
   return [input as IpcChannelMap['workbench:chatStream']['args'][0]]
 }
 
-/** Active streaming handles, keyed by streamId. */
-const activeStreams = new Map<string, { close: () => void }>()
+const MAX_PLAN_MARKDOWN_CHARS = 200 * 1024
+
+function parseCheckOperationalArgs(args: unknown[]): [{ repo: string }] {
+  const [input] = args
+  if (!isPlainObject(input)) {
+    throw new Error('workbench:checkOperational input must be a plain object')
+  }
+  if (typeof input.repo !== 'string' || input.repo.trim() === '') {
+    throw new Error('workbench:checkOperational input.repo must be a non-empty string')
+  }
+  return [input as { repo: string }]
+}
+
+function parseGenerateSpecArgs(args: unknown[]): [{ title: string; repo: string; templateHint: string }] {
+  const [input] = args
+  if (!isPlainObject(input)) {
+    throw new Error('workbench:generateSpec input must be a plain object')
+  }
+  if (typeof input.title !== 'string' || input.title.trim() === '') {
+    throw new Error('workbench:generateSpec input.title must be a non-empty string')
+  }
+  if (typeof input.repo !== 'string' || input.repo.trim() === '') {
+    throw new Error('workbench:generateSpec input.repo must be a non-empty string')
+  }
+  if (typeof input.templateHint !== 'string') {
+    throw new Error('workbench:generateSpec input.templateHint must be a string')
+  }
+  return [input as { title: string; repo: string; templateHint: string }]
+}
 
 export function registerWorkbenchHandlers(
   am?: AgentManager,
   deps: WorkbenchHandlerDeps = {}
 ): void {
   const specQualityService = deps.specQualityService ?? createSpecQualityService()
+  const activeStreams = new Map<string, { close: () => void }>()
+
   // --- Fully implemented: Operational validation checks ---
   safeHandle('workbench:checkOperational', async (_e, input: { repo: string }) => {
     return runOperationalChecks(input.repo, am)
-  })
+  }, parseCheckOperationalArgs)
 
   // --- Fully implemented: Repo research via grep ---
   safeHandle('workbench:researchRepo', async (_e, input: { query: string; repo: string }) => {
@@ -293,7 +307,7 @@ export function registerWorkbenchHandlers(
   safeHandle('workbench:generateSpec', async (_e, input: GenerateSpecInput) => {
     const spec = await generateSpec(input)
     return { spec }
-  })
+  }, parseGenerateSpecArgs)
 
   // --- AI-powered spec checks ---
   safeHandle('workbench:checkSpec',
@@ -306,6 +320,11 @@ export function registerWorkbenchHandlers(
 
   // --- Plan extraction ---
   safeHandle('workbench:extractPlan', async (_e, markdown: string) => {
+    if (markdown.length > MAX_PLAN_MARKDOWN_CHARS) {
+      throw new Error(
+        `Plan markdown too large: ${markdown.length} chars (max ${MAX_PLAN_MARKDOWN_CHARS})`
+      )
+    }
     const tasks = extractTasksFromPlan(markdown)
     return { tasks }
   })

@@ -31,7 +31,6 @@ import {
   forceReleaseClaim,
   type CreateTaskInput
 } from '../services/sprint-service'
-import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { ISprintTaskRepository } from '../data/sprint-task-repository'
 import { getAgentLogInfo } from '../data/agent-queries'
 import { readLog } from '../agent-history'
@@ -108,20 +107,20 @@ export interface SprintLocalDeps {
 
 export function registerSprintLocalHandlers(
   deps: SprintLocalDeps,
-  repo?: ISprintTaskRepository
+  repo: ISprintTaskRepository
 ): void {
-  const effectiveRepo = repo ?? createSprintTaskRepository()
   safeHandle('sprint:list', () => {
     return listTasksRecent()
   })
 
   safeHandle('sprint:create',
-    async (_e, task: CreateTaskInput) => createTaskWithValidation(task, { logger }),
+    async (_e, task: CreateTaskInput) =>
+      createTaskWithValidation(task, { logger, taskStateService: deps.taskStateService }),
     parseSprintCreateArgs
   )
 
   safeHandle('sprint:createWorkflow', async (_e, template: WorkflowTemplate) => {
-    const result = await instantiateWorkflow(template, effectiveRepo)
+    const result = await instantiateWorkflow(template, repo)
 
     if (result.errors.length > 0) {
       logger.warn(
@@ -223,7 +222,7 @@ export function registerSprintLocalHandlers(
   })
 
   safeHandle('sprint:failureBreakdown', () => {
-    return effectiveRepo.getFailureReasonBreakdown()
+    return repo.getFailureReasonBreakdown()
   })
 
   safeHandle('sprint:getSuccessRateBySpecType', () => {

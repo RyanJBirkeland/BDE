@@ -20,7 +20,7 @@
 import type { Logger } from '../logger'
 
 /** Number of consecutive failures before progressive delay kicks in. */
-export const BRUTE_FORCE_THRESHOLD = 10
+export const BRUTE_FORCE_THRESHOLD = 3
 
 /** Counter window — failures outside this window are treated as a fresh run. */
 export const WINDOW_MS = 60_000
@@ -130,12 +130,12 @@ function pruneStaleEntries(failures: Map<string, FailureRecord>, now: number): v
  * Progressive back-off. Below the threshold, no throttling. At/above,
  * delay doubles for every additional failure, capped at `MAX_DELAY_MS`:
  *
- *   failure #10 → 200ms
- *   failure #11 → 400ms
- *   failure #12 → 800ms
- *   failure #13 → 1600ms
- *   failure #14 → 3200ms
- *   failure #15 → 5000ms (capped)
+ *   failure #3 → 200ms
+ *   failure #4 → 400ms
+ *   failure #5 → 800ms
+ *   failure #6 → 1600ms
+ *   failure #7 → 3200ms
+ *   failure #8 → 5000ms (capped)
  */
 export function computeDelayMs(failureCount: number): number {
   if (failureCount < BRUTE_FORCE_THRESHOLD) return 0

@@ -155,6 +155,12 @@ vi.mock('node:fs', async (importOriginal) => {
   return { ...actual, existsSync: vi.fn(() => true) }
 })
 
+// Mock validation so validateRepoPath passes in tests without needing
+// a real repo configured in the settings.
+vi.mock('../../validation', () => ({
+  validateRepoPath: vi.fn((path: string) => path)
+}))
+
 // Mock data/event-queries (used lazily in agent:history)
 vi.mock('../../data/event-queries', () => ({
   queryEvents: vi.fn(),

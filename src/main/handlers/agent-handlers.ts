@@ -14,8 +14,8 @@ import { spawnAdhocAgent, getAdhocHandle } from '../adhoc-agent'
 import { createLogger, logError } from '../logger'
 import type { AgentEvent, SpawnLocalAgentArgs } from '../../shared/types'
 import type { AgentManager } from '../agent-manager'
-import { createSprintTaskRepository } from '../data/sprint-task-repository'
 import type { IDashboardRepository } from '../data/sprint-task-repository'
+import { validateRepoPath } from '../validation'
 import type { PreflightGate } from '../agent-manager/preflight-gate'
 import { promoteAdhocToTask } from '../services/adhoc-promotion-service'
 import { flushAgentEventBatcher } from '../agent-event-mapper'
@@ -169,22 +169,25 @@ function parseAgentsImportArgs(args: unknown[]): [{ meta: Partial<AgentMeta>; co
   return [arg as unknown as { meta: Partial<AgentMeta>; content: string }]
 }
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp'])
+const MAX_IMAGES_PER_STEER = 5
+/** Base64 encodes roughly 4/3 bytes per character, so 5 MB of binary ≈ 6.67 MB of base64. */
+const MAX_IMAGE_BASE64_CHARS = Math.ceil((5 * 1024 * 1024) / 0.75)
+
 export function registerAgentHandlers(
   am?: AgentManager,
   repo?: IDashboardRepository,
   preflightGate?: PreflightGate
 ): void {
-  const effectiveRepo = repo ?? createSprintTaskRepository()
-
   safeHandle('local:getAgentProcesses', async () => {
     return []
   })
   safeHandle('local:spawnClaudeAgent', async (_e, args: SpawnLocalAgentArgs) => {
     return spawnAdhocAgent({
       task: args.task,
-      repoPath: args.repoPath,
+      repoPath: validateRepoPath(args.repoPath),
       assistant: args.assistant,
-      repo: effectiveRepo
+      repo: repo!
     })
   })
   safeHandle('local:tailAgentLog', (_e, args: TailLogArgs) => tailAgentLog(args))
@@ -194,6 +197,19 @@ export function registerAgentHandlers(
     images?: Array<{ data: string; mimeType: string }> | undefined
   }
   safeHandle('agent:steer', async (_e, { agentId, message, images }: SteerArgs) => {
+    if (images !== undefined) {
+      if (images.length > MAX_IMAGES_PER_STEER) {
+        throw new Error(`Too many images: ${images.length} (max ${MAX_IMAGES_PER_STEER})`)
+      }
+      for (const image of images) {
+        if (!ALLOWED_IMAGE_MIME_TYPES.has(image.mimeType)) {
+          throw new Error(`Unsupported image MIME type: "${image.mimeType}"`)
+        }
+        if (image.data.length > MAX_IMAGE_BASE64_CHARS) {
+          throw new Error(`Image payload too large (max 5MB)`)
+        }
+      }
+    }
     // Try ad-hoc agents first
     const adhocHandle = getAdhocHandle(agentId)
     if (adhocHandle) {
