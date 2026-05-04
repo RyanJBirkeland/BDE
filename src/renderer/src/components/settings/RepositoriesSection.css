@@ -51,6 +51,13 @@
   align-items: start;
 }
 
+.settings-repo-form__path-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
 .settings-repo-form__path-row {
   display: flex;
   gap: 6px;
@@ -60,6 +67,22 @@
 .settings-repo-form__path-row .settings-field__input {
   flex: 1;
   min-width: 0;
+}
+
+.settings-field__input--error {
+  border-color: var(--fleet-danger) !important;
+}
+
+.settings-repo-form__path-error {
+  margin: 0;
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-danger);
+}
+
+.settings-repo-form__path-warning {
+  margin: 0;
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-warning, var(--fleet-text-muted));
 }
 
 .settings-repo-form__actions {

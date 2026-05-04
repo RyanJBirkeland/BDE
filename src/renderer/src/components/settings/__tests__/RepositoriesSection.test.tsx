@@ -10,13 +10,15 @@ vi.mock('../../../stores/toasts', () => ({
 }))
 
 beforeEach(() => {
-  vi.mocked(window.api.settings.getJson).mockResolvedValue(null)
-  vi.mocked(window.api.settings.setJson).mockResolvedValue(undefined)
-  vi.mocked(window.api.fs.openDirDialog).mockResolvedValue(null)
   vi.clearAllMocks()
   vi.mocked(window.api.settings.getJson).mockResolvedValue(null)
   vi.mocked(window.api.settings.setJson).mockResolvedValue(undefined)
   vi.mocked(window.api.fs.openDirDialog).mockResolvedValue(null)
+  vi.mocked(window.api.git.detectRemote).mockResolvedValue({
+    isGitRepo: true,
+    owner: undefined,
+    repo: undefined
+  })
 })
 
 import { RepositoriesSection } from '../RepositoriesSection'

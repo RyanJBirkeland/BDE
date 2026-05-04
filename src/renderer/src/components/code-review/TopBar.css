@@ -227,3 +227,11 @@
 .cr-topbar__ai-toggle:hover:not(.cr-topbar__ai-toggle--on) {
   background: var(--fleet-hover);
 }
+
+/* Run metrics: cost + duration after the branch bar */
+.cr-run-metrics {
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

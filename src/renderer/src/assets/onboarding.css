@@ -280,3 +280,28 @@
   border-radius: var(--fleet-radius-md);
   color: var(--fleet-warning);
 }
+
+/* Preflight note shown when auth checks fail — explains Continue Anyway is safe */
+.onboarding-step__preflight-note {
+  padding: var(--fleet-space-3) var(--fleet-space-4);
+  background: var(--fleet-surface-high, var(--fleet-surface));
+  border: 1px solid var(--fleet-border);
+  border-radius: var(--fleet-radius-md);
+  font-size: var(--fleet-size-sm);
+  color: var(--fleet-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.onboarding-step__preflight-note strong {
+  color: var(--fleet-text);
+}
+
+.onboarding-step__preflight-note code {
+  padding: 1px 4px;
+  background: var(--fleet-bg-elevated, var(--fleet-hover));
+  border-radius: 3px;
+  font-family: var(--fleet-font-code);
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text);
+}

@@ -326,6 +326,17 @@ export function AuthStep({ onNext, onBack, isFirst }: StepProps): React.JSX.Elem
         </Button>
       )}
 
+      {!checking && !isReady && (
+        <p
+          className="onboarding-step__preflight-note"
+          role="note"
+        >
+          <strong>Note:</strong> This is a preflight check only. Agents authenticate via the SDK
+          at spawn time — if <code>claude</code> works in your terminal, agents will run normally.
+          Common cause of red marks on unsigned bundles: macOS Keychain ACL.
+        </p>
+      )}
+
       <div className="onboarding-step__actions">
         {!isFirst && (
           <Button variant="ghost" onClick={onBack}>

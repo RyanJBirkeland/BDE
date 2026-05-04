@@ -48,6 +48,8 @@ export function RepositoriesSection(): React.JSX.Element {
   const [newColor, setNewColor] = useState(REPO_COLOR_PALETTE[0])
   const [expandedEnvRepo, setExpandedEnvRepo] = useState<string | null>(null)
   const [editingEnvPairs, setEditingEnvPairs] = useState<Array<{ key: string; value: string }>>([])
+  const [pathError, setPathError] = useState<string | null>(null)
+  const [pathWarning, setPathWarning] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.settings.getJson('repos').then((raw) => {
@@ -89,8 +91,24 @@ export function RepositoriesSection(): React.JSX.Element {
 
   const handleManualAdd = useCallback(async () => {
     if (!newName.trim() || !newPath.trim()) return
+
+    setPathError(null)
+    setPathWarning(null)
     setSaving(true)
+
     try {
+      const detected = await window.api.git.detectRemote(newPath.trim())
+
+      if (!detected.isGitRepo) {
+        setPathError('Not a git repository. Verify the path.')
+        return
+      }
+
+      const basename = newPath.trim().split('/').filter(Boolean).pop() ?? ''
+      if (basename.toLowerCase() !== newName.trim().toLowerCase()) {
+        setPathWarning("Directory name doesn't match repo name — double-check this is the right path.")
+      }
+
       const updated = [
         ...repos,
         {
@@ -108,6 +126,8 @@ export function RepositoriesSection(): React.JSX.Element {
       setNewOwner('')
       setNewRepo('')
       setNewColor(REPO_COLOR_PALETTE[0])
+      setPathError(null)
+      setPathWarning(null)
       toast.success(`Added "${newName.trim()}"`)
     } finally {
       setSaving(false)
@@ -343,23 +363,40 @@ export function RepositoriesSection(): React.JSX.Element {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                 />
-                <div className="settings-repo-form__path-row">
-                  <input
-                    className="settings-field__input"
-                    placeholder="Local path"
-                    aria-label="Local path"
-                    value={newPath}
-                    onChange={(e) => setNewPath(e.target.value)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBrowse}
-                    title="Browse"
-                    type="button"
-                  >
-                    <FolderOpen size={14} />
-                  </Button>
+                <div className="settings-repo-form__path-col">
+                  <div className="settings-repo-form__path-row">
+                    <input
+                      className={`settings-field__input${pathError ? ' settings-field__input--error' : ''}`}
+                      placeholder="Local path"
+                      aria-label="Local path"
+                      aria-describedby={pathError ? 'path-error' : pathWarning ? 'path-warning' : undefined}
+                      value={newPath}
+                      onChange={(e) => {
+                        setNewPath(e.target.value)
+                        setPathError(null)
+                        setPathWarning(null)
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBrowse}
+                      title="Browse"
+                      type="button"
+                    >
+                      <FolderOpen size={14} />
+                    </Button>
+                  </div>
+                  {pathError && (
+                    <p id="path-error" className="settings-repo-form__path-error" role="alert">
+                      {pathError}
+                    </p>
+                  )}
+                  {!pathError && pathWarning && (
+                    <p id="path-warning" className="settings-repo-form__path-warning" role="status">
+                      {pathWarning}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="settings-repo-form__row">

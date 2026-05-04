@@ -12,6 +12,7 @@ import { useReviewActions } from '../../hooks/useReviewActions'
 import { useTaskAutoSelect } from '../../hooks/useTaskAutoSelect'
 import { useBatchActions } from '../../hooks/useBatchActions'
 import { BranchBar } from './BranchBar'
+import { TaskRunMetrics } from './TaskRunMetrics'
 import { ApproveDropdown } from './ApproveDropdown'
 import { useReviewPartnerStore } from '../../stores/reviewPartner'
 import { ReviewActionsBar } from './ReviewActionsBar'
@@ -187,6 +188,7 @@ export function TopBar(): React.JSX.Element {
                 )}
               </div>
               {branch && <BranchBar branch={branch} targetBranch="main" />}
+              <TaskRunMetrics task={task} />
             </div>
 
             <ReviewActionsBar variant="compact">
