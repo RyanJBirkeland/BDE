@@ -79,6 +79,9 @@ export interface BroadcastChannels {
   'sprint:externalChange': void
   'sprint:mutation': { type: 'created' | 'updated' | 'deleted'; task: SprintTask }
 
+  // Settings
+  'settings:externalChange': void
+
   // Synthesizer streaming
   'synthesizer:chunk': {
     streamId: string

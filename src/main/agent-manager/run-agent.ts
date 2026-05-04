@@ -993,6 +993,13 @@ export async function runAgent(
   const prompt = await runSetupPhase(task, worktree, repoPath, deps)
   if (prompt === null) return
 
+  // Fire-and-forget: persist prompt before spawn so spec authors can inspect
+  // what the agent received. Errors are swallowed — a DB write failure must
+  // never block the agent from starting.
+  deps.repo.persistRenderedPrompt(task.id, prompt).catch((err) =>
+    deps.logger.warn(`[run-agent] persistRenderedPrompt failed for task ${task.id}: ${err}`)
+  )
+
   const tripwirePassed = await runPreSpawnTripwire(task, worktree, repoPath, deps)
   if (!tripwirePassed) return
 

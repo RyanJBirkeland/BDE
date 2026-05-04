@@ -101,6 +101,7 @@ export function startDbWatcher(): () => void {
       }
       for (const win of BrowserWindow.getAllWindows()) {
         win.webContents.send('sprint:externalChange')
+        win.webContents.send('settings:externalChange')
       }
     }, DEBOUNCE_MS)
   }

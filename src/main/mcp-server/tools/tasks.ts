@@ -173,6 +173,28 @@ export function registerTaskTools(server: McpServer, deps: TaskToolsDeps): void 
   )
 
   server.registerTool(
+    'tasks.lastPrompt',
+    {
+      description:
+        "Return the exact prompt text passed to the SDK on the task's most recent run. Returns null if the task has never been run.",
+      inputSchema: TaskIdSchema
+    },
+    async (rawArgs) =>
+      safeToolResponse(
+        async () => {
+          const { id } = parseToolArgs(TaskIdSchema, rawArgs)
+          const task = deps.getTask(id)
+          if (!task) {
+            deps.logger.debug(`mcp.tasks.lastPrompt: task ${id} not found`)
+            throw new McpDomainError(`Task ${id} not found`, McpErrorCode.NotFound, { id })
+          }
+          return jsonContent({ prompt: task.last_rendered_prompt ?? null })
+        },
+        { schema: TaskIdSchema, logger: deps.logger }
+      )
+  )
+
+  server.registerTool(
     'tasks.history',
     {
       description: 'Fetch the audit trail (field-level change log) for a task.',

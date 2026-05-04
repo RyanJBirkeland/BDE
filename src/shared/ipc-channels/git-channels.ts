@@ -79,6 +79,10 @@ export interface GitChannels {
     args: []
     result: boolean
   }
+  'git:diffBetweenRefs': {
+    args: [payload: { repoPath: string; fromRef: string; toRef: string }]
+    result: string
+  }
 }
 
 /** Pull request operations */

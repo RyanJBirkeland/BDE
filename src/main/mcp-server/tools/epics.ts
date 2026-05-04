@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { z } from 'zod'
 import {
   EpicCycleError,
   EpicNotFoundError,
@@ -179,6 +180,25 @@ export function registerEpicTools(server: McpServer, deps: EpicToolsDeps): void 
         },
         { schema: EpicSetDependenciesSchema }
       )
+  )
+
+  const BulkQueueSchema = z.object({ id: z.string().describe('Epic ID') })
+
+  server.registerTool(
+    'epics.bulkQueueTasks',
+    {
+      description:
+        'Queue all backlog tasks in an epic that have a valid spec. Returns counts of queued and skipped tasks.',
+      inputSchema: BulkQueueSchema
+    },
+    async (rawArgs) =>
+      safeToolResponse(async () => {
+        const { id } = parseToolArgs(BulkQueueSchema, rawArgs)
+        const epic = svc.getEpic(id)
+        if (!epic) throw new McpDomainError(`Epic ${id} not found`, McpErrorCode.NotFound, { id })
+        const queued = svc.queueAllTasks(id)
+        return jsonContent({ queued })
+      })
   )
 }
 

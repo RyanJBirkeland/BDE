@@ -72,6 +72,19 @@ export async function captureDiffSnapshot(
       files: files.length
     }
 
+    // Capture HEAD SHA before patch fetching so the snapshot records the exact
+    // commit the reviewer saw. Used later for incremental "since last review" diffs.
+    let branchTip: string | undefined
+    try {
+      const { stdout: headSha } = await execFileAsync('git', ['rev-parse', 'HEAD'], {
+        cwd: worktreePath,
+        env
+      })
+      branchTip = headSha.trim()
+    } catch (err) {
+      logger.warn(`[diff-snapshot] Failed to capture HEAD SHA: ${getErrorMessage(err)}`)
+    }
+
     // Fetch all per-file patches in a single git call, then distribute them.
     // A loop of N per-file diffs costs N+2 subprocesses; this collapses to 3.
     const { truncated, patchedFiles } = await fetchAndDistributePatches(
@@ -84,6 +97,7 @@ export async function captureDiffSnapshot(
 
     return {
       capturedAt: nowIso(),
+      ...(branchTip !== undefined ? { branchTip } : {}),
       totals,
       files: patchedFiles,
       ...(truncated ? { truncated: true } : {})

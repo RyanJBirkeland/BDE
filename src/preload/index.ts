@@ -15,7 +15,8 @@ import {
   gitCheckout as checkout,
   gitDetectRemote as detectRemote,
   gitFetch as fetch,
-  gitPull as pull
+  gitPull as pull,
+  gitDiffBetweenRefs as diffBetweenRefs
 } from './api-git'
 import { sprint, groups } from './api-sprint'
 import {
@@ -70,6 +71,7 @@ import {
   getPrList,
   refreshPrList,
   onExternalSprintChange,
+  onExternalSettingsChange,
   onSprintMutation,
   onTaskTerminalError,
   authStatus,
@@ -93,7 +95,10 @@ ipcRenderer.setMaxListeners(25)
 
 const api = {
   // Settings
-  settings,
+  settings: {
+    ...settings,
+    onExternalChange: onExternalSettingsChange
+  },
   claudeConfig,
 
   // Webhooks
@@ -116,7 +121,8 @@ const api = {
     checkout,
     detectRemote,
     fetch,
-    pull
+    pull,
+    diffBetweenRefs
   },
 
   // Memory

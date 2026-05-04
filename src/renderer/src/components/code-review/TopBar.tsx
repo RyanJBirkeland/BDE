@@ -1,10 +1,11 @@
 import './TopBar.css'
 import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Sparkles } from 'lucide-react'
+import { ChevronDown, FileText, Sparkles } from 'lucide-react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
 import { ConfirmModal } from '../ui/ConfirmModal'
+import { Modal } from '../ui/Modal'
 import { ReviewQueue } from './ReviewQueue'
 import { VARIANTS } from '../../lib/motion'
 import { useReviewActions } from '../../hooks/useReviewActions'
@@ -33,6 +34,15 @@ export function TopBar(): React.JSX.Element {
 
   const [taskSwitcherOpen, setTaskSwitcherOpen] = useState(false)
   const taskSwitcherRef = useRef<HTMLDivElement>(null)
+  const [promptModalOpen, setPromptModalOpen] = useState(false)
+  const [promptText, setPromptText] = useState<string | null>(null)
+
+  const openPromptModal = async (): Promise<void> => {
+    if (!task) return
+    const result = await window.api.sprint.getLastPrompt(task.id)
+    setPromptText(result.prompt)
+    setPromptModalOpen(true)
+  }
 
   const selectedTasks = tasks.filter((t) => selectedBatchIds.has(t.id) && t.status === 'review')
   const isBatchMode = selectedBatchIds.size > 0
@@ -188,6 +198,17 @@ export function TopBar(): React.JSX.Element {
                   </div>
 
                   <div className="cr-topbar__right">
+                    {/* View rendered agent prompt */}
+                    <button
+                      type="button"
+                      className="cr-topbar__prompt-btn"
+                      aria-label="View rendered agent prompt"
+                      title="View rendered agent prompt"
+                      onClick={openPromptModal}
+                    >
+                      <FileText size={14} />
+                    </button>
+
                     {/* AI Partner toggle */}
                     <button
                       type="button"
@@ -225,6 +246,33 @@ export function TopBar(): React.JSX.Element {
           handleSubmitRollupPr(selectedTasks, branchName, prTitle)
         }
       />
+      <Modal
+        open={promptModalOpen}
+        onClose={() => setPromptModalOpen(false)}
+        title="Rendered Agent Prompt"
+        size="lg"
+      >
+        {promptText != null ? (
+          <pre
+            style={{
+              fontFamily: 'monospace',
+              fontSize: '0.8rem',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowY: 'auto',
+              maxHeight: '60vh',
+              margin: 0,
+              padding: '1rem'
+            }}
+          >
+            {promptText}
+          </pre>
+        ) : (
+          <p style={{ padding: '1rem', color: 'var(--color-text-muted)' }}>
+            No prompt recorded for this run.
+          </p>
+        )}
+      </Modal>
     </div>
   )
 }

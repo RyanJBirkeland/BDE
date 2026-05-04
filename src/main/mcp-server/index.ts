@@ -64,7 +64,8 @@ export function createMcpServer(deps: McpServerDeps, config: McpServerConfig): M
     )
 
     registerMetaTools(mcp, {
-      getRepos: reposCache.getRepos
+      getRepos: reposCache.getRepos,
+      broadcastSettingsChange: () => broadcast('settings:externalChange')
     })
 
     registerTaskTools(mcp, {
