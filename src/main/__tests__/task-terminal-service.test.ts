@@ -86,7 +86,7 @@ describe('createTaskTerminalService — batch deduplication', () => {
     await vi.runAllTimersAsync()
 
     expect(vi.mocked(resolveDependents)).toHaveBeenCalledTimes(1)
-    expect(vi.mocked(resolveDependents).mock.calls[0][0]).toBe('task-1')
+    expect(vi.mocked(resolveDependents).mock.calls[0][0]).toMatchObject({ completedTaskId: 'task-1' })
   })
 
   it('multiple different task IDs in one batch all get resolved', async () => {
@@ -99,7 +99,7 @@ describe('createTaskTerminalService — batch deduplication', () => {
 
     await vi.runAllTimersAsync()
 
-    const resolvedIds = vi.mocked(resolveDependents).mock.calls.map((call) => call[0])
+    const resolvedIds = vi.mocked(resolveDependents).mock.calls.map((call) => (call[0] as { completedTaskId: string }).completedTaskId)
     expect(resolvedIds).toContain('task-1')
     expect(resolvedIds).toContain('task-2')
     expect(resolvedIds).toContain('task-3')
@@ -133,7 +133,7 @@ describe('createTaskTerminalService — retry on failure', () => {
     expect(vi.mocked(sleep)).toHaveBeenCalledWith(500)
     // resolveDependents is called twice — first attempt throws, second succeeds
     expect(vi.mocked(resolveDependents)).toHaveBeenCalledTimes(2)
-    expect(vi.mocked(resolveDependents).mock.calls[1][0]).toBe('task-retry')
+    expect(vi.mocked(resolveDependents).mock.calls[1][0]).toMatchObject({ completedTaskId: 'task-retry' })
   })
 
   it('logs an error and stops after the retry if it also throws', async () => {
