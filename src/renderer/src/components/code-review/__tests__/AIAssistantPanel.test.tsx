@@ -198,6 +198,15 @@ describe('AIAssistantPanel', () => {
     partnerState.reviewByTask = { 'task-1': { status: 'error', error: 'Something went wrong' } }
     render(<AIAssistantPanel />)
     expect(screen.getByRole('alert')).toBeInTheDocument()
+    expect(screen.getByText('AI Review unavailable')).toBeInTheDocument()
+    expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument()
+  })
+
+  it('shows raw error text when Details is expanded', () => {
+    useCodeReviewStore.setState({ selectedTaskId: 'task-1' })
+    partnerState.reviewByTask = { 'task-1': { status: 'error', error: 'Something went wrong' } }
+    render(<AIAssistantPanel />)
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }))
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
   })
 

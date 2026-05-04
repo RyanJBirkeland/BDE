@@ -35,6 +35,7 @@ export function AIAssistantPanel(): JSX.Element {
   const { autoReview, sendMessage, abortStream } = useReviewPartnerActions()
 
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showErrorDetails, setShowErrorDetails] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const streaming = !!activeStream
 
@@ -126,15 +127,36 @@ export function AIAssistantPanel(): JSX.Element {
 
       {errored && (
         <div className="cr-assistant__error" role="alert">
-          {reviewState?.error ?? 'Review failed.'}
-          <button
-            type="button"
-            onClick={() => {
-              if (selectedTaskId) void autoReview(selectedTaskId, { force: true })
-            }}
-          >
-            Retry
-          </button>
+          <div className="cr-assistant__error-summary">
+            <span>AI Review unavailable</span>
+            <div className="cr-assistant__error-actions">
+              <button
+                type="button"
+                className="cr-assistant__error-details-toggle"
+                onClick={() => setShowErrorDetails((v) => !v)}
+                aria-expanded={showErrorDetails}
+              >
+                {showErrorDetails ? 'Hide details' : 'Details'}
+              </button>
+              <button
+                type="button"
+                className="cr-assistant__error-retry"
+                onClick={() => {
+                  if (selectedTaskId) void autoReview(selectedTaskId, { force: true })
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+          <p className="cr-assistant__error-hint">
+            Review the Diff and Commits tabs manually.
+          </p>
+          {showErrorDetails && (
+            <pre className="cr-assistant__error-details">
+              {reviewState?.error ?? 'Unknown error'}
+            </pre>
+          )}
         </div>
       )}
 

@@ -3,8 +3,9 @@
  *
  * Encapsulates the three per-worktree git operations that the review service
  * and chat-stream deps need: reading the current HEAD SHA, reading the current
- * branch name, and producing a diff against main. All three call `buildAgentEnv()`
- * at request time so callers always receive a fresh environment snapshot.
+ * branch name, and producing a diff against the repo's default branch. All
+ * three call `buildAgentEnv()` at request time so callers always receive a
+ * fresh environment snapshot.
  *
  * Use `createReviewGitAdapter()` at the composition root (inside
  * `buildReviewWiring`) and destructure the returned functions into the
@@ -13,6 +14,7 @@
 import { execFileAsync } from './async-utils'
 import { buildAgentEnv } from '../env-utils'
 import { resolveGitExecutable } from '../agent-manager/resolve-git'
+import { resolveDefaultBranch } from './default-branch'
 import type { Logger } from '../logger'
 
 export interface ReviewGitAdapter {
@@ -49,9 +51,10 @@ export function createReviewGitAdapter(_logger?: Logger): ReviewGitAdapter {
 
   async function getDiff(worktreePath: string): Promise<string> {
     const gitBin = resolveGitExecutable() ?? 'git'
+    const defaultBranch = await resolveDefaultBranch(worktreePath)
     const { stdout } = await execFileAsync(
       gitBin,
-      ['-C', worktreePath, 'diff', 'main...HEAD'],
+      ['-C', worktreePath, 'diff', `origin/${defaultBranch}...HEAD`],
       { maxBuffer: 10 * 1024 * 1024, env: buildAgentEnv() }
     )
     return stdout
