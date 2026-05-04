@@ -24,3 +24,14 @@ export function resolveGitExecutable(): string | undefined {
   if (existsSync(SYSTEM_GIT)) return SYSTEM_GIT
   return undefined
 }
+
+/**
+ * Returns true when a `git rev-list --count` output string represents zero
+ * commits — i.e., the branch has no commits ahead of the comparison ref.
+ *
+ * Centralised here so every caller parses the rev-list output consistently
+ * rather than inlining `parseInt(out.trim(), 10) === 0` at each site.
+ */
+export function hasNoCommitsAheadOfMain(revListOutput: string): boolean {
+  return parseInt(revListOutput.trim(), 10) === 0
+}

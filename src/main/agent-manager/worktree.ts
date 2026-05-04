@@ -229,6 +229,153 @@ function asMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
+function assertRepoExists(repoPath: string): void {
+  if (!existsSync(repoPath) || !existsSync(path.join(repoPath, '.git'))) {
+    throw new Error(`Repo path does not exist or is not a git repository: ${repoPath}`)
+  }
+}
+
+async function fetchLatestMainOutsideLock(
+  repoPath: string,
+  env: Record<string, string | undefined>,
+  log: Logger,
+  taskId: string,
+  appendToNotes: ((text: string) => void) | undefined
+): Promise<string> {
+  // git fetch is safe to run concurrently — git handles its own locking.
+  // Running it before acquiring the per-repo lock avoids serializing all
+  // agents through 30s of network I/O for a single repo.
+  const defaultBranch = await resolveDefaultBranch(repoPath)
+  try {
+    await fetchMain(repoPath, env, log, GIT_FETCH_TIMEOUT_MS)
+    log.info(`[worktree] Fetched origin/${defaultBranch} for task ${taskId}`)
+  } catch (err) {
+    // Non-fatal — proceed with whatever local HEAD we have
+    const stderr = err instanceof Error ? err.message : String(err)
+    log.warn(`[worktree] Failed to fetch origin/${defaultBranch} (proceeding anyway): ${stderr}`)
+    appendToNotes?.(`[worktree] fetchMain failed: ${stderr}`)
+  }
+  return defaultBranch
+}
+
+async function fastForwardMainIfOnDefaultBranch(
+  repoPath: string,
+  defaultBranch: string,
+  env: Record<string, string | undefined>,
+  log: Logger
+): Promise<void> {
+  // Guards: ffMergeMain is the first writer against the MAIN repo's working
+  // tree in the whole worktree-setup flow. A timeout or race here can leave
+  // `.git/MERGE_HEAD` and modified files in the main checkout, which is the
+  // root cause of the agent-edit-leak bug. Assert cleanliness before and
+  // after, and on any post-condition breach abort + refuse to proceed.
+  await assertRepoCleanOrAbort(repoPath, env, log, 'pre-ffMergeMain')
+  try {
+    const { stdout: branchOut } = await execFileAsync(
+      'git',
+      ['rev-parse', '--abbrev-ref', 'HEAD'],
+      { cwd: repoPath, env }
+    )
+    const currentBranch = branchOut.trim()
+    if (currentBranch !== defaultBranch) {
+      log.warn(
+        `[worktree] Main repo is on branch "${currentBranch}", not "${defaultBranch}" — skipping ff-merge to avoid corrupting unrelated branch`
+      )
+    } else {
+      await ffMergeMain(repoPath, env, log, GIT_FF_MERGE_TIMEOUT_MS)
+    }
+  } catch (err) {
+    log.warn(
+      `[worktree] Failed to ff-merge origin/${defaultBranch} (proceeding anyway): ${err}`
+    )
+  }
+  await assertRepoCleanOrAbort(repoPath, env, log, 'post-ffMergeMain')
+}
+
+async function symlinkNodeModules(
+  repoPath: string,
+  worktreePath: string,
+  taskId: string,
+  log: Logger
+): Promise<void> {
+  // Symlink node_modules from the main checkout so agents skip npm install.
+  // Saves ~75s per task. better-sqlite3 ABI is not a concern for renderer
+  // tests (agents no longer run test:main). If the symlink already exists
+  // (e.g. from a stale worktree path collision), skip silently.
+  const worktreeNodeModules = path.join(worktreePath, 'node_modules')
+  const repoNodeModules = path.join(repoPath, 'node_modules')
+  if (existsSync(worktreeNodeModules) || !existsSync(repoNodeModules)) return
+
+  try {
+    symlinkSync(repoNodeModules, worktreeNodeModules)
+    log.info(`[worktree] Symlinked node_modules for task ${taskId}`)
+  } catch (symlinkErr) {
+    log.warn(
+      `[worktree] Failed to symlink node_modules (agents will npm install): ${symlinkErr}`
+    )
+  }
+  await excludeNodeModulesFromGitTracking(worktreePath, taskId, log)
+}
+
+async function excludeNodeModulesFromGitTracking(
+  worktreePath: string,
+  taskId: string,
+  log: Logger
+): Promise<void> {
+  // Exclude the node_modules symlink from git tracking in this worktree.
+  // The repo's .gitignore uses a trailing slash (node_modules/) which matches
+  // directories but not symlinks. Writing to .git/info/exclude (no trailing slash)
+  // ensures git never stages the symlink regardless of .gitignore behaviour.
+  // In a git worktree, `.git` is a pointer file — use --git-common-dir to resolve
+  // the real gitdir where info/exclude actually lives.
+  try {
+    const { stdout: gitDirOut } = await execFileAsync(
+      'git',
+      ['rev-parse', '--git-common-dir'],
+      { cwd: worktreePath }
+    )
+    const excludePath = path.join(gitDirOut.trim(), 'info', 'exclude')
+    appendFileSync(excludePath, '\nnode_modules\n')
+  } catch (excludeErr) {
+    log.warn(`[worktree] Failed to write .git/info/exclude for task ${taskId}: ${excludeErr}`)
+  }
+}
+
+async function createWorktreeUnderLock(
+  repoPath: string,
+  worktreeBase: string,
+  worktreePath: string,
+  branch: string,
+  defaultBranch: string,
+  taskId: string,
+  env: Record<string, string | undefined>,
+  log: Logger
+): Promise<void> {
+  // The lock guards `git worktree add`, branch creation, and the merge --ff-only
+  // (which mutates the main checkout's HEAD) — these races corrupted state in
+  // testing when multiple agents started simultaneously on the same repo.
+  await acquireLock(worktreeBase, repoPath, log)
+  try {
+    // Clean any stale state for this task/branch (other worktrees with the
+    // same branch name, leftover dirs, dangling refs).
+    await cleanupStaleWorktrees(repoPath, worktreePath, branch, env, log)
+    await fastForwardMainIfOnDefaultBranch(repoPath, defaultBranch, env, log)
+    await addWorktree(repoPath, branch, worktreePath, env)
+    await symlinkNodeModules(repoPath, worktreePath, taskId, log)
+  } catch (err) {
+    // Clean up the worktree directory on setup failure (best effort).
+    // The lock is released in the finally block below.
+    try {
+      rmSync(worktreePath, { recursive: true, force: true })
+    } catch {
+      /* best effort */
+    }
+    throw err
+  } finally {
+    releaseLock(worktreeBase, repoPath, log)
+  }
+}
+
 export async function setupWorktree(
   opts: SetupWorktreeOpts & { logger?: Logger | undefined }
 ): Promise<SetupWorktreeResult> {
@@ -240,15 +387,8 @@ export async function setupWorktree(
   const log = logger ?? defaultLogger
 
   mkdirSync(repoDir, { recursive: true })
+  assertRepoExists(repoPath)
 
-  // Validate repo path exists and is a git repository (no lock needed — read-only)
-  if (!existsSync(repoPath) || !existsSync(path.join(repoPath, '.git'))) {
-    throw new Error(`Repo path does not exist or is not a git repository: ${repoPath}`)
-  }
-
-  // Pre-check: ensure enough free disk space at the worktree base.
-  // Includes in-flight reservations so concurrent spawns don't all see "5 GB
-  // free" simultaneously and over-commit the disk (F-t1-sre-5).
   const pending = getPendingReservation(worktreeBase)
   await ensureFreeDiskSpace(worktreeBase, MIN_FREE_DISK_BYTES + pending, log)
 
@@ -256,112 +396,8 @@ export async function setupWorktree(
   // of success or failure so subsequent spawns see accurate headroom.
   reserveDisk(worktreeBase)
   try {
-    // Step 1: Fetch latest main OUTSIDE the per-repo lock.
-    // git fetch is safe to run concurrently from multiple processes — git
-    // handles locking on its own packed-refs / fetch-head writes. Holding our
-    // own lock through 30s of network I/O fully serialized worktree setup
-    // for multiple agents on the same repo (10 tasks → 5+ minute startup).
-    const defaultBranch = await resolveDefaultBranch(repoPath)
-    try {
-      await fetchMain(repoPath, env, log, GIT_FETCH_TIMEOUT_MS)
-      log.info(`[worktree] Fetched origin/${defaultBranch} for task ${taskId}`)
-    } catch (err) {
-      // Non-fatal — proceed with whatever local HEAD we have
-      const stderr = err instanceof Error ? err.message : String(err)
-      log.warn(`[worktree] Failed to fetch origin/${defaultBranch} (proceeding anyway): ${stderr}`)
-      appendToNotes?.(`[worktree] fetchMain failed: ${stderr}`)
-    }
-
-    // Step 2: Acquire the per-repo lock for the conflict-sensitive operations.
-    // The lock guards `git worktree add`, branch creation, and the merge --ff-only
-    // (which mutates the main checkout's HEAD) — these races corrupted state in
-    // testing when multiple agents started simultaneously on the same repo.
-    await acquireLock(worktreeBase, repoPath, log)
-
-    try {
-      // Clean any stale state for this task/branch (other worktrees with the
-      // same branch name, leftover dirs, dangling refs).
-      await cleanupStaleWorktrees(repoPath, worktreePath, branch, env, log)
-
-      // Fast-forward local main to match origin so the new worktree branches
-      // off the latest commit. Non-destructive — only succeeds for true ff.
-      //
-      // Guards: ffMergeMain is the first writer against the MAIN repo's working
-      // tree in the whole worktree-setup flow. A timeout or race here can leave
-      // `.git/MERGE_HEAD` and modified files in the main checkout, which is the
-      // root cause of the agent-edit-leak bug. Assert cleanliness before and
-      // after, and on any post-condition breach abort + refuse to proceed.
-      await assertRepoCleanOrAbort(repoPath, env, log, 'pre-ffMergeMain')
-      try {
-        const { stdout: branchOut } = await execFileAsync(
-          'git',
-          ['rev-parse', '--abbrev-ref', 'HEAD'],
-          { cwd: repoPath, env }
-        )
-        const currentBranch = branchOut.trim()
-        if (currentBranch !== defaultBranch) {
-          log.warn(
-            `[worktree] Main repo is on branch "${currentBranch}", not "${defaultBranch}" — skipping ff-merge to avoid corrupting unrelated branch`
-          )
-        } else {
-          await ffMergeMain(repoPath, env, log, GIT_FF_MERGE_TIMEOUT_MS)
-        }
-      } catch (err) {
-        log.warn(
-          `[worktree] Failed to ff-merge origin/${defaultBranch} (proceeding anyway): ${err}`
-        )
-      }
-      await assertRepoCleanOrAbort(repoPath, env, log, 'post-ffMergeMain')
-
-      // Create fresh worktree + branch
-      await addWorktree(repoPath, branch, worktreePath, env)
-
-      // Symlink node_modules from the main checkout so agents skip npm install.
-      // Saves ~75s per task. better-sqlite3 ABI is not a concern for renderer
-      // tests (agents no longer run test:main). If the symlink already exists
-      // (e.g. from a stale worktree path collision), skip silently.
-      const worktreeNodeModules = path.join(worktreePath, 'node_modules')
-      const repoNodeModules = path.join(repoPath, 'node_modules')
-      if (!existsSync(worktreeNodeModules) && existsSync(repoNodeModules)) {
-        try {
-          symlinkSync(repoNodeModules, worktreeNodeModules)
-          log.info(`[worktree] Symlinked node_modules for task ${taskId}`)
-        } catch (symlinkErr) {
-          log.warn(
-            `[worktree] Failed to symlink node_modules (agents will npm install): ${symlinkErr}`
-          )
-        }
-        // Exclude the node_modules symlink from git tracking in this worktree.
-        // The repo's .gitignore uses a trailing slash (node_modules/) which matches
-        // directories but not symlinks. Writing to .git/info/exclude (no trailing slash)
-        // ensures git never stages the symlink regardless of .gitignore behaviour.
-        // In a git worktree, `.git` is a pointer file — use --git-common-dir to resolve
-        // the real gitdir where info/exclude actually lives.
-        try {
-          const { stdout: gitDirOut } = await execFileAsync(
-            'git',
-            ['rev-parse', '--git-common-dir'],
-            { cwd: worktreePath }
-          )
-          const excludePath = path.join(gitDirOut.trim(), 'info', 'exclude')
-          appendFileSync(excludePath, '\nnode_modules\n')
-        } catch (excludeErr) {
-          log.warn(`[worktree] Failed to write .git/info/exclude for task ${taskId}: ${excludeErr}`)
-        }
-      }
-    } catch (err) {
-      // Clean up the worktree directory on setup failure (best effort).
-      // The lock is released in the finally block below.
-      try {
-        rmSync(worktreePath, { recursive: true, force: true })
-      } catch {
-        /* best effort */
-      }
-      throw err
-    } finally {
-      releaseLock(worktreeBase, repoPath, log)
-    }
-
+    const defaultBranch = await fetchLatestMainOutsideLock(repoPath, env, log, taskId, appendToNotes)
+    await createWorktreeUnderLock(repoPath, worktreeBase, worktreePath, branch, defaultBranch, taskId, env, log)
     return { worktreePath, branch }
   } finally {
     // Always release the disk reservation whether setup succeeded or failed.

@@ -17,6 +17,7 @@ import { TurnTracker } from './turn-tracker'
 import type { AgentRunClaim } from './run-agent'
 import { setTimeout as nodeSetTimeout, clearTimeout as nodeClearTimeout } from 'node:timers'
 import { invalidateOAuthToken, refreshOAuthTokenFromKeychain } from '../env-utils'
+import { classifyFailureReason } from './failure-classifier'
 
 /**
  * Maximum time between consecutive messages before the stream is considered stalled.
@@ -343,12 +344,7 @@ async function handleStreamError(
   })
   logError(ctx.logger, `[agent-manager] Error consuming messages for task ${ctx.task.id}`, err)
 
-  const isAuthError =
-    errMsg.includes('Invalid API key') ||
-    errMsg.includes('invalid_api_key') ||
-    errMsg.includes('authentication') ||
-    errMsg.includes('Not logged in') ||
-    errMsg.includes('Please run /login')
+  const isAuthError = classifyFailureReason(errMsg) === 'auth'
 
   if (isAuthError) {
     return handleAuthError(ctx, onOAuthRefreshStart)

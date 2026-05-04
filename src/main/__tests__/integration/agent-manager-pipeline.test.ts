@@ -72,8 +72,8 @@ vi.mock('../../agent-manager/sdk-adapter', () => {
   const spawnAgent = vi.fn()
   return {
     spawnAgent,
-    spawnWithTimeout: vi.fn((_prompt: string, _cwd: string, _model: string, _logger: unknown) =>
-      spawnAgent({ prompt: _prompt, cwd: _cwd, model: _model, logger: _logger })
+    spawnWithTimeout: vi.fn((opts: import('../../agent-manager/sdk-adapter').SpawnWithTimeoutOpts) =>
+      spawnAgent({ prompt: opts.prompt, cwd: opts.cwd, model: opts.model, logger: opts.logger })
     ),
     asSDKMessage: vi.fn((msg: unknown) => msg),
     getNumericField: vi.fn(),

@@ -321,21 +321,11 @@ interface ResolveAgentExitContext {
   exitedAt: number
   worktree: { worktreePath: string; branch: string }
   repoPath: string
-  repo: IAgentTaskRepository
-  reviewRepo: import('../data/review-repository').IReviewRepository
-  unitOfWork: IUnitOfWork
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>
-  taskStateService: TaskStateService
-  logger: Logger
-  resolveGhRepo: (repoSlug: string) => string | null
-  getAutoReviewRules?: () => import('../../shared/types/task-types').AutoReviewRule[] | null
-  resolveRepoLocalPath?: (repoSlug: string) => string | null
-  onFastFailRecorded?: (taskId: string, reason: string) => void
-  isFastFailExhausted?: (taskId: string) => boolean
-  onMutation?: (event: string, task: unknown) => void
+  deps: RunAgentDeps
 }
 
 async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
+  const { deps } = ctx
   const legacyFastFailCount = ctx.task.fast_fail_count ?? 0
   const ffResult = classifyExit(
     ctx.agent.startedAt,
@@ -352,10 +342,10 @@ async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
   // Falls back to the DB-backed count when no sliding-window callbacks are
   // injected (e.g. tests or callers that don't wire ErrorRegistry).
   const reason = ctx.lastAgentOutput || `exit code ${ctx.exitCode ?? 1}`
-  ctx.onFastFailRecorded?.(ctx.task.id, reason)
+  deps.onFastFailRecorded?.(ctx.task.id, reason)
 
-  const exhausted = ctx.isFastFailExhausted
-    ? ctx.isFastFailExhausted(ctx.task.id)
+  const exhausted = deps.isFastFailExhausted
+    ? deps.isFastFailExhausted(ctx.task.id)
     : ffResult === 'fast-fail-exhausted'
 
   if (exhausted) return handleFastFailExhausted(ctx)
@@ -363,9 +353,10 @@ async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
 }
 
 async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<void> {
+  const { deps } = ctx
   flushAgentEventBatcher()
   try {
-    await ctx.taskStateService.transition(ctx.task.id, 'error', {
+    await deps.taskStateService.transition(ctx.task.id, 'error', {
       fields: {
         failure_reason: 'spawn',
         completed_at: nowIso(),
@@ -375,17 +366,18 @@ async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<vo
       },
       caller: 'run-agent:fast-fail-exhausted'
     })
-    await ctx.onTaskTerminal(ctx.task.id, 'error')
+    await deps.onTaskTerminal(ctx.task.id, 'error')
   } catch (err) {
-    ctx.logger.error(
+    deps.logger.error(
       `[agent-manager] Failed to transition task ${ctx.task.id} after fast-fail exhausted: ${err}`
     )
   }
 }
 
 async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void> {
+  const { deps } = ctx
   try {
-    await ctx.taskStateService.transition(ctx.task.id, 'queued', {
+    await deps.taskStateService.transition(ctx.task.id, 'queued', {
       fields: {
         fast_fail_count: (ctx.task.fast_fail_count ?? 0) + 1,
         claimed_by: null
@@ -393,17 +385,17 @@ async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void
       caller: 'run-agent:fast-fail-requeue'
     })
   } catch (err) {
-    ctx.logger.error(`[agent-manager] Failed to requeue fast-fail task ${ctx.task.id}: ${err}`)
+    deps.logger.error(`[agent-manager] Failed to requeue fast-fail task ${ctx.task.id}: ${err}`)
     // DB write failed — task still marked active. Skip terminal notification so
     // dependents are not unblocked against a task that remains active in SQLite.
     return
   }
   // Fast-fail-requeue means the next drain tick will recreate the worktree.
   // Delete the agent branch so the new worktree starts from a clean ref.
-  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, ctx.logger)
+  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, deps.logger)
   // Notify terminal listeners even on requeue so blocked dependents unblock —
   // this run ended, even if a retry will follow.
-  await ctx.onTaskTerminal(ctx.task.id, 'queued')
+  await deps.onTaskTerminal(ctx.task.id, 'queued')
 }
 
 type SpecFileCheckResult = { kind: 'skip' } | { kind: 'ok' } | { kind: 'missing'; files: string[] }
@@ -536,64 +528,66 @@ async function handleIncompleteFiles(
   ctx: ResolveAgentExitContext,
   missingFiles: string[]
 ): Promise<void> {
+  const { deps } = ctx
   const notes = `Files to Change checklist incomplete. Missing: ${missingFiles.join(', ')}`
-  ctx.logger.warn(`[run-agent] task ${ctx.task.id}: ${notes}`)
+  deps.logger.warn(`[run-agent] task ${ctx.task.id}: ${notes}`)
 
   const result = await resolveFailure(
     {
       taskId: ctx.task.id,
       retryCount: ctx.task.retry_count ?? 0,
       notes,
-      repo: ctx.repo,
-      taskStateService: ctx.taskStateService
+      repo: deps.repo,
+      taskStateService: deps.taskStateService
     },
-    ctx.logger
+    deps.logger
   )
   if (result.writeFailed) {
-    ctx.logger.warn(
+    deps.logger.warn(
       `[run-agent] task ${ctx.task.id}: incomplete-files failure DB write failed — skipping terminal notification`
     )
     return
   }
   if (result.isTerminal) {
-    await ctx.onTaskTerminal(ctx.task.id, 'failed')
+    await deps.onTaskTerminal(ctx.task.id, 'failed')
     return
   }
-  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, ctx.logger)
-  await ctx.onTaskTerminal(ctx.task.id, 'queued')
+  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, deps.logger)
+  await deps.onTaskTerminal(ctx.task.id, 'queued')
 }
 
 async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
+  const { deps } = ctx
   const specFileCheck = await detectMissingSpecFiles(
     ctx.task,
     ctx.worktree.worktreePath,
-    ctx.logger
+    deps.logger
   )
   if (specFileCheck.kind === 'missing') {
     return handleIncompleteFiles(ctx, specFileCheck.files)
   }
 
   try {
-    const ghRepo = ctx.resolveGhRepo(ctx.task.repo) ?? ctx.task.repo
+    const ghRepo = deps.resolveGhRepo(ctx.task.repo) ?? ctx.task.repo
     await resolveSuccess(
       {
         taskId: ctx.task.id,
         worktreePath: ctx.worktree.worktreePath,
         title: ctx.task.title,
         ghRepo,
-        onTaskTerminal: ctx.onTaskTerminal,
+        onTaskTerminal: deps.onTaskTerminal,
         agentSummary: ctx.lastAgentOutput || null,
         retryCount: ctx.task.retry_count ?? 0,
-        repo: ctx.repo,
-        reviewRepo: ctx.reviewRepo,
-        unitOfWork: ctx.unitOfWork,
+        repo: deps.repo,
+        reviewRepo: deps.reviewRepo,
+        unitOfWork: deps.unitOfWork,
         repoPath: ctx.repoPath,
-        taskStateService: ctx.taskStateService,
-        ...(ctx.getAutoReviewRules && { getAutoReviewRules: ctx.getAutoReviewRules }),
-        ...(ctx.resolveRepoLocalPath && { resolveRepoLocalPath: ctx.resolveRepoLocalPath }),
-        ...(ctx.onMutation && { onMutation: ctx.onMutation })
+        taskStateService: deps.taskStateService,
+        ...(deps.getAutoReviewRules && { getAutoReviewRules: deps.getAutoReviewRules }),
+        ...(deps.resolveRepoLocalPath && { resolveRepoLocalPath: deps.resolveRepoLocalPath }),
+        ...(deps.onMutation && { onMutation: deps.onMutation })
       },
-      ctx.logger
+      deps.logger
     )
   } catch (err) {
     await handleResolveSuccessFailure(ctx, err)
@@ -604,7 +598,8 @@ async function handleResolveSuccessFailure(
   ctx: ResolveAgentExitContext,
   err: unknown
 ): Promise<void> {
-  ctx.logger.warn(`[agent-manager] resolveSuccess failed for task ${ctx.task.id}: ${err}`)
+  const { deps } = ctx
+  deps.logger.warn(`[agent-manager] resolveSuccess failed for task ${ctx.task.id}: ${err}`)
   // Pass lastAgentOutput so the retry agent knows what failed and doesn't repeat blindly.
   const failureNotes = [ctx.lastAgentOutput, String(err)].filter(Boolean).join('\n---\n')
   const result = await resolveFailure(
@@ -612,24 +607,24 @@ async function handleResolveSuccessFailure(
       taskId: ctx.task.id,
       retryCount: ctx.task.retry_count ?? 0,
       notes: failureNotes || undefined,
-      repo: ctx.repo,
-      taskStateService: ctx.taskStateService
+      repo: deps.repo,
+      taskStateService: deps.taskStateService
     },
-    ctx.logger
+    deps.logger
   )
   if (result.writeFailed) {
-    ctx.logger.warn(
+    deps.logger.warn(
       `[run-agent] task ${ctx.task.id}: resolve-success failure DB write failed — skipping terminal notification`
     )
     return
   }
   if (result.isTerminal) {
-    await ctx.onTaskTerminal(ctx.task.id, 'failed')
+    await deps.onTaskTerminal(ctx.task.id, 'failed')
     return
   }
   // Non-terminal: task was requeued. Delete the branch so the next drain
   // tick's worktree setup starts from a clean slate.
-  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, ctx.logger)
+  await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, deps.logger)
 }
 
 /**
@@ -673,21 +668,24 @@ export async function cleanupOrPreserveWorktree(
   }
 }
 
+interface FinalizeAgentRunOpts {
+  task: AgentRunClaim
+  worktree: { worktreePath: string; branch: string }
+  repoPath: string
+  agent: ActiveAgent
+  agentRunId: string
+  turnTracker: TurnTracker
+  exitCode: number | undefined
+  lastAgentOutput: string
+  deps: RunAgentDeps
+}
+
 /**
  * Phase 3: Finalizes agent run — emits completion event, classifies exit,
  * runs resolution handlers, and cleans up resources.
  */
-async function finalizeAgentRun(
-  task: AgentRunClaim,
-  worktree: { worktreePath: string; branch: string },
-  repoPath: string,
-  agent: ActiveAgent,
-  agentRunId: string,
-  turnTracker: TurnTracker,
-  exitCode: number | undefined,
-  lastAgentOutput: string,
-  deps: RunAgentDeps
-): Promise<void> {
+async function finalizeAgentRun(opts: FinalizeAgentRunOpts): Promise<void> {
+  const { task, worktree, repoPath, agent, agentRunId, turnTracker, exitCode, lastAgentOutput, deps } = opts
   const exitedAt = Date.now()
   const durationMs = exitedAt - agent.startedAt
 
@@ -705,27 +703,7 @@ async function finalizeAgentRun(
     durationMs,
     deps.logger
   )
-  await resolveAgentExit({
-    task,
-    exitCode,
-    lastAgentOutput,
-    agent,
-    exitedAt,
-    worktree,
-    repoPath,
-    repo: deps.repo,
-    reviewRepo: deps.reviewRepo,
-    unitOfWork: deps.unitOfWork,
-    onTaskTerminal: deps.onTaskTerminal,
-    taskStateService: deps.taskStateService,
-    logger: deps.logger,
-    resolveGhRepo: deps.resolveGhRepo,
-    ...(deps.getAutoReviewRules && { getAutoReviewRules: deps.getAutoReviewRules }),
-    ...(deps.resolveRepoLocalPath && { resolveRepoLocalPath: deps.resolveRepoLocalPath }),
-    ...(deps.onFastFailRecorded && { onFastFailRecorded: deps.onFastFailRecorded }),
-    ...(deps.isFastFailExhausted && { isFastFailExhausted: deps.isFastFailExhausted }),
-    ...(deps.onMutation && { onMutation: deps.onMutation })
-  })
+  await resolveAgentExit({ task, exitCode, lastAgentOutput, agent, exitedAt, worktree, repoPath, deps })
 
   const finalTask = deps.repo.getTask(task.id)
   const finalStatus: TaskStatus = finalTask?.status ?? 'error'
@@ -1012,15 +990,15 @@ export async function runAgent(
 
   const streamResult = await runStreamingPhase(streamingCtx)
 
-  await finalizeAgentRun(
+  await finalizeAgentRun({
     task,
     worktree,
     repoPath,
     agent,
     agentRunId,
     turnTracker,
-    streamResult.exitCode,
-    streamResult.lastAgentOutput,
+    exitCode: streamResult.exitCode,
+    lastAgentOutput: streamResult.lastAgentOutput,
     deps
-  )
+  })
 }

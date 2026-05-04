@@ -274,24 +274,27 @@ async function spawnClaudeAgent(opts: {
   )
 }
 
+export interface SpawnWithTimeoutOpts {
+  prompt: string
+  cwd: string
+  model: string
+  logger: Logger
+  maxBudgetUsd?: number
+  pipelineTuning?: PipelineSpawnTuning
+  worktreeBase?: string
+  branch?: string
+  tickId?: string
+  epicGroupService?: EpicGroupService
+  worktreePath?: string
+  extraEnv?: Record<string, string>
+  mainRepoPaths?: readonly string[]
+}
+
 /**
  * Spawns an agent with a timeout. Rejects if spawn takes longer than SPAWN_TIMEOUT_MS.
  */
-export async function spawnWithTimeout(
-  prompt: string,
-  cwd: string,
-  model: string,
-  logger: Logger,
-  maxBudgetUsd?: number,
-  pipelineTuning?: PipelineSpawnTuning,
-  worktreeBase?: string,
-  branch?: string,
-  tickId?: string,
-  epicGroupService?: EpicGroupService,
-  worktreePath?: string,
-  extraEnv?: Record<string, string>,
-  mainRepoPaths?: readonly string[]
-): Promise<AgentHandle> {
+export async function spawnWithTimeout(opts: SpawnWithTimeoutOpts): Promise<AgentHandle> {
+  const { prompt, cwd, model, logger, maxBudgetUsd, pipelineTuning, worktreeBase, branch, tickId, epicGroupService, worktreePath, extraEnv, mainRepoPaths } = opts
   let timer: ReturnType<typeof setTimeout>
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(

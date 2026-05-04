@@ -23,8 +23,8 @@ vi.mock('../sdk-adapter', async (importOriginal) => {
   return {
     ...actual,
     spawnAgent,
-    spawnWithTimeout: vi.fn((_prompt: string, _cwd: string, _model: string) =>
-      spawnAgent({ prompt: _prompt, cwd: _cwd, model: _model })
+    spawnWithTimeout: vi.fn((opts: import('../sdk-adapter').SpawnWithTimeoutOpts) =>
+      spawnAgent({ prompt: opts.prompt, cwd: opts.cwd, model: opts.model })
     )
   }
 })

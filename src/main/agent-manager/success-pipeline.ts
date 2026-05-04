@@ -234,15 +234,20 @@ const verifyWorktreeBuildPhase: SuccessPhase = {
   }
 }
 
+function buildAutoMergeStrategy(
+  ctx: SuccessPhaseContext
+): (opts: Omit<import('./auto-merge-coordinator').AutoMergeContext, 'getAutoReviewRules' | 'resolveRepoLocalPath'>) => Promise<void> {
+  const { getAutoReviewRules, resolveRepoLocalPath } = ctx
+  if (getAutoReviewRules && resolveRepoLocalPath) {
+    return (opts) => evaluateAutoMerge({ ...opts, getAutoReviewRules, resolveRepoLocalPath })
+  }
+  return () => Promise.resolve()
+}
+
 const reviewTransitionPhase: SuccessPhase = {
   name: 'reviewTransition',
   async run(ctx) {
-    const { getAutoReviewRules, resolveRepoLocalPath } = ctx
-    const attemptAutoMerge =
-      getAutoReviewRules && resolveRepoLocalPath
-        ? (opts: Omit<import('./auto-merge-coordinator').AutoMergeContext, 'getAutoReviewRules' | 'resolveRepoLocalPath'>) =>
-            evaluateAutoMerge({ ...opts, getAutoReviewRules, resolveRepoLocalPath })
-        : () => Promise.resolve()
+    const attemptAutoMerge = buildAutoMergeStrategy(ctx)
     await transitionTaskToReview(
       ctx.taskId,
       ctx.branch,

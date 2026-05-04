@@ -124,21 +124,21 @@ export async function spawnAndWireAgent(
 
   let handle: AgentHandle
   try {
-    handle = await spawnWithTimeout(
+    handle = await spawnWithTimeout({
       prompt,
-      worktree.worktreePath,
-      effectiveModel,
+      cwd: worktree.worktreePath,
+      model: effectiveModel,
       logger,
-      task.max_cost_usd ?? undefined,
+      ...(task.max_cost_usd != null && { maxBudgetUsd: task.max_cost_usd }),
       pipelineTuning,
-      deps.worktreeBase,
-      worktree.branch,
-      deps.tickId,
-      undefined,             // epicGroupService — not used by pipeline agents here
-      worktree.worktreePath, // worktreePath — for buildWorktreeEnv in spawnClaudeAgent
+      worktreeBase: deps.worktreeBase,
+      branch: worktree.branch,
+      ...(deps.tickId != null && { tickId: deps.tickId }),
+      // epicGroupService — not used by pipeline agents here
+      worktreePath: worktree.worktreePath,
       extraEnv,
-      deps.resolveMainRepoPaths?.()
-    )
+      ...(deps.resolveMainRepoPaths && { mainRepoPaths: deps.resolveMainRepoPaths() })
+    })
     try {
       onSpawnSuccess?.()
     } catch (cbErr) {

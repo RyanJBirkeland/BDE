@@ -41,6 +41,8 @@ export const BUILTIN_FAILURE_PATTERNS: readonly FailurePattern[] = Object.freeze
     keywords: [
       'invalid api key',
       'authentication failed',
+      'authentication error',
+      'authentication',
       'unauthorized',
       'token expired',
       'invalid token',
