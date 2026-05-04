@@ -144,6 +144,9 @@ export type {
   CloneProgressEvent
 } from './system-channels'
 
+// Update channels
+export type { UpdateChannels } from './update-channels'
+
 // Composite channel map — intersection of all domain maps
 export type IpcChannelMap = import('./settings-channels').SettingsChannels &
   import('./git-channels').GitChannels &
@@ -174,4 +177,5 @@ export type IpcChannelMap = import('./settings-channels').SettingsChannels &
   import('./system-channels').RepoDiscoveryChannels &
   import('./settings-channels').OnboardingChannels &
   import('./settings-channels').McpChannels &
-  import('./agent-channels').PreflightChannels
+  import('./agent-channels').PreflightChannels &
+  import('./update-channels').UpdateChannels

@@ -123,4 +123,15 @@ export interface BroadcastChannels {
   'tearoff:dragDone': void
   'tearoff:dragCancel': void
   'tearoff:crossWindowDrop': { view: string; targetPanelId: string; zone: string }
+
+  // Auto-updater status pushed from main process to renderer
+  'updates:status': {
+    status: 'checking' | 'available' | 'downloading' | 'ready' | 'up-to-date' | 'error'
+    /** New version string — present for status 'available', 'downloading', 'ready'. */
+    version?: string | undefined
+    /** Download progress 0–100 — present for status 'downloading'. */
+    percent?: number | undefined
+    /** Human-readable error message — present for status 'error'. */
+    error?: string | undefined
+  }
 }
