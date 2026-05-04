@@ -183,7 +183,11 @@ export function TaskDetailDrawer({
       confirmLabel: 'Mark Failed'
     })
     if (reason === null) return
-    await window.api.sprint.forceFailTask({ taskId: task.id, reason: reason.trim() || undefined })
+    try {
+      await window.api.sprint.forceFailTask({ taskId: task.id, reason: reason.trim() || undefined })
+    } catch (err) {
+      toast.error(`Failed to mark task as failed: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   async function handleForceDone(): Promise<void> {
@@ -195,7 +199,11 @@ export function TaskDetailDrawer({
       variant: 'danger'
     })
     if (!approved) return
-    await window.api.sprint.forceDoneTask({ taskId: task.id, force: true })
+    try {
+      await window.api.sprint.forceDoneTask({ taskId: task.id, force: true })
+    } catch (err) {
+      toast.error(`Failed to force task done: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   async function handleForceRelease(): Promise<void> {
@@ -214,6 +222,29 @@ export function TaskDetailDrawer({
       toast.error(`Failed to release claim: ${err instanceof Error ? err.message : String(err)}`)
     }
   }
+
+  const failureCategory = task.failure_reason ? failureCategoryForReason(task.failure_reason) : null
+  const failureChip = failureCategory ? (
+    <span
+      className={`task-drawer__failure-chip ${failureCategory.colorClass}`}
+      data-testid="task-drawer-failure-chip"
+    >
+      {failureCategory.label}
+    </span>
+  ) : null
+
+  const recentAgentErrors = (agentEvents ?? []).filter((e) => e.type === 'agent:error').slice(-3)
+  const recentErrorItems =
+    recentAgentErrors.length > 0 ? (
+      <div className="task-drawer__failure-errors" data-testid="task-drawer-failure-errors">
+        <div className="task-drawer__failure-errors-label">Recent errors</div>
+        {recentAgentErrors.map((e, i) => (
+          <div key={i} className="task-drawer__failure-error-item">
+            {e.type === 'agent:error' ? e.message : ''}
+          </div>
+        ))}
+      </div>
+    ) : null
 
   return (
     <aside className="task-drawer" data-testid="task-detail-drawer" style={{ width }}>
@@ -357,18 +388,7 @@ export function TaskDetailDrawer({
             >
               {task.status === 'cancelled' ? 'Cancellation details' : 'Failure details'}
             </h4>
-            {task.failure_reason &&
-              (() => {
-                const chip = failureCategoryForReason(task.failure_reason)
-                return (
-                  <span
-                    className={`task-drawer__failure-chip ${chip.colorClass}`}
-                    data-testid="task-drawer-failure-chip"
-                  >
-                    {chip.label}
-                  </span>
-                )
-              })()}
+            {failureChip}
             {task.failure_reason && (
               <pre className="task-drawer__failure-reason" data-testid="task-drawer-failure-reason">
                 {task.failure_reason}
@@ -386,25 +406,7 @@ export function TaskDetailDrawer({
                 </div>
               )}
             {renderFailureNotes(task.notes)}
-            {agentEvents &&
-              agentEvents.length > 0 &&
-              (() => {
-                const errors = agentEvents.filter((e) => e.type === 'agent:error').slice(-3)
-                if (errors.length === 0) return null
-                return (
-                  <div
-                    className="task-drawer__failure-errors"
-                    data-testid="task-drawer-failure-errors"
-                  >
-                    <div className="task-drawer__failure-errors-label">Recent errors</div>
-                    {errors.map((e, i) => (
-                      <div key={i} className="task-drawer__failure-error-item">
-                        {e.type === 'agent:error' ? e.message : ''}
-                      </div>
-                    ))}
-                  </div>
-                )
-              })()}
+            {recentErrorItems}
           </section>
         )}
 

@@ -147,6 +147,7 @@ function TaskPillInner({
       data-testid="task-pill"
     >
       <div
+        aria-hidden="true"
         className="task-pill__dot"
         style={{
           background:
@@ -221,7 +222,7 @@ function TaskPillInner({
             ${costUsd.toFixed(2)}
           </span>
         )}
-      {task.status === 'active' && !isZombie && <span className="task-pill__activity" />}
+      {task.status === 'active' && !isZombie && <span aria-hidden="true" className="task-pill__activity" />}
     </motion.div>
   )
 }

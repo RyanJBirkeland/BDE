@@ -33,6 +33,7 @@ import { BulkActionBar } from './BulkActionBar'
 import { NeonCard } from '../neon'
 import { ErrorBanner } from '../ui/ErrorBanner'
 import type { SprintTask } from '../../../../shared/types'
+import { WIP_LIMIT_IN_PROGRESS } from '../../lib/constants'
 import { useSprintPipelineCommands } from '../../hooks/useSprintPipelineCommands'
 
 import './SprintPipeline.css'
@@ -279,8 +280,8 @@ export function SprintPipeline(): React.JSX.Element {
         <div className="pipeline-poll-error">
           <ErrorBanner message={pollError} className="pipeline-poll-error__message" />
           <div className="pipeline-poll-error__actions">
-            <Button variant="primary" size="sm" onClick={() => { clearPollError(); void loadData() }} disabled={loading}>
-              {loading ? 'Retrying…' : 'Retry'}
+            <Button variant="primary" size="sm" onClick={() => { clearPollError(); void loadData() }} disabled={loading && tasks.length === 0}>
+              {loading && tasks.length === 0 ? 'Retrying…' : 'Retry'}
             </Button>
             <Button variant="ghost" size="sm" onClick={clearPollError}>
               Dismiss
@@ -290,7 +291,7 @@ export function SprintPipeline(): React.JSX.Element {
       )}
 
       {orphanBanner && (
-        <div className="pipeline-orphan-banner">
+        <div role="status" className="pipeline-orphan-banner">
           <div className="pipeline-orphan-banner__message">
             {orphanBanner.recovered.length > 0 && (
               <span>
@@ -320,14 +321,14 @@ export function SprintPipeline(): React.JSX.Element {
       )}
 
       {loading && tasks.length === 0 && (
-        <div className="sprint-pipeline__body">
+        <div role="status" aria-label="Loading pipeline" className="sprint-pipeline__body">
           <div className="pipeline-sidebar pipeline-sidebar--loading">
-            <div className="fleet-skeleton pipeline-skeleton--sidebar" />
+            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--sidebar" />
           </div>
           <div className="pipeline-center pipeline-center--loading">
-            <div className="fleet-skeleton pipeline-skeleton--stage" />
-            <div className="fleet-skeleton pipeline-skeleton--stage" />
-            <div className="fleet-skeleton pipeline-skeleton--stage" />
+            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
+            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
+            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
           </div>
         </div>
       )}
@@ -409,7 +410,7 @@ export function SprintPipeline(): React.JSX.Element {
                 name="active"
                 label="Active"
                 tasks={filteredPartition.inProgress}
-                count={`${filteredPartition.inProgress.length}/5`}
+                count={`${filteredPartition.inProgress.length}/${WIP_LIMIT_IN_PROGRESS}`}
                 selectedTaskId={selectedTaskId}
                 selectedTaskIds={selectedTaskIds}
                 onTaskClick={handleTaskClick}
