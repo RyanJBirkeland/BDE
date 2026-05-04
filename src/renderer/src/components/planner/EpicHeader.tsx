@@ -15,6 +15,7 @@ export interface EpicHeaderProps {
   onToggleReady: () => void
   onMarkCompleted: () => void
   onDelete: () => Promise<void>
+  onTogglePause: () => void
 }
 
 export function EpicHeader({
@@ -27,7 +28,8 @@ export function EpicHeader({
   onEdit,
   onToggleReady,
   onMarkCompleted,
-  onDelete
+  onDelete,
+  onTogglePause
 }: EpicHeaderProps): React.JSX.Element {
   const [showOverflowMenu, setShowOverflowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -97,6 +99,11 @@ export function EpicHeader({
   const handleDeleteClick = (): void => {
     setShowOverflowMenu(false)
     void onDelete()
+  }
+
+  const handleTogglePauseClick = (): void => {
+    setShowOverflowMenu(false)
+    onTogglePause()
   }
 
   return (
@@ -177,10 +184,22 @@ export function EpicHeader({
             >
               {isReady ? 'Mark as Draft' : 'Mark as Ready'}
             </button>
+            <button
+              ref={(el): void => {
+                if (el) menuItemsRef.current[2] = el
+              }}
+              type="button"
+              role="menuitem"
+              tabIndex={-1}
+              className="epic-detail__overflow-item epic-menu__item epic-menu__item--default"
+              onClick={handleTogglePauseClick}
+            >
+              {group.is_paused ? 'Resume Epic' : 'Pause Epic'}
+            </button>
             {!isCompleted && (
               <button
                 ref={(el): void => {
-                  if (el) menuItemsRef.current[2] = el
+                  if (el) menuItemsRef.current[3] = el
                 }}
                 type="button"
                 role="menuitem"
@@ -194,7 +213,7 @@ export function EpicHeader({
             )}
             <button
               ref={(el): void => {
-                if (el) menuItemsRef.current[isCompleted ? 2 : 3] = el
+                if (el) menuItemsRef.current[isCompleted ? 3 : 4] = el
               }}
               type="button"
               role="menuitem"

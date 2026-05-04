@@ -28,7 +28,8 @@ export default function PlannerView(): React.JSX.Element {
     reorderTasks,
     addDependency,
     removeDependency,
-    updateDependencyCondition
+    updateDependencyCondition,
+    togglePause
   } = useTaskGroups()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -87,6 +88,11 @@ export default function PlannerView(): React.JSX.Element {
     if (!selectedGroup) return
     const newStatus = selectedGroup.status === 'ready' ? 'draft' : 'ready'
     await updateGroup(selectedGroup.id, { status: newStatus })
+  }
+
+  const handleTogglePause = (): void => {
+    if (!selectedGroup) return
+    void togglePause(selectedGroup.id)
   }
 
   const handleMarkCompleted = async (): Promise<void> => {
@@ -186,6 +192,7 @@ export default function PlannerView(): React.JSX.Element {
                 onToggleReady={handleToggleReady}
                 onReorderTasks={handleReorderTasks}
                 onMarkCompleted={handleMarkCompleted}
+                onTogglePause={handleTogglePause}
                 onOpenAssistant={() => setAssistantOpen(true)}
               />
             )}

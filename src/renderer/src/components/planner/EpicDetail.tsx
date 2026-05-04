@@ -28,6 +28,7 @@ export interface EpicDetailProps {
   onToggleReady?: (() => void) | undefined
   onReorderTasks?: ((orderedTaskIds: string[]) => void) | undefined
   onMarkCompleted?: (() => void) | undefined
+  onTogglePause?: (() => void) | undefined
   onOpenAssistant: () => void
 }
 
@@ -47,6 +48,7 @@ export function EpicDetail({
   onToggleReady,
   onReorderTasks,
   onMarkCompleted,
+  onTogglePause,
   onOpenAssistant
 }: EpicDetailProps): React.JSX.Element {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
@@ -157,6 +159,7 @@ export function EpicDetail({
         onToggleReady={handleToggleReady}
         onMarkCompleted={handleMarkCompleted}
         onDelete={handleDelete}
+        onTogglePause={onTogglePause ?? (() => {})}
       />
 
       {/* Progress Section */}
