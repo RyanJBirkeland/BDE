@@ -4,9 +4,9 @@
 //   (set up via: xcrun notarytool store-credentials "FLEET-notarize" ...)
 //
 // CI builds: credentials passed via env vars:
-//   APPLE_API_KEY_PATH  — path to AuthKey_<id>.p8 file
-//   APPLE_API_KEY_ID    — key ID (e.g. 84355R2S7M)
-//   APPLE_API_ISSUER_ID — issuer UUID
+//   APPLE_API_KEY     — path to AuthKey_<id>.p8 file
+//   APPLE_API_KEY_ID  — key ID (e.g. 84355R2S7M)
+//   APPLE_API_ISSUER  — issuer UUID
 //
 // Skips notarization when FLEET_NOTARIZE is not "1" or platform is not macOS.
 
@@ -40,16 +40,16 @@ module.exports = async function afterSign(context) {
 
   console.log(`[after-sign] Notarizing ${appPath} ...`)
 
-  const { APPLE_API_KEY_ID, APPLE_API_ISSUER_ID, APPLE_API_KEY_PATH } = process.env
+  const { APPLE_API_KEY_ID, APPLE_API_ISSUER, APPLE_API_KEY } = process.env
 
-  if (APPLE_API_KEY_ID && APPLE_API_ISSUER_ID && APPLE_API_KEY_PATH) {
+  if (APPLE_API_KEY_ID && APPLE_API_ISSUER && APPLE_API_KEY) {
     // CI: use env var credentials directly
     await notarize({
       tool: 'notarytool',
       appPath,
-      appleApiKey: APPLE_API_KEY_PATH,
+      appleApiKey: APPLE_API_KEY,
       appleApiKeyId: APPLE_API_KEY_ID,
-      appleApiIssuer: APPLE_API_ISSUER_ID
+      appleApiIssuer: APPLE_API_ISSUER
     })
   } else {
     // Local: use keychain profile stored by xcrun notarytool store-credentials
