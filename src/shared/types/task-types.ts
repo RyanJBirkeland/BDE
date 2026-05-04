@@ -57,6 +57,7 @@ export type FailureReason =
   | 'tip-mismatch'
   | 'incomplete_files'
   | 'environmental'
+  | 'git-precondition-failed'
   | 'unknown'
 
 export interface SprintTask {

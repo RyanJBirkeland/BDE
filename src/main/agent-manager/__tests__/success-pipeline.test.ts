@@ -83,6 +83,7 @@ import {
   successPhases,
   PipelineAbortError
 } from '../success-pipeline'
+import { PipelineAbortError as AbortErrorClass } from '../pipeline-abort-error'
 import {
   verifyWorktreeExists,
   detectAgentBranch,
@@ -298,5 +299,16 @@ describe('noOpGuardPhase — detectNoOpAndFailIfSo write-failure guard', () => {
     await expect(noOpGuardPhase.run(ctx)).rejects.toBeInstanceOf(PipelineAbortError)
     expect(onTaskTerminal).toHaveBeenCalledOnce()
     expect(onTaskTerminal).toHaveBeenCalledWith('task-1', 'queued')
+  })
+})
+
+describe('PipelineAbortError cross-module identity', () => {
+  it('is the same class as pipeline-abort-error.ts so instanceof checks in run-agent work', () => {
+    // run-agent.ts imports PipelineAbortError from ./pipeline-abort-error and uses
+    // `err instanceof PipelineAbortError` to distinguish clean pipeline aborts from
+    // unexpected errors. If success-pipeline.ts defines its own copy of the class,
+    // that instanceof check silently returns false for every phase-thrown abort,
+    // causing run-agent to treat normal early exits as unexpected errors.
+    expect(PipelineAbortError).toBe(AbortErrorClass)
   })
 })

@@ -184,6 +184,24 @@ describe('mapRowToTask — optional field coercion', () => {
     expect(task.failure_reason).toBeNull()
   })
 
+  it('preserves git-precondition-failed as a valid failure_reason', () => {
+    const task = mapRowToTask(row({ failure_reason: 'git-precondition-failed' }))
+    expect(task.failure_reason).toBe('git-precondition-failed')
+  })
+
+  it('preserves every FailureReason member through the mapper without coercion to null', () => {
+    const allReasons = [
+      'auth', 'timeout', 'test_failure', 'compilation', 'spawn',
+      'no_commits', 'no-commits-exhausted', 'tip-mismatch',
+      'incomplete_files', 'environmental', 'unknown',
+      'git-precondition-failed'
+    ]
+    for (const reason of allReasons) {
+      const task = mapRowToTask(row({ failure_reason: reason }))
+      expect(task.failure_reason, `expected ${reason} to survive mapper`).toBe(reason)
+    }
+  })
+
   it('filters out depends_on entries with an unrecognised type', () => {
     const mixed = JSON.stringify([
       { id: 'a', type: 'hard' },

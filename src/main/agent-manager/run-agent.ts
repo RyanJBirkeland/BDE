@@ -697,7 +697,7 @@ async function finalizeAgentRun(
   })
 
   const finalTask = deps.repo.getTask(task.id)
-  const finalStatus = finalTask?.status ?? 'unknown'
+  const finalStatus: TaskStatus = finalTask?.status ?? 'error'
 
   await persistAndCleanupAfterRun(task, worktree, repoPath, agent, deps)
   deps.logger.event('agent.completed', {

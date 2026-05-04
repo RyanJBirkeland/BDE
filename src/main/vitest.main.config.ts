@@ -12,7 +12,11 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     maxWorkers,
-    include: ['src/main/**/*.test.ts'],
+    include: [
+      'src/main/**/*.test.ts',
+      '.worktrees/epic-1-pipeline-abort-error/src/main/**/*.test.ts',
+      '.worktrees/epic-1-pipeline-abort-error/src/shared/**/*.test.ts'
+    ],
     globalSetup: ['./src/main/vitest-global-setup.ts'],
     coverage: {
       provider: 'v8',

@@ -1,4 +1,4 @@
-import type { SprintTask, RevisionFeedbackEntry } from '../../shared/types'
+import type { SprintTask, RevisionFeedbackEntry, FailureReason } from '../../shared/types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { sanitizeTags } from '../../shared/sanitize-tags'
 import { TASK_STATUSES } from '../../shared/task-state-machine'
@@ -80,8 +80,14 @@ const VALID_FAILURE_REASONS: ReadonlySet<string> = new Set([
   'test_failure',
   'compilation',
   'spawn',
+  'no_commits',
+  'no-commits-exhausted',
+  'tip-mismatch',
+  'incomplete_files',
+  'environmental',
+  'git-precondition-failed',
   'unknown'
-])
+] satisfies FailureReason[])
 
 function optStr(value: unknown): string | null {
   return typeof value === 'string' ? value : null

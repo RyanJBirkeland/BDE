@@ -23,9 +23,12 @@ import {
   branchMatchesTask,
   assertBranchTipMatches,
   BranchTipMismatchError,
-  failTaskIfNoCommitsAheadOfMain
+  failTaskIfNoCommitsAheadOfMain,
+  failTaskWithError
 } from '../resolve-success-phases'
 import type { IAgentTaskRepository } from '../../data/sprint-task-repository'
+import type { TaskStateService } from '../../services/task-state-service'
+import { makeLogger } from './test-helpers'
 
 describe('extractTaskIdFromBranch', () => {
   it('extracts the task id slug from a standard agent branch name', () => {
@@ -372,5 +375,23 @@ describe('failTaskIfNoCommitsAheadOfMain — no-commits structured event', () =>
     await failTaskIfNoCommitsAheadOfMain(opts)
 
     expect(opts.logger.event).not.toHaveBeenCalledWith('completion.no_commits', expect.anything())
+  })
+})
+
+describe('failTaskWithError', () => {
+  it('transitions the task to error using only taskId, message, notes, logger, and taskStateService', async () => {
+    // T-23: _repo and _onTaskTerminal are unused. After removing them the function
+    // accepts 5 positional args (+ optional broadcastCoalesced). This call should
+    // compile and resolve without passing repo or onTaskTerminal.
+    const logger = makeLogger()
+    const stateService = {
+      transition: vi.fn().mockResolvedValue({ transitioned: true })
+    } as unknown as TaskStateService
+
+    await failTaskWithError('task-1', 'test error', 'test notes', logger, stateService)
+
+    expect(stateService.transition).toHaveBeenCalledWith('task-1', 'error', expect.objectContaining({
+      fields: expect.objectContaining({ notes: 'test notes' })
+    }))
   })
 })

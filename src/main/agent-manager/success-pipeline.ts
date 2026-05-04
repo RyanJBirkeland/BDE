@@ -30,6 +30,8 @@ import { NOOP_RUN_NOTE } from './failure-messages'
 import { buildAgentEnv } from '../env-utils'
 import { verifyBranchTipOrFail, verifyWorktreeOrFail } from './verification-gate'
 import { runPreReviewAdvisors } from './pre-review-advisors'
+import { PipelineAbortError } from './pipeline-abort-error'
+export { PipelineAbortError }
 
 /**
  * Context passed into the resolveSuccess pipeline from the agent runner.
@@ -69,18 +71,6 @@ export interface ResolveSuccessContext {
 }
 
 /**
- * Thrown by a SuccessPhase when it has already handled the error and wants to
- * abort the pipeline without further processing. The orchestrator catches this
- * as a clean stop signal — not a bug.
- */
-export class PipelineAbortError extends Error {
-  constructor() {
-    super('pipeline aborted')
-    this.name = 'PipelineAbortError'
-  }
-}
-
-/**
  * Mutable accumulator threaded through every SuccessPhase.
  *
  * Guard phases populate fields that later phases depend on. Each phase writes
@@ -107,9 +97,7 @@ const verifyWorktreePhase: SuccessPhase = {
     const exists = await verifyWorktreeExists(
       ctx.taskId,
       ctx.worktreePath,
-      ctx.repo,
       ctx.logger,
-      ctx.onTaskTerminal,
       ctx.taskStateService
     )
     if (!exists) throw new PipelineAbortError()
@@ -122,9 +110,7 @@ const detectBranchPhase: SuccessPhase = {
     const branch = await detectAgentBranch(
       ctx.taskId,
       ctx.worktreePath,
-      ctx.repo,
       ctx.logger,
-      ctx.onTaskTerminal,
       ctx.taskStateService
     )
     if (!branch) throw new PipelineAbortError()

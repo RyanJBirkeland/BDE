@@ -196,9 +196,7 @@ export async function failTaskWithError(
   taskId: string,
   message: string,
   notes: string,
-  _repo: IAgentTaskRepository,
   logger: Logger,
-  _onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   taskStateService: TaskStateService,
   broadcastCoalesced?: (channel: string, payload: unknown) => void
 ): Promise<void> {
@@ -236,9 +234,7 @@ async function detectBranch(worktreePath: string): Promise<string> {
 export async function verifyWorktreeExists(
   taskId: string,
   worktreePath: string,
-  repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   taskStateService: TaskStateService
 ): Promise<boolean> {
   if (existsSync(worktreePath)) {
@@ -248,9 +244,7 @@ export async function verifyWorktreeExists(
     taskId,
     `Worktree path no longer exists for task ${taskId}: ${worktreePath}`,
     `Worktree no longer exists at completion (${worktreePath}). This usually means the agent exited with an auth error or the worktree was cleaned up externally — check ~/.fleet/fleet.log for details.`,
-    repo,
     logger,
-    onTaskTerminal,
     taskStateService
   )
   return false
@@ -259,9 +253,7 @@ export async function verifyWorktreeExists(
 export async function detectAgentBranch(
   taskId: string,
   worktreePath: string,
-  repo: IAgentTaskRepository,
   logger: Logger,
-  onTaskTerminal: (taskId: string, status: TaskStatus) => Promise<void>,
   taskStateService: TaskStateService
 ): Promise<string | null> {
   let branch: string
@@ -272,9 +264,7 @@ export async function detectAgentBranch(
       taskId,
       `Failed to detect branch for task ${taskId}: ${err}`,
       'Failed to detect branch',
-      repo,
       logger,
-      onTaskTerminal,
       taskStateService
     )
     return null
@@ -285,9 +275,7 @@ export async function detectAgentBranch(
       taskId,
       `Empty branch name for task ${taskId}`,
       'Empty branch name',
-      repo,
       logger,
-      onTaskTerminal,
       taskStateService
     )
     return null

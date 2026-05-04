@@ -9,7 +9,7 @@
 export class PipelineAbortError extends Error {
   override readonly cause: unknown
 
-  constructor(message: string, cause?: unknown) {
+  constructor(message = 'pipeline aborted', cause?: unknown) {
     super(message)
     this.name = 'PipelineAbortError'
     this.cause = cause
