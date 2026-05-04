@@ -37,9 +37,10 @@ export class UpdaterService {
       broadcast('updates:status', { status: 'up-to-date' })
     })
 
-    autoUpdater.on('error', (err: Error) => {
-      this.logger.error(`[updater] ${err.message}`)
-      broadcast('updates:status', { status: 'error', error: err.message })
+    autoUpdater.on('error', (err: Error, message?: string) => {
+      const detail = message ?? err.message
+      this.logger.error(`[updater] ${detail}`)
+      broadcast('updates:status', { status: 'error', error: detail })
     })
   }
 
