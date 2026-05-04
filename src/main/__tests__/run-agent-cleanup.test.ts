@@ -9,7 +9,8 @@ vi.mock('../agent-manager/worktree', () => ({
 
 vi.mock('../lib/async-utils', () => ({
   sleep: vi.fn().mockResolvedValue(undefined),
-  execFileAsync: vi.fn()
+  execFileAsync: vi.fn(),
+  truncateToNoteLimit: (text: string) => text
 }))
 
 vi.mock('../logger', () => ({
