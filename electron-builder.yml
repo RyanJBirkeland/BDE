@@ -1,7 +1,7 @@
 appId: com.rbtechbot.fleet
 productName: FLEET
 copyright: Copyright © 2026 FLEET
-npmRebuild: true
+npmRebuild: false
 afterSign: scripts/after-sign.cjs
 directories:
   buildResources: resources

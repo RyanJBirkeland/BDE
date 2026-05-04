@@ -304,17 +304,32 @@ app.on('before-quit', () => {
 /**
  * Applies pending database migrations. On failure, surfaces an actionable
  * dialog and exits — we cannot continue past a broken schema.
+ *
+ * NODE_MODULE_VERSION errors are a build defect (native module compiled for
+ * the wrong ABI), not a database problem. They get a targeted message so
+ * users don't waste time deleting a database that isn't involved.
  */
 function initDatabaseOrExit(): void {
   try {
     initializeDatabase()
   } catch (err) {
-    dialog.showErrorBox(
-      'Database Migration Failed',
-      `FLEET could not upgrade its database:\n\n${err instanceof Error ? err.message : String(err)}\n\n` +
-        `Check ~/.fleet/fleet.log for details.\n` +
-        `To recover: back up ~/.fleet/fleet.db, then delete it to start fresh.`
-    )
+    const message = err instanceof Error ? err.message : String(err)
+    if (message.includes('NODE_MODULE_VERSION')) {
+      dialog.showErrorBox(
+        'Native Module Mismatch',
+        `FLEET could not load its database driver — the bundled native module was\n` +
+          `compiled for a different Node.js ABI than this Electron version requires.\n\n` +
+          `This is a build defect. Please reinstall FLEET from a corrected release.\n\n` +
+          `Technical detail: ${message}`
+      )
+    } else {
+      dialog.showErrorBox(
+        'Database Migration Failed',
+        `FLEET could not upgrade its database:\n\n${message}\n\n` +
+          `Check ~/.fleet/fleet.log for details.\n` +
+          `To recover: back up ~/.fleet/fleet.db, then delete it to start fresh.`
+      )
+    }
     app.exit(1)
   }
 }
