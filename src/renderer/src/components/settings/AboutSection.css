@@ -38,3 +38,18 @@
 .settings-about__link:hover {
   text-decoration: underline;
 }
+
+.settings-about__update-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.settings-about__update-status {
+  font-size: var(--fleet-size-xs, 11px);
+  color: var(--fleet-text-muted, rgba(255, 255, 255, 0.55));
+  padding: 0 0 4px;
+}
+
+.settings-about__update-status--error {
+  color: var(--fleet-danger, #ff5555);
+}

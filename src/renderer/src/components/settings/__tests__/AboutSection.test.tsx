@@ -37,4 +37,15 @@ describe('AboutSection', () => {
     )
     dispatchSpy.mockRestore()
   })
+
+  it('renders Check for Updates button', () => {
+    render(<AboutSection />)
+    expect(screen.getByRole('button', { name: 'Check for Updates' })).toBeInTheDocument()
+  })
+
+  it('calls checkForUpdates when the button is clicked', () => {
+    render(<AboutSection />)
+    fireEvent.click(screen.getByRole('button', { name: 'Check for Updates' }))
+    expect(window.api.updates.checkForUpdates).toHaveBeenCalled()
+  })
 })

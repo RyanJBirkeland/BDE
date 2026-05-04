@@ -345,5 +345,12 @@ vi.stubGlobal('api', {
     regenerateToken: vi
       .fn()
       .mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2')
+  },
+
+  // Auto-updater
+  updates: {
+    checkForUpdates: vi.fn().mockResolvedValue(undefined),
+    install: vi.fn().mockResolvedValue(undefined),
+    onStatus: vi.fn().mockReturnValue(() => {})
   }
 })

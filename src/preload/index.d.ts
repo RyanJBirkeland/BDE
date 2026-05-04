@@ -544,6 +544,20 @@ declare global {
         onCloneProgress: (cb: (data: CloneProgressEvent) => void) => () => void
       }
 
+      // Auto-updater
+      updates: {
+        checkForUpdates: () => Promise<void>
+        install: () => Promise<void>
+        onStatus: (
+          cb: (payload: {
+            status: 'checking' | 'available' | 'downloading' | 'ready' | 'up-to-date' | 'error'
+            version?: string | undefined
+            percent?: number | undefined
+            error?: string | undefined
+          }) => void
+        ) => () => void
+      }
+
       // MCP server management
       mcp: {
         getToken: () => Promise<string>
