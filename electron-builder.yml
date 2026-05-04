@@ -14,13 +14,11 @@ mac:
   target:
     - target: dmg
       arch: arm64
-  identity: null
-  hardenedRuntime: false
-  # gatekeeperAssess stays false until code signing is configured (Phase 5 —
-  # S5.2/S5.3). With identity: null, spctl assessment always rejects the
-  # ad-hoc signature and breaks the package build. Flip to true after signing
-  # lands so the build fails loudly on signature regressions.
-  gatekeeperAssess: false
+  identity: "Developer ID Application: Ryan Birkeland (DWK5AJJ5WY)"
+  hardenedRuntime: true
+  gatekeeperAssess: true
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
   icon: resources/icon.icns
 dmg:
   title: 'FLEET ${version}'
