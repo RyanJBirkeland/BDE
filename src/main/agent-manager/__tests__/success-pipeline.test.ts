@@ -312,3 +312,82 @@ describe('PipelineAbortError cross-module identity', () => {
     expect(PipelineAbortError).toBe(AbortErrorClass)
   })
 })
+
+// ---------------------------------------------------------------------------
+// T-52 · P1 — verifyCommitsPhase routes unexpected subprocess failure to failed
+// ---------------------------------------------------------------------------
+
+describe('T-52: verifyCommitsPhase unexpected failure routes to failed, not requeue', () => {
+  // verifyCommitsPhase is successPhases[4]
+  const verifyCommitsPhase = successPhases[4]
+  let logger: ReturnType<typeof makeLogger>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    logger = makeLogger()
+
+    // Reset all phase mocks to happy-path so only failTaskIfNoCommitsAheadOfMain is varied
+    vi.mocked(verifyWorktreeExists).mockResolvedValue(true)
+    vi.mocked(detectAgentBranch).mockResolvedValue('agent/task-1')
+    vi.mocked(autoCommitPendingChanges).mockResolvedValue(undefined)
+    vi.mocked(performRebaseOntoMain).mockResolvedValue({
+      rebaseNote: undefined,
+      rebaseBaseSha: undefined,
+      rebaseSucceeded: true
+    })
+    vi.mocked(detectNoOpRun).mockReturnValue(false)
+    vi.mocked(listChangedFiles).mockResolvedValue(['src/foo.ts'])
+    vi.mocked(verifyBranchTipOrFail).mockResolvedValue(true)
+    vi.mocked(runPreReviewAdvisors).mockResolvedValue(undefined)
+    vi.mocked(verifyWorktreeOrFail).mockResolvedValue(true)
+    vi.mocked(transitionTaskToReview).mockResolvedValue(undefined)
+  })
+
+  function makePhaseContext(onTaskTerminal = vi.fn().mockResolvedValue(undefined)) {
+    return {
+      taskId: 'task-1',
+      worktreePath: '/worktree/task-1',
+      title: 'Test task',
+      ghRepo: 'org/repo',
+      onTaskTerminal,
+      retryCount: 0,
+      repo: makeRepo(),
+      reviewRepo: makeReviewRepo(),
+      unitOfWork: makeUnitOfWork(),
+      taskStateService: makeTaskStateService(),
+      repoPath: '/repo',
+      logger,
+      branch: 'agent/task-1',
+      rebaseOutcome: { rebaseNote: undefined, rebaseBaseSha: undefined, rebaseSucceeded: false }
+    }
+  }
+
+  it('propagates unexpected errors from failTaskIfNoCommitsAheadOfMain out of verifyCommitsPhase', async () => {
+    // Unexpected throw (not a structured {committed: false} response — a subprocess crash)
+    const subprocessError = new Error('git rev-list: fatal: ambiguous argument')
+    vi.mocked(failTaskIfNoCommitsAheadOfMain).mockRejectedValue(subprocessError)
+
+    const onTaskTerminal = vi.fn()
+    const ctx = makePhaseContext(onTaskTerminal)
+
+    // The phase itself propagates the unexpected error (not PipelineAbortError)
+    await expect(verifyCommitsPhase.run(ctx)).rejects.toThrow('git rev-list: fatal: ambiguous argument')
+  })
+
+  it('when resolveSuccess catches the propagated error, resolveFailure routes to failed on terminal run', async () => {
+    const subprocessError = new Error('git rev-list: fatal: ambiguous argument')
+    vi.mocked(failTaskIfNoCommitsAheadOfMain).mockRejectedValue(subprocessError)
+    // resolveFailure returns terminal (exhausted retries) — should land on failed, not queued
+    vi.mocked(resolveFailure).mockResolvedValue({ writeFailed: false, isTerminal: true })
+
+    const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
+    const opts = { ...makeBaseOpts(), onTaskTerminal }
+
+    // resolveSuccess propagates the non-PipelineAbortError
+    await expect(resolveSuccess(opts, logger)).rejects.toThrow('git rev-list: fatal: ambiguous argument')
+
+    // onTaskTerminal must NOT have been called inside resolveSuccess — the caller
+    // (run-agent.ts handleResolveSuccessFailure) handles the terminal notification
+    expect(onTaskTerminal).not.toHaveBeenCalled()
+  })
+})

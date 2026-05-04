@@ -10,7 +10,10 @@ import {
   fetchUpstreamContext,
   readPriorScratchpad,
   consumeMessages,
-  filterToExistingBaseFiles as _filterToExistingBaseFiles
+  filterToExistingBaseFiles as _filterToExistingBaseFiles,
+  cleanupOrPreserveWorktree,
+  cleanupWorktreeWithRetry,
+  buildCleanupFailureNote
 } from '../run-agent'
 import {
   detectHtmlWrite,
@@ -1275,5 +1278,131 @@ describe('filterToExistingBaseFiles — T-11 path traversal validation', () => {
       expect.arrayContaining(['cat-file', '-e', expect.stringContaining('src/components/Button.tsx')]),
       expect.anything()
     )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-46 · P0 — cleanupOrPreserveWorktree preserves worktree for review tasks
+// ---------------------------------------------------------------------------
+
+describe('cleanupOrPreserveWorktree — T-46: preserves worktree at review status', () => {
+  function makeSimpleRepo(taskStatus: string | null): IAgentTaskRepository {
+    return {
+      ...mockRepo,
+      getTask: vi.fn().mockReturnValue(
+        taskStatus !== null ? { id: 'task-1', status: taskStatus } : null
+      ),
+      updateTask: vi.fn().mockResolvedValue(null)
+    } as unknown as IAgentTaskRepository
+  }
+
+  function makeSimpleTask(): AgentRunClaim {
+    return makeTask({ id: 'task-1' })
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('does NOT clean up worktree when task status is review', async () => {
+    const repo = makeSimpleRepo('review')
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const { cleanupWorktree } = await import('../worktree')
+
+    await cleanupOrPreserveWorktree(
+      makeSimpleTask(),
+      { worktreePath: '/tmp/wt', branch: 'agent/task-1' },
+      '/repo',
+      repo,
+      logger
+    )
+
+    expect(cleanupWorktree).not.toHaveBeenCalled()
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('Preserving worktree'))
+  })
+
+  it('DOES clean up worktree when task status is done', async () => {
+    const repo = makeSimpleRepo('done')
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const { cleanupWorktree } = await import('../worktree')
+    vi.mocked(cleanupWorktree).mockResolvedValue(undefined)
+
+    await cleanupOrPreserveWorktree(
+      makeSimpleTask(),
+      { worktreePath: '/tmp/wt', branch: 'agent/task-1' },
+      '/repo',
+      repo,
+      logger
+    )
+
+    expect(cleanupWorktree).toHaveBeenCalled()
+  })
+
+  it('preserves worktree conservatively when task is not found in DB (null)', async () => {
+    const repo = makeSimpleRepo(null)
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    const { cleanupWorktree } = await import('../worktree')
+
+    await cleanupOrPreserveWorktree(
+      makeSimpleTask(),
+      { worktreePath: '/tmp/wt', branch: 'agent/task-1' },
+      '/repo',
+      repo,
+      logger
+    )
+
+    expect(cleanupWorktree).not.toHaveBeenCalled()
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('not found in DB'))
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-51 · P1 — cleanupWorktreeWithRetry exhausts all retries and appends error note
+// ---------------------------------------------------------------------------
+
+describe('cleanupWorktreeWithRetry — T-51: exhausts retries and surfaces note to task', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('retries cleanup 4 times total (1 initial + 3 backoff retries) and surfaces error note to task', async () => {
+    const { cleanupWorktree } = await import('../worktree')
+    const persistentError = new Error('git worktree removal failed')
+    vi.mocked(cleanupWorktree).mockRejectedValue(persistentError)
+
+    const repo = {
+      ...mockRepo,
+      updateTask: vi.fn().mockResolvedValue(null)
+    } as unknown as IAgentTaskRepository
+    const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+
+    // Use fake timers so sleep() doesn't actually delay
+    vi.useFakeTimers()
+    const cleanupPromise = cleanupWorktreeWithRetry(
+      'task-1',
+      { worktreePath: '/tmp/wt', branch: 'agent/task-1' },
+      '/repo',
+      repo,
+      logger
+    )
+    // Advance through all retry delays (100ms + 500ms + 2000ms)
+    await vi.runAllTimersAsync()
+    await cleanupPromise
+    vi.useRealTimers()
+
+    // 4 attempts total: 3 in tryCleanupWithBackoff + 1 final in runFinalCleanupAttempt
+    expect(cleanupWorktree).toHaveBeenCalledTimes(4)
+
+    // A note should be surfaced to the task via repo.updateTask
+    expect(repo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ notes: expect.stringContaining('cleanup failed') })
+    )
+  })
+
+  it('buildCleanupFailureNote includes the error message and manual cleanup instruction', () => {
+    const note = buildCleanupFailureNote('/tmp/worktrees/task-1', new Error('permission denied'))
+    expect(note).toContain('permission denied')
+    expect(note).toContain('/tmp/worktrees/task-1')
   })
 })

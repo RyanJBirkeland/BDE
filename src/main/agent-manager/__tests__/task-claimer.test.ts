@@ -18,6 +18,9 @@ vi.mock('../../../shared/time', () => ({
   nowIso: vi.fn().mockReturnValue('2026-01-01T00:00:00.000Z')
 }))
 vi.mock('../preflight-check', () => ({ runPreflightChecks: vi.fn() }))
+vi.mock('../already-done-check', () => ({
+  taskHasMatchingCommitOnMain: vi.fn().mockResolvedValue(null)
+}))
 
 import {
   validateAndClaimTask,
@@ -34,6 +37,7 @@ import { SpawnRegistry } from '../spawn-registry'
 import type { TaskStateService } from '../../services/task-state-service'
 import type { PreflightGate } from '../preflight-gate'
 import { runPreflightChecks } from '../preflight-check'
+import { taskHasMatchingCommitOnMain } from '../already-done-check'
 
 function makeTask(overrides: Partial<MappedTask> = {}): MappedTask {
   return {
@@ -79,7 +83,7 @@ function makeDepIndex(): DependencyIndex {
 }
 
 function makeLogger() {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
 }
 
 function makeTaskStateService(repo: ReturnType<typeof makeRepo>): TaskStateService {
@@ -355,5 +359,107 @@ describe('processQueuedTask — pre-flight', () => {
     const deps = makeProcessDeps({ preflightGate: null })
     await processQueuedTask({ id: 'task-1', title: 'T', repo: 'fleet' } as import('../types').SprintTask, new Map(), deps)
     expect(deps.spawnAgent).toHaveBeenCalled()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-49 · P1 — skipIfAlreadyOnMain auto-completes and fires onTaskTerminal
+// ---------------------------------------------------------------------------
+
+describe('T-49: skipIfAlreadyOnMain auto-completes task and fires onTaskTerminal with done', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(mapQueuedTask).mockReturnValue(makeTask())
+    vi.mocked(checkAndBlockDeps).mockReturnValue(false)
+    vi.mocked(getRepoPaths).mockReturnValue({ fleet: '/Users/ryan/projects/FLEET' })
+  })
+
+  it('transitions task to done and fires onTaskTerminal when matching commit found on main', async () => {
+    vi.mocked(taskHasMatchingCommitOnMain).mockResolvedValue({
+      sha: 'abc123',
+      matchedOn: 'title'
+    } as any)
+
+    const deps = makeClaimerDeps()
+    const result = await validateAndClaimTask({} as any, new Map(), deps)
+
+    // Task skipped — returns null (already done, no need to spawn)
+    expect(result).toBeNull()
+
+    // taskStateService must have transitioned to done
+    expect(deps.taskStateService.transition).toHaveBeenCalledWith(
+      'task-1',
+      'done',
+      expect.objectContaining({ caller: expect.stringContaining('auto-complete') })
+    )
+
+    // onTaskTerminal must have been called with done status
+    expect(deps.onTaskTerminal).toHaveBeenCalledWith('task-1', 'done')
+  })
+
+  it('does NOT fire onTaskTerminal when the transition itself fails', async () => {
+    vi.mocked(taskHasMatchingCommitOnMain).mockResolvedValue({
+      sha: 'abc123',
+      matchedOn: 'title'
+    } as any)
+
+    const repo = makeRepo()
+    const failingTaskStateService: TaskStateService = {
+      transition: vi.fn().mockRejectedValue(new Error('DB write failed')) as any
+    } as unknown as TaskStateService
+
+    const deps = makeClaimerDeps({ repo, taskStateService: failingTaskStateService })
+    await validateAndClaimTask({} as any, new Map(), deps)
+
+    // Transition failed — onTaskTerminal must NOT be called to avoid unblocking
+    // dependents against a task that didn't actually complete
+    expect(deps.onTaskTerminal).not.toHaveBeenCalled()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-50 · P1 — prepareWorktreeForTask double-failure releases claimed_by
+// ---------------------------------------------------------------------------
+
+describe('T-50: prepareWorktreeForTask double-failure releases claimed_by', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('falls back to releasing claimed_by when worktree setup fails AND transition throws', async () => {
+    vi.mocked(setupWorktree).mockRejectedValue(new Error('git init failed'))
+
+    const repo = makeRepo()
+    const failingTaskStateService: TaskStateService = {
+      transition: vi.fn().mockRejectedValue(new Error('transition rejected')) as any
+    } as unknown as TaskStateService
+
+    const deps = makeClaimerDeps({ repo, taskStateService: failingTaskStateService })
+    const result = await prepareWorktreeForTask(makeTask(), '/repo', deps)
+
+    expect(result).toBeNull()
+
+    // The fallback release path: repo.updateTask({ claimed_by: null })
+    expect(repo.updateTask).toHaveBeenCalledWith(
+      'task-1',
+      expect.objectContaining({ claimed_by: null })
+    )
+  })
+
+  it('does NOT leave a stale claimed_by when both setup and transition fail', async () => {
+    vi.mocked(setupWorktree).mockRejectedValue(new Error('git init failed'))
+
+    const repo = makeRepo()
+    const failingTaskStateService: TaskStateService = {
+      transition: vi.fn().mockRejectedValue(new Error('transition rejected')) as any
+    } as unknown as TaskStateService
+
+    const deps = makeClaimerDeps({ repo, taskStateService: failingTaskStateService })
+    await prepareWorktreeForTask(makeTask(), '/repo', deps)
+
+    // Confirm the release-claim call happened (claimed_by set to null)
+    const calls = vi.mocked(repo.updateTask).mock.calls
+    const releaseCalls = calls.filter(([, patch]) => patch.claimed_by === null)
+    expect(releaseCalls.length).toBeGreaterThanOrEqual(1)
   })
 })

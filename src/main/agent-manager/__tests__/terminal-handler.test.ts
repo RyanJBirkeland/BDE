@@ -243,3 +243,61 @@ describe('handleTaskTerminal — cascadeCancellation policy', () => {
     expect(getSettingArg?.('dependency.cascadeBehavior')).toBe('continue')
   })
 })
+
+// ---------------------------------------------------------------------------
+// T-45 · P0 — hard/soft dependency resolution at the terminal boundary
+// ---------------------------------------------------------------------------
+
+describe('handleTaskTerminal — T-45: dependency resolution at terminal boundary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(resolveDependents).mockImplementation(() => undefined)
+  })
+
+  it('calls resolveDependents when a task completes successfully (hard dependency path)', async () => {
+    const deps = makeTerminalHandlerDeps()
+    const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
+
+    await handleTaskTerminal('upstream-task', 'done', onTaskTerminal, deps)
+
+    expect(resolveDependents).toHaveBeenCalledOnce()
+    // First arg: the completing task ID
+    expect(vi.mocked(resolveDependents).mock.calls[0]?.[0]).toBe('upstream-task')
+    // Second arg: the terminal status
+    expect(vi.mocked(resolveDependents).mock.calls[0]?.[1]).toBe('done')
+  })
+
+  it('calls resolveDependents when a task fails (hard dependency — downstream should stay blocked)', async () => {
+    const deps = makeTerminalHandlerDeps()
+    const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
+
+    await handleTaskTerminal('upstream-task', 'failed', onTaskTerminal, deps)
+
+    expect(resolveDependents).toHaveBeenCalledOnce()
+    expect(vi.mocked(resolveDependents).mock.calls[0]?.[0]).toBe('upstream-task')
+    expect(vi.mocked(resolveDependents).mock.calls[0]?.[1]).toBe('failed')
+  })
+
+  it('calls resolveDependents when a task completes with queued status (soft dependency requeue path)', async () => {
+    const deps = makeTerminalHandlerDeps()
+    const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
+
+    await handleTaskTerminal('upstream-task', 'queued', onTaskTerminal, deps)
+
+    expect(resolveDependents).toHaveBeenCalledOnce()
+    expect(vi.mocked(resolveDependents).mock.calls[0]?.[0]).toBe('upstream-task')
+    expect(vi.mocked(resolveDependents).mock.calls[0]?.[1]).toBe('queued')
+  })
+
+  it('passes the repo getTask and updateTask callbacks to resolveDependents', async () => {
+    const deps = makeTerminalHandlerDeps()
+    const onTaskTerminal = vi.fn().mockResolvedValue(undefined)
+
+    await handleTaskTerminal('task-1', 'done', onTaskTerminal, deps)
+
+    const call = vi.mocked(resolveDependents).mock.calls[0]
+    // Third arg: depIndex, fourth: getTask, fifth: updateTask
+    expect(call?.[3]).toBe(deps.repo.getTask)
+    expect(call?.[4]).toBe(deps.repo.updateTask)
+  })
+})

@@ -23,6 +23,7 @@ import {
   DRAIN_TICK_TIMEOUT_MS,
   type DrainLoopDeps
 } from '../drain-loop'
+import { DRAIN_PAUSE_ON_ENV_ERROR_MS } from '../types'
 import { checkOAuthToken } from '../oauth-checker'
 import { refreshDependencyIndex } from '../dependency-refresher'
 import { makeConcurrencyState } from '../concurrency'
@@ -538,5 +539,115 @@ describe('buildTaskStatusMap — T-18: invalid statuses excluded from dependency
 
     expect(result.has('task-ok')).toBe(true)
     expect(result.has('task-unknown')).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-47 · P0 — quarantineStatusFor returns correct status per input
+// ---------------------------------------------------------------------------
+// quarantineStatusFor is private, so we exercise it through the public
+// applyQuarantine path: trigger DRAIN_QUARANTINE_THRESHOLD spec-level failures
+// on a task with the given status, then assert the transition target status.
+
+describe('T-47: quarantineStatusFor routes queued→cancelled, others→error', () => {
+  const THRESHOLD = 3 // DRAIN_QUARANTINE_THRESHOLD
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  async function triggerQuarantine(
+    taskId: string,
+    initialStatus: string,
+    makeTaskStateServiceFn: () => import('../../services/task-state-service').TaskStateService
+  ): Promise<string | undefined> {
+    const repo = makeRepo()
+    vi.mocked(repo.getQueuedTasks).mockReturnValue([{ id: taskId }] as any)
+    vi.mocked(repo.getTask).mockReturnValue({ id: taskId, status: initialStatus } as any)
+
+    const taskStateService = makeTaskStateServiceFn()
+    const processQueuedTask = vi.fn().mockRejectedValue(new Error('spec-level: TypeError: x is undefined'))
+    const deps = makeDeps({ repo, processQueuedTask, taskStateService })
+    const loop = new DrainLoop(deps)
+
+    for (let i = 0; i < THRESHOLD; i++) {
+      await loop.drainQueuedTasksWithMap(1, new Map())
+    }
+
+    const calls = vi.mocked(taskStateService.transition).mock.calls
+    if (calls.length === 0) return undefined
+    return calls[calls.length - 1]?.[1] as string
+  }
+
+  it('transitions to cancelled when task is queued', async () => {
+    const makeTs = () => ({
+      transition: vi.fn().mockResolvedValue({ committed: true })
+    }) as unknown as import('../../services/task-state-service').TaskStateService
+
+    const status = await triggerQuarantine('q-task', 'queued', makeTs)
+    expect(status).toBe('cancelled')
+  })
+
+  it('transitions to error when task is active', async () => {
+    const makeTs = () => ({
+      transition: vi.fn().mockResolvedValue({ committed: true })
+    }) as unknown as import('../../services/task-state-service').TaskStateService
+
+    const status = await triggerQuarantine('a-task', 'active', makeTs)
+    expect(status).toBe('error')
+  })
+
+  it('transitions to error when task is blocked', async () => {
+    const makeTs = () => ({
+      transition: vi.fn().mockResolvedValue({ committed: true })
+    }) as unknown as import('../../services/task-state-service').TaskStateService
+
+    const status = await triggerQuarantine('b-task', 'blocked', makeTs)
+    expect(status).toBe('error')
+  })
+
+  it('transitions to error when task is review', async () => {
+    const makeTs = () => ({
+      transition: vi.fn().mockResolvedValue({ committed: true })
+    }) as unknown as import('../../services/task-state-service').TaskStateService
+
+    const status = await triggerQuarantine('r-task', 'review', makeTs)
+    expect(status).toBe('error')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-53 · P1 — env-failure pause duration is within tolerance of DRAIN_PAUSE_ON_ENV_ERROR_MS
+// ---------------------------------------------------------------------------
+
+describe('T-53: env-failure pause duration within ±500ms of DRAIN_PAUSE_ON_ENV_ERROR_MS', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('sets pausedUntil within ±500ms of Date.now() + DRAIN_PAUSE_ON_ENV_ERROR_MS', async () => {
+    const repo = makeRepo()
+    vi.mocked(repo.getQueuedTasks).mockReturnValue([{ id: 'env-task' }] as any)
+    vi.mocked(repo.getQueueStats).mockReturnValue({
+      queued: 1, blocked: 0, active: 0, review: 0, done: 0, failed: 0, cancelled: 0, error: 0
+    } as any)
+
+    const emitDrainPaused = vi.fn()
+    const processQueuedTask = vi
+      .fn()
+      .mockRejectedValue(new Error('Main repo has uncommitted changes (pre-ffMergeMain)'))
+    const deps = makeDeps({ repo, processQueuedTask, emitDrainPaused })
+
+    const before = Date.now()
+    await new DrainLoop(deps).drainQueuedTasksWithMap(1, new Map())
+    const after = Date.now()
+
+    expect(emitDrainPaused).toHaveBeenCalledTimes(1)
+    const { pausedUntil } = emitDrainPaused.mock.calls[0][0] as { pausedUntil: number }
+
+    const expectedMin = before + DRAIN_PAUSE_ON_ENV_ERROR_MS - 500
+    const expectedMax = after + DRAIN_PAUSE_ON_ENV_ERROR_MS + 500
+    expect(pausedUntil).toBeGreaterThanOrEqual(expectedMin)
+    expect(pausedUntil).toBeLessThanOrEqual(expectedMax)
   })
 })

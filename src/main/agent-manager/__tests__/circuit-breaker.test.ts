@@ -258,3 +258,36 @@ describe('spawn-phase circuit breaker scope (EP-5 T-55)', () => {
     }).not.toThrow()
   })
 })
+
+// ---------------------------------------------------------------------------
+// T-55 · P1 — recordFailure while circuit is open does NOT extend openUntil
+// ---------------------------------------------------------------------------
+
+describe('T-55: recordFailure while circuit is open does not change openUntil', () => {
+  function makeLogger() {
+    return { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), event: vi.fn() }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('openUntil timestamp is unchanged when recordFailure is called after circuit trips', () => {
+    const breaker = new CircuitBreaker(makeLogger())
+
+    // Trip the circuit
+    for (let i = 0; i < SPAWN_CIRCUIT_FAILURE_THRESHOLD; i++) {
+      breaker.recordFailure('task-trip', 'spawn error')
+    }
+    expect(breaker.isOpen()).toBe(true)
+
+    const openUntilAfterTrip = breaker.openUntilTimestamp
+
+    // Additional failures while the circuit is already open
+    breaker.recordFailure('task-extra-1', 'another spawn error')
+    breaker.recordFailure('task-extra-2', 'another spawn error')
+
+    // openUntil must not move forward — the pause window was set at trip time
+    expect(breaker.openUntilTimestamp).toBe(openUntilAfterTrip)
+  })
+})

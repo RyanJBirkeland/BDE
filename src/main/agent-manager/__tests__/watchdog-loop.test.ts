@@ -694,3 +694,100 @@ describe('cleanupWorktreeIfNotInReview (T-38)', () => {
     await expect(runWatchdog(deps)).resolves.not.toThrow()
   })
 })
+
+// ---------------------------------------------------------------------------
+// T-48 · P0 — DB write failure blocks onTaskTerminal, emits broadcastToRenderer warning
+// ---------------------------------------------------------------------------
+
+describe('T-48: watchdog DB-write failure blocks onTaskTerminal and broadcasts warning', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('does NOT call onTaskTerminal when taskStateService.transition throws', async () => {
+    const agent = makeAgent('task-db-fail')
+    const concurrency = makeConcurrencyState(2)
+    const broadcastToRenderer = vi.fn()
+    const taskStateService = {
+      transition: vi.fn().mockRejectedValue(new Error('SQLITE_BUSY: database is locked'))
+    }
+
+    const deps = makeDepsWithRegistry(registryWith(agent), {
+      getConcurrency: () => concurrency,
+      taskStateService: taskStateService as any,
+      broadcastToRenderer
+    })
+
+    vi.mocked(checkAgent).mockReturnValue('idle')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: {
+        status: 'error',
+        completed_at: '2026-01-01T00:00:00.000Z',
+        claimed_by: null,
+        notes: 'idle',
+        needs_review: true
+      },
+      concurrency,
+      shouldNotifyTerminal: true,
+      terminalStatus: 'error'
+    })
+
+    await runWatchdog(deps)
+
+    // onTaskTerminal must NOT be called — the DB write did not land
+    expect(deps.onTaskTerminal).not.toHaveBeenCalled()
+    // A warning must be broadcast to the renderer so the operator is informed
+    expect(broadcastToRenderer).toHaveBeenCalledWith(
+      'manager:warning',
+      expect.objectContaining({ message: expect.stringContaining('task-db-fail') })
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// T-54 · P1 — watchdog taskStateService routes rate-limit requeue as queued
+// ---------------------------------------------------------------------------
+
+describe('T-54: watchdog routes rate-limit-loop requeue through taskStateService with queued status', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('calls taskStateService.transition with queued (not error) for rate-limit-loop verdict', async () => {
+    const agent = makeAgent('task-rl')
+    const concurrency = makeConcurrencyState(2)
+    const taskStateService = {
+      transition: vi.fn().mockResolvedValue({ committed: true })
+    }
+
+    const deps = makeDepsWithRegistry(registryWith(agent), {
+      getConcurrency: () => concurrency,
+      taskStateService: taskStateService as any
+    })
+
+    vi.mocked(checkAgent).mockReturnValue('rate-limit-loop')
+    vi.mocked(handleWatchdogVerdict).mockReturnValue({
+      taskUpdate: {
+        status: 'queued',
+        claimed_by: null,
+        notes: 'rate-limit requeue'
+      },
+      concurrency,
+      shouldNotifyTerminal: false,
+      terminalStatus: undefined
+    })
+
+    await runWatchdog(deps)
+
+    expect(taskStateService.transition).toHaveBeenCalledWith(
+      'task-rl',
+      'queued',
+      expect.objectContaining({ caller: 'watchdog' })
+    )
+    // Must not transition to error
+    const errorCalls = taskStateService.transition.mock.calls.filter(
+      (c: unknown[]) => c[1] === 'error'
+    )
+    expect(errorCalls).toHaveLength(0)
+  })
+})
