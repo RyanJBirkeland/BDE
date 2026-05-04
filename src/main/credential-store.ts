@@ -11,7 +11,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { z } from 'zod'
-import { getOAuthToken } from './env-utils'
+import { getOAuthToken, parseExpiresAt } from './env-utils'
 
 function execFileAsync(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -35,19 +35,21 @@ export interface AuthStatus {
  * exact shape (user could edit the entry; different SDK versions may write
  * different fields), so validate at the parse boundary and treat any
  * structural mismatch as "no credential".
+ *
+ * Not .strict() — Claude Code v2.x stores refreshToken and other fields
+ * alongside accessToken. Strict mode would reject those payloads entirely,
+ * causing auth to always fall back to the file and show DISCONNECTED on
+ * fresh installs where ~/.fleet/oauth-token doesn't yet exist.
  */
-const KeychainOAuthSchema = z
-  .object({
-    accessToken: z.string().optional(),
-    expiresAt: z.string().optional()
-  })
-  .strict()
+const KeychainOAuthSchema = z.object({
+  accessToken: z.string().optional(),
+  refreshToken: z.string().optional(),
+  expiresAt: z.union([z.string(), z.number()]).optional()
+})
 
-const KeychainPayloadSchema = z
-  .object({
-    claudeAiOauth: KeychainOAuthSchema.optional()
-  })
-  .strict()
+const KeychainPayloadSchema = z.object({
+  claudeAiOauth: KeychainOAuthSchema.optional()
+})
 
 export type KeychainOAuth = z.infer<typeof KeychainOAuthSchema>
 export type KeychainPayload = z.infer<typeof KeychainPayloadSchema>
@@ -148,8 +150,8 @@ export async function checkAuthStatus(
   if (!oauth.expiresAt) {
     return { cliFound, tokenFound: true, tokenExpired: true }
   }
-  const expiresMs = parseInt(oauth.expiresAt, 10)
-  if (Number.isNaN(expiresMs)) {
+  const expiresMs = parseExpiresAt(oauth.expiresAt)
+  if (expiresMs === null) {
     return { cliFound, tokenFound: true, tokenExpired: true }
   }
   const expiresAt = new Date(expiresMs)

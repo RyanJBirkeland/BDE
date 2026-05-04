@@ -12,9 +12,13 @@ vi.mock('node:fs', () => ({
 
 // env-utils pulls in the logger, which touches the filesystem at module load.
 // Mock the single export auth-guard consumes so this test stays hermetic.
-vi.mock('../../env-utils', () => ({
-  getOAuthToken: vi.fn().mockReturnValue(null)
-}))
+vi.mock('../../env-utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../env-utils')>()
+  return {
+    getOAuthToken: vi.fn().mockReturnValue(null),
+    parseExpiresAt: actual.parseExpiresAt
+  }
+})
 
 // auth-guard now imports credential-service, which transitively loads
 // settings-queries.ts — and its module-scope `createLogger()` call writes to

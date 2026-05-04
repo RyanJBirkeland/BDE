@@ -10,7 +10,8 @@ vi.mock('node:fs', () => ({
 }))
 
 vi.mock('../env-utils', () => ({
-  getOAuthToken: vi.fn().mockReturnValue(null)
+  getOAuthToken: vi.fn().mockReturnValue(null),
+  parseExpiresAt: vi.fn().mockReturnValue(null)
 }))
 
 vi.mock('../logger', () => ({
@@ -23,56 +24,79 @@ vi.mock('../logger', () => ({
   logError: vi.fn()
 }))
 
-// Import the schemas indirectly via a re-export trick — the schemas are not
-// exported from credential-store.ts so we test them through the public surface
-// that uses them. For schema-shape tests we need direct access: re-import zod
-// and re-declare the schemas identically so the tests stay focused and fast.
+// Re-declare schemas matching production code so shape tests stay focused and fast.
+// IMPORTANT: these must stay in sync with credential-store.ts.
 import { z } from 'zod'
 
-const KeychainOAuthSchema = z
-  .object({
-    accessToken: z.string().optional(),
-    expiresAt: z.string().optional()
-  })
-  .strict()
+const KeychainOAuthSchema = z.object({
+  accessToken: z.string().optional(),
+  refreshToken: z.string().optional(),
+  expiresAt: z.union([z.string(), z.number()]).optional()
+})
 
-const KeychainPayloadSchema = z
-  .object({
-    claudeAiOauth: KeychainOAuthSchema.optional()
-  })
-  .strict()
+const KeychainPayloadSchema = z.object({
+  claudeAiOauth: KeychainOAuthSchema.optional()
+})
 
-describe('KeychainOAuthSchema (.strict())', () => {
-  it('rejects an object with an extra field', () => {
-    const result = KeychainOAuthSchema.safeParse({
-      accessToken: 'x',
-      expiresAt: '1',
-      injected: true
-    })
-    expect(result.success).toBe(false)
-  })
-
-  it('accepts a valid object with only the known fields', () => {
+describe('KeychainOAuthSchema', () => {
+  it('accepts a payload with the v1.x fields only', () => {
     const result = KeychainOAuthSchema.safeParse({
       accessToken: 'tok',
       expiresAt: '1700000000000'
     })
     expect(result.success).toBe(true)
   })
-})
 
-describe('KeychainPayloadSchema (.strict())', () => {
-  it('rejects an object with an extra top-level field', () => {
-    const result = KeychainPayloadSchema.safeParse({
-      claudeAiOauth: { accessToken: 'x' },
-      extra: 1
+  it('accepts a payload with the v2.x refreshToken field', () => {
+    const result = KeychainOAuthSchema.safeParse({
+      accessToken: 'tok',
+      refreshToken: 'ref',
+      expiresAt: '1700000000000'
     })
-    expect(result.success).toBe(false)
+    expect(result.success).toBe(true)
   })
 
-  it('accepts a valid object with only claudeAiOauth', () => {
+  it('accepts expiresAt as a number (seconds-since-epoch format)', () => {
+    const result = KeychainOAuthSchema.safeParse({
+      accessToken: 'tok',
+      expiresAt: 1700000000
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts additional unknown fields without failing', () => {
+    const result = KeychainOAuthSchema.safeParse({
+      accessToken: 'tok',
+      expiresAt: '1700000000000',
+      unknownFutureField: true
+    })
+    expect(result.success).toBe(true)
+  })
+})
+
+describe('KeychainPayloadSchema', () => {
+  it('accepts a payload with only claudeAiOauth', () => {
     const result = KeychainPayloadSchema.safeParse({
       claudeAiOauth: { accessToken: 'tok' }
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts additional top-level fields (v2.x may include them)', () => {
+    const result = KeychainPayloadSchema.safeParse({
+      claudeAiOauth: { accessToken: 'tok' },
+      extraTopLevel: 1
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts the full v2.x shape with refreshToken', () => {
+    const result = KeychainPayloadSchema.safeParse({
+      claudeAiOauth: {
+        accessToken: 'tok',
+        refreshToken: 'ref',
+        expiresAt: '1700000000000'
+      }
     })
     expect(result.success).toBe(true)
   })
