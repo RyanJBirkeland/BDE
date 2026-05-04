@@ -11,7 +11,7 @@
  */
 
 import type { Logger } from '../logger'
-import type { AgentManagerConfig, ActiveAgent } from './types'
+import type { AgentManagerConfig } from './types'
 import type { TaskStatus } from '../../shared/task-state-machine'
 import { isTaskStatus } from '../../shared/task-state-machine'
 import { NOTES_MAX_LENGTH, DRAIN_PAUSE_ON_ENV_ERROR_MS } from './types'
@@ -117,7 +117,8 @@ export interface DrainLoopDeps {
   logger: Logger
   isShuttingDown: () => boolean
   isCircuitOpen: (now?: number) => boolean
-  activeAgents: ReadonlyMap<string, ActiveAgent>
+  /** Returns the current count of active (in-flight) agents. */
+  activeAgentCount: () => number
   /** Returns the count of spawned agents not yet registered in activeAgents. */
   getPendingSpawns: () => number
   /** Returns true when a terminal event has fired since the last dep-index rebuild. */
@@ -217,12 +218,12 @@ export class DrainLoop {
   async runDrain(): Promise<void> {
     const tickId = generateTickId()
 
-    this.deps.logger.info(
-      `[agent-manager] Drain loop starting (shuttingDown=${this.deps.isShuttingDown()}, slots=${availableSlots(this._concurrency, this.deps.activeAgents.size)})`
+    this.deps.logger.debug(
+      `[agent-manager] Drain loop starting (shuttingDown=${this.deps.isShuttingDown()}, slots=${availableSlots(this._concurrency, this.deps.activeAgentCount())})`
     )
 
     if (this.drainPausedUntil && Date.now() < this.drainPausedUntil) {
-      this.deps.logger.info(
+      this.deps.logger.debug(
         `[drain-loop] skipping tick — paused until ${new Date(this.drainPausedUntil).toISOString()}`
       )
       return
@@ -235,7 +236,7 @@ export class DrainLoop {
 
     const taskStatusMap = this.buildTaskStatusMap()
 
-    const available = availableSlots(this._concurrency, this.deps.activeAgents.size)
+    const available = availableSlots(this._concurrency, this.deps.activeAgentCount())
     if (available <= 0) {
       this.deps.logger.debug(`drain.tick.idle tickId=${tickId} queuedCount=0`)
       this.deps.logger.event('drain.tick.idle', { tickId, queuedCount: 0 })
@@ -333,9 +334,9 @@ export class DrainLoop {
     taskStatusMap: Map<string, TaskStatus>,
     tickId: string
   ): Promise<void> {
-    const freshSlots = availableSlots(this._concurrency, this.deps.activeAgents.size)
+    const freshSlots = availableSlots(this._concurrency, this.deps.activeAgentCount())
     const limit = Math.min(available, freshSlots)
-    this.deps.logger.info(`[agent-manager] Fetching queued tasks (limit=${limit})...`)
+    this.deps.logger.debug(`[agent-manager] Fetching queued tasks (limit=${limit})...`)
 
     let queued: SprintTask[]
     try {
@@ -356,13 +357,17 @@ export class DrainLoop {
       throw err
     }
 
-    this.deps.logger.info(`[agent-manager] Found ${queued.length} queued tasks`)
+    if (queued.length > 0) {
+      this.deps.logger.info(`[agent-manager] Found ${queued.length} queued task(s) — processing`)
+    } else {
+      this.deps.logger.debug(`[agent-manager] No queued tasks found`)
+    }
     for (const rawTask of queued) {
       if (this.deps.isShuttingDown()) break
       if (
-        availableSlots(this._concurrency, this.deps.activeAgents.size + this.deps.getPendingSpawns()) <= 0
+        availableSlots(this._concurrency, this.deps.activeAgentCount() + this.deps.getPendingSpawns()) <= 0
       ) {
-        this.deps.logger.info('[agent-manager] No slots available — stopping drain iteration')
+        this.deps.logger.debug('[agent-manager] No slots available — stopping drain iteration')
         break
       }
       await this.deps.awaitOAuthRefresh?.()
@@ -442,43 +447,6 @@ export class DrainLoop {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Backward-compatible pure-function exports
-// ---------------------------------------------------------------------------
-// These allow existing unit tests (`runDrain(deps)` style) to continue working.
-// New code should construct a `DrainLoop` instance directly.
-
-/**
- * @deprecated Use `new DrainLoop(deps).validateDrainPreconditions()`.
- */
-export async function validateDrainPreconditions(deps: DrainLoopDeps): Promise<boolean> {
-  return new DrainLoop(deps).validateDrainPreconditions()
-}
-
-/**
- * @deprecated Use `new DrainLoop(deps).buildTaskStatusMap()`.
- */
-export function buildTaskStatusMap(deps: DrainLoopDeps): Map<string, TaskStatus> {
-  return new DrainLoop(deps).buildTaskStatusMap()
-}
-
-/**
- * @deprecated Use `new DrainLoop(deps).drainQueuedTasksWithMap(available, map)`.
- */
-export async function drainQueuedTasks(
-  available: number,
-  taskStatusMap: Map<string, TaskStatus>,
-  deps: DrainLoopDeps
-): Promise<void> {
-  return new DrainLoop(deps).drainQueuedTasksWithMap(available, taskStatusMap)
-}
-
-/**
- * @deprecated Use `new DrainLoop(deps).runDrain()`.
- */
-export async function runDrain(deps: DrainLoopDeps): Promise<void> {
-  return new DrainLoop(deps).runDrain()
-}
 
 // ---------------------------------------------------------------------------
 // Private pure helpers

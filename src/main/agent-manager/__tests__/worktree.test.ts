@@ -18,6 +18,7 @@ vi.mock('../../lib/main-repo-guards', () => ({
 import { execFile } from 'node:child_process'
 import type { ChildProcess } from 'node:child_process'
 import { branchNameForTask, setupWorktree, cleanupWorktree, pruneStaleWorktrees } from '../worktree'
+import { GIT_EXEC_TIMEOUT_MS } from '../worktree-lifecycle'
 
 const execFileMock = vi.mocked(execFile)
 
@@ -619,6 +620,22 @@ describe('cleanupWorktree', () => {
       if (opts && opts.cwd) {
         expect(opts.cwd).toBe('/repos/proj')
       }
+    }
+  })
+
+  it('passes GIT_EXEC_TIMEOUT_MS to every git call so a hung subprocess cannot stall cleanup indefinitely', async () => {
+    await cleanupWorktree({
+      repoPath: '/repos/proj',
+      worktreePath: '/tmp/worktrees/task-1',
+      branch: 'agent/my-task'
+    })
+
+    // Every execFile call must carry the timeout option.
+    // This asserts that a real hung git subprocess would be killed by the OS
+    // after GIT_EXEC_TIMEOUT_MS rather than blocking cleanup indefinitely.
+    for (const call of execFileMock.mock.calls) {
+      const opts = call[2] as { timeout?: number }
+      expect(opts?.timeout).toBe(GIT_EXEC_TIMEOUT_MS)
     }
   })
 })

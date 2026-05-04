@@ -286,7 +286,7 @@ export class AgentManagerImpl implements AgentManager {
       logger,
       isShuttingDown: () => this._shuttingDown,
       isCircuitOpen: (now?: number) => this._circuitBreaker.isOpen(now),
-      activeAgents: this.spawnRegistry.asActiveAgentsMap(),
+      activeAgentCount: () => this.spawnRegistry.activeAgentCount(),
       getPendingSpawns: () => this.spawnRegistry.pendingSpawnCount(),
       isDepIndexDirty: () => this._depIndexDirty,
       setDepIndexDirty: (dirty) => { this._depIndexDirty = dirty },

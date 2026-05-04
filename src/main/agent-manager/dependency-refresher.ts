@@ -138,8 +138,11 @@ export function refreshDependencyIndex(
 
     const statusMap = new Map(allTasks.map((t) => [t.id, t.status]))
 
-    // Record the post-update hash so the next clean tick can skip the DB.
-    lastGlobalHash.set(fingerprints, computeGlobalFingerprintHash(fingerprints))
+    // Compute the post-update hash exactly once and cache it for the next clean tick.
+    // Computing it here (after all fingerprint mutations are complete) means the
+    // dirty-path also pays at most one hash computation per invocation.
+    const postUpdateHash = computeGlobalFingerprintHash(fingerprints)
+    lastGlobalHash.set(fingerprints, postUpdateHash)
 
     return statusMap
   } catch (err) {

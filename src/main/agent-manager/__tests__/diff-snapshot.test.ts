@@ -272,4 +272,20 @@ describe('diff-snapshot', () => {
 
     expect(result?.capturedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
   })
+
+  it('T-56: returned files are new objects — calling twice produces independent results', async () => {
+    // Two calls with identical mock state must each return a result with patches
+    // on the returned objects. If fetchAndDistributePatches mutated the input array,
+    // the second call would see already-patched objects and the budget arithmetic
+    // would behave differently, causing test asymmetry. Identical results confirm
+    // that no shared mutable state exists between calls.
+    const firstResult = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+    const secondResult = await captureDiffSnapshot('/path/to/worktree', 'main', mockLogger)
+
+    expect(firstResult?.files[0].patch).toContain('diff --git')
+    expect(secondResult?.files[0].patch).toContain('diff --git')
+    // Distinct object references confirm a new array is returned each time.
+    expect(firstResult?.files).not.toBe(secondResult?.files)
+    expect(firstResult?.files[0]).not.toBe(secondResult?.files[0])
+  })
 })

@@ -101,6 +101,8 @@ export async function captureDiffSnapshot(
  *
  * Budget accounting mirrors the original: files whose patch would exceed the
  * remaining character budget are skipped (stats kept), and `truncated` is set.
+ *
+ * Returns a new array of file objects — the input array is never mutated.
  */
 async function fetchAndDistributePatches(
   files: ReviewDiffSnapshot['files'],
@@ -126,19 +128,20 @@ async function fetchAndDistributePatches(
 
   let budget = MAX_SNAPSHOT_CHARS
   let truncated = false
+  const patchedFiles: ReviewDiffSnapshot['files'] = []
 
   for (const file of files) {
     const patch = patchByPath.get(file.path)
-    if (patch === undefined) continue
-    if (patch.length > budget) {
-      truncated = true
+    if (patch === undefined || patch.length > budget) {
+      if (patch !== undefined) truncated = true
+      patchedFiles.push(file)
       continue
     }
-    file.patch = patch
+    patchedFiles.push({ ...file, patch })
     budget -= patch.length
   }
 
-  return { truncated, patchedFiles: files }
+  return { truncated, patchedFiles }
 }
 
 /**

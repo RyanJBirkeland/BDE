@@ -151,20 +151,6 @@ export function killAgentImmediately(agent: ActiveAgent, logger: Logger): void {
  * Remove an agent from the spawn registry if it is still current.
  * Guards against removing a newer retry that has overwritten the same task slot.
  */
-export function removeAgentFromMap(
-  agent: ActiveAgent,
-  activeAgents: Map<string, ActiveAgent>
-): void {
-  // Guard: only remove if this run's entry is still current — a retry may have overwritten it
-  if (activeAgents.get(agent.taskId)?.agentRunId === agent.agentRunId) {
-    activeAgents.delete(agent.taskId)
-  }
-}
-
-/**
- * Remove an agent from the spawn registry if it is still current.
- * Guards against removing a newer retry that has overwritten the same task slot.
- */
 export function removeAgentFromRegistry(
   agent: ActiveAgent,
   spawnRegistry: SpawnRegistry
@@ -175,20 +161,15 @@ export function removeAgentFromRegistry(
 }
 
 /**
- * Abort an active agent's handle and remove it from the active agents map.
- * Kept for backward compatibility with callers that need the combined operation.
+ * Abort an active agent's handle and remove it from the spawn registry.
  */
 export function killActiveAgent(
   agent: ActiveAgent,
-  activeAgentsOrRegistry: Map<string, ActiveAgent> | SpawnRegistry,
+  spawnRegistry: SpawnRegistry,
   logger: Logger
 ): void {
   killAgentImmediately(agent, logger)
-  if (activeAgentsOrRegistry instanceof Map) {
-    removeAgentFromMap(agent, activeAgentsOrRegistry)
-  } else {
-    removeAgentFromRegistry(agent, activeAgentsOrRegistry)
-  }
+  removeAgentFromRegistry(agent, spawnRegistry)
 }
 
 // ---------------------------------------------------------------------------

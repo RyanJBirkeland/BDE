@@ -20,10 +20,6 @@ vi.mock('../../paths', () => ({
 
 import {
   DrainLoop,
-  validateDrainPreconditions,
-  buildTaskStatusMap,
-  drainQueuedTasks,
-  runDrain,
   DRAIN_TICK_TIMEOUT_MS,
   type DrainLoopDeps
 } from '../drain-loop'
@@ -105,7 +101,7 @@ function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
     isShuttingDown: () => false,
     isCircuitOpen: () => false,
     circuitOpenUntil: 0,
-    activeAgents: new Map(),
+    activeAgentCount: () => 0,
     getConcurrency: () => concurrency,
     getPendingSpawns: () => 0,
     lastTaskDeps: new Map(),
@@ -133,7 +129,7 @@ describe('validateDrainPreconditions', () => {
 
   it('returns false when shutting down', async () => {
     const deps = makeDeps({ isShuttingDown: () => true })
-    expect(await validateDrainPreconditions(deps)).toBe(false)
+    expect(await new DrainLoop(deps).validateDrainPreconditions()).toBe(false)
   })
 
   it('returns false and logs when circuit is open', async () => {
@@ -141,14 +137,14 @@ describe('validateDrainPreconditions', () => {
       isCircuitOpen: () => true,
       circuitOpenUntil: Date.now() + 60_000
     })
-    expect(await validateDrainPreconditions(deps)).toBe(false)
+    expect(await new DrainLoop(deps).validateDrainPreconditions()).toBe(false)
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('circuit breaker open'))
   })
 
   it('returns false and logs when no repositories are configured', async () => {
     vi.mocked(getConfiguredRepos).mockReturnValue([])
     const deps = makeDeps()
-    expect(await validateDrainPreconditions(deps)).toBe(false)
+    expect(await new DrainLoop(deps).validateDrainPreconditions()).toBe(false)
     expect(deps.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('No repositories configured')
     )
@@ -158,14 +154,14 @@ describe('validateDrainPreconditions', () => {
   it('returns false and logs when OAuth token is invalid', async () => {
     vi.mocked(checkOAuthToken).mockResolvedValue(false)
     const deps = makeDeps()
-    expect(await validateDrainPreconditions(deps)).toBe(false)
+    expect(await new DrainLoop(deps).validateDrainPreconditions()).toBe(false)
     expect(deps.logger.warn).toHaveBeenCalledWith(expect.stringContaining('OAuth token invalid'))
   })
 
   it('returns true when all preconditions pass', async () => {
     vi.mocked(checkOAuthToken).mockResolvedValue(true)
     const deps = makeDeps()
-    expect(await validateDrainPreconditions(deps)).toBe(true)
+    expect(await new DrainLoop(deps).validateDrainPreconditions()).toBe(true)
   })
 })
 
@@ -178,7 +174,7 @@ describe('buildTaskStatusMap', () => {
     const statusMap = new Map([['task-1', 'active']])
     vi.mocked(refreshDependencyIndex).mockReturnValue(statusMap)
     const deps = makeDeps({ isDepIndexDirty: () => false })
-    const result = buildTaskStatusMap(deps)
+    const result = new DrainLoop(deps).buildTaskStatusMap()
     expect(refreshDependencyIndex).toHaveBeenCalled()
     // filterToValidTaskStatuses returns a new Map; verify the valid entries survive
     expect(result.get('task-1')).toBe('active')
@@ -191,7 +187,7 @@ describe('buildTaskStatusMap', () => {
     ])
     const setDepIndexDirty = vi.fn()
     const deps = makeDeps({ repo, isDepIndexDirty: () => true, setDepIndexDirty })
-    const result = buildTaskStatusMap(deps)
+    const result = new DrainLoop(deps).buildTaskStatusMap()
     expect(deps.depIndex.rebuild).toHaveBeenCalled()
     expect(setDepIndexDirty).toHaveBeenCalledWith(false)
     expect(result.get('task-1')).toBe('queued')
@@ -243,7 +239,7 @@ describe('drainQueuedTasks', () => {
     const deps = makeDeps({ repo, processQueuedTask })
     const taskStatusMap = new Map<string, string>()
 
-    await drainQueuedTasks(2, taskStatusMap, deps)
+    await new DrainLoop(deps).drainQueuedTasksWithMap(2, taskStatusMap)
 
     expect(processQueuedTask).toHaveBeenCalledTimes(2)
   })
@@ -258,7 +254,7 @@ describe('drainQueuedTasks', () => {
     })
     const deps = makeDeps({ repo, isShuttingDown, processQueuedTask })
 
-    await drainQueuedTasks(2, new Map(), deps)
+    await new DrainLoop(deps).drainQueuedTasksWithMap(2, new Map())
 
     expect(processQueuedTask).toHaveBeenCalledTimes(1)
   })
@@ -272,7 +268,7 @@ describe('drainQueuedTasks', () => {
       .mockResolvedValueOnce(undefined)
     const deps = makeDeps({ repo, processQueuedTask })
 
-    await drainQueuedTasks(2, new Map(), deps)
+    await new DrainLoop(deps).drainQueuedTasksWithMap(2, new Map())
 
     expect(deps.logger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to process task')
@@ -290,31 +286,29 @@ describe('runDrain', () => {
 
   it('skips drain when preconditions fail', async () => {
     const deps = makeDeps({ isShuttingDown: () => true })
-    await runDrain(deps)
+    await new DrainLoop(deps).runDrain()
     expect(deps.metrics.increment).not.toHaveBeenCalled()
   })
 
   it('increments drainLoopCount when drain runs', async () => {
     const deps = makeDeps()
-    await runDrain(deps)
+    await new DrainLoop(deps).runDrain()
     expect(deps.metrics.increment).toHaveBeenCalledWith('drainLoopCount')
   })
 
   it('skips task processing when no slots are available', async () => {
     const concurrency = makeConcurrencyState(1)
-    const activeAgents = new Map()
-    activeAgents.set('task-existing', {} as any)
     const deps = makeDeps({
       getConcurrency: () => concurrency,
-      activeAgents
+      activeAgentCount: () => 1
     })
-    await runDrain(deps)
+    await new DrainLoop(deps).runDrain()
     expect(deps.processQueuedTask).not.toHaveBeenCalled()
   })
 
   it('records drain duration', async () => {
     const deps = makeDeps()
-    await runDrain(deps)
+    await new DrainLoop(deps).runDrain()
     expect(deps.metrics.setLastDrainDuration).toHaveBeenCalledWith(expect.any(Number))
   })
 
@@ -365,7 +359,8 @@ describe('drain-loop: tick deadline', () => {
     const processQueuedTask = vi.fn()
     const deps = makeDeps({ repo, processQueuedTask })
 
-    const drainPromise = drainQueuedTasks(2, new Map(), deps)
+    const loop = new DrainLoop(deps)
+    const drainPromise = loop.drainQueuedTasksWithMap(2, new Map())
     // Advance past the deadline
     await vi.advanceTimersByTimeAsync(DRAIN_TICK_TIMEOUT_MS + 100)
     await drainPromise
@@ -382,7 +377,7 @@ describe('drain-loop: tick deadline', () => {
     const processQueuedTask = vi.fn().mockResolvedValue(undefined)
     const deps = makeDeps({ repo, processQueuedTask })
 
-    await drainQueuedTasks(2, new Map(), deps)
+    await new DrainLoop(deps).drainQueuedTasksWithMap(2, new Map())
 
     expect(processQueuedTask).toHaveBeenCalledTimes(1)
     expect(deps.logger.event).not.toHaveBeenCalledWith('drain.tick.timeout', expect.anything())
@@ -418,7 +413,7 @@ describe('drain-loop: environmental failure pauses drain', () => {
       .mockRejectedValue(new Error('Main repo has uncommitted changes (pre-ffMergeMain)'))
     const deps = makeDeps({ repo, processQueuedTask, emitDrainPaused })
 
-    await drainQueuedTasks(1, new Map(), deps)
+    await new DrainLoop(deps).drainQueuedTasksWithMap(1, new Map())
 
     const updateCalls = vi.mocked(repo.updateTask).mock.calls
     expect(updateCalls.length).toBe(1)
@@ -442,7 +437,7 @@ describe('drain-loop: environmental failure pauses drain', () => {
       .mockRejectedValue(new Error('credential unavailable for fleet repo'))
     const deps = makeDeps({ repo, processQueuedTask })
 
-    await drainQueuedTasks(1, new Map(), deps)
+    await new DrainLoop(deps).drainQueuedTasksWithMap(1, new Map())
 
     const [, patch] = vi.mocked(repo.updateTask).mock.calls[0]
     expect(patch.status).toBe('queued')
@@ -482,7 +477,7 @@ describe('drain-loop: environmental failure pauses drain', () => {
     const processQueuedTask = vi.fn().mockRejectedValue(new Error('Syntax error in spec'))
     const deps = makeDeps({ repo, processQueuedTask, emitDrainPaused })
 
-    await drainQueuedTasks(1, new Map(), deps)
+    await new DrainLoop(deps).drainQueuedTasksWithMap(1, new Map())
 
     expect(emitDrainPaused).not.toHaveBeenCalled()
     // First spec-level failure shouldn't update the task (count < threshold).
@@ -506,7 +501,7 @@ describe('buildTaskStatusMap — T-18: invalid statuses excluded from dependency
     ])
     const deps = makeDeps({ repo, isDepIndexDirty: () => true })
 
-    const result = buildTaskStatusMap(deps)
+    const result = new DrainLoop(deps).buildTaskStatusMap()
 
     expect(result.has('task-valid')).toBe(true)
     expect(result.has('task-bad')).toBe(false)
@@ -519,7 +514,7 @@ describe('buildTaskStatusMap — T-18: invalid statuses excluded from dependency
     ])
     const deps = makeDeps({ repo, isDepIndexDirty: () => true })
 
-    buildTaskStatusMap(deps)
+    new DrainLoop(deps).buildTaskStatusMap()
 
     expect(deps.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('task-weird')
@@ -539,7 +534,7 @@ describe('buildTaskStatusMap — T-18: invalid statuses excluded from dependency
     vi.mocked(refreshDependencyIndex).mockReturnValue(rawMap)
     const deps = makeDeps({ isDepIndexDirty: () => false })
 
-    const result = buildTaskStatusMap(deps)
+    const result = new DrainLoop(deps).buildTaskStatusMap()
 
     expect(result.has('task-ok')).toBe(true)
     expect(result.has('task-unknown')).toBe(false)

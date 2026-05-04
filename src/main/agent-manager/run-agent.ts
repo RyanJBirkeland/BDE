@@ -324,7 +324,7 @@ interface ResolveAgentExitContext {
   deps: RunAgentDeps
 }
 
-async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
+async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<TaskStatus> {
   const { deps } = ctx
   const legacyFastFailCount = ctx.task.fast_fail_count ?? 0
   const ffResult = classifyExit(
@@ -352,7 +352,7 @@ async function resolveAgentExit(ctx: ResolveAgentExitContext): Promise<void> {
   return handleFastFailRequeue(ctx)
 }
 
-async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<void> {
+async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<TaskStatus> {
   const { deps } = ctx
   flushAgentEventBatcher()
   try {
@@ -372,9 +372,10 @@ async function handleFastFailExhausted(ctx: ResolveAgentExitContext): Promise<vo
       `[agent-manager] Failed to transition task ${ctx.task.id} after fast-fail exhausted: ${err}`
     )
   }
+  return 'error'
 }
 
-async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void> {
+async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<TaskStatus> {
   const { deps } = ctx
   try {
     await deps.taskStateService.transition(ctx.task.id, 'queued', {
@@ -388,7 +389,7 @@ async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void
     deps.logger.error(`[agent-manager] Failed to requeue fast-fail task ${ctx.task.id}: ${err}`)
     // DB write failed — task still marked active. Skip terminal notification so
     // dependents are not unblocked against a task that remains active in SQLite.
-    return
+    return 'active'
   }
   // Fast-fail-requeue means the next drain tick will recreate the worktree.
   // Delete the agent branch so the new worktree starts from a clean ref.
@@ -396,6 +397,7 @@ async function handleFastFailRequeue(ctx: ResolveAgentExitContext): Promise<void
   // Notify terminal listeners even on requeue so blocked dependents unblock —
   // this run ended, even if a retry will follow.
   await deps.onTaskTerminal(ctx.task.id, 'queued')
+  return 'queued'
 }
 
 type SpecFileCheckResult = { kind: 'skip' } | { kind: 'ok' } | { kind: 'missing'; files: string[] }
@@ -527,7 +529,7 @@ export async function filterToExistingBaseFiles(
 async function handleIncompleteFiles(
   ctx: ResolveAgentExitContext,
   missingFiles: string[]
-): Promise<void> {
+): Promise<TaskStatus> {
   const { deps } = ctx
   const notes = `Files to Change checklist incomplete. Missing: ${missingFiles.join(', ')}`
   deps.logger.warn(`[run-agent] task ${ctx.task.id}: ${notes}`)
@@ -546,17 +548,18 @@ async function handleIncompleteFiles(
     deps.logger.warn(
       `[run-agent] task ${ctx.task.id}: incomplete-files failure DB write failed — skipping terminal notification`
     )
-    return
+    return 'active'
   }
   if (result.isTerminal) {
     await deps.onTaskTerminal(ctx.task.id, 'failed')
-    return
+    return 'failed'
   }
   await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, deps.logger)
   await deps.onTaskTerminal(ctx.task.id, 'queued')
+  return 'queued'
 }
 
-async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
+async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<TaskStatus> {
   const { deps } = ctx
   const specFileCheck = await detectMissingSpecFiles(
     ctx.task,
@@ -589,15 +592,19 @@ async function resolveNormalExit(ctx: ResolveAgentExitContext): Promise<void> {
       },
       deps.logger
     )
+    // The pipeline may have aborted mid-run (PipelineAbortError caught internally) and
+    // transitioned to failed/queued instead of review. Read the actual status rather than
+    // assuming the success path always lands on review.
+    return deps.repo.getTask(ctx.task.id)?.status ?? 'error'
   } catch (err) {
-    await handleResolveSuccessFailure(ctx, err)
+    return handleResolveSuccessFailure(ctx, err)
   }
 }
 
 async function handleResolveSuccessFailure(
   ctx: ResolveAgentExitContext,
   err: unknown
-): Promise<void> {
+): Promise<TaskStatus> {
   const { deps } = ctx
   deps.logger.warn(`[agent-manager] resolveSuccess failed for task ${ctx.task.id}: ${err}`)
   // Pass lastAgentOutput so the retry agent knows what failed and doesn't repeat blindly.
@@ -616,15 +623,16 @@ async function handleResolveSuccessFailure(
     deps.logger.warn(
       `[run-agent] task ${ctx.task.id}: resolve-success failure DB write failed — skipping terminal notification`
     )
-    return
+    return 'active'
   }
   if (result.isTerminal) {
     await deps.onTaskTerminal(ctx.task.id, 'failed')
-    return
+    return 'failed'
   }
   // Non-terminal: task was requeued. Delete the branch so the next drain
   // tick's worktree setup starts from a clean slate.
   await deleteAgentBranchBeforeRetry(ctx.repoPath, ctx.worktree.branch, deps.logger)
+  return 'queued'
 }
 
 /**
@@ -703,10 +711,7 @@ async function finalizeAgentRun(opts: FinalizeAgentRunOpts): Promise<void> {
     durationMs,
     deps.logger
   )
-  await resolveAgentExit({ task, exitCode, lastAgentOutput, agent, exitedAt, worktree, repoPath, deps })
-
-  const finalTask = deps.repo.getTask(task.id)
-  const finalStatus: TaskStatus = finalTask?.status ?? 'error'
+  const finalStatus = await resolveAgentExit({ task, exitCode, lastAgentOutput, agent, exitedAt, worktree, repoPath, deps })
 
   await persistAndCleanupAfterRun(task, worktree, repoPath, agent, deps)
   deps.logger.event('agent.completed', {

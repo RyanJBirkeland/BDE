@@ -56,7 +56,7 @@ function makeDeps(overrides: Partial<DrainLoopDeps> = {}): DrainLoopDeps {
     logger,
     isShuttingDown: () => false,
     isCircuitOpen: () => false,
-    activeAgents: new Map(),
+    activeAgentCount: () => 0,
     getPendingSpawns: () => 0,
     isDepIndexDirty: () => false,
     setDepIndexDirty: vi.fn(),

@@ -198,15 +198,15 @@ describe('killAgentWithEscalation', () => {
 })
 
 describe('killActiveAgent', () => {
-  it('aborts the agent handle and removes it from the map', () => {
+  it('aborts the agent handle and removes it from the registry', () => {
     const agent = makeAgent('task-1')
-    const activeAgents = new Map([['task-1', agent]])
+    const registry = registryWith(agent)
     const logger = makeLogger()
 
-    killActiveAgent(agent, activeAgents, logger)
+    killActiveAgent(agent, registry, logger)
 
     expect(agent.handle.abort).toHaveBeenCalled()
-    expect(activeAgents.has('task-1')).toBe(false)
+    expect(registry.getAgent('task-1')).toBeUndefined()
   })
 
   it('logs a warning when abort throws', () => {
@@ -214,13 +214,13 @@ describe('killActiveAgent', () => {
     vi.mocked(agent.handle.abort).mockImplementation(() => {
       throw new Error('abort failed')
     })
-    const activeAgents = new Map([['task-1', agent]])
+    const registry = registryWith(agent)
     const logger = makeLogger()
 
-    killActiveAgent(agent, activeAgents, logger)
+    killActiveAgent(agent, registry, logger)
 
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Failed to abort agent'))
-    expect(activeAgents.has('task-1')).toBe(false)
+    expect(registry.getAgent('task-1')).toBeUndefined()
   })
 })
 

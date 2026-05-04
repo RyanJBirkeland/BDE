@@ -182,3 +182,50 @@ describe('refreshDependencyIndex (clean-tick skip)', () => {
     )
   })
 })
+
+// T-41: computeGlobalFingerprintHash called at most once per dirty tick
+describe('refreshDependencyIndex (T-41: hash computed once per dirty tick)', () => {
+  it('caches the post-scan hash so a subsequent clean tick skips the DB without a second hash computation', () => {
+    // A dirty tick (non-empty dirty set) performs a full scan and must cache the
+    // resulting hash. The immediately following clean tick (empty dirty set) should
+    // see the cached hash and short-circuit without touching the DB.
+    const rows = [{ id: 'task-a', depends_on: null, status: 'queued' }]
+    const repo = makeRepo(rows)
+    const depIndex = makeDepIndex()
+    const fingerprints = seedFingerprints(rows)
+
+    // Dirty tick — runs the full scan.
+    refreshDependencyIndex(depIndex, fingerprints, repo, makeLogger(), new Set(['task-a']))
+    const dbCallsAfterDirtyTick = vi.mocked(repo.getTasksWithDependencies).mock.calls.length
+    expect(dbCallsAfterDirtyTick).toBe(1)
+
+    // Clean tick — must short-circuit because the dirty tick already cached the hash.
+    refreshDependencyIndex(depIndex, fingerprints, repo, makeLogger(), new Set<string>())
+    expect(vi.mocked(repo.getTasksWithDependencies).mock.calls.length).toBe(dbCallsAfterDirtyTick)
+  })
+
+  it('does not short-circuit the clean tick when the dirty tick changed fingerprints', () => {
+    // A dirty tick that actually modifies a fingerprint produces a new hash.
+    // The clean tick following it must also short-circuit since the cached hash
+    // now reflects the updated state.
+    const rows = [
+      {
+        id: 'task-a',
+        depends_on: [{ id: 'upstream', type: 'hard' as const }],
+        status: 'queued'
+      }
+    ]
+    const repo = makeRepo(rows)
+    const depIndex = makeDepIndex()
+    // Seed with a stale fingerprint so the dirty tick updates it.
+    const fingerprints: DepsFingerprint = new Map([['task-a', { deps: null, hash: '' }]])
+
+    // Dirty tick — updates the fingerprint and caches the new hash.
+    refreshDependencyIndex(depIndex, fingerprints, repo, makeLogger(), new Set(['task-a']))
+    const dbCallsAfterDirtyTick = vi.mocked(repo.getTasksWithDependencies).mock.calls.length
+
+    // Clean tick — should short-circuit with the new cached hash.
+    refreshDependencyIndex(depIndex, fingerprints, repo, makeLogger(), new Set<string>())
+    expect(vi.mocked(repo.getTasksWithDependencies).mock.calls.length).toBe(dbCallsAfterDirtyTick)
+  })
+})
