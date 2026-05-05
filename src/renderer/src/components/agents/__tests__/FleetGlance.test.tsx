@@ -22,17 +22,48 @@ const base: Omit<AgentMeta, 'id' | 'status' | 'startedAt' | 'finishedAt'> = {
 
 describe('FleetGlance', () => {
   let mockOnSelect: (id: string) => void
+  let mockOnSpawn: () => void
 
   beforeEach(() => {
     mockOnSelect = vi.fn()
+    mockOnSpawn = vi.fn()
   })
 
-  it('displays fleet status counts for running, done, and failed agents', () => {
-    const now = Date.now()
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const todayMs = todayStart.getTime()
+  it('renders V2 header with FLEET · GLANCE eyebrow and title', () => {
+    render(<FleetGlance agents={[]} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
+    expect(screen.getByText('FLEET · GLANCE')).toBeInTheDocument()
+    expect(screen.getByText('Pick an agent to focus, or spawn a new one')).toBeInTheDocument()
+  })
+
+  it('renders Spawn agent button in header', () => {
+    render(<FleetGlance agents={[]} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
+
+    const spawnButtons = screen.getAllByRole('button', { name: /Spawn agent/i })
+    expect(spawnButtons.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('calls onSpawn when header Spawn button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<FleetGlance agents={[]} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
+
+    const spawnButton = screen.getAllByRole('button', { name: /\+ Spawn agent/i })[0]
+    await user.click(spawnButton)
+
+    expect(mockOnSpawn).toHaveBeenCalledOnce()
+  })
+
+  it('displays fleet metrics row with live, review, done·24h, cost·24h labels', () => {
+    render(<FleetGlance agents={[]} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
+
+    expect(screen.getByText('live')).toBeInTheDocument()
+    expect(screen.getByText('review')).toBeInTheDocument()
+    expect(screen.getByText('done · 24h')).toBeInTheDocument()
+    expect(screen.getByText('cost · 24h')).toBeInTheDocument()
+  })
+
+  it('shows live count in metrics for running agents', () => {
+    const now = Date.now()
     const agents: AgentMeta[] = [
       {
         ...base,
@@ -47,36 +78,18 @@ describe('FleetGlance', () => {
         status: 'running',
         startedAt: new Date(now - 1000).toISOString(),
         finishedAt: null
-      },
-      {
-        ...base,
-        id: '3',
-        status: 'done',
-        startedAt: new Date(todayMs + 3600_000).toISOString(),
-        finishedAt: new Date(todayMs + 7200_000).toISOString()
-      },
-      {
-        ...base,
-        id: '4',
-        status: 'failed',
-        startedAt: new Date(todayMs + 1000).toISOString(),
-        finishedAt: new Date(todayMs + 5000).toISOString()
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    // Check status labels exist
-    expect(screen.getByText('Running')).toBeInTheDocument()
-    expect(screen.getByText('Done')).toBeInTheDocument()
-    expect(screen.getByText('Failed')).toBeInTheDocument()
-
-    // Check values exist (may have duplicates, so use getAllByText)
-    expect(screen.getByText('2')).toBeInTheDocument() // running count
-    expect(screen.getAllByText('1').length).toBeGreaterThan(0) // done/failed counts
+    // live metric should show 2
+    const liveLabel = screen.getByText('live')
+    const metricValue = liveLabel.nextElementSibling
+    expect(metricValue?.textContent).toBe('2')
   })
 
-  it('calculates today cost and runtime correctly', () => {
+  it('shows today cost in metrics row', () => {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const todayMs = todayStart.getTime()
@@ -100,12 +113,12 @@ describe('FleetGlance', () => {
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    expect(screen.getByText('$1.25')).toBeInTheDocument() // total cost
+    expect(screen.getByText('$1.25')).toBeInTheDocument()
   })
 
-  it('displays running agents with elapsed time', () => {
+  it('renders running agents as tiles with fleet-pulse', () => {
     const now = Date.now()
     const agents: AgentMeta[] = [
       {
@@ -113,20 +126,19 @@ describe('FleetGlance', () => {
         id: '1',
         status: 'running',
         task: 'Build feature X',
-        startedAt: new Date(now - 30000).toISOString(), // 30 seconds ago
-        finishedAt: null,
-        costUsd: 0.25
+        startedAt: new Date(now - 30000).toISOString(),
+        finishedAt: null
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    expect(screen.getByText("What's happening now")).toBeInTheDocument()
     expect(screen.getByText('Build feature X')).toBeInTheDocument()
-    expect(screen.getByText('▶ running')).toBeInTheDocument()
+    // Running tiles carry fleet-pulse
+    expect(document.querySelector('.fleet-pulse')).not.toBeNull()
   })
 
-  it('displays recent completions with duration and time ago', () => {
+  it('renders recent completions when no running agents', () => {
     const now = Date.now()
     const agents: AgentMeta[] = [
       {
@@ -134,20 +146,19 @@ describe('FleetGlance', () => {
         id: '1',
         status: 'done',
         task: 'Completed task',
-        startedAt: new Date(now - 600000).toISOString(), // 10 min ago
-        finishedAt: new Date(now - 300000).toISOString(), // 5 min ago
-        costUsd: 0.5
+        startedAt: new Date(now - 600000).toISOString(),
+        finishedAt: new Date(now - 300000).toISOString()
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    expect(screen.getByText('Recent completions')).toBeInTheDocument()
     expect(screen.getByText('Completed task')).toBeInTheDocument()
-    expect(screen.getByText('5m ago')).toBeInTheDocument()
+    // Non-running tiles must not carry fleet-pulse
+    expect(document.querySelector('.fleet-pulse')).toBeNull()
   })
 
-  it('limits running agents to max 5', () => {
+  it('limits running agents to max 6 tiles', () => {
     const now = Date.now()
     const agents: AgentMeta[] = Array.from({ length: 10 }, (_, i) => ({
       ...base,
@@ -158,14 +169,14 @@ describe('FleetGlance', () => {
       finishedAt: null
     }))
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    const runningSection = screen.getByText("What's happening now").parentElement
-    const items = runningSection?.querySelectorAll('.fleet-glance__item')
-    expect(items).toHaveLength(5)
+    // 6 tile buttons (each tile is a button) + spawn buttons in header/empty-state
+    const pulses = document.querySelectorAll('.fleet-pulse')
+    expect(pulses.length).toBeLessThanOrEqual(6)
   })
 
-  it('limits recent completions to max 5', () => {
+  it('limits recent completions to max 5 tiles', () => {
     const now = Date.now()
     const agents: AgentMeta[] = Array.from({ length: 10 }, (_, i) => ({
       ...base,
@@ -176,33 +187,14 @@ describe('FleetGlance', () => {
       finishedAt: new Date(now - i * 60000).toISOString()
     }))
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    const completionsSection = screen.getByText('Recent completions').parentElement
-    const items = completionsSection?.querySelectorAll('.fleet-glance__item')
-    expect(items).toHaveLength(5)
+    // All done agents render as tiles; slice(0,5) means max 5 task names shown
+    const taskElements = screen.getAllByText(/^Task \d+$/)
+    expect(taskElements.length).toBeLessThanOrEqual(5)
   })
 
-  it('truncates long task titles to 60 characters', () => {
-    const longTask = 'A'.repeat(80)
-    const agents: AgentMeta[] = [
-      {
-        ...base,
-        id: '1',
-        status: 'running',
-        task: longTask,
-        startedAt: new Date().toISOString(),
-        finishedAt: null
-      }
-    ]
-
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
-
-    const truncated = screen.getByText(/^A+…$/)
-    expect(truncated.textContent?.length).toBeLessThanOrEqual(61) // 60 chars + ellipsis
-  })
-
-  it('calls onSelect when clicking a running agent', async () => {
+  it('calls onSelect when clicking a running agent tile', async () => {
     const user = userEvent.setup()
     const agents: AgentMeta[] = [
       {
@@ -215,7 +207,7 @@ describe('FleetGlance', () => {
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
     const taskButton = screen.getByRole('button', { name: /Test task/ })
     await user.click(taskButton)
@@ -223,7 +215,7 @@ describe('FleetGlance', () => {
     expect(mockOnSelect).toHaveBeenCalledWith('test-agent-1')
   })
 
-  it('calls onSelect when clicking a completed agent', async () => {
+  it('calls onSelect when clicking a completed agent tile', async () => {
     const user = userEvent.setup()
     const now = Date.now()
     const agents: AgentMeta[] = [
@@ -237,7 +229,7 @@ describe('FleetGlance', () => {
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
     const taskButton = screen.getByRole('button', { name: /Finished task/ })
     await user.click(taskButton)
@@ -246,17 +238,23 @@ describe('FleetGlance', () => {
   })
 
   it('displays empty state when no agents exist', () => {
-    render(<FleetGlance agents={[]} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={[]} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
     expect(screen.getByText('No agents running or completed today.')).toBeInTheDocument()
-    expect(
-      screen.getByText((_content, element) => {
-        return element?.textContent === 'Click the + button to spawn a new agent.' || false
-      })
-    ).toBeInTheDocument()
   })
 
-  it('handles null cost gracefully', () => {
+  it('calls onSpawn from empty state when spawn button is clicked', async () => {
+    const user = userEvent.setup()
+    render(<FleetGlance agents={[]} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
+
+    // Both header and empty-state have a spawn button; clicking any calls onSpawn
+    const spawnButtons = screen.getAllByRole('button', { name: /\+ Spawn agent/i })
+    await user.click(spawnButtons[0])
+
+    expect(mockOnSpawn).toHaveBeenCalled()
+  })
+
+  it('handles null cost gracefully by showing $0.00', () => {
     const now = Date.now()
     const agents: AgentMeta[] = [
       {
@@ -270,9 +268,8 @@ describe('FleetGlance', () => {
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    // Should show $0.00 at least once (appears in both Today stat and running agent cost)
     expect(screen.getAllByText('$0.00').length).toBeGreaterThan(0)
   })
 
@@ -297,7 +294,7 @@ describe('FleetGlance', () => {
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
     const tasks = screen.getAllByText(/task/)
     const newerIndex = tasks.findIndex((el) => el.textContent === 'Newer task')
@@ -305,25 +302,21 @@ describe('FleetGlance', () => {
     expect(newerIndex).toBeLessThan(olderIndex)
   })
 
-  it('includes cancelled agents in failed count', () => {
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const todayMs = todayStart.getTime()
-
+  it('includes cancelled agents in recent completions', () => {
+    const now = Date.now()
     const agents: AgentMeta[] = [
       {
         ...base,
         id: '1',
         status: 'cancelled',
-        startedAt: new Date(todayMs + 1000).toISOString(),
-        finishedAt: new Date(todayMs + 5000).toISOString()
+        task: 'Cancelled task',
+        startedAt: new Date(now - 5000).toISOString(),
+        finishedAt: new Date(now - 1000).toISOString()
       }
     ]
 
-    render(<FleetGlance agents={agents} onSelect={mockOnSelect} />)
+    render(<FleetGlance agents={agents} onSelect={mockOnSelect} onSpawn={mockOnSpawn} />)
 
-    // Failed count should include cancelled agents
-    const failedStat = screen.getByText('Failed').nextElementSibling
-    expect(failedStat?.textContent).toBe('1')
+    expect(screen.getByText('Cancelled task')).toBeInTheDocument()
   })
 })

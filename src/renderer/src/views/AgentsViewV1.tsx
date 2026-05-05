@@ -206,7 +206,7 @@ export function AgentsViewV1(): React.JSX.Element {
                   overflow: 'auto'
                 }}
               >
-                <FleetGlance agents={agents} onSelect={handleSelectAgent} />
+                <FleetGlance agents={agents} onSelect={handleSelectAgent} onSpawn={openLaunchpad} />
               </div>
             )}
           </div>
