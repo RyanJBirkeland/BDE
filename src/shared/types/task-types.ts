@@ -171,6 +171,11 @@ export interface SprintTask {
    */
   last_rendered_prompt?: string | null
   verification_results?: VerificationResults | null
+  /**
+   * Quality score (0–100) written back by the auto-reviewer after a structured
+   * review completes. Null until a review has run for this task.
+   */
+  quality_score?: number | null
   updated_at: string
   created_at: string
 }

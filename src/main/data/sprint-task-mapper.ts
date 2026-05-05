@@ -206,6 +206,7 @@ export function mapRowToTask(row: Record<string, unknown>): SprintTask {
     rebased_at: toOptionalString(row.rebased_at),
     revision_feedback: parseRevisionFeedback(row.revision_feedback),
     verification_results: parseVerificationResults(row.verification_results),
+    quality_score: toOptionalInt(row.quality_score),
     review_diff_snapshot: toOptionalString(row.review_diff_snapshot),
     promoted_to_review_at: toOptionalString(row.promoted_to_review_at),
     orphan_recovery_count: toOptionalInt(row.orphan_recovery_count) ?? 0,
