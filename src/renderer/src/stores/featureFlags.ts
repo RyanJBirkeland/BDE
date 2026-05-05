@@ -16,16 +16,16 @@ const STORAGE_KEY = 'fleet:ff'
 function loadFlags(): Flags {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) return { v2Shell: false, v2Dashboard: false, v2Pipeline: false, v2Agents: false }
+    if (!stored) return { v2Shell: false, v2Dashboard: false, v2Pipeline: false, v2Agents: true }
     const parsed = JSON.parse(stored) as Partial<Flags>
     return {
       v2Shell: parsed.v2Shell ?? false,
       v2Dashboard: parsed.v2Dashboard ?? false,
       v2Pipeline: parsed.v2Pipeline ?? false,
-      v2Agents: parsed.v2Agents ?? false,
+      v2Agents: parsed.v2Agents ?? true,
     }
   } catch {
-    return { v2Shell: false, v2Dashboard: false, v2Pipeline: false, v2Agents: false }
+    return { v2Shell: false, v2Dashboard: false, v2Pipeline: false, v2Agents: true }
   }
 }
 
