@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type * as monacoEditor from 'monaco-editor'
-import { MarkerSeverity } from 'monaco-editor'
 import * as monacoApi from 'monaco-editor'
 import { SectionHead } from './SectionHead'
 import { CompactAgentRow } from './CompactAgentRow'
@@ -68,7 +67,7 @@ function basenameOf(filePath: string): string {
 
 function IDEMiniStat({ label, value }: { label: string; value: string }): React.JSX.Element {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-1)' }}>
       <span className="fleet-eyebrow">{label}</span>
       <span
         style={{
@@ -102,7 +101,6 @@ export function InsightSections({
   return (
     <>
       <ThisFileSection
-        activeFilePath={activeFilePath}
         editorRef={editorRef}
         open={insightSections.thisFile}
         onToggle={() => toggle('thisFile')}
@@ -135,14 +133,12 @@ export function InsightSections({
 // ---------------------------------------------------------------------------
 
 interface ThisFileSectionProps {
-  activeFilePath: string
   editorRef: React.RefObject<monacoEditor.editor.IStandaloneCodeEditor | null>
   open: boolean
   onToggle: () => void
 }
 
 function ThisFileSection({
-  activeFilePath: _activeFilePath,
   editorRef,
   open,
   onToggle
@@ -409,14 +405,14 @@ function ProblemsSection({
                 <span
                   style={{
                     color:
-                      marker.severity === MarkerSeverity.Error
+                      marker.severity === monacoApi.MarkerSeverity.Error
                         ? 'var(--st-failed)'
                         : 'var(--st-queued)',
                     fontSize: 'var(--t-sm)',
                     flexShrink: 0
                   }}
                 >
-                  {marker.severity === MarkerSeverity.Error ? '⊘' : '⚠'}
+                  {marker.severity === monacoApi.MarkerSeverity.Error ? '⊘' : '⚠'}
                 </span>
                 <span
                   style={{
