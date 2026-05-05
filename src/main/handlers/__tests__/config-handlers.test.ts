@@ -59,10 +59,10 @@ describe('Config handlers', () => {
     vi.clearAllMocks()
   })
 
-  it('registers all 15 settings + mcp channels', () => {
+  it('registers all 16 settings + mcp channels', () => {
     registerConfigHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(15)
+    expect(safeHandle).toHaveBeenCalledTimes(16)
     expect(safeHandle).toHaveBeenCalledWith('settings:get', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:hasSecret', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('settings:set', expect.any(Function))
