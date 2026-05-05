@@ -206,6 +206,24 @@ Related: Task Workbench, Sprint Pipeline, Task Dependencies.
 
 ## App Shell
 
+### Design System (V2)
+
+FLEET's V2 visual language: **calm, alive, spacious**. Tokens in `src/renderer/src/assets/tokens.css`.
+
+- **Token vocabulary**: `--bg` (page), `--surf-1/2/3` (elevation tiers), `--line/line-2` (hairlines), `--fg/fg-2/fg-3/fg-4` (text scale, AA+ contrast), `--st-running/queued/review/done/blocked/failed` (the only sanctioned colors — always pair with text/shape, not color alone), `--s-1…9` (4px grid spacing), `--r-sm/md/lg/xl` (radii), `--dur-fast/base/slow` (motion)
+- **Themes**: Applied via `data-theme` attribute (`quiet-graphite` default, `refined-pro-dark`, `warm-console`). Old `--fleet-*` names are aliased for backwards compat.
+- **Primitives**: `.fleet-eyebrow` (mono uppercase label), `.fleet-card`, `.fleet-dot--<status>`, `.fleet-pulse` (running-only animated ring — never use for idle/selected states)
+- **Rules**: No raw hex, no `rgba()` outside tokens, no raw `px` for layout spacing. Use `--s-*`. `--fg-3` on `--surf-1` is the hardest contrast pair — verify it when editing.
+
+### Shell (Header + Sidebar)
+
+The app shell is feature-flagged for V2 rollout. Default: V1. Enable V2 in DevTools: `localStorage.setItem('fleet:ff', JSON.stringify({v2Shell:true})); location.reload()`.
+
+- **Header**: `UnifiedHeader.tsx` dispatches to `UnifiedHeaderV1` (44px, B logo, NeonBadge) or `UnifiedHeaderV2` (38px, F mark + FLEET wordmark, CommandPill + HealthChip + TokenChip). Tab strip is always present — shows the focused panel's open views.
+- **Sidebar**: `Sidebar.tsx` dispatches to `SidebarV1` (52px icon-only) or `SidebarV2` (200px, labeled nav with 2px accent rail on active item, live agents block showing up to 3 active pipeline tasks with animated progress, footer with model + version). Collapses to 52px icon-only at <1024px via container query.
+- **V2 primitives** (all in `src/renderer/src/components/layout/`): `CommandPill` (opens command palette, collapses to icon at <1280px), `HealthChip` (pill with fleet-pulse when running, failure count in `--st-failed`), `TokenChip` (total token count), `LiveAgentRow` (sidebar agent row, click navigates to Sprint + selects task)
+- **Cleanup**: When V2 ships as default, delete `UnifiedHeaderV1`, `SidebarV1`, the dispatchers, and `featureFlags.ts`
+
 ### Dashboard
 
 Overview of task pipeline health, agent execution metrics, and recent activity. Default landing view (Cmd+1).
