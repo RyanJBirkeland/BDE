@@ -1,20 +1,44 @@
-/* Queue sidebar + batch actions */
+/* ReviewQueue — task switcher popover content */
 
 .cr-queue {
   width: 100%;
-  height: 100%;
-  border-right: 1px solid var(--fleet-border);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, var(--fleet-accent-surface) 0%, var(--fleet-surface-high) 100%);
+  background: var(--surf-1);
 }
 
+/* Section header */
 .cr-queue__header {
   display: flex;
   align-items: center;
-  gap: var(--fleet-space-2);
-  padding: var(--fleet-space-3);
-  border-bottom: 1px solid var(--fleet-border);
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-3) var(--s-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.cr-queue__header--approved {
+  border-top: 1px solid var(--line);
+}
+
+.cr-queue__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.cr-queue__title {
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--fg);
+  flex: 1;
+}
+
+.cr-queue__count {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
 }
 
 .cr-queue__select-all {
@@ -24,208 +48,164 @@
   flex-shrink: 0;
 }
 
-.cr-queue__select-all input[type='checkbox'] {
+/* V2 checkbox primitive */
+.cr-queue__select-all input[type='checkbox'],
+.cr-queue__checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
   cursor: pointer;
-  accent-color: var(--fleet-accent);
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
-.cr-queue__title {
-  font-size: var(--fleet-size-2xs);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--fleet-status-active);
-  font-weight: 600;
+/* Build PR ghost button */
+.cr-queue__build-pr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-left: auto;
+  height: 22px;
+  padding: 0 var(--s-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+  font-size: var(--t-xs);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
-.cr-queue__count {
-  font-size: var(--fleet-size-xs);
-  color: var(--fleet-text-dim);
+.cr-queue__build-pr-btn:hover {
+  background: var(--surf-2);
 }
 
+.cr-queue__build-pr-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Task list */
 .cr-queue__list {
-  flex: 1;
   overflow-y: auto;
 }
 
+/* Task row */
 .cr-queue__item {
+  position: relative;
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  gap: var(--fleet-space-2);
+  align-items: center;
+  gap: var(--s-2);
   width: 100%;
-  padding: 10px var(--fleet-space-3);
+  padding: var(--s-2) var(--s-3);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--fleet-border);
   cursor: pointer;
   text-align: left;
-  transition: background 150ms ease;
-}
-
-.cr-queue__checkbox {
-  flex-shrink: 0;
-  margin-top: 2px;
-  cursor: pointer;
-  accent-color: var(--fleet-accent);
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
 .cr-queue__item:hover {
-  background: var(--fleet-accent-surface);
+  background: var(--surf-1);
 }
 
 .cr-queue__item:focus-visible {
-  outline: 2px solid var(--fleet-status-review);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
-  background: var(--fleet-accent-surface);
 }
 
 .cr-queue__item--selected {
-  background: var(--fleet-accent-surface);
-  border-left: 3px solid var(--fleet-status-review);
+  background: var(--surf-2);
 }
 
-.cr-queue__item-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fleet-space-1);
+.cr-queue__item--selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+}
+
+.cr-queue__item-title {
+  font-size: var(--t-sm);
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   flex: 1;
   min-width: 0;
 }
 
-.cr-queue__item-title {
-  font-size: var(--fleet-size-sm);
-  color: var(--fleet-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .cr-queue__item-repo {
-  font-size: var(--fleet-size-2xs);
-  color: var(--fleet-text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
+  flex-shrink: 0;
 }
 
+.cr-queue__item-age {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-4);
+  flex-shrink: 0;
+}
+
+/* Empty states */
 .cr-queue__empty {
-  padding: var(--fleet-space-6) var(--fleet-space-3);
+  padding: var(--s-4) var(--s-3);
   text-align: center;
-  color: var(--fleet-text-dim);
-  font-size: var(--fleet-size-sm);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--fleet-space-3);
+  gap: var(--s-3);
 }
 
 .cr-queue__empty-message {
-  color: var(--fleet-text-dim);
-  font-size: var(--fleet-size-sm);
+  color: var(--fg-3);
+  font-size: var(--t-sm);
   margin: 0;
   line-height: 1.5;
 }
 
 .cr-queue__empty-cta {
-  padding: 6px var(--fleet-space-3);
-  background: var(--fleet-accent-surface);
-  border: 1px solid var(--fleet-accent-border);
-  border-radius: var(--fleet-radius-md);
-  color: var(--fleet-accent);
-  font-size: var(--fleet-size-sm);
-  font-family: var(--fleet-font-code);
-  font-weight: 600;
+  height: 26px;
+  padding: 0 var(--s-3);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  color: var(--fg-2);
+  font-size: var(--t-sm);
   cursor: pointer;
-  transition: background 150ms ease;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
 .cr-queue__empty-cta:hover {
-  background: var(--fleet-accent-border);
+  background: var(--surf-2);
 }
 
 .cr-queue__empty-cta:focus-visible {
-  outline: 2px solid var(--fleet-status-review);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .cr-queue__empty-cta {
-    transition: none;
-  }
-}
-
-/* Approved section header variant */
-.cr-queue__header--approved {
-  border-top: 1px solid var(--fleet-border);
-  margin-top: var(--fleet-space-1);
-}
-
-.cr-queue__title--approved {
-  font-size: var(--fleet-size-2xs);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--fleet-accent);
-  font-weight: 600;
-}
-
-/* "Build PR" button in the Approved section header */
-.cr-queue__build-pr-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  padding: 2px var(--fleet-space-2);
-  background: var(--fleet-accent-surface);
-  border: 1px solid var(--fleet-accent-border);
-  border-radius: var(--fleet-radius-sm);
-  color: var(--fleet-accent);
-  font-size: var(--fleet-size-2xs);
-  font-family: var(--fleet-font-code);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 150ms ease;
-}
-
-.cr-queue__build-pr-btn:hover {
-  background: var(--fleet-accent-border);
-}
-
-.cr-queue__build-pr-btn:focus-visible {
-  outline: 2px solid var(--fleet-status-review);
-  outline-offset: 2px;
-}
-
-/* Approved task row — no checkbox, slightly muted */
-.cr-queue__item--approved {
-  opacity: 0.85;
-}
-
-.cr-queue__item--approved.cr-queue__item--selected {
-  border-left: 3px solid var(--fleet-accent);
-}
-
-/* Compact empty state for the Approved section */
 .cr-queue__empty--compact {
-  padding: var(--fleet-space-3) var(--fleet-space-3);
+  padding: var(--s-3);
+  text-align: left;
 }
 
-/* Batch actions bar */
-.cr-batch {
-  display: flex;
-  align-items: center;
-  gap: var(--fleet-space-2);
-  padding: var(--fleet-space-2) var(--fleet-space-4);
-  border-top: 1px solid var(--fleet-accent-border);
-  background: var(--fleet-accent-surface);
-  flex-shrink: 0;
-}
-
-.cr-batch__count {
-  font-size: var(--fleet-size-sm);
-  font-weight: 600;
-  color: var(--fleet-accent);
-  font-family: var(--fleet-font-code);
+.cr-queue__empty--compact .cr-queue__empty-message {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--fg-4);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cr-queue__item {
+  .cr-queue__item,
+  .cr-queue__empty-cta,
+  .cr-queue__build-pr-btn {
     transition: none;
   }
 }

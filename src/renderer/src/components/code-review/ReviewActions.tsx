@@ -1,3 +1,4 @@
+// TODO(phase-4.5): ReviewActions uses ReviewActionsBar variant="full" which is pending V2 token migration.
 import './ReviewActions.css'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'

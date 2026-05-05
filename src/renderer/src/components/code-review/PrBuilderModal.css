@@ -1,112 +1,204 @@
+/* PrBuilderModal — V2 chrome for PR group composer */
+
 .pr-builder {
   display: flex;
-  gap: 1.5rem;
   height: 100%;
   overflow: hidden;
 }
 
+/* Pool rail */
 .pr-builder__pool {
   width: 280px;
   flex-shrink: 0;
+  padding: var(--s-3);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  overflow-y: auto;
-  border-right: 1px solid var(--fleet-border, #2a2a2a);
-  padding-right: 1.5rem;
+  gap: var(--s-3);
+  overflow: auto;
+  border-right: 1px solid var(--line);
 }
 
-.pr-builder__groups {
-  flex: 1;
+.pr-builder__pool-head {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  overflow-y: auto;
+  gap: 2px;
 }
 
-.pr-builder__panel-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--fleet-text-muted, #888);
+.pr-builder__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  color: var(--fg-3);
+}
+
+.pr-builder__section-title {
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--fg);
 }
 
 .pr-builder__count {
-  background: var(--fleet-accent, #3b82f6);
-  color: white;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  padding: 0 6px;
-  min-width: 20px;
-  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
 }
 
+/* Unassigned task list */
 .pr-builder__task-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--s-2);
 }
 
+/* Draggable task row */
 .pr-builder__pool-task {
-  padding: 0.5rem 0.75rem;
-  background: var(--fleet-surface, #1e1e1e);
-  border: 1px solid var(--fleet-border, #2a2a2a);
-  border-radius: 6px;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surf-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
   cursor: grab;
-  font-size: 0.875rem;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.pr-builder__pool-task:hover {
+  background: var(--surf-2);
 }
 
 .pr-builder__pool-task:active {
   cursor: grabbing;
+  opacity: 0.6;
 }
 
-.pr-builder__empty {
-  color: var(--fleet-text-muted, #888);
-  font-size: 0.875rem;
-}
-
-.pr-builder__groups-header {
+.pr-builder__pool-task-meta {
   display: flex;
   align-items: center;
+  gap: var(--s-2);
+  margin-bottom: 2px;
+}
+
+.pr-builder__task-id {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-4);
+}
+
+.pr-builder__task-repo {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
+}
+
+.pr-builder__task-title {
+  font-size: var(--t-sm);
+  color: var(--fg);
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+
+/* Pool empty state */
+.pr-builder__pool-empty {
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--fg-4);
+}
+
+/* Groups column */
+.pr-builder__groups {
+  flex: 1;
+  padding: var(--s-3);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.pr-builder__groups-head {
+  display: flex;
+  align-items: flex-end;
   justify-content: space-between;
+  gap: var(--s-3);
 }
 
 .pr-builder__new-group-btn {
-  font-size: 0.8125rem;
-  color: var(--fleet-accent, #3b82f6);
-  background: none;
-  border: 1px solid currentColor;
-  border-radius: 4px;
-  padding: 0.25rem 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--s-3);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+  border-radius: var(--r-md);
+  font-size: var(--t-sm);
+  font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
 }
 
+.pr-builder__new-group-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Groups empty state — also doubles as drop target */
 .pr-builder__empty-groups {
-  color: var(--fleet-text-muted, #888);
-  font-size: 0.875rem;
-}
-
-.pr-group-card {
-  border: 1px solid var(--fleet-border, #2a2a2a);
-  border-radius: 8px;
-  padding: 1rem;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  transition: border-color 0.15s;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+  text-align: center;
+}
+
+.pr-builder__empty-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+
+.pr-builder__empty-title {
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--fg-3);
+}
+
+.pr-builder__empty-body {
+  font-size: var(--t-sm);
+  color: var(--fg-4);
+}
+
+/* Group card */
+.pr-group-card {
+  padding: var(--s-3) var(--s-4);
+  background: var(--surf-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
 .pr-group-card--drag-over {
-  border-color: var(--fleet-accent, #3b82f6);
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
 }
 
+/* Card header */
 .pr-group-card__header {
   display: flex;
   align-items: center;
@@ -114,84 +206,162 @@
 }
 
 .pr-group-card__badge {
-  font-size: 0.75rem;
-  color: var(--fleet-text-muted, #888);
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-2);
+  background: var(--surf-2);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 1px var(--s-2);
 }
 
 .pr-group-card__delete-btn {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
   border: none;
+  border-radius: var(--r-md);
+  color: var(--fg-3);
   cursor: pointer;
-  color: var(--fleet-text-muted, #888);
-  font-size: 1.25rem;
-  line-height: 1;
-  padding: 0 0.25rem;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
+.pr-group-card__delete-btn:hover:not(:disabled) {
+  background: var(--surf-2);
+  color: var(--st-failed);
+}
+
+.pr-group-card__delete-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Task order list */
 .pr-group-card__tasks {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  min-height: 2rem;
+  gap: var(--s-1);
+  min-height: 28px;
 }
 
 .pr-group-card__task-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-family: monospace;
-  font-size: 0.8125rem;
-  padding: 0.25rem 0.5rem;
-  background: var(--fleet-surface, #1e1e1e);
-  border-radius: 4px;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  background: var(--surf-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
 }
 
-.pr-group-card__drop-hint {
-  color: var(--fleet-text-muted, #888);
-  font-size: 0.8125rem;
-  padding: 0.25rem 0;
+.pr-group-card__task-id {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-4);
+  flex: 1;
 }
 
 .pr-group-card__remove-task {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
   border: none;
+  border-radius: var(--r-sm);
+  color: var(--fg-3);
   cursor: pointer;
-  color: var(--fleet-text-muted, #888);
-  font-size: 0.875rem;
+  font-size: 12px;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
+.pr-group-card__remove-task:hover {
+  background: var(--surf-3);
+}
+
+.pr-group-card__drop-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-2) var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--fg-4);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-md);
+}
+
+/* Group fields */
 .pr-group-card__fields {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--s-2);
 }
 
 .pr-group-card__input,
 .pr-group-card__textarea {
   width: 100%;
-  background: var(--fleet-surface, #1e1e1e);
-  border: 1px solid var(--fleet-border, #2a2a2a);
-  border-radius: 4px;
-  color: var(--fleet-text, #e0e0e0);
-  font-size: 0.875rem;
-  padding: 0.375rem 0.625rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  color: var(--fg);
+  font-size: var(--t-md);
+  font-weight: 500;
+  padding: var(--s-2) var(--s-3);
   box-sizing: border-box;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
+.pr-group-card__input:focus,
+.pr-group-card__textarea:focus {
+  border-color: var(--accent);
+}
+
+.pr-group-card__input::placeholder,
+.pr-group-card__textarea::placeholder {
+  color: var(--fg-4);
+}
+
+/* Branch name input — mono font */
+.pr-group-card__input--branch {
+  font-family: var(--font-mono);
+  font-size: var(--t-sm);
+  font-weight: 400;
+  color: var(--fg-2);
+}
+
+.pr-group-card__textarea {
+  font-size: var(--t-sm);
+  font-weight: 400;
+  color: var(--fg-2);
+  line-height: 1.5;
+  min-height: 64px;
+  resize: vertical;
+}
+
+/* Build button */
 .pr-group-card__build-btn {
   width: 100%;
-  padding: 0.5rem;
-  background: var(--fleet-accent, #3b82f6);
-  color: white;
+  height: 32px;
+  background: var(--accent);
+  color: var(--accent-fg);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--r-md);
+  font-size: var(--t-md);
+  font-weight: 500;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
 }
 
 .pr-group-card__build-btn:disabled {
@@ -199,9 +369,36 @@
   cursor: not-allowed;
 }
 
+.pr-group-card__build-btn--open {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg-2);
+}
+
+.pr-group-card__build-btn .spin {
+  animation: fleet-spin 1s linear infinite;
+}
+
+/* PR link */
 .pr-group-card__pr-link {
   text-align: center;
-  font-size: 0.8125rem;
-  color: var(--fleet-accent, #3b82f6);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--accent);
   text-decoration: none;
+}
+
+.pr-group-card__pr-link:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pr-builder__pool-task,
+  .pr-group-card,
+  .pr-group-card__delete-btn,
+  .pr-group-card__remove-task,
+  .pr-group-card__input,
+  .pr-group-card__textarea {
+    transition: none;
+  }
 }

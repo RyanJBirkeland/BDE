@@ -44,17 +44,9 @@ export function ReviewQueue(): React.JSX.Element {
   const selectedTaskIdRef = useRef(selectedTaskId)
   const selectTaskRef = useRef(selectTask)
 
-  useEffect(() => {
-    allQueueTasksRef.current = allQueueTasks
-  }, [allQueueTasks])
-
-  useEffect(() => {
-    selectedTaskIdRef.current = selectedTaskId
-  }, [selectedTaskId])
-
-  useEffect(() => {
-    selectTaskRef.current = selectTask
-  }, [selectTask])
+  useEffect(() => { allQueueTasksRef.current = allQueueTasks }, [allQueueTasks])
+  useEffect(() => { selectedTaskIdRef.current = selectedTaskId }, [selectedTaskId])
+  useEffect(() => { selectTaskRef.current = selectTask }, [selectTask])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent): void => {
@@ -86,7 +78,7 @@ export function ReviewQueue(): React.JSX.Element {
 
   return (
     <div className="cr-queue">
-      {/* ── Pending Review section ────────────────────────────────────── */}
+      {/* ── Pending Review section ─────────────────────────── */}
       <section aria-label="Pending Review">
         <div className="cr-queue__header">
           <label className="cr-queue__select-all">
@@ -100,13 +92,14 @@ export function ReviewQueue(): React.JSX.Element {
               }}
             />
           </label>
-          <span className="cr-queue__title text-gradient-aurora">Pending Review</span>
+          <span className="cr-queue__eyebrow">Pending Review</span>
+          <span className="cr-queue__title">Pending</span>
           <span className="cr-queue__count">{reviewTasks.length}</span>
-          {/* Screen reader announcement for batch selection changes */}
           <span aria-live="polite" aria-atomic="true" className="sr-only">
             {selectedBatchIds.size > 0 ? `${selectedBatchIds.size} tasks selected` : ''}
           </span>
         </div>
+
         <motion.div
           className="cr-queue__list"
           variants={VARIANTS.staggerContainer}
@@ -137,11 +130,6 @@ export function ReviewQueue(): React.JSX.Element {
                 className="cr-queue__item-age"
                 data-testid={`cr-queue-age-${task.id}`}
                 title={new Date(task.completed_at ?? task.updated_at).toLocaleString()}
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: 10,
-                  color: 'var(--fleet-text-dim, rgba(255,255,255,0.5))'
-                }}
               >
                 {timeAgo(task.completed_at ?? task.updated_at)}
               </span>
@@ -163,10 +151,11 @@ export function ReviewQueue(): React.JSX.Element {
         </motion.div>
       </section>
 
-      {/* ── Approved section ──────────────────────────────────────────── */}
+      {/* ── Approved section ──────────────────────────────── */}
       <section aria-label="Approved">
         <div className="cr-queue__header cr-queue__header--approved">
-          <span className="cr-queue__title cr-queue__title--approved">Approved</span>
+          <span className="cr-queue__eyebrow">Approved</span>
+          <span className="cr-queue__title">Approved</span>
           <span className="cr-queue__count">{approvedTasks.length}</span>
           {approvedTasks.length > 0 && (
             <button
@@ -179,6 +168,7 @@ export function ReviewQueue(): React.JSX.Element {
             </button>
           )}
         </div>
+
         <motion.div
           className="cr-queue__list"
           variants={VARIANTS.staggerContainer}
@@ -188,7 +178,7 @@ export function ReviewQueue(): React.JSX.Element {
           {approvedTasks.map((task) => (
             <motion.button
               key={task.id}
-              className={`cr-queue__item cr-queue__item--approved${task.id === selectedTaskId ? ' cr-queue__item--selected' : ''}`}
+              className={`cr-queue__item${task.id === selectedTaskId ? ' cr-queue__item--selected' : ''}`}
               onClick={() => selectTask(task.id)}
               variants={VARIANTS.staggerChild}
               transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
@@ -199,11 +189,6 @@ export function ReviewQueue(): React.JSX.Element {
                 className="cr-queue__item-age"
                 data-testid={`cr-queue-age-${task.id}`}
                 title={new Date(task.completed_at ?? task.updated_at).toLocaleString()}
-                style={{
-                  marginLeft: 'auto',
-                  fontSize: 10,
-                  color: 'var(--fleet-text-dim, rgba(255,255,255,0.5))'
-                }}
               >
                 {timeAgo(task.completed_at ?? task.updated_at)}
               </span>

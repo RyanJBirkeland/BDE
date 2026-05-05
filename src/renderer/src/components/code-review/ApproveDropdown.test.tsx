@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { ApproveDropdown } from './ApproveDropdown'
 
+// V2: ApproveDropdown is a kebab button with aria-label "More review actions"
 describe('ApproveDropdown', () => {
   const actions = {
     onMergeLocally: vi.fn(),
@@ -13,7 +14,7 @@ describe('ApproveDropdown', () => {
 
   it('opens on click and shows all actions', () => {
     render(<ApproveDropdown {...actions} />)
-    fireEvent.click(screen.getByRole('button', { name: /approve/i }))
+    fireEvent.click(screen.getByRole('button', { name: /more review actions/i }))
     expect(screen.getByRole('menuitem', { name: /merge locally/i })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /squash/i })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /create pr/i })).toBeInTheDocument()
@@ -23,7 +24,7 @@ describe('ApproveDropdown', () => {
 
   it('invokes the selected action and closes on click', () => {
     render(<ApproveDropdown {...actions} />)
-    fireEvent.click(screen.getByRole('button', { name: /approve/i }))
+    fireEvent.click(screen.getByRole('button', { name: /more review actions/i }))
     fireEvent.click(screen.getByRole('menuitem', { name: /merge locally/i }))
     expect(actions.onMergeLocally).toHaveBeenCalled()
     expect(screen.queryByRole('menuitem', { name: /squash/i })).toBeNull()
@@ -31,14 +32,14 @@ describe('ApproveDropdown', () => {
 
   it('closes on Escape', () => {
     render(<ApproveDropdown {...actions} />)
-    fireEvent.click(screen.getByRole('button', { name: /approve/i }))
+    fireEvent.click(screen.getByRole('button', { name: /more review actions/i }))
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('menuitem', { name: /squash/i })).toBeNull()
   })
 
   it('focuses first menuitem on open and returns focus to trigger on Escape', () => {
     render(<ApproveDropdown {...actions} />)
-    const trigger = screen.getByRole('button', { name: /approve/i })
+    const trigger = screen.getByRole('button', { name: /more review actions/i })
     fireEvent.click(trigger)
     const firstItem = screen.getByRole('menuitem', { name: /merge locally/i })
     expect(document.activeElement).toBe(firstItem)
@@ -49,7 +50,7 @@ describe('ApproveDropdown', () => {
 
   it('navigates menu items with ArrowDown and ArrowUp', () => {
     render(<ApproveDropdown {...actions} />)
-    fireEvent.click(screen.getByRole('button', { name: /approve/i }))
+    fireEvent.click(screen.getByRole('button', { name: /more review actions/i }))
 
     const menu = screen.getByRole('menu')
     fireEvent.keyDown(menu, { key: 'ArrowDown' })

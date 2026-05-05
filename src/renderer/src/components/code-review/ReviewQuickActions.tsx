@@ -35,17 +35,16 @@ export function ReviewQuickActions({
   const tooltip = disabled ? disabledReason : undefined
   return (
     <div className="cr-quick-actions">
-      <div className="cr-quick-actions__label">Quick actions:</div>
       {ACTIONS.map(({ label, icon: Icon, prompt }) => (
         <button
           key={label}
           type="button"
-          className="cr-quick-actions__chip"
+          className="cr-quick-actions__btn"
           onClick={() => onAction(prompt)}
           disabled={disabled}
           title={tooltip}
         >
-          <Icon size={14} />
+          <Icon size={12} />
           <span>{label}</span>
         </button>
       ))}

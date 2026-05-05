@@ -75,33 +75,37 @@ describe('TopBar', () => {
     expect(screen.getByRole('button', { name: 'Toggle AI Review Partner' })).toBeInTheDocument()
   })
 
-  it('should render standalone Approve button and Approve dropdown trigger', () => {
+  it('should render standalone Approve button for review tasks', () => {
     render(<TopBar />)
-    // Both the standalone Approve button and the ApproveDropdown trigger are rendered
-    // for a task in 'review' status.
-    const approveBtns = screen.getAllByRole('button', { name: /approve/i })
-    expect(approveBtns.length).toBeGreaterThanOrEqual(2)
+    // V2: single accent CTA for Approve (aria-label contains "Approve task")
+    expect(
+      screen.getByRole('button', { name: /approve task/i })
+    ).toBeInTheDocument()
   })
 
-  it('should show action buttons inside Approve dropdown', async () => {
+  it('should render kebab dropdown for other actions', () => {
+    render(<TopBar />)
+    expect(
+      screen.getByRole('button', { name: /more review actions/i })
+    ).toBeInTheDocument()
+  })
+
+  it('should show action buttons inside the kebab dropdown', async () => {
     const user = userEvent.setup()
     render(<TopBar />)
-    // The ApproveDropdown trigger has aria-haspopup="menu" — target it specifically.
-    const dropdownTrigger = screen.getByRole('button', { name: /^approve$/i })
+    const dropdownTrigger = screen.getByRole('button', { name: /more review actions/i })
     await user.click(dropdownTrigger)
-    // All consolidated actions appear as menuitems
     expect(screen.getByRole('menuitem', { name: /Merge Locally/i })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /Create PR/i })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /Request Revision/i })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /Discard/i })).toBeInTheDocument()
   })
 
-  it('should show Ship It as Squash & Merge inside Approve dropdown', async () => {
+  it('should show Squash & Merge inside the kebab dropdown', async () => {
     const user = userEvent.setup()
     render(<TopBar />)
-    const dropdownTrigger = screen.getByRole('button', { name: /^approve$/i })
+    const dropdownTrigger = screen.getByRole('button', { name: /more review actions/i })
     await user.click(dropdownTrigger)
-    // Ship It functionality maps to Squash & Merge in the consolidated dropdown
     expect(screen.getByRole('menuitem', { name: /Squash & Merge/i })).toBeInTheDocument()
   })
 
@@ -144,7 +148,6 @@ describe('TopBar', () => {
   it('should not show BranchBar when review result has no branch yet', () => {
     useReviewPartnerStore.setState({ reviewByTask: {} })
     render(<TopBar />)
-    // No branch text — BranchBar is not rendered
     expect(screen.queryByText(/feat\//)).not.toBeInTheDocument()
   })
 
@@ -167,24 +170,18 @@ describe('TopBar', () => {
   it('should show batch mode when tasks are selected', () => {
     useSprintTasks.setState({
       tasks: [
-        {
-          ...TASK_1,
-          id: 'task-1',
-          title: 'Task 1'
-        } as SprintTask,
-        {
-          ...TASK_1,
-          id: 'task-2',
-          title: 'Task 2'
-        } as SprintTask
+        { ...TASK_1, id: 'task-1', title: 'Task 1' } as SprintTask,
+        { ...TASK_1, id: 'task-2', title: 'Task 2' } as SprintTask
       ]
     })
     const batchIds = new Set(['task-1', 'task-2'])
     useCodeReviewStore.setState({ selectedBatchIds: batchIds })
     render(<TopBar />)
-    expect(screen.getByText('2 tasks selected')).toBeInTheDocument()
-    expect(screen.getByText('Merge All')).toBeInTheDocument()
-    expect(screen.getByText('Ship All')).toBeInTheDocument()
+    // V2 batch toolbar — count chip uses "{n} selected"
+    expect(screen.getByText('2 selected')).toBeInTheDocument()
+    // V2 button labels use lowercase
+    expect(screen.getByText('Merge all')).toBeInTheDocument()
+    expect(screen.getByText('Ship all')).toBeInTheDocument()
     expect(screen.getByText('Create PRs')).toBeInTheDocument()
     expect(screen.getByText('Clear')).toBeInTheDocument()
   })

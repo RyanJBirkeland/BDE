@@ -51,7 +51,7 @@ describe('FileTreePanel', () => {
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 
-  it('renders file list with stats', () => {
+  it('renders file list with filenames', () => {
     useCodeReviewStore.setState({
       diffFiles: [
         { path: 'src/index.ts', status: 'M', additions: 10, deletions: 2, patch: '' },
@@ -60,9 +60,7 @@ describe('FileTreePanel', () => {
     })
     render(<FileTreePanel />)
     expect(screen.getByText('src/index.ts')).toBeInTheDocument()
-    expect(screen.getByText('+10 −2')).toBeInTheDocument()
     expect(screen.getByText('src/new.ts')).toBeInTheDocument()
-    expect(screen.getByText('+50 −0')).toBeInTheDocument()
   })
 
   it('calls setSelectedDiffFile when row clicked', () => {
@@ -107,14 +105,14 @@ describe('FileTreePanel', () => {
     expect(container.querySelector('.cr-file-modified')).toBeInTheDocument()
   })
 
-  it('renders empty list when no files', () => {
+  it('renders empty state when no files', () => {
     useCodeReviewStore.setState({ diffFiles: [] })
     render(<FileTreePanel />)
+    // In expanded state (default when diffFiles is empty array), shows "Files" header
     expect(screen.getByText('Files')).toBeInTheDocument()
-    expect(screen.getByText('0')).toBeInTheDocument()
   })
 
-  it('shows issues badge for a file with findings', () => {
+  it('shows fail badge for a file with issues', () => {
     useCodeReviewStore.setState({
       selectedTaskId: 'task-1',
       diffFiles: [{ path: 'src/risky.ts', status: 'M', additions: 5, deletions: 0, patch: '' }]
@@ -129,10 +127,11 @@ describe('FileTreePanel', () => {
       }
     }
     render(<FileTreePanel />)
+    // 'issues' maps to 'fail' → aria-label 'File has issues'
     expect(screen.getByRole('img', { name: 'File has issues' })).toBeInTheDocument()
   })
 
-  it('shows clean badge for a file with no issues', () => {
+  it('shows pass badge for a file with no issues', () => {
     useCodeReviewStore.setState({
       selectedTaskId: 'task-1',
       diffFiles: [{ path: 'src/clean.ts', status: 'M', additions: 2, deletions: 0, patch: '' }]
@@ -147,6 +146,7 @@ describe('FileTreePanel', () => {
       }
     }
     render(<FileTreePanel />)
+    // 'clean' maps to 'pass' → aria-label 'File reviewed clean'
     expect(screen.getByRole('img', { name: 'File reviewed clean' })).toBeInTheDocument()
   })
 

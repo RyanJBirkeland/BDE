@@ -9,6 +9,12 @@ import { AIReviewedBadge } from './AIReviewedBadge'
 import { toast } from '../../stores/toasts'
 import type { DiffMode } from '../../stores/codeReview'
 
+const TABS: Array<{ key: DiffMode; label: string }> = [
+  { key: 'diff', label: 'Changes' },
+  { key: 'commits', label: 'Commits' },
+  { key: 'verification', label: 'Verification' }
+]
+
 export function DiffViewerPanel(): React.JSX.Element {
   const diffMode = useCodeReviewStore((s) => s.diffMode)
   const setDiffMode = useCodeReviewStore((s) => s.setDiffMode)
@@ -27,12 +33,6 @@ export function DiffViewerPanel(): React.JSX.Element {
     toast.success('Path copied to clipboard')
   }
 
-  const modes: Array<{ key: DiffMode; label: string }> = [
-    { key: 'diff', label: 'Diff' },
-    { key: 'commits', label: 'Commits' },
-    { key: 'verification', label: 'Verification' }
-  ]
-
   return (
     <div className="cr-diffviewer">
       <div className="cr-diffviewer__header">
@@ -44,6 +44,7 @@ export function DiffViewerPanel(): React.JSX.Element {
                 className="cr-diffviewer__copy-btn"
                 onClick={handleCopyPath}
                 title="Copy path"
+                aria-label="Copy file path"
               >
                 <Copy size={12} />
               </button>
@@ -55,18 +56,23 @@ export function DiffViewerPanel(): React.JSX.Element {
             </span>
           )}
         </div>
-        <div className="cr-diffviewer__mode-control">
-          {modes.map((mode) => (
+
+        {/* V2 tab strip — 2px accent bottom border on active tab */}
+        <nav className="cr-diffviewer__tabs" role="tablist" aria-label="Review sections">
+          {TABS.map((tab) => (
             <button
-              key={mode.key}
-              className={`cr-diffviewer__mode-pill ${diffMode === mode.key ? 'cr-diffviewer__mode-pill--active' : ''}`}
-              onClick={() => setDiffMode(mode.key)}
+              key={tab.key}
+              role="tab"
+              aria-selected={diffMode === tab.key}
+              className={`cr-diffviewer__tab${diffMode === tab.key ? ' cr-diffviewer__tab--active' : ''}`}
+              onClick={() => setDiffMode(tab.key)}
             >
-              {mode.label}
+              {tab.label}
             </button>
           ))}
-        </div>
+        </nav>
       </div>
+
       <div className="cr-diffviewer__body">
         {diffMode === 'diff' && <ChangesTab />}
         {diffMode === 'commits' && <CommitsTab />}

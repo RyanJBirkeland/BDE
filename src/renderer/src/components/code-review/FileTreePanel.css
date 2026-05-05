@@ -1,120 +1,156 @@
-/* FileTreePanel — extracted file list sidebar for Code Review */
+/* FileTreePanel — collapsed 44px rail + expanded 280px panel */
 
 .cr-filetree {
-  width: 256px;
+  width: 44px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--fleet-border);
-  background: var(--fleet-surface);
-  position: relative;
+  overflow: auto;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  transition: width var(--dur-base) var(--ease-out);
 }
 
+.cr-filetree--expanded {
+  width: 280px;
+}
+
+/* Collapsed rail */
 .cr-filetree__expand-btn {
-  position: absolute;
-  top: var(--fleet-space-2);
-  left: var(--fleet-space-2);
-  width: 32px;
-  height: 32px;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--fleet-accent);
-  border: none;
-  border-radius: var(--fleet-radius-md);
-  color: var(--fleet-btn-primary-text);
+  width: 32px;
+  height: 32px;
+  margin: var(--s-2) auto;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--fg-3);
   cursor: pointer;
-  z-index: 10;
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 
 .cr-filetree__expand-btn:hover {
-  background: var(--fleet-accent-hover);
+  background: var(--surf-1);
+  border-color: var(--line);
 }
 
-.cr-filetree__collapse-btn {
-  background: transparent;
-  border: none;
-  color: var(--fleet-text-muted);
-  font-size: var(--fleet-size-xxl);
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 var(--fleet-space-2);
-  transition: color 120ms ease;
+.cr-filetree__expand-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-.cr-filetree__collapse-btn:hover {
-  color: var(--fleet-text);
+/* Collapsed dot preview stack */
+.cr-filetree__dot-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--s-2) var(--s-2);
 }
 
-@media (max-width: 860px) {
-  .cr-filetree:not(.cr-filetree--expanded) .cr-filetree__expand-btn {
-    display: flex;
-  }
-
-  .cr-filetree:not(.cr-filetree--expanded) .cr-filetree__header,
-  .cr-filetree:not(.cr-filetree--expanded) .cr-filetree__list {
-    display: none;
-  }
+.cr-filetree__dot-overflow {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--fg-4);
 }
 
+/* Expanded panel header */
 .cr-filetree__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--fleet-space-3) var(--fleet-space-4);
-  border-bottom: 1px solid var(--fleet-border);
-  background: var(--fleet-surface-raised);
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-3) var(--s-2);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.cr-filetree__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-3);
 }
 
 .cr-filetree__label {
-  font-size: var(--fleet-size-sm);
-  font-weight: 600;
-  color: var(--fleet-text);
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--fg);
+  flex: 1;
 }
 
 .cr-filetree__count {
-  font-size: var(--fleet-size-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--fleet-text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
 }
 
+.cr-filetree__collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--fg-3);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.cr-filetree__collapse-btn:hover {
+  background: var(--surf-1);
+  color: var(--fg);
+}
+
+/* File list */
 .cr-filetree__list {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
 }
 
+/* File row */
 .cr-filetree__row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--fleet-space-2);
+  gap: var(--s-2);
   width: 100%;
-  height: 28px;
-  padding: 0 var(--fleet-space-4);
+  padding: var(--s-2) var(--s-3);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--fleet-border);
-  color: var(--fleet-text-muted);
-  font-size: var(--fleet-size-sm);
-  font-family: var(--fleet-font-code);
   cursor: pointer;
   text-align: left;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
 .cr-filetree__row:hover {
-  background: var(--fleet-hover);
+  background: var(--surf-1);
 }
 
 .cr-filetree__row:focus-visible {
-  outline: 2px solid var(--fleet-accent);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
 .cr-filetree__row--selected {
-  background: var(--fleet-selected);
-  border-left: 2px solid var(--fleet-accent);
-  padding-left: calc(var(--fleet-space-4) - 2px);
-  color: var(--fleet-text);
+  background: var(--surf-2);
+}
+
+.cr-filetree__row--selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
 }
 
 .cr-filetree__filename {
@@ -122,34 +158,70 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--fleet-size-sm);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--fg-2);
   min-width: 0;
 }
 
 .cr-filetree__stats {
-  font-size: var(--fleet-size-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--fleet-text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
   flex-shrink: 0;
 }
 
-.cr-file-added {
-  color: var(--fleet-accent);
+/* File status icons */
+.cr-file-added { color: var(--st-done); flex-shrink: 0; }
+.cr-file-deleted { color: var(--st-failed); flex-shrink: 0; }
+.cr-file-modified { color: var(--fg-3); flex-shrink: 0; }
+
+/* Loading skeleton rows */
+.cr-filetree__row--skeleton {
+  gap: var(--s-2);
+  cursor: default;
+}
+
+.cr-filetree__skeleton-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-sm);
+  background: var(--surf-2);
   flex-shrink: 0;
 }
 
-.cr-file-deleted {
-  color: var(--fleet-danger);
+.cr-filetree__skeleton-filename {
+  flex: 1;
+  height: 10px;
+  border-radius: var(--r-sm);
+  background: var(--surf-2);
+}
+
+.cr-filetree__skeleton-badge {
+  width: 24px;
+  height: 10px;
+  border-radius: var(--r-sm);
+  background: var(--surf-2);
   flex-shrink: 0;
 }
 
-.cr-file-modified {
-  color: var(--fleet-warning);
+.cr-filetree__skeleton-stats {
+  width: 40px;
+  height: 10px;
+  border-radius: var(--r-sm);
+  background: var(--surf-2);
   flex-shrink: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cr-filetree__row {
+  .cr-filetree__row,
+  .cr-filetree__expand-btn,
+  .cr-filetree__collapse-btn {
     transition: none;
+  }
+  .cr-filetree__skeleton-icon,
+  .cr-filetree__skeleton-filename,
+  .cr-filetree__skeleton-badge,
+  .cr-filetree__skeleton-stats {
+    animation: none;
   }
 }

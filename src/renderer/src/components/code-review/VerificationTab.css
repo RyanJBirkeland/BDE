@@ -1,99 +1,143 @@
-/* ── VerificationTab: FLEET verification gate + agent test run display ── */
+/* VerificationTab — FLEET verification gate + agent test run display */
 
 .cr-verification {
-  padding: var(--fleet-space-3);
+  padding: var(--s-3) var(--s-4);
   display: flex;
   flex-direction: column;
-  gap: var(--fleet-space-4);
+  gap: var(--s-4);
 }
 
 .cr-verification__section {
   display: flex;
   flex-direction: column;
-  gap: var(--fleet-space-2);
+  gap: var(--s-2);
 }
 
 .cr-verification__section-heading {
-  font-size: var(--fleet-size-xs);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
   font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--fleet-text-muted);
+  color: var(--fg-3);
   margin: 0;
 }
 
 .cr-verification__empty {
-  font-size: var(--fleet-size-sm);
-  color: var(--fleet-text-dim);
+  font-size: var(--t-sm);
+  color: var(--fg-4);
   margin: 0;
 }
 
-/* ── Verification results table ── */
-
+/* Results table */
 .cr-verification__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fleet-size-sm);
+  font-size: var(--t-sm);
 }
 
-.cr-verification__row {
-  cursor: default;
-}
+.cr-verification__row { cursor: default; }
 
-.cr-verification__row--pass .cr-verification__status {
-  color: var(--fleet-success);
-}
-
-.cr-verification__row--fail .cr-verification__status {
-  color: var(--fleet-danger);
-}
-
-.cr-verification__row--skipped .cr-verification__status {
-  color: var(--fleet-text-dim);
-}
+.cr-verification__row--pass .cr-verification__status { color: var(--st-done); }
+.cr-verification__row--fail .cr-verification__status { color: var(--st-failed); }
+.cr-verification__row--skipped .cr-verification__status { color: var(--fg-4); }
 
 .cr-verification__label {
-  padding: var(--fleet-space-1) var(--fleet-space-2) var(--fleet-space-1) 0;
-  color: var(--fleet-text);
+  padding: var(--s-1) var(--s-2) var(--s-1) 0;
+  color: var(--fg);
   width: 50%;
 }
 
 .cr-verification__status {
-  padding: var(--fleet-space-1) var(--fleet-space-2);
+  padding: var(--s-1) var(--s-2);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .cr-verification__duration {
-  padding: var(--fleet-space-1) 0 var(--fleet-space-1) var(--fleet-space-2);
-  color: var(--fleet-text-dim);
+  padding: var(--s-1) 0 var(--s-1) var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-4);
   text-align: right;
   white-space: nowrap;
 }
 
-/* ── Collapsible output block ── */
-
+/* Output block */
 .cr-verification__output-row td {
-  padding: 0 0 var(--fleet-space-2) 0;
+  padding: 0 0 var(--s-2) 0;
 }
 
 .cr-verification__output {
   margin: 0;
-  padding: var(--fleet-space-3);
-  background: var(--fleet-surface-raised);
-  border: 1px solid var(--fleet-border);
-  border-radius: var(--fleet-radius-md);
-  font-size: var(--fleet-size-sm);
-  font-family: var(--fleet-font-code);
+  padding: var(--s-3);
+  background: var(--surf-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: var(--t-xs);
+  font-family: var(--font-mono);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 300px;
   overflow: auto;
-  color: var(--fleet-text);
+  color: var(--fg-2);
 }
 
 .cr-verification__truncated {
-  font-size: var(--fleet-size-2xs);
-  color: var(--fleet-text-dim);
-  margin: var(--fleet-space-1) 0 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-4);
+  margin: var(--s-1) 0 0 0;
+}
+
+/* Agent test run */
+.cr-tests {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.cr-tests__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.cr-tests__command {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--fg-3);
+}
+
+.cr-tests__status {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--st-done);
+}
+
+.cr-tests__status--failed {
+  color: var(--st-failed);
+}
+
+.cr-tests__hint {
+  font-size: var(--t-xs);
+  color: var(--fg-4);
+  margin: 0;
+}
+
+.cr-tests__output {
+  margin: 0;
+  padding: var(--s-3);
+  background: var(--surf-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: var(--t-xs);
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 400px;
+  overflow: auto;
+  color: var(--fg-2);
 }

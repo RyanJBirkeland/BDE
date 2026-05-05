@@ -1,4 +1,4 @@
-import { Send, StopCircle } from 'lucide-react'
+import { ArrowUp, StopCircle } from 'lucide-react'
 import { useState, type JSX, type KeyboardEvent } from 'react'
 
 interface Props {
@@ -64,7 +64,7 @@ export function ReviewChatInput({
           aria-label="Send message"
           title={tooltip ?? (!value.trim() ? 'Type a message to send' : undefined)}
         >
-          <Send size={14} />
+          <ArrowUp size={14} />
         </button>
       )}
     </div>

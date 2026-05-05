@@ -11,20 +11,22 @@ const defaultProps = {
   onDiscard: vi.fn()
 }
 
+// V2: ApproveDropdown is now a kebab (MoreHorizontal) button with
+// aria-label "More review actions" — not labeled "Approve".
 describe('ApproveDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders trigger button with Approve label by default', () => {
+  it('renders trigger button with More review actions label', () => {
     render(<ApproveDropdown {...defaultProps} />)
-    expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /more review actions/i })).toBeInTheDocument()
   })
 
   it('opens dropdown menu when trigger is clicked', async () => {
     const user = userEvent.setup()
     render(<ApproveDropdown {...defaultProps} />)
-    await user.click(screen.getByRole('button', { name: /approve/i }))
+    await user.click(screen.getByRole('button', { name: /more review actions/i }))
     expect(screen.getByRole('menu')).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /merge locally/i })).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /squash & merge/i })).toBeInTheDocument()
@@ -36,7 +38,7 @@ describe('ApproveDropdown', () => {
   it('closes dropdown and calls callback when a menu item is clicked', async () => {
     const user = userEvent.setup()
     render(<ApproveDropdown {...defaultProps} />)
-    await user.click(screen.getByRole('button', { name: /approve/i }))
+    await user.click(screen.getByRole('button', { name: /more review actions/i }))
     await user.click(screen.getByRole('menuitem', { name: /squash & merge/i }))
     expect(defaultProps.onSquashMerge).toHaveBeenCalledOnce()
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
@@ -44,37 +46,36 @@ describe('ApproveDropdown', () => {
 
   it('disables trigger button when disabled prop is true', () => {
     render(<ApproveDropdown {...defaultProps} disabled />)
-    expect(screen.getByRole('button', { name: /approve/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /more review actions/i })).toBeDisabled()
   })
 
   it('does not open dropdown when disabled', async () => {
     const user = userEvent.setup()
     render(<ApproveDropdown {...defaultProps} disabled />)
-    await user.click(screen.getByRole('button', { name: /approve/i }))
+    await user.click(screen.getByRole('button', { name: /more review actions/i }))
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
-  // Loading state tests — these will FAIL until loading prop is implemented
   it('disables trigger button when loading', () => {
     render(<ApproveDropdown {...defaultProps} loading />)
-    expect(screen.getByRole('button', { name: /approve/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /more review actions/i })).toBeDisabled()
   })
 
   it('marks trigger as busy when loading', () => {
     render(<ApproveDropdown {...defaultProps} loading />)
-    expect(screen.getByRole('button', { name: /approve/i })).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByRole('button', { name: /more review actions/i })).toHaveAttribute('aria-busy', 'true')
   })
 
   it('does not open dropdown when loading', async () => {
     const user = userEvent.setup()
     render(<ApproveDropdown {...defaultProps} loading />)
-    await user.click(screen.getByRole('button', { name: /approve/i }))
+    await user.click(screen.getByRole('button', { name: /more review actions/i }))
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
   it('does not show aria-busy when not loading', () => {
     render(<ApproveDropdown {...defaultProps} />)
-    const trigger = screen.getByRole('button', { name: /approve/i })
+    const trigger = screen.getByRole('button', { name: /more review actions/i })
     expect(trigger).not.toHaveAttribute('aria-busy', 'true')
   })
 })

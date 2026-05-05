@@ -174,7 +174,7 @@ export function TopBar(): React.JSX.Element {
             <div className="cr-topbar__left">
               <div className="cr-topbar__task-switcher" ref={taskSwitcherRef}>
                 <button
-                  className="cr-topbar__task-btn"
+                  className={`cr-topbar__task-btn${taskSwitcherOpen ? ' cr-topbar__task-btn--open' : ''}`}
                   onClick={() => setTaskSwitcherOpen(!taskSwitcherOpen)}
                 >
                   <span className="cr-topbar__task-title">{task.title}</span>
@@ -202,7 +202,7 @@ export function TopBar(): React.JSX.Element {
                     {/* View rendered agent prompt */}
                     <button
                       type="button"
-                      className="cr-topbar__prompt-btn"
+                      className="cr-topbar__icon-btn"
                       aria-label="View rendered agent prompt"
                       title="View rendered agent prompt"
                       onClick={openPromptModal}
@@ -210,7 +210,7 @@ export function TopBar(): React.JSX.Element {
                       <FileText size={14} />
                     </button>
 
-                    {/* AI Partner toggle */}
+                    {/* AI Partner toggle — no pulse, just a labeled segmented button */}
                     <button
                       type="button"
                       className={`cr-topbar__ai-toggle${panelOpen ? ' cr-topbar__ai-toggle--on' : ''}`}
@@ -218,35 +218,35 @@ export function TopBar(): React.JSX.Element {
                       aria-label="Toggle AI Review Partner"
                       onClick={togglePanel}
                     >
-                      <Sparkles size={14} />
+                      <Sparkles size={12} />
                       <span>AI Partner</span>
                     </button>
 
-                    {/* Approve button — transitions task to 'approved' for batched PR building */}
+                    {/* Approve — primary CTA only when task.status === 'review' */}
                     {task.status === 'review' && (
                       <button
                         type="button"
-                        className="cr-topbar__approve-btn"
+                        className="cr-topbar__cta-btn"
                         onClick={approve}
                         disabled={approveInFlight || !!actions.actionInFlight}
                         aria-busy={approveInFlight}
                         aria-label={approveInFlight ? 'Approving task…' : 'Approve task — mark as reviewed'}
                       >
-                        {approveInFlight ? <Loader2 size={14} className="spin" /> : null}
+                        {approveInFlight ? <Loader2 size={12} className="spin" /> : null}
                         {approveInFlight ? 'Approving…' : 'Approve'}
                       </button>
                     )}
 
-                    {/* Build PR button — opens PR builder for approved tasks */}
+                    {/* Build PR — primary CTA only when task.status === 'approved' */}
                     {task.status === 'approved' && (
                       <button
                         type="button"
-                        className="cr-topbar__build-pr-btn"
+                        className="cr-topbar__cta-btn"
                         onClick={() => setShowPrBuilder(true)}
                         disabled={!!actions.actionInFlight}
                         aria-label="Build PR from approved tasks"
                       >
-                        <GitPullRequest size={14} />
+                        <GitPullRequest size={12} />
                         Build PR
                       </button>
                     )}
@@ -282,20 +282,21 @@ export function TopBar(): React.JSX.Element {
         {promptText != null ? (
           <pre
             style={{
-              fontFamily: 'monospace',
-              fontSize: '0.8rem',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'var(--t-xs)',
               whiteSpace: 'pre-wrap',
               wordBreak: 'break-word',
               overflowY: 'auto',
               maxHeight: '60vh',
               margin: 0,
-              padding: '1rem'
+              padding: 'var(--s-4)',
+              color: 'var(--fg-2)'
             }}
           >
             {promptText}
           </pre>
         ) : (
-          <p style={{ padding: '1rem', color: 'var(--color-text-muted)' }}>
+          <p style={{ padding: 'var(--s-4)', color: 'var(--fg-3)', fontSize: 'var(--t-sm)' }}>
             No prompt recorded for this run.
           </p>
         )}

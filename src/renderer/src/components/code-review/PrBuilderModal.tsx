@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { Loader2, X } from 'lucide-react'
 import { Modal } from '../ui/Modal'
 import { usePrGroups } from '../../hooks/usePrGroups'
 import type { PrGroup, SprintTask } from '../../../../shared/types/task-types'
@@ -59,12 +60,15 @@ export function PrBuilderModal({ open, repo, onClose }: PrBuilderModalProps): Re
 function UnassignedTaskPool({ tasks }: { tasks: SprintTask[] }): React.JSX.Element {
   return (
     <aside className="pr-builder__pool">
-      <h3 className="pr-builder__panel-title">
-        Unassigned Tasks
-        <span className="pr-builder__count">{tasks.length}</span>
-      </h3>
+      <div className="pr-builder__pool-head">
+        <span className="pr-builder__eyebrow">Pool</span>
+        <span className="pr-builder__section-title">
+          Unassigned tasks{' '}
+          <span className="pr-builder__count">{tasks.length}</span>
+        </span>
+      </div>
       {tasks.length === 0 ? (
-        <p className="pr-builder__empty">No unassigned approved tasks</p>
+        <div className="pr-builder__pool-empty">No unassigned approved tasks</div>
       ) : (
         <ul className="pr-builder__task-list">
           {tasks.map((task) => (
@@ -85,6 +89,10 @@ function UnassignedTaskRow({ task }: { task: SprintTask }): React.JSX.Element {
         e.dataTransfer.setData('text/plain', task.id)
       }}
     >
+      <div className="pr-builder__pool-task-meta">
+        <span className="pr-builder__task-id">{task.id.slice(0, 8)}</span>
+        <span className="pr-builder__task-repo">{task.repo}</span>
+      </div>
       <span className="pr-builder__task-title">{task.title}</span>
     </li>
   )
@@ -118,16 +126,21 @@ function PrGroupList({
 }: PrGroupListProps): React.JSX.Element {
   return (
     <main className="pr-builder__groups">
-      <div className="pr-builder__groups-header">
-        <h3 className="pr-builder__panel-title">PR Groups</h3>
+      <div className="pr-builder__groups-head">
+        <div className="pr-builder__pool-head">
+          <span className="pr-builder__eyebrow">Groups</span>
+          <span className="pr-builder__section-title">PR groups</span>
+        </div>
         <button className="pr-builder__new-group-btn" onClick={onNewGroup}>
-          + New Group
+          + New group
         </button>
       </div>
 
       {groups.length === 0 ? (
         <div className="pr-builder__empty-groups">
-          No PR groups yet. Create a group or drag a task here.
+          <span className="pr-builder__empty-eyebrow">Empty</span>
+          <span className="pr-builder__empty-title">No PR groups yet</span>
+          <span className="pr-builder__empty-body">Create a group or drag a task here.</span>
         </div>
       ) : (
         groups.map((group) => (
@@ -174,15 +187,9 @@ function PrGroupCard({
   const [dragOver, setDragOver] = useState(false)
 
   const canBuild = group.task_order.length > 0 && group.status === 'composing' && !building
-
-  const taskCountLabel =
-    group.task_order.length === 1 ? '1 task' : `${group.task_order.length} tasks`
-
-  const buildButtonLabel = building
-    ? 'Building PR…'
-    : group.status === 'open'
-      ? 'PR Open ↗'
-      : 'Build PR'
+  const taskCount = group.task_order.length
+  const taskCountLabel = taskCount === 1 ? '1 task' : `${taskCount} tasks`
+  const isOpen = group.status === 'open'
 
   return (
     <div
@@ -207,7 +214,7 @@ function PrGroupCard({
           disabled={building}
           aria-label="Delete group"
         >
-          ×
+          <X size={14} />
         </button>
       </div>
 
@@ -217,20 +224,19 @@ function PrGroupCard({
         onRemoveTask={onRemoveTask}
       />
 
-      <PrGroupFields
-        group={group}
-        onUpdateGroup={onUpdateGroup}
-      />
+      <PrGroupFields group={group} onUpdateGroup={onUpdateGroup} />
 
       <button
-        className="pr-group-card__build-btn"
+        className={`pr-group-card__build-btn${isOpen ? ' pr-group-card__build-btn--open' : ''}`}
         onClick={() => onBuild(group.id)}
-        disabled={!canBuild}
+        disabled={!canBuild && !isOpen}
+        title={taskCount === 0 ? 'Add at least one task' : undefined}
       >
-        {buildButtonLabel}
+        {building && <Loader2 size={14} className="spin" />}
+        {building ? 'Building PR…' : isOpen ? 'PR open ↗' : 'Build PR'}
       </button>
 
-      {group.pr_url && group.status === 'open' && (
+      {group.pr_url && isOpen && (
         <a
           href={group.pr_url}
           target="_blank"
@@ -299,8 +305,8 @@ function PrGroupFields({ group, onUpdateGroup }: PrGroupFieldsProps): React.JSX.
         onBlur={(e) => onUpdateGroup(group.id, { title: e.target.value })}
       />
       <input
-        className="pr-group-card__input"
-        placeholder="Branch name"
+        className="pr-group-card__input pr-group-card__input--branch"
+        placeholder="Branch name (feat/...)"
         defaultValue={group.branch_name}
         onBlur={(e) => onUpdateGroup(group.id, { branchName: e.target.value })}
       />

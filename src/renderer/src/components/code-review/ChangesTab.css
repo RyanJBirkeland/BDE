@@ -1,37 +1,62 @@
-/* Changes tab — diff viewer only (file tree extracted to FileTreePanel) */
-
-.cr-changes__snapshot-banner {
-  grid-column: 1 / -1;
-  font-size: var(--fleet-size-xs);
-  padding: 6px 10px;
-  background: var(--fleet-surface-raised, rgba(255, 255, 255, 0.04));
-  border-bottom: 1px solid var(--fleet-border, rgba(255, 255, 255, 0.08));
-  color: var(--fleet-text-dim, rgba(255, 255, 255, 0.6));
-}
+/* ChangesTab — diff viewer chrome (V2 tokens) */
 
 .cr-changes {
   display: flex;
+  flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+
+.cr-changes__snapshot-banner {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  padding: var(--s-2) var(--s-4);
+  background: var(--surf-1);
+  border-bottom: 1px solid var(--line);
+  color: var(--fg-4);
+  flex-shrink: 0;
+}
+
+.cr-changes__incremental-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.cr-changes__incremental-toggle {
+  padding: 2px var(--s-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.cr-changes__incremental-toggle:hover {
+  background: var(--surf-1);
+  color: var(--fg-2);
+}
+
+.cr-changes__incremental-toggle--on {
+  background: var(--surf-2);
+  border-color: var(--line-2);
+  color: var(--fg);
 }
 
 .cr-changes__diff {
   flex: 1;
   overflow: auto;
   min-width: 0;
+  min-height: 0;
 }
 
 .cr-changes__diff--loading {
-  padding: var(--fleet-space-4);
-}
-
-.cr-changes__diff-content {
-  margin: 0;
-  padding: var(--fleet-space-3);
-  font-family: var(--fleet-font-code);
-  font-size: var(--fleet-size-sm);
-  color: var(--fleet-text-muted);
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.5;
+  padding: var(--s-4);
 }

@@ -49,12 +49,6 @@ vi.mock('../../../hooks/useReviewPartnerActions', () => ({
   }))
 }))
 
-vi.mock('../ReviewMetricsRow', () => ({
-  ReviewMetricsRow: ({ loading }: { loading?: boolean }) => (
-    <div data-testid="review-metrics-row" data-loading={loading ? 'true' : 'false'} />
-  )
-}))
-
 vi.mock('../ReviewMessageList', () => ({
   ReviewMessageList: ({
     messages,
@@ -122,8 +116,6 @@ describe('AIAssistantPanel', () => {
   it('renders header with AI Review Partner title', () => {
     render(<AIAssistantPanel />)
     expect(screen.getByText('AI Review Partner')).toBeInTheDocument()
-    // Model label was removed — the actual model comes from Settings → Models
-    // and the header no longer advertises a specific value it can't verify.
     expect(screen.queryByText(/Claude \d/)).not.toBeInTheDocument()
   })
 
@@ -175,9 +167,13 @@ describe('AIAssistantPanel', () => {
     expect(mockClearMessages).toHaveBeenCalledWith('task-abc')
   })
 
-  it('renders ReviewMetricsRow', () => {
+  it('renders quality section with score, issues, and files mini-stats', () => {
     render(<AIAssistantPanel />)
-    expect(screen.getByTestId('review-metrics-row')).toBeInTheDocument()
+    // V2 metrics are rendered inline as cr-mini-stat elements
+    expect(screen.getByRole('group', { name: 'AI review metrics' })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: /quality score/i })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: /issues found/i })).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: /files changed/i })).toBeInTheDocument()
   })
 
   it('shows empty message when no task selected', () => {

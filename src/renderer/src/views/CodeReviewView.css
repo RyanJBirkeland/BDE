@@ -1,77 +1,19 @@
-/* Code Review Station view shell — three-column layout */
+/* Code Review Station — three-column view shell */
 
 .cr-view {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  min-width: 620px;
   min-height: 0;
   overflow: hidden;
-  background: var(--fleet-bg);
-  font-family: var(--fleet-font-code);
+  background: var(--bg);
+  font-family: var(--font-ui);
 }
 
 .cr-panels {
   flex: 1 1 auto;
   display: flex;
   min-height: 0;
-  position: relative;
-}
-
-.cr-filetree {
-  width: 256px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
-  background: var(--fleet-surface);
-  border-right: 1px solid var(--fleet-border);
-  transition: width 180ms var(--fleet-transition-base);
-}
-
-.cr-diffviewer {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.cr-assistant {
-  width: 384px;
-  flex-shrink: 0;
-  background: var(--fleet-surface);
-  border-left: 1px solid var(--fleet-border);
-  transition: width 180ms var(--fleet-transition-base);
-}
-
-@media (max-width: 1120px) {
-  .cr-assistant {
-    width: 40px;
-  }
-
-  .cr-assistant--expanded {
-    position: absolute;
-    right: 0;
-    top: 44px;
-    bottom: 0;
-    width: 384px;
-    box-shadow: var(--fleet-shadow-lg);
-  }
-}
-
-@media (max-width: 860px) {
-  .cr-filetree {
-    width: 40px;
-  }
-
-  .cr-filetree--expanded {
-    position: absolute;
-    left: 0;
-    top: 44px;
-    bottom: 0;
-    width: 256px;
-    box-shadow: var(--fleet-shadow-lg);
-  }
 }

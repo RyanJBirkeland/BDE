@@ -51,11 +51,11 @@ describe('DiffViewerPanel', () => {
     expect(screen.queryByTestId('changes-tab')).not.toBeInTheDocument()
   })
 
-  it('should switch to Commits mode on pill click', async () => {
+  it('should switch to Commits mode on tab click', async () => {
     const user = userEvent.setup()
     render(<DiffViewerPanel />)
-    const commitsPill = screen.getByRole('button', { name: 'Commits' })
-    await user.click(commitsPill)
+    const commitsTab = screen.getByRole('tab', { name: 'Commits' })
+    await user.click(commitsTab)
     expect(screen.getByTestId('commits-tab')).toBeInTheDocument()
   })
 
@@ -70,11 +70,11 @@ describe('DiffViewerPanel', () => {
     expect(screen.getByText('Select a file to view diff')).toBeInTheDocument()
   })
 
-  it('should render all three mode pills', () => {
+  it('should render all three mode tabs', () => {
     render(<DiffViewerPanel />)
-    expect(screen.getByRole('button', { name: 'Diff' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Commits' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Verification' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Changes' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Commits' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Verification' })).toBeInTheDocument()
   })
 
   it('should show AIReviewedBadge when a finding exists for selected file', () => {

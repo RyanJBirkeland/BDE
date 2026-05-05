@@ -19,6 +19,23 @@ import { TextareaPromptModal } from '../ui/TextareaPromptModal'
 
 const MAX_REVISION_ATTEMPTS = 5
 
+// V2 freshness chip helpers — status dot class + label text
+const FRESHNESS_DOT_CLASS: Record<string, string> = {
+  fresh: 'fleet-dot fleet-dot--done',
+  stale: 'fleet-dot fleet-dot--blocked',
+  conflict: 'fleet-dot fleet-dot--failed',
+  unknown: 'fleet-dot fleet-dot--queued',
+  loading: 'fleet-dot fleet-dot--running'
+}
+
+function freshnessLabel(freshness: { status: string; commitsBehind?: number | undefined }): string {
+  if (freshness.status === 'fresh') return 'Fresh'
+  if (freshness.status === 'stale') return `Stale · ${freshness.commitsBehind ?? '?'} behind`
+  if (freshness.status === 'conflict') return 'Conflict'
+  if (freshness.status === 'loading') return 'Checking…'
+  return 'Unknown'
+}
+
 export interface ReviewActionCallbacks {
   actionInFlight: string | null
   mergeStrategy: 'squash' | 'merge' | 'rebase'
@@ -94,27 +111,55 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
           ? 'Up to date with main'
           : 'Checking...'
 
-  const renderFreshnessBadge = (): React.ReactNode => (
-    <span className={`rab__freshness rab__freshness--${freshness.status}`} title={freshnessTitle}>
-      {freshness.status === 'fresh' && 'Fresh'}
-      {freshness.status === 'stale' && `Stale (${freshness.commitsBehind} behind)`}
-      {freshness.status === 'conflict' && 'Conflict'}
-      {freshness.status === 'unknown' && 'Unknown'}
-      {freshness.status === 'loading' && '...'}
-    </span>
-  )
+  const renderFreshnessBadge = (): React.ReactNode => {
+    const dotClass = FRESHNESS_DOT_CLASS[freshness.status]
+    const label = freshnessLabel(freshness)
+    return (
+      <span
+        title={freshnessTitle}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 'var(--s-1)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 'var(--t-2xs)',
+          background: 'var(--surf-1)',
+          border: '1px solid var(--line)',
+          borderRadius: 999,
+          padding: '1px 7px',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        <span className={dotClass} />
+        {label}
+      </span>
+    )
+  }
 
   const renderRebaseButton = (): React.ReactNode => (
     <button
-      className="rab__btn rab__btn--ghost"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 'var(--s-1)',
+        height: 26,
+        padding: '0 var(--s-2)',
+        background: 'transparent',
+        border: '1px solid var(--line)',
+        borderRadius: 'var(--r-md)',
+        color: 'var(--fg-2)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 'var(--t-xs)',
+        cursor: 'pointer'
+      }}
       onClick={rebase}
       disabled={!!actionInFlight || freshness.status === 'fresh'}
       title="Rebase agent branch onto current main"
     >
       {actionInFlight === 'rebase' ? (
-        <Loader2 size={14} className="spin" />
+        <Loader2 size={12} style={{ animation: 'fleet-spin 1s linear infinite' }} />
       ) : (
-        <RefreshCw size={14} />
+        <RefreshCw size={12} />
       )}{' '}
       Rebase
     </button>
@@ -141,6 +186,7 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
 
   return (
     <>
+      {/* TODO(phase-4.5): refit ReviewActionsBar full variant to V2 tokens */}
       {variant === 'full' && (
         <div className="rab">
           {/* Conflict resolution banner — shown when rebase left unresolved conflicts */}

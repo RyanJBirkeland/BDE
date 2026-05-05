@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Loader2 } from 'lucide-react'
+import { Loader2, MoreHorizontal } from 'lucide-react'
 import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from 'react'
 
 interface Props {
@@ -8,10 +8,15 @@ interface Props {
   onRequestRevision: () => void
   onDiscard: () => void
   disabled?: boolean | undefined
-  /** True while any review action IPC call is in flight. Shows a spinner and blocks re-click. */
+  /** True while any review action IPC call is in flight. */
   loading?: boolean | undefined
 }
 
+/**
+ * Kebab dropdown consolidating merge/discard/revision actions.
+ * V2: 28×28 square trigger, V2 menu chrome (--surf-1 bg, --line border,
+ * shadow 4px 12px black 12%).
+ */
 export function ApproveDropdown({
   onMergeLocally,
   onSquashMerge,
@@ -85,46 +90,102 @@ export function ApproveDropdown({
   }
 
   return (
-    <div className="cr-approve" ref={rootRef}>
+    <div style={{ position: 'relative' }} ref={rootRef}>
+      {/* 28×28 square trigger — matches Prompt button */}
       <button
         type="button"
         ref={triggerRef}
-        className="cr-approve__trigger"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 28,
+          height: 28,
+          background: 'transparent',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--r-md)',
+          color: 'var(--fg-3)',
+          cursor: 'pointer'
+        }}
         disabled={disabled || loading}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-busy={loading || undefined}
+        aria-label="More review actions"
         onClick={() => setOpen((v) => !v)}
       >
-        {loading ? <Loader2 size={14} className="cr-approve__spinner" /> : <Check size={14} />}
-        <span>Approve</span>
-        {!loading && <ChevronDown size={12} />}
+        {loading ? (
+          <Loader2 size={14} style={{ animation: 'fleet-spin 1s linear infinite' }} />
+        ) : (
+          <MoreHorizontal size={14} />
+        )}
       </button>
+
       {open && (
-        <div className="cr-approve__menu" role="menu" ref={menuRef} onKeyDown={handleMenuKeyDown}>
-          <button type="button" role="menuitem" onClick={() => run(onMergeLocally)}>
-            Merge Locally
-          </button>
-          <button type="button" role="menuitem" onClick={() => run(onSquashMerge)}>
-            Squash & Merge
-          </button>
-          <button type="button" role="menuitem" onClick={() => run(onCreatePR)}>
-            Create PR
-          </button>
-          <hr className="cr-approve__divider" />
-          <button type="button" role="menuitem" onClick={() => run(onRequestRevision)}>
-            Request Revision
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="cr-approve__danger"
-            onClick={() => run(onDiscard)}
-          >
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            right: 0,
+            background: 'var(--surf-1)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--r-md)',
+            boxShadow: '0 4px 12px color-mix(in oklch, black 12%, transparent)',
+            minWidth: 180,
+            zIndex: 200,
+            overflow: 'hidden'
+          }}
+          role="menu"
+          ref={menuRef}
+          onKeyDown={handleMenuKeyDown}
+        >
+          <MenuItem onClick={() => run(onMergeLocally)}>Merge Locally</MenuItem>
+          <MenuItem onClick={() => run(onSquashMerge)}>Squash &amp; Merge</MenuItem>
+          <MenuItem onClick={() => run(onCreatePR)}>Create PR</MenuItem>
+          <hr style={{ margin: '4px 0', border: 'none', borderTop: '1px solid var(--line)' }} />
+          <MenuItem onClick={() => run(onRequestRevision)}>Request Revision</MenuItem>
+          <MenuItem onClick={() => run(onDiscard)} danger>
             Discard
-          </button>
+          </MenuItem>
         </div>
       )}
     </div>
+  )
+}
+
+function MenuItem({
+  onClick,
+  danger = false,
+  children
+}: {
+  onClick: () => void
+  danger?: boolean
+  children: React.ReactNode
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      style={{
+        display: 'block',
+        width: '100%',
+        padding: 'var(--s-2) var(--s-3)',
+        background: 'transparent',
+        border: 'none',
+        color: danger ? 'var(--st-failed)' : 'var(--fg-2)',
+        fontSize: 'var(--t-sm)',
+        textAlign: 'left',
+        cursor: 'pointer'
+      }}
+      onMouseEnter={(e) => {
+        ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--surf-2)'
+      }}
+      onMouseLeave={(e) => {
+        ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+      }}
+    >
+      {children}
+    </button>
   )
 }
