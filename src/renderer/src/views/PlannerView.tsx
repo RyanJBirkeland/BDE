@@ -12,8 +12,16 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 import './PlannerView.css'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
+import { useFeatureFlags } from '../stores/featureFlags'
+import { PlannerViewV2 } from '../components/planner/v2/PlannerViewV2'
 
 export default function PlannerView(): React.JSX.Element {
+  const { v2Planner } = useFeatureFlags()
+  if (v2Planner) return <PlannerViewV2 />
+  return <PlannerViewV1 />
+}
+
+function PlannerViewV1(): React.JSX.Element {
   const reduced = useReducedMotion()
   const {
     groups,
