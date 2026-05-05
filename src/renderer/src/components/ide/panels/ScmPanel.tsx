@@ -32,17 +32,10 @@ function statusColor(letter: string): string {
   return 'var(--fg-3)'
 }
 
-function indexStatusLetter(status: string): string {
-  return status[0] ?? '?'
-}
-
-function worktreeStatusLetter(status: string): string {
-  return status[1] ?? '?'
-}
-
 // ---------------------------------------------------------------------------
 // Internal helpers — git:status response parsing
 // The channel returns { files: { path, status, staged }[], branch }
+// IPC delivers single-character status values — use status[0] directly.
 // ---------------------------------------------------------------------------
 
 function parseGitStatus(files: { path: string; status: string; staged: boolean }[]): ScmStatus {
@@ -50,10 +43,11 @@ function parseGitStatus(files: { path: string; status: string; staged: boolean }
   const unstaged: ScmFile[] = []
 
   for (const file of files) {
+    const letter = file.status[0] ?? '?'
     if (file.staged) {
-      staged.push({ path: file.path, status: indexStatusLetter(file.status) })
+      staged.push({ path: file.path, status: letter })
     } else {
-      unstaged.push({ path: file.path, status: worktreeStatusLetter(file.status) })
+      unstaged.push({ path: file.path, status: letter })
     }
   }
 
@@ -80,21 +74,11 @@ function SectionLabel({ label, count }: SectionLabelProps): React.JSX.Element {
         padding: '0 var(--s-3)'
       }}
     >
+      <span className="fleet-eyebrow">{label}</span>
       <span
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          color: 'var(--fg-3)'
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
+          fontSize: 'var(--t-2xs)',
           color: 'var(--fg-4)'
         }}
       >
@@ -134,7 +118,7 @@ function ScmRow({ file, type }: ScmRowProps): React.JSX.Element {
       <span
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 11,
+          fontSize: 'var(--t-xs)',
           color: statusColor(file.status),
           flexShrink: 0,
           width: 10
@@ -165,7 +149,7 @@ function ScmRow({ file, type }: ScmRowProps): React.JSX.Element {
           style={{
             height: 20,
             padding: '0 var(--s-2)',
-            fontSize: 10,
+            fontSize: 'var(--t-2xs)',
             fontFamily: 'var(--font-ui)',
             color: 'var(--fg-3)',
             background: 'transparent',
@@ -301,6 +285,35 @@ function GhostButton({ label, disabled = false, onClick }: GhostButtonProps): Re
 }
 
 // ---------------------------------------------------------------------------
+// EmptyState
+// ---------------------------------------------------------------------------
+
+interface EmptyStateProps {
+  eyebrow: string
+  subtitle: string
+}
+
+function EmptyState({ eyebrow, subtitle }: EmptyStateProps): React.JSX.Element {
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 'var(--s-2)',
+        padding: 'var(--s-5)',
+        textAlign: 'center'
+      }}
+    >
+      <span className="fleet-eyebrow">{eyebrow}</span>
+      <span style={{ fontSize: 'var(--t-sm)', color: 'var(--fg-3)' }}>{subtitle}</span>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // ScmPanel
 // ---------------------------------------------------------------------------
 
@@ -310,9 +323,10 @@ export function ScmPanel({ rootPath }: ScmPanelProps): React.JSX.Element {
 
   useEffect(() => {
     if (!rootPath) return
+    const path: string = rootPath
     async function fetchStatus(): Promise<void> {
       try {
-        const result = await window.api.git.status(rootPath!)
+        const result = await window.api.git.status(path)
         setStatus(parseGitStatus(result.files))
       } catch {
         setStatus({ staged: [], unstaged: [] })
@@ -378,35 +392,6 @@ export function ScmPanel({ rootPath }: ScmPanelProps): React.JSX.Element {
           </>
         )}
       </div>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// EmptyState
-// ---------------------------------------------------------------------------
-
-interface EmptyStateProps {
-  eyebrow: string
-  subtitle: string
-}
-
-function EmptyState({ eyebrow, subtitle }: EmptyStateProps): React.JSX.Element {
-  return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 'var(--s-2)',
-        padding: 'var(--s-5)',
-        textAlign: 'center'
-      }}
-    >
-      <span className="fleet-eyebrow">{eyebrow}</span>
-      <span style={{ fontSize: 'var(--t-sm)', color: 'var(--fg-3)' }}>{subtitle}</span>
     </div>
   )
 }
