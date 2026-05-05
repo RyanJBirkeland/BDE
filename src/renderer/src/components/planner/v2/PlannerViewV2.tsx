@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useTaskGroups } from '../../../stores/taskGroups'
 import { useTaskWorkbenchModalStore } from '../../../stores/taskWorkbenchModal'
+import { useSprintTasks } from '../../../stores/sprintTasks'
 import { PlPlannerHeader } from './PlPlannerHeader'
 import { PlEpicRail } from './PlEpicRail'
 import { PlEpicCanvas } from './PlEpicCanvas'
@@ -113,6 +114,15 @@ export function PlannerViewV2(): React.JSX.Element {
     setAssistantKey((k) => k + 1)
   }, [])
 
+  const updateTask = useSprintTasks((s) => s.updateTask)
+  const handleSaveSpec = useCallback(
+    async (taskId: string, spec: string): Promise<void> => {
+      await updateTask(taskId, { spec })
+      if (selectedGroupId) await loadGroupTasks(selectedGroupId)
+    },
+    [updateTask, selectedGroupId, loadGroupTasks]
+  )
+
   const activeGroups = useMemo(() => groups.filter((g) => g.status !== 'completed'), [groups])
 
   return (
@@ -156,6 +166,7 @@ export function PlannerViewV2(): React.JSX.Element {
             onTogglePause={handleTogglePause}
             onQueueAll={handleQueueAll}
             onAskAssistantDraft={handleAskAssistantDraft}
+            onSaveSpec={handleSaveSpec}
           />
         ) : (
           <PlEmptyCanvas assistantOpen={assistantOpen} />

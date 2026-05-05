@@ -28,6 +28,7 @@ import type { Attachment, AgentEvent } from '../../../shared/types'
 import { useAgentViewLifecycle } from '../hooks/useAgentViewLifecycle'
 import { useAgentViewCommands } from '../hooks/useAgentViewCommands'
 import { useAgentSlashCommands } from '../hooks/useAgentSlashCommands'
+import { useScratchpadNotice } from '../hooks/useScratchpadNotice'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 const INSPECTOR_BREAKPOINT = 1280
@@ -58,7 +59,8 @@ export function AgentsViewV2(): React.JSX.Element {
   const activeId = selectedId ?? agents[0]?.id ?? null
 
   const [showLaunchpad, setShowLaunchpad] = useState(false)
-  const [showScratchpadBanner, setShowScratchpadBanner] = useState(false)
+  const { showBanner: showScratchpadBanner, dismiss: dismissScratchpadBanner } =
+    useScratchpadNotice()
   const [inspectorOpen, setInspectorOpen] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
 
@@ -82,7 +84,6 @@ export function AgentsViewV2(): React.JSX.Element {
     fetchAgents,
     loadHistory,
     setShowLaunchpad: openLaunchpad,
-    setShowScratchpadBanner,
   })
 
   const handleClearConsole = useCallback(() => {
@@ -94,11 +95,6 @@ export function AgentsViewV2(): React.JSX.Element {
   }, [activeId])
 
   useAgentViewCommands({ onSpawnAgent: openLaunchpad, handleClearConsole })
-
-  const handleDismissBanner = useCallback(() => {
-    setShowScratchpadBanner(false)
-    window.api.settings.set('scratchpad.noticeDismissed', 'true')
-  }, [])
 
   const handleSelectAgent = useCallback((id: string) => {
     setSelectedId(id)
@@ -149,7 +145,7 @@ export function AgentsViewV2(): React.JSX.Element {
           <FleetListPane
             listWidth={listWidth}
             onSpawn={openLaunchpad}
-            onDismissBanner={handleDismissBanner}
+            onDismissBanner={dismissScratchpadBanner}
             onSelectAgent={handleSelectAgent}
             showScratchpadBanner={showScratchpadBanner}
             activeId={activeId}

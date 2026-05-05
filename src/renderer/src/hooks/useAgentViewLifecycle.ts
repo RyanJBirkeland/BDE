@@ -6,7 +6,11 @@ interface UseAgentViewLifecycleParams {
   fetchAgents: () => void
   loadHistory: (agentId: string) => Promise<void>
   setShowLaunchpad: (show: boolean) => void
-  setShowScratchpadBanner: (show: boolean) => void
+  /**
+   * Optional. V1 wires this to expose the scratchpad notice flag to the view.
+   * V2 owns the read/dismiss pair via `useScratchpadNotice` and omits it.
+   */
+  setShowScratchpadBanner?: ((show: boolean) => void) | undefined
 }
 
 /**
@@ -41,12 +45,11 @@ export function useAgentViewLifecycle({
   }, [setShowLaunchpad])
 
   useEffect(() => {
+    if (!setShowScratchpadBanner) return
     window.api.settings
       .get('scratchpad.noticeDismissed')
       .then((val) => {
-        if (!val) {
-          setShowScratchpadBanner(true)
-        }
+        if (!val) setShowScratchpadBanner(true)
       })
       .catch((err) => console.error('Failed to get scratchpad setting:', err))
   }, [setShowScratchpadBanner])

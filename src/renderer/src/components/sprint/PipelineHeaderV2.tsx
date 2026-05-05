@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { GitMerge, HeartPulse, LayoutGrid, List, Network, Download, RefreshCw, Plus } from 'lucide-react'
+import React, { useCallback, useState } from 'react'
+import { GitMerge, HeartPulse, LayoutGrid, List, Network, RefreshCw, Plus } from 'lucide-react'
 import { useSprintUI } from '../../stores/sprintUI'
-import { useBackoffInterval } from '../../hooks/useBackoffInterval'
+import { useAgentManagerStatus } from '../../hooks/useAgentManagerStatus'
 import { toast } from '../../stores/toasts'
+import { ExportDropdown, type ExportFormat } from './ExportDropdown'
 import type { SprintTask } from '../../../../shared/types'
 
 interface StatBadge {
@@ -21,85 +22,6 @@ interface PipelineHeaderV2Props {
   onDagToggle?: (() => void) | undefined
   dagOpen?: boolean | undefined
   onOpenWorkbench: () => void
-}
-
-function ExportDropdown(): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const [exporting, setExporting] = useState(false)
-
-  useEffect(() => {
-    if (!open) return
-    const handleOutsideClick = (): void => setOpen(false)
-    document.addEventListener('click', handleOutsideClick)
-    return () => document.removeEventListener('click', handleOutsideClick)
-  }, [open])
-
-  const handleExport = async (format: 'json' | 'csv'): Promise<void> => {
-    setOpen(false)
-    setExporting(true)
-    try {
-      const result = await window.api.sprint.exportTasks(format)
-      if (!result.canceled && result.filePath) {
-        toast.success('Tasks exported')
-      }
-    } catch {
-      toast.error('Export failed')
-    } finally {
-      setExporting(false)
-    }
-  }
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
-        disabled={exporting}
-        title="Export tasks"
-        aria-label="Export sprint tasks"
-        style={ICON_BTN_STYLE}
-      >
-        <Download size={13} />
-      </button>
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + var(--s-1))',
-          right: 0,
-          background: 'var(--surf-2)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--r-md)',
-          padding: 'var(--s-1)',
-          zIndex: 50,
-          minWidth: 80,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-        }}>
-          {(['json', 'csv'] as const).map((fmt) => (
-            <button
-              key={fmt}
-              onClick={() => void handleExport(fmt)}
-              disabled={exporting}
-              style={{
-                padding: '3px var(--s-2)',
-                background: 'none',
-                border: 'none',
-                borderRadius: 'var(--r-sm)',
-                color: 'var(--fg)',
-                fontSize: 12,
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surf-3)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
-            >
-              {fmt.toUpperCase()}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
 }
 
 const ICON_BTN_STYLE: React.CSSProperties = {
@@ -143,19 +65,19 @@ export function PipelineHeaderV2({
 }: PipelineHeaderV2Props): React.JSX.Element {
   const pipelineDensity = useSprintUI((s) => s.pipelineDensity)
   const setPipelineDensity = useSprintUI((s) => s.setPipelineDensity)
-  const [wipSlots, setWipSlots] = useState<{ active: number; max: number } | null>(null)
+  const { activeCount, maxSlots } = useAgentManagerStatus()
   const [triggering, setTriggering] = useState(false)
 
-  const fetchStatus = useCallback(async (): Promise<void> => {
+  const handleExport = useCallback(async (format: ExportFormat): Promise<void> => {
     try {
-      const status = await window.api.agentManager.status()
-      setWipSlots({ active: status.concurrency.activeCount, max: status.concurrency.maxSlots })
+      const result = await window.api.sprint.exportTasks(format)
+      if (!result.canceled && result.filePath) {
+        toast.success('Tasks exported')
+      }
     } catch {
-      // agent manager may not be running
+      toast.error('Export failed')
     }
   }, [])
-
-  useBackoffInterval(fetchStatus, 5000)
 
   const handleTriggerDrain = useCallback(async (): Promise<void> => {
     setTriggering(true)
@@ -211,31 +133,29 @@ export function PipelineHeaderV2({
             <span>{stat.label}</span>
           </button>
         ))}
-        {wipSlots !== null && (
-          <span
-            title="Max concurrent agents. Change in Settings → Agents."
-            aria-label={`${wipSlots.active} of ${wipSlots.max} agent slots active`}
-            style={{
-              padding: '0 var(--s-2)',
-              height: 22,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              color: 'var(--fg-3)',
-              background: 'var(--surf-1)',
-              border: '1px solid var(--line)',
-              borderRadius: 'var(--r-md)',
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ color: 'var(--st-running)' }}>{wipSlots.active}</span>
-            <span>/</span>
-            <span>{wipSlots.max}</span>
-            <span>slots</span>
-          </span>
-        )}
+        <span
+          title="Max concurrent agents. Change in Settings → Agents."
+          aria-label={`${activeCount} of ${maxSlots} agent slots active`}
+          style={{
+            padding: '0 var(--s-2)',
+            height: 22,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 3,
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: 'var(--fg-3)',
+            background: 'var(--surf-1)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--r-md)',
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ color: 'var(--st-running)' }}>{activeCount}</span>
+          <span>/</span>
+          <span>{maxSlots}</span>
+          <span>slots</span>
+        </span>
       </div>
 
       {/* Right-side controls */}
@@ -282,7 +202,7 @@ export function PipelineHeaderV2({
           <Network size={13} />
           <span>DAG</span>
         </button>
-        <ExportDropdown />
+        <ExportDropdown onExport={handleExport} />
         <button
           onClick={() => void handleTriggerDrain()}
           disabled={triggering}

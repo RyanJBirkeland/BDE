@@ -14,55 +14,59 @@ vi.mock('framer-motion', () => ({
 }))
 
 const baseData = {
-  partitions: {
-    backlog: [],
-    todo: [],
-    blocked: [],
-    inProgress: [],
-    pendingReview: [],
-    approved: [],
-    openPrs: [],
-    done: [],
-    failed: []
+  metrics: {
+    partitions: {
+      backlog: [],
+      todo: [],
+      blocked: [],
+      inProgress: [],
+      pendingReview: [],
+      approved: [],
+      openPrs: [],
+      done: [],
+      failed: []
+    },
+    activeAgents: [],
+    attentionItems: [],
+    stats: {
+      active: 0,
+      queued: 0,
+      blocked: 0,
+      review: 0,
+      done: 0,
+      doneToday: 0,
+      failed: 0,
+      actualFailed: 0
+    },
+    recentCompletions: [],
+    tokens24h: 0,
+    tokenTrendData: [],
+    tokenAvg: null,
+    taskTokenMap: new Map<string, number>(),
+    stuckCount: 0,
+    loadSaturated: null,
+    successRate7dAvg: null,
+    successRateWeekDelta: null,
+    avgDuration: null,
+    avgTaskDuration: null,
+    throughputData: [],
+    successTrendData: [],
+    avgCostPerTask: null,
+    failureRate: null,
+    perAgentStats: [],
+    perRepoStats: [],
+    briefHeadlineParts: [{ kind: 'text' as const, text: 'All quiet.' }],
+    capacity: 2,
+    drainStatus: null
   },
-  activeAgents: [],
-  attentionItems: [],
-  stats: {
-    active: 0,
-    queued: 0,
-    blocked: 0,
-    review: 0,
-    done: 0,
-    doneToday: 0,
-    failed: 0,
-    actualFailed: 0
-  },
-  recentCompletions: [],
-  tokens24h: 0,
-  tokenTrendData: [],
-  tokenAvg: null,
-  taskTokenMap: new Map<string, number>(),
-  stuckCount: 0,
-  loadSaturated: null,
-  successRate7dAvg: null,
-  successRateWeekDelta: null,
-  avgDuration: null,
-  avgTaskDuration: null,
-  throughputData: [],
-  successTrendData: [],
-  avgCostPerTask: null,
-  failureRate: null,
-  perAgentStats: [],
-  perRepoStats: [],
-  briefHeadlineParts: [{ kind: 'text' as const, text: 'All quiet.' }],
-  capacity: 2,
-  drainStatus: null,
-  openAgentsView: vi.fn(),
-  openPipelineView: vi.fn(),
-  openReviewView: vi.fn(),
-  openPlannerView: vi.fn(),
-  openNewTask: vi.fn(),
-  retryTask: vi.fn().mockResolvedValue(undefined)
+  actions: {
+    openAgentsView: vi.fn(),
+    openPipelineView: vi.fn(),
+    openReviewView: vi.fn(),
+    openPlannerView: vi.fn(),
+    openNewTask: vi.fn(),
+    retryTask: vi.fn().mockResolvedValue(undefined)
+  }
 }
 
 vi.mock('../../components/dashboard/hooks/useDashboardData', () => ({

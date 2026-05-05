@@ -18,6 +18,7 @@ interface Props {
   onTogglePause: () => void
   onQueueAll: () => void
   onAskAssistantDraft: (message: string) => void
+  onSaveSpec: (taskId: string, spec: string) => Promise<void>
 }
 
 const TABS = ['Tasks', 'Spec', 'Dependencies', 'Activity'] as const
@@ -35,7 +36,8 @@ export function PlEpicCanvas({
   onToggleReady,
   onTogglePause,
   onQueueAll,
-  onAskAssistantDraft
+  onAskAssistantDraft,
+  onSaveSpec
 }: Props): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<Tab>('Tasks')
 
@@ -71,9 +73,9 @@ export function PlEpicCanvas({
           <PlSpecPane
             tasks={tasks}
             taskId={selectedTaskId}
-            epicId={epic.id}
             onEditInWorkbench={onEditInWorkbench}
             onAskAssistantDraft={onAskAssistantDraft}
+            onSaveSpec={onSaveSpec}
           />
         </div>
       ) : (

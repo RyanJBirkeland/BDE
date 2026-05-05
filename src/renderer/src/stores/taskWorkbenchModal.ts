@@ -2,11 +2,18 @@ import { create } from 'zustand'
 import type { SprintTask } from '../../../shared/types'
 import { useTaskWorkbenchStore } from './taskWorkbench'
 
+export interface TaskWorkbenchDefaults {
+  title?: string
+  spec?: string
+  groupId?: string
+}
+
 interface TaskWorkbenchModalState {
   open: boolean
   editingTask: SprintTask | null
 
   openForCreate: (preset?: { groupId?: string | null }) => void
+  openForCreateWithDefaults: (defaults: TaskWorkbenchDefaults) => void
   openForEdit: (task: SprintTask) => void
   close: () => void
 }
@@ -19,6 +26,15 @@ export const useTaskWorkbenchModalStore = create<TaskWorkbenchModalState>((set) 
     const form = useTaskWorkbenchStore.getState()
     form.resetForm()
     if (preset?.groupId) form.setField('pendingGroupId', preset.groupId)
+    set({ open: true, editingTask: null })
+  },
+
+  openForCreateWithDefaults: (defaults) => {
+    const form = useTaskWorkbenchStore.getState()
+    form.resetForm()
+    if (defaults.title != null) form.setField('title', defaults.title)
+    if (defaults.spec != null) form.setField('spec', defaults.spec)
+    if (defaults.groupId != null) form.setField('pendingGroupId', defaults.groupId)
     set({ open: true, editingTask: null })
   },
 

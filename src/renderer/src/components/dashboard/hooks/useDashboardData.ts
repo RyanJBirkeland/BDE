@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, useCallback } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../../../stores/sprintTasks'
 import { useCostDataStore } from '../../../stores/costData'
@@ -9,6 +9,7 @@ import { useSprintFilters, type StatusFilter } from '../../../stores/sprintFilte
 import { usePanelLayoutStore } from '../../../stores/panelLayout'
 import { useDrainStatus } from '../../../hooks/useDrainStatus'
 import { useDashboardMetrics } from '../../../hooks/useDashboardMetrics'
+import { useAgentManagerStatus } from '../../../hooks/useAgentManagerStatus'
 import { useTaskWorkbenchModalStore } from '../../../stores/taskWorkbenchModal'
 import { partitionSprintTasks } from '../../../lib/partitionSprintTasks'
 import type { SprintTask } from '../../../../../shared/types'
@@ -19,7 +20,6 @@ import type { CompletionBucket, DailySuccessRate } from '../../../../../shared/i
 import type { SprintPartition } from '../../../lib/partitionSprintTasks'
 import type { DrainPausedState } from '../../../hooks/useDrainStatus'
 
-const DEFAULT_CAPACITY = 2
 const STALE_REVIEW_THRESHOLD_MS = 2 * 60 * 60 * 1000 // 2 hours
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -63,7 +63,7 @@ export type BriefHeadlinePart =
   | { kind: 'text'; text: string }
   | { kind: 'count'; text: string; color: string }
 
-export interface DashboardData {
+export interface DashboardMetrics {
   partitions: SprintPartition
   activeAgents: ActiveAgent[]
   attentionItems: AttentionItem[]
@@ -88,12 +88,20 @@ export interface DashboardData {
   briefHeadlineParts: BriefHeadlinePart[]
   capacity: number
   drainStatus: DrainPausedState | null
+}
+
+export interface DashboardActions {
   openAgentsView: () => void
   openPipelineView: (filter?: StatusFilter) => void
   openReviewView: () => void
   openPlannerView: () => void
   openNewTask: () => void
   retryTask: (taskId: string) => Promise<void>
+}
+
+export interface DashboardData {
+  metrics: DashboardMetrics
+  actions: DashboardActions
 }
 
 function buildBriefHeadlineParts(
@@ -327,15 +335,7 @@ export function useDashboardData(): DashboardData {
     avgTaskDuration
   } = useDashboardMetrics()
 
-  const [capacity, setCapacity] = useState(DEFAULT_CAPACITY)
-  useEffect(() => {
-    window.api.settings
-      .getJson('agentManager.maxConcurrent')
-      .then((v) => {
-        if (typeof v === 'number' && v > 0) setCapacity(v)
-      })
-      .catch(() => {})
-  }, [])
+  const { maxSlots: capacity } = useAgentManagerStatus()
 
   const now = Date.now()
 
@@ -398,7 +398,7 @@ export function useDashboardData(): DashboardData {
   const openPlannerView = useCallback(() => setView('planner'), [setView])
   const openNewTask = useCallback(() => openForCreate(), [openForCreate])
 
-  return {
+  const metrics: DashboardMetrics = {
     partitions,
     activeAgents,
     attentionItems,
@@ -422,7 +422,10 @@ export function useDashboardData(): DashboardData {
     perRepoStats,
     briefHeadlineParts,
     capacity,
-    drainStatus,
+    drainStatus
+  }
+
+  const actions: DashboardActions = {
     openAgentsView,
     openPipelineView,
     openReviewView,
@@ -430,4 +433,6 @@ export function useDashboardData(): DashboardData {
     openNewTask,
     retryTask
   }
+
+  return { metrics, actions }
 }

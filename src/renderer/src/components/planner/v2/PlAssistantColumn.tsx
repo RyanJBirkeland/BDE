@@ -2,7 +2,9 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
 import { parseActionMarkers, type ParseResult } from '../PlannerAssistant'
 import { useRepoOptions } from '../../../hooks/useRepoOptions'
-import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
+import { useTaskWorkbenchModalStore } from '../../../stores/taskWorkbenchModal'
+import { useSprintTasks } from '../../../stores/sprintTasks'
+import { useTaskGroups } from '../../../stores/taskGroups'
 import {
   sanitizeAgentPayloadString,
   stripActionMarkers,
@@ -482,29 +484,47 @@ function PlActionCard({
   onAddTask,
   onClose
 }: ActionCardProps): React.JSX.Element | null {
+  const createTask = useSprintTasks((s) => s.createTask)
+  const updateTask = useSprintTasks((s) => s.updateTask)
+  const createGroup = useTaskGroups((s) => s.createGroup)
+  const openForCreateWithDefaults = useTaskWorkbenchModalStore((s) => s.openForCreateWithDefaults)
+
   if (cardState.dismissed) return null
+
+  const applyCreateTask = async (): Promise<void> => {
+    if (action.type !== 'create-task') return
+    await createTask({
+      title:
+        sanitizeAgentPayloadString(action.payload.title, MAX_TASK_TITLE_CHARS) || 'Untitled',
+      spec: sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS),
+      repo: firstRepo,
+      priority: 0,
+      playground_enabled: false,
+      group_id: epic.id
+    })
+  }
+
+  const applyCreateEpic = async (): Promise<void> => {
+    if (action.type !== 'create-epic') return
+    await createGroup({
+      name: sanitizeAgentPayloadString(action.payload.name, MAX_TASK_TITLE_CHARS) || 'New Epic',
+      goal: sanitizeAgentPayloadString(action.payload.goal, MAX_TASK_SPEC_CHARS)
+    })
+  }
+
+  const applyUpdateSpec = async (): Promise<void> => {
+    if (action.type !== 'update-spec' || !action.payload.taskId) return
+    await updateTask(action.payload.taskId, {
+      spec: sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS)
+    })
+  }
 
   const handleApply = async (): Promise<void> => {
     try {
-      if (action.type === 'create-task') {
-        await window.api.sprint.create({
-          title: sanitizeAgentPayloadString(action.payload.title, MAX_TASK_TITLE_CHARS) || 'Untitled',
-          spec: sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS),
-          repo: firstRepo,
-          priority: 0,
-          playground_enabled: false,
-          group_id: epic.id
-        })
-      } else if (action.type === 'create-epic') {
-        await window.api.groups.create({
-          name: sanitizeAgentPayloadString(action.payload.name, MAX_TASK_TITLE_CHARS) || 'New Epic',
-          goal: sanitizeAgentPayloadString(action.payload.goal, MAX_TASK_SPEC_CHARS)
-        })
-      } else if (action.type === 'update-spec' && action.payload.taskId) {
-        await window.api.sprint.update(action.payload.taskId, {
-          spec: sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS)
-        })
-      }
+      if (action.type === 'create-task') await applyCreateTask()
+      else if (action.type === 'create-epic') await applyCreateEpic()
+      else if (action.type === 'update-spec') await applyUpdateSpec()
+
       onCardStateChange(cardKey, {
         dismissed: false,
         confirmed: action.type === 'create-task' ? '✓ Added to backlog' : '✓ Done'
@@ -515,15 +535,17 @@ function PlActionCard({
   }
 
   const handleEditFirst = (): void => {
-    const store = useTaskWorkbenchStore.getState()
-    store.resetForm()
     if (action.type === 'create-task') {
-      store.setField('title', sanitizeAgentPayloadString(action.payload.title, MAX_TASK_TITLE_CHARS))
-      store.setField('spec', sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS))
-      store.setField('pendingGroupId', epic.id)
+      openForCreateWithDefaults({
+        title: sanitizeAgentPayloadString(action.payload.title, MAX_TASK_TITLE_CHARS),
+        spec: sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS),
+        groupId: epic.id
+      })
     } else if (action.type === 'create-epic') {
-      store.setField('title', sanitizeAgentPayloadString(action.payload.name, MAX_TASK_TITLE_CHARS))
-      store.setField('spec', sanitizeAgentPayloadString(action.payload.goal, MAX_TASK_SPEC_CHARS))
+      openForCreateWithDefaults({
+        title: sanitizeAgentPayloadString(action.payload.name, MAX_TASK_TITLE_CHARS),
+        spec: sanitizeAgentPayloadString(action.payload.goal, MAX_TASK_SPEC_CHARS)
+      })
     }
     onAddTask()
     onClose()

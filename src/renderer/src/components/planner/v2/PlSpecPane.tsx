@@ -1,22 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
 import type { SprintTask } from '../../../../../shared/types'
 import { analyzeSpecQuality } from '../../../lib/spec-quality'
-import { useTaskGroups } from '../../../stores/taskGroups'
 
 interface Props {
   tasks: SprintTask[]
   taskId: string | null
-  epicId: string
   onEditInWorkbench: (task: SprintTask) => void
   onAskAssistantDraft: (message: string) => void
+  onSaveSpec: (taskId: string, spec: string) => Promise<void>
 }
 
 export function PlSpecPane({
   tasks,
   taskId,
-  epicId,
   onEditInWorkbench,
-  onAskAssistantDraft
+  onAskAssistantDraft,
+  onSaveSpec
 }: Props): React.JSX.Element {
   const task = taskId ? tasks.find((t) => t.id === taskId) : null
 
@@ -32,23 +31,23 @@ export function PlSpecPane({
     <PlSpecPaneInner
       key={task.id}
       task={task}
-      epicId={epicId}
       onEditInWorkbench={onEditInWorkbench}
       onAskAssistantDraft={onAskAssistantDraft}
+      onSaveSpec={onSaveSpec}
     />
   )
 }
 
 function PlSpecPaneInner({
   task,
-  epicId,
   onEditInWorkbench,
-  onAskAssistantDraft
+  onAskAssistantDraft,
+  onSaveSpec
 }: {
   task: SprintTask
-  epicId: string
   onEditInWorkbench: (task: SprintTask) => void
   onAskAssistantDraft: (message: string) => void
+  onSaveSpec: (taskId: string, spec: string) => Promise<void>
 }): React.JSX.Element {
   const needsSpec = !task.spec || task.spec.trim() === ''
 
@@ -62,7 +61,7 @@ function PlSpecPaneInner({
           onEditInWorkbench={onEditInWorkbench}
         />
       ) : (
-        <PlSpecEditor task={task} epicId={epicId} />
+        <PlSpecEditor task={task} onSaveSpec={onSaveSpec} />
       )}
     </div>
   )
@@ -248,11 +247,16 @@ function PlSpecEmptyState({
   )
 }
 
-function PlSpecEditor({ task, epicId }: { task: SprintTask; epicId: string }): React.JSX.Element {
+function PlSpecEditor({
+  task,
+  onSaveSpec
+}: {
+  task: SprintTask
+  onSaveSpec: (taskId: string, spec: string) => Promise<void>
+}): React.JSX.Element {
   const [draftSpec, setDraftSpec] = useState(task.spec ?? '')
   const [saving, setSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  const { loadGroupTasks } = useTaskGroups()
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -263,8 +267,7 @@ function PlSpecEditor({ task, epicId }: { task: SprintTask; epicId: string }): R
     if (spec === task.spec) return
     setSaving(true)
     try {
-      await window.api.sprint.update(task.id, { spec })
-      await loadGroupTasks(epicId)
+      await onSaveSpec(task.id, spec)
       setLastSaved(new Date())
     } finally {
       setSaving(false)
