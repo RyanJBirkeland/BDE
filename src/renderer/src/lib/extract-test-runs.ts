@@ -15,8 +15,10 @@ export interface TestRun {
   timestamp: number
 }
 
+// Patterns starting with './' cannot use \b (word boundary rejects non-word prefix),
+// so they are handled in a separate leading alternation with a start-of-string-or-space anchor.
 const TEST_COMMAND_PATTERN =
-  /\b(npm (run )?test|yarn test|pnpm (run )?test|npx\s+vitest|vitest|jest|pytest|cargo test|go test)\b/i
+  /(?:^|[\s;|&])(\.\/gradlew\s+\w*[Tt]est\w*|\.\/gradlew\s+\w*[Cc]heck\w*|\.\/mvnw\s+(?:test|verify))|\b(npm (run )?test|yarn test|pnpm (run )?test|npx\s+vitest|vitest|jest|pytest|cargo test|go test|gradle\s+test|mvn\s+(?:test|verify)|mvnw\s+(?:test|verify))\b/i
 
 function bashCommand(input: unknown): string {
   if (input && typeof input === 'object' && 'command' in input) {

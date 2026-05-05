@@ -216,6 +216,34 @@ describe('mapRowToTask — optional field coercion', () => {
   })
 })
 
+describe('parseVerificationResults (via mapRowToTask)', () => {
+  const baseRow = {
+    id: 'task-1',
+    title: 'T',
+    repo: 'fleet',
+    status: 'queued',
+    priority: 1
+  }
+
+  it('parses valid JSON into VerificationResults', () => {
+    const results = { typecheck: null, tests: null }
+    const testRow = { ...baseRow, verification_results: JSON.stringify(results) }
+    const task = mapRowToTask(testRow as Record<string, unknown>)
+    expect(task.verification_results).toEqual(results)
+  })
+
+  it('returns null for malformed JSON', () => {
+    const testRow = { ...baseRow, verification_results: 'not-json' }
+    const task = mapRowToTask(testRow as Record<string, unknown>)
+    expect(task.verification_results).toBeNull()
+  })
+
+  it('returns undefined when column is absent', () => {
+    const task = mapRowToTask(baseRow as Record<string, unknown>)
+    expect(task.verification_results).toBeUndefined()
+  })
+})
+
 describe('serializeFieldForStorage (regression)', () => {
   it('still serializes tags to JSON string', () => {
     expect(serializeFieldForStorage('tags', ['a', 'b'])).toBe('["a","b"]')

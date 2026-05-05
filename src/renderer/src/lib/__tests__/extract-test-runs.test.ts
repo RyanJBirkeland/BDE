@@ -105,4 +105,34 @@ describe('extractTestRuns', () => {
   it('extractLatestTestRun returns null when no runs found', () => {
     expect(extractLatestTestRun([call('ls'), result('x')])).toBeNull()
   })
+
+  it('detects ./gradlew test', () => {
+    const runs = extractTestRuns([call('./gradlew test'), result('BUILD SUCCESSFUL')])
+    expect(runs).toHaveLength(1)
+  })
+
+  it('detects ./gradlew prettierCheck', () => {
+    const runs = extractTestRuns([call('./gradlew prettierCheck'), result('BUILD SUCCESSFUL')])
+    expect(runs).toHaveLength(1)
+  })
+
+  it('detects mvn test', () => {
+    const runs = extractTestRuns([call('mvn test'), result('BUILD SUCCESS')])
+    expect(runs).toHaveLength(1)
+  })
+
+  it('detects mvn verify', () => {
+    const runs = extractTestRuns([call('mvn verify'), result('BUILD SUCCESS')])
+    expect(runs).toHaveLength(1)
+  })
+
+  it('detects ./mvnw test', () => {
+    const runs = extractTestRuns([call('./mvnw test'), result('BUILD SUCCESS')])
+    expect(runs).toHaveLength(1)
+  })
+
+  it('does not match ./gradlew build', () => {
+    const runs = extractTestRuns([call('./gradlew build'), result('BUILD SUCCESSFUL')])
+    expect(runs).toHaveLength(0)
+  })
 })

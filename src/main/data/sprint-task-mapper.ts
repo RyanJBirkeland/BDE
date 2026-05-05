@@ -1,4 +1,5 @@
 import type { SprintTask, RevisionFeedbackEntry, FailureReason } from '../../shared/types'
+import { isVerificationResults } from '../../shared/types/task-types'
 import { sanitizeDependsOn } from '../../shared/sanitize-depends-on'
 import { sanitizeTags } from '../../shared/sanitize-tags'
 import { TASK_STATUSES } from '../../shared/task-state-machine'
@@ -135,6 +136,21 @@ function parseRevisionFeedback(value: unknown): RevisionFeedbackEntry[] | null {
   return validEntries
 }
 
+function parseVerificationResults(
+  value: unknown
+): import('../../shared/types/task-types').VerificationResults | null {
+  let parsed: unknown = value
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed)
+    } catch {
+      return null
+    }
+  }
+  if (!isVerificationResults(parsed)) return null
+  return parsed
+}
+
 /**
  * Sanitize a single task row from SQLite into a typed SprintTask.
  * Throws if the row's critical domain fields (id, status, priority, repo, title)
@@ -188,6 +204,7 @@ export function mapRowToTask(row: Record<string, unknown>): SprintTask {
     rebase_base_sha: toOptionalString(row.rebase_base_sha),
     rebased_at: toOptionalString(row.rebased_at),
     revision_feedback: parseRevisionFeedback(row.revision_feedback),
+    verification_results: parseVerificationResults(row.verification_results),
     review_diff_snapshot: toOptionalString(row.review_diff_snapshot),
     promoted_to_review_at: toOptionalString(row.promoted_to_review_at),
     orphan_recovery_count: toOptionalInt(row.orphan_recovery_count) ?? 0,
