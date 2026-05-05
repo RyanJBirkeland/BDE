@@ -18,6 +18,7 @@ export {
   TERMINAL_STATUSES,
   FAILURE_STATUSES,
   HARD_SATISFIED_STATUSES,
+  DEPENDENCY_TRIGGER_STATUSES,
   VALID_TRANSITIONS,
   isValidTransition,
   isTerminal,
@@ -48,6 +49,7 @@ export const TASK_STATUS = {
   BLOCKED: 'blocked',
   ACTIVE: 'active',
   REVIEW: 'review',
+  APPROVED: 'approved',
   DONE: 'done',
   CANCELLED: 'cancelled',
   FAILED: 'failed',
@@ -60,7 +62,7 @@ export const TASK_STATUS = {
 // ---------------------------------------------------------------------------
 
 /**
- * Bucket keys — the 7 UI partitions used by the sprint pipeline.
+ * Bucket keys — the 8 UI partitions used by the sprint pipeline.
  */
 export type BucketKey =
   | 'backlog'
@@ -68,6 +70,7 @@ export type BucketKey =
   | 'blocked'
   | 'inProgress'
   | 'awaitingReview'
+  | 'approved'
   | 'done'
   | 'failed'
 
@@ -124,6 +127,13 @@ export const STATUS_METADATA: Readonly<Record<TaskStatus, StatusMetadata>> = {
     bucketKey: 'awaitingReview',
     colorToken: '--fleet-status-review',
     iconName: 'Eye',
+    actionable: true
+  },
+  approved: {
+    label: 'Approved',
+    bucketKey: 'approved',
+    colorToken: '--fleet-status-done',
+    iconName: 'CheckCircle2',
     actionable: true
   },
   done: {

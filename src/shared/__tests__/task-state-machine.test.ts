@@ -5,6 +5,7 @@ import {
   TERMINAL_STATUSES,
   FAILURE_STATUSES,
   HARD_SATISFIED_STATUSES,
+  DEPENDENCY_TRIGGER_STATUSES,
   VALID_TRANSITIONS,
   isValidTransition,
   isTerminal,
@@ -16,8 +17,8 @@ import { type BucketKey, STATUS_METADATA } from '../task-statuses'
 
 describe('task-state-machine', () => {
   describe('TASK_STATUSES', () => {
-    it('should contain exactly 9 statuses', () => {
-      expect(TASK_STATUSES).toHaveLength(9)
+    it('should contain exactly 10 statuses', () => {
+      expect(TASK_STATUSES).toHaveLength(10)
     })
 
     it('should include all expected statuses', () => {
@@ -27,6 +28,7 @@ describe('task-state-machine', () => {
         'blocked',
         'active',
         'review',
+        'approved',
         'done',
         'cancelled',
         'failed',
@@ -75,14 +77,19 @@ describe('task-state-machine', () => {
   })
 
   describe('HARD_SATISFIED_STATUSES', () => {
-    it('should contain exactly 1 status', () => {
-      expect(HARD_SATISFIED_STATUSES.size).toBe(1)
+    it('should contain exactly 2 statuses', () => {
+      expect(HARD_SATISFIED_STATUSES.size).toBe(2)
     })
 
-    it('should only include done', () => {
+    it('should include done and approved', () => {
       expect(HARD_SATISFIED_STATUSES.has('done')).toBe(true)
+      expect(HARD_SATISFIED_STATUSES.has('approved')).toBe(true)
+    })
+
+    it('should not include failure or in-progress statuses', () => {
       expect(HARD_SATISFIED_STATUSES.has('failed')).toBe(false)
       expect(HARD_SATISFIED_STATUSES.has('cancelled')).toBe(false)
+      expect(HARD_SATISFIED_STATUSES.has('active')).toBe(false)
     })
   })
 
@@ -193,6 +200,7 @@ describe('task-state-machine', () => {
       expect(isTerminal('blocked')).toBe(false)
       expect(isTerminal('active')).toBe(false)
       expect(isTerminal('review')).toBe(false)
+      expect(isTerminal('approved')).toBe(false)
     })
   })
 
@@ -211,8 +219,9 @@ describe('task-state-machine', () => {
   })
 
   describe('isHardSatisfied', () => {
-    it('should return true only for done status', () => {
+    it('should return true for done and approved', () => {
       expect(isHardSatisfied('done')).toBe(true)
+      expect(isHardSatisfied('approved')).toBe(true)
     })
 
     it('should return false for all other statuses', () => {
@@ -221,6 +230,7 @@ describe('task-state-machine', () => {
       expect(isHardSatisfied('active')).toBe(false)
       expect(isHardSatisfied('queued')).toBe(false)
       expect(isHardSatisfied('error')).toBe(false)
+      expect(isHardSatisfied('review')).toBe(false)
     })
   })
 
@@ -243,6 +253,7 @@ describe('task-state-machine', () => {
         'blocked',
         'inProgress',
         'awaitingReview',
+        'approved',
         'done',
         'failed'
       ]
@@ -253,9 +264,9 @@ describe('task-state-machine', () => {
       }
     })
 
-    it('should have exactly 7 distinct bucket keys', () => {
+    it('should have exactly 8 distinct bucket keys', () => {
       const buckets = new Set(TASK_STATUSES.map((s) => STATUS_METADATA[s].bucketKey))
-      expect(buckets.size).toBe(7)
+      expect(buckets.size).toBe(8)
     })
 
     it('should map backlog status to backlog bucket', () => {
@@ -308,6 +319,58 @@ describe('task-state-machine', () => {
         const token = STATUS_METADATA[status].colorToken
         expect(token.startsWith('--fleet-')).toBe(true)
       }
+    })
+  })
+
+  describe('approved status', () => {
+    it('includes approved in TASK_STATUSES', () => {
+      expect(TASK_STATUSES).toContain('approved')
+    })
+
+    it('allows review → approved transition', () => {
+      expect(isValidTransition('review', 'approved')).toBe(true)
+    })
+
+    it('allows approved → done transition', () => {
+      expect(isValidTransition('approved', 'done')).toBe(true)
+    })
+
+    it('allows approved → queued transition', () => {
+      expect(isValidTransition('approved', 'queued')).toBe(true)
+    })
+
+    it('allows approved → cancelled transition', () => {
+      expect(isValidTransition('approved', 'cancelled')).toBe(true)
+    })
+
+    it('satisfies hard dependencies', () => {
+      expect(isHardSatisfied('approved')).toBe(true)
+    })
+
+    it('is in DEPENDENCY_TRIGGER_STATUSES', () => {
+      expect(DEPENDENCY_TRIGGER_STATUSES.has('approved')).toBe(true)
+    })
+
+    it('is not a terminal status', () => {
+      expect(isTerminal('approved')).toBe(false)
+    })
+  })
+
+  describe('DEPENDENCY_TRIGGER_STATUSES', () => {
+    it('includes all terminal statuses', () => {
+      for (const status of TERMINAL_STATUSES) {
+        expect(DEPENDENCY_TRIGGER_STATUSES.has(status)).toBe(true)
+      }
+    })
+
+    it('includes approved', () => {
+      expect(DEPENDENCY_TRIGGER_STATUSES.has('approved')).toBe(true)
+    })
+
+    it('does not include non-terminal, non-approved statuses', () => {
+      expect(DEPENDENCY_TRIGGER_STATUSES.has('active')).toBe(false)
+      expect(DEPENDENCY_TRIGGER_STATUSES.has('review')).toBe(false)
+      expect(DEPENDENCY_TRIGGER_STATUSES.has('queued')).toBe(false)
     })
   })
 

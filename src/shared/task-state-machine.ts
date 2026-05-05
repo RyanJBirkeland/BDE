@@ -13,7 +13,7 @@
  */
 
 /**
- * Task status union — all 9 possible states.
+ * Task status union — all 10 possible states.
  */
 export type TaskStatus =
   | 'backlog'
@@ -21,6 +21,7 @@ export type TaskStatus =
   | 'blocked'
   | 'active'
   | 'review'
+  | 'approved'
   | 'done'
   | 'cancelled'
   | 'failed'
@@ -38,6 +39,7 @@ export const TASK_STATUSES = [
   'blocked',
   'active',
   'review',
+  'approved',
   'done',
   'cancelled',
   'failed',
@@ -56,6 +58,17 @@ export const TERMINAL_STATUSES: ReadonlySet<TaskStatus> = new Set<TaskStatus>([
 ])
 
 /**
+ * Statuses that trigger dependency resolution — terminal statuses plus `approved`,
+ * which satisfies hard deps without being fully terminal.
+ * Use this set instead of TERMINAL_STATUSES when deciding whether to unblock
+ * downstream tasks, so approved tasks release their dependents immediately.
+ */
+export const DEPENDENCY_TRIGGER_STATUSES: ReadonlySet<TaskStatus> = new Set<TaskStatus>([
+  ...TERMINAL_STATUSES,
+  'approved'
+])
+
+/**
  * Failure statuses — task did not complete successfully.
  * Subset of terminal statuses.
  */
@@ -67,9 +80,14 @@ export const FAILURE_STATUSES: ReadonlySet<TaskStatus> = new Set<TaskStatus>([
 
 /**
  * Statuses that satisfy hard dependencies.
- * Only 'done' unblocks downstream tasks with hard dependencies.
+ * Both 'done' and 'approved' unblock downstream tasks with hard dependencies.
+ * 'approved' satisfies deps without being terminal — the PR is blessed and
+ * downstream tasks may begin while the merge is still pending.
  */
-export const HARD_SATISFIED_STATUSES: ReadonlySet<TaskStatus> = new Set<TaskStatus>(['done'])
+export const HARD_SATISFIED_STATUSES: ReadonlySet<TaskStatus> = new Set<TaskStatus>([
+  'done',
+  'approved'
+])
 
 /**
  * Valid state transitions — adjacency list representation.
@@ -98,7 +116,11 @@ export const VALID_TRANSITIONS: Record<TaskStatus, ReadonlySet<TaskStatus>> = {
   queued: new Set<TaskStatus>(['active', 'blocked', 'backlog', 'cancelled', 'done', 'failed', 'error']),
   blocked: new Set<TaskStatus>(['queued', 'cancelled']),
   active: new Set<TaskStatus>(['review', 'done', 'failed', 'error', 'cancelled', 'queued']),
-  review: new Set<TaskStatus>(['queued', 'done', 'cancelled', 'failed']),
+  review: new Set<TaskStatus>(['queued', 'done', 'cancelled', 'failed', 'approved']),
+  // 'approved' is a human-blessed state: code reviewed and accepted, waiting to ship.
+  // Satisfies hard dependencies so downstream tasks can unblock before merge.
+  // Not terminal — the Sprint PR Poller drives approved → done when the PR merges.
+  approved: new Set<TaskStatus>(['done', 'queued', 'cancelled', 'failed']),
   done: new Set<TaskStatus>(['cancelled']),
   failed: new Set<TaskStatus>(['queued', 'cancelled', 'done']),
   error: new Set<TaskStatus>(['queued', 'cancelled', 'done']),

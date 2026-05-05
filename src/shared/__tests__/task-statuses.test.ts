@@ -4,8 +4,8 @@ import { isTerminal, isFailure, TERMINAL_STATUSES, TASK_STATUSES } from '../task
 
 describe('task-statuses', () => {
   describe('ALL_TASK_STATUSES', () => {
-    it('contains all 9 expected statuses', () => {
-      expect(ALL_TASK_STATUSES).toHaveLength(9)
+    it('contains all 10 expected statuses', () => {
+      expect(ALL_TASK_STATUSES).toHaveLength(10)
     })
 
     it('is the same reference as TASK_STATUSES from task-state-machine', () => {
@@ -14,8 +14,8 @@ describe('task-statuses', () => {
   })
 
   describe('TASK_STATUS', () => {
-    it('has exactly 9 keys — one per status', () => {
-      expect(Object.keys(TASK_STATUS)).toHaveLength(9)
+    it('has exactly 10 keys — one per status', () => {
+      expect(Object.keys(TASK_STATUS)).toHaveLength(10)
     })
 
     it('values match ALL_TASK_STATUSES entries', () => {
@@ -31,6 +31,7 @@ describe('task-statuses', () => {
       expect(TASK_STATUS.BLOCKED).toBe('blocked')
       expect(TASK_STATUS.ACTIVE).toBe('active')
       expect(TASK_STATUS.REVIEW).toBe('review')
+      expect(TASK_STATUS.APPROVED).toBe('approved')
       expect(TASK_STATUS.DONE).toBe('done')
       expect(TASK_STATUS.CANCELLED).toBe('cancelled')
       expect(TASK_STATUS.FAILED).toBe('failed')
