@@ -1,3 +1,5 @@
+import React from 'react'
+
 export type StatusDotKind = 'running' | 'queued' | 'review' | 'blocked' | 'failed' | 'done'
 
 interface StatusDotProps {

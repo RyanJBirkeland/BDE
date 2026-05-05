@@ -59,13 +59,32 @@ export function BulkActionBar({
   }
 
   return (
-    <div className="bulk-action-bar" data-testid="bulk-action-bar">
-      <div className="bulk-action-bar__info">
-        <span className="bulk-action-bar__count">
-          {selectedCount} task{selectedCount > 1 ? 's' : ''} selected
-        </span>
-      </div>
-      <div className="bulk-action-bar__actions">
+    <div
+      data-testid="bulk-action-bar"
+      style={{
+        background: 'var(--surf-2)',
+        borderBottom: '1px solid var(--line-2)',
+        padding: 'var(--s-2) var(--s-6)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--s-3)',
+      }}
+    >
+      <span
+        style={{
+          padding: '1px var(--s-2)',
+          background: 'color-mix(in oklch, var(--accent) 15%, transparent)',
+          border: '1px solid color-mix(in oklch, var(--accent) 30%, transparent)',
+          borderRadius: 999,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          color: 'var(--fg)',
+          flexShrink: 0,
+        }}
+      >
+        {selectedCount} task{selectedCount > 1 ? 's' : ''} selected
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-1)', flex: 1 }}>
         <AssignEpicPopover selectedTaskIds={selectedTaskIds} onAssignComplete={onClearSelection} />
         <Button
           variant="ghost"
