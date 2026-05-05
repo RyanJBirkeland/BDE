@@ -3,7 +3,7 @@
  * Manages state (search, pending messages, playground) and delegates
  * rendering to AgentConsoleHeader, AgentConsoleStream, and AgentComposer.
  */
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, startTransition } from 'react'
 import './AgentConsole.css'
 import type { ChatBlock } from '../../lib/pair-events'
 import { pairEvents } from '../../lib/pair-events'
@@ -35,7 +35,7 @@ export function AgentConsole({
     contentType: PlaygroundContentType
     sizeBytes: number
   } | null>(null)
-  const [pendingMessages, setPendingMessages] = useState<string[]>([])
+  const [pendingMessages, setPendingMessages] = useState<{ text: string; timestamp: number }[]>([])
 
   // Search state
   const [searchOpen, setSearchOpen] = useState(false)
@@ -50,12 +50,12 @@ export function AgentConsole({
 
   const pairedBlocks = useMemo(() => pairEvents(events), [events])
 
-  // Inject pending messages at the end
+  // Inject pending messages at the end — timestamps captured at send time, not during render
   const blocks = useMemo(() => {
-    const pendingBlocks: ChatBlock[] = pendingMessages.map((text) => ({
+    const pendingBlocks: ChatBlock[] = pendingMessages.map(({ text, timestamp }) => ({
       type: 'user_message',
       text,
-      timestamp: Date.now(),
+      timestamp,
       pending: true
     }))
     return [...pairedBlocks, ...pendingBlocks]
@@ -105,16 +105,19 @@ export function AgentConsole({
     return { matchingIndicesArray: arr, matchingIndicesSet: new Set(arr) }
   }, [blocks, searchQuery, blockMatchesQuery])
 
-  // Remove pending messages when real user_message events arrive
+  // Remove pending messages when real user_message events arrive.
+  // startTransition defers the state update so it doesn't run synchronously inside the effect.
   useEffect(() => {
     const hasUserMessage = events.some((e) => e.type === 'agent:user_message')
     if (hasUserMessage && pendingMessages.length > 0) {
-      setPendingMessages((prev) => prev.slice(1))
+      startTransition(() => {
+        setPendingMessages((prev) => prev.slice(1))
+      })
     }
   }, [events, pendingMessages.length])
 
   const handleSteer = (message: string, attachment?: Attachment): void => {
-    setPendingMessages((prev) => [...prev, message])
+    setPendingMessages((prev) => [...prev, { text: message, timestamp: Date.now() }])
     onSteer(message, attachment)
   }
 
