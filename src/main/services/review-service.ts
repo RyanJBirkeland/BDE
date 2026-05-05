@@ -136,6 +136,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
       }
 
       repo.setCached(taskId, headSha, result, raw)
+      await taskRepo.updateTask(taskId, { quality_score: result.qualityScore }, { caller: 'review-service' })
       return result
     }
   }

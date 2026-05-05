@@ -87,7 +87,8 @@ function makeTask() {
 
 function makeFakeTaskRepo(task = makeTask()) {
   return {
-    getTask: (id: string) => (id === task.id ? task : null)
+    getTask: (id: string) => (id === task.id ? task : null),
+    updateTask: async () => null
   } as any
 }
 
@@ -244,5 +245,23 @@ describe('reviewService.reviewChanges', () => {
     const result = await svc.reviewChanges('task-1')
     expect(sdkOptions?.model).toBe('claude-haiku-4-5-20251001')
     expect(result.model).toBe('claude-haiku-4-5-20251001')
+  })
+
+  it('writes quality_score back to the task after a successful review', async () => {
+    const updates: Array<{ id: string; patch: Record<string, unknown> }> = []
+    const taskRepo = {
+      ...makeFakeTaskRepo(),
+      updateTask: async (id: string, patch: Record<string, unknown>) => {
+        updates.push({ id, patch })
+        return null
+      }
+    }
+    const svc = createReviewService(baseDeps({ taskRepo }))
+
+    await svc.reviewChanges('task-1')
+
+    expect(updates).toHaveLength(1)
+    expect(updates[0]?.id).toBe('task-1')
+    expect(updates[0]?.patch).toEqual({ quality_score: 88 })
   })
 })
