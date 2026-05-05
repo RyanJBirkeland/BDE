@@ -390,6 +390,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
       pr_status: null,
       pr_mergeable_state: null,
       pr_url: null,
+      stacked_on_task_id: null,
       claimed_by: null,
       started_at: null,
       completed_at: null,

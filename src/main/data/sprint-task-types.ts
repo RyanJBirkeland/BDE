@@ -44,7 +44,8 @@ export const UPDATE_ALLOWLIST: ReadonlyArray<keyof SprintTask> = [
   'rebase_base_sha',
   'rebased_at',
   'orphan_recovery_count',
-  'last_rendered_prompt'
+  'last_rendered_prompt',
+  'stacked_on_task_id'
 ]
 
 /** Fast membership check — derived from UPDATE_ALLOWLIST so the two stay in sync. */
@@ -65,6 +66,7 @@ export interface QueueStats {
   queued: number
   active: number
   review: number
+  approved: number
   done: number
   failed: number
   cancelled: number

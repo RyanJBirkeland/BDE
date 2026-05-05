@@ -58,7 +58,8 @@ export type {
   TaskOutputEvent,
   AutoReviewRule,
   SpecTypeSuccessRate,
-  Result
+  Result,
+  PrGroup
 } from './task-types'
 
 export { GENERAL_PATCH_FIELDS } from './task-types'

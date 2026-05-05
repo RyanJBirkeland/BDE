@@ -17,7 +17,8 @@ import type {
   SynthesizeRequest,
   ReviseRequest,
   ReviewResult,
-  PartnerMessage
+  PartnerMessage,
+  PrGroup
 } from '../types'
 import type { WorkflowTemplate } from '../workflow-types'
 
@@ -262,6 +263,70 @@ export interface ReviewChannels {
     result:
       | { success: true; prUrl: string; prNumber: number }
       | { success: false; error: string; conflictingFiles?: string[] | undefined }
+  }
+  /**
+   * Approve a task — transitions it from `review` to `approved` status.
+   * Approved tasks are eligible for inclusion in a PR Group for stacked-PR
+   * shipping. Dependency resolution fires (approved satisfies hard deps).
+   */
+  'review:approveTask': {
+    args: [{ taskId: string }]
+    result: { success: boolean }
+  }
+}
+
+/** PR Group CRUD and build operations */
+export interface PrGroupChannels {
+  'prGroups:list': {
+    args: [{ repo?: string | undefined }]
+    result: PrGroup[]
+  }
+  'prGroups:create': {
+    args: [
+      {
+        repo: string
+        title: string
+        branchName: string
+        description?: string | undefined
+      }
+    ]
+    result: PrGroup
+  }
+  'prGroups:update': {
+    args: [
+      {
+        id: string
+        title?: string | undefined
+        branchName?: string | undefined
+        description?: string | undefined
+        taskOrder?: string[] | undefined
+      }
+    ]
+    result: PrGroup
+  }
+  'prGroups:addTask': {
+    args: [{ groupId: string; taskId: string }]
+    result: PrGroup
+  }
+  'prGroups:removeTask': {
+    args: [{ groupId: string; taskId: string }]
+    result: PrGroup
+  }
+  /**
+   * Build a stacked PR for the group: squash-merges each task branch in
+   * `task_order` sequence, pushes the combined branch, and opens one PR.
+   * Returns the PR URL and number on success, or an error with any
+   * conflicting files that need to be resolved first.
+   */
+  'prGroups:build': {
+    args: [{ id: string }]
+    result:
+      | { success: true; prUrl: string; prNumber: number }
+      | { success: false; error: string; conflictingFiles?: string[] | undefined }
+  }
+  'prGroups:delete': {
+    args: [{ id: string }]
+    result: { success: boolean }
   }
 }
 

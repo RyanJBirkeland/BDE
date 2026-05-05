@@ -107,6 +107,12 @@ export interface SprintTask {
     | null
     | undefined
   pr_url: string | null
+  /**
+   * When this task is part of a PR Group, the id of the task whose worktree
+   * branch this task's commits are stacked on top of. Null for the first
+   * task in a group, or for tasks not yet assigned to a group.
+   */
+  stacked_on_task_id: string | null
   claimed_by: string | null
   started_at: string | null
   completed_at: string | null
@@ -313,6 +319,25 @@ export interface BatchImportTask {
 /** A claimed task with an optional template prompt prefix. */
 export interface ClaimedTask extends SprintTask {
   templatePromptPrefix: string | null
+}
+
+/**
+ * A PR Group collects multiple approved tasks into a single stacked PR.
+ * Tasks in the group are squash-merged in `task_order` sequence onto a
+ * shared branch, then pushed as one pull request.
+ */
+export interface PrGroup {
+  id: string
+  repo: string
+  title: string
+  branch_name: string
+  description: string | null
+  status: 'composing' | 'building' | 'open' | 'merged'
+  task_order: string[]
+  pr_number: number | null
+  pr_url: string | null
+  created_at: string
+  updated_at: string
 }
 
 // --- Spec Synthesizer ---

@@ -15,6 +15,7 @@ const EMPTY_QUEUE_STATS: QueueStats = {
   queued: 0,
   active: 0,
   review: 0,
+  approved: 0,
   done: 0,
   failed: 0,
   cancelled: 0,

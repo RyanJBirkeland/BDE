@@ -176,6 +176,7 @@ export function mapRowToTask(row: Record<string, unknown>): SprintTask {
       VALID_MERGEABLE_STATES
     ),
     pr_url: toOptionalString(row.pr_url),
+    stacked_on_task_id: toOptionalString(row.stacked_on_task_id),
     claimed_by: toOptionalString(row.claimed_by),
     started_at: toOptionalString(row.started_at),
     completed_at: toOptionalString(row.completed_at),

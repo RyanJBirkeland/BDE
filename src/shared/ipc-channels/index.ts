@@ -94,7 +94,8 @@ export type {
   TemplateChannels,
   SynthesizerChannels,
   GroupChannels,
-  PlannerChannels
+  PlannerChannels,
+  PrGroupChannels
 } from './sprint-channels'
 
 // Git channels
@@ -178,4 +179,5 @@ export type IpcChannelMap = import('./settings-channels').SettingsChannels &
   import('./settings-channels').OnboardingChannels &
   import('./settings-channels').McpChannels &
   import('./agent-channels').PreflightChannels &
-  import('./update-channels').UpdateChannels
+  import('./update-channels').UpdateChannels &
+  import('./sprint-channels').PrGroupChannels
