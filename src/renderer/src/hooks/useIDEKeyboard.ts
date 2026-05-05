@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useTerminalStore } from '../stores/terminal'
+import type { IDEActivity } from '../stores/ide'
 import { clearTerminal } from '../components/terminal/TerminalPane'
 
 interface UseIDEKeyboardParams {
@@ -15,6 +16,10 @@ interface UseIDEKeyboardParams {
   handleCloseTab: (tabId: string, isDirty: boolean) => Promise<void>
   setShowShortcuts: (show: boolean | ((prev: boolean) => boolean)) => void
   setShowQuickOpen: (show: boolean | ((prev: boolean) => boolean)) => void
+  // V2 IDE: activity rail mode switching + insight rail toggle.
+  setActivity?: (mode: IDEActivity) => void
+  setSidebarOpen?: (open: boolean) => void
+  toggleInsightRail?: () => void
 }
 
 export function useIDEKeyboard({
@@ -29,7 +34,10 @@ export function useIDEKeyboard({
   handleSave,
   handleCloseTab,
   setShowShortcuts,
-  setShowQuickOpen
+  setShowQuickOpen,
+  setActivity,
+  setSidebarOpen,
+  toggleInsightRail
 }: UseIDEKeyboardParams): void {
   const termAddTab = useTerminalStore((s) => s.addTab)
   const termCloseTab = useTerminalStore((s) => s.closeTab)
@@ -44,6 +52,54 @@ export function useIDEKeyboard({
     if (activeView !== 'ide') return
     const handler = (e: KeyboardEvent): void => {
       if (e.metaKey && !e.ctrlKey) {
+        // V2 activity rail mode switching (⌘⇧F/G/O/A) + ⌘1 files focus.
+        // Note: ⌘1 also resolves to "switch to Dashboard view" at the app shell;
+        // since this handler is gated on activeView==='ide' it will only fire
+        // when the user is already in the IDE, so the global handler wins
+        // when navigating away.
+        if (e.shiftKey && setActivity) {
+          if (e.key === 'F' || e.key === 'f') {
+            e.preventDefault()
+            e.stopPropagation()
+            setActivity('search')
+            setSidebarOpen?.(true)
+            return
+          }
+          if (e.key === 'G' || e.key === 'g') {
+            e.preventDefault()
+            e.stopPropagation()
+            setActivity('scm')
+            setSidebarOpen?.(true)
+            return
+          }
+          if (e.key === 'O' || e.key === 'o') {
+            e.preventDefault()
+            e.stopPropagation()
+            setActivity('outline')
+            setSidebarOpen?.(true)
+            return
+          }
+          if (e.key === 'A' || e.key === 'a') {
+            e.preventDefault()
+            e.stopPropagation()
+            setActivity('agents')
+            setSidebarOpen?.(true)
+            return
+          }
+        }
+        if (e.altKey && (e.key === 'i' || e.key === 'I' || e.key === '∆') && toggleInsightRail) {
+          e.preventDefault()
+          e.stopPropagation()
+          toggleInsightRail()
+          return
+        }
+        if (e.key === '1' && setActivity) {
+          e.preventDefault()
+          e.stopPropagation()
+          setActivity('files')
+          setSidebarOpen?.(true)
+          return
+        }
         if (e.key === 'b') {
           e.preventDefault()
           e.stopPropagation()
@@ -190,6 +246,9 @@ export function useIDEKeyboard({
     termResetZoom,
     showShortcuts,
     setShowShortcuts,
-    setShowQuickOpen
+    setShowQuickOpen,
+    setActivity,
+    setSidebarOpen,
+    toggleInsightRail
   ])
 }

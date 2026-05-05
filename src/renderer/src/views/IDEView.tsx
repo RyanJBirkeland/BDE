@@ -1,17 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
-import { PanelLeftOpen } from 'lucide-react'
+import type * as monaco from 'monaco-editor'
 import { useShallow } from 'zustand/react/shallow'
 import { useIDEStore } from '../stores/ide'
 import { useIDEFileCache } from '../stores/ideFileCache'
 import { usePanelLayoutStore } from '../stores/panelLayout'
-import { EditorPane } from '../components/ide/EditorPane'
-import { EditorTabBar } from '../components/ide/EditorTabBar'
-import { EditorBreadcrumb } from '../components/ide/EditorBreadcrumb'
-import { EditorToolbar } from '../components/ide/EditorToolbar'
-import { FileSidebar } from '../components/ide/FileSidebar'
-import { TerminalPanel } from '../components/ide/TerminalPanel'
+import { ActivityRail } from '../components/ide/ActivityRail'
+import { IDESidebar } from '../components/ide/IDESidebar'
+import { EditorColumn } from '../components/ide/EditorColumn'
+import { InsightRail } from '../components/ide/InsightRail'
+import { IDEStatusBar } from '../components/ide/IDEStatusBar'
 import { IDEEmptyState } from '../components/ide/IDEEmptyState'
 import { useUnsavedDialog, UnsavedDialogModal } from '../components/ide/UnsavedDialog'
 import { QuickOpenPalette } from '../components/ide/QuickOpenPalette'
@@ -23,9 +21,14 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/
 import './IDEView.css'
 import { useCommandPaletteStore, type Command } from '../stores/commandPalette'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
-import { LoadingState } from '../components/ui/LoadingState'
 
 const IDE_SHORTCUTS = [
+  { keys: '⌘1', desc: 'Files panel' },
+  { keys: '⌘⇧F', desc: 'Search panel' },
+  { keys: '⌘⇧G', desc: 'Source Control panel' },
+  { keys: '⌘⇧O', desc: 'Outline panel' },
+  { keys: '⌘⇧A', desc: 'Agents panel' },
+  { keys: '⌘⌥I', desc: 'Toggle Insight Rail' },
   { keys: '⌘B', desc: 'Toggle sidebar' },
   { keys: '⌘J', desc: 'Toggle terminal' },
   { keys: '⌘O', desc: 'Open folder' },
@@ -45,6 +48,7 @@ export function IDEView(): React.JSX.Element {
   const reduced = useReducedMotion()
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showQuickOpen, setShowQuickOpen] = useState(false)
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null)
 
   useIDEStateRestoration()
 
@@ -52,37 +56,37 @@ export function IDEView(): React.JSX.Element {
     rootPath,
     openTabs,
     activeTabId,
-    sidebarCollapsed,
-    terminalCollapsed,
     focusedPanel,
-    minimapEnabled,
-    wordWrapEnabled,
-    fontSize,
+    uiState,
     setRootPath,
     openTab,
     closeTab,
     setDirty,
     setFocusedPanel,
     toggleSidebar,
-    toggleTerminal
+    toggleTerminal,
+    setActivity,
+    setInsightRailOpen,
+    setTerminalOpen,
+    setSidebarOpen
   } = useIDEStore(
     useShallow((s) => ({
       rootPath: s.rootPath,
       openTabs: s.openTabs,
       activeTabId: s.activeTabId,
-      sidebarCollapsed: s.sidebarCollapsed,
-      terminalCollapsed: s.terminalCollapsed,
       focusedPanel: s.focusedPanel,
-      minimapEnabled: s.minimapEnabled,
-      wordWrapEnabled: s.wordWrapEnabled,
-      fontSize: s.fontSize,
+      uiState: s.uiState,
       setRootPath: s.setRootPath,
       openTab: s.openTab,
       closeTab: s.closeTab,
       setDirty: s.setDirty,
       setFocusedPanel: s.setFocusedPanel,
       toggleSidebar: s.toggleSidebar,
-      toggleTerminal: s.toggleTerminal
+      toggleTerminal: s.toggleTerminal,
+      setActivity: s.setActivity,
+      setInsightRailOpen: s.setInsightRailOpen,
+      setTerminalOpen: s.setTerminalOpen,
+      setSidebarOpen: s.setSidebarOpen
     }))
   )
 
@@ -94,22 +98,13 @@ export function IDEView(): React.JSX.Element {
       setFileLoading: s.setFileLoading
     }))
   )
-  const { fileContents, fileLoadingStates } = fileCache
 
   const activeView = usePanelLayoutStore((s) => s.activeView)
   const activeTab = openTabs.find((t) => t.id === activeTabId) ?? null
+  const activeFilePath = activeTab?.filePath ?? null
   const { confirmUnsaved, confirmProps } = useUnsavedDialog()
   const registerCommands = useCommandPaletteStore((s) => s.registerCommands)
   const unregisterCommands = useCommandPaletteStore((s) => s.unregisterCommands)
-  const sidebarPanelRef = usePanelRef()
-
-  useEffect(() => {
-    if (sidebarCollapsed) {
-      sidebarPanelRef.current?.collapse()
-    } else {
-      sidebarPanelRef.current?.expand()
-    }
-  }, [sidebarCollapsed, sidebarPanelRef])
 
   const { handleSave, handleContentChange, handleCloseTab, handleOpenFolder, handleOpenFile } =
     useIDEFileOperations({
@@ -122,9 +117,7 @@ export function IDEView(): React.JSX.Element {
 
   useIDEUnsavedGuard(openTabs)
 
-  // Register IDE commands in command palette
   const handleNewTerminalTab = useCallback(() => {
-    // Dispatch custom event for terminal to handle
     window.dispatchEvent(new CustomEvent('ide:new-terminal-tab'))
   }, [])
 
@@ -174,6 +167,11 @@ export function IDEView(): React.JSX.Element {
     unregisterCommands
   ])
 
+  const toggleInsightRail = useCallback(
+    () => setInsightRailOpen(!uiState.insightRailOpen),
+    [setInsightRailOpen, uiState.insightRailOpen]
+  )
+
   useIDEKeyboard({
     activeView,
     focusedPanel,
@@ -186,8 +184,36 @@ export function IDEView(): React.JSX.Element {
     handleSave,
     handleCloseTab,
     setShowShortcuts,
-    setShowQuickOpen
+    setShowQuickOpen,
+    setActivity,
+    setSidebarOpen,
+    toggleInsightRail
   })
+
+  const currentActivity = uiState.activity
+  const currentSidebarOpen = uiState.sidebarOpen
+
+  const handleActivityChange = useCallback(
+    (mode: typeof currentActivity) => {
+      // Re-clicking the active mode collapses the sidebar; clicking a new mode
+      // ensures the sidebar is open so the user sees the panel they requested.
+      if (mode === currentActivity) {
+        setSidebarOpen(!currentSidebarOpen)
+        return
+      }
+      setActivity(mode)
+      setSidebarOpen(true)
+    },
+    [currentActivity, currentSidebarOpen, setActivity, setSidebarOpen]
+  )
+
+  const handleAgentClick = useCallback((_agentId: string) => {
+    // TODO: navigate to Agents view + select this agent.
+  }, [])
+
+  const handleNewFile = useCallback(() => {
+    handleOpenFile('')
+  }, [handleOpenFile])
 
   if (!rootPath) {
     return (
@@ -200,81 +226,62 @@ export function IDEView(): React.JSX.Element {
 
   return (
     <ErrorBoundary name="IDEView">
-      <motion.div
+      <motion.main
         className="ide-view"
-        onClick={() => setFocusedPanel('editor')}
         variants={VARIANTS.fadeIn}
         initial="initial"
         animate="animate"
         transition={reduced ? REDUCED_TRANSITION : SPRINGS.snappy}
       >
-        <Group orientation="horizontal" style={{ flex: 1, height: '100%', minHeight: 0 }}>
-          <Panel panelRef={sidebarPanelRef} defaultSize={20} minSize={10} collapsible>
-            <FileSidebar onOpenFile={handleOpenFile} />
-          </Panel>
-          <Separator className="ide-separator ide-separator--h" />
-          <Panel defaultSize={80} minSize={30}>
-            <Group orientation="vertical" style={{ height: '100%' }}>
-              <Panel defaultSize={terminalCollapsed ? 100 : 65} minSize={20}>
-                <div
-                  className="ide-editor-area"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setFocusedPanel('editor')
-                  }}
-                >
-                  {sidebarCollapsed && !activeTab && (
-                    <button
-                      className="ide-sidebar-toggle"
-                      onClick={toggleSidebar}
-                      aria-label="Open sidebar"
-                    >
-                      <PanelLeftOpen size={16} />
-                    </button>
-                  )}
-                  <EditorTabBar onCloseTab={(id, dirty) => void handleCloseTab(id, dirty)} />
-                  <EditorBreadcrumb />
-                  <EditorToolbar />
-                  <div className="ide-editor-content">
-                    {activeTab && fileLoadingStates[activeTab.filePath] ? (
-                      <LoadingState className="ide-file-loading" />
-                    ) : (
-                      <EditorPane
-                        filePath={activeTab?.filePath ?? null}
-                        content={activeTab ? (fileContents[activeTab.filePath] ?? null) : null}
-                        language={activeTab?.language ?? 'plaintext'}
-                        onContentChange={handleContentChange}
-                        onSave={() => void handleSave()}
-                        minimapEnabled={minimapEnabled}
-                        wordWrapEnabled={wordWrapEnabled}
-                        fontSize={fontSize}
-                      />
-                    )}
-                  </div>
-                </div>
-              </Panel>
-              {!terminalCollapsed && (
-                <>
-                  <Separator className="ide-separator ide-separator--v" />
-                  <Panel defaultSize={35} minSize={15}>
-                    <div
-                      style={{ height: '100%' }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setFocusedPanel('terminal')
-                      }}
-                    >
-                      <TerminalPanel />
-                    </div>
-                  </Panel>
-                </>
-              )}
-            </Group>
-          </Panel>
-        </Group>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            overflow: 'hidden',
+            position: 'relative'
+          }}
+        >
+          <ActivityRail
+            activity={uiState.activity}
+            onChange={handleActivityChange}
+            insightOpen={uiState.insightRailOpen}
+            onToggleInsight={toggleInsightRail}
+          />
+          <IDESidebar
+            activity={uiState.activity}
+            activeFilePath={activeFilePath}
+            onOpenFile={handleOpenFile}
+            open={uiState.sidebarOpen}
+            rootPath={rootPath}
+            editorRef={editorRef}
+            onAgentClick={handleAgentClick}
+          />
+          <EditorColumn
+            terminalOpen={uiState.terminalOpen}
+            insightOpen={uiState.insightRailOpen}
+            onToggleTerminal={() => setTerminalOpen(!uiState.terminalOpen)}
+            onToggleInsight={toggleInsightRail}
+            onCloseTab={handleCloseTab}
+            onNewFile={handleNewFile}
+            editorRef={editorRef}
+            onContentChange={handleContentChange}
+            onSave={() => void handleSave()}
+          />
+          {uiState.insightRailOpen && (
+            <InsightRail
+              activeFilePath={activeFilePath}
+              editorRef={editorRef}
+              onClose={() => setInsightRailOpen(false)}
+              rootPath={rootPath}
+            />
+          )}
+        </div>
+
+        <IDEStatusBar editorRef={editorRef} />
+
         <UnsavedDialogModal {...confirmProps} />
 
-        {/* Quick Open Palette */}
         {showQuickOpen && rootPath && (
           <QuickOpenPalette
             rootPath={rootPath}
@@ -283,7 +290,6 @@ export function IDEView(): React.JSX.Element {
           />
         )}
 
-        {/* Keyboard shortcuts help overlay */}
         {showShortcuts && (
           <div
             className="ide-shortcuts-overlay"
@@ -305,7 +311,7 @@ export function IDEView(): React.JSX.Element {
             </div>
           </div>
         )}
-      </motion.div>
+      </motion.main>
     </ErrorBoundary>
   )
 }

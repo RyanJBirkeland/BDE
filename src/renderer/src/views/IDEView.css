@@ -5,8 +5,34 @@
   width: 100%;
   height: 100%;
   min-height: 0;
-  background: var(--fleet-bg);
+  background: var(--bg);
   overflow: hidden;
+  /* Enables @container width queries for responsive collapse without
+     coupling the IDE layout to viewport breakpoints — important when the
+     IDE is mounted inside a panel that can be resized independently. */
+  container-type: inline-size;
+}
+
+/* Responsive collapse rules.
+   ≥1440px: everything visible (default).
+   1280–1439px: InsightRail closed by default (handled in store defaults).
+   1024–1279px: sidebar overlays the editor instead of pushing it. */
+@container (max-width: 1279px) {
+  .ide-view__sidebar-overlay {
+    position: absolute;
+    top: 0;
+    left: 44px; /* width of ActivityRail */
+    bottom: 28px; /* height of IDEStatusBar */
+    z-index: 10;
+    box-shadow: var(--shadow-2);
+  }
+}
+
+/* TODO(phase-6.5): full sidebar overlay drawer animation at <1280px. */
+@container (max-width: 1023px) {
+  .ide-view__activity-rail-horizontal {
+    /* Placeholder for degraded ActivityRail-as-strip mode. */
+  }
 }
 /* Panel Separators */
 .ide-separator {

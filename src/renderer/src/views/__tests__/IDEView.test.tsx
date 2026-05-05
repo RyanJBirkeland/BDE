@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { IDEView } from '../IDEView'
 
+type MockIDEUIState = {
+  activity: 'files' | 'search' | 'scm' | 'outline' | 'agents'
+  insightRailOpen: boolean
+  insightSectionsOpen: Record<string, boolean>
+  terminalOpen: boolean
+  sidebarOpen: boolean
+}
+
 type MockIDEState = {
   rootPath: string | null
   openTabs: Array<{
@@ -15,6 +23,7 @@ type MockIDEState = {
   sidebarCollapsed: boolean
   terminalCollapsed: boolean
   focusedPanel: 'editor' | 'terminal'
+  uiState: MockIDEUIState
   setRootPath: ReturnType<typeof vi.fn>
   openTab: ReturnType<typeof vi.fn>
   closeTab: ReturnType<typeof vi.fn>
@@ -23,6 +32,10 @@ type MockIDEState = {
   setFocusedPanel: ReturnType<typeof vi.fn>
   toggleSidebar: ReturnType<typeof vi.fn>
   toggleTerminal: ReturnType<typeof vi.fn>
+  setActivity: ReturnType<typeof vi.fn>
+  setInsightRailOpen: ReturnType<typeof vi.fn>
+  setTerminalOpen: ReturnType<typeof vi.fn>
+  setSidebarOpen: ReturnType<typeof vi.fn>
   recentFolders: string[]
 }
 
@@ -33,49 +46,63 @@ type MockFileCacheState = {
   setFileLoading: ReturnType<typeof vi.fn>
 }
 
-const { mockUseIDEStore, mockUseIDEFileCache, mockSetFocusedPanel } = vi.hoisted(() => {
-  const mockSetFocusedPanel = vi.fn()
-  const defaultState: MockIDEState = {
-    rootPath: null,
-    openTabs: [],
-    activeTabId: null,
-    sidebarCollapsed: false,
-    terminalCollapsed: false,
-    focusedPanel: 'editor',
-    setRootPath: vi.fn(),
-    openTab: vi.fn(),
-    closeTab: vi.fn(),
-    setActiveTab: vi.fn(),
-    setDirty: vi.fn(),
-    setFocusedPanel: mockSetFocusedPanel,
-    toggleSidebar: vi.fn(),
-    toggleTerminal: vi.fn(),
-    recentFolders: []
+const { mockUseIDEStore, mockUseIDEFileCache, mockSetFocusedPanel, DEFAULT_UI_STATE } = vi.hoisted(
+  () => {
+    const DEFAULT_UI_STATE: MockIDEUIState = {
+      activity: 'files',
+      insightRailOpen: false,
+      insightSectionsOpen: {},
+      terminalOpen: false,
+      sidebarOpen: true
+    }
+    const mockSetFocusedPanel = vi.fn()
+    const defaultState: MockIDEState = {
+      rootPath: null,
+      openTabs: [],
+      activeTabId: null,
+      sidebarCollapsed: false,
+      terminalCollapsed: false,
+      focusedPanel: 'editor',
+      uiState: DEFAULT_UI_STATE,
+      setRootPath: vi.fn(),
+      openTab: vi.fn(),
+      closeTab: vi.fn(),
+      setActiveTab: vi.fn(),
+      setDirty: vi.fn(),
+      setFocusedPanel: mockSetFocusedPanel,
+      toggleSidebar: vi.fn(),
+      toggleTerminal: vi.fn(),
+      setActivity: vi.fn(),
+      setInsightRailOpen: vi.fn(),
+      setTerminalOpen: vi.fn(),
+      setSidebarOpen: vi.fn(),
+      recentFolders: []
+    }
+    const defaultCacheState: MockFileCacheState = {
+      fileContents: {},
+      fileLoadingStates: {},
+      setFileContent: vi.fn(),
+      setFileLoading: vi.fn()
+    }
+    const mockUseIDEStore = vi.fn((selector: (s: MockIDEState) => unknown) =>
+      selector(defaultState)
+    ) as ReturnType<typeof vi.fn> & {
+      getState: () => MockIDEState
+      setState: (partial: Partial<MockIDEState>) => void
+    }
+    mockUseIDEStore.getState = () => defaultState
+    mockUseIDEStore.setState = vi.fn()
+    const mockUseIDEFileCache = vi.fn((selector: (s: MockFileCacheState) => unknown) =>
+      selector(defaultCacheState)
+    ) as ReturnType<typeof vi.fn> & {
+      getState: () => MockFileCacheState
+      setState: (partial: Partial<MockFileCacheState>) => void
+    }
+    mockUseIDEFileCache.getState = () => defaultCacheState
+    mockUseIDEFileCache.setState = vi.fn()
+    return { mockUseIDEStore, mockUseIDEFileCache, mockSetFocusedPanel, DEFAULT_UI_STATE }
   }
-  const defaultCacheState: MockFileCacheState = {
-    fileContents: {},
-    fileLoadingStates: {},
-    setFileContent: vi.fn(),
-    setFileLoading: vi.fn()
-  }
-  const mockUseIDEStore = vi.fn((selector: (s: MockIDEState) => unknown) =>
-    selector(defaultState)
-  ) as ReturnType<typeof vi.fn> & {
-    getState: () => MockIDEState
-    setState: (partial: Partial<MockIDEState>) => void
-  }
-  mockUseIDEStore.getState = () => defaultState
-  mockUseIDEStore.setState = vi.fn()
-  const mockUseIDEFileCache = vi.fn((selector: (s: MockFileCacheState) => unknown) =>
-    selector(defaultCacheState)
-  ) as ReturnType<typeof vi.fn> & {
-    getState: () => MockFileCacheState
-    setState: (partial: Partial<MockFileCacheState>) => void
-  }
-  mockUseIDEFileCache.getState = () => defaultCacheState
-  mockUseIDEFileCache.setState = vi.fn()
-  return { mockUseIDEStore, mockUseIDEFileCache, mockSetFocusedPanel }
-})
+)
 
 vi.mock('../../stores/ide', () => ({ useIDEStore: mockUseIDEStore }))
 vi.mock('../../stores/ideFileCache', () => ({ useIDEFileCache: mockUseIDEFileCache }))
@@ -108,6 +135,53 @@ vi.mock('../../stores/terminal', () => ({
 vi.mock('@monaco-editor/react', () => ({
   default: ({ value }: { value?: string }) => <div data-testid="monaco-editor">{value}</div>,
   loader: { config: vi.fn() }
+}))
+vi.mock('monaco-editor', () => ({}))
+vi.mock('../../lib/monaco-theme-v2', () => ({
+  getMonacoV2Theme: vi.fn(() => ({ base: 'vs-dark', inherit: true, rules: [], colors: {} })),
+  V2_THEME_DARK: 'fleet-v2-dark',
+  V2_THEME_LIGHT: 'fleet-v2-light'
+}))
+vi.mock('../../components/ide/IDESidebar', () => ({
+  IDESidebar: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="ide-sidebar">EXPLORER</div> : null
+}))
+vi.mock('../../components/ide/ActivityRail', () => ({
+  ActivityRail: () => <nav data-testid="activity-rail" />
+}))
+vi.mock('../../components/ide/EditorColumn', () => ({
+  EditorColumn: ({ onCloseTab }: { onCloseTab: (id: string, dirty: boolean) => void }) => {
+    const state = mockUseIDEStore.getState()
+    return (
+      <div data-testid="editor-column">
+        <div role="tablist" aria-label="Editor tabs">
+          {state.openTabs.map((tab) => (
+            <div
+              key={tab.id}
+              role="tab"
+              aria-label={tab.displayName}
+              aria-selected={tab.id === state.activeTabId}
+              data-dirty={tab.isDirty}
+            >
+              {tab.displayName}
+              <button onClick={() => onCloseTab(tab.id, tab.isDirty)}>×</button>
+            </div>
+          ))}
+        </div>
+        {state.activeTabId == null ? (
+          <div data-testid="editor-empty">Open a file from the sidebar to start editing</div>
+        ) : (
+          <div data-testid="editor-pane">loaded</div>
+        )}
+      </div>
+    )
+  }
+}))
+vi.mock('../../components/ide/InsightRail', () => ({
+  InsightRail: () => <aside data-testid="insight-rail" />
+}))
+vi.mock('../../components/ide/IDEStatusBar', () => ({
+  IDEStatusBar: () => <footer data-testid="status-bar">status</footer>
 }))
 vi.mock('../../stores/theme', () => ({
   useThemeStore: vi.fn((selector: (s: { theme: string }) => unknown) => selector({ theme: 'dark' }))
@@ -223,6 +297,7 @@ function setIDEState(overrides: Partial<MockIDEState> & Partial<MockFileCacheSta
     sidebarCollapsed: false,
     terminalCollapsed: false,
     focusedPanel: 'editor',
+    uiState: DEFAULT_UI_STATE,
     setRootPath: vi.fn(),
     openTab: vi.fn(),
     closeTab: vi.fn(),
@@ -231,6 +306,10 @@ function setIDEState(overrides: Partial<MockIDEState> & Partial<MockFileCacheSta
     setFocusedPanel: mockSetFocusedPanel,
     toggleSidebar: vi.fn(),
     toggleTerminal: vi.fn(),
+    setActivity: vi.fn(),
+    setInsightRailOpen: vi.fn(),
+    setTerminalOpen: vi.fn(),
+    setSidebarOpen: vi.fn(),
     recentFolders: [],
     ...ideOverrides
   }
@@ -376,17 +455,12 @@ describe('IDEView', () => {
       expect(screen.getByText('EXPLORER')).toBeInTheDocument()
     })
 
-    it('hides terminal panel when terminalCollapsed is true', () => {
-      setIDEState({ rootPath: '/project', terminalCollapsed: true })
-      render(<IDEView />)
-      expect(screen.queryByTestId('terminal-pane-term-1')).not.toBeInTheDocument()
-    })
+    // V2 IDE: terminal visibility is owned by EditorColumn (uiState.terminalOpen).
+    // IDEView no longer renders TerminalPanel directly, so this is now a
+    // sub-component concern verified by EditorColumn.test.tsx.
+    it.skip('hides terminal panel when terminalCollapsed is true (V1 only)', () => {})
 
-    it('shows terminal panel when terminalCollapsed is false', () => {
-      setIDEState({ rootPath: '/project', terminalCollapsed: false })
-      render(<IDEView />)
-      expect(screen.getByTestId('terminal-panel')).toBeInTheDocument()
-    })
+    it.skip('shows terminal panel when terminalCollapsed is false (V1 only)', () => {})
 
     it('renders UnsavedDialogModal in both empty and loaded states', () => {
       const { rerender } = render(<IDEView />)
@@ -467,26 +541,10 @@ describe('IDEView', () => {
   })
 
   describe('File loading indicator', () => {
-    it('shows Loading... text when active file is loading', () => {
-      setIDEState({
-        rootPath: '/project',
-        openTabs: [
-          {
-            id: 'tab-1',
-            filePath: '/project/test.ts',
-            displayName: 'test.ts',
-            language: 'typescript',
-            isDirty: false
-          }
-        ],
-        activeTabId: 'tab-1',
-        fileLoadingStates: { '/project/test.ts': true },
-        fileContents: {}
-      })
-
-      render(<IDEView />)
-      expect(screen.getByText('Loading...')).toBeInTheDocument()
-    })
+    // V2 IDE: per-file loading is owned by EditorColumn → EditorPane. IDEView
+    // no longer renders LoadingState directly, so this is verified at the
+    // EditorColumn / EditorPane level.
+    it.skip('shows Loading... text when active file is loading (V1 only)', () => {})
 
     it('shows editor pane when file is loaded', () => {
       setIDEState({
@@ -511,7 +569,10 @@ describe('IDEView', () => {
     })
   })
 
-  describe('Sidebar toggle button when collapsed', () => {
+  // V2 IDE: the floating .ide-sidebar-toggle was V1 chrome shown when the
+  // sidebar was collapsed and no tab was open. V2 replaces it with the
+  // ActivityRail, which is always visible. These tests no longer apply.
+  describe.skip('Sidebar toggle button when collapsed (V1 only)', () => {
     it('shows sidebar toggle button when sidebar is collapsed and no active tab', () => {
       setIDEState({
         rootPath: '/project',
@@ -908,7 +969,11 @@ describe('IDEView', () => {
     })
   })
 
-  describe('Editor area focus handling', () => {
+  // V2 IDE: focus tracking is no longer driven by clicking a wrapping
+  // .ide-editor-area div. Editor focus comes directly from Monaco; terminal
+  // focus comes from the terminal pane. The implicit click-to-focus behavior
+  // tested here is gone, replaced by per-component focus contracts.
+  describe.skip('Editor area focus handling (V1 only)', () => {
     it('sets focused panel to editor when clicking editor area', () => {
       setIDEState({ rootPath: '/project' })
 
