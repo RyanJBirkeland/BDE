@@ -1,5 +1,12 @@
 import type { TaskGroup } from '../../../../../shared/types'
 
+function sanitizeCssColor(value: string | null | undefined): string {
+  if (!value) return 'var(--accent)'
+  // Allow: CSS named colors (letters only) and hex colors (#rgb, #rrggbb, #rgba, #rrggbbaa)
+  const isValid = /^#[0-9a-fA-F]{3,8}$/.test(value) || /^[a-zA-Z]+$/.test(value)
+  return isValid ? value : 'var(--accent)'
+}
+
 interface Props {
   groups: TaskGroup[]
   selectedId: string | null
@@ -163,13 +170,13 @@ function PlEpicRailItem({
             top: 8,
             bottom: 8,
             width: 2,
-            background: epic.accent_color,
+            background: sanitizeCssColor(epic.accent_color),
             borderRadius: 2
           }}
         />
       )}
 
-      <EpicIcon icon={epic.icon} accent={epic.accent_color} size={30} fontSize={13} />
+      <EpicIcon icon={epic.icon} accent={sanitizeCssColor(epic.accent_color)} size={30} fontSize={13} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -227,6 +234,7 @@ export function EpicIcon({
   size: number
   fontSize: number
 }): React.JSX.Element {
+  const safeAccent = sanitizeCssColor(accent)
   return (
     <div
       style={{
@@ -236,9 +244,9 @@ export function EpicIcon({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: `color-mix(in srgb, ${accent} 12%, transparent)`,
-        color: accent,
-        border: `1px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+        background: `color-mix(in srgb, ${safeAccent} 12%, transparent)`,
+        color: safeAccent,
+        border: `1px solid color-mix(in srgb, ${safeAccent} 30%, transparent)`,
         borderRadius: 7,
         fontSize,
         fontWeight: 600,

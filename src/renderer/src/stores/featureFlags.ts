@@ -14,33 +14,33 @@ interface FeatureFlagState extends Flags {
 
 const STORAGE_KEY = 'fleet:ff'
 
+const defaultFlags: Flags = {
+  v2Shell: false,
+  v2Dashboard: false,
+  v2Pipeline: false,
+  v2Agents: true,
+  v2Planner: false
+}
+
+function validatedFlag<K extends keyof Flags>(parsed: unknown, key: K): Flags[K] {
+  const value = (parsed as Record<string, unknown>)[key]
+  return typeof value === 'boolean' ? (value as Flags[K]) : defaultFlags[key]
+}
+
 function loadFlags(): Flags {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored)
-      return {
-        v2Shell: false,
-        v2Dashboard: false,
-        v2Pipeline: false,
-        v2Agents: true,
-        v2Planner: false
-      }
-    const parsed = JSON.parse(stored) as Partial<Flags>
+    if (!stored) return { ...defaultFlags }
+    const parsed: unknown = JSON.parse(stored)
     return {
-      v2Shell: parsed.v2Shell ?? false,
-      v2Dashboard: parsed.v2Dashboard ?? false,
-      v2Pipeline: parsed.v2Pipeline ?? false,
-      v2Agents: parsed.v2Agents ?? true,
-      v2Planner: parsed.v2Planner ?? false
+      v2Shell: validatedFlag(parsed, 'v2Shell'),
+      v2Dashboard: validatedFlag(parsed, 'v2Dashboard'),
+      v2Pipeline: validatedFlag(parsed, 'v2Pipeline'),
+      v2Agents: validatedFlag(parsed, 'v2Agents'),
+      v2Planner: validatedFlag(parsed, 'v2Planner')
     }
   } catch {
-    return {
-      v2Shell: false,
-      v2Dashboard: false,
-      v2Pipeline: false,
-      v2Agents: true,
-      v2Planner: false
-    }
+    return { ...defaultFlags }
   }
 }
 

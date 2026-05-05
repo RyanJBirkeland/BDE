@@ -4,6 +4,16 @@ import { parseActionMarkers, type ParseResult } from '../PlannerAssistant'
 import { useRepoOptions } from '../../../hooks/useRepoOptions'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
 
+function sanitizeAgentPayloadString(value: string | undefined, maxLength: number): string {
+  const raw = (value ?? '').slice(0, maxLength)
+  // Strip XML boundary tags that FLEET uses for prompt injection prevention
+  return raw.replace(/<\/?[a-z_]+>/g, '')
+}
+
+function stripActionMarkers(text: string): string {
+  return text.replace(/\[ACTION:[^\]]*\]/g, '')
+}
+
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -48,11 +58,11 @@ export function PlAssistantColumn({
     () =>
       JSON.stringify(
         {
-          epicName: epic.name,
-          epicGoal: epic.goal ?? null,
+          epicName: stripActionMarkers(epic.name),
+          epicGoal: epic.goal != null ? stripActionMarkers(epic.goal) : null,
           tasks: tasks.map((t) => ({
             id: t.id,
-            title: t.title,
+            title: stripActionMarkers(t.title),
             status: t.status,
             hasSpec: !!t.spec?.trim()
           }))
@@ -482,8 +492,8 @@ function PlActionCard({
     try {
       if (action.type === 'create-task') {
         await window.api.sprint.create({
-          title: action.payload.title ?? 'Untitled',
-          spec: action.payload.spec ?? '',
+          title: sanitizeAgentPayloadString(action.payload.title, 500) || 'Untitled',
+          spec: sanitizeAgentPayloadString(action.payload.spec, 8000),
           repo: firstRepo,
           priority: 0,
           playground_enabled: false,
@@ -491,11 +501,13 @@ function PlActionCard({
         })
       } else if (action.type === 'create-epic') {
         await window.api.groups.create({
-          name: action.payload.name ?? 'New Epic',
-          goal: action.payload.goal ?? ''
+          name: sanitizeAgentPayloadString(action.payload.name, 500) || 'New Epic',
+          goal: sanitizeAgentPayloadString(action.payload.goal, 8000)
         })
       } else if (action.type === 'update-spec' && action.payload.taskId) {
-        await window.api.sprint.update(action.payload.taskId, { spec: action.payload.spec ?? '' })
+        await window.api.sprint.update(action.payload.taskId, {
+          spec: sanitizeAgentPayloadString(action.payload.spec, 8000)
+        })
       }
       onCardStateChange(cardKey, {
         dismissed: false,
