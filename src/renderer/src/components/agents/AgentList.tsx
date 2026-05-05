@@ -24,7 +24,7 @@ interface AgentListProps {
   agents: AgentMeta[]
   selectedId: string | null
   onSelect: (id: string) => void
-  onSpawn?: (() => void) | undefined
+  onSpawn: () => void
   onKill?: (() => void) | undefined
   filter?: string | undefined
   loading?: boolean | undefined
@@ -88,7 +88,7 @@ function CompositionStrip({ agents }: { agents: AgentMeta[] }): React.JSX.Elemen
         height: 4,
         display: 'flex',
         overflow: 'hidden',
-        borderRadius: 2,
+        borderRadius: 999,
         margin: 'var(--s-2) var(--s-4) 0',
       }}
     >
@@ -139,7 +139,7 @@ function FilterChips({
       style={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: 4,
+        gap: 'var(--s-1)',
         padding: 'var(--s-2) var(--s-4)',
       }}
     >
@@ -153,9 +153,8 @@ function FilterChips({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              padding: '2px 8px',
-              height: 22,
+              gap: 'var(--s-1)',
+              padding: '3px var(--s-2)',
               background: isActive ? 'var(--surf-2)' : 'transparent',
               border: isActive ? '1px solid var(--line-2)' : '1px solid var(--line)',
               borderRadius: 'var(--r-sm)',
@@ -317,9 +316,6 @@ export function AgentList({
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all')
   const selectedRef = useRef<HTMLDivElement>(null)
 
-  // Provide a safe no-op when onSpawn is not passed (V1 compat)
-  const handleSpawn = onSpawn ?? (() => undefined)
-
   const limitedAgents = displayedCount ? agents.slice(0, displayedCount) : agents
 
   const searchFiltered = useMemo(() => {
@@ -387,7 +383,7 @@ export function AgentList({
 
   return (
     <div className="agent-list">
-      <HeaderBand agents={agents} onSpawn={handleSpawn} />
+      <HeaderBand agents={agents} onSpawn={onSpawn} />
 
       <FilterChips
         agents={searchFiltered}
@@ -403,8 +399,8 @@ export function AgentList({
         onBlur={() => setSearchFocused(false)}
       />
 
-      {showBanner && onDismissBanner && (
-        <ScratchpadBanner onDismiss={onDismissBanner} />
+      {showBanner && (
+        <ScratchpadBanner onDismiss={onDismissBanner ?? (() => undefined)} />
       )}
 
       <div
@@ -453,7 +449,7 @@ export function AgentList({
 
         {loading && agents.length === 0 && !fetchError && <SkeletonRows />}
 
-        {showEmptyState && <EmptyAgentState onSpawn={handleSpawn} />}
+        {showEmptyState && <EmptyAgentState onSpawn={onSpawn} />}
 
         {showFilteredEmptyMessage && (
           <div

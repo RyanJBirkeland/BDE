@@ -176,6 +176,7 @@ export function AgentsViewV1(): React.JSX.Element {
               agents={agents}
               selectedId={activeId}
               onSelect={handleSelectAgent}
+              onSpawn={openLaunchpad}
               onKill={fetchAgents}
               loading={!fetched && agents.length === 0 && !fetchError}
               fetchError={fetchError}
