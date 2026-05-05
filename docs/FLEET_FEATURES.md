@@ -270,7 +270,7 @@ Triage-oriented layout: *what's running, what needs me, am I on pace?*
 
 **Pulse rule:** Only `ActiveAgentsCard` and `PipelineGlanceCard` carry `fleet-pulse` — they show realtime-streaming data. No other element pulses.
 
-**TODO(phase-2.5):** Agent step descriptions (needs event streaming), quality scores (needs `SprintTask.quality` DB column + reviewer write-back), sprint IPC for deadline/pace, "Run all" quick action.
+**TODO(phase-3):** Sprint IPC for deadline/pace, "Run all" quick action.
 
 #### V1 Dashboard (default, `featureFlags.v2Dashboard = false`)
 

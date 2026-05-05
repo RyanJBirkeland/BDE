@@ -45,7 +45,8 @@ export const UPDATE_ALLOWLIST: ReadonlyArray<keyof SprintTask> = [
   'rebased_at',
   'orphan_recovery_count',
   'last_rendered_prompt',
-  'stacked_on_task_id'
+  'stacked_on_task_id',
+  'quality_score'
 ]
 
 /** Fast membership check — derived from UPDATE_ALLOWLIST so the two stay in sync. */
