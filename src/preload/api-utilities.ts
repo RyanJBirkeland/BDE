@@ -18,6 +18,9 @@ export const openExternal = (
   url: string
 ): Promise<IpcChannelMap['window:openExternal']['result']> =>
   typedInvoke('window:openExternal', url)
+export const openWorktreePath = (
+  path: string
+): Promise<IpcChannelMap['window:openPath']['result']> => typedInvoke('window:openPath', path)
 export const openPlaygroundInBrowser = (
   html: string
 ): Promise<IpcChannelMap['playground:openInBrowser']['result']> =>

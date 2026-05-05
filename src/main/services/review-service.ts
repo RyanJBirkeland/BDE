@@ -8,6 +8,7 @@ import { buildAgentPrompt } from '../lib/prompt-composer'
 import { getSettingJson } from '../settings'
 import { parseReviewResponse, MalformedReviewError } from './review-response-parser'
 import type { ParsedReview } from './review-response-parser'
+import { TEXT_HELPER_SETTINGS_SOURCES } from '../agent-manager/sdk-policy'
 
 export class WorktreeMissingError extends Error {
   constructor(public readonly path: string) {
@@ -103,9 +104,7 @@ export function createReviewService(deps: ReviewServiceDeps): ReviewService {
           model: reviewerModel,
           maxTurns: getSettingJson<number>('agentManager.maxTurnsReviewer') ?? 1000,
           tools: [],
-          // Reviewer generates opinions, not code. CLAUDE.md implementation
-          // guidelines are irrelevant and waste ~5-10KB per review call.
-          settingSources: [],
+          settingSources: TEXT_HELPER_SETTINGS_SOURCES,
           // tools:[] removes every tool, but the SDK still prompts for
           // permission on system messages if permissionMode is unset.
           // Bypass is safe because the session cannot invoke any tool.

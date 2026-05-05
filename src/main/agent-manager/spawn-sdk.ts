@@ -12,6 +12,7 @@ import { getClaudeCliPath } from '../env-utils'
 import { FLEET_MEMORY_DIR } from '../paths'
 import { getSessionId } from './sdk-message-protocol'
 import { createWorktreeIsolationHook } from './worktree-isolation-hook'
+import { INTERACTIVE_AGENT_SETTINGS_SOURCES } from './sdk-policy'
 
 /** Fallback turn limit when no pipelineTuning is supplied. Configurable via Settings → Agents. */
 export const MAX_TURNS = 1000
@@ -94,11 +95,7 @@ export function spawnViaSdk(
             logger
           })
         : async () => ({ behavior: 'allow' as const }),
-      // Pipeline agents receive FLEET conventions via the composed prompt —
-      // loading CLAUDE.md via 'project' would double-inject conventions and
-      // costs ~5-10KB extra per spawn. User hooks kept for permission settings;
-      // local overrides kept for dev convenience.
-      settingSources: ['user', 'local'],
+      settingSources: INTERACTIVE_AGENT_SETTINGS_SOURCES,
       // Configurable via Settings → Agents (default 1000). Watchdog provides
       // an independent time ceiling via maxRuntimeMs.
       maxTurns: effectiveMaxTurns,

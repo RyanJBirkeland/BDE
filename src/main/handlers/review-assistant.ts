@@ -12,6 +12,7 @@ import type { IReviewRepository } from '../data/review-repository'
 import type { IAgentTaskRepository } from '../data/sprint-task-repository'
 import type { ChatChunk, PartnerMessage, ReviewResult } from '../../shared/types'
 import { getErrorMessage } from '../../shared/errors'
+import { INTERACTIVE_AGENT_SETTINGS_SOURCES } from '../agent-manager/sdk-policy'
 
 const log = createLogger('review-assistant')
 
@@ -115,12 +116,7 @@ export async function handleChatStream(
           // keeps the chat streaming headless without human-in-the-loop prompts.
           permissionMode: 'bypassPermissions',
           allowDangerouslySkipPermissions: true,
-          // Inherit user-scoped Claude Code config so reviewer chats see the
-          // same hooks and permissions a normal `claude` CLI session would.
-          // `'project'` is excluded because reviewer conventions come from the
-          // composed prompt — re-loading repo CLAUDE.md via settings would
-          // double-inject the same context.
-          settingSources: ['user', 'local'],
+          settingSources: INTERACTIVE_AGENT_SETTINGS_SOURCES,
           maxBudgetUsd: REVIEWER_CHAT_MAX_BUDGET_USD,
           onToolUse: (event) => {
             const payload: ChatChunk = { streamId, toolUse: event }

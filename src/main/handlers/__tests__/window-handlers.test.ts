@@ -33,22 +33,28 @@ vi.mock('../../ipc-utils', () => ({
   safeOn: vi.fn()
 }))
 
+vi.mock('../../lib/review-paths', () => ({
+  validateWorktreePath: vi.fn()
+}))
+
 import { registerWindowHandlers } from '../window-handlers'
 import { safeHandle, safeOn } from '../../ipc-utils'
 import { shell } from 'electron'
 import { writeFileSync } from 'fs'
 import { tmpdir } from 'os'
+import { validateWorktreePath } from '../../lib/review-paths'
 
 describe('Window handlers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('registers 3 safeHandle channels and 1 safeOn channel', () => {
+  it('registers 4 safeHandle channels and 1 safeOn channel', () => {
     registerWindowHandlers()
 
-    expect(safeHandle).toHaveBeenCalledTimes(3)
+    expect(safeHandle).toHaveBeenCalledTimes(4)
     expect(safeHandle).toHaveBeenCalledWith('window:openExternal', expect.any(Function))
+    expect(safeHandle).toHaveBeenCalledWith('window:openPath', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('playground:sanitize', expect.any(Function))
     expect(safeHandle).toHaveBeenCalledWith('playground:openInBrowser', expect.any(Function))
   })
@@ -131,6 +137,31 @@ describe('Window handlers', () => {
         const result = handlers['playground:sanitize'](mockEvent, html)
         expect(result).toContain('<p>')
         expect(result).not.toContain('<script>')
+      })
+    })
+
+    describe('window:openPath', () => {
+      it('calls validateWorktreePath then shell.openPath for a valid path', async () => {
+        const handlers = captureHandlers()
+        const worktreePath = '/home/test/.fleet/worktrees/fleet/abc123'
+        vi.mocked(validateWorktreePath).mockReturnValue(undefined)
+
+        await handlers['window:openPath'](mockEvent, worktreePath)
+
+        expect(validateWorktreePath).toHaveBeenCalledWith(worktreePath)
+        expect(shell.openPath).toHaveBeenCalledWith(worktreePath)
+      })
+
+      it('rejects when validateWorktreePath rejects the path', async () => {
+        const handlers = captureHandlers()
+        vi.mocked(validateWorktreePath).mockImplementation(() => {
+          throw new Error('Invalid worktree path: "/etc" is not inside an allowed worktree base')
+        })
+
+        await expect(handlers['window:openPath'](mockEvent, '/etc')).rejects.toThrow(
+          'Invalid worktree path'
+        )
+        expect(shell.openPath).not.toHaveBeenCalled()
       })
     })
 

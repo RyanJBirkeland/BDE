@@ -6,6 +6,8 @@ import {
   checkHandlerCountAwareness,
   checkPreloadSync,
   checkComplexity,
+  checkWordCount,
+  checkFilesToChangeSection,
   extractFilePaths
 } from '../useValidationChecks'
 
@@ -341,6 +343,76 @@ describe('H6: preload declaration sync', () => {
     const checks = computeStructuralChecks({ title: 'Fix', repo: 'FLEET', spec })
     const preloadCheck = checks.find((c) => c.id === 'preload-sync')
     expect(preloadCheck?.status).toBe('pass')
+  })
+})
+
+describe('H8: word count limit', () => {
+  it('passes for spec under 500 words', () => {
+    const spec = Array.from({ length: 10 }, (_, i) => `word${i}`).join(' ')
+    const result = checkWordCount(spec)
+    expect(result.status).toBe('pass')
+  })
+
+  it('warns for spec over 500 words', () => {
+    const spec = Array.from({ length: 501 }, (_, i) => `word${i}`).join(' ')
+    const result = checkWordCount(spec)
+    expect(result.status).toBe('warn')
+  })
+
+  it('message contains word count when over limit', () => {
+    const spec = Array.from({ length: 600 }, (_, i) => `word${i}`).join(' ')
+    const result = checkWordCount(spec)
+    expect(result.message).toMatch(/600/)
+  })
+
+  it('reflects in computeStructuralChecks when over limit', () => {
+    const spec = Array.from({ length: 501 }, (_, i) => `word${i}`).join(' ')
+    const checks = computeStructuralChecks({ title: 'Fix', repo: 'FLEET', spec })
+    const wordCheck = checks.find((c) => c.id === 'word-count')
+    expect(wordCheck?.status).toBe('warn')
+  })
+
+  it('reflects in computeStructuralChecks when under limit', () => {
+    const spec = '## Problem\nShort spec\n## Solution\nFix it'
+    const checks = computeStructuralChecks({ title: 'Fix', repo: 'FLEET', spec })
+    const wordCheck = checks.find((c) => c.id === 'word-count')
+    expect(wordCheck?.status).toBe('pass')
+  })
+})
+
+describe('H9: files-to-change section', () => {
+  it('warns when no "## Files to Change" heading present', () => {
+    const result = checkFilesToChangeSection('## Problem\nBug\n## How to Test\nRun npm test')
+    expect(result.status).toBe('warn')
+  })
+
+  it('passes when "## Files to Change" heading present', () => {
+    const result = checkFilesToChangeSection('## Plan\nFix\n## Files to Change\nsrc/main/index.ts')
+    expect(result.status).toBe('pass')
+  })
+
+  it('passes when "## Files" heading present (common shorthand)', () => {
+    const result = checkFilesToChangeSection('## Plan\nFix\n## Files\nsrc/foo.ts')
+    expect(result.status).toBe('pass')
+  })
+
+  it('is case-insensitive', () => {
+    const result = checkFilesToChangeSection('## Plan\nFix\n## FILES TO CHANGE\nsrc/foo.ts')
+    expect(result.status).toBe('pass')
+  })
+
+  it('reflects in computeStructuralChecks when missing', () => {
+    const spec = '## Problem\nBug\n## Solution\nFix it\n## How to Test\nRun npm test'
+    const checks = computeStructuralChecks({ title: 'Fix', repo: 'FLEET', spec })
+    const filesCheck = checks.find((c) => c.id === 'files-to-change')
+    expect(filesCheck?.status).toBe('warn')
+  })
+
+  it('reflects in computeStructuralChecks when present', () => {
+    const spec = '## Problem\nBug\n## Files to Change\nsrc/main/index.ts\n## How to Test\nRun tests'
+    const checks = computeStructuralChecks({ title: 'Fix', repo: 'FLEET', spec })
+    const filesCheck = checks.find((c) => c.id === 'files-to-change')
+    expect(filesCheck?.status).toBe('pass')
   })
 })
 

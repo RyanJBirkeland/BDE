@@ -8,6 +8,10 @@ export interface WindowChannels {
     args: [url: string]
     result: void
   }
+  'window:openPath': {
+    args: [path: string]
+    result: void
+  }
   'window:setTitle': {
     args: [title: string]
     result: void

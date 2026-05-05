@@ -3,7 +3,7 @@ import type { DashboardStats } from '../../lib/dashboard-types'
 import { formatTokensCompact } from '../../lib/format'
 import './StatusRail.css'
 
-type RailFilter = 'active' | 'queued' | 'done'
+type RailFilter = 'active' | 'queued' | 'review' | 'done'
 
 interface StatusRailProps {
   stats: DashboardStats
@@ -40,6 +40,12 @@ export function StatusRail({
       label: 'Queued',
       value: String(stats.queued),
       filter: 'queued'
+    },
+    {
+      key: 'review',
+      label: 'Review',
+      value: String(stats.review),
+      filter: 'review'
     },
     {
       key: 'done',

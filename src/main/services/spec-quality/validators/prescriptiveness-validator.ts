@@ -2,6 +2,7 @@ import { buildAgentEnv, getClaudeCliPath } from '../../../env-utils'
 import type { IAsyncSpecValidator } from '../../../../shared/spec-quality/interfaces'
 import type { ParsedSpec, SpecIssue } from '../../../../shared/spec-quality/types'
 import { createLogger } from '../../../logger'
+import { TEXT_HELPER_SETTINGS_SOURCES } from '../../../agent-manager/sdk-policy'
 
 const log = createLogger('prescriptiveness-validator')
 
@@ -36,8 +37,7 @@ async function runSdkQuery(prompt: string): Promise<string> {
       pathToClaudeCodeExecutable: getClaudeCliPath(),
       permissionMode: 'bypassPermissions' as const,
       allowDangerouslySkipPermissions: true,
-      // Validation check only — implementation context from CLAUDE.md is irrelevant.
-      settingSources: []
+      settingSources: TEXT_HELPER_SETTINGS_SOURCES
     }
   })
 

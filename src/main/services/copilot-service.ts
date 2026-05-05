@@ -4,6 +4,7 @@
 import { buildAgentPrompt } from '../lib/prompt-composer'
 import type { SdkStreamingOptions } from '../sdk-streaming'
 import { getSettingJson } from '../settings'
+import { TEXT_HELPER_SETTINGS_SOURCES } from '../agent-manager/sdk-policy'
 
 /**
  * Read-only tools the copilot may use against the target repo.
@@ -79,10 +80,7 @@ export function getCopilotSdkOptions(
     maxTurns: getSettingJson<number>('agentManager.maxTurnsCopilot') ?? COPILOT_MAX_TURNS,
     maxBudgetUsd: COPILOT_MAX_BUDGET_USD,
     model,
-    // Spec-drafting agents skip CLAUDE.md — they receive FLEET conventions via
-    // their prompt (SPEC_DRAFTING_PREAMBLE) and loading the project settings
-    // file costs tokens without adding value.
-    settingSources: [],
+    settingSources: TEXT_HELPER_SETTINGS_SOURCES,
     // Copilot's allowed tools are already vetted to read-only (COPILOT_ALLOWED_TOOLS
     // is Read/Grep/Glob); bypass is safe and keeps the chat streaming headless.
     permissionMode: 'bypassPermissions',

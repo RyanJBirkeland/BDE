@@ -132,14 +132,18 @@ export default function DashboardView(): React.JSX.Element {
     navigateToSprintWithFilter('done')
   }, [navigateToSprintWithFilter])
 
-  /** Maps StatusRail's limited 'active'|'queued'|'done' emissions to real StatusFilter values. */
+  /** Maps StatusRail filter emissions to navigation actions. */
   const handleRailFilter = useCallback(
-    (kind: 'active' | 'queued' | 'done') => {
+    (kind: 'active' | 'queued' | 'review' | 'done') => {
+      if (kind === 'review') {
+        setView('code-review')
+        return
+      }
       const mapped: StatusFilter =
         kind === 'active' ? 'in-progress' : kind === 'queued' ? 'todo' : 'done'
       navigateToSprintWithFilter(mapped)
     },
-    [navigateToSprintWithFilter]
+    [navigateToSprintWithFilter, setView]
   )
 
   const handleFiresClick = useCallback(

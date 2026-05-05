@@ -7,6 +7,7 @@ import { createLogger } from '../logger'
 import { runSdkStreaming } from '../sdk-streaming'
 import { resolveAgentRuntime } from '../agent-manager/backend-selector'
 import type { SynthesizeRequest, ReviseRequest } from '../../shared/types'
+import { TEXT_HELPER_SETTINGS_SOURCES } from '../agent-manager/sdk-policy'
 
 const log = createLogger('spec-synthesizer')
 
@@ -235,7 +236,7 @@ export async function synthesizeSpec(
   // receives FLEET conventions via its prompt and doesn't need the project file.
   const spec = await runSdkStreaming(prompt, onChunk, activeStreams, streamId, 180_000, {
     model,
-    settingSources: [],
+    settingSources: TEXT_HELPER_SETTINGS_SOURCES,
     // Synthesizer works from the pre-fetched context in the prompt — it does
     // not need tools to explore the codebase. tools:[] + bypass is safe.
     tools: [],
@@ -267,7 +268,7 @@ export async function reviseSpec(
   // Stream revision — settingSources:[] skips CLAUDE.md (same rationale as synthesize).
   const spec = await runSdkStreaming(prompt, onChunk, activeStreams, streamId, 180_000, {
     model,
-    settingSources: [],
+    settingSources: TEXT_HELPER_SETTINGS_SOURCES,
     // Synthesizer works from the pre-fetched context in the prompt — it does
     // not need tools to explore the codebase. tools:[] + bypass is safe.
     tools: [],

@@ -183,6 +183,9 @@ declare global {
         openExternal: (
           ...args: IpcArgs<'window:openExternal'>
         ) => Promise<IpcResult<'window:openExternal'>>
+        openWorktreePath: (
+          ...args: IpcArgs<'window:openPath'>
+        ) => Promise<IpcResult<'window:openPath'>>
         openPlaygroundInBrowser: (
           ...args: IpcArgs<'playground:openInBrowser'>
         ) => Promise<IpcResult<'playground:openInBrowser'>>

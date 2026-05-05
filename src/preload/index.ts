@@ -42,6 +42,7 @@ import { webhooks } from './api-webhooks'
 import {
   readClipboardImage,
   openExternal,
+  openWorktreePath,
   openPlaygroundInBrowser,
   sanitizePlaygroundHtml,
   setTitle,
@@ -169,6 +170,7 @@ const api = {
   window: {
     readClipboardImage,
     openExternal,
+    openWorktreePath,
     openPlaygroundInBrowser,
     sanitizePlayground: sanitizePlaygroundHtml,
     setTitle

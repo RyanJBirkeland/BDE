@@ -26,10 +26,11 @@ describe('StatusRail', () => {
       />
     )
     const tiles = container.querySelectorAll('[data-role="rail-tile"]')
-    // 4 tiles: Active, Queued, Done, Tokens
-    expect(tiles.length).toBe(4)
+    // 5 tiles: Active, Queued, Review, Done, Tokens
+    expect(tiles.length).toBe(5)
     expect(screen.getByText(/Active/i)).toBeInTheDocument()
     expect(screen.getByText(/Queued/i)).toBeInTheDocument()
+    expect(screen.getByText(/Review/i)).toBeInTheDocument()
     expect(screen.getByText(/Done/i)).toBeInTheDocument()
     expect(screen.getByText(/Tokens/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new task/i })).toBeInTheDocument()
@@ -131,14 +132,48 @@ describe('StatusRail', () => {
     expect(onNewTaskClick).toHaveBeenCalled()
   })
 
-  it('does NOT render Blocked, Failed, Review, or PRs tiles', () => {
+  it('does NOT render Blocked, Failed, or PRs tiles', () => {
     const { container } = render(
       <StatusRail stats={baseStats} tokens24h={0} onFilterClick={noop} onNewTaskClick={noop} />
     )
     const allText = container.textContent ?? ''
     expect(allText).not.toMatch(/Blocked/i)
     expect(allText).not.toMatch(/Failed/i)
-    expect(allText).not.toMatch(/Review/i)
     expect(allText).not.toMatch(/PRs/i)
+  })
+
+  it('renders a Review tile showing pending review count', () => {
+    const statsWithReview = { ...baseStats, review: 7 }
+    const { container } = render(
+      <StatusRail
+        stats={statsWithReview}
+        tokens24h={0}
+        onFilterClick={noop}
+        onNewTaskClick={noop}
+      />
+    )
+    const tiles = container.querySelectorAll('[data-role="rail-tile"]')
+    expect(tiles.length).toBe(5)
+    const reviewTile = Array.from(tiles).find((t) => t.textContent?.match(/Review/i))
+    expect(reviewTile).toBeDefined()
+    expect(reviewTile?.textContent).toMatch(/7/)
+  })
+
+  it('clicking Review tile calls onFilterClick with "review"', () => {
+    const onFilterClick = vi.fn()
+    const statsWithReview = { ...baseStats, review: 2 }
+    const { container } = render(
+      <StatusRail
+        stats={statsWithReview}
+        tokens24h={0}
+        onFilterClick={onFilterClick}
+        onNewTaskClick={noop}
+      />
+    )
+    const reviewTile = Array.from(container.querySelectorAll('[data-role="rail-tile"]')).find((t) =>
+      t.textContent?.match(/Review/i)
+    ) as HTMLElement
+    fireEvent.click(reviewTile)
+    expect(onFilterClick).toHaveBeenCalledWith('review')
   })
 })

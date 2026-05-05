@@ -153,6 +153,14 @@ export function computeStructuralChecks(
   const complexityResult = checkComplexity(form.spec)
   checks.push(complexityResult)
 
+  // H8: Word count limit (> 500 words → pipeline agent timeout risk)
+  const wordCountResult = checkWordCount(form.spec)
+  checks.push(wordCountResult)
+
+  // H9: Files-to-change section
+  const filesToChangeResult = checkFilesToChangeSection(form.spec)
+  checks.push(filesToChangeResult)
+
   return checks
 }
 
@@ -275,6 +283,39 @@ export function checkComplexity(spec: string): CheckResult {
     tier: 1,
     status: 'pass',
     message: n === 0 ? 'Reasonable scope' : `Reasonable scope (${n} files)`,
+    fieldId: 'wb-form-spec'
+  }
+}
+
+const WORD_COUNT_LIMIT = 500
+
+export function checkWordCount(spec: string): CheckResult {
+  const wordCount = spec.trim() ? spec.trim().split(/\s+/).length : 0
+  const overLimit = wordCount > WORD_COUNT_LIMIT
+  return {
+    id: 'word-count',
+    label: 'Spec Length',
+    tier: 1,
+    status: overLimit ? 'warn' : 'pass',
+    message: overLimit
+      ? `Spec is ${wordCount} words — pipeline agents time out on specs > 500 words.`
+      : `${wordCount} words`,
+    fieldId: 'wb-form-spec'
+  }
+}
+
+const FILES_TO_CHANGE_HEADING_REGEX = /^## .*files?(?:\s+to\s+(?:change|modify))?/im
+
+export function checkFilesToChangeSection(spec: string): CheckResult {
+  const hasSection = FILES_TO_CHANGE_HEADING_REGEX.test(spec)
+  return {
+    id: 'files-to-change',
+    label: 'Files to Change',
+    tier: 1,
+    status: hasSection ? 'pass' : 'warn',
+    message: hasSection
+      ? 'Files to Change section found'
+      : 'No "## Files to Change" section. Agents waste tokens on file exploration without it.',
     fieldId: 'wb-form-spec'
   }
 }

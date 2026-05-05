@@ -76,6 +76,12 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
     setView('ide')
   }
 
+  const openWorktreeInFinder = (): void => {
+    if (worktreePath) {
+      void window.api.window.openWorktreePath(worktreePath)
+    }
+  }
+
   const hasConflicts = freshness.status === 'conflict'
   const revisionCapReached = revisionCount >= MAX_REVISION_ATTEMPTS
 
@@ -157,6 +163,15 @@ export function ReviewActionsBar({ variant, children }: ReviewActionsBarProps): 
           <div className="rab__rebase-status">
             {renderFreshnessBadge()}
             {renderRebaseButton()}
+            {worktreePath && (
+              <button
+                className="rab__btn rab__btn--ghost"
+                onClick={openWorktreeInFinder}
+                title="Open the agent's worktree directory in Finder"
+              >
+                <FolderOpen size={14} /> Open in Finder
+              </button>
+            )}
           </div>
 
           {/* Action buttons */}

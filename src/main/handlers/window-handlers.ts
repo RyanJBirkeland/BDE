@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 import { randomBytes } from 'crypto'
 import { safeHandle, safeOn } from '../ipc-utils'
 import { sanitizePlaygroundHtml } from '../playground-sanitize'
+import { validateWorktreePath } from '../lib/review-paths'
 
 const ALLOWED_URL_SCHEMES = new Set(['https:', 'http:', 'mailto:'])
 
@@ -18,6 +19,11 @@ export function registerWindowHandlers(): void {
       throw new Error(`Blocked URL scheme: "${parsed.protocol}"`)
     }
     return shell.openExternal(url)
+  })
+
+  safeHandle('window:openPath', async (_e, path: string) => {
+    validateWorktreePath(path)
+    await shell.openPath(path)
   })
 
   safeOn('window:setTitle', (_e, title: string) => {
