@@ -93,6 +93,12 @@ function useAgentUnreadDot(activity: ActivityMode): DotColor {
   return 'done'
 }
 
+function resolveDotColor(dot: NonNullable<DotColor>): string {
+  if (dot === 'running') return 'var(--st-running)'
+  if (dot === 'failed') return 'var(--st-failed)'
+  return 'var(--st-done)'
+}
+
 // ---------------------------------------------------------------------------
 // Individual mode button
 // ---------------------------------------------------------------------------
@@ -111,12 +117,6 @@ function RailButton({ mode, isActive, onClick, dotColor }: RailButtonProps): Rea
   const backgroundColor = isActive ? 'var(--accent-soft)' : hovered ? 'var(--surf-2)' : 'transparent'
   const color = isActive ? 'var(--accent)' : hovered ? 'var(--fg-2)' : 'var(--fg-3)'
   const outline = focused ? '2px solid var(--accent-line)' : 'none'
-
-  const dotTokenColor = dotColor === 'running'
-    ? 'var(--st-running)'
-    : dotColor === 'failed'
-      ? 'var(--st-failed)'
-      : 'var(--st-done)'
 
   return (
     <button
@@ -143,7 +143,7 @@ function RailButton({ mode, isActive, onClick, dotColor }: RailButtonProps): Rea
         padding: 0,
         flexShrink: 0,
         outline,
-        outlineOffset: outline !== 'none' ? 2 : 0,
+        outlineOffset: outline !== 'none' ? '2px' : '0px',
         transition: `background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out)`
       }}
     >
@@ -171,8 +171,8 @@ function RailButton({ mode, isActive, onClick, dotColor }: RailButtonProps): Rea
             right: 4,
             width: 8,
             height: 8,
-            borderRadius: 999,
-            background: dotTokenColor
+            borderRadius: '50%',
+            background: resolveDotColor(dotColor)
           }}
         />
       )}
@@ -227,7 +227,7 @@ function InsightToggle({ insightOpen, onToggle }: InsightToggleProps): React.JSX
         flexShrink: 0,
         marginTop: 'auto',
         outline,
-        outlineOffset: outline !== 'none' ? 2 : 0,
+        outlineOffset: outline !== 'none' ? '2px' : '0px',
         transition: `background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out)`
       }}
     >
