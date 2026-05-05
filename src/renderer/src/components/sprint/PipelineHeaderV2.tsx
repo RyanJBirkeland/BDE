@@ -90,8 +90,8 @@ function ExportDropdown(): React.JSX.Element {
                 cursor: 'pointer',
                 textAlign: 'left',
               }}
-              onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'var(--surf-3)' }}
-              onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'none' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surf-3)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'none' }}
             >
               {fmt.toUpperCase()}
             </button>

@@ -52,11 +52,12 @@ function PipelineStageV2Inner({
   const hiddenCount = tasks.length - STAGE_VISIBLE_LIMIT
 
   const handleStageKeyDown = (e: React.KeyboardEvent): void => {
-    const cards = cardsRef.current?.querySelectorAll(
-      '[role="button"], button'
-    ) as NodeListOf<HTMLElement>
-    if (!cards?.length) return
-    const currentIndex = Array.from(cards).indexOf(document.activeElement as HTMLElement)
+    const cards = Array.from(
+      cardsRef.current?.querySelectorAll('[role="button"], button') ?? []
+    ).filter((el): el is HTMLElement => el instanceof HTMLElement)
+    if (!cards.length) return
+    const activeEl = document.activeElement
+    const currentIndex = activeEl instanceof HTMLElement ? cards.indexOf(activeEl) : -1
     if (currentIndex === -1) return
 
     let nextIndex = currentIndex

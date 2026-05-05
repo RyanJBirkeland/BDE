@@ -134,7 +134,8 @@ export function SprintPipelineV2(): React.JSX.Element {
 
   const handleTaskClick = useCallback(
     (id: string) => {
-      triggerRef.current = document.activeElement as HTMLElement
+      const activeEl = document.activeElement
+      triggerRef.current = activeEl instanceof HTMLElement ? activeEl : null
       setSelectedTaskId(id)
     },
     [setSelectedTaskId]

@@ -24,7 +24,7 @@ import { AgentInspector } from '../components/agents/AgentInspector'
 import { toast } from '../stores/toasts'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 import { buildLocalAgentMessage } from '../adapters/attachments'
-import type { Attachment } from '../../../shared/types'
+import type { Attachment, AgentEvent } from '../../../shared/types'
 import { useAgentViewLifecycle } from '../hooks/useAgentViewLifecycle'
 import { useAgentViewCommands } from '../hooks/useAgentViewCommands'
 import { useAgentSlashCommands } from '../hooks/useAgentSlashCommands'
@@ -310,7 +310,7 @@ function CenterPane({
 
 interface InspectorPaneProps {
   agent: ReturnType<typeof useAgentHistoryStore.getState>['agents'][number]
-  events: ReturnType<typeof useAgentEventsStore.getState>['events'][string]
+  events: AgentEvent[] | undefined
   asOverlay: boolean
 }
 

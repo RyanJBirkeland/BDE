@@ -219,24 +219,30 @@ function derivePerAgentStats(
   const byName = new Map<string, AgentCostRecord[]>()
   for (const a of recent) {
     const name = a.taskTitle ?? 'unknown'
-    if (!byName.has(name)) byName.set(name, [])
-    byName.get(name)!.push(a)
+    const existing = byName.get(name) ?? []
+    existing.push(a)
+    byName.set(name, existing)
   }
 
   return Array.from(byName.entries())
     .map(([name, runs]) => {
-      const withDuration = runs.filter((r) => r.durationMs != null && r.durationMs > 0)
+      const withDuration = runs.filter(
+        (r): r is typeof r & { durationMs: number } => r.durationMs != null && r.durationMs > 0
+      )
       const avgDurationMs =
         withDuration.length > 0
-          ? withDuration.reduce((s, r) => s + r.durationMs!, 0) / withDuration.length
+          ? withDuration.reduce((s, r) => s + r.durationMs, 0) / withDuration.length
           : null
       const totalTokens = runs.reduce((s, r) => s + (r.tokensIn ?? 0) + (r.tokensOut ?? 0), 0)
       const withCost = runs.filter((r) => r.costUsd != null)
       const successCount = withCost.filter((r) => r.finishedAt != null).length
 
       const qualityScores = runs
-        .filter((r) => r.sprintTaskId != null && taskQualityMap.has(r.sprintTaskId))
-        .map((r) => taskQualityMap.get(r.sprintTaskId!)!)
+        .filter(
+          (r): r is typeof r & { sprintTaskId: string } =>
+            r.sprintTaskId != null && taskQualityMap.has(r.sprintTaskId)
+        )
+        .map((r) => taskQualityMap.get(r.sprintTaskId) ?? 0)
       const quality =
         qualityScores.length > 0
           ? Math.round(qualityScores.reduce((s, q) => s + q, 0) / qualityScores.length)
@@ -264,8 +270,9 @@ function derivePerRepoStats(agents: AgentCostRecord[]): PerRepoRow[] {
   const byRepo = new Map<string, AgentCostRecord[]>()
   for (const a of recent) {
     const repo = a.repo!
-    if (!byRepo.has(repo)) byRepo.set(repo, [])
-    byRepo.get(repo)!.push(a)
+    const existing = byRepo.get(repo) ?? []
+    existing.push(a)
+    byRepo.set(repo, existing)
   }
 
   return Array.from(byRepo.entries())

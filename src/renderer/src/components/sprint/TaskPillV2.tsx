@@ -10,6 +10,8 @@ import { useSprintTasks } from '../../stores/sprintTasks'
 import { PriorityChip } from './primitives/PriorityChip'
 import { Tag } from '../ui/Tag'
 
+const textPretty = { textWrap: 'pretty' } as React.CSSProperties
+
 interface TaskPillV2Props {
   task: SprintTask
   selected: boolean
@@ -246,14 +248,12 @@ function TaskPillV2Inner({
 
       {/* Title */}
       <span
-        style={
-          {
-            fontSize: 12,
-            color: 'var(--fg)',
-            lineHeight: 1.4,
-            textWrap: 'pretty',
-          } as React.CSSProperties
-        }
+        style={{
+          fontSize: 12,
+          color: 'var(--fg)',
+          lineHeight: 1.4,
+          ...textPretty,
+        }}
       >
         {task.title}
       </span>

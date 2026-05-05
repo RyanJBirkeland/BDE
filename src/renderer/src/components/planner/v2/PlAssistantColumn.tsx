@@ -656,7 +656,7 @@ function buildApiMessages(
   newText: string,
   systemPrefix: string
 ): Array<{ role: 'user' | 'assistant'; content: string }> {
-  const api = history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+  const api = history.map((m) => ({ role: m.role, content: m.content }))
   api.push({ role: 'user', content: newText })
   if (api[0]?.role === 'user') {
     api[0] = { role: 'user', content: `${systemPrefix}\n\n${api[0].content}` }

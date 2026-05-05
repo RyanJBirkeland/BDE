@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import type { SprintTask } from '../../../../shared/types'
 import { parseRevisionFeedback } from '../../../../shared/types/revision'
 import type { RevisionFeedback } from '../../../../shared/types/revision'
@@ -21,6 +21,8 @@ import type { StatusDotKind } from '../ui/StatusDot'
 import { statusToDotKind } from '../../lib/task-status'
 import { Tag } from '../ui/Tag'
 import { TaskDetailActionButtonsV2 } from './TaskDetailActionButtonsV2'
+
+const textPretty = { textWrap: 'pretty' } as React.CSSProperties
 
 const FORCE_FAIL_VISIBLE_STATUSES: ReadonlySet<SprintTask['status']> = new Set([
   'queued',
@@ -138,7 +140,9 @@ export function TaskDetailDrawerV2({
   onReviewChanges,
   onExport,
 }: TaskDetailDrawerV2Props): React.JSX.Element {
-  const [elapsed, setElapsed] = useState('')
+  const [elapsed, setElapsed] = useState(() =>
+    task.status === 'active' && task.started_at ? formatElapsed(task.started_at) : ''
+  )
   const { configured: ghConfigured } = useGitHubStatus()
   const titleRef = useRef<HTMLParagraphElement>(null)
 
@@ -148,9 +152,6 @@ export function TaskDetailDrawerV2({
 
   const isActive = task.status === 'active' && !!task.started_at
   useBackoffInterval(() => setElapsed(formatElapsed(task.started_at!)), isActive ? 10_000 : null)
-  if (isActive && !elapsed) {
-    setElapsed(formatElapsed(task.started_at!))
-  }
 
   const allTasks = useSprintTasks((s) => s.tasks)
   const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
@@ -327,9 +328,9 @@ export function TaskDetailDrawerV2({
             fontWeight: 500,
             color: 'var(--fg)',
             lineHeight: 1.4,
-            textWrap: 'pretty',
             margin: '0 0 var(--s-1) 0',
-          } as React.CSSProperties}
+            ...textPretty,
+          }}
         >
           {task.title}
         </p>
@@ -384,8 +385,8 @@ export function TaskDetailDrawerV2({
                 color: 'var(--fg-2)',
                 lineHeight: 1.5,
                 margin: 0,
-                textWrap: 'pretty',
-              } as React.CSSProperties}
+                ...textPretty,
+              }}
             >
               {task.spec.length > 300 ? task.spec.substring(0, 300) + '…' : task.spec}
             </p>
@@ -576,9 +577,9 @@ export function TaskDetailDrawerV2({
           {task.pr_url && task.pr_number && (
             <MetaRow label="PR" value={`#${task.pr_number} (${task.pr_status ?? 'unknown'})`} />
           )}
-          {task.agent_run_id && (
+          {agentRunId && (
             <button
-              onClick={() => onViewAgents(task.agent_run_id!)}
+              onClick={() => onViewAgents(agentRunId)}
               style={{
                 alignSelf: 'flex-start',
                 height: 24,
