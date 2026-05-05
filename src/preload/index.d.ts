@@ -571,7 +571,9 @@ declare global {
       // MCP server management
       mcp: {
         getToken: () => Promise<string>
+        revealToken: () => Promise<string>
         regenerateToken: () => Promise<string>
+        getTokenRotatedAt: () => Promise<string | null>
       }
     }
   }

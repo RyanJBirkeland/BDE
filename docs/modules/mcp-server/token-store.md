@@ -8,7 +8,8 @@ Persistent bearer token storage for MCP server authentication. Generates a 32-by
 
 ## Public API
 - `readOrCreateToken(filePath?, options?): Promise<TokenReadResult>` — reads the token from disk, regenerating if it is missing, corrupt, or unparseable. Accepts an optional logger in `options` to warn on corrupt content or file-mode drift and to record non-ENOENT read errors before rethrowing.
-- `regenerateToken(filePath?): Promise<TokenReadResult>` — unconditionally writes a new token. The returned `created` flag is always `true`.
+- `regenerateToken(filePath?): Promise<TokenReadResult>` — unconditionally writes a new token and records the current ISO timestamp to `<filePath>-rotated-at`. The returned `created` flag is always `true`.
+- `readRotatedAt(filePath?): Promise<string | null>` — reads the ISO timestamp written by `regenerateToken()`. Returns `null` when the file is absent or empty. Used by the Settings UI to surface a "Rotated at …" label.
 - `tokenFilePath(): string` — default token path (`~/.fleet/mcp-token`).
 - `TokenReadResult` — `{ token: string; created: boolean; path: string }`. `created` is `true` when a fresh token was written this call (missing file or corrupt contents); `false` when a valid existing token was returned as-is.
 - `TokenStoreOptions` — `{ logger?: TokenStoreLogger }`; `TokenStoreLogger` needs `warn` and `error`.

@@ -48,6 +48,13 @@ The 500 log line includes `method=<m> url=<u> remote=<addr>` plus the full stack
 ## Origin allow-list (T-45 / T-31)
 The handler passes an explicit `allowedOrigins` list to every transport instance — `['http://127.0.0.1:<port>', 'http://localhost:<port>', 'http://[::1]:<port>']` — instead of relying on the SDK's disabled-when-empty default. `allowedHosts` is extended to `['127.0.0.1', 'localhost', '127.0.0.1:<port>', 'localhost:<port>', '[::1]', '[::1]:<port>']`. MCP clients typically send no Origin header and the SDK only enforces when one is present, so absent-Origin requests are still accepted. IPv6 loopback clients connecting over `::1` no longer receive a `Host` rejection.
 
+## Response flush hints (F7)
+Before delegating to the SDK, `dispatch` calls `applyResponseFlushHints(res)` which:
+- Sets `Cache-Control: no-cache, no-transform` to prevent proxy/CDN buffering.
+- Calls `res.socket?.setNoDelay(true)` to disable Nagle's algorithm so short responses are sent immediately rather than waiting for the OS to coalesce small TCP segments.
+
+These changes make `tasks.create` / `tasks.cancel` and other single-result tool calls visible to `curl` reliably when the response body is small.
+
 ## Response close cleanup (T-47)
 On `res.on('close')`, both `transport.close()` and `server.close()` are invoked through a local `closeWithTimeout` helper that races them against `CLOSE_TIMEOUT_MS = 5s`. Timeouts and close failures log a structured `logger.warn` that preserves the stack for non-Error throws.
 

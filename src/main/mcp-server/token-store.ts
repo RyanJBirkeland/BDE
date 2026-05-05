@@ -8,6 +8,10 @@ const FILE_MODE = 0o600
 const DIR_MODE = 0o700
 const TOKEN_HEX_PATTERN = new RegExp(`^[0-9a-f]{${TOKEN_BYTES * 2}}$`)
 
+function rotatedAtFilePath(tokenPath: string): string {
+  return tokenPath + '-rotated-at'
+}
+
 export interface TokenStoreLogger {
   warn(msg: string): void
   error(msg: string): void
@@ -133,11 +137,23 @@ export async function readOrCreateToken(
   return { token: result.token, created: result.created, path: filePath }
 }
 
+export async function readRotatedAt(
+  filePath: string = tokenFilePath()
+): Promise<string | null> {
+  try {
+    const contents = await fs.readFile(rotatedAtFilePath(filePath), 'utf8')
+    return contents.trim() || null
+  } catch {
+    return null
+  }
+}
+
 export async function regenerateToken(
   filePath: string = tokenFilePath()
 ): Promise<TokenReadResult> {
   const token = randomBytes(TOKEN_BYTES).toString('hex')
   await lockParentDirectoryPermissions(filePath)
   await overwriteWithMode(filePath, token + '\n')
+  await overwriteWithMode(rotatedAtFilePath(filePath), new Date().toISOString() + '\n')
   return { token, created: true, path: filePath }
 }

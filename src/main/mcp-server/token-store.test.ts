@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path'
 import * as os from 'node:os'
 import { tmpdir } from 'node:os'
 import { randomBytes } from 'node:crypto'
-import { readOrCreateToken, regenerateToken, tokenFilePath } from './token-store'
+import { readOrCreateToken, readRotatedAt, regenerateToken, tokenFilePath } from './token-store'
 
 const HEX_TOKEN = /^[0-9a-f]{64}$/
 
@@ -188,6 +188,42 @@ describe('token-store', () => {
 
     const stat = await fs.stat(filePath)
     expect(stat.mode & 0o777).toBe(0o600)
+  })
+
+  it('readRotatedAt returns null when no rotation has occurred', async () => {
+    const result = await readRotatedAt(filePath)
+    expect(result).toBeNull()
+  })
+
+  it('readRotatedAt returns a recent ISO timestamp after regenerateToken', async () => {
+    const before = Date.now()
+    await regenerateToken(filePath)
+    const rotatedAt = await readRotatedAt(filePath)
+    const after = Date.now()
+
+    expect(rotatedAt).not.toBeNull()
+    const parsed = new Date(rotatedAt!).getTime()
+    expect(parsed).toBeGreaterThanOrEqual(before)
+    expect(parsed).toBeLessThanOrEqual(after)
+    // Verify it is a well-formed ISO 8601 string
+    expect(rotatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+  })
+
+  it('readRotatedAt updates to a newer timestamp on successive regenerations', async () => {
+    await regenerateToken(filePath)
+    const firstTimestamp = await readRotatedAt(filePath)
+
+    // Ensure at least 1ms passes so the timestamps differ
+    await new Promise<void>((resolve) => setTimeout(resolve, 2))
+
+    await regenerateToken(filePath)
+    const secondTimestamp = await readRotatedAt(filePath)
+
+    expect(firstTimestamp).not.toBeNull()
+    expect(secondTimestamp).not.toBeNull()
+    expect(new Date(secondTimestamp!).getTime()).toBeGreaterThanOrEqual(
+      new Date(firstTimestamp!).getTime()
+    )
   })
 
   it('tokenFilePath is absolute, under the home directory, and named mcp-token', () => {

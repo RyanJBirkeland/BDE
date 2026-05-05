@@ -769,6 +769,46 @@ describe('transport handler 500-path structured log (T-48)', () => {
   })
 })
 
+describe('transport handler response flush hints (F7)', () => {
+  const validToken = 'test-bearer-token-12345'
+  const port = 18792
+  const authHeaders = {
+    host: '127.0.0.1:18792',
+    authorization: `Bearer ${validToken}`
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    transportInstances.length = 0
+  })
+
+  it('sets Cache-Control: no-cache, no-transform on authorized requests', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const { req } = createMockRequest({ headers: authHeaders })
+    const { res, written } = createMockResponse()
+
+    await handler.handle(req, res)
+
+    expect(written.headers['Cache-Control']).toBe('no-cache, no-transform')
+  })
+
+  it('calls setNoDelay(true) on the socket for authorized requests', async () => {
+    const mockServer = createMockMcpServer()
+    const handler = createTransportHandler(() => mockServer, validToken, port, createMockLogger())
+
+    const { req } = createMockRequest({ headers: authHeaders })
+    const { res } = createMockResponse()
+    const setNoDelay = vi.fn()
+    Object.defineProperty(res, 'socket', { value: { setNoDelay }, configurable: true })
+
+    await handler.handle(req, res)
+
+    expect(setNoDelay).toHaveBeenCalledWith(true)
+  })
+})
+
 describe('transport handler DNS-rebinding protection (real SDK over loopback)', () => {
   const validToken = 'test-bearer-token-12345'
 

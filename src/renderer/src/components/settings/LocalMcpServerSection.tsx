@@ -7,12 +7,15 @@ import { toast } from '../../stores/toasts'
 import { SettingsCard } from './SettingsCard'
 import { MCP_DEFAULT_PORT } from '../../../../shared/mcp-constants'
 
+const TOKEN_REFRESH_DELAY_MS = 800
+
 export function LocalMcpServerSection(): React.JSX.Element {
   const [enabled, setEnabled] = useState(false)
   const [port, setPort] = useState(MCP_DEFAULT_PORT)
   const [token, setToken] = useState<string | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [tokenRotatedAt, setTokenRotatedAt] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.settings.get('mcp.enabled').then((v) => setEnabled(v === 'true'))
@@ -21,19 +24,33 @@ export function LocalMcpServerSection(): React.JSX.Element {
       if (!isNaN(parsed) && parsed > 0) setPort(parsed)
     })
     window.api.mcp.getToken().then(setToken)
+    window.api.mcp.getTokenRotatedAt().then(setTokenRotatedAt)
   }, [])
 
-  const handleToggleEnabled = useCallback(async (next: boolean): Promise<void> => {
-    setEnabled(next)
-    try {
-      await window.api.settings.set('mcp.enabled', next ? 'true' : 'false')
-    } catch (e) {
-      setEnabled(!next)
-      toast.error(
-        `Failed to update MCP enabled: ${e instanceof Error ? e.message : 'Unknown error'}`
-      )
-    }
+  const refreshTokenDisplay = useCallback((): void => {
+    setTimeout(() => {
+      window.api.mcp.getToken().then(setToken)
+      window.api.mcp.getTokenRotatedAt().then(setTokenRotatedAt)
+    }, TOKEN_REFRESH_DELAY_MS)
   }, [])
+
+  const handleToggleEnabled = useCallback(
+    async (next: boolean): Promise<void> => {
+      setEnabled(next)
+      try {
+        await window.api.settings.set('mcp.enabled', next ? 'true' : 'false')
+        if (next) {
+          refreshTokenDisplay()
+        }
+      } catch (e) {
+        setEnabled(!next)
+        toast.error(
+          `Failed to update MCP enabled: ${e instanceof Error ? e.message : 'Unknown error'}`
+        )
+      }
+    },
+    [refreshTokenDisplay]
+  )
 
   const handlePortChange = useCallback(async (next: number): Promise<void> => {
     setPort(next)
@@ -53,6 +70,7 @@ export function LocalMcpServerSection(): React.JSX.Element {
       const next = await window.api.mcp.regenerateToken()
       setToken(next)
       setRevealed(true)
+      window.api.mcp.getTokenRotatedAt().then(setTokenRotatedAt)
       toast.success('MCP token regenerated')
     } catch (e) {
       toast.error(`Failed to regenerate token: ${e instanceof Error ? e.message : 'Unknown error'}`)
@@ -140,6 +158,11 @@ export function LocalMcpServerSection(): React.JSX.Element {
             {busy ? 'Regenerating…' : 'Regenerate'}
           </button>
         </div>
+        {tokenRotatedAt !== null && (
+          <div className="settings-field__hint">
+            Rotated at {new Date(tokenRotatedAt).toLocaleString()}
+          </div>
+        )}
       </div>
 
       <div className="settings-field">

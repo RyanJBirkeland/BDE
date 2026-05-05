@@ -342,9 +342,13 @@ vi.stubGlobal('api', {
     getToken: vi
       .fn()
       .mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'),
+    revealToken: vi
+      .fn()
+      .mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'),
     regenerateToken: vi
       .fn()
-      .mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2')
+      .mockResolvedValue('a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2'),
+    getTokenRotatedAt: vi.fn().mockResolvedValue(null)
   },
 
   // Auto-updater

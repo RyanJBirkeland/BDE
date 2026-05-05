@@ -10,7 +10,9 @@ type Api = {
   }
   mcp: {
     getToken: ReturnType<typeof vi.fn>
+    revealToken: ReturnType<typeof vi.fn>
     regenerateToken: ReturnType<typeof vi.fn>
+    getTokenRotatedAt: ReturnType<typeof vi.fn>
   }
 }
 
@@ -31,7 +33,9 @@ describe('LocalMcpServerSection', () => {
     })
     api.settings.set = vi.fn().mockResolvedValue(undefined)
     api.mcp.getToken = vi.fn().mockResolvedValue(TEST_TOKEN)
+    api.mcp.revealToken = vi.fn().mockResolvedValue(TEST_TOKEN)
     api.mcp.regenerateToken = vi.fn().mockResolvedValue('new-token-0123456789abcdef')
+    api.mcp.getTokenRotatedAt = vi.fn().mockResolvedValue(null)
     Object.defineProperty(globalThis.navigator, 'clipboard', {
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
       configurable: true

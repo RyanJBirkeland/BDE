@@ -104,4 +104,8 @@ export interface McpChannels {
     args: []
     result: string
   }
+  'mcp:getTokenRotatedAt': {
+    args: []
+    result: string | null
+  }
 }

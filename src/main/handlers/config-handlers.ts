@@ -11,7 +11,7 @@ import {
 } from '../services/settings-profiles'
 import { validateWorktreeBase } from '../paths'
 import { emitSettingChanged } from '../events/settings-events'
-import { readOrCreateToken, regenerateToken } from '../mcp-server/token-store'
+import { readOrCreateToken, readRotatedAt, regenerateToken } from '../mcp-server/token-store'
 
 /** Setting keys that require path safety validation before writing. */
 const PATH_VALIDATORS: Record<string, (value: string) => void> = {
@@ -129,5 +129,9 @@ export function registerConfigHandlers(): void {
       emitSettingChanged({ key: 'mcp.enabled', value: 'true' })
     }
     return token
+  })
+
+  safeHandle('mcp:getTokenRotatedAt', async () => {
+    return readRotatedAt()
   })
 }

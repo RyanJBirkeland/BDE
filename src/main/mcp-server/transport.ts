@@ -197,6 +197,19 @@ function buildRequestScope(buildMcpServer: () => McpServer, port: number): Reque
 }
 
 /**
+ * Applies response hints that reduce OS-level and proxy buffering for
+ * streamed MCP replies. `Cache-Control: no-cache, no-transform` tells any
+ * intermediate proxy not to buffer or transform the body. `TCP_NODELAY`
+ * disables Nagle's algorithm so small response packets are sent immediately
+ * rather than waiting to be coalesced — important for single-result tool
+ * calls that produce a short response body.
+ */
+function applyResponseFlushHints(res: ServerResponse): void {
+  res.setHeader('Cache-Control', 'no-cache, no-transform')
+  res.socket?.setNoDelay(true)
+}
+
+/**
  * Hand the request off to the SDK and register a cleanup hook for the
  * response-close event. Any unhandled failure inside the SDK (including
  * `server.connect`) is logged and surfaced as a JSON-RPC 500.
@@ -209,6 +222,7 @@ async function dispatch(
   logger: Logger
 ): Promise<void> {
   try {
+    applyResponseFlushHints(res)
     // SDK's Transport interface types `onclose` as `() => void` but the concrete
     // `StreamableHTTPServerTransport` exposes it as `(() => void) | undefined`.
     // The assignment is safe — the SDK itself handles the undefined case.

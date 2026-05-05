@@ -255,7 +255,8 @@ const api = {
   mcp: {
     getToken: (): Promise<string> => ipcRenderer.invoke('mcp:getToken'),
     revealToken: (): Promise<string> => ipcRenderer.invoke('mcp:revealToken'),
-    regenerateToken: (): Promise<string> => ipcRenderer.invoke('mcp:regenerateToken')
+    regenerateToken: (): Promise<string> => ipcRenderer.invoke('mcp:regenerateToken'),
+    getTokenRotatedAt: (): Promise<string | null> => ipcRenderer.invoke('mcp:getTokenRotatedAt')
   }
 }
 
