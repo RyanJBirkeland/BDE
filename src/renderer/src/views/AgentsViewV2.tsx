@@ -32,6 +32,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/
 
 const INSPECTOR_BREAKPOINT = 1280
 const FLEET_LIST_WIDTH = 320
+const EMPTY_EVENTS: never[] = []
 
 export function AgentsViewV2(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -99,7 +100,7 @@ export function AgentsViewV2(): React.JSX.Element {
   }, [])
 
   const selectedAgent = agents.find((a) => a.id === activeId)
-  const events = useAgentEventsStore((s) => s.events[activeId ?? ''] ?? [])
+  const events = useAgentEventsStore((s) => s.events[activeId ?? ''] ?? EMPTY_EVENTS)
 
   const handleSteer = useCallback(
     async (message: string, attachment?: Attachment) => {
