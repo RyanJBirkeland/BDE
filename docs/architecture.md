@@ -102,7 +102,7 @@ Every piece of work in FLEET flows through the same state machine (`src/shared/t
         └─ auto-blocked at creation when unsatisfied hard deps present
 ```
 
-The `TaskStatus` union has 9 members: `backlog`, `queued`, `blocked`, `active`, `review`, `done`, `cancelled`, `failed`, `error`. Transitions are enforced by `isValidTransition()` at the data layer inside `updateTask()`. The review gate between `active` and `done` is Code Review Station — no agent pushes directly to main. For dependency semantics (hard vs. soft, cycle detection, auto-resolution on completion) see the agent-manager and services indexes.
+The `TaskStatus` union has 10 members: `backlog`, `queued`, `blocked`, `active`, `review`, `approved`, `done`, `cancelled`, `failed`, `error`. Transitions are enforced by `isValidTransition()` at the data layer inside `updateTask()`. The review gate between `active` and `done` has two stages: Code Review Station transitions tasks to `review` (awaiting human inspection), then to `approved` (code accepted, downstream tasks unblock immediately). The PR Builder groups approved tasks into stacked PRs; Sprint PR Poller drives `approved → done` on merge. No agent pushes directly to main. For dependency semantics (hard vs. soft, cycle detection, auto-resolution on completion) see the agent-manager and services indexes.
 
 ---
 
