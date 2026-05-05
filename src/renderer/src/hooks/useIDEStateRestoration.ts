@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useIDEStore } from '../stores/ide'
+import { useIDEStore, DEFAULT_UI_STATE, IDEUIState, DEFAULT_INSIGHT_SECTIONS } from '../stores/ide'
 
 export function useIDEStateRestoration(): void {
   useEffect(() => {
@@ -18,6 +18,7 @@ export function useIDEStateRestoration(): void {
           minimapEnabled?: boolean | undefined
           wordWrapEnabled?: boolean | undefined
           fontSize?: number | undefined
+          uiState?: IDEUIState | undefined
         }
 
         // Skip rootPath if it no longer exists on this machine (e.g., migrated from another machine).
@@ -45,7 +46,17 @@ export function useIDEStateRestoration(): void {
           expandedDirs: state.expandedDirs ?? {},
           minimapEnabled: state.minimapEnabled ?? true,
           wordWrapEnabled: state.wordWrapEnabled ?? false,
-          fontSize: state.fontSize ?? 13
+          fontSize: state.fontSize ?? 13,
+          uiState: state.uiState
+            ? {
+                ...DEFAULT_UI_STATE,
+                ...state.uiState,
+                insightSectionsOpen: {
+                  ...DEFAULT_INSIGHT_SECTIONS,
+                  ...(state.uiState.insightSectionsOpen ?? {})
+                }
+              }
+            : DEFAULT_UI_STATE
         })
 
         if (state.openTabs) {

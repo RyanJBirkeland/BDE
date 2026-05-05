@@ -19,7 +19,7 @@ export function PanelHeader({ eyebrow, children }: PanelHeaderProps): React.JSX.
       }}
     >
       <span className="fleet-eyebrow">{eyebrow}</span>
-      <div style={{ display: 'flex', gap: 4 }}>{children}</div>
+      <div style={{ display: 'flex', gap: 'var(--s-1)' }}>{children}</div>
     </div>
   )
 }

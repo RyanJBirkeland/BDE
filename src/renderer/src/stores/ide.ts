@@ -95,7 +95,7 @@ export interface IDEUIState {
   sidebarOpen: boolean
 }
 
-const DEFAULT_INSIGHT_SECTIONS: Record<InsightSectionKey, boolean> = {
+export const DEFAULT_INSIGHT_SECTIONS: Record<InsightSectionKey, boolean> = {
   thisFile: true,
   agents: true,
   tasks: true,
@@ -103,7 +103,7 @@ const DEFAULT_INSIGHT_SECTIONS: Record<InsightSectionKey, boolean> = {
   problems: true
 }
 
-const DEFAULT_UI_STATE: IDEUIState = {
+export const DEFAULT_UI_STATE: IDEUIState = {
   activity: 'files',
   insightRailOpen: true,
   insightSectionsOpen: DEFAULT_INSIGHT_SECTIONS,
@@ -128,7 +128,9 @@ interface IDEState {
   wordWrapEnabled: boolean
   fontSize: number
 
-  // V2 UI-only state
+  // V2 sidebar/terminal open state — authoritative when IDE V2 ships as default.
+  // The V1 fields sidebarCollapsed/terminalCollapsed remain until the V2 shell is
+  // the only render path; IDEView will use uiState exclusively.
   uiState: IDEUIState
 
   // Actions

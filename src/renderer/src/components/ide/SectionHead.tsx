@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -14,10 +15,14 @@ export function SectionHead({
   onToggle,
   children
 }: SectionHeadProps): React.JSX.Element {
+  const [focused, setFocused] = useState(false)
+
   return (
     <button
       onClick={onToggle}
       aria-expanded={open}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -31,13 +36,14 @@ export function SectionHead({
         borderBottom: '1px solid var(--line)',
         background: 'transparent',
         cursor: 'pointer',
-        flexShrink: 0
+        flexShrink: 0,
+        outline: focused ? '2px solid var(--accent-line)' : 'none'
       }}
     >
       <span className="fleet-eyebrow" style={{ color: 'var(--fg-3)' }}>
         {eyebrow}
       </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-1)' }}>
         {children}
         {open ? (
           <ChevronDown size={14} color="var(--fg-3)" />

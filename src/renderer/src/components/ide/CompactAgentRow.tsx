@@ -10,11 +10,23 @@ export interface CompactAgentRowProps {
   onClick?: () => void
 }
 
+// 'cancelled' and 'error' share the --st-failed color — no dedicated tokens exist.
+function toFleetDotStatus(status: CompactAgentRowProps['status']): string {
+  if (status === 'cancelled') return 'failed'
+  if (status === 'error') return 'failed'
+  return status
+}
+
 function StatusIndicator({ status }: { status: CompactAgentRowProps['status'] }): React.JSX.Element {
   if (status === 'running') {
     return <span className="fleet-pulse" style={{ width: 6, height: 6 }} />
   }
-  return <span className={`fleet-dot fleet-dot--${status}`} style={{ width: 6, height: 6 }} />
+  return (
+    <span
+      className={`fleet-dot fleet-dot--${toFleetDotStatus(status)}`}
+      style={{ width: 6, height: 6 }}
+    />
+  )
 }
 
 export function CompactAgentRow({
@@ -30,9 +42,15 @@ export function CompactAgentRow({
     <div
       role="button"
       tabIndex={0}
+      aria-label={agentId}
       onClick={onClick}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') onClick?.()
+        if (e.key === ' ') {
+          e.preventDefault()
+          onClick?.()
+        } else if (e.key === 'Enter') {
+          onClick?.()
+        }
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
