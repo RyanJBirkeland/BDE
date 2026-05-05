@@ -1,0 +1,135 @@
+/* ── Agents: Sidebar header ────────────────────────────── */
+
+.agents-view__sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--fleet-accent-border);
+}
+
+.agents-view__title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agents-view__title {
+  font-size: var(--fleet-size-2xs);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+.agents-view__info-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.agents-view__info-icon {
+  color: var(--fleet-text-muted);
+  cursor: help;
+  transition: color 0.2s;
+}
+
+.agents-view__info-icon:hover {
+  color: var(--fleet-accent);
+}
+
+.agents-view__tooltip {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 240px;
+  padding: 8px 10px;
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: 6px;
+  font-size: var(--fleet-size-2xs);
+  line-height: 1.4;
+  color: var(--fleet-text-muted);
+  z-index: var(--z-tooltip);
+  box-shadow: var(--fleet-shadow-md);
+}
+
+.agents-view__tooltip-strong {
+  color: var(--fleet-accent);
+}
+
+.agents-view__spawn-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.agents-view__scratchpad-banner {
+  font-size: var(--fleet-size-2xs);
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--fleet-accent-border);
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-text-muted);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.agents-view__scratchpad-banner-text {
+  flex: 1;
+}
+
+.agents-view__scratchpad-banner-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--fleet-text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.agents-view__scratchpad-banner-dismiss:hover {
+  color: var(--fleet-accent);
+}
+
+/* ── Agents View Container ── */
+/* Matches .cr-view pattern — overflow: hidden is REQUIRED for
+   react-resizable-panels to measure correctly; without it panels
+   collapse to intrinsic content width (~25px). */
+.agents-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--fleet-bg);
+}
+
+/* ── Agents Sidebar ── */
+.agents-sidebar {
+  border-right: 1px solid var(--fleet-accent-border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 300px;
+  flex-shrink: 0;
+  background: linear-gradient(
+    180deg,
+    var(--fleet-accent-surface),
+    var(--fleet-surface-high, rgba(10, 0, 21, 0.4))
+  );
+  overflow-y: auto;
+}
