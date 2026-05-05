@@ -10,7 +10,7 @@ import type { ChatBlock } from '../../lib/pair-events'
 import { pairEvents } from '../../lib/pair-events'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
-import { ConsoleHeader } from './ConsoleHeader'
+import { AgentConsoleHeader } from './AgentConsoleHeader'
 import { ConsoleCard } from './cards/ConsoleCard'
 import { CommandBar } from './CommandBar'
 import { PlaygroundModal } from './PlaygroundModal'
@@ -212,7 +212,7 @@ export function AgentConsole({
 
   return (
     <div className="agent-console">
-      <ConsoleHeader agent={agent} events={events} />
+      <AgentConsoleHeader agent={agent} events={events} />
 
       {wasEvicted && (
         <div className="console-cap-banner">Older events were trimmed (showing last 2,000)</div>

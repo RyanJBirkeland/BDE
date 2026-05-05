@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
-import { ConsoleHeader } from '../ConsoleHeader'
+import { AgentConsoleHeader } from '../AgentConsoleHeader'
 import type { AgentMeta, AgentEvent } from '../../../../../shared/types'
 import { nowIso } from '../../../../../shared/time'
 
@@ -73,68 +73,46 @@ const baseAgent: AgentMeta = {
   sprintTaskId: null
 }
 
-describe('ConsoleHeader', () => {
+describe('AgentConsoleHeader', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockConfirm.mockResolvedValue(true) // Reset to auto-confirm
   })
 
-  it('renders agent task name', () => {
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
-    expect(screen.getByText('Fix critical bug')).toBeInTheDocument()
+  it('renders agent id in the identity stack', () => {
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
+    expect(screen.getByText('agent-1')).toBeInTheDocument()
   })
 
-  it('renders model badge', () => {
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
-    expect(screen.getByText('opus')).toBeInTheDocument()
+  it('renders repo name in the subtitle line', () => {
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
+    expect(screen.getByText(/FLEET/)).toBeInTheDocument()
   })
 
-  it('shows Stop button when agent is running', () => {
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+  it('shows Kill button when agent is running', () => {
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     expect(screen.getByLabelText('Stop agent')).toBeInTheDocument()
   })
 
-  it('hides Stop button when agent is not running', () => {
+  it('hides Kill button when agent is not running', () => {
     const doneAgent = {
       ...baseAgent,
       status: 'done' as const,
       finishedAt: nowIso(),
       exitCode: 0
     }
-    render(<ConsoleHeader agent={doneAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={doneAgent} events={[]} />)
     expect(screen.queryByLabelText('Stop agent')).not.toBeInTheDocument()
   })
 
-  it('renders Open terminal button', () => {
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+  it('renders Shell button', () => {
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     expect(screen.getByLabelText('Open terminal')).toBeInTheDocument()
   })
 
   it('renders Copy log button', () => {
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     expect(screen.getByLabelText('Copy log')).toBeInTheDocument()
-  })
-
-  // ---------- Branch coverage: model accent ----------
-
-  it('assigns purple accent for opus model', () => {
-    render(<ConsoleHeader agent={{ ...baseAgent, model: 'claude-opus-4' }} events={[]} />)
-    expect(screen.getByText('claude-opus-4')).toBeInTheDocument()
-  })
-
-  it('assigns cyan accent for sonnet model', () => {
-    render(<ConsoleHeader agent={{ ...baseAgent, model: 'sonnet-3.5' }} events={[]} />)
-    expect(screen.getByText('sonnet-3.5')).toBeInTheDocument()
-  })
-
-  it('assigns pink accent for haiku model', () => {
-    render(<ConsoleHeader agent={{ ...baseAgent, model: 'haiku-3' }} events={[]} />)
-    expect(screen.getByText('haiku-3')).toBeInTheDocument()
-  })
-
-  it('assigns blue accent for unknown model', () => {
-    render(<ConsoleHeader agent={{ ...baseAgent, model: 'gpt-4' }} events={[]} />)
-    expect(screen.getByText('gpt-4')).toBeInTheDocument()
   })
 
   // ---------- Branch coverage: duration format ----------
@@ -144,7 +122,7 @@ describe('ConsoleHeader', () => {
       ...baseAgent,
       startedAt: new Date(Date.now() - 30000).toISOString()
     }
-    render(<ConsoleHeader agent={recentAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={recentAgent} events={[]} />)
     expect(screen.getByText(/30s/)).toBeInTheDocument()
   })
 
@@ -153,7 +131,7 @@ describe('ConsoleHeader', () => {
       ...baseAgent,
       startedAt: new Date(Date.now() - 150000).toISOString() // 2.5 min
     }
-    render(<ConsoleHeader agent={minuteAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={minuteAgent} events={[]} />)
     expect(screen.getByText(/2m/)).toBeInTheDocument()
   })
 
@@ -164,7 +142,7 @@ describe('ConsoleHeader', () => {
       finishedAt: nowIso(),
       status: 'done' as const
     }
-    render(<ConsoleHeader agent={hourAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={hourAgent} events={[]} />)
     expect(screen.getByText(/1h/)).toBeInTheDocument()
   })
 
@@ -182,18 +160,18 @@ describe('ConsoleHeader', () => {
         timestamp: Date.now()
       }
     ]
-    render(<ConsoleHeader agent={baseAgent} events={events} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={events} />)
     expect(screen.getByText('$0.1234')).toBeInTheDocument()
   })
 
   it('shows cost from agent meta when no completed event', () => {
     const agentWithCost = { ...baseAgent, costUsd: 0.5678 }
-    render(<ConsoleHeader agent={agentWithCost} events={[]} />)
+    render(<AgentConsoleHeader agent={agentWithCost} events={[]} />)
     expect(screen.getByText('$0.5678')).toBeInTheDocument()
   })
 
   it('does not show cost when neither event nor agent has cost', () => {
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     expect(screen.queryByText(/\$/)).not.toBeInTheDocument()
   })
 
@@ -201,7 +179,7 @@ describe('ConsoleHeader', () => {
 
   it('copies log on copy button click', async () => {
     const { toast } = await import('../../../stores/toasts')
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Copy log'))
     })
@@ -211,7 +189,7 @@ describe('ConsoleHeader', () => {
   })
 
   it('shows confirmation when stopping agent without worktree', async () => {
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Stop agent'))
     })
@@ -239,7 +217,7 @@ describe('ConsoleHeader', () => {
       ],
       branch: 'feat/test'
     })
-    render(<ConsoleHeader agent={agentWithWorktree} events={[]} />)
+    render(<AgentConsoleHeader agent={agentWithWorktree} events={[]} />)
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Stop agent'))
     })
@@ -257,7 +235,7 @@ describe('ConsoleHeader', () => {
 
   it('does not kill agent when user cancels confirmation', async () => {
     mockConfirm.mockResolvedValue(false)
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Stop agent'))
     })
@@ -268,7 +246,7 @@ describe('ConsoleHeader', () => {
   it('shows error toast when stop fails', async () => {
     vi.mocked(window.api.agents.kill).mockRejectedValue(new Error('kill failed'))
     const { toast } = await import('../../../stores/toasts')
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Stop agent'))
     })
@@ -278,7 +256,7 @@ describe('ConsoleHeader', () => {
   it('shows error toast when copy log fails', async () => {
     vi.mocked(window.api.agents.tailLog).mockRejectedValue(new Error('log read failed'))
     const { toast } = await import('../../../stores/toasts')
-    render(<ConsoleHeader agent={baseAgent} events={[]} />)
+    render(<AgentConsoleHeader agent={baseAgent} events={[]} />)
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Copy log'))
     })
