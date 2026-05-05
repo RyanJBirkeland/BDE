@@ -15,7 +15,6 @@ import { useSprintTasks } from '../../stores/sprintTasks'
 import { useAgentEventsStore } from '../../stores/agentEvents'
 import { extractTestRuns } from '../../lib/extract-test-runs'
 import type { VerificationRecord } from '../../../../shared/types/task-types'
-import './TestsTab.css'
 import './VerificationTab.css'
 
 export function VerificationTab(): React.JSX.Element {
