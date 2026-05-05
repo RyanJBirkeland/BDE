@@ -1,90 +1,104 @@
 import { describe, it, expect } from 'vitest'
-import { up, version } from '../v060-add-approved-status-to-sprint-tasks-check'
-import { makeMigrationTestDb, listTableColumns, indexExists } from './helpers'
+import Database from 'better-sqlite3'
+import { up, version } from '../v060-add-stacked-on-task-id-and-pr-groups'
 
-describe('migration v060', () => {
-  it('has version 60', () => {
+const createMinimalSprintTasksTable = (db: Database.Database): void => {
+  db.exec(
+    `CREATE TABLE sprint_tasks (
+      id      TEXT PRIMARY KEY,
+      title   TEXT NOT NULL,
+      status  TEXT NOT NULL DEFAULT 'backlog',
+      repo    TEXT NOT NULL DEFAULT ''
+    )`
+  )
+}
+
+describe('migration v059', () => {
+  it('has version 59', () => {
     expect(version).toBe(60)
   })
 
-  it("adds 'approved' as a valid status — inserting a task with status='approved' does not throw", () => {
-    const db = makeMigrationTestDb(59)
-    up(db)
-
-    expect(() => {
-      db.prepare(
-        `INSERT INTO sprint_tasks (id, title, status, repo)
-         VALUES ('t-approved', 'Approved task', 'approved', 'fleet')`
-      ).run()
-    }).not.toThrow()
-
-    const row = db
-      .prepare(`SELECT status FROM sprint_tasks WHERE id = 't-approved'`)
-      .get() as { status: string }
-    expect(row.status).toBe('approved')
-    db.close()
-  })
-
-  it('preserves existing cross_repo_contract values through the table recreation', () => {
-    const db = makeMigrationTestDb(59)
-
-    db.prepare(
-      `INSERT INTO sprint_tasks (id, title, status, repo, cross_repo_contract)
-       VALUES ('t-contract', 'Contract task', 'backlog', 'fleet', '{"api":"v1"}')`
-    ).run()
+  it('adds stacked_on_task_id column to sprint_tasks', () => {
+    const db = new Database(':memory:')
+    createMinimalSprintTasksTable(db)
 
     up(db)
 
-    const row = db
-      .prepare(`SELECT cross_repo_contract FROM sprint_tasks WHERE id = 't-contract'`)
-      .get() as { cross_repo_contract: string }
-    expect(row.cross_repo_contract).toBe('{"api":"v1"}')
-    db.close()
-  })
-
-  it('preserves stacked_on_task_id column after migration', () => {
-    const db = makeMigrationTestDb(59)
-    up(db)
-
-    const cols = listTableColumns(db, 'sprint_tasks')
+    const cols = (db.pragma('table_info(sprint_tasks)') as { name: string }[]).map((c) => c.name)
     expect(cols).toContain('stacked_on_task_id')
     db.close()
   })
 
-  it('preserves sort_order column after migration', () => {
-    const db = makeMigrationTestDb(59)
+  it('creates the pr_groups table with all expected columns', () => {
+    const db = new Database(':memory:')
+    createMinimalSprintTasksTable(db)
+
     up(db)
 
-    const cols = listTableColumns(db, 'sprint_tasks')
-    expect(cols).toContain('sort_order')
+    const table = db
+      .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='pr_groups'`)
+      .get() as { name: string } | undefined
+
+    expect(table?.name).toBe('pr_groups')
+
+    const cols = (db.pragma('table_info(pr_groups)') as { name: string }[]).map((c) => c.name)
+    expect(cols).toContain('id')
+    expect(cols).toContain('repo')
+    expect(cols).toContain('title')
+    expect(cols).toContain('branch_name')
+    expect(cols).toContain('description')
+    expect(cols).toContain('status')
+    expect(cols).toContain('task_order')
+    expect(cols).toContain('pr_number')
+    expect(cols).toContain('pr_url')
+    expect(cols).toContain('created_at')
+    expect(cols).toContain('updated_at')
     db.close()
   })
 
-  it('includes cross_repo_contract column in the recreated table', () => {
-    const db = makeMigrationTestDb(59)
+  it('pr_groups.status defaults to composing', () => {
+    const db = new Database(':memory:')
+    createMinimalSprintTasksTable(db)
+
     up(db)
 
-    const cols = listTableColumns(db, 'sprint_tasks')
-    expect(cols).toContain('cross_repo_contract')
-    db.close()
-  })
+    db.prepare(
+      `INSERT INTO pr_groups (id, repo, title, branch_name, created_at, updated_at)
+       VALUES ('pg-1', 'fleet', 'Stack PR', 'stack/test', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`
+    ).run()
 
-  it('does not create a duplicate idx_sprint_tasks_group index — only idx_sprint_tasks_group_id exists', () => {
-    const db = makeMigrationTestDb(59)
-    up(db)
+    const row = db.prepare(`SELECT status, task_order FROM pr_groups WHERE id = 'pg-1'`).get() as {
+      status: string
+      task_order: string
+    }
 
-    expect(indexExists(db, 'idx_sprint_tasks_group_id')).toBe(true)
-    expect(indexExists(db, 'idx_sprint_tasks_group')).toBe(false)
+    expect(row.status).toBe('composing')
+    expect(row.task_order).toBe('[]')
     db.close()
   })
 
   it('is idempotent — calling up twice does not throw', () => {
-    // The table-recreation DDL uses CREATE TABLE (not IF NOT EXISTS), so a
-    // second call will fail if sprint_tasks_v60 already exists. Idempotency
-    // here means the migration runner wraps each call in a transaction and
-    // the PRAGMA user_version guard prevents double-application in production.
-    // We verify the single-call path is stable and that data survives.
-    const db = makeMigrationTestDb(59)
+    const db = new Database(':memory:')
+    createMinimalSprintTasksTable(db)
+
+    expect(() => {
+      up(db)
+      up(db)
+    }).not.toThrow()
+    db.close()
+  })
+
+  it('is idempotent when stacked_on_task_id already exists on sprint_tasks', () => {
+    const db = new Database(':memory:')
+    db.exec(
+      `CREATE TABLE sprint_tasks (
+        id                  TEXT PRIMARY KEY,
+        title               TEXT NOT NULL,
+        status              TEXT NOT NULL DEFAULT 'backlog',
+        repo                TEXT NOT NULL DEFAULT '',
+        stacked_on_task_id  TEXT
+      )`
+    )
 
     expect(() => up(db)).not.toThrow()
     db.close()

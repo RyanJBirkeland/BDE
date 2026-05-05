@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const version = 60
+export const version = 61
 export const description =
   "Add 'approved' to sprint_tasks status CHECK constraint for PR group approval workflow"
 

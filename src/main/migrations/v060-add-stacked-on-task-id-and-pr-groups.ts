@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3'
 
-export const version = 59
+export const version = 60
 export const description = 'Add stacked_on_task_id to sprint_tasks and create pr_groups table'
 
 export const up = (db: Database.Database): void => {
