@@ -359,6 +359,12 @@ vi.mock('../../ui/ConfirmModal', () => ({
   ConfirmModal: () => <div data-testid="confirm-modal">ConfirmModal</div>
 }))
 
+vi.mock('../../../stores/featureFlags', () => ({
+  useFeatureFlags: vi.fn((selector: (s: { v2Pipeline: boolean }) => unknown) =>
+    selector({ v2Pipeline: false })
+  )
+}))
+
 function makeTask(overrides: Partial<SprintTask> = {}): SprintTask {
   return {
     id: crypto.randomUUID(),
