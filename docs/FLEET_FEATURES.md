@@ -241,7 +241,38 @@ The app shell is feature-flagged for V2 rollout. Default: V1. Enable V2 in DevTo
 
 ### Dashboard
 
-Overview of task pipeline health, agent execution metrics, and recent activity. Default landing view (Cmd+1).
+Overview of task pipeline health, agent execution metrics, and recent activity. Default landing view (Cmd+1). Feature-flagged for V2 rollout — default is V1. Enable V2: `localStorage.setItem('fleet:ff', JSON.stringify({v2Dashboard:true})); location.reload()`.
+
+#### V2 Dashboard (`featureFlags.v2Dashboard = true`)
+
+Triage-oriented layout: *what's running, what needs me, am I on pace?*
+
+**Layout (top → bottom):**
+1. **`MissionBriefBand`** — 3-col flex band. Headline sentence synthesizes live counts ("3 agents working, 7 reviews waiting on you, 1 failure overnight."). Sprint progress bar (done/total). Quick action buttons (Review queue, + Task, Plan).
+2. **Live column** (left, `flex: 1.4`):
+   - `ActiveAgentsCard` — Running agents (up to 5) with elapsed time + token count. `fleet-pulse` in card head. Empty state shows Spawn button.
+   - `PipelineGlanceCard` — Proportional flow bar + 4-up grid (queued/running/review/done counts + oldest-task peek). `fleet-pulse` in card head.
+   - `ThroughputCard` — 24-bar historical chart from `CompletionBucket[]` + delta vs yesterday. No pulse (historical).
+3. **Triage column** (right, `flex: 1`):
+   - `AttentionCard` — Failed + blocked + stale-review items ranked by severity×age. Capped at 5. Red-tinted border. Hides entirely when empty.
+   - `ReviewQueueCard` — Tasks in `pendingReview` partition, capped at 5. "All caught up." empty state.
+   - `RecentCompletionsCard` — Last 5 done tasks with token counts. Hides when empty.
+4. **`KPIStrip`** — Full-width flex row: Success rate · Avg duration · Tokens/run · Cost/task · Failure rate. Each cell has delta indicator + `MicroSpark` SVG sparkline. Reflows to 3-per-row at ≤700px.
+5. **Stats accordion** — Side-by-side flex, wraps at narrow viewports:
+   - `PerAgentStats` — Runs grouped by task title, last 7 days, sorted by runs desc, capped at 6.
+   - `PerRepoStats` — Runs grouped by repo with merged/open PR counts, capped at 6.
+
+**Data aggregation:** `useDashboardData` hook (`components/dashboard/hooks/`) — single source for all card props. Derives `activeAgents`, `attentionItems`, `perAgentStats`, `perRepoStats`, brief headline parts, and navigation callbacks from existing stores. No store reads inside card components.
+
+**V2 primitives** (`components/dashboard/primitives/`): `Card`, `CardHead`, `QualityChip` (green ≥90 / amber ≥75 / red <75, null-safe), `MicroSpark` (respects `prefers-reduced-motion`).
+
+**Responsive:** All layouts use `display: flex; flex-wrap: wrap` with `flex-basis` min values. Mission Brief cols swap left-border → top-border at ≤640px via container query.
+
+**Pulse rule:** Only `ActiveAgentsCard` and `PipelineGlanceCard` carry `fleet-pulse` — they show realtime-streaming data. No other element pulses.
+
+**TODO(phase-2.5):** Agent step descriptions (needs event streaming), quality scores (needs `SprintTask.quality` DB column + reviewer write-back), sprint IPC for deadline/pace, "Run all" quick action.
+
+#### V1 Dashboard (default, `featureFlags.v2Dashboard = false`)
 
 - **Status counters**: Active (cyan), Queued (orange), Blocked (red), PRs (blue), Done (cyan) — color-coded, clickable
 - **Pipeline flow**: Visual stage boxes showing task progression through queued → active → blocked → done
