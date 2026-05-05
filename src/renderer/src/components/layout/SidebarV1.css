@@ -1,0 +1,202 @@
+/* Sidebar + items + context menu + tooltip + model badge */
+
+.sidebar {
+  width: 52px;
+  background: linear-gradient(180deg, var(--fleet-accent-surface) 0%, var(--fleet-surface-high) 100%);
+  border-right: 1px solid var(--fleet-accent-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  flex: 1;
+  padding: 0 6px;
+}
+
+.sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 8px;
+}
+
+/* ── Sidebar Item ── */
+.sidebar-item {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--fleet-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+  color: var(--fleet-text-muted);
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.sidebar-item:hover {
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-text);
+}
+
+.sidebar-item:focus-visible {
+  outline: 2px solid var(--fleet-accent);
+  outline-offset: 2px;
+}
+
+.sidebar-item--active {
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-status-active);
+  box-shadow: inset 3px 0 0 var(--fleet-status-active);
+}
+
+.sidebar-item__open-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--fleet-accent);
+}
+
+.sidebar-item__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: var(--fleet-radius-lg);
+  background: var(--fleet-warning);
+  color: var(--fleet-bg);
+  font-size: var(--fleet-size-2xs);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0 4px;
+}
+
+.sidebar-item__badge--red {
+  background: var(--fleet-danger);
+}
+
+.sidebar-item__badge--blue {
+  background: var(--fleet-status-review);
+}
+
+.sidebar-item__badge--orange {
+  background: var(--fleet-warning);
+}
+
+/* ── Sidebar Context Menu ── */
+.sidebar-context-menu {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  background: var(--fleet-overlay);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-lg);
+  padding: 4px 0;
+  min-width: 200px;
+}
+
+.sidebar-context-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-sm);
+  cursor: pointer;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+
+.sidebar-context-menu__item:hover,
+.sidebar-context-menu__item:focus-visible {
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-text);
+  outline: none;
+}
+
+/* ── Sidebar Tooltip ── */
+.sidebar-tooltip {
+  max-width: calc(100vw - 96px);
+  overflow-wrap: anywhere;
+  position: fixed;
+  z-index: var(--z-tooltip);
+  padding: 6px 12px;
+  border-radius: var(--fleet-radius-lg);
+  background: linear-gradient(135deg, var(--fleet-accent-surface), var(--fleet-surface-high));
+  border: 1px solid var(--fleet-accent-border);
+  box-shadow: none;
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: sidebar-tooltip-in 150ms ease forwards;
+}
+
+.sidebar-tooltip__shortcut {
+  color: var(--fleet-status-active);
+  margin-left: 8px;
+  font-size: var(--fleet-size-2xs);
+  font-family: var(--fleet-font-code);
+}
+
+@keyframes sidebar-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Model Badge ── */
+.sidebar-model-badge {
+  padding: 3px 4px;
+  border-radius: var(--fleet-radius-md);
+  background: var(--fleet-accent-surface);
+  border: 1px solid var(--fleet-accent-border);
+  font-size: 7px;
+  color: var(--fleet-status-active);
+  font-family: var(--fleet-font-code);
+  text-align: center;
+  max-width: 48px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-tooltip {
+  max-width: calc(100vw - 96px);
+  overflow-wrap: anywhere;
+    animation: none;
+  }
+}

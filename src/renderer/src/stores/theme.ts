@@ -48,6 +48,10 @@ function applyTheme(t: Theme): void {
 
   if (resolved === 'light') document.documentElement.classList.add('theme-pro-light')
   else document.documentElement.classList.add('theme-pro-dark') // dark fallback
+
+  // V2 token system uses data-theme attribute; set alongside class for dual compat.
+  document.documentElement.dataset.theme =
+    resolved === 'light' ? 'refined-pro-dark' : 'quiet-graphite'
 }
 
 /**

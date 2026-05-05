@@ -1,0 +1,25 @@
+.live-agent-row {
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.live-agent-row:hover {
+  background: var(--surf-2);
+}
+
+.live-agent-row__progress {
+  animation: live-agent-progress 2s linear infinite;
+  transform-origin: left;
+}
+
+@keyframes live-agent-progress {
+  0%   { transform: translateX(-100%) scaleX(0.4); }
+  50%  { transform: translateX(0%)    scaleX(0.6); }
+  100% { transform: translateX(100%) scaleX(0.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-agent-row__progress {
+    animation: none;
+    transform: scaleX(0.5);
+  }
+}

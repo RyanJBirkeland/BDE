@@ -1,0 +1,458 @@
+/* App shell + unified header + tabs + overflow menu + panel/layout utilities */
+
+/* ── App Shell Background ── */
+/* padding-top creates a native titlebar inset zone above the header.
+   macOS hiddenInset renders traffic lights as a native overlay at ~(12, 4-18).
+   This 28px zone (standard macOS titlebar height) gives them dedicated space
+   so they don't sit on top of the UnifiedHeader content.
+   The zone inherits the app background and has -webkit-app-region: drag
+   so it acts as a seamless extension of the titlebar. */
+.app-shell {
+  background: var(--fleet-bg);
+  padding-top: 28px;
+}
+
+/* The inset zone above the header needs to be draggable */
+.app-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  -webkit-app-region: drag;
+  background: linear-gradient(180deg, var(--fleet-accent-surface) 0%, var(--fleet-surface-high) 100%);
+  z-index: 11;
+}
+
+.app-shell__body {
+  background: var(--fleet-bg);
+}
+
+/* ── Unified Header ── */
+.unified-header {
+  height: 44px;
+  display: flex;
+  align-items: stretch;
+  background: linear-gradient(180deg, var(--fleet-accent-surface) 0%, var(--fleet-surface-high) 100%);
+  border-bottom: 1px solid var(--fleet-accent-border);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  overflow: hidden;
+}
+
+/* Left zone — spans sidebar width, contains traffic lights + logo.
+   macOS hiddenInset traffic lights sit at ~(12,16) and span ~70px.
+   The "B" logo is only visible when traffic lights don't cover it. */
+.unified-header__traffic-lights {
+  width: 52px;
+  min-width: 52px;
+  height: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--fleet-accent-border);
+}
+
+.unified-header__logo {
+  -webkit-app-region: no-drag;
+  cursor: pointer;
+  transition: background 150ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border-radius: var(--fleet-radius-md);
+}
+
+.unified-header__logo:hover,
+.unified-header__logo:focus-visible {
+  background: var(--fleet-surface-high);
+  outline: none;
+}
+
+.unified-header__logo-letter {
+  color: var(--fleet-status-active);
+  font-size: var(--fleet-size-lg);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.unified-header__tabs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 8px;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+}
+
+.unified-header__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.unified-header__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0 18px 0 12px;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+/* Health strip pill — sized to align with neighboring icon buttons (28px) and
+   the TOKENS badge so the action row reads as a single horizontal band. */
+.health-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ── Header Tab ── */
+.header-tab {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 6px;
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-dim);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  border-radius: var(--fleet-radius-md);
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.header-tab:hover,
+.header-tab:focus-visible {
+  color: var(--fleet-text-muted);
+  background: var(--fleet-border);
+  outline: none;
+}
+
+.header-tab--active {
+  color: var(--fleet-text);
+  background: var(--fleet-surface-high);
+  border-color: var(--fleet-accent-border);
+  font-weight: 500;
+}
+
+.header-tab__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--fleet-accent);
+  box-shadow: none;
+  flex-shrink: 0;
+}
+
+.header-tab__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--fleet-radius-sm);
+  color: var(--fleet-text-dim);
+  cursor: pointer;
+  transition:
+    color 100ms ease,
+    background 100ms ease,
+    opacity 100ms ease;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-right: -4px;
+  opacity: 0;
+}
+
+.header-tab:hover .header-tab__close {
+  opacity: 1;
+}
+
+.header-tab__close:hover:not(:disabled),
+.header-tab__close:focus-visible {
+  color: var(--fleet-text);
+  background: var(--fleet-surface);
+  outline: none;
+}
+
+/* ── Overflow Menu ── */
+.overflow-menu {
+  position: fixed;
+  z-index: 100;
+  min-width: 200px;
+}
+
+.overflow-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--fleet-text-muted);
+  font-size: var(--fleet-size-sm);
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+  border-radius: var(--fleet-radius-md);
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.overflow-menu__item:hover,
+.overflow-menu__item:focus-visible {
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-text);
+  outline: none;
+}
+
+.overflow-menu__item-pin {
+  margin-left: auto;
+  color: var(--fleet-status-active);
+  font-size: var(--fleet-size-2xs);
+  opacity: 0;
+  transition: opacity 100ms ease;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.overflow-menu__item:hover .overflow-menu__item-pin {
+  opacity: 1;
+}
+
+.overflow-menu__empty {
+  padding: 12px;
+  font-size: var(--fleet-size-xs);
+  color: var(--fleet-text-dim);
+  text-align: center;
+}
+
+.overflow-menu__separator {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--fleet-accent-border);
+}
+
+.overflow-menu__customize-btn {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--fleet-size-xs);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  color: var(--fleet-text-muted);
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+  border-radius: var(--fleet-radius-md);
+}
+
+.overflow-menu__customize-btn:hover:not(:disabled),
+.overflow-menu__customize-btn:focus-visible {
+  background: var(--fleet-accent-surface);
+  color: var(--fleet-text);
+  outline: none;
+}
+
+/* ── Slim Panel Label (unfocused panels) ── */
+.panel-label-slim {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: var(--fleet-size-2xs);
+  color: var(--fleet-text-dim);
+  background: var(--fleet-surface-high);
+  border: none;
+  border-bottom: 1px solid var(--fleet-border);
+  cursor: pointer;
+  transition: color 100ms ease;
+  flex-shrink: 0;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.panel-label-slim:hover {
+  color: var(--fleet-text-muted);
+}
+
+.panel-label-slim:focus-visible {
+  outline: 2px solid var(--fleet-accent);
+  outline-offset: -2px;
+  color: var(--fleet-text-muted);
+}
+
+.panel-label-dirty-dot {
+  color: var(--fleet-status-active);
+  font-size: var(--fleet-size-lg);
+  line-height: 1;
+}
+
+/* ── View Skeleton Loading State ── */
+.view-skeleton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.view-skeleton__pulse {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--fleet-radius-full);
+  background: var(--fleet-surface-high);
+  animation: fleet-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes fleet-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── Panel Leaf Container ── */
+.panel-leaf {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  background: var(--fleet-surface);
+  outline: 1px solid transparent;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.panel-leaf--focused {
+  outline-color: var(--fleet-accent);
+}
+
+.panel-leaf__content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panel-leaf__tabpanel {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+}
+
+.panel-leaf__tabpanel--active {
+  display: flex;
+}
+
+/* Override react-resizable-panels inline min-width: 0px which
+   lets panels collapse when the Group container width isn't
+   resolved during initial render. Scoped to the outer panel system only. */
+.panel-leaf [data-panel] {
+  min-width: revert;
+}
+
+/* ── Quick Create Bar ── */
+.quick-create-bar {
+  position: fixed;
+  top: 68px; /* below header + traffic light zone */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--fleet-surface);
+  border: 1px solid var(--fleet-accent-border);
+  border-radius: var(--fleet-radius-lg);
+  box-shadow: var(--fleet-shadow-lg);
+  width: min(560px, 80vw);
+  font-family: var(--fleet-font-code);
+}
+.quick-create-bar__icon {
+  color: var(--fleet-accent);
+  flex-shrink: 0;
+}
+.quick-create-bar__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fleet-text);
+  font-size: var(--fleet-size-md);
+  font-family: var(--fleet-font-code);
+}
+.quick-create-bar__input::placeholder {
+  color: var(--fleet-text-dim);
+}
+.quick-create-bar__hints {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.quick-create-bar__hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fleet-size-2xs);
+  color: var(--fleet-text-dim);
+}
+.quick-create-bar__hint kbd {
+  padding: 1px 4px;
+  border-radius: var(--fleet-radius-sm);
+  background: var(--fleet-surface-high);
+  border: 1px solid var(--fleet-border);
+  font-size: var(--fleet-size-2xs);
+}
+.quick-create-bar__hint--queue {
+  color: var(--fleet-warning);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .view-skeleton__pulse {
+    animation: none;
+  }
+}

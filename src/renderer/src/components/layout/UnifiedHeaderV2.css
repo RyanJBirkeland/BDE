@@ -1,0 +1,137 @@
+.unified-header-v2 {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  padding-right: var(--s-2);
+  container-type: inline-size;
+}
+
+/* ── Brand block ──────────────────────────────────── */
+.unified-header-v2__brand {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-left: 14px;
+  height: 100%;
+  border-right: 1px solid var(--line);
+}
+
+.unified-header-v2__logo-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.unified-header-v2__logo-btn:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.unified-header-v2__mark {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.unified-header-v2__wordmark {
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--fg-2);
+}
+
+/* ── Tab strip ────────────────────────────────────── */
+.unified-header-v2__tabs {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Actions ──────────────────────────────────────── */
+.unified-header-v2__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-shrink: 0;
+  padding-left: var(--s-2);
+}
+
+.unified-header-v2__icon-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+
+.unified-header-v2__icon-btn:hover {
+  background: var(--surf-2);
+  color: var(--fg-2);
+}
+
+.unified-header-v2__icon-btn:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+/* ── V2 tab overrides ─────────────────────────────── */
+.unified-header-v2 .header-tab {
+  height: 30px;
+  border-top: 1.5px solid transparent;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg-3);
+  font-weight: 400;
+  padding: 0 var(--s-3);
+  gap: var(--s-2);
+}
+
+.unified-header-v2 .header-tab--active {
+  border-top-color: var(--accent);
+  background: var(--surf-1);
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.unified-header-v2 .header-tab__status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--fg-4);
+  flex-shrink: 0;
+}
+
+.unified-header-v2 .header-tab--active .header-tab__status-dot {
+  background: var(--st-running);
+}

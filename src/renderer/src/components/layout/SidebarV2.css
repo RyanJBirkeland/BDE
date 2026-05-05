@@ -1,0 +1,206 @@
+.sidebar-v2 {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+
+/* ── Workspace header ─────────────────────────────── */
+.sidebar-v2__workspace {
+  padding: var(--s-1) var(--s-2) var(--s-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-v2__branch {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
+}
+
+/* ── Nav ──────────────────────────────────────────── */
+.sidebar-v2__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 var(--s-2);
+}
+
+.sidebar-v2__nav-row {
+  position: relative;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 var(--s-2);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  color: var(--fg-2);
+  font-family: var(--font-ui);
+  font-size: var(--t-md);
+  font-weight: 400;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+
+.sidebar-v2__nav-row:hover {
+  background: var(--surf-2);
+}
+
+.sidebar-v2__nav-row:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: -2px;
+}
+
+.sidebar-v2__nav-row--active {
+  background: var(--accent-soft);
+  color: var(--fg);
+  font-weight: 500;
+}
+
+/* Left active rail */
+.sidebar-v2__nav-row--active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.sidebar-v2__nav-icon {
+  flex-shrink: 0;
+  color: var(--fg-3);
+}
+
+.sidebar-v2__nav-row--active .sidebar-v2__nav-icon {
+  color: var(--accent);
+}
+
+.sidebar-v2__nav-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Badge */
+.sidebar-v2__badge {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  min-width: 16px;
+  text-align: center;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--surf-2);
+  color: var(--fg-2);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.sidebar-v2__badge--review {
+  background: color-mix(in oklch, var(--st-review) 18%, transparent);
+  color: var(--st-review);
+  border-color: color-mix(in oklch, var(--st-review) 30%, transparent);
+}
+
+.sidebar-v2__badge--failed {
+  background: color-mix(in oklch, var(--st-failed) 18%, transparent);
+  color: var(--st-failed);
+  border-color: color-mix(in oklch, var(--st-failed) 30%, transparent);
+}
+
+/* ── Spacer ───────────────────────────────────────── */
+.sidebar-v2__spacer {
+  flex: 1;
+}
+
+/* ── Live agents ──────────────────────────────────── */
+.sidebar-v2__live-header {
+  padding: var(--s-1) var(--s-4) var(--s-1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-v2__live-count {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
+}
+
+.sidebar-v2__live-agents {
+  padding: 0 var(--s-2) var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Footer ───────────────────────────────────────── */
+.sidebar-v2__footer {
+  border-top: 1px solid var(--line);
+  padding: var(--s-1) var(--s-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-v2__footer-model {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-v2__footer-version {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  color: var(--fg-4);
+  flex-shrink: 0;
+}
+
+/* ── Responsive collapse (<1024px shell width) ────── */
+@container (max-width: 1024px) {
+  .sidebar-v2 {
+    width: 52px;
+  }
+
+  .sidebar-v2__workspace,
+  .sidebar-v2__nav-label,
+  .sidebar-v2__badge,
+  .sidebar-v2__live-header,
+  .sidebar-v2__live-agents,
+  .sidebar-v2__footer-model,
+  .sidebar-v2__footer-version {
+    display: none;
+  }
+
+  .sidebar-v2__nav-row {
+    justify-content: center;
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    margin: 0 auto;
+  }
+
+  .sidebar-v2__nav-row--active::before {
+    left: -6px;
+  }
+
+  .sidebar-v2__footer {
+    justify-content: center;
+    padding: var(--s-1);
+  }
+}

@@ -5,519 +5,267 @@
 @import '@fontsource/inter/800.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
-@import '@fontsource/jetbrains-mono/700.css';
+
+/**
+ * FLEET V2 — Design Tokens
+ * ─────────────────────────────────────────────────────────────
+ * Single source of truth for the V2 visual system.
+ *
+ * Default theme is "Quiet Graphite" (the chosen direction).
+ * Variant themes: [data-theme="refined-pro-dark"], [data-theme="warm-console"].
+ *
+ * Contrast: every fg-* token meets WCAG AA against its bg-* tier.
+ * - --fg   ≥ 13:1 (AAA)
+ * - --fg-2 ≥ 7.5:1 (AAA large / AA body)
+ * - --fg-3 ≥ 4.6:1 (AA body)
+ * - --fg-4 is intentionally faint — non-essential metadata only
+ */
 
 :root {
-  /* Typography */
-  --fleet-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --fleet-font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  --fleet-font-mono: var(--fleet-font-code);
+  /* ── Type families ─────────────────────────────────────── */
+  --font-ui:   'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
-  /* Font sizes */
-  --fleet-size-2xs: 10px;
-  --fleet-size-xs: 11px;
-  --fleet-size-sm: 12px;
-  --fleet-size-md: 13px;
-  --fleet-size-lg: 14px;
-  --fleet-size-xl: 16px;
-  --fleet-size-xxl: 20px;
+  /* ── Type scale ────────────────────────────────────────── */
+  --t-2xs:     10px;  /* eyebrow / kbd only */
+  --t-xs:      11px;  /* mono metadata */
+  --t-sm:      12px;  /* secondary UI text, small buttons */
+  --t-md:      13px;  /* body floor */
+  --t-base:    14px;  /* default body */
+  --t-lg:      16px;  /* emphasised body */
+  --t-xl:      20px;  /* section title */
+  --t-2xl:     28px;  /* page title */
+  --t-3xl:     40px;  /* dashboard hero number */
+  --t-display: 56px;  /* mission-brief headline */
 
-  /* Font size shorthand aliases (--font-*) */
-  --font-2xs: var(--fleet-size-2xs);
-  --font-xs: var(--fleet-size-xs);
-  --font-sm: var(--fleet-size-sm);
-  --font-md: var(--fleet-size-md);
-  --font-lg: var(--fleet-size-lg);
-  --font-xl: var(--fleet-size-xl);
-  --font-xxl: var(--fleet-size-xxl);
+  /* ── Spacing scale (4px grid) ──────────────────────────── */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 56px;
 
-  /* Spacing */
-  --fleet-space-1: 4px;
-  --fleet-space-2: 8px;
-  --fleet-space-3: 12px;
-  --fleet-space-4: 16px;
-  --fleet-space-5: 20px;
-  --fleet-space-6: 24px;
-  --fleet-space-8: 32px;
+  /* ── Radii ─────────────────────────────────────────────── */
+  --r-sm:  4px;
+  --r-md:  6px;
+  --r-lg: 10px;
+  --r-xl: 14px;
 
-  /* Radii */
-  --fleet-radius-sm: 4px;
-  --fleet-radius-md: 6px;
-  --fleet-radius-lg: 8px;
-  --fleet-radius-xl: 12px;
-  --fleet-radius-full: 9999px;
-
-  /* Shadows */
-  --fleet-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --fleet-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --fleet-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
-
-  /* Transitions */
-  --fleet-transition-fast: 100ms ease;
-  --fleet-transition-base: 150ms ease;
-  --fleet-transition-slow: 200ms ease;
-
-  /* ── Named Gradient Palette ──────────────────────────── */
-
-  /* Accent gradients */
-  --gradient-aurora: linear-gradient(135deg, #00d37f 0%, #00b4d8 100%);
-  --gradient-electric: linear-gradient(135deg, #6c8eef 0%, #a78bfa 50%, #c084fc 100%);
-  --gradient-solar: linear-gradient(135deg, #ffaa33 0%, #ff6b35 100%);
-  --gradient-ember: linear-gradient(135deg, #ff453a 0%, #ff6b8a 100%);
-
-  /* Surface gradients */
-  --gradient-frost: linear-gradient(
-    180deg,
-    rgba(90, 120, 200, 0.06) 0%,
-    rgba(60, 60, 120, 0.02) 100%
-  );
-  --gradient-midnight: linear-gradient(
-    180deg,
-    rgba(16, 16, 28, 0.95) 0%,
-    rgba(8, 8, 16, 0.98) 100%
-  );
-  --gradient-horizon: linear-gradient(
-    160deg,
-    rgba(0, 211, 127, 0.04) 0%,
-    rgba(108, 142, 239, 0.03) 50%,
-    rgba(10, 10, 15, 0) 100%
-  );
-  --gradient-shimmer: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.03) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-
-  /* ── Glass Tokens ────────────────────────────────────── */
-
-  /* Blur intensities */
-  --glass-blur-sm: blur(8px);
-  --glass-blur-md: blur(16px);
-  --glass-blur-lg: blur(24px);
-  --glass-blur-xl: blur(40px);
-
-  /* Saturation boost */
-  --glass-saturate: saturate(180%);
-
-  /* Glass tints */
-  --glass-tint-dark: rgba(10, 10, 18, 0.75);
-  --glass-tint-mid: rgba(16, 16, 26, 0.7);
-  --glass-tint-light: rgba(22, 22, 34, 0.6);
-  --glass-tint-ultra: rgba(30, 30, 48, 0.5);
-
-  /* ── Typography ──────────────────────────────────────── */
-
-  /* Font stacks */
-  --font-ui: 'Inter', 'SF Pro Display', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
-  --font-display: 'Inter', 'SF Pro Display', system-ui, sans-serif;
-
-  /* UI type scale */
-  --text-2xs: 10px;
-  --text-xs: 11px;
-  --text-sm: 13px;
-  --text-base: 14px;
-  --text-lg: 16px;
-  --text-xl: 20px;
-  --text-2xl: 28px;
-  --text-3xl: 36px;
-
-  /* UI line-heights */
-  --leading-2xs: 14px;
-  --leading-xs: 16px;
-  --leading-sm: 20px;
-  --leading-base: 22px;
-  --leading-lg: 24px;
-  --leading-xl: 28px;
-  --leading-2xl: 36px;
-  --leading-3xl: 44px;
-
-  /* Mono type scale */
-  --mono-2xs: 9px;
-  --mono-xs: 10px;
-  --mono-sm: 12px;
-  --mono-base: 13px;
-
-  /* Mono line-heights */
-  --mono-leading-2xs: 14px;
-  --mono-leading-xs: 16px;
-  --mono-leading-sm: 18px;
-  --mono-leading-base: 20px;
-
-  /* Letter-spacing */
-  --tracking-tight: -0.02em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.06em;
-  --tracking-widest: 0.12em;
-
-  /* Z-index scale */
-  --z-base: 1;
-  --z-dropdown-backdrop: 999;
-  --z-dropdown: 1000;
-  --z-sticky: 1050;
-  --z-modal-backdrop: 1099;
-  --z-modal: 1100;
-  --z-tooltip: 1200;
-  --z-notification: 1300;
-  --z-fullscreen: 9999;
+  /* ── Motion ────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:   120ms;
+  --dur-base:   200ms;
+  --dur-slow:   320ms;
 }
 
-/* ── Pro Dark — IntelliJ-inspired professional theme ── */
+/* ──────────────────────────────────────────────────────────
+   THEME · QUIET GRAPHITE  (default)
+   Near-monochrome. Status hues are the only color in the UI.
+   ────────────────────────────────────────────────────────── */
+:root,
+[data-theme="quiet-graphite"] {
+  --bg:     #101012;
+  --surf-1: #161618;
+  --surf-2: #1c1c1f;
+  --surf-3: #232326;
+  --line:   #24242a;
+  --line-2: #2e2e35;
 
-html.theme-pro-dark {
-  /* ── Core palette ───────────────────────────────────── */
-  --fleet-bg: #141414;
-  --fleet-surface: #1e1f22;
-  --fleet-surface-high: #2b2d30;
-  --fleet-border: #2b2d30;
-  --fleet-border-hover: #393b40;
-  --fleet-accent: #4a88c7;
-  --fleet-accent-dim: rgba(74, 136, 199, 0.15);
-  --fleet-text: #dfe1e5;
-  --fleet-text-muted: #9da0a6;
-  --fleet-text-dim: #6f737a;
-  --fleet-accent-text: #6cb8ff;
-  --fleet-text-dimmer: rgba(255, 255, 255, 0.35);
-  --fleet-danger: #db5c5c;
-  --fleet-danger-dim: rgba(219, 92, 92, 0.15);
-  --fleet-void: #141414;
-  --fleet-border-glow: #4a88c7;
-  --fleet-queued: #4a88c7;
-  --fleet-running: #4a88c7;
-  --fleet-bg-hover: rgba(255, 255, 255, 0.04);
-  --fleet-bg-subtle: rgba(255, 255, 255, 0.02);
-  --fleet-surface-raised: #2b2d30;
+  --fg:    #ececef;
+  --fg-2:  #b6b6bd;
+  --fg-3:  #7c7c85;
+  --fg-4:  #525258;
 
-  /* ── Interaction states ─────────────────────────────── */
-  --fleet-hover: rgba(255, 255, 255, 0.04);
-  --fleet-hover-strong: rgba(255, 255, 255, 0.06);
-  --fleet-selected: #2d4566;
-  --fleet-hover-subtle: rgba(255, 255, 255, 0.03);
-  --fleet-accent-hover: rgba(74, 136, 199, 0.1);
-  --fleet-danger-hover: rgba(219, 92, 92, 0.1);
-  --fleet-warning-hover: rgba(230, 162, 53, 0.12);
-  --fleet-error-bg: rgba(219, 92, 92, 0.1);
-  --fleet-overlay: rgba(0, 0, 0, 0.5);
-  --fleet-header-gradient: linear-gradient(
-    90deg,
-    rgba(74, 136, 199, 0.3) 0%,
-    rgba(74, 136, 199, 0.1) 60%,
-    transparent 100%
-  );
-  --fleet-danger-gradient: linear-gradient(
-    90deg,
-    rgba(219, 92, 92, 0.3) 0%,
-    rgba(219, 92, 92, 0.1) 60%,
-    transparent 100%
-  );
-  --fleet-warning-gradient: linear-gradient(
-    90deg,
-    rgba(230, 162, 53, 0.3) 0%,
-    rgba(230, 162, 53, 0.1) 60%,
-    transparent 100%
-  );
+  --accent:      #ececef;
+  --accent-fg:   #101012;
+  --accent-soft: rgba(255, 255, 255, 0.06);
+  --accent-line: rgba(255, 255, 255, 0.18);
 
-  /* ── Semantic colors ────────────────────────────────── */
-  --fleet-danger-text: #db5c5c;
-  --fleet-warning: #e6a235;
-  --fleet-warning-dim: rgba(230, 162, 53, 0.15);
-  --fleet-info: #4a88c7;
-  --fleet-info-dim: rgba(74, 136, 199, 0.15);
-  --fleet-success: #5fad65;
-  --fleet-subagent: #8a7cb5;
-  --fleet-purple: #8a7cb5;
-  --fleet-purple-dim: rgba(138, 124, 181, 0.15);
+  --st-running: #d8e0ff;
+  --st-queued:  #8a8a92;
+  --st-review:  #d4b8ff;
+  --st-done:    #b9e8c7;
+  --st-blocked: #f1cf90;
+  --st-failed:  #f3a6a6;
 
-  /* ── Diff colors ────────────────────────────────────── */
-  --fleet-diff-add: #5fad65;
-  --fleet-diff-del: #db5c5c;
-  --fleet-diff-mod: #e6a235;
-  --fleet-diff-add-bg: rgba(95, 173, 101, 0.15);
-  --fleet-diff-del-bg: rgba(219, 92, 92, 0.12);
-
-  /* ── Shadows ────────────────────────────────────────── */
-  --fleet-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --fleet-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --fleet-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
-
-  /* ── Button & glass ───────────────────────────────────── */
-  --fleet-btn-primary-text: #ffffff;
-  --fleet-glass-bg: rgba(255, 255, 255, 0.04);
-  --fleet-glass-bg-hover: rgba(255, 255, 255, 0.08);
-  --fleet-glass-bg-active: rgba(255, 255, 255, 0.06);
-
-  /* ── v2 — Gradients ─────────────────────────────────── */
-  --gradient-aurora: linear-gradient(135deg, #00d37f 0%, #00b4d8 100%);
-  --gradient-electric: linear-gradient(135deg, #6c8eef 0%, #a78bfa 50%, #c084fc 100%);
-  --gradient-solar: linear-gradient(135deg, #ffaa33 0%, #ff6b35 100%);
-  --gradient-ember: linear-gradient(135deg, #ff453a 0%, #ff6b8a 100%);
-  --gradient-frost: linear-gradient(
-    180deg,
-    rgba(90, 120, 200, 0.06) 0%,
-    rgba(60, 60, 120, 0.02) 100%
-  );
-  --gradient-midnight: linear-gradient(
-    180deg,
-    rgba(20, 20, 20, 0.95) 0%,
-    rgba(30, 31, 34, 0.98) 100%
-  );
-  --gradient-scanline: none;
-  --gradient-horizon: linear-gradient(
-    160deg,
-    rgba(74, 136, 199, 0.02) 0%,
-    rgba(138, 124, 181, 0.015) 50%,
-    rgba(20, 20, 20, 0) 100%
-  );
-  --gradient-shimmer: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.02) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-
-  /* ── v2 — Glass surface ─────────────────────────────── */
-  --glass-surface: rgba(10, 14, 24, 0.95);
-
-  /* ── v2 — Glass tints ───────────────────────────────── */
-  --glass-tint-dark: rgba(30, 31, 34, 0.75);
-  --glass-tint-mid: rgba(30, 31, 34, 0.7);
-  --glass-tint-light: rgba(30, 31, 34, 0.6);
-  --glass-tint-ultra: rgba(30, 31, 34, 0.5);
-
-  /* ── v2 — Glass glow ─────────────────────────────────── */
-  --glass-glow-color: rgba(0, 211, 127, 1);
-  --glass-glow-subtle: rgba(0, 211, 127, 0.015);
-  --glass-glow-border: rgba(0, 211, 127, 0.2);
-  --glass-glow-shadow: rgba(0, 211, 127, 0.15);
-  --glass-glow-pulse-1: rgba(0, 211, 127, 0.25);
-  --glass-glow-pulse-2: rgba(0, 211, 127, 0.35);
-  --glass-glow-pulse-3: rgba(0, 211, 127, 0.4);
-
-  /* ── Compact density ────────────────────────────────── */
-  --fleet-space-1: 3px;
-  --fleet-space-2: 6px;
-  --fleet-space-3: 8px;
-  --fleet-space-4: 12px;
-  --fleet-space-5: 14px;
-  --fleet-space-6: 18px;
-  --fleet-space-7: 22px;
-  --fleet-space-8: 28px;
-
-  /* ── Compact type scale ─────────────────────────────── */
-  --fleet-size-2xs: 9px;
-  --fleet-size-xs: 10px;
-  --fleet-size-sm: 11px;
-  --fleet-size-md: 12px;
-  --fleet-size-lg: 13px;
-  --fleet-size-xl: 15px;
-  --fleet-size-xxl: 18px;
-
-  /* ── Compact radii ──────────────────────────────────── */
-  --fleet-radius-sm: 3px;
-  --fleet-radius-md: 4px;
-  --fleet-radius-lg: 6px;
-  --fleet-radius-xl: 8px;
-
-  /* ── New unified tokens ── */
-  --fleet-accent-surface: rgba(74, 136, 199, 0.1);
-  --fleet-accent-border: rgba(74, 136, 199, 0.28);
-  --fleet-warning-surface: rgba(204, 136, 51, 0.1);
-  --fleet-warning-border: rgba(204, 136, 51, 0.3);
-  --fleet-danger-surface: rgba(219, 92, 92, 0.1);
-  --fleet-danger-border: rgba(219, 92, 92, 0.3);
-  --fleet-status-active: #7c6af7;
-  --fleet-status-review: var(--fleet-accent);
-  --fleet-status-blocked: var(--fleet-warning);
-  --fleet-status-done: #4caf82;
-  --fleet-status-queued: var(--fleet-accent);
-
-  /* ── Semantic aliases ───────────────────────────────── */
-  --fleet-error: var(--fleet-danger);
-  --fleet-bg-elevated: var(--fleet-surface-high);
-  --fleet-bg-secondary: var(--fleet-surface);
-  --fleet-surface-hover: var(--fleet-hover);
-  --fleet-success-surface: rgba(95, 173, 101, 0.1);
-
-  /* ── Surface elevation tiers ────────────────────────── */
-  --fleet-surface-1: var(--fleet-surface);
-  --fleet-surface-2: var(--fleet-surface-high);
-  --fleet-surface-3: var(--fleet-border-hover);
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.02), 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.5);
 }
 
-/* ── Pro Light — IntelliJ-inspired professional light theme ── */
+/* ──────────────────────────────────────────────────────────
+   THEME · REFINED PRO DARK   (variant — closest to V1)
+   ────────────────────────────────────────────────────────── */
+[data-theme="refined-pro-dark"] {
+  --bg:     #0e0f12;
+  --surf-1: #16181c;
+  --surf-2: #1d2026;
+  --surf-3: #262a31;
+  --line:   #24272d;
+  --line-2: #2f333b;
 
-html.theme-pro-light {
-  /* ── Core palette ───────────────────────────────────── */
-  --fleet-bg: #f7f8fa;
-  --fleet-surface: #ffffff;
-  --fleet-surface-high: #ebedf0;
-  --fleet-border: #d4d5d8;
-  --fleet-border-hover: #b8bac0;
-  --fleet-accent: #2675bf;
-  --fleet-accent-dim: rgba(38, 117, 191, 0.15);
-  --fleet-text: #1e1f22;
-  --fleet-text-muted: #5e6166;
-  --fleet-text-dim: #818388;
-  --fleet-accent-text: #1a6bb5;
-  --fleet-text-dimmer: #9ca0a8;
-  --fleet-danger: #cc4848;
-  --fleet-danger-dim: rgba(204, 72, 72, 0.1);
-  --fleet-void: #ebedf0;
-  --fleet-border-glow: #9ca0a8;
-  --fleet-queued: #2675bf;
-  --fleet-running: #2675bf;
-  --fleet-bg-hover: rgba(0, 0, 0, 0.03);
-  --fleet-bg-subtle: rgba(0, 0, 0, 0.015);
-  --fleet-surface-raised: #f0f1f3;
+  --fg:    #e8eaef;
+  --fg-2:  #b6bac2;
+  --fg-3:  #7e848f;
+  --fg-4:  #565b65;
 
-  /* ── Interaction states ─────────────────────────────── */
-  --fleet-hover: rgba(0, 0, 0, 0.04);
-  --fleet-hover-strong: rgba(0, 0, 0, 0.06);
-  --fleet-selected: #d4e4f5;
-  --fleet-hover-subtle: rgba(0, 0, 0, 0.03);
-  --fleet-accent-hover: rgba(38, 117, 191, 0.1);
-  --fleet-danger-hover: rgba(204, 72, 72, 0.1);
-  --fleet-warning-hover: rgba(201, 122, 26, 0.12);
-  --fleet-error-bg: rgba(204, 72, 72, 0.08);
-  --fleet-overlay: rgba(0, 0, 0, 0.3);
-  --fleet-header-gradient: linear-gradient(
-    90deg,
-    rgba(38, 117, 191, 0.3) 0%,
-    rgba(38, 117, 191, 0.1) 60%,
-    transparent 100%
-  );
-  --fleet-danger-gradient: linear-gradient(
-    90deg,
-    rgba(204, 72, 72, 0.3) 0%,
-    rgba(204, 72, 72, 0.08) 60%,
-    transparent 100%
-  );
-  --fleet-warning-gradient: linear-gradient(
-    90deg,
-    rgba(201, 122, 26, 0.3) 0%,
-    rgba(201, 122, 26, 0.08) 60%,
-    transparent 100%
-  );
+  --accent:      #6aa6ff;
+  --accent-fg:   #0b1220;
+  --accent-soft: rgba(106,166,255,0.10);
+  --accent-line: rgba(106,166,255,0.28);
 
-  /* ── Semantic colors ────────────────────────────────── */
-  --fleet-danger-text: #cc4848;
-  --fleet-warning: #c97a1a;
-  --fleet-info: #2675bf;
-  --fleet-success: #49a04b;
-  --fleet-subagent: #6b5fa0;
-  --fleet-warning-dim: rgba(201, 122, 26, 0.15);
-  --fleet-info-dim: rgba(38, 117, 191, 0.15);
-  --fleet-purple: #6b5fa0;
-  --fleet-purple-dim: rgba(107, 95, 160, 0.15);
+  --st-running: #6aa6ff;
+  --st-queued:  #8b94a3;
+  --st-review:  #c084fc;
+  --st-done:    #5fc28b;
+  --st-blocked: #e8b14a;
+  --st-failed:  #f06b6b;
 
-  /* ── Diff colors ────────────────────────────────────── */
-  --fleet-diff-add: #49a04b;
-  --fleet-diff-del: #cc4848;
-  --fleet-diff-mod: #c97a1a;
-  --fleet-diff-add-bg: rgba(73, 160, 75, 0.15);
-  --fleet-diff-del-bg: rgba(204, 72, 72, 0.12);
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.02), 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.45);
+}
 
-  /* ── Shadows ────────────────────────────────────────── */
-  --fleet-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --fleet-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --fleet-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+/* ──────────────────────────────────────────────────────────
+   THEME · WARM CONSOLE   (variant)
+   ────────────────────────────────────────────────────────── */
+[data-theme="warm-console"] {
+  --bg:     #131210;
+  --surf-1: #1a1814;
+  --surf-2: #221f1a;
+  --surf-3: #2a2620;
+  --line:   #2a2620;
+  --line-2: #38332b;
 
-  /* ── Button & glass ───────────────────────────────────── */
-  --fleet-btn-primary-text: #ffffff;
-  --fleet-glass-bg: rgba(0, 0, 0, 0.04);
-  --fleet-glass-bg-hover: rgba(0, 0, 0, 0.08);
-  --fleet-glass-bg-active: rgba(0, 0, 0, 0.06);
+  --fg:    #efeae0;
+  --fg-2:  #c2bcae;
+  --fg-3:  #8c8676;
+  --fg-4:  #5e5848;
 
-  /* ── v2 — Gradients ─────────────────────────────────── */
-  --gradient-aurora: none;
-  --gradient-electric: none;
-  --gradient-solar: none;
-  --gradient-ember: none;
-  --gradient-frost: linear-gradient(
-    180deg,
-    rgba(38, 117, 191, 0.04) 0%,
-    rgba(38, 117, 191, 0.01) 100%
-  );
-  --gradient-midnight: linear-gradient(
-    180deg,
-    rgba(247, 248, 250, 0.95) 0%,
-    rgba(255, 255, 255, 0.98) 100%
-  );
-  --gradient-horizon: linear-gradient(
-    160deg,
-    rgba(38, 117, 191, 0.03) 0%,
-    rgba(107, 95, 160, 0.02) 50%,
-    rgba(247, 248, 250, 0) 100%
-  );
-  --gradient-shimmer: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0) 0%,
-    rgba(0, 0, 0, 0.02) 50%,
-    rgba(0, 0, 0, 0) 100%
-  );
+  --accent:      #f4a637;
+  --accent-fg:   #1a1814;
+  --accent-soft: rgba(244,166,55,0.10);
+  --accent-line: rgba(244,166,55,0.30);
 
-  /* ── v2 — Glass surface ─────────────────────────────── */
-  --glass-surface: rgba(255, 255, 255, 0.95);
+  --st-running: #f4a637;
+  --st-queued:  #8c8676;
+  --st-review:  #c2a0e6;
+  --st-done:    #8fc99a;
+  --st-blocked: #e8b14a;
+  --st-failed:  #ec7d6e;
 
-  /* ── v2 — Glass tints ───────────────────────────────── */
-  --glass-tint-dark: rgba(255, 255, 255, 0.75);
-  --glass-tint-mid: rgba(255, 255, 255, 0.7);
-  --glass-tint-light: rgba(255, 255, 255, 0.6);
-  --glass-tint-ultra: rgba(255, 255, 255, 0.5);
+  --shadow-1: 0 1px 0 rgba(255,255,255,0.02), 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.5);
+}
 
-  /* ── v2 — Glass glow ─────────────────────────────────── */
-  --glass-glow-color: rgba(38, 117, 191, 1);
-  --glass-glow-subtle: rgba(38, 117, 191, 0.01);
-  --glass-glow-border: rgba(38, 117, 191, 0.12);
-  --glass-glow-shadow: rgba(38, 117, 191, 0.08);
-  --glass-glow-pulse-1: rgba(38, 117, 191, 0.15);
-  --glass-glow-pulse-2: rgba(38, 117, 191, 0.22);
-  --glass-glow-pulse-3: rgba(38, 117, 191, 0.25);
+/* ──────────────────────────────────────────────────────────
+   BACKWARDS COMPAT — maps old --fleet-* names to V2 tokens.
+   Remove incrementally as each view is migrated to V2.
+   ────────────────────────────────────────────────────────── */
+:root {
+  --fleet-bg:           var(--bg);
+  --fleet-surface:      var(--surf-1);
+  --fleet-surface-high: var(--surf-2);
+  --fleet-border:       var(--line);
+  --fleet-text:         var(--fg);
+  --fleet-text-muted:   var(--fg-2);
+  --fleet-text-dim:     var(--fg-3);
+  --fleet-accent:       var(--accent);
+  --fleet-font-ui:      var(--font-ui);
+  --fleet-font-mono:    var(--font-mono);
+  --fleet-space-1:      var(--s-1);
+  --fleet-space-2:      var(--s-2);
+  --fleet-space-3:      var(--s-3);
+  --fleet-space-4:      var(--s-4);
+  --fleet-space-5:      var(--s-5);
+  --fleet-radius-sm:    var(--r-sm);
+  --fleet-radius-md:    var(--r-md);
+  --fleet-radius-lg:    var(--r-lg);
+  --fleet-status-active:  var(--st-running);
+  --fleet-status-review:  var(--st-review);
+  --fleet-status-done:    var(--st-done);
+  --fleet-status-blocked: var(--st-blocked);
+  --fleet-status-queued:  var(--st-queued);
+  --fleet-danger:         var(--st-failed);
+  --fleet-transition-base: var(--dur-base);
+  --fleet-transition-fast: var(--dur-fast);
+  /* Glass / glow tokens — neutralised; V2 removes glow effects */
+  --glass-glow-color:  transparent;
+  --glass-glow-subtle: transparent;
+  --glass-glow-border: var(--line);
+  --glass-glow-shadow: var(--shadow-1);
+}
 
-  /* ── Compact density (same as pro-dark) ─────────────── */
-  --fleet-space-1: 3px;
-  --fleet-space-2: 6px;
-  --fleet-space-3: 8px;
-  --fleet-space-4: 12px;
-  --fleet-space-5: 14px;
-  --fleet-space-6: 18px;
-  --fleet-space-7: 22px;
-  --fleet-space-8: 28px;
-  --fleet-size-2xs: 9px;
-  --fleet-size-xs: 10px;
-  --fleet-size-sm: 11px;
-  --fleet-size-md: 12px;
-  --fleet-size-lg: 13px;
-  --fleet-size-xl: 15px;
-  --fleet-size-xxl: 18px;
-  --fleet-radius-sm: 3px;
-  --fleet-radius-md: 4px;
-  --fleet-radius-lg: 6px;
-  --fleet-radius-xl: 8px;
+/* Keep old class-based theme selectors working alongside data-theme */
+html.theme-pro-dark  { /* inherits :root (quiet-graphite) */ }
+html.theme-pro-light { /* uses quiet-graphite until V2 light theme is designed */ }
 
-  /* ── New unified tokens ── */
-  --fleet-accent-surface: rgba(38, 117, 191, 0.08);
-  --fleet-accent-border: rgba(38, 117, 191, 0.25);
-  --fleet-warning-surface: rgba(184, 115, 32, 0.08);
-  --fleet-warning-border: rgba(184, 115, 32, 0.28);
-  --fleet-danger-surface: rgba(201, 64, 64, 0.08);
-  --fleet-danger-border: rgba(201, 64, 64, 0.28);
-  --fleet-status-active: #6356e5;
-  --fleet-status-review: var(--fleet-accent);
-  --fleet-status-blocked: var(--fleet-warning);
-  --fleet-status-done: #3a9b6f;
-  --fleet-status-queued: var(--fleet-accent);
+/* ──────────────────────────────────────────────────────────
+   Shared primitives — reuse, don't redefine
+   ────────────────────────────────────────────────────────── */
 
-  /* ── Semantic aliases ───────────────────────────────── */
-  --fleet-error: var(--fleet-danger);
-  --fleet-bg-elevated: var(--fleet-surface-high);
-  --fleet-bg-secondary: var(--fleet-surface);
-  --fleet-surface-hover: var(--fleet-hover);
-  --fleet-success-surface: rgba(73, 160, 75, 0.08);
+.fleet-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
 
-  /* ── Surface elevation tiers ────────────────────────── */
-  --fleet-surface-1: var(--fleet-surface);
-  --fleet-surface-2: var(--fleet-surface-raised);
-  --fleet-surface-3: var(--fleet-surface-high);
+.fleet-card {
+  background: var(--surf-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.fleet-card--quiet {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+/* status dots */
+.fleet-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.fleet-dot--running { background: var(--st-running); box-shadow: 0 0 0 3px color-mix(in oklch, var(--st-running) 18%, transparent); }
+.fleet-dot--queued  { background: var(--st-queued); }
+.fleet-dot--review  { background: var(--st-review); }
+.fleet-dot--done    { background: var(--st-done); }
+.fleet-dot--blocked { background: var(--st-blocked); }
+.fleet-dot--failed  { background: var(--st-failed); }
+
+/* live pulse — ONLY on actively-running agents */
+.fleet-pulse {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--st-running);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.fleet-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  border: 1.5px solid var(--st-running);
+  animation: fleet-pulse-ring 1.8s var(--ease-out) infinite;
+}
+@keyframes fleet-pulse-ring {
+  0%   { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fleet-pulse::after { animation: none; }
 }
