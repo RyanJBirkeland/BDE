@@ -241,7 +241,7 @@ export function buildPlannerTools(deps: PlannerMcpDeps) {
     'meta.repos',
     'List the repositories configured in FLEET Settings. Use this before tasks.create to discover valid repo slugs.',
     {},
-    async () => jsonResult(listRepos())
+    async () => jsonResult(listRepos().map(({ envVars: _omit, ...safe }) => safe))
   )
 
   const metaTaskStatuses = tool(

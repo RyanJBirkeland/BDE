@@ -233,7 +233,7 @@ describe('translateCancelError', () => {
     expect(translated).toBeInstanceOf(McpDomainError)
     const domainError = translated as McpDomainError
     expect(domainError.kind).toBe(McpErrorCode.InvalidTransition)
-    expect(domainError.message).toContain('Invalid transition')
+    expect(domainError.message).toBe("Cannot transition task from 'done' to 'cancelled'.")
     expect(domainError.data).toEqual({
       taskId: 't1',
       fromStatus: 'done',
@@ -244,6 +244,46 @@ describe('translateCancelError', () => {
   it('passes unknown errors through unchanged', () => {
     const err = new Error('disk full')
     expect(translateCancelError(err)).toBe(err)
+  })
+
+  it('produces a friendly "already <status>" message when re-cancelling an already-cancelled task', () => {
+    const source = new TaskTransitionError(
+      '[sprint-task-crud] Bypass-prevention: ... Route through TaskStateService.transition() instead.',
+      { taskId: 't1', fromStatus: 'cancelled', toStatus: 'cancelled' }
+    )
+
+    const translated = translateCancelError(source)
+
+    expect(translated).toBeInstanceOf(McpDomainError)
+    const domainError = translated as McpDomainError
+    expect(domainError.message).toBe('Task is already cancelled.')
+    expect(domainError.message).not.toContain('sprint-task-crud')
+    expect(domainError.message).not.toContain('Bypass-prevention')
+    expect(domainError.message).not.toContain('Route through')
+    expect(domainError.data).toEqual({
+      taskId: 't1',
+      fromStatus: 'cancelled',
+      toStatus: 'cancelled'
+    })
+  })
+
+  it('produces a friendly transition message when fromStatus differs from toStatus', () => {
+    const source = new TaskTransitionError(
+      '[sprint-task-crud] Bypass-prevention: internal message',
+      { taskId: 't2', fromStatus: 'done', toStatus: 'cancelled' }
+    )
+
+    const translated = translateCancelError(source)
+
+    expect(translated).toBeInstanceOf(McpDomainError)
+    const domainError = translated as McpDomainError
+    expect(domainError.message).toBe("Cannot transition task from 'done' to 'cancelled'.")
+    expect(domainError.message).not.toContain('sprint-task-crud')
+    expect(domainError.data).toEqual({
+      taskId: 't2',
+      fromStatus: 'done',
+      toStatus: 'cancelled'
+    })
   })
 })
 

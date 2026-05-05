@@ -49,7 +49,7 @@ export function registerMetaTools(server: McpServer, deps: MetaToolsDeps): void 
       description: 'List repositories configured in FLEET Settings.',
       inputSchema: NoArgsSchema
     },
-    async () => jsonContent(deps.getRepos())
+    async () => jsonContent(deps.getRepos().map(({ envVars: _omit, ...safe }) => safe))
   )
 
   server.registerTool(

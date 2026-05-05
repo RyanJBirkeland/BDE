@@ -125,3 +125,51 @@ describe('meta.dependencyConditions', () => {
     expect(body.epic).toEqual(['on_success', 'always', 'manual'])
   })
 })
+
+describe('meta.repos — credential safety', () => {
+  it('strips envVars from each repo before returning it to the caller', async () => {
+    const reposWithSecrets: RepoConfig[] = [
+      {
+        name: 'fleet',
+        localPath: '/tmp/fleet',
+        githubOwner: 'example',
+        githubRepo: 'fleet',
+        envVars: { NODE_AUTH_TOKEN: 'ghp_secret_token', OTHER_SECRET: 'super-secret' }
+      }
+    ]
+    const deps = fakeDeps({ getRepos: vi.fn(() => reposWithSecrets) })
+    const { server, call } = mockServer()
+    registerMetaTools(server, deps)
+
+    const res = await call('meta.repos', {})
+    const responseText = res.content[0].text
+
+    expect(responseText).not.toContain('envVars')
+    expect(responseText).not.toContain('ghp_secret_token')
+    expect(responseText).not.toContain('super-secret')
+    expect(responseText).not.toContain('NODE_AUTH_TOKEN')
+  })
+
+  it('returns all non-credential repo fields intact after stripping envVars', async () => {
+    const repo: RepoConfig = {
+      name: 'fleet',
+      localPath: '/tmp/fleet',
+      githubOwner: 'example',
+      githubRepo: 'fleet',
+      color: '#00ff88',
+      envVars: { NODE_AUTH_TOKEN: 'ghp_secret_token' }
+    }
+    const deps = fakeDeps({ getRepos: vi.fn(() => [repo]) })
+    const { server, call } = mockServer()
+    registerMetaTools(server, deps)
+
+    const body = parseBody(await call('meta.repos', {})) as RepoConfig[]
+
+    expect(body).toHaveLength(1)
+    expect(body[0].name).toBe('fleet')
+    expect(body[0].localPath).toBe('/tmp/fleet')
+    expect(body[0].githubOwner).toBe('example')
+    expect(body[0].githubRepo).toBe('fleet')
+    expect(body[0].color).toBe('#00ff88')
+  })
+})

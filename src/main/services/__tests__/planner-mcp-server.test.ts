@@ -270,4 +270,33 @@ describe('meta tools', () => {
     expect(payload.statuses).toContain('done')
     expect(Object.keys(payload.transitions).length).toBeGreaterThan(0)
   })
+
+  it('meta.repos strips envVars before returning repos so credentials are not leaked to agents', async () => {
+    const epicService = createEpicGroupService()
+    const toolsWithSecretRepo = buildPlannerTools({
+      epicService,
+      logger: silentLogger,
+      getRepos: () => [
+        {
+          name: 'fleet',
+          localPath: '/tmp/fleet',
+          githubOwner: 'example',
+          githubRepo: 'fleet',
+          envVars: { NODE_AUTH_TOKEN: 'ghp_secret_token', OTHER_VAR: 'super-secret' }
+        }
+      ]
+    })
+
+    const { isError, body } = await callTool(toolsWithSecretRepo, 'meta.repos', {})
+    expect(isError).toBe(false)
+
+    const bodyText = JSON.stringify(body)
+    expect(bodyText).not.toContain('envVars')
+    expect(bodyText).not.toContain('ghp_secret_token')
+    expect(bodyText).not.toContain('super-secret')
+    expect(bodyText).not.toContain('NODE_AUTH_TOKEN')
+
+    const repos = body as Array<{ name: string }>
+    expect(repos[0].name).toBe('fleet')
+  })
 })

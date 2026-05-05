@@ -11,7 +11,7 @@ Read-only meta tools that expose FLEET enums and configuration to MCP clients wi
 - `MetaToolsDeps` — Dependency injection interface; callers provide `getRepos: () => RepoConfig[]`
 
 ## Tools
-- `meta.repos` — Returns the `RepoConfig[]` value from `deps.getRepos()`. The production wiring in `index.ts` points this at a memoized `createReposCache()` reader so repeated calls don't re-parse the setting.
+- `meta.repos` — Returns repos from `deps.getRepos()` with `envVars` stripped from each entry before serialization. Prevents credential leaks (e.g. `NODE_AUTH_TOKEN`) to MCP clients. The production wiring in `index.ts` points this at a memoized `createReposCache()` reader so repeated calls don't re-parse the setting.
 - `meta.taskStatuses` — Returns a frozen `{ statuses, transitions }` payload precomputed at module load from `TASK_STATUSES` and `VALID_TRANSITIONS`. Transitions are a plain adjacency object (`Set` values flattened to arrays) so it serializes cleanly over JSON-RPC.
 - `meta.dependencyConditions` — Returns a frozen payload `{ task: ['hard','soft'], epic: ['on_success','always','manual'] }` precomputed at module load.
 

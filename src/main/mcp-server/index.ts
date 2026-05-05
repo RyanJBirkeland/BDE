@@ -282,7 +282,11 @@ export function summarizeListenError(err: unknown, configuredPort: number): stri
  */
 export function translateCancelError(err: unknown): unknown {
   if (err instanceof TaskTransitionError) {
-    return new McpDomainError(err.message, McpErrorCode.InvalidTransition, {
+    const userMessage =
+      err.fromStatus === err.toStatus
+        ? `Task is already ${err.toStatus}.`
+        : `Cannot transition task from '${err.fromStatus}' to '${err.toStatus}'.`
+    return new McpDomainError(userMessage, McpErrorCode.InvalidTransition, {
       taskId: err.taskId,
       fromStatus: err.fromStatus,
       toStatus: err.toStatus
