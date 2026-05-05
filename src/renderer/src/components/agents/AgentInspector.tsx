@@ -1,4 +1,5 @@
 import './AgentInspector.css'
+import { FileText } from 'lucide-react'
 import type { AgentMeta, AgentEvent } from '../../../../shared/types'
 import { MiniStat } from '../sprint/primitives/MiniStat'
 import { MicroSpark } from '../dashboard/primitives/MicroSpark'
@@ -144,9 +145,7 @@ export function AgentInspector({ agent, events }: AgentInspectorProps): React.JS
             spec filename/location depends on pipeline conventions. Confirm and
             update once the IPC layer exposes this directly. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-4)' }}>
-            📄
-          </span>
+          <FileText size={12} style={{ color: 'var(--fg-4)', flexShrink: 0 }} />
           <span
             style={{
               fontFamily: 'var(--font-mono)',
@@ -182,7 +181,7 @@ export function AgentInspector({ agent, events }: AgentInspectorProps): React.JS
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              padding: '4px 0',
+              padding: 'var(--s-1) 0',
               fontFamily: 'var(--font-mono)',
               fontSize: 11,
             }}
@@ -281,8 +280,8 @@ export function AgentInspector({ agent, events }: AgentInspectorProps): React.JS
               style={{
                 display: 'grid',
                 gridTemplateColumns: '60px 8px 1fr',
-                gap: 8,
-                padding: '4px 0',
+                gap: 'var(--s-2)',
+                padding: 'var(--s-1) 0',
                 alignItems: 'center',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10,
