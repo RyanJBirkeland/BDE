@@ -28,7 +28,7 @@ Planning and spec creation interface, presented as a centered modal (`TaskWorkbe
 
 ### Sprint Pipeline
 
-Execution monitoring view. Shows tasks flowing through stages as a vertical pipeline with real-time status updates.
+Execution monitoring view. Shows tasks flowing through stages as a vertical pipeline with real-time status updates. Feature-flagged for V2 rollout — default is V1. Enable V2: `localStorage.setItem('fleet:ff', JSON.stringify({v2Pipeline:true})); location.reload()`. V2 replaces neon chrome with quiet graphite surfaces (`SprintPipelineV2`); V1 preserved as `SprintPipelineV1`.
 
 - **Task statuses**: `backlog` | `queued` | `blocked` | `active` | `review` | `approved` | `done` | `cancelled` | `failed` | `error`
 - **`approved` status**: Human-blessed state between `review` and `done`. The reviewer has accepted the code but hasn't pushed a PR yet. `approved` satisfies hard dependencies (downstream tasks can unblock before the PR merges). The Sprint PR Poller drives `approved → done` when the PR merges or the task is shipped locally
