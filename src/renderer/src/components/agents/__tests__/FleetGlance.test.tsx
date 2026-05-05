@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { FleetGlance } from '../FleetGlance'
 import type { AgentMeta } from '../../../../../shared/types'
 
+vi.mock('../../../stores/sprintTasks', () => ({
+  useSprintTasks: vi.fn((sel: (s: { tasks: unknown[] }) => unknown) => sel({ tasks: [] })),
+  selectReviewTaskCount: (s: { tasks: Array<{ status: string }> }) =>
+    s.tasks.filter((t) => t.status === 'review').length
+}))
+
 const base: Omit<AgentMeta, 'id' | 'status' | 'startedAt' | 'finishedAt'> = {
   pid: null,
   bin: 'claude',

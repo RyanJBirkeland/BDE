@@ -9,6 +9,7 @@ import { useMemo } from 'react'
 import type { AgentMeta } from '../../../../shared/types'
 import { formatDuration, formatElapsed, timeAgo } from '../../lib/format'
 import { MiniStat } from '../sprint/primitives/MiniStat'
+import { useSprintTasks, selectReviewTaskCount } from '../../stores/sprintTasks'
 import './FleetGlance.css'
 
 interface FleetGlanceProps {
@@ -91,7 +92,8 @@ function AgentTile({ agent, onClick }: AgentTileProps): React.JSX.Element {
 
       {isRunning && (
         <div style={{ height: 2, background: 'var(--surf-3)', borderRadius: 999 }}>
-          <div style={{ height: '100%', width: '30%', background: 'var(--st-running)' }} />
+          {/* TODO(verify): replace with event-based progress pct once AgentMeta exposes it */}
+          <div style={{ height: '100%', width: '100%', background: 'var(--st-running)', opacity: 0.6 }} />
         </div>
       )}
 
@@ -104,6 +106,7 @@ function AgentTile({ agent, onClick }: AgentTileProps): React.JSX.Element {
 }
 
 export function FleetGlance({ agents, onSelect, onSpawn }: FleetGlanceProps): React.JSX.Element {
+  const pendingReviewCount = useSprintTasks(selectReviewTaskCount)
   const { running, doneToday, todayCost, runningAgents, recentCompletions } = useMemo(() => {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
@@ -162,7 +165,7 @@ export function FleetGlance({ agents, onSelect, onSpawn }: FleetGlanceProps): Re
           <EmptyState onSpawn={onSpawn} />
         )}
 
-        <FleetMetrics running={running} doneToday={doneToday} todayCost={todayCost} formatCost={formatCost} />
+        <FleetMetrics running={running} pendingReview={pendingReviewCount} doneToday={doneToday} todayCost={todayCost} formatCost={formatCost} />
       </div>
     </div>
   )
@@ -262,16 +265,17 @@ function EmptyState({ onSpawn }: { onSpawn: () => void }): React.JSX.Element {
 
 interface FleetMetricsProps {
   running: number
+  pendingReview: number
   doneToday: number
   todayCost: number
   formatCost: (usd: number) => string
 }
 
-function FleetMetrics({ running, doneToday, todayCost, formatCost }: FleetMetricsProps): React.JSX.Element {
+function FleetMetrics({ running, pendingReview, doneToday, todayCost, formatCost }: FleetMetricsProps): React.JSX.Element {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--s-3)' }}>
       <MiniStat label="live" value={String(running)} />
-      <MiniStat label="review" value="0" />
+      <MiniStat label="review" value={String(pendingReview)} />
       <MiniStat label="done · 24h" value={String(doneToday)} />
       <MiniStat label="cost · 24h" value={formatCost(todayCost)} />
     </div>
