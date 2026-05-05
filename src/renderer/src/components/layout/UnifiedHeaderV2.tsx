@@ -1,6 +1,7 @@
 import './UnifiedHeaderV2.css'
 import { useMemo } from 'react'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, Plus } from 'lucide-react'
+import { useCommandPaletteStore } from '../../stores/commandPalette'
 import { useThemeStore } from '../../stores/theme'
 import { usePanelLayoutStore, findLeaf } from '../../stores/panelLayout'
 import { useSprintTasks } from '../../stores/sprintTasks'
@@ -13,6 +14,7 @@ import { useTearoffDrag } from '../../hooks/useTearoffDrag'
 import { useRovingTabIndex } from '../../hooks/useRovingTabIndex'
 
 export function UnifiedHeaderV2(): React.JSX.Element {
+  const openCommandPalette = useCommandPaletteStore((s) => s.open)
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
   const setView = usePanelLayoutStore((s) => s.setView)
@@ -112,6 +114,17 @@ export function UnifiedHeaderV2(): React.JSX.Element {
           )
         })}
       </div>
+
+      {/* + Add tab — opens command palette to let the user pick a view */}
+      <button
+        className="unified-header-v2__add-tab"
+        onClick={openCommandPalette}
+        title="Add tab (⌘K)"
+        aria-label="Add tab"
+        data-testid="header-add-tab"
+      >
+        <Plus size={12} />
+      </button>
 
       {/* Global controls */}
       <div className="unified-header-v2__actions">

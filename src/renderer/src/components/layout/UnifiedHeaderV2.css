@@ -7,6 +7,16 @@
   flex-shrink: 0;
   padding-right: var(--s-2);
   container-type: inline-size;
+  /* macOS: the header itself is draggable; interactive children opt out below */
+  -webkit-app-region: drag;
+}
+
+/* Interactive zones opt out of the header drag region */
+.unified-header-v2__brand,
+.unified-header-v2__tabs,
+.unified-header-v2__add-tab,
+.unified-header-v2__actions {
+  -webkit-app-region: no-drag;
 }
 
 /* ── Brand block ──────────────────────────────────── */
@@ -69,6 +79,33 @@
   flex: 1;
   overflow: hidden;
   min-width: 0;
+}
+
+/* ── Add-tab button ───────────────────────────────── */
+.unified-header-v2__add-tab {
+  width: 26px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--line);
+  color: var(--fg-4);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+
+.unified-header-v2__add-tab:hover {
+  background: var(--surf-2);
+  color: var(--fg-2);
+}
+
+.unified-header-v2__add-tab:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: -2px;
 }
 
 /* ── Actions ──────────────────────────────────────── */
