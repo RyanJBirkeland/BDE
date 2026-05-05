@@ -178,12 +178,13 @@ export function PipelineHeaderV2({
         flexShrink: 0,
         background: 'var(--bg)',
         overflow: 'hidden',
+        minWidth: 0,
       }}
     >
-      <span className="fleet-eyebrow" style={{ marginRight: 'var(--s-1)' }}>Pipeline</span>
+      <span className="fleet-eyebrow" style={{ marginRight: 'var(--s-1)', flexShrink: 0 }}>Pipeline</span>
 
-      {/* Stat chips */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-1)', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+      {/* Stat chips — scrollable at narrow viewports */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-1)', flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'hidden' }}>
         {stats.map((stat) => (
           <button
             key={stat.label}

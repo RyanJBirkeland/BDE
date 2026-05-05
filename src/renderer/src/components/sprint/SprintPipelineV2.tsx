@@ -345,8 +345,8 @@ export function SprintPipelineV2(): React.JSX.Element {
             onRequeueAllFailed={handleRequeueAllFailed}
           />
 
-          <div style={{ flex: 1, minWidth: 0, overflowX: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(220px, 1fr))', gap: 'var(--s-3)', padding: 'var(--s-4)', flex: 1, minHeight: 0, alignItems: 'stretch' }}>
+          <div style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(220px, 1fr))', gap: 'var(--s-3)', padding: 'var(--s-4)', height: '100%', boxSizing: 'border-box', alignItems: 'stretch' }}>
               <LayoutGroup>
                 <PipelineStageV2
                   name="queued"
