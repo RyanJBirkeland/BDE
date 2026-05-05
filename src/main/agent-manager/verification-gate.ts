@@ -173,21 +173,21 @@ export async function verifyWorktreeOrFail(opts: {
   const output = await verifyWorktreeBuildsAndTests(worktreePath, logger)
 
   // Persist gate results for the reviewer regardless of outcome.
-  void repo
-    .updateTask(taskId, { verification_results: buildVerificationResults(output) })
-    .catch((err: unknown) => {
-      logger.warn(`[completion] task ${taskId}: failed to persist verification_results — ${err}`)
-    })
+  // Promise.resolve() guards against mocks or legacy repo implementations that return null/void.
+  void Promise.resolve(
+    repo.updateTask(taskId, { verification_results: buildVerificationResults(output) })
+  ).catch((err: unknown) => {
+    logger.warn(`[completion] task ${taskId}: failed to persist verification_results — ${err}`)
+  })
 
-  const failed =
-    (output.typecheck !== null && !output.typecheck.ok) ||
-    (output.tests !== null && !output.tests.ok)
+  const typecheckFailed = output.typecheck?.ok === false
+  const testsFailed = output.tests?.ok === false
+  const failed = typecheckFailed || testsFailed
 
   if (!failed) return true
 
-  const failedResult = output.typecheck && !output.typecheck.ok ? output.typecheck : output.tests!
-  const failureKind: VerificationFailureKind =
-    output.typecheck && !output.typecheck.ok ? 'compilation' : 'test_failure'
+  const failedResult = typecheckFailed ? output.typecheck! : output.tests!
+  const failureKind: VerificationFailureKind = typecheckFailed ? 'compilation' : 'test_failure'
 
   logger.warn(
     `[completion] task ${taskId}: pre-review verification failed (${failureKind}) — requeueing`

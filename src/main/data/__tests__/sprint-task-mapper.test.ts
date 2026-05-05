@@ -238,9 +238,9 @@ describe('parseVerificationResults (via mapRowToTask)', () => {
     expect(task.verification_results).toBeNull()
   })
 
-  it('returns undefined when column is absent', () => {
+  it('returns null when column is absent', () => {
     const task = mapRowToTask(baseRow as Record<string, unknown>)
-    expect(task.verification_results).toBeUndefined()
+    expect(task.verification_results).toBeNull()
   })
 })
 

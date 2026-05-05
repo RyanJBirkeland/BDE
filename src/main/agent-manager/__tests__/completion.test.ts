@@ -36,6 +36,16 @@ vi.mock('../../lib/default-branch', () => ({
   resolveDefaultBranch: vi.fn().mockResolvedValue('main')
 }))
 
+// Mock verification to return a successful result — completion.test.ts covers the
+// success-path pipeline; verify-worktree.test.ts covers verification behaviour.
+vi.mock('../verify-worktree', async () => {
+  const actual = await vi.importActual<typeof import('../verify-worktree')>('../verify-worktree')
+  return {
+    ...actual,
+    verifyWorktreeBuildsAndTests: vi.fn().mockResolvedValue({ typecheck: null, tests: null })
+  }
+})
+
 import { existsSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { updateTask } from '../../data/sprint-queries'
@@ -650,6 +660,9 @@ describe('resolveSuccess — catch handler coverage', () => {
       { stdout: 'abc123\n' }, // git rev-parse origin/main (rebase base SHA)
       { stdout: '1\n' }
     ])
+    // First call: verification gate persistence (fire-and-forget, error caught silently)
+    updateTaskMock.mockReturnValueOnce(null)
+    // Second call: review transition — this is the one the test exercises
     updateTaskMock.mockImplementationOnce(() => {
       throw new Error('DB down')
     })

@@ -49,6 +49,17 @@ vi.mock('../../lib/default-branch', () => ({
   resolveDefaultBranch: vi.fn().mockResolvedValue('main')
 }))
 
+vi.mock('../../agent-manager/verify-worktree', async () => {
+  const actual =
+    await vi.importActual<typeof import('../../agent-manager/verify-worktree')>(
+      '../../agent-manager/verify-worktree'
+    )
+  return {
+    ...actual,
+    verifyWorktreeBuildsAndTests: vi.fn().mockResolvedValue({ typecheck: null, tests: null })
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------

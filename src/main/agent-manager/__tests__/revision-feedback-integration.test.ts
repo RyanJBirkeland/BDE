@@ -169,11 +169,8 @@ describe('resolveSuccess → verification_failed → structured notes', () => {
   it('stores RevisionFeedback JSON in task.notes on compilation failure', async () => {
     mockGitSequenceWithCommits()
     mockVerify.mockResolvedValue({
-      ok: false,
-      failure: {
-        kind: 'compilation',
-        stderr: 'src/foo.ts(10,5): error TS2304: Cannot find name "Bar".'
-      }
+      typecheck: { ok: false, stdout: '', stderr: 'src/foo.ts(10,5): error TS2304: Cannot find name "Bar".', durationMs: 0 },
+      tests: null
     })
 
     await resolveSuccess(baseOpts, noopLogger)
@@ -189,11 +186,8 @@ describe('resolveSuccess → verification_failed → structured notes', () => {
   it('stores RevisionFeedback JSON in task.notes on test failure', async () => {
     mockGitSequenceWithCommits()
     mockVerify.mockResolvedValue({
-      ok: false,
-      failure: {
-        kind: 'test_failure',
-        stderr: 'FAIL src/main/agent-manager/__tests__/foo.test.ts\n  expected 1 to equal 2'
-      }
+      typecheck: null,
+      tests: { ok: false, stdout: '', stderr: 'FAIL src/main/agent-manager/__tests__/foo.test.ts\n  expected 1 to equal 2', durationMs: 0 }
     })
 
     await resolveSuccess(baseOpts, noopLogger)
@@ -207,11 +201,8 @@ describe('resolveSuccess → verification_failed → structured notes', () => {
   it('produces valid JSON that round-trips through parseRevisionFeedback', async () => {
     mockGitSequenceWithCommits()
     mockVerify.mockResolvedValue({
-      ok: false,
-      failure: {
-        kind: 'compilation',
-        stderr: 'src/bar.ts(1,1): error TS2345: Argument of type "x" is not assignable to type "y".'
-      }
+      typecheck: { ok: false, stdout: '', stderr: 'src/bar.ts(1,1): error TS2345: Argument of type "x" is not assignable to type "y".', durationMs: 0 },
+      tests: null
     })
 
     await resolveSuccess(baseOpts, noopLogger)
