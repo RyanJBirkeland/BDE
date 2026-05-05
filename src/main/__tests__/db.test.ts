@@ -99,6 +99,7 @@ describe('db schema migrations', () => {
       'agent_events',
       'agent_run_turns',
       'agent_runs',
+      'pr_groups',
       'review_comments',
       'settings',
       'sprint_tasks',
