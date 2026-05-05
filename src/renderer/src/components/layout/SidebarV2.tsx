@@ -10,7 +10,9 @@ import {
   Settings,
   ListTodo,
 } from 'lucide-react'
+import { useShallow } from 'zustand/react/shallow'
 import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
+import { VIEW_REGISTRY } from '../../lib/view-registry'
 import { useSprintTasks, selectReviewTaskCount, selectFailedTaskCount } from '../../stores/sprintTasks'
 import { useSprintSelection } from '../../stores/sprintSelection'
 import { useGitTreeStore } from '../../stores/gitTree'
@@ -22,19 +24,18 @@ interface SidebarV2Props {
 
 interface NavItem {
   view: View
-  label: string
   icon: React.ReactNode
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { view: 'dashboard',    label: 'Dashboard', icon: <LayoutDashboard size={16} strokeWidth={1.5} /> },
-  { view: 'sprint',       label: 'Sprint',    icon: <ListTodo       size={16} strokeWidth={1.5} /> },
-  { view: 'planner',      label: 'Planner',   icon: <GitBranch      size={16} strokeWidth={1.5} /> },
-  { view: 'agents',       label: 'Agents',    icon: <Users          size={16} strokeWidth={1.5} /> },
-  { view: 'code-review',  label: 'Review',    icon: <GitPullRequest size={16} strokeWidth={1.5} /> },
-  { view: 'ide',          label: 'IDE',       icon: <Code2          size={16} strokeWidth={1.5} /> },
-  { view: 'git',          label: 'Git',       icon: <GitCommitHorizontal size={16} strokeWidth={1.5} /> },
-  { view: 'settings',     label: 'Settings',  icon: <Settings       size={16} strokeWidth={1.5} /> },
+  { view: 'dashboard',   icon: <LayoutDashboard    size={16} strokeWidth={1.5} /> },
+  { view: 'sprint',      icon: <ListTodo           size={16} strokeWidth={1.5} /> },
+  { view: 'planner',     icon: <GitBranch          size={16} strokeWidth={1.5} /> },
+  { view: 'agents',      icon: <Users              size={16} strokeWidth={1.5} /> },
+  { view: 'code-review', icon: <GitPullRequest     size={16} strokeWidth={1.5} /> },
+  { view: 'ide',         icon: <Code2              size={16} strokeWidth={1.5} /> },
+  { view: 'git',         icon: <GitCommitHorizontal size={16} strokeWidth={1.5} /> },
+  { view: 'settings',    icon: <Settings           size={16} strokeWidth={1.5} /> },
 ]
 
 export function SidebarV2({ model }: SidebarV2Props): React.JSX.Element {
@@ -44,7 +45,9 @@ export function SidebarV2({ model }: SidebarV2Props): React.JSX.Element {
 
   const reviewCount = useSprintTasks(selectReviewTaskCount)
   const failedCount = useSprintTasks(selectFailedTaskCount)
-  const activeTasks = useSprintTasks((s) => s.tasks.filter((t) => t.status === 'active'))
+  const activeTasks = useSprintTasks(
+    useShallow((s) => s.tasks.filter((t) => t.status === 'active'))
+  )
 
   const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
 
@@ -65,7 +68,8 @@ export function SidebarV2({ model }: SidebarV2Props): React.JSX.Element {
 
       {/* Nav */}
       <nav className="sidebar-v2__nav">
-        {NAV_ITEMS.map(({ view, label, icon }) => {
+        {NAV_ITEMS.map(({ view, icon }) => {
+          const label = VIEW_REGISTRY[view].label
           const isActive = activeView === view
           const badge =
             view === 'code-review' ? reviewCount
