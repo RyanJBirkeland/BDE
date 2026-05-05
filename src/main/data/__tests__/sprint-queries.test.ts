@@ -812,6 +812,18 @@ describe('markTaskDoneByPrNumber', () => {
     expect(other.status).toBe('active')
   })
 
+  it('also transitions approved tasks to done (PR group merge path)', async () => {
+    insertTask({ id: 'approved-1', status: 'approved', pr_number: 42, pr_status: 'open' })
+    insertTask({ id: 'active-1', status: 'active', pr_number: 42, pr_status: 'open' })
+
+    const affected = await markTaskDoneByPrNumber(42)
+    expect(affected).toContain('approved-1')
+    expect(affected).toContain('active-1')
+
+    expect(getTask('approved-1')!.status).toBe('done')
+    expect(getTask('active-1')!.status).toBe('done')
+  })
+
   it('returns empty array when no matching tasks', async () => {
     const result = await markTaskDoneByPrNumber(999)
     expect(result).toEqual([])
@@ -845,6 +857,14 @@ describe('markTaskCancelledByPrNumber', () => {
     expect(cancelledTask.status).toBe('cancelled')
   })
 
+  it('also transitions approved tasks to cancelled (PR group close path)', async () => {
+    insertTask({ id: 'approved-c1', status: 'approved', pr_number: 50, pr_status: 'open' })
+
+    const affected = await markTaskCancelledByPrNumber(50)
+    expect(affected).toContain('approved-c1')
+    expect(getTask('approved-c1')!.status).toBe('cancelled')
+  })
+
   it('returns empty array when no matching tasks', async () => {
     const result = await markTaskCancelledByPrNumber(999)
     expect(result).toEqual([])
@@ -875,6 +895,18 @@ describe('listTasksWithOpenPrs', () => {
     const result = listTasksWithOpenPrs()
     expect(result.length).toBe(1)
     expect(result[0].id).toBe('open-pr')
+  })
+
+  it('includes approved tasks with pr_status=open (PR group tasks awaiting merge)', async () => {
+    insertTask({ id: 'approved-open', status: 'approved', pr_number: 77, pr_status: 'open' })
+    insertTask({ id: 'review-open', status: 'review', pr_number: 78, pr_status: 'open' })
+    insertTask({ id: 'approved-no-pr', status: 'approved' })
+
+    const result = listTasksWithOpenPrs()
+    const ids = result.map((t) => t.id)
+    expect(ids).toContain('approved-open')
+    expect(ids).toContain('review-open')
+    expect(ids).not.toContain('approved-no-pr')
   })
 })
 

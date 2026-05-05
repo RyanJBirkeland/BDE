@@ -33,12 +33,15 @@ function transitionTasksByPrNumber(
   // included so the bulk audit comparison sees the prior value before the
   // UPDATE overwrites it. The wide column list pulled hundreds of KB of
   // `review_diff_snapshot` per active PR on every poller cycle.
+  //
+  // Includes 'approved' so that PR-group tasks (status='approved', pr_status='open')
+  // also transition when their shared PR merges or closes.
   const affected = db
     .prepare(
       `SELECT id, status, completed_at
-       FROM sprint_tasks WHERE pr_number = ? AND status = ?`
+       FROM sprint_tasks WHERE pr_number = ? AND status IN ('active', 'approved')`
     )
-    .all(prNumber, 'active') as Array<Record<string, unknown>>
+    .all(prNumber) as Array<Record<string, unknown>>
 
   // Filter to only tasks whose transition is valid per the state machine.
   // Rows with an unrecognised status are logged and skipped rather than
