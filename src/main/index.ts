@@ -56,8 +56,6 @@ import type { ReviewOrchestrationService } from './services/review-orchestration
 import { createReviewGitAdapter } from './lib/review-git-adapter'
 import { createReviewShipBatchService } from './services/review-ship-batch'
 import type { ReviewShipBatchService } from './services/review-ship-batch'
-import { createReviewRollupService } from './services/review-rollup-service'
-import type { ReviewRollupService } from './services/review-rollup-service'
 import {
   closeTearoffWindows,
   setQuitting,
@@ -342,7 +340,6 @@ interface CoreStartupServices {
   pollerTaskStateService: ReturnType<typeof createTaskStateService>
   reviewOrchestration: ReviewOrchestrationService
   reviewShipBatch: ReviewShipBatchService
-  reviewRollup: ReviewRollupService
   terminalDeps: {
     onStatusTerminal: ReturnType<typeof createTaskTerminalService>['onStatusTerminal']
     dialog: ReturnType<typeof createElectronDialogService>
@@ -359,7 +356,6 @@ interface CoreStartupServices {
 function wireReviewServices(repo: ReturnType<typeof createSprintTaskRepository>): {
   reviewOrchestration: ReviewOrchestrationService
   reviewShipBatch: ReviewShipBatchService
-  reviewRollup: ReviewRollupService
 } {
   const reviewOrchestration = createReviewOrchestrationService(repo, {
     getTask,
@@ -367,8 +363,7 @@ function wireReviewServices(repo: ReturnType<typeof createSprintTaskRepository>)
     notifySprintMutation
   })
   const reviewShipBatch = createReviewShipBatchService(repo)
-  const reviewRollup = createReviewRollupService(repo)
-  return { reviewOrchestration, reviewShipBatch, reviewRollup }
+  return { reviewOrchestration, reviewShipBatch }
 }
 
 /**
@@ -396,7 +391,7 @@ function initCoreServices(): CoreStartupServices {
   registerWebhookCallback((event, task) => webhookService.fireWebhook(event, task))
 
   // Wire all review services in one place — see wireReviewServices.
-  const { reviewOrchestration, reviewShipBatch, reviewRollup } = wireReviewServices(repo)
+  const { reviewOrchestration, reviewShipBatch } = wireReviewServices(repo)
 
   // The epic dependency graph has one owner — EpicGroupService, constructed
   // at the composition root and injected to every consumer (task-terminal-
@@ -435,7 +430,7 @@ function initCoreServices(): CoreStartupServices {
   startPrPollers(terminalDeps)
   setupCleanupTasks()
 
-  return { repo, epicGroupService, terminalService, pollerTaskStateService, reviewOrchestration, reviewShipBatch, reviewRollup, terminalDeps }
+  return { repo, epicGroupService, terminalService, pollerTaskStateService, reviewOrchestration, reviewShipBatch, terminalDeps }
 }
 
 /**
@@ -646,8 +641,7 @@ app.whenReady().then(async () => {
     repo: core.repo,
     epicGroupService: core.epicGroupService,
     reviewOrchestration: core.reviewOrchestration,
-    reviewShipBatch: core.reviewShipBatch,
-    reviewRollup: core.reviewRollup
+    reviewShipBatch: core.reviewShipBatch
   }
   registerAllHandlers(handlerDeps)
 

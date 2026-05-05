@@ -8,7 +8,6 @@ import type { EpicGroupService } from '../services/epic-group-service'
 import type { TaskStateService } from '../services/task-state-service'
 import type { ReviewOrchestrationService } from '../services/review-orchestration-service'
 import type { ReviewShipBatchService } from '../services/review-ship-batch'
-import type { ReviewRollupService } from '../services/review-rollup-service'
 import type { PreflightGate } from '../agent-manager/preflight-gate'
 import { createPrGroupBuildService } from '../services/pr-group-build-service'
 
@@ -59,7 +58,6 @@ export interface AppHandlerDeps {
   epicGroupService: EpicGroupService
   reviewOrchestration: ReviewOrchestrationService
   reviewShipBatch?: ReviewShipBatchService | undefined
-  reviewRollup?: ReviewRollupService | undefined
 }
 
 /**
@@ -76,8 +74,7 @@ export function registerAllHandlers(deps: AppHandlerDeps): void {
     repo,
     epicGroupService,
     reviewOrchestration,
-    reviewShipBatch,
-    reviewRollup
+    reviewShipBatch
   } = deps
 
   // Agent-related handlers (conditional on agentManager presence)
@@ -122,7 +119,7 @@ export function registerAllHandlers(deps: AppHandlerDeps): void {
   registerClaudeConfigHandlers()
 
   // Review handlers
-  registerReviewHandlers({ ...terminalDeps, reviewOrchestration, reviewShipBatch, reviewRollup })
+  registerReviewHandlers({ ...terminalDeps, reviewOrchestration, reviewShipBatch })
   if (reviewService && reviewChatStreamDeps) {
     registerReviewAssistantHandlers({
       reviewService,
