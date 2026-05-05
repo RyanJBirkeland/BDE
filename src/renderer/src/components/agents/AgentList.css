@@ -1,10 +1,10 @@
 /* AgentList V2 — styles via inline V2 tokens */
 .agent-list {
-  width: 320px;
-  flex-shrink: 0;
+  flex: 1;           /* fill the bounded FleetListPane wrapper height */
+  min-height: 0;     /* allow shrinking in flex context */
   display: flex;
   flex-direction: column;
-  min-height: 0;
   background: var(--bg);
   border-right: 1px solid var(--line);
+  overflow: hidden;
 }

@@ -48,6 +48,7 @@ function PipelineBacklogV2Inner({
 
   return (
     <div
+      className="pipeline-sidebar"
       style={{
         width: 280,
         flexShrink: 0,
@@ -56,6 +57,7 @@ function PipelineBacklogV2Inner({
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column',
+        minHeight: 0,
       }}
       data-testid="pipeline-backlog"
     >

@@ -31,8 +31,14 @@ import { useAgentSlashCommands } from '../hooks/useAgentSlashCommands'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
 
 const INSPECTOR_BREAKPOINT = 1280
-const FLEET_LIST_WIDTH = 320
 const EMPTY_EVENTS: never[] = []
+
+function fleetListWidth(viewportWidth: number): number {
+  if (viewportWidth < 700) return 0
+  if (viewportWidth < 960) return 220
+  if (viewportWidth < 1200) return 260
+  return 320
+}
 
 export function AgentsViewV2(): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -119,6 +125,7 @@ export function AgentsViewV2(): React.JSX.Element {
 
   const { handleCommand } = useAgentSlashCommands({ activeId, selectedAgent })
 
+  const listWidth = fleetListWidth(viewportWidth)
   const isConsoleMode = !!(selectedAgent && activeId && !showLaunchpad)
   const showInspectorInline = isConsoleMode && isWide
   const showInspectorOverlay = isConsoleMode && !isWide && inspectorOpen
@@ -138,20 +145,23 @@ export function AgentsViewV2(): React.JSX.Element {
           position: 'relative',
         }}
       >
-        <FleetListPane
-          onSpawn={openLaunchpad}
-          onDismissBanner={handleDismissBanner}
-          onSelectAgent={handleSelectAgent}
-          showScratchpadBanner={showScratchpadBanner}
-          activeId={activeId}
-          agents={agents}
-          fetched={fetched}
-          fetchError={fetchError}
-          fetchAgents={fetchAgents}
-          displayedCount={displayedCount}
-          hasMore={hasMore}
-          loadMore={loadMore}
-        />
+        {listWidth > 0 && (
+          <FleetListPane
+            listWidth={listWidth}
+            onSpawn={openLaunchpad}
+            onDismissBanner={handleDismissBanner}
+            onSelectAgent={handleSelectAgent}
+            showScratchpadBanner={showScratchpadBanner}
+            activeId={activeId}
+            agents={agents}
+            fetched={fetched}
+            fetchError={fetchError}
+            fetchAgents={fetchAgents}
+            displayedCount={displayedCount}
+            hasMore={hasMore}
+            loadMore={loadMore}
+          />
+        )}
 
         <CenterPane
           showLaunchpad={showLaunchpad}
@@ -200,6 +210,7 @@ interface FleetListPaneProps {
   hasMore: boolean
   loadMore: () => void
   showScratchpadBanner: boolean
+  listWidth: number
   onSpawn: () => void
   onDismissBanner: () => void
   onSelectAgent: (id: string) => void
@@ -215,12 +226,21 @@ function FleetListPane({
   hasMore,
   loadMore,
   showScratchpadBanner,
+  listWidth,
   onSpawn,
   onDismissBanner,
   onSelectAgent,
 }: FleetListPaneProps): React.JSX.Element {
   return (
-    <div style={{ width: FLEET_LIST_WIDTH, flexShrink: 0, minHeight: 0 }}>
+    <div style={{
+      width: listWidth,
+      flexShrink: 0,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      transition: 'width 0.2s ease',
+    }}>
       <AgentList
         agents={agents}
         selectedId={activeId}
