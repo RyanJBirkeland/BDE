@@ -49,7 +49,15 @@ export type RunCommand = (
   timeoutMs: number
 ) => Promise<CommandResult>
 
-export type CommandResult = { ok: true } | { ok: false; output: string }
+export type CommandResult =
+  | { ok: true; stdout: string; stderr: string; durationMs: number }
+  | { ok: false; stdout: string; stderr: string; durationMs: number }
+
+/** Full output of both verification steps. null = step was not run. */
+export interface WorktreeVerificationOutput {
+  typecheck: CommandResult | null
+  tests: CommandResult | null
+}
 
 /** Which test runner is present in the project, or 'none' when absent/undetectable. */
 type TestRunner = 'vitest' | 'other' | 'none'
@@ -108,9 +116,11 @@ export async function verifyWorktreeBuildsAndTests(
   worktreePath: string,
   logger: Logger,
   deps: VerificationDeps = defaultDeps()
-): Promise<VerificationResult> {
+): Promise<WorktreeVerificationOutput> {
   const readFile = deps.readFile ?? defaultReadFile
   const scripts = detectProjectScripts(worktreePath, readFile)
+
+  let typecheckResult: CommandResult | null = null
 
   if (!scripts.hasTypecheck) {
     logger.info(`[verify-worktree] no typecheck script at ${worktreePath} — skipping typecheck`)
@@ -122,13 +132,15 @@ export async function verifyWorktreeBuildsAndTests(
       failureKind: 'compilation',
       keywordHint: 'typescript error'
     }
-    const typecheck = await runVerificationAttempt(typecheckAttempt, worktreePath, logger, deps)
-    if (!typecheck.ok) return typecheck
+    typecheckResult = await runVerificationAttempt(typecheckAttempt, worktreePath, logger, deps)
+    if (!typecheckResult.ok) {
+      return { typecheck: typecheckResult, tests: null }
+    }
   }
 
   if (scripts.testRunner === 'none') {
     logger.info(`[verify-worktree] no test script at ${worktreePath} — skipping test step`)
-    return { ok: true }
+    return { typecheck: typecheckResult, tests: null }
   }
 
   const testAttempt: CommandAttempt = {
@@ -138,8 +150,8 @@ export async function verifyWorktreeBuildsAndTests(
     failureKind: 'test_failure',
     keywordHint: 'test run failed'
   }
-
-  return runVerificationAttempt(testAttempt, worktreePath, logger, deps)
+  const testsResult = await runVerificationAttempt(testAttempt, worktreePath, logger, deps)
+  return { typecheck: typecheckResult, tests: testsResult }
 }
 
 async function runVerificationAttempt(
@@ -147,29 +159,15 @@ async function runVerificationAttempt(
   worktreePath: string,
   logger: Logger,
   deps: VerificationDeps
-): Promise<VerificationResult> {
+): Promise<CommandResult> {
   const label = `${attempt.command} ${attempt.args.join(' ')}`
   const result = await deps.runCommand(attempt.command, attempt.args, worktreePath, attempt.timeoutMs)
-
   if (result.ok) {
     logger.info(`[verify-worktree] ${label} passed at ${worktreePath}`)
-    return { ok: true }
+  } else {
+    logger.warn(`[verify-worktree] ${label} failed at ${worktreePath}`)
   }
-
-  logger.warn(`[verify-worktree] ${label} failed at ${worktreePath}`)
-  const stderr = formatFailureNote(attempt, result.output)
-  return { ok: false, failure: { kind: attempt.failureKind, stderr } }
-}
-
-function formatFailureNote(attempt: CommandAttempt, output: string): string {
-  const tail = tailTruncate(output, VERIFICATION_STDERR_LIMIT)
-  const header = `Pre-review verification: ${attempt.keywordHint}`
-  return `${header}\n\n${tail}`
-}
-
-function tailTruncate(text: string, limit: number): string {
-  if (text.length <= limit) return text
-  return `...\n${text.slice(-limit)}`
+  return result
 }
 
 function defaultDeps(): VerificationDeps {
@@ -190,26 +188,34 @@ async function execFileRunCommand(
   cwd: string,
   timeoutMs: number
 ): Promise<CommandResult> {
+  const startMs = Date.now()
   try {
-    await execFileAsync(command, [...args], {
+    const result = await execFileAsync(command, [...args], {
       cwd,
       env: buildWorktreeEnv(cwd),
       timeout: timeoutMs,
       maxBuffer: 10 * 1024 * 1024
     })
-    return { ok: true }
+    return {
+      ok: true,
+      stdout: typeof result.stdout === 'string' ? result.stdout : '',
+      stderr: typeof result.stderr === 'string' ? result.stderr : '',
+      durationMs: Date.now() - startMs
+    }
   } catch (err) {
-    return { ok: false, output: extractCommandOutput(err) }
+    const { stdout, stderr } = extractCommandOutputParts(err)
+    return { ok: false, stdout, stderr, durationMs: Date.now() - startMs }
   }
 }
 
-function extractCommandOutput(err: unknown): string {
+function extractCommandOutputParts(err: unknown): { stdout: string; stderr: string } {
   if (err && typeof err === 'object') {
     const record = err as Record<string, unknown>
-    const stderr = typeof record.stderr === 'string' ? record.stderr : ''
-    const stdout = typeof record.stdout === 'string' ? record.stdout : ''
-    const combined = [stderr, stdout].filter((s) => s.length > 0).join('\n')
-    if (combined.length > 0) return combined
+    return {
+      stdout: typeof record.stdout === 'string' ? record.stdout : '',
+      stderr: typeof record.stderr === 'string' ? record.stderr : ''
+    }
   }
-  return err instanceof Error ? err.message : String(err)
+  const msg = err instanceof Error ? err.message : String(err)
+  return { stdout: '', stderr: msg }
 }
