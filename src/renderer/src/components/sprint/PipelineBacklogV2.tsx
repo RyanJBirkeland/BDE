@@ -38,7 +38,10 @@ function PipelineBacklogV2Inner({
   const visibleBacklog = backlogExpanded ? backlog : backlog.slice(0, BACKLOG_VISIBLE_LIMIT)
   const hiddenBacklogCount = backlog.length - BACKLOG_VISIBLE_LIMIT
 
-  const handleCheckboxClick = (e: React.MouseEvent, taskId: string): void => {
+  const handleCheckboxClick = (
+    e: React.MouseEvent | React.ChangeEvent<HTMLInputElement>,
+    taskId: string
+  ): void => {
     e.stopPropagation()
     toggleTaskSelection(taskId)
   }
@@ -102,9 +105,7 @@ function PipelineBacklogV2Inner({
                 <input
                   type="checkbox"
                   checked={isSelected}
-                  onChange={(e) =>
-                    handleCheckboxClick(e as unknown as React.MouseEvent, task.id)
-                  }
+                  onChange={(e) => handleCheckboxClick(e, task.id)}
                   onClick={(e) => e.stopPropagation()}
                   aria-label={`Select ${task.title}`}
                   style={{
