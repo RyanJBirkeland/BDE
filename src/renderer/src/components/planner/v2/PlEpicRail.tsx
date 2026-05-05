@@ -2,9 +2,13 @@ import type { TaskGroup } from '../../../../../shared/types'
 
 function sanitizeCssColor(value: string | null | undefined): string {
   if (!value) return 'var(--accent)'
-  // Allow: CSS named colors (letters only) and hex colors (#rgb, #rrggbb, #rgba, #rrggbbaa)
-  const isValid = /^#[0-9a-fA-F]{3,8}$/.test(value) || /^[a-zA-Z]+$/.test(value)
-  return isValid ? value : 'var(--accent)'
+  // Allow: CSS named colors (letters only) and hex colors with valid lengths:
+  // #RGB (3), #RGBA (4), #RRGGBB (6), #RRGGBBAA (8). {3,8} would also pass
+  // 5- and 7-digit hex strings which are not valid CSS.
+  const isValidHex =
+    /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value)
+  const isValidNamed = /^[a-zA-Z]+$/.test(value)
+  return isValidHex || isValidNamed ? value : 'var(--accent)'
 }
 
 interface Props {

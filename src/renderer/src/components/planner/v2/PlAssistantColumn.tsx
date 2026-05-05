@@ -3,16 +3,12 @@ import type { TaskGroup, SprintTask } from '../../../../../shared/types'
 import { parseActionMarkers, type ParseResult } from '../PlannerAssistant'
 import { useRepoOptions } from '../../../hooks/useRepoOptions'
 import { useTaskWorkbenchStore } from '../../../stores/taskWorkbench'
-
-function sanitizeAgentPayloadString(value: string | undefined, maxLength: number): string {
-  const raw = (value ?? '').slice(0, maxLength)
-  // Strip XML boundary tags that FLEET uses for prompt injection prevention
-  return raw.replace(/<\/?[a-z_]+>/g, '')
-}
-
-function stripActionMarkers(text: string): string {
-  return text.replace(/\[ACTION:[^\]]*\]/g, '')
-}
+import {
+  sanitizeAgentPayloadString,
+  stripActionMarkers,
+  MAX_TASK_TITLE_CHARS,
+  MAX_TASK_SPEC_CHARS
+} from '../../../lib/sanitize-agent-output'
 
 interface Message {
   id: string
@@ -492,8 +488,8 @@ function PlActionCard({
     try {
       if (action.type === 'create-task') {
         await window.api.sprint.create({
-          title: sanitizeAgentPayloadString(action.payload.title, 500) || 'Untitled',
-          spec: sanitizeAgentPayloadString(action.payload.spec, 8000),
+          title: sanitizeAgentPayloadString(action.payload.title, MAX_TASK_TITLE_CHARS) || 'Untitled',
+          spec: sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS),
           repo: firstRepo,
           priority: 0,
           playground_enabled: false,
@@ -501,12 +497,12 @@ function PlActionCard({
         })
       } else if (action.type === 'create-epic') {
         await window.api.groups.create({
-          name: sanitizeAgentPayloadString(action.payload.name, 500) || 'New Epic',
-          goal: sanitizeAgentPayloadString(action.payload.goal, 8000)
+          name: sanitizeAgentPayloadString(action.payload.name, MAX_TASK_TITLE_CHARS) || 'New Epic',
+          goal: sanitizeAgentPayloadString(action.payload.goal, MAX_TASK_SPEC_CHARS)
         })
       } else if (action.type === 'update-spec' && action.payload.taskId) {
         await window.api.sprint.update(action.payload.taskId, {
-          spec: sanitizeAgentPayloadString(action.payload.spec, 8000)
+          spec: sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS)
         })
       }
       onCardStateChange(cardKey, {
@@ -522,12 +518,12 @@ function PlActionCard({
     const store = useTaskWorkbenchStore.getState()
     store.resetForm()
     if (action.type === 'create-task') {
-      store.setField('title', action.payload.title ?? '')
-      store.setField('spec', action.payload.spec ?? '')
+      store.setField('title', sanitizeAgentPayloadString(action.payload.title, MAX_TASK_TITLE_CHARS))
+      store.setField('spec', sanitizeAgentPayloadString(action.payload.spec, MAX_TASK_SPEC_CHARS))
       store.setField('pendingGroupId', epic.id)
     } else if (action.type === 'create-epic') {
-      store.setField('title', action.payload.name ?? '')
-      store.setField('spec', action.payload.goal ?? '')
+      store.setField('title', sanitizeAgentPayloadString(action.payload.name, MAX_TASK_TITLE_CHARS))
+      store.setField('spec', sanitizeAgentPayloadString(action.payload.goal, MAX_TASK_SPEC_CHARS))
     }
     onAddTask()
     onClose()
