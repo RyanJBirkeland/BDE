@@ -49,6 +49,13 @@ export const PROMPT_TRUNCATION = {
 } as const
 
 /**
+ * Maximum characters stored per field in a VerificationRecord.
+ * A large test suite can emit 50KB+ of output; this cap keeps the SQLite
+ * row sane while preserving enough context for the reviewer.
+ */
+export const VERIFICATION_OUTPUT_CAP = 10_000
+
+/**
  * Maximum number of retries for the `no_commits` failure class.
  *
  * An agent that exits without committing (either because it misunderstood the

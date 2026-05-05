@@ -46,6 +46,29 @@ export interface RevisionFeedbackEntry {
   attempt: number
 }
 
+export interface VerificationRecord {
+  exitCode: number
+  stdout: string
+  stderr: string
+  /** true when stdout or stderr was truncated to VERIFICATION_OUTPUT_CAP chars */
+  truncated: boolean
+  durationMs: number
+  timestamp: string // ISO-8601
+}
+
+export interface VerificationResults {
+  /** null when the repo has no typecheck script */
+  typecheck: VerificationRecord | null
+  /** null when typecheck failed (gate short-circuits) or repo has no test script */
+  tests: VerificationRecord | null
+}
+
+export function isVerificationResults(v: unknown): v is VerificationResults {
+  if (!v || typeof v !== 'object') return false
+  const r = v as Record<string, unknown>
+  return 'typecheck' in r && 'tests' in r
+}
+
 export type FailureReason =
   | 'auth'
   | 'timeout'
@@ -141,6 +164,7 @@ export interface SprintTask {
    * what the agent actually received.
    */
   last_rendered_prompt?: string | null
+  verification_results?: VerificationResults | null
   updated_at: string
   created_at: string
 }
