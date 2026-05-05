@@ -1,6 +1,10 @@
+import type * as monaco from 'monaco-editor'
 import type { ActivityMode } from './ActivityRail'
 import { FilesPanel } from './panels/FilesPanel'
 import { SearchPanel } from './panels/SearchPanel'
+import { ScmPanel } from './panels/ScmPanel'
+import { OutlinePanel } from './panels/OutlinePanel'
+import { AgentsOnTreePanel } from './panels/AgentsOnTreePanel'
 
 // ---------------------------------------------------------------------------
 // Props
@@ -11,27 +15,9 @@ export interface IDESidebarProps {
   activeFilePath: string | null
   onOpenFile: (path: string) => void
   open: boolean
-}
-
-// ---------------------------------------------------------------------------
-// Stub panels — implemented in Task 4
-// ---------------------------------------------------------------------------
-
-function ComingSoonPlaceholder(): React.JSX.Element {
-  return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'var(--fg-3)',
-        fontSize: 'var(--t-sm)'
-      }}
-    >
-      Coming in Task 4
-    </div>
-  )
+  rootPath?: string | null
+  editorRef?: React.RefObject<monaco.editor.IStandaloneCodeEditor | null>
+  onAgentClick?: (agentId: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -42,7 +28,10 @@ export function IDESidebar({
   activity,
   activeFilePath,
   onOpenFile,
-  open
+  open,
+  rootPath = null,
+  editorRef,
+  onAgentClick
 }: IDESidebarProps): React.JSX.Element | null {
   if (!open) return null
 
@@ -63,9 +52,19 @@ export function IDESidebar({
         <FilesPanel activeFilePath={activeFilePath} onOpenFile={onOpenFile} />
       )}
       {activity === 'search' && <SearchPanel />}
-      {activity === 'scm' && <ComingSoonPlaceholder />}
-      {activity === 'outline' && <ComingSoonPlaceholder />}
-      {activity === 'agents' && <ComingSoonPlaceholder />}
+      {activity === 'scm' && <ScmPanel rootPath={rootPath} />}
+      {activity === 'outline' && (
+        <OutlinePanel
+          editorRef={editorRef ?? { current: null }}
+          activeFilePath={activeFilePath}
+        />
+      )}
+      {activity === 'agents' && (
+        <AgentsOnTreePanel
+          rootPath={rootPath}
+          onAgentClick={onAgentClick ?? (() => {})}
+        />
+      )}
     </div>
   )
 }
