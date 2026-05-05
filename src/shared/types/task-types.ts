@@ -242,6 +242,7 @@ export type SprintTaskPR = SprintTaskCore &
     | 'pr_number'
     | 'pr_status'
     | 'pr_mergeable_state'
+    | 'stacked_on_task_id'
     | 'revision_feedback'
     | 'review_diff_snapshot'
     | 'promoted_to_review_at'

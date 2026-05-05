@@ -270,7 +270,7 @@ export interface ReviewChannels {
    * shipping. Dependency resolution fires (approved satisfies hard deps).
    */
   'review:approveTask': {
-    args: [{ taskId: string }]
+    args: [payload: { taskId: string }]
     result: { success: boolean }
   }
 }
@@ -299,7 +299,6 @@ export interface PrGroupChannels {
         title?: string | undefined
         branchName?: string | undefined
         description?: string | undefined
-        taskOrder?: string[] | undefined
       }
     ]
     result: PrGroup
