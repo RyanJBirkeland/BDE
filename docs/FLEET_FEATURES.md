@@ -30,9 +30,11 @@ Planning and spec creation interface, presented as a centered modal (`TaskWorkbe
 
 Execution monitoring view. Shows tasks flowing through stages as a vertical pipeline with real-time status updates.
 
-- **Task statuses**: `backlog` | `queued` | `blocked` | `active` | `review` | `done` | `cancelled` | `failed` | `error`
-- **UI partitions** (8 buckets): `backlog`, `todo`, `blocked`, `inProgress`, `pendingReview`, `openPrs`, `done`, `failed`. All UI components must use `partitionSprintTasks()` from the sprint tasks store — never map raw statuses directly
+- **Task statuses**: `backlog` | `queued` | `blocked` | `active` | `review` | `approved` | `done` | `cancelled` | `failed` | `error`
+- **`approved` status**: Human-blessed state between `review` and `done`. The reviewer has accepted the code but hasn't pushed a PR yet. `approved` satisfies hard dependencies (downstream tasks can unblock before the PR merges). The Sprint PR Poller drives `approved → done` when the PR merges or the task is shipped locally
+- **UI partitions** (9 buckets): `backlog`, `todo`, `blocked`, `inProgress`, `pendingReview`, `approved`, `openPrs`, `done`, `failed`. All UI components must use `partitionSprintTasks()` from the sprint tasks store — never map raw statuses directly
 - **pendingReview**: Tasks with `status='review'` — agent done, awaiting human action in Code Review Station
+- **approved bucket**: Tasks with `status='approved'` — code accepted, ready to be grouped into a PR via PR Builder
 - **openPrs**: Tasks with `status='active'` and `pr_status='open'|'branch_only'` — open GitHub PRs in progress
 - **failed bucket**: Combines `failed` + `error` + `cancelled` statuses
 - **done sorting**: Most recent `completed_at` first
@@ -135,12 +137,25 @@ Human-in-the-loop review interface for agent work before integration. Agents com
 - **Commit history**: CommitsTab shows all commits in the agent's branch with messages, timestamps, and file change counts
 - **Conversation**: ConversationTab displays the full agent chat log for context on decisions made during execution
 - **Review actions**:
+  - **Approve** — Transitions the task to `approved` status. Signals that the code is accepted and ready to ship. Approved tasks can be grouped into a stacked PR via the PR Builder. Downstream hard-dependent tasks unblock immediately without waiting for the PR to merge
   - **Merge Locally** — Fast-forward merge the agent's branch into the current branch and mark task `done`. Worktree cleaned up automatically
   - **Create PR** — Push the branch and open a GitHub pull request. Task remains `review` until PR is merged (tracked by Sprint PR Poller)
   - **Request Revision** — Return task to `queued` status for the agent to retry. Worktree preserved for incremental work
   - **Discard** — Mark task `cancelled` and clean up the worktree. Used when the work is no longer needed
-- **Worktree preservation**: Agent worktrees stay intact at `review` status, allowing humans to inspect the full working directory before integration decisions
-- Related: Sprint PR Poller, Sprint Pipeline, Agent Manager (completion flow)
+- **Worktree preservation**: Agent worktrees stay intact at `review` and `approved` status, allowing humans to inspect the full working directory before integration decisions
+- Related: Sprint PR Poller, Sprint Pipeline, Agent Manager (completion flow), PR Builder
+
+### PR Builder
+
+Stacked-PR group composer for shipping multiple approved tasks as a single pull request. Accessible via the "Build PR" button in the Code Review queue's Approved section.
+
+- **PR Groups**: Named collections of approved tasks combined into one PR. Each group has a title, branch name, description, and status (`composing | building | open | merged`)
+- **Two-panel layout**: Left pool shows unassigned approved tasks (drag to add); right shows `PrGroup` cards each with title/branch/description editors and a "Build PR" trigger
+- **Single-task group**: Pushes the task's existing branch directly and opens a PR — no squash needed
+- **Multi-task group**: Squash-merges each task's branch onto a rollup branch in dependency order (`topoSort`), then pushes and opens one PR covering all tasks
+- **Conflict detection**: `checkConflicts` dry-runs the merge before committing — surfaces conflicting tasks before the build starts
+- **Fork-on-approve**: When a downstream task claims work after its upstream is `approved`, the agent's worktree is forked from the parent's branch (`stacked_on_task_id` written to the task). The auto-rebase phase in the success pipeline keeps the stacked branch current with `origin/main`
+- Related: Code Review Station, Sprint PR Poller, Task Dependencies
 
 ### Sprint PR Poller
 
