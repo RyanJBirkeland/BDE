@@ -27,6 +27,7 @@ export function ExportDropdown({ onExport }: ExportDropdownProps): React.JSX.Ele
   const [open, setOpen] = useState(false)
   const [exporting, setExporting] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -41,6 +42,25 @@ export function ExportDropdown({ onExport }: ExportDropdownProps): React.JSX.Ele
     firstMenuItem?.focus()
   }, [open])
 
+  const handleMenuKeyDown = (e: React.KeyboardEvent): void => {
+    const items = Array.from(
+      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
+    )
+    const focused = document.activeElement as HTMLElement
+    const index = items.indexOf(focused)
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      setOpen(false)
+      triggerRef.current?.focus()
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      items[(index + 1) % items.length]?.focus()
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      items[(index - 1 + items.length) % items.length]?.focus()
+    }
+  }
+
   const handleSelect = async (format: ExportFormat): Promise<void> => {
     setOpen(false)
     setExporting(true)
@@ -54,6 +74,7 @@ export function ExportDropdown({ onExport }: ExportDropdownProps): React.JSX.Ele
   return (
     <div style={{ position: 'relative' }}>
       <button
+        ref={triggerRef}
         onClick={(e) => {
           e.stopPropagation()
           setOpen(!open)
@@ -71,6 +92,7 @@ export function ExportDropdown({ onExport }: ExportDropdownProps): React.JSX.Ele
         <div
           ref={menuRef}
           role="menu"
+          onKeyDown={handleMenuKeyDown}
           style={{
             position: 'absolute',
             top: 'calc(100% + var(--s-1))',

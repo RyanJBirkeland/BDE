@@ -174,6 +174,14 @@ export function TaskDetailDrawerV2({
     titleRef.current?.focus()
   }, [task.id])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   useFocusTrap(drawerRef, true)
 
   const isActive = task.status === 'active' && !!task.started_at
@@ -285,8 +293,7 @@ export function TaskDetailDrawerV2({
         display: 'flex',
         flexDirection: 'column'
       }}
-      role="dialog"
-      aria-modal="true"
+      role="complementary"
       aria-labelledby={titleId}
       data-testid="task-detail-drawer"
     >

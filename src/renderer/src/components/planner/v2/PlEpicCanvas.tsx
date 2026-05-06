@@ -4,6 +4,7 @@ import { PlEpicHero } from './PlEpicHero'
 import { PlTaskListPane } from './PlTaskListPane'
 import { PlSpecPane } from './PlSpecPane'
 import { PlQueueBar } from './PlQueueBar'
+import { useRovingTabIndex } from '../../../hooks/useRovingTabIndex'
 
 interface Props {
   epic: TaskGroup
@@ -122,6 +123,16 @@ function PlEpicTabBar({
   taskCount: number
   dependencyCount: number
 }): React.JSX.Element {
+  const activeIndex = tabs.indexOf(activeTab)
+  const { getTabProps } = useRovingTabIndex({
+    count: tabs.length,
+    activeIndex,
+    onSelect: (index) => {
+      const tab = tabs[index]
+      if (tab !== undefined) onSelectTab(tab)
+    }
+  })
+
   const badgeFor = (tab: Tab): number | null => {
     if (tab === 'Tasks') return taskCount
     if (tab === 'Dependencies') return dependencyCount || null
@@ -141,17 +152,20 @@ function PlEpicTabBar({
         flexShrink: 0
       }}
     >
-      {tabs.map((tab) => {
+      {tabs.map((tab, index) => {
         const isActive = tab === activeTab
         const badge = badgeFor(tab)
+        const rovingProps = getTabProps(index)
         return (
           <button
             key={tab}
             role="tab"
             id={`tab-${tab}`}
             aria-selected={isActive}
-            aria-controls={`tabpanel-${tab}`}
+            aria-controls={isActive ? `tabpanel-${tab}` : undefined}
             onClick={() => onSelectTab(tab)}
+            tabIndex={rovingProps.tabIndex}
+            onKeyDown={rovingProps.onKeyDown}
             style={{
               position: 'relative',
               height: 38,
