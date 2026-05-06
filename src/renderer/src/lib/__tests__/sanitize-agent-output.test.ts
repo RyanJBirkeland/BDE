@@ -29,6 +29,35 @@ describe('sanitizeAgentPayloadString', () => {
     const result = sanitizeAgentPayloadString(input, 500)
     expect(result).toBe('a and b')
   })
+
+  it('preserves legitimate HTML tags like <pre> and <code>', () => {
+    const input = '<pre><code>const x = 1</code></pre>'
+    const result = sanitizeAgentPayloadString(input, 500)
+    expect(result).toBe('<pre><code>const x = 1</code></pre>')
+  })
+
+  it('strips all known FLEET boundary tags', () => {
+    const boundaryTags = [
+      'user_spec', 'upstream_spec', 'upstream_title', 'upstream_diff',
+      'failure_notes', 'retry_context', 'revision_feedback', 'summary',
+      'details', 'cross_repo_contract', 'prior_scratchpad', 'chat_message',
+      'files', 'module', 'name', 'user_task', 'codebase_context',
+      'generation_instructions', 'opening_message', 'review_context',
+      'review_diff', 'repo', 'spec_draft', 'task_title',
+    ]
+    for (const tag of boundaryTags) {
+      const input = `<${tag}>content</${tag}>`
+      const result = sanitizeAgentPayloadString(input, 500)
+      expect(result).toBe('content')
+      expect(result).not.toContain(`<${tag}>`)
+    }
+  })
+
+  it('does not strip generic HTML that is not a FLEET boundary tag', () => {
+    const input = '<div>content</div>'
+    const result = sanitizeAgentPayloadString(input, 500)
+    expect(result).toBe('<div>content</div>')
+  })
 })
 
 describe('stripActionMarkers', () => {

@@ -19,13 +19,55 @@ export const MAX_TASK_TITLE_CHARS = 500
 export const MAX_TASK_SPEC_CHARS = 8_000
 
 /**
+ * All FLEET prompt-boundary XML tags used across the main-process prompt builders.
+ * Only these tags are stripped — legitimate HTML like <pre> and <code> is left intact.
+ *
+ * Source of truth: prompt-sections.ts, prompt-pipeline.ts, prompt-assistant.ts,
+ * prompt-synthesizer.ts, prompt-composer-reviewer.ts, prompt-copilot.ts.
+ */
+const FLEET_BOUNDARY_TAGS = [
+  'user_spec',
+  'upstream_spec',
+  'upstream_title',
+  'upstream_diff',
+  'failure_notes',
+  'retry_context',
+  'revision_feedback',
+  'summary',
+  'details',
+  'cross_repo_contract',
+  'prior_scratchpad',
+  'chat_message',
+  'files',
+  'module',
+  'name',
+  'user_task',
+  'codebase_context',
+  'generation_instructions',
+  'opening_message',
+  'review_context',
+  'review_diff',
+  'repo',
+  'spec_draft',
+  'task_title',
+] as const
+
+const FLEET_BOUNDARY_TAG_PATTERN = new RegExp(
+  `</?(?:${FLEET_BOUNDARY_TAGS.join('|')})>`,
+  'g'
+)
+
+/**
  * Truncates `value` to `maxLength` characters and strips FLEET XML boundary
  * tags (e.g. `<user_spec>`, `</upstream_spec>`) that agents may echo back.
  * Stripping prevents prompt-injection fragments from leaking into task records.
+ *
+ * Only the known FLEET boundary tags are removed — legitimate HTML tags
+ * such as `<pre>` and `<code>` pass through unchanged.
  */
 export function sanitizeAgentPayloadString(value: string | undefined, maxLength: number): string {
   const raw = (value ?? '').slice(0, maxLength)
-  return raw.replace(/<\/?[a-z_]+>/g, '')
+  return raw.replace(FLEET_BOUNDARY_TAG_PATTERN, '')
 }
 
 /**
