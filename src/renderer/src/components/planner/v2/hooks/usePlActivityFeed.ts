@@ -138,6 +138,10 @@ export function usePlActivityFeed(tasks: SprintTask[]): {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Stable fingerprint of task IDs — avoids re-fetching on every 30s poll that
+  // delivers a new array reference even when task IDs haven't changed.
+  const taskIds = tasks.map((t) => t.id).join(',')
+
   const fetchAll = useCallback(async () => {
     if (tasks.length === 0) {
       setEntries([])
@@ -167,21 +171,24 @@ export function usePlActivityFeed(tasks: SprintTask[]): {
     } finally {
       setLoading(false)
     }
-  }, [tasks])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskIds])
 
   useEffect(() => {
     void fetchAll()
   }, [fetchAll])
 
   useEffect(() => {
-    const taskIds = new Set(tasks.map((t) => t.id))
+    const taskIdSet = new Set(tasks.map((t) => t.id))
     const titleByTaskId = new Map(tasks.map((t) => [t.id, t.title]))
 
     const unsubscribe = subscribeToAgentEvents(({ agentId, event }) => {
-      if (!taskIds.has(agentId)) return
+      if (!taskIdSet.has(agentId)) return
       const entry = buildAgentFeedEntry(event, agentId, titleByTaskId.get(agentId) ?? agentId)
       if (!entry) return
-      setEntries((prev) => sortNewestFirst([entry, ...prev]))
+      // Live events are always newer than existing historical entries, so
+      // prepending maintains newest-first order without a full re-sort.
+      setEntries((prev) => [entry, ...prev])
     })
 
     return unsubscribe

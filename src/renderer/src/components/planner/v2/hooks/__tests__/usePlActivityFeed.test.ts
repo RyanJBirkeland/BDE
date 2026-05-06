@@ -1,12 +1,47 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
 import {
   agentEventSummary,
   buildAgentFeedEntry,
   buildChangeFeedEntry,
   parseChangeRows,
-  parseAgentEvents
+  parseAgentEvents,
+  usePlActivityFeed
 } from '../usePlActivityFeed'
-import type { AgentEvent } from '../../../../../../shared/types'
+import type { AgentEvent, SprintTask } from '../../../../../../shared/types'
+
+vi.mock('../../../../../services/agents', () => ({
+  subscribeToAgentEvents: vi.fn(() => vi.fn()),
+  getAgentEventHistory: vi.fn().mockResolvedValue([])
+}))
+
+import { subscribeToAgentEvents, getAgentEventHistory } from '../../../../../services/agents'
+
+function makeTask(id: string, title = `Task ${id}`): SprintTask {
+  return { id, title } as SprintTask
+}
+
+function makeValidChangeRow(taskId: string, field = 'status') {
+  return {
+    id: 1,
+    task_id: taskId,
+    field,
+    old_value: null,
+    new_value: 'active',
+    changed_by: 'system',
+    changed_at: new Date(Date.now() - 1000).toISOString()
+  }
+}
+
+function setupWindowApi(options: {
+  getChanges?: () => Promise<unknown>
+} = {}) {
+  ;(window as Record<string, unknown>).api = {
+    sprint: {
+      getChanges: options.getChanges ?? vi.fn().mockResolvedValue([])
+    }
+  }
+}
 
 describe('agentEventSummary', () => {
   it('returns "Agent started" for agent:started', () => {
@@ -158,5 +193,94 @@ describe('parseAgentEvents', () => {
   it('accepts a well-formed agent event', () => {
     const valid = { type: 'agent:started', model: 'claude', timestamp: 1000 }
     expect(parseAgentEvents([valid])).toHaveLength(1)
+  })
+})
+
+describe('usePlActivityFeed — N+1 dep array fix', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    setupWindowApi()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('does not refetch when task content changes but IDs stay the same', async () => {
+    const getChangesMock = vi.fn().mockResolvedValue([])
+    setupWindowApi({ getChanges: getChangesMock })
+
+    const task = makeTask('t1', 'Original title')
+    const { rerender } = renderHook(({ tasks }: { tasks: SprintTask[] }) =>
+      usePlActivityFeed(tasks), { initialProps: { tasks: [task] } }
+    )
+
+    // Wait for initial fetch
+    await act(async () => {})
+    const callCountAfterMount = getChangesMock.mock.calls.length
+
+    // Rerender with same ID but different title — should NOT trigger a new fetch
+    rerender({ tasks: [makeTask('t1', 'Updated title')] })
+    await act(async () => {})
+
+    expect(getChangesMock.mock.calls.length).toBe(callCountAfterMount)
+  })
+
+  it('refetches when task IDs change', async () => {
+    const getChangesMock = vi.fn().mockResolvedValue([])
+    setupWindowApi({ getChanges: getChangesMock })
+
+    const { rerender } = renderHook(({ tasks }: { tasks: SprintTask[] }) =>
+      usePlActivityFeed(tasks), { initialProps: { tasks: [makeTask('t1')] } }
+    )
+
+    await act(async () => {})
+    const callCountAfterMount = getChangesMock.mock.calls.length
+
+    // Rerender with a different task ID — should trigger a new fetch
+    rerender({ tasks: [makeTask('t2')] })
+    await act(async () => {})
+
+    expect(getChangesMock.mock.calls.length).toBeGreaterThan(callCountAfterMount)
+  })
+})
+
+describe('usePlActivityFeed — live event insertion order', () => {
+  let capturedEventHandler: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    capturedEventHandler = null
+
+    vi.mocked(subscribeToAgentEvents).mockImplementation((handler) => {
+      capturedEventHandler = handler
+      return vi.fn()
+    })
+
+    setupWindowApi({
+      getChanges: vi.fn().mockResolvedValue([makeValidChangeRow('t1')])
+    })
+    vi.mocked(getAgentEventHistory).mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('inserts live events at the head, keeping newest-first order', async () => {
+    const { result } = renderHook(() => usePlActivityFeed([makeTask('t1')]))
+
+    // Wait for initial fetch to populate one historical entry
+    await act(async () => {})
+    expect(result.current.entries).toHaveLength(1)
+
+    // Emit a live event — it should appear at the head
+    const liveEvent: AgentEvent = { type: 'agent:started', model: 'claude', timestamp: Date.now() }
+    act(() => {
+      capturedEventHandler?.({ agentId: 't1', event: liveEvent })
+    })
+
+    expect(result.current.entries[0].kind).toBe('agent')
+    expect(result.current.entries).toHaveLength(2)
   })
 })
