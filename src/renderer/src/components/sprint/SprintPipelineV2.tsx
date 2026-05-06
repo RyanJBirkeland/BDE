@@ -22,6 +22,7 @@ import { PipelineErrorBoundary } from './PipelineErrorBoundary'
 import { PipelineFilterBarV2 } from './PipelineFilterBarV2'
 import { PipelineFilterBanner } from './PipelineFilterBanner'
 import { PipelineHeaderV2 } from './PipelineHeaderV2'
+import type { ExportFormat } from './ExportDropdown'
 import { PipelineOverlays } from './PipelineOverlays'
 import { DagOverlay } from './DagOverlay'
 import { BulkActionBar } from './BulkActionBar'
@@ -340,6 +341,21 @@ export function SprintPipelineV2(): React.JSX.Element {
     [exportTaskHistoryAction]
   )
 
+  const handleExportTasks = useCallback(async (format: ExportFormat): Promise<void> => {
+    try {
+      const result = await window.api.sprint.exportTasks(format)
+      if (!result.canceled && result.filePath) {
+        toast.success('Tasks exported')
+      }
+    } catch {
+      toast.error('Export failed')
+    }
+  }, [])
+
+  const handleTriggerDrain = useCallback(async (): Promise<void> => {
+    await window.api.agentManager.triggerDrain()
+  }, [])
+
   const headerStats = useMemo(
     () => [
       { label: 'active', count: partition.inProgress.length, filter: 'in-progress' as const },
@@ -383,6 +399,8 @@ export function SprintPipelineV2(): React.JSX.Element {
         onDagToggle={() => setDagOpen(!dagOpen)}
         dagOpen={dagOpen}
         onOpenWorkbench={openWorkbench}
+        onExportTasks={handleExportTasks}
+        onTriggerDrain={handleTriggerDrain}
       />
 
       <BulkActionBar
