@@ -34,6 +34,137 @@ import { useSprintPipelineCommands } from '../../hooks/useSprintPipelineCommands
 
 import './SprintPipeline.css'
 
+const STAGE_MIN_WIDTH = '220px'
+
+function PipelineStageGrid({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <div style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(6, minmax(${STAGE_MIN_WIDTH}, 1fr))`,
+          gap: 'var(--s-3)',
+          padding: 'var(--s-4)',
+          height: '100%',
+          boxSizing: 'border-box',
+          alignItems: 'stretch'
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+const CENTER_FLEX_STYLE: React.CSSProperties = {
+  display: 'flex',
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center'
+}
+
+const EMPTY_COLUMN_STYLE: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 'var(--s-3)',
+  padding: 'var(--s-8)'
+}
+
+const CTA_BUTTON_STYLE: React.CSSProperties = {
+  padding: '0 var(--s-3)',
+  height: 28,
+  background: 'var(--accent)',
+  color: 'var(--accent-fg)',
+  border: 'none',
+  borderRadius: 'var(--r-md)',
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: 'pointer'
+}
+
+interface PipelineLoadErrorProps {
+  message: string
+  loading: boolean
+  onRetry: () => void
+}
+
+function PipelineLoadError({ message, loading, onRetry }: PipelineLoadErrorProps): React.JSX.Element {
+  return (
+    <div style={CENTER_FLEX_STYLE}>
+      <div style={EMPTY_COLUMN_STYLE}>
+        <span className="fleet-eyebrow">ERROR</span>
+        <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--fg)' }}>
+          Error loading tasks
+        </span>
+        <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0 }}>{message}</p>
+        <button onClick={onRetry} disabled={loading} style={CTA_BUTTON_STYLE}>
+          {loading ? 'Retrying…' : 'Retry'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+interface NoRepositoryStateProps {
+  onNavigateToSettings: () => void
+}
+
+function NoRepositoryState({ onNavigateToSettings }: NoRepositoryStateProps): React.JSX.Element {
+  return (
+    <div style={CENTER_FLEX_STYLE}>
+      <div style={EMPTY_COLUMN_STYLE}>
+        <span className="fleet-eyebrow">NO REPOSITORY</span>
+        <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--fg)' }}>
+          No repository configured
+        </span>
+        <p style={{ fontSize: 12, color: 'var(--fg-3)', textAlign: 'center', margin: 0 }}>
+          Add a repository in Settings before creating tasks.
+        </p>
+        <button onClick={onNavigateToSettings} style={CTA_BUTTON_STYLE}>
+          Configure Repository
+        </button>
+      </div>
+    </div>
+  )
+}
+
+interface EmptyPipelineStateProps {
+  onCreateTask: () => void
+}
+
+function EmptyPipelineState({ onCreateTask }: EmptyPipelineStateProps): React.JSX.Element {
+  return (
+    <div style={CENTER_FLEX_STYLE}>
+      <div style={EMPTY_COLUMN_STYLE}>
+        <span className="fleet-eyebrow">PIPELINE</span>
+        <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--fg)' }}>No tasks yet</span>
+        <p style={{ fontSize: 12, color: 'var(--fg-3)', textAlign: 'center', margin: 0 }}>
+          Create your first task to start the pipeline.
+        </p>
+        <button onClick={onCreateTask} style={CTA_BUTTON_STYLE}>
+          New Task
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function PipelineLoadingSkeleton(): React.JSX.Element {
+  return (
+    <div role="status" aria-label="Loading pipeline" className="sprint-pipeline__body">
+      <div className="pipeline-sidebar pipeline-sidebar--loading">
+        <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--sidebar" />
+      </div>
+      <div className="pipeline-center pipeline-center--loading">
+        <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
+        <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
+        <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
+      </div>
+    </div>
+  )
+}
+
 export function SprintPipelineV2(): React.JSX.Element {
   const {
     tasks,
@@ -70,6 +201,7 @@ export function SprintPipelineV2(): React.JSX.Element {
 
   const pollError = useSprintTasks((s) => s.pollError)
   const clearPollError = useSprintTasks((s) => s.clearPollError)
+  const exportTaskHistoryAction = useSprintTasks((s) => s.exportTaskHistory)
 
   const orphanBanner = useSprintUI(selectOrphanRecoveryBanner)
   const dismissOrphanBanner = useSprintUI((s) => s.setOrphanRecoveryBanner)
@@ -196,14 +328,17 @@ export function SprintPipelineV2(): React.JSX.Element {
     void batchRequeueTasks(filteredPartition.failed.map((t) => t.id))
   }, [filteredPartition.failed, batchRequeueTasks])
 
-  const handleExport = useCallback(async (task: SprintTask) => {
-    try {
-      const result = await window.api.sprint.exportTaskHistory(task.id)
-      if (result.success) toast.success(`Task history exported to ${result.path}`)
-    } catch (err) {
-      toast.error(`Failed to export: ${err instanceof Error ? err.message : String(err)}`)
-    }
-  }, [])
+  const handleExport = useCallback(
+    async (task: SprintTask) => {
+      try {
+        const result = await exportTaskHistoryAction(task.id)
+        if (result.success) toast.success(`Task history exported to ${result.path}`)
+      } catch (err) {
+        toast.error(`Failed to export: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    },
+    [exportTaskHistoryAction]
+  )
 
   const headerStats = useMemo(
     () => [
@@ -289,135 +424,20 @@ export function SprintPipelineV2(): React.JSX.Element {
         />
       )}
 
-      {loading && tasks.length === 0 && (
-        <div role="status" aria-label="Loading pipeline" className="sprint-pipeline__body">
-          <div className="pipeline-sidebar pipeline-sidebar--loading">
-            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--sidebar" />
-          </div>
-          <div className="pipeline-center pipeline-center--loading">
-            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
-            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
-            <div aria-hidden="true" className="fleet-skeleton pipeline-skeleton--stage" />
-          </div>
-        </div>
-      )}
+      {loading && tasks.length === 0 && <PipelineLoadingSkeleton />}
 
       {loadError && (
-        <div
-          style={{
-            display: 'flex',
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 'var(--s-8)'
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 'var(--s-3)'
-            }}
-          >
-            <span className="fleet-eyebrow">ERROR</span>
-            <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--fg)' }}>
-              Error loading tasks
-            </span>
-            <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: 0 }}>{loadError}</p>
-            <button
-              onClick={() => void loadData()}
-              disabled={loading}
-              style={{
-                padding: '0 var(--s-3)',
-                height: 28,
-                background: 'var(--accent)',
-                color: 'var(--accent-fg)',
-                border: 'none',
-                borderRadius: 'var(--r-md)',
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
-            >
-              {loading ? 'Retrying…' : 'Retry'}
-            </button>
-          </div>
-        </div>
+        <PipelineLoadError
+          message={loadError}
+          loading={loading}
+          onRetry={() => void loadData()}
+        />
       )}
 
       {!loading && !loadError && tasks.length === 0 && (
-        <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          {repos.length === 0 ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 'var(--s-3)',
-                padding: 'var(--s-8)'
-              }}
-            >
-              <span className="fleet-eyebrow">NO REPOSITORY</span>
-              <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--fg)' }}>
-                No repository configured
-              </span>
-              <p style={{ fontSize: 12, color: 'var(--fg-3)', textAlign: 'center', margin: 0 }}>
-                Add a repository in Settings before creating tasks.
-              </p>
-              <button
-                onClick={() => setView('settings')}
-                style={{
-                  padding: '0 var(--s-3)',
-                  height: 28,
-                  background: 'var(--accent)',
-                  color: 'var(--accent-fg)',
-                  border: 'none',
-                  borderRadius: 'var(--r-md)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
-              >
-                Configure Repository
-              </button>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 'var(--s-3)',
-                padding: 'var(--s-8)'
-              }}
-            >
-              <span className="fleet-eyebrow">PIPELINE</span>
-              <span style={{ fontSize: 15, fontWeight: 500, color: 'var(--fg)' }}>
-                No tasks yet
-              </span>
-              <p style={{ fontSize: 12, color: 'var(--fg-3)', textAlign: 'center', margin: 0 }}>
-                Create your first task to start the pipeline.
-              </p>
-              <button
-                onClick={openWorkbench}
-                style={{
-                  padding: '0 var(--s-3)',
-                  height: 28,
-                  background: 'var(--accent)',
-                  color: 'var(--accent-fg)',
-                  border: 'none',
-                  borderRadius: 'var(--r-md)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer'
-                }}
-              >
-                New Task
-              </button>
-            </div>
-          )}
-        </div>
+        repos.length === 0
+          ? <NoRepositoryState onNavigateToSettings={() => setView('settings')} />
+          : <EmptyPipelineState onCreateTask={openWorkbench} />
       )}
 
       <PipelineErrorBoundary fallbackLabel="Pipeline crashed">
@@ -436,18 +456,7 @@ export function SprintPipelineV2(): React.JSX.Element {
             onRequeueAllFailed={handleRequeueAllFailed}
           />
 
-          <div style={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(6, minmax(220px, 1fr))',
-                gap: 'var(--s-3)',
-                padding: 'var(--s-4)',
-                height: '100%',
-                boxSizing: 'border-box',
-                alignItems: 'stretch'
-              }}
-            >
+          <PipelineStageGrid>
               <LayoutGroup>
                 <PipelineStageV2
                   name="queued"
@@ -515,8 +524,7 @@ export function SprintPipelineV2(): React.JSX.Element {
                   }
                 />
               </LayoutGroup>
-            </div>
-          </div>
+          </PipelineStageGrid>
 
           {drawerOpen && selectedTask && (
             <TaskDetailDrawerV2
