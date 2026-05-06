@@ -67,6 +67,33 @@ describe('renderMarkdown', () => {
     })
   })
 
+  describe('protocol allowlist', () => {
+    it('preserves http: href', () => {
+      const result = renderMarkdown('<a href="http://example.com">link</a>')
+      expect(result).toContain('href="http://example.com"')
+    })
+
+    it('preserves https: href', () => {
+      const result = renderMarkdown('<a href="https://example.com">link</a>')
+      expect(result).toContain('href="https://example.com"')
+    })
+
+    it('removes data: href', () => {
+      const result = renderMarkdown('<a href="data:text/html,<h1>x</h1>">link</a>')
+      expect(result).not.toContain('href="data:')
+    })
+
+    it('removes javascript: href', () => {
+      const result = renderMarkdown('<a href="javascript:alert(1)">link</a>')
+      expect(result).not.toContain('href="javascript:')
+    })
+
+    it('removes relative path href', () => {
+      const result = renderMarkdown('<a href="/foo">link</a>')
+      expect(result).not.toContain('href="/foo"')
+    })
+  })
+
   describe('edge cases', () => {
     it('returns empty string for empty input', () => {
       expect(renderMarkdown('')).toBe('')

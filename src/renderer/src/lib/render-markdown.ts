@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify'
 
-const ALLOWED_HREF_PROTOCOLS = ['https:', 'http:', 'mailto:']
+const ALLOWED_HREF_PROTOCOLS = ['https:', 'http:']
 
 // Install once — safe to call multiple times (DOMPurify deduplicates hooks)
 if (typeof DOMPurify.addHook === 'function') {
@@ -8,8 +8,8 @@ if (typeof DOMPurify.addHook === 'function') {
     if ('href' in node) {
       const href = (node as HTMLAnchorElement).getAttribute('href') ?? ''
       try {
-        const { protocol } = new URL(href)
-        if (!ALLOWED_HREF_PROTOCOLS.includes(protocol)) {
+        const parsedUrl = new URL(href)
+        if (!ALLOWED_HREF_PROTOCOLS.includes(parsedUrl.protocol)) {
           node.removeAttribute('href')
         }
       } catch {
