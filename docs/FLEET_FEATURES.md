@@ -28,7 +28,7 @@ Planning and spec creation interface, presented as a centered modal (`TaskWorkbe
 
 ### Sprint Pipeline
 
-Execution monitoring view. Shows tasks flowing through stages as a vertical pipeline with real-time status updates. Feature-flagged for V2 rollout — default is V1. Enable V2: `localStorage.setItem('fleet:ff', JSON.stringify({v2Pipeline:true})); location.reload()`. V2 replaces neon chrome with quiet graphite surfaces (`SprintPipelineV2`); V1 preserved as `SprintPipelineV1`.
+Execution monitoring view. Shows tasks flowing through stages as a vertical pipeline with real-time status updates. Renders `SprintPipelineV2` (quiet graphite surfaces, status-only color, V2 primitives). V1 files (`SprintPipelineV1`) are dead code pending deletion.
 
 - **Task statuses**: `backlog` | `queued` | `blocked` | `active` | `review` | `approved` | `done` | `cancelled` | `failed` | `error`
 - **`approved` status**: Human-blessed state between `review` and `done`. The reviewer has accepted the code but hasn't pushed a PR yet. `approved` satisfies hard dependencies (downstream tasks can unblock before the PR merges). The Sprint PR Poller drives `approved → done` when the PR merges or the task is shipped locally
@@ -232,18 +232,18 @@ FLEET's V2 visual language: **calm, alive, spacious**. Tokens in `src/renderer/s
 
 ### Shell (Header + Sidebar)
 
-The app shell is feature-flagged for V2 rollout. Default: V1. Enable V2 in DevTools: `localStorage.setItem('fleet:ff', JSON.stringify({v2Shell:true})); location.reload()`.
+V2 shell is the production UI. `UnifiedHeader.tsx` and `Sidebar.tsx` are thin dispatcher shims pending deletion.
 
-- **Header**: `UnifiedHeader.tsx` dispatches to `UnifiedHeaderV1` (44px, B logo, NeonBadge) or `UnifiedHeaderV2` (38px, F mark + FLEET wordmark, CommandPill + HealthChip + TokenChip). Tab strip is always present — shows the focused panel's open views.
-- **Sidebar**: `Sidebar.tsx` dispatches to `SidebarV1` (52px icon-only) or `SidebarV2` (200px, labeled nav with 2px accent rail on active item, live agents block showing up to 3 active pipeline tasks with animated progress, footer with model + version). Collapses to 52px icon-only at <1024px via container query.
-- **V2 primitives** (all in `src/renderer/src/components/layout/`): `CommandPill` (opens command palette, collapses to icon at <1280px), `HealthChip` (pill with fleet-pulse when running, failure count in `--st-failed`), `TokenChip` (total token count), `LiveAgentRow` (sidebar agent row, click navigates to Sprint + selects task)
-- **Cleanup**: When V2 ships as default, delete `UnifiedHeaderV1`, `SidebarV1`, the dispatchers, and `featureFlags.ts`
+- **Header**: `UnifiedHeaderV2` (38px, F mark + FLEET wordmark, CommandPill + HealthChip + TokenChip). Tab strip shows the focused panel's open views. V1 file (`UnifiedHeaderV1`) is dead code pending deletion.
+- **Sidebar**: `SidebarV2` (200px, labeled nav with 2px accent rail on active item, live agents block showing up to 3 active pipeline tasks with animated progress, footer with model + version). Collapses to 52px icon-only at <1024px via container query. V1 file (`SidebarV1`) is dead code pending deletion.
+- **Layout primitives** (all in `src/renderer/src/components/layout/`): `CommandPill` (opens command palette, collapses to icon at <1280px), `HealthChip` (pill with fleet-pulse when running, failure count in `--st-failed`), `TokenChip` (total token count), `LiveAgentRow` (sidebar agent row, click navigates to Sprint + selects task)
+- **Next cleanup step**: Delete `UnifiedHeaderV1`, `SidebarV1`, the dispatcher shims, V1 test mocks, and `featureFlags.ts`
 
 ### Dashboard
 
-Overview of task pipeline health, agent execution metrics, and recent activity. Default landing view (Cmd+1). Feature-flagged for V2 rollout — default is V1. Enable V2: `localStorage.setItem('fleet:ff', JSON.stringify({v2Dashboard:true})); location.reload()`.
+Overview of task pipeline health, agent execution metrics, and recent activity. Default landing view (Cmd+1). Renders `DashboardViewV2`. V1 files are dead code pending deletion.
 
-#### V2 Dashboard (`featureFlags.v2Dashboard = true`)
+#### Dashboard layout
 
 Triage-oriented layout: *what's running, what needs me, am I on pace?*
 
@@ -272,14 +272,6 @@ Triage-oriented layout: *what's running, what needs me, am I on pace?*
 
 **TODO(phase-3):** Sprint IPC for deadline/pace, "Run all" quick action.
 
-#### V1 Dashboard (default, `featureFlags.v2Dashboard = false`)
-
-- **Status counters**: Active (cyan), Queued (orange), Blocked (red), PRs (blue), Done (cyan) — color-coded, clickable
-- **Pipeline flow**: Visual stage boxes showing task progression through queued → active → blocked → done
-- **Charts**: Hourly completions sparkline (last 24h), cost-per-run trend (last 20 runs), success rate donut (% done vs failed), average duration
-- **Activity feed**: Recent agent events (errors, completions) color-coded by type, capped at 30 entries
-- **Recent completions**: Last 5 done tasks with relative time labels. 24h cost total
-- **Data refresh**: Polls every 60s with jitter + exponential backoff on errors via `useBackoffInterval`
 - Related: Sprint Pipeline, Agent Manager
 
 ### Panel System
