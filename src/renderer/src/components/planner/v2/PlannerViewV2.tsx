@@ -24,7 +24,8 @@ export function PlannerViewV2(): React.JSX.Element {
     loadGroupTasks,
     addDependency,
     removeDependency,
-    updateDependencyCondition
+    updateDependencyCondition,
+    importPlan
   } = useTaskGroups()
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -115,15 +116,13 @@ export function PlannerViewV2(): React.JSX.Element {
 
   const handleImport = useCallback(async () => {
     try {
-      const result = await window.api.planner.import('fleet')
+      const result = await importPlan('fleet')
       toast.success(`Imported "${result.epicName}" with ${result.taskCount} tasks`)
-      await loadGroups()
-      selectGroup(result.epicId)
     } catch (err) {
       if (err instanceof Error && err.message === 'No file selected') return
       toast.error('Failed to import plan — ' + (err instanceof Error ? err.message : String(err)))
     }
-  }, [loadGroups, selectGroup])
+  }, [importPlan])
 
   const handleAskAssistantDraft = useCallback((message: string) => {
     setAssistantOpen(true)

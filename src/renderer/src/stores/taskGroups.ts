@@ -17,6 +17,12 @@ import {
   updateDependencyCondition
 } from '../services/groups'
 
+interface ImportPlanResult {
+  epicId: string
+  epicName: string
+  taskCount: number
+}
+
 interface TaskGroupsState {
   groups: TaskGroup[]
   selectedGroupId: string | null
@@ -25,6 +31,7 @@ interface TaskGroupsState {
 
   loadGroups: () => Promise<void>
   selectGroup: (id: string | null) => void
+  importPlan: (repo: string) => Promise<ImportPlanResult>
   loadGroupTasks: (groupId: string) => Promise<void>
   createGroup: (input: {
     name: string
@@ -299,6 +306,14 @@ export const useTaskGroups = create<TaskGroupsState>((set, get) => ({
         'Failed to update dependency condition — ' + (e instanceof Error ? e.message : String(e))
       )
     }
+  },
+
+  importPlan: async (repo: string): Promise<ImportPlanResult> => {
+    const result = await window.api.planner.import(repo)
+    const imported = await listGroups()
+    set({ groups: Array.isArray(imported) ? imported : [] })
+    get().selectGroup(result.epicId)
+    return result
   },
 
   createGroupFromTemplate: async (template, repo): Promise<TaskGroup | null> => {
