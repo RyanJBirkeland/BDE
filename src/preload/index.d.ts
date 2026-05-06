@@ -276,6 +276,7 @@ declare global {
         getLastPrompt: (
           ...args: IpcArgs<'tasks:getLastPrompt'>
         ) => Promise<IpcResult<'tasks:getLastPrompt'>>
+        getChanges: (taskId: string) => Promise<IpcResult<'sprint:getChanges'>>
         onExternalChange: (cb: () => void) => () => void
         onMutation: (
           cb: (payload: { type: 'created' | 'updated' | 'deleted'; task: SprintTask }) => void
