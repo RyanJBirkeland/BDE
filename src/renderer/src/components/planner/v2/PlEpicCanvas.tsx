@@ -5,6 +5,7 @@ import { PlTaskListPane } from './PlTaskListPane'
 import { PlSpecPane } from './PlSpecPane'
 import { PlQueueBar } from './PlQueueBar'
 import { PlDepsPane } from './PlDepsPane'
+import { PlActivityFeed } from './PlActivityFeed'
 import { useRovingTabIndex } from '../../../hooks/useRovingTabIndex'
 
 interface Props {
@@ -93,6 +94,15 @@ export function PlEpicCanvas({
           style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
         >
           <PlDepsPane epic={epic} />
+        </div>
+      ) : activeTab === 'Activity' ? (
+        <div
+          role="tabpanel"
+          id="tabpanel-Activity"
+          aria-labelledby="tab-Activity"
+          style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+        >
+          <PlActivityFeed tasks={tasks} />
         </div>
       ) : (
         <div
