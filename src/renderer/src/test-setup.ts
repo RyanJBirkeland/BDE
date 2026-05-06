@@ -149,6 +149,11 @@ vi.stubGlobal('api', {
     batchUpdate: vi.fn().mockResolvedValue({ results: [] }),
     healthCheck: vi.fn().mockResolvedValue([]),
     unblockTask: vi.fn().mockResolvedValue({}),
+    retry: vi.fn().mockResolvedValue(undefined),
+    exportTasks: vi.fn().mockResolvedValue({ canceled: true }),
+    forceFailTask: vi.fn().mockResolvedValue(undefined),
+    forceDoneTask: vi.fn().mockResolvedValue(undefined),
+    forceReleaseClaim: vi.fn().mockResolvedValue(undefined),
     onExternalChange: vi.fn().mockReturnValue(() => {}),
     onMutation: vi.fn().mockReturnValue(() => {}),
     onTerminalError: vi.fn().mockReturnValue(() => {})
@@ -214,7 +219,8 @@ vi.stubGlobal('api', {
     onDrainPaused: vi.fn().mockReturnValue(() => {}),
     onOrphanRecovered: vi.fn().mockReturnValue(() => {}),
     onPreflightWarning: vi.fn().mockReturnValue(() => {}),
-    respondToPreflight: vi.fn().mockResolvedValue(undefined)
+    respondToPreflight: vi.fn().mockResolvedValue(undefined),
+    triggerDrain: vi.fn().mockResolvedValue(undefined)
   },
 
   // Cost analytics

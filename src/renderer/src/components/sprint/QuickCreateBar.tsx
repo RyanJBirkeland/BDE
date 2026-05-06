@@ -20,7 +20,7 @@ export function QuickCreateBar({
   const [title, setTitle] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const loadData = useSprintTasks((s) => s.loadData)
+  const createTask = useSprintTasks((s) => s.createTask)
   const reduced = useReducedMotion()
 
   useEffect(() => {
@@ -39,24 +39,25 @@ export function QuickCreateBar({
       setSubmitting(true)
       try {
         const status = queue ? TASK_STATUS.QUEUED : TASK_STATUS.BACKLOG
-        await window.api.sprint.create({
+        const taskId = await createTask({
           title: trimmed,
           repo: defaultRepo,
           prompt: trimmed,
           priority: 3,
           status
         })
-        toast.success(queue ? 'Task queued' : 'Task added to backlog')
-        setTitle('')
-        onClose()
-        loadData()
+        if (taskId) {
+          toast.success(queue ? 'Task queued' : 'Task added to backlog')
+          setTitle('')
+          onClose()
+        }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Failed to create task')
       } finally {
         setSubmitting(false)
       }
     },
-    [title, submitting, defaultRepo, onClose, loadData]
+    [title, submitting, defaultRepo, onClose, createTask]
   )
 
   const handleKeyDown = useCallback(

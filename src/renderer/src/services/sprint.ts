@@ -44,3 +44,39 @@ export async function getLastPrompt(
 ): ReturnType<typeof window.api.sprint.getLastPrompt> {
   return window.api.sprint.getLastPrompt(taskId)
 }
+
+export async function exportTasks(
+  format: Parameters<typeof window.api.sprint.exportTasks>[0]
+): ReturnType<typeof window.api.sprint.exportTasks> {
+  return window.api.sprint.exportTasks(format)
+}
+
+export async function retryTask(
+  taskId: string
+): ReturnType<typeof window.api.sprint.retry> {
+  return window.api.sprint.retry(taskId)
+}
+
+export async function unblockTask(
+  taskId: string
+): ReturnType<typeof window.api.sprint.unblockTask> {
+  return window.api.sprint.unblockTask(taskId)
+}
+
+export async function forceFailTask(
+  payload: Parameters<typeof window.api.sprint.forceFailTask>[0]
+): ReturnType<typeof window.api.sprint.forceFailTask> {
+  return window.api.sprint.forceFailTask(payload)
+}
+
+export async function forceDoneTask(
+  payload: Parameters<typeof window.api.sprint.forceDoneTask>[0]
+): ReturnType<typeof window.api.sprint.forceDoneTask> {
+  return window.api.sprint.forceDoneTask(payload)
+}
+
+export async function forceReleaseClaim(
+  taskId: string
+): ReturnType<typeof window.api.sprint.forceReleaseClaim> {
+  return window.api.sprint.forceReleaseClaim(taskId)
+}

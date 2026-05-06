@@ -5,7 +5,13 @@ import {
   deleteTask,
   createTask,
   batchUpdate,
-  generatePrompt
+  generatePrompt,
+  exportTasks,
+  retryTask,
+  unblockTask,
+  forceFailTask,
+  forceDoneTask,
+  forceReleaseClaim
 } from '../sprint'
 
 describe('sprint service', () => {
@@ -54,5 +60,41 @@ describe('sprint service', () => {
     const params = { taskId: 't1', title: 'task', repo: 'fleet', templateHint: 'feature' }
     await generatePrompt(params)
     expect(window.api.sprint.generatePrompt).toHaveBeenCalledWith(params)
+  })
+
+  it('exportTasks delegates to window.api.sprint.exportTasks', async () => {
+    vi.mocked(window.api.sprint.exportTasks).mockResolvedValue({ canceled: true })
+    await exportTasks('json')
+    expect(window.api.sprint.exportTasks).toHaveBeenCalledWith('json')
+  })
+
+  it('retryTask delegates to window.api.sprint.retry', async () => {
+    vi.mocked(window.api.sprint.retry).mockResolvedValue(undefined as any)
+    await retryTask('t1')
+    expect(window.api.sprint.retry).toHaveBeenCalledWith('t1')
+  })
+
+  it('unblockTask delegates to window.api.sprint.unblockTask', async () => {
+    vi.mocked(window.api.sprint.unblockTask).mockResolvedValue(undefined as any)
+    await unblockTask('t1')
+    expect(window.api.sprint.unblockTask).toHaveBeenCalledWith('t1')
+  })
+
+  it('forceFailTask delegates to window.api.sprint.forceFailTask', async () => {
+    vi.mocked(window.api.sprint.forceFailTask).mockResolvedValue(undefined as any)
+    await forceFailTask({ taskId: 't1', reason: 'r' })
+    expect(window.api.sprint.forceFailTask).toHaveBeenCalledWith({ taskId: 't1', reason: 'r' })
+  })
+
+  it('forceDoneTask delegates to window.api.sprint.forceDoneTask', async () => {
+    vi.mocked(window.api.sprint.forceDoneTask).mockResolvedValue(undefined as any)
+    await forceDoneTask({ taskId: 't1', force: true })
+    expect(window.api.sprint.forceDoneTask).toHaveBeenCalledWith({ taskId: 't1', force: true })
+  })
+
+  it('forceReleaseClaim delegates to window.api.sprint.forceReleaseClaim', async () => {
+    vi.mocked(window.api.sprint.forceReleaseClaim).mockResolvedValue(undefined as any)
+    await forceReleaseClaim('t1')
+    expect(window.api.sprint.forceReleaseClaim).toHaveBeenCalledWith('t1')
   })
 })

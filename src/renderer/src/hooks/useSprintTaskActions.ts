@@ -8,6 +8,16 @@ import { toast } from '../stores/toasts'
 import { TASK_STATUS } from '../../../shared/constants'
 import { detectTemplate } from '../../../shared/template-heuristics'
 import { useLaunchTask } from './useLaunchTask'
+import {
+  createTask as createTaskService,
+  retryTask as retryTaskService,
+  unblockTask as unblockTaskService,
+  forceFailTask as forceFailTaskService,
+  forceDoneTask as forceDoneTaskService,
+  forceReleaseClaim as forceReleaseClaimService,
+  exportTasks as exportTasksService
+} from '../services/sprint'
+import { killPipelineAgent, triggerDrain as triggerDrainService } from '../services/agentManager'
 import type { SprintTask } from '../../../shared/types'
 
 interface SprintTaskActions {
@@ -23,6 +33,10 @@ interface SprintTaskActions {
   markTaskFailed: (taskId: string, reason?: string) => Promise<void>
   forceTaskDone: (taskId: string) => Promise<void>
   releaseTask: (taskId: string) => Promise<void>
+  exportTasks: (
+    format: Parameters<typeof exportTasksService>[0]
+  ) => Promise<void>
+  triggerDrain: () => Promise<void>
   confirmProps: ReturnType<typeof useConfirm>['confirmProps']
 }
 
@@ -66,7 +80,7 @@ export function useSprintTaskActions(): SprintTaskActions {
       })
       if (!ok) return
       try {
-        const result = await window.api.agentManager.kill(task.id)
+        const result = await killPipelineAgent(task.id)
         if (result.ok) {
           updateTask(task.id, { status: TASK_STATUS.CANCELLED })
           toast.success('Agent stopped')
@@ -84,7 +98,7 @@ export function useSprintTaskActions(): SprintTaskActions {
   const handleRerun = useCallback(
     async (task: SprintTask) => {
       try {
-        await window.api.sprint.create({
+        await createTaskService({
           title: task.title,
           repo: task.repo,
           prompt: task.prompt || task.title,
@@ -112,7 +126,7 @@ export function useSprintTaskActions(): SprintTaskActions {
       })
       if (!ok) return
       try {
-        await window.api.sprint.retry(task.id)
+        await retryTaskService(task.id)
         toast.success('Task re-queued for retry')
         loadData()
       } catch (e) {
@@ -181,7 +195,7 @@ export function useSprintTaskActions(): SprintTaskActions {
   // --- Unblock a blocked task (re-checks dependencies) ---
   const unblockTask = useCallback(async (taskId: string): Promise<void> => {
     try {
-      await window.api.sprint.unblockTask(taskId)
+      await unblockTaskService(taskId)
       toast.success('Task unblocked - dependencies will be re-checked')
     } catch (err) {
       toast.error(`Failed to unblock: ${err instanceof Error ? err.message : String(err)}`)
@@ -191,7 +205,7 @@ export function useSprintTaskActions(): SprintTaskActions {
   // --- Operator override: mark task as failed (audit-trailed reason optional) ---
   const markTaskFailed = useCallback(async (taskId: string, reason?: string): Promise<void> => {
     try {
-      await window.api.sprint.forceFailTask({ taskId, reason })
+      await forceFailTaskService({ taskId, reason })
     } catch (err) {
       toast.error(
         `Failed to mark task as failed: ${err instanceof Error ? err.message : String(err)}`
@@ -202,7 +216,7 @@ export function useSprintTaskActions(): SprintTaskActions {
   // --- Operator override: force-mark task as done (resolves dependents) ---
   const forceTaskDone = useCallback(async (taskId: string): Promise<void> => {
     try {
-      await window.api.sprint.forceDoneTask({ taskId, force: true })
+      await forceDoneTaskService({ taskId, force: true })
     } catch (err) {
       toast.error(`Failed to force task done: ${err instanceof Error ? err.message : String(err)}`)
     }
@@ -211,11 +225,31 @@ export function useSprintTaskActions(): SprintTaskActions {
   // --- Operator override: force-release a stuck claim so the agent manager re-queues it ---
   const releaseTask = useCallback(async (taskId: string): Promise<void> => {
     try {
-      await window.api.sprint.forceReleaseClaim(taskId)
+      await forceReleaseClaimService(taskId)
       toast.success('Task released — it will be re-queued shortly')
     } catch (err) {
       toast.error(`Failed to release claim: ${err instanceof Error ? err.message : String(err)}`)
     }
+  }, [])
+
+  // --- Export the full task list to JSON or CSV (Save dialog handled in main) ---
+  const exportTasks = useCallback(
+    async (format: Parameters<typeof exportTasksService>[0]): Promise<void> => {
+      try {
+        const result = await exportTasksService(format)
+        if (!result.canceled && result.filePath) {
+          toast.success('Tasks exported')
+        }
+      } catch {
+        toast.error('Export failed')
+      }
+    },
+    []
+  )
+
+  // --- Manually nudge the agent manager drain loop ---
+  const triggerDrain = useCallback(async (): Promise<void> => {
+    await triggerDrainService()
   }, [])
 
   return {
@@ -231,6 +265,8 @@ export function useSprintTaskActions(): SprintTaskActions {
     markTaskFailed,
     forceTaskDone,
     releaseTask,
+    exportTasks,
+    triggerDrain,
     confirmProps
   }
 }

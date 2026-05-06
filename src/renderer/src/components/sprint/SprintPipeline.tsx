@@ -594,6 +594,8 @@ export function SprintPipeline(): React.JSX.Element {
     deleteTask,
     batchDeleteTasks,
     unblockTask,
+    exportTasks: handleExportTasks,
+    triggerDrain: handleTriggerDrain,
     confirmProps
   } = useSprintTaskActions()
 
@@ -706,21 +708,6 @@ export function SprintPipeline(): React.JSX.Element {
     },
     [exportTaskHistoryAction]
   )
-
-  const handleExportTasks = useCallback(async (format: ExportFormat): Promise<void> => {
-    try {
-      const result = await window.api.sprint.exportTasks(format)
-      if (!result.canceled && result.filePath) {
-        toast.success('Tasks exported')
-      }
-    } catch {
-      toast.error('Export failed')
-    }
-  }, [])
-
-  const handleTriggerDrain = useCallback(async (): Promise<void> => {
-    await window.api.agentManager.triggerDrain()
-  }, [])
 
   const headerStats = useMemo(
     () => [

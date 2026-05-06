@@ -5,6 +5,7 @@ import { Badge } from '../ui/Badge'
 import { toast } from '../../stores/toasts'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { useDrawerResize } from '../../hooks/useDrawerResize'
+import { useSprintTasks } from '../../stores/sprintTasks'
 import { TASK_STATUS } from '../../../../shared/constants'
 import type { SprintTask } from '../../../../shared/types'
 
@@ -28,6 +29,7 @@ export function HealthCheckDrawer({
 }: HealthCheckDrawerProps): React.JSX.Element {
   const [rescuing, setRescuing] = useState<string | null>(null)
   const drawerRef = useRef<HTMLDivElement>(null)
+  const updateTask = useSprintTasks((s) => s.updateTask)
   const {
     width,
     handleResizeStart,
@@ -53,23 +55,26 @@ export function HealthCheckDrawer({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, onClose])
 
-  const handleRescue = useCallback(async (task: SprintTask) => {
-    setRescuing(task.id)
-    try {
-      // System-managed fields (status, agent_run_id, claimed_by) are outside the
-      // public SprintTaskPatch surface but are accepted by UPDATE_ALLOWLIST at runtime.
-      await window.api.sprint.update(task.id, {
-        status: TASK_STATUS.QUEUED,
-        agent_run_id: null,
-        claimed_by: null
-      } as Parameters<typeof window.api.sprint.update>[1])
-      toast.success(`"${task.title}" reset to queued`)
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to rescue task')
-    } finally {
-      setRescuing(null)
-    }
-  }, [])
+  const handleRescue = useCallback(
+    async (task: SprintTask) => {
+      setRescuing(task.id)
+      try {
+        // System-managed fields (status, agent_run_id, claimed_by) are outside the
+        // public SprintTaskPatch surface but are accepted by UPDATE_ALLOWLIST at runtime.
+        await updateTask(task.id, {
+          status: TASK_STATUS.QUEUED,
+          agent_run_id: null,
+          claimed_by: null
+        })
+        toast.success(`"${task.title}" reset to queued`)
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Failed to rescue task')
+      } finally {
+        setRescuing(null)
+      }
+    },
+    [updateTask]
+  )
 
   return (
     <>

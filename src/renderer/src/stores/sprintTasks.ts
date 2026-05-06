@@ -12,7 +12,16 @@ import {
   type PendingUpdates,
   type SprintTaskField
 } from '../lib/optimisticUpdateManager'
-import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt, exportTaskHistory } from '../services/sprint'
+import {
+  listTasks,
+  updateTask,
+  deleteTask,
+  createTask,
+  batchUpdate,
+  generatePrompt,
+  exportTaskHistory,
+  retryTask as retryTaskService
+} from '../services/sprint'
 
 export interface CreateTicketInput {
   title: string
@@ -29,6 +38,7 @@ export interface CreateTicketInput {
   spec_type?: string | null
   group_id?: string | null
   cross_repo_contract?: string | null
+  status?: typeof TASK_STATUS[keyof typeof TASK_STATUS]
 }
 
 /** How long (ms) to protect an optimistic update from being overwritten by poll data. */
@@ -169,6 +179,7 @@ export interface SprintTasksState {
   setTasks: (tasks: SprintTask[]) => void
   batchDeleteTasks: (taskIds: string[]) => Promise<void>
   batchRequeueTasks: (taskIds: string[]) => Promise<void>
+  batchCancelTasks: (taskIds: string[]) => Promise<void>
   retryTask: (taskId: string) => Promise<void>
   exportTaskHistory: (taskId: string) => Promise<{ success: boolean; path?: string | undefined }>
 }
@@ -376,12 +387,13 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
   createTask: async (data: CreateTicketInput): Promise<string | null> => {
     const repoEnum = data.repo.toLowerCase()
+    const initialStatus = data.status ?? TASK_STATUS.BACKLOG
     const optimistic: SprintTask = {
       id: `temp-${Date.now()}`,
       title: data.title,
       repo: repoEnum,
       priority: data.priority,
-      status: TASK_STATUS.BACKLOG,
+      status: initialStatus,
       notes: null,
       spec: data.spec || null,
       prompt: data.prompt || data.title,
@@ -414,7 +426,7 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
         notes: data.notes || undefined,
         spec: data.spec || undefined,
         priority: data.priority,
-        status: TASK_STATUS.BACKLOG,
+        status: initialStatus,
         template_name: data.template_name || undefined,
         playground_enabled: data.playground_enabled || undefined,
         ...(data.depends_on ? { depends_on: data.depends_on } : {}),
@@ -554,10 +566,37 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
 
   retryTask: async (taskId): Promise<void> => {
     try {
-      await window.api.sprint.retry(taskId)
+      await retryTaskService(taskId)
       await get().loadData()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to retry task')
+    }
+  },
+
+  batchCancelTasks: async (taskIds): Promise<void> => {
+    if (taskIds.length === 0) return
+
+    try {
+      const operations = taskIds.map((id) => ({
+        op: 'update' as const,
+        id,
+        patch: { status: TASK_STATUS.CANCELLED }
+      }))
+      const result = await batchUpdate(operations)
+
+      const errors = result.results.filter((r) => !r.ok)
+      if (errors.length > 0) {
+        const errorMessages = errors.map((e) => e.error).filter(Boolean)
+        toast.error(
+          `Failed to cancel ${errors.length} task(s)${errorMessages.length > 0 ? `: ${errorMessages[0]}` : ''}`
+        )
+      } else {
+        toast.success(`Cancelled ${taskIds.length} task(s)`)
+      }
+
+      await get().loadData()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to cancel tasks')
     }
   }
 }))
