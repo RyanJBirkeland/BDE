@@ -11,6 +11,22 @@ import { getJsonSetting, setJsonSetting } from '../services/settings-storage'
 
 const SETTINGS_KEY = 'prompt_templates'
 
+function isPromptTemplate(value: unknown): value is PromptTemplate {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return (
+    typeof candidate.id === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.order === 'number' &&
+    typeof candidate.promptTemplate === 'string' &&
+    Array.isArray(candidate.questions)
+  )
+}
+
+function isPromptTemplateArray(value: unknown): value is PromptTemplate[] {
+  return Array.isArray(value) && value.every(isPromptTemplate)
+}
+
 interface PromptTemplatesState {
   templates: PromptTemplate[]
   loading: boolean
@@ -76,7 +92,7 @@ export const usePromptTemplatesStore = create<PromptTemplatesState>((set, get) =
   loadTemplates: async () => {
     set({ loading: true })
     try {
-      const saved = await getJsonSetting<PromptTemplate[]>(SETTINGS_KEY)
+      const saved = await getJsonSetting<PromptTemplate[]>(SETTINGS_KEY, isPromptTemplateArray)
       const merged = mergeTemplates(saved ?? [])
       set({ templates: merged, loading: false })
     } catch (err) {

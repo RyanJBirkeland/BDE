@@ -128,6 +128,22 @@ describe('keybindings store', () => {
     expect(dupe!.actions).toContain('view.agents')
   })
 
+  it('init discards unknown action ids and non-string combos (T-15)', async () => {
+    const corrupted = {
+      'view.dashboard': '⌘X',
+      'unknown.action': '⌘Q',
+      'palette.toggle': 42
+    }
+    vi.mocked(window.api.settings.get).mockResolvedValueOnce(JSON.stringify(corrupted))
+
+    await useKeybindingsStore.getState().init()
+
+    const bindings = useKeybindingsStore.getState().bindings
+    expect(bindings['view.dashboard']).toBe('⌘X')
+    expect((bindings as Record<string, unknown>)['unknown.action']).toBeUndefined()
+    expect(bindings['palette.toggle']).toBe(DEFAULT_KEYBINDINGS['palette.toggle'])
+  })
+
   it('ACTION_LABELS has labels for all action IDs', () => {
     for (const actionId of Object.keys(DEFAULT_KEYBINDINGS)) {
       expect(ACTION_LABELS[actionId as keyof typeof ACTION_LABELS]).toBeDefined()

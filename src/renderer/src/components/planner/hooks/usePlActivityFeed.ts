@@ -95,17 +95,21 @@ export function agentEventSummary(event: AgentEvent): string {
   return ''
 }
 
+function isTrackedEvent(event: AgentEvent): event is AgentEvent & { type: TrackedEventType } {
+  return TRACKED_EVENTS.has(event.type)
+}
+
 export function buildAgentFeedEntry(
   event: AgentEvent,
   taskId: string,
   taskTitle: string
 ): FeedEntry | null {
-  if (!TRACKED_EVENTS.has(event.type)) return null
+  if (!isTrackedEvent(event)) return null
   return {
     kind: 'agent',
     taskId,
     taskTitle,
-    eventType: event.type as TrackedEventType,
+    eventType: event.type,
     summary: agentEventSummary(event),
     timestamp: new Date(event.timestamp).toISOString()
   }

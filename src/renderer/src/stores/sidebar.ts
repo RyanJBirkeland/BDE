@@ -3,6 +3,10 @@ import type { View } from './panelLayout'
 import { toast } from './toasts'
 import { getJsonSetting, setSetting } from '../services/settings-storage'
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((v) => typeof v === 'string')
+}
+
 const ALL_VIEWS: View[] = [
   'dashboard',
   'agents',
@@ -43,7 +47,7 @@ export const useSidebarStore = create<SidebarState>((set, get) => ({
 
   loadSaved: async () => {
     try {
-      const saved = await getJsonSetting<string[]>('sidebar.pinnedViews')
+      const saved = await getJsonSetting<string[]>('sidebar.pinnedViews', isStringArray)
       if (Array.isArray(saved) && saved.length > 0) {
         // Filter to only valid views
         const valid = saved.filter((v: string) => ALL_VIEWS.includes(v as View)) as View[]

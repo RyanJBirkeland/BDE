@@ -646,6 +646,28 @@ describe('checkOpenPrsMergeability', () => {
   })
 })
 
+describe('runtime body validation (T-1)', () => {
+  it('fetchAllPages (via listOpenPRs) throws when body is not an array', async () => {
+    mockGithubFetch.mockResolvedValue(ipcResponse({ not: 'an array' }))
+    await expect(listOpenPRs('o', 'r')).rejects.toThrow(/expected array body/)
+  })
+
+  it('fetchAllPages (via listOpenPRs) throws when an element is malformed', async () => {
+    mockGithubFetch.mockResolvedValue(ipcResponse([{ number: 'not-a-number' }]))
+    await expect(listOpenPRs('o', 'r')).rejects.toThrow(/failed shape validation/)
+  })
+
+  it('getPRDiff throws when body is not a string', async () => {
+    mockGithubFetch.mockResolvedValue(ipcResponse({ unexpected: 'object' }))
+    await expect(getPRDiff('o', 'r', 1)).rejects.toThrow(/expected string body/)
+  })
+
+  it('getPRDetail throws when body is missing required fields', async () => {
+    mockGithubFetch.mockResolvedValue(ipcResponse({ number: 1, head: { ref: 'a' } }))
+    await expect(getPRDetail('o', 'r', 1)).rejects.toThrow(/PRDetail shape/)
+  })
+})
+
 describe('replyToComment', () => {
   it('posts a reply and returns the new comment', async () => {
     const newComment = {

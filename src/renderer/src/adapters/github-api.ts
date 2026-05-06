@@ -10,25 +10,100 @@ async function githubFetchRaw(path: string, init?: GitHubFetchInit): Promise<Git
   return window.api.github.fetch(path, init)
 }
 
-async function fetchAllPages<T>(path: string): Promise<T[]> {
+function assertArrayOfShape<T>(
+  body: unknown,
+  isElement: (value: unknown) => value is T,
+  context: string
+): T[] {
+  if (!Array.isArray(body)) {
+    throw new Error(`${context}: expected array body, got ${typeof body}`)
+  }
+  for (let i = 0; i < body.length; i++) {
+    if (!isElement(body[i])) {
+      throw new Error(`${context}: element at index ${i} failed shape validation`)
+    }
+  }
+  return body as T[]
+}
+
+async function fetchAllPages<T>(
+  path: string,
+  isElement: (value: unknown) => value is T
+): Promise<T[]> {
   const items: T[] = []
   const MAX_PAGES = 100 // Limit pagination depth to prevent infinite loops
 
   let res = await githubFetchRaw(path)
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  items.push(...(res.body as T[]))
+  items.push(...assertArrayOfShape(res.body, isElement, `GitHub API ${path}`))
 
   let nextUrl = res.linkNext
   let pageCount = 1
   while (nextUrl && pageCount < MAX_PAGES) {
     res = await githubFetchRaw(nextUrl)
     if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-    items.push(...(res.body as T[]))
+    items.push(...assertArrayOfShape(res.body, isElement, `GitHub API ${nextUrl}`))
     nextUrl = res.linkNext
     pageCount++
   }
 
   return items
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isPullRequest(value: unknown): value is PullRequest {
+  if (!isObject(value)) return false
+  if (typeof value.number !== 'number') return false
+  if (typeof value.title !== 'string') return false
+  if (typeof value.html_url !== 'string') return false
+  if (typeof value.state !== 'string') return false
+  const head = value.head
+  if (!isObject(head) || typeof head.ref !== 'string' || typeof head.sha !== 'string') return false
+  const base = value.base
+  if (!isObject(base) || typeof base.ref !== 'string') return false
+  const user = value.user
+  if (!isObject(user) || typeof user.login !== 'string') return false
+  return true
+}
+
+function isPRFile(value: unknown): value is PRFile {
+  if (!isObject(value)) return false
+  return (
+    typeof value.filename === 'string' &&
+    typeof value.status === 'string' &&
+    typeof value.additions === 'number' &&
+    typeof value.deletions === 'number'
+  )
+}
+
+function isPrReview(value: unknown): value is PrReview {
+  if (!isObject(value)) return false
+  return typeof value.id === 'number' && isObject(value.user)
+}
+
+function isPrComment(value: unknown): value is PrComment {
+  if (!isObject(value)) return false
+  return typeof value.id === 'number' && typeof value.body === 'string'
+}
+
+function isPrIssueComment(value: unknown): value is PrIssueComment {
+  if (!isObject(value)) return false
+  return typeof value.id === 'number' && typeof value.body === 'string'
+}
+
+function isPRDetail(value: unknown): value is PRDetail {
+  if (!isObject(value)) return false
+  if (typeof value.number !== 'number') return false
+  const head = value.head
+  if (!isObject(head) || typeof head.ref !== 'string' || typeof head.sha !== 'string') return false
+  const base = value.base
+  if (!isObject(base) || typeof base.ref !== 'string') return false
+  const user = value.user
+  if (!isObject(user) || typeof user.login !== 'string') return false
+  return true
 }
 
 export interface PullRequest {
@@ -49,7 +124,8 @@ export interface PullRequest {
 
 export async function listOpenPRs(owner: string, repo: string): Promise<PullRequest[]> {
   const data = await fetchAllPages<PullRequest>(
-    `/repos/${owner}/${repo}/pulls?state=open&per_page=100`
+    `/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
+    isPullRequest
   )
   return data.map((pr) => ({ ...pr, repo }))
 }
@@ -124,7 +200,10 @@ export async function getPRDiff(owner: string, repo: string, number: number): Pr
     headers: { Accept: 'application/vnd.github.diff' }
   })
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  return res.body as string
+  if (typeof res.body !== 'string') {
+    throw new Error(`GitHub API getPRDiff: expected string body, got ${typeof res.body}`)
+  }
+  return res.body
 }
 
 export interface PRDetail {
@@ -145,7 +224,10 @@ export interface PRDetail {
 export async function getPRDetail(owner: string, repo: string, number: number): Promise<PRDetail> {
   const res = await githubFetchRaw(`/repos/${owner}/${repo}/pulls/${number}`)
   if (!res.ok) throw new Error(`GitHub API error: ${res.status}`)
-  return res.body as PRDetail
+  if (!isPRDetail(res.body)) {
+    throw new Error(`GitHub API getPRDetail: response body did not match PRDetail shape`)
+  }
+  return res.body
 }
 
 export interface PRFile {
@@ -156,7 +238,10 @@ export interface PRFile {
 }
 
 export async function getPRFiles(owner: string, repo: string, number: number): Promise<PRFile[]> {
-  return fetchAllPages<PRFile>(`/repos/${owner}/${repo}/pulls/${number}/files?per_page=100`)
+  return fetchAllPages<PRFile>(
+    `/repos/${owner}/${repo}/pulls/${number}/files?per_page=100`,
+    isPRFile
+  )
 }
 
 export interface CheckRun {
@@ -200,7 +285,10 @@ export async function mergePR(
 }
 
 export async function getReviews(owner: string, repo: string, number: number): Promise<PrReview[]> {
-  return fetchAllPages<PrReview>(`/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100`)
+  return fetchAllPages<PrReview>(
+    `/repos/${owner}/${repo}/pulls/${number}/reviews?per_page=100`,
+    isPrReview
+  )
 }
 
 export async function getReviewComments(
@@ -208,7 +296,10 @@ export async function getReviewComments(
   repo: string,
   number: number
 ): Promise<PrComment[]> {
-  return fetchAllPages<PrComment>(`/repos/${owner}/${repo}/pulls/${number}/comments?per_page=100`)
+  return fetchAllPages<PrComment>(
+    `/repos/${owner}/${repo}/pulls/${number}/comments?per_page=100`,
+    isPrComment
+  )
 }
 
 export async function getIssueComments(
@@ -217,7 +308,8 @@ export async function getIssueComments(
   number: number
 ): Promise<PrIssueComment[]> {
   return fetchAllPages<PrIssueComment>(
-    `/repos/${owner}/${repo}/issues/${number}/comments?per_page=100`
+    `/repos/${owner}/${repo}/issues/${number}/comments?per_page=100`,
+    isPrIssueComment
   )
 }
 
@@ -270,7 +362,10 @@ export async function replyToComment(
     // Don't leak GitHub's raw error messages; provide generic user-friendly message
     throw new Error(`Reply failed: unable to post comment (status ${res.status})`)
   }
-  return res.body as PrComment
+  if (!isPrComment(res.body)) {
+    throw new Error(`GitHub API replyToComment: response body did not match PrComment shape`)
+  }
+  return res.body
 }
 
 export async function closePR(owner: string, repo: string, number: number): Promise<void> {

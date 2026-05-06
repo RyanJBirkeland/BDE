@@ -71,6 +71,23 @@ export const ACTION_LABELS: Record<ActionId, string> = {
   'settings.open': 'Open Settings'
 }
 
+const ACTION_IDS: ReadonlySet<string> = new Set(Object.keys(DEFAULT_KEYBINDINGS))
+
+function isActionId(value: string): value is ActionId {
+  return ACTION_IDS.has(value)
+}
+
+function pickValidBindings(parsed: unknown): Partial<Record<ActionId, string>> {
+  if (typeof parsed !== 'object' || parsed === null) return {}
+  const out: Partial<Record<ActionId, string>> = {}
+  for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+    if (isActionId(key) && typeof value === 'string') {
+      out[key] = value
+    }
+  }
+  return out
+}
+
 interface KeybindingsStore {
   bindings: Record<ActionId, string>
   init: () => Promise<void>
@@ -87,9 +104,11 @@ export const useKeybindingsStore = create<KeybindingsStore>((set, get) => ({
     try {
       const saved = await getSetting('keybindings')
       if (saved) {
-        const parsed = JSON.parse(saved) as Record<ActionId, string>
+        const parsed = JSON.parse(saved) as unknown
+        // Discard unknown action ids and non-string combos before merging.
+        const validBindings = pickValidBindings(parsed)
         // Merge with defaults to handle new actions added in updates
-        const merged = { ...DEFAULT_KEYBINDINGS, ...parsed }
+        const merged = { ...DEFAULT_KEYBINDINGS, ...validBindings }
         set({ bindings: merged })
       }
     } catch (err) {

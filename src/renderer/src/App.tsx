@@ -42,6 +42,24 @@ const _params = new URLSearchParams(window.location.search)
 const _tearoffView = _params.get('view') as View | null
 const _tearoffWindowId = _params.get('windowId')
 
+interface PendingFirstTask {
+  title: string
+  spec: string
+  repo: string
+  specType: string
+}
+
+function isPendingFirstTask(value: unknown): value is PendingFirstTask {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return (
+    typeof candidate.title === 'string' &&
+    typeof candidate.spec === 'string' &&
+    typeof candidate.repo === 'string' &&
+    typeof candidate.specType === 'string'
+  )
+}
+
 function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Element {
   const reduced = useReducedMotion()
   const [activeTab, setActiveTab] = useState(0)
@@ -132,13 +150,17 @@ function App(): React.JSX.Element {
     const raw = localStorage.getItem('fleet:pending-first-task')
     if (!raw) return
     try {
-      const task = JSON.parse(raw) as { title: string; spec: string; repo: string; specType: string }
+      const parsed: unknown = JSON.parse(raw)
       localStorage.removeItem('fleet:pending-first-task')
+      if (!isPendingFirstTask(parsed)) {
+        console.warn('Discarding malformed fleet:pending-first-task payload')
+        return
+      }
       const wb = useTaskWorkbenchStore.getState()
-      wb.setField('title', task.title)
-      wb.setField('spec', task.spec)
-      wb.setField('repo', task.repo)
-      wb.setSpecType(task.specType as Parameters<typeof wb.setSpecType>[0])
+      wb.setField('title', parsed.title)
+      wb.setField('spec', parsed.spec)
+      wb.setField('repo', parsed.repo)
+      wb.setSpecType(parsed.specType as Parameters<typeof wb.setSpecType>[0])
       usePanelLayoutStore.getState().setView('planner')
     } catch {
       localStorage.removeItem('fleet:pending-first-task')

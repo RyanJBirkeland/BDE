@@ -10,6 +10,7 @@ import {
   type View
 } from '../../stores/panelLayout'
 import { VIEW_LABELS } from '../../lib/view-registry'
+import { parseRestoreParam } from './parseRestoreParam'
 import { resolveView } from '../../lib/view-resolver'
 import { PanelRenderer } from '../panels/PanelRenderer'
 import { TearoffTabBar } from './TearoffTabBar'
@@ -104,9 +105,7 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
   const crossDrop = useCrossWindowDrop()
 
   const restoreParam = new URLSearchParams(window.location.search).get('restore')
-  const initialViews: View[] = restoreParam
-    ? (JSON.parse(decodeURIComponent(restoreParam)) as View[])
-    : [view]
+  const initialViews: View[] = restoreParam ? parseRestoreParam(restoreParam, view) : [view]
 
   const label = VIEW_LABELS[view] ?? view
 

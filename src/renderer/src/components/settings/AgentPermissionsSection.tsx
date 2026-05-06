@@ -106,10 +106,10 @@ export function AgentPermissionsSection(): React.JSX.Element {
       try {
         const config = await window.api.claudeConfig.get()
         if (config && Array.isArray(config.permissions?.allow)) {
-          setAllow(config.permissions.allow as string[])
+          setAllow(config.permissions.allow.filter((v): v is string => typeof v === 'string'))
         }
         if (config && Array.isArray(config.permissions?.deny)) {
-          setDeny(config.permissions.deny as string[])
+          setDeny(config.permissions.deny.filter((v): v is string => typeof v === 'string'))
         }
       } catch {
         // Leave defaults empty if config can't be read

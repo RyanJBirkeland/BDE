@@ -2,6 +2,12 @@ import { createDebouncedPersister } from '../lib/createDebouncedPersister'
 import type { PanelNode } from './panel-tree'
 import { setJsonSetting, getJsonSetting } from '../services/settings-storage'
 
+function isPanelNode(value: unknown): value is PanelNode {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return candidate.type === 'leaf' || candidate.type === 'split'
+}
+
 // ---------------------------------------------------------------------------
 // Layout persistence helpers — wraps IPC settings calls, no Zustand/React
 // ---------------------------------------------------------------------------
@@ -20,7 +26,7 @@ export function saveLayout(layout: PanelNode | null): void {
  * Returns null if no layout is saved or settings are unavailable.
  */
 export async function loadLayout(): Promise<PanelNode | null> {
-  const saved = await getJsonSetting<PanelNode>('panel.layout')
+  const saved = await getJsonSetting<PanelNode>('panel.layout', isPanelNode)
   return saved ?? null
 }
 
