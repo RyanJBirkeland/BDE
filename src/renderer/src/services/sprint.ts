@@ -32,3 +32,9 @@ export async function generatePrompt(
 ): ReturnType<typeof window.api.sprint.generatePrompt> {
   return window.api.sprint.generatePrompt(params)
 }
+
+export async function exportTaskHistory(
+  taskId: string
+): ReturnType<typeof window.api.sprint.exportTaskHistory> {
+  return window.api.sprint.exportTaskHistory(taskId)
+}

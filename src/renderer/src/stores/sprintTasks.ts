@@ -15,7 +15,7 @@ import {
   type SprintTaskField
 } from '../lib/optimisticUpdateManager'
 import { getRepoPaths } from '../services/git'
-import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt } from '../services/sprint'
+import { listTasks, updateTask, deleteTask, createTask, batchUpdate, generatePrompt, exportTaskHistory } from '../services/sprint'
 import { spawnLocal } from '../services/agents'
 
 export interface CreateTicketInput {
@@ -174,6 +174,7 @@ export interface SprintTasksState {
   setTasks: (tasks: SprintTask[]) => void
   batchDeleteTasks: (taskIds: string[]) => Promise<void>
   batchRequeueTasks: (taskIds: string[]) => Promise<void>
+  exportTaskHistory: (taskId: string) => Promise<{ success: boolean; path?: string | undefined }>
 }
 
 export const selectActiveTaskCount = (state: SprintTasksState): number =>
@@ -554,6 +555,10 @@ export const useSprintTasks = create<SprintTasksState>((set, get) => ({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to delete tasks')
     }
+  },
+
+  exportTaskHistory: async (taskId): Promise<{ success: boolean; path?: string | undefined }> => {
+    return exportTaskHistory(taskId)
   },
 
   batchRequeueTasks: async (taskIds): Promise<void> => {
