@@ -7,7 +7,7 @@
  * essential interactions (task selection, drawer display).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import type { SprintTask } from '../../../../../shared/types'
 import { nowIso } from '../../../../../shared/time'
 
@@ -83,6 +83,9 @@ const emptyPartition = {
 }
 
 let pipelineStateOverrides: Record<string, unknown> = {}
+let sprintTasksOverrides: Record<string, unknown> = {}
+let drainStatusOverride: unknown = null
+let sprintUIOverrides: Record<string, unknown> = {}
 
 vi.mock('../../../hooks/useSprintPipelineState', () => ({
   useSprintPipelineState: () => ({
@@ -142,7 +145,7 @@ vi.mock('../../../hooks/useVisibleStuckTasks', () => ({
 }))
 
 vi.mock('../../../hooks/useDrainStatus', () => ({
-  useDrainStatus: () => null
+  useDrainStatus: () => drainStatusOverride
 }))
 
 vi.mock('../../../hooks/useNow', () => ({
@@ -171,7 +174,15 @@ vi.mock('../../../stores/sprintFilters', () => ({
 }))
 
 vi.mock('../../../stores/sprintTasks', () => ({
-  useSprintTasks: vi.fn((sel: any) => sel({ pollError: null, clearPollError: vi.fn(), tasks: [] }))
+  useSprintTasks: vi.fn((sel: any) =>
+    sel({
+      pollError: null,
+      clearPollError: vi.fn(),
+      tasks: [],
+      exportTaskHistory: vi.fn(),
+      ...sprintTasksOverrides
+    })
+  )
 }))
 
 vi.mock('../../../stores/panelLayout', () => ({
@@ -180,7 +191,11 @@ vi.mock('../../../stores/panelLayout', () => ({
 
 vi.mock('../../../stores/sprintUI', () => ({
   useSprintUI: vi.fn((sel: any) =>
-    sel({ orphanRecoveryBanner: null, setOrphanRecoveryBanner: vi.fn() })
+    sel({
+      orphanRecoveryBanner: null,
+      setOrphanRecoveryBanner: vi.fn(),
+      ...sprintUIOverrides
+    })
   ),
   selectOrphanRecoveryBanner: (s: any) => s.orphanRecoveryBanner
 }))
@@ -229,15 +244,37 @@ vi.mock('../BulkActionBar', () => ({ BulkActionBar: () => null }))
 vi.mock('../PipelineErrorBoundary', () => ({
   PipelineErrorBoundary: ({ children }: any) => <>{children}</>
 }))
-vi.mock('../banners/PollErrorBanner', () => ({ PollErrorBanner: () => null }))
-vi.mock('../banners/DrainPausedBanner', () => ({ DrainPausedBanner: () => null }))
-vi.mock('../banners/OrphanRecoveryBanner', () => ({ OrphanRecoveryBanner: () => null }))
+vi.mock('../banners/PollErrorBanner', () => ({
+  PollErrorBanner: ({ message, onRetry, onDismiss }: any) => (
+    <div data-testid="poll-error-banner">
+      <span>{message}</span>
+      <button onClick={onRetry}>Retry</button>
+      <button onClick={onDismiss}>Dismiss</button>
+    </div>
+  )
+}))
+vi.mock('../banners/DrainPausedBanner', () => ({
+  DrainPausedBanner: ({ reason }: any) => (
+    <div data-testid="drain-paused-banner">{reason}</div>
+  )
+}))
+vi.mock('../banners/OrphanRecoveryBanner', () => ({
+  OrphanRecoveryBanner: ({ recoveredCount, onDismiss }: any) => (
+    <div data-testid="orphan-recovery-banner">
+      <span>Recovered: {recoveredCount}</span>
+      <button onClick={onDismiss}>Dismiss</button>
+    </div>
+  )
+}))
 
 import { SprintPipeline } from '../SprintPipeline'
 
 describe('V2 pipeline (via SprintPipeline dispatcher)', () => {
   beforeEach(() => {
     pipelineStateOverrides = {}
+    sprintTasksOverrides = {}
+    drainStatusOverride = null
+    sprintUIOverrides = {}
     setSelectedTaskId.mockClear()
   })
 
@@ -291,5 +328,43 @@ describe('V2 pipeline (via SprintPipeline dispatcher)', () => {
     expect(screen.getByTestId('pipeline-stage-v2-review')).toBeInTheDocument()
     expect(screen.getByTestId('pipeline-stage-v2-open-prs')).toBeInTheDocument()
     expect(screen.getByTestId('pipeline-stage-v2-done')).toBeInTheDocument()
+  })
+
+  it('renders the loading skeleton when loading is true and tasks are empty', () => {
+    pipelineStateOverrides = { loading: true, tasks: [] }
+    render(<SprintPipeline />)
+    expect(screen.getByRole('status', { name: 'Loading pipeline' })).toBeInTheDocument()
+  })
+
+  it('renders PipelineLoadError with a retry button when loadError is set', () => {
+    pipelineStateOverrides = {
+      loading: false,
+      loadError: 'Network timeout',
+      tasks: []
+    }
+    render(<SprintPipeline />)
+    expect(screen.getByText('Network timeout')).toBeInTheDocument()
+    const retryBtn = screen.getByRole('button', { name: 'Retry' })
+    expect(retryBtn).toBeInTheDocument()
+    fireEvent.click(retryBtn)
+    expect(loadData).toHaveBeenCalled()
+  })
+
+  it('renders PollErrorBanner when pollError is non-null', () => {
+    sprintTasksOverrides = { pollError: 'Poll failed', clearPollError: vi.fn() }
+    render(<SprintPipeline />)
+    expect(screen.getByTestId('poll-error-banner')).toBeInTheDocument()
+    expect(screen.getByText('Poll failed')).toBeInTheDocument()
+  })
+
+  it('renders DrainPausedBanner when drainStatus is set', () => {
+    drainStatusOverride = {
+      reason: 'rate-limit',
+      affectedTaskCount: 2,
+      pausedUntil: Date.now() + 60_000
+    }
+    render(<SprintPipeline />)
+    expect(screen.getByTestId('drain-paused-banner')).toBeInTheDocument()
+    expect(screen.getByText('rate-limit')).toBeInTheDocument()
   })
 })
