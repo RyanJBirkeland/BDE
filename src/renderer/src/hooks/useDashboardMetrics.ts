@@ -3,9 +3,8 @@ import { useShallow } from 'zustand/react/shallow'
 import { useSprintTasks } from '../stores/sprintTasks'
 import { useCostDataStore } from '../stores/costData'
 import { useDashboardDataStore } from '../stores/dashboardData'
-import type { ChartBar } from '../components/neon'
 import type { SprintTask } from '../../../shared/types'
-import type { DashboardStats } from '../lib/dashboard-types'
+import type { DashboardStats, ChartBar } from '../lib/dashboard-types'
 import { formatTokensCompact } from '../lib/format'
 
 /** 1 hour — matches agent-manager watchdog default */

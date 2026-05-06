@@ -2,7 +2,7 @@ import './KPIStrip.css'
 import React, { useMemo } from 'react'
 import { MicroSpark } from './primitives/MicroSpark'
 import { formatDurationMs } from '../../lib/format'
-import type { ChartBar } from '../neon'
+import type { ChartBar } from '../../lib/dashboard-types'
 import type { DailySuccessRate } from '../../../../shared/ipc-channels'
 
 interface KPIStripProps {

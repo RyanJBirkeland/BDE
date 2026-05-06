@@ -17,3 +17,9 @@ export interface DashboardStats {
   failed: number
   actualFailed: number
 }
+
+export interface ChartBar {
+  value: number
+  accent?: string | undefined
+  label?: string | undefined
+}

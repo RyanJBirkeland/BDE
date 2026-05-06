@@ -1,4 +1,5 @@
-import { NeonCard, SankeyPipeline, MiniChart, type ChartBar, type SankeyStageKey } from '../neon'
+import { NeonCard, SankeyPipeline, MiniChart, type SankeyStageKey } from '../neon'
+import type { ChartBar } from '../../lib/dashboard-types'
 import { ThroughputChart } from './ThroughputChart'
 import { SuccessRateChart } from './SuccessRateChart'
 import { LoadAverageChart } from './LoadAverageChart'

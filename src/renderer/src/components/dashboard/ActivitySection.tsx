@@ -1,5 +1,6 @@
 import { memo } from 'react'
-import { NeonCard, ActivityFeed, MiniChart, type ChartBar } from '../neon'
+import { NeonCard, ActivityFeed, MiniChart } from '../neon'
+import type { ChartBar } from '../../lib/dashboard-types'
 import { DashboardErrorCard } from './DashboardErrorCard'
 import { timeAgo, formatTokens } from '../../lib/format'
 import { CheckCircle, TrendingUp, Gauge } from 'lucide-react'
