@@ -65,9 +65,16 @@ export function AgentsViewV2(): React.JSX.Element {
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
 
   useEffect(() => {
-    const onResize = (): void => setViewportWidth(window.innerWidth)
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    const onResize = (): void => {
+      if (debounceTimer !== null) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => setViewportWidth(window.innerWidth), 150)
+    }
     window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      if (debounceTimer !== null) clearTimeout(debounceTimer)
+    }
   }, [])
 
   const isWide = viewportWidth >= INSPECTOR_BREAKPOINT
