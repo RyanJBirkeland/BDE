@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { TaskGroup } from '../../../../../shared/types'
 
-export function sanitizeCssColor(value: string | null | undefined): string {
+function sanitizeCssColor(value: string | null | undefined): string {
   if (!value) return 'var(--accent)'
   // Allow: CSS named colors (letters only) and hex colors with valid lengths:
   // #RGB (3), #RGBA (4), #RRGGBB (6), #RRGGBBAA (8). {3,8} would also pass

@@ -17,8 +17,19 @@ export function EditableField({
 }: EditableFieldProps): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
+  const [committedValue, setCommittedValue] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Sync draft to the latest external value when the field is not being edited.
+  // We use an intermediate "committedValue" state to detect upstream changes
+  // without calling setDraft inside a useEffect body (which triggers cascading
+  // renders per react-compiler rules). Instead we update during render —
+  // React's recommended pattern for derived-state synchronization.
+  if (!editing && value !== committedValue) {
+    setCommittedValue(value)
+    setDraft(value)
+  }
 
   useEffect(() => {
     if (editing && !multiline) inputRef.current?.select()
@@ -31,10 +42,6 @@ export function EditableField({
       el.style.height = `${el.scrollHeight}px`
     }
   }, [editing, multiline, draft])
-
-  useEffect(() => {
-    if (!editing) setDraft(value)
-  }, [value, editing])
 
   function startEdit(): void {
     setDraft(value)
