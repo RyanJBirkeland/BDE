@@ -45,7 +45,12 @@ export function UnifiedHeaderV2(): React.JSX.Element {
   const tabs = focusedPanel?.tabs ?? []
   const activeTabIndex = focusedPanel?.activeTab ?? 0
 
-  const tearoffWindowId = new URLSearchParams(window.location.search).get('windowId')
+  // window.location.search is set once at window open; parsing it once per mount avoids the
+  // alloc + parse cost on every render without introducing a render-time ref read.
+  const tearoffWindowId = useMemo(
+    () => new URLSearchParams(window.location.search).get('windowId'),
+    []
+  )
   const { startDrag } = useTearoffDrag(tearoffWindowId ?? undefined)
 
   const handleBrandClick = (): void => setView('dashboard')

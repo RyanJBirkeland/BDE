@@ -13,7 +13,13 @@ import {
 import { useShallow } from 'zustand/react/shallow'
 import { usePanelLayoutStore, type View } from '../../stores/panelLayout'
 import { VIEW_REGISTRY } from '../../lib/view-registry'
-import { useSprintTasks, selectReviewTaskCount, selectFailedTaskCount } from '../../stores/sprintTasks'
+import {
+  useSprintTasks,
+  selectReviewTaskCount,
+  selectFailedTaskCount,
+  type SprintTasksState
+} from '../../stores/sprintTasks'
+import type { SprintTask } from '../../../../shared/types'
 import { useSprintSelection } from '../../stores/sprintSelection'
 import { useGitTreeStore } from '../../stores/gitTree'
 import { LiveAgentRow } from './LiveAgentRow'
@@ -26,6 +32,9 @@ interface NavItem {
   view: View
   icon: React.ReactNode
 }
+
+const selectActiveTasks = (s: SprintTasksState): SprintTask[] =>
+  s.tasks.filter((t) => t.status === 'active')
 
 const NAV_ITEMS: NavItem[] = [
   { view: 'dashboard',   icon: <LayoutDashboard    size={16} strokeWidth={1.5} /> },
@@ -45,9 +54,7 @@ export function SidebarV2({ model }: SidebarV2Props): React.JSX.Element {
 
   const reviewCount = useSprintTasks(selectReviewTaskCount)
   const failedCount = useSprintTasks(selectFailedTaskCount)
-  const activeTasks = useSprintTasks(
-    useShallow((s) => s.tasks.filter((t) => t.status === 'active'))
-  )
+  const activeTasks = useSprintTasks(useShallow(selectActiveTasks))
 
   const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
 

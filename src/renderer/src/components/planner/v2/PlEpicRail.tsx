@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { TaskGroup } from '../../../../../shared/types'
 
 function sanitizeCssColor(value: string | null | undefined): string {
@@ -33,8 +34,12 @@ const STATUS_COLOR: Record<TaskGroup['status'], string> = {
 }
 
 export function PlEpicRail({ groups, selectedId, onSelect, onNewEpic }: Props): React.JSX.Element {
-  const active = groups.filter((g) => g.status !== 'completed')
-  const completed = groups.filter((g) => g.status === 'completed')
+  const { activeGroups: active, completedGroups: completed } = useMemo(() => {
+    const activeGroups: TaskGroup[] = []
+    const completedGroups: TaskGroup[] = []
+    groups.forEach((g) => (g.status === 'completed' ? completedGroups : activeGroups).push(g))
+    return { activeGroups, completedGroups }
+  }, [groups])
 
   return (
     <div

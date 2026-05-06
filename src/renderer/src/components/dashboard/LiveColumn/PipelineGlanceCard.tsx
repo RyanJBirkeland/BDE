@@ -1,4 +1,5 @@
 import './PipelineGlanceCard.css'
+import React, { useMemo } from 'react'
 import { Card } from '../primitives/Card'
 import { CardHead } from '../primitives/CardHead'
 import { timeAgo } from '../../../lib/format'
@@ -53,7 +54,7 @@ function buildStageCells(partitions: SprintPartition, stats: DashboardStats): St
   ]
 }
 
-export function PipelineGlanceCard({
+function PipelineGlanceCardComponent({
   partitions,
   stats,
   onOpenPipeline
@@ -63,7 +64,7 @@ export function PipelineGlanceCard({
     partitions.inProgress.length +
     partitions.pendingReview.length +
     partitions.done.length
-  const stages = buildStageCells(partitions, stats)
+  const stages = useMemo(() => buildStageCells(partitions, stats), [partitions, stats])
 
   return (
     <Card>
@@ -102,3 +103,5 @@ export function PipelineGlanceCard({
     </Card>
   )
 }
+
+export const PipelineGlanceCard = React.memo(PipelineGlanceCardComponent)

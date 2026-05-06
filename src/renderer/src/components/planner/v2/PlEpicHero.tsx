@@ -1,5 +1,7 @@
+import { useMemo } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
 import { EpicIcon } from './PlEpicRail'
+import { partitionSprintTasks } from '../../../lib/partitionSprintTasks'
 
 interface Props {
   epic: TaskGroup
@@ -16,25 +18,19 @@ const STATUS_LABEL: Record<TaskGroup['status'], string> = {
 }
 
 export function PlEpicHero({ epic, tasks, onEditEpic, onToggleReady }: Props): React.JSX.Element {
-  const doneCount = tasks.filter((t) => t.status === 'done').length
-  const runningCount = tasks.filter((t) => t.status === 'active').length
-  const queuedCount = tasks.filter((t) => t.status === 'queued').length
-  const blockedCount = tasks.filter((t) => t.status === 'blocked').length
-  const backlogCount = tasks.filter(
-    (t) =>
-      t.status === 'backlog' ||
-      ![
-        'done',
-        'active',
-        'queued',
-        'blocked',
-        'review',
-        'approved',
-        'failed',
-        'error',
-        'cancelled'
-      ].includes(t.status)
-  ).length
+  const counts = useMemo(() => {
+    const c = { done: 0, running: 0, queued: 0, blocked: 0 }
+    tasks.forEach((t) => {
+      if (t.status === 'done') c.done++
+      else if (t.status === 'active') c.running++
+      else if (t.status === 'queued') c.queued++
+      else if (t.status === 'blocked') c.blocked++
+    })
+    return c
+  }, [tasks])
+  const backlogCount = useMemo(() => partitionSprintTasks(tasks).backlog.length, [tasks])
+  const { done: doneCount, running: runningCount, queued: queuedCount, blocked: blockedCount } =
+    counts
 
   return (
     <div

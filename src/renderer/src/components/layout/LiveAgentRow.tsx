@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react'
 import './LiveAgentRow.css'
 
 interface LiveAgentRowProps {
@@ -5,19 +6,24 @@ interface LiveAgentRowProps {
   onClick: () => void
 }
 
-export function LiveAgentRow({ title, onClick }: LiveAgentRowProps): React.JSX.Element {
+function LiveAgentRowComponent({ title, onClick }: LiveAgentRowProps): React.JSX.Element {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent): void => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        onClick()
+      }
+    },
+    [onClick]
+  )
+
   return (
     <div
       className="live-agent-row"
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClick()
-        }
-      }}
+      onKeyDown={handleKeyDown}
       style={{
         padding: '7px var(--s-2)',
         borderRadius: 'var(--r-md)',
@@ -63,3 +69,5 @@ export function LiveAgentRow({ title, onClick }: LiveAgentRowProps): React.JSX.E
     </div>
   )
 }
+
+export const LiveAgentRow = React.memo(LiveAgentRowComponent)

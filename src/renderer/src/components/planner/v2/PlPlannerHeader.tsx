@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
 
 interface Props {
@@ -18,10 +19,21 @@ export function PlPlannerHeader({
   onImport
 }: Props): React.JSX.Element {
   const epicCount = groups.length
-  const readyCount = groups.filter((g) => g.status === 'ready').length
-  const draftCount = groups.filter((g) => g.status === 'draft').length
-  const inFlightCount = groups.filter((g) => g.status === 'in-pipeline').length
-  const doneTaskCount = tasks.filter((t) => t.status === 'done').length
+  const { readyCount, draftCount, inFlightCount } = useMemo(() => {
+    let ready = 0
+    let draft = 0
+    let inFlight = 0
+    groups.forEach((g) => {
+      if (g.status === 'ready') ready++
+      else if (g.status === 'draft') draft++
+      else if (g.status === 'in-pipeline') inFlight++
+    })
+    return { readyCount: ready, draftCount: draft, inFlightCount: inFlight }
+  }, [groups])
+  const doneTaskCount = useMemo(
+    () => tasks.reduce((n, t) => (t.status === 'done' ? n + 1 : n), 0),
+    [tasks]
+  )
 
   return (
     <div

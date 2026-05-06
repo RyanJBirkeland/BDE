@@ -219,6 +219,14 @@ export function SprintPipelineV2(): React.JSX.Element {
 
   const taskTitlesById = useMemo(() => new Map(tasks.map((t) => [t.id, t.title])), [tasks])
 
+  const handleSelectTask = useCallback(
+    (taskId: string) => {
+      setSelectedTaskId(taskId)
+      setDrawerOpen(true)
+    },
+    [setSelectedTaskId, setDrawerOpen]
+  )
+
   return (
     <motion.div
       className="sprint-pipeline"
@@ -551,10 +559,7 @@ export function SprintPipelineV2(): React.JSX.Element {
         <DagOverlay
           tasks={tasks}
           selectedTaskId={selectedTaskId}
-          onSelectTask={(taskId) => {
-            setSelectedTaskId(taskId)
-            setDrawerOpen(true)
-          }}
+          onSelectTask={handleSelectTask}
           onClose={() => setDagOpen(false)}
         />
       )}

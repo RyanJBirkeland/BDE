@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react'
 import './MissionBriefBand.css'
 import type { BriefHeadlinePart } from './hooks/useDashboardData'
 import type { DashboardStats } from '../../lib/dashboard-types'
@@ -83,17 +84,24 @@ function QuickActions({
   )
 }
 
-function Timestamp(): React.JSX.Element {
-  const now = new Date()
-  const day = now.toLocaleDateString('en-US', { weekday: 'short' })
-  const date = now.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })
-  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+const Timestamp = React.memo(function Timestamp(): React.JSX.Element {
+  const formattedTime = useMemo(() => {
+    const now = new Date()
+    return {
+      day: now.toLocaleDateString('en-US', { weekday: 'short' }),
+      date: now.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
+      time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+    }
+    // Recomputes once per minute — Date.now() in deps is the established pattern for time-bucketed memoization.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Math.floor(Date.now() / 60_000)])
+
   return (
     <span className="mission-brief__timestamp">
-      {day} · {date} · {time}
+      {formattedTime.day} · {formattedTime.date} · {formattedTime.time}
     </span>
   )
-}
+})
 
 export function MissionBriefBand({
   briefHeadlineParts,

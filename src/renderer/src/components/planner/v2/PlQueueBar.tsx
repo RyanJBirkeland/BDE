@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { SprintTask } from '../../../../../shared/types'
 
 interface Props {
@@ -13,10 +14,16 @@ export function PlQueueBar({
   onQueueAll,
   onTogglePause
 }: Props): React.JSX.Element {
-  const readyCount = tasks.filter(
-    (t) => (t.status === 'backlog' || t.status === 'queued') && t.spec && t.spec.trim() !== ''
-  ).length
-  const needsSpecCount = tasks.filter((t) => !t.spec || t.spec.trim() === '').length
+  const { readyCount, needsSpecCount } = useMemo(() => {
+    let ready = 0
+    let needsSpec = 0
+    tasks.forEach((t) => {
+      const hasSpec = !!t.spec && t.spec.trim() !== ''
+      if (!hasSpec) needsSpec++
+      else if (t.status === 'backlog' || t.status === 'queued') ready++
+    })
+    return { readyCount: ready, needsSpecCount: needsSpec }
+  }, [tasks])
   const canQueue = readyCount > 0 && needsSpecCount === 0
 
   return (

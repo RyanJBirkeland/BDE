@@ -1,5 +1,5 @@
 import './KPIStrip.css'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { MicroSpark } from './primitives/MicroSpark'
 import { formatDurationMs } from '../../lib/format'
 import type { ChartBar } from '../neon'
@@ -93,7 +93,39 @@ function buildKPICells(props: KPIStripProps): KPICell[] {
 }
 
 export function KPIStrip(props: KPIStripProps): React.JSX.Element {
-  const cells = buildKPICells(props)
+  const {
+    successRate7dAvg,
+    successRateWeekDelta,
+    avgDuration,
+    tokenAvg,
+    tokenTrendData,
+    avgCostPerTask,
+    failureRate,
+    successTrendData
+  } = props
+  const cells = useMemo(
+    () =>
+      buildKPICells({
+        successRate7dAvg,
+        successRateWeekDelta,
+        avgDuration,
+        tokenAvg,
+        tokenTrendData,
+        avgCostPerTask,
+        failureRate,
+        successTrendData
+      }),
+    [
+      successRate7dAvg,
+      successRateWeekDelta,
+      avgDuration,
+      tokenAvg,
+      tokenTrendData,
+      avgCostPerTask,
+      failureRate,
+      successTrendData
+    ]
+  )
 
   return (
     <div className="kpi-strip">

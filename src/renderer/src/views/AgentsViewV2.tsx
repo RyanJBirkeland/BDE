@@ -11,7 +11,7 @@
  * Inspector renders inline at ≥1280px and as a slide-over overlay at <1280px,
  * triggered by the toggle button. Hidden in Launchpad and Glance modes.
  */
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useAgentHistoryStore } from '../stores/agentHistory'
@@ -101,7 +101,10 @@ export function AgentsViewV2(): React.JSX.Element {
     setShowLaunchpad(false)
   }, [])
 
-  const selectedAgent = agents.find((a) => a.id === activeId)
+  const selectedAgent = useMemo(
+    () => agents.find((a) => a.id === activeId),
+    [agents, activeId]
+  )
   const events = useAgentEventsStore((s) => s.events[activeId ?? ''] ?? EMPTY_EVENTS)
 
   const handleSteer = useCallback(

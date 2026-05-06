@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import type { SprintTask } from '../../../../../shared/types'
 import { analyzeSpecQuality } from '../../../lib/spec-quality'
 
@@ -285,7 +285,7 @@ function PlSpecEditor({
     void saveSpec(draftSpec)
   }
 
-  const quality = analyzeSpecQuality(draftSpec)
+  const quality = useMemo(() => analyzeSpecQuality(draftSpec), [draftSpec])
 
   const savedLabel = saving
     ? 'saving…'

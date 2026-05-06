@@ -48,9 +48,22 @@ export function PlAssistantColumn({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const unsubRef = useRef<(() => void) | null>(null)
+  const streamBufferRef = useRef('')
+  const streamRafRef = useRef<number | null>(null)
 
   const repos = useRepoOptions()
   const firstRepo = repos[0]?.label ?? ''
+
+  const taskSummaries = useMemo(
+    () =>
+      tasks.map((t) => ({
+        id: t.id,
+        title: stripActionMarkers(t.title),
+        status: t.status,
+        hasSpec: !!t.spec?.trim()
+      })),
+    [tasks]
+  )
 
   const epicContext = useMemo(
     () =>
@@ -58,17 +71,12 @@ export function PlAssistantColumn({
         {
           epicName: stripActionMarkers(epic.name),
           epicGoal: epic.goal != null ? stripActionMarkers(epic.goal) : null,
-          tasks: tasks.map((t) => ({
-            id: t.id,
-            title: stripActionMarkers(t.title),
-            status: t.status,
-            hasSpec: !!t.spec?.trim()
-          }))
+          tasks: taskSummaries
         },
         null,
         2
       ),
-    [epic, tasks]
+    [epic, taskSummaries]
   )
 
   const suggestions = useMemo(() => deriveSuggestions(tasks), [tasks])
@@ -80,6 +88,10 @@ export function PlAssistantColumn({
   useEffect(
     () => () => {
       unsubRef.current?.()
+      if (streamRafRef.current !== null) {
+        cancelAnimationFrame(streamRafRef.current)
+        streamRafRef.current = null
+      }
     },
     []
   )
@@ -99,11 +111,21 @@ export function PlAssistantColumn({
       const systemPrefix = buildSystemPrefix(epicContext)
       const apiMessages = buildApiMessages(messages, body, systemPrefix)
 
-      let buffer = ''
+      streamBufferRef.current = ''
       unsubRef.current?.()
+      const flushBuffer = (): void => {
+        const snapshot = streamBufferRef.current
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: snapshot } : m))
+        )
+      }
       const unsub = window.api.workbench.onChatChunk((data) => {
         if (data.done) {
-          const { cleanText, actions } = parseActionMarkers(buffer)
+          if (streamRafRef.current !== null) {
+            cancelAnimationFrame(streamRafRef.current)
+            streamRafRef.current = null
+          }
+          const { cleanText, actions } = parseActionMarkers(streamBufferRef.current)
           setMessages((prev) =>
             prev.map((m) => (m.id === assistantId ? { ...m, content: cleanText, actions } : m))
           )
@@ -113,10 +135,13 @@ export function PlAssistantColumn({
           return
         }
         if (data.chunk) {
-          buffer += data.chunk
-          setMessages((prev) =>
-            prev.map((m) => (m.id === assistantId ? { ...m, content: buffer } : m))
-          )
+          streamBufferRef.current += data.chunk
+          if (streamRafRef.current === null) {
+            streamRafRef.current = requestAnimationFrame(() => {
+              streamRafRef.current = null
+              flushBuffer()
+            })
+          }
         }
       })
       unsubRef.current = unsub

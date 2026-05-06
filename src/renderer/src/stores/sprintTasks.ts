@@ -140,7 +140,7 @@ function mergeTasksWithPendingState(
   }
 }
 
-interface SprintTasksState {
+export interface SprintTasksState {
   // --- Data ---
   tasks: SprintTask[]
   loading: boolean

@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import type { SprintTask } from '../../../../shared/types'
 import { parseRevisionFeedback } from '../../../../shared/types/revision'
 import type { RevisionFeedback } from '../../../../shared/types/revision'
@@ -173,8 +174,19 @@ export function TaskDetailDrawerV2({
   const isActive = task.status === 'active' && !!task.started_at
   useBackoffInterval(() => setElapsed(formatElapsed(task.started_at!)), isActive ? 10_000 : null)
 
-  const allTasks = useSprintTasks((s) => s.tasks)
   const setSelectedTaskId = useSprintSelection((s) => s.setSelectedTaskId)
+
+  const depTaskIds = useMemo(
+    () => new Set((task.depends_on ?? []).map((d) => d.id)),
+    [task.depends_on]
+  )
+  const depTasks = useSprintTasks(
+    useShallow((s) =>
+      s.tasks
+        .filter((t) => depTaskIds.has(t.id))
+        .map((t) => ({ id: t.id, title: t.title, status: t.status }))
+    )
+  )
 
   const agentRunId = task.agent_run_id
   const allAgentEvents = useAgentEventsStore((s) =>
@@ -251,7 +263,10 @@ export function TaskDetailDrawerV2({
     onDelete(task)
   }
 
-  const recentAgentErrors = allAgentEvents.filter((e) => e.type === 'agent:error').slice(-3)
+  const recentAgentErrors = useMemo(
+    () => allAgentEvents.filter((e) => e.type === 'agent:error').slice(-3),
+    [allAgentEvents]
+  )
 
   return (
     <div
@@ -505,7 +520,7 @@ export function TaskDetailDrawerV2({
       {(task.depends_on?.length ?? 0) > 0 && (
         <DrawerSection eyebrow="GRAPH" title="Dependencies">
           {(task.depends_on ?? []).map((dep) => {
-            const depTask = allTasks.find((t) => t.id === dep.id)
+            const depTask = depTasks.find((t) => t.id === dep.id)
             return (
               <button
                 key={dep.id}

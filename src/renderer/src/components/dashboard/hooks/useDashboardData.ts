@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { useNow } from '../../../hooks/useNow'
 import { useSprintTasks } from '../../../stores/sprintTasks'
 import { useCostDataStore } from '../../../stores/costData'
 import { useSprintEvents, latestEventForTask, type SprintEventsState } from '../../../stores/sprintEvents'
@@ -337,20 +338,18 @@ export function useDashboardData(): DashboardData {
 
   const { maxSlots: capacity } = useAgentManagerStatus()
 
-  const now = Date.now()
+  const now = useNow()
 
   const partitions = useMemo(() => partitionSprintTasks(tasks), [tasks])
 
   const activeAgents = useMemo(
     () => deriveActiveAgents(partitions.inProgress, taskTokenMap, taskEvents, now),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [partitions.inProgress, taskTokenMap, taskEvents]
+    [partitions.inProgress, taskTokenMap, taskEvents, now]
   )
 
   const attentionItems = useMemo(
     () => deriveAttentionItems(partitions, now),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [partitions]
+    [partitions, now]
   )
 
   const taskQualityMap = useMemo(() => {
