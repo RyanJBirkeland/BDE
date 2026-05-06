@@ -89,53 +89,48 @@ export function PlAssistantColumn({
       const body = (text ?? input).trim()
       if (!body || chat.isStreaming) return
 
-      appendOptimisticMessages(body)
+      const assistantId = crypto.randomUUID()
+      appendOptimisticMessages(body, assistantId)
       setInput('')
 
-      const assistantId = resolveLastAssistantId()
       const apiMessages = buildApiMessages(messages, body, buildSystemPrefix(epicContext))
-
-      await chat.stream({
-        messages: apiMessages,
-        formContext: { title: epic.name, repo: firstRepo, spec: epicContext },
-        onChunk: (text) =>
-          setMessages((prev) =>
-            prev.map((m) => (m.id === assistantId ? { ...m, content: text } : m))
-          ),
-        onDone: (fullText) => {
-          const { cleanText, actions } = parseActionMarkers(fullText)
-          setMessages((prev) =>
-            prev.map((m) => (m.id === assistantId ? { ...m, content: cleanText, actions } : m))
-          )
-        },
-        onError: () =>
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, content: 'Error: failed to connect to assistant.' }
-                : m
-            )
-          )
-      })
+      await streamAssistantReply(assistantId, apiMessages)
     },
     [input, chat, messages, epic, epicContext, firstRepo]
   )
 
-  const appendOptimisticMessages = (body: string): void => {
+  const appendOptimisticMessages = (body: string, assistantId: string): void => {
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: body }
-    const assistantMsg: Message = { id: crypto.randomUUID(), role: 'assistant', content: '' }
+    const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '' }
     setMessages((prev) => [...prev, userMsg, assistantMsg])
   }
 
-  const resolveLastAssistantId = (): string => {
-    // The optimistic assistant placeholder was just appended; peek via functional
-    // update to avoid stale-closure capture.
-    let id = ''
-    setMessages((prev) => {
-      id = prev[prev.length - 1]?.id ?? ''
-      return prev
+  const streamAssistantReply = async (
+    assistantId: string,
+    apiMessages: Array<{ role: 'user' | 'assistant'; content: string }>
+  ): Promise<void> => {
+    await chat.stream({
+      messages: apiMessages,
+      formContext: { title: epic.name, repo: firstRepo, spec: epicContext },
+      onChunk: (text) =>
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: text } : m))
+        ),
+      onDone: (fullText) => {
+        const { cleanText, actions } = parseActionMarkers(fullText)
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, content: cleanText, actions } : m))
+        )
+      },
+      onError: () =>
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: 'Error: failed to connect to assistant.' }
+              : m
+          )
+        )
     })
-    return id
   }
 
   const handleCardState = (key: string, state: ActionCardState): void => {
