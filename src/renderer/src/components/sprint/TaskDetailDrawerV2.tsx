@@ -182,7 +182,7 @@ export function TaskDetailDrawerV2({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  useFocusTrap(drawerRef, true)
+  useFocusTrap(drawerRef, false)
 
   const isActive = task.status === 'active' && !!task.started_at
   useBackoffInterval(() => setElapsed(formatElapsed(task.started_at!)), isActive ? 10_000 : null)
