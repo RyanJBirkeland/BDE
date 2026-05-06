@@ -23,6 +23,7 @@ const defaultFlags: Flags = {
 }
 
 function validatedFlag<K extends keyof Flags>(parsed: unknown, key: K): Flags[K] {
+  if (typeof parsed !== 'object' || parsed === null) return defaultFlags[key]
   const value = (parsed as Record<string, unknown>)[key]
   return typeof value === 'boolean' ? (value as Flags[K]) : defaultFlags[key]
 }
