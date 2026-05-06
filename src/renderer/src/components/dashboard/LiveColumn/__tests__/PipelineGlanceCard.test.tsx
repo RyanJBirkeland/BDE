@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { PipelineGlanceCard, buildStageCells } from '../PipelineGlanceCard'
+import { PipelineGlanceCard } from '../PipelineGlanceCard'
+import { buildStageCells } from '../pipeline-glance-cells'
 import type { SprintPartition } from '../../../../lib/partitionSprintTasks'
 import type { DashboardStats } from '../../../../lib/dashboard-types'
 import type { SprintTask } from '../../../../../../shared/types'
