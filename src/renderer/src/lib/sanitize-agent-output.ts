@@ -42,6 +42,7 @@ const FLEET_BOUNDARY_TAGS = [
   'module',
   'name',
   'user_task',
+  'user_context',
   'codebase_context',
   'generation_instructions',
   'opening_message',
