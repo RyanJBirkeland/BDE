@@ -12,14 +12,14 @@ interface PipelineGlanceCardProps {
   onOpenPipeline: () => void
 }
 
-interface StageCell {
+export interface StageCell {
   key: string
   label: string
   count: number
   peek: string
 }
 
-function buildStageCells(partitions: SprintPartition, stats: DashboardStats): StageCell[] {
+export function buildStageCells(partitions: SprintPartition, stats: DashboardStats): StageCell[] {
   const oldestActive = partitions.inProgress[partitions.inProgress.length - 1]
   const oldestReview = partitions.pendingReview[partitions.pendingReview.length - 1]
   return [
