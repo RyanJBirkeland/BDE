@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import type { SprintTask } from '../../../../../shared/types'
 import { analyzeSpecQuality } from '../../../lib/spec-quality'
 
-interface Props {
+interface PlSpecPaneProps {
   tasks: SprintTask[]
   taskId: string | null
   onEditInWorkbench: (task: SprintTask) => void
@@ -16,7 +16,7 @@ export function PlSpecPane({
   onEditInWorkbench,
   onAskAssistantDraft,
   onSaveSpec
-}: Props): React.JSX.Element {
+}: PlSpecPaneProps): React.JSX.Element {
   const task = taskId ? tasks.find((t) => t.id === taskId) : null
 
   if (!task) {

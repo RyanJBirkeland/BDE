@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { SprintTask } from '../../../../../shared/types'
 
-interface Props {
+interface PlQueueBarProps {
   tasks: SprintTask[]
   isPaused: boolean
   onQueueAll: () => void
@@ -13,7 +13,7 @@ export function PlQueueBar({
   isPaused,
   onQueueAll,
   onTogglePause
-}: Props): React.JSX.Element {
+}: PlQueueBarProps): React.JSX.Element {
   const { readyCount, needsSpecCount } = useMemo(() => {
     let ready = 0
     let needsSpec = 0

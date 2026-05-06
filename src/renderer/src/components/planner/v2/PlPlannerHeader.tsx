@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
 
-interface Props {
+interface PlPlannerHeaderProps {
   groups: TaskGroup[]
   tasks: SprintTask[]
   assistantOpen: boolean
@@ -17,7 +17,7 @@ export function PlPlannerHeader({
   onToggleAssistant,
   onNewEpic,
   onImport
-}: Props): React.JSX.Element {
+}: PlPlannerHeaderProps): React.JSX.Element {
   const epicCount = groups.length
   const { readyCount, draftCount, inFlightCount } = useMemo(() => {
     let ready = 0
