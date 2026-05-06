@@ -43,3 +43,29 @@ export function tailLog(
 ): ReturnType<typeof window.api.agents.tailLog> {
   return window.api.agents.tailLog(params)
 }
+
+export async function getContextTokens(
+  agentId: string
+): ReturnType<typeof window.api.agents.getContextTokens> {
+  return window.api.agents.getContextTokens(agentId)
+}
+
+export async function killAgent(
+  agentId: string
+): ReturnType<typeof window.api.agents.kill> {
+  return window.api.agents.kill(agentId)
+}
+
+export async function promoteAgentToReview(
+  agentId: string
+): ReturnType<typeof window.api.agents.promoteToReview> {
+  return window.api.agents.promoteToReview(agentId)
+}
+
+export async function steerAgent(
+  agentId: string,
+  message: string,
+  images?: Parameters<typeof window.api.agents.steer>[2]
+): ReturnType<typeof window.api.agents.steer> {
+  return window.api.agents.steer(agentId, message, images)
+}

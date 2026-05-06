@@ -21,6 +21,7 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/
 import { useGitHubStatus } from '../hooks/useGitHubStatus'
 import { useGitCommands } from '../hooks/useGitCommands'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
+import { checkoutBranch, fetchRemote, pullBranch, stageFiles } from '../services/git'
 
 export default function GitTreeView(): React.ReactElement {
   const reduced = useReducedMotion()
@@ -83,8 +84,7 @@ export default function GitTreeView(): React.ReactElement {
 
   function handleCheckout(branchName: string): void {
     if (!activeRepo) return
-    window.api.git
-      .checkout(activeRepo, branchName)
+    checkoutBranch(activeRepo, branchName)
       .then(() => {
         fetchStatus(activeRepo)
         fetchBranches(activeRepo)
@@ -126,8 +126,7 @@ export default function GitTreeView(): React.ReactElement {
 
   function handleFetch(): void {
     if (!activeRepo) return
-    window.api.git
-      .fetch(activeRepo)
+    fetchRemote(activeRepo)
       .then((result) => {
         if (result.success) {
           toast.success('Fetched from origin')
@@ -143,8 +142,7 @@ export default function GitTreeView(): React.ReactElement {
 
   function handlePull(): void {
     if (!activeRepo || !branch) return
-    window.api.git
-      .pull(activeRepo, branch)
+    pullBranch(activeRepo, branch)
       .then((result) => {
         if (result.success) {
           toast.success('Pulled from origin')
@@ -160,8 +158,7 @@ export default function GitTreeView(): React.ReactElement {
 
   function handleStageSection(paths: string[]): void {
     if (!activeRepo) return
-    window.api.git
-      .stage(activeRepo, paths)
+    stageFiles(activeRepo, paths)
       .then(() => fetchStatus(activeRepo))
       .catch((e) => {
         setLastError(`Failed to stage files: ${e instanceof Error ? e.message : 'Unknown error'}`)

@@ -30,6 +30,7 @@ import { useAgentViewCommands } from '../hooks/useAgentViewCommands'
 import { useAgentSlashCommands } from '../hooks/useAgentSlashCommands'
 import { useScratchpadNotice } from '../hooks/useScratchpadNotice'
 import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/motion'
+import { steerAgent } from '../services/agents'
 
 const INSPECTOR_BREAKPOINT = 1280
 const EMPTY_EVENTS: never[] = []
@@ -121,7 +122,7 @@ export function AgentsView(): React.JSX.Element {
         attachment?.type === 'image' && attachment.data && attachment.mimeType
           ? [{ data: attachment.data, mimeType: attachment.mimeType }]
           : undefined
-      const result = await window.api.agents.steer(activeId, textFormattedMessage, images)
+      const result = await steerAgent(activeId, textFormattedMessage, images)
       if (!result.ok) toast.error(result.error ?? 'Failed to send message to agent')
     },
     [activeId]

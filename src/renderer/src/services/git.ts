@@ -46,3 +46,21 @@ export async function diffBetweenRefs(
 ): ReturnType<typeof window.api.git.diffBetweenRefs> {
   return window.api.git.diffBetweenRefs(payload)
 }
+
+export async function checkoutBranch(
+  cwd: string,
+  branchName: string
+): ReturnType<typeof window.api.git.checkout> {
+  return window.api.git.checkout(cwd, branchName)
+}
+
+export async function fetchRemote(cwd: string): ReturnType<typeof window.api.git.fetch> {
+  return window.api.git.fetch(cwd)
+}
+
+export async function pullBranch(
+  cwd: string,
+  branch: string
+): ReturnType<typeof window.api.git.pull> {
+  return window.api.git.pull(cwd, branch)
+}
