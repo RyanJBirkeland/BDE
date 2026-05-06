@@ -3,6 +3,7 @@ import { toast } from '../stores/toasts'
 import { usePrGroupsStore, selectGroupsForRepo, selectUnassignedApprovedTasks } from '../stores/prGroups'
 import { useSprintTasks } from '../stores/sprintTasks'
 import type { PrGroup } from '../../../shared/types/task-types'
+import { validateGitHubUrl } from '../lib/utils'
 
 export interface UsePrGroupsResult {
   groups: PrGroup[]
@@ -48,11 +49,15 @@ export function usePrGroups(repo: string): UsePrGroupsResult {
     async (id: string) => {
       const result = await storeBuildGroup(id)
       if (result.success && result.prUrl) {
-        const prUrl = result.prUrl
-        toast.info('PR created', {
-          action: 'Open PR',
-          onAction: () => window.open(prUrl, '_blank')
-        })
+        const safePrUrl = validateGitHubUrl(result.prUrl)
+        if (safePrUrl) {
+          toast.info('PR created', {
+            action: 'Open PR',
+            onAction: () => window.open(safePrUrl, '_blank')
+          })
+        } else {
+          toast.info('PR created')
+        }
         reload()
       } else if (!result.success) {
         toast.error(result.error ?? 'PR creation failed')

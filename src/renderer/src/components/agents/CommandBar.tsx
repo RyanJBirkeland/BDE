@@ -159,13 +159,27 @@ export function CommandBar({
       try {
         const result = await window.api.window.readClipboardImage()
         if (result) {
+          const ALLOWED_IMAGE_MIME = new Set([
+            'image/png',
+            'image/jpeg',
+            'image/gif',
+            'image/webp'
+          ])
+          const safeMimeType = ALLOWED_IMAGE_MIME.has(result.mimeType)
+            ? result.mimeType
+            : 'image/png'
+          if (!ALLOWED_IMAGE_MIME.has(result.mimeType)) {
+            console.warn(
+              `[CommandBar] clipboard image mime type "${result.mimeType}" not allowed; coercing to image/png`
+            )
+          }
           setAttachment({
             path: '',
             name: `paste-${Date.now()}.png`,
             type: 'image',
-            mimeType: result.mimeType,
+            mimeType: safeMimeType,
             data: result.data,
-            preview: `data:${result.mimeType};base64,${result.data}`
+            preview: `data:${safeMimeType};base64,${result.data}`
           })
           return
         }

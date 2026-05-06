@@ -1,4 +1,5 @@
 import type { SprintTask } from '../../../../shared/types'
+import { validateGitHubUrl } from '../../lib/utils'
 
 export interface UpstreamOutcomesProps {
   upstreamTasks: SprintTask[]
@@ -32,17 +33,20 @@ export function UpstreamOutcomes({
               <span className="task-drawer__upstream-status">{dep.status}</span>
             </div>
 
-            {dep.pr_url && (
-              <a
-                href={dep.pr_url}
-                className="task-drawer__upstream-pr"
-                onClick={(e) => e.stopPropagation()}
-                target="_blank"
-                rel="noreferrer"
-              >
-                PR #{dep.pr_number} ({dep.pr_status ?? 'unknown'}) →
-              </a>
-            )}
+            {(() => {
+              const safePrUrl = validateGitHubUrl(dep.pr_url)
+              return safePrUrl ? (
+                <a
+                  href={safePrUrl}
+                  className="task-drawer__upstream-pr"
+                  onClick={(e) => e.stopPropagation()}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  PR #{dep.pr_number} ({dep.pr_status ?? 'unknown'}) →
+                </a>
+              ) : null
+            })()}
 
             {dep.notes && (
               <div className="task-drawer__upstream-notes">

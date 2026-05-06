@@ -94,6 +94,16 @@ describe('renderMarkdown', () => {
     })
   })
 
+  describe('class attribute (T-20 regression)', () => {
+    it('strips class attribute from anchor tags to prevent CSS-injection abuse', () => {
+      const result = renderMarkdown('<a class="fleet-pulse" href="https://example.com">x</a>')
+      expect(result).not.toContain('class=')
+      expect(result).not.toContain('fleet-pulse')
+      // The anchor itself and its href should still survive
+      expect(result).toContain('href="https://example.com"')
+    })
+  })
+
   describe('edge cases', () => {
     it('returns empty string for empty input', () => {
       expect(renderMarkdown('')).toBe('')

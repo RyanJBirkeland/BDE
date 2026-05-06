@@ -72,8 +72,13 @@ export function renderUserContent(text: string): React.JSX.Element {
   const parts: React.JSX.Element[] = []
   let key = 0
 
-  // Combined regex: inline images ![name](data:...) OR 📄 filename + code blocks
-  const combinedRe = /(?:!\[([^\]]*)\]\((data:[^)]+)\))|(?:📄\s+(\S+)\n```(\w*)\n([\s\S]*?)```)/g
+  // Combined regex: inline images ![name](data:image/<allowed>;base64,...) OR 📄 filename + code blocks
+  // Restrict data URIs to the four allowed image mime types and base64 payloads only —
+  // arbitrary data URIs from agent output could include text/html or javascript scripts.
+  const combinedRe =
+    /(?:!\[([^\]]*)\]\((data:image\/(?:png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+)\))|(?:📄\s+(\S+)\n```(\w*)\n([\s\S]*?)```)/g
+  // Reject base64 payloads larger than ~1MB pre-decode (≈ 1.36M base64 chars).
+  const MAX_BASE64_PAYLOAD_CHARS = 1_360_000
   let lastIndex = 0
   let match: RegExpExecArray | null
 
@@ -91,10 +96,21 @@ export function renderUserContent(text: string): React.JSX.Element {
     }
 
     if (match[1] !== undefined && match[2] !== undefined) {
-      // Inline image: ![name](data:...)
-      parts.push(
-        <img key={key++} src={match[2]} alt={match[1]} className="chat-msg__inline-image" />
-      )
+      // Inline image: ![name](data:image/<allowed>;base64,...)
+      const dataUri = match[2]
+      const base64Payload = dataUri.slice(dataUri.indexOf(',') + 1)
+      if (base64Payload.length > MAX_BASE64_PAYLOAD_CHARS) {
+        // Payload too large — render the original text unchanged instead of the image
+        parts.push(
+          <span key={key++} className="chat-msg__text-plain">
+            {match[0]}
+          </span>
+        )
+      } else {
+        parts.push(
+          <img key={key++} src={dataUri} alt={match[1]} className="chat-msg__inline-image" />
+        )
+      }
     } else if (match[3] !== undefined && match[5] !== undefined) {
       // File attachment: 📄 filename + code block
       parts.push(

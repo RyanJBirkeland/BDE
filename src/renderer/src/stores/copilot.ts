@@ -50,12 +50,38 @@ const WELCOME_MESSAGE: CopilotMessage = {
 
 const COPILOT_STORAGE_KEY = 'fleet:copilot-messages'
 
+const VALID_ROLES = new Set<CopilotMessage['role']>(['user', 'assistant', 'system'])
+const VALID_KINDS = new Set<NonNullable<CopilotMessage['kind']>>(['tool-use'])
+
+function isCopilotMessage(value: unknown): value is CopilotMessage {
+  if (!value || typeof value !== 'object') return false
+  const candidate = value as Record<string, unknown>
+  if (typeof candidate.id !== 'string') return false
+  if (typeof candidate.role !== 'string' || !VALID_ROLES.has(candidate.role as CopilotMessage['role'])) {
+    return false
+  }
+  if (typeof candidate.content !== 'string') return false
+  if (typeof candidate.timestamp !== 'number') return false
+  if (
+    candidate.kind !== undefined &&
+    !(typeof candidate.kind === 'string' && VALID_KINDS.has(candidate.kind as NonNullable<CopilotMessage['kind']>))
+  ) {
+    return false
+  }
+  if (candidate.insertable !== undefined && typeof candidate.insertable !== 'boolean') {
+    return false
+  }
+  return true
+}
+
 function loadPersistedMessages(): CopilotMessage[] {
   try {
     const raw = localStorage.getItem(COPILOT_STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    if (!Array.isArray(parsed) || parsed.length === 0) return []
+    // Drop any element that doesn't match CopilotMessage — silent reject.
+    return parsed.filter(isCopilotMessage)
   } catch {
     // Ignore corrupt localStorage
   }

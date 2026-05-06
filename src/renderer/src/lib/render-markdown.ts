@@ -54,7 +54,7 @@ function sanitizeHtml(html: string): string {
       'br',
       'blockquote'
     ],
-    ALLOWED_ATTR: ['href', 'title', 'class'],
+    ALLOWED_ATTR: ['href', 'title'],
     ALLOW_DATA_ATTR: false
   })
 }

@@ -20,6 +20,7 @@ import { useSprintSelection } from '../../stores/sprintSelection'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { VIEW_LABELS } from '../../lib/view-registry'
 import { timeAgo } from '../../lib/format'
+import { validateGitHubUrl } from '../../lib/utils'
 
 const NOTIFICATION_ICONS: Record<
   NotificationType,
@@ -171,7 +172,10 @@ export function NotificationBell(): React.JSX.Element {
     markAsRead(id)
     if (viewLink) {
       if (viewLink.startsWith('http')) {
-        window.open(viewLink, '_blank')
+        const safeUrl = validateGitHubUrl(viewLink)
+        if (safeUrl) {
+          window.open(safeUrl, '_blank')
+        }
       } else {
         // Internal path like '/sprint/task-id' or '/code-review/task-id'
         const segments = viewLink.replace(/^\//, '').split('/')

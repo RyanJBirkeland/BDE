@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { toast } from '../stores/toasts'
 import type { SprintTask } from '../../../shared/types'
+import { validateGitHubUrl } from '../lib/utils'
 
 /** Tracks which LogDrawer is currently open so OS notifications can be suppressed. */
 let openLogDrawerTaskId: string | null = null
@@ -110,12 +111,16 @@ export function useTaskToasts(
 
       // 2. PR opened: pr_url went from null → non-null
       if (!prev.pr_url && task.pr_url) {
-        const url = task.pr_url
-        toast.info(`PR opened: ${task.title}`, {
-          action: 'Open PR',
-          onAction: () => window.open(url, '_blank'),
-          durationMs: TOAST_DURATION
-        })
+        const safePrUrl = validateGitHubUrl(task.pr_url)
+        if (safePrUrl) {
+          toast.info(`PR opened: ${task.title}`, {
+            action: 'Open PR',
+            onAction: () => window.open(safePrUrl, '_blank'),
+            durationMs: TOAST_DURATION
+          })
+        } else {
+          toast.info(`PR opened: ${task.title}`, { durationMs: TOAST_DURATION })
+        }
       }
     }
 

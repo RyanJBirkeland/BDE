@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { Modal } from '../ui/Modal'
 import { usePrGroups } from '../../hooks/usePrGroups'
+import { validateGitHubUrl } from '../../lib/utils'
 import type { PrGroup, SprintTask } from '../../../../shared/types/task-types'
 import './PrBuilderModal.css'
 
@@ -236,20 +237,25 @@ function PrGroupCard({
         {building ? 'Building PR…' : isOpen ? 'PR open ↗' : 'Build PR'}
       </button>
 
-      {group.pr_url && isOpen && (
-        <a
-          href={group.pr_url}
-          target="_blank"
-          rel="noreferrer"
-          className="pr-group-card__pr-link"
-          onClick={(e) => {
-            e.preventDefault()
-            window.open(group.pr_url!, '_blank')
-          }}
-        >
-          View PR →
-        </a>
-      )}
+      {(() => {
+        if (!isOpen) return null
+        const safePrUrl = validateGitHubUrl(group.pr_url)
+        if (!safePrUrl) return null
+        return (
+          <a
+            href={safePrUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="pr-group-card__pr-link"
+            onClick={(e) => {
+              e.preventDefault()
+              window.open(safePrUrl, '_blank')
+            }}
+          >
+            View PR →
+          </a>
+        )
+      })()}
     </div>
   )
 }
