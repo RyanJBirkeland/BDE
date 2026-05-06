@@ -284,3 +284,92 @@ describe('usePlActivityFeed — live event insertion order', () => {
     expect(result.current.entries).toHaveLength(2)
   })
 })
+
+describe('usePlActivityFeed hook — integration', () => {
+  let capturedEventHandler: ((payload: { agentId: string; event: AgentEvent }) => void) | null = null
+  let capturedUnsub: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    capturedEventHandler = null
+    capturedUnsub = vi.fn()
+
+    vi.mocked(subscribeToAgentEvents).mockImplementation((handler) => {
+      capturedEventHandler = handler
+      return capturedUnsub
+    })
+
+    setupWindowApi({ getChanges: vi.fn().mockResolvedValue([]) })
+    vi.mocked(getAgentEventHistory).mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('empty tasks array returns { entries: [], loading: false, error: null } without any IPC calls', () => {
+    const getChangesMock = vi.fn().mockResolvedValue([])
+    setupWindowApi({ getChanges: getChangesMock })
+
+    const { result } = renderHook(() => usePlActivityFeed([]))
+
+    expect(result.current.entries).toEqual([])
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toBeNull()
+    expect(getChangesMock).not.toHaveBeenCalled()
+    expect(getAgentEventHistory).not.toHaveBeenCalled()
+  })
+
+  it('non-empty tasks fetches changes and history, populating entries on resolve', async () => {
+    const changeRow = makeValidChangeRow('t1')
+    setupWindowApi({ getChanges: vi.fn().mockResolvedValue([changeRow]) })
+    vi.mocked(getAgentEventHistory).mockResolvedValue([
+      { type: 'agent:started', model: 'claude', timestamp: Date.now() }
+    ])
+
+    const { result } = renderHook(() => usePlActivityFeed([makeTask('t1')]))
+
+    await act(async () => {})
+
+    expect(result.current.entries.length).toBeGreaterThan(0)
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toBeNull()
+  })
+
+  it('IPC failure sets error state and leaves entries empty', async () => {
+    setupWindowApi({ getChanges: vi.fn().mockRejectedValue(new Error('IPC timeout')) })
+
+    const { result } = renderHook(() => usePlActivityFeed([makeTask('t1')]))
+
+    await act(async () => {})
+
+    expect(result.current.error).toBe('IPC timeout')
+    expect(result.current.entries).toEqual([])
+    expect(result.current.loading).toBe(false)
+  })
+
+  it('live subscription adds an entry at the head and entries stay newest-first', async () => {
+    const historicalRow = makeValidChangeRow('t1')
+    setupWindowApi({ getChanges: vi.fn().mockResolvedValue([historicalRow]) })
+
+    const { result } = renderHook(() => usePlActivityFeed([makeTask('t1')]))
+    await act(async () => {})
+    const beforeCount = result.current.entries.length
+
+    const liveEvent: AgentEvent = { type: 'agent:started', model: 'claude', timestamp: Date.now() }
+    act(() => {
+      capturedEventHandler?.({ agentId: 't1', event: liveEvent })
+    })
+
+    expect(result.current.entries).toHaveLength(beforeCount + 1)
+    expect(result.current.entries[0].kind).toBe('agent')
+  })
+
+  it('cleans up the subscription on unmount', () => {
+    const { unmount } = renderHook(() => usePlActivityFeed([makeTask('t1')]))
+    const callsBefore = capturedUnsub.mock.calls.length
+    unmount()
+    // At least one additional unsub call must happen when the component unmounts
+    expect(capturedUnsub.mock.calls.length).toBeGreaterThan(callsBefore)
+  })
+})
