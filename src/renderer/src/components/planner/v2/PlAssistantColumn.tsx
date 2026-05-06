@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
 import { parseActionMarkers, type ParseResult } from '../PlannerAssistant'
 import { useRepoOptions } from '../../../hooks/useRepoOptions'
@@ -84,51 +84,57 @@ export function PlAssistantColumn({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const appendOptimisticMessages = (body: string, assistantId: string): void => {
+  const appendOptimisticMessages = useCallback((body: string, assistantId: string): void => {
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: body }
     const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '' }
     setMessages((prev) => [...prev, userMsg, assistantMsg])
-  }
+  }, [])
 
-  const streamAssistantReply = async (
-    assistantId: string,
-    apiMessages: Array<{ role: 'user' | 'assistant'; content: string }>
-  ): Promise<void> => {
-    await chat.stream({
-      messages: apiMessages,
-      formContext: { title: epic.name, repo: firstRepo, spec: epicContext },
-      onChunk: (text) =>
-        setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content: text } : m))
-        ),
-      onDone: (fullText) => {
-        const { cleanText, actions } = parseActionMarkers(fullText)
-        setMessages((prev) =>
-          prev.map((m) => (m.id === assistantId ? { ...m, content: cleanText, actions } : m))
-        )
-      },
-      onError: () =>
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId
-              ? { ...m, content: 'Error: failed to connect to assistant.' }
-              : m
+  const streamAssistantReply = useCallback(
+    async (
+      assistantId: string,
+      apiMessages: Array<{ role: 'user' | 'assistant'; content: string }>
+    ): Promise<void> => {
+      await chat.stream({
+        messages: apiMessages,
+        formContext: { title: epic.name, repo: firstRepo, spec: epicContext },
+        onChunk: (text) =>
+          setMessages((prev) =>
+            prev.map((m) => (m.id === assistantId ? { ...m, content: text } : m))
+          ),
+        onDone: (fullText) => {
+          const { cleanText, actions } = parseActionMarkers(fullText)
+          setMessages((prev) =>
+            prev.map((m) => (m.id === assistantId ? { ...m, content: cleanText, actions } : m))
           )
-        )
-    })
-  }
+        },
+        onError: () =>
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId
+                ? { ...m, content: 'Error: failed to connect to assistant.' }
+                : m
+            )
+          )
+      })
+    },
+    [chat, epic.name, firstRepo, epicContext]
+  )
 
-  const sendMessage = async (text?: string): Promise<void> => {
-    const body = (text ?? input).trim()
-    if (!body || chat.isStreaming) return
+  const sendMessage = useCallback(
+    async (text?: string): Promise<void> => {
+      const body = (text ?? input).trim()
+      if (!body || chat.isStreaming) return
 
-    const assistantId = crypto.randomUUID()
-    appendOptimisticMessages(body, assistantId)
-    setInput('')
+      const assistantId = crypto.randomUUID()
+      appendOptimisticMessages(body, assistantId)
+      setInput('')
 
-    const apiMessages = buildApiMessages(messages, body, buildSystemPrefix(epicContext))
-    await streamAssistantReply(assistantId, apiMessages)
-  }
+      const apiMessages = buildApiMessages(messages, body, buildSystemPrefix(epicContext))
+      await streamAssistantReply(assistantId, apiMessages)
+    },
+    [input, messages, chat, epic, epicContext, firstRepo, appendOptimisticMessages, streamAssistantReply]
+  )
 
   const handleCardState = (key: string, state: ActionCardState): void => {
     setCardStates((prev) => ({ ...prev, [key]: state }))

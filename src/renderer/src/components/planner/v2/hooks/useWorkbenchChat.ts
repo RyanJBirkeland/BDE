@@ -92,6 +92,10 @@ export function useWorkbenchChat(): UseWorkbenchChatResult {
     try {
       await window.api.workbench.chatStream({ messages, formContext })
     } catch {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
       onError()
       setIsStreaming(false)
       unsubRef.current = null

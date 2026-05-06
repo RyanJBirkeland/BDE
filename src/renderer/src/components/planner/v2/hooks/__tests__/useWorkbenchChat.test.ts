@@ -113,6 +113,38 @@ describe('useWorkbenchChat', () => {
     expect(result.current.isStreaming).toBe(false)
   })
 
+  it('does not call onChunk after onError when a chunk arrives before rejection', async () => {
+    // chatStream rejects immediately, simulating a network error that races
+    // with a chunk that was buffered just before the failure.
+    vi.mocked(window.api.workbench.chatStream).mockRejectedValueOnce(new Error('network'))
+
+    const onChunk = vi.fn()
+    const onError = vi.fn()
+    const { result } = renderHook(() => useWorkbenchChat())
+
+    await act(async () => {
+      const streamPromise = result.current.stream({
+        messages: [],
+        formContext: { title: 'T', repo: 'r', spec: '' },
+        onChunk,
+        onDone: vi.fn(),
+        onError
+      })
+      // Fire a chunk before the rejection resolves — this schedules a RAF.
+      getListener().capture?.({ chunk: 'partial', done: false, streamId: 'x' })
+      await streamPromise
+    })
+
+    // The catch block must have cancelled the RAF, so onChunk must not be
+    // called after onError.
+    const onErrorCallOrder = onError.mock.invocationCallOrder[0]
+    const onChunkCallsAfterError = onChunk.mock.invocationCallOrder.filter(
+      (order) => order > onErrorCallOrder
+    )
+    expect(onChunkCallsAfterError).toHaveLength(0)
+    expect(onError).toHaveBeenCalledOnce()
+  })
+
   it('calls window.api.workbench.chatStream with the provided messages', async () => {
     const { result } = renderHook(() => useWorkbenchChat())
     const messages = [{ role: 'user' as const, content: 'hi' }]
