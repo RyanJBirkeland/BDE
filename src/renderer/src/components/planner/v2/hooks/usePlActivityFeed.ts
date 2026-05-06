@@ -11,6 +11,21 @@ const TRACKED_EVENTS = new Set<string>([
   'agent:tool_call'
 ])
 
+const AGENT_EVENT_TYPES = new Set<string>([
+  'agent:started',
+  'agent:mcp_disclosure',
+  'agent:text',
+  'agent:user_message',
+  'agent:thinking',
+  'agent:tool_call',
+  'agent:tool_result',
+  'agent:rate_limited',
+  'agent:error',
+  'agent:stderr',
+  'agent:completed',
+  'agent:playground'
+])
+
 interface ChangeRow {
   id: number
   task_id: string
@@ -19,6 +34,37 @@ interface ChangeRow {
   new_value: string | null
   changed_by: string
   changed_at: string
+}
+
+function isChangeRow(value: unknown): value is ChangeRow {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return (
+    typeof candidate.task_id === 'string' &&
+    typeof candidate.field === 'string' &&
+    typeof candidate.changed_by === 'string' &&
+    typeof candidate.changed_at === 'string'
+  )
+}
+
+function isAgentEvent(value: unknown): value is AgentEvent {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Record<string, unknown>
+  return (
+    typeof candidate.type === 'string' &&
+    AGENT_EVENT_TYPES.has(candidate.type) &&
+    typeof candidate.timestamp === 'number'
+  )
+}
+
+export function parseChangeRows(raw: unknown): ChangeRow[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter(isChangeRow)
+}
+
+export function parseAgentEvents(raw: unknown): AgentEvent[] {
+  if (!Array.isArray(raw)) return []
+  return raw.filter(isAgentEvent)
 }
 
 export type FeedEntry =
@@ -92,6 +138,10 @@ export function usePlActivityFeed(tasks: SprintTask[]): {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Stable fingerprint of task IDs — avoids re-fetching on every 30s poll that
+  // delivers a new array reference even when task IDs haven't changed.
+  const taskIds = tasks.map((t) => t.id).join(',')
+
   const fetchAll = useCallback(async () => {
     if (tasks.length === 0) {
       setEntries([])
@@ -106,36 +156,39 @@ export function usePlActivityFeed(tasks: SprintTask[]): {
             window.api.sprint.getChanges(task.id),
             getAgentEventHistory(task.id)
           ])
-          const changeEntries = (changes as ChangeRow[]).map((c) =>
+          const changeEntries = parseChangeRows(changes).map((c) =>
             buildChangeFeedEntry(c, task.title)
           )
-          const agentEntries = (agentEvents as AgentEvent[])
-            .map((e: AgentEvent) => buildAgentFeedEntry(e, task.id, task.title))
+          const agentEntries = parseAgentEvents(agentEvents)
+            .map((e) => buildAgentFeedEntry(e, task.id, task.title))
             .filter((e): e is FeedEntry => e !== null)
           return [...changeEntries, ...agentEntries]
         })
       )
       setEntries(sortNewestFirst(perTask.flat()))
     } catch (err) {
-      setError((err as Error).message)
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
-  }, [tasks])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskIds])
 
   useEffect(() => {
     void fetchAll()
   }, [fetchAll])
 
   useEffect(() => {
-    const taskIds = new Set(tasks.map((t) => t.id))
+    const taskIdSet = new Set(tasks.map((t) => t.id))
     const titleByTaskId = new Map(tasks.map((t) => [t.id, t.title]))
 
     const unsubscribe = subscribeToAgentEvents(({ agentId, event }) => {
-      if (!taskIds.has(agentId)) return
+      if (!taskIdSet.has(agentId)) return
       const entry = buildAgentFeedEntry(event, agentId, titleByTaskId.get(agentId) ?? agentId)
       if (!entry) return
-      setEntries((prev) => sortNewestFirst([entry, ...prev]))
+      // Live events are always newer than existing historical entries, so
+      // prepending maintains newest-first order without a full re-sort.
+      setEntries((prev) => [entry, ...prev])
     })
 
     return unsubscribe
