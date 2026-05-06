@@ -133,7 +133,7 @@ Source: `src/renderer/src/components/`
 | `ActiveAgentsCard.tsx`        | dashboard      | V2 live card showing running pipeline agents (up to 5) with elapsed time and token count. Empty state shows Spawn button. Card head carries `fleet-pulse`. | `ActiveAgentsCard` |
 | `PipelineGlanceCard.tsx`      | dashboard      | V2 live card: proportional flow bar + 4-up grid (queued/running/review/done counts + oldest peek). Card head carries `fleet-pulse`. | `PipelineGlanceCard` |
 | `ThroughputCard.tsx`          | dashboard      | V2 historical card: 24-bar chart from `CompletionBucket[]` + delta vs yesterday. No pulse — historical data. | `ThroughputCard` |
-| `AttentionCard.tsx`           | dashboard      | V2 triage card: aggregated failed/blocked/stale-review items ranked by severity×age. Hides entirely when empty. Red-tinted border. | `AttentionCard` |
+| `AttentionCard.tsx`           | dashboard      | V2 triage card: aggregated failed/blocked/stale-review items ranked by severity×age. Hides entirely when empty. Red-tinted border. Action routing: failed→`onRetryTask`, review→`onOpenReview`, blocked→`onOpenPipeline`. | `AttentionCard` |
 | `ReviewQueueCard.tsx`         | dashboard      | V2 triage card: tasks in `pendingReview` partition, capped at 5 with overflow link. Shows "All caught up." when empty. | `ReviewQueueCard` |
 | `RecentCompletionsCard.tsx`   | dashboard      | V2 triage card: last 5 done tasks with token count. Hides entirely when empty. QualityChip stubbed (TODO phase-2.5). | `RecentCompletionsCard` |
 | `KPIStrip.tsx`                | dashboard      | V2 full-width KPI row: 5 cells (success rate, avg duration, tokens/run, cost/task, failure rate) each with delta indicator and MicroSpark. | `KPIStrip` |
