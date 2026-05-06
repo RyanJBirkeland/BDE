@@ -16,7 +16,6 @@ interface Props {
   assistantOpen: boolean
   onAddTask: () => void
   onEditInWorkbench: (task: SprintTask) => void
-  onEditEpic: () => void
   onToggleReady: () => void
   onTogglePause: () => void
   onQueueAll: () => void
@@ -35,7 +34,6 @@ export function PlEpicCanvas({
   assistantOpen,
   onAddTask,
   onEditInWorkbench,
-  onEditEpic,
   onToggleReady,
   onTogglePause,
   onQueueAll,
@@ -55,7 +53,7 @@ export function PlEpicCanvas({
         borderRight: assistantOpen ? '1px solid var(--line)' : 'none'
       }}
     >
-      <PlEpicHero epic={epic} tasks={tasks} onEditEpic={onEditEpic} onToggleReady={onToggleReady} />
+      <PlEpicHero epic={epic} tasks={tasks} onToggleReady={onToggleReady} />
 
       <PlEpicTabBar
         tabs={TABS}

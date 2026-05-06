@@ -60,14 +60,6 @@ export function PlannerViewV2(): React.JSX.Element {
     useTaskWorkbenchModalStore.getState().openForEdit(task)
   }, [])
 
-  const handleEditEpic = useCallback(async () => {
-    if (!selectedGroup) return
-    // Delegate to workbench — for V2, launching the create modal in edit mode
-    // is the simplest path until an epic-specific modal is built.
-    // For now, show a toast directing the user to use the menu.
-    toast.info('Use the overflow menu on the epic to edit its name and goal.')
-  }, [selectedGroup])
-
   const handleToggleReady = useCallback(async () => {
     if (!selectedGroup) return
     const nextStatus: TaskGroup['status'] = selectedGroup.status === 'ready' ? 'draft' : 'ready'
@@ -161,7 +153,6 @@ export function PlannerViewV2(): React.JSX.Element {
             assistantOpen={assistantOpen}
             onAddTask={handleAddTask}
             onEditInWorkbench={handleEditInWorkbench}
-            onEditEpic={handleEditEpic}
             onToggleReady={handleToggleReady}
             onTogglePause={handleTogglePause}
             onQueueAll={handleQueueAll}
