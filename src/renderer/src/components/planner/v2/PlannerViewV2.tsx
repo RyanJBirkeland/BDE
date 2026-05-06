@@ -21,7 +21,10 @@ export function PlannerViewV2(): React.JSX.Element {
     queueAllTasks,
     updateGroup,
     togglePause,
-    loadGroupTasks
+    loadGroupTasks,
+    addDependency,
+    removeDependency,
+    updateDependencyCondition
   } = useTaskGroups()
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -137,6 +140,33 @@ export function PlannerViewV2(): React.JSX.Element {
     [updateTask, selectedGroupId, loadGroupTasks]
   )
 
+  const handleAddDependency = useCallback(
+    async (upstreamId: string): Promise<void> => {
+      if (!selectedGroup) return
+      await addDependency(selectedGroup.id, { id: upstreamId, condition: 'on_success' })
+    },
+    [selectedGroup, addDependency]
+  )
+
+  const handleRemoveDependency = useCallback(
+    async (upstreamId: string): Promise<void> => {
+      if (!selectedGroup) return
+      await removeDependency(selectedGroup.id, upstreamId)
+    },
+    [selectedGroup, removeDependency]
+  )
+
+  const handleChangeCondition = useCallback(
+    async (
+      upstreamId: string,
+      condition: import('../../../../../shared/types').EpicDependency['condition']
+    ): Promise<void> => {
+      if (!selectedGroup) return
+      await updateDependencyCondition(selectedGroup.id, upstreamId, condition)
+    },
+    [selectedGroup, updateDependencyCondition]
+  )
+
   const activeGroups = useMemo(() => groups.filter((g) => g.status !== 'completed'), [groups])
 
   return (
@@ -170,6 +200,7 @@ export function PlannerViewV2(): React.JSX.Element {
           <PlEpicCanvas
             epic={selectedGroup}
             tasks={groupTasks}
+            allGroups={groups}
             selectedTaskId={selectedTaskId}
             onSelectTask={handleSelectTask}
             assistantOpen={assistantOpen}
@@ -182,6 +213,9 @@ export function PlannerViewV2(): React.JSX.Element {
             onSaveSpec={handleSaveSpec}
             onSaveName={handleSaveName}
             onSaveGoal={handleSaveGoal}
+            onAddDependency={handleAddDependency}
+            onRemoveDependency={handleRemoveDependency}
+            onChangeCondition={handleChangeCondition}
           />
         ) : (
           <PlEmptyCanvas assistantOpen={assistantOpen} />

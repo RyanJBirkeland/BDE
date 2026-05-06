@@ -11,6 +11,7 @@ import { useRovingTabIndex } from '../../../hooks/useRovingTabIndex'
 interface PlEpicCanvasProps {
   epic: TaskGroup
   tasks: SprintTask[]
+  allGroups: TaskGroup[]
   selectedTaskId: string | null
   onSelectTask: (id: string) => void
   assistantOpen: boolean
@@ -23,6 +24,9 @@ interface PlEpicCanvasProps {
   onSaveSpec: (taskId: string, spec: string) => Promise<void>
   onSaveName: (name: string) => Promise<void>
   onSaveGoal: (goal: string) => Promise<void>
+  onAddDependency: (upstreamId: string) => Promise<void>
+  onRemoveDependency: (upstreamId: string) => Promise<void>
+  onChangeCondition: (upstreamId: string, condition: import('../../../../../shared/types').EpicDependency['condition']) => Promise<void>
 }
 
 const TABS = ['Tasks', 'Spec', 'Dependencies', 'Activity'] as const
@@ -31,6 +35,7 @@ type Tab = (typeof TABS)[number]
 export function PlEpicCanvas({
   epic,
   tasks,
+  allGroups,
   selectedTaskId,
   onSelectTask,
   assistantOpen,
@@ -42,7 +47,10 @@ export function PlEpicCanvas({
   onAskAssistantDraft,
   onSaveSpec,
   onSaveName,
-  onSaveGoal
+  onSaveGoal,
+  onAddDependency,
+  onRemoveDependency,
+  onChangeCondition
 }: PlEpicCanvasProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<Tab>('Tasks')
 
@@ -101,7 +109,14 @@ export function PlEpicCanvas({
           aria-labelledby="tab-Dependencies"
           style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
         >
-          <PlDepsPane epic={epic} />
+          <PlDepsPane
+            epicId={epic.id}
+            deps={epic.depends_on ?? []}
+            groups={allGroups}
+            onAdd={onAddDependency}
+            onRemove={onRemoveDependency}
+            onChangeCondition={onChangeCondition}
+          />
         </div>
       ) : activeTab === 'Activity' ? (
         <div

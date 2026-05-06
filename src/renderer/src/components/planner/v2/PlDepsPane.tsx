@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import type { TaskGroup, EpicDependency } from '../../../../../shared/types'
-import { useTaskGroups } from '../../../stores/taskGroups'
 
 interface PlDepsPaneProps {
-  epic: TaskGroup
+  epicId: string
+  deps: EpicDependency[]
+  groups: TaskGroup[]
+  onAdd: (upstreamId: string) => Promise<void>
+  onRemove: (upstreamId: string) => Promise<void>
+  onChangeCondition: (upstreamId: string, condition: EpicDependency['condition']) => Promise<void>
 }
 
 const CONDITION_LABEL: Record<EpicDependency['condition'], string> = {
@@ -20,36 +24,41 @@ export function nextDependencyCondition(
   return 'on_success'
 }
 
-export function PlDepsPane({ epic }: PlDepsPaneProps): React.JSX.Element {
-  const { groups, addDependency, removeDependency, updateDependencyCondition } = useTaskGroups()
+export function PlDepsPane({
+  epicId,
+  deps,
+  groups,
+  onAdd,
+  onRemove,
+  onChangeCondition
+}: PlDepsPaneProps): React.JSX.Element {
   const [cycleError, setCycleError] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
 
-  const deps = epic.depends_on ?? []
   const epicLookup = new Map(groups.map((g) => [g.id, g]))
   const addableEpics = groups
-    .filter((g) => g.id !== epic.id && !deps.some((d) => d.id === g.id))
+    .filter((g) => g.id !== epicId && !deps.some((d) => d.id === g.id))
     .sort((a, b) => a.name.localeCompare(b.name))
 
   async function handleCycleCondition(dep: EpicDependency): Promise<void> {
     setCycleError(null)
     try {
-      await updateDependencyCondition(epic.id, dep.id, nextDependencyCondition(dep.condition))
+      await onChangeCondition(dep.id, nextDependencyCondition(dep.condition))
     } catch (err) {
-      setCycleError((err as Error).message)
+      setCycleError(err instanceof Error ? err.message : String(err))
     }
   }
 
   async function handleRemove(upstreamId: string): Promise<void> {
     setCycleError(null)
-    await removeDependency(epic.id, upstreamId)
+    await onRemove(upstreamId)
   }
 
   async function handleAdd(upstreamId: string): Promise<void> {
     setCycleError(null)
     setAdding(true)
     try {
-      await addDependency(epic.id, { id: upstreamId, condition: 'on_success' })
+      await onAdd(upstreamId)
     } catch {
       setCycleError('Adding this dependency would create a cycle.')
     } finally {
