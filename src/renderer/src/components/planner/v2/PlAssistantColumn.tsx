@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
 import { parseActionMarkers, type ParseResult } from '../PlannerAssistant'
 import { useRepoOptions } from '../../../hooks/useRepoOptions'
@@ -84,21 +84,6 @@ export function PlAssistantColumn({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = useCallback(
-    async (text?: string) => {
-      const body = (text ?? input).trim()
-      if (!body || chat.isStreaming) return
-
-      const assistantId = crypto.randomUUID()
-      appendOptimisticMessages(body, assistantId)
-      setInput('')
-
-      const apiMessages = buildApiMessages(messages, body, buildSystemPrefix(epicContext))
-      await streamAssistantReply(assistantId, apiMessages)
-    },
-    [input, chat, messages, epic, epicContext, firstRepo]
-  )
-
   const appendOptimisticMessages = (body: string, assistantId: string): void => {
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: body }
     const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '' }
@@ -131,6 +116,18 @@ export function PlAssistantColumn({
           )
         )
     })
+  }
+
+  const sendMessage = async (text?: string): Promise<void> => {
+    const body = (text ?? input).trim()
+    if (!body || chat.isStreaming) return
+
+    const assistantId = crypto.randomUUID()
+    appendOptimisticMessages(body, assistantId)
+    setInput('')
+
+    const apiMessages = buildApiMessages(messages, body, buildSystemPrefix(epicContext))
+    await streamAssistantReply(assistantId, apiMessages)
   }
 
   const handleCardState = (key: string, state: ActionCardState): void => {
