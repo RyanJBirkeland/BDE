@@ -1,4 +1,4 @@
-import type { SprintTask } from '../../../../../shared/types'
+import type { SprintTask, AgentEventType } from '../../../../../shared/types'
 import { usePlActivityFeed, type FeedEntry } from './hooks/usePlActivityFeed'
 import { timeAgo } from '../../../lib/format'
 
@@ -6,7 +6,7 @@ interface PlActivityFeedProps {
   tasks: SprintTask[]
 }
 
-const DOT_COLOR: Record<string, string | undefined> = {
+const DOT_COLOR: Partial<Record<AgentEventType | 'change', string>> = {
   'agent:started': 'var(--st-running)',
   'agent:completed': 'var(--st-done)',
   'agent:error': 'var(--st-failed)',
@@ -15,8 +15,8 @@ const DOT_COLOR: Record<string, string | undefined> = {
 }
 
 function entryColor(entry: FeedEntry): string {
-  if (entry.kind === 'change') return DOT_COLOR.change ?? 'var(--fg-3)'
-  return DOT_COLOR[entry.eventType] ?? 'var(--fg-4)'
+  const key = entry.kind === 'agent' ? entry.eventType : 'change'
+  return DOT_COLOR[key] ?? 'var(--fg-4)'
 }
 
 function entryDescription(entry: FeedEntry): string {

@@ -1,6 +1,6 @@
 import type { SprintTask } from '../../../../../shared/types'
 
-interface Props {
+interface PlTaskListPaneProps {
   tasks: SprintTask[]
   selectedTaskId: string | null
   onSelectTask: (id: string) => void
@@ -25,7 +25,7 @@ export function PlTaskListPane({
   selectedTaskId,
   onSelectTask,
   onAddTask
-}: Props): React.JSX.Element {
+}: PlTaskListPaneProps): React.JSX.Element {
   return (
     <div
       style={{

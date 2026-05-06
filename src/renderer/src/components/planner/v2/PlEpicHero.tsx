@@ -1,13 +1,15 @@
-import { useMemo, useState, useRef, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
-import { useTaskGroups } from '../../../stores/taskGroups'
 import { EpicIcon } from './PlEpicRail'
+import { EditableField } from './EditableField'
 import { partitionSprintTasks } from '../../../lib/partitionSprintTasks'
 
-interface Props {
+interface PlEpicHeroProps {
   epic: TaskGroup
   tasks: SprintTask[]
   onToggleReady: () => void
+  saveName: (name: string) => Promise<void>
+  saveGoal: (goal: string) => Promise<void>
 }
 
 const STATUS_LABEL: Record<TaskGroup['status'], string> = {
@@ -17,9 +19,13 @@ const STATUS_LABEL: Record<TaskGroup['status'], string> = {
   completed: 'Completed'
 }
 
-export function PlEpicHero({ epic, tasks, onToggleReady }: Props): React.JSX.Element {
-  const { updateGroup } = useTaskGroups()
-
+export function PlEpicHero({
+  epic,
+  tasks,
+  onToggleReady,
+  saveName,
+  saveGoal
+}: PlEpicHeroProps): React.JSX.Element {
   const counts = useMemo(() => {
     const c = { done: 0, running: 0, queued: 0, blocked: 0 }
     tasks.forEach((t) => {
@@ -33,20 +39,6 @@ export function PlEpicHero({ epic, tasks, onToggleReady }: Props): React.JSX.Ele
   const backlogCount = useMemo(() => partitionSprintTasks(tasks).backlog.length, [tasks])
   const { done: doneCount, running: runningCount, queued: queuedCount, blocked: blockedCount } =
     counts
-
-  async function saveName(name: string): Promise<void> {
-    const trimmed = name.trim()
-    if (trimmed && trimmed !== epic.name) {
-      await updateGroup(epic.id, { name: trimmed })
-    }
-  }
-
-  async function saveGoal(goal: string): Promise<void> {
-    const trimmed = goal.trim()
-    if (trimmed !== (epic.goal ?? '')) {
-      await updateGroup(epic.id, { goal: trimmed || undefined })
-    }
-  }
 
   return (
     <div
@@ -93,7 +85,7 @@ export function PlEpicHero({ epic, tasks, onToggleReady }: Props): React.JSX.Ele
           )}
         </div>
 
-        <EditableText
+        <EditableField
           value={epic.name}
           onSave={saveName}
           style={{
@@ -105,10 +97,11 @@ export function PlEpicHero({ epic, tasks, onToggleReady }: Props): React.JSX.Ele
           }}
         />
 
-        <EditableTextarea
+        <EditableField
           value={epic.goal ?? ''}
-          placeholder="Add a goal…"
           onSave={saveGoal}
+          multiline
+          placeholder="Add a goal…"
           style={{
             marginTop: 6,
             fontSize: 13,
@@ -144,184 +137,6 @@ export function PlEpicHero({ epic, tasks, onToggleReady }: Props): React.JSX.Ele
           </button>
         </div>
       </div>
-    </div>
-  )
-}
-
-function EditableText({
-  value,
-  onSave,
-  style
-}: {
-  value: string
-  onSave: (v: string) => Promise<void>
-  style?: React.CSSProperties
-}): React.JSX.Element {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(value)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (editing) inputRef.current?.select()
-  }, [editing])
-
-  useEffect(() => {
-    if (!editing) setDraft(value)
-  }, [value, editing])
-
-  function startEdit(): void {
-    setDraft(value)
-    setEditing(true)
-  }
-
-  async function commit(): Promise<void> {
-    setEditing(false)
-    await onSave(draft)
-  }
-
-  function cancel(): void {
-    setDraft(value)
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <input
-        ref={inputRef}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => void commit()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            void commit()
-          }
-          if (e.key === 'Escape') {
-            e.preventDefault()
-            cancel()
-          }
-        }}
-        style={{
-          ...style,
-          display: 'block',
-          width: '100%',
-          background: 'transparent',
-          border: 'none',
-          borderBottom: '1px solid var(--accent)',
-          outline: 'none',
-          padding: '0 0 2px',
-          fontFamily: 'inherit'
-        }}
-      />
-    )
-  }
-
-  return (
-    <div
-      onClick={startEdit}
-      title="Click to edit"
-      style={{
-        ...style,
-        cursor: 'text',
-        borderBottom: '1px solid transparent',
-        paddingBottom: 2
-      }}
-    >
-      {value}
-    </div>
-  )
-}
-
-function EditableTextarea({
-  value,
-  placeholder,
-  onSave,
-  style
-}: {
-  value: string
-  placeholder?: string
-  onSave: (v: string) => Promise<void>
-  style?: React.CSSProperties
-}): React.JSX.Element {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(value)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    if (editing && textareaRef.current) {
-      const el = textareaRef.current
-      el.style.height = 'auto'
-      el.style.height = `${el.scrollHeight}px`
-    }
-  }, [editing, draft])
-
-  useEffect(() => {
-    if (!editing) setDraft(value)
-  }, [value, editing])
-
-  function startEdit(): void {
-    setDraft(value)
-    setEditing(true)
-  }
-
-  async function commit(): Promise<void> {
-    setEditing(false)
-    await onSave(draft)
-  }
-
-  function cancel(): void {
-    setDraft(value)
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <textarea
-        ref={textareaRef}
-        value={draft}
-        autoFocus
-        onChange={(e) => {
-          setDraft(e.target.value)
-          e.target.style.height = 'auto'
-          e.target.style.height = `${e.target.scrollHeight}px`
-        }}
-        onBlur={() => void commit()}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            e.preventDefault()
-            cancel()
-          }
-        }}
-        style={{
-          ...style,
-          display: 'block',
-          width: '100%',
-          background: 'transparent',
-          border: 'none',
-          borderBottom: '1px solid var(--accent)',
-          outline: 'none',
-          padding: '0 0 2px',
-          fontFamily: 'inherit',
-          resize: 'none',
-          overflow: 'hidden'
-        }}
-      />
-    )
-  }
-
-  return (
-    <div
-      onClick={startEdit}
-      title="Click to edit"
-      style={{
-        ...style,
-        cursor: 'text',
-        borderBottom: '1px solid transparent',
-        paddingBottom: 2,
-        color: value ? style?.color : 'var(--fg-4)'
-      }}
-    >
-      {value || placeholder}
     </div>
   )
 }

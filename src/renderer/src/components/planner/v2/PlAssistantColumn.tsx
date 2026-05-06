@@ -26,7 +26,7 @@ interface ActionCardState {
   confirmed: string | null
 }
 
-interface Props {
+interface PlAssistantColumnProps {
   epic: TaskGroup
   tasks: SprintTask[]
   initialInput?: string
@@ -42,7 +42,7 @@ export function PlAssistantColumn({
   initialInput,
   onAddTask,
   onClose
-}: Props): React.JSX.Element {
+}: PlAssistantColumnProps): React.JSX.Element {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState(initialInput ?? '')
   const [cardStates, setCardStates] = useState<Record<string, ActionCardState>>({})

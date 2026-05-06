@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { nextDependencyCondition } from '../PlDepsPane'
+import { nextDependencyCondition } from '../epicDependencyUtils'
 
 describe('nextDependencyCondition', () => {
   it('cycles on_success → always', () => {

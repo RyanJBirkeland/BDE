@@ -12,7 +12,7 @@ function sanitizeCssColor(value: string | null | undefined): string {
   return isValidHex || isValidNamed ? value : 'var(--accent)'
 }
 
-interface Props {
+interface PlEpicRailProps {
   groups: TaskGroup[]
   selectedId: string | null
   onSelect: (id: string) => void
@@ -33,7 +33,7 @@ const STATUS_COLOR: Record<TaskGroup['status'], string> = {
   completed: 'var(--st-done)'
 }
 
-export function PlEpicRail({ groups, selectedId, onSelect, onNewEpic }: Props): React.JSX.Element {
+export function PlEpicRail({ groups, selectedId, onSelect, onNewEpic }: PlEpicRailProps): React.JSX.Element {
   const { activeGroups: active, completedGroups: completed } = useMemo(() => {
     const activeGroups: TaskGroup[] = []
     const completedGroups: TaskGroup[] = []

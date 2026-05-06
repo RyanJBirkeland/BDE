@@ -21,7 +21,11 @@ export function PlannerViewV2(): React.JSX.Element {
     queueAllTasks,
     updateGroup,
     togglePause,
-    loadGroupTasks
+    loadGroupTasks,
+    addDependency,
+    removeDependency,
+    updateDependencyCondition,
+    importPlan
   } = useTaskGroups()
 
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -66,6 +70,28 @@ export function PlannerViewV2(): React.JSX.Element {
     await updateGroup(selectedGroup.id, { status: nextStatus })
   }, [selectedGroup, updateGroup])
 
+  const handleSaveName = useCallback(
+    async (name: string): Promise<void> => {
+      if (!selectedGroup) return
+      const trimmed = name.trim()
+      if (trimmed && trimmed !== selectedGroup.name) {
+        await updateGroup(selectedGroup.id, { name: trimmed })
+      }
+    },
+    [selectedGroup, updateGroup]
+  )
+
+  const handleSaveGoal = useCallback(
+    async (goal: string): Promise<void> => {
+      if (!selectedGroup) return
+      const trimmed = goal.trim()
+      if (trimmed !== (selectedGroup.goal ?? '')) {
+        await updateGroup(selectedGroup.id, { goal: trimmed || undefined })
+      }
+    },
+    [selectedGroup, updateGroup]
+  )
+
   const handleTogglePause = useCallback(() => {
     if (!selectedGroup) return
     void togglePause(selectedGroup.id)
@@ -90,15 +116,13 @@ export function PlannerViewV2(): React.JSX.Element {
 
   const handleImport = useCallback(async () => {
     try {
-      const result = await window.api.planner.import('fleet')
+      const result = await importPlan('fleet')
       toast.success(`Imported "${result.epicName}" with ${result.taskCount} tasks`)
-      await loadGroups()
-      selectGroup(result.epicId)
     } catch (err) {
       if (err instanceof Error && err.message === 'No file selected') return
       toast.error('Failed to import plan — ' + (err instanceof Error ? err.message : String(err)))
     }
-  }, [loadGroups, selectGroup])
+  }, [importPlan])
 
   const handleAskAssistantDraft = useCallback((message: string) => {
     setAssistantOpen(true)
@@ -113,6 +137,33 @@ export function PlannerViewV2(): React.JSX.Element {
       if (selectedGroupId) await loadGroupTasks(selectedGroupId)
     },
     [updateTask, selectedGroupId, loadGroupTasks]
+  )
+
+  const handleAddDependency = useCallback(
+    async (upstreamId: string): Promise<void> => {
+      if (!selectedGroup) return
+      await addDependency(selectedGroup.id, { id: upstreamId, condition: 'on_success' })
+    },
+    [selectedGroup, addDependency]
+  )
+
+  const handleRemoveDependency = useCallback(
+    async (upstreamId: string): Promise<void> => {
+      if (!selectedGroup) return
+      await removeDependency(selectedGroup.id, upstreamId)
+    },
+    [selectedGroup, removeDependency]
+  )
+
+  const handleChangeCondition = useCallback(
+    async (
+      upstreamId: string,
+      condition: import('../../../../../shared/types').EpicDependency['condition']
+    ): Promise<void> => {
+      if (!selectedGroup) return
+      await updateDependencyCondition(selectedGroup.id, upstreamId, condition)
+    },
+    [selectedGroup, updateDependencyCondition]
   )
 
   const activeGroups = useMemo(() => groups.filter((g) => g.status !== 'completed'), [groups])
@@ -148,6 +199,7 @@ export function PlannerViewV2(): React.JSX.Element {
           <PlEpicCanvas
             epic={selectedGroup}
             tasks={groupTasks}
+            allGroups={groups}
             selectedTaskId={selectedTaskId}
             onSelectTask={handleSelectTask}
             assistantOpen={assistantOpen}
@@ -158,6 +210,11 @@ export function PlannerViewV2(): React.JSX.Element {
             onQueueAll={handleQueueAll}
             onAskAssistantDraft={handleAskAssistantDraft}
             onSaveSpec={handleSaveSpec}
+            onSaveName={handleSaveName}
+            onSaveGoal={handleSaveGoal}
+            onAddDependency={handleAddDependency}
+            onRemoveDependency={handleRemoveDependency}
+            onChangeCondition={handleChangeCondition}
           />
         ) : (
           <PlEmptyCanvas assistantOpen={assistantOpen} />
