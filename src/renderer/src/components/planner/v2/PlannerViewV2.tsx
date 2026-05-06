@@ -66,6 +66,28 @@ export function PlannerViewV2(): React.JSX.Element {
     await updateGroup(selectedGroup.id, { status: nextStatus })
   }, [selectedGroup, updateGroup])
 
+  const handleSaveName = useCallback(
+    async (name: string): Promise<void> => {
+      if (!selectedGroup) return
+      const trimmed = name.trim()
+      if (trimmed && trimmed !== selectedGroup.name) {
+        await updateGroup(selectedGroup.id, { name: trimmed })
+      }
+    },
+    [selectedGroup, updateGroup]
+  )
+
+  const handleSaveGoal = useCallback(
+    async (goal: string): Promise<void> => {
+      if (!selectedGroup) return
+      const trimmed = goal.trim()
+      if (trimmed !== (selectedGroup.goal ?? '')) {
+        await updateGroup(selectedGroup.id, { goal: trimmed || undefined })
+      }
+    },
+    [selectedGroup, updateGroup]
+  )
+
   const handleTogglePause = useCallback(() => {
     if (!selectedGroup) return
     void togglePause(selectedGroup.id)
@@ -158,6 +180,8 @@ export function PlannerViewV2(): React.JSX.Element {
             onQueueAll={handleQueueAll}
             onAskAssistantDraft={handleAskAssistantDraft}
             onSaveSpec={handleSaveSpec}
+            onSaveName={handleSaveName}
+            onSaveGoal={handleSaveGoal}
           />
         ) : (
           <PlEmptyCanvas assistantOpen={assistantOpen} />

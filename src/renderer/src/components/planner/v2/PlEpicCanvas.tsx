@@ -8,7 +8,7 @@ import { PlDepsPane } from './PlDepsPane'
 import { PlActivityFeed } from './PlActivityFeed'
 import { useRovingTabIndex } from '../../../hooks/useRovingTabIndex'
 
-interface Props {
+interface PlEpicCanvasProps {
   epic: TaskGroup
   tasks: SprintTask[]
   selectedTaskId: string | null
@@ -21,6 +21,8 @@ interface Props {
   onQueueAll: () => void
   onAskAssistantDraft: (message: string) => void
   onSaveSpec: (taskId: string, spec: string) => Promise<void>
+  onSaveName: (name: string) => Promise<void>
+  onSaveGoal: (goal: string) => Promise<void>
 }
 
 const TABS = ['Tasks', 'Spec', 'Dependencies', 'Activity'] as const
@@ -38,8 +40,10 @@ export function PlEpicCanvas({
   onTogglePause,
   onQueueAll,
   onAskAssistantDraft,
-  onSaveSpec
-}: Props): React.JSX.Element {
+  onSaveSpec,
+  onSaveName,
+  onSaveGoal
+}: PlEpicCanvasProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<Tab>('Tasks')
 
   return (
@@ -53,7 +57,13 @@ export function PlEpicCanvas({
         borderRight: assistantOpen ? '1px solid var(--line)' : 'none'
       }}
     >
-      <PlEpicHero epic={epic} tasks={tasks} onToggleReady={onToggleReady} />
+      <PlEpicHero
+        epic={epic}
+        tasks={tasks}
+        onToggleReady={onToggleReady}
+        saveName={onSaveName}
+        saveGoal={onSaveGoal}
+      />
 
       <PlEpicTabBar
         tabs={TABS}

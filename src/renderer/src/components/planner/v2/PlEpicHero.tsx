@@ -1,13 +1,14 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../../shared/types'
-import { useTaskGroups } from '../../../stores/taskGroups'
 import { EpicIcon } from './PlEpicRail'
 import { partitionSprintTasks } from '../../../lib/partitionSprintTasks'
 
-interface Props {
+interface PlEpicHeroProps {
   epic: TaskGroup
   tasks: SprintTask[]
   onToggleReady: () => void
+  saveName: (name: string) => Promise<void>
+  saveGoal: (goal: string) => Promise<void>
 }
 
 const STATUS_LABEL: Record<TaskGroup['status'], string> = {
@@ -17,9 +18,13 @@ const STATUS_LABEL: Record<TaskGroup['status'], string> = {
   completed: 'Completed'
 }
 
-export function PlEpicHero({ epic, tasks, onToggleReady }: Props): React.JSX.Element {
-  const { updateGroup } = useTaskGroups()
-
+export function PlEpicHero({
+  epic,
+  tasks,
+  onToggleReady,
+  saveName,
+  saveGoal
+}: PlEpicHeroProps): React.JSX.Element {
   const counts = useMemo(() => {
     const c = { done: 0, running: 0, queued: 0, blocked: 0 }
     tasks.forEach((t) => {
@@ -33,20 +38,6 @@ export function PlEpicHero({ epic, tasks, onToggleReady }: Props): React.JSX.Ele
   const backlogCount = useMemo(() => partitionSprintTasks(tasks).backlog.length, [tasks])
   const { done: doneCount, running: runningCount, queued: queuedCount, blocked: blockedCount } =
     counts
-
-  async function saveName(name: string): Promise<void> {
-    const trimmed = name.trim()
-    if (trimmed && trimmed !== epic.name) {
-      await updateGroup(epic.id, { name: trimmed })
-    }
-  }
-
-  async function saveGoal(goal: string): Promise<void> {
-    const trimmed = goal.trim()
-    if (trimmed !== (epic.goal ?? '')) {
-      await updateGroup(epic.id, { goal: trimmed || undefined })
-    }
-  }
 
   return (
     <div
