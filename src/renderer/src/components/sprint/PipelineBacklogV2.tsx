@@ -20,6 +20,278 @@ interface PipelineBacklogV2Props {
 const FAILED_VISIBLE_LIMIT = 3
 const BACKLOG_VISIBLE_LIMIT = 40
 
+interface TriageCardProps {
+  task: SprintTask
+  isSelected: boolean
+  selectionAccentColor: string
+  testId: string
+  onCardClick: () => void
+  onDoubleClick?: ((e: React.MouseEvent) => void) | undefined
+  doubleClickTitle?: string | undefined
+  children: React.ReactNode
+  actions?: React.ReactNode | undefined
+  showCheckbox?: boolean | undefined
+  onToggleSelection?: (() => void) | undefined
+}
+
+function TriageCard({
+  task,
+  isSelected,
+  selectionAccentColor,
+  testId,
+  onCardClick,
+  onDoubleClick,
+  doubleClickTitle,
+  children,
+  actions,
+  showCheckbox,
+  onToggleSelection
+}: TriageCardProps): React.JSX.Element {
+  return (
+    <div style={{ position: 'relative' }}>
+      {isSelected && (
+        <span
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 2,
+            background: selectionAccentColor,
+            borderRadius: '0 2px 2px 0'
+          }}
+        />
+      )}
+      {showCheckbox && (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation()
+            onToggleSelection?.()
+          }}
+          onClick={(e) => e.stopPropagation()}
+          aria-label={`Select ${task.title}`}
+          style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            zIndex: 1,
+            cursor: 'pointer',
+            opacity: isSelected ? 1 : 0,
+            pointerEvents: 'auto'
+          }}
+        />
+      )}
+      <button
+        style={{
+          width: '100%',
+          padding: 'var(--s-2)',
+          borderRadius: 'var(--r-md)',
+          background: isSelected ? 'var(--surf-2)' : 'transparent',
+          border: isSelected ? '1px solid var(--line-2)' : '1px solid transparent',
+          textAlign: 'left',
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 'var(--s-1)'
+        }}
+        aria-label={`Select task: ${task.title}`}
+        onClick={onCardClick}
+        onDoubleClick={onDoubleClick}
+        title={doubleClickTitle}
+        data-testid={testId}
+      >
+        {children}
+      </button>
+      {actions}
+    </div>
+  )
+}
+
+interface ShowMoreButtonProps {
+  count: number
+  expanded: boolean
+  onExpand: () => void
+  onCollapse: () => void
+  label: string
+}
+
+function ShowMoreButton({ count, expanded, onExpand, onCollapse, label }: ShowMoreButtonProps): React.JSX.Element | null {
+  const SHOW_MORE_STYLE: React.CSSProperties = {
+    width: '100%',
+    padding: 'var(--s-2)',
+    border: '1px dashed var(--line-2)',
+    borderRadius: 'var(--r-md)',
+    background: 'transparent',
+    fontFamily: 'var(--font-mono)',
+    fontSize: 11,
+    color: 'var(--fg-3)',
+    cursor: 'pointer',
+    marginTop: 'var(--s-1)'
+  }
+  if (!expanded && count > 0) {
+    return (
+      <button
+        onClick={onExpand}
+        aria-expanded={false}
+        aria-label={`Show ${count} more ${label} tasks`}
+        style={SHOW_MORE_STYLE}
+      >
+        + {count} more{label === 'backlog' ? ' in backlog' : ''}
+      </button>
+    )
+  }
+  if (expanded && count > 0) {
+    return (
+      <button
+        onClick={onCollapse}
+        aria-expanded={true}
+        aria-label={`Show fewer ${label} tasks`}
+        style={SHOW_MORE_STYLE}
+      >
+        Show less
+      </button>
+    )
+  }
+  return null
+}
+
+function BacklogCard({
+  task,
+  isSelected,
+  onTaskClick,
+  onToggleTaskSelection,
+  onAddToQueue
+}: {
+  task: SprintTask
+  isSelected: boolean
+  onTaskClick: (id: string) => void
+  onToggleTaskSelection: (id: string) => void
+  onAddToQueue: (task: SprintTask) => void
+}): React.JSX.Element {
+  return (
+    <TriageCard
+      task={task}
+      isSelected={isSelected}
+      selectionAccentColor="var(--accent)"
+      testId={`backlog-card-${task.id}`}
+      onCardClick={() => onTaskClick(task.id)}
+      onDoubleClick={(e) => {
+        e.stopPropagation()
+        onAddToQueue(task)
+      }}
+      doubleClickTitle="Double-click to add to queue"
+      showCheckbox
+      onToggleSelection={() => onToggleTaskSelection(task.id)}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-1)', minWidth: 0 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-4)', flexShrink: 0 }}>
+          {task.id.substring(0, 8)}
+        </span>
+        {task.priority != null && <PriorityChip priority={task.priority} />}
+        <span style={{ flex: 1 }} />
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-3)', flexShrink: 0 }}>
+          {task.repo}
+        </span>
+      </div>
+      <span
+        style={
+          {
+            fontSize: 12,
+            color: 'var(--fg)',
+            lineHeight: 1.35,
+            textWrap: 'pretty'
+          } as React.CSSProperties
+        }
+      >
+        {task.title}
+      </span>
+      {task.tags && task.tags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {task.tags.map((tag) => (
+            <Tag key={tag}>{tag}</Tag>
+          ))}
+        </div>
+      )}
+    </TriageCard>
+  )
+}
+
+function FailedCard({
+  task,
+  isSelected,
+  onTaskClick,
+  onRerun
+}: {
+  task: SprintTask
+  isSelected: boolean
+  onTaskClick: (id: string) => void
+  onRerun: (task: SprintTask) => void
+}): React.JSX.Element {
+  return (
+    <TriageCard
+      task={task}
+      isSelected={isSelected}
+      selectionAccentColor="var(--st-failed)"
+      testId={`failed-card-${task.id}`}
+      onCardClick={() => onTaskClick(task.id)}
+      actions={
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onRerun(task)
+          }}
+          aria-label={`Re-run ${task.title}`}
+          style={{
+            position: 'absolute',
+            right: 8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            height: 22,
+            padding: '0 var(--s-2)',
+            border: '1px solid var(--line)',
+            background: 'transparent',
+            borderRadius: 'var(--r-sm)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: 'var(--fg-2)',
+            cursor: 'pointer',
+            flexShrink: 0
+          }}
+        >
+          ↻ Re-run
+        </button>
+      }
+    >
+      <span
+        style={
+          {
+            fontSize: 12,
+            color: 'var(--fg)',
+            lineHeight: 1.35,
+            textWrap: 'pretty'
+          } as React.CSSProperties
+        }
+      >
+        {task.title}
+      </span>
+      <span
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          color: 'var(--st-failed)',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
+        }}
+      >
+        ✗ {task.notes ?? 'No details'}
+      </span>
+    </TriageCard>
+  )
+}
+
 function PipelineBacklogV2Inner({
   backlog,
   failed,
@@ -86,161 +358,24 @@ function PipelineBacklogV2Inner({
             flex: 1
           }}
         >
-          {visibleBacklog.map((task) => {
-            const isSelected = selectedTaskIds.has(task.id)
-            return (
-              <div key={task.id} style={{ position: 'relative' }}>
-                {isSelected && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 2,
-                      background: 'var(--accent)',
-                      borderRadius: '0 2px 2px 0'
-                    }}
-                  />
-                )}
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    onToggleTaskSelection(task.id)
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Select ${task.title}`}
-                  style={{
-                    position: 'absolute',
-                    top: 8,
-                    left: 8,
-                    zIndex: 1,
-                    cursor: 'pointer',
-                    opacity: isSelected ? 1 : 0,
-                    pointerEvents: 'auto'
-                  }}
-                />
-                <button
-                  style={{
-                    width: '100%',
-                    padding: 'var(--s-2)',
-                    borderRadius: 'var(--r-md)',
-                    background: isSelected ? 'var(--surf-2)' : 'transparent',
-                    border: isSelected ? '1px solid var(--line-2)' : '1px solid transparent',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 'var(--s-1)'
-                  }}
-                  aria-label={`Select task: ${task.title}`}
-                  onClick={() => onTaskClick(task.id)}
-                  onDoubleClick={(e) => {
-                    e.stopPropagation()
-                    onAddToQueue(task)
-                  }}
-                  title="Double-click to add to queue"
-                  data-testid={`backlog-card-${task.id}`}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--s-1)',
-                      minWidth: 0
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        color: 'var(--fg-4)',
-                        flexShrink: 0
-                      }}
-                    >
-                      {task.id.substring(0, 8)}
-                    </span>
-                    {task.priority != null && <PriorityChip priority={task.priority} />}
-                    <span style={{ flex: 1 }} />
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        color: 'var(--fg-3)',
-                        flexShrink: 0
-                      }}
-                    >
-                      {task.repo}
-                    </span>
-                  </div>
-                  <span
-                    style={
-                      {
-                        fontSize: 12,
-                        color: 'var(--fg)',
-                        lineHeight: 1.35,
-                        textWrap: 'pretty'
-                      } as React.CSSProperties
-                    }
-                  >
-                    {task.title}
-                  </span>
-                  {task.tags && task.tags.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {task.tags.map((tag) => (
-                        <Tag key={tag}>{tag}</Tag>
-                      ))}
-                    </div>
-                  )}
-                </button>
-              </div>
-            )
-          })}
+          {visibleBacklog.map((task) => (
+            <BacklogCard
+              key={task.id}
+              task={task}
+              isSelected={selectedTaskIds.has(task.id)}
+              onTaskClick={onTaskClick}
+              onToggleTaskSelection={onToggleTaskSelection}
+              onAddToQueue={onAddToQueue}
+            />
+          ))}
 
-          {!backlogExpanded && hiddenBacklogCount > 0 && (
-            <button
-              onClick={() => setBacklogExpanded(true)}
-              aria-expanded={backlogExpanded}
-              aria-label={`Show ${hiddenBacklogCount} more backlog tasks`}
-              style={{
-                width: '100%',
-                padding: 'var(--s-2)',
-                border: '1px dashed var(--line-2)',
-                borderRadius: 'var(--r-md)',
-                background: 'transparent',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                color: 'var(--fg-3)',
-                cursor: 'pointer',
-                marginTop: 'var(--s-1)'
-              }}
-            >
-              + {hiddenBacklogCount} more in backlog
-            </button>
-          )}
-          {backlogExpanded && backlog.length > BACKLOG_VISIBLE_LIMIT && (
-            <button
-              onClick={() => setBacklogExpanded(false)}
-              aria-expanded={backlogExpanded}
-              aria-label="Show fewer backlog tasks"
-              style={{
-                width: '100%',
-                padding: 'var(--s-2)',
-                border: '1px dashed var(--line-2)',
-                borderRadius: 'var(--r-md)',
-                background: 'transparent',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                color: 'var(--fg-3)',
-                cursor: 'pointer',
-                marginTop: 'var(--s-1)'
-              }}
-            >
-              Show less
-            </button>
-          )}
+          <ShowMoreButton
+            count={hiddenBacklogCount}
+            expanded={backlogExpanded}
+            onExpand={() => setBacklogExpanded(true)}
+            onCollapse={() => setBacklogExpanded(false)}
+            label="backlog"
+          />
 
           {backlog.length === 0 && (
             <EmptyState
@@ -317,134 +452,23 @@ function PipelineBacklogV2Inner({
               gap: 'var(--s-1)'
             }}
           >
-            {visibleFailed.map((task) => {
-              const isSelected = selectedTaskIds.has(task.id)
-              return (
-                <div key={task.id} style={{ position: 'relative' }}>
-                  {isSelected && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: 2,
-                        background: 'var(--st-failed)',
-                        borderRadius: '0 2px 2px 0'
-                      }}
-                    />
-                  )}
-                  <button
-                    style={{
-                      width: '100%',
-                      padding: 'var(--s-2)',
-                      borderRadius: 'var(--r-md)',
-                      background: isSelected ? 'var(--surf-2)' : 'transparent',
-                      border: isSelected ? '1px solid var(--line-2)' : '1px solid transparent',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 'var(--s-1)'
-                    }}
-                    aria-label={`Select task: ${task.title}`}
-                    onClick={() => onTaskClick(task.id)}
-                    data-testid={`failed-card-${task.id}`}
-                  >
-                    <span
-                      style={
-                        {
-                          fontSize: 12,
-                          color: 'var(--fg)',
-                          lineHeight: 1.35,
-                          textWrap: 'pretty'
-                        } as React.CSSProperties
-                      }
-                    >
-                      {task.title}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 10,
-                        color: 'var(--st-failed)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      ✗ {task.notes ?? 'No details'}
-                    </span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onRerun(task)
-                    }}
-                    aria-label={`Re-run ${task.title}`}
-                    style={{
-                      position: 'absolute',
-                      right: 8,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      height: 22,
-                      padding: '0 var(--s-2)',
-                      border: '1px solid var(--line)',
-                      background: 'transparent',
-                      borderRadius: 'var(--r-sm)',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 10,
-                      color: 'var(--fg-2)',
-                      cursor: 'pointer',
-                      flexShrink: 0
-                    }}
-                  >
-                    ↻ Re-run
-                  </button>
-                </div>
-              )
-            })}
+            {visibleFailed.map((task) => (
+              <FailedCard
+                key={task.id}
+                task={task}
+                isSelected={selectedTaskIds.has(task.id)}
+                onTaskClick={onTaskClick}
+                onRerun={onRerun}
+              />
+            ))}
 
-            {!failedExpanded && hiddenFailedCount > 0 && (
-              <button
-                onClick={() => setFailedExpanded(true)}
-                aria-expanded={failedExpanded}
-                aria-label={`Show ${hiddenFailedCount} more failed tasks`}
-                style={{
-                  width: '100%',
-                  padding: 'var(--s-2)',
-                  border: '1px dashed var(--line-2)',
-                  borderRadius: 'var(--r-md)',
-                  background: 'transparent',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  color: 'var(--fg-3)',
-                  cursor: 'pointer'
-                }}
-              >
-                + {hiddenFailedCount} more
-              </button>
-            )}
-            {failedExpanded && failed.length > FAILED_VISIBLE_LIMIT && (
-              <button
-                onClick={() => setFailedExpanded(false)}
-                aria-expanded={failedExpanded}
-                aria-label="Show fewer failed tasks"
-                style={{
-                  width: '100%',
-                  padding: 'var(--s-2)',
-                  border: '1px dashed var(--line-2)',
-                  borderRadius: 'var(--r-md)',
-                  background: 'transparent',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 11,
-                  color: 'var(--fg-3)',
-                  cursor: 'pointer'
-                }}
-              >
-                Show less
-              </button>
-            )}
+            <ShowMoreButton
+              count={hiddenFailedCount}
+              expanded={failedExpanded}
+              onExpand={() => setFailedExpanded(true)}
+              onCollapse={() => setFailedExpanded(false)}
+              label="failed"
+            />
           </div>
         </div>
       )}
