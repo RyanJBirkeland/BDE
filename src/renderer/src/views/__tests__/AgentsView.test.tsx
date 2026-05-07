@@ -48,7 +48,8 @@ vi.mock('../../stores/agentEvents', () => ({
   useAgentEventsStore: Object.assign(
     vi.fn((selector: any) => selector(mockAgentEventsState)),
     { getState: () => mockAgentEventsState }
-  )
+  ),
+  useAgentEvents: vi.fn(() => [])
 }))
 
 vi.mock('../../stores/panelLayout', () => ({

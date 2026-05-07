@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState, useCallback, startTransition } from 'reac
 import './AgentConsole.css'
 import type { ChatBlock } from '../../lib/pair-events'
 import { pairEvents } from '../../lib/pair-events'
-import { useAgentEventsStore } from '../../stores/agentEvents'
+import { useAgentEventsStore, useAgentEvents } from '../../stores/agentEvents'
 import { useAgentHistoryStore } from '../../stores/agentHistory'
 import { AgentConsoleHeader } from './AgentConsoleHeader'
 import { AgentConsoleStream } from './AgentConsoleStream'
@@ -15,8 +15,6 @@ import { AgentComposer } from './AgentComposer'
 import { PlaygroundModal } from './PlaygroundModal'
 import { ConsoleSearchBar } from './ConsoleSearchBar'
 import type { Attachment, PlaygroundContentType } from '../../../../shared/types'
-
-const EMPTY_EVENTS: never[] = []
 
 interface AgentConsoleProps {
   agentId: string
@@ -45,7 +43,7 @@ export function AgentConsole({
   // Load agent meta and events
   const agents = useAgentHistoryStore((s) => s.agents)
   const agent = agents.find((a) => a.id === agentId)
-  const events = useAgentEventsStore((s) => s.events[agentId] ?? EMPTY_EVENTS)
+  const events = useAgentEvents(agentId)
   const wasEvicted = useAgentEventsStore((s) => s.evictedAgents[agentId] ?? false)
 
   const pairedBlocks = useMemo(() => pairEvents(events), [events])
@@ -134,9 +132,7 @@ export function AgentConsole({
 
   const handleSearchPrev = (): void => {
     if (matchingIndicesArray.length === 0) return
-    setActiveMatchIndex((prev) =>
-      prev === 0 ? matchingIndicesArray.length - 1 : prev - 1
-    )
+    setActiveMatchIndex((prev) => (prev === 0 ? matchingIndicesArray.length - 1 : prev - 1))
   }
 
   const handleSearchClose = (): void => {

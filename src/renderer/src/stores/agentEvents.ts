@@ -2,6 +2,13 @@ import { create } from 'zustand'
 import { toast } from './toasts'
 import type { AgentEvent } from '../../../shared/types'
 import { subscribeToAgentEvents, getAgentEventHistory } from '../services/agents'
+import { useMemo } from 'react'
+import {
+  createRingBuffer,
+  pushToRingBuffer,
+  readRingBuffer,
+  type RingBuffer
+} from '../lib/ringBuffer'
 
 const MAX_EVENTS_PER_AGENT = 2000
 const EMPTY_EVENTS: AgentEvent[] = []
@@ -23,7 +30,10 @@ let unsubscribe: (() => void) | null = null
  * 10KB+ of tool output, and stringifying them on every merge was causing
  * agent-console stutter when an agent streamed many tool calls per second.
  */
-export function mergeHistoryWithLiveEvents(history: AgentEvent[], live: AgentEvent[]): AgentEvent[] {
+export function mergeHistoryWithLiveEvents(
+  history: AgentEvent[],
+  live: AgentEvent[]
+): AgentEvent[] {
   const result: AgentEvent[] = []
   const seen = new Set<string>()
   let h = 0
@@ -82,7 +92,13 @@ function dedupKey(event: AgentEvent): string {
 }
 
 interface AgentEventsState {
-  events: Record<string, AgentEvent[]>
+  /**
+   * Per-agent ring buffer of events. Bounded at `MAX_EVENTS_PER_AGENT` slots
+   * with in-place writes — pushing a new event allocates zero arrays. Use
+   * `selectAgentEvents` (or the `useAgentEvents` hook) to project to a flat
+   * `AgentEvent[]` for rendering.
+   */
+  buffers: Record<string, RingBuffer<AgentEvent>>
   evictedAgents: Record<string, boolean>
   historyLoadErrors: Record<string, string>
   init: () => () => void
@@ -92,17 +108,51 @@ interface AgentEventsState {
 }
 
 /**
+ * Selector — returns the per-agent ring buffer (or undefined) without projecting
+ * to an array. Use together with `useMemo(() => readRingBuffer(buf) ...)` so
+ * the array projection only runs when the buffer reference actually changes.
+ */
+export function selectAgentEventBuffer(agentId: string | null) {
+  return (state: AgentEventsState): RingBuffer<AgentEvent> | undefined => {
+    if (!agentId) return undefined
+    return state.buffers[agentId]
+  }
+}
+
+/**
  * Scoped selector — subscribe to a single agent's events without
  * re-rendering when other agents receive events.
  *
  * Usage: `const events = useAgentEvents(agentId)`
  */
 export function useAgentEvents(agentId: string | null): AgentEvent[] {
-  return useAgentEventsStore((s) => (agentId ? (s.events[agentId] ?? EMPTY_EVENTS) : EMPTY_EVENTS))
+  const buffer = useAgentEventsStore(selectAgentEventBuffer(agentId))
+  return useMemo(() => (buffer ? readRingBuffer(buffer) : EMPTY_EVENTS), [buffer])
+}
+
+/**
+ * Pushes an event into a per-agent ring buffer in place — zero array allocation
+ * for the underlying `items` storage. We do create a fresh buffer wrapper
+ * (`{ ...existing }`) so Zustand selectors that read `state.buffers[agentId]`
+ * see a new reference and re-render; the inner `items` array is reused across
+ * pushes, which is the whole point of the ring buffer.
+ */
+function appendEventToBuffer(
+  buffers: Record<string, RingBuffer<AgentEvent>>,
+  agentId: string,
+  event: AgentEvent
+): { buffers: Record<string, RingBuffer<AgentEvent>>; evicted: boolean } {
+  const existing = buffers[agentId] ?? createRingBuffer<AgentEvent>(MAX_EVENTS_PER_AGENT)
+  const wasFullBeforePush = existing.count === existing.size
+  pushToRingBuffer(existing, event)
+  return {
+    buffers: { ...buffers, [agentId]: { ...existing } },
+    evicted: wasFullBeforePush
+  }
 }
 
 export const useAgentEventsStore = create<AgentEventsState>((set) => ({
-  events: {},
+  buffers: {},
   evictedAgents: {},
   historyLoadErrors: {},
 
@@ -113,15 +163,10 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
     try {
       unsubscribe = subscribeToAgentEvents(({ agentId, event }) => {
         set((state) => {
-          const existing = state.events[agentId] ?? []
-          const updated = [...existing, event]
-          const wasEvicted = updated.length > MAX_EVENTS_PER_AGENT
+          const { buffers, evicted } = appendEventToBuffer(state.buffers, agentId, event)
           return {
-            events: {
-              ...state.events,
-              [agentId]: wasEvicted ? updated.slice(-MAX_EVENTS_PER_AGENT) : updated
-            },
-            evictedAgents: wasEvicted
+            buffers,
+            evictedAgents: evicted
               ? { ...state.evictedAgents, [agentId]: true }
               : state.evictedAgents
           }
@@ -145,17 +190,17 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
     try {
       const history = await getAgentEventHistory(agentId)
       set((state) => {
-        const liveEvents = state.events[agentId] ?? []
+        const liveEvents = state.buffers[agentId] ? readRingBuffer(state.buffers[agentId]) : []
         const merged = mergeHistoryWithLiveEvents(history, liveEvents)
-        const wasEvicted = merged.length > MAX_EVENTS_PER_AGENT
+        const evicted = merged.length > MAX_EVENTS_PER_AGENT
+        const trimmed = evicted ? merged.slice(-MAX_EVENTS_PER_AGENT) : merged
+        const refilled = createRingBuffer<AgentEvent>(MAX_EVENTS_PER_AGENT)
+        for (const event of trimmed) pushToRingBuffer(refilled, event)
         const nextErrors = { ...state.historyLoadErrors }
         delete nextErrors[agentId]
         return {
-          events: {
-            ...state.events,
-            [agentId]: wasEvicted ? merged.slice(-MAX_EVENTS_PER_AGENT) : merged
-          },
-          evictedAgents: wasEvicted
+          buffers: { ...state.buffers, [agentId]: refilled },
+          evictedAgents: evicted
             ? { ...state.evictedAgents, [agentId]: true }
             : state.evictedAgents,
           historyLoadErrors: nextErrors
@@ -172,11 +217,11 @@ export const useAgentEventsStore = create<AgentEventsState>((set) => ({
 
   clear(agentId: string) {
     set((state) => {
-      const nextEvents = { ...state.events }
+      const nextBuffers = { ...state.buffers }
       const nextEvicted = { ...state.evictedAgents }
-      delete nextEvents[agentId]
+      delete nextBuffers[agentId]
       delete nextEvicted[agentId]
-      return { events: nextEvents, evictedAgents: nextEvicted }
+      return { buffers: nextBuffers, evictedAgents: nextEvicted }
     })
   }
 }))

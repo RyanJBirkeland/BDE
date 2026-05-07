@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useAgentEventsStore, mergeHistoryWithLiveEvents } from '../agentEvents'
 import type { AgentEvent } from '../../../../shared/types'
+import { createRingBuffer, pushToRingBuffer, readRingBuffer } from '../../lib/ringBuffer'
 
 const initialState = {
-  events: {}
+  buffers: {} as Record<string, ReturnType<typeof createRingBuffer<AgentEvent>>>
 }
 
 beforeEach(() => {
@@ -18,6 +19,19 @@ function makeEvent(text = 'hello', timestamp = Date.now()): AgentEvent {
     text,
     timestamp
   }
+}
+
+function readAgentBuffer(agentId: string): AgentEvent[] {
+  const buf = useAgentEventsStore.getState().buffers[agentId]
+  return buf ? readRingBuffer(buf) : []
+}
+
+function seedBuffer(agentId: string, events: AgentEvent[]): void {
+  const buf = createRingBuffer<AgentEvent>(2000)
+  for (const event of events) pushToRingBuffer(buf, event)
+  useAgentEventsStore.setState({
+    buffers: { ...useAgentEventsStore.getState().buffers, [agentId]: buf }
+  })
 }
 
 describe('init', () => {
@@ -43,9 +57,9 @@ describe('init', () => {
     const event = makeEvent('first')
     capturedCallback!({ agentId: 'agent-a', event })
 
-    const { events } = useAgentEventsStore.getState()
-    expect(events['agent-a']).toHaveLength(1)
-    expect((events['agent-a'][0] as { type: string; text: string }).text).toBe('first')
+    const events = readAgentBuffer('agent-a')
+    expect(events).toHaveLength(1)
+    expect((events[0] as { type: string; text: string }).text).toBe('first')
   })
 
   it('accumulates multiple events for the same agent', () => {
@@ -60,7 +74,7 @@ describe('init', () => {
     capturedCallback!({ agentId: 'agent-b', event: makeEvent('e1') })
     capturedCallback!({ agentId: 'agent-b', event: makeEvent('e2') })
 
-    expect(useAgentEventsStore.getState().events['agent-b']).toHaveLength(2)
+    expect(readAgentBuffer('agent-b')).toHaveLength(2)
   })
 
   it('keeps events for different agents isolated', () => {
@@ -75,8 +89,8 @@ describe('init', () => {
     capturedCallback!({ agentId: 'agent-x', event: makeEvent('ex') })
     capturedCallback!({ agentId: 'agent-y', event: makeEvent('ey') })
 
-    expect(useAgentEventsStore.getState().events['agent-x']).toHaveLength(1)
-    expect(useAgentEventsStore.getState().events['agent-y']).toHaveLength(1)
+    expect(readAgentBuffer('agent-x')).toHaveLength(1)
+    expect(readAgentBuffer('agent-y')).toHaveLength(1)
   })
 })
 
@@ -88,33 +102,28 @@ describe('loadHistory', () => {
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
     expect(window.api.agents.events.getHistory).toHaveBeenCalledWith('agent-z')
-    expect(useAgentEventsStore.getState().events['agent-z']).toHaveLength(2)
-    expect(
-      (useAgentEventsStore.getState().events['agent-z'][0] as { type: string; text: string }).text
-    ).toBe('h1')
+    const events = readAgentBuffer('agent-z')
+    expect(events).toHaveLength(2)
+    expect((events[0] as { type: string; text: string }).text).toBe('h1')
   })
 
   it('preserves live events that arrived before history returned', async () => {
     // Scenario: the renderer's live-broadcast subscriber appended `live-a` at
     // t=100 before loadHistory resolved. History returned up to t=50. Both
     // must end up in the store.
-    useAgentEventsStore.setState({
-      events: { 'agent-z': [makeEvent('live-a', 100)] }
-    })
+    seedBuffer('agent-z', [makeEvent('live-a', 100)])
     vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([makeEvent('hist-1', 50)])
 
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
-    const stored = useAgentEventsStore.getState().events['agent-z']
+    const stored = readAgentBuffer('agent-z')
     const texts = stored.map((e) => (e as { text: string }).text)
     expect(texts).toEqual(['hist-1', 'live-a'])
   })
 
   it('deduplicates events that appear in both history and live stream', async () => {
     const shared = makeEvent('shared', 100)
-    useAgentEventsStore.setState({
-      events: { 'agent-z': [shared, makeEvent('live-only', 150)] }
-    })
+    seedBuffer('agent-z', [shared, makeEvent('live-only', 150)])
     vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([
       makeEvent('hist-only', 50),
       shared
@@ -122,20 +131,18 @@ describe('loadHistory', () => {
 
     await useAgentEventsStore.getState().loadHistory('agent-z')
 
-    const stored = useAgentEventsStore.getState().events['agent-z']
+    const stored = readAgentBuffer('agent-z')
     const texts = stored.map((e) => (e as { text: string }).text)
     expect(texts).toEqual(['hist-only', 'shared', 'live-only'])
   })
 
   it('does not affect events for other agents', async () => {
-    useAgentEventsStore.setState({
-      events: { other: [makeEvent('o1')] }
-    })
+    seedBuffer('other', [makeEvent('o1')])
     vi.mocked(window.api.agents.events.getHistory).mockResolvedValue([makeEvent('n1')])
 
     await useAgentEventsStore.getState().loadHistory('target')
 
-    expect(useAgentEventsStore.getState().events['other']).toHaveLength(1)
+    expect(readAgentBuffer('other')).toHaveLength(1)
   })
 
   it('deduplicates tool_result events with large outputs without comparing the output payload', async () => {
@@ -148,9 +155,7 @@ describe('loadHistory', () => {
       output: largeOutput,
       timestamp: 200
     }
-    useAgentEventsStore.setState({
-      events: { 'agent-w': [sharedToolResult, makeEvent('after', 300)] }
-    })
+    seedBuffer('agent-w', [sharedToolResult, makeEvent('after', 300)])
     // History returns an "equivalent" tool_result with the same distinguishing
     // fields but a different (also large) output payload — the dedup key must
     // collapse them rather than keep both, regardless of output content.
@@ -165,7 +170,7 @@ describe('loadHistory', () => {
 
     await useAgentEventsStore.getState().loadHistory('agent-w')
 
-    const stored = useAgentEventsStore.getState().events['agent-w']
+    const stored = readAgentBuffer('agent-w')
     expect(stored).toHaveLength(3)
     expect(stored.map((e) => e.type)).toEqual(['agent:text', 'agent:tool_result', 'agent:text'])
   })
@@ -173,37 +178,28 @@ describe('loadHistory', () => {
 
 describe('clear', () => {
   it('removes the event bucket for the given agent', () => {
-    useAgentEventsStore.setState({
-      events: {
-        'agent-a': [makeEvent('a1')],
-        'agent-b': [makeEvent('b1')]
-      }
-    })
+    seedBuffer('agent-a', [makeEvent('a1')])
+    seedBuffer('agent-b', [makeEvent('b1')])
 
     useAgentEventsStore.getState().clear('agent-a')
 
-    const { events } = useAgentEventsStore.getState()
-    expect(events['agent-a']).toBeUndefined()
+    expect(useAgentEventsStore.getState().buffers['agent-a']).toBeUndefined()
   })
 
   it('leaves other agent events untouched', () => {
-    useAgentEventsStore.setState({
-      events: {
-        'agent-a': [makeEvent('a1')],
-        'agent-b': [makeEvent('b1')]
-      }
-    })
+    seedBuffer('agent-a', [makeEvent('a1')])
+    seedBuffer('agent-b', [makeEvent('b1')])
 
     useAgentEventsStore.getState().clear('agent-a')
 
-    expect(useAgentEventsStore.getState().events['agent-b']).toHaveLength(1)
+    expect(readAgentBuffer('agent-b')).toHaveLength(1)
   })
 
   it('is a no-op for an agent id that has no events', () => {
-    useAgentEventsStore.setState({ events: {} })
+    useAgentEventsStore.setState({ buffers: {} })
     // Should not throw
     useAgentEventsStore.getState().clear('nonexistent')
-    expect(useAgentEventsStore.getState().events).toEqual({})
+    expect(useAgentEventsStore.getState().buffers).toEqual({})
   })
 })
 
@@ -253,7 +249,7 @@ describe('event cap (MAX_EVENTS_PER_AGENT = 2000)', () => {
       capturedCallback!({ agentId: 'agent-cap', event: makeEvent(`e${i}`) })
     }
 
-    expect(useAgentEventsStore.getState().events['agent-cap']).toHaveLength(2000)
+    expect(readAgentBuffer('agent-cap')).toHaveLength(2000)
   })
 
   it('evicts oldest events once cap is exceeded', () => {
@@ -269,7 +265,7 @@ describe('event cap (MAX_EVENTS_PER_AGENT = 2000)', () => {
       capturedCallback!({ agentId: 'agent-cap', event: makeEvent(`e${i}`) })
     }
 
-    const events = useAgentEventsStore.getState().events['agent-cap']
+    const events = readAgentBuffer('agent-cap')
     expect(events).toHaveLength(2000)
     // oldest (e0) evicted; e1 is now first, e2000 is last
     expect((events[0] as { text: string }).text).toBe('e1')
@@ -282,7 +278,7 @@ describe('event cap (MAX_EVENTS_PER_AGENT = 2000)', () => {
 
     await useAgentEventsStore.getState().loadHistory('agent-hist')
 
-    const events = useAgentEventsStore.getState().events['agent-hist']
+    const events = readAgentBuffer('agent-hist')
     expect(events).toHaveLength(2000)
     // slice(-2000) of 2500 keeps indices 500..2499
     expect((events[0] as { text: string }).text).toBe('h500')

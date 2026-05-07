@@ -32,6 +32,56 @@ function truncate(str: string, maxLen: number): string {
   return str.length <= maxLen ? str : str.slice(0, maxLen) + '…'
 }
 
+/**
+ * Returns the `limit` most-recently-completed tasks (status==='done', sorted
+ * newest-first by `completed_at`) in a single linear pass. Maintains a small
+ * insertion-sorted top-N array instead of full-sorting every done task — O(n*N)
+ * where N is small (5) versus O(n log n) for the prior `.sort().slice()`.
+ */
+function selectMostRecentlyCompleted(tasks: SprintTask[], limit: number): SprintTask[] {
+  if (limit <= 0) return []
+  const top: SprintTask[] = []
+  const completedMs: number[] = []
+
+  for (const task of tasks) {
+    if (task.status !== 'done' || !task.completed_at) continue
+    const completedAt = new Date(task.completed_at).getTime()
+    if (top.length < limit) {
+      insertCompletedTask(top, completedMs, task, completedAt)
+      continue
+    }
+    // top is full; only consider candidates newer than the oldest entry kept.
+    if (completedAt <= completedMs[completedMs.length - 1]!) continue
+    top.pop()
+    completedMs.pop()
+    insertCompletedTask(top, completedMs, task, completedAt)
+  }
+
+  return top
+}
+
+/**
+ * Inserts a task into a parallel-array structure sorted by `completedMs`
+ * descending (newest first). The arrays are short (<= limit), so an in-place
+ * scan is faster than re-sorting after each insert.
+ */
+function insertCompletedTask(
+  top: SprintTask[],
+  completedMs: number[],
+  task: SprintTask,
+  completedAt: number
+): void {
+  let insertAt = top.length
+  for (let i = 0; i < top.length; i++) {
+    if (completedAt > completedMs[i]!) {
+      insertAt = i
+      break
+    }
+  }
+  top.splice(insertAt, 0, task)
+  completedMs.splice(insertAt, 0, completedAt)
+}
+
 /** Check if a timestamp (ISO string or epoch) is today in local time. */
 function isToday(timestamp: string | number): boolean {
   const date = new Date(timestamp)
@@ -137,12 +187,11 @@ export function useDashboardMetrics(): DashboardMetrics {
     return formatTokensCompact(Math.round(avg))
   }, [tokenTrendData])
 
-  // Recent completions — last 5 done tasks
+  // Recent completions — last 5 done tasks, newest first by completed_at.
+  // Single linear pass maintains the top-5 by insertion-sort so we avoid
+  // sorting (and allocating) over the entire done-task set.
   const recentCompletions = useMemo(() => {
-    return tasks
-      .filter((t) => t.status === 'done' && t.completed_at)
-      .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
-      .slice(0, 5)
+    return selectMostRecentlyCompleted(tasks, 5)
   }, [tasks])
 
   // Tokens 24h — sum tokens of agent runs started within last 24 hours.

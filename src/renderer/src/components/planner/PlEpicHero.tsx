@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import type { TaskGroup, SprintTask } from '../../../../shared/types'
 import { EpicIcon } from './PlEpicRail'
 import { EditableField } from './EditableField'
-import { partitionSprintTasks } from '../../lib/partitionSprintTasks'
 
 interface PlEpicHeroProps {
   epic: TaskGroup
@@ -27,18 +26,23 @@ export function PlEpicHero({
   saveGoal
 }: PlEpicHeroProps): React.JSX.Element {
   const counts = useMemo(() => {
-    const c = { done: 0, running: 0, queued: 0, blocked: 0 }
+    const c = { done: 0, running: 0, queued: 0, blocked: 0, backlog: 0 }
     tasks.forEach((t) => {
       if (t.status === 'done') c.done++
       else if (t.status === 'active') c.running++
       else if (t.status === 'queued') c.queued++
       else if (t.status === 'blocked') c.blocked++
+      else if (t.status === 'backlog') c.backlog++
     })
     return c
   }, [tasks])
-  const backlogCount = useMemo(() => partitionSprintTasks(tasks).backlog.length, [tasks])
-  const { done: doneCount, running: runningCount, queued: queuedCount, blocked: blockedCount } =
-    counts
+  const {
+    done: doneCount,
+    running: runningCount,
+    queued: queuedCount,
+    blocked: blockedCount,
+    backlog: backlogCount
+  } = counts
 
   return (
     <div

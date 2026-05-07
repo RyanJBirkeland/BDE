@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AgentConsole } from '../AgentConsole'
 import type { AgentMeta, AgentEvent } from '../../../../../shared/types'
 import { useAgentHistoryStore } from '../../../stores/agentHistory'
-import { useAgentEventsStore } from '../../../stores/agentEvents'
+import { useAgentEventsStore, useAgentEvents } from '../../../stores/agentEvents'
 
 // Mock stores
 vi.mock('../../../stores/agentHistory', () => ({
@@ -14,7 +14,8 @@ vi.mock('../../../stores/agentHistory', () => ({
 }))
 
 vi.mock('../../../stores/agentEvents', () => ({
-  useAgentEventsStore: vi.fn()
+  useAgentEventsStore: vi.fn(),
+  useAgentEvents: vi.fn(() => [])
 }))
 
 // Mock terminal store
@@ -106,9 +107,10 @@ describe('AgentConsole', () => {
       return selector(state)
     })
     vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      const state = { events: { 'test-agent-1': mockEvents }, evictedAgents: {} }
+      const state = { evictedAgents: {} }
       return selector(state)
     })
+    vi.mocked(useAgentEvents).mockReturnValue(mockEvents)
   })
 
   it('renders console header with agent name', () => {
@@ -133,10 +135,7 @@ describe('AgentConsole', () => {
   })
 
   it('shows loading state when agent is running and has no events', () => {
-    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      const state = { events: { 'test-agent-1': [] }, evictedAgents: {} }
-      return selector(state)
-    })
+    vi.mocked(useAgentEvents).mockReturnValue([])
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
     expect(screen.getByText('Waiting for agent output…')).toBeInTheDocument()
     // Check for spinner icon
@@ -150,10 +149,7 @@ describe('AgentConsole', () => {
       const state = { agents: [doneAgent] }
       return selector(state)
     })
-    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      const state = { events: { 'test-agent-1': [] }, evictedAgents: {} }
-      return selector(state)
-    })
+    vi.mocked(useAgentEvents).mockReturnValue([])
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
     expect(screen.getByText('No events recorded for this agent')).toBeInTheDocument()
   })
@@ -190,7 +186,6 @@ describe('AgentConsole', () => {
   it('shows trimmed events banner when evictedAgents flag is set', () => {
     vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
       const state = {
-        events: { 'test-agent-1': mockEvents },
         evictedAgents: { 'test-agent-1': true }
       }
       return selector(state)
@@ -200,10 +195,6 @@ describe('AgentConsole', () => {
   })
 
   it('does not show trimmed events banner when evictedAgents flag is not set', () => {
-    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      const state = { events: { 'test-agent-1': mockEvents }, evictedAgents: {} }
-      return selector(state)
-    })
     render(<AgentConsole agentId="test-agent-1" onSteer={vi.fn()} onCommand={vi.fn()} />)
     expect(
       screen.queryByText('Older events were trimmed (showing last 2,000)')
@@ -242,10 +233,11 @@ describe('AgentConsole', () => {
   })
 
   it('removes pending message when real user_message event arrives', () => {
-    let eventState = { events: { 'test-agent-1': mockEvents }, evictedAgents: {} }
+    let currentEvents: AgentEvent[] = mockEvents
     vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      return selector(eventState)
+      return selector({ evictedAgents: {} })
     })
+    vi.mocked(useAgentEvents).mockImplementation(() => currentEvents)
 
     const onSteer = vi.fn()
     const { rerender, container } = render(
@@ -260,24 +252,14 @@ describe('AgentConsole', () => {
     expect(container.querySelector('.console-card--pending')).toBeInTheDocument()
 
     // Simulate real user_message event arriving
-    eventState = {
-      events: {
-        'test-agent-1': [
-          ...mockEvents,
-          {
-            type: 'agent:user_message',
-            text: 'test message',
-            timestamp: Date.now()
-          }
-        ]
-      },
-      evictedAgents: {}
-    }
-
-    // Re-mock the store with updated events
-    vi.mocked(useAgentEventsStore).mockImplementation((selector: any) => {
-      return selector(eventState)
-    })
+    currentEvents = [
+      ...mockEvents,
+      {
+        type: 'agent:user_message',
+        text: 'test message',
+        timestamp: Date.now()
+      }
+    ]
 
     rerender(<AgentConsole agentId="test-agent-1" onSteer={onSteer} onCommand={vi.fn()} />)
 

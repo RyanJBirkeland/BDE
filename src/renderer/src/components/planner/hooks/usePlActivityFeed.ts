@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { SprintTask, AgentEvent } from '../../../../../shared/types'
-import { subscribeToAgentEvents, getAgentEventHistory } from '../../../services/agents'
+import { getAgentEventHistory } from '../../../services/agents'
+import { useAgentEventsStore } from '../../../stores/agentEvents'
+import { readRingBuffer } from '../../../lib/ringBuffer'
 
 type TrackedEventType = 'agent:started' | 'agent:completed' | 'agent:error' | 'agent:tool_call'
 
@@ -182,21 +184,47 @@ export function usePlActivityFeed(tasks: SprintTask[]): {
     void fetchAll()
   }, [fetchAll])
 
+  // Track per-agent last-seen ring-buffer head so we can pick up only new events
+  // when the shared agentEvents store updates. The store already maintains a
+  // single IPC subscription — re-subscribing here would create a third concurrent
+  // listener.
+  const lastSeenHead = useRef<Map<string, number>>(new Map())
+  // Reset the per-agent cursor map when the watched task set changes so we
+  // ingest the full live history once before resuming incremental reads.
+  useEffect(() => {
+    lastSeenHead.current = new Map()
+  }, [taskIds])
+
   useEffect(() => {
     const taskIdSet = new Set(tasks.map((t) => t.id))
     const titleByTaskId = new Map(tasks.map((t) => [t.id, t.title]))
 
-    const unsubscribe = subscribeToAgentEvents(({ agentId, event }) => {
-      if (!taskIdSet.has(agentId)) return
-      const entry = buildAgentFeedEntry(event, agentId, titleByTaskId.get(agentId) ?? agentId)
-      if (!entry) return
-      // Live events are always newer than existing historical entries, so
-      // prepending maintains newest-first order without a full re-sort.
-      setEntries((prev) => [entry, ...prev])
+    const unsubscribe = useAgentEventsStore.subscribe((state, prev) => {
+      if (state.buffers === prev.buffers) return
+      const fresh: FeedEntry[] = []
+      for (const taskId of taskIdSet) {
+        const buf = state.buffers[taskId]
+        if (!buf) continue
+        const previousHead = lastSeenHead.current.get(taskId) ?? buf.head - buf.count
+        if (buf.head === previousHead) continue
+        const events = readRingBuffer(buf)
+        const startIndex = Math.max(0, events.length - (buf.head - previousHead))
+        for (let i = startIndex; i < events.length; i++) {
+          const entry = buildAgentFeedEntry(events[i]!, taskId, titleByTaskId.get(taskId) ?? taskId)
+          if (entry) fresh.push(entry)
+        }
+        lastSeenHead.current.set(taskId, buf.head)
+      }
+      if (fresh.length > 0) {
+        // Live events are always newer than historical entries, so prepending
+        // keeps newest-first order without a full re-sort.
+        setEntries((prev) => [...fresh.reverse(), ...prev])
+      }
     })
 
     return unsubscribe
-  }, [tasks])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskIds])
 
   return { entries, loading, error, reload: fetchAll }
 }

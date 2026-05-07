@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useAgentEventsStore } from '../../stores/agentEvents'
+import { useAgentEventsStore, useAgentEvents } from '../../stores/agentEvents'
 import { pairEvents } from '../../lib/pair-events'
 import { ConsoleCard } from '../agents/cards/ConsoleCard'
 
@@ -14,7 +14,7 @@ export function AgentOutputTab({
   agentOutput,
   sessionKey
 }: AgentOutputTabProps): React.JSX.Element {
-  const events = useAgentEventsStore((s) => s.events[agentId])
+  const events = useAgentEvents(agentId)
   const loadHistory = useAgentEventsStore((s) => s.loadHistory)
 
   useEffect(() => {

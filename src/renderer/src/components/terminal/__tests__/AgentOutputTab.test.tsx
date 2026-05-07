@@ -8,9 +8,9 @@ const mockLoadHistory = vi.fn()
 vi.mock('../../../stores/agentEvents', () => ({
   useAgentEventsStore: (selector: (s: unknown) => unknown) =>
     selector({
-      events: mockEvents,
       loadHistory: mockLoadHistory
-    })
+    }),
+  useAgentEvents: (agentId: string | null) => (agentId ? (mockEvents[agentId] ?? []) : [])
 }))
 
 // Mock ConsoleCard

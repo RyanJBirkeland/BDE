@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 // Hoisted state containers so each test can mutate them before rendering.
-const { sprintState, reviewState, agentState } = vi.hoisted(() => ({
+const { sprintState, reviewState, agentState, agentEventsByAgentId } = vi.hoisted(() => ({
   sprintState: {
     tasks: [] as Array<Record<string, unknown>>
   },
@@ -10,9 +10,9 @@ const { sprintState, reviewState, agentState } = vi.hoisted(() => ({
     selectedTaskId: 'task-1' as string | null
   },
   agentState: {
-    events: {} as Record<string, unknown[]>,
     loadHistory: vi.fn()
-  }
+  },
+  agentEventsByAgentId: { current: {} as Record<string, unknown[]> }
 }))
 
 vi.mock('../../../stores/sprintTasks', () => ({
@@ -24,7 +24,10 @@ vi.mock('../../../stores/codeReview', () => ({
 }))
 
 vi.mock('../../../stores/agentEvents', () => ({
-  useAgentEventsStore: vi.fn((sel: (s: typeof agentState) => unknown) => sel(agentState))
+  useAgentEventsStore: vi.fn((sel: (s: typeof agentState) => unknown) => sel(agentState)),
+  useAgentEvents: vi.fn((agentId: string | null) =>
+    agentId ? (agentEventsByAgentId.current[agentId] ?? []) : []
+  )
 }))
 
 import { VerificationTab } from '../VerificationTab'
@@ -32,7 +35,7 @@ import { VerificationTab } from '../VerificationTab'
 function setup(taskOverrides: Record<string, unknown> = {}): void {
   reviewState.selectedTaskId = 'task-1'
   sprintState.tasks = [{ id: 'task-1', agent_run_id: 'run-1', ...taskOverrides }]
-  agentState.events = {}
+  agentEventsByAgentId.current = {}
   agentState.loadHistory = vi.fn()
 }
 

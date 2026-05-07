@@ -15,7 +15,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { usePanelLayoutStore } from '../stores/panelLayout'
 import { useAgentHistoryStore, type AgentMeta } from '../stores/agentHistory'
-import { useAgentEventsStore } from '../stores/agentEvents'
+import { useAgentEventsStore, useAgentEvents } from '../stores/agentEvents'
 import { AgentList } from '../components/agents/AgentList'
 import { AgentConsole } from '../components/agents/AgentConsole'
 import { AgentLaunchpad } from '../components/agents/AgentLaunchpad'
@@ -33,7 +33,6 @@ import { VARIANTS, SPRINGS, REDUCED_TRANSITION, useReducedMotion } from '../lib/
 import { steerAgent } from '../services/agents'
 
 const INSPECTOR_BREAKPOINT = 1280
-const EMPTY_EVENTS: never[] = []
 
 function fleetListWidth(viewportWidth: number): number {
   if (viewportWidth < 700) return 0
@@ -89,7 +88,7 @@ export function AgentsView(): React.JSX.Element {
     activeId,
     fetchAgents,
     loadHistory,
-    setShowLaunchpad: openLaunchpad,
+    setShowLaunchpad: openLaunchpad
   })
 
   const handleClearConsole = useCallback(() => {
@@ -107,11 +106,8 @@ export function AgentsView(): React.JSX.Element {
     setShowLaunchpad(false)
   }, [])
 
-  const selectedAgent = useMemo(
-    () => agents.find((a) => a.id === activeId),
-    [agents, activeId]
-  )
-  const events = useAgentEventsStore((s) => s.events[activeId ?? ''] ?? EMPTY_EVENTS)
+  const selectedAgent = useMemo(() => agents.find((a) => a.id === activeId), [agents, activeId])
+  const events = useAgentEvents(activeId)
 
   const handleSteer = useCallback(
     async (message: string, attachment?: Attachment) => {
@@ -147,7 +143,7 @@ export function AgentsView(): React.JSX.Element {
           height: '100%',
           overflow: 'hidden',
           background: 'var(--bg)',
-          position: 'relative',
+          position: 'relative'
         }}
       >
         {listWidth > 0 && (
@@ -183,11 +179,7 @@ export function AgentsView(): React.JSX.Element {
         />
 
         {(showInspectorInline || showInspectorOverlay) && selectedAgent && (
-          <InspectorPane
-            agent={selectedAgent}
-            events={events}
-            asOverlay={showInspectorOverlay}
-          />
+          <InspectorPane agent={selectedAgent} events={events} asOverlay={showInspectorOverlay} />
         )}
 
         {isConsoleMode && !isWide && (
@@ -228,18 +220,20 @@ function FleetListPane({
   listWidth,
   onSpawn,
   onDismissBanner,
-  onSelectAgent,
+  onSelectAgent
 }: FleetListPaneProps): React.JSX.Element {
   return (
-    <div style={{
-      width: listWidth,
-      flexShrink: 0,
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
-      transition: 'width 0.2s ease',
-    }}>
+    <div
+      style={{
+        width: listWidth,
+        flexShrink: 0,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        transition: 'width 0.2s ease'
+      }}
+    >
       <AgentList
         agents={agents}
         selectedId={activeId}
@@ -280,7 +274,7 @@ function CenterPane({
   onSelectAgent,
   onSpawn,
   onSteer,
-  onCommand,
+  onCommand
 }: CenterPaneProps): React.JSX.Element {
   const showLaunchpadState = showLaunchpad || (!selectedAgent && agents.length === 0)
 
@@ -291,7 +285,7 @@ function CenterPane({
         minWidth: 0,
         overflow: 'hidden',
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'column'
       }}
     >
       {showLaunchpadState ? (
@@ -328,7 +322,10 @@ interface InspectorToggleButtonProps {
   onToggle: () => void
 }
 
-function InspectorToggleButton({ isOpen, onToggle }: InspectorToggleButtonProps): React.JSX.Element {
+function InspectorToggleButton({
+  isOpen,
+  onToggle
+}: InspectorToggleButtonProps): React.JSX.Element {
   return (
     <button
       onClick={onToggle}
@@ -345,7 +342,7 @@ function InspectorToggleButton({ isOpen, onToggle }: InspectorToggleButtonProps)
         fontSize: 10,
         fontFamily: 'var(--font-mono)',
         cursor: 'pointer',
-        color: 'var(--fg-3)',
+        color: 'var(--fg-3)'
       }}
     >
       {isOpen ? 'Close inspector' : 'Inspector'}

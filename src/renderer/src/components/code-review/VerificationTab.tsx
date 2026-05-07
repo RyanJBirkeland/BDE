@@ -12,7 +12,7 @@
 import { useEffect, useMemo } from 'react'
 import { useCodeReviewStore } from '../../stores/codeReview'
 import { useSprintTasks } from '../../stores/sprintTasks'
-import { useAgentEventsStore } from '../../stores/agentEvents'
+import { useAgentEventsStore, useAgentEvents } from '../../stores/agentEvents'
 import { extractTestRuns } from '../../lib/extract-test-runs'
 import type { VerificationRecord } from '../../../../shared/types/task-types'
 import './VerificationTab.css'
@@ -24,9 +24,7 @@ export function VerificationTab(): React.JSX.Element {
 
   const task = tasks.find((t) => t.id === selectedTaskId)
   const agentRunId = task?.agent_run_id ?? null
-  const agentEvents = useAgentEventsStore((s) =>
-    agentRunId ? (s.events[agentRunId] ?? null) : null
-  )
+  const agentEvents = useAgentEvents(agentRunId)
 
   useEffect(() => {
     if (agentRunId) loadHistory(agentRunId)
@@ -132,7 +130,10 @@ interface VerificationOutputRowProps {
   truncated: boolean
 }
 
-function VerificationOutputRow({ output, truncated }: VerificationOutputRowProps): React.JSX.Element {
+function VerificationOutputRow({
+  output,
+  truncated
+}: VerificationOutputRowProps): React.JSX.Element {
   return (
     <tr className="cr-verification__output-row">
       <td colSpan={3}>
@@ -144,7 +145,6 @@ function VerificationOutputRow({ output, truncated }: VerificationOutputRowProps
     </tr>
   )
 }
-
 
 function buildOutputText(record: VerificationRecord): string {
   return [record.stdout, record.stderr].filter((s) => s.length > 0).join('\n')
@@ -181,9 +181,7 @@ interface AgentTestRunDisplayProps {
 }
 
 function AgentTestRunDisplay({ run, totalRunCount }: AgentTestRunDisplayProps): React.JSX.Element {
-  const statusClass = run.success
-    ? 'cr-tests__status'
-    : 'cr-tests__status cr-tests__status--failed'
+  const statusClass = run.success ? 'cr-tests__status' : 'cr-tests__status cr-tests__status--failed'
 
   return (
     <div className="cr-tests" data-testid="cr-agent-test-run">

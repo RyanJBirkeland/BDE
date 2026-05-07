@@ -45,12 +45,13 @@ vi.mock('../../stores/agentHistory', () => ({
 vi.mock('../../stores/agentEvents', () => ({
   useAgentEventsStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({
-      events: {},
+      buffers: {},
       init: vi.fn().mockReturnValue(() => {}),
       loadHistory: vi.fn().mockResolvedValue(undefined),
       clear: vi.fn()
     })
-  )
+  ),
+  useAgentEvents: vi.fn(() => [])
 }))
 
 vi.mock('../../stores/theme', () => ({
