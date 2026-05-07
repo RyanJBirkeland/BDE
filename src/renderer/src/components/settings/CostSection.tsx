@@ -267,9 +267,13 @@ export function CostSection(): React.JSX.Element {
       if (sortField === 'tokens') {
         return totalTokens(b) - totalTokens(a)
       }
-      const av = a[sortField] ?? -1
-      const bv = b[sortField] ?? -1
-      return (bv as number) - (av as number)
+      // Numeric field (e.g. durationMs). Narrow with typeof so any malformed
+      // non-number value falls back to a stable position rather than NaN.
+      const rawA: unknown = a[sortField]
+      const rawB: unknown = b[sortField]
+      const av = typeof rawA === 'number' ? rawA : -1
+      const bv = typeof rawB === 'number' ? rawB : -1
+      return bv - av
     })
   }, [runs, sortField])
 

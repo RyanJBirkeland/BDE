@@ -1,5 +1,7 @@
 import { useState, useId } from 'react'
-import { type NeonAccent, neonVar } from './types'
+import { type NeonAccent, neonVar, isNeonAccent } from './types'
+
+const DEFAULT_ACCENT: NeonAccent = 'cyan'
 
 export interface ChartBar {
   value: number
@@ -46,7 +48,8 @@ export function MiniChart({ data, height = 80 }: MiniChartProps): React.JSX.Elem
     )
   }
 
-  const accent: NeonAccent = (data[0]?.accent as NeonAccent | undefined) ?? 'cyan'
+  const rawAccent = data[0]?.accent
+  const accent: NeonAccent = isNeonAccent(rawAccent) ? rawAccent : DEFAULT_ACCENT
   const maxValue = Math.max(...data.map((d) => d.value), 1)
   const plotW = SVG_WIDTH - PAD.left - PAD.right
   const plotH = height - PAD.top - PAD.bottom

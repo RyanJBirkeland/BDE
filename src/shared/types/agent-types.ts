@@ -24,7 +24,7 @@ export interface AgentMeta {
   startedAt: string
   finishedAt: string | null
   exitCode: number | null
-  status: 'running' | 'done' | 'failed' | 'cancelled' | 'unknown'
+  status: 'running' | 'done' | 'failed' | 'cancelled' | 'unknown' | 'review' | 'error'
   logPath: string
   source: 'fleet' | 'external' | 'adhoc'
   costUsd: number | null

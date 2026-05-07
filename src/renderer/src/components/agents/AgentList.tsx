@@ -112,13 +112,10 @@ function FilterChips({
   onFilterChange: (f: StatusFilter) => void
 }): React.JSX.Element {
   const counts = useMemo(() => {
-    // Cast to string to accommodate any status values beyond the core union
-    // (e.g. 'review', 'error' from pipeline agent flows)
-    const statusOf = (a: AgentMeta): string => a.status as string
-    const live = agents.filter((a) => statusOf(a) === 'running').length
-    const review = agents.filter((a) => statusOf(a) === 'review').length
-    const failed = agents.filter((a) => statusOf(a) === 'failed' || statusOf(a) === 'error').length
-    const done = agents.filter((a) => statusOf(a) === 'done').length
+    const live = agents.filter((a) => a.status === 'running').length
+    const review = agents.filter((a) => a.status === 'review').length
+    const failed = agents.filter((a) => a.status === 'failed' || a.status === 'error').length
+    const done = agents.filter((a) => a.status === 'done').length
     return { live, review, failed, done }
   }, [agents])
 
@@ -324,13 +321,11 @@ export function AgentList({
 
   const statusFiltered = useMemo(() => {
     if (activeFilter === 'all') return searchFiltered
-    // Cast to string to handle status values beyond the core AgentMeta union
-    const s = (a: AgentMeta): string => a.status as string
-    if (activeFilter === 'live') return searchFiltered.filter((a) => s(a) === 'running')
-    if (activeFilter === 'review') return searchFiltered.filter((a) => s(a) === 'review')
+    if (activeFilter === 'live') return searchFiltered.filter((a) => a.status === 'running')
+    if (activeFilter === 'review') return searchFiltered.filter((a) => a.status === 'review')
     if (activeFilter === 'failed')
-      return searchFiltered.filter((a) => s(a) === 'failed' || s(a) === 'error')
-    if (activeFilter === 'done') return searchFiltered.filter((a) => s(a) === 'done')
+      return searchFiltered.filter((a) => a.status === 'failed' || a.status === 'error')
+    if (activeFilter === 'done') return searchFiltered.filter((a) => a.status === 'done')
     return searchFiltered
   }, [searchFiltered, activeFilter])
 

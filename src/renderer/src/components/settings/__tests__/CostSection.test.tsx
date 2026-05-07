@@ -111,6 +111,55 @@ describe('CostSection', () => {
     })
   })
 
+  it('handles a row with a non-number durationMs without producing NaN order', async () => {
+    // Regression test for T-53: previously the comparator cast the field as
+    // `number`. A non-number (e.g. null from DB or a string smuggled through)
+    // would yield `NaN - number`, sorting unpredictably. The typeof guard
+    // falls back to -1, keeping the order stable.
+    vi.mocked(window.api.cost.agentRuns).mockResolvedValue([
+      {
+        id: 'run-good',
+        task: 'Good duration',
+        repo: 'fleet',
+        startedAt: '2026-04-01T10:00:00Z',
+        finishedAt: '2026-04-01T10:30:00Z',
+        costUsd: 0.35,
+        durationMs: 1800000,
+        numTurns: 15,
+        tokensIn: 50000,
+        tokensOut: 10000,
+        cacheRead: 30000,
+        cacheCreate: 5000,
+        prUrl: null,
+        status: 'done'
+      },
+      {
+        id: 'run-bad',
+        task: 'Bad duration',
+        repo: 'fleet',
+        startedAt: '2026-04-02T10:00:00Z',
+        finishedAt: '2026-04-02T11:00:00Z',
+        costUsd: 0.5,
+        // Simulate a malformed payload — should NOT crash or produce NaN ordering.
+        durationMs: 'not-a-number' as unknown as number,
+        numTurns: 10,
+        tokensIn: 20000,
+        tokensOut: 5000,
+        cacheRead: 10000,
+        cacheCreate: 1000,
+        prUrl: null,
+        status: 'done'
+      }
+    ])
+    render(<CostSection />)
+    await waitFor(() => {
+      expect(screen.getByText('Task History')).toBeInTheDocument()
+    })
+    // Both rows render without the comparator throwing.
+    expect(screen.getByText(/Good duration/)).toBeInTheDocument()
+    expect(screen.getByText(/Bad duration/)).toBeInTheDocument()
+  })
+
   it('allows clicking column headers to sort', async () => {
     vi.mocked(window.api.cost.agentRuns).mockResolvedValue([
       {

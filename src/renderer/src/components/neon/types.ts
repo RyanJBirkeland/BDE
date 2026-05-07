@@ -49,3 +49,8 @@ export function neonVar(
 
 /** All accent names for iteration */
 export const NEON_ACCENTS: NeonAccent[] = ['cyan', 'pink', 'blue', 'purple', 'orange', 'red']
+
+/** Type guard — true when `value` is one of the sanctioned NeonAccent names. */
+export function isNeonAccent(value: unknown): value is NeonAccent {
+  return typeof value === 'string' && (NEON_ACCENTS as string[]).includes(value)
+}

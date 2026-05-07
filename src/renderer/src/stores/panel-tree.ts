@@ -301,21 +301,35 @@ export function isValidLayout(node: unknown): boolean {
 }
 
 /**
- * Migrates stale 'memory' and 'cost' tabs to 'settings'.
+ * Retired view keys that may still appear in persisted panel layouts from older
+ * app versions. Used by `migrateLayout` to rewrite them to current views.
+ */
+type LegacyView = 'memory' | 'cost' | 'pr-station'
+
+function isLegacyView(value: string): value is LegacyView {
+  return value === 'memory' || value === 'cost' || value === 'pr-station'
+}
+
+function migrateLegacyTab(legacy: LegacyView): PanelTab {
+  if (legacy === 'pr-station') {
+    return { viewKey: 'code-review', label: VIEW_LABELS['code-review'] }
+  }
+  // 'memory' and 'cost' both fold into Settings.
+  return { viewKey: 'settings', label: VIEW_LABELS.settings }
+}
+
+/**
+ * Migrates stale 'memory', 'cost', and 'pr-station' tabs to current views.
  * Returns a new layout with migrated tabs.
  */
 export function migrateLayout(node: PanelNode): PanelNode {
   if (node.type === 'leaf') {
     const migratedTabs = node.tabs.map((tab) => {
-      // Use type assertion to allow checking legacy view names
-      const viewKey = tab.viewKey as string
-      if (viewKey === 'memory' || viewKey === 'cost') {
-        return { viewKey: 'settings' as View, label: VIEW_LABELS.settings }
-      }
-      if (viewKey === 'pr-station') {
-        return { viewKey: 'code-review' as View, label: VIEW_LABELS['code-review'] }
-      }
-      return tab
+      // `tab.viewKey` is typed as the current `View` union, but persisted
+      // layouts on disk may still hold retired keys. Widen to string before
+      // running the predicate.
+      const viewKey: string = tab.viewKey
+      return isLegacyView(viewKey) ? migrateLegacyTab(viewKey) : tab
     })
     return { ...node, tabs: migratedTabs }
   }

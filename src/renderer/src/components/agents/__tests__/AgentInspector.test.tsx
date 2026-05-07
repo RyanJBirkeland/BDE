@@ -61,4 +61,19 @@ describe('AgentInspector', () => {
     expect(screen.getByTestId('ministat-tools')).toBeDefined()
     expect(screen.getByTestId('ministat-elapsed')).toBeDefined()
   })
+
+  it('does not crash when a tool_call event has a non-object input (e.g. a number)', () => {
+    // Guards against the bug where `event.input as Record<string, unknown>`
+    // would happily index a numeric value and read undefined properties.
+    const numericInputEvent = {
+      type: 'agent:tool_call',
+      tool: 'fake_tool',
+      summary: 'numeric',
+      input: 42,
+      timestamp: Date.now(),
+    } as const
+    render(<AgentInspector agent={agent} events={[numericInputEvent]} />)
+    // No file should be rendered for the numeric-input event.
+    expect(screen.getByText('No file events yet')).toBeDefined()
+  })
 })

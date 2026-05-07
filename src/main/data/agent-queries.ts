@@ -17,7 +17,9 @@ const VALID_AGENT_STATUSES: ReadonlySet<string> = new Set([
   'done',
   'failed',
   'cancelled',
-  'unknown'
+  'unknown',
+  'review',
+  'error'
 ])
 const VALID_AGENT_SOURCES: ReadonlySet<string> = new Set(['fleet', 'external', 'adhoc'])
 

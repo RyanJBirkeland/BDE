@@ -47,8 +47,8 @@ function deriveFilesTouched(events: AgentEvent[]): string[] {
 
   for (const event of events) {
     if (event.type !== 'agent:tool_call') continue
-    const input = event.input as Record<string, unknown> | null | undefined
-    if (input == null) continue
+    if (typeof event.input !== 'object' || event.input === null) continue
+    const input = event.input as Record<string, unknown>
     const path =
       typeof input['path'] === 'string'
         ? input['path']

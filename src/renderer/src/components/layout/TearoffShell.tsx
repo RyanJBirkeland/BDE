@@ -145,7 +145,7 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
     const unsub = usePanelLayoutStore.subscribe((state) => {
       if (debounce) clearTimeout(debounce)
       debounce = setTimeout(() => {
-        const views = getOpenViews(state.root) as string[]
+        const views = getOpenViews(state.root)
         window.api?.tearoff?.viewsChanged({ windowId, views })
       }, 500)
     })
@@ -223,7 +223,7 @@ export function TearoffShell({ view, windowId }: TearoffShellProps): React.React
 
   function handleReturnAll(): void {
     const views = getOpenViews(usePanelLayoutStore.getState().root)
-    window.api?.tearoff?.returnAll({ windowId, views: views as string[] })
+    window.api?.tearoff?.returnAll({ windowId, views })
   }
 
   function handleDialogClose(action: 'return' | 'close', remember: boolean): void {

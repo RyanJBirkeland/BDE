@@ -27,7 +27,9 @@ const STATUS_ACCENTS: Record<AgentMeta['status'], NeonAccent> = {
   done: 'purple',
   failed: 'red',
   cancelled: 'orange',
-  unknown: 'purple'
+  unknown: 'purple',
+  review: 'blue',
+  error: 'red'
 }
 
 interface StatusIndicatorProps {
