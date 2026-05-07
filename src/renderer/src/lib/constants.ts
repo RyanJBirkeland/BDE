@@ -25,6 +25,10 @@ export const GATEWAY_DISCONNECT_TOAST_DELAY = 4_000
 export const KILL_UNDO_WINDOW = 5_000
 export const SESSION_ACTIVE_THRESHOLD = 5 * 60 * 1000
 
+// Time unit constants (ms)
+export const MS_PER_HOUR = 60 * 60 * 1000
+export const MS_PER_DAY = 24 * MS_PER_HOUR
+
 // Log limits
 export const MAX_LOG_LINES = 2_000
 
