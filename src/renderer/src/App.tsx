@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCommandPaletteStore } from './stores/commandPalette'
 import { useSprintUI } from './stores/sprintUI'
-import { useTaskWorkbenchStore } from './stores/taskWorkbench'
 import { CommandPalette } from './components/layout/CommandPalette'
 import { QuickCreateBar } from './components/sprint/QuickCreateBar'
 import { ToastContainer } from './components/layout/ToastContainer'
@@ -41,24 +40,6 @@ import { FloatingAgentButton } from './components/floating-agent/FloatingAgentBu
 const _params = new URLSearchParams(window.location.search)
 const _tearoffView = _params.get('view') as View | null
 const _tearoffWindowId = _params.get('windowId')
-
-interface PendingFirstTask {
-  title: string
-  spec: string
-  repo: string
-  specType: string
-}
-
-function isPendingFirstTask(value: unknown): value is PendingFirstTask {
-  if (typeof value !== 'object' || value === null) return false
-  const candidate = value as Record<string, unknown>
-  return (
-    typeof candidate.title === 'string' &&
-    typeof candidate.spec === 'string' &&
-    typeof candidate.repo === 'string' &&
-    typeof candidate.specType === 'string'
-  )
-}
 
 function ShortcutsOverlay({ onClose }: { onClose: () => void }): React.JSX.Element {
   const reduced = useReducedMotion()
@@ -140,32 +121,10 @@ function App(): React.JSX.Element {
   const quickCreateOpen = useSprintUI((s) => s.quickCreateOpen)
   const setQuickCreateOpen = useSprintUI((s) => s.setQuickCreateOpen)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [featureGuideOpen, setFeatureGuideOpen] = useState(false)
 
   const showOnboarding = useOnboardingCheck()
-  useAppInitialization()
+  const { featureGuideOpen, closeFeatureGuide } = useAppInitialization()
   useAppShortcuts({ paletteOpen, shortcutsOpen, setShortcutsOpen })
-
-  useEffect(() => {
-    const raw = localStorage.getItem('fleet:pending-first-task')
-    if (!raw) return
-    try {
-      const parsed: unknown = JSON.parse(raw)
-      localStorage.removeItem('fleet:pending-first-task')
-      if (!isPendingFirstTask(parsed)) {
-        console.warn('Discarding malformed fleet:pending-first-task payload')
-        return
-      }
-      const wb = useTaskWorkbenchStore.getState()
-      wb.setTitle(parsed.title)
-      wb.setSpec(parsed.spec)
-      wb.setRepo(parsed.repo)
-      wb.setSpecType(parsed.specType as Parameters<typeof wb.setSpecType>[0])
-      usePanelLayoutStore.getState().setView('planner')
-    } catch {
-      localStorage.removeItem('fleet:pending-first-task')
-    }
-  }, [])
 
   useGitHubErrorListener()
   useManagerEventListener()
@@ -224,14 +183,6 @@ function App(): React.JSX.Element {
     document.title = title
     window.api.window.setTitle(title)
   }, [activeView])
-
-  useEffect(() => {
-    const handler = (): void => {
-      setFeatureGuideOpen(true)
-    }
-    window.addEventListener('fleet:open-feature-guide', handler)
-    return () => window.removeEventListener('fleet:open-feature-guide', handler)
-  }, [])
 
   // Save timestamp on window close for morning briefing detection
   useEffect(() => {
@@ -298,7 +249,7 @@ function App(): React.JSX.Element {
         <AnimatePresence>
           {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
         </AnimatePresence>
-        <FeatureGuideModal open={featureGuideOpen} onClose={() => setFeatureGuideOpen(false)} />
+        <FeatureGuideModal open={featureGuideOpen} onClose={closeFeatureGuide} />
         <ToastContainer />
         <TaskWorkbenchModal />
         <PreflightWarningModal />

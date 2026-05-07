@@ -22,6 +22,14 @@ export function saveLayout(layout: PanelNode | null): void {
 }
 
 /**
+ * Saves layout to the settings store and surfaces errors to the caller via the
+ * returned promise. Use when the caller needs to react to failure (e.g. show a toast).
+ */
+export function saveLayoutAsync(layout: PanelNode | null): Promise<void> {
+  return setJsonSetting('panel.layout', layout)
+}
+
+/**
  * Loads the saved layout from the settings store.
  * Returns null if no layout is saved or settings are unavailable.
  */
@@ -33,6 +41,7 @@ export async function loadLayout(): Promise<PanelNode | null> {
 export interface LayoutPersister {
   persist: (layout: PanelNode) => void
   flush: (layout: PanelNode | null) => void
+  clear: () => Promise<void>
   cancel: () => void
 }
 
@@ -55,5 +64,13 @@ export function createLayoutPersister(delayMs = 500): LayoutPersister {
     }
   }
 
-  return { persist, flush, cancel }
+  // Cancels any pending debounced write so it cannot overwrite the cleared value,
+  // then writes null to wipe the saved layout. Returns the underlying save promise
+  // so callers can react to failure (e.g. show a toast).
+  const clear = (): Promise<void> => {
+    cancel()
+    return saveLayoutAsync(null)
+  }
+
+  return { persist, flush, clear, cancel }
 }

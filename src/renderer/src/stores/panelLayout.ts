@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { toast } from './toasts'
 import { loadLayout, createLayoutPersister } from './panel-persistence'
-import { setJsonSetting } from '../services/settings-storage'
 import {
   _resetIdCounter,
   createLeaf,
@@ -38,6 +37,13 @@ export {
   isValidLayout,
   DEFAULT_LAYOUT
 }
+
+// ---------------------------------------------------------------------------
+// Persistence — single source for all layout writes (debounced + flush + clear)
+// ---------------------------------------------------------------------------
+
+const layoutPersister = createLayoutPersister(500)
+let lastLayoutToSave: PanelNode | null = null
 
 // ---------------------------------------------------------------------------
 // Zustand store
@@ -140,7 +146,7 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
     _resetIdCounter()
     const fresh = createLeaf('dashboard')
     set({ root: fresh, focusedPanelId: fresh.panelId, activeView: 'dashboard' })
-    setJsonSetting('panel.layout', null).catch((err) => {
+    layoutPersister.clear().catch((err) => {
       console.error('Failed to clear panel layout:', err)
       toast.error('Settings save failed — changes may be lost on restart')
     })
@@ -227,9 +233,6 @@ export const usePanelLayoutStore = create<PanelLayoutState>((set, get) => ({
 // ---------------------------------------------------------------------------
 // Persist layout on every mutation (debounced)
 // ---------------------------------------------------------------------------
-
-const layoutPersister = createLayoutPersister(500)
-let lastLayoutToSave: PanelNode | null = null
 
 usePanelLayoutStore.subscribe((state) => {
   if (!state.persistable) return

@@ -77,17 +77,12 @@ export function useSprintPipelineState(): SprintPipelineState {
   const loadData = useSprintTasks((s) => s.loadData)
   const batchRequeueTasks = useSprintTasks((s) => s.batchRequeueTasks)
 
-  const { selectedTaskId, selectedTaskIds, drawerOpen, specPanelOpen, logDrawerTaskId } =
-    useSprintSelection(
-      useShallow((s) => ({
-        selectedTaskId: s.selectedTaskId,
-        selectedTaskIds: s.selectedTaskIds,
-        drawerOpen: s.drawerOpen,
-        specPanelOpen: s.specPanelOpen,
-        logDrawerTaskId: s.logDrawerTaskId
-      }))
-    )
   const {
+    selectedTaskId,
+    selectedTaskIds,
+    drawerOpen,
+    specPanelOpen,
+    logDrawerTaskId,
     setSelectedTaskId,
     setDrawerOpen,
     setSpecPanelOpen,
@@ -96,6 +91,11 @@ export function useSprintPipelineState(): SprintPipelineState {
     toggleTaskSelection
   } = useSprintSelection(
     useShallow((s) => ({
+      selectedTaskId: s.selectedTaskId,
+      selectedTaskIds: s.selectedTaskIds,
+      drawerOpen: s.drawerOpen,
+      specPanelOpen: s.specPanelOpen,
+      logDrawerTaskId: s.logDrawerTaskId,
       setSelectedTaskId: s.setSelectedTaskId,
       setDrawerOpen: s.setDrawerOpen,
       setSpecPanelOpen: s.setSpecPanelOpen,

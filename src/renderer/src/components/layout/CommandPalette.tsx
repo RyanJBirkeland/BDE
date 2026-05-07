@@ -53,8 +53,20 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
   const fuzzySearch = useCommandPaletteStore((s) => s.fuzzySearch)
   const trackCommandUsage = useCommandPaletteStore((s) => s.trackCommandUsage)
 
-  // Register core commands on mount (commands capture setView/onClose from closure)
+  // Refs hold the latest setView/onClose so registered command closures always
+  // invoke the current versions without re-registering on every render.
+  const setViewRef = useRef(setView)
+  const onCloseRef = useRef(onClose)
   useEffect(() => {
+    setViewRef.current = setView
+    onCloseRef.current = onClose
+  })
+
+  // Register core commands on mount. Commands route through refs above instead
+  // of closing over mount-time setView/onClose values.
+  useEffect(() => {
+    const setViewLatest = (view: View): void => setViewRef.current(view)
+    const closeLatest = (): void => onCloseRef.current()
     const bindings = useKeybindingsStore.getState().bindings
 
     const navCommands: { view: View; label: string; actionId: keyof typeof bindings }[] = [
@@ -75,8 +87,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       hint: bindings[v.actionId],
       keywords: [v.view, 'goto', 'open'],
       action: () => {
-        setView(v.view)
-        onClose()
+        setViewLatest(v.view)
+        closeLatest()
       }
     }))
 
@@ -88,7 +100,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         hint: 'Interactive helper',
         keywords: ['assistant', 'help', 'agent', 'spawn'],
         action: async () => {
-          onClose()
+          closeLatest()
           try {
             const paths = await window.api.git.getRepoPaths()
             const firstKey = Object.keys(paths)[0]
@@ -103,7 +115,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
               assistant: true
             })
             toast.success('FLEET Assistant spawned')
-            setView('agents')
+            setViewLatest('agents')
           } catch (err) {
             toast.error(
               `Failed to spawn assistant: ${err instanceof Error ? err.message : 'Unknown error'}`
@@ -118,8 +130,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         hint: 'Open spawn modal',
         keywords: ['agent', 'spawn', 'adhoc'],
         action: () => {
-          setView('agents')
-          onClose()
+          setViewLatest('agents')
+          closeLatest()
           // Trigger spawn modal after navigation renders
           requestAnimationFrame(() => {
             window.dispatchEvent(new CustomEvent('fleet:open-spawn-modal'))
@@ -138,7 +150,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         action: () => {
           const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
           if (focusedPanelId) splitPanel(focusedPanelId, 'horizontal', 'agents')
-          onClose()
+          closeLatest()
         }
       },
       {
@@ -149,7 +161,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         action: () => {
           const { focusedPanelId, splitPanel } = usePanelLayoutStore.getState()
           if (focusedPanelId) splitPanel(focusedPanelId, 'vertical', 'agents')
-          onClose()
+          closeLatest()
         }
       },
       {
@@ -164,7 +176,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
             const leaf = findLeaf(root, focusedPanelId)
             if (leaf) closeTab(focusedPanelId, leaf.activeTab)
           }
-          onClose()
+          closeLatest()
         }
       },
       {
@@ -174,7 +186,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         keywords: ['reset', 'layout', 'default'],
         action: () => {
           usePanelLayoutStore.getState().resetLayout()
-          onClose()
+          closeLatest()
         }
       }
     ]
@@ -187,7 +199,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
         hint: 'View guide',
         keywords: ['help', 'guide', 'features', 'views', 'learn'],
         action: () => {
-          onClose()
+          closeLatest()
           requestAnimationFrame(() => {
             window.dispatchEvent(new CustomEvent('fleet:open-feature-guide'))
           })
@@ -201,23 +213,27 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
     return () => {
       unregisterCommands(coreCommands.map((c) => c.id))
     }
-    // Commands capture setView/onClose from closure - only register once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [registerCommands, unregisterCommands])
 
-  // Fetch recent agents when palette opens
+  // Reset query/selectedIndex/recentAgents on open transition by deriving from
+  // prior open state. Storing `prevOpen` in state avoids a setState-in-effect
+  // cascade — React schedules the resets in the same render pass when `open`
+  // first flips to true.
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    if (open) {
+      setQuery('')
+      setSelectedIndex(0)
+      setRecentAgents(useAgentHistoryStore.getState().agents.slice(0, 5))
+    }
+  }
+
+  // Side effects (focus + async fetch) still belong in an effect — they touch
+  // the DOM and external systems rather than synchronously deriving state.
   useEffect(() => {
     if (!open) return
-
-    setQuery('')
-
-    setSelectedIndex(0)
     requestAnimationFrame(() => inputRef.current?.focus())
-
-    const agents = useAgentHistoryStore.getState().agents
-    setRecentAgents(agents.slice(0, 5))
-
-    // Also try a fresh fetch
     useAgentHistoryStore
       .getState()
       .fetchAgents()
@@ -229,7 +245,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       })
   }, [open])
 
-  // Combine registered commands with dynamic session commands
+  // Combine registered commands with dynamic session commands.
+  // Action closures route through refs so they always invoke the latest setView/onClose.
   const commands = useMemo<Command[]>(() => {
     const agentItems: Command[] = recentAgents.map((agent) => ({
       id: `agent-${agent.id}`,
@@ -238,17 +255,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
       hint: `${agent.model} ${timeAgo(agent.startedAt)}`,
       keywords: ['agent', 'session', 'recent'],
       action: () => {
-        setView('agents')
+        setViewRef.current('agents')
         selectAgent(agent.id)
-        onClose()
+        onCloseRef.current()
       }
     }))
 
     return [...registeredCommands, ...agentItems]
-    // recentAgents changes frequently, registeredCommands is stable
-    // setView/selectAgent/onClose captured from closure
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registeredCommands, recentAgents])
+  }, [registeredCommands, recentAgents, selectAgent])
 
   const filtered = useMemo(() => {
     if (!query.trim()) return commands
@@ -298,9 +312,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps): React.JS
     }
   }, [flatItems, selectedIndex, trackCommandUsage])
 
-  useEffect(() => {
+  // Reset selectedIndex when the query changes by tracking the prior query in state.
+  // Same rationale as the open-transition reset above — keeps state derivation in
+  // render rather than scheduling a follow-up render via setState-in-effect.
+  const [prevQuery, setPrevQuery] = useState(query)
+  if (query !== prevQuery) {
+    setPrevQuery(query)
     setSelectedIndex(0)
-  }, [query])
+  }
 
   // Scroll selected item into view
   useEffect(() => {
